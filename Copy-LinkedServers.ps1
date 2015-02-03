@@ -29,7 +29,7 @@ Requires: 	PowerShell Version 3.0, SQL Server SMO,
 			Sys Admin access on Windows and SQL Server. DAC access enabled for local (default)
 DateUpdated: 2015-Feb-3
 Version: 	0.1
-Limitations: Hasn't been tested thouroghtly. Works on Win8.1 and SQL Server 2012 & 2014 so far.
+Limitations: Hasn't been tested thoroughly. Works on Win8.1 and SQL Server 2012 & 2014 so far.
 This just copies the SQL portion. It does not copy files (ie. a local SQLITE database, or Access DB), nor does it configure ODBC entries.
 Not close to finished.
 
