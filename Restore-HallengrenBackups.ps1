@@ -27,7 +27,7 @@
  .NOTES 
     Author  : Chrissy LeMaire
     Requires: PowerShell Version 3.0, SMO, sysadmin access on destination SQL Server.
-	Version: 1.0.0
+	Version: 0.2
 
  .LINK 
   	http://gallery.technet.microsoft.com/scriptcenter/Restore-SQL-Backups-cd958ec1
@@ -190,7 +190,7 @@ Function Get-SQLFileStructures {
 	return $destinationfiles
 }
 
-Function Get-SQLDefaultPaths {
+Function Get-SQLDefaultPaths     {
  <#
             .SYNOPSIS
 			Gets the default data and log paths for SQL Server. Needed because SMO's server.defaultpath is sometimes null.
@@ -215,30 +215,32 @@ Function Get-SQLDefaultPaths {
 		)
 		
 	switch ($filetype) { "data" { $filetype = "mdf" } "log" {  $filetype = "ldf" } }
-
-	if ($filetype -eq "mdf") { $sql = "select SERVERPROPERTY('InstanceDefaultDataPath') as physical_name" } 
-	else { $sql = "select SERVERPROPERTY('InstanceDefaultLogPath') as physical_name" }
-
-	$dataset = $server.databases['master'].ExecuteWithResults($sql)
-	$filepath = $dataset.Tables[0].physical_name
 	
-
-	if ($filepath -ne [DBNull]::Value) { $filepath = $filepath.TrimEnd("\"); return $filepath }
-	else {
-		
-		$dbname = "randomdb$(Get-Random)" #ensure there's at least one user db
-		$sql = "create database $dbname;
-					Declare @dbname varchar(255);
-					SET @dbname = (SELECT top 1 name FROM sys.databases where database_id > 4);
-					EXEC (N'select top 1 physical_name from ' + @dbname + '.sys.database_files where physical_name like ''%.$filetype''');
-					drop database $dbname"
-			
-			$dataset = $server.databases['master'].ExecuteWithResults($sql)
-			$filepath = ($dataset.Tables[0].rows[0]).physical_name
-			
-			if ($filepath -ne $null) { return Split-Path($filepath) }
-			else {return $null}
+	if ($filetype -eq "log") {
+		# First attempt
+		$filepath = $server.DefaultLog
+		# Second attempt
+		if ($filepath.Length -eq 0) { $filepath = $server.Information.MasterDBLogPath }
+		# Third attempt
+		if ($filepath.Length -eq 0) {
+			$sql = "select SERVERPROPERTY('InstanceDefaultLogPath') as physical_name"
+			$filepath = $server.ConnectionContext.ExecuteScalar($sql)
+		}
+	} else {
+		# First attempt
+		$filepath = $server.DefaultFile
+		# Second attempt
+		if ($filepath.Length -eq 0) { $filepath = $server.Information.MasterDBPath }
+		# Third attempt
+		if ($filepath.Length -eq 0) {
+			 $sql = "select SERVERPROPERTY('InstanceDefaultDataPath') as physical_name"
+			 $filepath = $server.ConnectionContext.ExecuteScalar($sql)
+		}
 	}
+	
+	if ($filepath.Length -eq 0) { throw "Cannot determine the required directory path." }
+	$filepath = $filepath.TrimEnd("\")
+	return Split-Path($filepath)
 }
 
 Function Test-SQLSA      {
@@ -262,9 +264,7 @@ Function Test-SQLSA      {
 		)
 		
 try {
-		$sql = "select IS_SRVROLEMEMBER ('sysadmin') as issysadmin"
-		$issysadmin = ($server.databases['master'].ExecuteWithResults($sql)).Tables.issysadmin
-		if ($issysadmin -eq $true) { return $true } else { return $false }
+		return ($server.Logins[$server.ConnectionContext.trueLogin].IsMember("sysadmin"))
 	}
 	catch { return $false }
 }
