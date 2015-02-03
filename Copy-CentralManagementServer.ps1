@@ -30,17 +30,17 @@
   	https://gallery.technet.microsoft.com/scriptcenter/Migrate-Central-Management-e062943f
 
  .EXAMPLE   
-.\Move-CentralManagementServer.ps1 -FromServer sqlserver -ToServer sqlcluster
+.\Copy-CentralManagementServer.ps1 -FromServer sqlserver -ToServer sqlcluster
 
 In the above example, all groups, subgroups, and server instances are copied from sqlserver's Central Management Server to sqlcluster's Central Management Server.
 
  .EXAMPLE   
-.\Move-CentralManagementServer.ps1 -FromServer sqlserver -ToServer sqlcluster -CMSGroups Group1,Group3
+.\Copy-CentralManagementServer.ps1 -FromServer sqlserver -ToServer sqlcluster -CMSGroups Group1,Group3
 
 In the above example, top level Group1 and Group3, along with its subgroups and server instances are copied from sqlserver to sqlcluster.
 
  .EXAMPLE   
-.\Move-CentralManagementServer.ps1 -FromServer sqlserver -ToServer sqlcluster -CMSGroups Group1,Group3 -SwitchServerName
+.\Copy-CentralManagementServer.ps1 -FromServer sqlserver -ToServer sqlcluster -CMSGroups Group1,Group3 -SwitchServerName
 
 In the above example, top level Group1 and Group3, along with its subgroups and server instances are copied from sqlserver to sqlcluster. When adding sql instances to sqlcluster, if
 the server name of the migrating instance is "sqlcluster", it will be switched to "sqlserver". If SwitchServerName is not specified, "sqlcluster" will be skipped.
