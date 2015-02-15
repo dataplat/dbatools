@@ -93,8 +93,8 @@
  .NOTES 
     Author  : Chrissy LeMaire
     Requires: PowerShell Version 3.0, SQL Server SMO
-	DateUpdated: 2015-Jan-28
-	Version: 1.2.2
+	DateUpdated: 2015-Feb-15
+	Version: 1.2.3
 	Limitations: 	Doesn't cover what it doesn't cover (replication, linked servers, certificates, etc)
 					SQL Server 2000 login migrations have some limitations (server perms aren't migrated, etc)
 					SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
@@ -205,7 +205,7 @@ DynamicParam  {
 					$databaselist += $database.name}
 			}
 		foreach ($login in $server.logins) { 
-			if ($login.logintype -eq "SqlLogin" -and !$login.name.StartsWith("##") -and $login.name -ne 'sa') {
+			if (!$login.name.StartsWith("##") -and $login.name -ne 'sa') {
 			$loginlist += $login.name}
 			}
 				
@@ -980,6 +980,8 @@ Function Copy-SQLDatabases  {
 			}
 		}
 	
+	$dbtotaltime=$dbfinish-$dbstart
+	$dbtotaltime = ($dbtotaltime.toString().Split(".")[0])
 
 	Write-Host "Finished: $dbfinish" -ForegroundColor Cyan
 	Write-Host "Elapsed time: $dbtotaltime" -ForegroundColor Cyan
@@ -1758,7 +1760,7 @@ Function Get-SQLDefaultPaths     {
 		
 	switch ($filetype) { "data" { $filetype = "mdf" } "log" {  $filetype = "ldf" } }
 	
-	if ($filetype -eq "log") {
+	if ($filetype -eq "ldf") {
 		# First attempt
 		$filepath = $server.DefaultLog
 		# Second attempt
@@ -1782,7 +1784,7 @@ Function Get-SQLDefaultPaths     {
 	
 	if ($filepath.Length -eq 0) { throw "Cannot determine the required directory path." }
 	$filepath = $filepath.TrimEnd("\")
-	return Split-Path($filepath)
+	return $filepath
 }
 
 Function Join-AdminUNC {
