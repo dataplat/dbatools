@@ -94,7 +94,7 @@
     Author  : Chrissy LeMaire
     Requires: PowerShell Version 3.0, SQL Server SMO
 	DateUpdated: 2015-Feb-15
-	Version: 1.2.3
+	Version: 1.2.4
 	Limitations: 	Doesn't cover what it doesn't cover (replication, linked servers, certificates, etc)
 					SQL Server 2000 login migrations have some limitations (server perms aren't migrated, etc)
 					SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
@@ -375,7 +375,10 @@ Function Restore-SQLDatabase {
 		Write-Progress -id 1 -activity "Restoring $dbname to $servername" -status "Complete" -Completed
 		
 		return $true
-	} catch { return $false	}
+	} catch { 
+		write-warning "Restore failed: $($_.Exception.InnerException.Message)"
+		return $false	
+	}
 }
 
 Function Get-SQLFileStructures {
