@@ -93,8 +93,8 @@
  .NOTES 
     Author  : Chrissy LeMaire
     Requires: PowerShell Version 3.0, SQL Server SMO
-	DateUpdated: 2015-Feb-15
-	Version: 1.2.4
+	DateUpdated: 2015-Feb-16
+	Version: 1.2.5
 	Limitations: 	Doesn't cover what it doesn't cover (replication, linked servers, certificates, etc)
 					SQL Server 2000 login migrations have some limitations (server perms aren't migrated, etc)
 					SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
@@ -447,6 +447,41 @@ Function Get-SQLFileStructures {
 				}
 			}
 			
+			# Add support for Full Text Catalogs in SQL Server 2005 and below
+			if ($sourceserver.VersionMajor -lt 10) {
+				foreach ($ftc in $db.FullTextCatalogs) {
+					# Destination File Structure
+					$d = @{}
+					$pre = "sysft_"
+					$name = $ftc.name
+					$physical = $ftc.RootPath
+					$logical = "$pre$name"
+					if ($ReuseFolderstructure) {
+						$d.physical = $physical
+					} else {
+						$directory = Get-SQLDefaultPaths $destserver data
+						if ($destserver.VersionMajor -lt 10) { $directory = "$directory\FTDATA" }
+						$filename = Split-Path($physical) -leaf	
+						$d.physical = "$directory\$filename"
+					}
+					$d.logical = $logical
+					$d.remotefilename = Join-AdminUNC $destnetbios $d.physical
+					$destinationfiles.add($logical,$d)
+					
+					# Source File Structure
+					$s = @{}
+					$pre = "sysft_"
+					$name = $ftc.name
+					$physical = $ftc.RootPath
+					$logical = "$pre$name"
+					
+					$s.logical = $logical
+					$s.physical = $physical
+					$s.remotefilename = Join-AdminUNC $sourcenetbios $s.physical
+					$sourcefiles.add($logical,$s)
+				}
+			}
+
 			# Log Files
 			foreach ($file in $db.logfiles) {
 				$d = @{}
