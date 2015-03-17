@@ -93,8 +93,8 @@
  .NOTES 
     Author  : Chrissy LeMaire
     Requires: PowerShell Version 3.0, SQL Server SMO
-	DateUpdated: 2015-Feb-16
-	Version: 1.2.5
+	DateUpdated: 2015-Mar-30
+	Version: 1.2.7
 	Limitations: 	Doesn't cover what it doesn't cover (replication, linked servers, certificates, etc)
 					SQL Server 2000 login migrations have some limitations (server perms aren't migrated, etc)
 					SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
@@ -845,8 +845,8 @@ Function Copy-SQLDatabases  {
 		
 		if ($database.id -le 4) { continue }
 		if ($IncludeDBs -and $IncludeDBs -notcontains $dbname) { continue }
-		if (!$IncludeSupportDBs -and $SupportDBs -contains $dbname) { continue }
-
+		if ($IncludeSupportDBs -eq $false -and $SupportDBs -contains $dbname) { continue }
+		
 		Write-Host "`n#################################### Database: $dbname ####################################" -ForegroundColor White
 		$dbstart = Get-Date
 		
@@ -1027,7 +1027,9 @@ Function Copy-SQLDatabases  {
 	
 	$alldbtotaltime = ($alldbelapsed.Elapsed.toString().Split(".")[0])
 	Add-Content -Path "$csvfilename-db.csv" "`r`nElapsed time,$alldbtotaltime"
-	if ($migrateddb.count -eq 0) { Remove-Item -Path "$csvfilename-db.csv" }
+	if ($migrateddb.count -eq 0) { 
+		If (Test-Path "$csvfilename-db.csv") { Remove-Item -Path "$csvfilename-db.csv" }
+	}
 	$migrateddb.GetEnumerator() | Sort-Object Value; $skippedb.GetEnumerator() | Sort-Object Value
 	Write-Host "`nCompleted database migration" -ForegroundColor Green
 }
@@ -1881,7 +1883,7 @@ Function Test-SQLSA      {
 		)
 		
 try {
-		return ($server.Logins[$server.ConnectionContext.trueLogin].IsMember("sysadmin"))
+		return ($server.ConnectionContext.FixedServerRoles -match "SysAdmin")
 	}
 	catch { return $false }
 }
@@ -1982,6 +1984,16 @@ PROCESS {
 		
 	try { $sourceserver.ConnectionContext.Connect() } catch { throw "Can't connect to $source or access denied. Quitting." }
 	try { $destserver.ConnectionContext.Connect() } catch { throw "Can't connect to $destination or access denied. Quitting." }
+
+	$sourceserver.ConnectionContext.Disconnect()
+	$destserver.ConnectionContext.Disconnect()
+	$sourceserver = New-Object Microsoft.SqlServer.Management.Smo.Server $source
+	$destserver = New-Object Microsoft.SqlServer.Management.Smo.Server $destination
+	$sourceserver.ConnectionContext.ConnectTimeout = 0
+	$destserver.ConnectionContext.ConnectTimeout = 0
+	$sourceserver.ConnectionContext.Connect() 
+	$destserver.ConnectionContext.Connect()
+	
 	
 	if ($sourceserver.versionMajor -lt 8 -and $destserver.versionMajor -lt 8) {
 		throw "This script can only be run on SQL Server 2000 and above. Quitting." 
