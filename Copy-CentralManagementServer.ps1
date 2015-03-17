@@ -24,7 +24,7 @@
     Author  : Chrissy LeMaire
     Requires: 	PowerShell Version 3.0, SQL Server SMO
 	Version: 0.8
-	DateUpdated: 2015-Jan-14
+	DateUpdated: 2015-Jan-15
 
  .LINK 
   	https://gallery.technet.microsoft.com/scriptcenter/Migrate-Central-Management-e062943f
