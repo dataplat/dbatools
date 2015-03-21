@@ -30,6 +30,16 @@ Watch-DBLogins.ps1 uses SQL Server process enumeration to track logins in a SQL 
 Running this script every 5 minutes for a week should give you a sufficient idea about database and login usage.
 
     .\Watch-DBLogins.ps1 -WatchDBServer sqlserver -CMServer cmserver1
+
+Get-SQLServerKeys.ps1
+--------------
+Using a string of servers, a text file, or Central Management Server to provide a list of servers, this script obtains the product key for all installed instances on a server or cluster. Requires regular user access to the SQL instances, SMO installed locally, and, if accessing remote servers, Remote Registry must enabled and acessible by the account running the script.
+
+Uses key decoder by Jakob Bindslet (http://goo.gl/1jiwcB)
+
+   .\Get-SQLServerKeys.ps1
+   .\Get-SQLServerKeys.ps1 -CentralMgmtServer sqlserver01
+   .\Get-SQLServerKeys.ps1 sqlservera, sqlserver2014a, sql01
 	
 Copy-SQLServerCredentials.ps1
 --------------
