@@ -3,12 +3,12 @@
     Gets SQL Server Product Keys from local and remote SQL Servers. Works with SQL Server 2005-2014
 
  .DESCRIPTION 
-    Using a string of servers, a text file, or Central Management Server to provide a list of servers, this script obtains the product key for all installed instances on a server or cluster. Requires regular user access to the SQL instances, SMO installed locally, and, if accessing remote servers, Remote Registry must enabled and acessible by the account running the script.
+    Using a string of servers, a text file, or Central Management Server to provide a list of servers, this script will go to each server and get the product key for all installed instances. Clustered instances are supported as well. Requires regular user access to the SQL instances, SMO installed locally, Remote Registry enabled and acessible by the account running the script.
 
 	Uses key decoder by Jakob Bindslet (http://goo.gl/1jiwcB)
 	
  .PARAMETER Servers
-	A comma separated list of servers. This can be the NetBIOS name, IP, or SQL instance name.
+	A comma separated list of servers. This can be the NetBIOS name, IP, or SQL instance name
 	
  .PARAMETER CentralMgmtServer
 	Compiles list of servers to inventory using all servers stored within a Central Management Server. Requires having SQL Management Studio installed.
@@ -21,29 +21,23 @@
  .NOTES 
     Author  : Chrissy LeMaire
     Requires: 	PowerShell Version 3.0, SQL Server SMO,  Remote Registry
-	Version: 0.8
-	DateUpdated: 2015-Mar-21
+	Version: 0.8.1
+	DateUpdated: 2015-Mar-22
 
  .LINK 
   	https://gallery.technet.microsoft.com/scriptcenter/Get-SQL-Server-Product-4b5bf4f8
 
  .EXAMPLE   
- .\Get-SQLServerKeys.ps1
-	Gets SQL Server versions for the local machine.
-	
- .EXAMPLE   
- .\Get-SQLServerKeys.ps1 sqlservera, sqlserver2014a, win2k8
-	Gets SQL Server versions for all instances on sqlservera, sqlserver2014a, and win2k8
+ .\Get-SQLServerKeys.ps1 winxp, sqlservera, sqlserver2014a, win2k8
+	Gets SQL Server versions and product keys for all instances within each server or workstation.
 
  .EXAMPLE   
  .\Get-SQLServerKeys.ps1 -CentralMgmtServer sqlserver01
-	Gets SQL Server versions for all SQL Server database instances within the Central Management Server on sqlserver01
+		Gets SQL Server versions and product keys for all instances within sqlserver01's Central Management Server
 
  .EXAMPLE   
  .\Get-SQLServerKeys.ps1 -ServersFromFile C:\Scripts\servers.txt
-  Gets product keys for all servers listed within a file C:\Scripts\servers.txt
-
-
+  Gets SQL Server versions and product keys for all instances listed within C:\Scripts\servers.txt
 #> 
 #Requires -Version 3.0
 [CmdletBinding(DefaultParameterSetName="Default")]
@@ -82,7 +76,7 @@ BEGIN {
 				}
 			}
 		}
-		catch { $productkey = "crap" }
+		catch { $productkey = "Cannot decode product key." }
 		return $productKey
 	}
 }
@@ -101,7 +95,7 @@ PROCESS {
 		try { $cmstore = new-object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sqlconnection)}
 		catch { throw "Cannot access Central Management Server" }
 		$dbstore = $cmstore.DatabaseEngineServerGroup
-		$servers = $dbstore.GetDescendantRegisteredServers().name
+		$servers = $dbstore.GetDescendantRegisteredServers().servername
 		# Add the CM server itself, which can't be stored in the CM server.
 		$servers += $CentralMgmtServer
 		$basenames = @()
@@ -153,7 +147,6 @@ PROCESS {
 				if ($instance -eq "MSSQLSERVER") { $sqlserver = $clustername } else { $sqlserver = "$clustername\$instance" }
 			}
 			
-			# Get version information via SMO
 			Write-Verbose "Attempting to connect to $sqlserver"
 			$server = New-Object Microsoft.SqlServer.Management.Smo.Server $sqlserver
 			try { $server.ConnectionContext.Connect() } catch { Write-Warning "Can't connect to $sqlserver or access denied. Moving on."; continue }
@@ -181,21 +174,21 @@ PROCESS {
 				try { 
 					$subkey = Split-Path $key; $binaryvalue = Split-Path $key -leaf
 					$binarykey = $($reg.OpenSubKey($subkey)).GetValue($binaryvalue)
-				} catch {$productid = "Could not connect." }
-				$productid = Unlock-SQLServerKey $binarykey $server.VersionMajor
-			} else { $productid = "SQL Server Express Edition"}
+				} catch {$pkey = "Could not connect." }
+				$pkey = Unlock-SQLServerKey $binarykey $server.VersionMajor
+			} else { $pkey = "SQL Server Express Edition"}
 			$server.ConnectionContext.Disconnect()
 
 			$object = New-Object PSObject -Property @{
-				SQLinstance = $sqlserver
-				SQLversion = $sqlversion
-				ProductID = $productid
+				"SQL Instance" = $sqlserver
+				"SQL Version" = $sqlversion
+				"Product Key" = $pkey
 			}
 			$objectCollection += $object
 		}
 		$reg.Close()
 	}
-	$objectCollection | Select SQLinstance, SQLversion, ProductID
+	$objectCollection | Select "SQL Instance", "SQL Version", "Product Key"
 }
 
 END {
