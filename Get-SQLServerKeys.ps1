@@ -21,23 +21,23 @@
  .NOTES 
     Author  : Chrissy LeMaire
     Requires: 	PowerShell Version 3.0, SQL Server SMO,  Remote Registry
-	Version: 0.8.1
-	DateUpdated: 2015-Mar-22
+	Version: 0.8.2
+	DateUpdated: 2015-Mar-25
 
  .LINK 
   	https://gallery.technet.microsoft.com/scriptcenter/Get-SQL-Server-Product-4b5bf4f8
 
  .EXAMPLE   
  .\Get-SQLServerKeys.ps1 winxp, sqlservera, sqlserver2014a, win2k8
-	Gets SQL Server versions and product keys for all instances within each server or workstation.
+	Gets SQL Server versions, editions and product keys for all instances within each server or workstation.
 
  .EXAMPLE   
  .\Get-SQLServerKeys.ps1 -CentralMgmtServer sqlserver01
-		Gets SQL Server versions and product keys for all instances within sqlserver01's Central Management Server
+		Gets SQL Server versions, editions and product keys for all instances within sqlserver01's Central Management Server
 
  .EXAMPLE   
  .\Get-SQLServerKeys.ps1 -ServersFromFile C:\Scripts\servers.txt
-  Gets SQL Server versions and product keys for all instances listed within C:\Scripts\servers.txt
+  Gets SQL Server versions, editions and product keys for all instances listed within C:\Scripts\servers.txt
 #> 
 #Requires -Version 3.0
 [CmdletBinding(DefaultParameterSetName="Default")]
@@ -54,7 +54,6 @@ Param(
 BEGIN {
 
 	Function Unlock-SQLServerKey {
-	# Uses key decoder by Jakob Bindslet (http://goo.gl/1jiwcB)
 		param(
 			[Parameter(Mandatory = $true)]
 			[byte[]]$data,
@@ -174,21 +173,22 @@ PROCESS {
 				try { 
 					$subkey = Split-Path $key; $binaryvalue = Split-Path $key -leaf
 					$binarykey = $($reg.OpenSubKey($subkey)).GetValue($binaryvalue)
-				} catch {$pkey = "Could not connect." }
-				$pkey = Unlock-SQLServerKey $binarykey $server.VersionMajor
-			} else { $pkey = "SQL Server Express Edition"}
+				} catch {$sqlkey = "Could not connect." }
+				$sqlkey = Unlock-SQLServerKey $binarykey $server.VersionMajor
+			} else { $sqlkey = "SQL Server Express Edition"}
 			$server.ConnectionContext.Disconnect()
 
 			$object = New-Object PSObject -Property @{
 				"SQL Instance" = $sqlserver
 				"SQL Version" = $sqlversion
-				"Product Key" = $pkey
+				"SQL Edition" = $server.Edition
+				"Product Key" = $sqlkey
 			}
 			$objectCollection += $object
 		}
 		$reg.Close()
 	}
-	$objectCollection | Select "SQL Instance", "SQL Version", "Product Key"
+	$objectCollection | Select "SQL Instance", "SQL Version", "SQL Edition", "Product Key" 
 }
 
 END {

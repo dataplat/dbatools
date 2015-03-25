@@ -93,8 +93,8 @@
  .NOTES 
     Author  : Chrissy LeMaire
     Requires: PowerShell Version 3.0, SQL Server SMO
-	DateUpdated: 2015-Mar-30
-	Version: 1.2.7
+	DateUpdated: 2015-Mar-25
+	Version: 1.2.9
 	Limitations: 	Doesn't cover what it doesn't cover (replication, linked servers, certificates, etc)
 					SQL Server 2000 login migrations have some limitations (server perms aren't migrated, etc)
 					SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
@@ -371,7 +371,7 @@ Function Restore-SQLDatabase {
 		$restore.Devices.Add($device)
 		
 		Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-		$restore.sqlrestore($servername)
+		$restore.sqlrestore($server)
 		Write-Progress -id 1 -activity "Restoring $dbname to $servername" -status "Complete" -Completed
 		
 		return $true
