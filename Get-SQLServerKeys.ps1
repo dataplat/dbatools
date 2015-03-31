@@ -21,8 +21,8 @@
  .NOTES 
     Author  : Chrissy LeMaire
     Requires: 	PowerShell Version 3.0, SQL Server SMO,  Remote Registry
-	Version: 0.8.2
-	DateUpdated: 2015-Mar-25
+	Version: 0.8.3
+	DateUpdated: 2015-Mar-31
 
  .LINK 
   	https://gallery.technet.microsoft.com/scriptcenter/Get-SQL-Server-Product-4b5bf4f8
@@ -80,7 +80,9 @@ BEGIN {
 	}
 }
 
-PROCESS { 
+PROCESS {
+	if ((Get-Host).Version.Major -lt 3) { throw "PowerShell 3.0 and above required." }
+	
 	if ([Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SMO") -eq $null )
 	{ throw "Quitting: SMO Required. You can download it from http://goo.gl/R4yA6u" }
 	
