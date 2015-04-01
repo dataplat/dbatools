@@ -21,7 +21,7 @@ Copy-CentralManagementServer.ps1
 --------------
 Copies all groups, subgroups, and server instances from one SQL Server to another. 
 
-    .\Copy-CentralManagementServer.ps1 -FromServer sqlserver -ToServer sqlcluster
+    .\Copy-CentralManagementServer.ps1 -Source sqlserver -Destination sqlcluster
 	
 Watch-DBLogins.ps1
 --------------
