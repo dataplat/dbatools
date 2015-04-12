@@ -93,8 +93,8 @@
  .NOTES 
     Author  : Chrissy LeMaire
     Requires: PowerShell Version 3.0, SQL Server SMO
-	DateUpdated: 2015-Mar-25
-	Version: 1.2.9
+	DateUpdated: 2015-April-12
+	Version: 1.3
 	Limitations: 	Doesn't cover what it doesn't cover (replication, linked servers, certificates, etc)
 					SQL Server 2000 login migrations have some limitations (server perms aren't migrated, etc)
 					SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
@@ -1085,7 +1085,7 @@ Function Copy-SQLLogins {
 		if ($skippeduser.ContainsKey($username) -or $username.StartsWith("##") -or $username -eq 'sa') { continue }
 		$servername = Get-NetBIOSName $sourceserver
 
-		$admin = ($sourceserver.Logins[$sourceserver.ConnectionContext.truelogin]).name.Tostring()
+		$admin = $sourceserver.ConnectionContext.truelogin
 
 		if ($admin -eq $username -and $force) {
 			Write-Warning "Cannot drop login performing the migration. Skipping"
