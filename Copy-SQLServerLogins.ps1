@@ -67,8 +67,8 @@ Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins
 .NOTES 
 Author: 		Chrissy LeMaire
 Requires: 		PowerShell Version 3.0, SQL Server SMO
-DateUpdated: 	2015-Jan-27
-Version: 		1.4
+DateUpdated: 	2015-Apr-12
+Version: 		1.4.5
 
 .LINK 
 https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-SQL-25a0cf05
@@ -185,7 +185,7 @@ Function Copy-SQLLogins {
 		if ($skippeduser.ContainsKey($username) -or $username.StartsWith("##") -or $username -eq 'sa') { continue }
 		$servername = Get-NetBIOSName $sourceserver
 
-		$admin = ($sourceserver.Logins[$sourceserver.ConnectionContext.truelogin]).name.Tostring()
+		$admin = $sourceserver.ConnectionContext.truelogin
 
 		if ($admin -eq $username -and $force) {
 			Write-Warning "Cannot drop login performing the migration. Skipping"
@@ -218,7 +218,7 @@ Function Copy-SQLLogins {
 						continue }
 				}
 		}
-				
+		
 		If ($Pscmdlet.ShouldProcess($destination,"Adding SQL login $username")) {
 			Write-Host "Attempting to add $username to $destination" -ForegroundColor Yellow
 			$destlogin = new-object Microsoft.SqlServer.Management.Smo.Login($destserver, $username)
@@ -241,7 +241,7 @@ Function Copy-SQLLogins {
 				$destlogin.PasswordExpirationEnabled = $false
 				$checkexpiration = "OFF"
 			}
-
+	
 			# Attempt to add SQL Login User
 			if ($sourcelogin.LoginType -eq "SqlLogin") {
 				$destlogin.LoginType = "SqlLogin"
@@ -267,7 +267,7 @@ Function Copy-SQLLogins {
 					$passtring = "0x"; $hashedpass | % {$passtring += ("{0:X}" -f $_).PadLeft(2, "0")}
 					$hashedpass = $passtring
 				}
-				
+					
 				try {
 					$destlogin.Create($hashedpass, [Microsoft.SqlServer.Management.Smo.LoginCreateOptions]::IsHashed)
 					$migrateduser.Add("$username","SQL Login Added successfully") 
@@ -290,7 +290,7 @@ Function Copy-SQLLogins {
 						continue 
 					}
 				}
-			}
+			} 
 			# Attempt to add Windows User
 			elseif ($sourcelogin.LoginType -eq "WindowsUser" -or $sourcelogin.LoginType -eq "WindowsGroup") {
 				$destlogin.LoginType = $sourcelogin.LoginType
@@ -313,10 +313,9 @@ Function Copy-SQLLogins {
 			if ($sourcelogin.IsDisabled) { try { $destlogin.Disable() } catch { Write-Warning "$username disabled on source, but could not be disabled on destination." } }
 			if ($sourcelogin.DenyWindowsLogin) { try { $destlogin.DenyWindowsLogin = $true } catch { Write-Warning "$username denied login on source, but could not be denied ogin on destination." } }
 		}
+		Update-SQLPermissions -sourceserver $sourceserver -sourcelogin $sourcelogin -destserver $destserver -destlogin $destlogin
 	}
-	
-	Update-SQLPermissions -sourceserver $sourceserver -sourcelogin $sourcelogin -destserver $destserver -destlogin $destlogin
-	
+
 	$migrateduser.GetEnumerator() | Sort-Object value; $skippeduser.GetEnumerator() | Sort-Object value
 	$migrateduser.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Path "$csvfilename-users.csv" -NoTypeInformation
 	$skippeduser.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Append -Path "$csvfilename-users.csv" -NoTypeInformation
@@ -341,7 +340,7 @@ Function Update-SQLPermissions      {
 		[object]$destserver,
 		[object]$destlogin
 	)
-		
+
 # Server Roles: sysadmin, bulkadmin, etc
 	foreach ($role in $sourceserver.roles) {
 	try { $rolemembers = $role.EnumMemberNames() } catch { $rolemembers = $role.EnumServerRoleMembers() }
@@ -566,9 +565,8 @@ Function Test-SQLSA      {
 			[ValidateNotNullOrEmpty()]
             [object]$server	
 		)
-		
 try {
-		return ($server.Logins[$server.ConnectionContext.trueLogin].IsMember("sysadmin"))
+		return ($server.ConnectionContext.FixedServerRoles -match "SysAdmin")
 	}
 	catch { return $false }
 }
