@@ -67,8 +67,8 @@ Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins
 .NOTES 
 Author: 		Chrissy LeMaire
 Requires: 		PowerShell Version 3.0, SQL Server SMO
-DateUpdated: 	2015-Apr-12
-Version: 		1.4.5
+DateUpdated: 	2015-Apr-15
+Version: 		1.4.6
 
 .LINK 
 https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-SQL-25a0cf05
@@ -411,7 +411,7 @@ Function Update-SQLPermissions      {
 				}
 			}	
 		 # DB owner
-			If ($sourcedb.owner -eq $username ) { # !!!!!!!!!!   WARNING: Failed to update test owner to BASE\Administrator.
+			If ($sourcedb.owner -eq $username ) {
 				If ($Pscmdlet.ShouldProcess($destination,"Changing $dbname dbowner to $username")) {
 					try {
 						$result = Update-SQLdbowner $sourceserver $destserver -dbname $dbname
