@@ -12,10 +12,10 @@ versions. This means that while SQL Server 2000 logins can be migrated to SQL Se
 created in SQL Server 2012 can only be migrated to SQL Server 2012 and above.
 
 .PARAMETER Source
-Source SQL Server. You must have sysadmin access and server version must be > SQL Server 7.
+Source SQL Server. You must have syscurrentuser access and server version must be > SQL Server 7.
 
 .PARAMETER Destination
-Destination SQL Server. You must have sysadmin access and server version must be > SQL Server 7.
+Destination SQL Server. You must have syscurrentuser access and server version must be > SQL Server 7.
 
 .PARAMETER UseSqlLoginSource
 Uses SQL Login credentials to connect to Source server. Note this is a switch. You will be prompted to enter your SQL login credentials. 
@@ -67,8 +67,8 @@ Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins
 .NOTES 
 Author: 		Chrissy LeMaire
 Requires: 		PowerShell Version 3.0, SQL Server SMO
-DateUpdated: 	2015-Apr-15
-Version: 		1.4.6
+DateUpdated: 	2015-Apr-16
+Version: 		1.4.7
 
 .LINK 
 https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-SQL-25a0cf05
@@ -185,9 +185,9 @@ Function Copy-SQLLogins {
 		if ($skippeduser.ContainsKey($username) -or $username.StartsWith("##") -or $username -eq 'sa') { continue }
 		$servername = Get-NetBIOSName $sourceserver
 
-		$admin = $sourceserver.ConnectionContext.truelogin
+		$currentuser = $sourceserver.ConnectionContext.truelogin
 
-		if ($admin -eq $username -and $force) {
+		if ($currentuser -eq $username -and $force) {
 			Write-Warning "Cannot drop login performing the migration. Skipping"
 			$skippeduser.Add("$username","Skipped. Cannot drop login performing the migration.")
 			continue
@@ -341,7 +341,7 @@ Function Update-SQLPermissions      {
 		[object]$destlogin
 	)
 
-# Server Roles: sysadmin, bulkadmin, etc
+# Server Roles: syscurrentuser, bulkcurrentuser, etc
 	foreach ($role in $sourceserver.roles) {
 	try { $rolemembers = $role.EnumMemberNames() } catch { $rolemembers = $role.EnumServerRoleMembers() }
 		if ($rolemembers -contains $sourcelogin.name) {
@@ -358,7 +358,7 @@ Function Update-SQLPermissions      {
 			}
 
 	if ($sourceserver.versionMajor -ge 9 -and $destserver.versionMajor -ge 9) { # These operations are only supported by SQL Server 2005 and above.
-		# Securables: Connect SQL, View any database, Administer Bulk Operations, etc.
+		# Securables: Connect SQL, View any database, currentuserister Bulk Operations, etc.
 		$perms = $sourceserver.EnumServerPermissions($username)
 		foreach ($perm in $perms) {
 			$permstate = $perm.permissionstate
@@ -476,12 +476,16 @@ Function Sync-Only {
 	foreach ($sourcelogin in $sourceserver.logins) {
 
 		$username = $sourcelogin.name
+		$currentuser = $sourceserver.ConnectionContext.truelogin
 		if ($IncludeLogins -ne $null -and $IncludeLogins -notcontains $username) { continue }
 		if ($skippeduser.ContainsKey($username) -or $username.StartsWith("##") -or $username -eq 'sa') { continue }
+		
+		if ($currentuser -eq $username) {
+			Write-Warning "Sync does not modify the permissions of the current user. Skipping."
+			continue
+		}
+		
 		$servername = Get-NetBIOSName $sourceserver
-
-		$admin = ($sourceserver.Logins[$sourceserver.ConnectionContext.truelogin]).name.Tostring()
-
 		$userbase = ($username.Split("\")[0]).ToLower()
 		if ($servername -eq $userbase -or $username.StartsWith("NT ")) { continue }
 		if (($destlogin = $destserver.Logins.Item($username)) -eq $null) { continue }
@@ -549,13 +553,13 @@ Function Update-SQLdbowner  {
 Function Test-SQLSA      {
  <#
             .SYNOPSIS
-              Ensures sysadmin account access on SQL Server. $server is an SMO server object.
+              Ensures syscurrentuser account access on SQL Server. $server is an SMO server object.
 
             .EXAMPLE
-              if (!(Test-SQLSA $server)) { throw "Not a sysadmin on $source. Quitting." }  
+              if (!(Test-SQLSA $server)) { throw "Not a syscurrentuser on $source. Quitting." }  
 
             .OUTPUTS
-                $true if syadmin
+                $true if sycurrentuser
                 $false if not
 			
         #>
@@ -566,7 +570,7 @@ Function Test-SQLSA      {
             [object]$server	
 		)
 try {
-		return ($server.ConnectionContext.FixedServerRoles -match "SysAdmin")
+		return ($server.ConnectionContext.FixedServerRoles -match "Syscurrentuser")
 	}
 	catch { return $false }
 }
@@ -608,7 +612,7 @@ PROCESS {
 		Sanity Checks
 			- Is SMO available?
 			- Are SQL Servers reachable?
-			- Is the account running this script an admin?
+			- Is the account running this script an currentuser?
 			- Are SQL Versions >= 2005?
 	---------------------------------------------------------- #>
 	$elapsed = [System.Diagnostics.Stopwatch]::StartNew() 
@@ -644,8 +648,8 @@ PROCESS {
 	
 	if ($sourceserver.versionMajor -lt 8 -or $destserver.versionMajor -lt 8) {throw "SQL Server 7 and below not supported. Quitting." }
 		
-	if (!(Test-SQLSA $sourceserver)) { throw "Not a sysadmin on $source. Quitting." }
-	if (!(Test-SQLSA $destserver)) { throw "Not a sysadmin on $destination. Quitting." }
+	if (!(Test-SQLSA $sourceserver)) { throw "Not a syscurrentuser on $source. Quitting." }
+	if (!(Test-SQLSA $destserver)) { throw "Not a syscurrentuser on $destination. Quitting." }
 	
 	<# ----------------------------------------------------------
 		Preps
