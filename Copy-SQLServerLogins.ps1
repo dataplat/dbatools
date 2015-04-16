@@ -12,10 +12,10 @@ versions. This means that while SQL Server 2000 logins can be migrated to SQL Se
 created in SQL Server 2012 can only be migrated to SQL Server 2012 and above.
 
 .PARAMETER Source
-Source SQL Server. You must have syscurrentuser access and server version must be > SQL Server 7.
+Source SQL Server. You must have sysadmin access and server version must be > SQL Server 7.
 
 .PARAMETER Destination
-Destination SQL Server. You must have syscurrentuser access and server version must be > SQL Server 7.
+Destination SQL Server. You must have sysadmin access and server version must be > SQL Server 7.
 
 .PARAMETER UseSqlLoginSource
 Uses SQL Login credentials to connect to Source server. Note this is a switch. You will be prompted to enter your SQL login credentials. 
@@ -341,7 +341,7 @@ Function Update-SQLPermissions      {
 		[object]$destlogin
 	)
 
-# Server Roles: syscurrentuser, bulkcurrentuser, etc
+# Server Roles: sysadmin, bulkcurrentuser, etc
 	foreach ($role in $sourceserver.roles) {
 	try { $rolemembers = $role.EnumMemberNames() } catch { $rolemembers = $role.EnumServerRoleMembers() }
 		if ($rolemembers -contains $sourcelogin.name) {
@@ -553,10 +553,10 @@ Function Update-SQLdbowner  {
 Function Test-SQLSA      {
  <#
             .SYNOPSIS
-              Ensures syscurrentuser account access on SQL Server. $server is an SMO server object.
+              Ensures sysadmin account access on SQL Server. $server is an SMO server object.
 
             .EXAMPLE
-              if (!(Test-SQLSA $server)) { throw "Not a syscurrentuser on $source. Quitting." }  
+              if (!(Test-SQLSA $server)) { throw "Not a sysadmin on $source. Quitting." }  
 
             .OUTPUTS
                 $true if sycurrentuser
@@ -570,7 +570,7 @@ Function Test-SQLSA      {
             [object]$server	
 		)
 try {
-		return ($server.ConnectionContext.FixedServerRoles -match "Syscurrentuser")
+		return ($server.ConnectionContext.FixedServerRoles -match "sysadmin")
 	}
 	catch { return $false }
 }
@@ -648,8 +648,8 @@ PROCESS {
 	
 	if ($sourceserver.versionMajor -lt 8 -or $destserver.versionMajor -lt 8) {throw "SQL Server 7 and below not supported. Quitting." }
 		
-	if (!(Test-SQLSA $sourceserver)) { throw "Not a syscurrentuser on $source. Quitting." }
-	if (!(Test-SQLSA $destserver)) { throw "Not a syscurrentuser on $destination. Quitting." }
+	if (!(Test-SQLSA $sourceserver)) { throw "Not a sysadmin on $source. Quitting." }
+	if (!(Test-SQLSA $destserver)) { throw "Not a sysadmin on $destination. Quitting." }
 	
 	<# ----------------------------------------------------------
 		Preps
