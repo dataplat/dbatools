@@ -669,7 +669,7 @@ PROCESS {
 		return
 	}
 	 
-	Write-Host "Attempting User Migration" -ForegroundColor Green; 
+	Write-Host "Attempting Login Migration" -ForegroundColor Green; 
 	Copy-SQLLogins -sourceserver $sourceserver -destserver $destserver -includelogins $IncludeLogins -excludelogins $ExcludeLogins -Force $force
 }
 
