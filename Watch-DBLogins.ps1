@@ -35,7 +35,7 @@
     Requires: 	PowerShell Version 3.0, SQL Server SMO, 
 				sysadmin access on all SQL Servers for
 				the most accurate results
-	DateUpdated: 2015-Jan-13
+	DateUpdated: 2015-Apr-17
 
  .LINK 
   	http://gallery.technet.microsoft.com/scriptcenter/SQL-Server-DatabaseApp-4abbd73a
@@ -130,8 +130,7 @@ Function Test-SQLSA      {
 		)
 		
 try {
-		$issysadmin = $server.Logins[$server.ConnectionContext.trueLogin].IsMember("sysadmin")
-		if ($issysadmin -eq $true) { return $true } else { return $false }
+		return ($server.ConnectionContext.FixedServerRoles -match "SysAdmin")
 	}
 	catch { return $false }
 }
