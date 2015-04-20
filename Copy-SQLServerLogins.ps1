@@ -36,10 +36,11 @@ Excludes specified logins. This list is auto-populated for tab completion.
 Migrates ONLY specified logins. This list is auto-populated for tab completion.
 
 .PARAMETER SyncOnly
-Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. If a matching login does not exist on the destination, the login will be skipped.
+Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. If a matching login does not exist on the destination, the login will be skipped. 
+Credential removal not currently supported for Syncs. TODO: Application role sync
 
 .PARAMETER Force
-Force drops and recreates logins.
+Force drops and recreates logins. Logins that own jobs cannot be dropped at this time.
 
 .EXAMPLE
 .\Copy-SQLServerLogins.ps1 -Source sqlserver -Destination sqlcluster -Force
@@ -67,8 +68,9 @@ Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins
 .NOTES 
 Author: 		Chrissy LeMaire
 Requires: 		PowerShell Version 3.0, SQL Server SMO
-DateUpdated: 	2015-Apr-16
-Version: 		1.4.7
+DateUpdated: 	2015-Apr-21
+Version: 		1.5
+Limitations: 	Does not support Application Roles yet. When using -Force, logins that own jobs cannot be dropped at this time.
 
 .LINK 
 https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-SQL-25a0cf05
@@ -203,20 +205,22 @@ Function Copy-SQLLogins {
 	
 		if ($login -ne $null -and $force) {
 			if ($username -eq $destserver.ServiceAccount) { Write-Warning "$username is the destination service account. Skipping drop."; continue }
-				If ($Pscmdlet.ShouldProcess($destination,"Dropping $username")) {
-					# Kill connections, delete user
-					Write-Host "Attempting to migrate $username" -ForegroundColor Yellow
-					Write-Host "Force was specified. Attempting to drop $username on $destination" -ForegroundColor Yellow
-					try {
-						$destserver.EnumProcesses() | Where { $_.Login -eq $username }  | ForEach-Object {$destserver.KillProcess($_.spid)}		
-						$destserver.Databases | Where { $_.Owner -eq $username } | ForEach-Object { $_.SetOwner('sa'); $_.Alter()  }	
-						$login.drop()
-						Write-Host "Successfully dropped $username on $destination" -ForegroundColor Green
-					} catch { 
-						$skippeduser.Add("$username","Couldn't drop on $destination") 
-						Write-Warning "Could not drop $username. Skipping"
-						continue }
+			If ($Pscmdlet.ShouldProcess($destination,"Dropping $username")) {
+				# Kill connections, delete user
+				Write-Host "Attempting to migrate $username" -ForegroundColor Yellow
+				Write-Host "Force was specified. Attempting to drop $username on $destination" -ForegroundColor Yellow
+				try {
+					$destserver.EnumProcesses() | Where { $_.Login -eq $username }  | ForEach-Object {$destserver.KillProcess($_.spid)}		
+					$destserver.Databases | Where { $_.Owner -eq $username } | ForEach-Object { $_.SetOwner('sa'); $_.Alter()  }	
+					$login.drop()
+					Write-Host "Successfully dropped $username on $destination" -ForegroundColor Green
+				} catch { 
+					$errormessage = (($_.Exception.InnerException).ToString()).Trim()
+					$skippeduser.Add("$username","Couldn't drop $username on $($destination): $errormessage")
+					Write-Warning "Could not drop $username. Skipping"
+					continue 
 				}
+			}
 		}
 		
 		If ($Pscmdlet.ShouldProcess($destination,"Adding SQL login $username")) {
@@ -326,7 +330,7 @@ Function Copy-SQLLogins {
 Function Update-SQLPermissions      {
 	 <#
 	.SYNOPSIS
-	  Updates permission sets, roles, database mappings on server and databases
+	 Updates permission sets, roles, database mappings on server and databases
 	.EXAMPLE 
 	Update-SQLPermissions -sourceserver $sourceserver -sourcelogin $sourcelogin -destserver $destserver -destlogin $destlogin
 
@@ -336,29 +340,58 @@ Function Update-SQLPermissions      {
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[object]$sourceserver,
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
 		[object]$sourcelogin,
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
 		[object]$destserver,
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
 		[object]$destlogin
 	)
 
+$destination = $destserver.name
+$source = $sourceserver.name
+$username = $sourcelogin.name
+
 # Server Roles: sysadmin, bulkcurrentuser, etc
 	foreach ($role in $sourceserver.roles) {
-	try { $rolemembers = $role.EnumMemberNames() } catch { $rolemembers = $role.EnumServerRoleMembers() }
-		if ($rolemembers -contains $sourcelogin.name) {
-			if ($destserver.roles[$role.name] -ne $null) { 
+		$destrole = $destserver.roles[$role.name]
+		if ($destrole -ne $null) { 
+			try { $destrolemembers = $destrole.EnumMemberNames() } catch { $destrolemembers = $destrole.EnumServerRoleMembers() }
+		}
+		try { $rolemembers = $role.EnumMemberNames() } catch { $rolemembers = $role.EnumServerRoleMembers() }		
+		if ($rolemembers -contains $username) {
+			if ($destrole -ne $null) { 
 				If ($Pscmdlet.ShouldProcess($destination,"Adding $username to $($role.name) server role")) {
 					try {
-						$destlogin.AddToRole($role.name)
+						$destrole.AddMember($username)
 						Write-Host "Added $username to $($role.name) server role."  -ForegroundColor Green
 						} catch {
-						Write-Warning "Failed to add $username to $($role.name) server role." }
-						}
+						Write-Warning "Failed to add $username to $($role.name) server role." 
 					}
 				}
 			}
+		}
 
-	if ($sourceserver.versionMajor -ge 9 -and $destserver.versionMajor -ge 9) { # These operations are only supported by SQL Server 2005 and above.
-		# Securables: Connect SQL, View any database, currentuserister Bulk Operations, etc.
+		# Remove for Syncs
+		if ($rolemembers -notcontains $username -and $destrolemembers -contains $username -and $destrole -ne $null) {
+			If ($Pscmdlet.ShouldProcess($destination,"Adding $username to $($role.name) server role")) {
+				try {
+					$destrole.DropMember($username)
+					Write-Host "Removed $username from $($destrole.name) server role on $($destserver.name)."  -ForegroundColor Yellow
+					} catch {
+					Write-Warning "Failed to remove $username from $($destrole.name) server role on $($destserver.name)." 
+				}
+			}
+		}
+	}
+
+	if ($sourceserver.versionMajor -ge 9 -and $destserver.versionMajor -ge 9) { 
+		# These operations are only supported by SQL Server 2005 and above.
+		# Securables: Connect SQL, View any database, Administer Bulk Operations, etc.
+		
 		$perms = $sourceserver.EnumServerPermissions($username)
 		foreach ($perm in $perms) {
 			$permstate = $perm.permissionstate
@@ -372,9 +405,28 @@ Function Update-SQLPermissions      {
 					Write-Warning "Failed to $permstate $($perm.permissiontype) to $username" 
 				}
 			}
+			
+			# for Syncs
+			$destperms = $destserver.EnumServerPermissions($username) 
+			foreach ($perm in $destperms) {
+				$permstate = $perm.permissionstate
+				$sourceperm = $perms | Where-Object { $_.PermissionType -eq $perm.Permissiontype -and $_.PermissionState -eq $permstate}
+				if ($sourceperm -eq $null) {
+					If ($Pscmdlet.ShouldProcess($destination,"Performing Revoke on $($perm.permissiontype) for $username")) {
+						try { 
+							$permset = New-object Microsoft.SqlServer.Management.Smo.ServerPermissionSet($perm.permissiontype)
+							if ($permstate -eq "GrantWithGrant") { $grantwithgrant = $true; $permstate = "grant" } else { $grantwithgrant = $false }
+							$destserver.PSObject.Methods["Revoke"].Invoke($permset, $username, $false, $grantwithgrant)
+							Write-Host "Successfully revoked $($perm.permissiontype) from $username"  -ForegroundColor Yellow
+						} catch {
+							Write-Warning "Failed to revoke $($perm.permissiontype) from $username" 
+						}
+					}
+				}
+			}
 		}
 		
-		# Credential mapping
+		# Credential mapping. Credential removal not currently supported for Syncs.
 		$logincredentials = $sourceserver.credentials | Where-Object {$_.Identity -eq $sourcelogin.name}
 		foreach ($credential in $logincredentials) {
 			if ($destserver.Credentials[$credential.name] -eq $null) {
@@ -383,9 +435,9 @@ Function Update-SQLPermissions      {
 						$newcred = new-object Microsoft.SqlServer.Management.Smo.Credential($destserver, $credential.name)
 						$newcred.identity = $sourcelogin.name
 						$newcred.Create() 
-						Write-Host "Successfully performed $permstate $($perm.permissiontype) to $username on $destination"  -ForegroundColor Green
+						Write-Host "Successfully created credential for $username"  -ForegroundColor Green
 					} catch {
-						Write-Warning "Failed to $permstate $($perm.permissiontype) to $username on $destination" }
+						Write-Warning "Failed to create credential for $username" }
 				}
 			}
 		}
@@ -393,7 +445,68 @@ Function Update-SQLPermissions      {
 		
 	if ($destserver.versionMajor -lt 9) { Write-Warning "Database mappings skipped when destination is < SQL Server 2005"; continue }
 	
-	# Database mappings and securables
+	# For Sync, if info doesn't exist in EnumDatabaseMappings, then no big deal.
+	foreach ($db in $destlogin.EnumDatabaseMappings()) {
+		$dbname = $db.dbname
+		$destdb = $destserver.databases[$dbname]
+		$sourcedb = $sourceserver.databases[$dbname]
+		$dbusername = $db.username; $dblogin = $db.loginName
+		
+		if ($sourcedb -ne $null) {
+			if ($sourcedb.users[$dbusername] -eq $null -and $destdb.users[$dbusername] -ne $null) {
+				If ($Pscmdlet.ShouldProcess($destination,"Dropping $dbusername from $dbname on destination.")) {
+					try { 
+						$destdb.users[$dbusername].Drop()
+						Write-Host "Dropped username $dbusername (login: $dblogin) from $dbname on destination" -ForegroundColor Yellow }
+					catch { Write-Warning "Failed to drop $dbusername ($dblogin) from $dbname on destination."
+					}
+				}
+			}
+		}
+		
+		# Remove user from role. Role removal not currently supported for Syncs.
+		# TODO: reassign if dbo, application roles
+		foreach ($destrole in $destdb.roles) {
+			$sourcerole = $sourcedb.roles[$destrole.name]
+			if ($sourcerole -ne $null) {
+				if ($sourcerole.EnumMembers() -notcontains $dbusername -and $destrole.EnumMembers() -contains $dbusername) {
+					if ($dbusername -ne "dbo") {
+						If ($Pscmdlet.ShouldProcess($destination,"Dropping $username from $($destrole.name) database role on $dbname")) {
+							try { 
+								$destrole.DropMember($dbusername)
+								$destdb.Alter()
+								Write-Host "Dropped username $dbusername (login: $dblogin) from ($destrole.name) on $destination" -ForegroundColor Yellow
+							}
+							catch { Write-Warning "Failed to remove $dbusername from $($destrole.name) database role on $dbname." }
+						}
+					}
+				}
+			}
+		}
+		
+		# Remove Connect, Alter Any Assembly, etc
+		$destperms = $destdb.EnumDatabasePermissions($username)
+		$perms = $sourcedb.EnumDatabasePermissions($username)
+		# for Syncs
+		foreach ($perm in $destperms) {
+			$permstate = $perm.permissionstate
+			$sourceperm = $perms | Where-Object { $_.PermissionType -eq $perm.Permissiontype -and $_.PermissionState -eq $permstate}
+			if ($sourceperm -eq $null) {
+				If ($Pscmdlet.ShouldProcess($destination,"Performing Revoke on $($perm.permissiontype) for $username on $dbname on $destination")) {
+					try { 
+						$permset = New-object Microsoft.SqlServer.Management.Smo.ServerPermissionSet($perm.permissiontype)
+						if ($permstate -eq "GrantWithGrant") { $grantwithgrant = $true; $permstate = "grant" } else { $grantwithgrant = $false }
+						$destserver.PSObject.Methods["Revoke"].Invoke($permset, $username, $false, $grantwithgrant)
+						Write-Host "Successfully revoked $($perm.permissiontype) from $username on $dbname on $destination"  -ForegroundColor Yellow
+					} catch {
+						Write-Warning "Failed to revoke $($perm.permissiontype) from $username on $dbname on $destination" 
+					}
+				}
+			}
+		}
+	}
+	
+	# Adding database mappings and securables
 	foreach ($db in $sourcelogin.EnumDatabaseMappings()) {
 		$dbname = $db.dbname
 		$destdb = $destserver.databases[$dbname]
@@ -404,14 +517,17 @@ Function Update-SQLPermissions      {
 			if ($destdb.users[$dbusername] -eq $null) {
 				If ($Pscmdlet.ShouldProcess($destination,"Adding $dbusername to $dbname")) {
 					$sql = $sourceserver.databases[$dbname].users[$dbusername].script()
-					try { $destdb.ExecuteNonQuery($sql)
-						Write-Host "Added username $dbusername (login: $dblogin) to $dbname" -ForegroundColor Green }
+					try { 
+						$destdb.ExecuteNonQuery($sql)
+						Write-Host "Added username $dbusername (login: $dblogin) to $dbname" -ForegroundColor Green 
+					}
 					catch { Write-Warning "Failed to add $dbusername ($dblogin) to $dbname on $destination."
 					}
 				}
-			}	
+			}
+			
 		 # DB owner
-			If ($sourcedb.owner -eq $username ) {
+			If ($sourcedb.owner -eq $username) {
 				If ($Pscmdlet.ShouldProcess($destination,"Changing $dbname dbowner to $username")) {
 					try {
 						$result = Update-SQLdbowner $sourceserver $destserver -dbname $dbname
@@ -421,20 +537,24 @@ Function Update-SQLPermissions      {
 					} catch { Write-Warning "Failed to update $($destdb.name) owner to $($sourcedb.owner)." }
 				}
 			}
-			
+		
 		 # Database Roles: db_owner, db_datareader, etc
 			foreach ($role in $sourcedb.roles) {
 				if ($role.EnumMembers() -contains $username) {
 					$destdbrole = $destdb.roles[$role.name]
 					if ($destdbrole -ne $null -and $dbusername -ne "dbo" -and $destdbrole.EnumMembers() -notcontains $username) { 
 						If ($Pscmdlet.ShouldProcess($destination,"Adding $username to $($role.name) database role on $dbname")) {
-							try { $destdbrole.AddMember($username)
-							$destdb.Alter() }
-							catch { Write-Warning "Failed to add $username to $($role.name) database role on $dbname." }
+							try { 
+								$destdbrole.AddMember($username)
+								$destdb.Alter() 
+								Write-Host "Added $username to $($role.name) database role on $dbname."  -ForegroundColor Green
+								
+							} catch { Write-Warning "Failed to add $username to $($role.name) database role on $dbname." }
 						}
 					}
 				}
 			}
+			
 			# Connect, Alter Any Assembly, etc
 			$perms = $sourcedb.EnumDatabasePermissions($username)
 			foreach ($perm in $perms) {
@@ -442,7 +562,10 @@ Function Update-SQLPermissions      {
 				if ($permstate -eq "GrantWithGrant") { $grantwithgrant = $true; $permstate = "grant" } else { $grantwithgrant = $false }
 				$permset = New-object Microsoft.SqlServer.Management.Smo.DatabasePermissionSet($perm.permissiontype)
 				If ($Pscmdlet.ShouldProcess($destination,"Performing $permstate on $($perm.permissiontype) for $username on $dbname")) {
-					try { $destdb.PSObject.Methods[$permstate].Invoke($permset, $username, $grantwithgrant) }
+					try { 
+						$destdb.PSObject.Methods[$permstate].Invoke($permset, $username, $grantwithgrant)
+						Write-Host "Successfully performed $permstate $($perm.permissiontype) to $username on $dbname"  -ForegroundColor Green
+					}
 					catch { Write-Warning "Failed to perform $permstate on $($perm.permissiontype) for $username on $dbname." }		
 				}
 			}
