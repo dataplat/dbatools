@@ -457,7 +457,7 @@ $username = $sourcelogin.name
 				If ($Pscmdlet.ShouldProcess($destination,"Dropping $dbusername from $dbname on destination.")) {
 					try { 
 						$destdb.users[$dbusername].Drop()
-						Write-Host "Dropped username $dbusername (login: $dblogin) from $dbname on destination" -ForegroundColor Yellow }
+						Write-Host "Dropped username $dbusername (login: $dblogin) from $dbname on destination. User may own a schema." -ForegroundColor Yellow }
 					catch { Write-Warning "Failed to drop $dbusername ($dblogin) from $dbname on destination."
 					}
 				}
@@ -494,9 +494,9 @@ $username = $sourcelogin.name
 			if ($sourceperm -eq $null) {
 				If ($Pscmdlet.ShouldProcess($destination,"Performing Revoke on $($perm.permissiontype) for $username on $dbname on $destination")) {
 					try { 
-						$permset = New-object Microsoft.SqlServer.Management.Smo.ServerPermissionSet($perm.permissiontype)
+						$permset = New-object Microsoft.SqlServer.Management.Smo.DatabasePermissionSet($perm.permissiontype)
 						if ($permstate -eq "GrantWithGrant") { $grantwithgrant = $true; $permstate = "grant" } else { $grantwithgrant = $false }
-						$destserver.PSObject.Methods["Revoke"].Invoke($permset, $username, $false, $grantwithgrant)
+						$destdb.PSObject.Methods["Revoke"].Invoke($permset, $username, $false, $grantwithgrant)
 						Write-Host "Successfully revoked $($perm.permissiontype) from $username on $dbname on $destination"  -ForegroundColor Yellow
 					} catch {
 						Write-Warning "Failed to revoke $($perm.permissiontype) from $username on $dbname on $destination" 
@@ -659,8 +659,7 @@ Function Update-SQLdbowner  {
 			}
 			
 			$destdb.SetOwner($dbowner)
-			Write-Host "Changed $dbname owner to $dbowner." -ForegroundColor Green
-			
+						
 			if ($changeroback) {
 				Update-SQLdbReadOnly $destserver $dbname $true
 				$changeroback = $null
@@ -671,6 +670,51 @@ Function Update-SQLdbowner  {
 			Write-Warning "Failed to update $dbname owner to $dbowner."
 			return $false 
 		}
+}
+
+Function Update-SQLdbReadOnly  { 
+        <#
+            .SYNOPSIS
+                Updates specified database to read-only or read-write. Necessary because SMO doesn't appear to support NO_WAIT.
+				Also, necessary within this script because dbowner can't be updated if db is set to read-only.
+
+            .EXAMPLE
+               Update-SQLdbReadOnly $server $dbname $true
+
+            .OUTPUTS
+                $true if success
+                $false if failure
+        #>
+		[CmdletBinding()]
+        param(
+			[Parameter(Mandatory = $true)]
+			[ValidateNotNullOrEmpty()]
+            [object]$server,
+
+			[Parameter(Mandatory = $true)]
+			[ValidateNotNullOrEmpty()]
+            [string]$dbname,
+			
+			[Parameter(Mandatory = $true)]
+			[ValidateNotNullOrEmpty()]
+            [bool]$readonly
+        )
+		
+		if ($readonly) {
+			$sql = "ALTER DATABASE [$dbname] SET READ_ONLY WITH NO_WAIT"
+		} else {
+			$sql = "ALTER DATABASE [$dbname] SET READ_WRITE WITH NO_WAIT"
+		}
+
+		try {
+			Write-Warning "Setting $dbname to $readonly to faciliate dbowner change."
+			$null = $server.ConnectionContext.ExecuteNonQuery($sql)
+			Write-Host "Changed ReadOnly status to $readonly for $dbname on $($server.name)." -ForegroundColor Green
+			return $true
+		} catch { 
+			Write-Host "Could not change readonly status for $dbname on $($server.name)" -ForegroundColor Red
+			return $false }
+
 }
 
 Function Test-SQLSA      {
