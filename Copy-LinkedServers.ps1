@@ -37,13 +37,13 @@ Not close to finished.
 
 
 .EXAMPLE   
-.\Copy-SQLServerCredentials.ps1 -Source sqlserver\instance -Destination sqlcluster
+.\Copy-LinkedServers.ps1 -Source sqlserver\instance -Destination sqlcluster
 
 Description
 Copies all SQL Server Linked Servers on sqlserver\instance to sqlcluster. If Linked Server exists on destination, it will be skipped.
 
 .EXAMPLE   
-.\Copy-SQLServerCredentials.ps1 -Source sqlserver -Destination sqlcluster -LinkedServers SQL2K5,SQL2k -Force
+.\Copy-LinkedServers.ps1 -Source sqlserver -Destination sqlcluster -LinkedServers SQL2K5,SQL2k -Force
 
 Description
 Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped.
@@ -247,8 +247,11 @@ Function Copy-LinkedServers {
 	Write-Host "Starting migration" -ForegroundColor Green
 	foreach ($linkedserver in $serverlist) {
 		$provider = $linkedserver.ProviderName
-		$destserver.LinkedServers.Refresh()
-		$destserver.LinkedServers.LinkedServerLogins.Refresh()
+		try { 
+			$destserver.LinkedServers.Refresh()
+			$destserver.LinkedServers.LinkedServerLogins.Refresh()
+		} catch { }
+		
 		$linkedservername = $linkedserver.name
 		
 		if (!$destserver.Settings.OleDbProviderSettings.Name.Contains($provider) -and !$provider.StartsWith("SQLN")) {
@@ -309,7 +312,7 @@ Function Test-SQLSA      {
 		)
 		
 try {
-		return ($server.Logins[$server.ConnectionContext.trueLogin].IsMember("sysadmin"))
+		return ($server.ConnectionContext.FixedServerRoles -match "SysAdmin")
 	}
 	catch { return $false }
 }
