@@ -4,6 +4,7 @@ Stuff that needs to be done
 Start-SQLMigration.ps1
 --------------
 Will not drop login in destination if permissions are set
+Migrate database mail
 Make into module
 Script Only
 Azure Support
