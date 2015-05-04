@@ -69,7 +69,7 @@ Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins
 Author: 		Chrissy LeMaire
 Requires: 		PowerShell Version 3.0, SQL Server SMO
 DateUpdated: 	2015-May-4
-Version: 		1.5.3
+Version: 		1.5.4
 Limitations: 	Does not support Application Roles yet. When using -Force, logins that own jobs cannot be dropped at this time.
 
 .LINK 
@@ -195,10 +195,16 @@ Function Copy-SQLLogins {
 			continue
 		}
 		
-		$userbase = ($username.Split("\")[0]).ToLower()
-		if ($servername -eq $userbase -or $username.StartsWith("NT ")) {
-			$skippeduser.Add("$username","Skipped. Local machine username.")
-			continue }
+		$userbase = ($username.Split("\")[0]).ToLower(); $localaccount = $false
+		if ($servername -eq $userbase) {
+			# Support local lab migrations w/o erroring out or skipping
+			$localaccount = $true 
+		}
+		if ($username.StartsWith("NT ")) {
+			$skippeduser.Add("$username","Skipped. Local machine username.") # Removed to support local lab migrations.
+			continue
+		}
+		
 		if (($login = $destserver.Logins.Item($username)) -ne $null -and !$force) { 
 			$skippeduser.Add("$username","Already exists in destination. Use -force to drop and recreate.")
 			continue }
@@ -311,9 +317,15 @@ Function Copy-SQLLogins {
 					$destlogin.refresh()
 					Write-Host "Successfully added $username to $destination" -ForegroundColor Green }
 				catch { 
-					$skippeduser.Add("$username","Add failed")
-					Write-Warning "Failed to add $username to $destination. See log for details."
-					continue }
+					if ($localaccount -eq $true) {
+						$skippeduser.Add("$username","Skipped. Unsupported local machine username.")
+						Write-Warning "Failed to add $username to $destination. See log for details."
+					} else {
+						$skippeduser.Add("$username","Add failed")
+						Write-Warning "Failed to add $username to $destination. See log for details."
+					}
+					continue
+				}
 			}
 			# This script does not currently support certificate mapped or asymmetric key users.
 			else { 
@@ -329,7 +341,7 @@ Function Copy-SQLLogins {
 		}
 	}
 	
-	if ($whatif -eq $false) {
+	If ($Pscmdlet.ShouldProcess("locally","Displaying summary and writing log in CSV format.")) {
 		$migrateduser.GetEnumerator() | Sort-Object value; $skippeduser.GetEnumerator() | Sort-Object value
 		$migrateduser.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Path "$csvfilename-users.csv" -NoTypeInformation
 		$skippeduser.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Append -Path "$csvfilename-users.csv" -NoTypeInformation
@@ -847,7 +859,7 @@ PROCESS {
 		return
 	}
 	 
-	if ($whatif -eq $false) { Write-Host "Attempting Login Migration" -ForegroundColor Green }
+	If ($Pscmdlet.ShouldProcess("locally","Alerting user of migration attempt"))  { Write-Host "Attempting Login Migration" -ForegroundColor Green }
 	Copy-SQLLogins -sourceserver $sourceserver -destserver $destserver -includelogins $IncludeLogins -excludelogins $ExcludeLogins -Force $force
 }
 
