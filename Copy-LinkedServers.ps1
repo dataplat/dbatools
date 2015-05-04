@@ -286,7 +286,6 @@ Function Copy-LinkedServers {
 			
 			if ($currentlogin.RemoteUser.length -ne 0) {
 				try { 
-					$currentlogin.Impersonate = $true
 					$currentlogin.SetRemotePassword($login.Password)
 					$currentlogin.Alter()
 				} catch { write-warning "$($login.login) failed to copy" }
