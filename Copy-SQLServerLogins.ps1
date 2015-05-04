@@ -68,8 +68,8 @@ Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins
 .NOTES 
 Author: 		Chrissy LeMaire
 Requires: 		PowerShell Version 3.0, SQL Server SMO
-DateUpdated: 	2015-Apr-27
-Version: 		1.5.1
+DateUpdated: 	2015-May-4
+Version: 		1.5.3
 Limitations: 	Does not support Application Roles yet. When using -Force, logins that own jobs cannot be dropped at this time.
 
 .LINK 
@@ -321,11 +321,13 @@ Function Copy-SQLLogins {
 			Update-SQLPermissions -sourceserver $sourceserver -sourcelogin $sourcelogin -destserver $destserver -destlogin $destlogin
 		}
 	}
-
-	$migrateduser.GetEnumerator() | Sort-Object value; $skippeduser.GetEnumerator() | Sort-Object value
-	$migrateduser.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Path "$csvfilename-users.csv" -NoTypeInformation
-	$skippeduser.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Append -Path "$csvfilename-users.csv" -NoTypeInformation
-	Write-Host "Completed user migration" -ForegroundColor Green
+	
+	if ($whatif -eq $false) {
+		$migrateduser.GetEnumerator() | Sort-Object value; $skippeduser.GetEnumerator() | Sort-Object value
+		$migrateduser.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Path "$csvfilename-users.csv" -NoTypeInformation
+		$skippeduser.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Append -Path "$csvfilename-users.csv" -NoTypeInformation
+		Write-Host "Completed user migration" -ForegroundColor Green 
+	}
 			
 }
 
@@ -838,7 +840,7 @@ PROCESS {
 		return
 	}
 	 
-	Write-Host "Attempting Login Migration" -ForegroundColor Green; 
+	if ($whatif -eq $false) { Write-Host "Attempting Login Migration" -ForegroundColor Green }
 	Copy-SQLLogins -sourceserver $sourceserver -destserver $destserver -includelogins $IncludeLogins -excludelogins $ExcludeLogins -Force $force
 }
 
@@ -847,7 +849,9 @@ END {
 	$sourceserver.ConnectionContext.Disconnect()
 	$destserver.ConnectionContext.Disconnect()
 	Write-Host "Script completed" -ForegroundColor Green
-	Write-Host "Migration started: $started"  -ForegroundColor Cyan
-	Write-Host "Migration completed: $(Get-Date)"  -ForegroundColor Cyan
-	Write-Host "Total Elapsed time: $totaltime"  -ForegroundColor Cyan
+	<# 
+		Write-Host "Migration started: $started"  -ForegroundColor Cyan
+		Write-Host "Migration completed: $(Get-Date)"  -ForegroundColor Cyan
+		Write-Host "Total Elapsed time: $totaltime"  -ForegroundColor Cyan
+	#>
 }
