@@ -235,15 +235,21 @@ Function Copy-SQLLogins {
 			}
 			Write-Host "Set $username defaultdb to $defaultdb" -ForegroundColor Green
 			$destlogin.DefaultDatabase = $defaultdb
-
-			$checkexpiration = "ON"; $checkpolicy = "ON"
-			if (!$sourcelogin.PasswordPolicyEnforced) { 
+			
+			if ($sourcelogin.PasswordPolicyEnforced -eq $false) {
 				$destlogin.PasswordPolicyEnforced = $false 
 				$checkpolicy = "OFF"
+			}  else {
+				$destlogin.PasswordPolicyEnforced = $true 
+				$checkpolicy = "ON"
 			}
-			if (!$sourcelogin.PasswordExpirationEnabled) { 
+			
+			if ($sourcelogin.PasswordExpirationEnabled -eq $false) { 
 				$destlogin.PasswordExpirationEnabled = $false
 				$checkexpiration = "OFF"
+			} else {
+				$destlogin.PasswordExpirationEnabled = $true 
+				$checkexpiration = "ON"
 			}
 	
 			# Attempt to add SQL Login User
@@ -275,6 +281,7 @@ Function Copy-SQLLogins {
 				try {
 					$destlogin.Create($hashedpass, [Microsoft.SqlServer.Management.Smo.LoginCreateOptions]::IsHashed)
 					$migrateduser.Add("$username","SQL Login Added successfully") 
+					$destlogin.Alter()
 					$destlogin.refresh()
 					Write-Host "Successfully added $username to $destination" -ForegroundColor Green }
 				catch {
