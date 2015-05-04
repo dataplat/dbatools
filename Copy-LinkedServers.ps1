@@ -27,8 +27,8 @@ By default, if a Linked Server exists on the source and destination, the Linked 
 Author  : 	Chrissy LeMaire
 Requires: 	PowerShell Version 3.0, SQL Server SMO, 
 			Sys Admin access on Windows and SQL Server. DAC access enabled for local (default)
-DateUpdated: 2015-Feb-3
-Version: 	0.1
+DateUpdated: 2015-May-4
+Version: 	0.2
 Limitations: Hasn't been tested thoroughly. Works on Win8.1 and SQL Server 2012 & 2014 so far.
 This just copies the SQL portion. It does not copy files (ie. a local SQLITE database, or Access DB), nor does it configure ODBC entries.
 Not close to finished.
@@ -194,6 +194,7 @@ Function Get-LinkedServerLogins {
 	[void]$decryptedlogins.Columns.Add("Login")
 	[void]$decryptedlogins.Columns.Add("Password")
 	
+	
 	# Go through each row in results
 	foreach ($login in $logins) {
 		# decrypt the password using the service master key and the extracted IV
@@ -213,7 +214,7 @@ Function Get-LinkedServerLogins {
 		# If problems arise remove the next three lines.. 
 		$i=8; foreach ($b in $decrypted) {if ($decrypted[$i] -ne 0 -and $decrypted[$i+1] -ne 0 -or $i -eq $decrypted.Length) {$i -= 1; break;}; $i += 1;}
 		$decrypted = $decrypted[8..$i]
-		
+
 		[void]$decryptedlogins.Rows.Add($($login.srvname),$($login.name),$($encode.GetString($decrypted)))
 	}
 	return $decryptedlogins
@@ -282,9 +283,14 @@ Function Copy-LinkedServers {
 
 		foreach ($login in $lslogins) {
 			$currentlogin = $destlogins | Where-Object { $_.RemoteUser -eq $login.Login }
+			
 			if ($currentlogin.RemoteUser.length -ne 0) {
-				try { $currentlogin.SetRemotePassword($login.Password)
+				try { 
+					$currentlogin.Impersonate = $true
+					$currentlogin.SetRemotePassword($login.Password)
+					$currentlogin.Alter()
 				} catch { write-warning "$($login.login) failed to copy" }
+				
 			}
 		}
 		Write-Host "Finished migrating logins for $linkedservername" -ForegroundColor Green	
