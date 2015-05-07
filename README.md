@@ -23,13 +23,13 @@ Copies all groups, subgroups, and server instances from one SQL Server to anothe
 
     .\Copy-SqlCentralManagementServer.ps1 -Source sqlserver -Destination sqlcluster
 	
-Watch-DBLogins.ps1
+Watch-SqlDbLogins.ps1
 --------------
-Watch-DBLogins.ps1 uses SQL Server process enumeration to track logins in a SQL Server table. This is helpful when you need to migrate a SQL Server, and update connection strings, but have inadequate documentation on which servers/applications are logging into your SQL instance. 
+Watch-SqlDbLogins.ps1 uses SQL Server process enumeration to track logins in a SQL Server table. This is helpful when you need to migrate a SQL Server, and update connection strings, but have inadequate documentation on which servers/applications are logging into your SQL instance. 
 
 Running this script every 5 minutes for a week should give you a sufficient idea about database and login usage.
 
-    .\Watch-DBLogins.ps1 -WatchDBServer sqlserver -CMServer cmserver1
+    .\Watch-SqlDbLogins.ps1 -WatchDBServer sqlserver -CMServer cmserver1
 
 Get-SqlServerKeys.ps1
 --------------

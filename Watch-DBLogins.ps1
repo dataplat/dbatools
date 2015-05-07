@@ -3,7 +3,7 @@
     Tracks SQL Server logins: which host they came from, what database they're using, and what program is being used to log in.
 
  .DESCRIPTION 
-    Watch-DBLogins.ps1 uses SQL Server process enumeration to track logins in a SQL Server table. This is helpful when you 
+    Watch-SqlDbLogins.ps1 uses SQL Server process enumeration to track logins in a SQL Server table. This is helpful when you 
 	need to migrate a SQL Server, and update connection strings, but have inadequate documentation on which servers/applications 
 	are logging into your SQL instance. 
 	
@@ -17,7 +17,7 @@
 	
  .PARAMETER cmgroups
 	This is an auto-populated array that contains your Central Management Server top-level groups. You can use one or many.
-	If -cmgroups is not specified, the Watch-DBLogins.ps1 script will run against all servers in your Central Management Server.
+	If -cmgroups is not specified, the Watch-SqlDbLogins.ps1 script will run against all servers in your Central Management Server.
 	
  .PARAMETER ServersFromFile
 	A list of servers to watch is required. You can use a file formatted as such:
@@ -41,17 +41,17 @@
   	http://gallery.technet.microsoft.com/scriptcenter/SQL-Server-DatabaseApp-4abbd73a
 
  .EXAMPLE   
-.\Watch-DBLogins.ps1 -WatchDBServer sqlserver -CMServer cmserver1
+.\Watch-SqlDbLogins.ps1 -WatchDBServer sqlserver -CMServer cmserver1
 
 In the above example, a list of servers is generated using all database instances within the Central Management Server "cmserver1". Using this list, the script then enumerates all the processes and gathers login information, and saves it to the table "DBlogins" within the "WatchDBLogins" database on the SQL Server "sqlserver".
 
  .EXAMPLE   
-.\Watch-DBLogins.ps1 -WatchDBServer sqlcluster -WatchDB CentralAudit -ServersFromFile .\sqlservers.txt
+.\Watch-SqlDbLogins.ps1 -WatchDBServer sqlcluster -WatchDB CentralAudit -ServersFromFile .\sqlservers.txt
 
 In the above example, a list of servers is gathered from the file sqlservers.txt in the current directory. Using this list, the script then enumerates all the processes and gathers login information, and saves it to the table "DBlogins" within the "CentralAudit" database on the SQL Server "sqlcluster".
 
  .EXAMPLE   
-.\Watch-DBLogins.ps1 -WatchDBServer sqlserver -CMServer cmserver1 -cmgroups SQL2014Clusters
+.\Watch-SqlDbLogins.ps1 -WatchDBServer sqlserver -CMServer cmserver1 -cmgroups SQL2014Clusters
 
 In the above example, a list of servers is generated using database instance names within the "SQL2014Clusters" group on the Central Management Server "cmserver1". Using this list, the script then enumerates all the processes and gathers login information, and saves it to the table "DBlogins" within the "WatchDBLogins" database on "sqlserver".
 
