@@ -9,7 +9,7 @@ By default, databases will be migrated to the destination SQL Server's default d
 
 Eventually, all scripts within this directory will be integrated into Start-SqlServerMigration.ps1
 
-    .\Start-SqlServerMigration.ps1 -Source sqlserver\instance -Destination sqlcluster -DetachAttach -Everything
+    .\Start-SqlServerMigration.ps1 -Source sqlserver\instance -Destination sqlcluster -DetachAttach -Everything 
 	
 Copy-SqlServerLogins.ps1
 --------------
