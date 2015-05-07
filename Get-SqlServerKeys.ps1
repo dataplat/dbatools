@@ -28,15 +28,15 @@
   	https://gallery.technet.microsoft.com/scriptcenter/Get-SQL-Server-Product-4b5bf4f8
 
  .EXAMPLE   
- .\Get-SQLServerKeys.ps1 winxp, sqlservera, sqlserver2014a, win2k8
+ .\Get-SqlServerKeys.ps1 winxp, sqlservera, sqlserver2014a, win2k8
 	Gets SQL Server versions, editions and product keys for all instances within each server or workstation.
 
  .EXAMPLE   
- .\Get-SQLServerKeys.ps1 -CentralMgmtServer sqlserver01
+ .\Get-SqlServerKeys.ps1 -CentralMgmtServer sqlserver01
 		Gets SQL Server versions, editions and product keys for all instances within sqlserver01's Central Management Server
 
  .EXAMPLE   
- .\Get-SQLServerKeys.ps1 -ServersFromFile C:\Scripts\servers.txt
+ .\Get-SqlServerKeys.ps1 -ServersFromFile C:\Scripts\servers.txt
   Gets SQL Server versions, editions and product keys for all instances listed within C:\Scripts\servers.txt
 #> 
 #Requires -Version 3.0

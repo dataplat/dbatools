@@ -43,24 +43,24 @@ Credential removal not currently supported for Syncs. TODO: Application role syn
 Force drops and recreates logins. Logins that own jobs cannot be dropped at this time.
 
 .EXAMPLE
-.\Copy-SQLServerLogins.ps1 -Source sqlserver -Destination sqlcluster -Force
+.\Copy-SqlServerLogins.ps1 -Source sqlserver -Destination sqlcluster -Force
 
 Copies all logins from source server to destination server. If a SQL login on source exists on the destination,
 the destination login will be dropped and recreated.
 
 .EXAMPLE
-.\Copy-SQLServerLogins.ps1 -Source sqlserver -Destination sqlcluster -ExcludeLogins realcajun -UseSqlLoginSource -UseSqlLoginDestination
+.\Copy-SqlServerLogins.ps1 -Source sqlserver -Destination sqlcluster -ExcludeLogins realcajun -UseSqlLoginSource -UseSqlLoginDestination
 
 Prompts for SQL login usernames and passwords on both the Source and Destination then connects to each using the SQL Login credentials. 
 Copies all logins except for realcajun. If a login already exists on the destination, the login will not be migrated.
 
 .EXAMPLE
-.\Copy-SQLServerLogins.ps1 -Source sqlserver -Destination sqlcluster -IncludeLogins realcajun -force
+.\Copy-SqlServerLogins.ps1 -Source sqlserver -Destination sqlcluster -IncludeLogins realcajun -force
 
 Copies ONLY login realcajun. If login realcajun exists on the destination, it will be dropped and recreated.
 
 .EXAMPLE
-.\Copy-SQLServerLogins.ps1 -Source sqlserver -Destination sqlcluster -SyncOnly
+.\Copy-SqlServerLogins.ps1 -Source sqlserver -Destination sqlcluster -SyncOnly
 
 Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. If a matching login does not exist on the destination, the login will be skipped.
 
@@ -138,13 +138,13 @@ DynamicParam  {
 
 BEGIN {
 
-Function Copy-SQLLogins {
+Function Copy-SqlLogins {
 	<#
 	.SYNOPSIS
 	  Migrates logins from source to destination SQL Servers. Database & Server securables & permissions are preserved.
 	
 	.EXAMPLE
-	 Copy-SQLLogins -Source $sourceserver -Destination $destserver -Force $true
+	 Copy-SqlLogins -Source $sourceserver -Destination $destserver -Force $true
 	
 	 Copies logins from source server to destination server.
 	 
@@ -844,7 +844,7 @@ PROCESS {
 	}
 	 
 	Write-Host "Attempting Login Migration" -ForegroundColor Green; 
-	Copy-SQLLogins -sourceserver $sourceserver -destserver $destserver -includelogins $IncludeLogins -excludelogins $ExcludeLogins -Force $force
+	Copy-SqlLogins -sourceserver $sourceserver -destserver $destserver -includelogins $IncludeLogins -excludelogins $ExcludeLogins -Force $force
 }
 
 END {

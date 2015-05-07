@@ -93,8 +93,8 @@
  .NOTES 
     Author  : Chrissy LeMaire
     Requires: PowerShell Version 3.0, SQL Server SMO
-	DateUpdated: 2015-April-12
-	Version: 1.3
+	DateUpdated: 2015-May-7
+	Version: 1.3.1
 	Limitations: 	Doesn't cover what it doesn't cover (replication, linked servers, certificates, etc)
 					SQL Server 2000 login migrations have some limitations (server perms aren't migrated, etc)
 					SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
@@ -104,14 +104,14 @@
   	https://gallery.technet.microsoft.com/scriptcenter/Use-PowerShell-to-Migrate-86c841df/
 
  .EXAMPLE   
-.\Start-SQLMigration.ps1 -Source sqlserver\instance -Destination sqlcluster -DetachAttach -Everything
+.\Start-SqlServerMigration.ps1 -Source sqlserver\instance -Destination sqlcluster -DetachAttach -Everything
 
 Description
 
 All databases, logins, job objects and sp_configure options will be migrated from sqlserver\instance to sqlcluster. Databases will be migrated using the detach/copy files/attach method. DBowner will be updated. User passwords, SIDs, database roles and server roles will be migrated along with the login.
 
  .EXAMPLE   
-.\Start-SQLMigration.ps1 -Source sqlserver\instance -Destination sqlcluster -AllUserDBs -ExcludeDBs Northwind, pubs -IncludeSupportDBs -force -AllUsers -ExcludeLogins nwuser, pubsuser, "corp\domain admins"  -MigrateJobServer -ExportSPconfigure -UseSqlLoginSource -UseSqlLoginDestination
+.\Start-SqlServerMigration.ps1 -Source sqlserver\instance -Destination sqlcluster -AllUserDBs -ExcludeDBs Northwind, pubs -IncludeSupportDBs -force -AllUsers -ExcludeLogins nwuser, pubsuser, "corp\domain admins"  -MigrateJobServer -ExportSPconfigure -UseSqlLoginSource -UseSqlLoginDestination
 
 Description
 
@@ -748,13 +748,13 @@ Function Start-SQLDetachAttach   {
 	}
 }
 
-Function Copy-SQLDatabases  {
+Function Copy-SqlDatabases  {
  <#
             .SYNOPSIS
               Performs tons of checks then migrates the databases.
 
             .EXAMPLE
-                Copy-SQLDatabases $sourceserver $destserver $AllUserDBs $IncludeDBs $ExcludeDBs $IncludeSupportDBs $force
+                Copy-SqlDatabases $sourceserver $destserver $AllUserDBs $IncludeDBs $ExcludeDBs $IncludeSupportDBs $force
 
             .OUTPUTS
               CSV files and informational messages.
@@ -1036,13 +1036,13 @@ Function Copy-SQLDatabases  {
 
 # Login Functions
 
-Function Copy-SQLLogins {
+Function Copy-SqlLogins {
 	<#
 	.SYNOPSIS
 	  Migrates logins from source to destination SQL Servers. Database & Server securables & permissions are preserved.
 	
 	.EXAMPLE
-	 Copy-SQLLogins -Source $sourceserver -Destination $destserver -Force $true
+	 Copy-SqlLogins -Source $sourceserver -Destination $destserver -Force $true
 	
 	 Copies logins from source server to destination server.
 	 
@@ -1461,7 +1461,7 @@ Function Test-SQLAgent  {
 	try { $null = $server.JobServer.script(); return $true } catch { return $false }
 }
 
-Function Copy-SQLjobs      {
+Function Copy-Sqljobs      {
  <#
             .SYNOPSIS
               Copies ProxyAccounts, JobSchedule, SharedSchedules, AlertSystem, JobCategories, 
@@ -1471,7 +1471,7 @@ Function Copy-SQLjobs      {
 			  does not drop and recreate.
 
             .EXAMPLE
-               Copy-SQLjobs $sourceserver $destserver  
+               Copy-Sqljobs $sourceserver $destserver  
 
             .OUTPUTS
                 $true if success
@@ -2046,16 +2046,16 @@ PROCESS {
 
 	if ($AllUserDBs -or !([string]::IsNullOrEmpty($ExcludeDBs)) -or $IncludeSupportDBs -or !([string]::IsNullOrEmpty($IncludeDBs)))
 	{ 
-		Copy-SQLDatabases  -sourceserver $sourceserver -destserver $destserver -AllUserDBs $AllUserDBs `
+		Copy-SqlDatabases  -sourceserver $sourceserver -destserver $destserver -AllUserDBs $AllUserDBs `
 		 -IncludeDBs $IncludeDBs -ExcludeDBs $ExcludeDBs -IncludeSupportDBs $IncludeSupportDBs -Force $force
 	}
 	
 	if ($AllUsers -or $IncludeLogins) {  Write-Host "Attempting User Migration" -ForegroundColor Green; 
-		Copy-SQLLogins -sourceserver $sourceserver -destserver $destserver -includelogins $IncludeLogins `
+		Copy-SqlLogins -sourceserver $sourceserver -destserver $destserver -includelogins $IncludeLogins `
 		-excludelogins $ExcludeLogins -Force $force
 	}		
 	
-	if ($MigrateJobServer) { Write-Host "Attempting Job Server Migration" -ForegroundColor Green; Copy-SQLjobs $sourceserver $destserver }
+	if ($MigrateJobServer) { Write-Host "Attempting Job Server Migration" -ForegroundColor Green; Copy-Sqljobs $sourceserver $destserver }
 	if ($MigrateUserObjectsinSysDBs) { 
 		Write-Host "Attempting MigrateUserObjectsinSysDBs" -ForegroundColor Green 
 		$null = Copy-UserObjectsinSysDBs $sourceserver $destserver 

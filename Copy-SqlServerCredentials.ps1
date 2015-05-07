@@ -1,6 +1,6 @@
 <# 
 .SYNOPSIS 
-Copy-SQLServerCredentials.ps1 migrates SQL Server Credentials from one SQL Server to another, while maintaining Credential passwords.
+Copy-SqlServerCredentials.ps1 migrates SQL Server Credentials from one SQL Server to another, while maintaining Credential passwords.
 
 .DESCRIPTION 
 By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Credentials from one server to another, while maintaining username and password.
@@ -27,21 +27,21 @@ By default, if a Credential exists on the source and destination, the Credential
 Author  : 	Chrissy LeMaire
 Requires: 	PowerShell Version 3.0, SQL Server SMO, 
 			Sys Admin access on Windows and SQL Server. DAC access enabled for local (default)
-DateUpdated: 2015-Feb-3
-Version: 	0.1
+DateUpdated: 2015-May-7
+Version: 	0.1.2
 Limitations: Hasn't been tested thoroughly. Works on Win8.1 and SQL Server 2012 & 2014 so far.		
 
 .LINK 
 
 
 .EXAMPLE   
-.\Copy-SQLServerCredentials.ps1 -Source sqlserver\instance -Destination sqlcluster
+.\Copy-SqlServerCredentials.ps1 -Source sqlserver\instance -Destination sqlcluster
 
 Description
 Copies all SQL Server Credentials on sqlserver\instance to sqlcluster. If credentials exist on destination, they will be skipped.
 
 .EXAMPLE   
-.\Copy-SQLServerCredentials.ps1 -Source sqlserver -Destination sqlcluster -Credentials "PowerShell Proxy Account" -Force
+.\Copy-SqlServerCredentials.ps1 -Source sqlserver -Destination sqlcluster -Credentials "PowerShell Proxy Account" -Force
 
 Description
 Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped and recreated.
@@ -215,7 +215,7 @@ Function Get-SQLCredentials {
 	return $decryptedlogins
 }
 
-Function Copy-SQLServerCredentials { 
+Function Copy-SqlServerCredentials { 
 	<#
 		.SYNOPSIS
 		Copies Credentials from one server to another using a combination of SMO's .Script() and manual password updates.
@@ -358,7 +358,7 @@ PROCESS {
 	catch { throw "Can't connect to registry on $source. Quitting." }
 	
 	# Magic happens here
-	Copy-SQLServerCredentials $sourceserver $destserver $credentials $force
+	Copy-SqlServerCredentials $sourceserver $destserver $credentials $force
 	
 }
 

@@ -3,7 +3,7 @@
     Migrates SQL Server Central Management groups and server instances from one SQL Server to another.
 	
  .DESCRIPTION 
-   Copy-CentralManagementServer.ps1 copies all groups, subgroups, and server instances from one SQL Server to another. 
+   Copy-SqlCentralManagementServer.ps1 copies all groups, subgroups, and server instances from one SQL Server to another. 
 
  .PARAMETER Source
 	The SQL Server Central Management Server you are migrating from.
@@ -13,7 +13,7 @@
 	
  .PARAMETER CMSGroups
 	This is an auto-populated array that contains your Central Management Server top-level groups on $Source. You can specify one, many or none.
-	If -CMSGroups is not specified, theCopy-CentralManagementServer.ps1 script will migrate all groups in your Central Management Server. Note this 
+	If -CMSGroups is not specified, theCopy-SqlCentralManagementServer.ps1 script will migrate all groups in your Central Management Server. Note this 
 	variable is only populated by top level groups.
 	
  .PARAMETER SwitchServerName
@@ -23,24 +23,24 @@
  .NOTES 
     Author  : Chrissy LeMaire
     Requires: 	PowerShell Version 3.0, SQL Server SMO
-	Version: 0.8.1
-	DateUpdated: 2015-Apr-1
+	Version: 0.8.2
+	DateUpdated: 2015-May-7
 
  .LINK 
   	https://gallery.technet.microsoft.com/scriptcenter/Migrate-Central-Management-e062943f
 
  .EXAMPLE   
-.\Copy-CentralManagementServer.ps1 -Source sqlserver -Destination sqlcluster
+.\Copy-SqlCentralManagementServer.ps1 -Source sqlserver -Destination sqlcluster
 
 In the above example, all groups, subgroups, and server instances are copied from sqlserver's Central Management Server to sqlcluster's Central Management Server.
 
  .EXAMPLE   
-.\Copy-CentralManagementServer.ps1 -Source sqlserver -Destination sqlcluster -CMSGroups Group1,Group3
+.\Copy-SqlCentralManagementServer.ps1 -Source sqlserver -Destination sqlcluster -CMSGroups Group1,Group3
 
 In the above example, top level Group1 and Group3, along with its subgroups and server instances are copied from sqlserver to sqlcluster.
 
  .EXAMPLE   
-.\Copy-CentralManagementServer.ps1 -Source sqlserver -Destination sqlcluster -CMSGroups Group1,Group3 -SwitchServerName
+.\Copy-SqlCentralManagementServer.ps1 -Source sqlserver -Destination sqlcluster -CMSGroups Group1,Group3 -SwitchServerName
 
 In the above example, top level Group1 and Group3, along with its subgroups and server instances are copied from sqlserver to sqlcluster. When adding sql instances to sqlcluster, if
 the server name of the migrating instance is "sqlcluster", it will be switched to "sqlserver". If SwitchServerName is not specified, "sqlcluster" will be skipped.

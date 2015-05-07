@@ -1,6 +1,6 @@
 ﻿<# 
 .SYNOPSIS 
-Copy-LinkedServers.ps1 migrates Linked Servers from one SQL Server to another. Linked Server logins and passwords are migrated as well.
+Copy-SqlLinkedServers.ps11 migrates Linked Servers from one SQL Server to another. Linked Server logins and passwords are migrated as well.
 
 .DESCRIPTION 
 By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Linked Servers from one server to another, while maintaining username and password.
@@ -27,8 +27,8 @@ By default, if a Linked Server exists on the source and destination, the Linked 
 Author  : 	Chrissy LeMaire
 Requires: 	PowerShell Version 3.0, SQL Server SMO, 
 			Sys Admin access on Windows and SQL Server. DAC access enabled for local (default)
-DateUpdated: 2015-May-4
-Version: 	0.2.1
+DateUpdated: 2015-May-7
+Version: 	0.2.2
 Limitations: Hasn't been tested thoroughly. Works on Win8.1 and SQL Server 2012 & 2014 so far.
 This just copies the SQL portion. It does not copy files (ie. a local SQLITE database, or Access DB), nor does it configure ODBC entries.
 Not close to finished.
@@ -37,13 +37,13 @@ Not close to finished.
 
 
 .EXAMPLE   
-.\Copy-LinkedServers.ps1 -Source sqlserver\instance -Destination sqlcluster
+.\Copy-SqlLinkedServers.ps11 -Source sqlserver\instance -Destination sqlcluster
 
 Description
 Copies all SQL Server Linked Servers on sqlserver\instance to sqlcluster. If Linked Server exists on destination, it will be skipped.
 
 .EXAMPLE   
-.\Copy-LinkedServers.ps1 -Source sqlserver -Destination sqlcluster -LinkedServers SQL2K5,SQL2k -Force
+.\Copy-SqlLinkedServers.ps11 -Source sqlserver -Destination sqlcluster -LinkedServers SQL2K5,SQL2k -Force
 
 Description
 Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped.
