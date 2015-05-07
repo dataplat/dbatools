@@ -1125,6 +1125,8 @@ Function Copy-SqlLogins {
 			Write-Host "Setting $username SID to source username SID" -ForegroundColor Green
 			$destlogin.set_Sid($sourcelogin.get_Sid())
 			$defaultdb = $sourcelogin.DefaultDatabase
+			$destlogin.Language = $sourcelogin.Language
+			
 			if ($destserver.databases[$defaultdb] -eq $null) {
 				Write-Warning "$defaultdb does not exist on destination. Setting defaultdb to master."
 				$defaultdb = "master" 
@@ -1194,6 +1196,7 @@ Function Copy-SqlLogins {
 			# Attempt to add Windows User
 			elseif ($sourcelogin.LoginType -eq "WindowsUser" -or $sourcelogin.LoginType -eq "WindowsGroup") {
 				$destlogin.LoginType = $sourcelogin.LoginType
+				$destlogin.Language = $sourcelogin.Language
 				try {
 					$destlogin.Create()
 					$migrateduser.Add("$username","Windows user/group added successfully") 
