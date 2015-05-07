@@ -68,8 +68,8 @@ Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins
 .NOTES 
 Author: 		Chrissy LeMaire
 Requires: 		PowerShell Version 3.0, SQL Server SMO
-DateUpdated: 	2015-May-4
-Version: 		1.5.4
+DateUpdated: 	2015-May-7
+Version: 		1.5.3
 Limitations: 	Does not support Application Roles yet. When using -Force, logins that own jobs cannot be dropped at this time.
 
 .LINK 
@@ -195,16 +195,10 @@ Function Copy-SQLLogins {
 			continue
 		}
 		
-		$userbase = ($username.Split("\")[0]).ToLower(); $localaccount = $false
-		if ($servername -eq $userbase) {
-			# Support local lab migrations w/o erroring out or skipping
-			$localaccount = $true 
-		}
-		if ($username.StartsWith("NT ")) {
-			$skippeduser.Add("$username","Skipped. Local machine username.") # Removed to support local lab migrations.
-			continue
-		}
-		
+		$userbase = ($username.Split("\")[0]).ToLower()
+		if ($servername -eq $userbase -or $username.StartsWith("NT ")) {
+			$skippeduser.Add("$username","Skipped. Local machine username.")
+			continue }
 		if (($login = $destserver.Logins.Item($username)) -ne $null -and !$force) { 
 			$skippeduser.Add("$username","Already exists in destination. Use -force to drop and recreate.")
 			continue }
@@ -234,28 +228,25 @@ Function Copy-SQLLogins {
 			$destlogin = new-object Microsoft.SqlServer.Management.Smo.Login($destserver, $username)
 			Write-Host "Setting $username SID to source username SID" -ForegroundColor Green
 			$destlogin.set_Sid($sourcelogin.get_Sid())
+			
 			$defaultdb = $sourcelogin.DefaultDatabase
+			$destlogin.Language = $sourcelogin.Language
+						
 			if ($destserver.databases[$defaultdb] -eq $null) {
 				Write-Warning "$defaultdb does not exist on destination. Setting defaultdb to master."
 				$defaultdb = "master" 
 			}
 			Write-Host "Set $username defaultdb to $defaultdb" -ForegroundColor Green
 			$destlogin.DefaultDatabase = $defaultdb
-			
-			if ($sourcelogin.PasswordPolicyEnforced -eq $false) {
+
+			$checkexpiration = "ON"; $checkpolicy = "ON"
+			if (!$sourcelogin.PasswordPolicyEnforced) { 
 				$destlogin.PasswordPolicyEnforced = $false 
 				$checkpolicy = "OFF"
-			}  else {
-				$destlogin.PasswordPolicyEnforced = $true 
-				$checkpolicy = "ON"
 			}
-			
-			if ($sourcelogin.PasswordExpirationEnabled -eq $false) { 
+			if (!$sourcelogin.PasswordExpirationEnabled) { 
 				$destlogin.PasswordExpirationEnabled = $false
 				$checkexpiration = "OFF"
-			} else {
-				$destlogin.PasswordExpirationEnabled = $true 
-				$checkexpiration = "ON"
 			}
 	
 			# Attempt to add SQL Login User
@@ -287,7 +278,6 @@ Function Copy-SQLLogins {
 				try {
 					$destlogin.Create($hashedpass, [Microsoft.SqlServer.Management.Smo.LoginCreateOptions]::IsHashed)
 					$migrateduser.Add("$username","SQL Login Added successfully") 
-					$destlogin.Alter()
 					$destlogin.refresh()
 					Write-Host "Successfully added $username to $destination" -ForegroundColor Green }
 				catch {
@@ -311,21 +301,17 @@ Function Copy-SQLLogins {
 			# Attempt to add Windows User
 			elseif ($sourcelogin.LoginType -eq "WindowsUser" -or $sourcelogin.LoginType -eq "WindowsGroup") {
 				$destlogin.LoginType = $sourcelogin.LoginType
+				$destlogin.Language = $sourcelogin.Language
+								
 				try {
 					$destlogin.Create()
 					$migrateduser.Add("$username","Windows user/group added successfully") 
 					$destlogin.refresh()
 					Write-Host "Successfully added $username to $destination" -ForegroundColor Green }
 				catch { 
-					if ($localaccount -eq $true) {
-						$skippeduser.Add("$username","Skipped. Unsupported local machine username.")
-						Write-Warning "Failed to add $username to $destination. See log for details."
-					} else {
-						$skippeduser.Add("$username","Add failed")
-						Write-Warning "Failed to add $username to $destination. See log for details."
-					}
-					continue
-				}
+					$skippeduser.Add("$username","Add failed")
+					Write-Warning "Failed to add $username to $destination. See log for details."
+					continue }
 			}
 			# This script does not currently support certificate mapped or asymmetric key users.
 			else { 
@@ -340,13 +326,11 @@ Function Copy-SQLLogins {
 			Update-SQLPermissions -sourceserver $sourceserver -sourcelogin $sourcelogin -destserver $destserver -destlogin $destlogin
 		}
 	}
-	
-	If ($Pscmdlet.ShouldProcess("locally","Displaying summary and writing log in CSV format.")) {
-		$migrateduser.GetEnumerator() | Sort-Object value; $skippeduser.GetEnumerator() | Sort-Object value
-		$migrateduser.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Path "$csvfilename-users.csv" -NoTypeInformation
-		$skippeduser.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Append -Path "$csvfilename-users.csv" -NoTypeInformation
-		Write-Host "Completed user migration" -ForegroundColor Green 
-	}
+
+	$migrateduser.GetEnumerator() | Sort-Object value; $skippeduser.GetEnumerator() | Sort-Object value
+	$migrateduser.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Path "$csvfilename-users.csv" -NoTypeInformation
+	$skippeduser.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Append -Path "$csvfilename-users.csv" -NoTypeInformation
+	Write-Host "Completed user migration" -ForegroundColor Green
 			
 }
 
@@ -859,7 +843,7 @@ PROCESS {
 		return
 	}
 	 
-	If ($Pscmdlet.ShouldProcess("locally","Alerting user of migration attempt"))  { Write-Host "Attempting Login Migration" -ForegroundColor Green }
+	Write-Host "Attempting Login Migration" -ForegroundColor Green; 
 	Copy-SQLLogins -sourceserver $sourceserver -destserver $destserver -includelogins $IncludeLogins -excludelogins $ExcludeLogins -Force $force
 }
 
@@ -868,9 +852,7 @@ END {
 	$sourceserver.ConnectionContext.Disconnect()
 	$destserver.ConnectionContext.Disconnect()
 	Write-Host "Script completed" -ForegroundColor Green
-	<# 
-		Write-Host "Migration started: $started"  -ForegroundColor Cyan
-		Write-Host "Migration completed: $(Get-Date)"  -ForegroundColor Cyan
-		Write-Host "Total Elapsed time: $totaltime"  -ForegroundColor Cyan
-	#>
+	Write-Host "Migration started: $started"  -ForegroundColor Cyan
+	Write-Host "Migration completed: $(Get-Date)"  -ForegroundColor Cyan
+	Write-Host "Total Elapsed time: $totaltime"  -ForegroundColor Cyan
 }
