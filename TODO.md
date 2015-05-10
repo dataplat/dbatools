@@ -23,6 +23,7 @@ local file moves
 Disable jobs after migration (requires granular job object migration)
 Replace system dbs & run post name change scripts?
 Suggest Compression if not enabled?
+allow user to specify destination data and log files
 
 Auto detect related: 
 Certificates
@@ -61,6 +62,7 @@ Support explicitly specified directory structures
 
 Copy-CentralManagementServer.ps1
 --------------
+Support for -force to drop and recreate
 
 Get-SQLServerKeys.ps1
 --------------
