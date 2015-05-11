@@ -51,7 +51,7 @@ the destination login will be dropped and recreated.
 .EXAMPLE
 .\Copy-SqlServerLogins.ps1 -Source sqlserver -Destination sqlcluster -ExcludeLogins realcajun -UseSqlLoginSource -UseSqlLoginDestination
 
-Prompts for SQL login usernames and passwords on both the Source and Destination then connects to each using the SQL Login credentials. 
+Prompts for SQL login names and passwords on both the Source and Destination then connects to each using the SQL Login credentials. 
 Copies all logins except for realcajun. If a login already exists on the destination, the login will not be migrated.
 
 .EXAMPLE
@@ -68,8 +68,8 @@ Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins
 .NOTES 
 Author: 		Chrissy LeMaire
 Requires: 		PowerShell Version 3.0, SQL Server SMO
-DateUpdated: 	2015-May-7
-Version: 		1.5.3
+DateUpdated: 	2015-May-11
+Version: 		1.5.4
 Limitations: 	Does not support Application Roles yet. When using -Force, logins that own jobs cannot be dropped at this time.
 
 .LINK 
@@ -172,11 +172,11 @@ Function Copy-SqlLogins {
 		)
 		
 	if ($sourceserver.versionMajor -gt 10 -and $destserver.versionMajor -lt 11) {
-		throw "SQL user migration from SQL Server version $($sourceserver.versionMajor) to $($destserver.versionMajor) not supported. Halting."
+		throw "SQL login migration from SQL Server version $($sourceserver.versionMajor) to $($destserver.versionMajor) not supported. Halting."
 	}
 
-	$skippeduser = @{}; $migrateduser = @{}; $source = $sourceserver.name; $destination = $destserver.name
-	$ExcludeLogins | Where-Object {!([string]::IsNullOrEmpty($_))} | ForEach-Object { $skippeduser.Add($_,"Explicitly Skipped") }
+	$skippedlogin = @{}; $migratedlogin = @{}; $source = $sourceserver.name; $destination = $destserver.name
+	$ExcludeLogins | Where-Object {!([string]::IsNullOrEmpty($_))} | ForEach-Object { $skippedlogin.Add($_,"Explicitly Skipped") }
 	$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
 	$csvfilename = "$($sourceserver.name.replace('\','$'))-to-$($destserver.name.replace('\','$'))-$timenow"
 	
@@ -184,23 +184,23 @@ Function Copy-SqlLogins {
 
 		$username = $sourcelogin.name
 		if ($IncludeLogins -ne $null -and $IncludeLogins -notcontains $username) { continue }
-		if ($skippeduser.ContainsKey($username) -or $username.StartsWith("##") -or $username -eq 'sa') { continue }
+		if ($skippedlogin.ContainsKey($username) -or $username.StartsWith("##") -or $username -eq 'sa') { continue }
 		$servername = Get-NetBIOSName $sourceserver
 
-		$currentuser = $sourceserver.ConnectionContext.truelogin
+		$currentlogin = $sourceserver.ConnectionContext.truelogin
 
-		if ($currentuser -eq $username -and $force) {
+		if ($currentlogin -eq $username -and $force) {
 			Write-Warning "Cannot drop login performing the migration. Skipping"
-			$skippeduser.Add("$username","Skipped. Cannot drop login performing the migration.")
+			$skippedlogin.Add("$username","Skipped. Cannot drop login performing the migration.")
 			continue
 		}
 		
 		$userbase = ($username.Split("\")[0]).ToLower()
 		if ($servername -eq $userbase -or $username.StartsWith("NT ")) {
-			$skippeduser.Add("$username","Skipped. Local machine username.")
+			$skippedlogin.Add("$username","Skipped. Local machine username.")
 			continue }
 		if (($login = $destserver.Logins.Item($username)) -ne $null -and !$force) { 
-			$skippeduser.Add("$username","Already exists in destination. Use -force to drop and recreate.")
+			$skippedlogin.Add("$username","Already exists in destination. Use -force to drop and recreate.")
 			continue }
 	
 		if ($login -ne $null -and $force) {
@@ -214,10 +214,11 @@ Function Copy-SqlLogins {
 					$destserver.Databases | Where { $_.Owner -eq $username } | ForEach-Object { $_.SetOwner('sa'); $_.Alter()  }	
 					$login.drop()
 					Write-Host "Successfully dropped $username on $destination" -ForegroundColor Green
-				} catch { 
-					$errormessage = (($_.Exception.InnerException).ToString()).Trim()
-					$skippeduser.Add("$username","Couldn't drop $username on $($destination): $errormessage")
-					Write-Warning "Could not drop $username. Skipping"
+				} catch {
+					$ex = (($_.Exception.Message -Split ":")[1])
+					if ($ex -ne $null) { $ex.trim() }
+					$skippedlogin.Add("$username","Couldn't drop $username on $($destination): $ex")
+					Write-Warning "Could not drop $username`: $ex"
 					continue 
 				}
 			}
@@ -277,7 +278,7 @@ Function Copy-SqlLogins {
 					
 				try {
 					$destlogin.Create($hashedpass, [Microsoft.SqlServer.Management.Smo.LoginCreateOptions]::IsHashed)
-					$migrateduser.Add("$username","SQL Login Added successfully") 
+					$migratedlogin.Add("$username","SQL Login Added successfully") 
 					$destlogin.refresh()
 					Write-Host "Successfully added $username to $destination" -ForegroundColor Green }
 				catch {
@@ -287,12 +288,11 @@ Function Copy-SqlLogins {
 						DEFAULT_DATABASE = [$defaultdb], CHECK_POLICY = $checkpolicy, CHECK_EXPIRATION = $checkexpiration"
 						$null = $destserver.ConnectionContext.ExecuteNonQuery($sqlfailsafe) 
 						$destlogin = $destserver.logins[$username]
-						$migrateduser.Add("$username","SQL Login Added successfully") 
+						$migratedlogin.Add("$username","SQL Login Added successfully") 
 						Write-Host "Successfully added $username to $destination" -ForegroundColor Green
 					} catch {
 						$ex = ($_.Exception.InnerException).tostring()
-						$ex = ($ex -split "at Microsoft.SqlServer.Management.Common.ConnectionManager")[0]
-						$skippeduser.Add("$username","Add failed: $ex")
+						$skippedlogin.Add("$username","Add failed: $ex")
 						Write-Warning "Failed to add $username to $destination. See log for details."
 						continue 
 					}
@@ -305,17 +305,17 @@ Function Copy-SqlLogins {
 								
 				try {
 					$destlogin.Create()
-					$migrateduser.Add("$username","Windows user/group added successfully") 
+					$migratedlogin.Add("$username","Windows user/group added successfully") 
 					$destlogin.refresh()
 					Write-Host "Successfully added $username to $destination" -ForegroundColor Green }
 				catch { 
-					$skippeduser.Add("$username","Add failed")
+					$skippedlogin.Add("$username","Add failed")
 					Write-Warning "Failed to add $username to $destination. See log for details."
 					continue }
 			}
 			# This script does not currently support certificate mapped or asymmetric key users.
 			else { 
-				$skippeduser.Add("$username","Skipped. $($sourcelogin.LoginType) logins not supported.")
+				$skippedlogin.Add("$username","Skipped. $($sourcelogin.LoginType) logins not supported.")
 				Write-Warning "$($sourcelogin.LoginType) logins not supported. $($sourcelogin.name) skipped."
 				continue }
 			
@@ -327,10 +327,10 @@ Function Copy-SqlLogins {
 		}
 	}
 
-	$migrateduser.GetEnumerator() | Sort-Object value; $skippeduser.GetEnumerator() | Sort-Object value
-	$migrateduser.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Path "$csvfilename-users.csv" -NoTypeInformation
-	$skippeduser.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Append -Path "$csvfilename-users.csv" -NoTypeInformation
-	Write-Host "Completed user migration" -ForegroundColor Green
+	$migratedlogin.GetEnumerator() | Sort-Object value; $skippedlogin.GetEnumerator() | Sort-Object value
+	$migratedlogin.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Path "$csvfilename-logins.csv" -NoTypeInformation
+	$skippedlogin.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Append -Path "$csvfilename-logins.csv" -NoTypeInformation
+	Write-Host "Completed login migration" -ForegroundColor Green
 			
 }
 
@@ -362,7 +362,7 @@ $destination = $destserver.name
 $source = $sourceserver.name
 $username = $sourcelogin.name
 
-# Server Roles: sysadmin, bulkcurrentuser, etc
+# Server Roles: sysadmin, bulkcurrentlogin, etc
 	foreach ($role in $sourceserver.roles) {
 		$destrole = $destserver.roles[$role.name]
 		if ($destrole -ne $null) { 
@@ -464,7 +464,7 @@ $username = $sourcelogin.name
 				If ($Pscmdlet.ShouldProcess($destination,"Dropping $dbusername from $dbname on destination.")) {
 					try { 
 						$destdb.users[$dbusername].Drop()
-						Write-Host "Dropped username $dbusername (login: $dblogin) from $dbname on destination. User may own a schema." -ForegroundColor Yellow }
+						Write-Host "Dropped user $dbusername (login: $dblogin) from $dbname on destination. User may own a schema." -ForegroundColor Yellow }
 					catch { Write-Warning "Failed to drop $dbusername ($dblogin) from $dbname on destination."
 					}
 				}
@@ -526,7 +526,7 @@ $username = $sourcelogin.name
 					$sql = $sourceserver.databases[$dbname].users[$dbusername].script()
 					try { 
 						$destdb.ExecuteNonQuery($sql)
-						Write-Host "Added username $dbusername (login: $dblogin) to $dbname" -ForegroundColor Green 
+						Write-Host "Added user $dbusername (login: $dblogin) to $dbname" -ForegroundColor Green 
 					}
 					catch { Write-Warning "Failed to add $dbusername ($dblogin) to $dbname on $destination."
 					}
@@ -598,19 +598,19 @@ Function Sync-Only {
 		[array]$ExcludeLogins
 	)
 	
-	$skippeduser = @{}; $source = $sourceserver.name; $destination = $destserver.name
-	$ExcludeLogins | Where-Object {!([string]::IsNullOrEmpty($_))} | ForEach-Object { $skippeduser.Add($_,"Explicitly Skipped") }
+	$skippedlogin = @{}; $source = $sourceserver.name; $destination = $destserver.name
+	$ExcludeLogins | Where-Object {!([string]::IsNullOrEmpty($_))} | ForEach-Object { $skippedlogin.Add($_,"Explicitly Skipped") }
 	$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
 	$csvfilename = "$($sourceserver.name.replace('\','$'))-to-$($destserver.name.replace('\','$'))-$timenow"
 	
 	foreach ($sourcelogin in $sourceserver.logins) {
 
 		$username = $sourcelogin.name
-		$currentuser = $sourceserver.ConnectionContext.truelogin
+		$currentlogin = $sourceserver.ConnectionContext.truelogin
 		if ($IncludeLogins -ne $null -and $IncludeLogins -notcontains $username) { continue }
-		if ($skippeduser.ContainsKey($username) -or $username.StartsWith("##") -or $username -eq 'sa') { continue }
+		if ($skippedlogin.ContainsKey($username) -or $username.StartsWith("##") -or $username -eq 'sa') { continue }
 		
-		if ($currentuser -eq $username) {
+		if ($currentlogin -eq $username) {
 			Write-Warning "Sync does not modify the permissions of the current user. Skipping."
 			continue
 		}
@@ -733,7 +733,7 @@ Function Test-SQLSA      {
               if (!(Test-SQLSA $server)) { throw "Not a sysadmin on $source. Quitting." }  
 
             .OUTPUTS
-                $true if sycurrentuser
+                $true if sycurrentlogin
                 $false if not
 			
         #>
@@ -786,7 +786,7 @@ PROCESS {
 		Sanity Checks
 			- Is SMO available?
 			- Are SQL Servers reachable?
-			- Is the account running this script an currentuser?
+			- Is the account running this script an currentlogin?
 			- Are SQL Versions >= 2005?
 	---------------------------------------------------------- #>
 	$elapsed = [System.Diagnostics.Stopwatch]::StartNew() 
@@ -838,7 +838,7 @@ PROCESS {
 	---------------------------------------------------------- #>
 	
 	if ($SyncOnly) {
-		Write-Host "Syncing User Permissions" -ForegroundColor Green; 
+		Write-Host "Syncing Login Permissions" -ForegroundColor Green; 
 		Sync-Only -sourceserver $sourceserver -destserver $destserver -IncludeLogins $IncludeLogins -ExcludeLogins $ExcludeLogins
 		return
 	}

@@ -1,6 +1,6 @@
 <# 
  .SYNOPSIS 
-    Migrates SQL Server databases, users, SQL Agent objects, and global configuration settings from one SQL Server to another.
+    Migrates SQL Server databases, logins, SQL Agent objects, and global configuration settings from one SQL Server to another.
 	
  .DESCRIPTION 
     This script provides the ability to migrate databases using detach/copy/attach or backup/restore. SQL Server logins, including passwords, SID and database/server roles can also be migrated. In addition, job server objects can be migrated and server configuration settings can be exported or migrated. This script works with named instances, clusters and SQL Express.
@@ -28,7 +28,7 @@
 	Windows Authentication will be used if UseSqlLoginDestination is not specified. To connect as a different Windows user, run PowerShell as that user.
 	
  .PARAMETER AllUserDBs
-	Migrates user databases. Does not migrate system or support databases. A logfile named $SOURCE-$DESTINATION-$date-users.csv will be written to the current directory. Requires -BackupRestore or -DetachAttach. Talk about database structure.
+	Migrates user databases. Does not migrate system or support databases. A logfile named $SOURCE-$DESTINATION-$date-logins.csv will be written to the current directory. Requires -BackupRestore or -DetachAttach. Talk about database structure.
  
  .PARAMETER IncludeSupportDBs
 	Migration of ReportServer, ReportServerTempDB, SSIDB, and distribution databases if they exist. A logfile named $SOURCE-$DESTINATION-$date-SQLs.csv will be written to the current directory. Requires -BackupRestore or -DetachAttach.
@@ -81,7 +81,7 @@
 	Sets all migrated databases to ReadOnly prior to detach/attach & backup/restore. If -ReAttachAtSource is used, db is set to read-only after reattach.
  
  .PARAMETER Everything
-	Migrates all users, databases, agent objects, except those listed by ExcludeDBs and ExcludeLogins. 
+	Migrates all logins, databases, agent objects, except those listed by ExcludeDBs and ExcludeLogins. 
 	Also exports sp_configure settings and user created objects within system databases.
 	
 .PARAMETER Force
@@ -94,7 +94,7 @@
     Author  : Chrissy LeMaire
     Requires: PowerShell Version 3.0, SQL Server SMO
 	DateUpdated: 2015-May-11
-	Version: 1.3.2
+	Version: 1.3.3
 	Limitations: 	Doesn't cover what it doesn't cover (replication, linked servers, certificates, etc)
 					SQL Server 2000 login migrations have some limitations (server perms aren't migrated, etc)
 					SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
@@ -117,7 +117,7 @@ Description
 
 Prompts for SQL login usernames and passwords on both the Source and Destination then connects to each using the SQL Login credentials. 
 
-All users except for nwuser, pubsuser and the corp\domain admins group will be migrated from sqlserver\instance to sqlcluster, along with their passwords, server roles and database roles. A logfile named SQLSERVER-SQLCLUSTER-$date-users.csv will be written to the current directory. Existing SQL users will be dropped and recreated.
+All logins except for nwuser, pubsuser and the corp\domain admins group will be migrated from sqlserver\instance to sqlcluster, along with their passwords, server roles and database roles. A logfile named SQLSERVER-SQLCLUSTER-$date-logins.csv will be written to the current directory. Existing SQL users will be dropped and recreated.
 
 Migrates all user databases except for Northwind and pubs by performing the following: kick all users out of the database, detach all data/log files, move files across the network over an admin share (\\SQLSERVER\M$\MSSQL...), attach file on destination server. If the database exists on the destination, it will be dropped prior to attach.
 
@@ -1070,11 +1070,11 @@ Function Copy-SqlLogins {
 		)
 		
 	if ($sourceserver.versionMajor -gt 10 -and $destserver.versionMajor -lt 11) {
-		throw "SQL user migration from SQL Server version $($sourceserver.versionMajor) to $($destserver.versionMajor) not supported. Halting."
+		throw "SQL login migration from SQL Server version $($sourceserver.versionMajor) to $($destserver.versionMajor) not supported. Halting."
 	}
 
-	$skippeduser = @{}; $migrateduser = @{}; $source = $sourceserver.name; $destination = $destserver.name
-	$ExcludeLogins | Where-Object {!([string]::IsNullOrEmpty($_))} | ForEach-Object { $skippeduser.Add($_,"Explicitly Skipped") }
+	$skippedlogin = @{}; $migratedlogin = @{}; $source = $sourceserver.name; $destination = $destserver.name
+	$ExcludeLogins | Where-Object {!([string]::IsNullOrEmpty($_))} | ForEach-Object { $skippedlogin.Add($_,"Explicitly Skipped") }
 	$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
 	$csvfilename = "$($sourceserver.name.replace('\','$'))-to-$($destserver.name.replace('\','$'))-$timenow"
 	
@@ -1082,23 +1082,23 @@ Function Copy-SqlLogins {
 
 		$username = $sourcelogin.name
 		if ($IncludeLogins -ne $null -and $IncludeLogins -notcontains $username) { continue }
-		if ($skippeduser.ContainsKey($username) -or $username.StartsWith("##") -or $username -eq 'sa') { continue }
+		if ($skippedlogin.ContainsKey($username) -or $username.StartsWith("##") -or $username -eq 'sa') { continue }
 		$servername = Get-NetBIOSName $sourceserver
 
 		$admin = $sourceserver.ConnectionContext.truelogin
 
 		if ($admin -eq $username -and $force) {
 			Write-Warning "Cannot drop login performing the migration. Skipping"
-			$skippeduser.Add("$username","Skipped. Cannot drop login performing the migration.")
+			$skippedlogin.Add("$username","Skipped. Cannot drop login performing the migration.")
 			continue
 		}
 		
 		$userbase = ($username.Split("\")[0]).ToLower()
 		if ($servername -eq $userbase -or $username.StartsWith("NT ")) {
-			$skippeduser.Add("$username","Skipped. Local machine username.")
+			$skippedlogin.Add("$username","Skipped. Local machine username.")
 			continue }
 		if (($login = $destserver.Logins.Item($username)) -ne $null -and !$force) { 
-			$skippeduser.Add("$username","Already exists in destination. Use -force to drop and recreate.")
+			$skippedlogin.Add("$username","Already exists in destination. Use -force to drop and recreate.")
 			continue }
 	
 		if ($login -ne $null -and $force) {
@@ -1112,9 +1112,11 @@ Function Copy-SqlLogins {
 						$destserver.Databases | Where { $_.Owner -eq $username } | ForEach-Object { $_.SetOwner('sa'); $_.Alter()  }	
 						$login.drop()
 						Write-Host "Successfully dropped $username on $destination" -ForegroundColor Green
-					} catch { 
-						$skippeduser.Add("$username","Couldn't drop on $destination") 
-						Write-Warning "Could not drop $username. Skipping"
+					} catch {
+						$ex = (($_.Exception.Message -Split ":")[1])
+						if ($ex -ne $null) { $ex.trim() }
+						$skippedlogin.Add("$username","Couldn't drop on $destination`: $ex") 
+						Write-Warning "Could not drop $username`: $ex"
 						continue }
 				}
 		}
@@ -1144,7 +1146,7 @@ Function Copy-SqlLogins {
 				$checkexpiration = "OFF"
 			}
 
-			# Attempt to add SQL Login User
+			# Attempt to add SQL Login
 			if ($sourcelogin.LoginType -eq "SqlLogin") {
 				$destlogin.LoginType = "SqlLogin"
 				$sourceloginname = $sourcelogin.name
@@ -1172,7 +1174,7 @@ Function Copy-SqlLogins {
 				
 				try {
 					$destlogin.Create($hashedpass, [Microsoft.SqlServer.Management.Smo.LoginCreateOptions]::IsHashed)
-					$migrateduser.Add("$username","SQL Login Added successfully") 
+					$migratedlogin.Add("$username","SQL Login Added successfully") 
 					$destlogin.refresh()
 					Write-Host "Successfully added $username to $destination" -ForegroundColor Green }
 				catch {
@@ -1182,34 +1184,34 @@ Function Copy-SqlLogins {
 						DEFAULT_DATABASE = [$defaultdb], CHECK_POLICY = $checkpolicy, CHECK_EXPIRATION = $checkexpiration"
 						$null = $destserver.ConnectionContext.ExecuteNonQuery($sqlfailsafe) 
 						$destlogin = $destserver.logins[$username]
-						$migrateduser.Add("$username","SQL Login Added successfully") 
+						$migratedlogin.Add("$username","SQL Login Added successfully") 
 						Write-Host "Successfully added $username to $destination" -ForegroundColor Green
 					} catch {
 						$ex = ($_.Exception.InnerException).tostring()
 						$ex = ($ex -split "at Microsoft.SqlServer.Management.Common.ConnectionManager")[0]
-						$skippeduser.Add("$username","Add failed: $ex")
+						$skippedlogin.Add("$username","Add failed: $ex")
 						Write-Warning "Failed to add $username to $destination. See log for details."
 						continue 
 					}
 				}
 			}
-			# Attempt to add Windows User
+			# Attempt to add Windows Login
 			elseif ($sourcelogin.LoginType -eq "WindowsUser" -or $sourcelogin.LoginType -eq "WindowsGroup") {
 				$destlogin.LoginType = $sourcelogin.LoginType
 				$destlogin.Language = $sourcelogin.Language
 				try {
 					$destlogin.Create()
-					$migrateduser.Add("$username","Windows user/group added successfully") 
+					$migratedlogin.Add("$username","Windows user/group added successfully") 
 					$destlogin.refresh()
 					Write-Host "Successfully added $username to $destination" -ForegroundColor Green }
 				catch { 
-					$skippeduser.Add("$username","Add failed")
+					$skippedlogin.Add("$username","Add failed")
 					Write-Warning "Failed to add $username to $destination. See log for details."
 					continue }
 			}
 			# This script does not currently support certificate mapped or asymmetric key users.
 			else { 
-				$skippeduser.Add("$username","Skipped. $($sourcelogin.LoginType) logins not supported.")
+				$skippedlogin.Add("$username","Skipped. $($sourcelogin.LoginType) logins not supported.")
 				Write-Warning "$($sourcelogin.LoginType) logins not supported. $($sourcelogin.name) skipped."
 				continue }
 			
@@ -1327,9 +1329,9 @@ Function Copy-SqlLogins {
 		}
 	}
 	
-	$migrateduser.GetEnumerator() | Sort-Object value; $skippeduser.GetEnumerator() | Sort-Object value
-	$migrateduser.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Path "$csvfilename-users.csv" -NoTypeInformation
-	$skippeduser.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Append -Path "$csvfilename-users.csv" -NoTypeInformation
+	$migratedlogin.GetEnumerator() | Sort-Object value; $skippedlogin.GetEnumerator() | Sort-Object value
+	$migratedlogin.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Path "$csvfilename-logins.csv" -NoTypeInformation
+	$skippedlogin.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Append -Path "$csvfilename-logins.csv" -NoTypeInformation
 	Write-Host "Completed user migration" -ForegroundColor Green
 			
 }
