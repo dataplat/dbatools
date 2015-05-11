@@ -27,7 +27,7 @@
  .NOTES 
     Author  : Chrissy LeMaire
     Requires: PowerShell Version 3.0, SMO, sysadmin access on destination SQL Server.
-	Version: 0.2
+	Version: 0.2.1
 
  .LINK 
   	http://gallery.technet.microsoft.com/scriptcenter/Restore-SQL-Backups-cd958ec1
@@ -481,7 +481,7 @@ PROCESS {
 		$sql = "RESTORE DATABASE [$dbname] WITH RECOVERY"
 		try { 
 			$server.databases['master'].ExecuteNonQuery($sql)
-			$migrateddb.Add($dbname,"Successfully migrated")
+			$migrateddb.Add($dbname,"Successfully restored.")
 			Write-Host "Successfully restored $dbname." -ForegroundColor Green
 		} catch { Write-Warning "$dbname could not be recovered." }
 		
