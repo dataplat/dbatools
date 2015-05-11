@@ -413,13 +413,15 @@ $username = $sourcelogin.name
 	
 	$ownedjobs = $sourceserver.JobServer.Jobs | Where { $_.OwnerLoginName -eq $username } 
 	foreach ($ownedjob in $ownedjobs) {
-		If ($Pscmdlet.ShouldProcess($destination,"Changing job owner to $username for $($ownedjob.name)")) {
-			try {
-				Write-Host "Changing job owner to $username for $($ownedjob.name)" -ForegroundColor Yellow
-				$destownedjob = $destserver.JobServer.Jobs | Where { $_.name -eq $ownedjobs.name } 
-				$destownedjob.set_OwnerLoginName($username)
-				$destownedjob.Alter() 
-			} catch { Write-Warning "Could not change job owner for $($ownedjob.name)" }
+		if ($destserver.JobServer.Jobs[$ownedjob.name] -ne $null) {
+			If ($Pscmdlet.ShouldProcess($destination,"Changing job owner to $username for $($ownedjob.name)")) {
+				try {
+					Write-Host "Changing job owner to $username for $($ownedjob.name)" -ForegroundColor Yellow
+					$destownedjob = $destserver.JobServer.Jobs | Where { $_.name -eq $ownedjobs.name } 
+					$destownedjob.set_OwnerLoginName($username)
+					$destownedjob.Alter() 
+				} catch { Write-Warning "Could not change job owner for $($ownedjob.name)" }
+			}
 		}
 	}
 		

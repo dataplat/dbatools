@@ -1259,12 +1259,14 @@ Function Copy-SqlLogins {
 
 		
 		foreach ($ownedjob in $ownedjobs) {
-			If ($Pscmdlet.ShouldProcess($destination,"Changing job owner to $username for $($ownedjob.name)")) {
-				try {
-					Write-Host "Changing job owner to $username for $($ownedjob.name)" -ForegroundColor Yellow
-					$ownedjob.set_OwnerLoginName($username)
-					$ownedjob.Alter() 
-				} catch { Write-Warning "Could not change job owner for $($ownedjob.name)" }
+			if ($destserver.JobServer.Jobs[$ownedjob.name] -ne $null) {
+				If ($Pscmdlet.ShouldProcess($destination,"Changing job owner to $username for $($ownedjob.name)")) {
+					try {
+						Write-Host "Changing job owner to $username for $($ownedjob.name)" -ForegroundColor Yellow
+						$ownedjob.set_OwnerLoginName($username)
+						$ownedjob.Alter() 
+					} catch { Write-Warning "Could not change job owner for $($ownedjob.name)" }
+				}
 			}
 		}
 						
