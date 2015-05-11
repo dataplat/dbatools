@@ -899,7 +899,11 @@ Function Copy-SqlDatabases  {
 					if (!$dropresult) { $skippedb[$dbname] = "Database exists and could not be dropped."; continue }
 				}
 		}
-		Write-Host "Started: $dbstart" -ForegroundColor Cyan
+		
+		
+		If ($Pscmdlet.ShouldProcess("local host","Showing start time")) {
+			Write-Host "Started: $dbstart" -ForegroundColor Cyan
+		}
 		
 		if ($sourceserver.versionMajor -ge 9) {
 			$sourcedbownerchaining = $sourceserver.databases[$dbname].DatabaseOwnershipChaining
@@ -1018,11 +1022,14 @@ Function Copy-SqlDatabases  {
 			}
 		}
 	
-	$dbtotaltime=$dbfinish-$dbstart
-	$dbtotaltime = ($dbtotaltime.toString().Split(".")[0])
+	If ($Pscmdlet.ShouldProcess("local host","Showing elapsed time")) {
+		$dbtotaltime=$dbfinish-$dbstart
+		$dbtotaltime = ($dbtotaltime.toString().Split(".")[0])
 
-	Write-Host "Finished: $dbfinish" -ForegroundColor Cyan
-	Write-Host "Elapsed time: $dbtotaltime" -ForegroundColor Cyan
+		Write-Host "Finished: $dbfinish" -ForegroundColor Cyan
+		Write-Host "Elapsed time: $dbtotaltime" -ForegroundColor Cyan
+	}
+	
 	} # end db by db processing
 	
 	$alldbtotaltime = ($alldbelapsed.Elapsed.toString().Split(".")[0])
@@ -1109,7 +1116,21 @@ Function Copy-SqlLogins {
 					Write-Host "Force was specified. Attempting to drop $username on $destination" -ForegroundColor Yellow
 					try {
 						$destserver.EnumProcesses() | Where { $_.Login -eq $username }  | ForEach-Object {$destserver.KillProcess($_.spid)}		
-						$destserver.Databases | Where { $_.Owner -eq $username } | ForEach-Object { $_.SetOwner('sa'); $_.Alter()  }	
+						
+						$owneddbs = $destserver.Databases | Where { $_.Owner -eq $username }	
+						foreach ($owneddb in $owneddbs) {
+							Write-Warning "Changing database owner for $($owneddb.name) from $username to sa"
+							$owneddb.SetOwner('sa')
+							$owneddb.Alter()
+						}
+					
+						$ownedjobs = $destserver.JobServer.Jobs | Where { $_.OwnerLoginName -eq $username } 
+						foreach ($ownedjob in $ownedjobs) {
+							Write-Warning "Changing job owner for $($ownedjob.name) from $username to sa"
+							$ownedjob.set_OwnerLoginName('sa')
+							$ownedjob.Alter() 
+						}
+						
 						$login.drop()
 						Write-Host "Successfully dropped $username on $destination" -ForegroundColor Green
 					} catch {
@@ -1236,6 +1257,17 @@ Function Copy-SqlLogins {
 					}
 				}
 
+		
+		foreach ($ownedjob in $ownedjobs) {
+			If ($Pscmdlet.ShouldProcess($destination,"Changing job owner to $username for $($ownedjob.name)")) {
+				try {
+					Write-Host "Changing job owner to $username for $($ownedjob.name)"
+					$ownedjob.set_OwnerLoginName($username)
+					$ownedjob.Alter() 
+				} catch { Write-Warning "Could not change job owner for $($ownedjob.name)" }
+			}
+		}
+						
 		if ($sourceserver.versionMajor -ge 9 -and $destserver.versionMajor -ge 9) { # These operations are only supported by SQL Server 2005 and above.
 			# Securables: Connect SQL, View any database, Administer Bulk Operations, etc.
 			$perms = $sourceserver.EnumServerPermissions($username)
@@ -1329,11 +1361,12 @@ Function Copy-SqlLogins {
 		}
 	}
 	
-	$migratedlogin.GetEnumerator() | Sort-Object value; $skippedlogin.GetEnumerator() | Sort-Object value
-	$migratedlogin.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Path "$csvfilename-logins.csv" -NoTypeInformation
-	$skippedlogin.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Append -Path "$csvfilename-logins.csv" -NoTypeInformation
-	Write-Host "Completed user migration" -ForegroundColor Green
-			
+	If ($Pscmdlet.ShouldProcess("local host","Showing summary information.")) {
+		$migratedlogin.GetEnumerator() | Sort-Object value; $skippedlogin.GetEnumerator() | Sort-Object value
+		$migratedlogin.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Path "$csvfilename-logins.csv" -NoTypeInformation
+		$skippedlogin.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Append -Path "$csvfilename-logins.csv" -NoTypeInformation
+		Write-Host "Completed user migration" -ForegroundColor Green
+	}	
 }
 
 # SP Configure Functions
