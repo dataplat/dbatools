@@ -69,8 +69,8 @@ Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins
 Author: 		Chrissy LeMaire
 Requires: 		PowerShell Version 3.0, SQL Server SMO
 DateUpdated: 	2015-May-11
-Version: 		1.5.4
-Limitations: 	Does not support Application Roles yet. When using -Force, logins that own jobs cannot be dropped at this time.
+Version: 		1.5.6
+Limitations: 	Does not support Application Roles yet.
 
 .LINK 
 https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-SQL-25a0cf05
@@ -210,8 +210,22 @@ Function Copy-SqlLogins {
 				Write-Host "Attempting to migrate $username" -ForegroundColor Yellow
 				Write-Host "Force was specified. Attempting to drop $username on $destination" -ForegroundColor Yellow
 				try {
-					$destserver.EnumProcesses() | Where { $_.Login -eq $username }  | ForEach-Object {$destserver.KillProcess($_.spid)}		
-					$destserver.Databases | Where { $_.Owner -eq $username } | ForEach-Object { $_.SetOwner('sa'); $_.Alter()  }	
+					$destserver.EnumProcesses() | Where { $_.Login -eq $username }  | ForEach-Object {$destserver.KillProcess($_.spid)}
+					
+					$owneddbs = $destserver.Databases | Where { $_.Owner -eq $username }	
+						foreach ($owneddb in $owneddbs) {
+							Write-Host "Changing database owner for $($owneddb.name) from $username to sa" -ForegroundColor Yellow
+							$owneddb.SetOwner('sa')
+							$owneddb.Alter()
+						}
+					
+					$ownedjobs = $destserver.JobServer.Jobs | Where { $_.OwnerLoginName -eq $username } 
+					foreach ($ownedjob in $ownedjobs) {
+						Write-Host "Changing job owner for $($ownedjob.name) from $username to sa"  -ForegroundColor Yellow
+						$ownedjob.set_OwnerLoginName('sa')
+						$ownedjob.Alter() 
+					}
+					
 					$login.drop()
 					Write-Host "Successfully dropped $username on $destination" -ForegroundColor Green
 				} catch {
@@ -327,9 +341,11 @@ Function Copy-SqlLogins {
 		}
 	}
 
-	$migratedlogin.GetEnumerator() | Sort-Object value; $skippedlogin.GetEnumerator() | Sort-Object value
-	$migratedlogin.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Path "$csvfilename-logins.csv" -NoTypeInformation
-	$skippedlogin.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Append -Path "$csvfilename-logins.csv" -NoTypeInformation
+	If ($Pscmdlet.ShouldProcess("local host","Showing summary information.")) {
+		$migratedlogin.GetEnumerator() | Sort-Object value; $skippedlogin.GetEnumerator() | Sort-Object value
+		$migratedlogin.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Path "$csvfilename-logins.csv" -NoTypeInformation
+		$skippedlogin.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Append -Path "$csvfilename-logins.csv" -NoTypeInformation
+	}
 	Write-Host "Completed login migration" -ForegroundColor Green
 			
 }
@@ -394,7 +410,19 @@ $username = $sourcelogin.name
 			}
 		}
 	}
-
+	
+	$ownedjobs = $sourceserver.JobServer.Jobs | Where { $_.OwnerLoginName -eq $username } 
+	foreach ($ownedjob in $ownedjobs) {
+		If ($Pscmdlet.ShouldProcess($destination,"Changing job owner to $username for $($ownedjob.name)")) {
+			try {
+				Write-Host "Changing job owner to $username for $($ownedjob.name)" -ForegroundColor Yellow
+				$destownedjob = $destserver.JobServer.Jobs | Where { $_.name -eq $ownedjobs.name } 
+				$destownedjob.set_OwnerLoginName($username)
+				$destownedjob.Alter() 
+			} catch { Write-Warning "Could not change job owner for $($ownedjob.name)" }
+		}
+	}
+		
 	if ($sourceserver.versionMajor -ge 9 -and $destserver.versionMajor -ge 9) { 
 		# These operations are only supported by SQL Server 2005 and above.
 		# Securables: Connect SQL, View any database, Administer Bulk Operations, etc.
@@ -469,44 +497,44 @@ $username = $sourcelogin.name
 					}
 				}
 			}
-		}
-		
-		# Remove user from role. Role removal not currently supported for Syncs.
-		# TODO: reassign if dbo, application roles
-		foreach ($destrole in $destdb.roles) {
-			$sourcerole = $sourcedb.roles[$destrole.name]
-			if ($sourcerole -ne $null) {
-				if ($sourcerole.EnumMembers() -notcontains $dbusername -and $destrole.EnumMembers() -contains $dbusername) {
-					if ($dbusername -ne "dbo") {
-						If ($Pscmdlet.ShouldProcess($destination,"Dropping $username from $($destrole.name) database role on $dbname")) {
-							try { 
-								$destrole.DropMember($dbusername)
-								$destdb.Alter()
-								Write-Host "Dropped username $dbusername (login: $dblogin) from ($destrole.name) on $destination" -ForegroundColor Yellow
+
+			# Remove user from role. Role removal not currently supported for Syncs.
+			# TODO: reassign if dbo, application roles
+			foreach ($destrole in $destdb.roles) {
+				$sourcerole = $sourcedb.roles[$destrole.name]
+				if ($sourcerole -ne $null) {
+					if ($sourcerole.EnumMembers() -notcontains $dbusername -and $destrole.EnumMembers() -contains $dbusername) {
+						if ($dbusername -ne "dbo") {
+							If ($Pscmdlet.ShouldProcess($destination,"Dropping $username from $($destrole.name) database role on $dbname")) {
+								try { 
+									$destrole.DropMember($dbusername)
+									$destdb.Alter()
+									Write-Host "Dropped username $dbusername (login: $dblogin) from ($destrole.name) on $destination" -ForegroundColor Yellow
+								}
+								catch { Write-Warning "Failed to remove $dbusername from $($destrole.name) database role on $dbname." }
 							}
-							catch { Write-Warning "Failed to remove $dbusername from $($destrole.name) database role on $dbname." }
 						}
 					}
 				}
 			}
-		}
 		
-		# Remove Connect, Alter Any Assembly, etc
-		$destperms = $destdb.EnumDatabasePermissions($username)
-		$perms = $sourcedb.EnumDatabasePermissions($username)
-		# for Syncs
-		foreach ($perm in $destperms) {
-			$permstate = $perm.permissionstate
-			$sourceperm = $perms | Where-Object { $_.PermissionType -eq $perm.Permissiontype -and $_.PermissionState -eq $permstate}
-			if ($sourceperm -eq $null) {
-				If ($Pscmdlet.ShouldProcess($destination,"Performing Revoke on $($perm.permissiontype) for $username on $dbname on $destination")) {
-					try { 
-						$permset = New-object Microsoft.SqlServer.Management.Smo.DatabasePermissionSet($perm.permissiontype)
-						if ($permstate -eq "GrantWithGrant") { $grantwithgrant = $true; $permstate = "grant" } else { $grantwithgrant = $false }
-						$destdb.PSObject.Methods["Revoke"].Invoke($permset, $username, $false, $grantwithgrant)
-						Write-Host "Successfully revoked $($perm.permissiontype) from $username on $dbname on $destination"  -ForegroundColor Yellow
-					} catch {
-						Write-Warning "Failed to revoke $($perm.permissiontype) from $username on $dbname on $destination" 
+			# Remove Connect, Alter Any Assembly, etc
+			$destperms = $destdb.EnumDatabasePermissions($username)
+			$perms = $sourcedb.EnumDatabasePermissions($username)
+			# for Syncs
+			foreach ($perm in $destperms) {
+				$permstate = $perm.permissionstate
+				$sourceperm = $perms | Where-Object { $_.PermissionType -eq $perm.Permissiontype -and $_.PermissionState -eq $permstate}
+				if ($sourceperm -eq $null) {
+					If ($Pscmdlet.ShouldProcess($destination,"Performing Revoke on $($perm.permissiontype) for $username on $dbname on $destination")) {
+						try { 
+							$permset = New-object Microsoft.SqlServer.Management.Smo.DatabasePermissionSet($perm.permissiontype)
+							if ($permstate -eq "GrantWithGrant") { $grantwithgrant = $true; $permstate = "grant" } else { $grantwithgrant = $false }
+							$destdb.PSObject.Methods["Revoke"].Invoke($permset, $username, $false, $grantwithgrant)
+							Write-Host "Successfully revoked $($perm.permissiontype) from $username on $dbname on $destination"  -ForegroundColor Yellow
+						} catch {
+							Write-Warning "Failed to revoke $($perm.permissiontype) from $username on $dbname on $destination" 
+						}
 					}
 				}
 			}
