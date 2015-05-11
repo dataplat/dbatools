@@ -48,8 +48,8 @@
  .PARAMETER NetworkShare
 	Specifies the network location for the backup files. The SQL Service service accounts must read/write permission to access this location.
 
- .PARAMETER AllUsers
-	Migrates all logins, along with their passwords, sids, databasae roles and server roles. Use ExcludeUsers to exclude specific users. Use -force to drop and recreate any existing users on destination. Otherwise, they will be skipped. The 'sa' user and users starting with ## will be skipped. Also updates database owners on destination.
+ .PARAMETER AllLogins
+	Migrates all logins, along with their passwords, sids, databasae roles and server roles. Use ExcludeLogins to exclude specific users. Use -force to drop and recreate any existing users on destination. Otherwise, they will be skipped. The 'sa' user and users starting with ## will be skipped. Also updates database owners on destination.
 
  .PARAMETER ExcludeDBs
 	Excludes specified databases when performing -AllUserDBs migrations. This list is auto-populated for tab completion.
@@ -93,8 +93,8 @@
  .NOTES 
     Author  : Chrissy LeMaire
     Requires: PowerShell Version 3.0, SQL Server SMO
-	DateUpdated: 2015-May-7
-	Version: 1.3.1
+	DateUpdated: 2015-May-11
+	Version: 1.3.2
 	Limitations: 	Doesn't cover what it doesn't cover (replication, linked servers, certificates, etc)
 					SQL Server 2000 login migrations have some limitations (server perms aren't migrated, etc)
 					SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
@@ -111,7 +111,7 @@ Description
 All databases, logins, job objects and sp_configure options will be migrated from sqlserver\instance to sqlcluster. Databases will be migrated using the detach/copy files/attach method. DBowner will be updated. User passwords, SIDs, database roles and server roles will be migrated along with the login.
 
  .EXAMPLE   
-.\Start-SqlServerMigration.ps1 -Source sqlserver\instance -Destination sqlcluster -AllUserDBs -ExcludeDBs Northwind, pubs -IncludeSupportDBs -force -AllUsers -ExcludeLogins nwuser, pubsuser, "corp\domain admins"  -MigrateJobServer -ExportSPconfigure -UseSqlLoginSource -UseSqlLoginDestination
+.\Start-SqlServerMigration.ps1 -Source sqlserver\instance -Destination sqlcluster -AllUserDBs -ExcludeDBs Northwind, pubs -IncludeSupportDBs -force -AllLogins -ExcludeLogins nwuser, pubsuser, "corp\domain admins"  -MigrateJobServer -ExportSPconfigure -UseSqlLoginSource -UseSqlLoginDestination
 
 Description
 
@@ -142,7 +142,7 @@ Param(
 	[string]$Destination,
 	
 	#Other Migrations
-	[switch]$AllUsers,
+	[switch]$AllLogins,
 	[switch]$MigrateJobServer,
 	[switch]$ExportSPconfigure,
 	[switch]$RunSPConfigure,
@@ -847,7 +847,7 @@ Function Copy-SqlDatabases  {
 		if ($IncludeDBs -and $IncludeDBs -notcontains $dbname) { continue }
 		if ($IncludeSupportDBs -eq $false -and $SupportDBs -contains $dbname) { continue }
 		
-		Write-Host "`n#################################### Database: $dbname ####################################" -ForegroundColor White
+		Write-Host "`n######### Database: $dbname #########" -ForegroundColor White
 		$dbstart = Get-Date
 		
 		if ($skippedb.ContainsKey($dbname) -and $IncludeDBs -eq $null) {
@@ -1941,7 +1941,7 @@ PROCESS {
 
 	if ($Everything -eq $true) { 
 		$AllUserDBs = $true; $IncludeSupportDBs = $true; 
-		$AllUsers = $true; $MigrateJobServer = $true; 
+		$AllLogins = $true; $MigrateJobServer = $true; 
 		$ExportSPConfigure = $true; $MigrateUserObjectsinSysDBs = $true
 	}
 	
@@ -2053,7 +2053,7 @@ PROCESS {
 		 -IncludeDBs $IncludeDBs -ExcludeDBs $ExcludeDBs -IncludeSupportDBs $IncludeSupportDBs -Force $force
 	}
 	
-	if ($AllUsers -or $IncludeLogins) {  Write-Host "Attempting User Migration" -ForegroundColor Green; 
+	if ($AllLogins -or $IncludeLogins) {  Write-Host "Attempting User Migration" -ForegroundColor Green; 
 		Copy-SqlLogins -sourceserver $sourceserver -destserver $destserver -includelogins $IncludeLogins `
 		-excludelogins $ExcludeLogins -Force $force
 	}		
