@@ -24,6 +24,7 @@ Disable jobs after migration (requires granular job object migration)
 Replace system dbs & run post name change scripts?
 Suggest Compression if not enabled?
 allow user to specify destination data and log files
+add escapes to names in dynamic params
 
 Auto detect related: 
 Certificates
@@ -38,6 +39,7 @@ Copy-SQLServerLogins.ps1
 Will not drop login in destination if permissions are set
 Detect schema ownership proper to user drop attempt
 Script Only
+add escapes to names in dynamic params
 
 Auto detect related: 
 Certificates
@@ -54,11 +56,13 @@ Copy-LinkedServers.ps1
 --------------
 Automatically setup ODBC entry
 Copy files?
+add escapes to names in dynamic params
 	
 Restore-HallengrenBackups.ps1
 --------------
 Finish replacing systems db (run post name change scripts)
 Support explicitly specified directory structures
+add escapes to names in dynamic params
 
 Copy-CentralManagementServer.ps1
 --------------
