@@ -1119,14 +1119,14 @@ Function Copy-SqlLogins {
 						
 						$owneddbs = $destserver.Databases | Where { $_.Owner -eq $username }	
 						foreach ($owneddb in $owneddbs) {
-							Write-Warning "Changing database owner for $($owneddb.name) from $username to sa"
+							Write-Host "Changing database owner for $($owneddb.name) from $username to sa" -ForegroundColor Yellow
 							$owneddb.SetOwner('sa')
 							$owneddb.Alter()
 						}
 					
 						$ownedjobs = $destserver.JobServer.Jobs | Where { $_.OwnerLoginName -eq $username } 
 						foreach ($ownedjob in $ownedjobs) {
-							Write-Warning "Changing job owner for $($ownedjob.name) from $username to sa"
+							Write-Host "Changing job owner for $($ownedjob.name) from $username to sa" -ForegroundColor Yellow
 							$ownedjob.set_OwnerLoginName('sa')
 							$ownedjob.Alter() 
 						}
@@ -1261,7 +1261,7 @@ Function Copy-SqlLogins {
 		foreach ($ownedjob in $ownedjobs) {
 			If ($Pscmdlet.ShouldProcess($destination,"Changing job owner to $username for $($ownedjob.name)")) {
 				try {
-					Write-Host "Changing job owner to $username for $($ownedjob.name)"
+					Write-Host "Changing job owner to $username for $($ownedjob.name)" -ForegroundColor Yellow
 					$ownedjob.set_OwnerLoginName($username)
 					$ownedjob.Alter() 
 				} catch { Write-Warning "Could not change job owner for $($ownedjob.name)" }
