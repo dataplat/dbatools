@@ -93,8 +93,8 @@
  .NOTES 
     Author  : Chrissy LeMaire
     Requires: PowerShell Version 3.0, SQL Server SMO
-	DateUpdated: 2015-May-11
-	Version: 1.3.3
+	DateUpdated: 2015-May-12
+	Version: 1.3.4
 	Limitations: 	Doesn't cover what it doesn't cover (replication, linked servers, certificates, etc)
 					SQL Server 2000 login migrations have some limitations (server perms aren't migrated, etc)
 					SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
@@ -1769,11 +1769,7 @@ Function Copy-UserObjectsinSysDBs  {
 			$sqlQueries = $transfer.scriptTransfer()
 			foreach ($query in $sqlQueries) {				
 				Add-Content $logfile "$query`r`nGO"
-				try {
-					if (($everything -and $force) -or !$everything) {
-						$destserver.Databases[$systemdb].ExecuteNonQuery($query)
-					}
-				} catch {}  # This usually occurs if there are existing objects in destination
+				try { $destserver.Databases[$systemdb].ExecuteNonQuery($query)} catch {}  # This usually occurs if there are existing objects in destination
 			}
 		} catch { Write-Host "Exception caught." -ForegroundColor Yellow}
 	}
