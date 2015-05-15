@@ -341,7 +341,11 @@ Function Restore-SQLDatabase {
 		Write-Progress -id 1 -activity "Restoring $dbname to $servername" -status "Complete" -Completed
 		
 		return $true
-	} catch {$x = $_.Exception; return $x }
+	} catch {
+		$x = $_.Exception
+		Write-Warning "Restore failed: $x"
+		return $false
+	}
 }
 
 
@@ -448,7 +452,7 @@ PROCESS {
 		$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem $full, "FILE"
 		$restore.Devices.Add($device)
 		try { $filelist = $restore.ReadFileList($server) }
-		catch { throw "File list could not be determined. This is likely due to connectivity issues with the SQL Server or the SQL Server service account does not have access to the file share. Script terminating." }
+		catch { throw "File list could not be determined. This is likely due to connectivity issues with the SQL Server, the database version is incorrect, or the SQL Server service account does not have access to the file share. Script terminating." }
 			
 		$filestructure = Get-SQLFileStructures $server $dbname $filelist $ReuseFolderstructure
 		
@@ -483,7 +487,7 @@ PROCESS {
 			$server.databases['master'].ExecuteNonQuery($sql)
 			$migrateddb.Add($dbname,"Successfully restored.")
 			Write-Host "Successfully restored $dbname." -ForegroundColor Green
-		} catch { Write-Warning "$dbname could not be recovered." }
+		} catch { Write-Warning "$dbname could not be restored." }
 		
 		try {
 			$server.databases.refresh()
