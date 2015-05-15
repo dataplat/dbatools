@@ -27,7 +27,7 @@
  .NOTES 
     Author  : Chrissy LeMaire
     Requires: PowerShell Version 3.0, SMO, sysadmin access on destination SQL Server.
-	Version: 0.2.1
+	Version: 0.2.2
 
  .LINK 
   	http://gallery.technet.microsoft.com/scriptcenter/Restore-SQL-Backups-cd958ec1
