@@ -25,7 +25,6 @@ Start-SQLMigration.ps1
 - Suggest Compression if not enabled?
 - allow user to specify destination data and log files
 - add escapes to names in dynamic params
-
 - Auto detect related certificates
 - Auto detect related SSIS Packages
 - Auto detect related Endpoints 
@@ -39,7 +38,6 @@ Copy-SQLServerLogins.ps1
 - Detect schema ownership proper to user drop attempt
 - Script Only
 - add escapes to names in dynamic params
-
 - Auto detect related certificates
 - Auto detect related SSIS Packages
 - Auto detect related Endpoints 
