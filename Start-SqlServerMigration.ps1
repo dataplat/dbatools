@@ -807,6 +807,7 @@ Function Copy-SqlDatabases  {
 	$sourcenetbios = Get-NetBIOSName $sourceserver
 	$destnetbios = Get-NetBIOSName $destserver
 	$remotesourcepath = Join-AdminUNC $sourcenetbios (Get-SQLDefaultPaths $sourceserver data)
+	If ((Test-Path $remotesourcepath) -ne $true) { 
 		Write-Host "Can't access remote SQL directories on $source." -ForegroundColor Red
 		Write-Host "You can manually try accessing $remotesourcepath to diagnose any issues." -ForegroundColor Red
 		Write-Host "Halting database migration." -ForegroundColor Red
@@ -814,6 +815,7 @@ Function Copy-SqlDatabases  {
 	}
 	
 	$remotedestpath = Join-AdminUNC $destnetbios (Get-SQLDefaultPaths $destserver data)
+	If ((Test-Path $remotedestpath) -ne $true) {
 		Write-Host "Can't access remote SQL directories on $destination." -ForegroundColor Red
 		Write-Host "You can manually try accessing $remotedestpath to diagnose any issues." -ForegroundColor Red
 		Write-Host "Halting database migration." -ForegroundColor Red
