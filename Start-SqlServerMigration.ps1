@@ -93,8 +93,8 @@
  .NOTES 
     Author  : Chrissy LeMaire
     Requires: PowerShell Version 3.0, SQL Server SMO
-	DateUpdated: 2015-May-12
-	Version: 1.3.4
+	DateUpdated: 2015-May-17
+	Version: 1.3.5
 	Limitations: 	Doesn't cover what it doesn't cover (replication, linked servers, certificates, etc)
 					SQL Server 2000 login migrations have some limitations (server perms aren't migrated, etc)
 					SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
@@ -675,7 +675,7 @@ Function Start-SQLBackupRestore  {
 	} else {
 		# add to failed because BACKUP was unsuccessful
 		Write-Host "Backup Failed. Does SQL Server account ($($sourceserver.ServiceAccount)) have access to $($NetworkShare)?"	-ForegroundColor Red
-		return "Backup Failed. Does SQL Server account ($($sourceserver.ServiceAccount)) have access to $NetworkShare?"	
+		return "Backup Failed. Does SQL Server account ($($sourceserver.ServiceAccount)) have access to $NetworkShare` and does the fileshare have space?"	
 	}
 }
 
@@ -806,14 +806,17 @@ Function Copy-SqlDatabases  {
 	
 	$sourcenetbios = Get-NetBIOSName $sourceserver
 	$destnetbios = Get-NetBIOSName $destserver
-	
-	If (!(Test-Path (Join-AdminUNC $sourcenetbios (Get-SQLDefaultPaths $sourceserver data)))) { 
-		Write-Host "Can't access remote SQL directories on $source. Halting database migration." -ForegroundColor Red
+	$remotesourcepath = Join-AdminUNC $sourcenetbios (Get-SQLDefaultPaths $sourceserver data)
+		Write-Host "Can't access remote SQL directories on $source." -ForegroundColor Red
+		Write-Host "You can manually try accessing $remotesourcepath to diagnose any issues." -ForegroundColor Red
+		Write-Host "Halting database migration." -ForegroundColor Red
 		return 
 	}
 	
-	If (!(Test-Path (Join-AdminUNC $destnetbios (Get-SQLDefaultPaths $destserver data)))) { 
-		Write-Host "Can't access remote SQL directories on $destination. Halting database migration." -ForegroundColor Red
+	$remotedestpath = Join-AdminUNC $destnetbios (Get-SQLDefaultPaths $destserver data)
+		Write-Host "Can't access remote SQL directories on $destination." -ForegroundColor Red
+		Write-Host "You can manually try accessing $remotedestpath to diagnose any issues." -ForegroundColor Red
+		Write-Host "Halting database migration." -ForegroundColor Red
 		return 
 	}
 	
@@ -847,6 +850,10 @@ Function Copy-SqlDatabases  {
 		if ($IncludeDBs -and $IncludeDBs -notcontains $dbname) { continue }
 		if ($IncludeSupportDBs -eq $false -and $SupportDBs -contains $dbname) { continue }
 		
+		if ($IncludeSupportDBs -eq $true -and $SupportDBs -notcontains $dbname) {
+			if ($AllUserDBs -eq $false -and $IncludeDBs.length -eq 0) { continue }
+		}
+		
 		Write-Host "`n######### Database: $dbname #########" -ForegroundColor White
 		$dbstart = Get-Date
 		
@@ -855,9 +862,9 @@ Function Copy-SqlDatabases  {
 			continue 
 		}
 
-		if (($database.status.toString()).StartsWith("Normal") -eq $false) { 
-			Write-Warning "Skipping $dbname. Status not Normal."
-			$skippedb.Add($dbname,"Skipped. Database status not Normal (Status: $($database.status)).")
+		if ($database.IsAccessible -eq $false) { 
+			Write-Warning "Skipping $dbname. Database is inaccessible."
+			$skippedb.Add($dbname,"Skipped. Database is inaccessible.")
 			continue
 		}
 		
@@ -2062,12 +2069,12 @@ PROCESS {
 	if ($IncludeLogins.Value -ne $null) {$IncludeLogins = @($IncludeLogins.Value)}  else {$IncludeLogins = $null}
 	if ($ExcludeLogins.Value -ne $null) {$ExcludeLogins = @($ExcludeLogins.Value)}  else {$ExcludeLogins = $null}
 	
-	if (($IncludeDBs -or $ExcludeDBs) -and (!$DetachAttach -and !$BackupRestore)) {
+	if (($IncludeDBs -or $ExcludeDBs -or $IncludeSupportDBs) -and (!$DetachAttach -and !$BackupRestore)) {
 		throw "You did not select a migration method. Please use -BackupRestore or -DetachAttach"
 	}
 	
-	if ((!$IncludeDBs -and !$AllUserDBs) -and ($DetachAttach -or $BackupRestore)) {
-		throw "You did not select any databases to migrate. Please use -AllUserDBs or -IncludeDBs"
+	if ((!$IncludeDBs -and !$AllUserDBs -and !$IncludeSupportDBs) -and ($DetachAttach -or $BackupRestore)) {
+		throw "You did not select any databases to migrate. Please use -AllUserDBs or -IncludeDBs or -IncludeSupportDBs"
 	}
 	
 	# SMO's filestreamlevel is sometimes null
