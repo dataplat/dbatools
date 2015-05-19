@@ -30,6 +30,9 @@ Start-SQLMigration.ps1
 - Auto detect related Endpoints 
 - Auto detect related Logins
 - Auto detect related SQL Agent Jobs (then find related...)
+- Support for NORECOVERY
+- Investigate limiting RAM
+- Remap logins via CSV - http://www.reddit.com/r/SQLServer/comments/35xqy2/im_doing_a_webinar_today_on_simplifying_sql/crac39e
 
 
 Copy-SQLServerLogins.ps1
