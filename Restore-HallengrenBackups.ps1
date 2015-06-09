@@ -214,7 +214,7 @@ Function Get-SQLDefaultPaths     {
             [string]$filetype
 		)
 		
-	switch ($filetype) { "data" { $filetype = "mdf" } "log" {  $filetype = "ldf" } }
+	switch ($filetype) { "mdf" { $filetype = "data" } "ldf" {  $filetype = "log" } }
 	
 	if ($filetype -eq "log") {
 		# First attempt
@@ -240,7 +240,7 @@ Function Get-SQLDefaultPaths     {
 	
 	if ($filepath.Length -eq 0) { throw "Cannot determine the required directory path." }
 	$filepath = $filepath.TrimEnd("\")
-	return Split-Path($filepath)
+	return $filepath
 }
 
 Function Test-SQLSA      {
