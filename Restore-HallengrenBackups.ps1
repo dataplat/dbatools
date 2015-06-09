@@ -264,7 +264,7 @@ Function Test-SQLSA      {
 		)
 		
 try {
-		return ($server.Logins[$server.ConnectionContext.trueLogin].IsMember("sysadmin"))
+		return ($server.ConnectionContext.FixedServerRoles -match "SysAdmin")
 	}
 	catch { return $false }
 }
