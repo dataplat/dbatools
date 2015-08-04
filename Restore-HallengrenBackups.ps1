@@ -27,7 +27,7 @@
  .NOTES 
     Author  : Chrissy LeMaire
     Requires: PowerShell Version 3.0, SMO, sysadmin access on destination SQL Server.
-	Version: 0.2.2
+	Version: 0.2.3
 
  .LINK 
   	http://gallery.technet.microsoft.com/scriptcenter/Restore-SQL-Backups-cd958ec1
@@ -306,7 +306,7 @@ Function Restore-SQLDatabase {
             [object]$filestructure
 
         )
-		
+	
 	$servername = $server.name
 	$server.ConnectionContext.StatementTimeout = 0
 	$restore = New-Object "Microsoft.SqlServer.Management.Smo.Restore"
@@ -337,7 +337,7 @@ Function Restore-SQLDatabase {
 		$restore.Devices.Add($device)
 		
 		Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-		$restore.sqlrestore($servername)
+		$restore.sqlrestore($server)
 		Write-Progress -id 1 -activity "Restoring $dbname to $servername" -status "Complete" -Completed
 		
 		return $true
@@ -481,19 +481,21 @@ PROCESS {
 		}
 		
 		if ($result -eq $false) { Write-Warning "$dbname could not be restored."; continue }
+
 		
 		$sql = "RESTORE DATABASE [$dbname] WITH RECOVERY"
+			
 		try { 
 			$server.databases['master'].ExecuteNonQuery($sql)
 			$migrateddb.Add($dbname,"Successfully restored.")
 			Write-Host "Successfully restored $dbname." -ForegroundColor Green
-		} catch { Write-Warning "$dbname could not be restored." }
+		} catch { Write-Warning "$dbname could not be set to recovered." }
 		
 		try {
 			$server.databases.refresh()
 			$server.databases[$dbname].SetOwner('sa')
 			$server.databases[$dbname].Alter()
-			Write-Host "Successfully change $dbname dbowner to sa" -ForegroundColor Green
+			Write-Host "Successfully changed $dbname dbowner to sa" -ForegroundColor Green
 		} catch { Write-Warning "Could not update dbowner to sa." }
 		
 		
