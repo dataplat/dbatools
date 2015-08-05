@@ -1,3 +1,4 @@
+#Requires -Version 3.0
 <# 
  .SYNOPSIS 
     Migrates SQL Server databases, logins, SQL Agent objects, and global configuration settings from one SQL Server to another.
@@ -93,8 +94,8 @@
  .NOTES 
     Author  : Chrissy LeMaire
     Requires: PowerShell Version 3.0, SQL Server SMO
-	DateUpdated: 2015-May-17
-	Version: 1.3.5
+	DateUpdated: 2015-Aug-5
+	Version: 1.3.6
 	Limitations: 	Doesn't cover what it doesn't cover (replication, linked servers, certificates, etc)
 					SQL Server 2000 login migrations have some limitations (server perms aren't migrated, etc)
 					SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
@@ -129,7 +130,6 @@ All job server objects will be migrated. A logfile named SQLSERVER-SQLCLUSTER-$d
 
 A file named SQLSERVER-SQLCluster-$date-sp_configure.sql with global server configurations will be written to the current directory. This file can then be executed manually on SQLCLUSTER.
 #> 
-#Requires -Version 3.0
 [CmdletBinding(DefaultParameterSetName="DBMigration", SupportsShouldProcess = $true)] 
 
 Param(
@@ -803,16 +803,19 @@ Function Copy-SqlDatabases  {
 	if ($fswarning) { Write-Warning "FILESTREAM enabled on $source but not $destination. Databases that use FILESTREAM will be skipped."  }
 
 	Write-Host "Checking access to remote directories..." -ForegroundColor Yellow
-	
+	Write-Host "Resolving NetBIOS name for $source..." -ForegroundColor Yellow
 	$sourcenetbios = Get-NetBIOSName $sourceserver
+	Write-Host "Resolving NetBIOS name for $destination..." -ForegroundColor Yellow
 	$destnetbios = Get-NetBIOSName $destserver
 	$remotesourcepath = Join-AdminUNC $sourcenetbios (Get-SQLDefaultPaths $sourceserver data)
+	
 	If ((Test-Path $remotesourcepath) -ne $true) { 
 		Write-Host "Can't access remote SQL directories on $source." -ForegroundColor Red
 		Write-Host "You can manually try accessing $remotesourcepath to diagnose any issues." -ForegroundColor Red
 		Write-Host "Halting database migration." -ForegroundColor Red
 		return 
 	}
+	
 	
 	$remotedestpath = Join-AdminUNC $destnetbios (Get-SQLDefaultPaths $destserver data)
 	If ((Test-Path $remotedestpath) -ne $true) {
@@ -1901,7 +1904,8 @@ Function Join-AdminUNC {
 	if ($filepath.StartsWith("\\")) { return $filepath }
 
 	if ($filepath.length -gt 0 -and $filepath -ne [System.DBNull]::Value) {
-		$newpath = Join-Path "\\$servername\" $filepath.replace(':\','$\')
+		$newpath = Join-Path "\\$servername\" $filepath.replace(':','$')
+		
 		return $newpath
 	}
 	else { return }
@@ -1976,8 +1980,6 @@ PROCESS {
 			- Are SQL Versions >= 2000?
 			- If specified, is $NetworkShare valid?
 	---------------------------------------------------------- #>
-	# One user reported that the #Requires line didn't prevent the script from running, so let's double check
-	if ((Get-Host).Version.Major -lt 3) { throw "PowerShell 3.0 and above required." }
 	
 	if ($source -eq $destination) { throw "Source and Destination SQL Servers are the same. Quitting." }
 
