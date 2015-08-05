@@ -1542,7 +1542,7 @@ Function Copy-Sqljobs      {
 		)
 		
 	if (!(Test-SQLAgent $sourceserver)) { Write-Host "SQL Agent not running on $source. Halting job import." -ForegroundColor Red; return }
-	if (!(Test-SQLAgent $sourceserver)) { Write-Host "SQL Agent not running on $destination. Halting job import." -ForegroundColor Red; return }
+	if (!(Test-SQLAgent $destserver)) { Write-Host "SQL Agent not running on $destination. Halting job import." -ForegroundColor Red; return }
 	$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
 	$csvfilename = "$($sourceserver.name.replace('\','$'))-to-$($destserver.name.replace('\','$'))-$timenow"
 	
