@@ -268,18 +268,19 @@ Function Copy-SqlServerCredentials {
 	}
 }
 
+
 Function Test-SQLSA      {
  <#
-	.SYNOPSIS
-	  Ensures sysadmin account access on SQL Server. $server is an SMO server object.
+            .SYNOPSIS
+              Ensures sysadmin account access on SQL Server. $server is an SMO server object.
 
-	.EXAMPLE
-	  if (!(Test-SQLSA $server)) { throw "Not a sysadmin on $source. Quitting." }  
+            .EXAMPLE
+              if (!(Test-SQLSA $server)) { throw "Not a sysadmin on $source. Quitting." }  
 
-	.OUTPUTS
-		$true if syadmin
-		$false if not
-	
+            .OUTPUTS
+                $true if syadmin
+                $false if not
+			
         #>
 		[CmdletBinding()]
         param(
@@ -289,7 +290,7 @@ Function Test-SQLSA      {
 		)
 		
 try {
-		return ($server.Logins[$server.ConnectionContext.trueLogin].IsMember("sysadmin"))
+		return ($server.ConnectionContext.FixedServerRoles -match "SysAdmin")
 	}
 	catch { return $false }
 }
