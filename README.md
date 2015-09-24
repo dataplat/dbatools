@@ -1,5 +1,5 @@
 # dbatools
-A collection of modules that help dba productivity
+A collection of modules for SQL Server DBAs.
 
 Installer
 --------------
