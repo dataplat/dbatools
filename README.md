@@ -7,7 +7,7 @@ Run the following command to automatically install the module.
 
 	Invoke-Expression (Invoke-WebRequest  http://git.io/vn1hQ).Content
 
-This will install the following functions
+This will install the following commands
 
 	Copy-SqlCentralManagementServer
 	Copy-SqlCredentials
