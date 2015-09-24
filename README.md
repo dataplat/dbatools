@@ -51,7 +51,7 @@ This function used to be a core part of Start-SqlServerMigration. While the docu
 
 	# SQL Authentication with Backup/Restore. 
 	# Note that both SQL Server service accounts must have access to the share.
-	Copy-SqlDatabases -Source sqlserver -Destination sqlcluster -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential -All -SetSourceReadOnly
+	Copy-SqlDatabases -Source sqlserver -Destination sqlcluster -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential -All -SetSourceReadOnly -BackupRestore -NetworkShare \\fileshare\sql\migration
     
 Copy-SqlLogins
 --------------
