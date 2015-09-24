@@ -24,6 +24,21 @@ Note: if spaces exist in the Linked Server name, you will have to type "" or '' 
 .PARAMETER Force
 By default, if a Linked Server exists on the source and destination, the Linked Server is not copied over. Specifying -force will drop and recreate the Linked Server on the Destination server.
 
+.PARAMETER SourceSqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+$scred = Get-Credential, this pass $scred object to the param. 
+
+Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+
+.PARAMETER DestinationSqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+$dcred = Get-Credential, this pass this $dcred to the param. 
+
+Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+
+
 .NOTES 
 Author  : 	Chrissy LeMaire
 Requires: 	PowerShell Version 3.0, SQL Server SMO, 

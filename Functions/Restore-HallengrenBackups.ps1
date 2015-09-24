@@ -1,39 +1,46 @@
 Function Restore-HallengrenBackups { 
 <# 
- .SYNOPSIS 
-    Restores SQL Server databases from the backup directory structure created by Ola Hallengren's database maintenance scripts.
+.SYNOPSIS 
+Restores SQL Server databases from the backup directory structure created by Ola Hallengren's database maintenance scripts.
 
- .DESCRIPTION 
-    Many SQL Server database administrators use Ola Hallengren's SQL Server Maintenance Solution which can be found at http://ola.hallengren.com
-	Hallengren uses a predictable backup structure which made it relatively easy to create a script that can restore an entire SQL Server database instance, down to the master database (next version), to a new server. This script is intended to be used in the event that the originating SQL Server becomes unavailable, thus rendering my other SQL restore script (http://goo.gl/QmfQ6s) ineffective.
-	
- .PARAMETER ServerName
-	Required. The SQL Server to which you will be restoring the databases.
+.DESCRIPTION 
+Many SQL Server database administrators use Ola Hallengren's SQL Server Maintenance Solution which can be found at http://ola.hallengren.com
+Hallengren uses a predictable backup structure which made it relatively easy to create a script that can restore an entire SQL Server database instance, down to the master database (next version), to a new server. This script is intended to be used in the event that the originating SQL Server becomes unavailable, thus rendering my other SQL restore script (http://goo.gl/QmfQ6s) ineffective.
 
- .PARAMETER Path
-	Required. The directory that contains the database backups (ex. \\fileserver\share\sqlbackups\SQLSERVERA)
+.PARAMETER ServerName
+Required. The SQL Server to which you will be restoring the databases.
+
+.PARAMETER Path
+Required. The directory that contains the database backups (ex. \\fileserver\share\sqlbackups\SQLSERVERA)
 
 .PARAMETER ReuseFolderStructure
-	Restore-HallengrenBackups will restore to the default user data and log directories, unless this switch is used. Useful if you're restoring from a server that had a complex db file structure.
+Restore-HallengrenBackups will restore to the default user data and log directories, unless this switch is used. Useful if you're restoring from a server that had a complex db file structure.
 
 .PARAMETER IncludeDbs
-  Migrates ONLY specified databases. This list is auto-populated for tab completion.
-  
+Migrates ONLY specified databases. This list is auto-populated for tab completion.
+
 .PARAMETER ExcludeDbs
-	Excludes specified databases from migration. This list is auto-populated for tab completion.
- 
+Excludes specified databases from migration. This list is auto-populated for tab completion.
+
 .PARAMETER Force
-	Will overwrite any existing databases on $SqlServer. 
-	
- .NOTES 
-    Author  : Chrissy LeMaire
-    Requires: PowerShell Version 3.0, SMO, sysadmin access on destination SQL Server.
-	Version: 2.0
+Will overwrite any existing databases on $SqlServer. 
 
- .LINK 
-  	http://gallery.technet.microsoft.com/scriptcenter/Restore-Sql-Backups-cd958ec1
+.PARAMETER SqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
- .EXAMPLE   
+$cred = Get-Credential, this pass this $cred to the param. 
+
+Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+
+.NOTES 
+Author  : Chrissy LeMaire
+Requires: PowerShell Version 3.0, SMO, sysadmin access on destination SQL Server.
+Version: 2.0
+
+.LINK 
+http://gallery.technet.microsoft.com/scriptcenter/Restore-Sql-Backups-cd958ec1
+
+.EXAMPLE   
 Restore-HallengrenBackups -ServerName sqlcluster -Path \\fileserver\share\sqlbackups\SQLSERVER2014A
 
 Description

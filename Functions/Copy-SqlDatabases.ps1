@@ -1,93 +1,95 @@
 Function Copy-SqlDatabases {
 <# 
- .SYNOPSIS 
-    Migrates Sql Server databases, logins, Sql Agent objects, and global configuration settings from one Sql Server to another.
-	
- .DESCRIPTION 
-    This script provides the ability to migrate databases using detach/copy/attach or backup/restore. Sql Server logins, including passwords, SID and database/server roles can also be migrated. In addition, job server objects can be migrated and server configuration settings can be exported or migrated. This script works with named instances, clusters and Sql Express.
-	
-	By default, databases will be migrated to the destination Sql Server's default data and log directories. You can override this by specifying -ReuseFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.
-	
-	THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
-	
- .PARAMETER Source
-	Source Sql Server. You must have sysadmin access and server version must be > Sql Server 7.
- 
- .PARAMETER Destination
-	Destination Sql Server. You must have sysadmin access and server version must be > Sql Server 7.
- 
- .PARAMETER SourceSqlCredential
-	Uses Sql Login credentials to connect to Source server. Note this is a switch. You will be prompted to enter your Sql login credentials. 
-	
-	Windows Authentication will be used if SourceSqlCredential is not specified.
-	
-	NOTE: Auto-populating parameters (ExcludeDbs, ExcludeLogins, IncludeDbs, IncludeLogins) are populated by the account running the PowerShell script.
+.SYNOPSIS 
+Migrates Sql Server databases, logins, Sql Agent objects, and global configuration settings from one Sql Server to another.
 
- .PARAMETER DestinationSqlCredential
-	Uses Sql Login credentials to connect to Destination server. Note this is a switch. You will be prompted to enter your Sql login credentials. 
-	
-	Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
-	
- .PARAMETER AllUserDbs
-	Migrates user databases. Does not migrate system or support databases. A logfile named $SOURCE-$DESTINATION-$date-logins.csv will be written to the current directory. Requires -BackupRestore or -DetachAttach. Talk about database structure.
- 
- .PARAMETER IncludeSupportDbs
-	Migration of ReportServer, ReportServerTempDb, SSIDb, and distribution databases if they exist. A logfile named $SOURCE-$DESTINATION-$date-Sqls.csv will be written to the current directory. Requires -BackupRestore or -DetachAttach.
+.DESCRIPTION 
+This script provides the ability to migrate databases using detach/copy/attach or backup/restore. Sql Server logins, including passwords, SID and database/server roles can also be migrated. In addition, job server objects can be migrated and server configuration settings can be exported or migrated. This script works with named instances, clusters and Sql Express.
 
- .PARAMETER BackupRestore
-	Use the a Copy-Only Backup and Restore Method. This parameter requires that you specify -NetworkShare in a valid UNC format (\\server\share)
-	
- .PARAMETER DetachAttach
-	Uses the detach/copy/attach method to perform database migrations. No files are deleted on the source. If the destination attachment fails, the source database will be reattached. File copies are performed over administrative shares (\\server\x$\mssql) using BITS. If a database is being mirrored, the mirror will be broken prior to migration. 
- 
- .PARAMETER Reattach
-	Reattaches all source databases after DetachAttach migration.
-	
- .PARAMETER ReuseFolderStructure
-	By default, databases will be migrated to the destination Sql Server's default data and log directories. You can override this by specifying -ReuseFolderStructure. The same structure will be kept exactly, so consider this if you're migrating between different versions and use part of Microsoft's default Sql structure (MSSql12.INSTANCE, etc)
-	
- .PARAMETER NetworkShare
-	Specifies the network location for the backup files. The Sql Service service accounts must read/write permission to access this location.
+By default, databases will be migrated to the destination Sql Server's default data and log directories. You can override this by specifying -ReuseFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.
 
- .PARAMETER ExcludeDbs
-	Excludes specified databases when performing -AllUserDbs migrations. This list is auto-populated for tab completion.
+THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
- .PARAMETER IncludeDbs
-  Migrates ONLY specified databases. This list is auto-populated for tab completion.
-  
- .PARAMETER SysDbUserObjects
-	This switch migrates user-created objects in the systems databases to the new server. This is useful for DbA's who create environment specific stored procedures, tables, etc in the master, model or msdb databases.
+.PARAMETER Source
+Source Sql Server. You must have sysadmin access and server version must be > Sql Server 7.
 
- .PARAMETER SetSourceReadOnly
-	Sets all migrated databases to ReadOnly prior to detach/attach & backup/restore. If -Reattach is used, db is set to read-only after reattach.
- 
- 	
+.PARAMETER Destination
+Destination Sql Server. You must have sysadmin access and server version must be > Sql Server 7.
+
+.PARAMETER SourceSqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+$scred = Get-Credential, this pass $scred object to the param. 
+
+Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+
+.PARAMETER DestinationSqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+$dcred = Get-Credential, this pass this $dcred to the param. 
+
+Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+
+.PARAMETER AllUserDbs
+Migrates user databases. Does not migrate system or support databases. A logfile named $SOURCE-$DESTINATION-$date-logins.csv will be written to the current directory. Requires -BackupRestore or -DetachAttach. Talk about database structure.
+
+.PARAMETER IncludeSupportDbs
+Migration of ReportServer, ReportServerTempDb, SSIDb, and distribution databases if they exist. A logfile named $SOURCE-$DESTINATION-$date-Sqls.csv will be written to the current directory. Requires -BackupRestore or -DetachAttach.
+
+.PARAMETER BackupRestore
+Use the a Copy-Only Backup and Restore Method. This parameter requires that you specify -NetworkShare in a valid UNC format (\\server\share)
+
+.PARAMETER DetachAttach
+Uses the detach/copy/attach method to perform database migrations. No files are deleted on the source. If the destination attachment fails, the source database will be reattached. File copies are performed over administrative shares (\\server\x$\mssql) using BITS. If a database is being mirrored, the mirror will be broken prior to migration. 
+
+.PARAMETER Reattach
+Reattaches all source databases after DetachAttach migration.
+
+.PARAMETER ReuseFolderStructure
+By default, databases will be migrated to the destination Sql Server's default data and log directories. You can override this by specifying -ReuseFolderStructure. The same structure will be kept exactly, so consider this if you're migrating between different versions and use part of Microsoft's default Sql structure (MSSql12.INSTANCE, etc)
+
+.PARAMETER NetworkShare
+Specifies the network location for the backup files. The Sql Service service accounts must read/write permission to access this location.
+
+.PARAMETER ExcludeDbs
+Excludes specified databases when performing -AllUserDbs migrations. This list is auto-populated for tab completion.
+
+.PARAMETER IncludeDbs
+Migrates ONLY specified databases. This list is auto-populated for tab completion.
+
+.PARAMETER SysDbUserObjects
+This switch migrates user-created objects in the systems databases to the new server. This is useful for DbA's who create environment specific stored procedures, tables, etc in the master, model or msdb databases.
+
+.PARAMETER SetSourceReadOnly
+Sets all migrated databases to ReadOnly prior to detach/attach & backup/restore. If -Reattach is used, db is set to read-only after reattach.
+
+
 .PARAMETER Force
-	If migrating databases, deletes existing databases with matching names. 
-	If using -DetachAttach, -Force will break mirrors and drop dbs from Availability Groups.
-	MigrateJobServer not supported.
-	
- .NOTES 
-    Author  : Chrissy LeMaire
-    Requires: PowerShell Version 3.0, Sql Server SMO
-	DateUpdated: 2015-Aug-5
-	Version: 2.0
-	Limitations: 	Doesn't cover what it doesn't cover (replication, linked servers, certificates, etc)
-					Sql Server 2000 login migrations have some limitations (server perms aren't migrated, etc)
-					Sql Server 2000 databases cannot be directly migrated to Sql Server 2012 and above.
-					Logins within Sql Server 2012 and above logins cannot be migrated to Sql Server 2008 R2 and below.				
+If migrating databases, deletes existing databases with matching names. 
+If using -DetachAttach, -Force will break mirrors and drop dbs from Availability Groups.
+MigrateJobServer not supported.
 
- .LINK 
-  	https://gallery.technet.microsoft.com/scriptcenter/Use-PowerShell-to-Migrate-86c841df/
+.NOTES 
+Author  : Chrissy LeMaire
+Requires: PowerShell Version 3.0, Sql Server SMO
+DateUpdated: 2015-Aug-5
+Version: 2.0
+Limitations: 	Doesn't cover what it doesn't cover (replication, linked servers, certificates, etc)
+		Sql Server 2000 login migrations have some limitations (server perms aren't migrated, etc)
+		Sql Server 2000 databases cannot be directly migrated to Sql Server 2012 and above.
+		Logins within Sql Server 2012 and above logins cannot be migrated to Sql Server 2008 R2 and below.				
 
- .EXAMPLE   
+.LINK 
+https://gallery.technet.microsoft.com/scriptcenter/Use-PowerShell-to-Migrate-86c841df/
+
+.EXAMPLE   
 Copy-SqlDatabases -Source sqlserver\instance -Destination sqlcluster -DetachAttach -Everything
 
 Description
 
 All databases, logins, job objects and sp_configure options will be migrated from sqlserver\instance to sqlcluster. Databases will be migrated using the detach/copy files/attach method. Dbowner will be updated. User passwords, SIDs, database roles and server roles will be migrated along with the login.
 
- .EXAMPLE   
+.EXAMPLE   
 Copy-SqlDatabases -Source sqlserver\instance -Destination sqlcluster -AllUserDbs -ExcludeDbs Northwind, pubs -IncludeSupportDbs -force -AllLogins -ExcludeLogins nwuser, pubsuser, "corp\domain admins"  -MigrateJobServer -ExportSPconfigure -SourceSqlCredential -DestinationSqlCredential
 
 Description

@@ -32,7 +32,13 @@ Function Watch-SqlDbLogins {
 	The Watch table. By default, this is DbLogins.
 
 .PARAMETER SqlCredential
-	Allows you to login to servers using SQL Credentials as opposed to Windows Auth/Integrated/Trusted.
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+$cred = Get-Credential, this pass this $cred to the param. 
+
+Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+
+
 	
  .NOTES 
     Author  : Chrissy LeMaire
@@ -194,27 +200,27 @@ END {
 <#
 ---- SQL database and table ----
 
-CREATE DATABASE DatabaseLogins
-GO
-USE DatabaseLogins
-GO
-CREATE TABLE [dbo].[DbLogins]( 
-[SQLServer] varchar(128),
-[LoginName] varchar(128),
-[Host] varchar(128),
-[DbName] varchar(128),
-[Program] varchar(256),
-[Timestamp] datetime default getdate(),
-)
+    CREATE DATABASE DatabaseLogins
+    GO
+    USE DatabaseLogins
+    GO
+        CREATE TABLE [dbo].[DbLogins]( 
+        [SQLServer] varchar(128),
+        [LoginName] varchar(128),
+        [Host] varchar(128),
+        [DbName] varchar(128),
+        [Program] varchar(256),
+        [Timestamp] datetime default getdate(),
+    )
 -- Create Unique Clustered Index with IGNORE_DUPE_KEY=ON to avoid duplicates
-CREATE UNIQUE CLUSTERED INDEX [ClusteredIndex-Combo] ON [dbo].[DbLogins]
-(
-	 [SQLServer] ASC,
-     [LoginName] ASC,
-     [Host] ASC,
-     [DbName] ASC,
-	 [Program] ASC
-) WITH (IGNORE_DUP_KEY = ON)
-GO
+    CREATE UNIQUE CLUSTERED INDEX [ClusteredIndex-Combo] ON [dbo].[DbLogins]
+        (
+        [SQLServer] ASC,
+        [LoginName] ASC,
+        [Host] ASC,
+        [DbName] ASC,
+        [Program] ASC
+    ) WITH (IGNORE_DUP_KEY = ON)
+    GO
 #>
 }	

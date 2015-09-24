@@ -1,46 +1,57 @@
 Function Copy-SqlCentralManagementServer {
 <# 
- .SYNOPSIS 
-    Migrates SQL Server Central Management groups and server instances from one SQL Server to another.
-	
- .DESCRIPTION 
-   Copy-SqlCentralManagementServer copies all groups, subgroups, and server instances from one SQL Server to another. 
+.SYNOPSIS 
+Migrates SQL Server Central Management groups and server instances from one SQL Server to another.
 
- .PARAMETER Source
-	The SQL Server Central Management Server you are migrating from.
-	
- .PARAMETER Destination
-	The SQL Server Central Management Server you are migrating to.
-	
- .PARAMETER CMSGroups
-	This is an auto-populated array that contains your Central Management Server top-level groups on $Source. You can specify one, many or none.
-	If -CMSGroups is not specified, theCopy-SqlCentralManagementServer script will migrate all groups in your Central Management Server. Note this 
-	variable is only populated by top level groups.
-	
- .PARAMETER SwitchServerName
-	Central Management Server does not allow you to add a shared registered server with the same name as the Configuration Server. If you wish to 
-	change all migrating instance names of $Destination to $Source, use this switch.
+.DESCRIPTION 
+Copy-SqlCentralManagementServer copies all groups, subgroups, and server instances from one SQL Server to another. 
 
- .NOTES 
-    Author  : Chrissy LeMaire
-    Requires: 	PowerShell Version 3.0, SQL Server SMO
-	Version: 2.0
-	DateUpdated: 2015-Sept-22
+.PARAMETER Source
+The SQL Server Central Management Server you are migrating from.
 
- .LINK 
-  	https://gallery.technet.microsoft.com/scriptcenter/Migrate-Central-Management-e062943f
+.PARAMETER Destination
+The SQL Server Central Management Server you are migrating to.
 
- .EXAMPLE   
+.PARAMETER CMSGroups
+This is an auto-populated array that contains your Central Management Server top-level groups on $Source. You can specify one, many or none.
+If -CMSGroups is not specified, theCopy-SqlCentralManagementServer script will migrate all groups in your Central Management Server. Note this 
+variable is only populated by top level groups.
+
+.PARAMETER SwitchServerName
+Central Management Server does not allow you to add a shared registered server with the same name as the Configuration Server. If you wish to 
+change all migrating instance names of $Destination to $Source, use this switch.
+
+.PARAMETER SourceSqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+$scred = Get-Credential, this pass $scred object to the param. 
+
+.PARAMETER DestinationSqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+$dcred = Get-Credential, this pass this $dcred to the param. 
+
+.NOTES 
+Author  : Chrissy LeMaire
+Requires: 	PowerShell Version 3.0, SQL Server SMO
+Version: 2.0
+DateUpdated: 2015-Sept-22
+
+
+.LINK 
+https://gallery.technet.microsoft.com/scriptcenter/Migrate-Central-Management-e062943f
+
+.EXAMPLE   
 Copy-SqlCentralManagementServer -Source sqlserver -Destination sqlcluster
 
 In the above example, all groups, subgroups, and server instances are copied from sqlserver's Central Management Server to sqlcluster's Central Management Server.
 
- .EXAMPLE   
+.EXAMPLE   
 Copy-SqlCentralManagementServer -Source sqlserver -Destination sqlcluster -CMSGroups Group1,Group3
 
 In the above example, top level Group1 and Group3, along with its subgroups and server instances are copied from sqlserver to sqlcluster.
 
- .EXAMPLE   
+.EXAMPLE   
 Copy-SqlCentralManagementServer -Source sqlserver -Destination sqlcluster -CMSGroups Group1,Group3 -SwitchServerName -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential
 
 In the above example, top level Group1 and Group3, along with its subgroups and server instances are copied from sqlserver to sqlcluster. When adding sql instances to sqlcluster, if

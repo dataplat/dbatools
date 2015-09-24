@@ -1,45 +1,52 @@
 Function Get-SqlServerKeys {
-	<# 
-	 .SYNOPSIS 
-		Gets SQL Server Product Keys from local and remote SQL Servers. Works with SQL Server 2005-2014
+<# 
+.SYNOPSIS 
+Gets SQL Server Product Keys from local and remote SQL Servers. Works with SQL Server 2005-2014
 
-	 .DESCRIPTION 
-		Using a string of servers, a text file, or Central Management Server to provide a list of servers, this script will go to each server and get the product key for all installed instances. Clustered instances are supported as well. Requires regular user access to the SQL instances, SMO installed locally, Remote Registry enabled and acessible by the account running the script.
+.DESCRIPTION 
+Using a string of servers, a text file, or Central Management Server to provide a list of servers, this script will go to each server and get the product key for all installed instances. Clustered instances are supported as well. Requires regular user access to the SQL instances, SMO installed locally, Remote Registry enabled and acessible by the account running the script.
 
-		Uses key decoder by Jakob Bindslet (http://goo.gl/1jiwcB)
-		
-	 .PARAMETER SqlServers
-		A comma separated list of servers. This can be the NetBIOS name, IP, or SQL instance name
-		
-	 .PARAMETER SqlCms
-		Compiles list of servers to inventory using all servers stored within a Central Management Server. Requires having SQL Management Studio installed.
-		
-	 .PARAMETER ServersFromFile
-		Uses a text file as input. The file must be formatted as such:
-		sqlserver1
-		sqlserver2
+Uses key decoder by Jakob Bindslet (http://goo.gl/1jiwcB)
 
-	 .NOTES 
-		Author  : Chrissy LeMaire
-		Requires: 	PowerShell Version 3.0, SQL Server SMO,  Remote Registry
-		Version: 2.0
-		DateUpdated: 2015-Sept-22
+.PARAMETER SqlServers
+A comma separated list of servers. This can be the NetBIOS name, IP, or SQL instance name
 
-	 .LINK 
-		https://gallery.technet.microsoft.com/scriptcenter/Get-Sql-Server-Product-4b5bf4f8
+.PARAMETER SqlCms
+Compiles list of servers to inventory using all servers stored within a Central Management Server. Requires having SQL Management Studio installed.
 
-	 .EXAMPLE   
-	 Get-SqlServerKeys winxp, sqlservera, sqlserver2014a, win2k8
-		Gets SQL Server versions, editions and product keys for all instances within each server or workstation.
+.PARAMETER ServersFromFile
+Uses a text file as input. The file must be formatted as such:
+sqlserver1
+sqlserver2
 
-	 .EXAMPLE   
-	 Get-SqlServerKeys -SqlCms sqlserver01
-			Gets SQL Server versions, editions and product keys for all instances within sqlserver01's Central Management Server
+.PARAMETER SqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-	 .EXAMPLE   
-	 Get-SqlServerKeys -ServersFromFile C:\Scripts\servers.txt
-	  Gets SQL Server versions, editions and product keys for all instances listed within C:\Scripts\servers.txt
-	#> 
+$cred = Get-Credential, this pass this $cred to the param. 
+
+Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+
+.NOTES 
+Author  : Chrissy LeMaire
+Requires: 	PowerShell Version 3.0, SQL Server SMO,  Remote Registry
+Version: 2.0
+DateUpdated: 2015-Sept-22
+
+.LINK 
+https://gallery.technet.microsoft.com/scriptcenter/Get-Sql-Server-Product-4b5bf4f8
+
+.EXAMPLE   
+Get-SqlServerKeys winxp, sqlservera, sqlserver2014a, win2k8
+Gets SQL Server versions, editions and product keys for all instances within each server or workstation.
+
+.EXAMPLE   
+Get-SqlServerKeys -SqlCms sqlserver01
+	Gets SQL Server versions, editions and product keys for all instances within sqlserver01's Central Management Server
+
+.EXAMPLE   
+Get-SqlServerKeys -ServersFromFile C:\Scripts\servers.txt
+Gets SQL Server versions, editions and product keys for all instances listed within C:\Scripts\servers.txt
+#> 
 	#Requires -Version 3.0
 	[CmdletBinding(DefaultParameterSetName="Default")]
 

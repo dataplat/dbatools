@@ -12,6 +12,14 @@ An online SQL Server is required to parse the information within the detached da
 .PARAMETER MDF 
 The path to the MDF file. This path must be readable by the SQL Server service account. Ideally, the MDF will be located on the SQL Server itself, or on a network share to which the SQL Server service account has access. 
 
+.PARAMETER SqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+$cred = Get-Credential, this pass this $cred to the param. 
+
+Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+
+
 .NOTES  
 Author  : Chrissy LeMaire 
 Requires:     PowerShell Version 3.0, SQL Server SMO

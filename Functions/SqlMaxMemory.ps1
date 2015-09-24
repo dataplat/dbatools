@@ -1,49 +1,56 @@
 Function Get-SqlMaxMemory {
 
-	<# 
-	.SYNOPSIS 
-	Displays information relating to SQL Server Max Memory configuration settings.  Works on SQL Server 2000-2014.
+<# 
+.SYNOPSIS 
+Displays information relating to SQL Server Max Memory configuration settings.  Works on SQL Server 2000-2014.
 
-	.DESCRIPTION 
-	Inspired by Jonathan Kehayias's post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this script displays a SQL Server's: 
-	total memory, currently configured SQL max memory, and the calculated recommendation.
+.DESCRIPTION 
+Inspired by Jonathan Kehayias's post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this script displays a SQL Server's: 
+total memory, currently configured SQL max memory, and the calculated recommendation.
 
-	Jonathan notes that the formula used provides a *general recommendation* that doesn't account for everything that may be going on in your specific environment. 
-	
-	.PARAMETER SqlServers
-	Allows you to specify a comma separated list of servers to query.
-	
-	.PARAMETER ServersFromFile
-	Allows you to specify a list that's been populated by a list of servers to query. The format is as follows
-	server1
-	server2
-	server3
+Jonathan notes that the formula used provides a *general recommendation* that doesn't account for everything that may be going on in your specific environment. 
 
-	.PARAMETER SqlCms
-	Reports on a list of servers populated by the specified SQL Server Central Management Server.
+.PARAMETER SqlServers
+Allows you to specify a comma separated list of servers to query.
 
-	.PARAMETER SqlCmsGroups
-	This is a parameter that appears when SqlCms has been specified. It is populated by Server Groups within the given Central Management Server.
-	
-	.NOTES 
-	Author  : Chrissy LeMaire
-	Requires: 	PowerShell Version 3.0, SQL Server SMO, sysadmin access on SQL Servers 
-	DateUpdated: 2015-Sept-22
+.PARAMETER ServersFromFile
+Allows you to specify a list that's been populated by a list of servers to query. The format is as follows
+server1
+server2
+server3
 
-	.LINK 
-	https://gallery.technet.microsoft.com/scriptcenter/Get-Set-SQL-Max-Memory-19147057
-	
-	.EXAMPLE   
-	Get-SqlMaxMemory -SqlCms sqlcluster
-	
-	Get Memory Settings for all servers within the SQL Server Central Management Server "sqlcluster"
+.PARAMETER SqlCms
+Reports on a list of servers populated by the specified SQL Server Central Management Server.
 
-	.EXAMPLE 
-	Get-SqlMaxMemory -SqlCms sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-SqlMaxMemory -UseRecommended
-	
-	Find all servers in CMS that have Max SQL memory set to higher than the total memory of the server (think 2147483647)
-	
-	#>
+.PARAMETER SqlCmsGroups
+This is a parameter that appears when SqlCms has been specified. It is populated by Server Groups within the given Central Management Server.
+
+.PARAMETER SqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+$cred = Get-Credential, this pass this $cred to the param. 
+
+Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+
+.NOTES 
+Author  : Chrissy LeMaire
+Requires: 	PowerShell Version 3.0, SQL Server SMO, sysadmin access on SQL Servers 
+DateUpdated: 2015-Sept-22
+
+.LINK 
+https://gallery.technet.microsoft.com/scriptcenter/Get-Set-SQL-Max-Memory-19147057
+
+.EXAMPLE   
+Get-SqlMaxMemory -SqlCms sqlcluster
+
+Get Memory Settings for all servers within the SQL Server Central Management Server "sqlcluster"
+
+.EXAMPLE 
+Get-SqlMaxMemory -SqlCms sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-SqlMaxMemory -UseRecommended
+
+Find all servers in CMS that have Max SQL memory set to higher than the total memory of the server (think 2147483647)
+
+#>
 	
 	[CmdletBinding()]
 

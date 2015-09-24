@@ -19,16 +19,18 @@ Source SQL Server. You must have sysadmin access and server version must be > SQ
 Destination SQL Server. You must have sysadmin access and server version must be > SQL Server 7.
 
 .PARAMETER SourceSqlCredential
-Uses SQL Login credentials to connect to Source server. Note this is a switch. You will be prompted to enter your SQL login credentials. 
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-Windows Authentication will be used if SourceSqlCredential is not specified.
+$scred = Get-Credential, this pass $scred object to the param. 
 
-NOTE: Auto-populating parameters (ExcludeLogins, IncludeLogins) are populated by the account running the PowerShell script.
+Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
 .PARAMETER DestinationSqlCredential
-Uses SQL Login credentials to connect to Destination server. Note this is a switch. You will be prompted to enter your SQL login credentials. 
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+$dcred = Get-Credential, this pass this $dcred to the param. 
+
+Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
 .PARAMETER ExcludeLogins
 Excludes specified logins. This list is auto-populated for tab completion.
