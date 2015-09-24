@@ -66,7 +66,7 @@ FormatsToProcess = @()
 NestedModules = @()
 
 # Functions to export from this module
-FunctionsToExport = @('Update-dbatools','Copy-SqlDatabaseMail','Copy-SqlDatabases','Copy-SqlJobServer','Import-SqlSpConfigure','Export-SqlSpConfigure','Watch-SqlDbLogins', 'Reset-SqlSaPassword', 'Get-SqlServerKeys', 'Set-SqlMaxMemory', 'Get-SqlMaxMemory', 'Get-DetachedDBInfo', 'Restore-HallengrenBackups', 'Copy-SqlLogins', 'Copy-SqlLinkedServers', 'Copy-SqlCredentials', 'Copy-SqlCentralManagementServer', 'Start-SqlMigration')
+FunctionsToExport = @('Import-CsvToSql','Update-dbatools','Copy-SqlDatabaseMail','Copy-SqlDatabases','Copy-SqlJobServer','Import-SqlSpConfigure','Export-SqlSpConfigure','Watch-SqlDbLogins', 'Reset-SqlSaPassword', 'Get-SqlServerKeys', 'Set-SqlMaxMemory', 'Get-SqlMaxMemory', 'Get-DetachedDBInfo', 'Restore-HallengrenBackups', 'Copy-SqlLogins', 'Copy-SqlLinkedServers', 'Copy-SqlCredentials', 'Copy-SqlCentralManagementServer', 'Start-SqlMigration')
 
 # Cmdlets to export from this module
 CmdletsToExport = '*'

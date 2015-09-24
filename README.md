@@ -20,6 +20,7 @@ This will install the following functions
 	Get-DetachedDBinfo
 	Get-SqlMaxMemory
 	Get-SqlServerKeys
+	Import-CsvToSql
 	Import-SqlSpConfigure
 	Reset-SqlSaPassword
 	Restore-HallengrenBackups
@@ -27,6 +28,7 @@ This will install the following functions
 	Start-SqlMigration
 	Update-dbatools
 	Watch-SqlDbLogins
+
 
 A couple quick notes
 --------------
@@ -267,12 +269,13 @@ Jonathan notes that the formula used provides a *general recommendation* that do
     Set-SqlMaxMemory sql2016 -UseRecommended
     Set-SqlMaxMemory sqlcluster 10240
 
+Import-CsvtoSql
+--------------
+
+Impport-CsvToSql is also a stand-alone module, but I decided it really fit well within this toolset, because it's sort of a command-line DTS Wizard from back in the days when it was easy and just worked. Until I get more time to document this here, you can [see this blog post](https://blog.netnerds.net/2015/09/import-csvtosql-super-fast-csv-to-sql-server-import-powershell-module/)  fore more details about this tool which can import more than 10.5 million records in 2 minutes.
+
+![awesome](https://i1.gallery.technet.s-msft.com/scriptcenter/import-large-csvs-into-sql-fa339046/image/file/142180/1/importcsvsql-win10win-small.gif)
+
 You may also like...
 --------------
-**Import-CsvtoSql** didn't quite fit into this toolset, but you may find it useful nevertheless. For those of you with PowerShell 5, you can **Install-Module CsvSqlimport** or download from [Script Center](https://gallery.technet.microsoft.com/scriptcenter/Import-Large-CSVs-into-SQL-fa339046).
-
-[See this blog post](https://blog.netnerds.net/2015/09/import-csvtosql-super-fast-csv-to-sql-server-import-powershell-module/)  fore more details about this tool which can import more than 10.5 million records in 2minutes.
-
-![enter image description here](https://i1.gallery.technet.s-msft.com/scriptcenter/import-large-csvs-into-sql-fa339046/image/file/142180/1/importcsvsql-win10win-small.gif)
-
-Also, it's not super polished, but you may also like Invoke-CsvSqlcmd, which allows you to query CSV files using SQL syntax. Visit [Script Center](https://gallery.technet.microsoft.com/scriptcenter/Query-CSV-with-SQL-c6c3c7e5) or **Install-Module CsvSqlcmd** from PSGallery.
+It's not super polished, but you may also like Invoke-CsvSqlcmd, which allows you to query CSV files using SQL syntax. Visit [Script Center](https://gallery.technet.microsoft.com/scriptcenter/Query-CSV-with-SQL-c6c3c7e5) or **Install-Module CsvSqlcmd** from PSGallery.
