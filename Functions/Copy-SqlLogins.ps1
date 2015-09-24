@@ -1,3 +1,4 @@
+Function Copy-SqlLogins { 
 <#
 .SYNOPSIS
 Migrates logins from source to destination SQL Servers. Supports SQL Server versions 2000 and above.
@@ -17,17 +18,17 @@ Source SQL Server. You must have sysadmin access and server version must be > SQ
 .PARAMETER Destination
 Destination SQL Server. You must have sysadmin access and server version must be > SQL Server 7.
 
-.PARAMETER UseSqlLoginSource
+.PARAMETER SourceSqlCredential
 Uses SQL Login credentials to connect to Source server. Note this is a switch. You will be prompted to enter your SQL login credentials. 
 
-Windows Authentication will be used if UseSqlLoginSource is not specified.
+Windows Authentication will be used if SourceSqlCredential is not specified.
 
 NOTE: Auto-populating parameters (ExcludeLogins, IncludeLogins) are populated by the account running the PowerShell script.
 
-.PARAMETER UseSqlLoginDestination
+.PARAMETER DestinationSqlCredential
 Uses SQL Login credentials to connect to Destination server. Note this is a switch. You will be prompted to enter your SQL login credentials. 
 
-Windows Authentication will be used if UseSqlLoginDestination is not specified. To connect as a different Windows user, run PowerShell as that user.
+Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER ExcludeLogins
 Excludes specified logins. This list is auto-populated for tab completion.
@@ -43,24 +44,24 @@ Credential removal not currently supported for Syncs. TODO: Application role syn
 Force drops and recreates logins. Logins that own jobs cannot be dropped at this time.
 
 .EXAMPLE
-.\Copy-SqlServerLogins.ps1 -Source sqlserver -Destination sqlcluster -Force
+Copy-SqlLogins -Source sqlserver -Destination sqlcluster -Force
 
 Copies all logins from source server to destination server. If a SQL login on source exists on the destination,
 the destination login will be dropped and recreated.
 
 .EXAMPLE
-.\Copy-SqlServerLogins.ps1 -Source sqlserver -Destination sqlcluster -ExcludeLogins realcajun -UseSqlLoginSource -UseSqlLoginDestination
+Copy-SqlLogins -Source sqlserver -Destination sqlcluster -ExcludeLogins realcajun -SourceSqlCredential -DestinationSqlCredential
 
 Prompts for SQL login names and passwords on both the Source and Destination then connects to each using the SQL Login credentials. 
 Copies all logins except for realcajun. If a login already exists on the destination, the login will not be migrated.
 
 .EXAMPLE
-.\Copy-SqlServerLogins.ps1 -Source sqlserver -Destination sqlcluster -IncludeLogins realcajun -force
+Copy-SqlLogins -Source sqlserver -Destination sqlcluster -IncludeLogins realcajun -force
 
 Copies ONLY login realcajun. If login realcajun exists on the destination, it will be dropped and recreated.
 
 .EXAMPLE
-.\Copy-SqlServerLogins.ps1 -Source sqlserver -Destination sqlcluster -SyncOnly
+Copy-SqlLogins -Source sqlserver -Destination sqlcluster -SyncOnly
 
 Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. If a matching login does not exist on the destination, the login will be skipped.
 
@@ -68,12 +69,12 @@ Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins
 .NOTES 
 Author: 		Chrissy LeMaire
 Requires: 		PowerShell Version 3.0, SQL Server SMO
-DateUpdated: 	2015-May-11
-Version: 		1.5.6
+DateUpdated: 	2015-Sept-22
+Version: 		2.0
 Limitations: 	Does not support Application Roles yet.
 
 .LINK 
-https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-SQL-25a0cf05
+https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a0cf05
 
 .OUTPUTS
 A CSV log and visual output of added or skipped logins.
@@ -83,58 +84,17 @@ A CSV log and visual output of added or skipped logins.
 [CmdletBinding(SupportsShouldProcess = $true)] 
 
 Param(
-	# Source SQL Server
 	[parameter(Mandatory = $true)]
-	[string]$Source,
-	
-	# Destination SQL Server
+	[object]$Source,
 	[parameter(Mandatory = $true)]
-	[string]$Destination,
-
-	[switch]$UseSqlLoginSource,
-	[switch]$UseSqlLoginDestination,
+	[object]$Destination,
+	[object]$SourceSqlCredential,
+	[object]$DestinationSqlCredential,
 	[switch]$SyncOnly,	
 	[switch]$Force
 	)
-
-DynamicParam  {
-	if ($Source) {
-		# Check for SMO and SQL Server access
-		if ([Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SMO") -eq $null) {return}
-		
-		$server = New-Object Microsoft.SqlServer.Management.Smo.Server $source
-		$server.ConnectionContext.ConnectTimeout = 2
-		try { $server.ConnectionContext.Connect() } catch { return }
-
-		# Populate arrays
-		$loginlist = @()
-		foreach ($login in $server.logins) { 
-			if (!$login.name.StartsWith("##") -and $login.name -ne 'sa') {
-				$loginlist += $login.name}
-			}
-				
-		# Reusable parameter setup
-		$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-		$attributes = New-Object System.Management.Automation.ParameterAttribute
-		$attributes.ParameterSetName = "__AllParameterSets"
-		$attributes.Mandatory = $false
-		
-		# Login list parameter setup
-		if ($loginlist) { $loginvalidationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $loginlist }
-		$loginattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-		$loginattributes.Add($attributes)
-		if ($loginlist) { $loginattributes.Add($loginvalidationset) }
-		$IncludeLogins = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("IncludeLogins", [String[]], $loginattributes)
-		$ExcludeLogins = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("ExcludeLogins", [String[]], $loginattributes)
-
-		$newparams.Add("IncludeLogins", $IncludeLogins)
-		$newparams.Add("ExcludeLogins", $ExcludeLogins)
-		
-		$server.ConnectionContext.Disconnect()
 	
-	return $newparams
-	}
-}
+DynamicParam  { if ($source) { return Get-ParamSqlLogins -SqlServer $source -SqlCredential $SourceSqlCredential } }
 
 BEGIN {
 
@@ -185,7 +145,7 @@ Function Copy-SqlLogins {
 		$username = $sourcelogin.name
 		if ($IncludeLogins -ne $null -and $IncludeLogins -notcontains $username) { continue }
 		if ($skippedlogin.ContainsKey($username) -or $username.StartsWith("##") -or $username -eq 'sa') { continue }
-		$servername = Get-NetBIOSName $sourceserver
+		$servername = Get-NetBiosName $sourceserver
 
 		$currentlogin = $sourceserver.ConnectionContext.truelogin
 
@@ -207,41 +167,41 @@ Function Copy-SqlLogins {
 			if ($username -eq $destserver.ServiceAccount) { Write-Warning "$username is the destination service account. Skipping drop."; continue }
 			If ($Pscmdlet.ShouldProcess($destination,"Dropping $username")) {
 				# Kill connections, delete user
-				Write-Host "Attempting to migrate $username" -ForegroundColor Yellow
-				Write-Host "Force was specified. Attempting to drop $username on $destination" -ForegroundColor Yellow
+				Write-Output "Attempting to migrate $username"
+				Write-Output "Force was specified. Attempting to drop $username on $destination"
 				try {
 					$destserver.EnumProcesses() | Where { $_.Login -eq $username }  | ForEach-Object {$destserver.KillProcess($_.spid)}
 					
 					$owneddbs = $destserver.Databases | Where { $_.Owner -eq $username }	
 						foreach ($owneddb in $owneddbs) {
-							Write-Host "Changing database owner for $($owneddb.name) from $username to sa" -ForegroundColor Yellow
+							Write-Output "Changing database owner for $($owneddb.name) from $username to sa"
 							$owneddb.SetOwner('sa')
 							$owneddb.Alter()
 						}
 					
 					$ownedjobs = $destserver.JobServer.Jobs | Where { $_.OwnerLoginName -eq $username } 
 					foreach ($ownedjob in $ownedjobs) {
-						Write-Host "Changing job owner for $($ownedjob.name) from $username to sa"  -ForegroundColor Yellow
+						Write-Output "Changing job owner for $($ownedjob.name) from $username to sa" 
 						$ownedjob.set_OwnerLoginName('sa')
 						$ownedjob.Alter() 
 					}
 					
 					$login.drop()
-					Write-Host "Successfully dropped $username on $destination" -ForegroundColor Green
+					Write-Output "Successfully dropped $username on $destination"
 				} catch {
-					$ex = (($_.Exception.Message -Split ":")[1])
+					$ex = $_.Exception.Message
 					if ($ex -ne $null) { $ex.trim() }
 					$skippedlogin.Add("$username","Couldn't drop $username on $($destination): $ex")
-					Write-Warning "Could not drop $username`: $ex"
+					Write-Error "Could not drop $username`: $ex"
 					continue 
 				}
 			}
 		}
 		
 		If ($Pscmdlet.ShouldProcess($destination,"Adding SQL login $username")) {
-			Write-Host "Attempting to add $username to $destination" -ForegroundColor Yellow
-			$destlogin = new-object Microsoft.SqlServer.Management.Smo.Login($destserver, $username)
-			Write-Host "Setting $username SID to source username SID" -ForegroundColor Green
+			Write-Output "Attempting to add $username to $destination"
+			$destlogin = New-Object Microsoft.SqlServer.Management.Smo.Login($destserver, $username)
+			Write-Output "Setting $username SID to source username SID"
 			$destlogin.set_Sid($sourcelogin.get_Sid())
 			
 			$defaultdb = $sourcelogin.DefaultDatabase
@@ -251,7 +211,7 @@ Function Copy-SqlLogins {
 				Write-Warning "$defaultdb does not exist on destination. Setting defaultdb to master."
 				$defaultdb = "master" 
 			}
-			Write-Host "Set $username defaultdb to $defaultdb" -ForegroundColor Green
+			Write-Output "Set $username defaultdb to $defaultdb"
 			$destlogin.DefaultDatabase = $defaultdb
 
 			$checkexpiration = "ON"; $checkpolicy = "ON"
@@ -294,7 +254,7 @@ Function Copy-SqlLogins {
 					$destlogin.Create($hashedpass, [Microsoft.SqlServer.Management.Smo.LoginCreateOptions]::IsHashed)
 					$migratedlogin.Add("$username","SQL Login Added successfully") 
 					$destlogin.refresh()
-					Write-Host "Successfully added $username to $destination" -ForegroundColor Green }
+					Write-Output "Successfully added $username to $destination" }
 				catch {
 					try {
 						$sid = "0x"; $sourcelogin.sid | % {$sid += ("{0:X}" -f $_).PadLeft(2, "0")}
@@ -303,7 +263,7 @@ Function Copy-SqlLogins {
 						$null = $destserver.ConnectionContext.ExecuteNonQuery($sqlfailsafe) 
 						$destlogin = $destserver.logins[$username]
 						$migratedlogin.Add("$username","SQL Login Added successfully") 
-						Write-Host "Successfully added $username to $destination" -ForegroundColor Green
+						Write-Output "Successfully added $username to $destination"
 					} catch {
 						$ex = ($_.Exception.InnerException).tostring()
 						$skippedlogin.Add("$username","Add failed: $ex")
@@ -321,7 +281,7 @@ Function Copy-SqlLogins {
 					$destlogin.Create()
 					$migratedlogin.Add("$username","Windows user/group added successfully") 
 					$destlogin.refresh()
-					Write-Host "Successfully added $username to $destination" -ForegroundColor Green }
+					Write-Output "Successfully added $username to $destination" }
 				catch { 
 					$skippedlogin.Add("$username","Add failed")
 					Write-Warning "Failed to add $username to $destination. See log for details."
@@ -337,7 +297,7 @@ Function Copy-SqlLogins {
 			if ($sourcelogin.DenyWindowsLogin) { try { $destlogin.DenyWindowsLogin = $true } catch { Write-Warning "$username denied login on source, but could not be denied ogin on destination." } }
 		}
 		If ($Pscmdlet.ShouldProcess($destination,"Updating SQL login $username permissions")) {
-			Update-SQLPermissions -sourceserver $sourceserver -sourcelogin $sourcelogin -destserver $destserver -destlogin $destlogin
+			Update-SqlPermissions -sourceserver $sourceserver -sourcelogin $sourcelogin -destserver $destserver -destlogin $destlogin
 		}
 	}
 
@@ -346,16 +306,16 @@ Function Copy-SqlLogins {
 		$migratedlogin.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Path "$csvfilename-logins.csv" -NoTypeInformation
 		$skippedlogin.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Append -Path "$csvfilename-logins.csv" -NoTypeInformation
 	}
-	Write-Host "Completed login migration" -ForegroundColor Green
+	Write-Output "Completed login migration"
 			
 }
 
-Function Update-SQLPermissions      {
+Function Update-SqlPermissions      {
 	 <#
 	.SYNOPSIS
 	 Updates permission sets, roles, database mappings on server and databases
 	.EXAMPLE 
-	Update-SQLPermissions -sourceserver $sourceserver -sourcelogin $sourcelogin -destserver $destserver -destlogin $destlogin
+	Update-SqlPermissions -sourceserver $sourceserver -sourcelogin $sourcelogin -destserver $destserver -destlogin $destlogin
 
 		#>
 	[CmdletBinding()]
@@ -390,7 +350,7 @@ $username = $sourcelogin.name
 				If ($Pscmdlet.ShouldProcess($destination,"Adding $username to $($role.name) server role")) {
 					try {
 						$destrole.AddMember($username)
-						Write-Host "Added $username to $($role.name) server role."  -ForegroundColor Green
+						Write-Output "Added $username to $($role.name) server role." 
 						} catch {
 						Write-Warning "Failed to add $username to $($role.name) server role." 
 					}
@@ -403,7 +363,7 @@ $username = $sourcelogin.name
 			If ($Pscmdlet.ShouldProcess($destination,"Adding $username to $($role.name) server role")) {
 				try {
 					$destrole.DropMember($username)
-					Write-Host "Removed $username from $($destrole.name) server role on $($destserver.name)."  -ForegroundColor Yellow
+					Write-Output "Removed $username from $($destrole.name) server role on $($destserver.name)." 
 					} catch {
 					Write-Warning "Failed to remove $username from $($destrole.name) server role on $($destserver.name)." 
 				}
@@ -416,7 +376,7 @@ $username = $sourcelogin.name
 		if ($destserver.JobServer.Jobs[$ownedjob.name] -ne $null) {
 			If ($Pscmdlet.ShouldProcess($destination,"Changing job owner to $username for $($ownedjob.name)")) {
 				try {
-					Write-Host "Changing job owner to $username for $($ownedjob.name)" -ForegroundColor Yellow
+					Write-Output "Changing job owner to $username for $($ownedjob.name)"
 					$destownedjob = $destserver.JobServer.Jobs | Where { $_.name -eq $ownedjobs.name } 
 					$destownedjob.set_OwnerLoginName($username)
 					$destownedjob.Alter() 
@@ -433,11 +393,11 @@ $username = $sourcelogin.name
 		foreach ($perm in $perms) {
 			$permstate = $perm.permissionstate
 			if ($permstate -eq "GrantWithGrant") { $grantwithgrant = $true; $permstate = "grant" } else { $grantwithgrant = $false }
-			$permset = New-object Microsoft.SqlServer.Management.Smo.ServerPermissionSet($perm.permissiontype)
+			$permset = New-Object Microsoft.SqlServer.Management.Smo.ServerPermissionSet($perm.permissiontype)
 			If ($Pscmdlet.ShouldProcess($destination,"Performing $permstate on $($perm.permissiontype) for $username")) {
 				try { 
 					$destserver.PSObject.Methods[$permstate].Invoke($permset, $username, $grantwithgrant)
-					Write-Host "Successfully performed $permstate $($perm.permissiontype) to $username"  -ForegroundColor Green
+					Write-Output "Successfully performed $permstate $($perm.permissiontype) to $username" 
 				} catch {
 					Write-Warning "Failed to $permstate $($perm.permissiontype) to $username" 
 				}
@@ -451,10 +411,10 @@ $username = $sourcelogin.name
 				if ($sourceperm -eq $null) {
 					If ($Pscmdlet.ShouldProcess($destination,"Performing Revoke on $($perm.permissiontype) for $username")) {
 						try { 
-							$permset = New-object Microsoft.SqlServer.Management.Smo.ServerPermissionSet($perm.permissiontype)
+							$permset = New-Object Microsoft.SqlServer.Management.Smo.ServerPermissionSet($perm.permissiontype)
 							if ($permstate -eq "GrantWithGrant") { $grantwithgrant = $true; $permstate = "grant" } else { $grantwithgrant = $false }
 							$destserver.PSObject.Methods["Revoke"].Invoke($permset, $username, $false, $grantwithgrant)
-							Write-Host "Successfully revoked $($perm.permissiontype) from $username"  -ForegroundColor Yellow
+							Write-Output "Successfully revoked $($perm.permissiontype) from $username" 
 						} catch {
 							Write-Warning "Failed to revoke $($perm.permissiontype) from $username" 
 						}
@@ -469,10 +429,10 @@ $username = $sourcelogin.name
 			if ($destserver.Credentials[$credential.name] -eq $null) {
 				If ($Pscmdlet.ShouldProcess($destination,"Adding $($credential.name) to $username")) {
 					try {
-						$newcred = new-object Microsoft.SqlServer.Management.Smo.Credential($destserver, $credential.name)
+						$newcred = New-Object Microsoft.SqlServer.Management.Smo.Credential($destserver, $credential.name)
 						$newcred.identity = $sourcelogin.name
 						$newcred.Create() 
-						Write-Host "Successfully created credential for $username"  -ForegroundColor Green
+						Write-Output "Successfully created credential for $username" 
 					} catch {
 						Write-Warning "Failed to create credential for $username" }
 				}
@@ -494,7 +454,7 @@ $username = $sourcelogin.name
 				If ($Pscmdlet.ShouldProcess($destination,"Dropping $dbusername from $dbname on destination.")) {
 					try { 
 						$destdb.users[$dbusername].Drop()
-						Write-Host "Dropped user $dbusername (login: $dblogin) from $dbname on destination. User may own a schema." -ForegroundColor Yellow }
+						Write-Output "Dropped user $dbusername (login: $dblogin) from $dbname on destination. User may own a schema." }
 					catch { Write-Warning "Failed to drop $dbusername ($dblogin) from $dbname on destination."
 					}
 				}
@@ -511,7 +471,7 @@ $username = $sourcelogin.name
 								try { 
 									$destrole.DropMember($dbusername)
 									$destdb.Alter()
-									Write-Host "Dropped username $dbusername (login: $dblogin) from ($destrole.name) on $destination" -ForegroundColor Yellow
+									Write-Output "Dropped username $dbusername (login: $dblogin) from ($destrole.name) on $destination"
 								}
 								catch { Write-Warning "Failed to remove $dbusername from $($destrole.name) database role on $dbname." }
 							}
@@ -530,10 +490,10 @@ $username = $sourcelogin.name
 				if ($sourceperm -eq $null) {
 					If ($Pscmdlet.ShouldProcess($destination,"Performing Revoke on $($perm.permissiontype) for $username on $dbname on $destination")) {
 						try { 
-							$permset = New-object Microsoft.SqlServer.Management.Smo.DatabasePermissionSet($perm.permissiontype)
+							$permset = New-Object Microsoft.SqlServer.Management.Smo.DatabasePermissionSet($perm.permissiontype)
 							if ($permstate -eq "GrantWithGrant") { $grantwithgrant = $true; $permstate = "grant" } else { $grantwithgrant = $false }
 							$destdb.PSObject.Methods["Revoke"].Invoke($permset, $username, $false, $grantwithgrant)
-							Write-Host "Successfully revoked $($perm.permissiontype) from $username on $dbname on $destination"  -ForegroundColor Yellow
+							Write-Output "Successfully revoked $($perm.permissiontype) from $username on $dbname on $destination" 
 						} catch {
 							Write-Warning "Failed to revoke $($perm.permissiontype) from $username on $dbname on $destination" 
 						}
@@ -556,20 +516,20 @@ $username = $sourcelogin.name
 					$sql = $sourceserver.databases[$dbname].users[$dbusername].script()
 					try { 
 						$destdb.ExecuteNonQuery($sql)
-						Write-Host "Added user $dbusername (login: $dblogin) to $dbname" -ForegroundColor Green 
+						Write-Output "Added user $dbusername (login: $dblogin) to $dbname" 
 					}
 					catch { Write-Warning "Failed to add $dbusername ($dblogin) to $dbname on $destination."
 					}
 				}
 			}
 			
-		 # DB owner
+		 # Db owner
 			If ($sourcedb.owner -eq $username) {
 				If ($Pscmdlet.ShouldProcess($destination,"Changing $dbname dbowner to $username")) {
 					try {
-						$result = Update-SQLdbowner $sourceserver $destserver -dbname $dbname
+						$result = Update-SqlDbOwner $sourceserver $destserver -dbname $dbname
 						if ($result -eq $true) {
-							Write-Host "Changed $($destdb.name) owner to $($sourcedb.owner)." -ForegroundColor Green
+							Write-Output "Changed $($destdb.name) owner to $($sourcedb.owner)."
 						} else { Write-Warning "Failed to update $($destdb.name) owner to $($sourcedb.owner)." }
 					} catch { Write-Warning "Failed to update $($destdb.name) owner to $($sourcedb.owner)." }
 				}
@@ -584,7 +544,7 @@ $username = $sourcelogin.name
 							try { 
 								$destdbrole.AddMember($username)
 								$destdb.Alter() 
-								Write-Host "Added $username to $($role.name) database role on $dbname."  -ForegroundColor Green
+								Write-Output "Added $username to $($role.name) database role on $dbname." 
 								
 							} catch { Write-Warning "Failed to add $username to $($role.name) database role on $dbname." }
 						}
@@ -597,11 +557,11 @@ $username = $sourcelogin.name
 			foreach ($perm in $perms) {
 				$permstate = $perm.permissionstate
 				if ($permstate -eq "GrantWithGrant") { $grantwithgrant = $true; $permstate = "grant" } else { $grantwithgrant = $false }
-				$permset = New-object Microsoft.SqlServer.Management.Smo.DatabasePermissionSet($perm.permissiontype)
+				$permset = New-Object Microsoft.SqlServer.Management.Smo.DatabasePermissionSet($perm.permissiontype)
 				If ($Pscmdlet.ShouldProcess($destination,"Performing $permstate on $($perm.permissiontype) for $username on $dbname")) {
 					try { 
 						$destdb.PSObject.Methods[$permstate].Invoke($permset, $username, $grantwithgrant)
-						Write-Host "Successfully performed $permstate $($perm.permissiontype) to $username on $dbname"  -ForegroundColor Green
+						Write-Output "Successfully performed $permstate $($perm.permissiontype) to $username on $dbname" 
 					}
 					catch { Write-Warning "Failed to perform $permstate on $($perm.permissiontype) for $username on $dbname." }		
 				}
@@ -645,167 +605,14 @@ Function Sync-Only {
 			continue
 		}
 		
-		$servername = Get-NetBIOSName $sourceserver
+		$servername = Get-NetBiosName $sourceserver
 		$userbase = ($username.Split("\")[0]).ToLower()
 		if ($servername -eq $userbase -or $username.StartsWith("NT ")) { continue }
 		if (($destlogin = $destserver.Logins.Item($username)) -eq $null) { continue }
 		
-		Update-SQLPermissions -sourceserver $sourceserver -sourcelogin $sourcelogin -destserver $destserver -destlogin $destlogin
+		Update-SqlPermissions -sourceserver $sourceserver -sourcelogin $sourcelogin -destserver $destserver -destlogin $destlogin
 	}
 	
-}
-# Supporting Functions
-
-Function Update-SQLdbowner  { 
-        <#
-            .SYNOPSIS
-                Updates specified database dbowner.
-
-            .EXAMPLE
-                Update-SQLdbowner $sourceserver $destserver -dbname $dbname
-
-            .OUTPUTS
-                $true if success
-                $false if failure
-        #>
-		[CmdletBinding()]
-        param(
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-            [object]$sourceserver,
-			
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-            [object]$destserver,
-			
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-            [string]$dbname
-        )
-
-		$destdb = $destserver.databases[$dbname]
-		$dbowner = $sourceserver.databases[$dbname].owner
-		
-		if ($dbowner -eq $null -or $destserver.logins[$dbowner] -eq $null) { $dbowner = 'sa' }
-				
-		try {
-			if ($destdb.ReadOnly -eq $true) 
-			{
-				$changeroback = $true
-				Update-SQLdbReadOnly $destserver $dbname $false
-			}
-			
-			$destdb.SetOwner($dbowner)
-						
-			if ($changeroback) {
-				Update-SQLdbReadOnly $destserver $dbname $true
-				$changeroback = $null
-			}
-			
-			return $true
-		} catch { 
-			Write-Warning "Failed to update $dbname owner to $dbowner."
-			return $false 
-		}
-}
-
-Function Update-SQLdbReadOnly  { 
-        <#
-            .SYNOPSIS
-                Updates specified database to read-only or read-write. Necessary because SMO doesn't appear to support NO_WAIT.
-				Also, necessary within this script because dbowner can't be updated if db is set to read-only.
-
-            .EXAMPLE
-               Update-SQLdbReadOnly $server $dbname $true
-
-            .OUTPUTS
-                $true if success
-                $false if failure
-        #>
-		[CmdletBinding()]
-        param(
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-            [object]$server,
-
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-            [string]$dbname,
-			
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-            [bool]$readonly
-        )
-		
-		if ($readonly) {
-			$sql = "ALTER DATABASE [$dbname] SET READ_ONLY WITH NO_WAIT"
-		} else {
-			$sql = "ALTER DATABASE [$dbname] SET READ_WRITE WITH NO_WAIT"
-		}
-
-		try {
-			Write-Warning "Setting $dbname to $readonly to faciliate dbowner change."
-			$null = $server.ConnectionContext.ExecuteNonQuery($sql)
-			Write-Host "Changed ReadOnly status to $readonly for $dbname on $($server.name)." -ForegroundColor Green
-			return $true
-		} catch { 
-			Write-Host "Could not change readonly status for $dbname on $($server.name)" -ForegroundColor Red
-			return $false }
-
-}
-
-Function Test-SQLSA      {
- <#
-            .SYNOPSIS
-              Ensures sysadmin account access on SQL Server. $server is an SMO server object.
-
-            .EXAMPLE
-              if (!(Test-SQLSA $server)) { throw "Not a sysadmin on $source. Quitting." }  
-
-            .OUTPUTS
-                $true if sycurrentlogin
-                $false if not
-			
-        #>
-		[CmdletBinding()]
-        param(
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-            [object]$server	
-		)
-try {
-		return ($server.ConnectionContext.FixedServerRoles -match "sysadmin")
-	}
-	catch { return $false }
-}
-
-Function Get-NetBIOSName {
- <#
-	.SYNOPSIS
-	Takes a best guess at the NetBIOS name of a server. 
-
-	.EXAMPLE
-	$sourcenetbios = Get-NetBIOSName $server
-	
-	.OUTPUTS
-	  String with netbios name.
-			
- #>
-		[CmdletBinding()]
-        param(
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-            [object]$server
-		)
-
-	$servernetbios = $server.ComputerNamePhysicalNetBIOS
-	
-	if ($servernetbios -eq $null) {
-		$servernetbios = ($server.name).Split("\")[0]
-		$servernetbios = $servernetbios.Split(",")[0]
-	}
-	
-	return $($servernetbios.ToLower())
 }
 
 }
@@ -824,65 +631,47 @@ PROCESS {
 	
 	if ($source -eq $destination) { throw "Source and Destination SQL Servers are the same. Quitting." }
 
-	if ([Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SMO") -eq $null )
-	{ throw "Quitting: SMO Required. You can download it from http://goo.gl/R4yA6u" }
+	Write-Output "Attempting to connect to SQL Servers.." 
+	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+
+	$source = $sourceserver.name
+	$destination = $destserver.name
 	
-	Write-Host "Attempting to connect to SQL Servers.."  -ForegroundColor Green
-	$sourceserver = New-Object Microsoft.SqlServer.Management.Smo.Server $source
-	$destserver = New-Object Microsoft.SqlServer.Management.Smo.Server $destination
-	
-	if ($UseSqlLoginSource -eq $true) {
-		$sourcemsg = "Enter the SQL Login credentials for the SOURCE server, $($source.ToUpper())"; 
-		$sourceserver.ConnectionContext.LoginSecure = $false
-		$sourcelogin = Get-Credential -Message $sourcemsg
-		$sourceserver.ConnectionContext.set_Login($sourcelogin.username)
-		$sourceserver.ConnectionContext.set_SecurePassword($sourcelogin.Password)
-	}
-	
-	if ($UseSqlLoginDestination -eq $true) {
-		$destmsg = "Enter the SQL Login credentials for the DESTINATION server, $($destination.ToUpper())"; 
-		$destserver.ConnectionContext.LoginSecure = $false
-		$destlogin = Get-Credential -Message $destmsg
-		$destserver.ConnectionContext.set_Login($destlogin.username)
-		$destserver.ConnectionContext.Set_SecurePassword($destlogin.Password)	
-	}
-	
-	try { $sourceserver.ConnectionContext.Connect() } catch { throw "Can't connect to $source. Quitting." }
-	try { $destserver.ConnectionContext.Connect() } catch { throw "Can't connect to $destination. Quitting." }
+	if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
+	if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 	
 	if ($sourceserver.versionMajor -lt 8 -or $destserver.versionMajor -lt 8) {throw "SQL Server 7 and below not supported. Quitting." }
-		
-	if (!(Test-SQLSA $sourceserver)) { throw "Not a sysadmin on $source. Quitting." }
-	if (!(Test-SQLSA $destserver)) { throw "Not a sysadmin on $destination. Quitting." }
 	
 	<# ----------------------------------------------------------
 		Preps
 	---------------------------------------------------------- #>
 
 	# Convert from RuntimeDefinedParameter  object to regular array
-	if ($IncludeLogins.Value -ne $null) {$IncludeLogins = @($IncludeLogins.Value)}  else {$IncludeLogins = $null}
-	if ($ExcludeLogins.Value -ne $null) {$ExcludeLogins = @($ExcludeLogins.Value)}  else {$ExcludeLogins = $null}
-	
+	$IncludeLogins = $psboundparameters.IncludeLogins
+	$ExcludeLogins = $psboundparameters.ExcludeLogins
+
 	<# ----------------------------------------------------------
 		Run
 	---------------------------------------------------------- #>
 	
 	if ($SyncOnly) {
-		Write-Host "Syncing Login Permissions" -ForegroundColor Green; 
+		Write-Output "Syncing Login Permissions"; 
 		Sync-Only -sourceserver $sourceserver -destserver $destserver -IncludeLogins $IncludeLogins -ExcludeLogins $ExcludeLogins
 		return
 	}
 	 
-	Write-Host "Attempting Login Migration" -ForegroundColor Green; 
-	Copy-SqlLogins -sourceserver $sourceserver -destserver $destserver -includelogins $IncludeLogins -excludelogins $ExcludeLogins -Force $force
+	Write-Output "Attempting Login Migration"; 
+	Copy-SqlLogins -sourceserver $sourceserver -destserver $destserver -IncludeLogins $IncludeLogins -excludelogins $ExcludeLogins -Force $force
 }
 
 END {
 	$totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
 	$sourceserver.ConnectionContext.Disconnect()
 	$destserver.ConnectionContext.Disconnect()
-	Write-Host "Script completed" -ForegroundColor Green
-	Write-Host "Migration started: $started"  -ForegroundColor Cyan
-	Write-Host "Migration completed: $(Get-Date)"  -ForegroundColor Cyan
-	Write-Host "Total Elapsed time: $totaltime"  -ForegroundColor Cyan
+	Write-Output "Login migration finished"
+	Write-Output "Migration started: $started" 
+	Write-Output "Migration completed: $(Get-Date)" 
+	Write-Output "Total Elapsed time: $totaltime" 
+}
 }

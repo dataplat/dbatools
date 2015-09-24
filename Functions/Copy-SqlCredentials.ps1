@@ -1,6 +1,7 @@
+Function Copy-SqlCredentials {
 <# 
 .SYNOPSIS 
-Copy-SqlServerCredentials.ps1 migrates SQL Server Credentials from one SQL Server to another, while maintaining Credential passwords.
+Copy-SqlCredentials migrates SQL Server Credentials from one SQL Server to another, while maintaining Credential passwords.
 
 .DESCRIPTION 
 By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Credentials from one server to another, while maintaining username and password.
@@ -27,81 +28,44 @@ By default, if a Credential exists on the source and destination, the Credential
 Author  : 	Chrissy LeMaire
 Requires: 	PowerShell Version 3.0, SQL Server SMO, 
 			Sys Admin access on Windows and SQL Server. DAC access enabled for local (default)
-DateUpdated: 2015-May-7
-Version: 	0.1.2
+DateUpdated: 2015-Sept-22
+Version: 	2.0
 Limitations: Hasn't been tested thoroughly. Works on Win8.1 and SQL Server 2012 & 2014 so far.		
 
 .LINK 
 
 
 .EXAMPLE   
-.\Copy-SqlServerCredentials.ps1 -Source sqlserver\instance -Destination sqlcluster
+Copy-SqlCredentials -Source sqlserver\instance -Destination sqlcluster
 
 Description
 Copies all SQL Server Credentials on sqlserver\instance to sqlcluster. If credentials exist on destination, they will be skipped.
 
 .EXAMPLE   
-.\Copy-SqlServerCredentials.ps1 -Source sqlserver -Destination sqlcluster -Credentials "PowerShell Proxy Account" -Force
+Copy-SqlCredentials -Source sqlserver -Destination sqlcluster -Credentials "PowerShell Proxy Account" -Force
 
 Description
 Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped and recreated.
 
 #> 
-#Requires -Version 3.0
 [CmdletBinding(DefaultParameterSetName="Default", SupportsShouldProcess = $true)] 
 
 Param(
-	# Source SQL Server
 	[parameter(Mandatory = $true)]
-	[string]$Source,
-	
-	# Destination SQL Server
+	[object]$Source,
 	[parameter(Mandatory = $true)]
-	[string]$Destination,
-	
+	[object]$Destination,
+	[System.Management.Automation.PSCredential]$SourceSqlCredential,
+	[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 	[switch]$Force
 
 	)
 	
-DynamicParam  {
-	if ($Source) {
-		# Check for SMO and SQL Server access
-		if ([Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SMO") -eq $null) {return}
-		
-		$server = New-Object Microsoft.SqlServer.Management.Smo.Server $source
-		$server.ConnectionContext.ConnectTimeout = 2
-		try { $server.ConnectionContext.Connect() } catch { return }
-	
-		# Populate arrays
-		$credentiallist = @()
-		foreach ($credential in $server.credentials) {
-			$credentiallist += $credential.name
-		}
-
-		# Reusable parameter setup
-		$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-		$attributes = New-Object System.Management.Automation.ParameterAttribute
-		
-		$attributes.ParameterSetName = "__AllParameterSets"
-		$attributes.Mandatory = $false
-		
-		# Database list parameter setup
-		if ($credentiallist) { $dbvalidationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $credentiallist }
-		$lsattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-		$lsattributes.Add($attributes)
-		if ($credentiallist) { $lsattributes.Add($dbvalidationset) }
-		$Credentials = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Credentials", [String[]], $lsattributes)
-		
-		$newparams.Add("Credentials", $Credentials)			
-		$server.ConnectionContext.Disconnect()
-	
-	return $newparams
-	}
-}
+DynamicParam  { if ($source) { return (Get-ParamSqlCredentials -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 
 BEGIN {
 
-Function Get-SQLCredentials { 
+Function Get-SqlCredentials { 
 	<#
 		.SYNOPSIS
 		Gets Credential Logins
@@ -114,10 +78,12 @@ Function Get-SQLCredentials {
 		System.Data.DataTable
 	
 	#>
-		
 		param(
-		[object]$server
-	)
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+		)
+	
+	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 	$sourcename = $server.name
 	
 	# Query Service Master Key from the database - remove padding from the key
@@ -126,7 +92,7 @@ Function Get-SQLCredentials {
 	try { $smkbytes = $server.ConnectionContext.ExecuteScalar($sql) }
 	catch { throw "Can't execute SQL on $sourcename" }
 	
-	$sourcenetbios = Get-NetBIOSName $server
+	$sourcenetbios = Get-NetBiosName $server
 	$instance = $server.InstanceName
 	$serviceInstanceId = $server.serviceInstanceId
 	
@@ -151,8 +117,7 @@ Function Get-SQLCredentials {
 	# Choose the encryption algorithm based on the SMK length - 3DES for 2008, AES for 2012
 	# Choose IV length based on the algorithm
 	if (($servicekey.Length -ne 16) -and ($servicekey.Length -ne 32)) {
-		Write-Warning "Unknown key size. Cannot continue. Quitting."
-		return
+		throw "Unknown key size. Cannot continue. Quitting."
 	}
 
 	if ($servicekey.Length -eq 16) {
@@ -163,10 +128,12 @@ Function Get-SQLCredentials {
 		$ivlen = 16
 	}
 
-	# Query link server password information from the DB. Remove header from pwdhash, extract IV (as iv) and ciphertext (as pass)
+	# Query link server password information from the Db. Remove header from pwdhash, extract IV (as iv) and ciphertext (as pass)
 	# Ignore links with blank credentials (integrated auth ?)
 
-	$connstring = "Server=ADMIN:$sourcenetbios\$instance;Trusted_Connection=True"
+	if ($server.IsClustered -eq $false) { $connstring = "Server=ADMIN:$sourcenetbios\$instance;Trusted_Connection=True" }
+	else { $connstring = "Server=ADMIN:$sourcename;Trusted_Connection=True" }
+	
 	$sql = "SELECT name,credential_identity,substring(imageval,5,$ivlen) iv, substring(imageval,$($ivlen+5),len(imageval)-$($ivlen+4)) pass from sys.credentials cred inner join sys.sysobjvalues obj on cred.credential_id = obj.objid where valclass=28 and valnum=2"		
 	
 	# Get entropy from the registry
@@ -215,7 +182,7 @@ Function Get-SQLCredentials {
 	return $decryptedlogins
 }
 
-Function Copy-SqlServerCredentials { 
+Function Copy-SqlCredentials { 
 	<#
 		.SYNOPSIS
 		Copies Credentials from one server to another using a combination of SMO's .Script() and manual password updates.
@@ -224,23 +191,30 @@ Function Copy-SqlServerCredentials {
 		System.Data.DataTable
 	
 	#>
-		
 		param(
-		[object]$sourceserver,
-		[object]$destserver,
+		[object]$source,
+		[object]$destination,
 		[string[]]$credentials,
-		[bool]$force
+		[bool]$force,
+		[System.Management.Automation.PSCredential]$SourceSqlCredential,
+		[System.Management.Automation.PSCredential]$DestinationSqlCredential
 	)
 	
-	Write-Warning "Collecting Credential logins and passwords on $($sourceserver.name)"
-	$sourcecredentials = Get-SQLCredentials $sourceserver
+	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+
+	$source = $sourceserver.name
+	$destination = $destserver.name	
+
+	Write-Output "Collecting Credential logins and passwords on $($sourceserver.name)"
+	$sourcecredentials = Get-SqlCredentials $sourceserver
 	
 	
 	if ($credentials -ne $null) { 
 		$serverlist = $sourceserver.credentials | Where-Object { $credentials -contains $_.Name }
 	} else { $serverlist = $sourceserver.credentials }
 	
-	Write-Host "Starting migration" -ForegroundColor Green
+	Write-Output "Starting migration"
 	foreach ($credential in $serverlist) {
 		$destserver.credentials.Refresh()
 		$credentialname = $credential.name
@@ -255,7 +229,7 @@ Function Copy-SqlServerCredentials {
 			}
 		}
 		
-		Write-Host "Attempting to migrate: $credentialname" -ForegroundColor Yellow
+		Write-Output "Attempting to migrate: $credentialname"
 		try {
 			$currentcred = $sourcecredentials | Where-Object { $_.Credential -eq $credentialname  }
 			$identity = $currentcred.Identity
@@ -263,108 +237,45 @@ Function Copy-SqlServerCredentials {
 			$sql = "CREATE CREDENTIAL [$credentialname] WITH IDENTITY = N'$identity', SECRET = N'$password'"		
 			[void]$destserver.ConnectionContext.ExecuteNonQuery($sql) 
 			$destserver.credentials.Refresh()
-			Write-Host "$credentialname successfully copied." -ForegroundColor Green
-		} catch { Write-Warning "$credentialname could not be added to $($destserver.name)" }
+			Write-Output "$credentialname successfully copied"
+		} catch { Write-Error "$credentialname could not be added to $($destserver.name)" }
 	}
 }
-
-
-Function Test-SQLSA      {
- <#
-            .SYNOPSIS
-              Ensures sysadmin account access on SQL Server. $server is an SMO server object.
-
-            .EXAMPLE
-              if (!(Test-SQLSA $server)) { throw "Not a sysadmin on $source. Quitting." }  
-
-            .OUTPUTS
-                $true if syadmin
-                $false if not
-			
-        #>
-		[CmdletBinding()]
-        param(
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-            [object]$server	
-		)
-		
-try {
-		return ($server.ConnectionContext.FixedServerRoles -match "SysAdmin")
-	}
-	catch { return $false }
-}
-
-Function Get-NetBIOSName {
- <#
-	.SYNOPSIS
-	Takes a best guess at the NetBIOS name of a server. 
-
-	.EXAMPLE
-	$sourcenetbios = Get-NetBIOSName $server
-	
-	.OUTPUTS
-	  String with netbios name.
-			
- #>
-		[CmdletBinding()]
-        param(
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-            [object]$server
-		)
-
-	$servernetbios = $server.ComputerNamePhysicalNetBIOS
-	
-	if ($servernetbios -eq $null) { $servernetbios = $server.Information.NetName }
-	
-	if ($servernetbios -eq $null) {
-		$servernetbios = ($server.name).Split("\")[0]
-		$servernetbios = $servernetbios.Split(",")[0]
-	}
-	
-	return $($servernetbios.ToLower())
-}
-
 }
 
 PROCESS {
-	if ($credentials.Value -ne $null) {$credentials = @($credentials.Value)}  else {$credentials = $null}
 
-	if ((Get-Host).Version.Major -lt 3) { throw "PowerShell 3.0 and above required." }
+	$credentials = $psboundparameters.credentials
 
-	if ([Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SMO") -eq $null )
-	{ throw "Quitting: SMO Required. You can download it from http://goo.gl/R4yA6u" }
+	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 
-	if ([Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SMOExtended") -eq $null )
-	{ throw "Quitting: Extended SMO Required. You can download it from http://goo.gl/R4yA6u" }
+	$source = $sourceserver.name
+	$destination = $destserver.name
+
+	if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
+	if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 	
-	Write-Host "Attempting to connect to SQL Servers.."  -ForegroundColor Green
-	$sourceserver = New-Object Microsoft.SqlServer.Management.Smo.Server $source
-	$destserver = New-Object Microsoft.SqlServer.Management.Smo.Server $destination
-	
-	try { $sourceserver.ConnectionContext.Connect() } catch { throw "Can't connect to $source or access denied. Quitting." }
-	try { $destserver.ConnectionContext.Connect() } catch { throw "Can't connect to $destination or access denied. Quitting." }
-		
-	if (!(Test-SQLSA $sourceserver)) { throw "Not a sysadmin on $source. Quitting." }
-	if (!(Test-SQLSA $destserver)) { throw "Not a sysadmin on $destination. Quitting." }
-	
-	$sourcenetbios = Get-NetBIOSName $sourceserver
+	$sourcenetbios = Get-NetBiosName $sourceserver
 	
 	# Test for WinRM
-	try { $result = Test-WSMan -ComputerName $sourcenetbios } catch { throw "Remote PowerShell access not enabled on on $source. Quitting." }
+	winrm id -r:$sourcenetbios 2>$null | Out-Null
+	if ($LastExitCode -ne 0) { throw "Remote PowerShell access not enabled on on $source or access denied. Quitting." }
 	
 	# Test for registry access
 	try { Invoke-Command -ComputerName $sourcenetbios { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } } 
 	catch { throw "Can't connect to registry on $source. Quitting." }
 	
 	# Magic happens here
-	Copy-SqlServerCredentials $sourceserver $destserver $credentials $force
+	If ($Pscmdlet.ShouldProcess($destination,"Copying credentials")) {
+		Copy-SqlCredentials $sourceserver $destserver $credentials $force
+	}
 	
 }
 
 END {
 	$sourceserver.ConnectionContext.Disconnect()
 	$destserver.ConnectionContext.Disconnect()
-	Write-Host "Script completed" -ForegroundColor Green
+	Write-Output "Credential migration finished"
+}
 }

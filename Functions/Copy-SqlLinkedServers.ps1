@@ -1,6 +1,7 @@
-﻿<# 
+﻿Function Copy-SqlLinkedServers {
+<# 
 .SYNOPSIS 
-Copy-SqlLinkedServers.ps11 migrates Linked Servers from one SQL Server to another. Linked Server logins and passwords are migrated as well.
+Copy-SqlLinkedServers migrates Linked Servers from one SQL Server to another. Linked Server logins and passwords are migrated as well.
 
 .DESCRIPTION 
 By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Linked Servers from one server to another, while maintaining username and password.
@@ -27,23 +28,23 @@ By default, if a Linked Server exists on the source and destination, the Linked 
 Author  : 	Chrissy LeMaire
 Requires: 	PowerShell Version 3.0, SQL Server SMO, 
 			Sys Admin access on Windows and SQL Server. DAC access enabled for local (default)
-DateUpdated: 2015-May-7
-Version: 	0.2.2
+DateUpdated: 2015-Sept-22
+Version: 	2.0
 Limitations: Hasn't been tested thoroughly. Works on Win8.1 and SQL Server 2012 & 2014 so far.
-This just copies the SQL portion. It does not copy files (ie. a local SQLITE database, or Access DB), nor does it configure ODBC entries.
+This just copies the SQL portion. It does not copy files (ie. a local SQLITE database, or Access Db), nor does it configure ODbC entries.
 Not close to finished.
 
 .LINK 
 
 
 .EXAMPLE   
-.\Copy-SqlLinkedServers.ps11 -Source sqlserver\instance -Destination sqlcluster
+Copy-SqlLinkedServers -Source sqlserver\instance -Destination sqlcluster
 
 Description
 Copies all SQL Server Linked Servers on sqlserver\instance to sqlcluster. If Linked Server exists on destination, it will be skipped.
 
 .EXAMPLE   
-.\Copy-SqlLinkedServers.ps11 -Source sqlserver -Destination sqlcluster -LinkedServers SQL2K5,SQL2k -Force
+Copy-SqlLinkedServers -Source sqlserver -Destination sqlcluster -LinkedServers SQL2K5,SQL2k -Force
 
 Description
 Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped.
@@ -56,54 +57,18 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 Param(
 	# Source SQL Server
 	[parameter(Mandatory = $true)]
-	[string]$Source,
-	
-	# Destination SQL Server
+	[object]$Source,
 	[parameter(Mandatory = $true)]
-	[string]$Destination,
-	
-	[switch]$Force
-
+	[object]$Destination,
+	[switch]$Force,
+	[System.Management.Automation.PSCredential]$SourceSqlCredential,
+	[System.Management.Automation.PSCredential]$DestinationSqlCredential
 	)
 	
-DynamicParam  {
-	if ($Source) {
-		# Check for SMO and SQL Server access
-		if ([Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SMO") -eq $null) {return}
-		
-		$server = New-Object Microsoft.SqlServer.Management.Smo.Server $source
-		$server.ConnectionContext.ConnectTimeout = 2
-		try { $server.ConnectionContext.Connect() } catch { return }
-	
-		# Populate arrays
-		$linkedserverlist = @()
-		foreach ($linkedserver in $server.LinkedServers) {
-			$linkedserverlist += $linkedserver.name
-		}
+DynamicParam  { if ($source) { return (Get-ParamSqlLinkedServers -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 
-		# Reusable parameter setup
-		$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-		$attributes = New-Object System.Management.Automation.ParameterAttribute
-		
-		$attributes.ParameterSetName = "__AllParameterSets"
-		$attributes.Mandatory = $false
-		
-		# Database list parameter setup
-		if ($linkedserverlist) { $dbvalidationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $linkedserverlist }
-		$lsattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-		$lsattributes.Add($attributes)
-		if ($linkedserverlist) { $lsattributes.Add($dbvalidationset) }
-		$LinkedServers = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("LinkedServers", [String[]], $lsattributes)
-		
-		$newparams.Add("LinkedServers", $LinkedServers)			
-		$server.ConnectionContext.Disconnect()
-	
-	return $newparams
-	}
-}
 
 BEGIN {
-
 Function Get-LinkedServerLogins { 
 	<#
 		.SYNOPSIS
@@ -118,9 +83,12 @@ Function Get-LinkedServerLogins {
 	
 	#>
 		
-		param(
-		[object]$server
-	)
+	param(
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+		)
+	
+	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 	$sourcename = $server.name
 	
 	# Query Service Master Key from the database - remove padding from the key
@@ -129,7 +97,7 @@ Function Get-LinkedServerLogins {
 	try { $smkbytes = $server.ConnectionContext.ExecuteScalar($sql) }
 	catch { throw "Can't execute SQL on $sourcename" }
 	
-	$sourcenetbios = Get-NetBIOSName $server
+	$sourcenetbios = Get-NetBiosName $server
 	$instance = $server.InstanceName
 	$serviceInstanceId = $server.serviceInstanceId
 	
@@ -153,10 +121,7 @@ Function Get-LinkedServerLogins {
 
 	# Choose the encryption algorithm based on the SMK length - 3DES for 2008, AES for 2012
 	# Choose IV length based on the algorithm
-	if (($servicekey.Length -ne 16) -and ($servicekey.Length -ne 32)) {
-		Write-Warning "Unknown key size. Cannot continue. Quitting."
-		return
-	}
+	if (($servicekey.Length -ne 16) -and ($servicekey.Length -ne 32)) { throw"Unknown key size. Cannot continue. Quitting." }
 
 	if ($servicekey.Length -eq 16) {
 		$decryptor = New-Object System.Security.Cryptography.TripleDESCryptoServiceProvider
@@ -166,10 +131,12 @@ Function Get-LinkedServerLogins {
 		$ivlen = 16
 	}
 
-	# Query link server password information from the DB. Remove header from pwdhash, extract IV (as iv) and ciphertext (as pass)
+	# Query link server password information from the Db. Remove header from pwdhash, extract IV (as iv) and ciphertext (as pass)
 	# Ignore links with blank credentials (integrated auth ?)
 
-	$connstring = "Server=ADMIN:$sourcenetbios\$instance;Trusted_Connection=True"
+	if ($server.IsClustered -eq $false) { $connstring = "Server=ADMIN:$sourcenetbios\$instance;Trusted_Connection=True" }
+	else { $connstring = "Server=ADMIN:$sourcename;Trusted_Connection=True" }
+	
 	$sql = "SELECT sysservers.srvname,syslnklgns.name,substring(syslnklgns.pwdhash,5,$ivlen) iv,substring(syslnklgns.pwdhash,$($ivlen+5),
 	len(syslnklgns.pwdhash)-$($ivlen+4)) pass FROM master.sys.syslnklgns inner join master.sys.sysservers on syslnklgns.srvid=sysservers.srvid WHERE len(pwdhash)>0"		
 	
@@ -231,13 +198,21 @@ Function Copy-LinkedServers {
 	#>
 		
 		param(
-		[object]$sourceserver,
-		[object]$destserver,
+		[object]$source,
+		[object]$destination,
 		[string[]]$LinkedServers,
-		[bool]$force
+		[bool]$force,
+		[System.Management.Automation.PSCredential]$SourceSqlCredential,
+		[System.Management.Automation.PSCredential]$DestinationSqlCredential
 	)
 	
-	Write-Warning "Collecting Linked Server logins and passwords on $($sourceserver.name)"
+	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+
+	$source = $sourceserver.name
+	$destination = $destserver.name
+	
+	Write-Output "Collecting Linked Server logins and passwords on $($sourceserver.name)"
 	$sourcelogins = Get-LinkedServerLogins $sourceserver
 	
 	
@@ -245,7 +220,7 @@ Function Copy-LinkedServers {
 		$serverlist = $sourceserver.LinkedServers | Where-Object { $LinkedServers -contains $_.Name }
 	} else { $serverlist = $sourceserver.LinkedServers }
 	
-	Write-Host "Starting migration" -ForegroundColor Green
+	Write-Output "Starting migration"
 	foreach ($linkedserver in $serverlist) {
 		$provider = $linkedserver.ProviderName
 		try { 
@@ -270,12 +245,12 @@ Function Copy-LinkedServers {
 			}
 		}
 		
-		Write-Host "`nAttempting to migrate: $linkedservername" -ForegroundColor Yellow
+		Write-Output "Attempting to migrate: $linkedservername"
 		try { 
 			$sql = $linkedserver.Script()
 			[void]$destserver.ConnectionContext.ExecuteNonQuery($sql) 
 			$destserver.LinkedServers.Refresh()
-			Write-Host "$linkedservername successfully copied." -ForegroundColor Green
+			Write-Output "$linkedservername successfully copied"
 		} catch { Write-Warning "$linkedservername could not be added to $($destserver.name)" }
 		
 		$destlogins = $destserver.LinkedServers[$linkedservername].LinkedServerLogins
@@ -288,110 +263,50 @@ Function Copy-LinkedServers {
 				try { 
 					$currentlogin.SetRemotePassword($login.Password)
 					$currentlogin.Alter()
-				} catch { write-warning "$($login.login) failed to copy" }
+				} catch { Write-Error "$($login.login) failed to copy" }
 				
 			}
 		}
-		Write-Host "Finished migrating logins for $linkedservername" -ForegroundColor Green	
+		Write-Output "Finished migrating logins for $linkedservername"	
 	}
-}
-
-Function Test-SQLSA      {
- <#
-            .SYNOPSIS
-              Ensures sysadmin account access on SQL Server. $server is an SMO server object.
-
-            .EXAMPLE
-              if (!(Test-SQLSA $server)) { throw "Not a sysadmin on $source. Quitting." }  
-
-            .OUTPUTS
-                $true if syadmin
-                $false if not
-			
-        #>
-		[CmdletBinding()]
-        param(
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-            [object]$server	
-		)
-		
-try {
-		return ($server.ConnectionContext.FixedServerRoles -match "SysAdmin")
-	}
-	catch { return $false }
-}
-
-Function Get-NetBIOSName {
- <#
-	.SYNOPSIS
-	Takes a best guess at the NetBIOS name of a server. 
-
-	.EXAMPLE
-	$sourcenetbios = Get-NetBIOSName $server
-	
-	.OUTPUTS
-	  String with netbios name.
-			
- #>
-		[CmdletBinding()]
-        param(
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-            [object]$server
-		)
-
-	$servernetbios = $server.ComputerNamePhysicalNetBIOS
-	
-	if ($servernetbios -eq $null) { $servernetbios = $server.Information.NetName }
-	
-	if ($servernetbios -eq $null) {
-		$servernetbios = ($server.name).Split("\")[0]
-		$servernetbios = $servernetbios.Split(",")[0]
-	}
-	
-	return $($servernetbios.ToLower())
 }
 
 }
 
 PROCESS {
-	if ($LinkedServers.Value -ne $null) {$LinkedServers = @($LinkedServers.Value)}  else {$LinkedServers = $null}
-	
-	if ((Get-Host).Version.Major -lt 3) { throw "PowerShell 3.0 and above required." }
 
-	if ([Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SMO") -eq $null )
-	{ throw "Quitting: SMO Required. You can download it from http://goo.gl/R4yA6u" }
+	$LinkedServers = $psboundparameters.LinkedServers
 
-	if ([Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SMOExtended") -eq $null )
-	{ throw "Quitting: Extended SMO Required. You can download it from http://goo.gl/R4yA6u" }
+	Write-Output "Attempting to connect to SQL Servers.." 
+	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+
+	$source = $sourceserver.name
+	$destination = $destserver.name
 	
-	Write-Host "Attempting to connect to SQL Servers.."  -ForegroundColor Green
-	$sourceserver = New-Object Microsoft.SqlServer.Management.Smo.Server $source
-	$destserver = New-Object Microsoft.SqlServer.Management.Smo.Server $destination
+	if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
+	if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 	
-	try { $sourceserver.ConnectionContext.Connect() } catch { throw "Can't connect to $source or access denied. Quitting." }
-	try { $destserver.ConnectionContext.Connect() } catch { throw "Can't connect to $destination or access denied. Quitting." }
-		
-	if (!(Test-SQLSA $sourceserver)) { throw "Not a sysadmin on $source. Quitting." }
-	if (!(Test-SQLSA $destserver)) { throw "Not a sysadmin on $destination. Quitting." }
-	
-	$sourcenetbios = Get-NetBIOSName $sourceserver
+	$sourcenetbios = Get-NetBiosName $sourceserver
 	
 	# Test for WinRM
-	try { $result = Test-WSMan -ComputerName $sourcenetbios } catch { throw "Remote PowerShell access not enabled on on $source. Quitting." }
+	winrm id -r:$sourcenetbios 2>$null | Out-Null
+	if ($LastExitCode -ne 0) { throw "Remote PowerShell access not enabled on on $source or access denied. Quitting." }
 	
 	# Test for registry access
 	try { Invoke-Command -ComputerName $sourcenetbios { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } } 
 	catch { throw "Can't connect to registry on $source. Quitting." }
 	
 	# Magic happens here
-	Copy-LinkedServers $sourceserver $destserver $linkedservers $force
+	If ($Pscmdlet.ShouldProcess($destination,"Copying the following linked servers: ")) {
+		Copy-LinkedServers $sourceserver $destserver $linkedservers $force
+	}
 	
 }
 
 END {
 	$sourceserver.ConnectionContext.Disconnect()
 	$destserver.ConnectionContext.Disconnect()
-	Write-Host "`nScript completed" -ForegroundColor Green
+	Write-Output "Linked Server migration finished"
+}
 }

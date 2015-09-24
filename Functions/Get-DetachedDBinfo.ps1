@@ -1,3 +1,4 @@
+Function Get-DetachedDBinfo {
 <#  
 .SYNOPSIS  
 Get detailed information about detached SQL Server database files.
@@ -5,7 +6,7 @@ Get detailed information about detached SQL Server database files.
 .DESCRIPTION
 This script gathers the following information from detached database files: database name, SQL Server version (compatibility level), collation, and file structure. "Data files" and "Log file" report the structure of the data and log files as they were when the database was detached. "Database version" is the comptability level.
  
-.PARAMETER Server
+.PARAMETER SqlServer
 An online SQL Server is required to parse the information within the detached database file. Note that this script will not attach the file, it will simply use SQL Server to read its contents.
  
 .PARAMETER MDF 
@@ -14,14 +15,14 @@ The path to the MDF file. This path must be readable by the SQL Server service a
 .NOTES  
 Author  : Chrissy LeMaire 
 Requires:     PowerShell Version 3.0, SQL Server SMO
-DateUpdated: 2015-Jan-22
-Version: 1.0
+DateUpdated: 2015-Sept-22
+Version: 2.0
  
 .LINK
- https://gallery.technet.microsoft.com/scriptcenter/Get-Detached-SQL-Server-7ad8d4e7
+ https://gallery.technet.microsoft.com/scriptcenter/Get-Detached-Sql-SqlServer-7ad8d4e7
  
 .EXAMPLE    
-.\Get-DetachedDBInfo.ps1 -Server sqlserver -MDF M:\Archive\mydb.mdf
+Get-DetachedDbInfo -SqlServer sqlserver -SqlCredential $SqlCredential -MDF M:\Archive\mydb.mdf
  
 #> 
 
@@ -30,32 +31,37 @@ Version: 1.0
 
 Param(
 	[parameter(Mandatory = $true)]
-	[string]$Server,
+	[string]$SqlServer,
 	[parameter(Mandatory = $true)]
-	[string]$MDF
+	[string]$MDF,
+	[System.Management.Automation.PSCredential]$SqlCredential
 	)
 
 BEGIN {
-	Function Get-DetachedDBInfo {
+	Function Get-MdfFileInfo {
 		[CmdletBinding()]
 		param(
 			[Parameter(Mandatory = $true)]
 			[ValidateNotNullOrEmpty()]
-			[object]$server,
-			[string]$mdf	
+			[object]$SqlServer,
+			[string]$mdf,
+			[System.Management.Automation.PSCredential]$SqlCredential
 		)
+
+		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 
 		$datafiles = New-Object System.Collections.Specialized.StringCollection
 		$logfiles = New-Object System.Collections.Specialized.StringCollection
 		
 		try {
-			$detachedDatabaseInfo = $server.DetachedDatabaseInfo($mdf)
+			$detachedDatabaseInfo = $SqlServer.DetachedDatabaseInfo($mdf)
 			$dbname = ( $detachedDatabaseInfo | Where { $_.Property -eq "Database name" }).Value
 			$dbversion = ($detachedDatabaseInfo | Where { $_.Property -eq "Database version" }).Value
 			$collationid = ($detachedDatabaseInfo | Where { $_.Property -eq "Collation" }).Value
-		} catch { throw "$($server.name) cannot read the file $($MDF). Does service account $($server.ServiceAccount) have accesss to that path?" }
+		} catch { throw "$($server.name) cannot read the file $($MDF). Does service account $($SqlServer.ServiceAccount) have accesss to that path and is the database detached?" }
 
 		switch ($dbversion) {
+			829 {$dbversion = "SQL Server 2016"}
 			782 {$dbversion = "SQL Server 2014"}
 			706 {$dbversion = "SQL Server 2012"}
 			684 {$dbversion = "SQL Server 2012 CTP1"}
@@ -67,25 +73,26 @@ BEGIN {
 			539 {$dbversion = "SQL Server 2000"}
 			515 {$dbversion = "SQL Server 7.0"}
 			408 {$dbversion = "SQL Server 6.5"}
+			default {$dbversion = "Unknown ($dbversion)"}
 		}
 		
 		$collationsql = "SELECT name FROM fn_helpcollations() where collationproperty(name, N'COLLATIONID')  = $collationid"
 		try {
-			$dataset = $server.databases['master'].ExecuteWithResults($collationsql)
+			$dataset = $SqlServer.databases['master'].ExecuteWithResults($collationsql)
 			$collation = "$($dataset.Tables[0].Rows[0].Item(0))"
 		} catch { $collation = $collationid }
 		
 		if ($collation.length -eq 0) { $collation = $collationid }
 		
 		try {
-			foreach    ($file in $server.EnumDetachedDatabaseFiles($mdf)) {
+			foreach    ($file in $SqlServer.EnumDetachedDatabaseFiles($mdf)) {
 				$datafiles +=$file
 			}
 			 
-			foreach ($file in $server.EnumDetachedLogFiles($mdf)) {
+			foreach ($file in $SqlServer.EnumDetachedLogFiles($mdf)) {
 				$logfiles +=$file
 			}
-		} catch { throw "$($server.name) enumerate database or log structure information for $($MDF)" }
+		} catch { throw "$($SqlServer.name) enumerate database or log structure information for $($MDF)" }
 			
 		$mdfinfo = New-Object PSObject -Property @{
 			"Database Name" = $dbname
@@ -100,19 +107,18 @@ BEGIN {
 }
 
 PROCESS {
-	[void][Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SMO")
 
-	$smoserver = New-Object Microsoft.SqlServer.Management.Smo.Server $server
-	try { $smoserver.ConnectionContext.Connect() } catch { throw "Can't connect to SQL Server." }
+	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 	
-	# Get-DetachedDBInfo returns a custom object. Data file and log files are a string collection.
-	$mdfinfo = Get-DetachedDBInfo $smoserver $mdf
+	# Get-DetachedDbInfo returns a custom object. Data file and log files are a string collection.
+	$mdfinfo = Get-MdfFileInfo $server $mdf
 	
-	Write-Host "The following information was gathered about the detatched database:" -ForegroundColor Green
-	$mdfinfo
+	Write-Output "The following information was gathered about the detatched database:"
+	Write-Output $mdfinfo
 	
 }
 
 END {
-	$smoserver.ConnectionContext.Disconnect()
+	$server.ConnectionContext.Disconnect()
 	}
+}
