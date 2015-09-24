@@ -3,7 +3,7 @@ A collection of modules that help dba productivity
 
 Installer
 --------------
-Will place in PowerShell Gallery when it's slightly more mature. 
+Run the following command to automatically install the module.
 
 	Invoke-Expression (Invoke-WebRequest  http://git.io/vn1hQ).Content
 
@@ -29,7 +29,9 @@ This will install the following functions
 	Update-dbatools
 	Watch-SqlDbLogins
 
-A couple quick notes
+This module will be placed in PowerShell Gallery when it's slightly more mature. 
+	
+A few quick notes
 --------------
 
  - I try to support SQL Server 2000-2016 when possible
