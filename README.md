@@ -1,5 +1,5 @@
 # dbatools
-A collection of modules for SQL Server DBAs.
+A collection of modules for SQL Server DBAs. It initually started out as 'sqlmigration', but has now grown into a collection of various commands that help automate DBA tasks.
 
 Installer
 --------------
@@ -258,9 +258,11 @@ Gets the following
     Log files          : {L:\MSSQL12.MSSQLSERVER\MSSQL\Data\mydb_log.ldf}
     Database Version   : SQL Server 2014
 
-Get-SqlMaxMemory
+Get-SqlMaxMemory and Set-SqlMaxMemory
 --------------
 Displays information relating to SQL Server Max Memory configuration settings.  Inspired by Jonathan Kehayias's post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this script displays a SQL Server's: total memory, currently configured SQL max memory, and the calculated recommendation.
+
+![Get-SqlMaxMemory](https://i1.gallery.technet.s-msft.com/scriptcenter/get-set-sql-max-memory-19147057/image/file/138076/1/sqlmaxmemory.png)
 
 Jonathan notes that the formula used provides a *general recommendation* that doesn't account for everything that may be going on in your specific environment. 
 
@@ -269,6 +271,7 @@ Jonathan notes that the formula used provides a *general recommendation* that do
     Set-SqlMaxMemory sql2016 -UseRecommended
     Set-SqlMaxMemory sqlcluster 10240
 
+	
 Import-CsvtoSql
 --------------
 
