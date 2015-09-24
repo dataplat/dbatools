@@ -29,7 +29,6 @@ This will install the following functions
 	Update-dbatools
 	Watch-SqlDbLogins
 
-
 A couple quick notes
 --------------
 
@@ -143,18 +142,17 @@ This brings the rest of the functions together, which is useful when you're look
 
 Examples
 
-    # Migrate databases uses backup/restore. Also migrate logins, database mail, credentials, SQL Agent, Central Management Server, SQL global configuration.
+Migrate databases uses backup/restore. Also migrate logins, database mail, credentials, SQL Agent, Central Management Server, SQL global configuration.
     
     Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -SourceSqlCredential \$cred -ReuseFolderstructure -DestinationSqlCredential $cred -Force -NetworkShare \\fileserver\share\sqlbackups\Migration -BackupRestore
-    
-    # Migrate only database mail, credentials, SQL Agent, Central Management Server, SQL global configuration. 
+
+Migrate only database mail, credentials, SQL Agent, Central Management Server, SQL global configuration. 
     
     Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -SkipDatabases -SkipLogins
     
-    # Migrate databases using detach/copy/attach. Reattach at source and set source databases read-only. Also migrate logins, database mail, credentials, SQL Agent, Central Management Server, SQL global configuration. 
+Migrate databases uses backup/restore. Also migrate logins, database mail, credentials, SQL Agent, Central Management Server, SQL global configuration.Migrate databases using detach/copy/attach. Reattach at source and set source databases read-only. Also migrate logins, database mail, credentials, SQL Agent, Central Management Server, SQL global configuration. 
     
     Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -DetachAttach -Reattach -SetSourceReadonly
-    
 
 Restore-HallengrenBackups
 --------------
