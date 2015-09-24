@@ -41,6 +41,8 @@ Copy-SqlDatabases
 Copy-SqlDatabases allows you to migrate using detach/copy/attach or backup/restore. 
 By default, databases will be migrated to the destination SQL Server's default data and log directories. You can override this by specifying -ReuseFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.
 
+This function used to be a core part of Start-SqlServerMigration. While the documentation is slightly outdated, you can visit [ScriptCenter](https://gallery.technet.microsoft.com/scriptcenter/Use-PowerShell-to-Migrate-86c841df) for details and a video of the script in action.
+
 	# Windows Authentication with Detach/Attach
 	Copy-SqlDatabases -Source sqlcluster -Destination sql2016 -DetachAttach -Reattachatsource -AllUserDbs
 
@@ -160,13 +162,64 @@ Very early version.
 
     Restore-HallengrenBackups -SqlServer sqlcluster -Path \\fileserver\share\sqlbackups\SQLSERVER2014A
     
+Reset-SqlSaPassword
+--------------
+ This function allows administrators to regain access to local or remote SQL Servers by either resetting the sa password, adding sysadmin role to existing login, or adding a new login (SQL or Windows) and granting it sysadmin privileges.
+
+![Reset-SqlSaPassword](https://i1.gallery.technet.s-msft.com/scriptcenter/reset-sql-sa-password-15fb488d/image/file/138615/1/salsapassword-scriptcenter-1.gif)
+
+This is accomplished by stopping the SQL services or SQL Clustered Resource Group, then restarting SQL via the command-line using the /mReset-SqlSaPassword paramter which starts the server in Single-User mode, and only allows this script to connect.
+	  
+Once the service is restarted, the following tasks are performed:
+
+ - Login is added if it doesn't exist
+ - If login is a Windows User, an attempt is made to ensure it exists
+ - If login is a SQL Login, password policy will be set to OFF when creating the login, and SQL Server authentication will be set to Mixed Mode.
+ - Login will be enabled and unlocked
+ - Login will be added to sysadmin role
+	  
+If failures occur at any point, a best attempt is made to restart the SQL Server.
+	  
+In order to make this script as portable as possible, [the original module on Script Center](https://gallery.technet.microsoft.com/scriptcenter/Use-PowerShell-to-Migrate-86c841df) only uses System.Data.SqlClient and Get-WmiObject are used (as opposed to requiring the Failover Cluster Admin tools or SMO).  If using this function against a remote SQL Server, ensure WinRM is configured and accessible. If this is not possible, run the script locally.
+	  
+Tested on Windows XP, 7, 8.1, Server 2012 and Windows Server Technical Preview 2. Tested on SQL Server 2005 SP4 through 2016 CTP2.
+
 Watch-SqlDbLogins
 --------------
-Watch-SqlDbLogins uses SQL Server process enumeration to track logins in a SQL Server table. This is helpful when you need to migrate a SQL Server, and update connection strings, but have inadequate documentation on which servers/applications are logging into your SQL instance. 
+Watch-SqlDbLogins uses SQL Server process enumeration to track logins in a SQL Server table. This is helpful when you need to migrate a SQL Server, and update connection strings, but have inadequate documentation on which servers/applications are logging into your SQL instance. See the [Script Center](https://gallery.technet.microsoft.com/scriptcenter/SQL-Server-DatabaseApp-4abbd73a) page for more information.
 
 Running this script every 5 minutes for a week should give you a sufficient idea about database and login usage.
 
     Watch-SqlDbLogins -SqlServer sqlserver -SqlCms cmserver1
+  
+  The data in the SQL table looks like this:
+  
+![enter image description here](https://gallery.technet.microsoft.com/scriptcenter/site/view/file/124201/1/Watch-DBLogins.png)
+
+Use the following code to setup the required SQL table
+
+    CREATE DATABASE DatabaseLogins
+    GO
+    USE DatabaseLogins
+    GO
+        CREATE TABLE [dbo].[DbLogins]( 
+        [SQLServer] varchar(128),
+        [LoginName] varchar(128),
+        [Host] varchar(128),
+        [DbName] varchar(128),
+        [Program] varchar(256),
+        [Timestamp] datetime default getdate(),
+    )
+    -- Create Unique Clustered Index with IGNORE_DUPE_KEY=ON to avoid duplicates
+    CREATE UNIQUE CLUSTERED INDEX [ClusteredIndex-Combo] ON [dbo].[DbLogins]
+        (
+        [SQLServer] ASC,
+        [LoginName] ASC,
+        [Host] ASC,
+        [DbName] ASC,
+        [Program] ASC
+    ) WITH (IGNORE_DUP_KEY = ON)
+    GO
 
 Get-SqlServerKeys
 --------------
@@ -184,8 +237,13 @@ Uses key decoder by Jakob Bindslet (http://goo.gl/1jiwcB)
     $cred = Get-Credential 
     Get-SqlServerKeys -SqlCms sqlserver -SqlCredential $cred
     
+Output looks like this
+
+![enter image description here](https://i1.gallery.technet.s-msft.com/scriptcenter/get-sql-server-product-4b5bf4f8/image/file/135405/1/sql6.png)
+
 Get-DetachedDBinfo
 --------------
+Get-DetachedDBinfo gathers the following information from detached database files: database name, SQL Server version (compatibility level), collation, and file structure. "Data files" and "Log file" report the structure of the data and log files as they were when the database was detached. "Database version" is the compatibility level.
 
     Get-DetachedDbInfo -SqlServer sqlserver -MDF M:\Archive\mydb.mdf
     Get-DetachedDbInfo -SqlServer sqlserver -SqlCredential $SqlCredential -MDF M:\Archive\mydb.mdf
@@ -207,3 +265,14 @@ Jonathan notes that the formula used provides a *general recommendation* that do
     Get-SqlMaxMemory -SqlCms sqlserver -SqlCredential $SqlCredential
     Get-SqlMaxMemory -SqlServers sql2016 -SqlCredential $SqlCredential | Set-SqlMaxMemory -UseRecommended
     Set-SqlMaxMemory sql2016 -UseRecommended
+    Set-SqlMaxMemory sqlcluster 10240
+
+You may also like...
+--------------
+**Import-CsvtoSql** didn't quite fit into this toolset, but you may find it useful nevertheless. For those of you with PowerShell 5, you can **Install-Module CsvSqlimport** or download from [Script Center](https://gallery.technet.microsoft.com/scriptcenter/Import-Large-CSVs-into-SQL-fa339046).
+
+[See this blog post](https://blog.netnerds.net/2015/09/import-csvtosql-super-fast-csv-to-sql-server-import-powershell-module/)  fore more details about this tool which can import more than 10.5 million records in 2minutes.
+
+![enter image description here](https://i1.gallery.technet.s-msft.com/scriptcenter/import-large-csvs-into-sql-fa339046/image/file/142180/1/importcsvsql-win10win-small.gif)
+
+Also, it's not super polished, but you may also like Invoke-CsvSqlcmd, which allows you to query CSV files using SQL syntax. Visit [Script Center](https://gallery.technet.microsoft.com/scriptcenter/Query-CSV-with-SQL-c6c3c7e5) or **Install-Module CsvSqlcmd** from PSGallery.

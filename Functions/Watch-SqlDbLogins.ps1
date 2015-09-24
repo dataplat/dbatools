@@ -31,6 +31,9 @@ Function Watch-SqlDbLogins {
 .PARAMETER Table
 	The Watch table. By default, this is DbLogins.
 
+.PARAMETER SqlCredential
+	Allows you to login to servers using SQL Credentials as opposed to Windows Auth/Integrated/Trusted.
+	
  .NOTES 
     Author  : Chrissy LeMaire
     Requires: 	PowerShell Version 3.0, SQL Server SMO, 
@@ -52,7 +55,7 @@ Watch-SqlDbLogins -SqlServer sqlcluster -Database CentralAudit -ServersFromFile 
 In the above example, a list of servers is gathered from the file sqlservers.txt in the current directory. Using this list, the script then enumerates all the processes and gathers login information, and saves it to the table "Dblogins" within the "CentralAudit" database on the SQL Server "sqlcluster".
 
  .EXAMPLE   
-Watch-SqlDbLogins -SqlServer sqlserver -SqlCms SqlCms1 -SqlCmsGroups SQL2014Clusters
+Watch-SqlDbLogins -SqlServer sqlserver -SqlCms SqlCms1 -SqlCmsGroups SQL2014Clusters -SqlCredential $cred
 
 In the above example, a list of servers is generated using database instance names within the "SQL2014Clusters" group on the Central Management Server "SqlCms1". Using this list, the script then enumerates all the processes and gathers login information, and saves it to the table "Dblogins" within the "DatabaseLogins" database on "sqlserver".
 
