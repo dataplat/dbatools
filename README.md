@@ -47,11 +47,11 @@ By default, databases will be migrated to the destination SQL Server's default d
 This function used to be a core part of Start-SqlServerMigration. While the documentation is slightly outdated, you can visit [ScriptCenter](https://gallery.technet.microsoft.com/scriptcenter/Use-PowerShell-to-Migrate-86c841df) for details and a video of the script in action.
 
 	# Windows Authentication with Detach/Attach
-	Copy-SqlDatabases -Source sqlcluster -Destination sql2016 -DetachAttach -Reattachatsource -AllUserDbs
+	Copy-SqlDatabases -Source sqlcluster -Destination sql2016 -DetachAttach -Reattachatsource -All
 
 	# SQL Authentication with Backup/Restore. 
 	# Note that both SQL Server service accounts must have access to the share.
-	Copy-SqlDatabases -Source sqlserver -Destination sqlcluster -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential -AllUserDbs -SetSourceReadOnly
+	Copy-SqlDatabases -Source sqlserver -Destination sqlcluster -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential -All -SetSourceReadOnly
     
 Copy-SqlLogins
 --------------

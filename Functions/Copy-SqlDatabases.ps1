@@ -30,7 +30,7 @@ $dcred = Get-Credential, this pass this $dcred to the param.
 
 Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
-.PARAMETER AllUserDbs
+.PARAMETER All
 Migrates user databases. Does not migrate system or support databases. A logfile named $SOURCE-$DESTINATION-$date-logins.csv will be written to the current directory. Requires -BackupRestore or -DetachAttach. Talk about database structure.
 
 .PARAMETER IncludeSupportDbs
@@ -51,10 +51,10 @@ By default, databases will be migrated to the destination Sql Server's default d
 .PARAMETER NetworkShare
 Specifies the network location for the backup files. The Sql Service service accounts must read/write permission to access this location.
 
-.PARAMETER ExcludeDbs
-Excludes specified databases when performing -AllUserDbs migrations. This list is auto-populated for tab completion.
+.PARAMETER Exclude
+Excludes specified databases when performing -All migrations. This list is auto-populated for tab completion.
 
-.PARAMETER IncludeDbs
+.PARAMETER Databases
 Migrates ONLY specified databases. This list is auto-populated for tab completion.
 
 .PARAMETER SysDbUserObjects
@@ -90,7 +90,7 @@ Description
 All databases, logins, job objects and sp_configure options will be migrated from sqlserver\instance to sqlcluster. Databases will be migrated using the detach/copy files/attach method. Dbowner will be updated. User passwords, SIDs, database roles and server roles will be migrated along with the login.
 
 .EXAMPLE   
-Copy-SqlDatabases -Source sqlserver\instance -Destination sqlcluster -AllUserDbs -ExcludeDbs Northwind, pubs -IncludeSupportDbs -force -AllLogins -ExcludeLogins nwuser, pubsuser, "corp\domain admins"  -MigrateJobServer -ExportSPconfigure -SourceSqlCredential -DestinationSqlCredential
+Copy-SqlDatabases -Source sqlserver\instance -Destination sqlcluster -All -Exclude Northwind, pubs -IncludeSupportDbs -force -AllLogins -Exclude nwuser, pubsuser, "corp\domain admins"  -MigrateJobServer -ExportSPconfigure -SourceSqlCredential -DestinationSqlCredential
 
 Description
 
@@ -131,7 +131,7 @@ Param(
 	
 	[Parameter(ParameterSetName="DbBackup")]
 	[Parameter(ParameterSetName="DbAttachDetach")]
-	[switch]$AllUserDbs,
+	[switch]$All,
 	
 	[Parameter(ParameterSetName="DbBackup")]
 	[Parameter(ParameterSetName="DbAttachDetach")]
@@ -563,7 +563,7 @@ Function Copy-SqlDatabases  {
               Performs tons of checks then migrates the databases.
 
             .EXAMPLE
-                Copy-SqlDatabases $sourceserver $destserver $AllUserDBs $IncludeDBs $ExcludeDBs $IncludeSupportDBs $force
+                Copy-SqlDatabases $sourceserver $destserver $All $Databases $Exclude $IncludeSupportDBs $force
 
             .OUTPUTS
               CSV files and informational messages.
@@ -580,13 +580,13 @@ Function Copy-SqlDatabases  {
             [object]$destserver,
 
 			[Parameter()]
-            [bool]$AllUserDBs,
+            [bool]$All,
 			
 			[Parameter()]
-            [string[]]$IncludeDBs,
+            [string[]]$Databases,
 			
 			[Parameter()]
-            [string[]]$ExcludeDBs,
+            [string[]]$Exclude,
 
 			[Parameter()]
             [string]
@@ -643,7 +643,7 @@ Function Copy-SqlDatabases  {
 	$csvfilename = "$($sourceserver.name.replace('\','$'))-to-$($destserver.name.replace('\','$'))-$timenow"
 	
 	$migrateddb = @{}; $skippedb = @{}
-	$ExcludeDBs | Where-Object {!([string]::IsNullOrEmpty($_))} | ForEach-Object { $skippedb.Add($_,"Explicitly Skipped") }
+	$Exclude | Where-Object {!([string]::IsNullOrEmpty($_))} | ForEach-Object { $skippedb.Add($_,"Explicitly Skipped") }
 	
 	$filestructure = Get-SqlFileStructures $sourceserver $destserver $ReuseFolderstructure
 	Set-Content -Path "$csvfilename-db.csv" "Database Name, Result, Start, Finish"
@@ -661,17 +661,17 @@ Function Copy-SqlDatabases  {
 		############################################################### #>
 		
 		if ($database.id -le 4) { continue }
-		if ($IncludeDBs -and $IncludeDBs -notcontains $dbname) { continue }
+		if ($Databases -and $Databases -notcontains $dbname) { continue }
 		if ($IncludeSupportDBs -eq $false -and $SupportDBs -contains $dbname) { continue }
 		
 		if ($IncludeSupportDBs -eq $true -and $SupportDBs -notcontains $dbname) {
-			if ($AllUserDBs -eq $false -and $IncludeDBs.length -eq 0) { continue }
+			if ($All -eq $false -and $Databases.length -eq 0) { continue }
 		}
 		
 		Write-Output "`n######### Database: $dbname #########"
 		$dbstart = Get-Date
 		
-		if ($skippedb.ContainsKey($dbname) -and $IncludeDBs -eq $null) {
+		if ($skippedb.ContainsKey($dbname) -and $Databases -eq $null) {
 			Write-Output "`nSkipping $dbname"
 			continue 
 		}
@@ -1097,10 +1097,10 @@ PROCESS {
 	if ($source -eq $destination) { throw "Source and Destination Sql Servers are the same. Quitting." }
 
 	# Convert from RuntimeDefinedParameter object to regular array
-	$IncludeDbs = $psboundparameters.IncludeDbs
-	$ExcludeDbs = $psboundparameters.ExcludeDbs
+	$Databases = $psboundparameters.Databases
+	$Exclude = $psboundparameters.Exclude
 	
-	if (($AllUserDbs -or $IncludeSupportDbs -or $IncludeDbs) -and !$DetachAttach -and !$BackupRestore) {
+	if (($All -or $IncludeSupportDbs -or $Databases) -and !$DetachAttach -and !$BackupRestore) {
       throw "You must specify -DetachAttach or -BackupRestore when migrating databases."
     }
 
@@ -1139,12 +1139,12 @@ PROCESS {
 		Preps
 	---------------------------------------------------------- #>
 
-	if (($IncludeDbs -or $ExcludeDbs -or $IncludeSupportDbs) -and (!$DetachAttach -and !$BackupRestore)) {
+	if (($Databases -or $Exclude -or $IncludeSupportDbs) -and (!$DetachAttach -and !$BackupRestore)) {
 		throw "You did not select a migration method. Please use -BackupRestore or -DetachAttach"
 	}
 	
-	if ((!$IncludeDbs -and !$AllUserDbs -and !$IncludeSupportDbs) -and ($DetachAttach -or $BackupRestore)) {
-		throw "You did not select any databases to migrate. Please use -AllUserDbs or -IncludeDbs or -IncludeSupportDbs"
+	if ((!$Databases -and !$All -and !$IncludeSupportDbs) -and ($DetachAttach -or $BackupRestore)) {
+		throw "You did not select any databases to migrate. Please use -All or -Databases or -IncludeSupportDbs"
 	}
 	
 	# SMO's filestreamlevel is sometimes null
@@ -1163,10 +1163,10 @@ PROCESS {
 		}
 	}
 	
-	if ($AllUserDbs -or $ExcludeDbs.length -gt 0 -or $IncludeSupportDbs -or $IncludeDbs.length -gt 0)
+	if ($All -or $Exclude.length -gt 0 -or $IncludeSupportDbs -or $Databases.length -gt 0)
 	{ 
-		Copy-SqlDatabases  -sourceserver $sourceserver -destserver $destserver -AllUserDbs $AllUserDbs `
-		 -IncludeDbs $IncludeDbs -ExcludeDbs $ExcludeDbs -IncludeSupportDbs $IncludeSupportDbs -Force $force
+		Copy-SqlDatabases  -sourceserver $sourceserver -destserver $destserver -All $All `
+		 -Databases $Databases -Exclude $Exclude -IncludeSupportDbs $IncludeSupportDbs -Force $force
 	}
 	
 }

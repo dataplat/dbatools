@@ -32,10 +32,10 @@ $dcred = Get-Credential, this pass this $dcred to the param.
 
 Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
-.PARAMETER ExcludeLogins
+.PARAMETER Exclude
 Excludes specified logins. This list is auto-populated for tab completion.
 
-.PARAMETER IncludeLogins
+.PARAMETER Logins
 Migrates ONLY specified logins. This list is auto-populated for tab completion.
 
 .PARAMETER SyncOnly
@@ -52,13 +52,13 @@ Copies all logins from source server to destination server. If a SQL login on so
 the destination login will be dropped and recreated.
 
 .EXAMPLE
-Copy-SqlLogins -Source sqlserver -Destination sqlcluster -ExcludeLogins realcajun -SourceSqlCredential -DestinationSqlCredential
+Copy-SqlLogins -Source sqlserver -Destination sqlcluster -Exclude realcajun -SourceSqlCredential -DestinationSqlCredential
 
 Prompts for SQL login names and passwords on both the Source and Destination then connects to each using the SQL Login credentials. 
 Copies all logins except for realcajun. If a login already exists on the destination, the login will not be migrated.
 
 .EXAMPLE
-Copy-SqlLogins -Source sqlserver -Destination sqlcluster -IncludeLogins realcajun -force
+Copy-SqlLogins -Source sqlserver -Destination sqlcluster -Logins realcajun -force
 
 Copies ONLY login realcajun. If login realcajun exists on the destination, it will be dropped and recreated.
 
@@ -124,10 +124,10 @@ Function Copy-SqlLogins {
 			[object]$destserver,
 			
 			[Parameter()]
-            [string[]]$IncludeLogins,
+            [string[]]$Logins,
 			
 			[Parameter()]
-            [string[]]$ExcludeLogins,
+            [string[]]$Exclude,
 			
 			[Parameter()]
             [bool]$Force
@@ -138,14 +138,14 @@ Function Copy-SqlLogins {
 	}
 
 	$skippedlogin = @{}; $migratedlogin = @{}; $source = $sourceserver.name; $destination = $destserver.name
-	$ExcludeLogins | Where-Object {!([string]::IsNullOrEmpty($_))} | ForEach-Object { $skippedlogin.Add($_,"Explicitly Skipped") }
+	$Exclude | Where-Object {!([string]::IsNullOrEmpty($_))} | ForEach-Object { $skippedlogin.Add($_,"Explicitly Skipped") }
 	$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
 	$csvfilename = "$($sourceserver.name.replace('\','$'))-to-$($destserver.name.replace('\','$'))-$timenow"
 	
 	foreach ($sourcelogin in $sourceserver.logins) {
 
 		$username = $sourcelogin.name
-		if ($IncludeLogins -ne $null -and $IncludeLogins -notcontains $username) { continue }
+		if ($Logins -ne $null -and $Logins -notcontains $username) { continue }
 		if ($skippedlogin.ContainsKey($username) -or $username.StartsWith("##") -or $username -eq 'sa') { continue }
 		$servername = Get-NetBiosName $sourceserver
 
@@ -577,7 +577,7 @@ Function Sync-Only {
 	.SYNOPSIS
 	  Skips migration, and just syncs permission sets, roles, database mappings on server and databases
 	.EXAMPLE 
-	 Sync-Only -sourceserver $sourceserver -destserver $destserver -IncludeLogins $IncludeLogins -ExcludeLogins $ExcludeLogins
+	 Sync-Only -sourceserver $sourceserver -destserver $destserver -Logins $Logins -Exclude $Exclude
 
 		#>
 	[CmdletBinding()]
@@ -586,12 +586,12 @@ Function Sync-Only {
 		[ValidateNotNullOrEmpty()]
 		[object]$sourceserver,
 		[object]$destserver,
-		[array]$IncludeLogins,
-		[array]$ExcludeLogins
+		[array]$Logins,
+		[array]$Exclude
 	)
 	
 	$skippedlogin = @{}; $source = $sourceserver.name; $destination = $destserver.name
-	$ExcludeLogins | Where-Object {!([string]::IsNullOrEmpty($_))} | ForEach-Object { $skippedlogin.Add($_,"Explicitly Skipped") }
+	$Exclude | Where-Object {!([string]::IsNullOrEmpty($_))} | ForEach-Object { $skippedlogin.Add($_,"Explicitly Skipped") }
 	$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
 	$csvfilename = "$($sourceserver.name.replace('\','$'))-to-$($destserver.name.replace('\','$'))-$timenow"
 	
@@ -599,7 +599,7 @@ Function Sync-Only {
 
 		$username = $sourcelogin.name
 		$currentlogin = $sourceserver.ConnectionContext.truelogin
-		if ($IncludeLogins -ne $null -and $IncludeLogins -notcontains $username) { continue }
+		if ($Logins -ne $null -and $Logins -notcontains $username) { continue }
 		if ($skippedlogin.ContainsKey($username) -or $username.StartsWith("##") -or $username -eq 'sa') { continue }
 		
 		if ($currentlogin -eq $username) {
@@ -650,8 +650,8 @@ PROCESS {
 	---------------------------------------------------------- #>
 
 	# Convert from RuntimeDefinedParameter  object to regular array
-	$IncludeLogins = $psboundparameters.IncludeLogins
-	$ExcludeLogins = $psboundparameters.ExcludeLogins
+	$Logins = $psboundparameters.Logins
+	$Exclude = $psboundparameters.Exclude
 
 	<# ----------------------------------------------------------
 		Run
@@ -659,12 +659,12 @@ PROCESS {
 	
 	if ($SyncOnly) {
 		Write-Output "Syncing Login Permissions"; 
-		Sync-Only -sourceserver $sourceserver -destserver $destserver -IncludeLogins $IncludeLogins -ExcludeLogins $ExcludeLogins
+		Sync-Only -sourceserver $sourceserver -destserver $destserver -Logins $Logins -Exclude $Exclude
 		return
 	}
 	 
 	Write-Output "Attempting Login Migration"; 
-	Copy-SqlLogins -sourceserver $sourceserver -destserver $destserver -IncludeLogins $IncludeLogins -excludelogins $ExcludeLogins -Force $force
+	Copy-SqlLogins -sourceserver $sourceserver -destserver $destserver -Logins $Logins -Exclude $Exclude -Force $force
 }
 
 END {

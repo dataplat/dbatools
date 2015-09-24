@@ -16,10 +16,10 @@ Required. The directory that contains the database backups (ex. \\fileserver\sha
 .PARAMETER ReuseFolderStructure
 Restore-HallengrenBackups will restore to the default user data and log directories, unless this switch is used. Useful if you're restoring from a server that had a complex db file structure.
 
-.PARAMETER IncludeDbs
+.PARAMETER Databases
 Migrates ONLY specified databases. This list is auto-populated for tab completion.
 
-.PARAMETER ExcludeDbs
+.PARAMETER Exclude
 Excludes specified databases from migration. This list is auto-populated for tab completion.
 
 .PARAMETER Force
@@ -76,10 +76,10 @@ DynamicParam  {
 		$combinedattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
 		$combinedattributes.Add($paramattributes)
 		$combinedattributes.Add($validationset)
-		$IncludeDbs = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("IncludeDbs", [String[]], $combinedattributes)
-		$ExcludeDbs = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("ExcludeDbs", [String[]], $combinedattributes)
-		$newparams.Add("IncludeDbs", $IncludeDbs)
-		$newparams.Add("ExcludeDbs", $ExcludeDbs)
+		$Databases = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Databases", [String[]], $combinedattributes)
+		$Exclude = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Exclude", [String[]], $combinedattributes)
+		$newparams.Add("Databases", $Databases)
+		$newparams.Add("Exclude", $Exclude)
 		return $newparams
 	}
 }
@@ -113,8 +113,8 @@ PROCESS {
 	
 	# Convert from RuntimeDefinedParameter  object to regular array
 		# Convert from RuntimeDefinedParameter  object to regular array
-	$IncludeDbs = $psboundparameters.IncludeDbs
-	$ExcludeDbs = $psboundparameters.ExcludeDbs
+	$Databases = $psboundparameters.Databases
+	$Exclude = $psboundparameters.Exclude
 	
 	$dblist = @(); $skippedb = @{}; $migrateddb = @{};
 	$systemdbs = @("master","msdb","model")
@@ -132,8 +132,8 @@ PROCESS {
 	foreach ($db in $dblist) {
 		$dbname = Split-Path $db -leaf
 		if ($systemdbs -contains $dbname) { continue }
-		if (!([string]::IsNullOrEmpty($IncludeDbs)) -and $IncludeDbs -notcontains $dbname) { continue }
-		if (!([string]::IsNullOrEmpty($ExcludeDbs)) -and $ExcludeDbs -contains $dbname) { 
+		if (!([string]::IsNullOrEmpty($Databases)) -and $Databases -notcontains $dbname) { continue }
+		if (!([string]::IsNullOrEmpty($Exclude)) -and $Exclude -contains $dbname) { 
 			 $skippedb.Add($dbname,"Explicitly Skipped")
 			 Continue
 		}

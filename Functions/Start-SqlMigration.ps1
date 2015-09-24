@@ -176,9 +176,9 @@ PROCESS {
 		Write-Output "Migrating databases..."
 		try {
 			if ($BackupRestore) {
-				Copy-SqlDatabases -Source $sourceserver -Destination $destserver -AllUserDbs -SysDbUserObjects -IncludeSupportDbs -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -BackupRestore -NetworkShare $NetworkShare -Force:$force -WhatIf:$whatif
+				Copy-SqlDatabases -Source $sourceserver -Destination $destserver -All -SysDbUserObjects -IncludeSupportDbs -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -BackupRestore -NetworkShare $NetworkShare -Force:$force -WhatIf:$whatif
 			} else {
-				Copy-SqlDatabases -Source $sourceserver -Destination $destserver -AllUserDbs -SysDbUserObjects -IncludeSupportDbs -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$force -WhatIf:$whatif
+				Copy-SqlDatabases -Source $sourceserver -Destination $destserver -All -SysDbUserObjects -IncludeSupportDbs -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$force -WhatIf:$whatif
 			}
 		} catch { Write-Error "Database migration reported the following error $($_.Exception.Message)" }
 	}

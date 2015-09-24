@@ -235,11 +235,11 @@ Function Get-ParamSqlDatabases {
 		$dbattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
 		$dbattributes.Add($attributes)
 		if ($databaselist) { $dbattributes.Add($dbvalidationset) }
-		$IncludeDbs = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("IncludeDbs", [String[]], $dbattributes)
-		$ExcludeDbs = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("ExcludeDbs", [String[]], $dbattributes)
+		$Databases = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Databases", [String[]], $dbattributes)
+		$Exclude = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Exclude", [String[]], $dbattributes)
 
-		$newparams.Add("IncludeDbs", $IncludeDbs)
-		$newparams.Add("ExcludeDbs", $ExcludeDbs)
+		$newparams.Add("Databases", $Databases)
+		$newparams.Add("Exclude", $Exclude)
 		
 		$server.ConnectionContext.Disconnect()
 	
@@ -283,11 +283,11 @@ Function Get-ParamSqlLogins {
 		$loginattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
 		$loginattributes.Add($attributes)
 		if ($loginlist) { $loginattributes.Add($loginvalidationset) }
-		$IncludeLogins = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("IncludeLogins", [String[]], $loginattributes)
-		$ExcludeLogins = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("ExcludeLogins", [String[]], $loginattributes)
+		$Logins = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Logins", [String[]], $loginattributes)
+		$Exclude = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Exclude", [String[]], $loginattributes)
 
-		$newparams.Add("IncludeLogins", $IncludeLogins)
-		$newparams.Add("ExcludeLogins", $ExcludeLogins)
+		$newparams.Add("Logins", $Logins)
+		$newparams.Add("Exclude", $Exclude)
 		
 		$server.ConnectionContext.Disconnect()
 	
