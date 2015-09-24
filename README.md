@@ -1,5 +1,5 @@
 # dbatools
-A collection of modules for SQL Server DBAs. It initually started out as 'sqlmigration', but has now grown into a collection of various commands that help automate DBA tasks.
+A collection of modules for SQL Server DBAs. It initually started out as 'sqlmigration', but has now grown into a collection of various commands that help automate DBA tasks. The consolidation was done pretty quickly, so there will be bugs, and documentation will be slightly out of date for about a month or so.
 
 Installer
 --------------
