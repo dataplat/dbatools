@@ -30,7 +30,7 @@ Copyright = '2015 Chrissy LeMaire'
 Description = 'Provides extra functionality for SQL Server Database admins'
 
 # Minimum version of the Windows PowerShell engine required by this module
-PowerShellVersion = '3.0.0'
+PowerShellVersion = '3.0'
 
 # Name of the Windows PowerShell host required by this module
 PowerShellHostName = ''

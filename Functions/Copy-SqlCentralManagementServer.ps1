@@ -74,7 +74,7 @@ Param(
 DynamicParam  { if ($Source) { return (Get-ParamSqlCmsGroups -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 
 BEGIN {
-	
+
 	Function Parse-ServerGroup($sourceGroup, $destinationgroup, $SwitchServerName) {
 
 	if ($destinationgroup.name -eq "DatabaseEngineServerGroup" -and $sourceGroup.name -ne "DatabaseEngineServerGroup") {
