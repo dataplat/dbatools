@@ -1,3 +1,5 @@
+foreach ($function in (Get-ChildItem "$PSScriptRoot\Functions\*.ps1")) { . $function  }
+
 Function Update-dbatools {
 	<# 
 	 .SYNOPSIS 
@@ -965,4 +967,4 @@ Function Remove-SqlDatabase {
 	catch {	return $false }
 }
 
-foreach ($function in (Get-ChildItem "$PSScriptRoot\Functions\*.ps1")) { . $function }
+

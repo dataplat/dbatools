@@ -24,10 +24,9 @@ $destinationFolder.CopyHere($zipPackage.Items())
 
 Write-Output "Cleaning up"
 Move-Item -Path "$path\dbatools-master\*" $path
+Import-Module "$path\dbatools.psd1"
 Remove-Item -Path "$path\dbatools-master"
 Remove-Item -Path $zipfile
-
-Import-Module "$path\dbatools.psd1"
 
 Write-Output "Done! Please report any bugs to clemaire@gmail.com."
 Get-Command -Module dbatools
