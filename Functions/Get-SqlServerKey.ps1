@@ -1,4 +1,4 @@
-Function Get-SqlServerKeys {
+Function Get-SqlServerKey {
 <# 
 .SYNOPSIS 
 Gets SQL Server Product Keys from local and remote SQL Servers. Works with SQL Server 2005-2014
@@ -36,15 +36,15 @@ DateUpdated: 2015-Sept-22
 https://gallery.technet.microsoft.com/scriptcenter/Get-Sql-Server-Product-4b5bf4f8
 
 .EXAMPLE   
-Get-SqlServerKeys winxp, sqlservera, sqlserver2014a, win2k8
+Get-SqlServerKey winxp, sqlservera, sqlserver2014a, win2k8
 Gets SQL Server versions, editions and product keys for all instances within each server or workstation.
 
 .EXAMPLE   
-Get-SqlServerKeys -SqlCms sqlserver01
+Get-SqlServerKey -SqlCms sqlserver01
 	Gets SQL Server versions, editions and product keys for all instances within sqlserver01's Central Management Server
 
 .EXAMPLE   
-Get-SqlServerKeys -ServersFromFile C:\Scripts\servers.txt
+Get-SqlServerKey -ServersFromFile C:\Scripts\servers.txt
 Gets SQL Server versions, editions and product keys for all instances listed within C:\Scripts\servers.txt
 #> 
 	#Requires -Version 3.0

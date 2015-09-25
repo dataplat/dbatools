@@ -1,4 +1,4 @@
-Function Restore-HallengrenBackups { 
+Function Restore-HallengrenBackup { 
 <# 
 .SYNOPSIS 
 Restores SQL Server databases from the backup directory structure created by Ola Hallengren's database maintenance scripts.
@@ -14,7 +14,7 @@ Required. The SQL Server to which you will be restoring the databases.
 Required. The directory that contains the database backups (ex. \\fileserver\share\sqlbackups\SQLSERVERA)
 
 .PARAMETER ReuseFolderStructure
-Restore-HallengrenBackups will restore to the default user data and log directories, unless this switch is used. Useful if you're restoring from a server that had a complex db file structure.
+Restore-HallengrenBackup will restore to the default user data and log directories, unless this switch is used. Useful if you're restoring from a server that had a complex db file structure.
 
 .PARAMETER Databases
 Migrates ONLY specified databases. This list is auto-populated for tab completion.
@@ -41,7 +41,7 @@ Version: 2.0
 http://gallery.technet.microsoft.com/scriptcenter/Restore-Sql-Backups-cd958ec1
 
 .EXAMPLE   
-Restore-HallengrenBackups -ServerName sqlcluster -Path \\fileserver\share\sqlbackups\SQLSERVER2014A
+Restore-HallengrenBackup -ServerName sqlcluster -Path \\fileserver\share\sqlbackups\SQLSERVER2014A
 
 Description
 

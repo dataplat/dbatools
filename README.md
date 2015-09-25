@@ -10,24 +10,24 @@ Run the following command to automatically install the module.
 This will install the following commands
 
 	Copy-SqlCentralManagementServer
-	Copy-SqlCredentials
+	Copy-SqlCredential
 	Copy-SqlDatabaseMail
-	Copy-SqlDatabases
+	Copy-SqlDatabase
 	Copy-SqlJobServer
-	Copy-SqlLinkedServers
-	Copy-SqlLogins
+	Copy-SqlLinkedServer
+	Copy-SqlLogin
 	Export-SqlSpConfigure
 	Get-DetachedDBinfo
 	Get-SqlMaxMemory
-	Get-SqlServerKeys
+	Get-SqlServerKey
 	Import-CsvToSql
 	Import-SqlSpConfigure
 	Reset-SqlSaPassword
-	Restore-HallengrenBackups
+	Restore-HallengrenBackup
 	Set-SqlMaxMemory
 	Start-SqlMigration
 	Update-dbatools
-	Watch-SqlDbLogins
+	Watch-SqlDbLogin
 
 This module will be placed in PowerShell Gallery when it's slightly more mature. 
 	
@@ -39,35 +39,35 @@ A few quick notes
  - SQL Sysadmin access is required unless otherwise specified
  - This module requires SQL Management Objects (SMO). SMO is included when you install SQL Server Management Studio, or you can download it from Microsoft: [SQL Server 2014 32-bit SMO](http://download.microsoft.com/download/1/3/0/13089488-91FC-4E22-AD68-5BE58BD5C014/ENU/x86/SharedManagementObjects.msi) or [SQL Server 2014 64-bit SMO](http://download.microsoft.com/download/1/3/0/13089488-91FC-4E22-AD68-5BE58BD5C014/ENU/x64/SharedManagementObjects.msi)
 
-Copy-SqlDatabases
+Copy-SqlDatabase
 --------------
-Copy-SqlDatabases allows you to migrate using detach/copy/attach or backup/restore. 
+Copy-SqlDatabase allows you to migrate using detach/copy/attach or backup/restore. 
 By default, databases will be migrated to the destination SQL Server's default data and log directories. You can override this by specifying -ReuseFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.
 
 This function used to be a core part of Start-SqlServerMigration. While the documentation is slightly outdated, you can visit [ScriptCenter](https://gallery.technet.microsoft.com/scriptcenter/Use-PowerShell-to-Migrate-86c841df) for details and a video of the script in action.
 
 	# Windows Authentication with Detach/Attach
-	Copy-SqlDatabases -Source sqlcluster -Destination sql2016 -DetachAttach -Reattachatsource -All
+	Copy-SqlDatabase -Source sqlcluster -Destination sql2016 -DetachAttach -Reattachatsource -All
 
 	# SQL Authentication with Backup/Restore. 
 	# Note that both SQL Server service accounts must have access to the share.
-	Copy-SqlDatabases -Source sqlserver -Destination sqlcluster -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential -All -SetSourceReadOnly -BackupRestore -NetworkShare \\fileshare\sql\migration
+	Copy-SqlDatabase -Source sqlserver -Destination sqlcluster -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential -All -SetSourceReadOnly -BackupRestore -NetworkShare \\fileshare\sql\migration
     
-Copy-SqlLogins
+Copy-SqlLogin
 --------------
 Migrates logins from source to destination SQL Servers. Supports SQL Server versions 2000 and above.  Migrates logins with SIDs, passwords, defaultdb, server roles & securables, database permissions & securables, login attributes (enforce password policy, expiration, etc). -Sync option will sync permissions but not add or drop logins. Requires SQL sa access.
 
 	# Windows Authentication
-    Copy-SqlLogins -Source sqlserver -Destination sqlcluster
+    Copy-SqlLogin -Source sqlserver -Destination sqlcluster
 	
 	# SQL Authentication
 	$scred = Get-Credential 
 	$dcred = Get-Credential
-	Copy-SqlLogins -Source sqlserver -Destination sqlcluster -SourceSqlCredential $scred -DestinationSqlCredential $dcred
+	Copy-SqlLogin -Source sqlserver -Destination sqlcluster -SourceSqlCredential $scred -DestinationSqlCredential $dcred
 	
 	# Mix it up
 	$dcred = Get-Credential
-	Copy-SqlLogins -Source sqlserver -Destination sqlcluster --DestinationSqlCredential $dcred
+	Copy-SqlLogin -Source sqlserver -Destination sqlcluster --DestinationSqlCredential $dcred
 
 	
 Copy-SqlCentralManagementServer
@@ -83,7 +83,7 @@ Copies all groups, subgroups, and server instances from one SQL Server to anothe
 	Copy-SqlCentralManagementServer -Source sqlserver -Destination sqlcluster -SourceSqlCredential $scred -DestinationSqlCredential $dcred
 
 	
-Copy-SqlCredentials
+Copy-SqlCredential
 --------------
 By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Credentials from one server to another, while maintaining login names and passwords. 
 
@@ -93,22 +93,22 @@ Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
 License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
 
 	# Windows Authentication
-    Copy-SqlCredentials -Source sqlserver -Destination sqlcluster
+    Copy-SqlCredential -Source sqlserver -Destination sqlcluster
 	
 	# SQL Authentication
 	$scred = Get-Credential 
 	$dcred = Get-Credential
-	Copy-SqlCredentials -Source sqlserver -Destination sqlcluster -SourceSqlCredential $scred -DestinationSqlCredential $dcred
+	Copy-SqlCredential -Source sqlserver -Destination sqlcluster -SourceSqlCredential $scred -DestinationSqlCredential $dcred
     
 	
-Copy-SqlLinkedServers
+Copy-SqlLinkedServer
 --------------
 By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Linked Servers from one server to another, while maintaining username and password. 
 
 Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
 License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
 
-    Copy-SqlCredentials -Source sqlserver\instance -Destination sqlcluster
+    Copy-SqlCredential -Source sqlserver\instance -Destination sqlcluster
 	
 Copy-SqlDatabaseMail
 --------------
@@ -156,13 +156,13 @@ Migrate databases uses backup/restore. Also migrate logins, database mail, crede
     
     Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -DetachAttach -Reattach -SetSourceReadonly
 
-Restore-HallengrenBackups
+Restore-HallengrenBackup
 --------------
 Many SQL Server database administrators use Ola Hallengren's SQL Server Maintenance Solution which can be found at http://ola.hallengren.com  Hallengren uses a predictable backup structure which made it relatively easy to create a script that can restore an entire SQL Server database instance, down to the master database (next version), to a new server. Note, this only works with his script's default paths.
 
 Very early version.
 
-    Restore-HallengrenBackups -SqlServer sqlcluster -Path \\fileserver\share\sqlbackups\SQLSERVER2014A
+    Restore-HallengrenBackup -SqlServer sqlcluster -Path \\fileserver\share\sqlbackups\SQLSERVER2014A
     
 Reset-SqlSaPassword
 --------------
@@ -186,13 +186,13 @@ In order to make this script as portable as possible, [the original module on Sc
 	  
 Tested on Windows XP, 7, 8.1, Server 2012 and Windows Server Technical Preview 2. Tested on SQL Server 2005 SP4 through 2016 CTP2.
 
-Watch-SqlDbLogins
+Watch-SqlDbLogin
 --------------
-Watch-SqlDbLogins uses SQL Server process enumeration to track logins in a SQL Server table. This is helpful when you need to migrate a SQL Server, and update connection strings, but have inadequate documentation on which servers/applications are logging into your SQL instance. See the [Script Center](https://gallery.technet.microsoft.com/scriptcenter/SQL-Server-DatabaseApp-4abbd73a) page for more information.
+Watch-SqlDbLogin uses SQL Server process enumeration to track logins in a SQL Server table. This is helpful when you need to migrate a SQL Server, and update connection strings, but have inadequate documentation on which servers/applications are logging into your SQL instance. See the [Script Center](https://gallery.technet.microsoft.com/scriptcenter/SQL-Server-DatabaseApp-4abbd73a) page for more information.
 
 Running this script every 5 minutes for a week should give you a sufficient idea about database and login usage.
 
-    Watch-SqlDbLogins -SqlServer sqlserver -SqlCms cmserver1
+    Watch-SqlDbLogin -SqlServer sqlserver -SqlCms cmserver1
   
   The data in the SQL table looks like this:
   
@@ -223,21 +223,21 @@ Use the following code to setup the required SQL table
     ) WITH (IGNORE_DUP_KEY = ON)
     GO
 
-Get-SqlServerKeys
+Get-SqlServerKey
 --------------
 Using a string of servers, a text file, or Central Management Server to provide a list of servers, this script obtains the product key for all installed instances on a server or cluster. Requires regular user access to the SQL instances, and, if accessing remote servers, Remote Registry must enabled and acessible by the account running the script.
 
 Uses key decoder by Jakob Bindslet (http://goo.gl/1jiwcB)
 	
     # Windows Authentication
-    Get-SqlServerKeys
-    Get-SqlServerKeys -CentralMgmtServer sqlserver01
-    Get-SqlServerKeys sqlservera, sqlserver2014a, sql01
+    Get-SqlServerKey
+    Get-SqlServerKey -CentralMgmtServer sqlserver01
+    Get-SqlServerKey sqlservera, sqlserver2014a, sql01
    
     # SQL Auth - uses same auth for all connections. 
     # Windows account is still used to access (remote/local) registry.
     $cred = Get-Credential 
-    Get-SqlServerKeys -SqlCms sqlserver -SqlCredential $cred
+    Get-SqlServerKey -SqlCms sqlserver -SqlCredential $cred
     
 Output looks like this
 

@@ -1,7 +1,7 @@
-Function Copy-SqlCredentials {
+Function Copy-SqlCredential {
 <# 
 .SYNOPSIS 
-Copy-SqlCredentials migrates SQL Server Credentials from one SQL Server to another, while maintaining Credential passwords.
+Copy-SqlCredential migrates SQL Server Credentials from one SQL Server to another, while maintaining Credential passwords.
 
 .DESCRIPTION 
 By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Credentials from one server to another, while maintaining username and password.
@@ -51,13 +51,13 @@ Limitations: Hasn't been tested thoroughly. Works on Win8.1 and SQL Server 2012 
 
 
 .EXAMPLE   
-Copy-SqlCredentials -Source sqlserver\instance -Destination sqlcluster
+Copy-SqlCredential -Source sqlserver\instance -Destination sqlcluster
 
 Description
 Copies all SQL Server Credentials on sqlserver\instance to sqlcluster. If credentials exist on destination, they will be skipped.
 
 .EXAMPLE   
-Copy-SqlCredentials -Source sqlserver -Destination sqlcluster -Credentials "PowerShell Proxy Account" -Force
+Copy-SqlCredential -Source sqlserver -Destination sqlcluster -Credentials "PowerShell Proxy Account" -Force
 
 Description
 Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped and recreated.
@@ -197,7 +197,7 @@ Function Get-SqlCredentials {
 	return $decryptedlogins
 }
 
-Function Copy-SqlCredentials { 
+Function Copy-SqlCredential { 
 	<#
 		.SYNOPSIS
 		Copies Credentials from one server to another using a combination of SMO's .Script() and manual password updates.
@@ -283,7 +283,7 @@ PROCESS {
 	
 	# Magic happens here
 	If ($Pscmdlet.ShouldProcess($destination,"Copying credentials")) {
-		Copy-SqlCredentials $sourceserver $destserver $credentials $force
+		Copy-SqlCredential $sourceserver $destserver $credentials $force
 	}
 	
 }

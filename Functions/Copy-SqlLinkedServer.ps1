@@ -1,7 +1,7 @@
-﻿Function Copy-SqlLinkedServers {
+﻿Function Copy-SqlLinkedServer {
 <# 
 .SYNOPSIS 
-Copy-SqlLinkedServers migrates Linked Servers from one SQL Server to another. Linked Server logins and passwords are migrated as well.
+Copy-SqlLinkedServer migrates Linked Servers from one SQL Server to another. Linked Server logins and passwords are migrated as well.
 
 .DESCRIPTION 
 By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Linked Servers from one server to another, while maintaining username and password.
@@ -53,13 +53,13 @@ Not close to finished.
 
 
 .EXAMPLE   
-Copy-SqlLinkedServers -Source sqlserver\instance -Destination sqlcluster
+Copy-SqlLinkedServer -Source sqlserver\instance -Destination sqlcluster
 
 Description
 Copies all SQL Server Linked Servers on sqlserver\instance to sqlcluster. If Linked Server exists on destination, it will be skipped.
 
 .EXAMPLE   
-Copy-SqlLinkedServers -Source sqlserver -Destination sqlcluster -LinkedServers SQL2K5,SQL2k -Force
+Copy-SqlLinkedServer -Source sqlserver -Destination sqlcluster -LinkedServers SQL2K5,SQL2k -Force
 
 Description
 Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped.

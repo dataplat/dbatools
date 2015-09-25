@@ -1,4 +1,4 @@
-Function Copy-SqlLogins { 
+Function Copy-SqlLogin { 
 <#
 .SYNOPSIS
 Migrates logins from source to destination SQL Servers. Supports SQL Server versions 2000 and above.
@@ -46,24 +46,24 @@ Credential removal not currently supported for Syncs. TODO: Application role syn
 Force drops and recreates logins. Logins that own jobs cannot be dropped at this time.
 
 .EXAMPLE
-Copy-SqlLogins -Source sqlserver -Destination sqlcluster -Force
+Copy-SqlLogin -Source sqlserver -Destination sqlcluster -Force
 
 Copies all logins from source server to destination server. If a SQL login on source exists on the destination,
 the destination login will be dropped and recreated.
 
 .EXAMPLE
-Copy-SqlLogins -Source sqlserver -Destination sqlcluster -Exclude realcajun -SourceSqlCredential -DestinationSqlCredential
+Copy-SqlLogin -Source sqlserver -Destination sqlcluster -Exclude realcajun -SourceSqlCredential -DestinationSqlCredential
 
 Prompts for SQL login names and passwords on both the Source and Destination then connects to each using the SQL Login credentials. 
 Copies all logins except for realcajun. If a login already exists on the destination, the login will not be migrated.
 
 .EXAMPLE
-Copy-SqlLogins -Source sqlserver -Destination sqlcluster -Logins realcajun -force
+Copy-SqlLogin -Source sqlserver -Destination sqlcluster -Logins realcajun -force
 
 Copies ONLY login realcajun. If login realcajun exists on the destination, it will be dropped and recreated.
 
 .EXAMPLE
-Copy-SqlLogins -Source sqlserver -Destination sqlcluster -SyncOnly
+Copy-SqlLogin -Source sqlserver -Destination sqlcluster -SyncOnly
 
 Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. If a matching login does not exist on the destination, the login will be skipped.
 
@@ -100,13 +100,13 @@ DynamicParam  { if ($source) { return Get-ParamSqlLogins -SqlServer $source -Sql
 
 BEGIN {
 
-Function Copy-SqlLogins {
+Function Copy-SqlLogin {
 	<#
 	.SYNOPSIS
 	  Migrates logins from source to destination SQL Servers. Database & Server securables & permissions are preserved.
 	
 	.EXAMPLE
-	 Copy-SqlLogins -Source $sourceserver -Destination $destserver -Force $true
+	 Copy-SqlLogin -Source $sourceserver -Destination $destserver -Force $true
 	
 	 Copies logins from source server to destination server.
 	 
@@ -664,7 +664,7 @@ PROCESS {
 	}
 	 
 	Write-Output "Attempting Login Migration"; 
-	Copy-SqlLogins -sourceserver $sourceserver -destserver $destserver -Logins $Logins -Exclude $Exclude -Force $force
+	Copy-SqlLogin -sourceserver $sourceserver -destserver $destserver -Logins $Logins -Exclude $Exclude -Force $force
 }
 
 END {

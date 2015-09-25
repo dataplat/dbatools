@@ -176,22 +176,22 @@ PROCESS {
 		Write-Output "Migrating databases..."
 		try {
 			if ($BackupRestore) {
-				Copy-SqlDatabases -Source $sourceserver -Destination $destserver -All -SysDbUserObjects -IncludeSupportDbs -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -BackupRestore -NetworkShare $NetworkShare -Force:$force -WhatIf:$whatif
+				Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SysDbUserObjects -IncludeSupportDbs -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -BackupRestore -NetworkShare $NetworkShare -Force:$force -WhatIf:$whatif
 			} else {
-				Copy-SqlDatabases -Source $sourceserver -Destination $destserver -All -SysDbUserObjects -IncludeSupportDbs -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$force -WhatIf:$whatif
+				Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SysDbUserObjects -IncludeSupportDbs -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$force -WhatIf:$whatif
 			}
 		} catch { Write-Error "Database migration reported the following error $($_.Exception.Message)" }
 	}
 	
 	if (!$SkipCredentials) {
 		Write-Output "`n`nMigrating SQL credentials..."
-		try { Copy-SqlCredentials -Source $sourceserver -Destination $destserver -Force:$force -WhatIf:$whatif
+		try { Copy-SqlCredential -Source $sourceserver -Destination $destserver -Force:$force -WhatIf:$whatif
 		} catch { Write-Error "Credential migration reported the following error $($_.Exception.Message) "}
 	}
 	
 	if (!$SkipLogins) {
 		Write-Output "`n`nMigrating logins..."
-		try { Copy-SqlLogins -Source $sourceserver -Destination $destserver -Force:$force -WhatIf:$whatif
+		try { Copy-SqlLogin -Source $sourceserver -Destination $destserver -Force:$force -WhatIf:$whatif
 		} catch { Write-Error "Login migration reported the following error $($_.Exception.Message) "}
 	}
 	
@@ -203,7 +203,7 @@ PROCESS {
 	
 	if (!$SkipLinkedServers) {
 		Write-Output "`n`nMigrating linked servers..."
-		try { Copy-SqlLinkedServers -Source $sourceserver -Destination $destserver -Force:$force -WhatIf:$whatif
+		try { Copy-SqlLinkedServer -Source $sourceserver -Destination $destserver -Force:$force -WhatIf:$whatif
 		} catch { Write-Error "Linked server migration reported the following error $($_.Exception.Message) "}
 	}
 	

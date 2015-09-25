@@ -1,4 +1,4 @@
-Function Copy-SqlDatabases {
+Function Copy-SqlDatabase {
 <# 
 .SYNOPSIS 
 Migrates Sql Server databases, logins, Sql Agent objects, and global configuration settings from one Sql Server to another.
@@ -83,14 +83,14 @@ Limitations: 	Doesn't cover what it doesn't cover (replication, linked servers, 
 https://gallery.technet.microsoft.com/scriptcenter/Use-PowerShell-to-Migrate-86c841df/
 
 .EXAMPLE   
-Copy-SqlDatabases -Source sqlserver\instance -Destination sqlcluster -DetachAttach -Everything
+Copy-SqlDatabase -Source sqlserver\instance -Destination sqlcluster -DetachAttach -Everything
 
 Description
 
 All databases, logins, job objects and sp_configure options will be migrated from sqlserver\instance to sqlcluster. Databases will be migrated using the detach/copy files/attach method. Dbowner will be updated. User passwords, SIDs, database roles and server roles will be migrated along with the login.
 
 .EXAMPLE   
-Copy-SqlDatabases -Source sqlserver\instance -Destination sqlcluster -All -Exclude Northwind, pubs -IncludeSupportDbs -force -AllLogins -Exclude nwuser, pubsuser, "corp\domain admins"  -MigrateJobServer -ExportSPconfigure -SourceSqlCredential -DestinationSqlCredential
+Copy-SqlDatabase -Source sqlserver\instance -Destination sqlcluster -All -Exclude Northwind, pubs -IncludeSupportDbs -force -AllLogins -Exclude nwuser, pubsuser, "corp\domain admins"  -MigrateJobServer -ExportSPconfigure -SourceSqlCredential -DestinationSqlCredential
 
 Description
 
@@ -557,13 +557,13 @@ Function Dismount-SqlDatabase {
 	catch { return $false }
 }
 
-Function Copy-SqlDatabases  {
+Function Copy-SqlDatabase  {
  <#
             .SYNOPSIS
               Performs tons of checks then migrates the databases.
 
             .EXAMPLE
-                Copy-SqlDatabases $sourceserver $destserver $All $Databases $Exclude $IncludeSupportDBs $force
+                Copy-SqlDatabase $sourceserver $destserver $All $Databases $Exclude $IncludeSupportDBs $force
 
             .OUTPUTS
               CSV files and informational messages.
@@ -1165,7 +1165,7 @@ PROCESS {
 	
 	if ($All -or $Exclude.length -gt 0 -or $IncludeSupportDbs -or $Databases.length -gt 0)
 	{ 
-		Copy-SqlDatabases  -sourceserver $sourceserver -destserver $destserver -All $All `
+		Copy-SqlDatabase  -sourceserver $sourceserver -destserver $destserver -All $All `
 		 -Databases $Databases -Exclude $Exclude -IncludeSupportDbs $IncludeSupportDbs -Force $force
 	}
 	

@@ -1,7 +1,7 @@
 # TODO
 Stuff that needs to be done
 
-Start-SQLMigration.ps1
+Start-SQLMigration
 --------------
 - Warn in differing server collations
 - Enerprise -> Std detection for databases and sp_configure options that require Enterprise
@@ -35,7 +35,7 @@ Start-SQLMigration.ps1
 - Azure Support
 - AlwaysOn
 
-Copy-SQLServerLogins.ps1
+Copy-SQLServerLogins
 --------------
 - Will not drop login in destination if permissions are set
 - Detect schema ownership proper to user drop attempt
@@ -47,29 +47,29 @@ Copy-SQLServerLogins.ps1
 - Auto detect related Logins
 - Auto detect related SQL Agent Jobs (then find related...)
 	
-Watch-DBLogins.ps1
+Watch-DBLogins
 --------------
 - Investigate benefits of using Auditing. So far, seems it doesn't track application names.
 - Add a most recent field too?
 	
-Copy-LinkedServers.ps1
+Copy-LinkedServers
 --------------
 - Automatically setup ODBC entry
 - Copy files?
 
 	
-Restore-HallengrenBackups.ps1
+Restore-HallengrenBackup
 --------------
 - Finish replacing systems db (run post name change scripts)
 - Support explicitly specified directory structures
 - add escapes to names in dynamic params
 
-Copy-CentralManagementServer.ps1
+Copy-CentralManagementServer
 --------------
 - Support for -force to drop and recreate
 
-Get-SQLServerKeys.ps1
+Get-SqlServerKey
 --------------
 	
-Copy-SQLServerCredentials.ps1
+Copy-SQLServerCredentials
 --------------
