@@ -24,6 +24,9 @@ PROCESS {
 	$source = $sourceserver.name
 	$destination = $destserver.name	
 	
+	if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
+	if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
+	
 	$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
 	$csvfilename = "$($sourceserver.name.replace('\','$'))-to-$($destserver.name.replace('\','$'))-$timenow"
 	
