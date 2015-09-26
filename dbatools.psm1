@@ -48,7 +48,7 @@ Function Connect-SqlServer  {
 	
 	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlServer
 	
-	if ($SqlCredential.username -ne $null ) {
+	if ($SqlCredential -ne $null ) {
 		$username = ($SqlCredential.username).TrimStart("\")
 		$server.ConnectionContext.LoginSecure = $false
 		$server.ConnectionContext.set_Login($username)
@@ -58,7 +58,8 @@ Function Connect-SqlServer  {
 	try { 
 		if ($ParameterConnection) { $server.ConnectionContext.ConnectTimeout = 2 }
 		$server.ConnectionContext.Connect() } catch {
-		throw "Can't connect to $sqlserver`: $($_.Exception.Message)" 
+		$message = $_.Exception.InnerException.InnerException
+		throw "Can't connect to $sqlserver`: $message "  
 	}
 	
 	return $server
