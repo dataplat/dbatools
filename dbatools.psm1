@@ -57,8 +57,11 @@ Function Connect-SqlServer  {
 		
 	try { 
 		if ($ParameterConnection) { $server.ConnectionContext.ConnectTimeout = 2 }
+		else { $server.ConnectionContext.ConnectTimeout = 3 }
 		$server.ConnectionContext.Connect() } catch {
 		$message = $_.Exception.InnerException.InnerException
+		$message = $message.ToString()
+		$message = ($message -Split '-->')[0]
 		throw "Can't connect to $sqlserver`: $message "  
 	}
 	
