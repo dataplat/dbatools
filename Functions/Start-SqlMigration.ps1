@@ -142,6 +142,7 @@ Param(
 	[switch]$Reattach,
 	[string]$NetworkShare,
 	[switch]$SetSourceReadOnly,
+	[switch]$NoRecovery,
 	[System.Management.Automation.PSCredential]$SourceSqlCredential,
 	[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 	[switch]$SkipDatabases,
@@ -183,7 +184,7 @@ PROCESS {
 		Write-Output "`nMigrating databases..."
 		try {
 			if ($BackupRestore) {
-				Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -IncludeSupportDbs -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -CsvLog:$csvlog
+				Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -IncludeSupportDbs -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -CsvLog:$csvlog -NoRecovery:$NoRecovery
 			} else {
 				Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -IncludeSupportDbs -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force -CsvLog:$csvlog
 			}

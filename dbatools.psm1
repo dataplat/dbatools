@@ -971,9 +971,17 @@ Function Remove-SqlDatabase {
 		$server.KillDatabase($dbname)
 		$server.refresh()
 		Write-Output "Successfully dropped $dbname on $($server.name)"
-		return $true
+	 } catch {	
+		try { 
+			$server.databases[$dbname].Drop() 
+			Write-Output "Successfully dropped $dbname on $($server.name)"
+		} catch { 
+			try {
+				$null = $server.ConnectionContext.ExecuteNonQuery("DROP DATABASE $dbname")
+				Write-Output "Successfully dropped $dbname on $($server.name)"
+			} catch { return $false }
+		}
 	}
-	catch {	return $false }
 }
 
 Function Test-SqlConnection  {

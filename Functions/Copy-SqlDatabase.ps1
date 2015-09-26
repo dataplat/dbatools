@@ -31,7 +31,7 @@ $dcred = Get-Credential, this pass this $dcred to the param.
 Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
 .PARAMETER All
-Migrates user databases. Does not migrate system or support databases. A logfile named $SOURCE-$DESTINATION-$date-logins.csv will be written to the current directory. Requires -BackupRestore or -DetachAttach. Talk about database structure.
+This is a parameter that was included for safety, so you dont' accidentally detach/attach all databases without specifying. Migrates user databases. Does not migrate system or support databases. Requires -BackupRestore or -DetachAttach. 
 
 .PARAMETER IncludeSupportDbs
 Migration of ReportServer, ReportServerTempDb, SSIDb, and distribution databases if they exist. A logfile named $SOURCE-$DESTINATION-$date-Sqls.csv will be written to the current directory. Requires -BackupRestore or -DetachAttach.
@@ -60,19 +60,21 @@ Migrates ONLY specified databases. This list is auto-populated for tab completio
 .PARAMETER SetSourceReadOnly
 Sets all migrated databases to ReadOnly prior to detach/attach & backup/restore. If -Reattach is used, db is set to read-only after reattach.
 
+.PARAMETER NoRecovery
+Sets restore to NoRecovery. Ideal for staging. 
+
+.PARAMETER CsvLog
+Outputs a log in CSV format
 
 .PARAMETER Force
-If migrating databases, deletes existing databases with matching names. 
-If using -DetachAttach, -Force will break mirrors and drop dbs from Availability Groups.
-MigrateJobServer not supported.
+Drops existing databases with matching names. If using -DetachAttach, -Force will break mirrors and drop dbs from Availability Groups.
 
 .NOTES 
 Author  : Chrissy LeMaire
 Requires: PowerShell Version 3.0, Sql Server SMO
 DateUpdated: 2015-Aug-5
 Version: 2.0
-Limitations: 	Doesn't cover what it doesn't cover (replication, linked servers, certificates, etc)
-		Sql Server 2000 login migrations have some limitations (server perms aren't migrated, etc)
+Limitations: 	Doesn't cover what it doesn't cover (replication, certificates, etc)
 		Sql Server 2000 databases cannot be directly migrated to Sql Server 2012 and above.
 		Logins within Sql Server 2012 and above logins cannot be migrated to Sql Server 2008 R2 and below.				
 
@@ -80,31 +82,23 @@ Limitations: 	Doesn't cover what it doesn't cover (replication, linked servers, 
 https://gallery.technet.microsoft.com/scriptcenter/Use-PowerShell-to-Migrate-86c841df/
 
 .EXAMPLE   
-Copy-SqlDatabase -Source sqlserver\instance -Destination sqlcluster -DetachAttach -Everything
+Copy-SqlDatabase -Source sqlserver\instance -Destination sqlcluster -DetachAttach -Reattach
 
 Description
 
-All databases, logins, job objects and sp_configure options will be migrated from sqlserver\instance to sqlcluster. Databases will be migrated using the detach/copy files/attach method. Dbowner will be updated. User passwords, SIDs, database roles and server roles will be migrated along with the login.
+Databases will be migrated from sqlserver\instance to sqlcluster using the detach/copy files/attach method.The following will be perfomed: kick all users out of the database, detach all data/log files, move files across the network over an admin share (\\SqlSERVER\M$\MSSql...), attach file on destination server, reattach at source. If the database files (*.mdf, *.ndf, *.ldf) on *destination* exist and aren't in use, they will be overwritten.
+
 
 .EXAMPLE   
-Copy-SqlDatabase -Source sqlserver\instance -Destination sqlcluster -All -Exclude Northwind, pubs -IncludeSupportDbs -force -AllLogins -Exclude nwuser, pubsuser, "corp\domain admins"  -MigrateJobServer -ExportSPconfigure -SourceSqlCredential -DestinationSqlCredential
+Copy-SqlDatabase -Source sqlserver\instance -Destination sqlcluster -Exclude Northwind, pubs -IncludeSupportDbs -Force -BackupRestore \\fileshare\sql\migration
 
 Description
 
-Prompts for Sql login usernames and passwords on both the Source and Destination then connects to each using the Sql Login credentials. 
+Migrates all user databases except for Northwind and pubs by using backup/restore (copy-only). Backup files are stored in \\fileshare\sql\migration. If the database exists on the destination, it will be dropped prior to attach.
 
-All logins except for nwuser, pubsuser and the corp\domain admins group will be migrated from sqlserver\instance to sqlcluster, along with their passwords, server roles and database roles. A logfile named SqlSERVER-SqlCLUSTER-$date-logins.csv will be written to the current directory. Existing Sql users will be dropped and recreated.
+It also includes the support databases (ReportServer, ReportServerTempDb, distribution). 
 
-Migrates all user databases except for Northwind and pubs by performing the following: kick all users out of the database, detach all data/log files, move files across the network over an admin share (\\SqlSERVER\M$\MSSql...), attach file on destination server. If the database exists on the destination, it will be dropped prior to attach.
-
-It also includes the support databases (ReportServer, ReportServerTempDb, SSIDb, distribution). 
-
-If the database files (*.mdf, *.ndf, *.ldf) on SqlCLUSTER exist and aren't in use, they will be overwritten. A logfile named SqlSERVER-SqlCLUSTER-$date-Sqls.csv will be written to the current directory.
-
-All job server objects will be migrated. A logfile named SqlSERVER-SqlCLUSTER-$date-jobs.csv will be written to the current directory.
-
-A file named SqlSERVER-SqlCluster-$date-sp_configure.sql with global server configurations will be written to the current directory. This file can then be executed manually on SqlCLUSTER.
-#> 
+#>  
 [CmdletBinding(DefaultParameterSetName="DbMigration", SupportsShouldProcess = $true)] 
 
 Param(
@@ -146,7 +140,7 @@ Param(
 	[switch]$SetSourceReadOnly,
 
 	# The rest
-	[switch]$NoRecovery = $false,
+	[switch]$NoRecovery,
 	[switch]$Force,
 	[System.Management.Automation.PSCredential]$SourceSqlCredential,
 	[System.Management.Automation.PSCredential]$DestinationSqlCredential,
@@ -159,14 +153,14 @@ Param(
 BEGIN {
 
 # Global Database Function
-Function Get-SqlFileStructures {
+Function Get-SqlFileStructure {
  <#
             .SYNOPSIS
              Custom object that contains file structures and remote paths (\\sqlserver\m$\mssql\etc\etc\file.mdf) for
 			 source and destination servers.
 			
             .EXAMPLE
-            $filestructure = Get-SqlFileStructures $sourceserver $destserver $ReuseFolderstructure
+            $filestructure = Get-SqlFileStructure $sourceserver $destserver $ReuseFolderstructure
 			foreach	($file in $filestructure.databases[$dbname].destination.values) {
 				Write-Output $file.physical
 				Write-Output $file.logical
@@ -189,7 +183,10 @@ Function Get-SqlFileStructures {
 			[Parameter(Mandatory = $false,Position=2)]
 			[bool]$ReuseFolderstructure
 		)
-
+	
+	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+	
 	$sourcenetbios = Get-NetBIOSName $sourceserver
 	$destnetbios = Get-NetBIOSName $destserver
 	
@@ -197,7 +194,7 @@ Function Get-SqlFileStructures {
 	
 		foreach ($db in $sourceserver.databases) {
 			$dbstatus = $db.status.toString()
-			if ($dbstatus.StartsWith("Normal") -eq $false) { continue }
+			if ($dbstatus.StartsWith("Normal") -eq $false) { continue  }
 			$destinationfiles = @{}; $sourcefiles = @{}
 			
 			# Data Files
@@ -357,7 +354,7 @@ Function Restore-SqlDatabase {
 			a custom object that contains logical and physical file locations.
 
             .EXAMPLE
-			 $filestructure = Get-SqlFileStructures $sourceserver $destserver $ReuseFolderstructure
+			 $filestructure = Get-SqlFileStructure $sourceserver $destserver $ReuseFolderstructure
              Restore-SqlDatabase $destserver $dbname $backupfile $filestructure   
 
             .OUTPUTS
@@ -373,7 +370,6 @@ Function Restore-SqlDatabase {
 			[Parameter(Mandatory = $true)]
 			[ValidateNotNullOrEmpty()]
             [string]$dbname,
-            
 			
 			[Parameter(Mandatory = $true)]
 			[ValidateNotNullOrEmpty()]
@@ -409,7 +405,7 @@ Function Restore-SqlDatabase {
 		$restore.ReplaceDatabase = $true
 		$restore.Database = $dbname
 		$restore.Action = "Database"
-		$restore.NoRecovery = $false
+		$restore.NoRecovery = $NoRecovery
 		$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
 		$device.name = $backupfile
 		$device.devicetype = "File"
@@ -462,7 +458,7 @@ Function Start-SqlBackupRestore  {
             [bool]$force	
 		)
 		
-	$filestructure = Get-SqlFileStructures $sourceserver $destserver $ReuseFolderstructure
+	$filestructure = Get-SqlFileStructure $sourceserver $destserver $ReuseFolderstructure
 	$filename = "$dbname-$timenow.bak"
 	$backupfile = Join-Path $networkshare $filename
 	
@@ -637,7 +633,7 @@ Function Copy-SqlDatabase  {
 	
 	$exclude | Where-Object {!([string]::IsNullOrEmpty($_))} | ForEach-Object { $skippedb.Add($_,"Explicitly Skipped") }
 	
-	$filestructure = Get-SqlFileStructures $sourceserver $destserver $ReuseFolderstructure
+	$filestructure = Get-SqlFileStructure $sourceserver $destserver $ReuseFolderstructure
 	
 	foreach ($database in $sourceserver.databases) {
 		$dbelapsed = [System.Diagnostics.Stopwatch]::StartNew() 
@@ -708,7 +704,7 @@ Function Copy-SqlDatabase  {
 				If ($Pscmdlet.ShouldProcess($destination,"DROP DATABASE $dbname")) {
 					Write-Output "$dbname already exists. -Force was specified. Dropping $dbname on $destination."
 					$dropresult = Remove-SqlDatabase $destserver $dbname
-					if (!$dropresult) { $skippedb[$dbname] = "Database exists and could not be dropped."; continue }
+					if ($dropresult -eq $false) { $skippedb[$dbname] = "Database exists and could not be dropped."; continue }
 				}
 		}
 		
@@ -737,10 +733,11 @@ Function Copy-SqlDatabase  {
 				$result = (Start-SqlBackupRestore $sourceserver $destserver $dbname $networkshare $force)
 				$dbfinish = Get-Date					
 				if ($result -eq $true) {
+					Write-Output "Successfully restored $dbname"
 					$migrateddb.Add($dbname,"Successfully migrated,$dbstart,$dbfinish")
-					$result = Update-Sqldbowner $sourceserver $destserver -dbname $dbname
-				} else { 
-					$skippedb[$dbname] = $result
+					if (!$norecovery) { $result = Update-Sqldbowner $sourceserver $destserver -dbname $dbname }
+				} else {
+					Write-Output "Failed to restore $dbname"
 					$skippedb[$dbname] = $result
 				}
 			}
@@ -757,8 +754,9 @@ Function Copy-SqlDatabase  {
 				$dbfinish = Get-Date
 				if ($result -eq $true) {
 					$migrateddb.Add($dbname,"Successfully migrated,$dbstart,$dbfinish")
-					$result = Update-Sqldbowner $sourceserver $destserver -dbname $dbname
-				} else { 
+					if (!$norecovery) { $result = Update-Sqldbowner $sourceserver $destserver -dbname $dbname }
+				} else {
+					Write-Output "Failed to attach $dbname"
 					$skippedb[$dbname] = $result
 				}
 				
@@ -783,7 +781,7 @@ Function Copy-SqlDatabase  {
 		
 		# restore poentially lost settings
 		
-		if ($destserver.versionMajor -ge 9) {
+		if ($destserver.versionMajor -ge 9 -and $norecovery -eq $false) {
 		
 			if ($sourcedbownerchaining -ne $destserver.databases[$dbname].DatabaseOwnershipChaining ) {
 				If ($Pscmdlet.ShouldProcess($destination,"Updating DatabaseOwnershipChaining on $dbname")) {
@@ -816,13 +814,14 @@ Function Copy-SqlDatabase  {
 			}
 		}
 		
-		if ($sourcedbreadonly -ne $destserver.databases[$dbname].ReadOnly ) {
+		if ($sourcedbreadonly -ne $destserver.databases[$dbname].ReadOnly -and $norecovery -eq $false) {
 			If ($Pscmdlet.ShouldProcess($destination,"Updating ReadOnly status on $dbname")) {
 				try {
 					$result = Update-SqldbReadOnly $destserver $dbname $sourcedbreadonly
 				} catch { Write-Error "Failed to update ReadOnly status on $dbname" }
 			}
 		}
+
 	
 	If ($Pscmdlet.ShouldProcess("console","Showing elapsed time")) {
 		$dbtotaltime=$dbfinish-$dbstart
@@ -933,7 +932,7 @@ Function Start-SqlDetachAttach   {
             .SYNOPSIS
              Performs checks, then executes Dismount-SqlDatabase on a database, copies its files to the new server, 
 			 then performs Mount-SqlDatabase. $sourceserver and $destserver are SMO server objects.
-			 $filestructure is a custom object generated by Get-SqlFileStructures
+			 $filestructure is a custom object generated by Get-SqlFileStructure
 
             .EXAMPLE
               result = Start-SqlDetachAttach $sourceserver $destserver $filestructure $dbname $force
@@ -997,7 +996,6 @@ Function Start-SqlDetachAttach   {
 	}
 }
 
-
 }
 
 PROCESS {
@@ -1011,13 +1009,13 @@ PROCESS {
 	$source = $sourceserver.name
 	$destination = $destserver.name
 	
-	$script:migrateddb = @{}; $script:skippedb = @{}
+	$migrateddb = @{}; $skippedb = @{}
 
 	if ($source -eq $destination) { throw "Source and Destination Sql Servers are the same. Quitting." }
 
 	# Convert from RuntimeDefinedParameter object to regular array
-	$Databases = $psboundparameters.Databases
-	$Exclude = $psboundparameters.Exclude
+	$databases = $psboundparameters.Databases
+	$exclude = $psboundparameters.Exclude
 	
 	if (($All -or $IncludeSupportDbs -or $Databases) -and !$DetachAttach -and !$BackupRestore) {
       throw "You must specify -DetachAttach or -BackupRestore when migrating databases."
@@ -1082,7 +1080,6 @@ PROCESS {
 		Copy-SqlDatabase  -sourceserver $sourceserver -destserver $destserver -All $All `
 		 -Databases $Databases -Exclude $Exclude -IncludeSupportDbs $IncludeSupportDbs -Force $force
 	}
-	
 
 	if ($csvlog) {
 		$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
@@ -1105,7 +1102,7 @@ END {
 		$totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
-		Write-Output "Database migration finished"
+		Write-Output "`nDatabase migration finished"
 		Write-Output "Migration started: $started" 
 		Write-Output "Migration completed: $(Get-Date)" 
 		Write-Output "Total Elapsed time: $totaltime"
