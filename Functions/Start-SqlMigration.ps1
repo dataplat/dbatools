@@ -159,9 +159,9 @@ Param(
 	)
 
 BEGIN { 
-	
-	Start-Transcript -Path dbatools-startmigration-transcript.txt -NoClobber -ErrorAction SilentlyContinue
-	
+	$transcript = ".\dbatools-startmigration-transcript.txt"
+	if (Test-Path $transcript) { Start-Transcript -Path $transcript -NoClobber }
+	else  { Start-Transcript -Path $transcript }
 }
 
 PROCESS {
