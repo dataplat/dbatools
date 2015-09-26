@@ -16,6 +16,7 @@ This will install the following commands
 	Copy-SqlJobServer
 	Copy-SqlLinkedServer
 	Copy-SqlLogin
+	Copy-SqlSysDbUserObjects
 	Export-SqlSpConfigure
 	Get-DetachedDBinfo
 	Get-SqlMaxMemory
@@ -70,6 +71,12 @@ Migrates logins from source to destination SQL Servers. Supports SQL Server vers
 	$dcred = Get-Credential
 	Copy-SqlLogin -Source sqlserver -Destination sqlcluster --DestinationSqlCredential $dcred
 
+
+Copy-SqlSysDbUserObjects
+--------------
+Copies ALL user objects (tables, stored procs, functions, etc) in ALL system databases, hence the plural. This is useful for DBA's who keep their maintenance tasks in system databases, and for the model database.
+
+    Copy-SqlSysDbUserObjects -Source sqlserver -Destination sqlcluster -SourceSqlCredential $scred -DestinationSqlCredential $dcred
 	
 Copy-SqlCentralManagementServer
 --------------
