@@ -153,7 +153,8 @@ Param(
 	[switch]$SkipCentralManagementServer,
 	[switch]$SkipDatabaseMail,
 	[switch]$SkipSysDbUserObjects,
-	[switch]$Force
+	[switch]$Force,
+	[switch]$CsvLog
 	)
 
 
@@ -177,9 +178,9 @@ PROCESS {
 		Write-Output "`nMigrating databases..."
 		try {
 			if ($BackupRestore) {
-				Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -IncludeSupportDbs -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force
+				Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -IncludeSupportDbs -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -CsvLog:$csvlog
 			} else {
-				Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -IncludeSupportDbs -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force
+				Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -IncludeSupportDbs -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force -CsvLog:$csvlog
 			}
 		} catch { Write-Error "Database migration reported the following error $($_.Exception.Message)" }
 	}
@@ -198,14 +199,14 @@ PROCESS {
 	if (!$SkipLogins) {
 		Write-Output "`n`nMigrating logins..."
 		try { 
-			Copy-SqlLogin -Source $sourceserver -Destination $destserver -Force:$Force
+			Copy-SqlLogin -Source $sourceserver -Destination $destserver -Force:$Force -CsvLog:$csvlog
 		} catch { Write-Error "Login migration reported the following error $($_.Exception.Message) "}
 	}
 	
 	if (!$SkipJobServer) {
 	Write-Output "`n`nMigrating job server..."
 		if ($force) { Write-Warning " Copy-SqlJobServer currently does not support force." }
-		try { Copy-SqlJobServer -Source $sourceserver -Destination $destserver
+		try { Copy-SqlJobServer -Source $sourceserver -Destination $destserver -CsvLog:$csvlog
 		} catch { Write-Error "Job Server migration reported the following error $($_.Exception.Message) "}
 	}
 

@@ -149,7 +149,8 @@ Param(
 	[switch]$NoRecovery = $false,
 	[switch]$Force,
 	[System.Management.Automation.PSCredential]$SourceSqlCredential,
-	[System.Management.Automation.PSCredential]$DestinationSqlCredential
+	[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+	[switch]$CsvLog
 	
 	)
 
@@ -599,7 +600,6 @@ Function Copy-SqlDatabase  {
 		
 	############################################################### #>
 
-	$alldbelapsed = [System.Diagnostics.Stopwatch]::StartNew() 
 	if ($sourceserver.Databases.count -le 4) { throw "No user databases to migrate. Quitting." }
 	
 	if ([version]$sourceserver.ResourceVersionString -gt [version]$destserver.ResourceVersionString) {
@@ -635,14 +635,9 @@ Function Copy-SqlDatabase  {
 	$SupportDBs = "ReportServer","ReportServerTempDB", "distribution"
 	$sa = $changedbowner
 	
-	$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-	$csvfilename = "$($sourceserver.name.replace('\','$'))-to-$($destserver.name.replace('\','$'))-$timenow"
-	
-	$migrateddb = @{}; $skippedb = @{}
-	$Exclude | Where-Object {!([string]::IsNullOrEmpty($_))} | ForEach-Object { $skippedb.Add($_,"Explicitly Skipped") }
+	$exclude | Where-Object {!([string]::IsNullOrEmpty($_))} | ForEach-Object { $skippedb.Add($_,"Explicitly Skipped") }
 	
 	$filestructure = Get-SqlFileStructures $sourceserver $destserver $ReuseFolderstructure
-	Set-Content -Path "$csvfilename-db.csv" "Database Name, Result, Start, Finish"
 	
 	foreach ($database in $sourceserver.databases) {
 		$dbelapsed = [System.Diagnostics.Stopwatch]::StartNew() 
@@ -743,14 +738,10 @@ Function Copy-SqlDatabase  {
 				$dbfinish = Get-Date					
 				if ($result -eq $true) {
 					$migrateddb.Add($dbname,"Successfully migrated,$dbstart,$dbfinish")
-					Add-Content -Path "$csvfilename-db.csv" "$dbname,Successfully migrated,$dbstart,$dbfinish"
 					$result = Update-Sqldbowner $sourceserver $destserver -dbname $dbname
-					If ($result) {
-						Add-Content -Path "$csvfilename-dbowner.csv" "$dbname,$dbowner"
-					}
 				} else { 
 					$skippedb[$dbname] = $result
-					Add-Content -Path "$csvfilename-db.csv" "$dbname,Migration failed - $result,$dbstart,$dbfinish"
+					$skippedb[$dbname] = $result
 				}
 			}
 		} # End of backup
@@ -766,15 +757,9 @@ Function Copy-SqlDatabase  {
 				$dbfinish = Get-Date
 				if ($result -eq $true) {
 					$migrateddb.Add($dbname,"Successfully migrated,$dbstart,$dbfinish")
-					Add-Content -Path "$csvfilename-db.csv" "$dbname,Successfully migrated,$dbstart,$dbfinish"
 					$result = Update-Sqldbowner $sourceserver $destserver -dbname $dbname
-					
-					If ($result) {
-						Add-Content -Path "$csvfilename-dbowner.csv" "$dbname,$dbowner" 
-					}
 				} else { 
 					$skippedb[$dbname] = $result
-					Add-Content -Path "$csvfilename-db.csv" "$dbname,Migration failed - $result,$dbstart,$dbfinish"
 				}
 				
 				if ($Reattach) {
@@ -848,13 +833,6 @@ Function Copy-SqlDatabase  {
 	}
 	
 	} # end db by db processing
-	
-	$alldbtotaltime = ($alldbelapsed.Elapsed.toString().Split(".")[0])
-	Add-Content -Path "$csvfilename-db.csv" "`r`nElapsed time,$alldbtotaltime"
-	if ($migrateddb.count -eq 0) { 
-		If (Test-Path "$csvfilename-db.csv") { Remove-Item -Path "$csvfilename-db.csv" }
-	}
-	$migrateddb.GetEnumerator() | Sort-Object Value; $skippedb.GetEnumerator() | Sort-Object Value
 }
 
 Function Mount-SqlDatabase {
@@ -1033,6 +1011,8 @@ PROCESS {
 	$source = $sourceserver.name
 	$destination = $destserver.name
 	
+	$script:migrateddb = @{}; $script:skippedb = @{}
+
 	if ($source -eq $destination) { throw "Source and Destination Sql Servers are the same. Quitting." }
 
 	# Convert from RuntimeDefinedParameter object to regular array
@@ -1095,13 +1075,29 @@ PROCESS {
 	<# ----------------------------------------------------------
 		Run
 	---------------------------------------------------------- #>
-
+	$alldbelapsed = [System.Diagnostics.Stopwatch]::StartNew() 
+	
 	if ($All -or $Exclude.length -gt 0 -or $IncludeSupportDbs -or $Databases.length -gt 0)
 	{ 
 		Copy-SqlDatabase  -sourceserver $sourceserver -destserver $destserver -All $All `
 		 -Databases $Databases -Exclude $Exclude -IncludeSupportDbs $IncludeSupportDbs -Force $force
 	}
 	
+
+	if ($csvlog) {
+		$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+		$script:csvfilename = "$($sourceserver.name.replace('\','$'))-to-$($destserver.name.replace('\','$'))-$timenow-db.csv"
+		Set-Content -Path "$csvfilename" "Database Name, Result, Start, Finish"
+		
+		$migrateddb.GetEnumerator() | Sort-Object value; $skippedb.GetEnumerator() | Sort-Object value
+		
+		foreach ($db in $migrateddb.GetEnumerator()) { Add-Content -Path $csvfilename "$($db.name),$($db.value)" }
+		foreach ($db in $migrateddb.GetEnumerator()) { Add-Content -Path $csvfilename "$($db.name),$($db.value)" }
+		
+		$alldbtotaltime = ($alldbelapsed.Elapsed.toString().Split(".")[0])
+		Add-Content -Path $csvfilename "`r`nElapsed time,$alldbtotaltime"
+
+	}
 }
 
 END {
@@ -1115,6 +1111,5 @@ END {
 		Write-Output "Total Elapsed time: $totaltime"
 		if ($networkshare.length -gt 0) { Write-Warning "This script does not delete backup files. Backups may still exist at $networkshare." }
 	}
-
 }
 }
