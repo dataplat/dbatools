@@ -126,7 +126,7 @@ Import-SqlSpConfigure
 --------------
 Updates sp_configure settings on destination server. Can use either a file or another server as the source.
 
-	 Import-SqlSpConfigure sqlserver sqlcluster $SourceSqlCredential 	 	 	$DestinationSqlCredential
+	 Import-SqlSpConfigure sqlserver sqlcluster $SourceSqlCredential $DestinationSqlCredential
 	 Import-SqlSpConfigure -SqlServer sqlserver -Path .\spconfig.sql -SqlCredential $SqlCredential
 	 
 Start-SqlServerMigration
@@ -141,6 +141,7 @@ This brings the rest of the functions together, which is useful when you're look
  - Linked Server. Use -SkipLinkedServers to skip. 
  - All items within Central Management Server. Use -SkipCentralManagementServer to skip.
  - SQL Server configuration objects (everything in sp_configure). Use -SkipSpConfigure to skip.
+ - User objects in systemdbs (things like dba backup routines, etc). Use -SkipSysDbUserObjects to skip.
 
 Examples
 
@@ -171,6 +172,8 @@ Reset-SqlSaPassword
 ![Reset-SqlSaPassword](https://i1.gallery.technet.s-msft.com/scriptcenter/reset-sql-sa-password-15fb488d/image/file/138615/1/salsapassword-scriptcenter-1.gif)
 
 This is accomplished by stopping the SQL services or SQL Clustered Resource Group, then restarting SQL via the command-line using the /mReset-SqlSaPassword paramter which starts the server in Single-User mode, and only allows this script to connect.
+
+Using Reset-SqlSaPassword will restart your SQL Server. I chose this method because it is the most effective, cross-version method. Impersonating tokens may not work in all situations.
 	  
 Once the service is restarted, the following tasks are performed:
 
