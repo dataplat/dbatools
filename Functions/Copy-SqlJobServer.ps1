@@ -23,7 +23,8 @@ Function Copy-SqlJobServer      {
 			[parameter(Mandatory = $true)]
 			[object]$Destination,
 			[System.Management.Automation.PSCredential]$SourceSqlCredential,
-			[System.Management.Automation.PSCredential]$DestinationSqlCredential
+			[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+			[Switch]$CsvLog
 		)
 	
 PROCESS {
@@ -35,10 +36,7 @@ PROCESS {
 	
 	if (!(Test-SqlAgent $sourceserver)) { Write-Error "SQL Agent not running on $source. Halting job import."; return }
 	if (!(Test-SqlAgent $destserver)) { Write-Error "SQL Agent not running on $destination. Halting job import."; return }
-	
-	$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-	$csvfilename = "$($sourceserver.name.replace('\','$'))-to-$($destserver.name.replace('\','$'))-$timenow"
-	
+		
 	$sourceagent = $sourceserver.jobserver
 	$migratedjob = @{}; $skippedjob = @{}
 	
@@ -66,8 +64,12 @@ PROCESS {
 		}
 	 }
 	
-	$migratedjob.GetEnumerator() | Sort-Object | Select Name, Value | Export-Csv -Path "$csvfilename-jobs.csv" -NoTypeInformation
-	$skippedjob.GetEnumerator() | Sort-Object | Select Name, Value | Export-Csv -Append -Path "$csvfilename-jobs.csv" -NoTypeInformation
+	if ($csvlog) {
+		$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+		$csvfilename = "$($sourceserver.name.replace('\','$'))-to-$($destserver.name.replace('\','$'))-$timenow"
+		$migratedjob.GetEnumerator() | Sort-Object | Select Name, Value | Export-Csv -Path "$csvfilename-jobs.csv" -NoTypeInformation
+		$skippedjob.GetEnumerator() | Sort-Object | Select Name, Value | Export-Csv -Append -Path "$csvfilename-jobs.csv" -NoTypeInformation
+	}
 }
 
 END {
