@@ -157,9 +157,14 @@ Param(
 	[switch]$CsvLog
 	)
 
+BEGIN { 
+	
+	Start-Transcript -Path dbatools-startmigration-transcript.txt -NoClobber -ErrorAction SilentlyContinue
+	
+}
 
 PROCESS {
-	# Just in case
+	
 	
 	$elapsed = [System.Diagnostics.Stopwatch]::StartNew() 
 	$started = Get-Date
@@ -254,6 +259,7 @@ END {
 	Write-Output "Migration started: $started" 
 	Write-Output "Migration completed: $(Get-Date)" 
 	Write-Output "Total Elapsed time: $totaltime" 
+	Stop-Transcript
 	}
 }
 }
