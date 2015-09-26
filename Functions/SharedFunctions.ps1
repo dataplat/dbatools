@@ -9,7 +9,7 @@ Function Update-dbatools {
 	Update-dbatools
 	#> 
 	
-	Invoke-Expression (Invoke-WebRequest  http://git.io/vn1hQ).Content
+	Invoke-Expression (Invoke-WebRequest -UseBasicParsing  http://git.io/vn1hQ).Content
 }
 
 Function Connect-SqlServer  {
