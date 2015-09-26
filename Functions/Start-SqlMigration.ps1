@@ -156,8 +156,8 @@ Param(
 BEGIN {}
 PROCESS {
 	# Just in case
-	if ($WhatIf -eq $null) { $WhatIf = $false }
-	if ($Force -eq $null) { $Force = $false }
+	try { if ($WhatIf -eq $null) { $WhatIf = $false }
+	if ($Force -eq $null) { $Force = $false } } catch {}
 	
 	$elapsed = [System.Diagnostics.Stopwatch]::StartNew() 
 	$started = Get-Date
