@@ -197,7 +197,7 @@ Function Get-SqlCredentials {
 	return $decryptedlogins
 }
 
-Function Copy-SqlCredential { 
+Function Copy-Credential { 
 	<#
 		.SYNOPSIS
 		Copies Credentials from one server to another using a combination of SMO's .Script() and manual password updates.
@@ -209,49 +209,49 @@ Function Copy-SqlCredential {
 		param(
 		[object]$source,
 		[object]$destination,
-		[string[]]$credentials,
-		[bool]$force,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential
+		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+		[string[]]$credentials,
+		[bool]$force
 	)
-	
-	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
-
-	$source = $sourceserver.name
-	$destination = $destserver.name	
 
 	Write-Output "Collecting Credential logins and passwords on $($sourceserver.name)"
 	$sourcecredentials = Get-SqlCredentials $sourceserver
-	
-	
+
 	if ($credentials -ne $null) { 
-		$serverlist = $sourceserver.credentials | Where-Object { $credentials -contains $_.Name }
-	} else { $serverlist = $sourceserver.credentials }
+		$credentiallist = $sourceserver.credentials | Where-Object { $credentials -contains $_.Name }
+	} else { $credentiallist = $sourceserver.credentials }
 	
+
 	Write-Output "Starting migration"
-	foreach ($credential in $serverlist) {
+	foreach ($credential in $credentiallist) {
 		$destserver.credentials.Refresh()
 		$credentialname = $credential.name
-		
+
 		if ($destserver.credentials[$credentialname] -ne $null) { 
 			if (!$force) {
 				Write-Warning "$credentialname exists $($destserver.name). Skipping." 
 				continue
 			} else {
-				$destserver.credentials[$credentialname].Drop()
-				$destserver.credentials.refresh()
+				If ($Pscmdlet.ShouldProcess($destination,"Dropping $identity")) {
+					$destserver.credentials[$credentialname].Drop()
+					$destserver.credentials.refresh()
+				}
 			}
 		}
-		
-		Write-Output "Attempting to migrate: $credentialname"
+			
+		Write-Output "Attempting to migrate $credentialname"
+			
 		try {
-			$currentcred = $sourcecredentials | Where-Object { $_.Credential -eq $credentialname  }
+			$currentcred = $sourcecredentials | Where-Object { $_.Credential -eq $credentialname }
 			$identity = $currentcred.Identity
 			$password = $currentcred.Password
-			$sql = "CREATE CREDENTIAL [$credentialname] WITH IDENTITY = N'$identity', SECRET = N'$password'"		
-			[void]$destserver.ConnectionContext.ExecuteNonQuery($sql) 
-			$destserver.credentials.Refresh()
+					
+			If ($Pscmdlet.ShouldProcess($destination,"Copying $identity")) {
+				$sql = "CREATE CREDENTIAL [$credentialname] WITH IDENTITY = N'$identity', SECRET = N'$password'"	
+				[void]$destserver.ConnectionContext.ExecuteNonQuery($sql) 
+				$destserver.credentials.Refresh()
+			}
 			Write-Output "$credentialname successfully copied"
 		} catch { Write-Error "$credentialname could not be added to $($destserver.name)" }
 	}
@@ -282,9 +282,7 @@ PROCESS {
 	catch { throw "Can't connect to registry on $source. Quitting." }
 	
 	# Magic happens here
-	If ($Pscmdlet.ShouldProcess($destination,"Copying credentials")) {
-		Copy-SqlCredential $sourceserver $destserver $credentials $force
-	}
+	Copy-Credential $sourceserver $destserver -Credentials $credentials -force:$force
 	
 }
 
