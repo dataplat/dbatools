@@ -63,7 +63,7 @@ Description
 Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped and recreated.
 
 #> 
-[CmdletBinding(DefaultParameterSetName="Default", SupportsShouldProcess = $true)] 
+[CmdletBinding(SupportsShouldProcess = $true)] 
 
 Param(
 	[parameter(Mandatory = $true)]
@@ -93,6 +93,7 @@ Function Get-SqlCredentials {
 		System.Data.DataTable
 	
 	#>
+		[CmdletBinding(DefaultParameterSetName="Default", SupportsShouldProcess = $true)] 
 		param(
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
@@ -289,6 +290,6 @@ PROCESS {
 END {
 	$sourceserver.ConnectionContext.Disconnect()
 	$destserver.ConnectionContext.Disconnect()
-	If ($Pscmdlet.ShouldProcess("local host","Showing finished message")) { Write-Output "Credential migration finished" }
+	If ($Pscmdlet.ShouldProcess("console","Showing finished message")) { Write-Output "Credential migration finished" }
 }
 }

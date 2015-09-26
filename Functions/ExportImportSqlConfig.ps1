@@ -81,6 +81,9 @@ Function Import-SqlSpConfigure     {
 			$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 			$destination = $destserver.name
 
+			if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
+			if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
+			
 			If ($Pscmdlet.ShouldProcess($destination,"Export sp_configure")) {
 				$sqlfilename = Export-SqlSpConfigure $sourceserver
 			}
@@ -138,7 +141,7 @@ Function Import-SqlSpConfigure     {
 		}
 	} 
 	END { 
-		If ($Pscmdlet.ShouldProcess("local host","Showing finished message")) {
+		If ($Pscmdlet.ShouldProcess("console","Showing finished message")) {
 			Write-Output "SQL Server configuration options migration finished" 
 		}
 	}

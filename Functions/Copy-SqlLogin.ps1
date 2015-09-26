@@ -100,19 +100,7 @@ DynamicParam  { if ($source) { return Get-ParamSqlLogins -SqlServer $source -Sql
 
 BEGIN {
 
-Function Copy-SqlLogin {
-	<#
-	.SYNOPSIS
-	  Migrates logins from source to destination SQL Servers. Database & Server securables & permissions are preserved.
-	
-	.EXAMPLE
-	 Copy-SqlLogin -Source $sourceserver -Destination $destserver -Force $true
-	
-	 Copies logins from source server to destination server.
-	 
-	.OUTPUTS
-	   A CSV log and visual output of added or skipped logins.
-	#>
+Function Copy-Login {
 		[cmdletbinding(SupportsShouldProcess = $true)] 
         param(
 			[Parameter(Mandatory = $true)]
@@ -159,11 +147,18 @@ Function Copy-SqlLogin {
 		
 		$userbase = ($username.Split("\")[0]).ToLower()
 		if ($servername -eq $userbase -or $username.StartsWith("NT ")) {
-			$skippedlogin.Add("$username","Skipped. Local machine username.")
-			continue }
+			If ($Pscmdlet.ShouldProcess("console","Stating $username is skipped because it is a local machine name.")) {
+				$skippedlogin.Add("$username","Skipped. Local machine username.") 
+			}
+			continue
+		}
+		
 		if (($login = $destserver.Logins.Item($username)) -ne $null -and !$force) { 
-			$skippedlogin.Add("$username","Already exists in destination. Use -force to drop and recreate.")
-			continue }
+			If ($Pscmdlet.ShouldProcess("console","Stating $username is skipped because it exists at destination.")) {
+				$skippedlogin.Add("$username","Already exists in destination. Use -force to drop and recreate.") 
+			}
+			continue
+		}
 	
 		if ($login -ne $null -and $force) {
 			if ($username -eq $destserver.ServiceAccount) { Write-Warning "$username is the destination service account. Skipping drop."; continue }
@@ -303,7 +298,7 @@ Function Copy-SqlLogin {
 		}
 	}
 
-	If ($Pscmdlet.ShouldProcess("local host","Showing summary information.")) {
+	If ($Pscmdlet.ShouldProcess("console","Showing summary information.")) {
 		$migratedlogin.GetEnumerator() | Sort-Object value; $skippedlogin.GetEnumerator() | Sort-Object value
 		$migratedlogin.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Path "$csvfilename-logins.csv" -NoTypeInformation
 		$skippedlogin.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Append -Path "$csvfilename-logins.csv" -NoTypeInformation
@@ -663,12 +658,12 @@ PROCESS {
 	}
 	 
 	Write-Output "Attempting Login Migration"; 
-	Copy-SqlLogin -sourceserver $sourceserver -destserver $destserver -Logins $Logins -Exclude $Exclude -Force $force
+	Copy-Login -sourceserver $sourceserver -destserver $destserver -Logins $Logins -Exclude $Exclude -Force $force
 }
 
 END {
 
-	If ($Pscmdlet.ShouldProcess("local host","Showing time elapsed message")) {
+	If ($Pscmdlet.ShouldProcess("console","Showing time elapsed message")) {
 		$totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()

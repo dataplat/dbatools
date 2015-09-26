@@ -73,6 +73,6 @@ PROCESS {
 END {
 	$sourceserver.ConnectionContext.Disconnect()
 	$destserver.ConnectionContext.Disconnect()
-	If ($Pscmdlet.ShouldProcess("local host","Showing finished message")) { Write-Output "Job server migration finished" }
+	If ($Pscmdlet.ShouldProcess("console","Showing finished message")) { Write-Output "Job server migration finished" }
 }
 }

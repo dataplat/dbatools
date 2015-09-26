@@ -718,7 +718,7 @@ Function Copy-SqlDatabase  {
 		}
 		
 		
-		If ($Pscmdlet.ShouldProcess("local host","Showing start time")) {
+		If ($Pscmdlet.ShouldProcess("console","Showing start time")) {
 			Write-Output "Started: $dbstart"
 		}
 		
@@ -839,7 +839,7 @@ Function Copy-SqlDatabase  {
 			}
 		}
 	
-	If ($Pscmdlet.ShouldProcess("local host","Showing elapsed time")) {
+	If ($Pscmdlet.ShouldProcess("console","Showing elapsed time")) {
 		$dbtotaltime=$dbfinish-$dbstart
 		$dbtotaltime = ($dbtotaltime.toString().Split(".")[0])
 
@@ -1105,7 +1105,7 @@ PROCESS {
 }
 
 END {
-	If ($Pscmdlet.ShouldProcess("local host","Showing migration time elapsed")) {
+	If ($Pscmdlet.ShouldProcess("console","Showing migration time elapsed")) {
 		$totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
