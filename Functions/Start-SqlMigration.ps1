@@ -156,11 +156,9 @@ Param(
 	[switch]$SkipSysDbUserObjects
 	)
 
-BEGIN {}
+
 PROCESS {
 	# Just in case
-	try { if ($WhatIf -eq $null) { $WhatIf = $false }
-	if ($Force -eq $null) { $Force = $false } } catch {}
 	
 	$elapsed = [System.Diagnostics.Stopwatch]::StartNew() 
 	$started = Get-Date
@@ -170,13 +168,19 @@ PROCESS {
 
 	$source = $sourceserver.name
 	$destination = $destserver.name	
+	
+	if (!$SkipCredentials) {
+		Write-Output "`n`nMigrating SQL credentials..."
+		try { Copy-SqlCredential -Source $sourceserver -Destination $destserver -Force:$force -WhatIf:$whatif
+		} catch { Write-Error "Credential migration reported the following error $($_.Exception.Message) "}
+	}
 
 	if (!$SkipDatabases) {
 		# Test some things
 		if ($networkshare.length -gt 0) {$netshare += "-NetworkShare $NetworkShare" }
 			if (!$DetachAttach -and !$BackupRestore) { throw "You must specify a migration method using -BackupRestore or -DetachAttach."}
 		# Do it
-		Write-Output "Migrating databases..."
+		Write-Output "`nMigrating databases..."
 		try {
 			if ($BackupRestore) {
 				Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -IncludeSupportDbs -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -BackupRestore -NetworkShare $NetworkShare -Force:$force -WhatIf:$whatif
@@ -195,16 +199,12 @@ PROCESS {
 	
 	} catch { Write-Error "Couldn't copy all user objects in system databases." }
 }
-	
-	if (!$SkipCredentials) {
-		Write-Output "`n`nMigrating SQL credentials..."
-		try { Copy-SqlCredential -Source $sourceserver -Destination $destserver -Force:$force -WhatIf:$whatif
-		} catch { Write-Error "Credential migration reported the following error $($_.Exception.Message) "}
-	}
+
 	
 	if (!$SkipLogins) {
 		Write-Output "`n`nMigrating logins..."
-		try { Copy-SqlLogin -Source $sourceserver -Destination $destserver -Force:$force -WhatIf:$whatif
+		try { 
+			Copy-SqlLogin -Source $sourceserver -Destination $destserver -Force:$force -WhatIf:$whatif
 		} catch { Write-Error "Login migration reported the following error $($_.Exception.Message) "}
 	}
 	
@@ -222,19 +222,21 @@ PROCESS {
 	
 	if (!$SkipCentralManagementServer) {
 		Write-Output "`n`nMigrating Central Management Server..."
+		if ($force) { Write-Warning " Copy-SqlCentralManagementServer currently does not support force." }
 		try { Copy-SqlCentralManagementServer -Source $sourceserver -Destination $destserver -WhatIf:$whatif
 		} catch { Write-Error "Central Management Server migration reported the following error $($_.Exception.Message)" }
 	}	
 	
 	if (!$SkipDatabaseMail) {
 		Write-Output "`n`nMigrating database mail..."
+		if ($force) { Write-Warning " Copy-SqlDatabaseMail currently does not support force." }
 		try { Copy-SqlDatabaseMail -Source $sourceserver -Destination $destserver -WhatIf:$whatif
 		} catch { Write-Error "Database mail migration reported the following error $($_.Exception.Message)" }
 	}	
 	
 	if (!$SkipSpConfigure) {
 		Write-Output "`n`nMigrating SQL Server Configuration..."
-		try { Import-SqlSpConfigure -Source $sourceserver -Destination $destserver -WhatIf:$whatif
+		try { Import-SqlSpConfigure -Source $sourceserver -Destination $destserver -WhatIf:$whatif -Force:$force
 			} catch { Write-Error "Configuration migration reported the following error $($_.Exception.Message) " }
 		}
 }
@@ -244,9 +246,12 @@ END {
 	
 	if ($sourceserver.ConnectionContext.IsOpen -eq $true) { $sourceserver.ConnectionContext.Disconnect() }
 	if ($destserver.ConnectionContext.IsOpen -eq $true) { $destserver.ConnectionContext.Disconnect() }
+	
+	If ($Pscmdlet.ShouldProcess("local host","Showing finished message")) {
 	Write-Output "`n`nSQL Server migration complete"
 	Write-Output "Migration started: $started" 
 	Write-Output "Migration completed: $(Get-Date)" 
 	Write-Output "Total Elapsed time: $totaltime" 
+	}
 }
 }
