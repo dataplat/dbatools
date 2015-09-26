@@ -160,7 +160,7 @@ Param(
 
 BEGIN { 
 	$transcript = ".\dbatools-startmigration-transcript.txt"
-	if (Test-Path $transcript) { Start-Transcript -Path $transcript -NoClobber }
+	if (Test-Path $transcript) { Start-Transcript -Path $transcript -Append }
 	else  { Start-Transcript -Path $transcript }
 }
 
