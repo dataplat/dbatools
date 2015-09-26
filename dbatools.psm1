@@ -63,6 +63,7 @@ Function Connect-SqlServer  {
 		$message = $message.ToString()
 		$message = ($message -Split '-->')[0]
 		$message = ($message -Split 'at System.Data.SqlClient')[0]
+		$message = ($message -Split 'at System.Data.ProviderBase')[0]
 		throw "Can't connect to $sqlserver`: $message "  
 	}
 	
