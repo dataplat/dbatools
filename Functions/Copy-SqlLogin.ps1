@@ -93,7 +93,8 @@ Param(
 	[object]$SourceSqlCredential,
 	[object]$DestinationSqlCredential,
 	[switch]$SyncOnly,	
-	[switch]$Force
+	[switch]$Force,
+	[Switch]$CsvLog
 	)
 	
 DynamicParam  { if ($source) { return Get-ParamSqlLogins -SqlServer $source -SqlCredential $SourceSqlCredential } }
@@ -125,10 +126,9 @@ Function Copy-Login {
 		throw "SQL login migration from SQL Server version $($sourceserver.versionMajor) to $($destserver.versionMajor) not supported. Halting."
 	}
 
-	$skippedlogin = @{}; $migratedlogin = @{}; $source = $sourceserver.name; $destination = $destserver.name
+	$source = $sourceserver.name
+	$destination = $destserver.name
 	$Exclude | Where-Object {!([string]::IsNullOrEmpty($_))} | ForEach-Object { $skippedlogin.Add($_,"Explicitly Skipped") }
-	$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-	$csvfilename = "$($sourceserver.name.replace('\','$'))-to-$($destserver.name.replace('\','$'))-$timenow"
 	
 	foreach ($sourcelogin in $sourceserver.logins) {
 
@@ -296,12 +296,6 @@ Function Copy-Login {
 		If ($Pscmdlet.ShouldProcess($destination,"Updating SQL login $username permissions")) {
 			Update-SqlPermissions -sourceserver $sourceserver -sourcelogin $sourcelogin -destserver $destserver -destlogin $destlogin
 		}
-	}
-
-	If ($Pscmdlet.ShouldProcess("console","Showing summary information.")) {
-		$migratedlogin.GetEnumerator() | Sort-Object value; $skippedlogin.GetEnumerator() | Sort-Object value
-		$migratedlogin.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Path "$csvfilename-logins.csv" -NoTypeInformation
-		$skippedlogin.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Append -Path "$csvfilename-logins.csv" -NoTypeInformation
 	}
 			
 }
@@ -584,10 +578,8 @@ Function Sync-Only {
 		[array]$Exclude
 	)
 	
-	$skippedlogin = @{}; $source = $sourceserver.name; $destination = $destserver.name
-	$Exclude | Where-Object {!([string]::IsNullOrEmpty($_))} | ForEach-Object { $skippedlogin.Add($_,"Explicitly Skipped") }
-	$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-	$csvfilename = "$($sourceserver.name.replace('\','$'))-to-$($destserver.name.replace('\','$'))-$timenow"
+	$source = $sourceserver.name; $destination = $destserver.name
+	$exclude | Where-Object {!([string]::IsNullOrEmpty($_))} | ForEach-Object { $skippedlogin.Add($_,"Explicitly Skipped") }
 	
 	foreach ($sourcelogin in $sourceserver.logins) {
 
@@ -608,7 +600,6 @@ Function Sync-Only {
 		
 		Update-SqlPermissions -sourceserver $sourceserver -sourcelogin $sourcelogin -destserver $destserver -destlogin $destlogin
 	}
-	
 }
 
 }
@@ -627,6 +618,8 @@ PROCESS {
 	
 	if ($source -eq $destination) { throw "Source and Destination SQL Servers are the same. Quitting." }
 
+	$script:skippedlogin = @{}; $script:migratedlogin = @{}; 
+	
 	Write-Output "Attempting to connect to SQL Servers.." 
 	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
@@ -659,6 +652,18 @@ PROCESS {
 	 
 	Write-Output "Attempting Login Migration"; 
 	Copy-Login -sourceserver $sourceserver -destserver $destserver -Logins $Logins -Exclude $Exclude -Force $force
+	
+	
+	$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+	$csvfilename = "$($sourceserver.name.replace('\','$'))-to-$($destserver.name.replace('\','$'))-$timenow"
+	
+	if ($CsvLog) {
+		If ($Pscmdlet.ShouldProcess("console","Showing summary information.")) {
+			$migratedlogin.GetEnumerator() | Sort-Object value; $skippedlogin.GetEnumerator() | Sort-Object value
+			$migratedlogin.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Path "$csvfilename-logins.csv" -NoTypeInformation
+			$skippedlogin.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Append -Path "$csvfilename-logins.csv" -NoTypeInformation
+		}
+	}
 }
 
 END {
