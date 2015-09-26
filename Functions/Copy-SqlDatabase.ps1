@@ -57,9 +57,6 @@ Excludes specified databases when performing -All migrations. This list is auto-
 .PARAMETER Databases
 Migrates ONLY specified databases. This list is auto-populated for tab completion.
 
-.PARAMETER SysDbUserObjects
-This switch migrates user-created objects in the systems databases to the new server. This is useful for DbA's who create environment specific stored procedures, tables, etc in the master, model or msdb databases.
-
 .PARAMETER SetSourceReadOnly
 Sets all migrated databases to ReadOnly prior to detach/attach & backup/restore. If -Reattach is used, db is set to read-only after reattach.
 
@@ -151,7 +148,6 @@ Param(
 	# The rest
 	[switch]$NoRecovery = $false,
 	[switch]$Force,
-	[switch]$SysDbUserObjects,
 	[System.Management.Automation.PSCredential]$SourceSqlCredential,
 	[System.Management.Automation.PSCredential]$DestinationSqlCredential
 	
@@ -1024,62 +1020,6 @@ Function Start-SqlDetachAttach   {
 	}
 }
 
-Function Copy-SysDbUserObjects  { 
-        <#
-            .SYNOPSIS
-                Imports user objects found in source SQL Server's master, msdb and model databases to the destination.
-				This is useful because many DbA's store backup/maintenance procs (among other things) in master or msdb.
-				If Copy-SysDbUserObjects is called via -Everything, the objects are just exported to a .sql file, 
-				not actually imported to the destination (unless -force is used).
-
-            .EXAMPLE
-               Copy-SysDbUserObjects $sourceserver $destserver
-
-            .OUTPUTS
-                $true
-        #>
-		[CmdletBinding()]
-        param(
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-            [object]$sourceserver,
-			
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-            [object]$destserver
-        )
-			
-	$systemdbs = "master","model","msdb"
-	$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-	
-	foreach ($systemdb in $systemdbs) {
-		$sysdb = $sourceserver.databases[$systemdb]
-		$logfile = "$($sourceserver.name.replace('\','$'))-to-$($destserver.name.replace('\','$'))-$timenow-$systemdb-updates.sql"
-		$transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $sysdb
-		$transfer.CopyAllObjects = $false
-		$transfer.CopyAllDatabaseTriggers = $true
-		$transfer.CopyAllTables = $true
-		$transfer.CopyAllViews = $true
-		$transfer.CopyAllStoredProcedures = $true
-		$transfer.CopyAllUserDefinedAggregates = $true
-		$transfer.CopyAllUserDefinedDataTypes = $true
-		$transfer.CopyAllUserDefinedTableTypes = $true
-		$transfer.CopyAllUserDefinedTypes = $true
-		$transfer.PreserveDbo = $true
-		$transfer.Options.AllowSystemObjects = $false
-		$transfer.Options.ContinueScriptingOnError = $true
-		Write-Output "Migrating user objects in $systemdb"
-		try { 
-			$sqlQueries = $transfer.scriptTransfer()
-			foreach ($query in $sqlQueries) {				
-				Add-Content $logfile "$query`r`nGO"
-				try { $destserver.Databases[$systemdb].ExecuteNonQuery($query)} catch {}  # This usually occurs if there are existing objects in destination
-			}
-		} catch { Write-Output "Exception caught."}
-	}
-	return $true
-}
-
 
 }
 
@@ -1156,13 +1096,7 @@ PROCESS {
 	<# ----------------------------------------------------------
 		Run
 	---------------------------------------------------------- #>
-	if ($SysDbUserObjects) { 
-		Write-Output "Attempting to copy user objects in system databases" 
-		If ($Pscmdlet.ShouldProcess($destination,"Copying user objects.")) {
-			$null = Copy-SysDbUserObjects $sourceserver $destserver
-		}
-	}
-	
+
 	if ($All -or $Exclude.length -gt 0 -or $IncludeSupportDbs -or $Databases.length -gt 0)
 	{ 
 		Copy-SqlDatabase  -sourceserver $sourceserver -destserver $destserver -All $All `
