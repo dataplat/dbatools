@@ -26,6 +26,7 @@ This will install the following commands
 	Restore-HallengrenBackup
 	Set-SqlMaxMemory
 	Start-SqlMigration
+	Test-SqlConnection
 	Update-dbatools
 	Watch-SqlDbLogin
 
@@ -274,6 +275,12 @@ Jonathan notes that the formula used provides a *general recommendation* that do
     Set-SqlMaxMemory sql2016 -UseRecommended
     Set-SqlMaxMemory sqlcluster 10240
 
+
+Test-SqlConnection
+--------------
+Displays various outputs that will help you diagnose connection issues. If you're having an issue with dbatools, email this output to me, along with your issue.
+
+    Test-SqlConnection -SqlServer sql2016 -SqlCredential $SqlCredential
 	
 Import-CsvtoSql
 --------------
