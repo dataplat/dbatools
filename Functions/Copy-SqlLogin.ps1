@@ -308,7 +308,6 @@ Function Copy-SqlLogin {
 		$migratedlogin.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Path "$csvfilename-logins.csv" -NoTypeInformation
 		$skippedlogin.GetEnumerator() | Sort-Object value | Select Name, Value | Export-Csv -Append -Path "$csvfilename-logins.csv" -NoTypeInformation
 	}
-	Write-Output "Completed login migration"
 			
 }
 
@@ -668,12 +667,15 @@ PROCESS {
 }
 
 END {
-	$totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
-	$sourceserver.ConnectionContext.Disconnect()
-	$destserver.ConnectionContext.Disconnect()
-	Write-Output "Login migration finished"
-	Write-Output "Migration started: $started" 
-	Write-Output "Migration completed: $(Get-Date)" 
-	Write-Output "Total Elapsed time: $totaltime" 
+
+	If ($Pscmdlet.ShouldProcess("local host","Showing time elapsed message")) {
+		$totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
+		$sourceserver.ConnectionContext.Disconnect()
+		$destserver.ConnectionContext.Disconnect()
+		Write-Output "Login migration finished"
+		Write-Output "Migration started: $started" 
+		Write-Output "Migration completed: $(Get-Date)" 
+		Write-Output "Total Elapsed time: $totaltime" 
+	}
 }
 }

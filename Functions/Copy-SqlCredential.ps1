@@ -251,8 +251,8 @@ Function Copy-Credential {
 				$sql = "CREATE CREDENTIAL [$credentialname] WITH IDENTITY = N'$identity', SECRET = N'$password'"	
 				[void]$destserver.ConnectionContext.ExecuteNonQuery($sql) 
 				$destserver.credentials.Refresh()
+				Write-Output "$credentialname successfully copied"
 			}
-			Write-Output "$credentialname successfully copied"
 		} catch { Write-Error "$credentialname could not be added to $($destserver.name)" }
 	}
 }
@@ -289,6 +289,6 @@ PROCESS {
 END {
 	$sourceserver.ConnectionContext.Disconnect()
 	$destserver.ConnectionContext.Disconnect()
-	Write-Output "Credential migration finished"
+	If ($Pscmdlet.ShouldProcess("local host","Showing finished message")) { Write-Output "Credential migration finished" }
 }
 }

@@ -47,6 +47,6 @@ PROCESS {
 END {
 	$sourceserver.ConnectionContext.Disconnect()
 	$destserver.ConnectionContext.Disconnect()
-	Write-Output "Mail migration finished"
+	If ($Pscmdlet.ShouldProcess("local host","Showing finished message")) { Write-Output "Mail migration finished" }
 }
 }

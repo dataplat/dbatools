@@ -14,7 +14,7 @@ The SQL Server Central Management Server you are migrating to.
 
 .PARAMETER CMSGroups
 This is an auto-populated array that contains your Central Management Server top-level groups on $Source. You can specify one, many or none.
-If -CMSGroups is not specified, theCopy-SqlCentralManagementServer script will migrate all groups in your Central Management Server. Note this 
+If -CMSGroups is not specified, the Copy-SqlCentralManagementServer script will migrate all groups in your Central Management Server. Note this 
 variable is only populated by top level groups.
 
 .PARAMETER SwitchServerName
@@ -105,6 +105,7 @@ BEGIN {
 			}		
 			 
 			if($destinationgroup.RegisteredServers.name -notcontains $instancename) {
+			If ($Pscmdlet.ShouldProcess($destination,"Copying $instancename")) {
 				$newserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($destinationgroup, $instancename)
 				$newserver.ServerName = $servername
 				$newserver.Description = $instance.Description
@@ -120,6 +121,7 @@ BEGIN {
 				}
 				Write-Output "Added Server $servername as $instancename to $($destinationgroup.name)"
 			  }
+			}
 			else { Write-Warning "Server $instancename already exists. Skipped" }
 		}
 	 
@@ -158,20 +160,18 @@ PROCESS {
 		$tocmstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($destserver.ConnectionContext.SqlConnectionObject)
 		}
 	catch { throw "Cannot access Central Management Servers" }
-	
-	If ($Pscmdlet.ShouldProcess($destination,"Copying CMS Servers")) {
-		if ($CMSGroups -eq $null) { $stores = $fromcmstore.DatabaseEngineServerGroup } 
-		else { $stores = @(); foreach ($groupname in $CMSGroups) { $stores += $fromcmstore.DatabaseEngineServerGroup.ServerGroups[$groupname] } }
 
-		foreach ($store in $stores) {
-			Parse-ServerGroup -sourceGroup $store -destinationgroup $tocmstore.DatabaseEngineServerGroup -SwitchServerName $SwitchServerName
-		}
+	if ($CMSGroups -eq $null) { $stores = $fromcmstore.DatabaseEngineServerGroup } 
+	else { $stores = @(); foreach ($groupname in $CMSGroups) { $stores += $fromcmstore.DatabaseEngineServerGroup.ServerGroups[$groupname] } }
+
+	foreach ($store in $stores) {
+		Parse-ServerGroup -sourceGroup $store -destinationgroup $tocmstore.DatabaseEngineServerGroup -SwitchServerName $SwitchServerName
 	}
 }
 
 END {
 	$sourceserver.ConnectionContext.Disconnect()
 	$destserver.ConnectionContext.Disconnect()
-	Write-Output "Central Management Server migration finished"
+	If ($Pscmdlet.ShouldProcess("local host","Showing finished message")) { Write-Output "Central Management Server migration finished" }
 }
 }

@@ -855,7 +855,6 @@ Function Copy-SqlDatabase  {
 		If (Test-Path "$csvfilename-db.csv") { Remove-Item -Path "$csvfilename-db.csv" }
 	}
 	$migrateddb.GetEnumerator() | Sort-Object Value; $skippedb.GetEnumerator() | Sort-Object Value
-	Write-Output "`nCompleted database migration"
 }
 
 Function Mount-SqlDatabase {
@@ -1106,14 +1105,16 @@ PROCESS {
 }
 
 END {
-	$totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
-	$sourceserver.ConnectionContext.Disconnect()
-	$destserver.ConnectionContext.Disconnect()
-	Write-Output "Database migration finished"
-	Write-Output "Migration started: $started" 
-	Write-Output "Migration completed: $(Get-Date)" 
-	Write-Output "Total Elapsed time: $totaltime"
-	if ($networkshare.length -gt 0) { Write-Warning "This script does not delete backup files. Backups may still exist at $networkshare." }
+	If ($Pscmdlet.ShouldProcess("local host","Showing migration time elapsed")) {
+		$totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
+		$sourceserver.ConnectionContext.Disconnect()
+		$destserver.ConnectionContext.Disconnect()
+		Write-Output "Database migration finished"
+		Write-Output "Migration started: $started" 
+		Write-Output "Migration completed: $(Get-Date)" 
+		Write-Output "Total Elapsed time: $totaltime"
+		if ($networkshare.length -gt 0) { Write-Warning "This script does not delete backup files. Backups may still exist at $networkshare." }
+	}
 
 }
 }

@@ -137,5 +137,9 @@ Function Import-SqlSpConfigure     {
 			}
 		}
 	} 
-	END { Write-Output "SQL Server configuration options migration finished" }
+	END { 
+		If ($Pscmdlet.ShouldProcess("local host","Showing finished message")) {
+			Write-Output "SQL Server configuration options migration finished" 
+		}
+	}
 }

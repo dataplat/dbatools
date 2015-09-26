@@ -255,31 +255,37 @@ Function Copy-LinkedServers {
 				Write-Warning "$linkedservername exists $($destserver.name). Skipping." 
 				continue
 			} else {
+			If ($Pscmdlet.ShouldProcess($destination,"Dropping $linkedservername")) {
 				$destserver.LinkedServers[$linkedservername].Drop($true)
 				$destserver.LinkedServers.refresh()
+				}
 			}
 		}
 		
 		Write-Output "Attempting to migrate: $linkedservername"
-		try { 
-			$sql = $linkedserver.Script()
-			[void]$destserver.ConnectionContext.ExecuteNonQuery($sql) 
-			$destserver.LinkedServers.Refresh()
-			Write-Output "$linkedservername successfully copied"
-		} catch { Write-Warning "$linkedservername could not be added to $($destserver.name)" }
+		If ($Pscmdlet.ShouldProcess($destination,"Migrating $linkedservername")) {
+			try { 
+				$sql = $linkedserver.Script()
+				[void]$destserver.ConnectionContext.ExecuteNonQuery($sql) 
+				$destserver.LinkedServers.Refresh()
+				Write-Output "$linkedservername successfully copied"
+			} catch { Write-Warning "$linkedservername could not be added to $($destserver.name)" }
+		}
 		
 		$destlogins = $destserver.LinkedServers[$linkedservername].LinkedServerLogins
 		$lslogins = $sourcelogins | Where-Object { $_.LinkedServer -eq $linkedservername }
-
+	
 		foreach ($login in $lslogins) {
-			$currentlogin = $destlogins | Where-Object { $_.RemoteUser -eq $login.Login }
-			
-			if ($currentlogin.RemoteUser.length -ne 0) {
-				try { 
-					$currentlogin.SetRemotePassword($login.Password)
-					$currentlogin.Alter()
-				} catch { Write-Error "$($login.login) failed to copy" }
+			If ($Pscmdlet.ShouldProcess($destination,"Migrating $($login.Login)")) {
+				$currentlogin = $destlogins | Where-Object { $_.RemoteUser -eq $login.Login }
 				
+				if ($currentlogin.RemoteUser.length -ne 0) {
+					try {
+						$currentlogin.SetRemotePassword($login.Password)
+						$currentlogin.Alter()
+					} catch { Write-Error "$($login.login) failed to copy" }
+					
+				}
 			}
 		}
 		Write-Output "Finished migrating logins for $linkedservername"	
@@ -313,15 +319,14 @@ PROCESS {
 	catch { throw "Can't connect to registry on $source. Quitting." }
 	
 	# Magic happens here
-	If ($Pscmdlet.ShouldProcess($destination,"Copying the following linked servers: ")) {
-		Copy-LinkedServers $sourceserver $destserver $linkedservers $force
-	}
+	Copy-LinkedServers $sourceserver $destserver $linkedservers $force
+
 	
 }
 
 END {
 	$sourceserver.ConnectionContext.Disconnect()
 	$destserver.ConnectionContext.Disconnect()
-	Write-Output "Linked Server migration finished"
+	If ($Pscmdlet.ShouldProcess("local host","Showing finished message")) { Write-Output "Linked Server migration finished" }
 }
 }
