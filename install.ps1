@@ -1,4 +1,3 @@
-Remove-Module dbatools -ErrorAction SilentlyContinue
 $url = 'https://github.com/ctrlbold/dbatools/archive/master.zip'
 $path = Join-Path -Path (Split-Path -Path $profile) -ChildPath '\Modules\dbatools'
 $zipfile = "$path\sqltools.zip"
@@ -24,9 +23,11 @@ $destinationFolder.CopyHere($zipPackage.Items())
 
 Write-Output "Cleaning up"
 Move-Item -Path "$path\dbatools-master\*" $path
-Import-Module "$path\dbatools.psd1"
 Remove-Item -Path "$path\dbatools-master"
 Remove-Item -Path $zipfile
+
+Remove-Module dbatools -ErrorAction SilentlyContinue
+Import-Module "$path\dbatools.psd1"
 
 Write-Output "Done! Please report any bugs to clemaire@gmail.com."
 Get-Command -Module dbatools
