@@ -61,29 +61,31 @@ Specifies the network location for the backup files. The SQL Service service acc
 Sets all migrated databases to ReadOnly prior to detach/attach & backup/restore. If -Reattach is used, db is set to read-only after reattach.
 
 .PARAMETER SkipDatabases
-Skips the database migration 
+Skips the database migration.
 
 .PARAMETER SkipLogins
-Skips the login migration 
+Skips the login migration.
 
 .PARAMETER SkipJobServer
-Skips the job server (SQL Agent) migration 
+Skips the job server (SQL Agent) migration.
 
 .PARAMETER SkipCredentials
-Skips the credential migration 
+Skips the credential migration.
 
 .PARAMETER SkipLinkedServers
-Skips the Linked Server migration 
+Skips the Linked Server migration.
 
 .PARAMETER SkipSpConfigure
-Skips the global configuration migration 
+Skips the global configuration migration.
 
 .PARAMETER SkipCentralManagementServer
-Skips the CMS migration 
+Skips the CMS migration.
 
 .PARAMETER SkipDatabaseMail
-Skips the database mail migration 
+Skips the database mail migration.
 
+.PARAMETER SkipSysDbUserObjects
+Skips the import user objects found in source SQL Server's master, msdb and model databases to the destination.
 
 .PARAMETER Force
 If migrating users, forces drop and recreate of SQL and Windows logins. 
@@ -97,8 +99,8 @@ Author  : Chrissy LeMaire
 Requires: PowerShell Version 3.0, SQL Server SMO
 DateUpdated: 2015-Sept-22
 Version: 2.0
-Limitations: 	Doesn't cover what it doesn't cover (replication, linked servers, certificates, etc)
-			SQL Server 2000 login migrations have some limitations (server perms aren't migrated, etc)
+Limitations: 	Doesn't cover what it doesn't cover (replication, certificates, etc)
+			SQL Server 2000 login migrations have some limitations (server perms aren't migrated)
 			SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
 			Logins within SQL Server 2012 and above logins cannot be migrated to SQL Server 2008 R2 and below.				
 
@@ -150,7 +152,8 @@ Param(
 	[switch]$SkipLinkedServers,
 	[switch]$SkipSpConfigure,
 	[switch]$SkipCentralManagementServer,
-	[switch]$SkipDatabaseMail
+	[switch]$SkipDatabaseMail,
+	[switch]$SkipSysDbUserObjects
 	)
 
 BEGIN {}
@@ -176,12 +179,22 @@ PROCESS {
 		Write-Output "Migrating databases..."
 		try {
 			if ($BackupRestore) {
-				Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SysDbUserObjects -IncludeSupportDbs -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -BackupRestore -NetworkShare $NetworkShare -Force:$force -WhatIf:$whatif
+				Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -IncludeSupportDbs -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -BackupRestore -NetworkShare $NetworkShare -Force:$force -WhatIf:$whatif
 			} else {
-				Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SysDbUserObjects -IncludeSupportDbs -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$force -WhatIf:$whatif
+				Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -IncludeSupportDbs -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$force -WhatIf:$whatif
 			}
 		} catch { Write-Error "Database migration reported the following error $($_.Exception.Message)" }
 	}
+
+	if (!$SkipSysDbUserObjects) {
+	Write-Output "`n`nMigrating user objects in system databases (this takes a second)..."
+	try { 
+			If ($Pscmdlet.ShouldProcess($destination,"Copying user objects.")) {
+			Copy-SqlSysDbUserObjects -Source $sourceserver -Destination $destserver
+		}
+	
+	} catch { Write-Error "Couldn't copy all user objects in system databases." }
+}
 	
 	if (!$SkipCredentials) {
 		Write-Output "`n`nMigrating SQL credentials..."
