@@ -1,5 +1,5 @@
-# More set-scrictmodes coming soon after I get some testing done.
-Set-StrictMode -Version Latest
+# Strictmode coming when I've got time.
+# Set-StrictMode -Version Latest
 foreach ($function in (Get-ChildItem "$PSScriptRoot\Functions\*.ps1")) { . $function  }
 
 Function Update-dbatools {
@@ -48,7 +48,7 @@ Function Connect-SqlServer  {
 	
 	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlServer
 	
-	if ($SqlCredential -ne $null ) {
+	if ($SqlCredential.username -ne $null ) {
 		$username = ($SqlCredential.username).TrimStart("\")
 		$server.ConnectionContext.LoginSecure = $false
 		$server.ConnectionContext.set_Login($username)
