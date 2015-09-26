@@ -62,6 +62,7 @@ Function Connect-SqlServer  {
 		$message = $_.Exception.InnerException.InnerException
 		$message = $message.ToString()
 		$message = ($message -Split '-->')[0]
+		$message = ($message -Split 'at System.Data.SqlClient')[0]
 		throw "Can't connect to $sqlserver`: $message "  
 	}
 	

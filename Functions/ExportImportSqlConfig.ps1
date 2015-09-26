@@ -4,7 +4,7 @@ Function Export-SqlSpConfigure     {
               Exports advanced sp_configure global configuration options to sql file.
 
             .EXAMPLE
-               $sql = Export-SqlSpConfigure $sourceserver -Path C:\temp\sp_configure.sql
+               $outputfile = Export-SqlSpConfigure $sourceserver -Path C:\temp\sp_configure.sql
 
             .OUTPUTS
                 File to disk, and string path.
@@ -42,7 +42,6 @@ Function Export-SqlSpConfigure     {
 		$server.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null	
 		return $path
 	} 
-	END { Write-Output "Mail migration finished" }
 }
 
 Function Import-SqlSpConfigure     {
