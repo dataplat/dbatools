@@ -201,6 +201,11 @@ PROCESS {
 	} catch { Write-Error "Couldn't copy all user objects in system databases." }
 }
 
+	if (!$SkipCredentials) {
+		Write-Output "`n`nMigrating SQL credentials..."
+		try { Copy-SqlCredential -Source $sourceserver -Destination $destserver -Force:$Force
+		} catch { Write-Error "Credential migration reported the following error $($_.Exception.Message) "}
+	}
 	
 	if (!$SkipLogins) {
 		Write-Output "`n`nMigrating logins..."
@@ -214,12 +219,6 @@ PROCESS {
 		if ($force) { Write-Warning " Copy-SqlJobServer currently does not support force." }
 		try { Copy-SqlJobServer -Source $sourceserver -Destination $destserver -CsvLog:$csvlog
 		} catch { Write-Error "Job Server migration reported the following error $($_.Exception.Message) "}
-	}
-
-	if (!$SkipCredentials) {
-		Write-Output "`n`nMigrating SQL credentials..."
-		try { Copy-SqlCredential -Source $sourceserver -Destination $destserver -Force:$Force
-		} catch { Write-Error "Credential migration reported the following error $($_.Exception.Message) "}
 	}
 
 	if (!$SkipLinkedServers) {
