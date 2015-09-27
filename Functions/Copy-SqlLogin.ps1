@@ -134,7 +134,7 @@ Function Copy-Login {
 
 		$username = $sourcelogin.name
 		if ($Logins -ne $null -and $Logins -notcontains $username) { continue }
-		if ($skippedlogin.ContainsKey($username) -or $username.StartsWith("##") -or $username -eq 'sa') { continue }
+		if ($skippedlogin.ContainsKey($username) -or $username.StartsWith("##") -or $username -eq 'sa') { Write-Output "Skipping $username"; continue }
 		$servername = Get-NetBiosName $sourceserver
 
 		$currentlogin = $sourceserver.ConnectionContext.truelogin
@@ -148,6 +148,7 @@ Function Copy-Login {
 		$userbase = ($username.Split("\")[0]).ToLower()
 		if ($servername -eq $userbase -or $username.StartsWith("NT ")) {
 			If ($Pscmdlet.ShouldProcess("console","Stating $username is skipped because it is a local machine name.")) {
+				Write-Output "Stating $username is skipped because it is a local machine name."
 				$skippedlogin.Add("$username","Skipped. Local machine username.") 
 			}
 			continue
@@ -155,6 +156,7 @@ Function Copy-Login {
 		
 		if (($login = $destserver.Logins.Item($username)) -ne $null -and !$force) { 
 			If ($Pscmdlet.ShouldProcess("console","Stating $username is skipped because it exists at destination.")) {
+				Write-Output "$username already exists in destination. Use -force to drop and recreate."
 				$skippedlogin.Add("$username","Already exists in destination. Use -force to drop and recreate.") 
 			}
 			continue
