@@ -1,5 +1,7 @@
 # dbatools
-A collection of modules for SQL Server DBAs. It initually started out as 'sqlmigration', but has now grown into a collection of various commands that help automate DBA tasks. The consolidation was done pretty quickly, so there will be bugs, and documentation will be slightly out of date for about a month or so.
+A collection of modules for SQL Server DBAs. It initially started out as 'sqlmigration', but has now grown into a collection of various commands that help automate DBA tasks. The consolidation was done pretty quickly, so there will be bugs, and documentation will be slightly out of date for about a month or so. 
+
+In my domain joined Windows 10, PowerShell v5, SMO v12 lab, these commands work swimmingly on SQL Server 2000-2016. If you're still using SMO v10 (SQL Server 2008 R2) on your workstation, some functionality may be reduced, but give it a try anyway. 
 
 Installer
 --------------
@@ -31,15 +33,14 @@ This will install the following commands
 	Update-dbatools
 	Watch-SqlDbLogin
 
-This module will be placed in PowerShell Gallery when it's slightly more mature. 
-	
-A few quick notes
+This module will be placed in PowerShell Gallery when it's slightly more mature. 	
+A few important notes
 --------------
-
- - I try to support SQL Server 2000-2016 when possible
+ - I try to support SQL Server 2000-2016 and clustered instances when possible
  - SQL Auth and Windows Auth are supported when possible
+ - Windows authentication/Windows admin access is required at the *Windows Server level* for Copy-SqlCredential, Copy-SqlLinkedServer, and Reset-SqlSaPassword.
  - SQL Sysadmin access is required unless otherwise specified
- - This module requires SQL Management Objects (SMO). SMO is included when you install SQL Server Management Studio, or you can download it from Microsoft: [SQL Server 2014 32-bit SMO](http://download.microsoft.com/download/1/3/0/13089488-91FC-4E22-AD68-5BE58BD5C014/ENU/x86/SharedManagementObjects.msi) or [SQL Server 2014 64-bit SMO](http://download.microsoft.com/download/1/3/0/13089488-91FC-4E22-AD68-5BE58BD5C014/ENU/x64/SharedManagementObjects.msi)
+ - This module requires SQL Management Objects (SMO). SMO is included when you install SQL Server Management Studio, or you can download it from Microsoft: [SQL Server 2014 32-bit SMO](http://download.microsoft.com/download/1/3/0/13089488-91FC-4E22-AD68-5BE58BD5C014/ENU/x86/SharedManagementObjects.msi) or [SQL Server 2014 64-bit SMO](http://download.microsoft.com/download/1/3/0/13089488-91FC-4E22-AD68-5BE58BD5C014/ENU/x64/SharedManagementObjects.msi). The higher the version the better.
 
 Copy-SqlDatabase
 --------------
