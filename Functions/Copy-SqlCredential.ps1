@@ -261,6 +261,9 @@ Function Copy-Credential {
 
 PROCESS {
 
+	Invoke-SMOCheck -SqlServer $sourceserver
+	Invoke-SMOCheck -SqlServer $destserver
+	
 	$credentials = $psboundparameters.credentials
 
 	if ($SourceSqlCredential.username -ne $null -or $DestinationSqlCredential -ne $null) {

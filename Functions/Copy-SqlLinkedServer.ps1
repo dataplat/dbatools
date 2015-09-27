@@ -296,6 +296,9 @@ Function Copy-LinkedServers {
 
 PROCESS {
 
+	Invoke-SMOCheck -SqlServer $sourceserver
+	Invoke-SMOCheck -SqlServer $destserver
+	
 	$LinkedServers = $psboundparameters.LinkedServers
 
 	if ($SourceSqlCredential.username -ne $null -or $DestinationSqlCredential -ne $null) {
