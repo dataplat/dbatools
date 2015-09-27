@@ -1031,7 +1031,7 @@ Function Test-SqlConnection  {
 	Write-Output "Determining SQL Server base address"
 	$baseaddress = $sqlserver.Split("\")[0]
 	try { $instance = $sqlserver.Split("\")[1] } catch { $instance = "(Default)" }
-	
+	if ($instance -eq $null) { $instance = "(Default)" }
 	
 	if ($baseaddress -eq "." -or $baseaddress -eq $env:COMPUTERNAME) { 
 		$ipaddr = "."
