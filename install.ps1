@@ -1,3 +1,4 @@
+Remove-Module dbatools -ErrorAction SilentlyContinue
 $url = 'https://github.com/ctrlbold/dbatools/archive/master.zip'
 $path = Join-Path -Path (Split-Path -Path $profile) -ChildPath '\Modules\dbatools'
 $zipfile = "$($pwd.path)\sqltools.zip"
@@ -26,8 +27,7 @@ Move-Item -Path "$($pwd.path)\dbatools-master\*" $path
 Remove-Item -Path "$($pwd.path)\dbatools-master"
 Remove-Item -Path $zipfile
 
-#Remove-Module dbatools -ErrorAction SilentlyContinue
-#Import-Module "$path\dbatools.psd1"
 
 Write-Output "Done! Please report any bugs to clemaire@gmail.com."
+Write-Output "If you experience any function errors after update, please restart PowerShell."
 Get-Command -Module dbatools
