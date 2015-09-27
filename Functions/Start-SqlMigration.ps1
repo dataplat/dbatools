@@ -191,9 +191,9 @@ PROCESS {
 		Write-Output "`nMigrating databases"
 		try {
 			if ($BackupRestore) {
-				Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -IncludeSupportDbs -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -CsvLog:$csvlog -NoRecovery:$NoRecovery
+				Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -CsvLog:$csvlog -NoRecovery:$NoRecovery
 			} else {
-				Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -IncludeSupportDbs -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force -CsvLog:$csvlog
+				Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force -CsvLog:$csvlog
 			}
 		} catch { Write-Error "Database migration reported the following error $($_.Exception.Message)" }
 	}
@@ -251,7 +251,7 @@ PROCESS {
 	
 	if (!$SkipSpConfigure) {
 		Write-Output "`n`nMigrating SQL Server Configuration"
-		try { Import-SqlSpConfigure -Source $sourceserver -Destination $destserver -Force:$Force
+		try { Import-SqlSpConfigure -Source $sourceserver -Destination $destserver -Force:$true
 			} catch { Write-Error "Configuration migration reported the following error $($_.Exception.Message) " }
 		}
 }
