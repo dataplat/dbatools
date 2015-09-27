@@ -1,7 +1,6 @@
-Remove-Module dbatools -ErrorAction SilentlyContinue
 $url = 'https://github.com/ctrlbold/dbatools/archive/master.zip'
 $path = Join-Path -Path (Split-Path -Path $profile) -ChildPath '\Modules\dbatools'
-$zipfile = "$PSScriptRoot\sqltools.zip"
+$zipfile = "$($pwd.path)\sqltools.zip"
 
 
 if (!(Test-Path -Path $path)){
@@ -19,15 +18,15 @@ Write-Output "Unzipping"
 # Keep it backwards compatible
 $shell = New-Object -COM Shell.Application
 $zipPackage = $shell.NameSpace($zipfile)
-$destinationFolder = $shell.NameSpace($env:temp)
+$destinationFolder = $shell.NameSpace($($pwd.path))
 $destinationFolder.CopyHere($zipPackage.Items())
 
 Write-Output "Cleaning up"
-Move-Item -Path "$PSScriptRoot\dbatools-master\*" $path
-Remove-Item -Path "$PSScriptRoot\dbatools-master"
+Move-Item -Path "$($pwd.path)\dbatools-master\*" $path
+Remove-Item -Path "$($pwd.path)\dbatools-master"
 Remove-Item -Path $zipfile
 
-
+#Remove-Module dbatools -ErrorAction SilentlyContinue
 #Import-Module "$path\dbatools.psd1"
 
 Write-Output "Done! Please report any bugs to clemaire@gmail.com."
