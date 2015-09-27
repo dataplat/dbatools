@@ -157,14 +157,16 @@ Function Get-SqlCredentials {
 		$creds =  Invoke-Command -ComputerName $sourcenetbios -argumentlist $connstring, $sql {
 			$connstring = $args[0]; $sql = $args[1]
 			$conn = New-Object System.Data.SqlClient.SQLConnection($connstring)
-			$conn.open()
-			$cmd = New-Object System.Data.SqlClient.SqlCommand($sql,$conn);
-			$data = $cmd.ExecuteReader()
-			$dt = New-Object "System.Data.DataTable"
-			$dt.Load($data)
-			$conn.Close()
-			$conn.Dispose()
-			return $dt 
+			try { 
+				$conn.open()
+				$cmd = New-Object System.Data.SqlClient.SqlCommand($sql,$conn);
+				$data = $cmd.ExecuteReader()
+				$dt = New-Object "System.Data.DataTable"
+				$dt.Load($data)
+				$conn.Close()
+				$conn.Dispose()
+				return $dt
+			 } catch { throw "Can't open DAC connection :(" }
 		}
 	} catch { throw "Can't establish DAC connection to $sourcename from $sourcename. Quitting."}
 
@@ -261,12 +263,9 @@ Function Copy-Credential {
 
 PROCESS {
 
-	Invoke-SMOCheck -SqlServer $sourceserver
-	Invoke-SMOCheck -SqlServer $destserver
-	
 	$credentials = $psboundparameters.credentials
 
-	if ($SourceSqlCredential.username -ne $null -or $DestinationSqlCredential -ne $null) {
+	if ($SourceSqlCredential.username -ne $null -or $DestinationSqlCredential.username -ne $null) {
 		Write-Warning "You are using SQL credentials and this script requires Windows admin access to the server. Trying anyway."
 	}
 	
@@ -279,17 +278,22 @@ PROCESS {
 	if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
 	if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 	
+	
+	Invoke-SMOCheck -SqlServer $sourceserver
+	Invoke-SMOCheck -SqlServer $destserver
+	
+	Write-Output "Getting NetBios name"
 	$sourcenetbios = Get-NetBiosName $sourceserver
 	
-	# Test for WinRM
+	Write-Output "Checking if remote access is enabled"
 	winrm id -r:$sourcenetbios 2>$null | Out-Null
 	if ($LastExitCode -ne 0) { throw "Remote PowerShell access not enabled on on $source or access denied. Windows admin acccess required. Quitting." }
 
-	# Test for registry access
+	Write-Output "Checking if Remote Registry is enabled"
 	try { Invoke-Command -ComputerName $sourcenetbios { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } } 
 	catch { throw "Can't connect to remote registry on $source. Quitting." }
 	
-	# Magic happens here
+	Write-Output "Copying credentials"
 	Copy-Credential $sourceserver $destserver -Credentials $credentials -force:$force
 	
 }

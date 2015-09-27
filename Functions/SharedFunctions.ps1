@@ -1088,8 +1088,10 @@ Function Test-SqlConnection  {
 	
 	$serverinfo.NetBIOSname = $hostname
 
+	
 	if ($remote -eq $true) {
 		# Test for WinRM #Test-WinRM neh
+		Write-Output "Checking remote acccess"
 		winrm id -r:$hostname 2>$null | Out-Null
 		if ($LastExitCode -eq 0) { $remoting = $true } else { $remoting = $false }
 		

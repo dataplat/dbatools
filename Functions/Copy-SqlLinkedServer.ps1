@@ -314,13 +314,14 @@ PROCESS {
 	if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
 	if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 	
+	Write-Output "Getting NetBios name"
 	$sourcenetbios = Get-NetBiosName $sourceserver
 	
-	# Test for WinRM
+	Write-Output "Checking if remote access is enabled"
 	winrm id -r:$sourcenetbios 2>$null | Out-Null
 	if ($LastExitCode -ne 0) { throw "Remote PowerShell access not enabled on on $source or access denied. Windows admin acccess required. Quitting." }
 
-	# Test for registry access
+	Write-Output "Checking if Remote Registry is enabled"
 	try { Invoke-Command -ComputerName $sourcenetbios { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } } 
 	catch { throw "Can't connect to registry on $source. Quitting." }
 	
