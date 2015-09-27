@@ -298,13 +298,16 @@ PROCESS {
 
 	$LinkedServers = $psboundparameters.LinkedServers
 
-	Write-Output "Attempting to connect to SQL Servers.." 
+	if ($SourceSqlCredential.username -ne $null -or $DestinationSqlCredential -ne $null) {
+		Write-Warning "You are using SQL credentials and this script requires Windows admin access to the server. Trying anyway."
+	}
+	
 	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 
 	$source = $sourceserver.name
 	$destination = $destserver.name
-	
+
 	if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
 	if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 	
@@ -312,8 +315,8 @@ PROCESS {
 	
 	# Test for WinRM
 	winrm id -r:$sourcenetbios 2>$null | Out-Null
-	if ($LastExitCode -ne 0) { throw "Remote PowerShell access not enabled on on $source or access denied. Quitting." }
-	
+	if ($LastExitCode -ne 0) { throw "Remote PowerShell access not enabled on on $source or access denied. Windows admin acccess required. Quitting." }
+
 	# Test for registry access
 	try { Invoke-Command -ComputerName $sourcenetbios { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } } 
 	catch { throw "Can't connect to registry on $source. Quitting." }
@@ -321,7 +324,6 @@ PROCESS {
 	# Magic happens here
 	Copy-LinkedServers $sourceserver $destserver $linkedservers $force
 
-	
 }
 
 END {
