@@ -322,7 +322,7 @@ PROCESS {
 	catch { throw "Can't connect to registry on $source. Quitting." }
 	
 	# Magic happens here
-	Copy-LinkedServers $sourceserver $destserver $linkedservers $force
+	Copy-LinkedServers $sourceserver $destserver $linkedservers -force:$force
 
 }
 
