@@ -1027,7 +1027,7 @@ PROCESS {
 		}
 		
 		if (!(Test-Path $NetworkShare)) {
-			throw "Specified network share does not exist or cannot be accessed." 
+			Write-Warning "$networkshare share cannot be accessed. Still trying anyway, in case the SQL Server service accounts have access." 
 		}
 	}
 	
