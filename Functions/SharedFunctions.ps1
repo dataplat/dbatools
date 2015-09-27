@@ -29,6 +29,12 @@ Function Connect-SqlServer  {
 			[switch]$ParameterConnection
 		)
 	
+	$username = $SqlCredential.username
+	if ($username -ne $null) {
+		$username = $username.TrimStart("\") 
+		if ($username -like "*\*") { throw "Only SQL Logins can be specified when using the Credential parameter. To connect as to SQL Server a different Windows user, you must start PowerShell as that user." }
+	}
+		
 	if ($SqlServer.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
 	
 		if ($ParameterConnection) { 
@@ -45,12 +51,13 @@ Function Connect-SqlServer  {
 	
 	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlServer
 	
-	if ($SqlCredential.username -ne $null ) {
-		$username = ($SqlCredential.username).TrimStart("\")
-		$server.ConnectionContext.LoginSecure = $false
-		$server.ConnectionContext.set_Login($username)
-		$server.ConnectionContext.set_SecurePassword($SqlCredential.Password)
-	}
+	try {
+		if ($SqlCredential.username -ne $null ) {
+			$server.ConnectionContext.LoginSecure = $false
+			$server.ConnectionContext.set_Login($username)
+			$server.ConnectionContext.set_SecurePassword($SqlCredential.Password)
+		}
+	} catch { } 
 		
 	try { 
 		if ($ParameterConnection) { $server.ConnectionContext.ConnectTimeout = 2 }
@@ -997,6 +1004,11 @@ Function Test-SqlConnection  {
             [System.Management.Automation.PSCredential]$SqlCredential
 		)
 	
+	$username = $SqlCredential.username
+	if ($username -ne $null) {
+		$username = $username.TrimStart("\") 
+		if ($username -like "*\*") { throw "Only SQL Logins can be specified when using the Credential parameter. To connect as to SQL Server a different Windows user, you must start PowerShell as that user." }
+	}
 	
 	# Get local enviornment
 	Write-Output "Getting local enivornment information"
@@ -1090,13 +1102,18 @@ Function Test-SqlConnection  {
 	
 	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlServer
 	
-	if ($SqlCredential -ne $null ) {
-		$authtype = "SQL Authentication"
-		$username = ($SqlCredential.username).TrimStart("\")
-		$server.ConnectionContext.LoginSecure = $false
-		$server.ConnectionContext.set_Login($username)
-		$server.ConnectionContext.set_SecurePassword($SqlCredential.Password)
-	} else {
+	try {
+		if ($SqlCredential -ne $null ) {
+			$authtype = "SQL Authentication"
+			$username = ($SqlCredential.username).TrimStart("\")
+			$server.ConnectionContext.LoginSecure = $false
+			$server.ConnectionContext.set_Login($username)
+			$server.ConnectionContext.set_SecurePassword($SqlCredential.Password)
+		} else {
+			$authtype = "Windows Authentication (Trusted)"
+			$username =  "$env:USERDOMAIN\$env:username"
+		}
+	} catch {
 		$authtype = "Windows Authentication (Trusted)"
 		$username =  "$env:USERDOMAIN\$env:username"
 	}
