@@ -856,48 +856,48 @@ Function Update-SqlDbOwner  {
 			[ValidateNotNullOrEmpty()]
             [object]$destination,
 			
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
             [string]$dbname,
 			[System.Management.Automation.PSCredential]$SourceSqlCredential,
 			[System.Management.Automation.PSCredential]$DestinationSqlCredential
         )
+	
+	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 
-		
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+	$source = $sourceserver.name
+	$destination = $destserver.name
+	
+	if ($dbname.length -eq 0) { 
+		$databases = ($sourceserver.Databases | Where-Object { $destserver.databases.name -contains $_.name -and $_.IsSystemObject -eq $false }).Name
+	} else { $databases = $dbname }
 
-		$source = $sourceserver.name
-		$destination = $destserver.name	
-		
+	foreach ($dbname in $databases) {
 		$destdb = $destserver.databases[$dbname]
 		$dbowner = $sourceserver.databases[$dbname].owner
 		
-		if ($destdb.Status -ne 'Normal') { Write-Output "Database status not normal. Skipping dbowner update."; break }
-		
-		
-		if ($dbowner -eq $null -or $destserver.logins[$dbowner] -eq $null) { $dbowner = 'sa' }
+		if ($destdb.owner -ne $dbowner) {
+			if ($destdb.Status -ne 'Normal') { Write-Output "Database status not normal. Skipping dbowner update."; continue }
+			if ($dbowner -eq $null -or $destserver.logins[$dbowner] -eq $null) { $dbowner = 'sa' }
+					
+			try {
+				if ($destdb.ReadOnly -eq $true) 
+				{
+					$changeroback = $true
+					Update-SqlDbReadOnly $destserver $dbname $false
+				}
 				
-		try {
-			if ($destdb.ReadOnly -eq $true) 
-			{
-				$changeroback = $true
-				Update-SqlDbReadOnly $destserver $dbname $false
+				$destdb.SetOwner($dbowner)
+				Write-Output "Changed $dbname owner to $dbowner"
+				
+				if ($changeroback) {
+					Update-SqlDbReadOnly $destserver $dbname $true
+					$changeroback = $null
+				}
+			} catch { 
+				Write-Error "Failed to update $dbname owner to $dbowner."
 			}
-			
-			$destdb.SetOwner($dbowner)
-			Write-Output "Changed $dbname owner to $dbowner"
-			
-			if ($changeroback) {
-				Update-SqlDbReadOnly $destserver $dbname $true
-				$changeroback = $null
-			}
-			
-			return $true
-		} catch { 
-			Write-Error "Failed to update $dbname owner to $dbowner."
-			return $false 
-		}
+		} else { Write-Output "Proper owner already set on $dbname" }
+	}
 }
 
 Function Update-SqlDbReadOnly  { 

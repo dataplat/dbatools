@@ -264,10 +264,14 @@ Function Copy-Login {
 						$migratedlogin.Add("$username","SQL Login Added successfully") 
 						Write-Output "Successfully added $username to $destination"
 					} catch {
-						$ex = ($_.Exception.InnerException).tostring()
-						$skippedlogin.Add("$username","Add failed: $ex")
-						Write-Warning "Failed to add $username to $destination. See log for details."
-						continue 
+							$skippedlogin.Add("$username","Add failed")
+							$message = $_.Exception.InnerException.InnerException
+							$message = $message.ToString()
+							$errorlog = ".\dbatools-exceptions.txt"
+							Write-Warning "Failed to add $username to $destination`: $_"
+							Write-Warning "See error log $errorlog for more details."
+							Add-Content $errorlog $message
+							continue 
 					}
 				}
 			} 
@@ -281,10 +285,16 @@ Function Copy-Login {
 					$migratedlogin.Add("$username","Windows user/group added successfully") 
 					$destlogin.refresh()
 					Write-Output "Successfully added $username to $destination" }
-				catch { 
+				catch  { 
 					$skippedlogin.Add("$username","Add failed")
-					Write-Warning "Failed to add $username to $destination. See log for details."
-					continue }
+					$message = $_.Exception.InnerException.InnerException
+					$message = $message.ToString()
+					$errorlog = ".\dbatools-exceptions.txt"
+					Write-Warning "Failed to add $username to $destination`: $_"
+					Write-Warning "See error log $errorlog for more details."
+					Add-Content $errorlog $message
+					continue 
+				}
 			}
 			# This script does not currently support certificate mapped or asymmetric key users.
 			else { 
