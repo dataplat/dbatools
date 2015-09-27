@@ -999,6 +999,7 @@ Function Start-SqlDetachAttach   {
 }
 
 PROCESS {
+
 	$elapsed = [System.Diagnostics.Stopwatch]::StartNew() 
 	$started = Get-Date
 	
@@ -1009,6 +1010,9 @@ PROCESS {
 	$source = $sourceserver.name
 	$destination = $destserver.name
 	
+	Invoke-SMOCheck -SqlServer $sourceserver
+	Invoke-SMOCheck -SqlServer $destserver
+
 	$migrateddb = @{}; $skippedb = @{}
 
 	if ($source -eq $destination) { throw "Source and Destination Sql Servers are the same. Quitting." }
