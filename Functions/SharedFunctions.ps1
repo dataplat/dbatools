@@ -71,21 +71,6 @@ Function Connect-SqlServer  {
 		throw "Can't connect to $sqlserver`: $message "  
 	}
 	
-	
-	if ($script:smocheck -ne $true) {
-		$script:smocheck = $true
-		Write-Output "Performing SMO version check"
-		$smo = (([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object {$_.Fullname -like "Microsoft.SqlServer.SMO,*" }).FullName -Split ", ")[1]
-		$smo = ([version]$smo.TrimStart("Version=")).Major
-		$serverversion = $server.version.major
-		
-		if ($serverversion-$smo -gt 1) {
-			Write-Warning "Your version of SMO $smo, which is significantly older than the server's version $($server.version.major)."
-			Write-Warning "This may present an issue when migrating certain portions of SQL Server."
-			Write-Warning "IF you encounter issues, consider upgrading SMO."
-		}
-	}
-	
 	return $server
 }
 
