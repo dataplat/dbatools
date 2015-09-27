@@ -1106,7 +1106,7 @@ END {
 		Write-Output "Migration started: $started" 
 		Write-Output "Migration completed: $(Get-Date)" 
 		Write-Output "Total Elapsed time: $totaltime"
-		if ($networkshare.length -gt 0) { Write-Warning "This script does not delete backup files. Backups may still exist at $networkshare." }
+		if ($networkshare.length -gt 0) { Write-Warning "This script does not delete backup files. Backups still exist at $networkshare." }
 	}
 }
 }
