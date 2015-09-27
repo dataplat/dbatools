@@ -610,8 +610,8 @@ Function Copy-SqlDatabase  {
 	$destnetbios = Get-NetBIOSName $destserver
 	$remotesourcepath = Join-AdminUNC $sourcenetbios (Get-SqlDefaultPaths $sourceserver data)
 	
-	If ((Test-Path $remotesourcepath) -ne $true) { 
-		Write-Error "Can't access remote Sql directories on $source."
+	If ((Test-Path $remotesourcepath) -ne $true -and $DetachAttach) { 
+		Write-Error "Can't access remote Sql directories on $source which is required to perform detach/copy/attach."
 		Write-Error "You can manually try accessing $remotesourcepath to diagnose any issues."
 		Write-Error "Halting database migration."
 		return 
@@ -619,8 +619,8 @@ Function Copy-SqlDatabase  {
 	
 	
 	$remotedestpath = Join-AdminUNC $destnetbios (Get-SqlDefaultPaths $destserver data)
-	If ((Test-Path $remotedestpath) -ne $true) {
-		Write-Error "Can't access remote Sql directories on $destination."
+	If ((Test-Path $remotedestpath) -ne $true -and $DetachAttach) { 
+		Write-Error "Can't access remote Sql directories on $destination which is required to perform detach/copy/attach."
 		Write-Error "You can manually try accessing $remotedestpath to diagnose any issues."
 		Write-Error "Halting database migration."
 		return 
