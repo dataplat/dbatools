@@ -44,7 +44,7 @@ A few quick notes
 Copy-SqlDatabase
 --------------
 Copy-SqlDatabase allows you to migrate using detach/copy/attach or backup/restore. 
-By default, databases will be migrated to the destination SQL Server's default data and log directories. You can override this by specifying -ReuseFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.
+By default, databases will be migrated to the destination SQL Server's default data and log directories. You can override this by specifying -ReuseFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized. Now supports -NoRecovery.
 
 This function used to be a core part of Start-SqlServerMigration. While the documentation is slightly outdated, you can visit [ScriptCenter](https://gallery.technet.microsoft.com/scriptcenter/Use-PowerShell-to-Migrate-86c841df) for details and a video of the script in action.
 
