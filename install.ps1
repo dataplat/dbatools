@@ -30,4 +30,4 @@ Remove-Item -Path $zipfile
 
 Write-Output "Done! Please report any bugs to clemaire@gmail.com."
 Get-Command -Module dbatools
-Write-Output "If you experience any function missing errors after update, please restart PowerShell or reload your profile."
+Write-Output "`n`nIf you experience any function missing errors after update, please restart PowerShell or reload your profile."
