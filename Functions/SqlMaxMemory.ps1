@@ -89,8 +89,10 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 			$reserve = 1
 			$totalMemory = $server.PhysicalMemory
 			
+		
 			# Some servers underreport by 1MB.
 			if (($totalmemory % 1024) -ne 0) { $totalMemory = $totalMemory + 1 }
+			
 			
 			if ($totalMemory -ge 4096) {
 				$currentCount = $totalMemory
@@ -103,9 +105,10 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 						$currentCount += -4096
 					}
 				}
-			}
-
 			$recommendedMax = [int]($totalMemory-($reserve*1024))
+			} else  { $recommendedMax = $totalMemory*.5 }
+
+			
 			$object = New-Object PSObject -Property @{
 			Server = $server.name
 			TotalMB = $totalMemory
