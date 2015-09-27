@@ -1,7 +1,7 @@
 Remove-Module dbatools -ErrorAction SilentlyContinue
 $url = 'https://github.com/ctrlbold/dbatools/archive/master.zip'
 $path = Join-Path -Path (Split-Path -Path $profile) -ChildPath '\Modules\dbatools'
-$zipfile = "$env:temp\sqltools.zip"
+$zipfile = "$PSScriptRoot\sqltools.zip"
 
 
 if (!(Test-Path -Path $path)){
@@ -23,9 +23,10 @@ $destinationFolder = $shell.NameSpace($env:temp)
 $destinationFolder.CopyHere($zipPackage.Items())
 
 Write-Output "Cleaning up"
-Move-Item -Path "$env:temp\dbatools-master\*" $path
-Remove-Item -Path "$env:temp\dbatools-master"
+Move-Item -Path "$PSScriptRoot\dbatools-master\*" $path
+Remove-Item -Path "$PSScriptRoot\dbatools-master"
 Remove-Item -Path $zipfile
+
 
 #Import-Module "$path\dbatools.psd1"
 
