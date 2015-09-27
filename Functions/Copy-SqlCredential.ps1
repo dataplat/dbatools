@@ -261,6 +261,10 @@ Function Copy-Credential {
 
 PROCESS {
 
+	# Test for WinRM
+	winrm id -r:$sourcenetbios 2>$null | Out-Null
+	if ($LastExitCode -ne 0) { throw "Remote PowerShell access not enabled on on $source or access denied. Windows admin acccess required. Quitting." }
+
 	$credentials = $psboundparameters.credentials
 
 	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
@@ -273,10 +277,6 @@ PROCESS {
 	if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 	
 	$sourcenetbios = Get-NetBiosName $sourceserver
-	
-	# Test for WinRM
-	winrm id -r:$sourcenetbios 2>$null | Out-Null
-	if ($LastExitCode -ne 0) { throw "Remote PowerShell access not enabled on on $source or access denied. Quitting." }
 	
 	# Test for registry access
 	try { Invoke-Command -ComputerName $sourcenetbios { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } } 
