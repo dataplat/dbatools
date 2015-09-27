@@ -83,7 +83,7 @@ Function Invoke-SMOCheck {
 	[CmdletBinding()]
         param(
 			[Parameter(Mandatory = $true)]
-            [Microsoft.SqlServer.Management.Smo.Server]$SqlServer
+            [object]$SqlServer
 		)
 	
 	if ($script:smocheck -ne $true) {
