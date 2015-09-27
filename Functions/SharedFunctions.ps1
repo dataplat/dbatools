@@ -1156,7 +1156,7 @@ Function Test-SqlConnection  {
 		$server.ConnectionContext.ConnectTimeout = 10
 		$server.ConnectionContext.Connect()
 		$connectSuccess = $true
-		$version = $server.ResourceVersionString
+		$version = $server.Version.ToString()
 		$addlinfo = "N/A"
 		$server.ConnectionContext.Disconnect()
 	} catch {
