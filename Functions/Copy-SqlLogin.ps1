@@ -212,17 +212,14 @@ Function Copy-Login {
 			}
 			Write-Output "Set $username defaultdb to $defaultdb"
 			$destlogin.DefaultDatabase = $defaultdb
-
-			$checkexpiration = "ON"; $checkpolicy = "ON"
-			if (!$sourcelogin.PasswordPolicyEnforced) { 
-				$destlogin.PasswordPolicyEnforced = $false 
-				$checkpolicy = "OFF"
-			}
-			if (!$sourcelogin.PasswordExpirationEnabled) { 
-				$destlogin.PasswordExpirationEnabled = $false
-				$checkexpiration = "OFF"
-			}
 	
+			$checkexpiration = "ON"; $checkpolicy = "ON"
+			if ($sourcelogin.PasswordPolicyEnforced -eq $false) { $checkpolicy = "OFF" }
+			if (!$sourcelogin.PasswordExpirationEnabled) { $checkexpiration = "OFF" }
+			
+			$destlogin.PasswordPolicyEnforced = $sourcelogin.PasswordPolicyEnforced
+			$destlogin.PasswordExpirationEnabled = $sourcelogin.PasswordExpirationEnabled
+			
 			# Attempt to add SQL Login User
 			if ($sourcelogin.LoginType -eq "SqlLogin") {
 				$destlogin.LoginType = "SqlLogin"
