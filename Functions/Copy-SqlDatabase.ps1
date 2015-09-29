@@ -919,9 +919,9 @@ $dbdestination = $copydb.destination
 				}
 			}
 			else {
+			Write-Host "Copying $fn for $dbname"
 			Start-BitsTransfer -Source $from -Destination $remotefilename }
 			$fn = Split-Path $($dbdestination[$file].physical) -leaf
-			Write-Output "Copied $fn for $dbname"
 		} catch { return $false }
 	}
 	return $true
