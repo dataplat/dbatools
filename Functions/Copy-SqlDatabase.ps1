@@ -1084,9 +1084,10 @@ PROCESS {
 		Copy-SqlDatabase  -sourceserver $sourceserver -destserver $destserver -All $All `
 		 -Databases $Databases -Exclude $Exclude -IncludeSupportDbs $IncludeSupportDbs -Force $force
 	}
-
+	
+	$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
 	if ($csvlog) {
-		$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+		
 		$script:csvfilename = "$($sourceserver.name.replace('\','$'))-to-$($destserver.name.replace('\','$'))-$timenow-db.csv"
 		Set-Content -Path "$csvfilename" "Database Name, Result, Start, Finish"
 		
