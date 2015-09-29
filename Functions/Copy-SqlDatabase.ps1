@@ -1002,6 +1002,7 @@ PROCESS {
 
 	$elapsed = [System.Diagnostics.Stopwatch]::StartNew() 
 	$started = Get-Date
+	$script:timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
 	
 	Write-Output "Attempting to connect to Sql Servers.." 
 	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
@@ -1085,7 +1086,6 @@ PROCESS {
 		 -Databases $Databases -Exclude $Exclude -IncludeSupportDbs $IncludeSupportDbs -Force $force
 	}
 	
-	$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
 	if ($csvlog) {
 		
 		$script:csvfilename = "$($sourceserver.name.replace('\','$'))-to-$($destserver.name.replace('\','$'))-$timenow-db.csv"
