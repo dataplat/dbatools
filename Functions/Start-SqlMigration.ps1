@@ -85,7 +85,10 @@ Skips the CMS migration.
 Skips the database mail migration.
 
 .PARAMETER SkipSysDbUserObjects
-Skips the import user objects found in source SQL Server's master, msdb and model databases to the destination.
+Skips the import of user objects found in source SQL Server's master, msdb and model databases to the destination.
+
+.PARAMETER SkipSystemTriggers
+Skips the System Triggers migration.
 
 .PARAMETER Force
 If migrating users, forces drop and recreate of SQL and Windows logins. 
@@ -151,6 +154,7 @@ Param(
 	[switch]$SkipCentralManagementServer,
 	[switch]$SkipDatabaseMail,
 	[switch]$SkipSysDbUserObjects,
+	[switch]$SkipSystemTriggers,
 	[switch]$Force,
 	[switch]$CsvLog
 	)
@@ -228,7 +232,7 @@ PROCESS {
 
 	if (!$SkipLinkedServers) {
 		Write-Output "`n`nMigrating linked servers"
-		try { Copy-SqlLinkedServer -Source $sourceserver -Destination $destserver -Force:$Force
+		try { Copy-SqlLinkedServer -Source $sourceserver -Destination $destserver -Force:$force
 		} catch { Write-Error "Linked server migration reported the following error $($_.Exception.Message) "}
 	}
 	
@@ -245,10 +249,16 @@ PROCESS {
 		try { Copy-SqlDatabaseMail -Source $sourceserver -Destination $destserver 
 		} catch { Write-Error "Database mail migration reported the following error $($_.Exception.Message)" }
 	}	
+
+	if (!$SkipSystemTriggers) {
+		Write-Output "`n`nMigrating System Triggers"
+		try { Copy-SqlServerTrigger -Source $sourceserver -Destination $destserver -Force:$force
+		} catch { Write-Error "System Triggers migration reported the following error $($_.Exception.Message)" }
+	}	
 	
 	if (!$SkipSpConfigure) {
 		Write-Output "`n`nMigrating SQL Server Configuration"
-		try { Import-SqlSpConfigure -Source $sourceserver -Destination $destserver -Force:$true
+		try { Import-SqlSpConfigure -Source $sourceserver -Destination $destserver -Force:$force
 			} catch { Write-Error "Configuration migration reported the following error $($_.Exception.Message) " }
 		}
 }
