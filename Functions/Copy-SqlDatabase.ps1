@@ -343,6 +343,7 @@ Function Backup-SqlDatabase {
 		}
 	catch {
 		Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
+		Write-Exception $_
 		return $false 
 	}
 }
@@ -418,6 +419,7 @@ Function Restore-SqlDatabase {
 		return $true
 	} catch { 
 		write-warning "Restore failed: $($_.Exception.InnerException.Message)"
+		Write-Exception $_
 		return $false	
 	}
 }
@@ -526,7 +528,7 @@ Function Dismount-SqlDatabase {
 			$database.Refresh()		
 			Write-Warning "Could not break mirror for $dbname. Skipping."
 			
-		} catch { return $false }
+		} catch { Write-Exception $_ ; return $false }
 	}
 	
 	if ($database.AvailabilityGroupName.Length -gt 0 ) {
@@ -535,7 +537,7 @@ Function Dismount-SqlDatabase {
 		try {
 			$server.AvailabilityGroups[$database.AvailabilityGroupName].AvailabilityDatabases[$dbname].Drop()
 			Write-Output "Successfully removed $dbname from  detach from $agname on $($server.name)" 
-		} catch { Write-Error "Could not remove $dbname from $agname on $($server.name)"; return $false }
+		} catch { Write-Error "Could not remove $dbname from $agname on $($server.name)"; Write-Exception $_; return $false }
 	}
 	
 	Write-Output "Attempting detach from $dbname from $source" 
@@ -547,7 +549,7 @@ Function Dismount-SqlDatabase {
 		Write-Output "Successfully detached $dbname from $source" 
 		return $true
 	} 
-	catch { return $false }
+	catch { Write-Exception $_; return $false }
 }
 
 Function Copy-SqlDatabase  {
@@ -789,7 +791,7 @@ Function Copy-SqlDatabase  {
 						$destserver.databases[$dbname].DatabaseOwnershipChaining = $sourcedbownerchaining 
 						$destserver.databases[$dbname].alter()
 						Write-Output "Successfully updated DatabaseOwnershipChaining for $sourcedbownerchaining on $dbname on $destination"
-					} catch { Write-Error "Failed to update DatabaseOwnershipChaining for $sourcedbownerchaining on $dbname on $destination" }
+					} catch { Write-Error "Failed to update DatabaseOwnershipChaining for $sourcedbownerchaining on $dbname on $destination" ; Write-Exception $_ }
 				}
 			}
 			
@@ -799,7 +801,7 @@ Function Copy-SqlDatabase  {
 						$destserver.databases[$dbname].Trustworthy = $sourcedbtrustworthy
 						$destserver.databases[$dbname].alter()
 						Write-Output "Successfully updated Trustworthy to $sourcedbtrustworthy for $dbname on $destination"
-					} catch { Write-Error "Failed to update Trustworthy to $sourcedbtrustworthy for $dbname on $destination" }
+					} catch { Write-Error "Failed to update Trustworthy to $sourcedbtrustworthy for $dbname on $destination" ; Write-Exception $_ }
 				}
 			}
 			
@@ -809,7 +811,7 @@ Function Copy-SqlDatabase  {
 						$destserver.databases[$dbname].BrokerEnabled = $sourcedbbrokerenabled
 						$destserver.databases[$dbname].alter()
 						Write-Output "Successfully updated BrokerEnabled to $sourcedbbrokerenabled for $dbname on $destination"
-					} catch { Write-Error "Failed to update BrokerEnabled to $sourcedbbrokerenabled for $dbname on $destination" }
+					} catch { Write-Error "Failed to update BrokerEnabled to $sourcedbbrokerenabled for $dbname on $destination" ; Write-Exception $_ }
 				}
 			}
 		}
@@ -818,7 +820,7 @@ Function Copy-SqlDatabase  {
 			If ($Pscmdlet.ShouldProcess($destination,"Updating ReadOnly status on $dbname")) {
 				try {
 					$result = Update-SqldbReadOnly $destserver $dbname $sourcedbreadonly
-				} catch { Write-Error "Failed to update ReadOnly status on $dbname" }
+				} catch { Write-Error "Failed to update ReadOnly status on $dbname" ; Write-Exception $_ }
 			}
 		}
 
@@ -870,7 +872,7 @@ Function Mount-SqlDatabase {
 	try {
 		$null = $server.AttachDatabase($dbname, $filestructure, $dbowner, [Microsoft.SqlServer.Management.Smo.AttachOptions]::None)
 		return $true
-	} catch { return $false  }
+	} catch {  Write-Exception $_ ; return $false  }
 }
 
 Function Start-SqlFileTransfer  {
@@ -922,7 +924,7 @@ $dbdestination = $copydb.destination
 			Write-Host "Copying $fn for $dbname"
 			Start-BitsTransfer -Source $from -Destination $remotefilename }
 			$fn = Split-Path $($dbdestination[$file].physical) -leaf
-		} catch { return $false }
+		} catch { Write-Exception $_ ; return $false }
 	}
 	return $true
 }

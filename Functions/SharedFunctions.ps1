@@ -1176,3 +1176,26 @@ Function Test-SqlConnection  {
 	$serverinfo | Select ServerName, BaseName, InstanceName, AuthType, ConnectingAsUser, ConnectSuccess, SqlServerVersion, AddlConnectInfo, RemoteServer, IPAddress, NetBIOSname, RemotingAccessible, Pingable, DefaultSQLPortOpen, RemotingPortOpen
 
 }
+
+Function Write-Exception {
+ <#
+	.SYNOPSIS
+	Writes exception to disk for later analysis
+
+#>
+	[CmdletBinding()]
+	param(
+		[Parameter(Mandatory = $true)]
+		[object]$e
+	)
+	
+	$errorlog = ".\dbatools-exceptions.txt"
+	$message = $e.Exception
+	
+	if ($e.Exception.InnerException -ne $null) { $messsage = $e.Exception.InnerException }
+	
+	$message = $message.ToString()
+	Add-Content $errorlog $(Get-Date)
+	Add-Content $errorlog $message
+	Write-Warning "See error log $(Resolve-Path $errorlog) for more details."
+}

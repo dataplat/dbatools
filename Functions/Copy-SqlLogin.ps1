@@ -140,8 +140,10 @@ Function Copy-Login {
 		$currentlogin = $sourceserver.ConnectionContext.truelogin
 
 		if ($currentlogin -eq $username -and $force) {
-			Write-Warning "Cannot drop login performing the migration. Skipping"
-			$skippedlogin.Add("$username","Skipped. Cannot drop login performing the migration.")
+			If ($Pscmdlet.ShouldProcess("console","Stating $username is skipped because it is performing the migration.")) {
+				Write-Warning "Cannot drop login performing the migration. Skipping"
+				$skippedlogin.Add("$username","Skipped. Cannot drop login performing the migration.")
+			}
 			continue
 		}
 		
@@ -192,6 +194,7 @@ Function Copy-Login {
 					if ($ex -ne $null) { $ex.trim() }
 					$skippedlogin.Add("$username","Couldn't drop $username on $($destination): $ex")
 					Write-Error "Could not drop $username`: $ex"
+					Write-Exception $_
 					continue 
 				}
 			}
@@ -262,12 +265,8 @@ Function Copy-Login {
 						Write-Output "Successfully added $username to $destination"
 					} catch {
 							$skippedlogin.Add("$username","Add failed")
-							$message = $_.Exception.InnerException.InnerException
-							$message = $message.ToString()
-							$errorlog = ".\dbatools-exceptions.txt"
 							Write-Warning "Failed to add $username to $destination`: $_"
-							Write-Warning "See error log $errorlog for more details."
-							Add-Content $errorlog $message
+							Write-Exception $_
 							continue 
 					}
 				}
@@ -284,12 +283,8 @@ Function Copy-Login {
 					Write-Output "Successfully added $username to $destination" }
 				catch  { 
 					$skippedlogin.Add("$username","Add failed")
-					$message = $_.Exception.InnerException.InnerException
-					$message = $message.ToString()
-					$errorlog = ".\dbatools-exceptions.txt"
-					Write-Warning "Failed to add $username to $destination`: $_"
-					Write-Warning "See error log $errorlog for more details."
-					Add-Content $errorlog $message
+					Write-Warning "Failed to add $username to $destination"
+					Write-Exception $_
 					continue 
 				}
 			}
@@ -297,10 +292,11 @@ Function Copy-Login {
 			else { 
 				$skippedlogin.Add("$username","Skipped. $($sourcelogin.LoginType) logins not supported.")
 				Write-Warning "$($sourcelogin.LoginType) logins not supported. $($sourcelogin.name) skipped."
-				continue }
+				continue 
+			}
 			
-			if ($sourcelogin.IsDisabled) { try { $destlogin.Disable() } catch { Write-Warning "$username disabled on source, but could not be disabled on destination." } }
-			if ($sourcelogin.DenyWindowsLogin) { try { $destlogin.DenyWindowsLogin = $true } catch { Write-Warning "$username denied login on source, but could not be denied ogin on destination." } }
+			if ($sourcelogin.IsDisabled) { try { $destlogin.Disable() } catch { Write-Warning "$username disabled on source, but could not be disabled on destination."; Write-Exception $_ } }
+			if ($sourcelogin.DenyWindowsLogin) { try { $destlogin.DenyWindowsLogin = $true } catch { Write-Warning "$username denied login on source, but could not be denied login on destination."; Write-Exception $_ } }
 		}
 		If ($Pscmdlet.ShouldProcess($destination,"Updating SQL login $username permissions")) {
 			Update-SqlPermissions -sourceserver $sourceserver -sourcelogin $sourcelogin -destserver $destserver -destlogin $destlogin
@@ -350,8 +346,9 @@ $username = $sourcelogin.name
 					try {
 						$destrole.AddMember($username)
 						Write-Output "Added $username to $($role.name) server role." 
-						} catch {
-						Write-Warning "Failed to add $username to $($role.name) server role." 
+					} catch {
+						Write-Warning "Failed to add $username to $($role.name) server role."
+						Write-Exception $_
 					}
 				}
 			}
@@ -365,6 +362,7 @@ $username = $sourcelogin.name
 					Write-Output "Removed $username from $($destrole.name) server role on $($destserver.name)." 
 					} catch {
 					Write-Warning "Failed to remove $username from $($destrole.name) server role on $($destserver.name)." 
+					Write-Exception $_
 				}
 			}
 		}
@@ -379,7 +377,10 @@ $username = $sourcelogin.name
 					$destownedjob = $destserver.JobServer.Jobs | Where { $_.name -eq $ownedjobs.name } 
 					$destownedjob.set_OwnerLoginName($username)
 					$destownedjob.Alter() 
-				} catch { Write-Warning "Could not change job owner for $($ownedjob.name)" }
+				} catch { 
+					Write-Warning "Could not change job owner for $($ownedjob.name)" 
+					Write-Exception $_
+				}
 			}
 		}
 	}
@@ -398,7 +399,8 @@ $username = $sourcelogin.name
 					$destserver.PSObject.Methods[$permstate].Invoke($permset, $username, $grantwithgrant)
 					Write-Output "Successfully performed $permstate $($perm.permissiontype) to $username" 
 				} catch {
-					Write-Warning "Failed to $permstate $($perm.permissiontype) to $username" 
+					Write-Warning "Failed to $permstate $($perm.permissiontype) to $username"
+					Write-Exception $_
 				}
 			}
 			
@@ -415,7 +417,8 @@ $username = $sourcelogin.name
 							$destserver.PSObject.Methods["Revoke"].Invoke($permset, $username, $false, $grantwithgrant)
 							Write-Output "Successfully revoked $($perm.permissiontype) from $username" 
 						} catch {
-							Write-Warning "Failed to revoke $($perm.permissiontype) from $username" 
+							Write-Warning "Failed to revoke $($perm.permissiontype) from $username"
+							Write-Exception $_
 						}
 					}
 				}
@@ -433,7 +436,9 @@ $username = $sourcelogin.name
 						$newcred.Create() 
 						Write-Output "Successfully created credential for $username" 
 					} catch {
-						Write-Warning "Failed to create credential for $username" }
+						Write-Warning "Failed to create credential for $username" 
+						Write-Exception $_
+					}
 				}
 			}
 		}
@@ -454,7 +459,9 @@ $username = $sourcelogin.name
 					try { 
 						$destdb.users[$dbusername].Drop()
 						Write-Output "Dropped user $dbusername (login: $dblogin) from $dbname on destination. User may own a schema." }
-					catch { Write-Warning "Failed to drop $dbusername ($dblogin) from $dbname on destination."
+					catch { 
+						Write-Warning "Failed to drop $dbusername ($dblogin) from $dbname on destination."
+						Write-Exception $_
 					}
 				}
 			}
@@ -472,7 +479,10 @@ $username = $sourcelogin.name
 									$destdb.Alter()
 									Write-Output "Dropped username $dbusername (login: $dblogin) from ($destrole.name) on $destination"
 								}
-								catch { Write-Warning "Failed to remove $dbusername from $($destrole.name) database role on $dbname." }
+								catch { 
+									Write-Warning "Failed to remove $dbusername from $($destrole.name) database role on $dbname."
+									Write-Exception $_
+								}
 							}
 						}
 					}
@@ -495,6 +505,7 @@ $username = $sourcelogin.name
 							Write-Output "Successfully revoked $($perm.permissiontype) from $username on $dbname on $destination" 
 						} catch {
 							Write-Warning "Failed to revoke $($perm.permissiontype) from $username on $dbname on $destination" 
+							Write-Exception $_
 						}
 					}
 				}
@@ -517,7 +528,9 @@ $username = $sourcelogin.name
 						$destdb.ExecuteNonQuery($sql)
 						Write-Output "Added user $dbusername (login: $dblogin) to $dbname" 
 					}
-					catch { Write-Warning "Failed to add $dbusername ($dblogin) to $dbname on $destination."
+					catch { 
+						Write-Warning "Failed to add $dbusername ($dblogin) to $dbname on $destination."
+						Write-Exception $_
 					}
 				}
 			}
@@ -545,7 +558,10 @@ $username = $sourcelogin.name
 								$destdb.Alter() 
 								Write-Output "Added $username to $($role.name) database role on $dbname." 
 								
-							} catch { Write-Warning "Failed to add $username to $($role.name) database role on $dbname." }
+							} catch { 
+								Write-Warning "Failed to add $username to $($role.name) database role on $dbname."
+								Write-Exception $_ 
+							}
 						}
 					}
 				}
@@ -562,7 +578,10 @@ $username = $sourcelogin.name
 						$destdb.PSObject.Methods[$permstate].Invoke($permset, $username, $grantwithgrant)
 						Write-Output "Successfully performed $permstate $($perm.permissiontype) to $username on $dbname" 
 					}
-					catch { Write-Warning "Failed to perform $permstate on $($perm.permissiontype) for $username on $dbname." }		
+					catch { 
+						Write-Warning "Failed to perform $permstate on $($perm.permissiontype) for $username on $dbname." 
+						Write-Exception $_
+					}		
 				}
 			}
 		}
