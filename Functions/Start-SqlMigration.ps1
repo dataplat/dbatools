@@ -96,9 +96,6 @@ For other migration objects, it will just drop existing items and readd, if -for
 
 .NOTES 
 Author  : Chrissy LeMaire
-Requires: PowerShell Version 3.0, SQL Server SMO
-DateUpdated: 2015-Sept-22
-Version: 2.0
 Limitations: 	Doesn't cover what it doesn't cover (replication, certificates, etc)
 			SQL Server 2000 login migrations have some limitations (server perms aren't migrated)
 			SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
@@ -115,7 +112,7 @@ Description
 All databases, logins, job objects and sp_configure options will be migrated from sqlserver\instance to sqlcluster. Databases will be migrated using the detach/copy files/attach method. Dbowner will be updated. User passwords, SIDs, database roles and server roles will be migrated along with the login.
 
 .EXAMPLE  
-Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -SourceSqlCredential \$cred -ReuseFolderstructure -DestinationSqlCredential $cred -Force -NetworkShare \\fileserver\share\sqlbackups\Migration -BackupRestore
+Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -SourceSqlCredential $scred -ReuseFolderstructure -DestinationSqlCredential $cred -Force -NetworkShare \\fileserver\share\sqlbackups\Migration -BackupRestore
 
 Migrate databases uses backup/restore. Also migrate logins, database mail, credentials, SQL Agent, Central Management Server, SQL global configuration.
 
