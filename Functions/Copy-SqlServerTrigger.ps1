@@ -15,8 +15,11 @@ Function Copy-SqlServerTrigger {
 			[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 			[switch]$force
 		)
+DynamicParam  { if ($source) { return (Get-ParamSqlServerTriggers -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
 PROCESS {
+	$triggers = $psboundparameters.Triggers
+	
 	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 
@@ -26,10 +29,11 @@ PROCESS {
 	if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
 	if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 	
-	$triggers = $sourceserver.Triggers
+	$servertriggers = $sourceserver.Triggers
 	$desttriggers = $destserver.Triggers
 	
-	foreach ($trigger in $triggers) {
+	foreach ($trigger in $servertriggers) {
+		if ($triggers.length -gt 0 -and $triggers -notcontains $trigger.name) { continue }
 		if ($desttriggers.name -contains $trigger.name) {
 			if ($force -eq $false) {
 				Write-Warning "Server trigger $($trigger.name) exists at destination. Use -Force to drop and migrate."

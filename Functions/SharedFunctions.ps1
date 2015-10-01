@@ -1,4 +1,3 @@
-
 Function Update-dbatools {
 	<# 
 	 .SYNOPSIS 
@@ -331,6 +330,50 @@ Function Get-ParamSqlLogins {
 		$newparams.Add("Logins", $Logins)
 		$newparams.Add("Exclude", $Exclude)
 		
+		$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
+Function Get-ParamSqlServerTriggers {
+	<# 
+	 .SYNOPSIS 
+	 Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+	 filled with Server Triggers from specified SQL Server.
+	 
+	  .EXAMPLE
+      Get-ParamSqlServerTriggers -SqlServer $server -SqlCredential $SqlCredential
+	#> 
+	[CmdletBinding()]
+        param(
+			[Parameter(Mandatory = $true)]
+            [object]$SqlServer,
+			[System.Management.Automation.PSCredential]$SqlCredential
+		)
+
+		try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection } catch { return }
+
+		# Populate arrays
+		$triggerlist = @()
+		foreach ($trigger in $server.Triggers) {
+			$triggerlist += $trigger.name
+		}
+
+		# Reusable parameter setup
+		$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+		$attributes = New-Object System.Management.Automation.ParameterAttribute
+		
+		$attributes.ParameterSetName = "__AllParameterSets"
+		$attributes.Mandatory = $false
+		
+		# Database list parameter setup
+		if ($triggerlist) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $triggerlist }
+		$objattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+		$objattributes.Add($attributes)
+		if ($triggerlist) { $objattributes.Add($validationset) }
+		$Triggers = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Triggers", [String[]], $objattributes)
+		
+		$newparams.Add("Triggers", $Triggers)			
 		$server.ConnectionContext.Disconnect()
 	
 	return $newparams
