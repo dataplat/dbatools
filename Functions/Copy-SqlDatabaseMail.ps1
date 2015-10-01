@@ -1,7 +1,7 @@
 Function Copy-SqlDatabaseMail {
  <#
             .SYNOPSIS
-             Copies *all* database mail settings. More granulatiry coming later.
+             Copies *all* database mail settings. More granularity coming later.
 
             .EXAMPLE
                Copy-SqlDatabaseMail $sourceserver $destserver  
