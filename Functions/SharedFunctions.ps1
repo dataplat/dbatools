@@ -379,6 +379,50 @@ Function Get-ParamSqlServerTriggers {
 	return $newparams
 }
 
+Function Get-ParamSqlBackupDevices {
+	<# 
+	 .SYNOPSIS 
+	 Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+	 filled with Backup Devices from specified SQL Server.
+	 
+	  .EXAMPLE
+      Get-ParamSqlBackupDevices -SqlServer $server -SqlCredential $SqlCredential
+	#> 
+	[CmdletBinding()]
+        param(
+			[Parameter(Mandatory = $true)]
+            [object]$SqlServer,
+			[System.Management.Automation.PSCredential]$SqlCredential
+		)
+
+		try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection } catch { return }
+
+		# Populate arrays
+		$backupdevicelist = @()
+		foreach ($backupdevice in $server.BackupDevices) {
+			$backupdevicelist += $backupdevice.name
+		}
+
+		# Reusable parameter setup
+		$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+		$attributes = New-Object System.Management.Automation.ParameterAttribute
+		
+		$attributes.ParameterSetName = "__AllParameterSets"
+		$attributes.Mandatory = $false
+		
+		# Database list parameter setup
+		if ($backupdevicelist) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $backupdevicelist }
+		$objattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+		$objattributes.Add($attributes)
+		if ($backupdevicelist) { $objattributes.Add($validationset) }
+		$backupdevices = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("BackupDevices", [String[]], $objattributes)
+		
+		$newparams.Add("BackupDevices", $backupdevices)			
+		$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
 Function Get-SqlCmsRegServers {
 	<# 
 	 .SYNOPSIS 

@@ -90,6 +90,9 @@ Skips the import of user objects found in source SQL Server's master, msdb and m
 .PARAMETER SkipSystemTriggers
 Skips the System Triggers migration.
 
+.PARAMETER SkipBackupDevices
+Skips the backup device migration.
+
 .PARAMETER Force
 If migrating users, forces drop and recreate of SQL and Windows logins. 
 If migrating databases, deletes existing databases with matching names. 
@@ -155,6 +158,7 @@ Param(
 	[switch]$SkipDatabaseMail,
 	[switch]$SkipSysDbUserObjects,
 	[switch]$SkipSystemTriggers,
+	[switch]$SkipBackupDevices,
 	[switch]$Force,
 	[switch]$CsvLog
 	)
@@ -255,6 +259,12 @@ PROCESS {
 		try { Copy-SqlServerTrigger -Source $sourceserver -Destination $destserver -Force:$force
 		} catch { Write-Error "System Triggers migration reported the following error $($_.Exception.Message)" }
 	}	
+
+	if (!$SkipBackupDevices) {
+		Write-Output "`n`nMigrating Backup Devices"
+		try { Copy-SqlBackupDevice -Source $sourceserver -Destination $destserver -Force:$force
+		} catch { Write-Error "Backup device migration reported the following error $($_.Exception.Message)" }
+	}
 	
 	if (!$SkipSpConfigure) {
 		Write-Output "`n`nMigrating SQL Server Configuration"
