@@ -123,6 +123,11 @@ Function Import-SqlSpConfigure     {
 				if ($needsrestart -eq $true) { Write-Warning "Some configuration options will be updated once SQL Server is restarted." 
 				} else { Write-Output "Configuration option has been updated." }
 			}
+			
+			If ($Pscmdlet.ShouldProcess($destination,"Removing temp file")) {
+				Remove-Item $sqlfilename -ErrorAction SilentlyContinue 
+			}
+			
 		} else {
 				If ($Pscmdlet.ShouldProcess($destination,"Importing sp_configure from $Path")) {
 				$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
