@@ -279,7 +279,7 @@ END {
 	if ($sourceserver.ConnectionContext.IsOpen -eq $true) { $sourceserver.ConnectionContext.Disconnect() }
 	if ($destserver.ConnectionContext.IsOpen -eq $true) { $destserver.ConnectionContext.Disconnect() }
 	
-	If ($Pscmdlet.ShouldProcess("console","Showing finished message")) {
+	If ($Pscmdlet.ShouldProcess("console","Showing SQL Server migration finished message")) {
 	Write-Output "`n`nSQL Server migration complete"
 	Write-Output "Migration started: $started" 
 	Write-Output "Migration completed: $(Get-Date)" 
