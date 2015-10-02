@@ -70,27 +70,25 @@ Outputs a log in CSV format
 Drops existing databases with matching names. If using -DetachAttach, -Force will break mirrors and drop dbs from Availability Groups.
 
 .NOTES 
-Author  : Chrissy LeMaire
-Requires: PowerShell Version 3.0, Sql Server SMO
-DateUpdated: 2015-Aug-5
-Version: 2.0
-Limitations: 	Doesn't cover what it doesn't cover (replication, certificates, etc)
-		Sql Server 2000 databases cannot be directly migrated to Sql Server 2012 and above.
-		Logins within Sql Server 2012 and above logins cannot be migrated to Sql Server 2008 R2 and below.				
+Author  : Chrissy LeMaire (@cl), netnerds.net
+Requires: sysadmin access on SQL Servers
+Limitations: Doesn't cover what it doesn't cover (replication, certificates, etc)
+			 Sql Server 2000 databases cannot be directly migrated to Sql Server 2012 and above.
+			 Logins within Sql Server 2012 and above logins cannot be migrated to Sql Server 2008 R2 and below.				
 
 .LINK 
 https://gallery.technet.microsoft.com/scriptcenter/Use-PowerShell-to-Migrate-86c841df/
 
 .EXAMPLE   
-Copy-SqlDatabase -Source sqlserver\instance -Destination sqlcluster -DetachAttach -Reattach
+Copy-SqlDatabase -Source sqlserver2014a -Destination sqlcluster -DetachAttach -Reattach
 
 Description
 
-Databases will be migrated from sqlserver\instance to sqlcluster using the detach/copy files/attach method.The following will be perfomed: kick all users out of the database, detach all data/log files, move files across the network over an admin share (\\SqlSERVER\M$\MSSql...), attach file on destination server, reattach at source. If the database files (*.mdf, *.ndf, *.ldf) on *destination* exist and aren't in use, they will be overwritten.
+Databases will be migrated from sqlserver2014a to sqlcluster using the detach/copy files/attach method.The following will be perfomed: kick all users out of the database, detach all data/log files, move files across the network over an admin share (\\SqlSERVER\M$\MSSql...), attach file on destination server, reattach at source. If the database files (*.mdf, *.ndf, *.ldf) on *destination* exist and aren't in use, they will be overwritten.
 
 
 .EXAMPLE   
-Copy-SqlDatabase -Source sqlserver\instance -Destination sqlcluster -Exclude Northwind, pubs -IncludeSupportDbs -Force -BackupRestore \\fileshare\sql\migration
+Copy-SqlDatabase -Source sqlserver2014a -Destination sqlcluster -Exclude Northwind, pubs -IncludeSupportDbs -Force -BackupRestore \\fileshare\sql\migration
 
 Description
 
@@ -102,15 +100,10 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 [CmdletBinding(DefaultParameterSetName="DbMigration", SupportsShouldProcess = $true)] 
 
 Param(
-	# Source Sql Server
 	[parameter(Mandatory = $true)]
 	[object]$Source,
-	
-	# Destination Sql Server
 	[parameter(Mandatory = $true)]
 	[object]$Destination,
-	
-	# Database Migration
 	[Parameter(Mandatory = $true, ParameterSetName="DbAttachDetach")]
 	[switch]$DetachAttach,
 	[Parameter(Mandatory = $true,ParameterSetName="DbBackup")]
@@ -138,51 +131,38 @@ Param(
 	[Parameter(ParameterSetName="DbBackup")]
 	[Parameter(ParameterSetName="DbAttachDetach")]
 	[switch]$SetSourceReadOnly,
-
-	# The rest
 	[switch]$NoRecovery,
 	[switch]$Force,
 	[System.Management.Automation.PSCredential]$SourceSqlCredential,
 	[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 	[switch]$CsvLog
-	
-	)
+)
 
-	DynamicParam  { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential } }
+DynamicParam  { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential } }
 
 BEGIN {
 
 # Global Database Function
 Function Get-SqlFileStructure {
- <#
-            .SYNOPSIS
-             Custom object that contains file structures and remote paths (\\sqlserver\m$\mssql\etc\etc\file.mdf) for
-			 source and destination servers.
-			
-            .EXAMPLE
-            $filestructure = Get-SqlFileStructure $sourceserver $destserver $ReuseFolderstructure
-			foreach	($file in $filestructure.databases[$dbname].destination.values) {
-				Write-Output $file.physical
-				Write-Output $file.logical
-				Write-Output $file.remotepath
-			}
+<#
 
-            .OUTPUTS
-             Custom object 
-        #>
-		[CmdletBinding()]
-        param(
-			[Parameter(Mandatory = $true,Position=0)]
-			[ValidateNotNullOrEmpty()]
-			[object]$sourceserver,
-			
-			[Parameter(Mandatory = $true,Position=1)]
-			[ValidateNotNullOrEmpty()]
-			[object]$destserver,
-			
-			[Parameter(Mandatory = $false,Position=2)]
-			[bool]$ReuseFolderstructure
-		)
+.SYNOPSIS
+Internal function.
+
+#>
+[CmdletBinding()]
+param(
+	[Parameter(Mandatory = $true,Position=0)]
+	[ValidateNotNullOrEmpty()]
+	[object]$sourceserver,
+	
+	[Parameter(Mandatory = $true,Position=1)]
+	[ValidateNotNullOrEmpty()]
+	[object]$destserver,
+	
+	[Parameter(Mandatory = $false,Position=2)]
+	[bool]$ReuseFolderstructure
+)
 	
 	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
@@ -290,31 +270,26 @@ Function Get-SqlFileStructure {
 
 # Backup Restore
 Function Backup-SqlDatabase {
-        <#
-            .SYNOPSIS
-             Makes a full database backup of a database to a specified directory. $server is an SMO server object.
+<#
 
-            .EXAMPLE
-             Backup-SqlDatabase $smoserver $dbname \\fileserver\share\sql\database.bak
+.SYNOPSIS
+Internal function.
 
-            .OUTPUTS
-                $true if success
-                $false if failure
-        #>
-		[CmdletBinding()]
-        param(
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-			[object]$server,
+#>
+[CmdletBinding()]
+param(
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
+	[object]$server,
 
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-            [string]$dbname,
-           
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-            [string]$backupfile
-        )
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
+	[string]$dbname,
+   
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
+	[string]$backupfile
+)
 
 	$server.ConnectionContext.StatementTimeout = 0
 	$backup = New-Object "Microsoft.SqlServer.Management.Smo.Backup"
@@ -349,19 +324,12 @@ Function Backup-SqlDatabase {
 }
 
 Function Restore-SqlDatabase {
-        <#
-            .SYNOPSIS
-             Restores .bak file to Sql database. Creates db if it doesn't exist. $filestructure is
-			a custom object that contains logical and physical file locations.
+<#
 
-            .EXAMPLE
-			 $filestructure = Get-SqlFileStructure $sourceserver $destserver $ReuseFolderstructure
-             Restore-SqlDatabase $destserver $dbname $backupfile $filestructure   
+.SYNOPSIS
+Internal function.
 
-            .OUTPUTS
-                $true if success
-                $true if failure
-        #>
+#>
 		[CmdletBinding()]
         param(
 			[Parameter(Mandatory = $true)]
@@ -425,18 +393,12 @@ Function Restore-SqlDatabase {
 }
 
 Function Start-SqlBackupRestore  {
- <#
-            .SYNOPSIS
-             Performs checks, then executes Backup-SqlDatabase to a fileshare and then a subsequential Restore-SqlDatabase.
+<#
 
-            .EXAMPLE
-              Start-SqlBackupRestore $sourceserver $destserver $dbname $networkshare $force  
+.SYNOPSIS
+Internal function.
 
-            .OUTPUTS
-                $true if successful
-                error string if failure
-			
-        #>
+#>
 		[CmdletBinding()]
         param(
 			[Parameter(Mandatory = $true)]
@@ -495,18 +457,12 @@ Function Start-SqlBackupRestore  {
 
 # Detach Attach 
 Function Dismount-SqlDatabase {
- <#
-            .SYNOPSIS
-             Detaches a Sql Server database. $server is an SMO server object.   
+<#
 
-            .EXAMPLE
-             $detachresult = Dismount-SqlDatabase $server $dbname   
+.SYNOPSIS
+Internal function.
 
-            .OUTPUTS
-                $true if success
-                $false if failure
-
-        #>
+#>
 		[CmdletBinding()]
         param(
 			[Parameter(Mandatory = $true)]
@@ -553,17 +509,12 @@ Function Dismount-SqlDatabase {
 }
 
 Function Copy-SqlDatabase  {
- <#
-            .SYNOPSIS
-              Performs tons of checks then migrates the databases.
+<#
 
-            .EXAMPLE
-                Copy-SqlDatabase $sourceserver $destserver $All $Databases $Exclude $IncludeSupportDBs $force
+.SYNOPSIS
+Internal function.
 
-            .OUTPUTS
-              CSV files and informational messages.
-			
-        #>
+#>
 		[cmdletbinding(SupportsShouldProcess = $true)] 
         param(
 			[Parameter(Mandatory = $true)]
@@ -837,37 +788,31 @@ Function Copy-SqlDatabase  {
 }
 
 Function Mount-SqlDatabase {
-	 <#
-		SYNOPSIS
-		 Attaches a Sql Server database, and sets its owner. $server is an SMO server object.
+<#
 
-		.EXAMPLE
-		 Mount-SqlDatabase $destserver $dbname $destfilestructure $dbowner
+.SYNOPSIS
+Internal function.
 
-		.OUTPUTS
-			$true if success
-			$false if failure	
-				
-	#>
-		[CmdletBinding()]
-        param(
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-			[object]$server,
-			
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-			[string]$dbname,
-			
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-            [object]$filestructure,
+#>
+[CmdletBinding()]
+param(
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
+	[object]$server,
+	
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
+	[string]$dbname,
+	
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
+	[object]$filestructure,
 
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-			[string]$dbowner
-		)
-		
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
+	[string]$dbowner
+)
+
 	if ($server.Logins.Item($dbowner) -eq $null) { $dbowner = 'sa' }
 	try {
 		$null = $server.AttachDatabase($dbname, $filestructure, $dbowner, [Microsoft.SqlServer.Management.Smo.AttachOptions]::None)
@@ -876,19 +821,13 @@ Function Mount-SqlDatabase {
 }
 
 Function Start-SqlFileTransfer  {
- <#
-	SYNOPSIS
-	Uses BITS to transfer detached files (.mdf, .ndf, .ldf, and filegroups) to 
-	another server over admin UNC paths. Locations of data files are kept in the
-	custom object generated by Get-SqlFileStructure
+<#
 
-	.EXAMPLE
-	 $result = Start-SqlFileTransfer $filestructure $dbname
+SYNOPSIS
+Internal function. Uses BITS to transfer detached files (.mdf, .ndf, .ldf, and filegroups) to 
+another server over admin UNC paths. Locations of data files are kept in the
+custom object generated by Get-SqlFileStructure
 
-	.OUTPUTS
-		$true if success
-		$false if failure	
-			
 #>	
         param(
 			[Parameter(Mandatory = $true)]
@@ -930,20 +869,14 @@ $dbdestination = $copydb.destination
 }
 
 Function Start-SqlDetachAttach   {
- <#
-            .SYNOPSIS
-             Performs checks, then executes Dismount-SqlDatabase on a database, copies its files to the new server, 
-			 then performs Mount-SqlDatabase. $sourceserver and $destserver are SMO server objects.
-			 $filestructure is a custom object generated by Get-SqlFileStructure
+<#
 
-            .EXAMPLE
-              result = Start-SqlDetachAttach $sourceserver $destserver $filestructure $dbname $force
+.SYNOPSIS
+Internal function. Performs checks, then executes Dismount-SqlDatabase on a database, copies its files to the new server, 
+then performs Mount-SqlDatabase. $sourceserver and $destserver are SMO server objects.
+$filestructure is a custom object generated by Get-SqlFileStructure
 
-            .OUTPUTS
-                $true if successful
-                error string if failure
-			
-        #>
+#>
 		[CmdletBinding()]
         param(
 			[Parameter(Mandatory = $true)]

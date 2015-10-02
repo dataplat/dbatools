@@ -1,20 +1,65 @@
 Function Copy-SqlServerTrigger {
- <#
-            .SYNOPSIS
-             Copies server triggers one by one. If trigger with same name exists on destination, it will
-			 not be dropped and recreated unless -force is used.
-			
-        #>
-		[CmdletBinding(DefaultParameterSetName="Default", SupportsShouldProcess = $true)] 
-        param(
-			[parameter(Mandatory = $true)]
-			[object]$Source,
-			[parameter(Mandatory = $true)]
-			[object]$Destination,
-			[System.Management.Automation.PSCredential]$SourceSqlCredential,
-			[System.Management.Automation.PSCredential]$DestinationSqlCredential,
-			[switch]$force
-		)
+<#
+.SYNOPSIS 
+Copy-SqlServerTrigger migrates server triggers from one SQL Server to another. 
+
+.DESCRIPTION
+By default, all triggers are copied. The -Triggers parameter is autopopulated for command-line completion and can be used to copy only specific triggers.
+
+If the trigger already exists on the destination, it will be skipped unless -Force is used. 
+
+.PARAMETER Source
+Source Sql Server. You must have sysadmin access and server version must be > Sql Server 7.
+
+.PARAMETER Destination
+Destination Sql Server. You must have sysadmin access and server version must be > Sql Server 7.
+
+.PARAMETER SourceSqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
+
+Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+To connect as a different Windows user, run PowerShell as that user.
+
+.PARAMETER DestinationSqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
+
+Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+To connect as a different Windows user, run PowerShell as that user.
+
+.NOTES 
+Author  : Chrissy LeMaire (@cl), netnerds.net
+Requires: sysadmin access on SQL Servers
+
+.EXAMPLE   
+Copy-SqlServerTrigger -Source sqlserver2014a -Destination sqlcluster
+
+Copies all server triggers from sqlserver2014a to sqlcluster, using Windows credentials. If triggers with the same name exist on sqlcluster, they will be skipped.
+
+.EXAMPLE   
+Copy-SqlServerTrigger -Source sqlserver2014a -Destination sqlcluster -Trigger tg_noDbDrop -SourceSqlCredential $cred -Force
+
+Copies a single trigger, the tg_noDbDrop trigger from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a
+and Windows credentials for sqlcluster. If a trigger with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+
+.EXAMPLE   
+Copy-SqlServerTrigger -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+
+Shows what would happen if the command were executed using force.
+#>
+[CmdletBinding(DefaultParameterSetName="Default", SupportsShouldProcess = $true)] 
+param(
+	[parameter(Mandatory = $true)]
+	[object]$Source,
+	[parameter(Mandatory = $true)]
+	[object]$Destination,
+	[System.Management.Automation.PSCredential]$SourceSqlCredential,
+	[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+	[switch]$force
+)
 DynamicParam  { if ($source) { return (Get-ParamSqlServerTriggers -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
 PROCESS {

@@ -27,50 +27,40 @@ By default, if a Linked Server exists on the source and destination, the Linked 
 .PARAMETER SourceSqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$scred = Get-Credential, this pass $scred object to the param. 
+$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER DestinationSqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$dcred = Get-Credential, this pass this $dcred to the param. 
+$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
-
+Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+To connect as a different Windows user, run PowerShell as that user.
 
 .NOTES 
-Author  : 	Chrissy LeMaire
-Requires: 	PowerShell Version 3.0, SQL Server SMO, 
-			Sys Admin access on Windows and SQL Server. DAC access enabled for local (default)
-DateUpdated: 2015-Sept-22
-Version: 	2.0
+Author  : Chrissy LeMaire (@cl), netnerds.net
+Requires: sysadmin access on SQL Servers, Remote Registry & Remote Adminsitration enabled and accessible on source server.
 Limitations: Hasn't been tested thoroughly. Works on Win8.1 and SQL Server 2012 & 2014 so far.
 This just copies the SQL portion. It does not copy files (ie. a local SQLITE database, or Access Db), nor does it configure ODbC entries.
-Not close to finished.
-
-.LINK 
-
 
 .EXAMPLE   
-Copy-SqlLinkedServer -Source sqlserver\instance -Destination sqlcluster
+Copy-SqlLinkedServer -Source sqlserver2014a -Destination sqlcluster
 
 Description
-Copies all SQL Server Linked Servers on sqlserver\instance to sqlcluster. If Linked Server exists on destination, it will be skipped.
+Copies all SQL Server Linked Servers on sqlserver2014a to sqlcluster. If Linked Server exists on destination, it will be skipped.
 
 .EXAMPLE   
-Copy-SqlLinkedServer -Source sqlserver -Destination sqlcluster -LinkedServers SQL2K5,SQL2k -Force
+Copy-SqlLinkedServer -Source sqlserver2014a -Destination sqlcluster -LinkedServers SQL2K5,SQL2k -Force
 
 Description
 Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped.
-
-
 #> 
-#Requires -Version 3.0
 [CmdletBinding(DefaultParameterSetName="Default", SupportsShouldProcess = $true)] 
 
 Param(
-	# Source SQL Server
 	[parameter(Mandatory = $true)]
 	[object]$Source,
 	[parameter(Mandatory = $true)]
@@ -85,23 +75,21 @@ DynamicParam  { if ($source) { return (Get-ParamSqlLinkedServers -SqlServer $Sou
 
 BEGIN {
 Function Get-LinkedServerLogins { 
-	<#
-		.SYNOPSIS
-		Gets Linked Server Logins
-		 
-		This function is heavily based on Antti Rantasaari's script at http://goo.gl/wpqSib
-		Antti Rantasaari 2014, NetSPI
-		License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
+<# 
+
+.SYNOPSIS
+Internal function. 
+	 
+This function is heavily based on Antti Rantasaari's script at http://goo.gl/wpqSib
+Antti Rantasaari 2014, NetSPI
+License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
+
+#>
 		
-		.OUTPUT
-		System.Data.DataTable
-	
-	#>
-		
-	param(
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
-		)
+param(
+	[object]$SqlServer,
+	[System.Management.Automation.PSCredential]$SqlCredential
+)
 	
 	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 	$sourcename = $server.name
@@ -203,23 +191,21 @@ Function Get-LinkedServerLogins {
 }
 
 Function Copy-LinkedServers { 
-	<#
-		.SYNOPSIS
-		Copies Linked Servers from one server to another using a combination of SMO's .Script() and manual password updates.
+<#
+
+.SYNOPSIS
+Internal function.
+
+#>
 		
-		.OUTPUT
-		System.Data.DataTable
-	
-	#>
-		
-		param(
-		[object]$source,
-		[object]$destination,
-		[string[]]$LinkedServers,
-		[bool]$force,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential
-	)
+param(
+	[object]$source,
+	[object]$destination,
+	[string[]]$LinkedServers,
+	[bool]$force,
+	[System.Management.Automation.PSCredential]$SourceSqlCredential,
+	[System.Management.Automation.PSCredential]$DestinationSqlCredential
+)
 	
 	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential

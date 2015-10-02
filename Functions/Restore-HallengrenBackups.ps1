@@ -33,9 +33,8 @@ $cred = Get-Credential, this pass this $cred to the param.
 Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
 .NOTES 
-Author  : Chrissy LeMaire
-Requires: PowerShell Version 3.0, SMO, sysadmin access on destination SQL Server.
-Version: 2.0
+Author  : Chrissy LeMaire, netnerds.net
+Requires: sysadmin access on destination SQL Server.
 
 .LINK 
 http://gallery.technet.microsoft.com/scriptcenter/Restore-Sql-Backups-cd958ec1

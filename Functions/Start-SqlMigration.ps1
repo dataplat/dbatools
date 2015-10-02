@@ -1,7 +1,13 @@
 Function Start-SqlMigration {
 <# 
 .SYNOPSIS 
-Migrates SQL Server *ALL* databases, logins, database mail profies/accounts, SQL Agent objects, linked servers, Central Management Server objects, and global configuration settings from one SQL Server to another. For more granular control, please see the other functions available within the dbatools module.
+Migrates SQL Server *ALL* databases, logins, database mail profies/accounts, credentials, SQL Agent objects, linked servers, 
+Central Management Server objects, server configuration settings (sp_configure), user objects in systems databases,
+system triggers and backup devices from one SQL Server to another. 
+
+For more granular control, please use one of the -Skip parameters and use the other functions available within the dbatools module.
+
+Automatically outputs a transcript to disk.
 
 .DESCRIPTION 
 
@@ -12,9 +18,12 @@ All logins. Use -SkipLogins to skip.
 All database mail objects. Use -SkipDatabaseMail
 All credentials. Use -SkipCredentials to skip.
 All objects within the Job Server (SQL Agent). Use -SkipJobServer to skip.
-Linked Server. Use -SkipLinkedServers to skip.
-All items within Central Management Server. Use -SkipCentralManagementServer to skip.
-SQL Server configuration objects (everything in sp_configure). Use -SkipSpConfigure to skip.
+All linked servers. Use -SkipLinkedServers to skip.
+All groups and servers within Central Management Server. Use -SkipCentralManagementServer to skip.
+All SQL Server configuration objects (everything in sp_configure). Use -SkipSpConfigure to skip.
+All user objects in system databases. Use -SkipSysDbUserObjects to skip.
+All system triggers. Use -SkipSystemTriggers to skip.
+All system backup devices. Use -SkipBackupDevices to skip.
 
 This script provides the ability to migrate databases using detach/copy/attach or backup/restore. SQL Server logins, including passwords, SID and database/server roles can also be migrated. In addition, job server objects can be migrated and server configuration settings can be exported or migrated. This script works with named instances, clusters and SQL Express.
 
@@ -100,6 +109,9 @@ If using -DetachAttach, -Force will break mirrors and drop dbs from Availability
 
 For other migration objects, it will just drop existing items and readd, if -force is supported within the udnerlying function.
 
+.PARAMETER CsvLog
+Outputs a CSV of some of the results. Left in for backwards compatability, as it's slightly more organized than the transcript.
+
 .NOTES 
 Author  : Chrissy LeMaire
 Limitations: 	Doesn't cover what it doesn't cover (replication, certificates, etc)
@@ -125,12 +137,12 @@ Migrate databases uses backup/restore. Also migrate logins, database mail, crede
 .EXAMPLE
 Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -SkipDatabases -SkipLogins
 
-Migrate only database mail, credentials, SQL Agent, Central Management Server, SQL global configuration. 
+Migrates everything but logins and databases.
 
 .EXAMPLE
 Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -DetachAttach -Reattach -SetSourceReadonly
 
-Migrate databases using detach/copy/attach. Reattach at source and set source databases read-only. Also migrate logins, database mail, credentials, SQL Agent, Central Management Server, SQL global configuration. 
+Migrate databases using detach/copy/attach. Reattach at source and set source databases read-only. Also migrates everything else. 
 
 #> 
 [CmdletBinding(DefaultParameterSetName="Default", SupportsShouldProcess = $true)] 

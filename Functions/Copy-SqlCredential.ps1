@@ -21,43 +21,41 @@ Destination SQL Server (2005 and above). You must have sysadmin access to both S
 Auto-populated list of Credentials from Source. If no Credential is specified, all Credentials will be migrated.
 Note: if spaces exist in the credential name, you will have to type "" or '' around it. I couldn't figure out a way around this.
 
-.PARAMETER Force
-By default, if a Credential exists on the source and destination, the Credential is not copied over. Specifying -force will drop and recreate the Credential on the Destination server.
-
 .PARAMETER SourceSqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$scred = Get-Credential, this pass $scred object to the param. 
+$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER DestinationSqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$dcred = Get-Credential, this pass this $dcred to the param. 
+$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+To connect as a different Windows user, run PowerShell as that user.
+
+.PARAMETER Force
+By default, if a Credential exists on the source and destination, the Credential is not copied over. Specifying -force will drop and recreate the Credential on the Destination server.
 
 
 .NOTES 
-Author  : 	Chrissy LeMaire
+Author  : Chrissy LeMaire (@cl), netnerds.net
 Requires: 	PowerShell Version 3.0, SQL Server SMO, 
 			Sys Admin access on Windows and SQL Server. DAC access enabled for local (default)
-DateUpdated: 2015-Sept-22
-Version: 	2.0
 Limitations: Hasn't been tested thoroughly. Works on Win8.1 and SQL Server 2012 & 2014 so far.		
 
-.LINK 
-
 
 .EXAMPLE   
-Copy-SqlCredential -Source sqlserver\instance -Destination sqlcluster
+Copy-SqlCredential -Source sqlserver2014a -Destination sqlcluster
 
 Description
-Copies all SQL Server Credentials on sqlserver\instance to sqlcluster. If credentials exist on destination, they will be skipped.
+Copies all SQL Server Credentials on sqlserver2014a to sqlcluster. If credentials exist on destination, they will be skipped.
 
 .EXAMPLE   
-Copy-SqlCredential -Source sqlserver -Destination sqlcluster -Credentials "PowerShell Proxy Account" -Force
+Copy-SqlCredential -Source sqlserver2014a -Destination sqlcluster -Credentials "PowerShell Proxy Account" -Force
 
 Description
 Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped and recreated.

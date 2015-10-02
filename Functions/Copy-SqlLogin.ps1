@@ -3,6 +3,7 @@ Function Copy-SqlLogin {
 .SYNOPSIS
 Migrates logins from source to destination SQL Servers. Supports SQL Server versions 2000 and above.
 
+.DESCRIPTION
 SQL Server 2000: Migrates logins with SIDs, passwords, server roles and database roles.
 
 SQL Server 2005 & above: Migrates logins with SIDs, passwords, defaultdb, server roles & securables,
@@ -11,6 +12,8 @@ database permissions & securables, login attributes (enforce password policy, ex
 The login hash algorithm changed in SQL Server 2012, and is not backwards compatible with previous SQL
 versions. This means that while SQL Server 2000 logins can be migrated to SQL Server 2012, logins
 created in SQL Server 2012 can only be migrated to SQL Server 2012 and above.
+
+THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
 .PARAMETER Source
 Source SQL Server. You must have sysadmin access and server version must be > SQL Server 7.
@@ -21,16 +24,18 @@ Destination SQL Server. You must have sysadmin access and server version must be
 .PARAMETER SourceSqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$scred = Get-Credential, this pass $scred object to the param. 
+$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER DestinationSqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$dcred = Get-Credential, this pass this $dcred to the param. 
+$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER Exclude
 Excludes specified logins. This list is auto-populated for tab completion.
@@ -45,44 +50,44 @@ Credential removal not currently supported for Syncs. TODO: Application role syn
 .PARAMETER Force
 Force drops and recreates logins. Logins that own jobs cannot be dropped at this time.
 
+.NOTES 
+Author  : Chrissy LeMaire (@cl), netnerds.net
+Requires: sysadmin access on SQL Servers
+
 .EXAMPLE
-Copy-SqlLogin -Source sqlserver -Destination sqlcluster -Force
+Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -Force
 
 Copies all logins from source server to destination server. If a SQL login on source exists on the destination,
 the destination login will be dropped and recreated.
 
 .EXAMPLE
-Copy-SqlLogin -Source sqlserver -Destination sqlcluster -Exclude realcajun -SourceSqlCredential -DestinationSqlCredential
+Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred
 
-Prompts for SQL login names and passwords on both the Source and Destination then connects to each using the SQL Login credentials. 
+Authenticates to SQL Servers using SQL Authentication.
+
 Copies all logins except for realcajun. If a login already exists on the destination, the login will not be migrated.
 
 .EXAMPLE
-Copy-SqlLogin -Source sqlserver -Destination sqlcluster -Logins realcajun -force
+Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -Logins realcajun -force
 
 Copies ONLY login realcajun. If login realcajun exists on the destination, it will be dropped and recreated.
 
 .EXAMPLE
-Copy-SqlLogin -Source sqlserver -Destination sqlcluster -SyncOnly
+Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -SyncOnly
 
 Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. If a matching login does not exist on the destination, the login will be skipped.
 
 
 .NOTES 
-Author: 		Chrissy LeMaire
-Requires: 		PowerShell Version 3.0, SQL Server SMO
-DateUpdated: 	2015-Sept-22
-Version: 		2.0
-Limitations: 	Does not support Application Roles yet.
+Author  : Chrissy LeMaire (@cl), netnerds.net
+Requires: sysadmin access on SQL Servers
+Limitations: Does not support Application Roles yet
 
 .LINK 
 https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a0cf05
 
-.OUTPUTS
-A CSV log and visual output of added or skipped logins.
-
 #>
-#Requires -Version 3.0
+
 [CmdletBinding(SupportsShouldProcess = $true)] 
 
 Param(
@@ -102,25 +107,29 @@ DynamicParam  { if ($source) { return Get-ParamSqlLogins -SqlServer $source -Sql
 BEGIN {
 
 Function Copy-Login {
-		[cmdletbinding(SupportsShouldProcess = $true)] 
-        param(
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-            [object]$sourceserver,
-			
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-			[object]$destserver,
-			
-			[Parameter()]
-            [string[]]$Logins,
-			
-			[Parameter()]
-            [string[]]$Exclude,
-			
-			[Parameter()]
-            [bool]$Force
-		)
+<#
+	.SYNOPSIS
+	Internal function
+#>	
+[cmdletbinding(SupportsShouldProcess = $true)] 
+param(
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
+	[object]$sourceserver,
+	
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
+	[object]$destserver,
+	
+	[Parameter()]
+	[string[]]$Logins,
+	
+	[Parameter()]
+	[string[]]$Exclude,
+	
+	[Parameter()]
+	[bool]$Force
+)
 		
 	if ($sourceserver.versionMajor -gt 10 -and $destserver.versionMajor -lt 11) {
 		throw "SQL login migration from SQL Server version $($sourceserver.versionMajor) to $($destserver.versionMajor) not supported. Halting."
@@ -306,13 +315,12 @@ Function Copy-Login {
 }
 
 Function Update-SqlPermissions      {
-	 <#
-	.SYNOPSIS
-	 Updates permission sets, roles, database mappings on server and databases
-	.EXAMPLE 
-	Update-SqlPermissions -sourceserver $sourceserver -sourcelogin $sourcelogin -destserver $destserver -destlogin $destlogin
+ <#
+ 
+.SYNOPSIS
+ Internal function. Updates permission sets, roles, database mappings on server and databases
 
-		#>
+ #>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true)]
@@ -589,22 +597,20 @@ $username = $sourcelogin.name
 }
 
 Function Sync-Only {
-	 <#
-	.SYNOPSIS
-	  Skips migration, and just syncs permission sets, roles, database mappings on server and databases
-	.EXAMPLE 
-	 Sync-Only -sourceserver $sourceserver -destserver $destserver -Logins $Logins -Exclude $Exclude
+<#
+.SYNOPSIS
+Internal function. Skips migration, and just syncs permission sets, roles, database mappings on server and databases
 
-		#>
-	[CmdletBinding()]
-	param(
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[object]$sourceserver,
-		[object]$destserver,
-		[array]$Logins,
-		[array]$Exclude
-	)
+#>
+[CmdletBinding()]
+param(
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
+	[object]$sourceserver,
+	[object]$destserver,
+	[array]$Logins,
+	[array]$Exclude
+)
 	
 	$source = $sourceserver.name; $destination = $destserver.name
 	$exclude | Where-Object {!([string]::IsNullOrEmpty($_))} | ForEach-Object { $skippedlogin.Add($_,"Explicitly Skipped") }
@@ -634,13 +640,7 @@ Function Sync-Only {
 
 
 PROCESS { 
-	<# ----------------------------------------------------------
-		Sanity Checks
-			- Is SMO available?
-			- Are SQL Servers reachable?
-			- Is the account running this script an currentlogin?
-			- Are SQL Versions >= 2005?
-	---------------------------------------------------------- #>
+
 	$elapsed = [System.Diagnostics.Stopwatch]::StartNew() 
 	$started = Get-Date
 	

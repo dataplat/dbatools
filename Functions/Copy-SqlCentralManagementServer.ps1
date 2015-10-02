@@ -24,41 +24,43 @@ change all migrating instance names of $Destination to $Source, use this switch.
 .PARAMETER SourceSqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$scred = Get-Credential, this pass $scred object to the param. 
+$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
+
+Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER DestinationSqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$dcred = Get-Credential, this pass this $dcred to the param. 
+$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
+
+Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+To connect as a different Windows user, run PowerShell as that user.
 
 .NOTES 
-Author  : Chrissy LeMaire
-Requires: 	PowerShell Version 3.0, SQL Server SMO
-Version: 2.0
-DateUpdated: 2015-Sept-22
-
+Author  : Chrissy LeMaire (@cl), netnerds.net
+Requires: sysadmin access on SQL Servers
 
 .LINK 
 https://gallery.technet.microsoft.com/scriptcenter/Migrate-Central-Management-e062943f
 
 .EXAMPLE   
-Copy-SqlCentralManagementServer -Source sqlserver -Destination sqlcluster
+Copy-SqlCentralManagementServer -Source sqlserver2014a -Destination sqlcluster
 
 In the above example, all groups, subgroups, and server instances are copied from sqlserver's Central Management Server to sqlcluster's Central Management Server.
 
 .EXAMPLE   
-Copy-SqlCentralManagementServer -Source sqlserver -Destination sqlcluster -CMSGroups Group1,Group3
+Copy-SqlCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -CMSGroups Group1,Group3
 
 In the above example, top level Group1 and Group3, along with its subgroups and server instances are copied from sqlserver to sqlcluster.
 
 .EXAMPLE   
-Copy-SqlCentralManagementServer -Source sqlserver -Destination sqlcluster -CMSGroups Group1,Group3 -SwitchServerName -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential
+Copy-SqlCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -CMSGroups Group1,Group3 -SwitchServerName -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential
 
 In the above example, top level Group1 and Group3, along with its subgroups and server instances are copied from sqlserver to sqlcluster. When adding sql instances to sqlcluster, if
 the server name of the migrating instance is "sqlcluster", it will be switched to "sqlserver". If SwitchServerName is not specified, "sqlcluster" will be skipped.
 
 #> 
-#Requires -Version 3.0
 [CmdletBinding(DefaultParameterSetName="Default", SupportsShouldProcess = $true)] 
 
 Param(

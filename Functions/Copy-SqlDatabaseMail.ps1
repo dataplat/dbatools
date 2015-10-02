@@ -1,21 +1,66 @@
 Function Copy-SqlDatabaseMail {
- <#
-            .SYNOPSIS
-             Copies *all* database mail settings. More granularity coming later.
+<#
+.SYNOPSIS
+Copies *all* database mail profiles, accounts and settings. More granularity coming later. 
 
-            .EXAMPLE
-               Copy-SqlDatabaseMail $sourceserver $destserver  
-			
-        #>
-		[CmdletBinding(DefaultParameterSetName="Default", SupportsShouldProcess = $true)] 
-        param(
-			[parameter(Mandatory = $true)]
-			[object]$Source,
-			[parameter(Mandatory = $true)]
-			[object]$Destination,
-			[System.Management.Automation.PSCredential]$SourceSqlCredential,
-			[System.Management.Automation.PSCredential]$DestinationSqlCredential
-		)
+Ignores -force: does not drop and recreate.
+
+.DESCRIPTION
+This function could use some refining, as *all* database mail objects are copied. 
+
+THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
+
+.PARAMETER Source
+Source Sql Server. You must have sysadmin access and server version must be > Sql Server 7.
+
+.PARAMETER Destination
+Destination Sql Server. You must have sysadmin access and server version must be > Sql Server 7.
+
+.PARAMETER SourceSqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
+
+Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+To connect as a different Windows user, run PowerShell as that user.
+
+.PARAMETER DestinationSqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
+
+Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+To connect as a different Windows user, run PowerShell as that user.
+
+.NOTES 
+Author  : Chrissy LeMaire (@cl), netnerds.net
+Requires: sysadmin access on SQL Servers
+
+.EXAMPLE   
+Copy-SqlDatabaseMail -Source sqlserver2014a -Destination sqlcluster
+
+Copies all database mail objects from sqlserver2014a to sqlcluster, using Windows credentials. If database mail objects with the same name exist on sqlcluster, they will be skipped.
+
+.EXAMPLE   
+Copy-SqlDatabaseMail -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+
+Copies all database mail objects from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a
+and Windows credentials for sqlcluster.
+
+.EXAMPLE   
+Copy-SqlDatabaseMail -Source sqlserver2014a -Destination sqlcluster -WhatIf
+
+Shows what would happen if the command were executed.
+#>
+[CmdletBinding(DefaultParameterSetName="Default", SupportsShouldProcess = $true)] 
+param(
+	[parameter(Mandatory = $true)]
+	[object]$Source,
+	[parameter(Mandatory = $true)]
+	[object]$Destination,
+	[System.Management.Automation.PSCredential]$SourceSqlCredential,
+	[System.Management.Automation.PSCredential]$DestinationSqlCredential
+)
 	
 PROCESS {
 	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential

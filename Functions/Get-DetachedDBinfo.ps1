@@ -15,28 +15,22 @@ The path to the MDF file. This path must be readable by the SQL Server service a
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$cred = Get-Credential, this pass this $cred to the param. 
+$cred = Get-Credential, this pass this $cred to the SqlCredential parameter. 
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+To connect as a different Windows user, run PowerShell as that user.
 
-
-.NOTES  
-Author  : Chrissy LeMaire 
-Requires:     PowerShell Version 3.0, SQL Server SMO
-DateUpdated: 2015-Sept-22
-Version: 2.0
+.NOTES 
+Author: Chrissy LeMaire (@cl), netnerds.net
  
 .LINK
  https://gallery.technet.microsoft.com/scriptcenter/Get-Detached-Sql-SqlServer-7ad8d4e7
  
 .EXAMPLE    
 Get-DetachedDbInfo -SqlServer sqlserver -SqlCredential $SqlCredential -MDF M:\Archive\mydb.mdf
- 
-#> 
+ #> 
 
-#Requires -Version 3.0
 [CmdletBinding(DefaultParameterSetName="Default")]
-
 Param(
 	[parameter(Mandatory = $true)]
 	[string]$SqlServer,

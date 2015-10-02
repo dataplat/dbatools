@@ -1,28 +1,27 @@
 Function Copy-SqlSysDbUserObjects  { 
-        <#
-            .SYNOPSIS
-                Imports user objects found in source SQL Server's master, msdb and model databases to the destination.
-				This is useful because many DbA's store backup/maintenance procs (among other things) in master or msdb.
+<#
+.SYNOPSIS
+Imports *all* user objects found in source SQL Server's master, msdb and model databases to the destination.
+This is useful because many DbA's store backup/maintenance procs/tables/triggers/etc (among other things) in master or msdb.
 
-            .EXAMPLE
-               Copy-SqlSysDbUserObjects $sourceserver $destserver
+It is also useful for migrating objects within the model database.
 
-            .OUTPUTS
-                $true
-        #>
-		[CmdletBinding()]
-        param(
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-            [object]$source,
-			
-			[Parameter(Mandatory = $true)]
-			[ValidateNotNullOrEmpty()]
-            [object]$destination,
-			
-			[System.Management.Automation.PSCredential]$SourceSqlCredential,
-			[System.Management.Automation.PSCredential]$DestinationSqlCredential
-        )
+.EXAMPLE
+Copy-SqlSysDbUserObjects $sourceserver $destserver
+#>
+[CmdletBinding()]
+param(
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
+	[object]$source,
+	
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
+	[object]$destination,
+	
+	[System.Management.Automation.PSCredential]$SourceSqlCredential,
+	[System.Management.Automation.PSCredential]$DestinationSqlCredential
+)
 	
 	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
