@@ -11,27 +11,29 @@ Run the following command to automatically install the module.
 
 This will install the following commands
 
-	Copy-SqlCentralManagementServer
-	Copy-SqlCredential
-	Copy-SqlDatabaseMail
-	Copy-SqlDatabase
-	Copy-SqlJobServer
-	Copy-SqlLinkedServer
-	Copy-SqlLogin
-	Copy-SqlSysDbUserObjects
-	Export-SqlSpConfigure
-	Get-DetachedDBinfo
-	Get-SqlMaxMemory
-	Get-SqlServerKey
-	Import-CsvToSql
-	Import-SqlSpConfigure
-	Reset-SqlSaPassword
-	Restore-HallengrenBackup
-	Set-SqlMaxMemory
-	Start-SqlMigration
-	Test-SqlConnection
-	Update-dbatools
-	Watch-SqlDbLogin
+    Copy-SqlBackupDevice
+    Copy-SqlCentralManagementServer
+    Copy-SqlCredential
+    Copy-SqlDatabase
+    Copy-SqlDatabaseMail
+    Copy-SqlJobServer
+    Copy-SqlLinkedServer
+    Copy-SqlLogin
+    Copy-SqlServerTrigger
+    Copy-SqlSysDbUserObjects
+    Export-SqlSpConfigure
+    Get-DetachedDBinfo
+    Get-SqlMaxMemory
+    Get-SqlServerKey
+    Import-CsvToSql
+    Import-SqlSpConfigure
+    Reset-SqlSaPassword
+    Restore-HallengrenBackup
+    Set-SqlMaxMemory
+    Start-SqlMigration
+    Test-SqlConnection
+    Update-dbatools
+    Watch-SqlDbLogin
 
 This module will be placed in PowerShell Gallery when it's slightly more mature. 	
 A few important notes
