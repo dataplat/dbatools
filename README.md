@@ -75,24 +75,35 @@ Migrates logins from source to destination SQL Servers. Supports SQL Server vers
 	Copy-SqlLogin -Source sqlserver -Destination sqlcluster --DestinationSqlCredential $dcred
 
 
-Copy-SqlSysDbUserObjects
+Start-SqlMigration
 --------------
-Copies ALL user objects (tables, stored procs, functions, etc) in ALL system databases, hence the plural. This is useful for DBA's who keep their maintenance tasks in system databases, and for the model database.
+This brings a number of the functions together, which is useful when you're looking to migrate entire instances. It less flexible than using the underlying functions, but it's sort of like an easy button.
 
-    Copy-SqlSysDbUserObjects -Source sqlserver -Destination sqlcluster -SourceSqlCredential $scred -DestinationSqlCredential $dcred
-	
-Copy-SqlCentralManagementServer
---------------
-Copies all groups, subgroups, and server instances from one SQL Server to another. 
+ - All user databases. Use -SkipDatabases to skip.
+ - All logins. Use -SkipLogins to skip.
+ - All database mail objects. Use -SkipDatabaseMail
+ - All credentials. Use -SkipCredentials to skip.
+ - All objects within the Job Server (SQL Agent). Use -SkipJobServer to skip.
+ - All linked servers. Use -SkipLinkedServers to skip.
+ - All groups and servers within Central Management Server. Use -SkipCentralManagementServer to skip.
+ - All SQL Server configuration objects (everything in sp_configure). Use -SkipSpConfigure to skip.
+ - All user objects in system databases. Use -SkipSysDbUserObjects to skip.
+ - All system triggers. Use -SkipSystemTriggers to skip.
+ - All system backup devices. Use -SkipBackupDevices to skip.
 
-	# Windows Authentication
-    Copy-SqlCentralManagementServer -Source sqlserver -Destination sqlcluster
+Examples
 
-	# SQL Authentication
-	$scred = Get-Credential 
-	$dcred = Get-Credential
-	Copy-SqlCentralManagementServer -Source sqlserver -Destination sqlcluster -SourceSqlCredential $scred -DestinationSqlCredential $dcred
+Migrate databases uses backup/restore. Also migrate logins, database mail, credentials, SQL Agent, Central Management Server, SQL global configuration, linked servers, server triggers, and backup devices.
+    
+    Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -SourceSqlCredential \$cred -ReuseFolderstructure -DestinationSqlCredential $cred -Force -NetworkShare \\fileserver\share\sqlbackups\Migration -BackupRestore
 
+Migrate only database mail, credentials, SQL Agent, Central Management Server, SQL global configuration. 
+    
+    Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -SkipDatabases -SkipLogins
+    
+Migrate databases uses backup/restore. Also migrate logins, database mail, credentials, SQL Agent, Central Management Server, SQL global configuration.Migrate databases using detach/copy/attach. Reattach at source and set source databases read-only.
+    
+    Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -DetachAttach -Reattach -SetSourceReadonly
 	
 Copy-SqlCredential
 --------------
@@ -139,34 +150,43 @@ Updates sp_configure settings on destination server. Can use either a file or an
 
 	 Import-SqlSpConfigure sqlserver sqlcluster $SourceSqlCredential $DestinationSqlCredential
 	 Import-SqlSpConfigure -SqlServer sqlserver -Path .\spconfig.sql -SqlCredential $SqlCredential
-	 
-Start-SqlServerMigration
+
+
+Copy-SqlSysDbUserObjects
 --------------
-This brings the rest of the functions together, which is useful when you're looking to migrate entire instances. It less flexible than using the underlying functions, but it's sort of like an easy button.
+Copies ALL user objects (tables, stored procs, functions, etc) in ALL system databases, hence the plural. This is useful for DBA's who keep their maintenance tasks in system databases, and for the model database.
 
- - All user databases. Use -SkipDatabases to skip.
- - All logins. Use -SkipLogins to skip.
- - All database mail objects. Use -SkipDatabaseMail 
- - All credentials. Use -SkipCredentials to skip.
- - All objects within the Job Server (SQL Agent). Use -SkipJobServer to skip.
- - Linked Server. Use -SkipLinkedServers to skip. 
- - All items within Central Management Server. Use -SkipCentralManagementServer to skip.
- - SQL Server configuration objects (everything in sp_configure). Use -SkipSpConfigure to skip.
- - User objects in systemdbs (things like dba backup routines, etc). Use -SkipSysDbUserObjects to skip.
+    Copy-SqlSysDbUserObjects -Source sqlserver -Destination sqlcluster -SourceSqlCredential $scred -DestinationSqlCredential $dcred
+	
+Copy-SqlCentralManagementServer
+--------------
+Copies all groups, subgroups, and server instances from one SQL Server to another. 
 
-Examples
+	# Windows Authentication
+    Copy-SqlCentralManagementServer -Source sqlserver -Destination sqlcluster
 
-Migrate databases uses backup/restore. Also migrate logins, database mail, credentials, SQL Agent, Central Management Server, SQL global configuration.
-    
-    Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -SourceSqlCredential \$cred -ReuseFolderstructure -DestinationSqlCredential $cred -Force -NetworkShare \\fileserver\share\sqlbackups\Migration -BackupRestore
+	# SQL Authentication
+	$scred = Get-Credential 
+	$dcred = Get-Credential
+	Copy-SqlCentralManagementServer -Source sqlserver -Destination sqlcluster -SourceSqlCredential $scred -DestinationSqlCredential $dcred
+	
+Copy-SqlBackupDevice
+--------------
+Copies one or more backup devices. Copies both SQL code and the backup file itself. Backups are migrated using Admin shares. If destination directory does not exist, SQL Server's default backup directory will be used. If backup device with same name exists on destination, it will not be dropped and recreated unless -Force is used.
 
-Migrate only database mail, credentials, SQL Agent, Central Management Server, SQL global configuration. 
-    
-    Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -SkipDatabases -SkipLogins
-    
-Migrate databases uses backup/restore. Also migrate logins, database mail, credentials, SQL Agent, Central Management Server, SQL global configuration.Migrate databases using detach/copy/attach. Reattach at source and set source databases read-only. Also migrate logins, database mail, credentials, SQL Agent, Central Management Server, SQL global configuration. 
-    
-    Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -DetachAttach -Reattach -SetSourceReadonly
+    Copy-SqlBackupDevice -Source sqlserver2014a -Destination sqlcluster
+	
+Copies all server backup devices from sqlserver2014a to sqlcluster, using Windows credentials. If backup devices with the same name exist on sqlcluster, they will be skipped.
+
+Copy-SqlServerTrigger
+--------------
+Copy-SqlServerTrigger migrates server triggers from one SQL Server to another.  By default, all triggers are copied. The -Triggers parameter is autopopulated for command-line completion and can be used to copy only specific triggers. If the trigger already exists on the destination, it will be skipped unless -Force is used. 
+
+    Copy-SqlServerTrigger -Source sqlserver2014a -Destination sqlcluster -Trigger tg_noDbDrop -SourceSqlCredential $cred -Force
+
+Copies a single trigger, the tg_noDbDrop trigger from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a
+and Windows credentials for sqlcluster. If a trigger with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+
 
 Restore-HallengrenBackup
 --------------
