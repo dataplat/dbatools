@@ -467,7 +467,6 @@ filled with database list from specified SQL Server server.
 		$server.ConnectionContext.Disconnect()
 	
 	return $newparams
-
 }
 
 Function Get-ParamSqlLogins {
@@ -509,6 +508,73 @@ Function Get-ParamSqlLogins {
 	$newparams.Add("Logins", $Logins)
 	$newparams.Add("Exclude", $Exclude)
 	
+	$server.ConnectionContext.Disconnect()
+
+return $newparams
+}
+
+Function Get-ParamSqlJobServer {
+<# 
+ .SYNOPSIS 
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+ filled with job server objects from specified SQL Server server.
+#> 
+[CmdletBinding()]
+	param(
+		[Parameter(Mandatory = $true)]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection } catch { return }
+	
+	$jobobjects = "ProxyAccounts","JobSchedule","SharedSchedules","AlertSystem","JobCategories","OperatorCategories"
+	$jobobjects += "AlertCategories","Alerts","TargetServerGroups","TargetServers","Operators", "Jobs", "Mail"
+	
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	
+	foreach ($name in $jobobjects) {
+		$items = $server.JobServer.$name.Name
+		if ($items.count -gt 0) {
+			$attributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+			$attributes.Add((New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $items)) 
+		}
+		
+		$newparams.Add($name, (New-Object -Type System.Management.Automation.RuntimeDefinedParameter($name, [String[]], $attributes)))
+	}
+	$server.ConnectionContext.Disconnect()
+
+return $newparams
+}
+
+Function Get-ParamSqlDatabaseMail {
+<# 
+ .SYNOPSIS 
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+ filled with Database Mail server objects from specified SQL Server server.
+#> 
+[CmdletBinding()]
+	param(
+		[Parameter(Mandatory = $true)]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection } catch { return }
+	
+	$objects = "ConfigurationValues","Profiles","Accounts","MailServers"
+	
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	
+	foreach ($name in $objects) {
+		if ($name -eq "MailServers") { $items = $server.Mail.Accounts.$name.Name } else { $items = $server.Mail.$name.Name }
+		if ($items.count -gt 0) {
+			$attributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+			$attributes.Add((New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $items)) 
+		}
+		
+		$newparams.Add($name, (New-Object -Type System.Management.Automation.RuntimeDefinedParameter($name, [String[]], $attributes)))
+	}
 	$server.ConnectionContext.Disconnect()
 
 return $newparams
