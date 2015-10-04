@@ -76,16 +76,20 @@ PROCESS {
 	
 	If ($Pscmdlet.ShouldProcess($destination,"Migrating all mail objects")) {
 		try {
-			$sql = $mail.script()
-			$sql += $mail.profiles.Script()
-			$sql += $mail.accounts.Script()
-			$sql += $mail.accounts.mailservers.Script()
+			$sql = $mail.Script()
+			$sql += $mail.Profiles.Script()
+			$sql += $mail.Accounts.Script()
+			Write-Output "Adding configuration, profiles and accounts"
 			$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 		} catch { 
 			if ($_.Exception -like '*duplicate*' -or $_.Exception -like '*exist*') {
 				Write-Output "Some mail objects were skipped because they already exist on $destination"
-			} else { Write-Output $_.Exception }
+			} else { Write-Exception $_ }
 		}
+		try {
+			Write-Output "Updating account mail servers"
+			$destserver.ConnectionContext.ExecuteNonQuery($mail.Accounts.MailServers.Script()) | Out-Null
+		} catch { Write-Exception $_ }
 	}
 }
 
