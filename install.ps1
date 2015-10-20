@@ -1,8 +1,8 @@
 Remove-Module dbatools -ErrorAction SilentlyContinue
 $url = 'https://github.com/ctrlbold/dbatools/archive/master.zip'
 $path = Join-Path -Path (Split-Path -Path $profile) -ChildPath '\Modules\dbatools'
-$zipfile = "$($pwd.path)\sqltools.zip"
-
+$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
+$zipfile = "$temp\sqltools.zip"
 
 if (!(Test-Path -Path $path)){
 	Write-Output "Creating directory: $path"
@@ -19,12 +19,12 @@ Write-Output "Unzipping"
 # Keep it backwards compatible
 $shell = New-Object -COM Shell.Application
 $zipPackage = $shell.NameSpace($zipfile)
-$destinationFolder = $shell.NameSpace($($pwd.path))
+$destinationFolder = $shell.NameSpace($temp)
 $destinationFolder.CopyHere($zipPackage.Items())
 
 Write-Output "Cleaning up"
-Move-Item -Path "$($pwd.path)\dbatools-master\*" $path
-Remove-Item -Path "$($pwd.path)\dbatools-master"
+Move-Item -Path "$temp\dbatools-master\*" $path
+Remove-Item -Path "$temp\dbatools-master"
 Remove-Item -Path $zipfile
 
 Write-Output "Done! Please report any bugs to clemaire@gmail.com."
