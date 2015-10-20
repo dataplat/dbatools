@@ -25,7 +25,8 @@ Function Export-SqlSpConfigure     {
 		
 		if ($path.length -eq 0) {
 			$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-			$path = "$($server.name.replace('\','$'))-$timenow-sp_configure.sql"
+			$mydocs = [Environment]::GetFolderPath('MyDocuments')
+			$path = "$mydocs\$($server.name.replace('\','$'))-$timenow-sp_configure.sql"
 		}
 		
 		try { Set-Content -Path $path "EXEC sp_configure 'show advanced options' , 1;  RECONFIGURE WITH OVERRIDE" }
