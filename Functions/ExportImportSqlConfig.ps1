@@ -21,7 +21,7 @@ Function Export-SqlSpConfigure     {
 	PROCESS {	
 		$server = Connect-SqlServer $SqlServer $SqlCredential
 		
-		if ($sqlserver.versionMajor -lt 9) { "Windows 2000 not supported for sp_configure export."; break }
+		if ($server.versionMajor -lt 9) { "Windows 2000 not supported for sp_configure export."; break }
 		
 		if ($path.length -eq 0) {
 			$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
