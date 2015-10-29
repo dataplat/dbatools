@@ -27,7 +27,6 @@ If using this function against a remote SQL Server, ensure WinRM is configured a
 Tested on Windows XP, 7, 8.1, Server 2012 and Windows Server Technical Preview 2.
 Tested on SQL Server 2005 SP4 through 2016 CTP2.
 
-THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
 .PARAMETER SqlServer
 The SQL Server instance. SQL Server must be 2005 and above, and can be a clustered or stand-alone instance.
@@ -43,6 +42,23 @@ Groups are valid input.
 Author  : Chrissy LeMaire (@cl), netnerds.net
 Requires: Admin access to server (not SQL Services), 
 Remoting must be enabled and accessible if $sqlserver is not local
+
+dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
+Copyright (C) 2105 Chrissy LeMaire
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 
 .LINK 
 https://gallery.technet.microsoft.com/scriptcenter/Reset-SQL-SA-Password-15fb488d
