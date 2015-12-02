@@ -1,10 +1,10 @@
 Function Copy-SqlDatabase {
 <# 
 .SYNOPSIS 
-Migrates Sql Server databases, logins, Sql Agent objects, and global configuration settings from one Sql Server to another.
+Migrates Sql Server databases from one Sql Server to another.
 
 .DESCRIPTION 
-This script provides the ability to migrate databases using detach/copy/attach or backup/restore. Sql Server logins, including passwords, SID and database/server roles can also be migrated. In addition, job server objects can be migrated and server configuration settings can be exported or migrated. This script works with named instances, clusters and Sql Express.
+This script provides the ability to migrate databases using detach/copy/attach or backup/restore. This script works with named instances, clusters and Sql Express.
 
 By default, databases will be migrated to the destination Sql Server's default data and log directories. You can override this by specifying -ReuseFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.
 
