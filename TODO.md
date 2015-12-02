@@ -24,16 +24,18 @@ Start-SQLMigration
 - Auto detect related Logins
 - Auto detect related SQL Agent Jobs (then find related...)
 - Investigate limiting RAM
+- Striped backups https://gallery.technet.microsoft.com/Striped-Backup-of-Sql-0b20f712
 - Existing Backups (Last Full Backup from server taken from the backup history)
 - Existing Backups (Point-in-time backups using backup files from server backup history)
 - Remap logins via CSV - http://www.reddit.com/r/SQLServer/comments/35xqy2/im_doing_a_webinar_today_on_simplifying_sql/crac39e
 - Option to update db compatability after migration to newer server
 - option to DBCC UPDATEUSAGE, rebuild indexes, update index statistics and recompile procedures (maybe)
 - Determine total number of MB to transfer. Best guess migration time?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 - SQL Server Reporting Server
 - Azure Support
-- AlwaysOn
+- AlwaysOn (will probably require replication)
+- WithDependencies 
+- Add destination ReUseFolderStructure that does not drop, and with that, ensure that any ALTER first tests for single user mode.
 
 Copy-SQLServerLogins
 --------------
@@ -46,7 +48,9 @@ Copy-SQLServerLogins
 - Auto detect related Endpoints 
 - Auto detect related Logins
 - Auto detect related SQL Agent Jobs (then find related...)
-	
+- WITH REPLACE 
+
+
 Watch-DBLogins
 --------------
 - Investigate benefits of using Auditing. So far, seems it doesn't track application names.
@@ -73,3 +77,7 @@ Get-SqlServerKey
 	
 Copy-SQLServerCredentials
 --------------
+
+Impor-CsvToSql
+--------------
+schema support
