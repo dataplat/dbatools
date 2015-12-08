@@ -1,3 +1,17 @@
+# for PowerShell 3 zip file unblocking
+# Thanks http://andyarismendi.blogspot.be/2012/02/unblocking-files-with-powershell.html
+Add-Type -Namespace Win32 -Name PInvoke -MemberDefinition @"
+        [DllImport("kernel32", CharSet = CharSet.Unicode, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool DeleteFile(string name);
+        public static int Win32DeleteFile(string filePath) {
+            bool is_gone = DeleteFile(filePath); return Marshal.GetLastWin32Error();}
+ 
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        static extern int GetFileAttributes(string lpFileName);
+        public static bool Win32FileExists(string filePath) {return GetFileAttributes(filePath) != -1;}
+"@
+
 Remove-Module dbatools -ErrorAction SilentlyContinue
 $url = 'https://github.com/ctrlbold/dbatools/archive/master.zip'
 $path = Join-Path -Path (Split-Path -Path $profile) -ChildPath '\Modules\dbatools'
@@ -13,7 +27,18 @@ if (!(Test-Path -Path $path)){
 }
 
 Write-Output "Downloading archive from github"
-Invoke-WebRequest $url -OutFile $zipfile
+$wc = New-Object System.Net.WebClient
+$wc.DownloadFile($url, $zipfile)
+
+# Unblock
+ if ([Win32.PInvoke]::Win32FileExists($zipfile + ':Zone.Identifier')) {
+	if ($PSCmdlet.ShouldProcess($_)) {
+		$result_code = [Win32.PInvoke]::Win32DeleteFile($zipfile + ':Zone.Identifier')
+		if ([Win32.PInvoke]::Win32FileExists($zipfile + ':Zone.Identifier')) {
+			Write-Error ("Failed to unblock '{0}' the Win32 return code is '{1}'." -f $zipfile, $result_code)
+		}
+	}
+}
 
 Write-Output "Unzipping"
 # Keep it backwards compatible
