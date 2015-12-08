@@ -14,7 +14,7 @@ if (!(Test-Path -Path $path)){
 
 Write-Output "Downloading archive from github"
 Invoke-WebRequest $url -OutFile $zipfile
-
+Unblock-File $zipfile -ErrorAction SilentlyContinue
 Write-Output "Unzipping"
 # Keep it backwards compatible
 $shell = New-Object -COM Shell.Application
