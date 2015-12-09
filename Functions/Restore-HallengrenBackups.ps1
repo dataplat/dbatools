@@ -216,7 +216,7 @@ PROCESS {
 		
 		if ($result -eq $false) { Write-Warning "$dbname could not be restored."; continue }
 
-		if ($norecovery = $false) {
+		if ($norecovery -eq $false) {
 			$sql = "RESTORE DATABASE [$dbname] WITH RECOVERY"
 			try { 
 				$server.databases['master'].ExecuteNonQuery($sql)
