@@ -13,8 +13,19 @@ if (!(Test-Path -Path $path)){
 }
 
 Write-Output "Downloading archive from github"
-Invoke-WebRequest $url -OutFile $zipfile
+try
+{
+	Invoke-WebRequest $url -OutFile $zipfile
+} catch {
+   #try with default proxy and usersettings
+   Write-Output "Probably using a proxy for internet access, trying default proxy settings"
+   (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+   Invoke-WebRequest $url -OutFile $zipfile
+}
+
+# Unblock if there's a block
 Unblock-File $zipfile -ErrorAction SilentlyContinue
+
 Write-Output "Unzipping"
 # Keep it backwards compatible
 $shell = New-Object -COM Shell.Application
