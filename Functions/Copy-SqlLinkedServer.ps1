@@ -275,26 +275,29 @@ param(
 			} catch { 
 				Write-Warning "$linkedservername could not be added to $($destserver.name)"
 				Write-Warning "Reason: $($_.Exception)"
+				$skiplogins = $true
 			}
 		}
 		
-		$destlogins = $destserver.LinkedServers[$linkedservername].LinkedServerLogins
-		$lslogins = $sourcelogins | Where-Object { $_.LinkedServer -eq $linkedservername }
-	
-		foreach ($login in $lslogins) {
-			If ($Pscmdlet.ShouldProcess($destination,"Migrating $($login.Login)")) {
-				$currentlogin = $destlogins | Where-Object { $_.RemoteUser -eq $login.Login }
-				
-				if ($currentlogin.RemoteUser.length -ne 0) {
-					try {
-						$currentlogin.SetRemotePassword($login.Password)
-						$currentlogin.Alter()
-					} catch { Write-Error "$($login.login) failed to copy" }
+		if ($skiplogins -ne $true) {
+			$destlogins = $destserver.LinkedServers[$linkedservername].LinkedServerLogins
+			$lslogins = $sourcelogins | Where-Object { $_.LinkedServer -eq $linkedservername }
+		
+			foreach ($login in $lslogins) {
+				If ($Pscmdlet.ShouldProcess($destination,"Migrating $($login.Login)")) {
+					$currentlogin = $destlogins | Where-Object { $_.RemoteUser -eq $login.Login }
 					
+					if ($currentlogin.RemoteUser.length -ne 0) {
+						try {
+							$currentlogin.SetRemotePassword($login.Password)
+							$currentlogin.Alter()
+						} catch { Write-Error "$($login.login) failed to copy" }
+						
+					}
 				}
 			}
+			Write-Output "Finished migrating logins for $linkedservername"
 		}
-		Write-Output "Finished migrating logins for $linkedservername"	
 	}
 }
 
