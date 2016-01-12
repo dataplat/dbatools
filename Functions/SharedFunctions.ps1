@@ -266,7 +266,7 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 	return $server
 }
 
-Function Invoke-SMOCheck {
+Function Invoke-SmoCheck {
 <# 
 .SYNOPSIS 
 Checks for PowerShell SMO version vs SQL Server's SMO version.
