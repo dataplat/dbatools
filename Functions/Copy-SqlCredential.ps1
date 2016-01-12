@@ -293,8 +293,8 @@ PROCESS {
 	if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 	
 	
-	Invoke-SMOCheck -SqlServer $sourceserver
-	Invoke-SMOCheck -SqlServer $destserver
+	Invoke-SmoCheck -SqlServer $sourceserver
+	Invoke-SmoCheck -SqlServer $destserver
 	
 	Write-Output "Getting NetBios name"
 	$sourcenetbios = Get-NetBiosName $sourceserver

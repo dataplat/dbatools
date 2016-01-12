@@ -314,8 +314,8 @@ PROCESS {
 	$source = $sourceserver.name
 	$destination = $destserver.name
 
-	Invoke-SMOCheck -SqlServer $sourceserver
-	Invoke-SMOCheck -SqlServer $destserver
+	Invoke-SmoCheck -SqlServer $sourceserver
+	Invoke-SmoCheck -SqlServer $destserver
 	
 	if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
 	if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }

@@ -963,8 +963,8 @@ PROCESS {
 	$source = $sourceserver.name
 	$destination = $destserver.name
 	
-	Invoke-SMOCheck -SqlServer $sourceserver
-	Invoke-SMOCheck -SqlServer $destserver
+	Invoke-SmoCheck -SqlServer $sourceserver
+	Invoke-SmoCheck -SqlServer $destserver
 
 	$migrateddb = @{}; $skippedb = @{}
 

@@ -91,8 +91,8 @@ PROCESS {
 	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 	
-	Invoke-SMOCheck -SqlServer $sourceserver
-	Invoke-SMOCheck -SqlServer $destserver
+	Invoke-SmoCheck -SqlServer $sourceserver
+	Invoke-SmoCheck -SqlServer $destserver
 	
 	$source = $sourceserver.name
 	$destination = $destserver.name	
