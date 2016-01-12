@@ -249,7 +249,7 @@ param(
 		$linkedservername = $linkedserver.name
 		
 		if (!$destserver.Settings.OleDbProviderSettings.Name.Contains($provider) -and !$provider.StartsWith("SQLN")) {
-			Write-Warning "$($destserver.name) does not support the $provider provider. Skipping."
+			Write-Warning "$($destserver.name) does not support the $provider provider. Skipping $linkedservername."
 			continue
 		}
 		
@@ -272,7 +272,10 @@ param(
 				[void]$destserver.ConnectionContext.ExecuteNonQuery($sql) 
 				$destserver.LinkedServers.Refresh()
 				Write-Output "$linkedservername successfully copied"
-			} catch { Write-Warning "$linkedservername could not be added to $($destserver.name)" }
+			} catch { 
+				Write-Warning "$linkedservername could not be added to $($destserver.name)"
+				Write-Warning "Reason: $($_.Exception)"
+			}
 		}
 		
 		$destlogins = $destserver.LinkedServers[$linkedservername].LinkedServerLogins
