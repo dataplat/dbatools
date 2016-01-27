@@ -126,11 +126,14 @@ PROCESS {
 				$migratedjob["$jobobject $agentname"] = "Successfully added"
 				Write-Output "$agentname successfully migrated "
 				} 
-				catch { 
-					if ($_.Exception -like '*duplicate*' -or $_.Exception -like '*exist*') {
+				catch {
+					if ($_.Exception -like '*duplicate*' -or $_.Exception -like '*already exists*') {
 						Write-Output "$agentname exists at destination"
 						$skippedjob.Add("$jobobject $agentname","Skipped. $agentname exists on $destination.") }
-					else { $skippedjob["$jobobject $agentname"] = $_.Exception.Message }
+					else {
+                        $skippedjob["$jobobject $agentname"] = $_.Exception.InnerException.InnerException.Message
+                        Write-Error "$jobobject : $agentname : $($_.Exception.InnerException.InnerException.Message)" 
+                    }
 				}
 			}
 		}
