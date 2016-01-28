@@ -38,6 +38,9 @@ To connect as a different Windows user, run PowerShell as that user.
 .PARAMETER CsvLog
 Outputs an ordered CSV log of migration successes, failures and skips.
 
+.PARAMETER DisableJobsOnDestination
+When this flag is set, copy all jobs as Enabled=0
+
 .NOTES 
 Author  : Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
@@ -84,15 +87,17 @@ param(
 	[object]$Destination,
 	[System.Management.Automation.PSCredential]$SourceSqlCredential,
 	[System.Management.Automation.PSCredential]$DestinationSqlCredential,
-	[Switch]$CsvLog
+	[Switch]$CsvLog,
+	[Switch]$DisableJobsOnDestination
+    
 )
 	
 PROCESS {
 	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 	
-	Invoke-SmoCheck -SqlServer $sourceserver
-	Invoke-SmoCheck -SqlServer $destserver
+	Invoke-SMOCheck -SqlServer $sourceserver
+	Invoke-SMOCheck -SqlServer $destserver
 	
 	$source = $sourceserver.name
 	$destination = $destserver.name	
@@ -112,16 +117,23 @@ PROCESS {
 		$agentname = $agent.name
 		If ($Pscmdlet.ShouldProcess($destination,"Adding $jobobject $agentname")) {
 				try {
+                if($DisableJobsOnDestination -and ($jobobject -eq "Jobs"))
+                {
+                    $agent.IsEnabled = $False
+                }
 				$sql = $agent.script()	
 				$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
 				$migratedjob["$jobobject $agentname"] = "Successfully added"
 				Write-Output "$agentname successfully migrated "
 				} 
-				catch { 
-					if ($_.Exception -like '*duplicate*' -or $_.Exception -like '*exist*') {
+				catch {
+					if ($_.Exception -like '*duplicate*' -or $_.Exception -like '*already exists*') {
 						Write-Output "$agentname exists at destination"
 						$skippedjob.Add("$jobobject $agentname","Skipped. $agentname exists on $destination.") }
-					else { $skippedjob["$jobobject $agentname"] = $_.Exception.Message }
+					else {
+                        $skippedjob["$jobobject $agentname"] = $_.Exception.InnerException.InnerException.Message
+                        Write-Error "$jobobject : $agentname : $($_.Exception.InnerException.InnerException.Message)" 
+                    }
 				}
 			}
 		}
