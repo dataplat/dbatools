@@ -272,9 +272,24 @@ PROCESS {
 	if (!$SkipCentralManagementServer) {
 		Write-Output "`n`nMigrating Central Management Server"
 		if ($force) { Write-Warning " Copy-SqlCentralManagementServer currently does not support force." }
-		try { Copy-SqlCentralManagementServer -Source $sourceserver -Destination $destserver
+		try {
+	            try {
+	                $inst = (get-itemproperty 'HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server').InstalledInstances
+	                foreach ($i in $inst) {
+	                   $p = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\Instance Names\SQL').$i
+	                   $version = [String](Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\$p\Setup").Version
+	                }
+	                $versionA, $versionB = $version.Split('.', 2)
+	                if($versionA > 9) {
+	                    Write-Output "SQL Server Version supports Central Management Server. Continuing"
+	                    Copy-SqlCentralManagementServer -Source $sourceserver -Destination $destserver
+	                } else {
+	                    Write-Warning "SQL Server Version doesn't support Central Management Server. Skipping"
+	                }
+	             } catch { Write-Error "Couldn't get the SQL Server Version" }
+	            
 		} catch { Write-Error "Central Management Server migration reported the following error $($_.Exception.Message)" }
-	}	
+	}		
 	
 	if (!$SkipDatabaseMail) {
 		Write-Output "`n`nMigrating database mail"
