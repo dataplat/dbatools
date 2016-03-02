@@ -271,9 +271,29 @@ PROCESS {
 	
 	if (!$SkipCentralManagementServer) {
 		Write-Output "`n`nMigrating Central Management Server"
-		if ($force) { Write-Warning " Copy-SqlCentralManagementServer currently does not support force." }
-		try { Copy-SqlCentralManagementServer -Source $sourceserver -Destination $destserver
-		} catch { Write-Error "Central Management Server migration reported the following error $($_.Exception.Message)" }
+		if ($force) { Write-Warning " Copy-SqlCentralManagementServer currently does not support force." } 
+	        try {
+	            $registry = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $Source)
+	            $registryKey = $registry.OpenSubKey("SOFTWARE\\Microsoft\\Microsoft SQL Server")
+	            $inst = $registryKey.GetValue("InstalledInstances")
+	            foreach ($i in $inst) {
+	                $registryKey = $registry.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server\Instance Names\SQL")
+	                $p = $registryKey.GetValue("$i")
+	
+	                $registryKey = $registry.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server\$p\Setup")
+	                $version = $registryKey.GetValue("Version")
+	            }
+	            
+	            $versionA, $versionB = $version.Split('.', 2)
+	        } catch {"Couldn't get the SQL Server Version"}
+		    if([int]$versionA -gt 9) {
+		        Write-Output "SQL Server Version $Version supports Central Management Server. Continuing..."
+	                try {
+		            Copy-SqlCentralManagementServer -Source $sourceserver -Destination $destserver
+	                } catch {Write-Error "Central Management Server migration reported the following error $($_.Exception.Message)"}
+		    } else {
+		        Write-Warning "SQL Server Version $Version doesn't support Central Management Server. Skipping."
+		    } 
 	}	
 	
 	if (!$SkipDatabaseMail) {
