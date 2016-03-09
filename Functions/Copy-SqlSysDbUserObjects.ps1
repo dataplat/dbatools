@@ -26,7 +26,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #>
-[CmdletBinding()]
+[CmdletBinding(SupportsShouldProcess = $true)]
 param(
 	[Parameter(Mandatory = $true)]
 	[ValidateNotNullOrEmpty()]
@@ -56,6 +56,13 @@ param(
 		$transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $sysdb
 		$transfer.CopyAllObjects = $false
 		$transfer.CopyAllDatabaseTriggers = $true
+		$transfer.CopyAllDefaults = $true
+		$transfer.CopyAllRoles = $true
+		$transfer.CopyAllRules = $true
+		$transfer.CopyAllSchemas = $true
+		$transfer.CopyAllSequences = $true
+		$transfer.CopyAllSqlAssemblies = $true
+		$transfer.CopyAllSynonyms = $true
 		$transfer.CopyAllTables = $true
 		$transfer.CopyAllViews = $true
 		$transfer.CopyAllStoredProcedures = $true
@@ -63,14 +70,22 @@ param(
 		$transfer.CopyAllUserDefinedDataTypes = $true
 		$transfer.CopyAllUserDefinedTableTypes = $true
 		$transfer.CopyAllUserDefinedTypes = $true
+		$transfer.CopyAllUsers = $true
 		$transfer.PreserveDbo = $true
 		$transfer.Options.AllowSystemObjects = $false
 		$transfer.Options.ContinueScriptingOnError = $true
+		$transfer.Options.IncludeDatabaseRoleMemberships = $true
+		$transfer.Options.Indexes = $true
+		$transfer.Options.Permissions = $true
+        $transfer.Options.WithDependencies = $false
+
 		Write-Output "Copying from $systemdb"
 		try { 
 			$sqlQueries = $transfer.scriptTransfer()
 			foreach ($query in $sqlQueries) {
-				try { $destserver.Databases[$systemdb].ExecuteNonQuery($query)} catch {}  # This usually occurs if there are existing objects in destination
+                if ($PSCmdlet.ShouldProcess($DestServer, $query)) {
+				    try { $destserver.Databases[$systemdb].ExecuteNonQuery($query)} catch {}  # This usually occurs if there are existing objects in destination
+                }
 			}
 		} catch { Write-Output "Exception caught."}
 	}
