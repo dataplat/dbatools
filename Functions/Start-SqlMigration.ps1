@@ -270,11 +270,10 @@ PROCESS {
 	}
 	
 	if (!$SkipCentralManagementServer) {
-		Write-Output "`n`nMigrating Central Management Server"
-		
 		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
-		throw "Central Management Server is only supported in SQL Server 2008 and above. Skipping." 
+		Write-Output "Central Management Server is only supported in SQL Server 2008 and above. Skipping." 
 		} else {
+			Write-Output "`n`nMigrating Central Management Server"
 			if ($force) { Write-Warning " Copy-SqlCentralManagementServer currently does not support force." }
 			try { Copy-SqlCentralManagementServer -Source $sourceserver -Destination $destserver
 			} catch { Write-Error "Central Management Server migration reported the following error $($_.Exception.Message)" }
