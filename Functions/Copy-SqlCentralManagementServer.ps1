@@ -173,6 +173,11 @@ PROCESS {
 	if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $($sourceserver.name). Quitting." }  
 	if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on  $($destserver.name). Quitting." }  
 
+	if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
+		throw "Central Management Server is only supported in SQL Server 2008 and above. Quitting." 
+        
+	}
+	
 	Write-Output "Connecting to Central Management Servers"
 	try { 
 		$fromcmstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sourceserver.ConnectionContext.SqlConnectionObject)
