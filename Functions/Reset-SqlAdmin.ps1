@@ -1,4 +1,4 @@
-Function Reset-SqlSaPassword {
+Function Reset-SqlAdmin {
 <# 
 .SYNOPSIS 
 This function will allow administrators to regain access to SQL Servers in the event that passwords or access was lost.
@@ -10,7 +10,7 @@ This function allows administrators to regain access to local or remote SQL Serv
 or adding a new login (SQL or Windows) and granting it sysadmin privileges.
 
 This is accomplished by stopping the SQL services or SQL Clustered Resource Group, then restarting SQL via the command-line
-using the /mReset-SqlSaPassword paramter which starts the server in Single-User mode, and only allows this script to connect.
+using the /mReset-SqlAdmin paramter which starts the server in Single-User mode, and only allows this script to connect.
 
 Once the service is restarted, the following tasks are performed:
 - Login is added if it doesn't exist
@@ -64,18 +64,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://gallery.technet.microsoft.com/scriptcenter/Reset-SQL-SA-Password-15fb488d
 
 .EXAMPLE   
-Reset-SqlSaPassword -SqlServer sqlcluster
+Reset-SqlAdmin -SqlServer sqlcluster
 
 Prompts for password, then resets the "sa" account password on sqlcluster.
 
 .EXAMPLE   
-Reset-SqlSaPassword -SqlServer sqlserver\sqlexpress -Login ad\administrator
+Reset-SqlAdmin -SqlServer sqlserver\sqlexpress -Login ad\administrator
 
 Adds the domain account "ad\administrator" as a sysadmin to the SQL instance. 
 If the account already exists, it will be added to the sysadmin role.
 
 .EXAMPLE   
-Reset-SqlSaPassword -SqlServer sqlserver\sqlexpress -Login sqladmin
+Reset-SqlAdmin -SqlServer sqlserver\sqlexpress -Login sqladmin
 
 Prompts for passsword, then adds a SQL Login "sqladmin" with sysadmin privleges. 
 If the account already exists, it will be added to the sysadmin role and the password will be reset.
@@ -110,7 +110,7 @@ Function Invoke-ResetSqlCmd {
 <#
 
 .SYNOPSIS
-Internal function. Executes a SQL statement against specified computer, and uses "Reset-SqlSaPassword" as the
+Internal function. Executes a SQL statement against specified computer, and uses "Reset-SqlAdmin" as the
 Application Name.
 			
  #>
@@ -121,7 +121,7 @@ param(
 	[string]$sql
 )
 	try { 
-		$connstring = "Data Source=$sqlserver;Integrated Security=True;Connect Timeout=2;Application Name=Reset-SqlSaPassword"
+		$connstring = "Data Source=$sqlserver;Integrated Security=True;Connect Timeout=2;Application Name=Reset-SqlAdmin"
 		$conn = New-Object System.Data.SqlClient.SqlConnection $connstring
 		$conn.Open() 
 		$cmd = New-Object system.data.sqlclient.sqlcommand($null, $conn)
@@ -253,15 +253,15 @@ PROCESS {
 		}
 	}
 
-	# /mReset-SqlSaPassword Starts an instance of SQL Server in single-user mode and only allows this script to connect.
+	# /mReset-SqlAdmin Starts an instance of SQL Server in single-user mode and only allows this script to connect.
 	Write-Output "Starting SQL Service from command line"
 	try {
 		if ($hostname -eq $env:COMPUTERNAME) { 
-			$netstart = net start ""$displayname"" /mReset-SqlSaPassword 2>&1
+			$netstart = net start ""$displayname"" /mReset-SqlAdmin 2>&1
 			if ("$netstart" -notmatch "success") { throw }
 		} 
 		else {
-			$netstart = Invoke-Command -ErrorAction Stop -Session $session -Args $displayname -ScriptBlock { net start ""$args"" /mReset-SqlSaPassword } 2>&1
+			$netstart = Invoke-Command -ErrorAction Stop -Session $session -Args $displayname -ScriptBlock { net start ""$args"" /mReset-SqlAdmin } 2>&1
 			foreach ($line in $netstart) { 
 				if ($line.length -gt 0) { Write-Output $line }
 			}

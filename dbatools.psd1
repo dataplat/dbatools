@@ -11,7 +11,7 @@
 RootModule = 'dbatools.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.7.5.5'
+ModuleVersion = '0.7.5.6'
 
 # ID used to uniquely identify this module
 GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -65,7 +65,7 @@ FormatsToProcess = @()
 NestedModules = @()
 
 # Functions to export from this module
-FunctionsToExport = @('Copy-SqlBackupDevice','Copy-SqlServerTrigger','Test-SqlConnection','Import-CsvToSql','Update-dbatools','Copy-SqlDatabaseMail','Copy-SqlDatabase','Copy-SqlJobServer','Import-SqlSpConfigure','Export-SqlSpConfigure','Watch-SqlDbLogin', 'Reset-SqlSaPassword', 'Get-SqlServerKey', 'Set-SqlMaxMemory', 'Get-SqlMaxMemory', 'Get-DetachedDBInfo', 'Restore-HallengrenBackup', 'Copy-SqlLogin', 'Copy-SqlLinkedServer', 'Copy-SqlCredential', 'Copy-SqlCentralManagementServer', 'Start-SqlMigration','Copy-SqlSysDbUserObjects')
+FunctionsToExport = @('Copy-SqlBackupDevice','Copy-SqlServerTrigger','Test-SqlConnection','Import-CsvToSql','Update-dbatools','Copy-SqlDatabaseMail','Copy-SqlDatabase','Copy-SqlJobServer','Import-SqlSpConfigure','Export-SqlSpConfigure','Watch-SqlDbLogin', 'Reset-SqlAdmin', 'Get-SqlServerKey', 'Set-SqlMaxMemory', 'Get-SqlMaxMemory', 'Get-DetachedDBInfo', 'Restore-HallengrenBackup', 'Copy-SqlLogin', 'Copy-SqlLinkedServer', 'Copy-SqlCredential', 'Copy-SqlCentralManagementServer', 'Start-SqlMigration','Copy-SqlSysDbUserObjects')
 
 # Cmdlets to export from this module
 CmdletsToExport = '*'
@@ -74,7 +74,7 @@ CmdletsToExport = '*'
 VariablesToExport = '*'
 
 # Aliases to export from this module
-AliasesToExport = '*'
+AliasesToExport = 'Reset-SqlSaPassword'
 
 # List of all modules packaged with this module
 ModuleList = @()

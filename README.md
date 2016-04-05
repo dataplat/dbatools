@@ -27,7 +27,7 @@ This will install the following commands
     Get-SqlServerKey
     Import-CsvToSql
     Import-SqlSpConfigure
-    Reset-SqlSaPassword
+    Reset-SqlAdmin
     Restore-HallengrenBackup
     Set-SqlMaxMemory
     Start-SqlMigration
@@ -40,7 +40,7 @@ A few important notes
 --------------
  - I try to support SQL Server 2000-2016 and clustered instances when possible
  - SQL Auth and Windows Auth are supported when possible
- - Windows authentication/Windows admin access is required at the *Windows Server level* for Copy-SqlCredential, Copy-SqlLinkedServer, and Reset-SqlSaPassword.
+ - Windows authentication/Windows admin access is required at the *Windows Server level* for Copy-SqlCredential, Copy-SqlLinkedServer, and Reset-SqlAdmin.
  - SQL Sysadmin access is required unless otherwise specified
  - This module requires SQL Management Objects (SMO). SMO is included when you install SQL Server Management Studio, or you can download it from Microsoft: [SQL Server 2014 32-bit SMO](http://download.microsoft.com/download/1/3/0/13089488-91FC-4E22-AD68-5BE58BD5C014/ENU/x86/SharedManagementObjects.msi) or [SQL Server 2014 64-bit SMO](http://download.microsoft.com/download/1/3/0/13089488-91FC-4E22-AD68-5BE58BD5C014/ENU/x64/SharedManagementObjects.msi). The higher the version the better.
 
@@ -196,15 +196,15 @@ Very early version.
 
     Restore-HallengrenBackup -SqlServer sqlcluster -Path \\fileserver\share\sqlbackups\SQLSERVER2014A
     
-Reset-SqlSaPassword
+Reset-SqlAdmin
 --------------
  This function allows administrators to regain access to local or remote SQL Servers by either resetting the sa password, adding sysadmin role to existing login, or adding a new login (SQL or Windows) and granting it sysadmin privileges.
 
-![Reset-SqlSaPassword](https://i1.gallery.technet.s-msft.com/scriptcenter/reset-sql-sa-password-15fb488d/image/file/138615/1/salsapassword-scriptcenter-1.gif)
+![Reset-SqlAdmin](https://i1.gallery.technet.s-msft.com/scriptcenter/reset-sql-sa-password-15fb488d/image/file/138615/1/salsapassword-scriptcenter-1.gif)
 
-This is accomplished by stopping the SQL services or SQL Clustered Resource Group, then restarting SQL via the command-line using the /mReset-SqlSaPassword paramter which starts the server in Single-User mode, and only allows this script to connect.
+This is accomplished by stopping the SQL services or SQL Clustered Resource Group, then restarting SQL via the command-line using the /mReset-SqlAdmin paramter which starts the server in Single-User mode, and only allows this script to connect.
 
-Using Reset-SqlSaPassword will restart your SQL Server. I chose this method because it is the most effective, cross-version method. Impersonating tokens may not work in all situations.
+Using Reset-SqlAdmin will restart your SQL Server. I chose this method because it is the most effective, cross-version method. Impersonating tokens may not work in all situations.
 	  
 Once the service is restarted, the following tasks are performed:
 
