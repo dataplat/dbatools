@@ -69,50 +69,91 @@ Copy-SqlDatabaseMail -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
 Shows what would happen if the command were executed.
 #>
-[CmdletBinding(DefaultParameterSetName="Default", SupportsShouldProcess = $true)] 
-param(
-	[parameter(Mandatory = $true)]
-	[object]$Source,
-	[parameter(Mandatory = $true)]
-	[object]$Destination,
-	[System.Management.Automation.PSCredential]$SourceSqlCredential,
-	[System.Management.Automation.PSCredential]$DestinationSqlCredential
-)
+    [CmdletBinding(DefaultParameterSetName="Default", SupportsShouldProcess = $true)] 
+    param(
+	    [parameter(Mandatory = $true)]
+	    [object]$Source,
+	    [parameter(Mandatory = $true)]
+	    [object]$Destination,
+	    [System.Management.Automation.PSCredential]$SourceSqlCredential,
+	    [System.Management.Automation.PSCredential]$DestinationSqlCredential
+    )
 	
-PROCESS {
-	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+    process {
+	    $sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+	    $destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 
-	$source = $sourceserver.name
-	$destination = $destserver.name	
+	    $source = $sourceserver.name
+	    $destination = $destserver.name	
 	
-	if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
-	if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
+	    if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
+	    if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 	
-	$mail = $sourceserver.mail
+	    $mail = $sourceserver.mail
 	
-	If ($Pscmdlet.ShouldProcess($destination,"Migrating all mail objects")) {
-		try {
-			$sql = $mail.Script()
-			$sql += $mail.Profiles.Script()
-			$sql += $mail.Accounts.Script()
-			Write-Output "Adding configuration, profiles and accounts"
-			$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-		} catch { 
-			if ($_.Exception -like '*duplicate*' -or $_.Exception -like '*exist*') {
-				Write-Output "Some mail objects were skipped because they already exist on $destination"
-			} else { Write-Exception $_ }
-		}
-		try {
-			Write-Output "Updating account mail servers"
-			$destserver.ConnectionContext.ExecuteNonQuery($mail.Accounts.MailServers.Script()) | Out-Null
-		} catch { Write-Exception $_ }
-	}
+
+        Write-Output "Migrating mail server configuration values"
+		$sql = $mail.ConfigurationValues.Script()
+        Write-Verbose "$sql"
+        if ($Pscmdlet.ShouldProcess($destination,"Migrating mail server parameters")) {
+            try {
+    		    $destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+	        } catch { 
+                Write-Exception $_ 
+            }
+        }
+
+
+        Write-Output "Migrating mail accounts"
+        foreach ($acct in $mail.Accounts) {
+            $sql = $acct.Script()
+            Write-Verbose "$sql"
+            if ($Pscmdlet.ShouldProcess($destination,"Migrating mail account $acct")) {
+                try {
+		            $destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+                } catch {
+		            if ($_.Exception -like '*duplicate*' -or $_.Exception -like '*exist*') {
+			            Write-Warning "Mail account '$acct' was skipped because it already exists on $destination"
+		            } else { Write-Exception $_ }
+                }
+            }
+        }
+
+        Write-Output "Migrating mail profiles"
+        foreach ($profile in $mail.Profiles) {
+            $sql = $profile.Script()
+            Write-Verbose "$sql"
+            if ($Pscmdlet.ShouldProcess($destination,"Migrating mail profile $profile")) {
+                try {
+    		        $destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+                } catch {
+		            if ($_.Exception -like '*duplicate*' -or $_.Exception -like '*exist*') {
+			            Write-Warning "Mail profile '$profile' was skipped because it already exists on $destination"
+		            } else { Write-Exception $_ }
+                }
+            }
+        }
+
+        Write-Output "Updating account mail servers"
+        foreach ($mailsrv in $mail.Accounts.MailServers) {
+            $sql = $mailsrv.Script()
+            Write-Verbose "$sql"
+            if ($Pscmdlet.ShouldProcess($destination,"Migrating account mail server $mailsrv")) {
+                try {
+    		        $destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+ 	            } catch { 
+		            if ($_.Exception -like '*duplicate*' -or $_.Exception -like '*exist*') {
+			            Write-Warning "Mail account '$mailsrv' was skipped because it already exists on $destination"
+		            } else { Write-Exception $_ }
+                }
+            }
+        }
+    }
+
+    end {
+	    $sourceserver.ConnectionContext.Disconnect()
+	    $destserver.ConnectionContext.Disconnect()
+	    If ($Pscmdlet.ShouldProcess("console","Showing finished message")) { Write-Output "Mail migration finished" }
+    }
 }
 
-END {
-	$sourceserver.ConnectionContext.Disconnect()
-	$destserver.ConnectionContext.Disconnect()
-	If ($Pscmdlet.ShouldProcess("console","Showing finished message")) { Write-Output "Mail migration finished" }
-}
-}
