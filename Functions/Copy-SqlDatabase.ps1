@@ -967,6 +967,8 @@ PROCESS {
 		$databases = $pipedatabase.name 
 	}
 	
+	if ($databases -contains "master" -or $databases -contains "msdb" -or $databases -contains "tempdb") { throw "Migrating system databases is not currently supported."}
+	
 	Write-Output "Attempting to connect to Sql Servers.." 
 	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential

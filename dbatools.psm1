@@ -6,4 +6,5 @@
 
 foreach ($function in (Get-ChildItem "$PSScriptRoot\Functions\*.ps1")) { . $function  }
 
+# I renamed this function to be more accurate
 Set-Alias -Name Reset-SqlSaPassword -Value Reset-SqlAdmin
