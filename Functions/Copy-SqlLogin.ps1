@@ -724,10 +724,8 @@ END {
 		$totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
-		Write-Output "Login migration finished"
-		Write-Output "Migration started: $started" 
-		Write-Output "Migration completed: $(Get-Date)" 
-		Write-Output "Total Elapsed time: $totaltime" 
+		Write-Output "Login migration completed: $(Get-Date)" 
+		Write-Output "Total elapsed time: $totaltime" 
 	}
 }
 }
