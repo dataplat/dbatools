@@ -721,10 +721,10 @@ PROCESS {
 END {
 
 	If ($Pscmdlet.ShouldProcess("console","Showing time elapsed message")) {
+		Write-Output "Login migration completed: $(Get-Date)" 
 		$totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
-		Write-Output "Login migration completed: $(Get-Date)" 
 		Write-Output "Total elapsed time: $totaltime" 
 	}
 }
