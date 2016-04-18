@@ -233,6 +233,7 @@ param(
 			$destlogin.set_Sid($sourcelogin.get_Sid())
 			
 			$defaultdb = $sourcelogin.DefaultDatabase
+			Write-Output "Setting login language to $($sourcelogin.Language)"
 			$destlogin.Language = $sourcelogin.Language
 						
 			if ($destserver.databases[$defaultdb] -eq $null) {
@@ -299,7 +300,9 @@ param(
 			} 
 			# Attempt to add Windows User
 			elseif ($sourcelogin.LoginType -eq "WindowsUser" -or $sourcelogin.LoginType -eq "WindowsGroup") {
+				Write-Output "Adding as login type $($sourcelogin.LoginType)"
 				$destlogin.LoginType = $sourcelogin.LoginType
+				Write-Output "Setting language as $($sourcelogin.Language)"
 				$destlogin.Language = $sourcelogin.Language
 								
 				try {
@@ -660,6 +663,10 @@ PROCESS {
 
 	$elapsed = [System.Diagnostics.Stopwatch]::StartNew() 
 	$started = Get-Date
+	
+	If ($Pscmdlet.ShouldProcess("console","Showing time elapsed message")) {
+		Write-Output "Migration started: $started"
+	}
 	
 	if ($source -eq $destination) { throw "Source and Destination SQL Servers are the same. Quitting." }
 
