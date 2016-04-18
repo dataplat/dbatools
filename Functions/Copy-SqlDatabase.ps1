@@ -117,7 +117,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 [CmdletBinding(DefaultParameterSetName="DbMigration", SupportsShouldProcess = $true)] 
 
 Param(
-	[parameter(Mandatory = $true)]
+	[parameter(Mandatory = $true,ValueFromPipeline=$True)]
 	[object]$Source,
 	[parameter(Mandatory = $true)]
 	[object]$Destination,
@@ -152,7 +152,9 @@ Param(
 	[switch]$Force,
 	[System.Management.Automation.PSCredential]$SourceSqlCredential,
 	[System.Management.Automation.PSCredential]$DestinationSqlCredential,
-	[switch]$CsvLog
+	[switch]$CsvLog,
+	[Parameter(ValueFromPipeline=$True)]
+	[object]$pipedatabase
 )
 
 DynamicParam  { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential } }
@@ -956,6 +958,15 @@ PROCESS {
 	$started = Get-Date
 	$script:timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
 	
+	# Convert from RuntimeDefinedParameter object to regular array
+	$databases = $psboundparameters.Databases
+	$exclude = $psboundparameters.Exclude
+	
+	if ($pipedatabase.Length -gt 0) {
+		$Source = $pipedatabase[0].parent.name
+		$databases = $pipedatabase.name 
+	}
+	
 	Write-Output "Attempting to connect to Sql Servers.." 
 	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
@@ -969,10 +980,6 @@ PROCESS {
 	$migrateddb = @{}; $skippedb = @{}
 
 	if ($source -eq $destination) { throw "Source and Destination Sql Servers are the same. Quitting." }
-
-	# Convert from RuntimeDefinedParameter object to regular array
-	$databases = $psboundparameters.Databases
-	$exclude = $psboundparameters.Exclude
 	
 	if (($All -or $IncludeSupportDbs -or $Databases) -and !$DetachAttach -and !$BackupRestore) {
       throw "You must specify -DetachAttach or -BackupRestore when migrating databases."

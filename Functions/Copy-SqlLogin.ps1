@@ -108,7 +108,7 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 [CmdletBinding(SupportsShouldProcess = $true)] 
 
 Param(
-	[parameter(Mandatory = $true)]
+	[parameter(Mandatory = $true,ValueFromPipeline=$True)]
 	[object]$Source,
 	[parameter(Mandatory = $true)]
 	[object]$Destination,
@@ -116,7 +116,9 @@ Param(
 	[object]$DestinationSqlCredential,
 	[switch]$SyncOnly,	
 	[switch]$Force,
-	[Switch]$CsvLog
+	[Switch]$CsvLog,
+	[parameter(ValueFromPipeline=$True)]
+	[object]$pipelogin
 	)
 	
 DynamicParam  { if ($source) { return Get-ParamSqlLogins -SqlServer $source -SqlCredential $SourceSqlCredential } }
@@ -666,6 +668,11 @@ PROCESS {
 	
 	If ($Pscmdlet.ShouldProcess("console","Showing time elapsed message")) {
 		Write-Output "Migration started: $started"
+	}
+		
+	if ($pipelogin.Length -gt 0) {
+		$Source = $pipelogin[0].parent.name
+		$logins = $pipelogin.name 
 	}
 	
 	if ($source -eq $destination) { throw "Source and Destination SQL Servers are the same. Quitting." }
