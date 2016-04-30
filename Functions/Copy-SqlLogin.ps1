@@ -40,8 +40,8 @@ To connect as a different Windows user, run PowerShell as that user.
 .PARAMETER Exclude
 Excludes specified logins. This list is auto-populated for tab completion.
 
-.PARAMETER Logins
-Migrates ONLY specified logins. This list is auto-populated for tab completion.
+.PARAMETER Login
+Migrates ONLY specified logins. This list is auto-populated for tab completion. Multiple logins allowed.
 
 .PARAMETER SyncOnly
 Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. If a matching login does not exist on the destination, the login will be skipped. 
@@ -85,9 +85,9 @@ Authenticates to SQL Servers using SQL Authentication.
 Copies all logins except for realcajun. If a login already exists on the destination, the login will not be migrated.
 
 .EXAMPLE
-Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -Logins realcajun -force
+Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds -force
 
-Copies ONLY login realcajun. If login realcajun exists on the destination, it will be dropped and recreated.
+Copies ONLY logins netnerds and realcajun. If login realcajun or netnerds exists on the destination, they will be dropped and recreated.
 
 .EXAMPLE
 Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -SyncOnly
@@ -696,7 +696,7 @@ PROCESS {
 	---------------------------------------------------------- #>
 
 	# Convert from RuntimeDefinedParameter  object to regular array
-	$Logins = $psboundparameters.Logins
+	$Logins = $psboundparameters.Login
 	$Exclude = $psboundparameters.Exclude
 
 	<# ----------------------------------------------------------

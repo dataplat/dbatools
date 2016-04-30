@@ -54,8 +54,8 @@ Specifies the network location for the backup files. The Sql Service service acc
 .PARAMETER Exclude
 Excludes specified databases when performing -All migrations. This list is auto-populated for tab completion.
 
-.PARAMETER Databases
-Migrates ONLY specified databases. This list is auto-populated for tab completion.
+.PARAMETER Database
+Migrates ONLY specified databases. This list is auto-populated for tab completion. Multiple databases are allowed.
 
 .PARAMETER SetSourceReadOnly
 Sets all migrated databases to ReadOnly prior to detach/attach & backup/restore. If -Reattach is used, db is set to read-only after reattach.
@@ -879,10 +879,18 @@ $dbdestination = $copydb.destination
 				}
 			}
 			else {
-			Write-Host "Copying $fn for $dbname"
-			Start-BitsTransfer -Source $from -Destination $remotefilename }
+				Write-Host "Copying $fn for $dbname"
+				Start-BitsTransfer -Source $from -Destination $remotefilename
+			}
 			$fn = Split-Path $($dbdestination[$file].physical) -leaf
-		} catch { Write-Exception $_ ; return $false }
+		} catch {
+			try {
+				# Sometimes BITS trips out temporarily on cloned drives.
+				Start-BitsTransfer -Source $from -Destination $remotefilename
+			} catch {
+				throw "$_ `n This sometimes happens with cloned VMs. You can try again or use Backup and Restore"
+			}
+		}
 	}
 	return $true
 }
@@ -959,7 +967,7 @@ PROCESS {
 	$script:timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
 	
 	# Convert from RuntimeDefinedParameter object to regular array
-	$databases = $psboundparameters.Databases
+	$databases = $psboundparameters.Database
 	$exclude = $psboundparameters.Exclude
 	
 	if ($pipedatabase.Length -gt 0) {

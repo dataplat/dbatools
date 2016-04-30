@@ -492,6 +492,9 @@ filled with database list from specified SQL Server server.
 		$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
 		$attributes = New-Object System.Management.Automation.ParameterAttribute
 		
+		# Provide backwards compatability for improperly named parameter
+		$alias = New-Object System.Management.Automation.AliasAttribute "Databases"
+		
 		$attributes.ParameterSetName = "__AllParameterSets"
 		$attributes.Mandatory = $false
 		
@@ -500,10 +503,15 @@ filled with database list from specified SQL Server server.
 		$dbattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
 		$dbattributes.Add($attributes)
 		if ($databaselist) { $dbattributes.Add($dbvalidationset) }
-		$Databases = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Databases", [String[]], $dbattributes)
-		$Exclude = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Exclude", [String[]], $dbattributes)
-
-		$newparams.Add("Databases", $Databases)
+		$dbattributes.Add($alias)
+		$Database = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Database", [String[]], $dbattributes)
+		
+		$dbexcludeattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+		$dbexcludeattributes.Add($attributes)
+		if ($databaselist) { $dbexcludeattributes.Add($dbvalidationset) }
+		$Exclude = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Exclude", [String[]], $dbexcludeattributes)
+		
+		$newparams.Add("Database", $Database)
 		$newparams.Add("Exclude", $Exclude)
 		
 		$server.ConnectionContext.Disconnect()
@@ -536,18 +544,28 @@ Function Get-ParamSqlLogins {
 	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
 	$attributes = New-Object System.Management.Automation.ParameterAttribute
 	
+	# Provide backwards compatability for improperly named parameter
+	$alias = New-Object System.Management.Automation.AliasAttribute "Logins"
+	
 	$attributes.ParameterSetName = "__AllParameterSets"
 	$attributes.Mandatory = $false
 	
 	# Login list parameter setup
 	if ($loginlist) { $loginvalidationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $loginlist }
+	
 	$loginattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
 	$loginattributes.Add($attributes)
 	if ($loginlist) { $loginattributes.Add($loginvalidationset) }
-	$Logins = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Logins", [String[]], $loginattributes)
-	$Exclude = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Exclude", [String[]], $loginattributes)
-
-	$newparams.Add("Logins", $Logins)
+	
+	$loginattributes.Add($alias)
+	$Login = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Login", [String[]], $loginattributes)
+	
+	$excludeattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$excludeattributes.Add($attributes)
+	if ($loginlist) { $excludeattributes.Add($loginvalidationset) }
+	$Exclude = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Exclude", [String[]], $excludeattributes)
+	
+	$newparams.Add("Login", $Login)
 	$newparams.Add("Exclude", $Exclude)
 	
 	$server.ConnectionContext.Disconnect()
