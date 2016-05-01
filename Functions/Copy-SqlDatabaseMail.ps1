@@ -96,7 +96,7 @@ Shows what would happen if the command were executed.
 		
 		Write-Output "Migrating mail server configuration values"
 		$sql = $mail.ConfigurationValues.Script()
-		Write-Verbose "$sql"
+		Write-Verbose $sql
 		if ($Pscmdlet.ShouldProcess($destination, "Migrating mail server parameters"))
 		{
 			try
@@ -114,7 +114,7 @@ Shows what would happen if the command were executed.
 		foreach ($acct in $mail.Accounts)
 		{
 			$sql = $acct.Script()
-			Write-Verbose "$sql"
+			Write-Verbose $sql
 			if ($Pscmdlet.ShouldProcess($destination, "Migrating mail account $acct"))
 			{
 				try
@@ -136,7 +136,7 @@ Shows what would happen if the command were executed.
 		foreach ($profile in $mail.Profiles)
 		{
 			$sql = $profile.Script()
-			Write-Verbose "$sql"
+			Write-Verbose $sql
 			if ($Pscmdlet.ShouldProcess($destination, "Migrating mail profile $profile"))
 			{
 				try
@@ -158,7 +158,7 @@ Shows what would happen if the command were executed.
 		foreach ($mailsrv in $mail.Accounts.MailServers)
 		{
 			$sql = $mailsrv.Script()
-			Write-Verbose "$sql"
+			Write-Verbose $sql
 			if ($Pscmdlet.ShouldProcess($destination, "Migrating account mail server $mailsrv"))
 			{
 				try

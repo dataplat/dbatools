@@ -562,11 +562,11 @@ filled with database list from specified SQL Server server.
 	
 	# Database list parameter setup
 	if ($databaselist) { $dbvalidationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $databaselist }
-	$dbattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-	$dbattributes.Add($attributes)
-	if ($databaselist) { $dbattributes.Add($dbvalidationset) }
-	$dbattributes.Add($alias)
-	$Database = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Database", [String[]], $dbattributes)
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($databaselist) { $attributeCollection.Add($dbvalidationset) }
+	$attributeCollection.Add($alias)
+	$Database = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Database", [String[]], $attributeCollection)
 	
 	$dbexcludeattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
 	$dbexcludeattributes.Add($attributes)
@@ -620,12 +620,12 @@ Function Get-ParamSqlLogins
 	# Login list parameter setup
 	if ($loginlist) { $loginvalidationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $loginlist }
 	
-	$loginattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-	$loginattributes.Add($attributes)
-	if ($loginlist) { $loginattributes.Add($loginvalidationset) }
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($loginlist) { $attributeCollection.Add($loginvalidationset) }
 	
-	$loginattributes.Add($alias)
-	$Login = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Login", [String[]], $loginattributes)
+	$attributeCollection.Add($alias)
+	$Login = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Login", [String[]], $attributeCollection)
 	
 	$excludeattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
 	$excludeattributes.Add($attributes)
@@ -661,17 +661,116 @@ Function Get-ParamSqlJobServer
 	$jobobjects += "AlertCategories", "Alerts", "TargetServerGroups", "TargetServers", "Operators", "Jobs", "Mail"
 	
 	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
 	
 	foreach ($name in $jobobjects)
 	{
 		$items = $server.JobServer.$name.Name
 		if ($items.count -gt 0)
 		{
-			$attributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-			$attributes.Add((New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $items))
+			$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+			$attributeCollection.Add($attributes)
+			$attributeCollection.Add((New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $items))
 		}
 		
-		$newparams.Add($name, (New-Object -Type System.Management.Automation.RuntimeDefinedParameter($name, [String[]], $attributes)))
+		$newparams.Add($name, (New-Object -Type System.Management.Automation.RuntimeDefinedParameter($name, [String[]], $attributeCollection)))
+	}
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
+Function Get-ParamSqlExtendedEvents
+{
+<# 
+ .SYNOPSIS 
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+ filled with Extended Event objects from specified SQL Server server.
+#>	
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	$sqlconn = $server.ConnectionContext.SqlConnectionObject
+	$sqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sqlconn
+	
+	$store = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $sqlStoreConnection
+	
+	$objects = "Sessions" # Maybe packages later? I don't understand xEvents well enough yet to know.
+	
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	
+	foreach ($name in $objects)
+	{
+		$items = $store.$name.Name
+		if ($items.count -gt 0)
+		{
+			$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+			$attributeCollection.Add($attributes)
+			$attributeCollection.Add((New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $items))
+		}
+		
+		$newparams.Add($name, (New-Object -Type System.Management.Automation.RuntimeDefinedParameter($name, [String[]], $attributeCollection)))
+	}
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
+Function Get-ParamSqlPolicyManagement
+{
+<# 
+ .SYNOPSIS 
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+ filled with Sql Policy Management objects from specified SQL Server server.
+#>	
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	$sqlconn = $server.ConnectionContext.SqlConnectionObject
+	$sqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sqlconn
+	
+	# DMF is the Declarative Management Framework, Policy Based Management's old name
+	$store = New-Object Microsoft.SqlServer.Management.DMF.PolicyStore $sqlStoreConnection 
+
+	$objects = "Policies","Conditions" # Maybe other stuff later? I don't know PBM well enough yet to know.
+	
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	
+	foreach ($name in $objects)
+	{
+		$items = $store.$name.Name
+		if ($items.count -gt 0)
+		{
+			$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+			$attributeCollection.Add($attributes)
+			$attributeCollection.Add((New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $items))
+		}
+		
+		$newparams.Add($name, (New-Object -Type System.Management.Automation.RuntimeDefinedParameter($name, [String[]], $attributeCollection)))
 	}
 	$server.ConnectionContext.Disconnect()
 	
@@ -699,22 +798,64 @@ Function Get-ParamSqlDatabaseMail
 	
 	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
 	
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	
 	foreach ($name in $objects)
 	{
 		if ($name -eq "MailServers") { $items = $server.Mail.Accounts.$name.Name }
 		else { $items = $server.Mail.$name.Name }
 		if ($items.count -gt 0)
 		{
-			$attributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-			$attributes.Add((New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $items))
+			$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+			$attributeCollection.Add($attributes)
+			$attributeCollection.Add((New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $items))
 		}
 		
-		$newparams.Add($name, (New-Object -Type System.Management.Automation.RuntimeDefinedParameter($name, [String[]], $attributes)))
+		$newparams.Add($name, (New-Object -Type System.Management.Automation.RuntimeDefinedParameter($name, [String[]], $attributeCollection)))
 	}
 	$server.ConnectionContext.Disconnect()
 	
 	return $newparams
 }
+
+
+Function Get-ParamSqlResourceGovernor
+{
+<# 
+ .SYNOPSIS 
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+ filled with Resource Governor objects from specified SQL Server server.
+#>	
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	$pools = $server.ResourceGovernor.ResourcePools | Where-Object { $_.Name -notin "internal", "default" }
+	
+	if ($pools.count -gt 0)
+	{
+		$attributes = New-Object System.Management.Automation.ParameterAttribute
+		$attributes.ParameterSetName = "__AllParameterSets"
+		$attributes.Mandatory = $false
+		$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+		$attributeCollection.Add($attributes)
+		$attributeCollection.Add((New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $pools.Name))
+		
+		$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+		$newparams.Add("ResourcePools", (New-Object -Type System.Management.Automation.RuntimeDefinedParameter("ResourcePools", [String[]], $attributeCollection)))
+	}
+	$server.ConnectionContext.Disconnect()
+	return $newparams
+}
+
 
 Function Get-ParamSqlServerTriggers
 {
@@ -749,10 +890,10 @@ Function Get-ParamSqlServerTriggers
 	
 	# Database list parameter setup
 	if ($triggerlist) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $triggerlist }
-	$objattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-	$objattributes.Add($attributes)
-	if ($triggerlist) { $objattributes.Add($validationset) }
-	$Triggers = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Triggers", [String[]], $objattributes)
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($triggerlist) { $attributeCollection.Add($validationset) }
+	$Triggers = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Triggers", [String[]], $attributeCollection)
 	
 	$newparams.Add("Triggers", $Triggers)
 	$server.ConnectionContext.Disconnect()
@@ -787,16 +928,15 @@ Function Get-ParamSqlBackupDevices
 	# Reusable parameter setup
 	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
 	$attributes = New-Object System.Management.Automation.ParameterAttribute
-	
 	$attributes.ParameterSetName = "__AllParameterSets"
 	$attributes.Mandatory = $false
 	
 	# Database list parameter setup
 	if ($backupdevicelist) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $backupdevicelist }
-	$objattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-	$objattributes.Add($attributes)
-	if ($backupdevicelist) { $objattributes.Add($validationset) }
-	$backupdevices = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("BackupDevices", [String[]], $objattributes)
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($backupdevicelist) { $attributeCollection.Add($validationset) }
+	$backupdevices = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("BackupDevices", [String[]], $attributeCollection)
 	
 	$newparams.Add("BackupDevices", $backupdevices)
 	$server.ConnectionContext.Disconnect()

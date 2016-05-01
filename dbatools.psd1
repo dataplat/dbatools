@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.7.7.0'
+	ModuleVersion = '0.7.8.0'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -50,7 +50,7 @@
 	RequiredModules = @()
 	
 	# Assemblies that must be loaded prior to importing this module
-	RequiredAssemblies = @('Microsoft.SqlServer.SMO', 'Microsoft.SqlServer.SMOExtended')
+	RequiredAssemblies = @('Microsoft.SqlServer.Smo', 'Microsoft.SqlServer.SmoExtended', 'Microsoft.SqlServer.Management.XEvent', 'Microsoft.SQlServer.Management.Sdk.Sfc')
 	
 	# Script files () that are run in the caller's environment prior to importing this module
 	ScriptsToProcess = @()
@@ -65,7 +65,7 @@
 	NestedModules = @()
 	
 	# Functions to export from this module
-	FunctionsToExport = @('Copy-SqlBackupDevice', 'Copy-SqlServerTrigger', 'Test-SqlConnection', 'Import-CsvToSql', 'Update-dbatools', 'Copy-SqlDatabaseMail', 'Copy-SqlDatabase', 'Copy-SqlJobServer', 'Import-SqlSpConfigure', 'Export-SqlSpConfigure', 'Watch-SqlDbLogin', 'Reset-SqlAdmin', 'Get-SqlServerKey', 'Set-SqlMaxMemory', 'Get-SqlMaxMemory', 'Get-DetachedDBInfo', 'Restore-HallengrenBackup', 'Copy-SqlLogin', 'Copy-SqlLinkedServer', 'Copy-SqlCredential', 'Copy-SqlCentralManagementServer', 'Start-SqlMigration', 'Copy-SqlSysDbUserObjects')
+	FunctionsToExport = @('Copy-SqlResourceGovernor','Copy-SqlPolicyManagement','Copy-SqlExtendedEvent','Copy-SqlBackupDevice', 'Copy-SqlServerTrigger', 'Test-SqlConnection', 'Import-CsvToSql', 'Update-dbatools', 'Copy-SqlDatabaseMail', 'Copy-SqlDatabase', 'Copy-SqlJobServer', 'Import-SqlSpConfigure', 'Export-SqlSpConfigure', 'Watch-SqlDbLogin', 'Reset-SqlAdmin', 'Get-SqlServerKey', 'Set-SqlMaxMemory', 'Get-SqlMaxMemory', 'Get-DetachedDBInfo', 'Restore-HallengrenBackup', 'Copy-SqlLogin', 'Copy-SqlLinkedServer', 'Copy-SqlCredential', 'Copy-SqlCentralManagementServer', 'Start-SqlMigration', 'Copy-SqlSysDbUserObjects')
 	
 	# Cmdlets to export from this module
 	CmdletsToExport = '*'
