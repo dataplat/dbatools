@@ -3,6 +3,7 @@ A collection of modules for SQL Server DBAs. It initially started out as 'sqlmig
 
 In my domain joined Windows 10, PowerShell v5, SMO v12 lab, these commands work swimmingly on SQL Server 2000-2016. If you're still using SMO v10 (SQL Server 2008 R2) on your workstation, some functionality may be reduced, but give it a try anyway. 
 
+<p align="center"><img src=https://blog.netnerds.net/wp-content/uploads/2016/05/dbatools.png></p>
 Installer
 --------------
 Run the following command to automatically install the module.
