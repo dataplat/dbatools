@@ -1,5 +1,5 @@
 # dbatools
-A collection of modules for SQL Server DBAs. It initially started out as 'sqlmigration', but has now grown into a collection of various commands that help automate DBA tasks. The consolidation was done pretty quickly, so there will be bugs, and documentation will be slightly out of date for about a month or so. 
+A collection of modules for SQL Server DBAs. It initially started out as 'sqlmigration', but has now grown into a collection of various commands that help automate DBA tasks.
 
 In my domain joined Windows 10, PowerShell v5, SMO v12 lab, these commands work swimmingly on SQL Server 2000-2016. If you're still using SMO v10 (SQL Server 2008 R2) on your workstation, some functionality may be reduced, but give it a try anyway. 
 
