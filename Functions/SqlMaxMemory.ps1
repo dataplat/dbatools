@@ -1,4 +1,5 @@
-Function Get-SqlMaxMemory {
+Function Get-SqlMaxMemory
+{
 <# 
 .SYNOPSIS 
 Displays information relating to SQL Server Max Memory configuration settings.  Works on SQL Server 2000-2014.
@@ -68,77 +69,87 @@ Get-SqlMaxMemory -SqlCms sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB 
 Find all servers in CMS that have Max SQL memory set to higher than the total memory of the server (think 2147483647)
 
 #>
-[CmdletBinding()]
+	[CmdletBinding()]
+	Param (
+		[parameter(Position = 0)]
+		[string[]]$SqlServers,
+		# File with one server per line
 
-Param(
-	[parameter(Position=0)]
-	[string[]]$SqlServers,
-	# File with one server per line
-	[string]$SqlServersFromFile,	
-	# Central Management Server
-	[string]$SqlCms,
-	[System.Management.Automation.PSCredential]$SqlCredential
-)
+		[string]$SqlServersFromFile,
+		# Central Management Server
 
-DynamicParam  { if ($SqlCms) { return (Get-ParamSqlCmsGroups -SqlServer $SqlCms -SqlCredential $SqlCredential) } }
-
-PROCESS { 
+		[string]$SqlCms,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
 	
-	if ([string]::IsNullOrEmpty($SqlCms) -and [string]::IsNullOrEmpty($SqlServersFromFile) -and [string]::IsNullOrEmpty($SqlServers)) 
-	{ throw "You must specify a server list source using -SqlServers or -SqlCms or -SqlServersFromFile" }
-
-	 if ([Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers") -eq $null )
-	{ throw "Quitting: SMO Required. You can download it from http://goo.gl/R4yA6u" }
+	DynamicParam { if ($SqlCms) { return (Get-ParamSqlCmsGroups -SqlServer $SqlCms -SqlCredential $SqlCredential) } }
 	
-	$SqlCmsGroups = $psboundparameters.SqlCmsGroups
-	if ($SqlCms) { $SqlServers = Get-SqlCmsRegServers -SqlServer $SqlCms -SqlCredential $SqlCredential -groups $SqlCmsGroups }
-	If ($SqlServersFromFile) { $SqlServers = Get-Content $SqlServersFromFile }
-	
-	$collection = @()
-	foreach ($SqlServer in $SqlServers) {
-		Write-Verbose "Attempting to connect to $sqlserver"
-		try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential } 
-		catch { Write-Warning "Can't connect to $sqlserver or access denied. Skipping."; continue }
+	PROCESS
+	{
+		
+		if ([string]::IsNullOrEmpty($SqlCms) -and [string]::IsNullOrEmpty($SqlServersFromFile) -and [string]::IsNullOrEmpty($SqlServers))
+		{ throw "You must specify a server list source using -SqlServers or -SqlCms or -SqlServersFromFile" }
+		
+		if ([Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers") -eq $null)
+		{ throw "Quitting: SMO Required. You can download it from http://goo.gl/R4yA6u" }
+		
+		$SqlCmsGroups = $psboundparameters.SqlCmsGroups
+		if ($SqlCms) { $SqlServers = Get-SqlCmsRegServers -SqlServer $SqlCms -SqlCredential $SqlCredential -groups $SqlCmsGroups }
+		If ($SqlServersFromFile) { $SqlServers = Get-Content $SqlServersFromFile }
+		
+		$collection = @()
+		foreach ($SqlServer in $SqlServers)
+		{
+			Write-Verbose "Attempting to connect to $sqlserver"
+			try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential }
+			catch { Write-Warning "Can't connect to $sqlserver or access denied. Skipping."; continue }
 			
-		$maxmem = $server.Configuration.MaxServerMemory.ConfigValue
-
-		$reserve = 1
-		$totalMemory = $server.PhysicalMemory
-		
-	
-		# Some servers underreport by 1MB.
-		if (($totalmemory % 1024) -ne 0) { $totalMemory = $totalMemory + 1 }
-		
-		
-		if ($totalMemory -ge 4096) {
-			$currentCount = $totalMemory
-			while ($currentCount/4096 -gt 0) {
-				if ($currentCount -gt 16384) {
-					$reserve += 1
-					$currentCount += -8192
-				} else {
-					$reserve += 1
-					$currentCount += -4096
+			$maxmem = $server.Configuration.MaxServerMemory.ConfigValue
+			
+			$reserve = 1
+			$totalMemory = $server.PhysicalMemory
+			
+			
+			# Some servers underreport by 1MB.
+			if (($totalmemory % 1024) -ne 0) { $totalMemory = $totalMemory + 1 }
+			
+			
+			if ($totalMemory -ge 4096)
+			{
+				$currentCount = $totalMemory
+				while ($currentCount/4096 -gt 0)
+				{
+					if ($currentCount -gt 16384)
+					{
+						$reserve += 1
+						$currentCount += -8192
+					}
+					else
+					{
+						$reserve += 1
+						$currentCount += -4096
+					}
 				}
+				$recommendedMax = [int]($totalMemory - ($reserve * 1024))
 			}
-		$recommendedMax = [int]($totalMemory-($reserve*1024))
-		} else  { $recommendedMax = $totalMemory*.5 }
-
-		
-		$object = New-Object PSObject -Property @{
-		Server = $server.name
-		TotalMB = $totalMemory
-		SqlMaxMB = $maxmem
-		RecommendedMB = $recommendedMax
+			else { $recommendedMax = $totalMemory * .5 }
+			
+			
+			$object = New-Object PSObject -Property @{
+				Server = $server.name
+				TotalMB = $totalMemory
+				SqlMaxMB = $maxmem
+				RecommendedMB = $recommendedMax
+			}
+			$server.ConnectionContext.Disconnect()
+			$collection += $object
 		}
-		$server.ConnectionContext.Disconnect()
-		$collection += $object
+		return ($collection | Sort-Object Server | Select Server, TotalMB, SqlMaxMB, RecommendedMB)
 	}
-	return ($collection | Sort-Object Server | Select Server, TotalMB, SqlMaxMB, RecommendedMB)
-}
 }
 
-Function Set-SqlMaxMemory {
+Function Set-SqlMaxMemory
+{
 <# 
 .SYNOPSIS 
 Sets SQL Server max memory then displays information relating to SQL Server Max Memory configuration settings. Works on SQL Server 2000-2014.
@@ -191,70 +202,80 @@ Set-SqlMaxMemory -SqlCms sqlcluster -SqlCmsGroups Express -MaxMB 512 -Verbose
 Specifically set memory to 512 MB for all servers within the "Express" server group on CMS "sqlcluster"
 
 #>
-[CmdletBinding()]
-
-Param(
-	[parameter(Position=0)]
-	[string[]]$SqlServers,
-	[parameter(Position=1)]
-	[int]$MaxMB,
-	[string]$SqlServersFromFile,	
-	[string]$SqlCms,
-	[switch]$UseRecommended,
-	[Parameter(ValueFromPipeline=$True)]
-	[object]$collection,
-	[System.Management.Automation.PSCredential]$SqlCredential
+	[CmdletBinding()]
+	Param (
+		[parameter(Position = 0)]
+		[string[]]$SqlServers,
+		[parameter(Position = 1)]
+		[int]$MaxMB,
+		[string]$SqlServersFromFile,
+		[string]$SqlCms,
+		[switch]$UseRecommended,
+		[Parameter(ValueFromPipeline = $True)]
+		[object]$collection,
+		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-DynamicParam  { if ($SqlCms) { return (Get-ParamSqlCmsGroups -SqlServer $SqlCms -SqlCredential $SqlCredential) } }
-
-PROCESS {
+	DynamicParam { if ($SqlCms) { return (Get-ParamSqlCmsGroups -SqlServer $SqlCms -SqlCredential $SqlCredential) } }
 	
-	if ([string]::IsNullOrEmpty($SqlCms) -and [string]::IsNullOrEmpty($SqlServersFromFile) -and [string]::IsNullOrEmpty($SqlServers) -and $collection -eq $null) 
-	{ throw "You must specify a server list source using -SqlServers or -SqlCms or -SqlServersFromFile or you can pipe results from Get-SqlMaxMemory" }
-	
-	if ($MaxMB -eq 0 -and $UseRecommended -eq $false -and $collection -eq $null) { throw "You must specify -MaxMB or -UseRecommended" }
-	
-	if ($collection -eq $null) {
-		$SqlCmsGroups = $psboundparameters.SqlCmsGroups
-		if ($SqlCmsGroups -ne $null) { 
-			$collection =  Get-SqlMaxMemory -SqlServers $SqlServers -SqlCms $SqlCms -SqlServersFromFile $SqlServersFromFile -SqlCmsGroups $SqlCmsGroups 
-		} else { $collection =  Get-SqlMaxMemory -SqlServers $SqlServers -SqlCms $SqlCms -SqlServersFromFile $SqlServersFromFile  } 
-	}
-	
-	$collection | Add-Member -NotePropertyName OldMaxValue -NotePropertyValue 0
-	
-	foreach ($row in $collection) {
-	
-		Write-Verbose "Attempting to connect to $sqlserver"
-		try { $server = Connect-SqlServer -SqlServer $row.server -SqlCredential $SqlCredential } 
-		catch { Write-Warning "Can't connect to $sqlserver or access denied. Skipping."; continue }
-			
-		if (!(Test-SqlSa -SqlServer $server)) { 
-			Write-Error "Not a sysadmin on $servername. Skipping."
-			$server.ConnectionContext.Disconnect()
-			continue 
+	PROCESS
+	{
+		
+		if ([string]::IsNullOrEmpty($SqlCms) -and [string]::IsNullOrEmpty($SqlServersFromFile) -and [string]::IsNullOrEmpty($SqlServers) -and $collection -eq $null)
+		{ throw "You must specify a server list source using -SqlServers or -SqlCms or -SqlServersFromFile or you can pipe results from Get-SqlMaxMemory" }
+		
+		if ($MaxMB -eq 0 -and $UseRecommended -eq $false -and $collection -eq $null) { throw "You must specify -MaxMB or -UseRecommended" }
+		
+		if ($collection -eq $null)
+		{
+			$SqlCmsGroups = $psboundparameters.SqlCmsGroups
+			if ($SqlCmsGroups -ne $null)
+			{
+				$collection = Get-SqlMaxMemory -SqlServers $SqlServers -SqlCms $SqlCms -SqlServersFromFile $SqlServersFromFile -SqlCmsGroups $SqlCmsGroups
+			}
+			else { $collection = Get-SqlMaxMemory -SqlServers $SqlServers -SqlCms $SqlCms -SqlServersFromFile $SqlServersFromFile }
 		}
 		
-		$row.OldMaxValue = $row.SqlMaxMB
-
-		try { 
-			if ($UseRecommended) {
-				Write-Verbose "Changing $($row.server) SQL Server max from $($row.SqlMaxMB) to $($row.RecommendedMB) MB" 
-				$server.Configuration.MaxServerMemory.ConfigValue = $row.RecommendedMB
-				$row.SqlMaxMB = $row.RecommendedMB
-			} else { 
-				Write-Verbose "Changing $($row.server) SQL Server max from $($row.SqlMaxMB) to $MaxMB MB" 
-				$server.Configuration.MaxServerMemory.ConfigValue = $MaxMB 
-				$row.SqlMaxMB = $MaxMB 
-			}
-			$server.Configuration.Alter()
-			
-		} catch { Write-Error "Could not modify Max Server Memory for $($row.server)" }
+		$collection | Add-Member -NotePropertyName OldMaxValue -NotePropertyValue 0
 		
-		$server.ConnectionContext.Disconnect()
+		foreach ($row in $collection)
+		{
+			
+			Write-Verbose "Attempting to connect to $sqlserver"
+			try { $server = Connect-SqlServer -SqlServer $row.server -SqlCredential $SqlCredential }
+			catch { Write-Warning "Can't connect to $sqlserver or access denied. Skipping."; continue }
+			
+			if (!(Test-SqlSa -SqlServer $server))
+			{
+				Write-Error "Not a sysadmin on $servername. Skipping."
+				$server.ConnectionContext.Disconnect()
+				continue
+			}
+			
+			$row.OldMaxValue = $row.SqlMaxMB
+			
+			try
+			{
+				if ($UseRecommended)
+				{
+					Write-Verbose "Changing $($row.server) SQL Server max from $($row.SqlMaxMB) to $($row.RecommendedMB) MB"
+					$server.Configuration.MaxServerMemory.ConfigValue = $row.RecommendedMB
+					$row.SqlMaxMB = $row.RecommendedMB
+				}
+				else
+				{
+					Write-Verbose "Changing $($row.server) SQL Server max from $($row.SqlMaxMB) to $MaxMB MB"
+					$server.Configuration.MaxServerMemory.ConfigValue = $MaxMB
+					$row.SqlMaxMB = $MaxMB
+				}
+				$server.Configuration.Alter()
+				
+			}
+			catch { Write-Error "Could not modify Max Server Memory for $($row.server)" }
+			
+			$server.ConnectionContext.Disconnect()
+		}
+		
+		return $collection | Select Server, TotalMB, OldMaxValue, @{ name = "CurrentMaxValue"; expression = { $_.SqlMaxMB } }
 	}
-
-	return $collection | Select Server, TotalMB, OldMaxValue, @{name="CurrentMaxValue";expression={$_.SqlMaxMB}}
-}
 }

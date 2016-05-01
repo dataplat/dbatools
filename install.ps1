@@ -4,23 +4,28 @@ $path = Join-Path -Path (Split-Path -Path $profile) -ChildPath '\Modules\dbatool
 $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 $zipfile = "$temp\sqltools.zip"
 
-if (!(Test-Path -Path $path)){
+if (!(Test-Path -Path $path))
+{
 	Write-Output "Creating directory: $path"
-	New-Item -Path $path -ItemType Directory | Out-Null 
-} else { 
+	New-Item -Path $path -ItemType Directory | Out-Null
+}
+else
+{
 	Write-Output "Deleting previously installed module"
-	Remove-Item -Path "$path\*" -Force -Recurse 
+	Remove-Item -Path "$path\*" -Force -Recurse
 }
 
 Write-Output "Downloading archive from github"
 try
 {
 	Invoke-WebRequest $url -OutFile $zipfile
-} catch {
-   #try with default proxy and usersettings
-   Write-Output "Probably using a proxy for internet access, trying default proxy settings"
-   (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-   Invoke-WebRequest $url -OutFile $zipfile
+}
+catch
+{
+	#try with default proxy and usersettings
+	Write-Output "Probably using a proxy for internet access, trying default proxy settings"
+	(New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+	Invoke-WebRequest $url -OutFile $zipfile
 }
 
 # Unblock if there's a block

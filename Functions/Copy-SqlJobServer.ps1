@@ -1,4 +1,5 @@
-Function Copy-SqlJobServer      {
+Function Copy-SqlJobServer
+{
 <#
 .SYNOPSIS
 Copies *all* ProxyAccounts, JobSchedule, SharedSchedules, AlertSystem, JobCategories, 
@@ -78,78 +79,89 @@ Copy-SqlServerTrigger -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
 Shows what would happen if the command were executed.
 #>
-
-[cmdletbinding(SupportsShouldProcess = $true)] 
-param(
-	[parameter(Mandatory = $true)]
-	[object]$Source,
-	[parameter(Mandatory = $true)]
-	[object]$Destination,
-	[System.Management.Automation.PSCredential]$SourceSqlCredential,
-	[System.Management.Automation.PSCredential]$DestinationSqlCredential,
-	[Switch]$CsvLog,
-	[Switch]$DisableJobsOnDestination
-    
-)
 	
-PROCESS {
-	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
-	
-	Invoke-SmoCheck -SqlServer $sourceserver
-	Invoke-SmoCheck -SqlServer $destserver
-	
-	$source = $sourceserver.name
-	$destination = $destserver.name	
-	
-	if (!(Test-SqlAgent $sourceserver)) { Write-Error "SQL Agent not running on $source. Halting job import."; return }
-	if (!(Test-SqlAgent $destserver)) { Write-Error "SQL Agent not running on $destination. Halting job import."; return }
+	[cmdletbinding(SupportsShouldProcess = $true)]
+	param (
+		[parameter(Mandatory = $true)]
+		[object]$Source,
+		[parameter(Mandatory = $true)]
+		[object]$Destination,
+		[System.Management.Automation.PSCredential]$SourceSqlCredential,
+		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+		[Switch]$CsvLog,
+		[Switch]$DisableJobsOnDestination
 		
-	$sourceagent = $sourceserver.jobserver
-	$migratedjob = @{}; $skippedjob = @{}
+	)
 	
-	$jobobjects = "ProxyAccounts","JobSchedule","SharedSchedules","AlertSystem","JobCategories","OperatorCategories"
-	$jobobjects += "AlertCategories","Alerts","TargetServerGroups","TargetServers","Operators", "Jobs", "Mail"
-	
-	$errorcount = 0
-	foreach ($jobobject in $jobobjects) {
-		foreach($agent in $sourceagent.($jobobject)) {		
-		$agentname = $agent.name
-		If ($Pscmdlet.ShouldProcess($destination,"Adding $jobobject $agentname")) {
-				try {
-                if($DisableJobsOnDestination -and ($jobobject -eq "Jobs"))
-                {
-                    $agent.IsEnabled = $False
-                }
-				$sql = $agent.script()	
-				$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
-				$migratedjob["$jobobject $agentname"] = "Successfully added"
-				Write-Output "$agentname successfully migrated "
-				} 
-				catch {
-					if ($_.Exception -like '*duplicate*' -or $_.Exception -like '*already exists*') {
-						Write-Output "$agentname exists at destination"
-						$skippedjob.Add("$jobobject $agentname","Skipped. $agentname exists on $destination.") }
-					else {
-                        $skippedjob["$jobobject $agentname"] = $_.Exception.InnerException.InnerException.Message
-                        Write-Error "$jobobject : $agentname : $($_.Exception.InnerException.InnerException.Message)" 
-                    }
+	PROCESS
+	{
+		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		
+		Invoke-SmoCheck -SqlServer $sourceserver
+		Invoke-SmoCheck -SqlServer $destserver
+		
+		$source = $sourceserver.name
+		$destination = $destserver.name
+		
+		if (!(Test-SqlAgent $sourceserver)) { Write-Error "SQL Agent not running on $source. Halting job import."; return }
+		if (!(Test-SqlAgent $destserver)) { Write-Error "SQL Agent not running on $destination. Halting job import."; return }
+		
+		$sourceagent = $sourceserver.jobserver
+		$migratedjob = @{ }; $skippedjob = @{ }
+		
+		$jobobjects = "ProxyAccounts", "JobSchedule", "SharedSchedules", "AlertSystem", "JobCategories", "OperatorCategories"
+		$jobobjects += "AlertCategories", "Alerts", "TargetServerGroups", "TargetServers", "Operators", "Jobs", "Mail"
+		
+		$errorcount = 0
+		foreach ($jobobject in $jobobjects)
+		{
+			foreach ($agent in $sourceagent.($jobobject))
+			{
+				$agentname = $agent.name
+				If ($Pscmdlet.ShouldProcess($destination, "Adding $jobobject $agentname"))
+				{
+					try
+					{
+						if ($DisableJobsOnDestination -and ($jobobject -eq "Jobs"))
+						{
+							$agent.IsEnabled = $False
+						}
+						$sql = $agent.script()
+						$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
+						$migratedjob["$jobobject $agentname"] = "Successfully added"
+						Write-Output "$agentname successfully migrated "
+					}
+					catch
+					{
+						if ($_.Exception -like '*duplicate*' -or $_.Exception -like '*already exists*')
+						{
+							Write-Output "$agentname exists at destination"
+							$skippedjob.Add("$jobobject $agentname", "Skipped. $agentname exists on $destination.")
+						}
+						else
+						{
+							$skippedjob["$jobobject $agentname"] = $_.Exception.InnerException.InnerException.Message
+							Write-Error "$jobobject : $agentname : $($_.Exception.InnerException.InnerException.Message)"
+						}
+					}
 				}
 			}
 		}
-	 }
-	
-	if ($csvlog) {
-		$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-		$csvfilename = "$($sourceserver.name.replace('\','$'))-to-$($destserver.name.replace('\','$'))-$timenow"
-		$migratedjob.GetEnumerator() | Sort-Object | Select Name, Value | Export-Csv -Path "$csvfilename-jobs.csv" -NoTypeInformation
-		$skippedjob.GetEnumerator() | Sort-Object | Select Name, Value | Export-Csv -Append -Path "$csvfilename-jobs.csv" -NoTypeInformation
+		
+		if ($csvlog)
+		{
+			$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+			$csvfilename = "$($sourceserver.name.replace('\', '$'))-to-$($destserver.name.replace('\', '$'))-$timenow"
+			$migratedjob.GetEnumerator() | Sort-Object | Select Name, Value | Export-Csv -Path "$csvfilename-jobs.csv" -NoTypeInformation
+			$skippedjob.GetEnumerator() | Sort-Object | Select Name, Value | Export-Csv -Append -Path "$csvfilename-jobs.csv" -NoTypeInformation
+		}
 	}
-}
-
-END {
-	$sourceserver.ConnectionContext.Disconnect()
-	$destserver.ConnectionContext.Disconnect()
-	If ($Pscmdlet.ShouldProcess("console","Showing finished message")) { Write-Output "Job server migration finished" }
-}
+	
+	END
+	{
+		$sourceserver.ConnectionContext.Disconnect()
+		$destserver.ConnectionContext.Disconnect()
+		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Job server migration finished" }
+	}
 }

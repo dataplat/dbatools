@@ -1,4 +1,5 @@
-Function Watch-SqlDbLogin {
+Function Watch-SqlDbLogin
+{
 <# 
 .SYNOPSIS 
 Tracks SQL Server logins: which host they came from, what database they're using, and what program is being used to log in.
@@ -78,134 +79,151 @@ Watch-SqlDbLogin -SqlServer sqlserver -SqlCms SqlCms1 -SqlCmsGroups SQL2014Clust
 
 In the above example, a list of servers is generated using database instance names within the "SQL2014Clusters" group on the Central Management Server "SqlCms1". Using this list, the script then enumerates all the processes and gathers login information, and saves it to the table "Dblogins" within the "DatabaseLogins" database on "sqlserver".
 
-#> 
-[CmdletBinding(DefaultParameterSetName="Default")]
+#>	
+	[CmdletBinding(DefaultParameterSetName = "Default")]
+	Param (
+		[parameter(Mandatory = $true)]
+		[string]$SqlServer,
+		[string]$Database = "DatabaseLogins",
+		[string]$Table = "DbLogins",
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		# Central Management Server
 
-Param(
-	[parameter(Mandatory = $true)]
-	[string]$SqlServer,
-	[string]$Database = "DatabaseLogins",
-	[string]$Table = "DbLogins",
-	[System.Management.Automation.PSCredential]$SqlCredential,
-	# Central Management Server
-	[string]$SqlCms,
-	# File with one server per line
-	[string]$ServersFromFile
+		[string]$SqlCms,
+		# File with one server per line
+
+		[string]$ServersFromFile
 	)
 	
-DynamicParam  { if ($SqlCms) { return (Get-ParamSqlCmsGroups -SqlServer $SqlCms -SqlCredential $SqlCredential) } }
-
-PROCESS { 
-
-$SqlCmsGroups = $psboundparameters.SqlCmsGroups
-
-if ([string]::IsNullOrEmpty($SqlCms) -and [string]::IsNullOrEmpty($ServersFromFile)) {
-	throw "You must specify a server list source using -SqlCms or -ServersFromFile" 
-}
-
-if ($SqlCms -and [Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers") -eq $null )
-{ throw "Can't load CMS assemblies. You must have SQL Server Management Studio installed to use the -SqlCms switch." }
-
+	DynamicParam { if ($SqlCms) { return (Get-ParamSqlCmsGroups -SqlServer $SqlCms -SqlCredential $SqlCredential) } }
+	
+	PROCESS
+	{
+		
+		$SqlCmsGroups = $psboundparameters.SqlCmsGroups
+		
+		if ([string]::IsNullOrEmpty($SqlCms) -and [string]::IsNullOrEmpty($ServersFromFile))
+		{
+			throw "You must specify a server list source using -SqlCms or -ServersFromFile"
+		}
+		
+		if ($SqlCms -and [Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers") -eq $null)
+		{ throw "Can't load CMS assemblies. You must have SQL Server Management Studio installed to use the -SqlCms switch." }
+		
 <#
 
 	Setup datatable & bulk copy
 
 #>
-
-if ($sqlcredential.Username -ne $null) {
-	$username = $sqlcredential.Username
-	$password = $SqlCredential.GetNetworkCredential().Password
-	$connectionstring = "Data Source=$SqlServer;Initial Catalog=$Database;User Id=$username;Password=$password;" 
-} else { $connectionstring = "Data Source=$SqlServer;Integrated Security=true;Initial Catalog=$Database;" }
-
-
-$bulkcopy = New-Object ("Data.SqlClient.Sqlbulkcopy") $connectionstring 
-$bulkcopy.DestinationTableName = $Table
-
-$datatable = New-Object "System.Data.DataTable"
-$null = $datatable.Columns.Add("SQLServer") 
-$null = $datatable.Columns.Add("Loginname") 
-$null = $datatable.Columns.Add("Host") 
-$null = $datatable.Columns.Add("Dbname") 
-$null = $datatable.Columns.Add("Program") 
-
-$systemdbs = "master","msdb","model","tempdb"
-$excludedPrograms = "Microsoft SQL Server Management Studio - Query","SQL Management"
-
+		
+		if ($sqlcredential.Username -ne $null)
+		{
+			$username = $sqlcredential.Username
+			$password = $SqlCredential.GetNetworkCredential().Password
+			$connectionstring = "Data Source=$SqlServer;Initial Catalog=$Database;User Id=$username;Password=$password;"
+		}
+		else { $connectionstring = "Data Source=$SqlServer;Integrated Security=true;Initial Catalog=$Database;" }
+		
+		
+		$bulkcopy = New-Object ("Data.SqlClient.Sqlbulkcopy") $connectionstring
+		$bulkcopy.DestinationTableName = $Table
+		
+		$datatable = New-Object "System.Data.DataTable"
+		$null = $datatable.Columns.Add("SQLServer")
+		$null = $datatable.Columns.Add("Loginname")
+		$null = $datatable.Columns.Add("Host")
+		$null = $datatable.Columns.Add("Dbname")
+		$null = $datatable.Columns.Add("Program")
+		
+		$systemdbs = "master", "msdb", "model", "tempdb"
+		$excludedPrograms = "Microsoft SQL Server Management Studio - Query", "SQL Management"
+		
 <#
 
 	Get servers to query from Central Management Server or File
 
 #>
-$servers = @()
-if ($SqlCms) {
-	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlCms
-	$sqlconnection = $server.ConnectionContext.SqlConnectionObject
-
-	try { $cmstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sqlconnection)}
-	catch { throw "Cannot access Central Management Server" }
-
-	if ($SqlCmsGroups -ne $null) {
-		foreach ($groupname in $SqlCmsGroups) {
-			$CMS = $cmstore.ServerGroups["DatabaseEngineServerGroup"].ServerGroups[$groupname]
-			$servers += ($cms.GetDescendantRegisteredServers()).servername	
+		$servers = @()
+		if ($SqlCms)
+		{
+			$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlCms
+			$sqlconnection = $server.ConnectionContext.SqlConnectionObject
+			
+			try { $cmstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sqlconnection) }
+			catch { throw "Cannot access Central Management Server" }
+			
+			if ($SqlCmsGroups -ne $null)
+			{
+				foreach ($groupname in $SqlCmsGroups)
+				{
+					$CMS = $cmstore.ServerGroups["DatabaseEngineServerGroup"].ServerGroups[$groupname]
+					$servers += ($cms.GetDescendantRegisteredServers()).servername
+				}
+			}
+			else
+			{
+				$CMS = $cmstore.ServerGroups["DatabaseEngineServerGroup"]
+				$servers = ($cms.GetDescendantRegisteredServers()).servername
+				if ($servers -notcontains $SqlCms) { $servers += $SqlCms }
+			}
 		}
-	} else {
-		$CMS = $cmstore.ServerGroups["DatabaseEngineServerGroup"]
-		$servers = ($cms.GetDescendantRegisteredServers()).servername
-		if ($servers -notcontains $SqlCms) { $servers += $SqlCms }
-	}
-}
-
-If ($ServersFromFile) {
-	$servers = Get-Content $ServersFromFile
-}
-
+		
+		If ($ServersFromFile)
+		{
+			$servers = Get-Content $ServersFromFile
+		}
+		
 <#
 
 			Process each server
 
 #>
-
-foreach ($servername in $servers) {
-	Write-Output "Attempting to connect to $servername" 
-	try { $server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential } 
-	catch { Write-Error "Can't connect to $servername. Skipping."; continue }
-	
-	if (!(Test-SqlSa $server)) { Write-Warning "Not a sysadmin on $servername, resultset would be underwhelming. Skipping."; continue }
-
-	
-	$procs = $server.EnumProcesses() | Where-Object { $_.Host -ne $sourceserver.ComputerNamePhysicalNetBIOS -and ![string]::IsNullOrEmpty($_.Host) }
-	$procs = $procs | Where-Object {$systemdbs -notcontains $_.Database -and $excludedPrograms -notcontains $_.Program }| Select Login, Host, Database, Program
-
-	foreach ($p in $procs) {
-		$row = $datatable.NewRow() 
-		$row.itemarray = $server.name, $p.Login, $p.Host, $p.Database, $p.Program
-		$datatable.Rows.Add($row)
-	}
-	$server.ConnectionContext.Disconnect()
-	Write-Output "Added process information for $servername to datatable."
-}
-
+		
+		foreach ($servername in $servers)
+		{
+			Write-Output "Attempting to connect to $servername"
+			try { $server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential }
+			catch { Write-Error "Can't connect to $servername. Skipping."; continue }
+			
+			if (!(Test-SqlSa $server)) { Write-Warning "Not a sysadmin on $servername, resultset would be underwhelming. Skipping."; continue }
+			
+			
+			$procs = $server.EnumProcesses() | Where-Object { $_.Host -ne $sourceserver.ComputerNamePhysicalNetBIOS -and ![string]::IsNullOrEmpty($_.Host) }
+			$procs = $procs | Where-Object { $systemdbs -notcontains $_.Database -and $excludedPrograms -notcontains $_.Program } | Select Login, Host, Database, Program
+			
+			foreach ($p in $procs)
+			{
+				$row = $datatable.NewRow()
+				$row.itemarray = $server.name, $p.Login, $p.Host, $p.Database, $p.Program
+				$datatable.Rows.Add($row)
+			}
+			$server.ConnectionContext.Disconnect()
+			Write-Output "Added process information for $servername to datatable."
+		}
+		
 <#
 
 			Write to $Table in $Database on $SqlServer
 
 #>
-
-try {
-	$bulkcopy.WriteToServer($datatable)
-	if ($datatable.rows.count -eq 0) {
-		Write-Warning "Nothing done."
+		
+		try
+		{
+			$bulkcopy.WriteToServer($datatable)
+			if ($datatable.rows.count -eq 0)
+			{
+				Write-Warning "Nothing done."
+			}
+			$bulkcopy.Close()
+			Write-Output "Updated $Table in $Database on $SqlServer with $($datatable.rows.count) rows."
+		}
+		catch { Write-Error "Could not update $Table in $Database on $SqlServer. Do the database and table exist and do you have access?" }
+		
 	}
-	$bulkcopy.Close()
-	Write-Output "Updated $Table in $Database on $SqlServer with $($datatable.rows.count) rows."
-} catch {Write-Error "Could not update $Table in $Database on $SqlServer. Do the database and table exist and do you have access?"}
 	
-}
-
-END {
-	Write-Output "Script completed"
+	END
+	{
+		Write-Output "Script completed"
 	}
 <#
 ---- SQL database and table ----
@@ -233,4 +251,4 @@ END {
     ) WITH (IGNORE_DUP_KEY = ON)
     GO
 #>
-}	
+}

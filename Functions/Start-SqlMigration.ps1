@@ -1,4 +1,5 @@
-Function Start-SqlMigration {
+Function Start-SqlMigration
+{
 <# 
 .SYNOPSIS 
 Migrates SQL Server *ALL* databases, logins, database mail profies/accounts, credentials, SQL Agent objects, linked servers, 
@@ -161,163 +162,218 @@ Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -DetachAttac
 
 Migrate databases using detach/copy/attach. Reattach at source and set source databases read-only. Also migrates everything else. 
 
-#> 
-[CmdletBinding(DefaultParameterSetName="Default", SupportsShouldProcess = $true)] 
-Param(
-	[parameter(Mandatory = $true)]
-	[object]$Source,
-	[parameter(Mandatory = $true)]
-	[object]$Destination,
-	[switch]$DetachAttach,
-	[switch]$BackupRestore,
-	[switch]$ReuseFolderstructure,
-	[switch]$Reattach,
-	[string]$NetworkShare,
-	[switch]$SetSourceReadOnly,
-	[switch]$NoRecovery,
-	[System.Management.Automation.PSCredential]$SourceSqlCredential,
-	[System.Management.Automation.PSCredential]$DestinationSqlCredential,
-	[switch]$SkipDatabases,
-	[switch]$SkipLogins,
-	[switch]$SkipJobServer,
-	[switch]$SkipCredentials,
-	[switch]$SkipLinkedServers,
-	[switch]$SkipSpConfigure,
-	[switch]$SkipCentralManagementServer,
-	[switch]$SkipDatabaseMail,
-	[switch]$SkipSysDbUserObjects,
-	[switch]$SkipSystemTriggers,
-	[switch]$SkipBackupDevices,
-	[switch]$Force,
-	[switch]$CsvLog
+#>	
+	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+	Param (
+		[parameter(Mandatory = $true)]
+		[object]$Source,
+		[parameter(Mandatory = $true)]
+		[object]$Destination,
+		[switch]$DetachAttach,
+		[switch]$BackupRestore,
+		[switch]$ReuseFolderstructure,
+		[switch]$Reattach,
+		[string]$NetworkShare,
+		[switch]$SetSourceReadOnly,
+		[switch]$NoRecovery,
+		[System.Management.Automation.PSCredential]$SourceSqlCredential,
+		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+		[switch]$SkipDatabases,
+		[switch]$SkipLogins,
+		[switch]$SkipJobServer,
+		[switch]$SkipCredentials,
+		[switch]$SkipLinkedServers,
+		[switch]$SkipSpConfigure,
+		[switch]$SkipCentralManagementServer,
+		[switch]$SkipDatabaseMail,
+		[switch]$SkipSysDbUserObjects,
+		[switch]$SkipSystemTriggers,
+		[switch]$SkipBackupDevices,
+		[switch]$Force,
+		[switch]$CsvLog
 	)
-
-BEGIN { 
-	$transcript = ".\dbatools-startmigration-transcript.txt"
-	if (Test-Path $transcript) { Start-Transcript -Path $transcript -Append }
-	else  { Start-Transcript -Path $transcript }
-}
-
-PROCESS {
 	
-	
-	$elapsed = [System.Diagnostics.Stopwatch]::StartNew() 
-	$started = Get-Date
-	
-	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
-
-	$source = $sourceserver.name
-	$destination = $destserver.name	
-
-
-	if (!$SkipCredentials) {
-		Write-Output "`n`nMigrating SQL credentials"
-		try { Copy-SqlCredential -Source $sourceserver.name -Destination $destserver.name -Force:$Force
-		} catch { Write-Error "Credential migration reported the following error $($_.Exception.Message) "}
+	BEGIN
+	{
+		$transcript = ".\dbatools-startmigration-transcript.txt"
+		if (Test-Path $transcript) { Start-Transcript -Path $transcript -Append }
+		else { Start-Transcript -Path $transcript }
 	}
+	
+	PROCESS
+	{
 		
-	if (!$SkipDatabases) {
-		# Test some things
-		if ($networkshare.length -gt 0) {$netshare += "-NetworkShare $NetworkShare" }
-			if (!$DetachAttach -and !$BackupRestore) { throw "You must specify a migration method using -BackupRestore or -DetachAttach."}
-		# Do it
-		Write-Output "`nMigrating databases"
-		try {
-			if ($BackupRestore) {
-				Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -CsvLog:$csvlog -NoRecovery:$NoRecovery
-			} else {
-				Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force -CsvLog:$csvlog
+		
+		$elapsed = [System.Diagnostics.Stopwatch]::StartNew()
+		$started = Get-Date
+		
+		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		
+		$source = $sourceserver.name
+		$destination = $destserver.name
+		
+		
+		if (!$SkipCredentials)
+		{
+			Write-Output "`n`nMigrating SQL credentials"
+			try
+			{
+				Copy-SqlCredential -Source $sourceserver.name -Destination $destserver.name -Force:$Force
 			}
-		} catch { Write-Error "Database migration reported the following error $($_.Exception.Message)" }
-	}
-
-	if (!$SkipSysDbUserObjects) {
-	Write-Output "`n`nMigrating user objects in system databases (this can take a second)"
-	try { 
-			If ($Pscmdlet.ShouldProcess($destination,"Copying user objects.")) {
-			Copy-SqlSysDbUserObjects -Source $sourceserver -Destination $destserver
+			catch { Write-Error "Credential migration reported the following error $($_.Exception.Message) " }
 		}
-	
-	} catch { Write-Error "Couldn't copy all user objects in system databases." }
-}
-
-	if (!$SkipLogins) {
-		Write-Output "`n`nMigrating logins"
-		try { 
-			Copy-SqlLogin -Source $sourceserver -Destination $destserver -Force:$Force -CsvLog:$csvlog
-		} catch { Write-Error "Login migration reported the following error $($_.Exception.Message) "}
-	}
-
-	if (!$SkipLogins -and !$SkipDatabases -and !$NoRecovery) {
-		Write-Output "`n`nUpdating database owners to match newly migrated logins"
-		try { 
-			 Update-SqlDbOwner -Source $sourceserver -Destination $destserver
-		} catch { Write-Error "Login migration reported the following error $($_.Exception.Message) "}
-	}
 		
-	if (!$SkipJobServer) {
-	Write-Output "`n`nMigrating job server"
-		if ($force) { Write-Warning " Copy-SqlJobServer currently does not support force." }
-		try { Copy-SqlJobServer -Source $sourceserver -Destination $destserver -CsvLog:$csvlog
-		} catch { Write-Error "Job Server migration reported the following error $($_.Exception.Message) "}
-	}
-
-	if (!$SkipLinkedServers) {
-		Write-Output "`n`nMigrating linked servers"
-		try { Copy-SqlLinkedServer -Source $sourceserver -Destination $destserver -Force:$force
-		} catch { Write-Error "Linked server migration reported the following error $($_.Exception.Message) "}
-	}
-	
-	if (!$SkipCentralManagementServer) {
-		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
-		Write-Output "Central Management Server is only supported in SQL Server 2008 and above. Skipping." 
-		} else {
-			Write-Output "`n`nMigrating Central Management Server"
-			if ($force) { Write-Warning " Copy-SqlCentralManagementServer currently does not support force." }
-			try { Copy-SqlCentralManagementServer -Source $sourceserver -Destination $destserver
-			} catch { Write-Error "Central Management Server migration reported the following error $($_.Exception.Message)" }
+		if (!$SkipDatabases)
+		{
+			# Test some things
+			if ($networkshare.length -gt 0) { $netshare += "-NetworkShare $NetworkShare" }
+			if (!$DetachAttach -and !$BackupRestore) { throw "You must specify a migration method using -BackupRestore or -DetachAttach." }
+			# Do it
+			Write-Output "`nMigrating databases"
+			try
+			{
+				if ($BackupRestore)
+				{
+					Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -CsvLog:$csvlog -NoRecovery:$NoRecovery
+				}
+				else
+				{
+					Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force -CsvLog:$csvlog
+				}
+			}
+			catch { Write-Error "Database migration reported the following error $($_.Exception.Message)" }
 		}
-	}	
-	
-	if (!$SkipDatabaseMail) {
-		Write-Output "`n`nMigrating database mail"
-		if ($force) { Write-Warning " Copy-SqlDatabaseMail currently does not support force." }
-		try { Copy-SqlDatabaseMail -Source $sourceserver -Destination $destserver 
-		} catch { Write-Error "Database mail migration reported the following error $($_.Exception.Message)" }
-	}	
-
-	if (!$SkipSystemTriggers) {
-		Write-Output "`n`nMigrating System Triggers"
-		try { Copy-SqlServerTrigger -Source $sourceserver -Destination $destserver -Force:$force
-		} catch { Write-Error "System Triggers migration reported the following error $($_.Exception.Message)" }
-	}	
-
-	if (!$SkipBackupDevices) {
-		Write-Output "`n`nMigrating Backup Devices"
-		try { Copy-SqlBackupDevice -Source $sourceserver -Destination $destserver -Force:$force
-		} catch { Write-Error "Backup device migration reported the following error $($_.Exception.Message)" }
-	}
-	
-	if (!$SkipSpConfigure) {
-		Write-Output "`n`nMigrating SQL Server Configuration"
-		try { Import-SqlSpConfigure -Source $sourceserver -Destination $destserver -Force:$force
-			} catch { Write-Error "Configuration migration reported the following error $($_.Exception.Message) " }
+		
+		if (!$SkipSysDbUserObjects)
+		{
+			Write-Output "`n`nMigrating user objects in system databases (this can take a second)"
+			try
+			{
+				If ($Pscmdlet.ShouldProcess($destination, "Copying user objects."))
+				{
+					Copy-SqlSysDbUserObjects -Source $sourceserver -Destination $destserver
+				}
+				
+			}
+			catch { Write-Error "Couldn't copy all user objects in system databases." }
 		}
-}
-
-END {
-	$totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
-	
-	if ($sourceserver.ConnectionContext.IsOpen -eq $true) { $sourceserver.ConnectionContext.Disconnect() }
-	if ($destserver.ConnectionContext.IsOpen -eq $true) { $destserver.ConnectionContext.Disconnect() }
-	
-	If ($Pscmdlet.ShouldProcess("console","Showing SQL Server migration finished message")) {
-	Write-Output "`n`nSQL Server migration complete"
-	Write-Output "Migration started: $started" 
-	Write-Output "Migration completed: $(Get-Date)" 
-	Write-Output "Total Elapsed time: $totaltime" 
-	Stop-Transcript
+		
+		if (!$SkipLogins)
+		{
+			Write-Output "`n`nMigrating logins"
+			try
+			{
+				Copy-SqlLogin -Source $sourceserver -Destination $destserver -Force:$Force -CsvLog:$csvlog
+			}
+			catch { Write-Error "Login migration reported the following error $($_.Exception.Message) " }
+		}
+		
+		if (!$SkipLogins -and !$SkipDatabases -and !$NoRecovery)
+		{
+			Write-Output "`n`nUpdating database owners to match newly migrated logins"
+			try
+			{
+				Update-SqlDbOwner -Source $sourceserver -Destination $destserver
+			}
+			catch { Write-Error "Login migration reported the following error $($_.Exception.Message) " }
+		}
+		
+		if (!$SkipJobServer)
+		{
+			Write-Output "`n`nMigrating job server"
+			if ($force) { Write-Warning " Copy-SqlJobServer currently does not support force." }
+			try
+			{
+				Copy-SqlJobServer -Source $sourceserver -Destination $destserver -CsvLog:$csvlog
+			}
+			catch { Write-Error "Job Server migration reported the following error $($_.Exception.Message) " }
+		}
+		
+		if (!$SkipLinkedServers)
+		{
+			Write-Output "`n`nMigrating linked servers"
+			try
+			{
+				Copy-SqlLinkedServer -Source $sourceserver -Destination $destserver -Force:$force
+			}
+			catch { Write-Error "Linked server migration reported the following error $($_.Exception.Message) " }
+		}
+		
+		if (!$SkipCentralManagementServer)
+		{
+			if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
+			{
+				Write-Output "Central Management Server is only supported in SQL Server 2008 and above. Skipping."
+			}
+			else
+			{
+				Write-Output "`n`nMigrating Central Management Server"
+				if ($force) { Write-Warning " Copy-SqlCentralManagementServer currently does not support force." }
+				try
+				{
+					Copy-SqlCentralManagementServer -Source $sourceserver -Destination $destserver
+				}
+				catch { Write-Error "Central Management Server migration reported the following error $($_.Exception.Message)" }
+			}
+		}
+		
+		if (!$SkipDatabaseMail)
+		{
+			Write-Output "`n`nMigrating database mail"
+			if ($force) { Write-Warning " Copy-SqlDatabaseMail currently does not support force." }
+			try
+			{
+				Copy-SqlDatabaseMail -Source $sourceserver -Destination $destserver
+			}
+			catch { Write-Error "Database mail migration reported the following error $($_.Exception.Message)" }
+		}
+		
+		if (!$SkipSystemTriggers)
+		{
+			Write-Output "`n`nMigrating System Triggers"
+			try
+			{
+				Copy-SqlServerTrigger -Source $sourceserver -Destination $destserver -Force:$force
+			}
+			catch { Write-Error "System Triggers migration reported the following error $($_.Exception.Message)" }
+		}
+		
+		if (!$SkipBackupDevices)
+		{
+			Write-Output "`n`nMigrating Backup Devices"
+			try
+			{
+				Copy-SqlBackupDevice -Source $sourceserver -Destination $destserver -Force:$force
+			}
+			catch { Write-Error "Backup device migration reported the following error $($_.Exception.Message)" }
+		}
+		
+		if (!$SkipSpConfigure)
+		{
+			Write-Output "`n`nMigrating SQL Server Configuration"
+			try
+			{
+				Import-SqlSpConfigure -Source $sourceserver -Destination $destserver -Force:$force
+			}
+			catch { Write-Error "Configuration migration reported the following error $($_.Exception.Message) " }
+		}
 	}
-}
+	
+	END
+	{
+		$totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
+		
+		if ($sourceserver.ConnectionContext.IsOpen -eq $true) { $sourceserver.ConnectionContext.Disconnect() }
+		if ($destserver.ConnectionContext.IsOpen -eq $true) { $destserver.ConnectionContext.Disconnect() }
+		
+		If ($Pscmdlet.ShouldProcess("console", "Showing SQL Server migration finished message"))
+		{
+			Write-Output "`n`nSQL Server migration complete"
+			Write-Output "Migration started: $started"
+			Write-Output "Migration completed: $(Get-Date)"
+			Write-Output "Total Elapsed time: $totaltime"
+			Stop-Transcript
+		}
+	}
 }

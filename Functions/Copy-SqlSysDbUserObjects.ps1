@@ -1,4 +1,5 @@
-Function Copy-SqlSysDbUserObjects  { 
+Function Copy-SqlSysDbUserObjects
+{
 <#
 .SYNOPSIS
 Imports *all* user objects found in source SQL Server's master, msdb and model databases to the destination.
@@ -26,32 +27,31 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #>
-[CmdletBinding(SupportsShouldProcess = $true)]
-param(
-	[Parameter(Mandatory = $true)]
-	[ValidateNotNullOrEmpty()]
-	[object]$source,
-	
-	[Parameter(Mandatory = $true)]
-	[ValidateNotNullOrEmpty()]
-	[object]$destination,
-	
-	[System.Management.Automation.PSCredential]$SourceSqlCredential,
-	[System.Management.Automation.PSCredential]$DestinationSqlCredential
-)
+	[CmdletBinding(SupportsShouldProcess = $true)]
+	param (
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[object]$source,
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[object]$destination,
+		[System.Management.Automation.PSCredential]$SourceSqlCredential,
+		[System.Management.Automation.PSCredential]$DestinationSqlCredential
+	)
 	
 	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
-
+	
 	$source = $sourceserver.name
 	$destination = $destserver.name
 	
 	if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
 	if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 	
-	$systemdbs = "master","model","msdb"
+	$systemdbs = "master", "model", "msdb"
 	
-	foreach ($systemdb in $systemdbs) {
+	foreach ($systemdb in $systemdbs)
+	{
 		$sysdb = $sourceserver.databases[$systemdb]
 		$transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $sysdb
 		$transfer.CopyAllObjects = $false
@@ -77,17 +77,22 @@ param(
 		$transfer.Options.IncludeDatabaseRoleMemberships = $true
 		$transfer.Options.Indexes = $true
 		$transfer.Options.Permissions = $true
-        $transfer.Options.WithDependencies = $false
-
+		$transfer.Options.WithDependencies = $false
+		
 		Write-Output "Copying from $systemdb"
-		try { 
+		try
+		{
 			$sqlQueries = $transfer.scriptTransfer()
-			foreach ($query in $sqlQueries) {
-                if ($PSCmdlet.ShouldProcess($DestServer, $query)) {
-				    try { $destserver.Databases[$systemdb].ExecuteNonQuery($query)} catch {}  # This usually occurs if there are existing objects in destination
-                }
+			foreach ($query in $sqlQueries)
+			{
+				if ($PSCmdlet.ShouldProcess($DestServer, $query))
+				{
+					try { $destserver.Databases[$systemdb].ExecuteNonQuery($query) }
+					catch { } # This usually occurs if there are existing objects in destination
+				}
 			}
-		} catch { Write-Output "Exception caught."}
+		}
+		catch { Write-Output "Exception caught." }
 	}
 	Write-Output "Migrating user objects in system databases finished"
 }

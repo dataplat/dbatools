@@ -1,4 +1,5 @@
-Function Copy-SqlDatabaseMail {
+Function Copy-SqlDatabaseMail
+{
 <#
 .SYNOPSIS
 Copies *all* database mail profiles, accounts and settings. More granularity coming later. 
@@ -69,91 +70,118 @@ Copy-SqlDatabaseMail -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
 Shows what would happen if the command were executed.
 #>
-    [CmdletBinding(DefaultParameterSetName="Default", SupportsShouldProcess = $true)] 
-    param(
-	    [parameter(Mandatory = $true)]
-	    [object]$Source,
-	    [parameter(Mandatory = $true)]
-	    [object]$Destination,
-	    [System.Management.Automation.PSCredential]$SourceSqlCredential,
-	    [System.Management.Automation.PSCredential]$DestinationSqlCredential
-    )
+	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+	param (
+		[parameter(Mandatory = $true)]
+		[object]$Source,
+		[parameter(Mandatory = $true)]
+		[object]$Destination,
+		[System.Management.Automation.PSCredential]$SourceSqlCredential,
+		[System.Management.Automation.PSCredential]$DestinationSqlCredential
+	)
 	
-    process {
-	    $sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-	    $destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
-
-	    $source = $sourceserver.name
-	    $destination = $destserver.name	
-	
-	    if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
-	    if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
-	
-	    $mail = $sourceserver.mail
-	
-
-        Write-Output "Migrating mail server configuration values"
+	process
+	{
+		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		
+		$source = $sourceserver.name
+		$destination = $destserver.name
+		
+		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
+		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
+		
+		$mail = $sourceserver.mail
+		
+		
+		Write-Output "Migrating mail server configuration values"
 		$sql = $mail.ConfigurationValues.Script()
-        Write-Verbose "$sql"
-        if ($Pscmdlet.ShouldProcess($destination,"Migrating mail server parameters")) {
-            try {
-    		    $destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-	        } catch { 
-                Write-Exception $_ 
-            }
-        }
-
-
-        Write-Output "Migrating mail accounts"
-        foreach ($acct in $mail.Accounts) {
-            $sql = $acct.Script()
-            Write-Verbose "$sql"
-            if ($Pscmdlet.ShouldProcess($destination,"Migrating mail account $acct")) {
-                try {
-		            $destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-                } catch {
-		            if ($_.Exception -like '*duplicate*' -or $_.Exception -like '*exist*') {
-			            Write-Warning "Mail account '$acct' was skipped because it already exists on $destination"
-		            } else { Write-Exception $_ }
-                }
-            }
-        }
-
-        Write-Output "Migrating mail profiles"
-        foreach ($profile in $mail.Profiles) {
-            $sql = $profile.Script()
-            Write-Verbose "$sql"
-            if ($Pscmdlet.ShouldProcess($destination,"Migrating mail profile $profile")) {
-                try {
-    		        $destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-                } catch {
-		            if ($_.Exception -like '*duplicate*' -or $_.Exception -like '*exist*') {
-			            Write-Warning "Mail profile '$profile' was skipped because it already exists on $destination"
-		            } else { Write-Exception $_ }
-                }
-            }
-        }
-
-        Write-Output "Updating account mail servers"
-        foreach ($mailsrv in $mail.Accounts.MailServers) {
-            $sql = $mailsrv.Script()
-            Write-Verbose "$sql"
-            if ($Pscmdlet.ShouldProcess($destination,"Migrating account mail server $mailsrv")) {
-                try {
-    		        $destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
- 	            } catch { 
-		            if ($_.Exception -like '*duplicate*' -or $_.Exception -like '*exist*') {
-			            Write-Warning "Mail account '$mailsrv' was skipped because it already exists on $destination"
-		            } else { Write-Exception $_ }
-                }
-            }
-        }
-    }
-
-    end {
-	    $sourceserver.ConnectionContext.Disconnect()
-	    $destserver.ConnectionContext.Disconnect()
-	    If ($Pscmdlet.ShouldProcess("console","Showing finished message")) { Write-Output "Mail migration finished" }
-    }
+		Write-Verbose "$sql"
+		if ($Pscmdlet.ShouldProcess($destination, "Migrating mail server parameters"))
+		{
+			try
+			{
+				$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+			}
+			catch
+			{
+				Write-Exception $_
+			}
+		}
+		
+		
+		Write-Output "Migrating mail accounts"
+		foreach ($acct in $mail.Accounts)
+		{
+			$sql = $acct.Script()
+			Write-Verbose "$sql"
+			if ($Pscmdlet.ShouldProcess($destination, "Migrating mail account $acct"))
+			{
+				try
+				{
+					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+				}
+				catch
+				{
+					if ($_.Exception -like '*duplicate*' -or $_.Exception -like '*exist*')
+					{
+						Write-Warning "Mail account '$acct' was skipped because it already exists on $destination"
+					}
+					else { Write-Exception $_ }
+				}
+			}
+		}
+		
+		Write-Output "Migrating mail profiles"
+		foreach ($profile in $mail.Profiles)
+		{
+			$sql = $profile.Script()
+			Write-Verbose "$sql"
+			if ($Pscmdlet.ShouldProcess($destination, "Migrating mail profile $profile"))
+			{
+				try
+				{
+					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+				}
+				catch
+				{
+					if ($_.Exception -like '*duplicate*' -or $_.Exception -like '*exist*')
+					{
+						Write-Warning "Mail profile '$profile' was skipped because it already exists on $destination"
+					}
+					else { Write-Exception $_ }
+				}
+			}
+		}
+		
+		Write-Output "Updating account mail servers"
+		foreach ($mailsrv in $mail.Accounts.MailServers)
+		{
+			$sql = $mailsrv.Script()
+			Write-Verbose "$sql"
+			if ($Pscmdlet.ShouldProcess($destination, "Migrating account mail server $mailsrv"))
+			{
+				try
+				{
+					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+				}
+				catch
+				{
+					if ($_.Exception -like '*duplicate*' -or $_.Exception -like '*exist*')
+					{
+						Write-Warning "Mail account '$mailsrv' was skipped because it already exists on $destination"
+					}
+					else { Write-Exception $_ }
+				}
+			}
+		}
+	}
+	
+	end
+	{
+		$sourceserver.ConnectionContext.Disconnect()
+		$destserver.ConnectionContext.Disconnect()
+		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Mail migration finished" }
+	}
 }
 

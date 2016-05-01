@@ -1,4 +1,5 @@
-Function Copy-SqlCentralManagementServer {
+Function Copy-SqlCentralManagementServer
+{
 <# 
 .SYNOPSIS 
 Migrates SQL Server Central Management groups and server instances from one SQL Server to another.
@@ -77,125 +78,143 @@ Copy-SqlCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -
 In the above example, top level Group1 and Group3, along with its subgroups and server instances are copied from sqlserver to sqlcluster. When adding sql instances to sqlcluster, if
 the server name of the migrating instance is "sqlcluster", it will be switched to "sqlserver". If SwitchServerName is not specified, "sqlcluster" will be skipped.
 
-#> 
-[CmdletBinding(DefaultParameterSetName="Default", SupportsShouldProcess = $true)] 
-
-Param(
-	[parameter(Mandatory = $true)]
-	[object]$Source,
-	[parameter(Mandatory = $true)]
-	[object]$Destination,
-	[System.Management.Automation.PSCredential]$SourceSqlCredential,
-	[System.Management.Automation.PSCredential]$DestinationSqlCredential,
-	[switch]$SwitchServerName
+#>	
+	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+	Param (
+		[parameter(Mandatory = $true)]
+		[object]$Source,
+		[parameter(Mandatory = $true)]
+		[object]$Destination,
+		[System.Management.Automation.PSCredential]$SourceSqlCredential,
+		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+		[switch]$SwitchServerName
 	)
-
-DynamicParam  { if ($Source) { return (Get-ParamSqlCmsGroups -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
-
-BEGIN {
-
-	Function Parse-ServerGroup($sourceGroup, $destinationgroup, $SwitchServerName) {
-
-	if ($destinationgroup.name -eq "DatabaseEngineServerGroup" -and $sourceGroup.name -ne "DatabaseEngineServerGroup") {
-		$currentservergroup = $destinationgroup
-		$destinationgroup = $destinationgroup.ServerGroups[$sourceGroup.name]
-		if ($destinationgroup -eq $null) {
-			Write-Output "Creating group $($sourceGroup.name)"
-			$destinationgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($currentservergroup,$sourcegroup.name)
-			$destinationgroup.create()
-		}
-	}
-			
-	# Add Servers
-		foreach ($instance in $sourceGroup.RegisteredServers) {
-			$instancename = $instance.name
-			$servername = $instance.ServerName
-			
-			if ($servername.ToLower() -eq $tocmstore.DomainInstanceName.ToLower()) {
-				if ($SwitchServerName) {				
-					$servername = $fromcmstore.DomainInstanceName
-					$instancename = $fromcmstore.DomainInstanceName
-					Write-Output "SwitchServerName was used and new CMS equals current server name. $($tocmstore.DomainInstanceName.ToLower()) changed to $servername."
-				}
-				else {
-					Write-Warning "$servername is Central Management Server. Add prohibited. Skipping."
-					continue
-				}
-			}		
-			 
-			if($destinationgroup.RegisteredServers.name -notcontains $instancename) {
-			If ($Pscmdlet.ShouldProcess($destination,"Copying $instancename")) {
-				$newserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($destinationgroup, $instancename)
-				$newserver.ServerName = $servername
-				$newserver.Description = $instance.Description
-				
-				if ($servername -ne $fromcmstore.DomainInstanceName) {
-					$newserver.SecureConnectionString = $instance.SecureConnectionString.tostring()
-					$newserver.ConnectionString = $instance.ConnectionString.tostring()
-				}
-				
-				try { $newserver.Create() } catch { 
-					if ($_.Exception -match "same name") { Write-Error "Could not add Switched Server instance name."; continue }
-					else { Write-Error "Failed to add $servername" }
-				}
-				Write-Output "Added Server $servername as $instancename to $($destinationgroup.name)"
-			  }
-			}
-			else { Write-Warning "Server $instancename already exists. Skipped" }
-		}
-	 
-		# Add Groups
-		foreach($fromsubgroup in $sourceGroup.ServerGroups)
-		{
-			$tosubgroup = $destinationgroup.ServerGroups[$fromsubgroup.name]
-			if ($tosubgroup -eq $null) {
-				Write-Output "Creating group $($fromsubgroup.name)"
-				$tosubgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($destinationgroup,$fromsubgroup.name)
-				$tosubgroup.create()
-			}
+	
+	DynamicParam { if ($Source) { return (Get-ParamSqlCmsGroups -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+	
+	BEGIN
+	{
 		
-		 Parse-ServerGroup -sourceGroup $fromsubgroup -destinationgroup $tosubgroup -SwitchServerName $SwitchServerName
+		Function Parse-ServerGroup($sourceGroup, $destinationgroup, $SwitchServerName)
+		{
+			
+			if ($destinationgroup.name -eq "DatabaseEngineServerGroup" -and $sourceGroup.name -ne "DatabaseEngineServerGroup")
+			{
+				$currentservergroup = $destinationgroup
+				$destinationgroup = $destinationgroup.ServerGroups[$sourceGroup.name]
+				if ($destinationgroup -eq $null)
+				{
+					Write-Output "Creating group $($sourceGroup.name)"
+					$destinationgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($currentservergroup, $sourcegroup.name)
+					$destinationgroup.create()
+				}
+			}
+			
+			# Add Servers
+			foreach ($instance in $sourceGroup.RegisteredServers)
+			{
+				$instancename = $instance.name
+				$servername = $instance.ServerName
+				
+				if ($servername.ToLower() -eq $tocmstore.DomainInstanceName.ToLower())
+				{
+					if ($SwitchServerName)
+					{
+						$servername = $fromcmstore.DomainInstanceName
+						$instancename = $fromcmstore.DomainInstanceName
+						Write-Output "SwitchServerName was used and new CMS equals current server name. $($tocmstore.DomainInstanceName.ToLower()) changed to $servername."
+					}
+					else
+					{
+						Write-Warning "$servername is Central Management Server. Add prohibited. Skipping."
+						continue
+					}
+				}
+				
+				if ($destinationgroup.RegisteredServers.name -notcontains $instancename)
+				{
+					If ($Pscmdlet.ShouldProcess($destination, "Copying $instancename"))
+					{
+						$newserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($destinationgroup, $instancename)
+						$newserver.ServerName = $servername
+						$newserver.Description = $instance.Description
+						
+						if ($servername -ne $fromcmstore.DomainInstanceName)
+						{
+							$newserver.SecureConnectionString = $instance.SecureConnectionString.tostring()
+							$newserver.ConnectionString = $instance.ConnectionString.tostring()
+						}
+						
+						try { $newserver.Create() }
+						catch
+						{
+							if ($_.Exception -match "same name") { Write-Error "Could not add Switched Server instance name."; continue }
+							else { Write-Error "Failed to add $servername" }
+						}
+						Write-Output "Added Server $servername as $instancename to $($destinationgroup.name)"
+					}
+				}
+				else { Write-Warning "Server $instancename already exists. Skipped" }
+			}
+			
+			# Add Groups
+			foreach ($fromsubgroup in $sourceGroup.ServerGroups)
+			{
+				$tosubgroup = $destinationgroup.ServerGroups[$fromsubgroup.name]
+				if ($tosubgroup -eq $null)
+				{
+					Write-Output "Creating group $($fromsubgroup.name)"
+					$tosubgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($destinationgroup, $fromsubgroup.name)
+					$tosubgroup.create()
+				}
+				
+				Parse-ServerGroup -sourceGroup $fromsubgroup -destinationgroup $tosubgroup -SwitchServerName $SwitchServerName
+			}
 		}
 	}
-}
-
-PROCESS { 
 	
-	$SqlCmsGroups = $psboundparameters.SqlCmsGroups
-			 
-	Write-Output "Connecting to SQL Servers"
-	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
-
-	$source = $sourceserver.name
-	$destination = $destserver.name
-
-	if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $($sourceserver.name). Quitting." }  
-	if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on  $($destserver.name). Quitting." }  
-
-	if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
-		throw "Central Management Server is only supported in SQL Server 2008 and above. Quitting." 
-        
-	}
-	
-	Write-Output "Connecting to Central Management Servers"
-	try { 
-		$fromcmstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sourceserver.ConnectionContext.SqlConnectionObject)
-		$tocmstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($destserver.ConnectionContext.SqlConnectionObject)
+	PROCESS
+	{
+		
+		$SqlCmsGroups = $psboundparameters.SqlCmsGroups
+		
+		Write-Output "Connecting to SQL Servers"
+		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		
+		$source = $sourceserver.name
+		$destination = $destserver.name
+		
+		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $($sourceserver.name). Quitting." }
+		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on  $($destserver.name). Quitting." }
+		
+		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
+		{
+			throw "Central Management Server is only supported in SQL Server 2008 and above. Quitting."
+			
 		}
-	catch { throw "Cannot access Central Management Servers" }
-
-	if ($CMSGroups -eq $null) { $stores = $fromcmstore.DatabaseEngineServerGroup } 
-	else { $stores = @(); foreach ($groupname in $CMSGroups) { $stores += $fromcmstore.DatabaseEngineServerGroup.ServerGroups[$groupname] } }
-
-	foreach ($store in $stores) {
-		Parse-ServerGroup -sourceGroup $store -destinationgroup $tocmstore.DatabaseEngineServerGroup -SwitchServerName $SwitchServerName
+		
+		Write-Output "Connecting to Central Management Servers"
+		try
+		{
+			$fromcmstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sourceserver.ConnectionContext.SqlConnectionObject)
+			$tocmstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($destserver.ConnectionContext.SqlConnectionObject)
+		}
+		catch { throw "Cannot access Central Management Servers" }
+		
+		if ($CMSGroups -eq $null) { $stores = $fromcmstore.DatabaseEngineServerGroup }
+		else { $stores = @(); foreach ($groupname in $CMSGroups) { $stores += $fromcmstore.DatabaseEngineServerGroup.ServerGroups[$groupname] } }
+		
+		foreach ($store in $stores)
+		{
+			Parse-ServerGroup -sourceGroup $store -destinationgroup $tocmstore.DatabaseEngineServerGroup -SwitchServerName $SwitchServerName
+		}
 	}
-}
-
-END {
-	$sourceserver.ConnectionContext.Disconnect()
-	$destserver.ConnectionContext.Disconnect()
-	If ($Pscmdlet.ShouldProcess("console","Showing finished message")) { Write-Output "Central Management Server migration finished" }
-}
+	
+	END
+	{
+		$sourceserver.ConnectionContext.Disconnect()
+		$destserver.ConnectionContext.Disconnect()
+		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Central Management Server migration finished" }
+	}
 }
