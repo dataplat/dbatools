@@ -15,10 +15,10 @@ This function could use some refining, as *all* job objects are copied.
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
 .PARAMETER Source
-Source Sql Server. You must have sysadmin access and server version must be > Sql Server 7.
+Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER Destination
-Destination Sql Server. You must have sysadmin access and server version must be > Sql Server 7.
+Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER SourceSqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -47,7 +47,7 @@ Author  : Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
 dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
-Copyright (C) 2105 Chrissy LeMaire
+Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -128,6 +128,7 @@ Shows what would happen if the command were executed.
 							$agent.IsEnabled = $False
 						}
 						$sql = $agent.script()
+						$sql = $sql -replace [regex]::Escape("@server=N'$source'"), "@server=N'$destination'"
 						$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
 						$migratedjob["$jobobject $agentname"] = "Successfully added"
 						Write-Output "$agentname successfully migrated "
