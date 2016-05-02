@@ -122,6 +122,7 @@ PROCESS {
                     $agent.IsEnabled = $False
                 }
 				$sql = $agent.script()	
+				$sql = $sql -replace [regex]::Escape("@server=N'$source'"), "@server=N'$destination'"
 				$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
 				$migratedjob["$jobobject $agentname"] = "Successfully added"
 				Write-Output "$agentname successfully migrated "
