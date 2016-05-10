@@ -70,6 +70,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		$transfer.CopyAllUserDefinedDataTypes = $true
 		$transfer.CopyAllUserDefinedTableTypes = $true
 		$transfer.CopyAllUserDefinedTypes = $true
+		$transfer.CopyAllUserDefinedFunctions = $true
 		$transfer.CopyAllUsers = $true
 		$transfer.PreserveDbo = $true
 		$transfer.Options.AllowSystemObjects = $false
