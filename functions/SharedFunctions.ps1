@@ -1,1611 +1,278 @@
-# These are shared, mostly internal functions.
-
-Function Update-dbatools
+Function Get-SqlMaxMemory
 {
 <# 
 .SYNOPSIS 
-Exported function. Updates dbatools. Deletes current copy and replaces it with freshest copy.
+Displays information relating to SQL Server Max Memory configuration settings.  Works on SQL Server 2000-2014.
 
-.EXAMPLE
-Update-dbatools
-#>	
-	
-	Invoke-Expression (Invoke-WebRequest -UseBasicParsing http://git.io/vn1hQ).Content
-}
+.DESCRIPTION 
+Inspired by Jonathan Kehayias's post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this script displays a SQL Server's: 
+total memory, currently configured SQL max memory, and the calculated recommendation.
 
-Function Test-SqlConnection
-{
-<# 
-.SYNOPSIS 
-Exported function. Tests a the connection to a single instance and shows the output.
+Jonathan notes that the formula used provides a *general recommendation* that doesn't account for everything that may be going on in your specific environment. 
 
-.EXAMPLE
-Test-SqlConnection sql01
+THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
-Sample output:
+.PARAMETER SqlServers
+Allows you to specify a comma separated list of servers to query.
 
-Local PowerShell Enviornment
+.PARAMETER ServersFromFile
+Allows you to specify a list that's been populated by a list of servers to query. The format is as follows
+server1
+server2
+server3
 
-Windows    : 10.0.10240.0
-PowerShell : 5.0.10240.16384
-CLR        : 4.0.30319.42000
-SMO        : 13.0.0.0
-DomainUser : True
-RunAsAdmin : False
+.PARAMETER SqlCms
+Reports on a list of servers populated by the specified SQL Server Central Management Server.
 
-SQL Server Connection Information
+.PARAMETER SqlCmsGroups
+This is a parameter that appears when SqlCms has been specified. It is populated by Server Groups within the given Central Management Server.
 
-ServerName         : sql01
-BaseName           : sql01
-InstanceName       : (Default)
-AuthType           : Windows Authentication (Trusted)
-ConnectingAsUser   : ad\dba
-ConnectSuccess     : True
-SqlServerVersion   : 12.0.2370
-AddlConnectInfo    : N/A
-RemoteServer       : True
-IPAddress          : 10.0.1.4
-NetBIOSname        : SQLSERVER2014A
-RemotingAccessible : True
-Pingable           : True
-DefaultSQLPortOpen : True
-RemotingPortOpen   : True
-#>	
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	$username = $SqlCredential.username
-	if ($username -ne $null)
-	{
-		$username = $username.TrimStart("\")
-		if ($username -like "*\*") { throw "Only SQL Logins can be specified when using the Credential parameter. To connect as to SQL Server a different Windows user, you must start PowerShell as that user." }
-	}
-	
-	# Get local enviornment
-	Write-Output "Getting local enivornment information"
-	$localinfo = @{ } | Select Windows, PowerShell, CLR, SMO, DomainUser, RunAsAdmin
-	$localinfo.Windows = [environment]::OSVersion.Version.ToString()
-	$localinfo.PowerShell = $PSVersionTable.PSversion.ToString()
-	$localinfo.CLR = $PSVersionTable.CLRVersion.ToString()
-	$smo = (([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }).FullName -Split ", ")[1]
-	$localinfo.SMO = $smo.TrimStart("Version=")
-	$localinfo.DomainUser = $env:computername -ne $env:USERDOMAIN
-	$localinfo.RunAsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
-	
-	# SQL Server
-	if ($SqlServer.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) { $SqlServer = $SqlServer.Name.ToString() }
-	
-	$serverinfo = @{ } | Select ServerName, BaseName, InstanceName, AuthType, ConnectingAsUser, ConnectSuccess, SqlServerVersion, AddlConnectInfo, RemoteServer, IPAddress, NetBIOSname, RemotingAccessible, Pingable, DefaultSQLPortOpen, RemotingPortOpen
-	
-	$serverinfo.ServerName = $sqlserver
-	
-	Write-Output "Determining SQL Server base address"
-	$baseaddress = $sqlserver.Split("\")[0]
-	try { $instance = $sqlserver.Split("\")[1] }
-	catch { $instance = "(Default)" }
-	if ($instance -eq $null) { $instance = "(Default)" }
-	
-	if ($baseaddress -eq "." -or $baseaddress -eq $env:COMPUTERNAME)
-	{
-		$ipaddr = "."
-		$hostname = $env:COMPUTERNAME
-		$baseaddress = $env:COMPUTERNAME
-	}
-	
-	$serverinfo.BaseName = $baseaddress
-	$remote = $baseaddress -ne $env:COMPUTERNAME
-	$serverinfo.InstanceName = $instance
-	$serverinfo.RemoteServer = $remote
-	
-	Write-Output "Resolving IP address"
-	try
-	{
-		$hostentry = [System.Net.Dns]::GetHostEntry($baseaddress)
-		$ipaddr = ($hostentry.AddressList | Where-Object { $_ -notlike '169.*' } | Select -First 1).IPAddressToString
-	}
-	catch { $ipaddr = "Unable to resolve" }
-	
-	$serverinfo.IPAddress = $ipaddr
-	
-	Write-Output "Resolving NetBIOS name"
-	try
-	{
-		$hostname = (Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter IPEnabled=TRUE -ComputerName $ipaddr -ErrorAction SilentlyContinue).PSComputerName
-		if ($hostname -eq $null) { $hostname = (nbtstat -A $ipaddr | Where-Object { $_ -match '\<00\>  UNIQUE' } | ForEach-Object { $_.SubString(4, 14) }).Trim() }
-	}
-	catch { $hostname = "Unknown" }
-	
-	$serverinfo.NetBIOSname = $hostname
-	
-	
-	if ($remote -eq $true)
-	{
-		# Test for WinRM #Test-WinRM neh
-		Write-Output "Checking remote acccess"
-		winrm id -r:$hostname 2>$null | Out-Null
-		if ($LastExitCode -eq 0) { $remoting = $true }
-		else { $remoting = $false }
-		
-		$serverinfo.RemotingAccessible = $remoting
-		
-		Write-Output "Testing raw socket connection to PowerShell remoting port"
-		$tcp = New-Object System.Net.Sockets.TcpClient
-		try
-		{
-			$tcp.Connect($baseaddress, 135)
-			$tcp.Close()
-			$tcp.Dispose()
-			$remotingport = $true
-		}
-		catch { $remotingport = $false }
-		
-		$serverinfo.RemotingPortOpen = $remotingport
-	}
-	
-	# Test Connection first using Test-Connection which requires ICMP access then failback to tcp if pings are blocked
-	Write-Output "Testing ping to $baseaddress"
-	$testconnect = Test-Connection -ComputerName $baseaddress -Count 1 -Quiet
-	
-	$serverinfo.Pingable = $testconnect
-	
-	# SQL Server connection
-	
-	if ($instance -eq "(Default)")
-	{
-		Write-Output "Testing raw socket connection to default SQL port"
-		$tcp = New-Object System.Net.Sockets.TcpClient
-		try
-		{
-			$tcp.Connect($baseaddress, 1433)
-			$tcp.Close()
-			$tcp.Dispose()
-			$sqlport = $true
-		}
-		catch { $sqlport = $false }
-		$serverinfo.DefaultSQLPortOpen = $sqlport
-	}
-	else { $serverinfo.DefaultSQLPortOpen = "N/A" }
-	
-	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlServer
-	
-	try
-	{
-		if ($SqlCredential -ne $null)
-		{
-			$authtype = "SQL Authentication"
-			$username = ($SqlCredential.username).TrimStart("\")
-			$server.ConnectionContext.LoginSecure = $false
-			$server.ConnectionContext.set_Login($username)
-			$server.ConnectionContext.set_SecurePassword($SqlCredential.Password)
-		}
-		else
-		{
-			$authtype = "Windows Authentication (Trusted)"
-			$username = "$env:USERDOMAIN\$env:username"
-		}
-	}
-	catch
-	{
-		$authtype = "Windows Authentication (Trusted)"
-		$username = "$env:USERDOMAIN\$env:username"
-	}
-	
-	$serverinfo.ConnectingAsUser = $username
-	$serverinfo.AuthType = $authtype
-	
-	
-	Write-Output "Attempting to connect to $SqlServer as $username "
-	try
-	{
-		$server.ConnectionContext.ConnectTimeout = 10
-		$server.ConnectionContext.Connect()
-		$connectSuccess = $true
-		$version = $server.Version.ToString()
-		$addlinfo = "N/A"
-		$server.ConnectionContext.Disconnect()
-	}
-	catch
-	{
-		$connectSuccess = $false
-		$version = "N/A"
-		$addlinfo = $_.Exception
-	}
-	
-	$serverinfo.ConnectSuccess = $connectSuccess
-	$serverinfo.SqlServerVersion = $version
-	$serverinfo.AddlConnectInfo = $addlinfo
-	
-	Write-Output "`nLocal PowerShell Enviornment"
-	$localinfo | Select Windows, PowerShell, CLR, SMO, DomainUser, RunAsAdmin
-	
-	Write-Output "SQL Server Connection Information`n"
-	$serverinfo | Select ServerName, BaseName, InstanceName, AuthType, ConnectingAsUser, ConnectSuccess, SqlServerVersion, AddlConnectInfo, RemoteServer, IPAddress, NetBIOSname, RemotingAccessible, Pingable, DefaultSQLPortOpen, RemotingPortOpen
-	
-}
+.PARAMETER SqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-<#
-				
-		All functions below are internal to the module and cannot be executed via command line.
-				
-#>
+$cred = Get-Credential, this pass this $cred to the param. 
 
-Function Connect-SqlServer
-{
-<# 
-.SYNOPSIS 
-Internal function that creates SMO server object. Input can be text or SMO.Server.
-#>	
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential,
-		[switch]$ParameterConnection
-	)
-	
-	$username = $SqlCredential.username
-	if ($username -ne $null)
-	{
-		$username = $username.TrimStart("\")
-		if ($username -like "*\*") { throw "Only SQL Logins can be specified when using the Credential parameter. To connect as to SQL Server a different Windows user, you must start PowerShell as that user." }
-	}
-	
-	if ($SqlServer.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
-	{
-		
-		if ($ParameterConnection)
-		{
-			$paramserver = New-Object Microsoft.SqlServer.Management.Smo.Server
-			$paramserver.ConnectionContext.ConnectTimeout = 2
-			$paramserver.ConnectionContext.ConnectionString = $SqlServer.ConnectionContext.ConnectionString
-			$paramserver.ConnectionContext.Connect()
-			return $paramserver
-		}
-		
-		if ($SqlServer.ConnectionContext.IsOpen -eq $false) { $SqlServer.ConnectionContext.Connect() }
-		return $SqlServer
-	}
-	
-	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlServer
-	
-	try
-	{
-		if ($SqlCredential.username -ne $null)
-		{
-			$server.ConnectionContext.LoginSecure = $false
-			$server.ConnectionContext.set_Login($username)
-			$server.ConnectionContext.set_SecurePassword($SqlCredential.Password)
-		}
-	}
-	catch { }
-	
-	try
-	{
-		if ($ParameterConnection) { $server.ConnectionContext.ConnectTimeout = 2 }
-		else { $server.ConnectionContext.ConnectTimeout = 3 }
-		$server.ConnectionContext.Connect()
-	}
-	catch
-	{
-		$message = $_.Exception.InnerException.InnerException
-		$message = $message.ToString()
-		$message = ($message -Split '-->')[0]
-		$message = ($message -Split 'at System.Data.SqlClient')[0]
-		$message = ($message -Split 'at System.Data.ProviderBase')[0]
-		throw "Can't connect to $sqlserver`: $message "
-	}
-	
-	return $server
-}
+Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
-Function Connect-AsServer
-{
-<# 
-.SYNOPSIS 
-Internal function that creates SMO server object. Input can be text or SMO.Server.
-#>	
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[object]$AsServer,
-		[switch]$ParameterConnection
-	)
-	
-	if ($AsServer.GetType() -eq [Microsoft.AnalysisServices.Server])
-	{
-		
-		if ($ParameterConnection)
-		{
-			$paramserver = New-Object Microsoft.AnalysisServices.Server
-			$paramserver.Connect("Data Source=$($AsServer.Name);Connect Timeout=2")
-			return $paramserver
-		}
-		
-		if ($AsServer.Connected -eq $false) { $AsServer.Connect("Data Source=$($AsServer.Name);Connect Timeout=3") }
-		return $AsServer
-	}
-	
-	$server = New-Object Microsoft.AnalysisServices.Server
-	
-	try
-	{
-		if ($ParameterConnection)
-		{
-			$server.Connect("Data Source=$AsServer;Connect Timeout=2")
-		}
-		else { $server.Connect("Data Source=$AsServer;Connect Timeout=3") }
-	}
-	catch
-	{
-		$message = $_.Exception.InnerException
-		$message = $message.ToString()
-		$message = ($message -Split '-->')[0]
-		$message = ($message -Split 'at System.Data.SqlClient')[0]
-		$message = ($message -Split 'at System.Data.ProviderBase')[0]
-		throw "Can't connect to $asserver`: $message "
-	}
-	
-	return $server
-}
+.NOTES 
+Author: Chrissy LeMaire (@cl), netnerds.net
+Requires: sysadmin access on SQL Servers
 
-Function Invoke-SmoCheck
-{
-<# 
-.SYNOPSIS 
-Checks for PowerShell SMO version vs SQL Server's SMO version.
+dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
+Copyright (C) 2016 Chrissy LeMaire
 
-#>	
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[object]$SqlServer
-	)
-	
-	if ($script:smocheck -ne $true)
-	{
-		$script:smocheck = $true
-		Write-Output "Performing SMO version check"
-		$smo = (([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }).FullName -Split ", ")[1]
-		$smo = ([version]$smo.TrimStart("Version=")).Major
-		$serverversion = $SqlServer.version.major
-		
-		if ($serverversion - $smo -gt 1)
-		{
-			Write-Warning "Your version of SMO is $smo, which is significantly older than $($sqlserver.name)'s version $($SqlServer.version.major)."
-			Write-Warning "This may present an issue when migrating certain portions of SQL Server."
-			Write-Warning "If you encounter issues, consider upgrading SMO."
-		}
-	}
-}
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-Function Get-ParamSqlCmsGroups
-{
-<# 
-.SYNOPSIS 
-Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
-filled with server groups from specified SQL Server Central Management server name.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-#>	
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
-		
-	)
-	
-	if ([Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers") -eq $null) { return }
-	
-	try { $SqlCms = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
-	catch { return }
-	
-	$sqlconnection = $SqlCms.ConnectionContext.SqlConnectionObject
-	
-	try { $cmstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sqlconnection) }
-	catch { return }
-	
-	if ($cmstore -eq $null) { return }
-	
-	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-	$paramattributes = New-Object System.Management.Automation.ParameterAttribute
-	$paramattributes.ParameterSetName = "__AllParameterSets"
-	$paramattributes.Mandatory = $false
-	
-	$argumentlist = $cmstore.DatabaseEngineServerGroup.ServerGroups.name
-	
-	if ($argumentlist -ne $null)
-	{
-		$validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $argumentlist
-		
-		$combinedattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-		$combinedattributes.Add($paramattributes)
-		$combinedattributes.Add($validationset)
-		
-		$SqlCmsGroups = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("SqlCmsGroups", [String[]], $combinedattributes)
-		$newparams.Add("SqlCmsGroups", $SqlCmsGroups)
-		
-		return $newparams
-	}
-	else { return }
-}
-
-Function Get-ParamSqlLinkedServers
-{
-<# 
-.SYNOPSIS 
-Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
-filled with Linked Servers from specified SQL Server Central Management server name.
-#>	
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
-	catch { return }
-	
-	# Populate arrays
-	$linkedserverlist = @()
-	foreach ($linkedserver in $server.LinkedServers)
-	{
-		$linkedserverlist += $linkedserver.name
-	}
-	
-	# Reusable parameter setup
-	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-	$attributes = New-Object System.Management.Automation.ParameterAttribute
-	
-	$attributes.ParameterSetName = "__AllParameterSets"
-	$attributes.Mandatory = $false
-	
-	# Database list parameter setup
-	if ($linkedserverlist) { $dbvalidationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $linkedserverlist }
-	$lsattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-	$lsattributes.Add($attributes)
-	if ($linkedserverlist) { $lsattributes.Add($dbvalidationset) }
-	$LinkedServers = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("LinkedServers", [String[]], $lsattributes)
-	
-	$newparams.Add("LinkedServers", $LinkedServers)
-	$server.ConnectionContext.Disconnect()
-	
-	return $newparams
-}
-
-Function Get-ParamSqlCredentials
-{
-<# 
-.SYNOPSIS 
-Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
-filled with SQL Credentials from specified SQL Server server name.
-#>	
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
-	catch { return }
-	
-	# Populate arrays
-	$credentiallist = @()
-	foreach ($credential in $server.credentials)
-	{
-		$credentiallist += $credential.name
-	}
-	
-	# Reusable parameter setup
-	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-	$attributes = New-Object System.Management.Automation.ParameterAttribute
-	
-	$attributes.ParameterSetName = "__AllParameterSets"
-	$attributes.Mandatory = $false
-	
-	# Database list parameter setup
-	if ($credentiallist) { $dbvalidationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $credentiallist }
-	$lsattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-	$lsattributes.Add($attributes)
-	if ($credentiallist) { $lsattributes.Add($dbvalidationset) }
-	$Credentials = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Credentials", [String[]], $lsattributes)
-	
-	$newparams.Add("Credentials", $Credentials)
-	$server.ConnectionContext.Disconnect()
-	
-	return $newparams
-}
-
-Function Get-ParamSqlDatabases
-{
-<# 
-.SYNOPSIS 
-Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
-filled with database list from specified SQL Server server.
-#>	
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
-	catch { return }
-	
-	$SupportDbs = "ReportServer", "ReportServerTempDb", "distribution"
-	
-	# Populate arrays
-	$databaselist = @()
-	foreach ($database in $server.databases)
-	{
-		if ((!$database.IsSystemObject) -and $SupportDbs -notcontains $database.name)
-		{
-			$databaselist += $database.name
-		}
-	}
-	
-	# Reusable parameter setup
-	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-	$attributes = New-Object System.Management.Automation.ParameterAttribute
-	
-	# Provide backwards compatability for improperly named parameter
-	$alias = New-Object System.Management.Automation.AliasAttribute "Databases"
-	
-	$attributes.ParameterSetName = "__AllParameterSets"
-	$attributes.Mandatory = $false
-	
-	# Database list parameter setup
-	if ($databaselist) { $dbvalidationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $databaselist }
-	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-	$attributeCollection.Add($attributes)
-	if ($databaselist) { $attributeCollection.Add($dbvalidationset) }
-	$attributeCollection.Add($alias)
-	$Database = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Database", [String[]], $attributeCollection)
-	
-	$dbexcludeattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-	$dbexcludeattributes.Add($attributes)
-	if ($databaselist) { $dbexcludeattributes.Add($dbvalidationset) }
-	$Exclude = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Exclude", [String[]], $dbexcludeattributes)
-	
-	$newparams.Add("Database", $Database)
-	$newparams.Add("Exclude", $Exclude)
-	
-	$server.ConnectionContext.Disconnect()
-	
-	return $newparams
-}
-
-Function Get-ParamSqlLogins
-{
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
- filled with login list from specified SQL Server server.
-#>	
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
-	catch { return }
-	$loginlist = @()
-	
-	foreach ($login in $server.logins)
-	{
-		if (!$login.name.StartsWith("##") -and $login.name -ne 'sa')
-		{
-			$loginlist += $login.name
-		}
-	}
-	
-	# Reusable parameter setup
-	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-	$attributes = New-Object System.Management.Automation.ParameterAttribute
-	
-	# Provide backwards compatability for improperly named parameter
-	$alias = New-Object System.Management.Automation.AliasAttribute "Logins"
-	
-	$attributes.ParameterSetName = "__AllParameterSets"
-	$attributes.Mandatory = $false
-	
-	# Login list parameter setup
-	if ($loginlist) { $loginvalidationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $loginlist }
-	
-	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-	$attributeCollection.Add($attributes)
-	if ($loginlist) { $attributeCollection.Add($loginvalidationset) }
-	
-	$attributeCollection.Add($alias)
-	$Login = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Login", [String[]], $attributeCollection)
-	
-	$excludeattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-	$excludeattributes.Add($attributes)
-	if ($loginlist) { $excludeattributes.Add($loginvalidationset) }
-	$Exclude = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Exclude", [String[]], $excludeattributes)
-	
-	$newparams.Add("Login", $Login)
-	$newparams.Add("Exclude", $Exclude)
-	
-	$server.ConnectionContext.Disconnect()
-	
-	return $newparams
-}
-
-Function Get-ParamSqlJobServer
-{
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
- filled with job server objects from specified SQL Server server.
-#>	
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
-	catch { return }
-	
-	$jobobjects = "ProxyAccounts", "JobSchedule", "SharedSchedules", "AlertSystem", "JobCategories", "OperatorCategories"
-	$jobobjects += "AlertCategories", "Alerts", "TargetServerGroups", "TargetServers", "Operators", "Jobs", "Mail"
-	
-	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-	$attributes = New-Object System.Management.Automation.ParameterAttribute
-	$attributes.ParameterSetName = "__AllParameterSets"
-	$attributes.Mandatory = $false
-	
-	foreach ($name in $jobobjects)
-	{
-		$items = $server.JobServer.$name.Name
-		if ($items.count -gt 0)
-		{
-			$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-			$attributeCollection.Add($attributes)
-			$attributeCollection.Add((New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $items))
-		}
-		
-		$newparams.Add($name, (New-Object -Type System.Management.Automation.RuntimeDefinedParameter($name, [String[]], $attributeCollection)))
-	}
-	$server.ConnectionContext.Disconnect()
-	
-	return $newparams
-}
-
-Function Get-ParamSqlExtendedEvents
-{
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
- filled with Extended Event objects from specified SQL Server server.
-#>	
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
-	catch { return }
-	
-	$sqlconn = $server.ConnectionContext.SqlConnectionObject
-	$sqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sqlconn
-	
-	$store = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $sqlStoreConnection
-	
-	$objects = "Sessions" # Maybe packages later? I don't understand xEvents well enough yet to know.
-	
-	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-	
-	$attributes = New-Object System.Management.Automation.ParameterAttribute
-	$attributes.ParameterSetName = "__AllParameterSets"
-	$attributes.Mandatory = $false
-	
-	foreach ($name in $objects)
-	{
-		$items = $store.$name.Name
-		if ($items.count -gt 0)
-		{
-			$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-			$attributeCollection.Add($attributes)
-			$attributeCollection.Add((New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $items))
-		}
-		
-		$newparams.Add($name, (New-Object -Type System.Management.Automation.RuntimeDefinedParameter($name, [String[]], $attributeCollection)))
-	}
-	$server.ConnectionContext.Disconnect()
-	
-	return $newparams
-}
-
-Function Get-ParamSqlPolicyManagement
-{
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
- filled with Sql Policy Management objects from specified SQL Server server.
-#>	
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
-	catch { return }
-	
-	$sqlconn = $server.ConnectionContext.SqlConnectionObject
-	$sqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sqlconn
-	
-	# DMF is the Declarative Management Framework, Policy Based Management's old name
-	$store = New-Object Microsoft.SqlServer.Management.DMF.PolicyStore $sqlStoreConnection 
-
-	$objects = "Policies","Conditions" # Maybe other stuff later? I don't know PBM well enough yet to know.
-	
-	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-	
-	$attributes = New-Object System.Management.Automation.ParameterAttribute
-	$attributes.ParameterSetName = "__AllParameterSets"
-	$attributes.Mandatory = $false
-	
-	foreach ($name in $objects)
-	{
-		$items = $store.$name.Name
-		if ($items.count -gt 0)
-		{
-			$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-			$attributeCollection.Add($attributes)
-			$attributeCollection.Add((New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $items))
-		}
-		
-		$newparams.Add($name, (New-Object -Type System.Management.Automation.RuntimeDefinedParameter($name, [String[]], $attributeCollection)))
-	}
-	$server.ConnectionContext.Disconnect()
-	
-	return $newparams
-}
-
-Function Get-ParamSqlDatabaseMail
-{
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
- filled with Database Mail server objects from specified SQL Server server.
-#>	
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
-	catch { return }
-	
-	$objects = "ConfigurationValues", "Profiles", "Accounts", "MailServers"
-	
-	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-	
-	$attributes = New-Object System.Management.Automation.ParameterAttribute
-	$attributes.ParameterSetName = "__AllParameterSets"
-	$attributes.Mandatory = $false
-	
-	foreach ($name in $objects)
-	{
-		if ($name -eq "MailServers") { $items = $server.Mail.Accounts.$name.Name }
-		else { $items = $server.Mail.$name.Name }
-		if ($items.count -gt 0)
-		{
-			$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-			$attributeCollection.Add($attributes)
-			$attributeCollection.Add((New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $items))
-		}
-		
-		$newparams.Add($name, (New-Object -Type System.Management.Automation.RuntimeDefinedParameter($name, [String[]], $attributeCollection)))
-	}
-	$server.ConnectionContext.Disconnect()
-	
-	return $newparams
-}
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-Function Get-ParamSqlResourceGovernor
-{
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
- filled with Resource Governor objects from specified SQL Server server.
-#>	
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
-	catch { return }
-	
-	$pools = $server.ResourceGovernor.ResourcePools | Where-Object { $_.Name -notin "internal", "default" }
-	
-	if ($pools.count -gt 0)
-	{
-		$attributes = New-Object System.Management.Automation.ParameterAttribute
-		$attributes.ParameterSetName = "__AllParameterSets"
-		$attributes.Mandatory = $false
-		$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-		$attributeCollection.Add($attributes)
-		$attributeCollection.Add((New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $pools.Name))
-		
-		$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-		$newparams.Add("ResourcePools", (New-Object -Type System.Management.Automation.RuntimeDefinedParameter("ResourcePools", [String[]], $attributeCollection)))
-	}
-	$server.ConnectionContext.Disconnect()
-	return $newparams
-}
+.LINK 
+https://gallery.technet.microsoft.com/scriptcenter/Get-Set-SQL-Max-Memory-19147057
 
+.EXAMPLE   
+Get-SqlMaxMemory -SqlCms sqlcluster
 
-Function Get-ParamSqlServerTriggers
-{
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
- filled with Server Triggers from specified SQL Server.
-#>	
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
-	catch { return }
-	
-	# Populate arrays
-	$triggerlist = @()
-	foreach ($trigger in $server.Triggers)
-	{
-		$triggerlist += $trigger.name
-	}
-	
-	# Reusable parameter setup
-	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-	$attributes = New-Object System.Management.Automation.ParameterAttribute
-	
-	$attributes.ParameterSetName = "__AllParameterSets"
-	$attributes.Mandatory = $false
-	
-	# Database list parameter setup
-	if ($triggerlist) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $triggerlist }
-	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-	$attributeCollection.Add($attributes)
-	if ($triggerlist) { $attributeCollection.Add($validationset) }
-	$Triggers = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Triggers", [String[]], $attributeCollection)
-	
-	$newparams.Add("Triggers", $Triggers)
-	$server.ConnectionContext.Disconnect()
-	
-	return $newparams
-}
+Get Memory Settings for all servers within the SQL Server Central Management Server "sqlcluster"
 
-Function Get-ParamSqlBackupDevices
-{
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
- filled with Backup Devices from specified SQL Server.
-#>	
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
-	catch { return }
-	
-	# Populate arrays
-	$backupdevicelist = @()
-	foreach ($backupdevice in $server.BackupDevices)
-	{
-		$backupdevicelist += $backupdevice.name
-	}
-	
-	# Reusable parameter setup
-	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-	$attributes = New-Object System.Management.Automation.ParameterAttribute
-	$attributes.ParameterSetName = "__AllParameterSets"
-	$attributes.Mandatory = $false
-	
-	# Database list parameter setup
-	if ($backupdevicelist) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $backupdevicelist }
-	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-	$attributeCollection.Add($attributes)
-	if ($backupdevicelist) { $attributeCollection.Add($validationset) }
-	$backupdevices = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("BackupDevices", [String[]], $attributeCollection)
-	
-	$newparams.Add("BackupDevices", $backupdevices)
-	$server.ConnectionContext.Disconnect()
-	
-	return $newparams
-}
+.EXAMPLE 
+Get-SqlMaxMemory -SqlCms sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-SqlMaxMemory -UseRecommended
 
-Function Get-SqlCmsRegServers
-{
-<# 
- .SYNOPSIS 
- Internal function. Returns array of server names from CMS Server. If -Groups is specified,
- only servers within the given groups are returned.
-#>	
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[object]$SqlServer,
-		[string[]]$groups,
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	if ([Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers") -eq $null) { return }
-	
-	$SqlCms = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-	$sqlconnection = $SqlCms.ConnectionContext.SqlConnectionObject
-	
-	try { $cmstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sqlconnection) }
-	catch { throw "Cannot access Central Management Server" }
-	
-	$servers = @()
-	if ($groups -ne $null)
-	{
-		foreach ($group in $groups)
-		{
-			$cms = $cmstore.ServerGroups["DatabaseEngineServerGroup"].ServerGroups[$group]
-			$servers += ($cms.GetDescendantRegisteredServers()).servername
-		}
-	}
-	else
-	{
-		$cms = $cmstore.ServerGroups["DatabaseEngineServerGroup"]
-		$servers = ($cms.GetDescendantRegisteredServers()).servername
-	}
-	
-	return $servers
-}
-
-Function Get-OfflineSqlFileStructure
-{
-<#
-.SYNOPSIS
-Internal function. Returns dictionary object that contains file structures for SQL databases.
+Find all servers in CMS that have Max SQL memory set to higher than the total memory of the server (think 2147483647)
 
 #>
 	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true, Position = 0)]
-		[ValidateNotNullOrEmpty()]
-		[object]$SqlServer,
-		[Parameter(Mandatory = $true, Position = 1)]
-		[string]$dbname,
-		[Parameter(Mandatory = $true, Position = 2)]
-		[object]$filelist,
-		[Parameter(Mandatory = $false, Position = 3)]
-		[bool]$ReuseFolderstructure,
+	Param (
+		[parameter(Position = 0)]
+		[string[]]$SqlServers,
+		# File with one server per line
+
+		[string]$SqlServersFromFile,
+		# Central Management Server
+
+		[string]$SqlCms,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+	DynamicParam { if ($SqlCms) { return (Get-ParamSqlCmsGroups -SqlServer $SqlCms -SqlCredential $SqlCredential) } }
 	
-	$destinationfiles = @{ };
-	$logfiles = $filelist | Where-Object { $_.Type -eq "L" }
-	$datafiles = $filelist | Where-Object { $_.Type -ne "L" }
-	$filestream = $filelist | Where-Object { $_.Type -eq "S" }
-	
-	if ($filestream)
+	PROCESS
 	{
-		$sql = "select coalesce(SERVERPROPERTY('FilestreamConfiguredLevel'),0) as fs"
-		$fscheck = $server.databases['master'].ExecuteWithResults($sql)
-		if ($fscheck.tables.fs -eq 0) { return $false }
-	}
-	
-	# Data Files
-	foreach ($file in $datafiles)
-	{
-		# Destination File Structure
-		$d = @{ }
-		if ($ReuseFolderstructure -eq $true)
-		{
-			$d.physical = $file.PhysicalName
-		}
-		else
-		{
-			$directory = Get-SqlDefaultPaths $server data
-			$filename = Split-Path $($file.PhysicalName) -leaf
-			$d.physical = "$directory\$filename"
-		}
 		
-		$d.logical = $file.LogicalName
-		$destinationfiles.add($file.LogicalName, $d)
-	}
-	
-	# Log Files
-	foreach ($file in $logfiles)
-	{
-		$d = @{ }
-		if ($ReuseFolderstructure)
-		{
-			$d.physical = $file.PhysicalName
-		}
-		else
-		{
-			$directory = Get-SqlDefaultPaths $server log
-			$filename = Split-Path $($file.PhysicalName) -leaf
-			$d.physical = "$directory\$filename"
-		}
+		if ([string]::IsNullOrEmpty($SqlCms) -and [string]::IsNullOrEmpty($SqlServersFromFile) -and [string]::IsNullOrEmpty($SqlServers))
+		{ throw "You must specify a server list source using -SqlServers or -SqlCms or -SqlServersFromFile" }
 		
-		$d.logical = $file.LogicalName
-		$destinationfiles.add($file.LogicalName, $d)
-	}
-	
-	return $destinationfiles
-}
-
-Function Get-SqlFileStructure
-{
-<#
-.SYNOPSIS
-Internal function. Returns custom object that contains file structures and remote paths (\\sqlserver\m$\mssql\etc\etc\file.mdf) for
-source and destination servers.
-#>
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true, Position = 0)]
-		[ValidateNotNullOrEmpty()]
-		[object]$source,
-		[Parameter(Mandatory = $true, Position = 1)]
-		[ValidateNotNullOrEmpty()]
-		[object]$destination,
-		[Parameter(Mandatory = $false, Position = 2)]
-		[bool]$ReuseFolderstructure,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential
-	)
-	
-	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-	$source = $sourceserver.name
-	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
-	$destination = $destserver.name
-	
-	$sourcenetbios = Get-NetBiosName $sourceserver
-	$destnetbios = Get-NetBiosName $destserver
-	
-	$dbcollection = @{ };
-	
-	foreach ($db in $sourceserver.databases)
-	{
-		$dbstatus = $db.status.toString()
-		if ($dbstatus.StartsWith("Normal") -eq $false) { continue }
-		$destinationfiles = @{ }; $sourcefiles = @{ }
+		$SqlCmsGroups = $psboundparameters.SqlCmsGroups
+		if ($SqlCms) { $SqlServers = Get-SqlCmsRegServers -SqlServer $SqlCms -SqlCredential $SqlCredential -groups $SqlCmsGroups }
+		If ($SqlServersFromFile) { $SqlServers = Get-Content $SqlServersFromFile }
 		
-		# Data Files
-		foreach ($filegroup in $db.filegroups)
+		$collection = @()
+		foreach ($SqlServer in $SqlServers)
 		{
-			foreach ($file in $filegroup.files)
-			{
-				# Destination File Structure
-				$d = @{ }
-				if ($ReuseFolderstructure)
-				{
-					$d.physical = $file.filename
-				}
-				else
-				{
-					$directory = Get-SqlDefaultPaths $destserver data
-					$filename = Split-Path $($file.filename) -leaf
-					$d.physical = "$directory\$filename"
-				}
-				$d.logical = $file.name
-				$d.remotefilename = Join-AdminUnc $destnetbios $d.physical
-				$destinationfiles.add($file.name, $d)
-				
-				# Source File Structure
-				$s = @{ }
-				$s.logical = $file.name
-				$s.physical = $file.filename
-				$s.remotefilename = Join-AdminUnc $sourcenetbios $s.physical
-				$sourcefiles.add($file.name, $s)
-			}
-		}
-		
-		# Add support for Full Text Catalogs in SQL Server 2005 and below
-		if ($sourceserver.VersionMajor -lt 10)
-		{
-			foreach ($ftc in $db.FullTextCatalogs)
-			{
-				# Destination File Structure
-				$d = @{ }
-				$pre = "sysft_"
-				$name = $ftc.name
-				$physical = $ftc.RootPath
-				$logical = "$pre$name"
-				if ($ReuseFolderstructure)
-				{
-					$d.physical = $physical
-				}
-				else
-				{
-					$directory = Get-SqlDefaultPaths $destserver data
-					if ($destserver.VersionMajor -lt 10) { $directory = "$directory\FTDATA" }
-					$filename = Split-Path($physical) -leaf
-					$d.physical = "$directory\$filename"
-				}
-				$d.logical = $logical
-				$d.remotefilename = Join-AdminUnc $destnetbios $d.physical
-				$destinationfiles.add($logical, $d)
-				
-				# Source File Structure
-				$s = @{ }
-				$pre = "sysft_"
-				$name = $ftc.name
-				$physical = $ftc.RootPath
-				$logical = "$pre$name"
-				
-				$s.logical = $logical
-				$s.physical = $physical
-				$s.remotefilename = Join-AdminUnc $sourcenetbios $s.physical
-				$sourcefiles.add($logical, $s)
-			}
-		}
-		
-		# Log Files
-		foreach ($file in $db.logfiles)
-		{
-			$d = @{ }
-			if ($ReuseFolderstructure)
-			{
-				$d.physical = $file.filename
-			}
-			else
-			{
-				$directory = Get-SqlDefaultPaths $destserver log
-				$filename = Split-Path $($file.filename) -leaf
-				$d.physical = "$directory\$filename"
-			}
-			$d.logical = $file.name
-			$d.remotefilename = Join-AdminUnc $destnetbios $d.physical
-			$destinationfiles.add($file.name, $d)
+			Write-Verbose "Attempting to connect to $sqlserver"
+			try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential }
+			catch { Write-Warning "Can't connect to $sqlserver or access denied. Skipping."; continue }
 			
-			$s = @{ }
-			$s.logical = $file.name
-			$s.physical = $file.filename
-			$s.remotefilename = Join-AdminUnc $sourcenetbios $s.physical
-			$sourcefiles.add($file.name, $s)
+			$maxmem = $server.Configuration.MaxServerMemory.ConfigValue
+			
+			$reserve = 1
+			$totalMemory = $server.PhysicalMemory
+			
+			
+			# Some servers underreport by 1MB.
+			if (($totalmemory % 1024) -ne 0) { $totalMemory = $totalMemory + 1 }
+			
+			
+			if ($totalMemory -ge 4096)
+			{
+				$currentCount = $totalMemory
+				while ($currentCount/4096 -gt 0)
+				{
+					if ($currentCount -gt 16384)
+					{
+						$reserve += 1
+						$currentCount += -8192
+					}
+					else
+					{
+						$reserve += 1
+						$currentCount += -4096
+					}
+				}
+				$recommendedMax = [int]($totalMemory - ($reserve * 1024))
+			}
+			else { $recommendedMax = $totalMemory * .5 }
+			
+			
+			$object = New-Object PSObject -Property @{
+				Server = $server.name
+				TotalMB = $totalMemory
+				SqlMaxMB = $maxmem
+				RecommendedMB = $recommendedMax
+			}
+			$server.ConnectionContext.Disconnect()
+			$collection += $object
 		}
-		
-		$location = @{ }
-		$location.add("Destination", $destinationfiles)
-		$location.add("Source", $sourcefiles)
-		$dbcollection.Add($($db.name), $location)
+		return ($collection | Sort-Object Server | Select Server, TotalMB, SqlMaxMB, RecommendedMB)
 	}
-	
-	$filestructure = [pscustomobject]@{ "databases" = $dbcollection }
-	return $filestructure
 }
 
-Function Get-SqlDefaultPaths
-{
-<#
-.SYNOPSIS
-Internal function. Returns the default data and log paths for SQL Server. Needed because SMO's server.defaultpath is sometimes null.
-#>
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[object]$SqlServer,
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[string]$filetype,
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-	
-	switch ($filetype) { "mdf" { $filetype = "data" } "ldf" { $filetype = "log" } }
-	
-	if ($filetype -eq "log")
-	{
-		# First attempt
-		$filepath = $server.DefaultLog
-		# Second attempt
-		if ($filepath.Length -eq 0) { $filepath = $server.Information.MasterDbLogPath }
-		# Third attempt
-		if ($filepath.Length -eq 0)
-		{
-			$sql = "select SERVERPROPERTY('InstanceDefaultLogPath') as physical_name"
-			$filepath = $server.ConnectionContext.ExecuteScalar($sql)
-		}
-	}
-	else
-	{
-		# First attempt
-		$filepath = $server.DefaultFile
-		# Second attempt
-		if ($filepath.Length -eq 0) { $filepath = $server.Information.MasterDbPath }
-		# Third attempt
-		if ($filepath.Length -eq 0)
-		{
-			$sql = "select SERVERPROPERTY('InstanceDefaultDataPath') as physical_name"
-			$filepath = $server.ConnectionContext.ExecuteScalar($sql)
-		}
-	}
-	
-	if ($filepath.Length -eq 0) { throw "Cannot determine the required directory path" }
-	$filepath = $filepath.TrimEnd("\")
-	return $filepath
-}
-
-Function Join-AdminUnc
-{
-<#
-.SYNOPSIS
-Internal function. Parses a path to make it an admin UNC.
-#>
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[string]$servername,
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[string]$filepath
-		
-	)
-	
-	if (!$filepath) { return }
-	if ($filepath.StartsWith("\\")) { return $filepath }
-	
-	if ($filepath.length -gt 0 -and $filepath -ne [System.DbNull]::Value)
-	{
-		$newpath = Join-Path "\\$servername\" $filepath.replace(':', '$')
-		return $newpath
-	}
-	else { return }
-}
-
-Function Test-SqlSa
-{
-<#
-.SYNOPSIS
-Internal function. Ensures sysadmin account access on SQL Server.
-#>
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	try
-	{
-		
-		if ($SqlServer.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
-		{
-			return ($SqlServer.ConnectionContext.FixedServerRoles -match "SysAdmin")
-		}
-		
-		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-		return ($server.ConnectionContext.FixedServerRoles -match "SysAdmin")
-	}
-	catch { return $false }
-}
-
-Function Get-NetBiosName
-{
- <#
-.SYNOPSIS
-Internal function. Takes a best guess at the NetBIOS name of a server. 		
- #>
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-	$servernetbios = $server.ComputerNamePhysicalNetBIOS
-	
-	if ($servernetbios -eq $null)
-	{
-		$servernetbios = ($server.name).Split("\")[0]
-		$servernetbios = $servernetbios.Split(",")[0]
-	}
-	
-	return $($servernetbios.ToLower())
-}
-
-Function Restore-Database
+Function Set-SqlMaxMemory
 {
 <# 
-	.SYNOPSIS
-	Internal function. Restores .bak file to SQL database. Creates db if it doesn't exist. $filestructure is
-	a custom object that contains logical and physical file locations.
+.SYNOPSIS 
+Sets SQL Server max memory then displays information relating to SQL Server Max Memory configuration settings. Works on SQL Server 2000-2014.
+
+THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
+
+.PARAMETER SqlServers
+Allows you to specify a comma separated list of servers to query.
+
+.PARAMETER ServersFromFile
+Allows you to specify a list that's been populated by a list of servers to query. The format is as follows
+server1
+server2
+server3
+
+.PARAMETER SqlCms
+Reports on a list of servers populated by the specified SQL Server Central Management Server.
+
+.PARAMETER SqlCmsGroups
+This is a parameter that appears when SqlCms has been specified. It is populated by Server Groups within the given Central Management Server.
+
+.PARAMETER MaxMB
+Specifies the max megabytes
+
+.PARAMETER UseRecommended
+Inspired by Jonathan Kehayias's post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this uses a formula to determine the default optimum RAM to use, then sets the SQL max value to that number.
+
+Jonathan notes that the formula used provides a *general recommendation* that doesn't account for everything that may be going on in your specific environment. 
+
+.NOTES 
+Author: Chrissy LeMaire (@cl), netnerds.net
+Requires: sysadmin access on SQL Servers
+
+.LINK 
+https://gallery.technet.microsoft.com/scriptcenter/Get-Set-SQL-Max-Memory-19147057
+
+.EXAMPLE 
+Set-SqlMaxMemory sqlserver1 2048
+
+Set max memory to 2048 MB on just one server, "sqlserver1"
+
+.EXAMPLE 
+Get-SqlMaxMemory -SqlCms sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-SqlMaxMemory -UseRecommended
+
+Find all servers in CMS that have Max SQL memory set to higher than the total memory of the server (think 2147483647),
+then pipe those to Set-SqlMaxMemory and use the default recommendation
+
+.EXAMPLE 
+Set-SqlMaxMemory -SqlCms sqlcluster -SqlCmsGroups Express -MaxMB 512 -Verbose
+Specifically set memory to 512 MB for all servers within the "Express" server group on CMS "sqlcluster"
+
 #>
 	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[object]$SqlServer,
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[string]$dbname,
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[string]$backupfile,
-		[string]$filetype = "Database",
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[object]$filestructure,
-		[switch]$norecovery = $true,
+	Param (
+		[parameter(Position = 0)]
+		[string[]]$SqlServers,
+		[parameter(Position = 1)]
+		[int]$MaxMB,
+		[string]$SqlServersFromFile,
+		[string]$SqlCms,
+		[switch]$UseRecommended,
+		[Parameter(ValueFromPipeline = $True)]
+		[object]$collection,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-	$servername = $server.name
-	$server.ConnectionContext.StatementTimeout = 0
-	$restore = New-Object "Microsoft.SqlServer.Management.Smo.Restore"
-	$restore.ReplaceDatabase = $true
+	DynamicParam { if ($SqlCms) { return (Get-ParamSqlCmsGroups -SqlServer $SqlCms -SqlCredential $SqlCredential) } }
 	
-	foreach ($file in $filestructure.values)
-	{
-		$movefile = New-Object "Microsoft.SqlServer.Management.Smo.RelocateFile"
-		$movefile.LogicalFileName = $file.logical
-		$movefile.PhysicalFileName = $file.physical
-		$null = $restore.RelocateFiles.Add($movefile)
-	}
-	
-	try
+	PROCESS
 	{
 		
-		$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-			Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
-		}
-		$restore.add_PercentComplete($percent)
-		$restore.PercentCompleteNotification = 1
-		$restore.add_Complete($complete)
-		$restore.ReplaceDatabase = $true
-		$restore.Database = $dbname
-		$restore.Action = $filetype
-		$restore.NoRecovery = $norecovery
-		$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-		$device.name = $backupfile
-		$device.devicetype = "File"
-		$restore.Devices.Add($device)
+		if ([string]::IsNullOrEmpty($SqlCms) -and [string]::IsNullOrEmpty($SqlServersFromFile) -and [string]::IsNullOrEmpty($SqlServers) -and $collection -eq $null)
+		{ throw "You must specify a server list source using -SqlServers or -SqlCms or -SqlServersFromFile or you can pipe results from Get-SqlMaxMemory" }
 		
-		Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-		$restore.sqlrestore($server)
-		Write-Progress -id 1 -activity "Restoring $dbname to $servername" -status "Complete" -Completed
+		if ($MaxMB -eq 0 -and $UseRecommended -eq $false -and $collection -eq $null) { throw "You must specify -MaxMB or -UseRecommended" }
 		
-		return $true
-	}
-	catch
-	{
-		Write-Error "Restore failed: $($_.Exception)"
-		return $false
-	}
-}
-
-Function Test-SqlAgent
-{
-<#
-.SYNOPSIS
-Internal function. Checks to see if SQL Server Agent is running on a server.  
-#>
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	if ($SqlServer.GetType() -ne [Microsoft.SqlServer.Management.Smo.Server])
-	{
-		$SqlServer = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-	}
-	
-	if ($SqlServer.JobServer -eq $null) { return $false }
-	try { $null = $SqlServer.JobServer.script(); return $true }
-	catch { return $false }
-}
-
-Function Update-SqlDbOwner
-{
-<#
-.SYNOPSIS
-Internal function. Updates specified database dbowner.
-#>
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[object]$source,
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[object]$destination,
-		[string]$dbname,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential
-	)
-	
-	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
-	
-	$source = $sourceserver.name
-	$destination = $destserver.name
-	
-	if ($dbname.length -eq 0)
-	{
-		$databases = ($sourceserver.Databases | Where-Object { $destserver.databases.name -contains $_.name -and $_.IsSystemObject -eq $false }).Name
-	}
-	else { $databases = $dbname }
-	
-	foreach ($dbname in $databases)
-	{
-		$destdb = $destserver.databases[$dbname]
-		$dbowner = $sourceserver.databases[$dbname].owner
-		
-		if ($destdb.owner -ne $dbowner)
+		if ($collection -eq $null)
 		{
-			if ($destdb.Status -ne 'Normal') { Write-Output "Database status not normal. Skipping dbowner update."; continue }
-			if ($dbowner -eq $null -or $destserver.logins[$dbowner] -eq $null) { $dbowner = 'sa' }
+			$SqlCmsGroups = $psboundparameters.SqlCmsGroups
+			if ($SqlCmsGroups -ne $null)
+			{
+				$collection = Get-SqlMaxMemory -SqlServers $SqlServers -SqlCms $SqlCms -SqlServersFromFile $SqlServersFromFile -SqlCmsGroups $SqlCmsGroups
+			}
+			else { $collection = Get-SqlMaxMemory -SqlServers $SqlServers -SqlCms $SqlCms -SqlServersFromFile $SqlServersFromFile }
+		}
+		
+		$collection | Add-Member -NotePropertyName OldMaxValue -NotePropertyValue 0
+		
+		foreach ($row in $collection)
+		{
+			
+			Write-Verbose "Attempting to connect to $sqlserver"
+			try { $server = Connect-SqlServer -SqlServer $row.server -SqlCredential $SqlCredential }
+			catch { Write-Warning "Can't connect to $sqlserver or access denied. Skipping."; continue }
+			
+			if (!(Test-SqlSa -SqlServer $server))
+			{
+				Write-Error "Not a sysadmin on $servername. Skipping."
+				$server.ConnectionContext.Disconnect()
+				continue
+			}
+			
+			$row.OldMaxValue = $row.SqlMaxMB
 			
 			try
 			{
-				if ($destdb.ReadOnly -eq $true)
+				if ($UseRecommended)
 				{
-					$changeroback = $true
-					Update-SqlDbReadOnly $destserver $dbname $false
+					Write-Verbose "Changing $($row.server) SQL Server max from $($row.SqlMaxMB) to $($row.RecommendedMB) MB"
+					$server.Configuration.MaxServerMemory.ConfigValue = $row.RecommendedMB
+					$row.SqlMaxMB = $row.RecommendedMB
 				}
-				
-				$destdb.SetOwner($dbowner)
-				Write-Output "Changed $dbname owner to $dbowner"
-				
-				if ($changeroback)
+				else
 				{
-					Update-SqlDbReadOnly $destserver $dbname $true
-					$changeroback = $null
+					Write-Verbose "Changing $($row.server) SQL Server max from $($row.SqlMaxMB) to $MaxMB MB"
+					$server.Configuration.MaxServerMemory.ConfigValue = $MaxMB
+					$row.SqlMaxMB = $MaxMB
 				}
+				$server.Configuration.Alter()
+				
 			}
-			catch
-			{
-				Write-Error "Failed to update $dbname owner to $dbowner."
-			}
+			catch { Write-Error "Could not modify Max Server Memory for $($row.server)" }
+			
+			$server.ConnectionContext.Disconnect()
 		}
-		else { Write-Output "Proper owner already set on $dbname" }
+		
+		return $collection | Select Server, TotalMB, OldMaxValue, @{ name = "CurrentMaxValue"; expression = { $_.SqlMaxMB } }
 	}
-}
-
-Function Update-SqlDbReadOnly
-{
-<#
-.SYNOPSIS
-Internal function. Updates specified database to read-only or read-write. Necessary because SMO doesn't appear to support NO_WAIT.
-#>
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[object]$SqlServer,
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[string]$dbname,
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[bool]$readonly
-	)
-	
-	if ($readonly)
-	{
-		$sql = "ALTER DATABASE [$dbname] SET READ_ONLY WITH NO_WAIT"
-	}
-	else
-	{
-		$sql = "ALTER DATABASE [$dbname] SET READ_WRITE WITH NO_WAIT"
-	}
-	
-	try
-	{
-		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-		$null = $server.ConnectionContext.ExecuteNonQuery($sql)
-		Write-Output "Changed ReadOnly status to $readonly for $dbname on $($server.name)"
-		return $true
-	}
-	catch
-	{
-		Write-Error "Could not change readonly status for $dbname on $($server.name)"
-		return $false
-	}
-}
-
-Function Remove-SqlDatabase
-{
-<#
-.SYNOPSIS
-Internal function. Uses SMO's KillDatabase to drop all user connections then drop a database. $server is
-an SMO server object.
-#>
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[object]$SqlServer,
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[string]$DBName,
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	try
-	{
-		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-		$server.KillDatabase($dbname)
-		$server.refresh()
-		Write-Output "Successfully dropped $dbname on $($server.name)"
-	}
-	catch
-	{
-		try
-		{
-			$server.databases[$dbname].Drop()
-			Write-Output "Successfully dropped $dbname on $($server.name)"
-		}
-		catch
-		{
-			try
-			{
-				$null = $server.ConnectionContext.ExecuteNonQuery("DROP DATABASE $dbname")
-				Write-Output "Successfully dropped $dbname on $($server.name)"
-			}
-			catch { return $false }
-		}
-	}
-}
-
-Function Write-Exception
-{
-<#
-.SYNOPSIS
-Internal function. Writes exception to disk (.\dbatools-exceptions.txt) for later analysis.
-#>
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[object]$e
-	)
-	
-	$errorlog = ".\dbatools-exceptions.txt"
-	$message = $e.Exception
-	
-	if ($e.Exception.InnerException -ne $null) { $messsage = $e.Exception.InnerException }
-	
-	$message = $message.ToString()
-	Add-Content $errorlog $(Get-Date)
-	Add-Content $errorlog $message
-	Write-Warning "See error log $(Resolve-Path $errorlog) for more details."
 }
