@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.7.8.0'
+	ModuleVersion = '0.7.9.0'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -23,7 +23,7 @@
 	CompanyName = 'netnerds.net'
 	
 	# Copyright statement for this module
-	Copyright = '2015 Chrissy LeMaire'
+	Copyright = '2016 Chrissy LeMaire'
 	
 	# Description of the functionality provided by this module
 	Description = 'Provides extra functionality for SQL Server Database admins'
@@ -50,7 +50,10 @@
 	RequiredModules = @()
 	
 	# Assemblies that must be loaded prior to importing this module
-	RequiredAssemblies = @('Microsoft.SqlServer.Smo', 'Microsoft.SqlServer.SmoExtended', 'Microsoft.SqlServer.Management.XEvent', 'Microsoft.SQlServer.Management.Sdk.Sfc')
+	RequiredAssemblies = @('Microsoft.SqlServer.Smo', 'Microsoft.SqlServer.SmoExtended',
+	'Microsoft.SqlServer.Management.XEvent', 'Microsoft.SQlServer.Management.Sdk.Sfc',
+	'Microsoft.SqlServer.Rmo', 'Microsoft.SqlServer.Dmf', 'Microsoft.SqlServer.SqlEnum'
+	'Microsoft.SqlServer.Management.RegisteredServers')
 	
 	# Script files () that are run in the caller's environment prior to importing this module
 	ScriptsToProcess = @()
@@ -65,7 +68,12 @@
 	NestedModules = @()
 	
 	# Functions to export from this module
-	FunctionsToExport = @('Copy-SqlResourceGovernor','Copy-SqlPolicyManagement','Copy-SqlExtendedEvent','Copy-SqlBackupDevice', 'Copy-SqlServerTrigger', 'Test-SqlConnection', 'Import-CsvToSql', 'Update-dbatools', 'Copy-SqlDatabaseMail', 'Copy-SqlDatabase', 'Copy-SqlJobServer', 'Import-SqlSpConfigure', 'Export-SqlSpConfigure', 'Watch-SqlDbLogin', 'Reset-SqlAdmin', 'Get-SqlServerKey', 'Set-SqlMaxMemory', 'Get-SqlMaxMemory', 'Get-DetachedDBInfo', 'Restore-HallengrenBackup', 'Copy-SqlLogin', 'Copy-SqlLinkedServer', 'Copy-SqlCredential', 'Copy-SqlCentralManagementServer', 'Start-SqlMigration', 'Copy-SqlSysDbUserObjects')
+	FunctionsToExport = @('Copy-SqlAuditSpecification','Copy-SqlEndpoint', 'Copy-SqlAudit', 'Copy-SqlServerRole', 'Copy-SqlResourceGovernor', 'Copy-SqlPolicyManagement',
+	'Copy-SqlExtendedEvent', 'Copy-SqlBackupDevice', 'Copy-SqlServerTrigger', 'Copy-SqlLogin', 'Copy-SqlLinkedServer', 'Copy-SqlCredential',
+	'Copy-SqlCentralManagementServer', 'Copy-SqlSysDbUserObjects', 'Copy-SqlDatabaseMail', 'Copy-SqlDatabase', 'Copy-SqlJobServer', 'Start-SqlMigration',
+	'Import-SqlSpConfigure', 'Export-SqlSpConfigure', 'Watch-SqlDbLogin', 'Reset-SqlAdmin', 'Get-SqlServerKey', 'Set-SqlMaxMemory',
+	'Get-SqlMaxMemory', 'Get-DetachedDBInfo', 'Restore-HallengrenBackup', 'Test-SqlConnection', 'Import-CsvToSql', 'Update-dbatools',
+	'Copy-SqlSpConfigure', 'Test-SqlPath')
 	
 	# Cmdlets to export from this module
 	CmdletsToExport = '*'
