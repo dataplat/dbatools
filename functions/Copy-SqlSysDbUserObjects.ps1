@@ -3,7 +3,7 @@ Function Copy-SqlSysDbUserObjects
 <#
 .SYNOPSIS
 Imports *all* user objects found in source SQL Server's master, msdb and model databases to the destination.
-This is useful because many DbA's store backup/maintenance procs/tables/triggers/etc (among other things) in master or msdb.
+This is useful because many DBA's store backup/maintenance procs/tables/triggers/etc (among other things) in master or msdb.
 
 It is also useful for migrating objects within the model database.
 
@@ -11,7 +11,7 @@ It is also useful for migrating objects within the model database.
 Copy-SqlSysDbUserObjects $sourceserver $destserver
 
 dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
-Copyright (C) 2105 Chrissy LeMaire
+Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
