@@ -42,13 +42,13 @@ Windows Authentication will be used if DestinationSqlCredential is not specified
 To connect as a different Windows user, run PowerShell as that user.
 
 .NOTES 
-Author  : Chrissy LeMaire (@cl), netnerds.net
+Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers, Remote Registry & Remote Adminsitration enabled and accessible on source server.
 Limitations: Hasn't been tested thoroughly. Works on Win8.1 and SQL Server 2012 & 2014 so far.
 This just copies the SQL portion. It does not copy files (ie. a local SQLITE database, or Access Db), nor does it configure ODbC entries.
 
 dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
-Copyright (C) 2105 Chrissy LeMaire
+Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -285,6 +285,12 @@ Internal function.
 					{
 						If ($Pscmdlet.ShouldProcess($destination, "Dropping $linkedservername"))
 						{
+							if ($linkedserver.name -eq 'repl_distributor')
+							{
+								Write-Warning "repl_distributor cannot be dropped. Not going to try."
+								continue
+							}
+							
 							$destserver.LinkedServers[$linkedservername].Drop($true)
 							$destserver.LinkedServers.refresh()
 						}
@@ -296,7 +302,10 @@ Internal function.
 				{
 					try
 					{
-						$sql = $linkedserver.Script()
+						$sql = $linkedserver.Script() | Out-String
+						$sql = $sql -replace "'$source'", "'$destination'"
+						Write-Verbose $sql
+						
 						[void]$destserver.ConnectionContext.ExecuteNonQuery($sql)
 						$destserver.LinkedServers.Refresh()
 						Write-Output "$linkedservername successfully copied"
