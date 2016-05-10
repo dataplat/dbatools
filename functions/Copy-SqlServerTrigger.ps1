@@ -10,10 +10,10 @@ By default, all triggers are copied. The -Triggers parameter is autopopulated fo
 If the trigger already exists on the destination, it will be skipped unless -Force is used. 
 
 .PARAMETER Source
-Source Sql Server. You must have sysadmin access and server version must be > Sql Server 7.
+Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER Destination
-Destination Sql Server. You must have sysadmin access and server version must be > Sql Server 7.
+Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER SourceSqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -32,11 +32,11 @@ Windows Authentication will be used if DestinationSqlCredential is not specified
 To connect as a different Windows user, run PowerShell as that user.
 
 .NOTES 
-Author  : Chrissy LeMaire (@cl), netnerds.net
+Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
 dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
-Copyright (C) 2105 Chrissy LeMaire
+Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -76,7 +76,7 @@ Shows what would happen if the command were executed using force.
 		[object]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
-		[switch]$force
+		[switch]$Force
 	)
 	DynamicParam { if ($source) { return (Get-ParamSqlServerTriggers -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
@@ -92,6 +92,11 @@ Shows what would happen if the command were executed using force.
 		
 		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
 		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
+		
+		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
+		{
+			throw "Server Triggers are only supported in SQL Server 2008 and above. Quitting."
+		}
 		
 		$servertriggers = $sourceserver.Triggers
 		$desttriggers = $destserver.Triggers
