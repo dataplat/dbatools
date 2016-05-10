@@ -40,12 +40,12 @@ When adding a Windows login to remote servers, ensure the SQL Server can add the
 Groups are valid input.
 
 .NOTES 
-Author  : Chrissy LeMaire (@cl), netnerds.net
+Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: Admin access to server (not SQL Services), 
 Remoting must be enabled and accessible if $sqlserver is not local
 
 dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
-Copyright (C) 2105 Chrissy LeMaire
+Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -111,13 +111,13 @@ Internal function.
 		
 		Function Invoke-ResetSqlCmd
 		{
-<#
+		<#
 
-.SYNOPSIS
-Internal function. Executes a SQL statement against specified computer, and uses "Reset-SqlAdmin" as the
-Application Name.
-			
- #>
+		.SYNOPSIS
+		Internal function. Executes a SQL statement against specified computer, and uses "Reset-SqlAdmin" as the
+		Application Name.
+					
+		 #>
 			[CmdletBinding()]
 			param (
 				[Parameter(Mandatory = $true)]
@@ -224,7 +224,7 @@ Application Name.
 					}
 				}
 			}
-			catch { throw "SQL Server cannot resolve Windows User or Group $login." }
+			catch { Write-Warning "Cannot resolve Windows User or Group $login. Trying anyway." }
 		}
 		
 		# If it's not a Windows login, it's a SQL login, so it needs a password.
