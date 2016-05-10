@@ -131,6 +131,7 @@ Function Import-SqlSpConfigure
 				}
 				try { $destserver.Configuration.Alter() }
 				catch { $needsrestart = $true }
+				
 				$sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
 				$sourceserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
 				$destserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
