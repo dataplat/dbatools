@@ -2,18 +2,20 @@
 {
 <#
 .SYNOPSIS
-Migrates Resource Governor Objects
+Migrates Resource Pools
 
 .DESCRIPTION
-Coming soon
+By default, all non-system resource pools are migrated. If the pool already exists on the destination, it will be skipped unless -Force is used. 
+	
+The -ResourcePools parameter is autopopulated for command-line completion and can be used to copy only specific objects.
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
 .PARAMETER Source
-Source Sql Server. You must have sysadmin access and server version must be > Sql Server 2005.
+Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
 .PARAMETER Destination
-Destination Sql Server. You must have sysadmin access and server version must be > Sql Server 2005.
+Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
 .PARAMETER SourceSqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -32,14 +34,14 @@ Windows Authentication will be used if DestinationSqlCredential is not specified
 To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER Force
-If policies exists and remote server, it will be dropped and recreated.
+If policies exists on destination server, it will be dropped and recreated.
 
 .NOTES 
-Author  : Chrissy LeMaire (@cl), netnerds.net
+Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
 dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
-Copyright (C) 2105 Chrissy LeMaire
+Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -83,7 +85,7 @@ Shows what would happen if the command were executed.
 	)
 	
 	DynamicParam { if ($source) { return (Get-ParamSqlResourceGovernor -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
-
+	
 	process
 	{
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
@@ -96,13 +98,20 @@ Shows what would happen if the command were executed.
 		
 		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
 		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
-			
+		
+		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
+		{
+			throw "Resource Governor is only supported in SQL Server 2008 and above. Quitting."
+		}
+		
 		if ($Pscmdlet.ShouldProcess($destination, "Updating Resource Governor settings"))
 		{
 			try
 			{
 				$sql = $sourceserver.resourceGovernor.Script() | Out-String
+				$sql = $sql -replace "'$source'", "'$destination'"
 				Write-Verbose $sql
+				Write-Output "Updating Resource Governor settings"
 				$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
 			}
 			catch
@@ -110,7 +119,7 @@ Shows what would happen if the command were executed.
 				Write-Exception $_
 			}
 		}
-
+		
 		# Pools
 		if ($respools.length -gt 0)
 		{
@@ -137,8 +146,8 @@ Shows what would happen if the command were executed.
 				{
 					if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $poolName"))
 					{
-						Write-Output "Pool '$poolName' exists on $destination"
-						Write-Output "Force specified. Dropping $poolName."
+						Write-Verbose "Pool '$poolName' exists on $destination"
+						Write-Verbose "Force specified. Dropping $poolName."
 						
 						try
 						{
@@ -165,16 +174,19 @@ Shows what would happen if the command were executed.
 				try
 				{
 					$sql = $pool.Script() | Out-String
+					$sql = $sql -replace "'$source'", "'$destination'"
 					Write-Verbose $sql
+					Write-Output "Copying pool $poolName"
 					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
 					
 					$workloadgroups = $pool.WorkloadGroups
 					foreach ($workloadgroup in $workloadgroups)
 					{
 						$workgroupname = $workloadgroup.name
-						Write-Output "Migrating $workgroupname"
 						$sql = $workloadgroup.script() | Out-String
+						$sql = $sql -replace "'$source'", "'$destination'"
 						Write-Verbose $sql
+						Write-Output "Copying $workgroupname"
 						$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
 					}
 					
@@ -185,13 +197,25 @@ Shows what would happen if the command were executed.
 				}
 			}
 		}
+		
+		if ($Pscmdlet.ShouldProcess($destination, "Reconfiguring"))
+		{
+			Write-Output "Reconfiguring Resource Governor"
+			$sql = "ALTER RESOURCE GOVERNOR RECONFIGURE"
+			$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
+		}
+		
 	}
 	
 	end
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Resource Governor migration finished" }
+		
+		If ($Pscmdlet.ShouldProcess("console", "Showing finished message"))
+		{
+			Write-Output "Resource Governor migration finished"
+		}
 	}
-
+	
 }
