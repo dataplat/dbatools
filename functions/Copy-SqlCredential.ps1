@@ -43,13 +43,13 @@ By default, if a Credential exists on the source and destination, the Credential
 
 
 .NOTES 
-Author  : Chrissy LeMaire (@cl), netnerds.net
+Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: 	PowerShell Version 3.0, SQL Server SMO, 
 			Sys Admin access on Windows and SQL Server. DAC access enabled for local (default)
 Limitations: Hasn't been tested thoroughly. Works on Win8.1 and SQL Server 2012 & 2014 so far.		
 
 dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
-Copyright (C) 2105 Chrissy LeMaire
+Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -294,12 +294,13 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 					If ($Pscmdlet.ShouldProcess($destination, "Copying $identity"))
 					{
 						$sql = "CREATE CREDENTIAL [$credentialname] WITH IDENTITY = N'$identity', SECRET = N'$password'"
+						Write-Verbose $sql
 						[void]$destserver.ConnectionContext.ExecuteNonQuery($sql)
 						$destserver.credentials.Refresh()
 						Write-Output "$credentialname successfully copied"
 					}
 				}
-				catch { Write-Error "$credentialname could not be added to $($destserver.name)" }
+				catch { Write-Exception $_ }
 			}
 		}
 	}
@@ -323,6 +324,10 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
 		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 		
+		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
+		{
+			throw "Credentials are only supported in SQL Server 2005 and above. Quitting."
+		}
 		
 		Invoke-SmoCheck -SqlServer $sourceserver
 		Invoke-SmoCheck -SqlServer $destserver
