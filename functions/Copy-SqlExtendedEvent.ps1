@@ -2,18 +2,20 @@
 {
 <#
 .SYNOPSIS
-Migrates SQL Extended Event Sessions
+Migrates SQL Extended Event Sessions except the two default sessions, AlwaysOn_health and system_health.
 
 .DESCRIPTION
-Coming soon
+By default, all non-system extended events are migrated. If the event already exists on the destination, it will be skipped unless -Force is used. 
+	
+The -Sessions parameter is autopopulated for command-line completion and can be used to copy only specific objects.
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
 .PARAMETER Source
-Source Sql Server. You must have sysadmin access and server version must be > Sql Server 2005.
+Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
 .PARAMETER Destination
-Destination Sql Server. You must have sysadmin access and server version must be > Sql Server 2005.
+Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
 .PARAMETER SourceSqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -32,14 +34,14 @@ Windows Authentication will be used if DestinationSqlCredential is not specified
 To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER Force
-If Sessions exists and remote server, it will be dropped and recreated.
+If sessions exists on destination server, it will be dropped and recreated.
 
 .NOTES 
-Author  : Chrissy LeMaire (@cl), netnerds.net
+Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
 dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
-Copyright (C) 2105 Chrissy LeMaire
+Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -70,6 +72,11 @@ and Windows credentials for sqlcluster.
 Copy-SqlExtendedEvent -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
 Shows what would happen if the command were executed.
+	
+.EXAMPLE   
+Copy-SqlExtendedEvent -Source sqlserver2014a -Destination sqlcluster -Sessions CheckQueries, MonitorUserDefinedException 
+
+Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from sqlserver2014a to sqlcluster.
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
@@ -96,6 +103,11 @@ Shows what would happen if the command were executed.
 		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
 		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 		
+		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
+		{
+			throw "Extended Events are only supported in SQL Server 2008 and above. Quitting."
+		}
+		
 		$sourceSqlConn = $sourceserver.ConnectionContext.SqlConnectionObject
 		$sourceSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sourceSqlConn
 		$sourceStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $sourceSqlStoreConnection
@@ -104,7 +116,7 @@ Shows what would happen if the command were executed.
 		$destSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $destSqlConn
 		$destStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $destSqlStoreConnection
 		
-		$storeSessions = $sourceStore.sessions
+		$storeSessions = $sourceStore.sessions | Where-Object { $_.Name -notin 'AlwaysOn_health', 'system_health' }
 		if ($sessions.length -gt 0) { $storeSessions = $storeSessions | Where-Object { $sessions -contains $_.Name } }
 		
 		Write-Output "Migrating sessions"
@@ -123,8 +135,8 @@ Shows what would happen if the command were executed.
 				{
 					if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $sessionName"))
 					{
-						Write-Output "Extended Event Session '$sessionName' exists on $destination"
-						Write-Output "Force specified. Dropping $sessionName."
+						Write-Verbose "Extended Event Session '$sessionName' exists on $destination"
+						Write-Verbose "Force specified. Dropping $sessionName."
 						
 						try
 						{
@@ -143,8 +155,10 @@ Shows what would happen if the command were executed.
 			{
 				try
 				{
-					$sql = $session.ScriptCreate().GetScript()
+					$sql = $session.ScriptCreate().GetScript() | Out-String
+					$sql = $sql -replace "'$source'", "'$destination'"
 					Write-Verbose $sql
+					Write-Output "Migrating session $sessionName"
 					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
 				}
 				catch
@@ -154,7 +168,7 @@ Shows what would happen if the command were executed.
 			}
 		}
 	}
-
+	
 	end
 	{
 		$sourceserver.ConnectionContext.Disconnect()
