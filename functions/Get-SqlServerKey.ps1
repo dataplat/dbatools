@@ -2,7 +2,7 @@ Function Get-SqlServerKey
 {
 <# 
 .SYNOPSIS 
-Gets SQL Server Product Keys from local and remote SQL Servers. Works with SQL Server 2005-2014
+Gets SQL Server Product Keys from local on destination SQL Servers. Works with SQL Server 2005-2014
 
 .DESCRIPTION 
 Using a string of servers, a text file, or Central Management Server to provide a list of servers, this script will go to each server and get the product key for all installed instances. Clustered instances are supported as well. Requires regular user access to the SQL instances, SMO installed locally, Remote Registry enabled and acessible by the account running the script.
@@ -28,10 +28,10 @@ $cred = Get-Credential, this pass this $cred to the param.
 Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
 .NOTES 
-Author  : Chrissy LeMaire (@cl), netnerds.net
+Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: 	PowerShell Version 3.0, SQL Server SMO,  Remote Registry
 dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
-Copyright (C) 2105 Chrissy LeMaire
+Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
