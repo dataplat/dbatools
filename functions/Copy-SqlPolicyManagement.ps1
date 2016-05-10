@@ -2,18 +2,20 @@ Function Copy-SqlPolicyManagement
 {
 <#
 .SYNOPSIS
-Migrates SQL Policy Based Management Objects
+Migrates SQL Policy Based Management Objects, including both policies and conditions.
 
 .DESCRIPTION
-Coming soon
+By default, all policies and conditions are copied. If an object already exist on the destination, it will be skipped unless -Force is used. 
+	
+The -Policies and -Conditions parameters are autopopulated for command-line completion and can be used to copy only specific objects.
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
 .PARAMETER Source
-Source Sql Server. You must have sysadmin access and server version must be > Sql Server 2005.
+Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
 .PARAMETER Destination
-Destination Sql Server. You must have sysadmin access and server version must be > Sql Server 2005.
+Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
 .PARAMETER SourceSqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -32,14 +34,14 @@ Windows Authentication will be used if DestinationSqlCredential is not specified
 To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER Force
-If policies exists and remote server, it will be dropped and recreated.
+If policies exists on destination server, it will be dropped and recreated.
 
 .NOTES 
-Author  : Chrissy LeMaire (@cl), netnerds.net
+Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
 dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
-Copyright (C) 2105 Chrissy LeMaire
+Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -58,18 +60,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .EXAMPLE   
 Copy-SqlPolicyManagement -Source sqlserver2014a -Destination sqlcluster
 
-Copies all extended event policies from sqlserver2014a to sqlcluster, using Windows credentials. 
+Copies all policies and conditions from sqlserver2014a to sqlcluster, using Windows credentials. 
 
 .EXAMPLE   
 Copy-SqlPolicyManagement -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
-Copies all extended event policies from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a
+Copies all policies and conditions from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a
 and Windows credentials for sqlcluster.
 
 .EXAMPLE   
 Copy-SqlPolicyManagement -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
 Shows what would happen if the command were executed.
+	
+.EXAMPLE   
+Copy-SqlPolicyManagement -Source sqlserver2014a -Destination sqlcluster -Policy 'xp_cmdshell must be disabled'
+
+Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sqlcluster. No conditions are migrated.
+	
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
@@ -97,6 +105,11 @@ Shows what would happen if the command were executed.
 		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
 		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 		
+		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
+		{
+			throw "Policy Management is only supported in SQL Server 2008 and above. Quitting."
+		}
+		
 		$sourceSqlConn = $sourceserver.ConnectionContext.SqlConnectionObject
 		$sourceSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sourceSqlConn
 		$sourceStore = New-Object  Microsoft.SqlServer.Management.DMF.PolicyStore $sourceSqlStoreConnection
@@ -105,63 +118,14 @@ Shows what would happen if the command were executed.
 		$destSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $destSqlConn
 		$destStore = New-Object  Microsoft.SqlServer.Management.DMF.PolicyStore $destSqlStoreConnection
 		
-		$storepolicies = $sourceStore.policies
-		$storeconditions = $sourceStore.conditions
+		$storepolicies = $sourceStore.policies | Where-Object { $_.IsSystemObject -eq $false }
+		$storeconditions = $sourceStore.conditions | Where-Object { $_.IsSystemObject -eq $false }
+		
 		if ($policies.length -gt 0) { $storepolicies = $storepolicies | Where-Object { $policies -contains $_.Name } }
 		if ($conditions.length -gt 0) { $storeconditions = $storeconditions | Where-Object { $conditions -contains $_.Name } }
 		
 		if ($policies.length -gt 0 -and $conditions.length -eq 0) { $storeconditions = $null }
 		if ($conditions.length -gt 0 -and $policies.length -eq 0) { $storepolicies = $null }
-		
-		<# 
-						Policies
-		#>
-		Write-Output "Migrating policies"
-		foreach ($policy in $storepolicies)
-		{
-			$policyName = $policy.name
-			if ($deststore.policies[$policyName] -ne $null)
-			{
-				if ($force -eq $false)
-				{
-					Write-Warning "Policy '$policyName' was skipped because it already exists on $destination"
-					Write-Warning "Use -Force to drop and recreate"
-					continue
-				}
-				else
-				{
-					if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $policyName"))
-					{
-						Write-Output "Policy '$policyName' exists on $destination"
-						Write-Output "Force specified. Dropping $policyName."
-						
-						try
-						{
-							$deststore.policies[$policyName].Drop()
-						}
-						catch
-						{
-							Write-Exception "Unable to drop: $_  Moving on."
-							continue
-						}
-					}
-				}
-			}
-			
-			if ($Pscmdlet.ShouldProcess($destination, "Migrating policy $policyName"))
-			{
-				try
-				{
-					$sql = $policy.ScriptCreate().GetScript()
-					Write-Verbose $sql
-					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
-				}
-				catch
-				{
-					Write-Exception $_
-				}
-			}
-		}
 		
 		<# 
 						Conditions
@@ -182,8 +146,8 @@ Shows what would happen if the command were executed.
 				{
 					if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $conditionName"))
 					{
-						Write-Output "condition '$conditionName' exists on $destination"
-						Write-Output "Force specified. Dropping $conditionName."
+						Write-Verbose "Condition '$conditionName' exists on $destination"
+						Write-Verbose "Force specified. Dropping $conditionName."
 						
 						try
 						{
@@ -202,8 +166,62 @@ Shows what would happen if the command were executed.
 			{
 				try
 				{
-					$sql = $condition.ScriptCreate().GetScript()
+					$sql = $condition.ScriptCreate().GetScript() | Out-String
+					$sql = $sql -replace "'$source'", "'$destination'"
 					Write-Verbose $sql
+					Write-Output "Copying condition $conditionName"
+					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
+				}
+				catch
+				{
+					Write-Exception $_
+				}
+			}
+		}
+		
+		<# 
+						Policies
+		#>
+		Write-Output "Migrating policies"
+		foreach ($policy in $storepolicies)
+		{
+			$policyName = $policy.name
+			if ($deststore.policies[$policyName] -ne $null)
+			{
+				if ($force -eq $false)
+				{
+					Write-Warning "Policy '$policyName' was skipped because it already exists on $destination"
+					Write-Warning "Use -Force to drop and recreate"
+					continue
+				}
+				else
+				{
+					if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $policyName"))
+					{
+						Write-Verbose "Policy '$policyName' exists on $destination"
+						Write-Verbose "Force specified. Dropping $policyName."
+						
+						try
+						{
+							$deststore.policies[$policyName].Drop()
+						}
+						catch
+						{
+							Write-Exception "Unable to drop: $_  Moving on."
+							continue
+						}
+					}
+				}
+			}
+			
+			if ($Pscmdlet.ShouldProcess($destination, "Migrating policy $policyName"))
+			{
+				try
+				{
+					$sql = $policy.ScriptCreate().GetScript() | Out-String
+					$sql = $sql -replace "'$source'", "'$destination'"
+					Write-Verbose $sql
+					Write-Output "Copying policy $policyName"
 					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
 				}
 				catch
@@ -218,7 +236,6 @@ Shows what would happen if the command were executed.
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Extended Event migration finished" }
+		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Policy Management migration finished" }
 	}
 }
-
