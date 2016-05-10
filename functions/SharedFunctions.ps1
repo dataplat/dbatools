@@ -502,7 +502,7 @@ Function Get-SqlFileStructure
 {
 <#
 .SYNOPSIS
-Internal function. Returns custom object that contains file structures and remote paths (\\sqlserver\m$\mssql\etc\etc\file.mdf) for
+Internal function. Returns custom object that contains file structures on destination paths (\\sqlserver\m$\mssql\etc\etc\file.mdf) for
 source and destination servers.
 #>
 	[CmdletBinding()]
@@ -693,6 +693,50 @@ Internal function. Returns the default data and log paths for SQL Server. Needed
 	return $filepath
 }
 
+Function Test-SqlPath
+{
+<#
+.SYNOPSIS
+Tests if file or directory exists from the perspective of the SQL Server
+
+.DESCRIPTION
+Uses master.dbo.xp_fileexist to determine if a file or directory exists
+	
+.PARAMETER SqlServer
+The SQL Server you want to run the test on.
+	
+.PARAMETER Path
+The Path to tests. Can be a file or directory.
+	
+.OUTPUTS
+$true or $false
+	
+#>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[object]$SqlServer,
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[string]$Path,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+	$sql = "EXEC master.dbo.xp_fileexist '$path'"
+	$fileexist = $server.ConnectionContext.ExecuteWithResults($sql)
+	
+	if ($fileexist.tables.rows['File Exists'] -eq $true -or $fileexist.tables.rows['File is a Directory'] -eq $true)
+	{
+		return $true
+	}
+	else
+	{
+		return $false
+	}
+}
+
 Function Join-AdminUnc
 {
 <#
@@ -866,7 +910,7 @@ Internal function. Checks to see if SQL Server Agent is running on a server.
 	}
 	
 	if ($SqlServer.JobServer -eq $null) { return $false }
-	try { $null = $SqlServer.JobServer.script() ; return $true }
+	try { $null = $SqlServer.JobServer.script(); return $true }
 	catch { return $false }
 }
 
