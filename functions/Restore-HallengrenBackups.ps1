@@ -38,7 +38,7 @@ Author  : Chrissy LeMaire, netnerds.net
 Requires: sysadmin access on destination SQL Server.
 
 dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
-Copyright (C) 2105 Chrissy LeMaire
+Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
