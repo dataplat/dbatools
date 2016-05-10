@@ -109,12 +109,6 @@ the destination."
 SqlBulkCopy option. Per Microsoft "Preserve null values in the destination table regardless of the settings for default 
 values. When not specified, null values are replaced by default values where applicable."
 
-.PARAMETER shellswitch
-Internal parameter.
-
-.PARAMETER SqlCredentialPath
-Internal parameter.
-
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
 
@@ -186,7 +180,9 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		[switch]$FireTriggers,
 		[switch]$KeepIdentity,
 		[switch]$KeepNulls,
+		[Parameter(DontShow)]
 		[switch]$shellswitch,
+		[Parameter(DontShow)]
 		[string]$SqlCredentialPath
 	)
 	
