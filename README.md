@@ -14,29 +14,37 @@ Run the following command to automatically install the module.
 
 This will install the following commands
 
-    Copy-SqlBackupDevice
-    Copy-SqlCentralManagementServer
-    Copy-SqlCredential
-    Copy-SqlDatabase
-    Copy-SqlDatabaseMail
-    Copy-SqlJobServer
-    Copy-SqlLinkedServer
-    Copy-SqlLogin
-    Copy-SqlServerTrigger
-    Copy-SqlSysDbUserObjects
+	Copy-SqlDatabase
+	Copy-SqlSysDbUserObjects
+	Copy-SqlLogin
+	Copy-SqlServerRole
+	Copy-SqlCredential
+	Copy-SqlAudit
+	Copy-SqlAuditSpecification
+	Copy-SqlBackupDevice
+	Copy-SqlEndpoint
+	Copy-SqlLinkedServer
+	Copy-SqlServerTrigger
+	Copy-SqlPolicyManagement
+	Copy-SqlResourceGovernor
+	Copy-SqlExtendedEvent
+	Copy-SqlDatabaseMail
+	Copy-SqlJobServer
+	Copy-SqlCentralManagementServer
+    Import-SqlSpConfigure
     Export-SqlSpConfigure
-    Get-DetachedDBinfo
+	Start-SqlMigration
+	
+	Set-SqlMaxMemory
     Get-SqlMaxMemory
     Get-SqlServerKey
-    Import-CsvToSql
-    Import-SqlSpConfigure
+    Get-DetachedDBinfo
+	Import-CsvToSql
     Reset-SqlAdmin
     Restore-HallengrenBackup
-    Set-SqlMaxMemory
-    Start-SqlMigration
-    Test-SqlConnection
-    Update-dbatools
     Watch-SqlDbLogin
+	Test-SqlConnection
+    Update-dbatools
 
 This module will be placed in PowerShell Gallery when it's slightly more mature. 	
 A few important notes
@@ -82,17 +90,23 @@ Start-SqlMigration
 --------------
 This brings a number of the functions together, which is useful when you're looking to migrate entire instances. It less flexible than using the underlying functions, but it's sort of like an easy button.
 
- - All user databases. Use -SkipDatabases to skip.
- - All logins. Use -SkipLogins to skip.
- - All database mail objects. Use -SkipDatabaseMail
- - All credentials. Use -SkipCredentials to skip.
- - All objects within the Job Server (SQL Agent). Use -SkipJobServer to skip.
- - All linked servers. Use -SkipLinkedServers to skip.
- - All groups and servers within Central Management Server. Use -SkipCentralManagementServer to skip.
- - All SQL Server configuration objects (everything in sp_configure). Use -SkipSpConfigure to skip.
- - All user objects in system databases. Use -SkipSysDbUserObjects to skip.
- - All system triggers. Use -SkipSystemTriggers to skip.
- - All system backup devices. Use -SkipBackupDevices to skip.
+All user databases. Use -NoDatabases to skip.
+All logins. Use -NoLogins to skip.
+All database mail objects. Use -NoDatabaseMail
+All credentials. Use -NoCredentials to skip.
+All objects within the Job Server (SQL Agent). Use -NoJobServer to skip.
+All linked servers. Use -NoLinkedServers to skip.
+All groups and servers within Central Management Server. Use -NoCentralManagementServer to skip.
+All SQL Server configuration objects (everything in sp_configure). Use -NoSpConfigure to skip.
+All user objects in system databases. Use -NoSysDbUserObjects to skip.
+All system triggers. Use -NoSystemTriggers to skip.
+All system backup devices. Use -NoBackupDevices to skip.
+All Audits. Use -NoAudits to skip.
+All Endpoints. Use -NoEndpoints to skip.
+All Extended Events. Use -NoExtendedEvents to skip.
+All Policy Management objects. Use -NoPolicyManagement to skip.
+All Resource Governor objects. Use -NoResourceGovernor to skip.
+All Server Audit Specifications. Use -NoServerAuditSpecifications to skip.
 
 Examples
 
@@ -102,7 +116,7 @@ Migrate databases uses backup/restore. Also migrate logins, database mail, crede
 
 Migrate only database mail, credentials, SQL Agent, Central Management Server, SQL global configuration. 
     
-    Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -SkipDatabases -SkipLogins
+    Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -NoDatabases -NoLogins
     
 Migrate databases uses backup/restore. Also migrate logins, database mail, credentials, SQL Agent, Central Management Server, SQL global configuration.Migrate databases using detach/copy/attach. Reattach at source and set source databases read-only.
     
