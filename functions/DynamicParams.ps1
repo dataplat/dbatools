@@ -857,3 +857,65 @@ Function Get-ParamSqlCustomErrors
 	
 	return $newparams
 }
+
+Function Get-ParamSqlDatabaseAssemblies
+{
+<# 
+ .SYNOPSIS 
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+ filled with assemblies from specified SQL Server.
+	
+ Assembly name is in database.assemblyname format.
+#>	
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	######### Assemblies
+	$list = @()
+	
+	foreach ($database in $server.Databases)
+	{
+		try
+		{
+			# a bug here requires a try/catch
+			$userAssemblies = $($database.assemblies | Where-Object { $_.isSystemObject -eq $false })
+			foreach ($assembly in $userAssemblies)
+			{
+				$name = "$($database.name).$($assembly.name)"
+				$list += $name
+			}
+		}
+		catch { }
+	}
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	$attributes.Position = 3
+	
+	# Database list parameter setup
+	if ($list)
+	{
+		$validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $list
+	}
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($list) { $attributeCollection.Add($validationset) }
+	$Assemblies = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Assemblies", [String[]], $attributeCollection)
+	
+	$newparams.Add("Assemblies", $Assemblies)
+	
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
