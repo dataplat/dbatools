@@ -8,6 +8,7 @@ if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\")) { throw "Starting " }
 
 # I renamed this function to be more accurate
 Set-Alias -Name Reset-SqlSaPassword -Value Reset-SqlAdmin
+Set-Alias -Name Copy-SqlUserDefinedMessage -Value Copy-SqlCustomError
 
 # Strictmode coming when I've got time.
 # Set-StrictMode -Version Latest

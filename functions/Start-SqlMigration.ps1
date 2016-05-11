@@ -6,7 +6,7 @@ Migrates SQL Server *ALL* databases, logins, database mail profies/accounts, cre
 Central Management Server objects, server configuration settings (sp_configure), user objects in systems databases,
 system triggers and backup devices from one SQL Server to another. 
 
-For more granular control, please use one of the -Skip parameters and use the other functions available within the dbatools module.
+For more granular control, please use one of the -No parameters and use the other functions available within the dbatools module.
 
 Automatically outputs a transcript to disk.
 
@@ -14,17 +14,24 @@ Automatically outputs a transcript to disk.
 
 Start-SqlMigration consolidates most of the migration tools in dbatools into one command.  This is useful when you're looking to migrate entire instances. It less flexible than using the underlying functions. Think of it as an easy button. It migrates:
 
-All user databases. Use -SkipDatabases to skip.
-All logins. Use -SkipLogins to skip.
-All database mail objects. Use -SkipDatabaseMail
-All credentials. Use -SkipCredentials to skip.
-All objects within the Job Server (SQL Agent). Use -SkipJobServer to skip.
-All linked servers. Use -SkipLinkedServers to skip.
-All groups and servers within Central Management Server. Use -SkipCentralManagementServer to skip.
-All SQL Server configuration objects (everything in sp_configure). Use -SkipSpConfigure to skip.
-All user objects in system databases. Use -SkipSysDbUserObjects to skip.
-All system triggers. Use -SkipSystemTriggers to skip.
-All system backup devices. Use -SkipBackupDevices to skip.
+All user databases. Use -NoDatabases to skip.
+All logins. Use -NoLogins to skip.
+All database mail objects. Use -NoDatabaseMail
+All credentials. Use -NoCredentials to skip.
+All objects within the Job Server (SQL Agent). Use -NoJobServer to skip.
+All linked servers. Use -NoLinkedServers to skip.
+All groups and servers within Central Management Server. Use -NoCentralManagementServer to skip.
+All SQL Server configuration objects (everything in sp_configure). Use -NoSpConfigure to skip.
+All user objects in system databases. Use -NoSysDbUserObjects to skip.
+All system triggers. Use -NoSystemTriggers to skip.
+All system backup devices. Use -NoBackupDevices to skip.
+All Audits. Use -NoAudits to skip.
+All Endpoints. Use -NoEndpoints to skip.
+All Extended Events. Use -NoExtendedEvents to skip.
+All Policy Management objects. Use -NoPolicyManagement to skip.
+All Resource Governor objects. Use -NoResourceGovernor to skip.
+All Server Audit Specifications. Use -NoServerAuditSpecifications to skip.
+All Custom Errors (User Defined Messages). Use -NoCustomErrors to skip.
 
 This script provides the ability to migrate databases using detach/copy/attach or backup/restore. SQL Server logins, including passwords, SID and database/server roles can also be migrated. In addition, job server objects can be migrated and server configuration settings can be exported or migrated. This script works with named instances, clusters and SQL Express.
 
@@ -33,10 +40,10 @@ By default, databases will be migrated to the destination SQL Server's default d
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
 .PARAMETER Source
-Source SQL Server. You must have sysadmin access and server version must be > SQL Server 7.
+Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER Destination
-Destination SQL Server. You must have sysadmin access and server version must be > SQL Server 7.
+Destination SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER SourceSqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -70,38 +77,62 @@ Specifies the network location for the backup files. The SQL Service service acc
 .PARAMETER SetSourceReadOnly
 Sets all migrated databases to ReadOnly prior to detach/attach & backup/restore. If -Reattach is used, db is set to read-only after reattach.
 
-.PARAMETER SkipDatabases
+.PARAMETER WithReplace
+It's exactly WITH REPLACE. This is useful if you want to stage some complex file paths.
+
+.PARAMETER NoDatabases
 Skips the database migration.
 
-.PARAMETER SkipLogins
+.PARAMETER NoLogins
 Skips the login migration.
 
-.PARAMETER SkipJobServer
+.PARAMETER NoJobServer
 Skips the job server (SQL Agent) migration.
 
-.PARAMETER SkipCredentials
+.PARAMETER NoCredentials
 Skips the credential migration.
 
-.PARAMETER SkipLinkedServers
+.PARAMETER NoLinkedServers
 Skips the Linked Server migration.
 
-.PARAMETER SkipSpConfigure
+.PARAMETER NoSpConfigure
 Skips the global configuration migration.
 
-.PARAMETER SkipCentralManagementServer
+.PARAMETER NoCentralManagementServer
 Skips the CMS migration.
 
-.PARAMETER SkipDatabaseMail
+.PARAMETER NoDatabaseMail
 Skips the database mail migration.
 
-.PARAMETER SkipSysDbUserObjects
+.PARAMETER NoSysDbUserObjects
 Skips the import of user objects found in source SQL Server's master, msdb and model databases to the destination.
 
-.PARAMETER SkipSystemTriggers
+.PARAMETER NoSystemTriggers
 Skips the System Triggers migration.
 
-.PARAMETER SkipBackupDevices
+.PARAMETER NoBackupDevices
 Skips the backup device migration.
+
+.PARAMETER NoAudits
+Skips the Audit migration.
+
+.PARAMETER NoEndpoints
+Skips the Endpoin migration.
+
+.PARAMETER NoExtendedEvents
+Skips the Extended Event migration.
+
+.PARAMETER NoPolicyManagement
+Skips the Policy Management migration.
+
+.PARAMETER NoResourceGovernor
+Skips the Resource Governor migration.
+
+.PARAMETER NoServerAuditSpecifications
+Skips the Server Audit Specification migration.
+
+.PARAMETER NoCustomErrors
+Skips the Custom Error (User Defined Messages) migration.
 
 .PARAMETER Force
 If migrating users, forces drop and recreate of SQL and Windows logins. 
@@ -114,14 +145,14 @@ For other migration objects, it will just drop existing items and readd, if -for
 Outputs a CSV of some of the results. Left in for backwards compatability, as it's slightly more organized than the transcript.
 
 .NOTES 
-Author  : Chrissy LeMaire
-Limitations: 	Doesn't cover what it doesn't cover (replication, certificates, etc)
-			SQL Server 2000 login migrations have some limitations (server perms aren't migrated)
-			SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
-			Logins within SQL Server 2012 and above logins cannot be migrated to SQL Server 2008 R2 and below.	
+Author: Chrissy LeMaire
+Limitations: 	Doesn't cover what it doesn't cover (certificates, etc)
+				SQL Server 2000 login migrations have some limitations (server perms aren't migrated)
+				SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
+				Logins within SQL Server 2012 and above logins cannot be migrated to SQL Server 2008 R2 and below.	
 
 dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
-Copyright (C) 2105 Chrissy LeMaire
+Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -153,7 +184,7 @@ Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -SourceSqlCr
 Migrate databases uses backup/restore. Also migrate logins, database mail, credentials, SQL Agent, Central Management Server, SQL global configuration.
 
 .EXAMPLE
-Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -SkipDatabases -SkipLogins
+Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -NoDatabases -NoLogins
 
 Migrates everything but logins and databases.
 
@@ -176,19 +207,39 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 		[string]$NetworkShare,
 		[switch]$SetSourceReadOnly,
 		[switch]$NoRecovery,
+		[Parameter(ParameterSetName = "DbBackup")]
+		[switch]$WithReplace,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
-		[switch]$SkipDatabases,
-		[switch]$SkipLogins,
-		[switch]$SkipJobServer,
-		[switch]$SkipCredentials,
-		[switch]$SkipLinkedServers,
-		[switch]$SkipSpConfigure,
-		[switch]$SkipCentralManagementServer,
-		[switch]$SkipDatabaseMail,
-		[switch]$SkipSysDbUserObjects,
-		[switch]$SkipSystemTriggers,
-		[switch]$SkipBackupDevices,
+		[Alias("SkipDatabases")]
+		[switch]$NoDatabases,
+		[Alias("SkipLogins")]
+		[switch]$NoLogins,
+		[Alias("SkipJobServer")]
+		[switch]$NoJobServer,
+		[Alias("SkipCredentials")]
+		[switch]$NoCredentials,
+		[Alias("SkipLinkedServers")]
+		[switch]$NoLinkedServers,
+		[Alias("SkipSpConfigure")]
+		[switch]$NoSpConfigure,
+		[Alias("SkipCentralManagementServer")]
+		[switch]$NoCentralManagementServer,
+		[Alias("SkipDatabaseMail")]
+		[switch]$NoDatabaseMail,
+		[Alias("SkipSysDbUserObjects")]
+		[switch]$NoSysDbUserObjects,
+		[Alias("SkipSystemTriggers")]
+		[switch]$NoSystemTriggers,
+		[Alias("SkipBackupDevices")]
+		[switch]$NoBackupDevices,
+		[switch]$NoAudits,
+		[switch]$NoEndpoints,
+		[switch]$NoExtendedEvents,
+		[switch]$NoPolicyManagement,
+		[switch]$NoResourceGovernor,
+		[switch]$NoServerAuditSpecifications,
+		[switch]$NoCustomErrors,
 		[switch]$Force,
 		[switch]$CsvLog
 	)
@@ -214,17 +265,38 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 		$destination = $destserver.name
 		
 		
-		if (!$SkipCredentials)
+		if (!$NoCredentials)
 		{
-			Write-Output "`n`nMigrating SQL credentials"
-			try
+			if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
 			{
-				Copy-SqlCredential -Source $sourceserver.name -Destination $destserver.name -Force:$Force
+				Write-Output "Credentials are only supported in SQL Server 2005 and above. Skipping."
 			}
-			catch { Write-Error "Credential migration reported the following error $($_.Exception.Message) " }
+			else
+			{
+				Write-Output "`n`nMigrating SQL credentials"
+				try
+				{
+					Copy-SqlCredential -Source $sourceserver.name -Destination $destserver.name -Force:$Force
+				}
+				catch { Write-Error "Credential migration reported the following error $($_.Exception.Message) " }
+			}
 		}
 		
-		if (!$SkipDatabases)
+		if (!$NoCustomErrors)
+		{
+			Write-Output "`n`nMigrating custom errors (user defined messages)"
+			try
+			{
+				If ($Pscmdlet.ShouldProcess($destination, "Copying custom errors."))
+				{
+					Copy-SqlCustomError -Source $sourceserver -Destination $destserver -Force:$Force
+				}
+				
+			}
+			catch { Write-Error "Couldn't copy custom errors." }
+		}
+		
+		if (!$NoDatabases)
 		{
 			# Test some things
 			if ($networkshare.length -gt 0) { $netshare += "-NetworkShare $NetworkShare" }
@@ -235,7 +307,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			{
 				if ($BackupRestore)
 				{
-					Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -CsvLog:$csvlog -NoRecovery:$NoRecovery
+					Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -CsvLog:$csvlog -NoRecovery:$NoRecovery -WithReplace:$WithReplace
 				}
 				else
 				{
@@ -245,7 +317,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			catch { Write-Error "Database migration reported the following error $($_.Exception.Message)" }
 		}
 		
-		if (!$SkipSysDbUserObjects)
+		if (!$NoSysDbUserObjects)
 		{
 			Write-Output "`n`nMigrating user objects in system databases (this can take a second)"
 			try
@@ -259,7 +331,8 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			catch { Write-Error "Couldn't copy all user objects in system databases." }
 		}
 		
-		if (!$SkipLogins)
+		
+		if (!$NoLogins)
 		{
 			Write-Output "`n`nMigrating logins"
 			try
@@ -269,7 +342,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			catch { Write-Error "Login migration reported the following error $($_.Exception.Message) " }
 		}
 		
-		if (!$SkipLogins -and !$SkipDatabases -and !$NoRecovery)
+		if (!$NoLogins -and !$NoDatabases -and !$NoRecovery)
 		{
 			Write-Output "`n`nUpdating database owners to match newly migrated logins"
 			try
@@ -279,18 +352,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			catch { Write-Error "Login migration reported the following error $($_.Exception.Message) " }
 		}
 		
-		if (!$SkipJobServer)
-		{
-			Write-Output "`n`nMigrating job server"
-			if ($force) { Write-Warning " Copy-SqlJobServer currently does not support force." }
-			try
-			{
-				Copy-SqlJobServer -Source $sourceserver -Destination $destserver -CsvLog:$csvlog
-			}
-			catch { Write-Error "Job Server migration reported the following error $($_.Exception.Message) " }
-		}
-		
-		if (!$SkipLinkedServers)
+		if (!$NoLinkedServers)
 		{
 			Write-Output "`n`nMigrating linked servers"
 			try
@@ -300,7 +362,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			catch { Write-Error "Linked server migration reported the following error $($_.Exception.Message) " }
 		}
 		
-		if (!$SkipCentralManagementServer)
+		if (!$NoCentralManagementServer)
 		{
 			if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
 			{
@@ -318,28 +380,42 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			}
 		}
 		
-		if (!$SkipDatabaseMail)
+		if (!$NoDatabaseMail)
 		{
-			Write-Output "`n`nMigrating database mail"
-			if ($force) { Write-Warning " Copy-SqlDatabaseMail currently does not support force." }
-			try
+			if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
 			{
-				Copy-SqlDatabaseMail -Source $sourceserver -Destination $destserver
+				Write-Output "Database Mail is only supported in SQL Server 2005 and above. Skipping."
 			}
-			catch { Write-Error "Database mail migration reported the following error $($_.Exception.Message)" }
+			else
+			{
+				Write-Output "`n`nMigrating database mail"
+				if ($force) { Write-Warning " Copy-SqlDatabaseMail currently does not support force." }
+				try
+				{
+					Copy-SqlDatabaseMail -Source $sourceserver -Destination $destserver
+				}
+				catch { Write-Error "Database mail migration reported the following error $($_.Exception.Message)" }
+			}
 		}
 		
-		if (!$SkipSystemTriggers)
+		if (!$NoSystemTriggers)
 		{
-			Write-Output "`n`nMigrating System Triggers"
-			try
+			if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
 			{
-				Copy-SqlServerTrigger -Source $sourceserver -Destination $destserver -Force:$force
+				Write-Output "Server Triggers are only supported in SQL Server 2008 and above. Skipping."
 			}
-			catch { Write-Error "System Triggers migration reported the following error $($_.Exception.Message)" }
+			else
+			{
+				Write-Output "`n`nMigrating System Triggers"
+				try
+				{
+					Copy-SqlServerTrigger -Source $sourceserver -Destination $destserver -Force:$force
+				}
+				catch { Write-Error "System Triggers migration reported the following error $($_.Exception.Message)" }
+			}
 		}
 		
-		if (!$SkipBackupDevices)
+		if (!$NoBackupDevices)
 		{
 			Write-Output "`n`nMigrating Backup Devices"
 			try
@@ -349,15 +425,132 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			catch { Write-Error "Backup device migration reported the following error $($_.Exception.Message)" }
 		}
 		
-		if (!$SkipSpConfigure)
+		if (!$NoSpConfigure)
 		{
 			Write-Output "`n`nMigrating SQL Server Configuration"
 			try
 			{
-				Import-SqlSpConfigure -Source $sourceserver -Destination $destserver -Force:$force
+				Copy-SqlSpConfigure -Source $sourceserver -Destination $destserver
 			}
 			catch { Write-Error "Configuration migration reported the following error $($_.Exception.Message) " }
 		}
+		
+		if (!$NoAudits)
+		{
+			if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
+			{
+				Write-Output "Server Audit Specifications are only supported in SQL Server 2008 and above. Skipping."
+			}
+			else
+			{
+				Write-Output "`n`nMigrating Audits"
+				try
+				{
+					Copy-SqlAudit -Source $sourceserver -Destination $destserver -Force:$force
+				}
+				catch { Write-Error "Backup device migration reported the following error $($_.Exception.Message)" }
+			}
+		}
+		
+		if (!$NoServerAuditSpecifications)
+		{
+			if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
+			{
+				Write-Output "Server Audit Specifications are only supported in SQL Server 2008 and above. Skipping."
+			}
+			else
+			{
+				Write-Output "`n`nMigrating Server Audit Specifications"
+				try
+				{
+					Copy-SqlAuditSpecification -Source $sourceserver -Destination $destserver -Force:$force
+				}
+				catch { Write-Error "Server Audit Specification migration reported the following error $($_.Exception.Message)" }
+			}
+		}
+		
+		if (!$NoEndpoints)
+		{
+			if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
+			{
+				Write-Output "Server Endpoints are only supported in SQL Server 2008 and above. Skipping."
+			}
+			else
+			{
+				Write-Output "`n`nMigrating Endpoints"
+				try
+				{
+					Copy-SqlEndpoint -Source $sourceserver -Destination $destserver -Force:$force
+				}
+				catch { Write-Error "Backup device migration reported the following error $($_.Exception.Message)" }
+			}
+		}
+		
+		
+		if (!$NoExtendedEvents)
+		{
+			if ($sourceserver.versionMajor -lt 11 -or $destserver.versionMajor -lt 11)
+			{
+				Write-Output "Extended Events are only supported in SQL Server 2012 and above. Skipping."
+			}
+			else
+			{
+				Write-Output "`n`nMigrating Extended Events"
+				try
+				{
+					Copy-SqlExtendedEvent -Source $sourceserver -Destination $destserver -Force:$force
+				}
+				catch { Write-Error "Extended Event migration reported the following error $($_.Exception.Message)" }
+			}
+		}
+		
+		
+		if (!$NoPolicyManagement)
+		{
+			if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
+			{
+				Write-Output "Policy Management is only supported in SQL Server 2008 and above. Skipping."
+			}
+			else
+			{
+				Write-Output "`n`nMigrating Policy Management "
+				try
+				{
+					Copy-SqlPolicyManagement -Source $sourceserver -Destination $destserver -Force:$force
+				}
+				catch { Write-Error "Policy Management migration reported the following error $($_.Exception.Message)" }
+			}
+		}
+		
+		if (!$NoResourceGovernor)
+		{
+			if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
+			{
+				Write-Output "Resource Governor is only supported in SQL Server 2008 and above. Skipping."
+			}
+			else
+			{
+				Write-Output "`n`nMigrating Resource Governor"
+				try
+				{
+					Copy-SqlResourceGovernor -Source $sourceserver -Destination $destserver -Force:$force
+				}
+				catch { Write-Error "Resource Governor migration reported the following error $($_.Exception.Message)" }
+			}
+		}
+		
+		
+		if (!$NoJobServer)
+		{
+			Write-Output "`n`nMigrating job server"
+			if ($force) { Write-Warning " Copy-SqlJobServer currently does not support force." }
+			try
+			{
+				Copy-SqlJobServer -Source $sourceserver -Destination $destserver -CsvLog:$csvlog
+			}
+			catch { Write-Error "Job Server migration reported the following error $($_.Exception.Message) " }
+		}
+		
 	}
 	
 	END

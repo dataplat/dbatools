@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.7.9.0'
+	ModuleVersion = '0.7.9.1'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -68,7 +68,7 @@
 	NestedModules = @()
 	
 	# Functions to export from this module
-	FunctionsToExport = @('Copy-SqlAuditSpecification','Copy-SqlEndpoint', 'Copy-SqlAudit', 'Copy-SqlServerRole', 'Copy-SqlResourceGovernor', 'Copy-SqlPolicyManagement',
+	FunctionsToExport = @('Copy-SqlCustomError','Copy-SqlAuditSpecification','Copy-SqlEndpoint', 'Copy-SqlAudit', 'Copy-SqlServerRole', 'Copy-SqlResourceGovernor', 'Copy-SqlPolicyManagement',
 	'Copy-SqlExtendedEvent', 'Copy-SqlBackupDevice', 'Copy-SqlServerTrigger', 'Copy-SqlLogin', 'Copy-SqlLinkedServer', 'Copy-SqlCredential',
 	'Copy-SqlCentralManagementServer', 'Copy-SqlSysDbUserObjects', 'Copy-SqlDatabaseMail', 'Copy-SqlDatabase', 'Copy-SqlJobServer', 'Start-SqlMigration',
 	'Import-SqlSpConfigure', 'Export-SqlSpConfigure', 'Watch-SqlDbLogin', 'Reset-SqlAdmin', 'Get-SqlServerKey', 'Set-SqlMaxMemory',
@@ -82,7 +82,7 @@
 	VariablesToExport = '*'
 	
 	# Aliases to export from this module
-	AliasesToExport = 'Reset-SqlSaPassword'
+	AliasesToExport = 'Reset-SqlSaPassword','Copy-SqlUserDefinedMessage'
 	
 	# List of all modules packaged with this module
 	ModuleList = @()
