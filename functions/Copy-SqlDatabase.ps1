@@ -12,10 +12,10 @@ By default, databases will be migrated to the destination Sql Server's default d
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
 .PARAMETER Source
-Source Sql Server. You must have sysadmin access and server version must be > Sql Server 7.
+Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER Destination
-Destination Sql Server. You must have sysadmin access and server version must be > Sql Server 7.
+Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER SourceSqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -32,7 +32,7 @@ $dcred = Get-Credential, this pass this $dcred to the param.
 Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
 .PARAMETER All
-This is a parameter that was included for safety, so you dont' accidentally detach/attach all databases without specifying. Migrates user databases. Does not migrate system or support databases. Requires -BackupRestore or -DetachAttach. 
+This is a parameter that was included for safety, so you don't accidentally detach/attach all databases without specifying. Migrates user databases. Does not migrate system or support databases. Requires -BackupRestore or -DetachAttach. 
 
 .PARAMETER IncludeSupportDbs
 Migration of ReportServer, ReportServerTempDb, SSIDb, and distribution databases if they exist. A logfile named $SOURCE-$DESTINATION-$date-Sqls.csv will be written to the current directory. Requires -BackupRestore or -DetachAttach.
@@ -47,7 +47,12 @@ Uses the detach/copy/attach method to perform database migrations. No files are 
 Reattaches all source databases after DetachAttach migration.
 
 .PARAMETER ReuseFolderStructure
-By default, databases will be migrated to the destination Sql Server's default data and log directories. You can override this by specifying -ReuseFolderStructure. The same structure will be kept exactly, so consider this if you're migrating between different versions and use part of Microsoft's default Sql structure (MSSql12.INSTANCE, etc)
+By default, databases will be migrated to the destination Sql Server's default data and log directories. 
+You can override this by specifying -ReuseFolderStructure. 
+The same structure on the SOURCE will be kept exactly, so consider this if you're migrating between 
+different versions and use part of Microsoft's default Sql structure (MSSql12.INSTANCE, etc)
+
+* note, to reuse destination folder structure, specify -WithReplace
 
 .PARAMETER NetworkShare
 Specifies the network location for the backup files. The Sql Service service accounts must read/write permission to access this location.
@@ -63,6 +68,9 @@ Sets all migrated databases to ReadOnly prior to detach/attach & backup/restore.
 
 .PARAMETER NoRecovery
 Sets restore to NoRecovery. Ideal for staging. 
+	
+.PARAMETER WithReplace
+It's exactly WITH REPLACE. This is useful if you want to stage some complex file paths.
 
 .PARAMETER CsvLog
 Outputs a log in CSV format
@@ -71,14 +79,14 @@ Outputs a log in CSV format
 Drops existing databases with matching names. If using -DetachAttach, -Force will break mirrors and drop dbs from Availability Groups.
 
 .NOTES 
-Author  : Chrissy LeMaire (@cl), netnerds.net
+Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 Limitations: Doesn't cover what it doesn't cover (replication, certificates, etc)
 			 Sql Server 2000 databases cannot be directly migrated to Sql Server 2012 and above.
 			 Logins within Sql Server 2012 and above logins cannot be migrated to Sql Server 2008 R2 and below.				
 
-dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
-Copyright (C) 2105 Chrissy LeMaire
+dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -94,8 +102,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-.LINK 
-https://gallery.technet.microsoft.com/scriptcenter/Use-PowerShell-to-Migrate-86c841df/
+.LINK
+https://dbatools.io/Copy-SqlDatabase
 
 .EXAMPLE   
 Copy-SqlDatabase -Source sqlserver2014a -Destination sqlcluster -DetachAttach -Reattach
@@ -142,12 +150,15 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		[Parameter(ParameterSetName = "DbBackup")]
 		[Parameter(ParameterSetName = "DbAttachDetach")]
 		[switch]$SetSourceReadOnly,
+		[Parameter(ParameterSetName = "DbBackup")]
 		[switch]$NoRecovery,
+		[Parameter(ParameterSetName = "DbBackup")]
+		[switch]$WithReplace,
 		[switch]$Force,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$CsvLog,
-		[Parameter(ValueFromPipeline = $True)]
+		[parameter(ValueFromPipeline = $true, DontShow)]
 		[object]$pipedatabase
 	)
 	
@@ -381,12 +392,15 @@ Internal function.
 			$server.ConnectionContext.StatementTimeout = 0
 			$restore = New-Object "Microsoft.SqlServer.Management.Smo.Restore"
 			
-			foreach ($file in $filestructure.databases[$dbname].destination.values)
+			if ($WithReplace -eq $false -or $server.databases[$dbname] -eq $null)
 			{
-				$movefile = New-Object "Microsoft.SqlServer.Management.Smo.RelocateFile"
-				$movefile.LogicalFileName = $file.logical
-				$movefile.PhysicalFileName = $file.physical
-				$null = $restore.RelocateFiles.Add($movefile)
+				foreach ($file in $filestructure.databases[$dbname].destination.values)
+				{
+					$movefile = New-Object "Microsoft.SqlServer.Management.Smo.RelocateFile"
+					$movefile.LogicalFileName = $file.logical
+					$movefile.PhysicalFileName = $file.physical
+					$null = $restore.RelocateFiles.Add($movefile)
+				}
 			}
 			
 			Write-Output "Restoring $dbname to $servername"
@@ -609,7 +623,6 @@ Internal function.
 				return
 			}
 			
-			
 			$remotedestpath = Join-AdminUNC $destnetbios (Get-SqlDefaultPaths $destserver data)
 			If ((Test-Path $remotedestpath) -ne $true -and $DetachAttach)
 			{
@@ -642,9 +655,9 @@ Internal function.
 		############################################################### #>
 				
 				if ($database.id -le 4) { continue }
+				
 				if ($Databases -and $Databases -notcontains $dbname) { continue }
 				if ($IncludeSupportDBs -eq $false -and $SupportDBs -contains $dbname) { continue }
-				
 				if ($IncludeSupportDBs -eq $true -and $SupportDBs -notcontains $dbname)
 				{
 					if ($All -eq $false -and $Databases.length -eq 0) { continue }
@@ -689,6 +702,21 @@ Internal function.
 					continue
 				}
 				
+				$dbstatus = $database.status.toString()
+				
+				if ($dbstatus.StartsWith("Normal") -eq $false)
+				{
+					Write-Warning "$dbname is not in a Normal state. Skipping."
+					continue
+				}
+				
+				if ($database.ReplicationOptions -ne "None" -and $DetachAttach -eq $true)
+				{
+					Write-Warning "$dbname is part of replication. Skipping."
+					continue
+				}
+				
+				
 				if ($database.IsMirroringEnabled -and !$force -and $DetachAttach)
 				{
 					Write-Warning "Database is being mirrored. Use -Force to break mirror and migrate. Alternatively, you can use the safer backup/restore method."
@@ -696,7 +724,7 @@ Internal function.
 					continue
 				}
 				
-				if ($destserver.Databases[$dbname] -ne $null -and !$force)
+				if (($destserver.Databases[$dbname] -ne $null) -and !$force -and !$WithReplace)
 				{
 					Write-Warning "Database exists at destination. Use -Force to drop and migrate."
 					$skippedb[$dbname] = "Database exists at destination. Use -Force to drop and migrate."
@@ -1047,7 +1075,7 @@ $filestructure is a custom object generated by Get-SqlFileStructure
 		$script:timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
 		
 		# Convert from RuntimeDefinedParameter object to regular array
-		$databases = $psboundparameters.Database
+		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
 		
 		if ($pipedatabase.Length -gt 0)
@@ -1064,6 +1092,19 @@ $filestructure is a custom object generated by Get-SqlFileStructure
 		
 		$source = $sourceserver.name
 		$destination = $destserver.name
+		
+		if ($NetworkShare.Length -gt 0)
+		{
+			if ($(Test-SqlPath -SqlServer $Source -Path $NetworkShare) -eq $false)
+			{
+				throw "$Source cannot access $NetworkShare"
+			}
+			
+			if ($(Test-SqlPath -SqlServer $Destination -Path $NetworkShare) -eq $false)
+			{
+				throw "$Destination cannot access $NetworkShare"
+			}
+		}
 		
 		Invoke-SmoCheck -SqlServer $sourceserver
 		Invoke-SmoCheck -SqlServer $destserver
@@ -1114,6 +1155,11 @@ $filestructure is a custom object generated by Get-SqlFileStructure
 		{
 			throw "Backup and restore is the safest method for migrating from Sql Server 2005 to other Sql Server versions.
 		Please use the -BackupRestore switch or override this requirement by specifying -Force."
+		}
+		
+		if ($sourceserver.collation -ne $destserver.collation)
+		{
+			Write-Warning "Collation on $Source, $($sourceserver.collation) differs from the $Destination, $($destserver.collation)."
 		}
 		
 	<# ----------------------------------------------------------
