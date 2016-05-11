@@ -35,7 +35,7 @@ To connect as a different Windows user, run PowerShell as that user.
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
-dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
+dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
@@ -51,6 +51,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+.LINK
+https://dbatools.io/Copy-SqlAudit
 
 .EXAMPLE   
 Copy-SqlAudit -Source sqlserver2014a -Destination sqlcluster
@@ -110,7 +112,7 @@ Shows what would happen if the command were executed using force.
 				continue
 			}
 			
-			$sql = $audit.Script()
+			$sql = $audit.Script() | Out-String
 			$sql = $sql -replace "'$source'", "'$destination'"
 			
 			if ($destaudits.name -contains $audit.name)
