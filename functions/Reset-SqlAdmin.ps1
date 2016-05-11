@@ -44,7 +44,7 @@ Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: Admin access to server (not SQL Services), 
 Remoting must be enabled and accessible if $sqlserver is not local
 
-dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
+dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
@@ -60,9 +60,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 .LINK 
-https://gallery.technet.microsoft.com/scriptcenter/Reset-SQL-SA-Password-15fb488d
+https://dbatools.io/Reset-SqlAdmin 
 
 .EXAMPLE   
 Reset-SqlAdmin -SqlServer sqlcluster

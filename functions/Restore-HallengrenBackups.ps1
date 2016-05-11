@@ -37,7 +37,7 @@ Windows Authentication will be used if DestinationSqlCredential is not specified
 Author  : Chrissy LeMaire, netnerds.net
 Requires: sysadmin access on destination SQL Server.
 
-dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
+dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify

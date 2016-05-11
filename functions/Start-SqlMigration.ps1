@@ -151,7 +151,7 @@ Limitations: 	Doesn't cover what it doesn't cover (certificates, etc)
 				SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
 				Logins within SQL Server 2012 and above logins cannot be migrated to SQL Server 2008 R2 and below.	
 
-dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
+dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
@@ -169,7 +169,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			
 
 .LINK 
-https://gallery.technet.microsoft.com/scriptcenter/Use-PowerShell-to-Migrate-86c841df/
+https://dbatools.io/Start-SqlMigration
 
 .EXAMPLE   
 Start-SqlMigration -Source sqlserver\instance -Destination sqlcluster -DetachAttach 

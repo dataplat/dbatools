@@ -1,4 +1,4 @@
-﻿Function Copy-SqlResourceGovernor
+﻿Function Copy-SqlResourceGovernor 
 {
 <#
 .SYNOPSIS
@@ -40,7 +40,7 @@ If policies exists on destination server, it will be dropped and recreated.
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
-dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
+dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
@@ -56,20 +56,22 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+.LINK
+https://dbatools.io/Copy-SqlResourceGovernor
 
 .EXAMPLE   
-Copy-SqlResourceGovernor-Source sqlserver2014a -Destination sqlcluster
+Copy-SqlResourceGovernor -Source sqlserver2014a -Destination sqlcluster
 
 Copies all extended event policies from sqlserver2014a to sqlcluster, using Windows credentials. 
 
 .EXAMPLE   
-Copy-SqlResourceGovernor-Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+Copy-SqlResourceGovernor -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
 Copies all extended event policies from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a
 and Windows credentials for sqlcluster.
 
 .EXAMPLE   
-Copy-SqlResourceGovernor-Source sqlserver2014a -Destination sqlcluster -WhatIf
+Copy-SqlResourceGovernor -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
 Shows what would happen if the command were executed.
 #>

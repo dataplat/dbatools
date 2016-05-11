@@ -43,10 +43,10 @@ Outputs an ordered CSV log of migration successes, failures and skips.
 When this flag is set, copy all jobs as Enabled=0
 
 .NOTES 
-Author  : Chrissy LeMaire (@cl), netnerds.net
+Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
-dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
+dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
@@ -62,6 +62,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+.LINK
+https://dbatools.io/Copy-SqlJobServer
 
 .EXAMPLE   
 Copy-SqlJobServer -Source sqlserver2014a -Destination sqlcluster
@@ -118,6 +120,32 @@ Shows what would happen if the command were executed.
 		{
 			foreach ($agent in $sourceagent.($jobobject))
 			{
+				if ($jobobject -eq "Jobs")
+				{
+					$dbnames = $agent.JobSteps.Databasename.Where{ $_.length -gt 0 }
+					$missingdb = $dbnames.Where{ $destserver.Databases.Name -notcontains $_ }
+					if ($missingdb.count -gt 0 -and $dbnames.count -gt 0)
+					{
+						Write-Warning "Database $missingdb doesn't exist on destination. Skipping."
+						continue
+					}
+					
+					$missinglogin = $agent.OwnerLoginName.Where{ $destserver.Logins.Name -notcontains $_ }
+					if ($missinglogin.count -gt 0)
+					{
+						Write-Warning "Login $missinglogin doesn't exist on destination. Skipping."
+						continue
+					}
+					
+					$proxynames = $agent.JobSteps.ProxyName.Where{ $_.length -gt 0 }
+					$missingproxy = $proxynames.Where{ $destserver.JobServer.ProxyAccounts.Name -notcontains $_ }
+					if ($missingproxy.count -gt 0 -and $proxynames.count -gt 0)
+					{
+						Write-Warning "Proxy Account $($proxynames[0]) doesn't exist on destination. Skipping."
+						continue
+					}
+				}
+				
 				$agentname = $agent.name
 				If ($Pscmdlet.ShouldProcess($destination, "Adding $jobobject $agentname"))
 				{
@@ -127,7 +155,7 @@ Shows what would happen if the command were executed.
 						{
 							$agent.IsEnabled = $False
 						}
-						$sql = $agent.script()
+						$sql = $agent.Script() | Out-String
 						$sql = $sql -replace [regex]::Escape("@server=N'$source'"), "@server=N'$destination'"
 						$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
 						$migratedjob["$jobobject $agentname"] = "Successfully added"

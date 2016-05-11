@@ -30,7 +30,7 @@ Windows Authentication will be used if DestinationSqlCredential is not specified
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: 	PowerShell Version 3.0, SQL Server SMO,  Remote Registry
-dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
+dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
@@ -46,9 +46,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 .LINK 
-https://gallery.technet.microsoft.com/scriptcenter/Get-Sql-Server-Product-4b5bf4f8
+https://dbatools.io/Get-SqlServerKey
 
 .EXAMPLE   
 Get-SqlServerKey winxp, sqlservera, sqlserver2014a, win2k8

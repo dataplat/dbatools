@@ -47,7 +47,7 @@ Requires: sysadmin access on SQL Servers, Remote Registry & Remote Adminsitratio
 Limitations: Hasn't been tested thoroughly. Works on Win8.1 and SQL Server 2012 & 2014 so far.
 This just copies the SQL portion. It does not copy files (ie. a local SQLITE database, or Access Db), nor does it configure ODbC entries.
 
-dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
+dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
@@ -63,6 +63,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+.LINK
+https://dbatools.io/Copy-SqlLinkedServer 
 
 .EXAMPLE   
 Copy-SqlLinkedServer -Source sqlserver2014a -Destination sqlcluster

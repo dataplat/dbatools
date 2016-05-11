@@ -2,7 +2,7 @@ Function Copy-SqlAuditSpecification
 {
 <#
 .SYNOPSIS 
-Copy-SqlServerServerAuditSpecification migrates server audit specifications from one SQL Server to another. 
+Copy-SqlAuditSpecification migrates server audit specifications from one SQL Server to another. 
 
 .DESCRIPTION
 By default, all audits are copied. The -ServerAuditSpecifications parameter is autopopulated for command-line completion and can be used to copy only specific audits.
@@ -35,7 +35,7 @@ To connect as a different Windows user, run PowerShell as that user.
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
-dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
+dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
@@ -51,20 +51,22 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+.LINK
+https://dbatools.io/Copy-SqlAuditSpecification
 
 .EXAMPLE   
-Copy-SqlServerServerAuditSpecification -Source sqlserver2014a -Destination sqlcluster
+Copy-SqlAuditSpecification -Source sqlserver2014a -Destination sqlcluster
 
 Copies all server audits from sqlserver2014a to sqlcluster, using Windows credentials. If audits with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-SqlServerServerAuditSpecification -Source sqlserver2014a -Destination sqlcluster -ServerAuditSpecifications tg_noDbDrop -SourceSqlCredential $cred -Force
+Copy-SqlAuditSpecification -Source sqlserver2014a -Destination sqlcluster -ServerAuditSpecifications tg_noDbDrop -SourceSqlCredential $cred -Force
 
 Copies a single audit, the tg_noDbDrop audit from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a
 and Windows credentials for sqlcluster. If a audit with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 .EXAMPLE   
-Copy-SqlServerServerAuditSpecification -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+Copy-SqlAuditSpecification -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
 #>

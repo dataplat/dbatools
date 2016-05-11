@@ -38,7 +38,7 @@ Windows Authentication will be used if DestinationSqlCredential is not specified
 Author  : Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
-dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
+dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2105 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
@@ -56,7 +56,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 .LINK 
-https://gallery.technet.microsoft.com/scriptcenter/Get-Set-SQL-Max-Memory-19147057
+https://dbatools.io/Get-SqlMaxMemory
 
 .EXAMPLE   
 Get-SqlMaxMemory -SqlCms sqlcluster

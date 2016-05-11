@@ -48,7 +48,7 @@ Requires: 	PowerShell Version 3.0, SQL Server SMO,
 			Sys Admin access on Windows and SQL Server. DAC access enabled for local (default)
 Limitations: Hasn't been tested thoroughly. Works on Win8.1 and SQL Server 2012 & 2014 so far.		
 
-dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
+dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
@@ -64,6 +64,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+.LINK
+https://dbatools.io/Copy-SqlCredential
 
 .EXAMPLE   
 Copy-SqlCredential -Source sqlserver2014a -Destination sqlcluster

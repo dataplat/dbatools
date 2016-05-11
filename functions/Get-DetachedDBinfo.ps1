@@ -23,7 +23,7 @@ To connect as a different Windows user, run PowerShell as that user.
 
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
-dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
+dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
@@ -40,8 +40,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
  
-.LINK
- https://gallery.technet.microsoft.com/scriptcenter/Get-Detached-Sql-SqlServer-7ad8d4e7
+.LINK 
+https://dbatools.io/Get-DetachedDbInfo
  
 .EXAMPLE    
 Get-DetachedDbInfo -SqlServer sqlserver -SqlCredential $SqlCredential -MDF M:\Archive\mydb.mdf
