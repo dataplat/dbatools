@@ -17,10 +17,10 @@ created in SQL Server 2012 can only be migrated to SQL Server 2012 and above.
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
 .PARAMETER Source
-Source SQL Server. You must have sysadmin access and server version must be > SQL Server 7.
+Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER Destination
-Destination SQL Server. You must have sysadmin access and server version must be > SQL Server 7.
+Destination SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER SourceSqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -52,11 +52,11 @@ Credential removal not currently supported for Syncs. TODO: Application role syn
 Force drops and recreates logins. Logins that own jobs cannot be dropped at this time.
 
 .NOTES 
-Author  : Chrissy LeMaire (@cl), netnerds.net
+Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
-dbatools PowerShell module (http://git.io/b3oo, clemaire@gmail.com)
-Copyright (C) 2105 Chrissy LeMaire
+dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+Copyright (C) 2016 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -71,6 +71,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+.LINK
+https://dbatools.io/Copy-SqlLogin
 
 .EXAMPLE
 Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -Force
@@ -97,7 +99,7 @@ Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins
 
 
 .NOTES 
-Author  : Chrissy LeMaire (@cl), netnerds.net
+Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 Limitations: Does not support Application Roles yet
 
@@ -108,7 +110,7 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 	
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $True)]
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object]$Source,
 		[parameter(Mandatory = $true)]
 		[object]$Destination,
@@ -117,7 +119,7 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 		[switch]$SyncOnly,
 		[switch]$Force,
 		[Switch]$CsvLog,
-		[parameter(ValueFromPipeline = $True)]
+		[parameter(ValueFromPipeline = $true, DontShow)]
 		[object]$pipelogin
 	)
 	
@@ -358,10 +360,16 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 						continue
 					}
 					
-					if ($sourcelogin.IsDisabled) { try { $destlogin.Disable() }
-						catch { Write-Warning "$username disabled on source, but could not be disabled on destination."; Write-Exception $_ } }
-					if ($sourcelogin.DenyWindowsLogin) { try { $destlogin.DenyWindowsLogin = $true }
-						catch { Write-Warning "$username denied login on source, but could not be denied login on destination."; Write-Exception $_ } }
+					if ($sourcelogin.IsDisabled)
+					{
+						try { $destlogin.Disable() }
+						catch { Write-Warning "$username disabled on source, but could not be disabled on destination."; Write-Exception $_ }
+					}
+					if ($sourcelogin.DenyWindowsLogin)
+					{
+						try { $destlogin.DenyWindowsLogin = $true }
+						catch { Write-Warning "$username denied login on source, but could not be denied login on destination."; Write-Exception $_ }
+					}
 				}
 				If ($Pscmdlet.ShouldProcess($destination, "Updating SQL login $username permissions"))
 				{
@@ -399,7 +407,7 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 			$source = $sourceserver.name
 			$username = $sourcelogin.name
 			
-			# Server Roles: sysadmin, bulkcurrentlogin, etc
+			# Server Roles: sysadmin, bulklogin, etc
 			foreach ($role in $sourceserver.roles)
 			{
 				$destrole = $destserver.roles[$role.name]
@@ -551,7 +559,7 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 				}
 			}
 			
-			if ($destserver.versionMajor -lt 9) { Write-Warning "Database mappings skipped when destination is < SQL Server 2005"; continue }
+			if ($destserver.versionMajor -lt 9) { Write-Warning "Database mappings skipped when destination is SQL Server 2000"; continue }
 			
 			# For Sync, if info doesn't exist in EnumDatabaseMappings, then no big deal.
 			foreach ($db in $destlogin.EnumDatabaseMappings())
@@ -655,7 +663,8 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 					{
 						If ($Pscmdlet.ShouldProcess($destination, "Adding $dbusername to $dbname"))
 						{
-							$sql = $sourceserver.databases[$dbname].users[$dbusername].script()
+							$sql = $sourceserver.databases[$dbname].users[$dbusername].script() | Out-String
+							$sql = $sql -replace "'$source'", "'$destination'"
 							try
 							{
 								$destdb.ExecuteNonQuery($sql)
