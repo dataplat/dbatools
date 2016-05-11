@@ -495,51 +495,6 @@ filled with Linked Servers from specified server name.
 	return $newparams
 }
 
-Function Get-ParamSqlServerTriggers
-{
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
- filled with Server Triggers from specified SQL Server.
-#>	
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
-	catch { return }
-	
-	# Populate arrays
-	$triggerlist = @()
-	foreach ($trigger in $server.Triggers)
-	{
-		$triggerlist += $trigger.name
-	}
-	
-	# Reusable parameter setup
-	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-	$attributes = New-Object System.Management.Automation.ParameterAttribute
-	
-	$attributes.ParameterSetName = "__AllParameterSets"
-	$attributes.Mandatory = $false
-	$attributes.Position = 3
-	
-	# Database list parameter setup
-	if ($triggerlist) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $triggerlist }
-	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-	$attributeCollection.Add($attributes)
-	if ($triggerlist) { $attributeCollection.Add($validationset) }
-	$Triggers = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Triggers", [String[]], $attributeCollection)
-	
-	$newparams.Add("Triggers", $Triggers)
-	$server.ConnectionContext.Disconnect()
-	
-	return $newparams
-}
-
 Function Get-ParamSqlPolicyManagement
 {
 <# 
@@ -809,4 +764,96 @@ filled with server groups from specified SQL Server Central Management server na
 		return $newparams
 	}
 	else { return }
+}
+
+Function Get-ParamSqlServerTriggers
+{
+<# 
+ .SYNOPSIS 
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+ filled with Server Triggers from specified SQL Server.
+#>	
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	# Populate arrays
+	$triggerlist = @()
+	foreach ($trigger in $server.Triggers)
+	{
+		$triggerlist += $trigger.name
+	}
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	$attributes.Position = 3
+	
+	# Database list parameter setup
+	if ($triggerlist) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $triggerlist }
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($triggerlist) { $attributeCollection.Add($validationset) }
+	$Triggers = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Triggers", [String[]], $attributeCollection)
+	
+	$newparams.Add("Triggers", $Triggers)
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
+
+Function Get-ParamSqlCustomErrors
+{
+<# 
+ .SYNOPSIS 
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+ filled with ID of Server Custom Errors/User Defined Messages from specified SQL Server.
+#>	
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	# Populate arrays
+	$messagelist = @()
+	$uniquemessageid = $server.UserDefinedMessages | Select ID | Sort-Object | Get-Unique
+	foreach ($message in $uniquemessageid)
+	{
+		$messagelist += $message.ID
+	}
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	$attributes.Position = 3
+	
+	# Database list parameter setup
+	if ($messagelist) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $messagelist }
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($messagelist) { $attributeCollection.Add($validationset) }
+	$CustomErrors = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("CustomErrors", [String[]], $attributeCollection)
+	
+	$newparams.Add("CustomErrors", $CustomErrors)
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
 }
