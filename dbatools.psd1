@@ -53,7 +53,7 @@
 	RequiredAssemblies = @('Microsoft.SqlServer.Smo', 'Microsoft.SqlServer.SmoExtended',
 	'Microsoft.SqlServer.Management.XEvent', 'Microsoft.SQlServer.Management.Sdk.Sfc',
 	'Microsoft.SqlServer.Rmo', 'Microsoft.SqlServer.Dmf', 'Microsoft.SqlServer.SqlEnum'
-	'Microsoft.SqlServer.Management.RegisteredServers')
+	'Microsoft.SqlServer.Management.RegisteredServers','Microsoft.SqlServer.Management.Collector')
 	
 	# Script files () that are run in the caller's environment prior to importing this module
 	ScriptsToProcess = @()
@@ -68,12 +68,14 @@
 	NestedModules = @()
 	
 	# Functions to export from this module
-	FunctionsToExport = @('Copy-SqlCustomError','Copy-SqlAuditSpecification','Copy-SqlEndpoint', 'Copy-SqlAudit', 'Copy-SqlServerRole', 'Copy-SqlResourceGovernor', 'Copy-SqlPolicyManagement',
+	FunctionsToExport = @('Copy-SqlCustomError','Copy-SqlAuditSpecification','Copy-SqlEndpoint', 'Copy-SqlAudit', 'Copy-SqlServerRole', 'Copy-SqlResourceGovernor',
 	'Copy-SqlExtendedEvent', 'Copy-SqlBackupDevice', 'Copy-SqlServerTrigger', 'Copy-SqlLogin', 'Copy-SqlLinkedServer', 'Copy-SqlCredential',
 	'Copy-SqlCentralManagementServer', 'Copy-SqlSysDbUserObjects', 'Copy-SqlDatabaseMail', 'Copy-SqlDatabase', 'Copy-SqlJobServer', 'Start-SqlMigration',
 	'Import-SqlSpConfigure', 'Export-SqlSpConfigure', 'Watch-SqlDbLogin', 'Reset-SqlAdmin', 'Get-SqlServerKey', 'Set-SqlMaxMemory',
 	'Get-SqlMaxMemory', 'Get-DetachedDBInfo', 'Restore-HallengrenBackup', 'Test-SqlConnection', 'Import-CsvToSql', 'Update-dbatools',
-	'Copy-SqlSpConfigure', 'Test-SqlPath', 'Copy-SqlDatabaseAssembly')
+	'Copy-SqlSpConfigure', 'Test-SqlPath', 'Copy-SqlDatabaseAssembly', 'Copy-SqlPolicyManagement')
+	
+	# 'Copy-SqlDataCollector',
 	
 	# Cmdlets to export from this module
 	CmdletsToExport = '*'

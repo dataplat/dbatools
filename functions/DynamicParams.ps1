@@ -919,3 +919,55 @@ Function Get-ParamSqlDatabaseAssemblies
 	
 	return $newparams
 }
+
+
+Function Get-ParamSqlDataCollectionSets
+{
+<# 
+ .SYNOPSIS 
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+ filled with Collection Sets from specified SQL Server's Data Collection object.
+#>	
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	$sqlconn = $server.ConnectionContext.SqlConnectionObject
+	$storeconn = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sqlconn
+	$store = New-Object Microsoft.SqlServer.Management.Collector.CollectorConfigStore $storeconn
+	
+	# Populate arrays
+	$list = @()
+	
+	$collectionsets = $store.CollectionSets | Where-Object { $_.isSystem -eq $false }
+	foreach ($collectionset in $collectionsets)
+	{
+		$list += $collectionset.name
+	}
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	$attributes.Position = 3
+	
+	# Database list parameter setup
+	if ($list) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $list }
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($list) { $attributeCollection.Add($validationset) }
+	$CollectionSets = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("CollectionSets", [String[]], $attributeCollection)
+	
+	$newparams.Add("CollectionSets", $CollectionSets)
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
