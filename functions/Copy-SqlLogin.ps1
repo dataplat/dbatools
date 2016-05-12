@@ -155,8 +155,8 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 				throw "SQL login migration from SQL Server version $($sourceserver.versionMajor) to $($destserver.versionMajor) not supported. Halting."
 			}
 			
-			$source = $sourceserver.name
-			$destination = $destserver.name
+			$source = $sourceserver.DomainInstanceName
+			$destination = $destserver.DomainInstanceName
 			$Exclude | Where-Object { !([string]::IsNullOrEmpty($_)) } | ForEach-Object { $skippedlogin.Add($_, "Explicitly Skipped") }
 			
 			foreach ($sourcelogin in $sourceserver.logins)
@@ -403,8 +403,8 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 				[object]$destlogin
 			)
 			
-			$destination = $destserver.name
-			$source = $sourceserver.name
+			$destination = $destserver.DomainInstanceName
+			$source = $sourceserver.DomainInstanceName
 			$username = $sourcelogin.name
 			
 			# Server Roles: sysadmin, bulklogin, etc
@@ -766,7 +766,7 @@ Internal function. Skips migration, and just syncs permission sets, roles, datab
 				[array]$Exclude
 			)
 			
-			$source = $sourceserver.name; $destination = $destserver.name
+			$source = $sourceserver.DomainInstanceName; $destination = $destserver.DomainInstanceName
 			$exclude | Where-Object { !([string]::IsNullOrEmpty($_)) } | ForEach-Object { $skippedlogin.Add($_, "Explicitly Skipped") }
 			
 			foreach ($sourcelogin in $sourceserver.logins)
@@ -820,8 +820,8 @@ Internal function. Skips migration, and just syncs permission sets, roles, datab
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 		
-		$source = $sourceserver.name
-		$destination = $destserver.name
+		$source = $sourceserver.DomainInstanceName
+		$destination = $destserver.DomainInstanceName
 		
 		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
 		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }

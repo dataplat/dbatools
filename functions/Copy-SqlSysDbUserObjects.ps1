@@ -45,8 +45,8 @@ https://dbatools.io/Get-DetachedDbInfo
 	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 	
-	$source = $sourceserver.name
-	$destination = $destserver.name
+	$source = $sourceserver.DomainInstanceName
+	$destination = $destserver.DomainInstanceName
 	
 	if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
 	if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }

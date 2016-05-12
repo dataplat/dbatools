@@ -520,9 +520,9 @@ source and destination servers.
 	)
 	
 	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-	$source = $sourceserver.name
+	$source = $sourceserver.DomainInstanceName
 	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
-	$destination = $destserver.name
+	$destination = $destserver.DomainInstanceName
 	
 	$sourcenetbios = Get-NetBiosName $sourceserver
 	$destnetbios = Get-NetBiosName $destserver
@@ -936,8 +936,8 @@ Internal function. Updates specified database dbowner.
 	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 	
-	$source = $sourceserver.name
-	$destination = $destserver.name
+	$source = $sourceserver.DomainInstanceName
+	$destination = $destserver.DomainInstanceName
 	
 	if ($dbname.length -eq 0)
 	{

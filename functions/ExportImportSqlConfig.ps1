@@ -85,9 +85,9 @@ Function Import-SqlSpConfigure
 		if ($Path.length -eq 0)
 		{
 			$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-			$source = $sourceserver.name
+			$source = $sourceserver.DomainInstanceName
 			$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
-			$destination = $destserver.name
+			$destination = $destserver.DomainInstanceName
 			
 			if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
 			if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }

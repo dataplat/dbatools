@@ -261,8 +261,8 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 		
-		$source = $sourceserver.name
-		$destination = $destserver.name
+		$source = $sourceserver.DomainInstanceName
+		$destination = $destserver.DomainInstanceName
 		
 		
 		if (!$NoCredentials)

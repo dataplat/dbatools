@@ -98,8 +98,8 @@ Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from s
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 		
-		$source = $sourceserver.name
-		$destination = $destserver.name
+		$source = $sourceserver.DomainInstanceName
+		$destination = $destserver.DomainInstanceName
 		$sessions = $psboundparameters.Sessions
 		
 		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }

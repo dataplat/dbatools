@@ -93,8 +93,8 @@ Shows what would happen if the command were executed.
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 		
-		$source = $sourceserver.name
-		$destination = $destserver.name
+		$source = $sourceserver.DomainInstanceName
+		$destination = $destserver.DomainInstanceName
 		
 		$respools = $psboundparameters.ResourcePools
 		

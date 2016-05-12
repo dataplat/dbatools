@@ -181,8 +181,8 @@ the server name of the migrating instance is "sqlcluster", it will be switched t
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 		
-		$source = $sourceserver.name
-		$destination = $destserver.name
+		$source = $sourceserver.DomainInstanceName
+		$destination = $destserver.DomainInstanceName
 		
 		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $($sourceserver.name). Quitting." }
 		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on  $($destserver.name). Quitting." }

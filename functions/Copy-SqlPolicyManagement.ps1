@@ -99,8 +99,8 @@ Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sq
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 		
-		$source = $sourceserver.name
-		$destination = $destserver.name
+		$source = $sourceserver.DomainInstanceName
+		$destination = $destserver.DomainInstanceName
 		$policies = $psboundparameters.policies
 		$conditions = $psboundparameters.conditions
 		

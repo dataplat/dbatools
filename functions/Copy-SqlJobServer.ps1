@@ -103,8 +103,8 @@ Shows what would happen if the command were executed.
 		Invoke-SmoCheck -SqlServer $sourceserver
 		Invoke-SmoCheck -SqlServer $destserver
 		
-		$source = $sourceserver.name
-		$destination = $destserver.name
+		$source = $sourceserver.DomainInstanceName
+		$destination = $destserver.DomainInstanceName
 		
 		if (!(Test-SqlAgent $sourceserver)) { Write-Error "SQL Agent not running on $source. Halting job import."; return }
 		if (!(Test-SqlAgent $destserver)) { Write-Error "SQL Agent not running on $destination. Halting job import."; return }

@@ -244,8 +244,8 @@ Internal function.
 			$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 			$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 			
-			$source = $sourceserver.name
-			$destination = $destserver.name
+			$source = $sourceserver.DomainInstanceName
+			$destination = $destserver.DomainInstanceName
 			
 			Write-Output "Collecting Linked Server logins and passwords on $($sourceserver.name)"
 			$sourcelogins = Get-LinkedServerLogins $sourceserver
@@ -363,8 +363,8 @@ Internal function.
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 		
-		$source = $sourceserver.name
-		$destination = $destserver.name
+		$source = $sourceserver.DomainInstanceName
+		$destination = $destserver.DomainInstanceName
 		
 		Invoke-SmoCheck -SqlServer $sourceserver
 		Invoke-SmoCheck -SqlServer $destserver
