@@ -1074,7 +1074,7 @@ Function Get-ParamSqlOperatorCategories
 	catch { return }
 	
 	# Populate arrays
-	$list = $server.JobServer.OperatorCategories.Name
+	$list = ($server.JobServer.OperatorCategories | Where-Object { $_.ID -ge 100 }).Name
 	
 	# Reusable parameter setup
 	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
@@ -1241,7 +1241,7 @@ Function Get-ParamSqlAlertCategories
 	catch { return }
 	
 	# Populate arrays
-	$list = $server.JobServer.AlertCategories.Name
+	$list = ($server.JobServer.AlertCategories | Where-Object { $_.ID -ge 100 }).Name
 	
 	# Reusable parameter setup
 	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
@@ -1383,6 +1383,48 @@ Function Get-ParamSqlJobs
 	
 	$newparams.Add("Jobs", $Jobs)
 	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
+Function Get-ParamSqlAgentCategories
+{
+<# 
+ .SYNOPSIS 
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+ filled with job server objects from specified SQL Server server.
+#>	
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	$jobobjects = "JobCategories", "OperatorCategories", "AlertCategories"
+	
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	$attributes.Position = 3
+	
+	foreach ($name in $jobobjects)
+	{
+		$userobjects =   ($server.JobServer.$name | Where-Object { $_.ID -ge 100 }).Name
+		$items = $userobjects.Name
+		if ($items.count -gt 0)
+		{
+			$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+			$attributeCollection.Add($attributes)
+			$attributeCollection.Add((New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $items))
+		}
+		
+		$newparams.Add($name, (New-Object -Type System.Management.Automation.RuntimeDefinedParameter($name, [String[]], $attributeCollection)))
+	}
 	
 	return $newparams
 }
