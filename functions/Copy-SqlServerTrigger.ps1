@@ -97,7 +97,7 @@ Shows what would happen if the command were executed using force.
 		
 		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
 		{
-			throw "Server Triggers are only supported in SQL Server 2008 and above. Quitting."
+			throw "Server Triggers are only supported in SQL Server 2005 and above. Quitting."
 		}
 		
 		$servertriggers = $sourceserver.Triggers
@@ -105,23 +105,26 @@ Shows what would happen if the command were executed using force.
 		
 		foreach ($trigger in $servertriggers)
 		{
-			if ($triggers.length -gt 0 -and $triggers -notcontains $trigger.name) { continue }
-			if ($desttriggers.name -contains $trigger.name)
+			$triggername = $trigger.name
+			if ($triggers.length -gt 0 -and $triggers -notcontains $triggername) { continue }
+			if ($desttriggers.name -contains $triggername)
 			{
 				if ($force -eq $false)
 				{
-					Write-Warning "Server trigger $($trigger.name) exists at destination. Use -Force to drop and migrate."
+					Write-Warning "Server trigger $triggername exists at destination. Use -Force to drop and migrate."
 				}
 				else
 				{
-					If ($Pscmdlet.ShouldProcess($destination, "Dropping server trigger $($trigger.name) and recreating"))
+					If ($Pscmdlet.ShouldProcess($destination, "Dropping server trigger $triggername and recreating"))
 					{
 						try
 						{
-							Write-Output "Dropping server trigger $($trigger.name)"
-							$destserver.triggers[$trigger.name].Drop()
-							Write-Output "Copying server trigger $($trigger.name)"
-							$destserver.ConnectionContext.ExecuteNonQuery($trigger.Script()) | Out-Null
+							Write-Output "Dropping server trigger $triggername"
+							$destserver.triggers[$triggername].Drop()
+							Write-Output "Copying server trigger $triggername"
+							$sql = $trigger.Script() | Out-String
+							$sql = $sql -replace "'$source'", "'$destination'"
+							$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 						}
 						catch { Write-Exception $_ }
 					}
@@ -129,12 +132,15 @@ Shows what would happen if the command were executed using force.
 			}
 			else
 			{
-				If ($Pscmdlet.ShouldProcess($destination, "Creating server trigger $($trigger.name)"))
+				If ($Pscmdlet.ShouldProcess($destination, "Creating server trigger $triggername"))
 				{
 					try
 					{
-						Write-Output "Copying server trigger $($trigger.name)"
-						$destserver.ConnectionContext.ExecuteNonQuery($trigger.Script()) | Out-Null
+						Write-Output "Copying server trigger $triggername"
+						$sql = $trigger.Script() | Out-String
+						$sql = $sql -replace "'$source'", "'$destination'"
+						Write-Verbose $sql
+						$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 					}
 					catch
 					{
