@@ -991,7 +991,7 @@ Function Get-ParamSqlAlerts
 	catch { return }
 	
 	# Populate arrays
-	$list = $server.JobServer.Alerts
+	$list = $server.JobServer.Alerts.Name
 	
 	# Reusable parameter setup
 	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
@@ -1033,7 +1033,7 @@ Function Get-ParamSqlOperators
 	catch { return }
 	
 	# Populate arrays
-	$list = $server.JobServer.Operators
+	$list = $server.JobServer.Operators.Name
 	
 	# Reusable parameter setup
 	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
@@ -1074,7 +1074,7 @@ Function Get-ParamSqlOperatorCategories
 	catch { return }
 	
 	# Populate arrays
-	$list = $server.JobServer.OperatorCategories
+	$list = $server.JobServer.OperatorCategories.Name
 	
 	# Reusable parameter setup
 	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
@@ -1116,7 +1116,7 @@ Function Get-ParamSqlProxyAccounts
 	catch { return }
 	
 	# Populate arrays
-	$list = $server.JobServer.ProxyAccounts
+	$list = $server.JobServer.ProxyAccounts.Name
 	
 	# Reusable parameter setup
 	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
@@ -1159,7 +1159,7 @@ Function Get-ParamSqlSharedSchedules
 	catch { return }
 	
 	# Populate arrays
-	$list = $server.JobServer.SharedSchedules
+	$list = $server.JobServer.SharedSchedules.Name
 	
 	# Reusable parameter setup
 	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
@@ -1182,13 +1182,207 @@ Function Get-ParamSqlSharedSchedules
 	return $newparams
 }
 
-<#
-left:
-JobCategories
-AlertCategories
-AlertSystem ?
-TargetServers ?
-TargetServerGroups ?
-Jobs
-SharedSchedules
-#>
+Function Get-ParamSqlJobCategories
+{
+<# 
+ .SYNOPSIS 
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+ filled with JobCategories from specified SQL Server Job Server (SQL Agent).
+#>	
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	# Populate arrays
+	$list = ($server.JobServer.JobCategories | Where-Object { $_.ID -ge 100 }).Name
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	$attributes.Position = 3
+	
+	# Database list parameter setup
+	if ($list) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $list }
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($list) { $attributeCollection.Add($validationset) }
+	$JobCategories = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("JobCategories", [String[]], $attributeCollection)
+	
+	$newparams.Add("JobCategories", $JobCategories)
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
+Function Get-ParamSqlAlertCategories
+{
+<# 
+ .SYNOPSIS 
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+ filled with AlertCategories from specified SQL Server Job Server (SQL Agent).
+#>	
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	# Populate arrays
+	$list = $server.JobServer.AlertCategories.Name
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	$attributes.Position = 3
+	
+	# Database list parameter setup
+	if ($list) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $list }
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($list) { $attributeCollection.Add($validationset) }
+	$AlertCategories = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("AlertCategories", [String[]], $attributeCollection)
+	
+	$newparams.Add("AlertCategories", $AlertCategories)
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
+Function Get-ParamSqlTargetServers
+{
+<# 
+ .SYNOPSIS 
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+ filled with TargetServers from specified SQL Server Job Server (SQL Agent).
+#>	
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	# Populate arrays
+	$list = $server.JobServer.TargetServers.Name
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	$attributes.Position = 3
+	
+	# Database list parameter setup
+	if ($list) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $list }
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($list) { $attributeCollection.Add($validationset) }
+	$TargetServers = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("TargetServers", [String[]], $attributeCollection)
+	
+	$newparams.Add("TargetServers", $TargetServers)
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
+Function Get-ParamSqlTargetServerGroups
+{
+<# 
+ .SYNOPSIS 
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+ filled with TargetServerGroups from specified SQL Server Job Server (SQL Agent).
+#>	
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	# Populate arrays
+	$list = $server.JobServer.TargetServerGroups.Name
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	$attributes.Position = 3
+	
+	# Database list parameter setup
+	if ($list) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $list }
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($list) { $attributeCollection.Add($validationset) }
+	$TargetServerGroups = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("TargetServerGroups", [String[]], $attributeCollection)
+	
+	$newparams.Add("TargetServerGroups", $TargetServerGroups)
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
+Function Get-ParamSqlJobs
+{
+<# 
+ .SYNOPSIS 
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+ filled with Jobs from specified SQL Server Job Server (SQL Agent).
+#>	
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	# Populate arrays
+	$list = $server.JobServer.Jobs.Name
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	$attributes.Position = 3
+	
+	# Database list parameter setup
+	if ($list) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $list }
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($list) { $attributeCollection.Add($validationset) }
+	$Jobs = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Jobs", [String[]], $attributeCollection)
+	
+	$newparams.Add("Jobs", $Jobs)
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
