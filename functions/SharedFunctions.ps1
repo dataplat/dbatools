@@ -244,9 +244,11 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 		[Parameter(Mandatory = $true)]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[switch]$ParameterConnection
+		[switch]$ParameterConnection,
+		[switch]$RegularUser
 	)
 	
+		
 	$username = $SqlCredential.username
 	if ($username -ne $null)
 	{
@@ -256,7 +258,10 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 	
 	if ($SqlServer.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
 	{
-		
+	
+		if ($RegularUser -eq $false) {
+			if (!(Test-SqlSa -SqlServer $SqlServer)) { throw "Not a sysadmin on $source. Quitting." }
+		}
 		if ($ParameterConnection)
 		{
 			$paramserver = New-Object Microsoft.SqlServer.Management.Smo.Server
@@ -297,6 +302,10 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 		$message = ($message -Split 'at System.Data.SqlClient')[0]
 		$message = ($message -Split 'at System.Data.ProviderBase')[0]
 		throw "Can't connect to $sqlserver`: $message "
+	}
+	
+	if ($RegularUser -eq $false) {
+		if ($server.ConnectionContext.FixedServerRoles -notmatch "SysAdmin") { throw "Not a sysadmin on $source. Quitting." }
 	}
 	
 	return $server
