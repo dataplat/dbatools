@@ -74,7 +74,8 @@
 	'Copy-SqlDatabase', 'Copy-SqlJobServer', 'Start-SqlMigration','Import-SqlSpConfigure', 'Export-SqlSpConfigure', 'Watch-SqlDbLogin', 
 	'Reset-SqlAdmin', 'Get-SqlServerKey', 'Set-SqlMaxMemory','Get-SqlMaxMemory', 'Get-DetachedDBInfo', 'Restore-HallengrenBackup', 
 	'Test-SqlConnection', 'Import-CsvToSql', 'Update-dbatools','Copy-SqlSpConfigure', 'Test-SqlPath', 'Copy-SqlDatabaseAssembly', 
-	'Copy-SqlPolicyManagement', 'Copy-SqlProxyAccount','Copy-SqlSharedSchedule','Copy-SqlAgentCategory','Copy-SqlAlert')
+	'Copy-SqlPolicyManagement', 'Copy-SqlProxyAccount','Copy-SqlSharedSchedule','Copy-SqlAgentCategory','Copy-SqlAlert',
+	'Copy-SqlJob')
 	
 	# 'Copy-SqlDataCollector',
 	
