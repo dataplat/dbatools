@@ -880,6 +880,11 @@ Internal function.
 						try
 						{
 							$result = Update-SqldbReadOnly $destserver $dbname $sourcedbreadonly
+							
+							if ($sourcedbreadonly -eq $true)
+							{
+								Write-Output "Successfully updated Read-Only to $sourcedbreadonly for $dbname on $destination"
+							}
 						}
 						catch { Write-Error "Failed to update ReadOnly status on $dbname"; Write-Exception $_ }
 					}
