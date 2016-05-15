@@ -162,6 +162,12 @@ Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from s
 					Write-Verbose $sql
 					Write-Output "Migrating session $sessionName"
 					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
+					
+					if ($session.IsRunning -eq $true)
+					{
+						$deststore.sessions.Refresh()
+						$deststore.sessions[$sessionName].Start()
+					}
 				}
 				catch
 				{
