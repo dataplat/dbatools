@@ -18,7 +18,7 @@ All user databases. Use -NoDatabases to skip.
 All logins. Use -NoLogins to skip.
 All database mail objects. Use -NoDatabaseMail
 All credentials. Use -NoCredentials to skip.
-All objects within the Job Server (SQL Agent). Use -NoJobServer to skip.
+All objects within the Job Server (SQL Agent). Use -NoAgentServer to skip.
 All linked servers. Use -NoLinkedServers to skip.
 All groups and servers within Central Management Server. Use -NoCentralManagementServer to skip.
 All SQL Server configuration objects (everything in sp_configure). Use -NoSpConfigure to skip.
@@ -86,7 +86,7 @@ Skips the database migration.
 .PARAMETER NoLogins
 Skips the login migration.
 
-.PARAMETER NoJobServer
+.PARAMETER NoAgentServer
 Skips the job server (SQL Agent) migration.
 
 .PARAMETER NoCredentials
@@ -133,6 +133,12 @@ Skips the Server Audit Specification migration.
 
 .PARAMETER NoCustomErrors
 Skips the Custom Error (User Defined Messages) migration.
+
+.PARAMETER DisableJobsOnDestination
+Disables migrated SQL Agent jobs on destination server
+
+.PARAMETER DisableJobsOnSource
+Disables migrated SQL Agent jobs on source server
 
 .PARAMETER Force
 If migrating users, forces drop and recreate of SQL and Windows logins. 
@@ -213,7 +219,8 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 		[Alias("SkipLogins")]
 		[switch]$NoLogins,
 		[Alias("SkipJobServer")]
-		[switch]$NoJobServer,
+		[Alias("NoJobServer")]
+		[switch]$NoAgentServer,
 		[Alias("SkipCredentials")]
 		[switch]$NoCredentials,
 		[Alias("SkipLinkedServers")]
@@ -237,6 +244,8 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 		[switch]$NoResourceGovernor,
 		[switch]$NoServerAuditSpecifications,
 		[switch]$NoCustomErrors,
+		[switch]$DisableJobsOnDestination,
+		[switch]$DisableJobsOnSource,
 		[switch]$Force
 	)
 	
@@ -544,13 +553,12 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 		}
 		
 		
-		if (!$NoJobServer)
+		if (!$NoAgentServer)
 		{
 			Write-Output "`n`nMigrating job server"
-			if ($force) { Write-Warning " Copy-SqlServerAgent currently does not support force." }
 			try
 			{
-				Copy-SqlServerAgent -Source $sourceserver -Destination $destserver
+				Copy-SqlServerAgent -Source $sourceserver -Destination $destserver -Force:$force
 			}
 			catch { Write-Error "Job Server migration reported the following error $($_.Exception.Message) " }
 		}
