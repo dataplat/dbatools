@@ -286,6 +286,27 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			throw "You must specify a database migration method (-BackupRestore or -DetachAttach) or -NoDatabases"
 		}
 		
+		if (!$NoSpConfigure)
+		{
+			Write-Output "`n`nMigrating SQL Server Configuration"
+			try
+			{
+				Copy-SqlSpConfigure -Source $sourceserver -Destination $destserver
+			}
+			catch { Write-Error "Configuration migration reported the following error $($_.Exception.Message) " }
+		}
+		
+		
+		if (!$NoCustomErrors)
+		{
+			Write-Output "`n`nMigrating custom errors (user defined messages)"
+			try
+			{
+				Copy-SqlCustomError -Source $sourceserver -Destination $destserver -Force:$Force
+			}
+			catch { Write-Error "Couldn't copy custom errors." }
+		}
+		
 		if (!$NoCredentials)
 		{
 			if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
@@ -303,15 +324,95 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			}
 		}
 		
-		if (!$NoCustomErrors)
+		if (!$NoDatabaseMail)
 		{
-			Write-Output "`n`nMigrating custom errors (user defined messages)"
+			if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
+			{
+				Write-Output "Database Mail is only supported in SQL Server 2005 and above. Skipping."
+			}
+			else
+			{
+				Write-Output "`n`nMigrating database mail"
+				try
+				{
+					Copy-SqlDatabaseMail -Source $sourceserver -Destination $destserver -Force:$Force
+				}
+				catch { Write-Error "Database mail migration reported the following error $($_.Exception.Message)" }
+			}
+		}
+		
+		if (!$NoSysDbUserObjects)
+		{
+			Write-Output "`n`nMigrating user objects in system databases (this can take a second)"
 			try
 			{
-				Copy-SqlCustomError -Source $sourceserver -Destination $destserver -Force:$Force
+				If ($Pscmdlet.ShouldProcess($destination, "Copying user objects."))
+				{
+					Copy-SqlSysDbUserObjects -Source $sourceserver -Destination $destserver
+				}
+				
 			}
-			catch { Write-Error "Couldn't copy custom errors." }
+			catch { Write-Error "Couldn't copy all user objects in system databases." }
 		}
+		
+		if (!$NoCentralManagementServer)
+		{
+			if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
+			{
+				Write-Output "Central Management Server is only supported in SQL Server 2008 and above. Skipping."
+			}
+			else
+			{
+				Write-Output "`n`nMigrating Central Management Server"
+				try
+				{
+					Copy-SqlCentralManagementServer -Source $sourceserver -Destination $destserver -Force:$Force
+				}
+				catch
+				{
+					Write-Error "Central Management Server migration reported the following error $($_.Exception.Message)"
+				}
+			}
+		}
+		
+		if (!$NoBackupDevices)
+		{
+			Write-Output "`n`nMigrating Backup Devices"
+			try
+			{
+				Copy-SqlBackupDevice -Source $sourceserver -Destination $destserver -Force:$Force
+			}
+			catch { Write-Error "Backup device migration reported the following error $($_.Exception.Message)" }
+		}
+		
+		if (!$NoLinkedServers)
+		{
+			Write-Output "`n`nMigrating linked servers"
+			try
+			{
+				Copy-SqlLinkedServer -Source $sourceserver.name -Destination $destserver.name -Force:$Force
+			}
+			catch { Write-Error "Linked server migration reported the following error $($_.Exception.Message) " }
+		}
+		
+		if (!$NoSystemTriggers)
+		{
+			if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
+			{
+				Write-Output "Server Triggers are only supported in SQL Server 2008 and above. Skipping."
+			}
+			else
+			{
+				Write-Output "`n`nMigrating System Triggers"
+				try
+				{
+					Copy-SqlServerTrigger -Source $sourceserver -Destination $destserver -Force:$Force
+				}
+				catch { Write-Error "System Triggers migration reported the following error $($_.Exception.Message)" }
+			}
+		}
+		
+		################################################################################################################################################################
 		
 		if (!$NoDatabases)
 		{
@@ -332,20 +433,6 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				}
 			}
 			catch { Write-Error "Database migration reported the following error $($_.Exception.Message)" }
-		}
-		
-		if (!$NoSysDbUserObjects)
-		{
-			Write-Output "`n`nMigrating user objects in system databases (this can take a second)"
-			try
-			{
-				If ($Pscmdlet.ShouldProcess($destination, "Copying user objects."))
-				{
-					Copy-SqlSysDbUserObjects -Source $sourceserver -Destination $destserver
-				}
-				
-			}
-			catch { Write-Error "Couldn't copy all user objects in system databases." }
 		}
 		
 		
@@ -369,89 +456,16 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			catch { Write-Error "Login migration reported the following error $($_.Exception.Message) " }
 		}
 		
-		if (!$NoLinkedServers)
+		if (!$NoDataCollector)
 		{
-			Write-Output "`n`nMigrating linked servers"
+			Write-Output "`n`nMigrating Data Collector collection sets"
 			try
 			{
-				Copy-SqlLinkedServer -Source $sourceserver.name -Destination $destserver.name -Force:$Force
+				Copy-SqlDataCollector -Source $sourceserver -Destination $destserver -Force:$Force
 			}
-			catch { Write-Error "Linked server migration reported the following error $($_.Exception.Message) " }
+			catch { Write-Error "Job Server migration reported the following error $($_.Exception.Message) " }
 		}
 		
-		if (!$NoCentralManagementServer)
-		{
-			if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
-			{
-				Write-Output "Central Management Server is only supported in SQL Server 2008 and above. Skipping."
-			}
-			else
-			{
-				Write-Output "`n`nMigrating Central Management Server"
-				try
-				{
-					Copy-SqlCentralManagementServer -Source $sourceserver -Destination $destserver -Force:$Force
-				}
-				catch 
-				{ 
-					Write-Error "Central Management Server migration reported the following error $($_.Exception.Message)" 
-				}
-			}
-		}
-		
-		if (!$NoDatabaseMail)
-		{
-			if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
-			{
-				Write-Output "Database Mail is only supported in SQL Server 2005 and above. Skipping."
-			}
-			else
-			{
-				Write-Output "`n`nMigrating database mail"
-				try
-				{
-					Copy-SqlDatabaseMail -Source $sourceserver -Destination $destserver -Force:$Force
-				}
-				catch { Write-Error "Database mail migration reported the following error $($_.Exception.Message)" }
-			}
-		}
-		
-		if (!$NoSystemTriggers)
-		{
-			if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
-			{
-				Write-Output "Server Triggers are only supported in SQL Server 2008 and above. Skipping."
-			}
-			else
-			{
-				Write-Output "`n`nMigrating System Triggers"
-				try
-				{
-					Copy-SqlServerTrigger -Source $sourceserver -Destination $destserver -Force:$Force
-				}
-				catch { Write-Error "System Triggers migration reported the following error $($_.Exception.Message)" }
-			}
-		}
-		
-		if (!$NoBackupDevices)
-		{
-			Write-Output "`n`nMigrating Backup Devices"
-			try
-			{
-				Copy-SqlBackupDevice -Source $sourceserver -Destination $destserver -Force:$Force
-			}
-			catch { Write-Error "Backup device migration reported the following error $($_.Exception.Message)" }
-		}
-		
-		if (!$NoSpConfigure)
-		{
-			Write-Output "`n`nMigrating SQL Server Configuration"
-			try
-			{
-				Copy-SqlSpConfigure -Source $sourceserver -Destination $destserver
-			}
-			catch { Write-Error "Configuration migration reported the following error $($_.Exception.Message) " }
-		}
 		
 		if (!$NoAudits)
 		{
@@ -505,24 +519,6 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 		}
 		
 		
-		if (!$NoExtendedEvents)
-		{
-			if ($sourceserver.versionMajor -lt 11 -or $destserver.versionMajor -lt 11)
-			{
-				Write-Output "Extended Events are only supported in SQL Server 2012 and above. Skipping."
-			}
-			else
-			{
-				Write-Output "`n`nMigrating Extended Events"
-				try
-				{
-					Copy-SqlExtendedEvent -Source $sourceserver -Destination $destserver -Force:$Force
-				}
-				catch { Write-Error "Extended Event migration reported the following error $($_.Exception.Message)" }
-			}
-		}
-		
-		
 		if (!$NoPolicyManagement)
 		{
 			if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
@@ -557,6 +553,22 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			}
 		}
 		
+		if (!$NoExtendedEvents)
+		{
+			if ($sourceserver.versionMajor -lt 11 -or $destserver.versionMajor -lt 11)
+			{
+				Write-Output "Extended Events are only supported in SQL Server 2012 and above. Skipping."
+			}
+			else
+			{
+				Write-Output "`n`nMigrating Extended Events"
+				try
+				{
+					Copy-SqlExtendedEvent -Source $sourceserver -Destination $destserver -Force:$Force
+				}
+				catch { Write-Error "Extended Event migration reported the following error $($_.Exception.Message)" }
+			}
+		}
 		
 		if (!$NoAgentServer)
 		{
@@ -567,17 +579,6 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			}
 			catch { Write-Error "Job Server migration reported the following error $($_.Exception.Message) " }
 		}
-		
-		if (!$NoDataCollector)
-		{
-			Write-Output "`n`nMigrating Data Collector collection sets"
-			try
-			{
-				Copy-SqlDataCollector -Source $sourceserver -Destination $destserver -Force:$Force
-			}
-			catch { Write-Error "Job Server migration reported the following error $($_.Exception.Message) " }
-		}
-		
 		
 	}
 	
