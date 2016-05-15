@@ -84,16 +84,13 @@ Shows what would happen if the command were executed.
 	
 	DynamicParam { if ($source) { return (Get-ParamSqlDatabaseMail -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	process
-	{
+	BEGIN {
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
 		
-		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
-		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 		
 		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
 		{
@@ -101,7 +98,9 @@ Shows what would happen if the command were executed.
 		}
 		
 		$mail = $sourceserver.mail
-		
+	}
+	process
+	{
 		
 		Write-Output "Migrating mail server configuration values"
 		$sql = $mail.ConfigurationValues.Script() | Out-String

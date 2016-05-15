@@ -84,7 +84,7 @@ Shows what would happen if the command were executed using force.
 	)
 	DynamicParam { if ($source) { return (Get-ParamSqlBackupDevices -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	PROCESS
+	BEGIN
 	{
 		$backupdevices = $psboundparameters.BackupDevices
 		
@@ -94,15 +94,16 @@ Shows what would happen if the command were executed using force.
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
 		
-		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
-		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
-		
 		$serverbackupdevices = $sourceserver.BackupDevices
 		$destbackupdevices = $destserver.BackupDevices
 		
 		Write-Output "Resolving NetBios name"
 		$destnetbios = Get-NetBiosName $destserver
 		$sourcenetbios = Get-NetBiosName $sourceserver
+		
+	}
+	PROCESS
+	{
 		
 		foreach ($backupdevice in $serverbackupdevices)
 		{

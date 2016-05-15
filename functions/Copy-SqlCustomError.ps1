@@ -84,7 +84,7 @@ Shows what would happen if the command were executed using force.
 	)
 	DynamicParam { if ($source) { return (Get-ParamSqlCustomErrors -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	PROCESS
+	BEGIN
 	{
 		$customerrors = $psboundparameters.CustomErrors
 		
@@ -94,13 +94,15 @@ Shows what would happen if the command were executed using force.
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
 		
-		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
-		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
-		
 		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
 		{
 			throw "Custom Errors are only supported in SQL Server 2000 and above. Quitting."
 		}
+	}
+	
+	PROCESS
+	{
+		
 		
 		# Us has to go first
 		$orderedcustomerrors = @($sourceserver.UserDefinedMessages | Where-Object { $_.Language -eq "us_english" })

@@ -19,7 +19,8 @@ Function Export-SqlSpConfigure
 		[string]$Path,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
-	PROCESS
+	
+	BEGIN
 	{
 		$server = Connect-SqlServer $SqlServer $SqlCredential
 		
@@ -31,7 +32,11 @@ Function Export-SqlSpConfigure
 			$mydocs = [Environment]::GetFolderPath('MyDocuments')
 			$path = "$mydocs\$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
 		}
-		
+	
+	}
+	
+	PROCESS
+		{
 		try { Set-Content -Path $path "EXEC sp_configure 'show advanced options' , 1;  RECONFIGURE WITH OVERRIDE" }
 		catch { throw "Can't write to $path" }
 		
@@ -46,6 +51,16 @@ Function Export-SqlSpConfigure
 		$server.Configuration.ShowAdvancedOptions.ConfigValue = $false
 		$server.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
 		return $path
+	}
+	
+	END
+	{
+		$server.ConnectionContext.Disconnect()
+		
+		If ($Pscmdlet.ShouldProcess("console", "Showing finished message"))
+		{
+			Write-Output "Server configuration export finished"
+		}
 	}
 }
 
@@ -79,24 +94,31 @@ Function Import-SqlSpConfigure
 		[switch]$Force
 		
 	)
+	BEGIN {
+	
+		if ($Path.length -eq 0)
+		{
+			$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+			$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+			
+			$source = $sourceserver.DomainInstanceName
+			$destination = $destserver.DomainInstanceName
+		} else {
+			$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+			if ((Test-Path $Path) -eq $false) { throw "File Not Found" }
+		}
+	
+	}
 	PROCESS
 	{
 		
 		if ($Path.length -eq 0)
 		{
-			$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-			$source = $sourceserver.DomainInstanceName
-			$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
-			$destination = $destserver.DomainInstanceName
-			
-			if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
-			if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 			
 			If ($Pscmdlet.ShouldProcess($destination, "Export sp_configure"))
 			{
 				$sqlfilename = Export-SqlSpConfigure $sourceserver
 			}
-			
 			
 			if ($sourceserver.versionMajor -ne $destserver.versionMajor -and $force -eq $false)
 			{
@@ -153,10 +175,7 @@ Function Import-SqlSpConfigure
 		else
 		{
 			If ($Pscmdlet.ShouldProcess($destination, "Importing sp_configure from $Path"))
-			{
-				$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-				if ((Test-Path $Path) -eq $false) { throw "File Not Found" }
-				
+			{	
 				$server.Configuration.ShowAdvancedOptions.ConfigValue = $true
 				$sql = Get-Content $Path
 				foreach ($line in $sql)
@@ -177,6 +196,13 @@ Function Import-SqlSpConfigure
 	}
 	END
 	{
+		if ($Path.length -gt 0) { 
+			$server.ConnectionContext.Disconnect() 
+		} else {
+			$sourceserver.ConnectionContext.Disconnect() 
+			$destserver.ConnectionContext.Disconnect() 
+		}
+	
 		If ($Pscmdlet.ShouldProcess("console", "Showing finished message"))
 		{
 			Write-Output "SQL Server configuration options migration finished"

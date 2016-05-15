@@ -86,9 +86,10 @@ Shows what would happen if the command were executed using force.
 	)
 	DynamicParam { if ($source) { return (Get-ParamSqlDatabaseAssemblies -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	PROCESS
+	BEGIN 
 	{
-		$assemblies = $psboundparameters.Assemblies
+	
+	$assemblies = $psboundparameters.Assemblies
 		
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
@@ -96,13 +97,14 @@ Shows what would happen if the command were executed using force.
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
 		
-		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
-		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
-		
 		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
 		{
 			throw "Assemblies are only supported in SQL Server 2005 and above. Quitting."
 		}
+	
+	}
+	PROCESS
+	{
 		
 		$sourceassemblies = @()
 		foreach ($database in $sourceserver.Databases)

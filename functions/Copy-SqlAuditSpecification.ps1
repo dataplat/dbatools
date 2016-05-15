@@ -82,8 +82,9 @@ Shows what would happen if the command were executed using force.
 	)
 	DynamicParam { if ($source) { return (Get-ParamSqlServerServerAuditSpecifications -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	PROCESS
+	BEGIN
 	{
+		
 		$auditspecs = $psboundparameters.ServerAuditSpecifications
 		
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
@@ -103,6 +104,11 @@ Shows what would happen if the command were executed using force.
 		
 		$serverauditspecs = $sourceserver.ServerAuditSpecifications
 		$destaudits = $destserver.ServerAuditSpecifications
+		
+	}
+	PROCESS
+	{
+		
 		
 		foreach ($auditspec in $serverauditspecs)
 		{

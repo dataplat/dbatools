@@ -82,8 +82,8 @@ Shows what would happen if the command were executed using force.
 	)
 	DynamicParam { if ($source) { return (Get-ParamSqlServerAudits -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	PROCESS
-	{
+	BEGIN {
+	
 		$audits = $psboundparameters.Audits
 		
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
@@ -91,9 +91,6 @@ Shows what would happen if the command were executed using force.
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
-		
-		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
-		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 		
 		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
 		{
@@ -103,7 +100,10 @@ Shows what would happen if the command were executed using force.
 		
 		$serveraudits = $sourceserver.Audits
 		$destaudits = $destserver.Audits
-		
+	}
+	
+	PROCESS
+	{	
 		foreach ($audit in $serveraudits)
 		{
 			

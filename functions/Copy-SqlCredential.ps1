@@ -305,10 +305,6 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 				catch { Write-Exception $_ }
 			}
 		}
-	}
-	
-	PROCESS
-	{
 		
 		$credentials = $psboundparameters.credentials
 		
@@ -323,9 +319,6 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
 		
-		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
-		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
-		
 		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
 		{
 			throw "Credentials are only supported in SQL Server 2005 and above. Quitting."
@@ -333,6 +326,12 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 		
 		Invoke-SmoCheck -SqlServer $sourceserver
 		Invoke-SmoCheck -SqlServer $destserver
+		
+	}
+	
+	PROCESS
+	{
+		
 		
 		Write-Output "Getting NetBios name"
 		$sourcenetbios = Get-NetBiosName $sourceserver
