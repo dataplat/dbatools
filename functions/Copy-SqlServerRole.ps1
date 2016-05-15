@@ -83,7 +83,7 @@ Shows what would happen if the command were executed using force.
 	DynamicParam { if ($source) { return (Get-ParamSqlServerRoles -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
 BEGIN {
-		throw "This function is not quite ready yet."
+		
 		$roles = $psboundparameters.Roles
 		
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
@@ -97,6 +97,7 @@ BEGIN {
 }
 	PROCESS
 	{
+		throw "This function is not quite ready yet."
 		
 		foreach ($role in $serverroles)
 		{
