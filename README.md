@@ -94,7 +94,7 @@ All user databases. Use -NoDatabases to skip.
 All logins. Use -NoLogins to skip.
 All database mail objects. Use -NoDatabaseMail
 All credentials. Use -NoCredentials to skip.
-All objects within the Job Server (SQL Agent). Use -NoJobServer to skip.
+All objects within the Job Server (SQL Agent). Use -NoAgentServer to skip.
 All linked servers. Use -NoLinkedServers to skip.
 All groups and servers within Central Management Server. Use -NoCentralManagementServer to skip.
 All SQL Server configuration objects (everything in sp_configure). Use -NoSpConfigure to skip.
