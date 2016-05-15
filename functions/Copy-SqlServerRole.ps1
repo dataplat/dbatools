@@ -143,11 +143,11 @@ BEGIN {
 					try { $rolemembers = $role.EnumMemberNames() }
 					catch { $rolemembers = $role.EnumServerRoleMembers() }
 					
-					foreach ($username in $rolemembers)
+					foreach ($rolename in $rolemembers)
 					{
-						if ($destserver.logins[$username] -ne $null)
+						if ($destserver.logins[$rolename] -ne $null)
 						{
-							$newrole.AddMember($username)
+							$newrole.AddMember($rolename)
 						}
 					}
 					
@@ -159,45 +159,90 @@ BEGIN {
 						$perms = $sourceserver.EnumServerPermissions($($rolename))
 						foreach ($perm in $perms)
 						{
+							
+							<#
+							SO HARD. I must be overthinking this.
+							
+							Here's some equivs for database level. It's hard to find 
+							$permissionset1 = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::Select)
+							$permissionset1.Add([Microsoft.SqlServer.Management.Smo.ObjectPermission]::Select)
+							$hrschema = $database.Schemas["HumanResources"] 
+							$hrschema.Grant($permissionset1, $dbrole.Name)
+							
+							$permissionType = $perm.PermissionType
+							$permissionState = $perm.PermissionState
+							
+							if ($perm.PermissionState -eq "Grant")
+							{
+								$permstate = 0
+							}
+							else
+							{
+								$permstate = 1
+							}
+							
+							$permissionSet = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$permissionType)
+							
+							#identify permission
+							$permissionSet = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::Connect)
+							if (PermissionState)
+							$role.Grant($permissionSet, $rolename, 1)
+							
+							#grant permission
+							$endpoint.Grant($permissionSet, $endpointAccount)
+							
+							
+							PermissionType  : ALTER
+							Grantee         : Endpoint-Admins
+							GranteeType     : ServerRole
+							Grantor         : BASE\ctrlb
+							GrantorType     : Login
+							PermissionState : Grant
+							ColumnName      :
+							ObjectClass     : Endpoint
+							ObjectName      : endpoint_mirroring
+							ObjectSchema    :
+							ObjectID        : 65536
+							#>
 							$permstate = $perm.permissionstate
 							if ($permstate -eq "GrantWithGrant") { $grantwithgrant = $true; $permstate = "grant" }
 							else { $grantwithgrant = $false }
-							$permset = New-Object Microsoft.SqlServer.Management.Smo.ServerPermissionSet($perm.permissiontype)
-							If ($Pscmdlet.ShouldProcess($destination, "Performing $permstate on $($perm.permissiontype) for $username"))
+							$permset = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet($perm.permissiontype)
+							If ($Pscmdlet.ShouldProcess($destination, "Performing $permstate on $($perm.permissiontype) for $rolename"))
 							{
 								try
 								{
-									$destserver.PSObject.Methods[$permstate].Invoke($permset, $username, $grantwithgrant)
-									Write-Output "Successfully performed $permstate $($perm.permissiontype) to $username"
+									$destserver.PSObject.Methods[$permstate].Invoke($permset, $rolename, $grantwithgrant)
+									Write-Output "Successfully performed $permstate $($perm.permissiontype) to $rolename"
 								}
 								catch
 								{
-									Write-Warning "Failed to $permstate $($perm.permissiontype) to $username"
+									Write-Warning "Failed to $permstate $($perm.permissiontype) to $rolename"
 									Write-Exception $_
 								}
 							}
 							
 							# for Syncs
-							$destperms = $destserver.EnumServerPermissions($username)
+							$destperms = $destserver.EnumServerPermissions($rolename)
 							foreach ($perm in $destperms)
 							{
 								$permstate = $perm.permissionstate
 								$sourceperm = $perms | Where-Object { $_.PermissionType -eq $perm.Permissiontype -and $_.PermissionState -eq $permstate }
 								if ($sourceperm -eq $null)
 								{
-									If ($Pscmdlet.ShouldProcess($destination, "Performing Revoke on $($perm.permissiontype) for $username"))
+									If ($Pscmdlet.ShouldProcess($destination, "Performing Revoke on $($perm.permissiontype) for $rolename"))
 									{
 										try
 										{
-											$permset = New-Object Microsoft.SqlServer.Management.Smo.ServerPermissionSet($perm.permissiontype)
+											$permset = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet($perm.permissiontype)
 											if ($permstate -eq "GrantWithGrant") { $grantwithgrant = $true; $permstate = "grant" }
 											else { $grantwithgrant = $false }
-											$destserver.PSObject.Methods["Revoke"].Invoke($permset, $username, $false, $grantwithgrant)
-											Write-Output "Successfully revoked $($perm.permissiontype) from $username"
+											$destserver.PSObject.Methods["Revoke"].Invoke($permset, $rolename, $false, $grantwithgrant)
+											Write-Output "Successfully revoked $($perm.permissiontype) from $rolename"
 										}
 										catch
 										{
-											Write-Warning "Failed to revoke $($perm.permissiontype) from $username"
+											Write-Warning "Failed to revoke $($perm.permissiontype) from $rolename"
 											Write-Exception $_
 										}
 									}
