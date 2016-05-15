@@ -148,7 +148,7 @@ Shows what would happen if the command were executed using force.
 								try
 								{
 									Write-Verbose "Dropping Job category $categoryname"
-									$destserver.jobserver.jobcategories[$jobcategory.name].Drop()
+									$destserver.jobserver.jobcategories[$categoryname].Drop()
 									
 								}
 								catch { 
@@ -223,7 +223,7 @@ Shows what would happen if the command were executed using force.
 								try
 								{
 									Write-Verbose "Dropping Operator category $categoryname"
-									$destserver.jobserver.operatorcategories[$operatorcategory.name].Drop()
+									$destserver.jobserver.operatorcategories[$categoryname].Drop()
 									Write-Output "Copying Operator category $categoryname"
 									$sql = $operatorcategory.Script() | Out-String
 									$sql = $sql -replace "'$source'", "'$destination'"
@@ -306,7 +306,7 @@ Shows what would happen if the command were executed using force.
 								try
 								{
 									Write-Verbose "Dropping Alert category $categoryname"
-									$destserver.jobserver.alertcategories[$alertcategory.name].Drop()
+									$destserver.jobserver.alertcategories[$categoryname].Drop()
 									Write-Output "Copying Alert category $categoryname"
 									$sql = $alertcategory.Script() | Out-String
 									$sql = $sql -replace "'$source'", "'$destination'"

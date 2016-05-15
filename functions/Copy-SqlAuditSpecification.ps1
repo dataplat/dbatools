@@ -112,31 +112,32 @@ Shows what would happen if the command were executed using force.
 		
 		foreach ($auditspec in $serverauditspecs)
 		{
-			if ($auditspecs.length -gt 0 -and $auditspecs -notcontains $auditspec.name) { continue }
+			$auditspecname = $auditspec.name
+			if ($auditspecs.length -gt 0 -and $auditspecs -notcontains $auditspecname) { continue }
 			
 			$destserver.Audits.Refresh()
 			
 			if ($destserver.Audits.Name -notcontains $auditspec.AuditName)
 			{
-				Write-Warning "Audit $($auditspec.AuditName) does not exist on $Destination. Skipping $($auditspec.name)."
+				Write-Warning "Audit $($auditspec.AuditName) does not exist on $Destination. Skipping $auditspecname."
 				continue
 			}
 			
-			if ($destaudits.name -contains $auditspec.name)
+			if ($destaudits.name -contains $auditspecname)
 			{
 				if ($force -eq $false)
 				{
-					Write-Warning "Server audit $($auditspec.name) exists at destination. Use -Force to drop and migrate."
+					Write-Warning "Server audit $auditspecname exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else
 				{
-					If ($Pscmdlet.ShouldProcess($destination, "Dropping server audit $($auditspec.name) and recreating"))
+					If ($Pscmdlet.ShouldProcess($destination, "Dropping server audit $auditspecname and recreating"))
 					{
 						try
 						{
-							Write-Verbose "Dropping server audit $($auditspec.name)"
-							$destserver.ServerAuditSpecifications[$auditspec.name].Drop()
+							Write-Verbose "Dropping server audit $auditspecname"
+							$destserver.ServerAuditSpecifications[$auditspecname].Drop()
 						}
 						catch { 
 							Write-Exception $_ 
@@ -146,11 +147,11 @@ Shows what would happen if the command were executed using force.
 				}
 			}
 			
-			If ($Pscmdlet.ShouldProcess($destination, "Creating server audit $($auditspec.name)"))
+			If ($Pscmdlet.ShouldProcess($destination, "Creating server audit $auditspecname"))
 			{
 				try
 				{
-					Write-Output "Copying server audit $($auditspec.name)"
+					Write-Output "Copying server audit $auditspecname"
 					$destserver.ConnectionContext.ExecuteNonQuery($auditspec.Script()) | Out-Null
 				}
 				catch

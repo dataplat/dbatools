@@ -106,8 +106,8 @@ Shows what would happen if the command were executed using force.
 	{	
 		foreach ($audit in $serveraudits)
 		{
-			
-			if ($audits.length -gt 0 -and $audits -notcontains $audit.name)
+			$auditname = $audit.name
+			if ($audits.length -gt 0 -and $audits -notcontains $auditname)
 			{
 				continue
 			}
@@ -115,33 +115,35 @@ Shows what would happen if the command were executed using force.
 			$sql = $audit.Script() | Out-String
 			$sql = $sql -replace "'$source'", "'$destination'"
 			
-			if ($destaudits.name -contains $audit.name)
+			if ($destaudits.name -contains $auditname)
 			{
 				if ($force -eq $false)
 				{
-					Write-Warning "Server audit $($audit.name) exists at destination. Use -Force to drop and migrate."
+					Write-Warning "Server audit $auditname exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else
 				{
-					If ($Pscmdlet.ShouldProcess($destination, "Dropping server audit $($audit.name)"))
+					If ($Pscmdlet.ShouldProcess($destination, "Dropping server audit $auditname"))
 					{
 						try
 						{
-							Write-Verbose "Dropping server audit $($audit.name)"
+							Write-Verbose "Dropping server audit $auditname"
 							foreach ($spec in $destserver.ServerAuditSpecifications)
 							{
-								if ($auditSpecification.Auditname -eq $audit.name)
+								if ($auditSpecification.Auditname -eq $auditname)
 								{
 									$auditSpecification.Drop()
 								}
 							}
 							
-							$destserver.audits[$audit.name].Disable()
-							$destserver.audits[$audit.name].Alter()
-							$destserver.audits[$audit.name].Drop()
+							$destserver.audits[$auditname].Disable()
+							$destserver.audits[$auditname].Alter()
+							$destserver.audits[$auditname].Drop()
 						}
-						catch { Write-Exception $_ }
+						catch { 
+							Write-Exception $_ 
+						}
 					}
 				}
 			}
@@ -150,7 +152,7 @@ Shows what would happen if the command were executed using force.
 			{
 				if ($Force -eq $false)
 				{
-					Write-Warning "$($audit.Filepath) does not exist. Skipping $($audit.name)."
+					Write-Warning "$($audit.Filepath) does not exist. Skipping $auditname."
 					Write-Warning "Specify -Force to create the directory"
 					continue
 				}
@@ -186,11 +188,11 @@ Shows what would happen if the command were executed using force.
 					}
 				}
 			}
-			If ($Pscmdlet.ShouldProcess($destination, "Creating server audit $($audit.name)"))
+			If ($Pscmdlet.ShouldProcess($destination, "Creating server audit $auditname"))
 			{
 				try
 				{
-					Write-Output "Copying server audit $($audit.name)"
+					Write-Output "Copying server audit $auditname"
 					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 				}
 				catch

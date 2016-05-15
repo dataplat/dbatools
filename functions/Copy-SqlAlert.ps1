@@ -139,7 +139,7 @@ Shows what would happen if the command were executed using force.
 					try
 					{
 						Write-Verbose "Dropping Alert $alertname"
-						$destserver.JobServer.Alerts[$alert.name].Drop()
+						$destserver.JobServer.Alerts[$alertname].Drop()
 					}
 					catch {
 						Write-Exception $_
