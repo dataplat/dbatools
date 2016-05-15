@@ -197,7 +197,7 @@ Function Get-ParamSqlServerRoles
 	$roles = $server.roles | Where-Object { $_.IsFixedRole -eq $false -and $_.Name -ne 'public' }
 	foreach ($role in $roles)
 	{
-		$rolelist += $rolename
+		$rolelist += $role.name
 	}
 	
 	# Reusable parameter setup
