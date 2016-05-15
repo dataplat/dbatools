@@ -259,7 +259,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 	
 	BEGIN
 	{
-		
+		$whatif
 		$transcript = ".\dbatools-startmigration-transcript.txt"
 		
 		if (Test-Path $transcript) { 
@@ -281,6 +281,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 	
 	PROCESS
 	{
+	
 		if ($BackupRestore -eq $false -and $DetachAttach -eq $false -and $NoDatabases -eq $false) 
 		{
 			throw "You must specify a database migration method (-BackupRestore or -DetachAttach) or -NoDatabases"
@@ -297,7 +298,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating SQL credentials"
 				try
 				{
-					Copy-SqlCredential -Source $sourceserver.name -Destination $destserver.name -Force:$Force -WhatIf:$WhatIf
+					Copy-SqlCredential -Source $sourceserver.name -Destination $destserver.name -Force:$Force
 				}
 				catch { Write-Error "Credential migration reported the following error $($_.Exception.Message) " }
 			}
@@ -308,7 +309,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			Write-Output "`n`nMigrating custom errors (user defined messages)"
 			try
 			{
-				Copy-SqlCustomError -Source $sourceserver -Destination $destserver -Force:$Force -WhatIf:$WhatIf
+				Copy-SqlCustomError -Source $sourceserver -Destination $destserver -Force:$Force
 			}
 			catch { Write-Error "Couldn't copy custom errors." }
 		}
@@ -324,11 +325,11 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			{
 				if ($BackupRestore)
 				{
-					Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -WhatIf:$WhatIf -NoRecovery:$NoRecovery -WithReplace:$WithReplace
+					Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace
 				}
 				else
 				{
-					Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force -WhatIf:$WhatIf
+					Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force
 				}
 			}
 			catch { Write-Error "Database migration reported the following error $($_.Exception.Message)" }
@@ -354,7 +355,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			Write-Output "`n`nMigrating logins"
 			try
 			{
-				Copy-SqlLogin -Source $sourceserver -Destination $destserver -Force:$Force -WhatIf:$WhatIf
+				Copy-SqlLogin -Source $sourceserver -Destination $destserver -Force:$Force
 			}
 			catch { Write-Error "Login migration reported the following error $($_.Exception.Message) " }
 		}
@@ -374,7 +375,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			Write-Output "`n`nMigrating linked servers"
 			try
 			{
-				Copy-SqlLinkedServer -Source $sourceserver.name -Destination $destserver.name -Force:$Force -WhatIf:$WhatIf
+				Copy-SqlLinkedServer -Source $sourceserver.name -Destination $destserver.name -Force:$Force
 			}
 			catch { Write-Error "Linked server migration reported the following error $($_.Exception.Message) " }
 		}
@@ -390,7 +391,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating Central Management Server"
 				try
 				{
-					Copy-SqlCentralManagementServer -Source $sourceserver -Destination $destserver -Force:$Force -WhatIf:$WhatIf
+					Copy-SqlCentralManagementServer -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch 
 				{ 
@@ -410,7 +411,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating database mail"
 				try
 				{
-					Copy-SqlDatabaseMail -Source $sourceserver -Destination $destserver -Force:$Force -WhatIf:$WhatIf
+					Copy-SqlDatabaseMail -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch { Write-Error "Database mail migration reported the following error $($_.Exception.Message)" }
 			}
@@ -427,7 +428,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating System Triggers"
 				try
 				{
-					Copy-SqlServerTrigger -Source $sourceserver -Destination $destserver -Force:$Force -WhatIf:$WhatIf
+					Copy-SqlServerTrigger -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch { Write-Error "System Triggers migration reported the following error $($_.Exception.Message)" }
 			}
@@ -438,7 +439,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			Write-Output "`n`nMigrating Backup Devices"
 			try
 			{
-				Copy-SqlBackupDevice -Source $sourceserver -Destination $destserver -Force:$Force -WhatIf:$WhatIf
+				Copy-SqlBackupDevice -Source $sourceserver -Destination $destserver -Force:$Force
 			}
 			catch { Write-Error "Backup device migration reported the following error $($_.Exception.Message)" }
 		}
@@ -464,7 +465,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating Audits"
 				try
 				{
-					Copy-SqlAudit -Source $sourceserver -Destination $destserver -Force:$Force -WhatIf:$WhatIf
+					Copy-SqlAudit -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch { Write-Error "Backup device migration reported the following error $($_.Exception.Message)" }
 			}
@@ -481,7 +482,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating Server Audit Specifications"
 				try
 				{
-					Copy-SqlAuditSpecification -Source $sourceserver -Destination $destserver -Force:$Force -WhatIf:$WhatIf
+					Copy-SqlAuditSpecification -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch { Write-Error "Server Audit Specification migration reported the following error $($_.Exception.Message)" }
 			}
@@ -498,7 +499,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating Endpoints"
 				try
 				{
-					Copy-SqlEndpoint -Source $sourceserver -Destination $destserver -Force:$Force -WhatIf:$WhatIf
+					Copy-SqlEndpoint -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch { Write-Error "Backup device migration reported the following error $($_.Exception.Message)" }
 			}
@@ -516,7 +517,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating Extended Events"
 				try
 				{
-					Copy-SqlExtendedEvent -Source $sourceserver -Destination $destserver -Force:$Force -WhatIf:$WhatIf
+					Copy-SqlExtendedEvent -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch { Write-Error "Extended Event migration reported the following error $($_.Exception.Message)" }
 			}
@@ -534,7 +535,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating Policy Management "
 				try
 				{
-					Copy-SqlPolicyManagement -Source $sourceserver -Destination $destserver -Force:$Force -WhatIf:$WhatIf
+					Copy-SqlPolicyManagement -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch { Write-Error "Policy Management migration reported the following error $($_.Exception.Message)" }
 			}
@@ -551,7 +552,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating Resource Governor"
 				try
 				{
-					Copy-SqlResourceGovernor -Source $sourceserver -Destination $destserver -Force:$Force -WhatIf:$WhatIf
+					Copy-SqlResourceGovernor -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch { Write-Error "Resource Governor migration reported the following error $($_.Exception.Message)" }
 			}
@@ -563,7 +564,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			Write-Output "`n`nMigrating job server"
 			try
 			{
-				Copy-SqlServerAgent -Source $sourceserver -Destination $destserver -DisableJobsOnDestination:$DisableJobsOnDestination -DisableJobsOnSource:$DisableJobsOnSource -Force:$Force -WhatIf:$WhatIf
+				Copy-SqlServerAgent -Source $sourceserver -Destination $destserver -DisableJobsOnDestination:$DisableJobsOnDestination -DisableJobsOnSource:$DisableJobsOnSource -Force:$Force
 			}
 			catch { Write-Error "Job Server migration reported the following error $($_.Exception.Message) " }
 		}
@@ -573,7 +574,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			Write-Output "`n`nMigrating Data Collector collection sets"
 			try
 			{
-				Copy-SqlDataCollector -Source $sourceserver -Destination $destserver -Force:$Force -WhatIf:$WhatIf
+				Copy-SqlDataCollector -Source $sourceserver -Destination $destserver -Force:$Force
 			}
 			catch { Write-Error "Job Server migration reported the following error $($_.Exception.Message) " }
 		}
