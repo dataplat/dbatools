@@ -68,12 +68,13 @@
 	NestedModules = @()
 	
 	# Functions to export from this module
-	FunctionsToExport = @('Copy-SqlCustomError','Copy-SqlAuditSpecification','Copy-SqlEndpoint', 'Copy-SqlAudit', 'Copy-SqlServerRole', 'Copy-SqlResourceGovernor',
-	'Copy-SqlExtendedEvent', 'Copy-SqlBackupDevice', 'Copy-SqlServerTrigger', 'Copy-SqlLogin', 'Copy-SqlLinkedServer', 'Copy-SqlCredential',
-	'Copy-SqlCentralManagementServer', 'Copy-SqlSysDbUserObjects', 'Copy-SqlDatabaseMail', 'Copy-SqlDatabase', 'Copy-SqlJobServer', 'Start-SqlMigration',
-	'Import-SqlSpConfigure', 'Export-SqlSpConfigure', 'Watch-SqlDbLogin', 'Reset-SqlAdmin', 'Get-SqlServerKey', 'Set-SqlMaxMemory',
-	'Get-SqlMaxMemory', 'Get-DetachedDBInfo', 'Restore-HallengrenBackup', 'Test-SqlConnection', 'Import-CsvToSql', 'Update-dbatools',
-	'Copy-SqlSpConfigure', 'Test-SqlPath', 'Copy-SqlDatabaseAssembly', 'Copy-SqlPolicyManagement', 'Copy-SqlProxyAccount','Copy-SqlSharedSchedule')
+	FunctionsToExport = @('Copy-SqlCustomError','Copy-SqlAuditSpecification','Copy-SqlEndpoint', 'Copy-SqlAudit', 'Copy-SqlServerRole', 
+	'Copy-SqlResourceGovernor','Copy-SqlExtendedEvent', 'Copy-SqlBackupDevice', 'Copy-SqlServerTrigger', 'Copy-SqlLogin', 
+	'Copy-SqlLinkedServer', 'Copy-SqlCredential','Copy-SqlCentralManagementServer', 'Copy-SqlSysDbUserObjects', 'Copy-SqlDatabaseMail', 
+	'Copy-SqlDatabase', 'Copy-SqlJobServer', 'Start-SqlMigration','Import-SqlSpConfigure', 'Export-SqlSpConfigure', 'Watch-SqlDbLogin', 
+	'Reset-SqlAdmin', 'Get-SqlServerKey', 'Set-SqlMaxMemory','Get-SqlMaxMemory', 'Get-DetachedDBInfo', 'Restore-HallengrenBackup', 
+	'Test-SqlConnection', 'Import-CsvToSql', 'Update-dbatools','Copy-SqlSpConfigure', 'Test-SqlPath', 'Copy-SqlDatabaseAssembly', 
+	'Copy-SqlPolicyManagement', 'Copy-SqlProxyAccount','Copy-SqlSharedSchedule','Copy-SqlAgentCategory')
 	
 	# 'Copy-SqlDataCollector',
 	
