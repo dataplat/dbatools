@@ -77,7 +77,7 @@ Copy-SqlLinkedServer -Source sqlserver2014a -Destination sqlcluster -LinkedServe
 
 Description
 Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped.
-#>	
+#>		
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true)]
@@ -147,10 +147,7 @@ License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
 					return $servicekey
 				}
 			}
-			catch 
-			{ 
-				throw "Can't unprotect registry data on $($source.name)). Quitting." 
-			}
+			catch { throw "Can't unprotect registry data on $($source.name)). Quitting." }
 			
 			# Choose the encryption algorithm based on the SMK length - 3DES for 2008, AES for 2012
 			# Choose IV length based on the algorithm
@@ -192,10 +189,7 @@ License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
 					return $dt
 				}
 			}
-			catch 
-			{ 
-				throw "Can't establish DAC connection to $sourcename from $sourcename. Quitting." 
-			}
+			catch { throw "Can't establish DAC connection to $sourcename from $sourcename. Quitting." }
 			
 			$decryptedlogins = New-Object "System.Data.DataTable"
 			[void]$decryptedlogins.Columns.Add("LinkedServer")
@@ -250,8 +244,8 @@ Internal function.
 			$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 			$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 			
-			$source = $sourceserver.DomainInstanceName
-			$destination = $destserver.DomainInstanceName
+			$source = $sourceserver.name
+			$destination = $destserver.name
 			
 			Write-Output "Collecting Linked Server logins and passwords on $($sourceserver.name)"
 			$sourcelogins = Get-LinkedServerLogins $sourceserver
@@ -261,10 +255,7 @@ Internal function.
 			{
 				$serverlist = $sourceserver.LinkedServers | Where-Object { $LinkedServers -contains $_.Name }
 			}
-			else 
-			{ 
-				$serverlist = $sourceserver.LinkedServers 
-			}
+			else { $serverlist = $sourceserver.LinkedServers }
 			
 			Write-Output "Starting migration"
 			foreach ($linkedserver in $serverlist)
@@ -357,6 +348,10 @@ Internal function.
 			}
 		}
 		
+	}
+	
+	PROCESS
+	{
 		
 		$LinkedServers = $psboundparameters.LinkedServers
 		
@@ -368,36 +363,25 @@ Internal function.
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 		
-		$source = $sourceserver.DomainInstanceName
-		$destination = $destserver.DomainInstanceName
+		$source = $sourceserver.name
+		$destination = $destserver.name
 		
 		Invoke-SmoCheck -SqlServer $sourceserver
 		Invoke-SmoCheck -SqlServer $destserver
-
-	}
-	
-	PROCESS
-	{
+		
+		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
+		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 		
 		Write-Output "Getting NetBios name"
 		$sourcenetbios = Get-NetBiosName $sourceserver
 		
 		Write-Output "Checking if remote access is enabled"
 		winrm id -r:$sourcenetbios 2>$null | Out-Null
-		
-		if ($LastExitCode -ne 0) { 
-			throw "Remote PowerShell access not enabled on on $source or access denied. Windows admin acccess required. Quitting." 
-		}
+		if ($LastExitCode -ne 0) { throw "Remote PowerShell access not enabled on on $source or access denied. Windows admin acccess required. Quitting." }
 		
 		Write-Output "Checking if Remote Registry is enabled"
-		try 
-		{
-			Invoke-Command -ComputerName $sourcenetbios { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } 
-		}
-		catch 
-		{ 
-			throw "Can't connect to registry on $source. Quitting." 
-		}
+		try { Invoke-Command -ComputerName $sourcenetbios { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } }
+		catch { throw "Can't connect to registry on $source. Quitting." }
 		
 		# Magic happens here
 		Copy-LinkedServers $sourceserver $destserver $linkedservers -force:$force
