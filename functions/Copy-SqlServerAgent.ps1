@@ -87,7 +87,9 @@ Shows what would happen if the command were executed.
 		[object]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
-		[Switch]$DisableJobsOnDestination
+		[Switch]$DisableJobsOnDestination,
+		[Switch]$DisableJobsOnSource,
+		[switch]$Force
 		
 	)
 	
@@ -106,70 +108,19 @@ Shows what would happen if the command were executed.
 	
 	PROCESS
 	{
-	
 		
-		$jobobjects = "ProxyAccounts", "JobSchedule", "SharedSchedules", "AlertSystem", "JobCategories", "OperatorCategories"
-		$jobobjects += "AlertCategories", "Alerts", "TargetServerGroups", "TargetServers", "Operators", "Jobs", "Mail"
+		Copy-SqlAgentCategory -Source $sourceserver -Destination $destserver -Force:$force
+		Copy-SqlAlert -Source $sourceserver -Destination $destserver -Force:$force -IncludeDefaults
+		Copy-SqlOperator -Source $sourceserver -Destination $destserver -Force:$force
+		Copy-SqlProxyAccount -Source $sourceserver -Destination $destserver -Force:$force
+		Copy-SqlSharedSchedule -Source $sourceserver -Destination $destserver -Force:$force
+		Copy-SqlJob -Source $sourceserver -Destination $destserver -Force:$force -DisableOnDestination:$DisableJobsOnDestination -DisableOnSource:$DisableJobsOnSource
 		
-		$errorcount = 0
-		foreach ($jobobject in $jobobjects)
-		{
-			foreach ($agent in $sourceagent.($jobobject))
-			{
-				if ($jobobject -eq "Jobs")
-				{
-					$dbnames = $agent.JobSteps.Databasename.Where{ $_.length -gt 0 }
-					$missingdb = $dbnames.Where{ $destserver.Databases.Name -notcontains $_ }
-					if ($missingdb.count -gt 0 -and $dbnames.count -gt 0)
-					{
-						Write-Warning "Database $missingdb doesn't exist on destination. Skipping."
-						continue
-					}
-					
-					$missinglogin = $agent.OwnerLoginName.Where{ $destserver.Logins.Name -notcontains $_ }
-					if ($missinglogin.count -gt 0)
-					{
-						Write-Warning "Login $missinglogin doesn't exist on destination. Skipping."
-						continue
-					}
-					
-					$proxynames = $agent.JobSteps.ProxyName.Where{ $_.length -gt 0 }
-					$missingproxy = $proxynames.Where{ $destserver.JobServer.ProxyAccounts.Name -notcontains $_ }
-					if ($missingproxy.count -gt 0 -and $proxynames.count -gt 0)
-					{
-						Write-Warning "Proxy Account $($proxynames[0]) doesn't exist on destination. Skipping."
-						continue
-					}
-				}
-				
-				$agentname = $agent.name
-				If ($Pscmdlet.ShouldProcess($destination, "Adding $jobobject $agentname"))
-				{
-					try
-					{
-						if ($DisableJobsOnDestination -and ($jobobject -eq "Jobs"))
-						{
-							$agent.IsEnabled = $False
-						}
-						$sql = $agent.Script() | Out-String
-						$sql = $sql -replace [regex]::Escape("@server=N'$source'"), "@server=N'$destination'"
-						$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
-						Write-Output "$agentname successfully migrated "
-					}
-					catch
-					{
-						if ($_.Exception -like '*duplicate*' -or $_.Exception -like '*already exists*')
-						{
-							Write-Output "$agentname exists at destination"
-						}
-						else
-						{
-							Write-Error "$jobobject : $agentname : $($_.Exception.InnerException.InnerException.Message)"
-						}
-					}
-				}
-			}
-		}
+		<# 
+			Copy-SqlMasterServer -Source $sourceserver -Destination $destserver -Force:$force
+			Copy-SqlTargetServer -Source $sourceserver -Destination $destserver -Force:$force
+			Copy-SqlTargetServerGroup -Source $sourceserver -Destination $destserver -Force:$force
+		#>
 	}
 	
 	END
