@@ -1414,8 +1414,7 @@ Function Get-ParamSqlAgentCategories
 	
 	foreach ($name in $jobobjects)
 	{
-		$userobjects =   ($server.JobServer.$name | Where-Object { $_.ID -ge 100 }).Name
-		$items = $userobjects.Name
+		$items = ($server.JobServer.$name | Where-Object { $_.ID -ge 100 }).Name
 		if ($items.count -gt 0)
 		{
 			$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
