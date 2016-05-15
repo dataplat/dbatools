@@ -29,8 +29,15 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 $dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
 
 Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+
 To connect as a different Windows user, run PowerShell as that user.
 
+.PARAMETER DisableOnSource
+Disable the job on the source server
+
+.PARAMETER DisableOnDestination
+Disable the newly migrated job on the destination server
+		
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
@@ -78,6 +85,8 @@ Shows what would happen if the command were executed using force.
 		[object]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+		[switch]$DisableOnSource,
+		[switch]$DisableOnDestination,
 		[switch]$Force
 	)
 	DynamicParam { if ($source) { return (Get-ParamSqlJobs -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
@@ -104,7 +113,34 @@ Shows what would happen if the command were executed using force.
 			
 			if ($jobs.count -gt 0 -and $jobs -notcontains $jobname) { continue }
 			
-			<# LOOK AT JOB HTING #>
+			$dbnames = $job.JobSteps.Databasename.Where{ $_.length -gt 0 }
+			$missingdb = $dbnames.Where{ $destserver.Databases.Name -notcontains $_ } 
+			
+			if ($missingdb.count -gt 0 -and $dbnames.count -gt 0)
+			{
+				$missingdb = ($missingdb | Sort-Object | Get-Unique) -join ", "
+				Write-Warning "Database(s) $missingdb doesn't exist on destination. Skipping."
+				continue
+			}
+			
+			$missinglogin = $job.OwnerLoginName.Where{ $destserver.Logins.Name -notcontains $_ }
+			
+			if ($missinglogin.count -gt 0)
+			{
+				$missinglogin = ($missinglogin | Sort-Object | Get-Unique) -join ", "
+				Write-Warning "Login(s) $missinglogin doesn't exist on destination. Skipping."
+				continue
+			}
+			
+			$proxynames = $job.JobSteps.ProxyName.Where{ $_.length -gt 0 }
+			$missingproxy = $proxynames.Where{ $destserver.JobServer.ProxyAccounts.Name -notcontains $_ }
+			
+			if ($missingproxy.count -gt 0 -and $proxynames.count -gt 0)
+			{
+				$missingproxy = ($missingproxy | Sort-Object | Get-Unique) -join ", "
+				Write-Warning "Proxy Account(s) $($proxynames[0]) doesn't exist on destination. Skipping."
+				continue
+			}
 			
 			if ($destjobs.name -contains $job.name)
 			{
@@ -125,12 +161,23 @@ Shows what would happen if the command were executed using force.
 							$sql = $sql -replace "'$source'", "'$destination'"
 							Write-Verbose $sql
 							$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+							
+							if ($DisableOnDestination)
+							{
+								$destserver.JobServer.Jobs[$job.name].IsEnabled = $False
+							}
+							
+							if ($DisableOnSource)
+							{
+								$job.IsEnabled = $false
+							}
 						}
 						catch { Write-Exception $_ }
 					}
 				}
 			}
 			else
+			# This duplicated code drives me crazy but I've got too much to do to rewrite.
 			{
 				If ($Pscmdlet.ShouldProcess($destination, "Creating Job $jobname"))
 				{
@@ -141,6 +188,16 @@ Shows what would happen if the command were executed using force.
 						$sql = $sql -replace "'$source'", "'$destination'"
 						Write-Verbose $sql
 						$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+						
+						if ($DisableOnDestination)
+						{
+							$destserver.JobServer.Jobs[$job.name].IsEnabled = $False
+						}
+						
+						if ($DisableOnSource)
+						{
+							$job.IsEnabled = $false
+						}
 					}
 					catch
 					{

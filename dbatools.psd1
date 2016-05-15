@@ -75,7 +75,7 @@
 	'Reset-SqlAdmin', 'Get-SqlServerKey', 'Set-SqlMaxMemory','Get-SqlMaxMemory', 'Get-DetachedDBInfo', 'Restore-HallengrenBackup', 
 	'Test-SqlConnection', 'Import-CsvToSql', 'Update-dbatools','Copy-SqlSpConfigure', 'Test-SqlPath', 'Copy-SqlDatabaseAssembly', 
 	'Copy-SqlPolicyManagement', 'Copy-SqlProxyAccount','Copy-SqlSharedSchedule','Copy-SqlAgentCategory','Copy-SqlAlert',
-	'Copy-SqlOperator')
+	'Copy-SqlOperator','Copy-SqlJob')
 	
 	# 'Copy-SqlDataCollector',
 	
