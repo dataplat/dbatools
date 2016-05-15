@@ -102,10 +102,8 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 		}
 	}
 	
+	BEGIN {
 	
-	PROCESS
-	{
-		
 		if (!([string]::IsNullOrEmpty($Path)))
 		{
 			if (!($Path.StartsWith("\\")))
@@ -123,8 +121,6 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 		$server.ConnectionContext.StatementTimeout = 0
 		
-		if (!(Test-SqlSa -SqlServer $server -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $SqlServer. Quitting." }
-		
 		if ($server.versionMajor -lt 8 -and $server.versionMajor -lt 8)
 		{
 			throw "This script can only be run on SQL Server 2000 and above. Quitting."
@@ -136,9 +132,13 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 		}
 		
 		# Convert from RuntimeDefinedParameter  object to regular array
-		# Convert from RuntimeDefinedParameter  object to regular array
 		$Databases = $psboundparameters.Databases
 		$Exclude = $psboundparameters.Exclude
+	
+	}
+	PROCESS
+	
+	{
 		
 		$dblist = @(); $skippedb = @{ }; $migrateddb = @{ };
 		$systemdbs = @("master", "msdb", "model")
