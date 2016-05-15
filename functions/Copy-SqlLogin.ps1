@@ -156,14 +156,13 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 			
 			$source = $sourceserver.DomainInstanceName
 			$destination = $destserver.DomainInstanceName
-			$Exclude | Where-Object { !([string]::IsNullOrEmpty($_)) } | ForEach-Object { $skippedlogin.Add($_, "Explicitly Skipped") }
 			
 			foreach ($sourcelogin in $sourceserver.logins)
 			{
 				
 				$username = $sourcelogin.name
 				if ($Logins -ne $null -and $Logins -notcontains $username) { continue }
-				if ($skippedlogin.ContainsKey($username) -or $username.StartsWith("##") -or $username -eq 'sa') { Write-Output "Skipping $username"; continue }
+				if ($Exclude -contains $username -or $username.StartsWith("##") -or $username -eq 'sa') { Write-Output "Skipping $username"; continue }
 				$servername = Get-NetBiosName $sourceserver
 				
 				$currentlogin = $sourceserver.ConnectionContext.truelogin
@@ -173,7 +172,6 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 					If ($Pscmdlet.ShouldProcess("console", "Stating $username is skipped because it is performing the migration."))
 					{
 						Write-Warning "Cannot drop login performing the migration. Skipping"
-						$skippedlogin.Add("$username", "Skipped. Cannot drop login performing the migration.")
 					}
 					continue
 				}
@@ -184,7 +182,6 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 					If ($Pscmdlet.ShouldProcess("console", "Stating $username is skipped because it is a local machine name."))
 					{
 						Write-Output "Stating $username is skipped because it is a local machine name."
-						$skippedlogin.Add("$username", "Skipped. Local machine username.")
 					}
 					continue
 				}
@@ -194,7 +191,6 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 					If ($Pscmdlet.ShouldProcess("console", "Stating $username is skipped because it exists at destination."))
 					{
 						Write-Output "$username already exists in destination. Use -force to drop and recreate."
-						$skippedlogin.Add("$username", "Already exists in destination. Use -force to drop and recreate.")
 					}
 					continue
 				}
@@ -234,7 +230,6 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 						{
 							$ex = $_.Exception.Message
 							if ($ex -ne $null) { $ex.trim() }
-							$skippedlogin.Add("$username", "Couldn't drop $username on $($destination): $ex")
 							Write-Error "Could not drop $username`: $ex"
 							Write-Exception $_
 							continue
@@ -336,13 +331,11 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 						try
 						{
 							$destlogin.Create()
-							$migratedlogin.Add("$username", "Windows user/group added successfully")
-							$destlogin.refresh()
+							$destlogin.Refresh()
 							Write-Output "Successfully added $username to $destination"
 						}
 						catch
 						{
-							$skippedlogin.Add("$username", "Add failed")
 							Write-Warning "Failed to add $username to $destination"
 							Write-Exception $_
 							continue
@@ -351,7 +344,6 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 					# This script does not currently support certificate mapped or asymmetric key users.
 					else
 					{
-						$skippedlogin.Add("$username", "Skipped. $($sourcelogin.LoginType) logins not supported.")
 						Write-Warning "$($sourcelogin.LoginType) logins not supported. $($sourcelogin.name) skipped."
 						continue
 					}
@@ -771,7 +763,7 @@ Internal function. Skips migration, and just syncs permission sets, roles, datab
 				$username = $sourcelogin.name
 				$currentlogin = $sourceserver.ConnectionContext.truelogin
 				if ($Logins -ne $null -and $Logins -notcontains $username) { continue }
-				if ($skippedlogin.ContainsKey($username) -or $username.StartsWith("##") -or $username -eq 'sa') { continue }
+				if ($exclude -contains $username -or $username.StartsWith("##") -or $username -eq 'sa') { continue }
 				
 				if ($currentlogin -eq $username)
 				{
