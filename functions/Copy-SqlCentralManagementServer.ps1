@@ -96,7 +96,6 @@ the server name of the migrating instance is "sqlcluster", it will be switched t
 		
 		Function Parse-ServerGroup($sourceGroup, $destinationgroup, $SwitchServerName)
 		{
-			
 			if ($destinationgroup.name -eq "DatabaseEngineServerGroup" -and $sourceGroup.name -ne "DatabaseEngineServerGroup")
 			{
 				$currentservergroup = $destinationgroup
@@ -144,16 +143,29 @@ the server name of the migrating instance is "sqlcluster", it will be switched t
 							$newserver.ConnectionString = $instance.ConnectionString.tostring()
 						}
 						
-						try { $newserver.Create() }
+						try 
+						{ 
+							$newserver.Create() 
+						}
 						catch
 						{
-							if ($_.Exception -match "same name") { Write-Error "Could not add Switched Server instance name."; continue }
-							else { Write-Error "Failed to add $servername" }
+							if ($_.Exception -match "same name") 
+							{ 
+								Write-Error "Could not add Switched Server instance name."
+								continue 
+							}
+							else 
+							{ 
+								Write-Error "Failed to add $servername" 
+							}
 						}
 						Write-Output "Added Server $servername as $instancename to $($destinationgroup.name)"
 					}
 				}
-				else { Write-Warning "Server $instancename already exists. Skipped" }
+				else 
+				{ 
+					Write-Warning "Server $instancename already exists. Skipped" 
+				}
 			}
 			
 			# Add Groups
@@ -171,7 +183,6 @@ the server name of the migrating instance is "sqlcluster", it will be switched t
 			}
 		}
 		
-		
 		$SqlCmsGroups = $psboundparameters.SqlCmsGroups
 		
 		Write-Output "Connecting to SQL Servers"
@@ -184,24 +195,30 @@ the server name of the migrating instance is "sqlcluster", it will be switched t
 		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
 		{
 			throw "Central Management Server is only supported in SQL Server 2008 and above. Quitting."
-			
 		}
 	}
 	
 	PROCESS
 	{
-		
-		
 		Write-Output "Connecting to Central Management Servers"
+		
 		try
 		{
 			$fromcmstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sourceserver.ConnectionContext.SqlConnectionObject)
 			$tocmstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($destserver.ConnectionContext.SqlConnectionObject)
 		}
-		catch { throw "Cannot access Central Management Servers" }
+		catch 
+		{ 
+			throw "Cannot access Central Management Servers" 
+		}
 		
-		if ($CMSGroups -eq $null) { $stores = $fromcmstore.DatabaseEngineServerGroup }
-		else { $stores = @(); foreach ($groupname in $CMSGroups) { $stores += $fromcmstore.DatabaseEngineServerGroup.ServerGroups[$groupname] } }
+		if ($CMSGroups -eq $null) { 
+			$stores = $fromcmstore.DatabaseEngineServerGroup 
+		}
+		else 
+		{ 
+			$stores = @(); foreach ($groupname in $CMSGroups) { $stores += $fromcmstore.DatabaseEngineServerGroup.ServerGroups[$groupname] } 
+		}
 		
 		foreach ($store in $stores)
 		{
@@ -213,6 +230,9 @@ the server name of the migrating instance is "sqlcluster", it will be switched t
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Central Management Server migration finished" }
+		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) 
+		{ 
+			Write-Output "Central Management Server migration finished" 
+		}
 	}
 }
