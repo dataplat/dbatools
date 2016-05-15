@@ -29,7 +29,11 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 $dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
 
 Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+
 To connect as a different Windows user, run PowerShell as that user.
+
+.PARAMETER IncludeDefaults
+Copy SQL Agent defaults such as FailSafeEmailAddress, ForwardingServer, and PagerSubjectTemplate.
 
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
@@ -78,6 +82,7 @@ Shows what would happen if the command were executed using force.
 		[object]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+		[switch]$IncludeDefaults,
 		[switch]$Force
 	)
 	DynamicParam { if ($source) { return (Get-ParamSqlAlerts -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
@@ -97,6 +102,24 @@ Shows what would happen if the command were executed using force.
 		
 		$serveralerts = $sourceserver.JobServer.Alerts
 		$destalerts = $destserver.JobServer.Alerts
+		
+		if ($IncludeDefaults -eq $true) {
+			If ($Pscmdlet.ShouldProcess($destination, "Copying Alert Defaults"))
+			{
+				try
+				{
+					Write-Output "Copying Alert Defaults"
+					$sql = $sourceserver.JobServer.AlertSystem.Script() | Out-String
+					$sql = $sql -replace "'$source'", "'$destination'"
+					Write-Verbose $sql
+					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+				}
+				catch
+				{
+					Write-Exception $_
+				}
+			}
+		}
 		
 		foreach ($alert in $serveralerts)
 		{
