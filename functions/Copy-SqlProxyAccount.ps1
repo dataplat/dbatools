@@ -82,7 +82,7 @@ Shows what would happen if the command were executed using force.
 	)
 	DynamicParam { if ($source) { return (Get-ParamSqlProxyAccounts -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	PROCESS
+	BEGIN
 	{
 		$proxyaccounts = $psboundparameters.ProxyAccounts
 		
@@ -92,9 +92,6 @@ Shows what would happen if the command were executed using force.
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
 		
-		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
-		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
-		
 		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
 		{
 			throw "Server ProxyAccounts are only supported in SQL Server 2005 and above. Quitting."
@@ -102,6 +99,10 @@ Shows what would happen if the command were executed using force.
 		
 		$serverproxyaccounts = $sourceserver.JobServer.ProxyAccounts
 		$destproxyaccounts = $destserver.JobServer.ProxyAccounts
+		
+	}
+	PROCESS
+	{
 		
 		foreach ($proxyaccount in $serverproxyaccounts)
 		{
@@ -136,7 +137,14 @@ Shows what would happen if the command were executed using force.
 							Write-Verbose $sql
 							$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 						}
-						catch { Write-Exception $_ }
+						catch { 
+							$exceptionstring = $_.Exception.InnerException.ToString()
+							if ($exceptionstring -match 'subsystem') {
+								Write-Warning "One or more subsystems do not exist on the destination server. Skipping that part."
+							} else {
+								Write-Exception $_
+							}
+						}
 					}
 				}
 			}
@@ -154,7 +162,12 @@ Shows what would happen if the command were executed using force.
 					}
 					catch
 					{
-						Write-Exception $_
+						$exceptionstring = $_.Exception.InnerException.ToString()
+						if ($exceptionstring -match 'subsystem') {
+							Write-Warning "One or more subsystems do not exist on the destination server. Skipping that part."
+						} else {
+							Write-Exception $_
+						}
 					}
 				}
 			}
