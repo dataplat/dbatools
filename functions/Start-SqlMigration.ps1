@@ -246,14 +246,15 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 	
 	BEGIN
 	{
-		$transcript = ".\dbatools-startmigration-transcript.txt"
-		if (Test-Path $transcript) { Start-Transcript -Path $transcript -Append }
-		else { Start-Transcript -Path $transcript }
-	}
-	
-	PROCESS
-	{
 		
+		$transcript = ".\dbatools-startmigration-transcript.txt"
+		
+		if (Test-Path $transcript) { 
+			Start-Transcript -Path $transcript -Append 
+		}
+		else { 
+			Start-Transcript -Path $transcript 
+		}
 		
 		$elapsed = [System.Diagnostics.Stopwatch]::StartNew()
 		$started = Get-Date
@@ -263,7 +264,14 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
-		
+	}
+	
+	PROCESS
+	{
+		if ($BackupRestore -eq $false -and $DetachAttach -eq $false -and $NoDatabases -eq $false) 
+		{
+			throw "You must specify a database migration method (-BackupRestore or -DetachAttach) or -NoDatabases"
+		}
 		
 		if (!$NoCredentials)
 		{
