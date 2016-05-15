@@ -402,10 +402,9 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			else
 			{
 				Write-Output "`n`nMigrating database mail"
-				if ($force) { Write-Warning " Copy-SqlDatabaseMail currently does not support force." }
 				try
 				{
-					Copy-SqlDatabaseMail -Source $sourceserver -Destination $destserver
+					Copy-SqlDatabaseMail -Source $sourceserver -Destination $destserver -Force:$force
 				}
 				catch { Write-Error "Database mail migration reported the following error $($_.Exception.Message)" }
 			}

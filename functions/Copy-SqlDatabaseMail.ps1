@@ -2,12 +2,15 @@ Function Copy-SqlDatabaseMail
 {
 <#
 .SYNOPSIS
-Copies *all* database mail profiles, accounts and settings. More granularity coming later. 
+Migrates Mail Profiles, Accounts, Mail Servers and Mail Server Configs from one SQL Server to another.
 
-Ignores -force: does not drop and recreate.
 
 .DESCRIPTION
-This function could use some refining, as *all* database mail objects are copied. 
+By default, all mail configurations for Profiles, Accounts, Mail Servers and Configs are copied. 
+ 
+The -Profiles parameter is autopopulated for command-line completion and can be used to copy only specific mail profiles.
+The -Accounts parameter is autopopulated for command-line completion and can be used to copy only specific mail accounts.
+The -MailServers parameter is autopopulated for command-line completion and can be used to copy only specific mail servers.
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
@@ -31,7 +34,20 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 $dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
 
 Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+
 To connect as a different Windows user, run PowerShell as that user.
+
+.PARAMETER Type
+Specifies the object type to migrate. Valid options are Job, Alert and Operator. When CategoryType is specified, all categories from the selected type will be migrated. For granular migrations, use the three parameters below.
+
+.PARAMETER Profiles 
+This parameter is autopopulated for command-line completion and can be used to copy only specific mail profiles.
+
+.PARAMETER Accounts
+This parameter is autopopulated for command-line completion and can be used to copy only specific mail accounts.
+
+.PARAMETER MailServers
+The parameter is autopopulated for command-line completion and can be used to copy only specific mail servers.
 
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
@@ -78,8 +94,13 @@ Shows what would happen if the command were executed.
 		[object]$Source,
 		[parameter(Mandatory = $true)]
 		[object]$Destination,
+		[Parameter(ParameterSetName = 'SpecifcTypes')]
+		[ValidateSet('ConfigurationValues', 'Profiles', 'Accounts', 'MailServers')]
+		[string[]]$Type,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential
+		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+		[switch]$Force
+		
 	)
 	
 	DynamicParam { if ($source) { return (Get-ParamSqlDatabaseMail -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
@@ -106,18 +127,44 @@ Shows what would happen if the command were executed.
 			}
 		}
 		
-		
-		Function Copy-SqlDatabaseMailAccount
+		Function Copy-SqlDatabaseAccount
 		{
-			Write-Output "Migrating mail accounts"
-			foreach ($account in $mail.Accounts)
+			$sourceaccounts = $sourceserver.Mail.Accounts
+			$destaccounts = $destserver.Mail.Accounts
+			
+			Write-Output "Migrating accounts"
+			foreach ($account in $sourceaccounts)
 			{
+				$accountname = $account.name
+				if ($accounts.count -gt 0 -and $accounts -notcontains $accountname) { continue }
 				
-				# ADD DROP CODE HERE
-				if ($Pscmdlet.ShouldProcess($destination, "Migrating mail account $account"))
+				if ($destaccounts.name -contains $accountname)
+				{
+					if ($force -eq $false)
+					{
+						Write-Warning "Account $accountname exists at destination. Use -Force to drop and migrate."
+						continue
+					}
+					
+					If ($Pscmdlet.ShouldProcess($destination, "Dropping account $accountname and recreating"))
+					{
+						try
+						{
+							Write-Verbose "Dropping account $accountname"
+							$destserver.Mail.Accounts[$accountname].Drop()
+						}
+						catch {
+							Write-Exception $_
+							continue
+						}
+					}
+				}
+				
+				if ($Pscmdlet.ShouldProcess($destination, "Migrating account $accountname"))
 				{
 					try
 					{
+						Write-Output "Copying mail account $accountname"
 						$sql = $account.Script() | Out-String
 						$sql = $sql -replace "'$source'", "'$destination'"
 						Write-Verbose $sql
@@ -125,7 +172,7 @@ Shows what would happen if the command were executed.
 					}
 					catch
 					{
-						Write-Exception $_ 
+						Write-Exception $_
 					}
 				}
 			}
@@ -133,15 +180,44 @@ Shows what would happen if the command were executed.
 		
 		Function Copy-SqlDatabaseMailProfile
 		{
+			
+			$sourceprofiles = $sourceserver.Mail.Profiles
+			$destprofiles = $destserver.Mail.Profiles
+			
 			Write-Output "Migrating mail profiles"
-			foreach ($profile in $mail.Profiles)
+			foreach ($profile in $sourceprofiles)
 			{
+			
+				$profilename = $profile.name
+				if ($profiles.count -gt 0 -and $profiles -notcontains $profilename) { continue }
 				
-				# ADD DROP CODE HERE
-				if ($Pscmdlet.ShouldProcess($destination, "Migrating mail profile $profile"))
+				if ($destprofiles.name -contains $profilename)
+				{
+					if ($force -eq $false)
+					{
+						Write-Warning "Profile $profilename exists at destination. Use -Force to drop and migrate."
+						continue
+					}
+					
+					If ($Pscmdlet.ShouldProcess($destination, "Dropping profile $profilename and recreating"))
+					{
+						try
+						{
+							Write-Verbose "Dropping profile $profilename"
+							$destserver.Mail.Profiles[$profilename].Drop()
+						}
+						catch {
+							Write-Exception $_
+							continue
+						}
+					}
+				}
+				
+				if ($Pscmdlet.ShouldProcess($destination, "Migrating mail profile $profilename"))
 				{
 					try
 					{
+						Write-Output "Copying mail profile $profilename"
 						$sql = $profile.Script() | Out-String
 						$sql = $sql -replace "'$source'", "'$destination'"
 						Write-Verbose $sql
@@ -156,13 +232,12 @@ Shows what would happen if the command were executed.
 			}
 		}
 		
-		Function Copy-SqlDatabaseMailProfile
+		Function Copy-SqlDatabaseMailServer
 		{
-			
 			$sourcemailservers = $sourceserver.Mail.Accounts.MailServers
 			$destmailservers = $destserver.Mail.Accounts.MailServers
 			
-			Write-Output "Updating account mail servers"
+			Write-Output "Migrating mail servers"
 			foreach ($mailserver in $sourcemailservers)
 			{
 				$mailservername = $mailserver.name
@@ -189,10 +264,12 @@ Shows what would happen if the command were executed.
 						}
 					}
 				}
-				if ($Pscmdlet.ShouldProcess($destination, "Migrating account mail server $mailserver"))
+				
+				if ($Pscmdlet.ShouldProcess($destination, "Migrating account mail server $mailservername"))
 				{
 					try
 					{
+						Write-Output "Copying mail server $mailservername"
 						$sql = $mailserver.Script() | Out-String
 						$sql = $sql -replace "'$source'", "'$destination'"
 						Write-Verbose $sql
@@ -220,8 +297,64 @@ Shows what would happen if the command were executed.
 		
 		$mail = $sourceserver.mail
 	}
-	process
+	PROCESS
 	{
+	
+	if ($type.count -gt 0)
+		{
+			
+			switch ($type)
+			{
+				"ConfigurationValues" {
+					Copy-SqlDatabaseMailConfig
+				}
+				
+				"Profiles" {
+					Copy-SqlDatabaseMailProfile
+				}
+				
+				"Accounts" {
+					Copy-SqlDatabaseAccount
+				}
+				
+				"MailServers" {
+					Copy-SqlDatabaseMailServer
+				}
+			}
+			
+			return
+		}
+		
+		
+		$profiles = $psboundparameters.Profiles
+		$accounts = $psboundparameters.Accounts
+		$mailServers = $psboundparameters.MailServers
+		
+		if (($profiles.count + $accounts.count + $mailServers.count) -gt 0)
+		{
+			
+			if ($profiles.count -gt 0)
+			{
+				Copy-SqlDatabaseMailProfile -Profiles $profiles 
+			}
+			
+			if ($accounts.count -gt 0)
+			{
+				Copy-SqlDatabaseAccount -Accounts $accounts 
+			}
+			
+			if ($mailServers.count -gt 0)
+			{
+				Copy-SqlDatabaseMailServer -MailServers $mailServers 
+			}
+			
+			return
+		}
+		
+		Copy-SqlDatabaseMailConfig
+		Copy-SqlDatabaseMailProfile 
+		Copy-SqlDatabaseAccount
+		Copy-SqlDatabaseMailServer
 	}
 	
 	end
