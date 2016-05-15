@@ -141,9 +141,6 @@ If using -DetachAttach, -Force will break mirrors and drop dbs from Availability
 
 For other migration objects, it will just drop existing items and readd, if -force is supported within the udnerlying function.
 
-.PARAMETER CsvLog
-Outputs a CSV of some of the results. Left in for backwards compatability, as it's slightly more organized than the transcript.
-
 .NOTES 
 Author: Chrissy LeMaire
 Limitations: 	Doesn't cover what it doesn't cover (certificates, etc)
@@ -240,8 +237,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 		[switch]$NoResourceGovernor,
 		[switch]$NoServerAuditSpecifications,
 		[switch]$NoCustomErrors,
-		[switch]$Force,
-		[switch]$CsvLog
+		[switch]$Force
 	)
 	
 	BEGIN
@@ -315,11 +311,11 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			{
 				if ($BackupRestore)
 				{
-					Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -CsvLog:$csvlog -NoRecovery:$NoRecovery -WithReplace:$WithReplace
+					Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace
 				}
 				else
 				{
-					Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force -CsvLog:$csvlog
+					Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force
 				}
 			}
 			catch { Write-Error "Database migration reported the following error $($_.Exception.Message)" }
@@ -345,7 +341,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			Write-Output "`n`nMigrating logins"
 			try
 			{
-				Copy-SqlLogin -Source $sourceserver -Destination $destserver -Force:$Force -CsvLog:$csvlog
+				Copy-SqlLogin -Source $sourceserver -Destination $destserver -Force:$Force
 			}
 			catch { Write-Error "Login migration reported the following error $($_.Exception.Message) " }
 		}
@@ -554,7 +550,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			if ($force) { Write-Warning " Copy-SqlJobServer currently does not support force." }
 			try
 			{
-				Copy-SqlJobServer -Source $sourceserver -Destination $destserver -CsvLog:$csvlog
+				Copy-SqlJobServer -Source $sourceserver -Destination $destserver
 			}
 			catch { Write-Error "Job Server migration reported the following error $($_.Exception.Message) " }
 		}

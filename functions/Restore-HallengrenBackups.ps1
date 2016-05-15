@@ -261,11 +261,6 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 			}
 			
 		} #end of for each database folder
-		
-		$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-		$csvfilename = "$($server.name.replace('\', '$'))-$timenow"
-		$migrateddb.GetEnumerator() | Sort-Object Value; $skippedb.GetEnumerator() | Sort-Object Value
-		$migrateddb.GetEnumerator() | Sort-Object Value | Select Name, Value | Export-Csv -Path "$csvfilename-db.csv" -NoTypeInformation
 	}
 	
 	END

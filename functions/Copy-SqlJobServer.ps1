@@ -36,9 +36,6 @@ $dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential 
 Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
 To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER CsvLog
-Outputs an ordered CSV log of migration successes, failures and skips.
-
 .PARAMETER DisableJobsOnDestination
 When this flag is set, copy all jobs as Enabled=0
 
@@ -90,7 +87,6 @@ Shows what would happen if the command were executed.
 		[object]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
-		[Switch]$CsvLog,
 		[Switch]$DisableJobsOnDestination
 		
 	)
@@ -110,8 +106,7 @@ Shows what would happen if the command were executed.
 	
 	PROCESS
 	{
-		
-		$migratedjob = @{ }; $skippedjob = @{ }
+	
 		
 		$jobobjects = "ProxyAccounts", "JobSchedule", "SharedSchedules", "AlertSystem", "JobCategories", "OperatorCategories"
 		$jobobjects += "AlertCategories", "Alerts", "TargetServerGroups", "TargetServers", "Operators", "Jobs", "Mail"
@@ -159,7 +154,6 @@ Shows what would happen if the command were executed.
 						$sql = $agent.Script() | Out-String
 						$sql = $sql -replace [regex]::Escape("@server=N'$source'"), "@server=N'$destination'"
 						$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
-						$migratedjob["$jobobject $agentname"] = "Successfully added"
 						Write-Output "$agentname successfully migrated "
 					}
 					catch
@@ -167,24 +161,14 @@ Shows what would happen if the command were executed.
 						if ($_.Exception -like '*duplicate*' -or $_.Exception -like '*already exists*')
 						{
 							Write-Output "$agentname exists at destination"
-							$skippedjob.Add("$jobobject $agentname", "Skipped. $agentname exists on $destination.")
 						}
 						else
 						{
-							$skippedjob["$jobobject $agentname"] = $_.Exception.InnerException.InnerException.Message
 							Write-Error "$jobobject : $agentname : $($_.Exception.InnerException.InnerException.Message)"
 						}
 					}
 				}
 			}
-		}
-		
-		if ($csvlog)
-		{
-			$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-			$csvfilename = "$($sourceserver.name.replace('\', '$'))-to-$($destserver.name.replace('\', '$'))-$timenow"
-			$migratedjob.GetEnumerator() | Sort-Object | Select Name, Value | Export-Csv -Path "$csvfilename-jobs.csv" -NoTypeInformation
-			$skippedjob.GetEnumerator() | Sort-Object | Select Name, Value | Export-Csv -Append -Path "$csvfilename-jobs.csv" -NoTypeInformation
 		}
 	}
 	
