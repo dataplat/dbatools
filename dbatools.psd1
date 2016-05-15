@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.7.9.7'
+	ModuleVersion = '0.7.9.8'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -94,6 +94,35 @@
 	# List of all files packaged with this module
 	FileList = ''
 	
-	# Private data to pass to the module specified in ModuleToProcess
-	PrivateData = ''
+	PrivateData = @{
+    # PSData is module packaging and gallery metadata embedded in PrivateData
+    # It's for rebuilding PowerShellGet (and PoshCode) NuGet-style packages
+    # We had to do this because it's the only place we're allowed to extend the manifest
+    # https://connect.microsoft.com/PowerShell/feedback/details/421837
+    PSData = @{
+        # The primary categorization of this module (from the TechNet Gallery tech tree).
+        Category = "Databases"
+
+        # Keyword tags to help users find this module via navigations and search.
+        Tags = @('sql server','migrations','sql','dba','database administration')
+
+        # The web address of an icon which can be used in galleries to represent this module
+        IconUri = "https://dbatools.io/logo.png"
+
+        # The web address of this module's project or support homepage.
+        ProjectUri = "https://dbatools.io"
+
+        # The web address of this module's license. Points to a page that's embeddable and linkable.
+        LicenseUri = "http://www.gnu.org/licenses/gpl-3.0.en.html"
+
+        # Release notes for this particular version of the module
+        # ReleaseNotes = False
+
+        # If true, the LicenseUrl points to an end-user license (not just a source license) which requires the user agreement before use.
+        # RequireLicenseAcceptance = ""
+
+        # Indicates this is a pre-release/testing version of the module.
+        IsPrerelease = 'True'
+		}
+	}
 }
