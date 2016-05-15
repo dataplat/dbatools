@@ -86,26 +86,48 @@ the server name of the migrating instance is "sqlcluster", it will be switched t
 		[object]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
-		[switch]$SwitchServerName
+		[switch]$SwitchServerName,
+		[switch]$Force
 	)
 	
 	DynamicParam { if ($Source) { return (Get-ParamSqlCmsGroups -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
 	BEGIN
 	{
-		
 		Function Parse-ServerGroup($sourceGroup, $destinationgroup, $SwitchServerName)
 		{
 			if ($destinationgroup.name -eq "DatabaseEngineServerGroup" -and $sourceGroup.name -ne "DatabaseEngineServerGroup")
 			{
 				$currentservergroup = $destinationgroup
-				$destinationgroup = $destinationgroup.ServerGroups[$sourceGroup.name]
-				if ($destinationgroup -eq $null)
+				$groupname = $sourceGroup.name
+				$destinationgroup = $destinationgroup.ServerGroups[$groupname]
+				
+				if ($destinationgroup -ne $null)
 				{
-					Write-Output "Creating group $($sourceGroup.name)"
-					$destinationgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($currentservergroup, $sourcegroup.name)
-					$destinationgroup.create()
+					if ($force -eq $false)
+					{
+						Write-Warning "Destination group $groupname exists at destination. Use -Force to drop and migrate."
+						continue
+					}
+					
+					If ($Pscmdlet.ShouldProcess($destination, "Dropping group $groupname and recreating"))
+					{
+						try
+						{
+							Write-Verbose "Dropping Alert $alertname"
+							$destinationgroup.Drop()
+						}
+						catch 
+						{
+							Write-Exception $_
+							continue
+						}
+					}
 				}
+				
+				Write-Output "Creating group $($sourceGroup.name)"
+				$destinationgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($currentservergroup, $sourcegroup.name)
+				$destinationgroup.Create()
 			}
 			
 			# Add Servers
@@ -129,55 +151,95 @@ the server name of the migrating instance is "sqlcluster", it will be switched t
 					}
 				}
 				
-				if ($destinationgroup.RegisteredServers.name -notcontains $instancename)
+				if ($destinationgroup.RegisteredServers.name -contains $instancename)
 				{
-					If ($Pscmdlet.ShouldProcess($destination, "Copying $instancename"))
+					if ($force -eq $false)
 					{
-						$newserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($destinationgroup, $instancename)
-						$newserver.ServerName = $servername
-						$newserver.Description = $instance.Description
-						
-						if ($servername -ne $fromcmstore.DomainInstanceName)
+						Write-Warning "Instance $instancename exists in group $groupname at destination. Use -Force to drop and migrate."
+						continue
+					}
+					
+					If ($Pscmdlet.ShouldProcess($destination, "Dropping instance $instancename from $groupname and recreating"))
+					{
+						try
 						{
-							$newserver.SecureConnectionString = $instance.SecureConnectionString.tostring()
-							$newserver.ConnectionString = $instance.ConnectionString.tostring()
+							Write-Verbose "Dropping Alert $alertname"
+							$destinationgroup.RegisteredServers[$instancename].Drop()
 						}
-						
-						try 
-						{ 
-							$newserver.Create() 
-						}
-						catch
+						catch 
 						{
-							if ($_.Exception -match "same name") 
-							{ 
-								Write-Error "Could not add Switched Server instance name."
-								continue 
-							}
-							else 
-							{ 
-								Write-Error "Failed to add $servername" 
-							}
+							Write-Exception $_
+							continue
 						}
-						Write-Output "Added Server $servername as $instancename to $($destinationgroup.name)"
 					}
 				}
-				else 
-				{ 
-					Write-Warning "Server $instancename already exists. Skipped" 
+				
+				if ($Pscmdlet.ShouldProcess($destination, "Copying $instancename"))
+				{
+					$newserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($destinationgroup, $instancename)
+					$newserver.ServerName = $servername
+					$newserver.Description = $instance.Description
+					
+					if ($servername -ne $fromcmstore.DomainInstanceName)
+					{
+						$newserver.SecureConnectionString = $instance.SecureConnectionString.tostring()
+						$newserver.ConnectionString = $instance.ConnectionString.tostring()
+					}
+					
+					try 
+					{ 
+						$newserver.Create() 
+					}
+					catch
+					{
+						if ($_.Exception -match "same name") 
+						{ 
+							Write-Error "Could not add Switched Server instance name."
+							continue 
+						}
+						else 
+						{ 
+							Write-Error "Failed to add $servername" 
+						}
+					}
+					Write-Output "Added Server $servername as $instancename to $($destinationgroup.name)"
 				}
 			}
 			
 			# Add Groups
 			foreach ($fromsubgroup in $sourceGroup.ServerGroups)
 			{
-				$tosubgroup = $destinationgroup.ServerGroups[$fromsubgroup.name]
-				if ($tosubgroup -eq $null)
-				{
-					Write-Output "Creating group $($fromsubgroup.name)"
-					$tosubgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($destinationgroup, $fromsubgroup.name)
-					$tosubgroup.create()
+				$fromsubgroupname = $fromsubgroup.name
+				$tosubgroup = $destinationgroup.ServerGroups[$fromsubgroupname]
+				
+				if ($tosubgroup -ne $null) {
+				
+					if ($force -eq $false)
+					{
+						Write-Warning "Subgroup $fromsubgroupname exists at destination. Use -Force to drop and migrate."
+						continue
+					}
+					
+					If ($Pscmdlet.ShouldProcess($destination, "Dropping subgroup $fromsubgroupname recreating"))
+					{
+						try
+						{
+							Write-Verbose "Dropping subgroup $fromsubgroupname"
+							$tosubgroup.Drop()
+						}
+						catch 
+						{
+							Write-Exception $_
+							continue
+						}
+					}
 				}
+				
+				
+				Write-Output "Creating group $($fromsubgroup.name)"
+				$tosubgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($destinationgroup, $fromsubgroup.name)
+				$tosubgroup.create()
+				
 				
 				Parse-ServerGroup -sourceGroup $fromsubgroup -destinationgroup $tosubgroup -SwitchServerName $SwitchServerName
 			}

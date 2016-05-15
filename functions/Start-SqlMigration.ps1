@@ -384,12 +384,14 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			else
 			{
 				Write-Output "`n`nMigrating Central Management Server"
-				if ($force) { Write-Warning " Copy-SqlCentralManagementServer currently does not support force." }
 				try
 				{
-					Copy-SqlCentralManagementServer -Source $sourceserver -Destination $destserver
+					Copy-SqlCentralManagementServer -Source $sourceserver -Destination $destserver -Force:$force
 				}
-				catch { Write-Error "Central Management Server migration reported the following error $($_.Exception.Message)" }
+				catch 
+				{ 
+					Write-Error "Central Management Server migration reported the following error $($_.Exception.Message)" 
+				}
 			}
 		}
 		
