@@ -156,53 +156,41 @@ Shows what would happen if the command were executed using force.
 						{
 							Write-Verbose "Dropping Job $jobname"
 							$destserver.JobServer.Jobs[$job.name].Drop()
-							Write-Output "Copying Job $jobname"
-							$sql = $job.Script() | Out-String
-							$sql = $sql -replace "'$source'", "'$destination'"
-							Write-Verbose $sql
-							$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-							
-							if ($DisableOnDestination)
-							{
-								$destserver.JobServer.Jobs[$job.name].IsEnabled = $False
-							}
-							
-							if ($DisableOnSource)
-							{
-								$job.IsEnabled = $false
-							}
 						}
 						catch { Write-Exception $_ }
 					}
 				}
 			}
-			else
-			# This duplicated code drives me crazy but I've got too much to do to rewrite.
+		
+			If ($Pscmdlet.ShouldProcess($destination, "Creating Job $jobname"))
 			{
-				If ($Pscmdlet.ShouldProcess($destination, "Creating Job $jobname"))
+				try
 				{
-					try
-					{
-						Write-Output "Copying Job $jobname"
-						$sql = $job.Script() | Out-String
-						$sql = $sql -replace "'$source'", "'$destination'"
-						Write-Verbose $sql
-						$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-						
-						if ($DisableOnDestination)
-						{
-							$destserver.JobServer.Jobs[$job.name].IsEnabled = $False
-						}
-						
-						if ($DisableOnSource)
-						{
-							$job.IsEnabled = $false
-						}
-					}
-					catch
-					{
-						Write-Exception $_
-					}
+					Write-Output "Copying Job $jobname"
+					$sql = $job.Script() | Out-String
+					$sql = $sql -replace "'$source'", "'$destination'"
+					Write-Verbose $sql
+					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+				}
+				catch
+				{
+					Write-Exception $_
+					continue
+				}
+			}
+			
+			If ($Pscmdlet.ShouldProcess($destination, "Creating Job $jobname"))
+			{
+				if ($DisableOnDestination)
+				{
+					Write-Output "Disabling $jobname on $destination"
+					$destserver.JobServer.Jobs[$job.name].IsEnabled = $False
+				}
+				
+				if ($DisableOnSource)
+				{
+					Write-Output "Disabling $jobname on $source"
+					$job.IsEnabled = $false
 				}
 			}
 		}

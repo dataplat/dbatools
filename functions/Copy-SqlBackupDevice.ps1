@@ -124,7 +124,7 @@ Shows what would happen if the command were executed using force.
 					{
 						try
 						{
-							Write-Output "Dropping backup device $devicename"
+							Write-Verbose "Dropping backup device $devicename"
 							$destserver.BackupDevices[$devicename].Drop()
 						}
 						catch { Write-Exception $_; continue }
@@ -140,7 +140,10 @@ Shows what would happen if the command were executed using force.
 					$sql = $backupdevice.Script() | Out-String
 					$sql = $sql -replace "'$source'", "'$destination'"
 				}
-				catch { Write-Exception $_; continue }
+				catch { 
+					Write-Exception $_
+					continue 
+				}
 			}
 			
 			If ($Pscmdlet.ShouldProcess("console", "Stating that the actual file copy is about to occur"))
@@ -173,7 +176,10 @@ Shows what would happen if the command were executed using force.
 						$sql = $sql -replace $path, $backupdirectory
 						$sql = $sql -replace "'$source'", "'$destination'"
 					}
-					catch { Write-Exception $_; continue }
+					catch { 
+						Write-Exception $_
+						continue 
+					}
 				}
 			}
 			
@@ -185,7 +191,10 @@ Shows what would happen if the command were executed using force.
 					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 					$destserver.BackupDevices.Refresh()
 				}
-				catch { Write-Exception $_; continue }
+				catch { 
+					Write-Exception $_
+					continue 
+				}
 			}
 			
 			If ($Pscmdlet.ShouldProcess($destination, "Copying $sourcepath to $destpath using BITSTransfer"))

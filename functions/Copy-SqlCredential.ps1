@@ -259,7 +259,10 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 			{
 				$credentiallist = $sourceserver.credentials | Where-Object { $credentials -contains $_.Name }
 			}
-			else { $credentiallist = $sourceserver.credentials }
+			else 
+			{ 
+				$credentiallist = $sourceserver.credentials 
+			}
 			
 			
 			Write-Output "Starting migration"
@@ -297,12 +300,15 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 					{
 						$sql = "CREATE CREDENTIAL [$credentialname] WITH IDENTITY = N'$identity', SECRET = N'$password'"
 						Write-Verbose $sql
-						[void]$destserver.ConnectionContext.ExecuteNonQuery($sql)
-						$destserver.credentials.Refresh()
+						$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+						$destserver.Credentials.Refresh()
 						Write-Output "$credentialname successfully copied"
 					}
 				}
-				catch { Write-Exception $_ }
+				catch 
+				{ 
+					Write-Exception $_ 
+				}
 			}
 		}
 		
@@ -338,11 +344,21 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 		
 		Write-Output "Checking if remote access is enabled"
 		winrm id -r:$sourcenetbios 2>$null | Out-Null
-		if ($LastExitCode -ne 0) { throw "Remote PowerShell access not enabled on on $source or access denied. Windows admin acccess required. Quitting." }
+		
+		if ($LastExitCode -ne 0) 
+		{ 
+			throw "Remote PowerShell access not enabled on on $source or access denied. Windows admin acccess required. Quitting." 
+		}
 		
 		Write-Output "Checking if Remote Registry is enabled"
-		try { Invoke-Command -ComputerName $sourcenetbios { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } }
-		catch { throw "Can't connect to remote registry on $source. Quitting." }
+		try 
+		{ 
+			Invoke-Command -ComputerName $sourcenetbios { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } 
+		}
+		catch 
+		{ 
+			throw "Can't connect to remote registry on $source. Quitting." 
+		}
 		
 		Write-Output "Copying credentials"
 		Copy-Credential $sourceserver $destserver -Credentials $credentials -force:$force

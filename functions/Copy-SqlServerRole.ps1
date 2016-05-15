@@ -118,7 +118,7 @@ BEGIN {
 					{
 						try
 						{
-							Write-Output "Dropping server role $($role.name)"
+							Write-Verbose "Dropping server role $($role.name)"
 							$destserver.roles[$role.name].Drop()
 						}
 						catch

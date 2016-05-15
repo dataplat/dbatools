@@ -107,11 +107,13 @@ Shows what would happen if the command were executed using force.
 		{
 			$triggername = $trigger.name
 			if ($triggers.length -gt 0 -and $triggers -notcontains $triggername) { continue }
+			
 			if ($desttriggers.name -contains $triggername)
 			{
 				if ($force -eq $false)
 				{
 					Write-Warning "Server trigger $triggername exists at destination. Use -Force to drop and migrate."
+					continue
 				}
 				else
 				{
@@ -119,33 +121,30 @@ Shows what would happen if the command were executed using force.
 					{
 						try
 						{
-							Write-Output "Dropping server trigger $triggername"
+							Write-Verbose "Dropping server trigger $triggername"
 							$destserver.triggers[$triggername].Drop()
-							Write-Output "Copying server trigger $triggername"
-							$sql = $trigger.Script() | Out-String
-							$sql = $sql -replace "'$source'", "'$destination'"
-							$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 						}
-						catch { Write-Exception $_ }
+						catch { 
+							Write-Exception $_ 
+							continue
+						}
 					}
 				}
 			}
-			else
+
+			If ($Pscmdlet.ShouldProcess($destination, "Creating server trigger $triggername"))
 			{
-				If ($Pscmdlet.ShouldProcess($destination, "Creating server trigger $triggername"))
+				try
 				{
-					try
-					{
-						Write-Output "Copying server trigger $triggername"
-						$sql = $trigger.Script() | Out-String
-						$sql = $sql -replace "'$source'", "'$destination'"
-						Write-Verbose $sql
-						$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-					}
-					catch
-					{
-						Write-Exception $_
-					}
+					Write-Output "Copying server trigger $triggername"
+					$sql = $trigger.Script() | Out-String
+					$sql = $sql -replace "'$source'", "'$destination'"
+					Write-Verbose $sql
+					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+				}
+				catch
+				{
+					Write-Exception $_
 				}
 			}
 		}

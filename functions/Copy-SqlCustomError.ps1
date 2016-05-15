@@ -121,42 +121,39 @@ Shows what would happen if the command were executed using force.
 				if ($force -eq $false)
 				{
 					Write-Warning "Custom error $customerrorid $language exists at destination. Use -Force to drop and migrate."
+					continue
 				}
 				else
 				{
 					If ($Pscmdlet.ShouldProcess($destination, "Dropping custom error $customerrorid $language and recreating"))
 					{
-						
 						try
 						{
-							Write-Output "Dropping custom error $customerrorid (drops all languages)"
+							Write-Verbose "Dropping custom error $customerrorid (drops all languages for custom error $customerrorid)"
 							$destserver.UserDefinedMessages[$customerrorid, $language].Drop()
-							Write-Output "Copying custom error $customerrorid $language"
-							$sql = $customerror.Script() | Out-String
-							$sql = $sql -replace "'$source'", "'$destination'"
-							Write-Verbose $sql
-							$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 						}
-						catch { Write-Exception $_ }
+						catch 
+						{ 
+							Write-Exception $_ 
+							continue
+						}
 					}
 				}
 			}
-			else
+			
+			If ($Pscmdlet.ShouldProcess($destination, "Creating custom error $customerrorid $language"))
 			{
-				If ($Pscmdlet.ShouldProcess($destination, "Creating custom error $customerrorid $language"))
+				try
 				{
-					try
-					{
-						Write-Output "Copying custom error $customerrorid $language"
-						$sql = $customerror.Script() | Out-String
-						$sql = $sql -replace "'$source'", "'$destination'"
-						Write-Verbose $sql
-						$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-					}
-					catch
-					{
-						Write-Exception $_
-					}
+					Write-Output "Copying custom error $customerrorid $language"
+					$sql = $customerror.Script() | Out-String
+					$sql = $sql -replace "'$source'", "'$destination'"
+					Write-Verbose $sql
+					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+				}
+				catch
+				{
+					Write-Exception $_
 				}
 			}
 		}

@@ -122,6 +122,7 @@ Shows what would happen if the command were executed using force.
 				if ($force -eq $false)
 				{
 					Write-Warning "Server proxy account $proxyname exists at destination. Use -Force to drop and migrate."
+					continue
 				}
 				else
 				{
@@ -129,45 +130,39 @@ Shows what would happen if the command were executed using force.
 					{
 						try
 						{
-							Write-Output "Dropping server proxy account $proxyname"
+							Write-Verbose "Dropping server proxy account $proxyname"
 							$destserver.jobserver.proxyaccounts[$proxyaccount.name].Drop()
-							Write-Output "Copying server proxy account $proxyname"
-							$sql = $proxyaccount.Script() | Out-String
-							$sql = $sql -replace "'$source'", "'$destination'"
-							Write-Verbose $sql
-							$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 						}
-						catch { 
-							$exceptionstring = $_.Exception.InnerException.ToString()
-							if ($exceptionstring -match 'subsystem') {
-								Write-Warning "One or more subsystems do not exist on the destination server. Skipping that part."
-							} else {
-								Write-Exception $_
-							}
+						catch 
+						{ 
+							Write-Exception $_
+							continue
+							
 						}
 					}
 				}
 			}
-			else
+	
+			If ($Pscmdlet.ShouldProcess($destination, "Creating server proxy account $proxyname"))
 			{
-				If ($Pscmdlet.ShouldProcess($destination, "Creating server proxy account $proxyname"))
+				try
 				{
-					try
+					Write-Output "Copying server proxy account $proxyname"
+					$sql = $proxyaccount.Script() | Out-String
+					$sql = $sql -replace "'$source'", "'$destination'"
+					Write-Verbose $sql
+					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+				}
+				catch
+				{
+					$exceptionstring = $_.Exception.InnerException.ToString()
+					if ($exceptionstring -match 'subsystem') 
 					{
-						Write-Output "Copying server proxy account $proxyname"
-						$sql = $proxyaccount.Script() | Out-String
-						$sql = $sql -replace "'$source'", "'$destination'"
-						Write-Verbose $sql
-						$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-					}
-					catch
+						Write-Warning "One or more subsystems do not exist on the destination server. Skipping that part."
+					} 
+					else 
 					{
-						$exceptionstring = $_.Exception.InnerException.ToString()
-						if ($exceptionstring -match 'subsystem') {
-							Write-Warning "One or more subsystems do not exist on the destination server. Skipping that part."
-						} else {
-							Write-Exception $_
-						}
+						Write-Exception $_
 					}
 				}
 			}

@@ -143,8 +143,14 @@ Shows what would happen if the command were executed.
 				
 				If ($Pscmdlet.ShouldProcess($destination, "Altering configuration"))
 				{
-					try { $destserver.Configuration.Alter() }
-					catch { $needsrestart = $true }
+					try 
+					{ 
+						$destserver.Configuration.Alter() 
+					}
+					catch 
+					{ 
+						$needsrestart = $true 
+					}
 				}
 			}
 		}

@@ -119,7 +119,7 @@ Shows what would happen if the command were executed using force.
 			if ($destserver.Audits.Name -notcontains $auditspec.AuditName)
 			{
 				Write-Warning "Audit $($auditspec.AuditName) does not exist on $Destination. Skipping $($auditspec.name)."
-				Continue
+				continue
 			}
 			
 			if ($destaudits.name -contains $auditspec.name)
@@ -127,6 +127,7 @@ Shows what would happen if the command were executed using force.
 				if ($force -eq $false)
 				{
 					Write-Warning "Server audit $($auditspec.name) exists at destination. Use -Force to drop and migrate."
+					continue
 				}
 				else
 				{
@@ -134,30 +135,30 @@ Shows what would happen if the command were executed using force.
 					{
 						try
 						{
-							Write-Output "Dropping server audit $($auditspec.name)"
+							Write-Verbose "Dropping server audit $($auditspec.name)"
 							$destserver.ServerAuditSpecifications[$auditspec.name].Drop()
-							Write-Output "Copying server audit $($auditspec.name)"
-							$destserver.ConnectionContext.ExecuteNonQuery($auditspec.Script()) | Out-Null
 						}
-						catch { Write-Exception $_ }
+						catch { 
+							Write-Exception $_ 
+							continue
+						}
 					}
 				}
 			}
-			else
+			
+			If ($Pscmdlet.ShouldProcess($destination, "Creating server audit $($auditspec.name)"))
 			{
-				If ($Pscmdlet.ShouldProcess($destination, "Creating server audit $($auditspec.name)"))
+				try
 				{
-					try
-					{
-						Write-Output "Copying server audit $($auditspec.name)"
-						$destserver.ConnectionContext.ExecuteNonQuery($auditspec.Script()) | Out-Null
-					}
-					catch
-					{
-						Write-Exception $_
-					}
+					Write-Output "Copying server audit $($auditspec.name)"
+					$destserver.ConnectionContext.ExecuteNonQuery($auditspec.Script()) | Out-Null
+				}
+				catch
+				{
+					Write-Exception $_
 				}
 			}
+
 		}
 	}
 	

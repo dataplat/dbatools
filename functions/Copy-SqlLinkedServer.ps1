@@ -147,7 +147,10 @@ License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
 					return $servicekey
 				}
 			}
-			catch { throw "Can't unprotect registry data on $($source.name)). Quitting." }
+			catch 
+			{ 
+				throw "Can't unprotect registry data on $($source.name)). Quitting." 
+			}
 			
 			# Choose the encryption algorithm based on the SMK length - 3DES for 2008, AES for 2012
 			# Choose IV length based on the algorithm
@@ -189,7 +192,10 @@ License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
 					return $dt
 				}
 			}
-			catch { throw "Can't establish DAC connection to $sourcename from $sourcename. Quitting." }
+			catch 
+			{ 
+				throw "Can't establish DAC connection to $sourcename from $sourcename. Quitting." 
+			}
 			
 			$decryptedlogins = New-Object "System.Data.DataTable"
 			[void]$decryptedlogins.Columns.Add("LinkedServer")
@@ -255,7 +261,10 @@ Internal function.
 			{
 				$serverlist = $sourceserver.LinkedServers | Where-Object { $LinkedServers -contains $_.Name }
 			}
-			else { $serverlist = $sourceserver.LinkedServers }
+			else 
+			{ 
+				$serverlist = $sourceserver.LinkedServers 
+			}
 			
 			Write-Output "Starting migration"
 			foreach ($linkedserver in $serverlist)
@@ -375,11 +384,20 @@ Internal function.
 		
 		Write-Output "Checking if remote access is enabled"
 		winrm id -r:$sourcenetbios 2>$null | Out-Null
-		if ($LastExitCode -ne 0) { throw "Remote PowerShell access not enabled on on $source or access denied. Windows admin acccess required. Quitting." }
+		
+		if ($LastExitCode -ne 0) { 
+			throw "Remote PowerShell access not enabled on on $source or access denied. Windows admin acccess required. Quitting." 
+		}
 		
 		Write-Output "Checking if Remote Registry is enabled"
-		try { Invoke-Command -ComputerName $sourcenetbios { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } }
-		catch { throw "Can't connect to registry on $source. Quitting." }
+		try 
+		{
+			Invoke-Command -ComputerName $sourcenetbios { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } 
+		}
+		catch 
+		{ 
+			throw "Can't connect to registry on $source. Quitting." 
+		}
 		
 		# Magic happens here
 		Copy-LinkedServers $sourceserver $destserver $linkedservers -force:$force

@@ -139,6 +139,7 @@ Shows what would happen if the command were executed using force.
 						if ($force -eq $false)
 						{
 							Write-Warning "Job category $categoryname exists at destination. Use -Force to drop and migrate."
+							continue
 						}
 						else
 						{
@@ -148,32 +149,29 @@ Shows what would happen if the command were executed using force.
 								{
 									Write-Verbose "Dropping Job category $categoryname"
 									$destserver.jobserver.jobcategories[$jobcategory.name].Drop()
-									Write-Output "Copying Job category $categoryname"
-									$sql = $jobcategory.Script() | Out-String
-									$sql = $sql -replace "'$source'", "'$destination'"
-									Write-Verbose $sql
-									$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+									
 								}
-								catch { Write-Exception $_ }
+								catch { 
+									Write-Exception $_ 
+									continue
+								}
 							}
 						}
 					}
-					else
+					
+				If ($Pscmdlet.ShouldProcess($destination, "Creating Job category $categoryname"))
 					{
-						If ($Pscmdlet.ShouldProcess($destination, "Creating Job category $categoryname"))
+						try
 						{
-							try
-							{
-								Write-Output "Copying Job category $categoryname"
-								$sql = $jobcategory.Script() | Out-String
-								$sql = $sql -replace "'$source'", "'$destination'"
-								Write-Verbose $sql
-								$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-							}
-							catch
-							{
-								Write-Exception $_
-							}
+							Write-Output "Copying Job category $categoryname"
+							$sql = $jobcategory.Script() | Out-String
+							$sql = $sql -replace "'$source'", "'$destination'"
+							Write-Verbose $sql
+							$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+						}
+						catch
+						{
+							Write-Exception $_
 						}
 					}
 				}

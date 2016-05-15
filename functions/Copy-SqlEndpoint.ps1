@@ -106,11 +106,13 @@ Shows what would happen if the command were executed using force.
 		foreach ($endpoint in $serverendpoints)
 		{
 			if ($endpoints.length -gt 0 -and $endpoints -notcontains $endpoint.name) { continue }
+			
 			if ($destendpoints.name -contains $endpoint.name)
 			{
 				if ($force -eq $false)
 				{
 					Write-Warning "Server endpoint $($endpoint.name) exists at destination. Use -Force to drop and migrate."
+					continue
 				}
 				else
 				{
@@ -120,28 +122,28 @@ Shows what would happen if the command were executed using force.
 						{
 							Write-Output "Dropping server endpoint $($endpoint.name)"
 							$destserver.endpoints[$endpoint.name].Drop()
-							Write-Output "Copying server endpoint $($endpoint.name)"
-							$destserver.ConnectionContext.ExecuteNonQuery($endpoint.Script()) | Out-Null
 						}
-						catch { Write-Exception $_ }
+						catch { 
+							Write-Exception $_ 
+							continue
+						}
 					}
 				}
 			}
-			else
+			
+			If ($Pscmdlet.ShouldProcess($destination, "Creating server endpoint $($endpoint.name)"))
 			{
-				If ($Pscmdlet.ShouldProcess($destination, "Creating server endpoint $($endpoint.name)"))
+				try
 				{
-					try
-					{
-						Write-Output "Copying server endpoint $($endpoint.name)"
-						$destserver.ConnectionContext.ExecuteNonQuery($endpoint.Script()) | Out-Null
-					}
-					catch
-					{
-						Write-Exception $_
-					}
+					Write-Output "Copying server endpoint $($endpoint.name)"
+					$destserver.ConnectionContext.ExecuteNonQuery($endpoint.Script()) | Out-Null
+				}
+				catch
+				{
+					Write-Exception $_
 				}
 			}
+
 		}
 	}
 	

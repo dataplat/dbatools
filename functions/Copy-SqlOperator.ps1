@@ -52,6 +52,7 @@ Shows what would happen if the command were executed using force.
 				if ($force -eq $false)
 				{
 					Write-Warning "Operator $operatorname exists at destination. Use -Force to drop and migrate."
+					continue
 				}
 				else
 				{
@@ -61,32 +62,29 @@ Shows what would happen if the command were executed using force.
 						{
 							Write-Verbose "Dropping Operator $operatorname"
 							$destserver.jobserver.operators[$operator.name].Drop()
-							Write-Output "Copying Operator $operatorname"
-							$sql = $operator.Script() | Out-String
-							$sql = $sql -replace "'$source'", "'$destination'"
-							Write-Verbose $sql
-							$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 						}
-						catch { Write-Exception $_ }
+						catch 
+						{ 
+							Write-Exception $_ 
+							continue
+						}
 					}
 				}
 			}
-			else
+
+			If ($Pscmdlet.ShouldProcess($destination, "Creating Operator $operatorname"))
 			{
-				If ($Pscmdlet.ShouldProcess($destination, "Creating Operator $operatorname"))
+				try
 				{
-					try
-					{
-						Write-Output "Copying Operator $operatorname"
-						$sql = $operator.Script() | Out-String
-						$sql = $sql -replace "'$source'", "'$destination'"
-						Write-Verbose $sql
-						$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-					}
-					catch
-					{
-						Write-Exception $_
-					}
+					Write-Output "Copying Operator $operatorname"
+					$sql = $operator.Script() | Out-String
+					$sql = $sql -replace "'$source'", "'$destination'"
+					Write-Verbose $sql
+					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+				}
+				catch
+				{
+					Write-Exception $_
 				}
 			}
 		}

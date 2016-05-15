@@ -131,41 +131,36 @@ Shows what would happen if the command were executed using force.
 				if ($force -eq $false)
 				{
 					Write-Warning "Alert $alertname exists at destination. Use -Force to drop and migrate."
+					continue
 				}
-				else
-				{
-					If ($Pscmdlet.ShouldProcess($destination, "Dropping alert $alertname and recreating"))
-					{
-						try
-						{
-							Write-Verbose "Dropping Alert $alertname"
-							$destserver.JobServer.Alerts[$alert.name].Drop()
-							Write-Output "Copying Alert $alertname"
-							$sql = $alert.Script() | Out-String
-							$sql = $sql -replace "'$source'", "'$destination'"
-							Write-Verbose $sql
-							$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-						}
-						catch { Write-Exception $_ }
-					}
-				}
-			}
-			else
-			{
-				If ($Pscmdlet.ShouldProcess($destination, "Creating Alert $alertname"))
+				
+				If ($Pscmdlet.ShouldProcess($destination, "Dropping alert $alertname and recreating"))
 				{
 					try
 					{
-						Write-Output "Copying Alert $alertname"
-						$sql = $alert.Script() | Out-String
-						$sql = $sql -replace "'$source'", "'$destination'"
-						Write-Verbose $sql
-						$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+						Write-Verbose "Dropping Alert $alertname"
+						$destserver.JobServer.Alerts[$alert.name].Drop()
 					}
-					catch
-					{
+					catch {
 						Write-Exception $_
+						continue
 					}
+				}
+			}
+			
+			If ($Pscmdlet.ShouldProcess($destination, "Creating Alert $alertname"))
+			{
+				try
+				{
+					Write-Output "Copying Alert $alertname"
+					$sql = $alert.Script() | Out-String
+					$sql = $sql -replace "'$source'", "'$destination'"
+					Write-Verbose $sql
+					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+				}
+				catch
+				{
+					Write-Exception $_
 				}
 			}
 		}

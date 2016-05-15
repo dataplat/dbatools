@@ -165,6 +165,7 @@ Shows what would happen if the command were executed using force.
 				if ($force -eq $false)
 				{
 					Write-Warning "Assembly $assemblyname exists at destination in the $dbname database. Use -Force to drop and migrate."
+					continue
 				}
 				else
 				{
@@ -178,23 +179,24 @@ Shows what would happen if the command were executed using force.
 							Write-Output "Copying assembly $assemblyname"
 							$destserver.Databases[$dbname].ExecuteNonQuery($assembly.Script()) | Out-Null
 						}
-						catch { Write-Exception $_ }
+						catch { 
+							Write-Exception $_ 
+							continue
+						}
 					}
 				}
 			}
-			else
+			
+			If ($Pscmdlet.ShouldProcess($destination, "Creating assembly $assemblyname"))
 			{
-				If ($Pscmdlet.ShouldProcess($destination, "Creating assembly $assemblyname"))
+				try
 				{
-					try
-					{
-						Write-Output "Copying assembly $assemblyname from database."
-						$destserver.Databases[$dbname].ExecuteNonQuery($assembly.Script()) | Out-Null
-					}
-					catch
-					{
-						Write-Exception $_
-					}
+					Write-Output "Copying assembly $assemblyname from database."
+					$destserver.Databases[$dbname].ExecuteNonQuery($assembly.Script()) | Out-Null
+				}
+				catch
+				{
+					Write-Exception $_
 				}
 			}
 		}

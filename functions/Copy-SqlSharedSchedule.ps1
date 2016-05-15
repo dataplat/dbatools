@@ -112,6 +112,7 @@ Shows what would happen if the command were executed using force.
 				if ($force -eq $false)
 				{
 					Write-Warning "Shared job schedule $schedulename exists at destination. Use -Force to drop and migrate."
+					continue
 				}
 				else
 				{
@@ -121,32 +122,29 @@ Shows what would happen if the command were executed using force.
 						{
 							Write-Verbose "Dropping schedule $schedulename"
 							$destserver.JobServer.SharedSchedules[$schedulename].Drop()
-							Write-Output "Copying schedule $schedulename"
-							$sql = $schedule.Script() | Out-String
-							$sql = $sql -replace "'$source'", "'$destination'"
-							Write-Verbose $sql
-							$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 						}
-						catch { Write-Exception $_ }
+						catch 
+						{ 
+							Write-Exception $_ 
+							continue
+						}
 					}
 				}
 			}
-			else
+
+			If ($Pscmdlet.ShouldProcess($destination, "Creating schedule $schedulename"))
 			{
-				If ($Pscmdlet.ShouldProcess($destination, "Creating schedule $schedulename"))
+				try
 				{
-					try
-					{
-						Write-Output "Copying schedule $schedulename"
-						$sql = $schedule.Script() | Out-String
-						$sql = $sql -replace "'$source'", "'$destination'"
-						Write-Verbose $sql
-						$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-					}
-					catch
-					{
-						Write-Exception $_
-					}
+					Write-Output "Copying schedule $schedulename"
+					$sql = $schedule.Script() | Out-String
+					$sql = $sql -replace "'$source'", "'$destination'"
+					Write-Verbose $sql
+					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+				}
+				catch
+				{
+					Write-Exception $_
 				}
 			}
 		}
