@@ -225,8 +225,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 		[switch]$NoDatabases,
 		[Alias("SkipLogins")]
 		[switch]$NoLogins,
-		[Alias("SkipJobServer")]
-		[Alias("NoJobServer")]
+		[Alias("SkipJobServer","NoJobServer")]
 		[switch]$NoAgentServer,
 		[Alias("SkipCredentials")]
 		[switch]$NoCredentials,
