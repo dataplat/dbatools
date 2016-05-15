@@ -157,7 +157,11 @@ Shows what would happen if the command were executed using force.
 							Write-Verbose "Dropping Job $jobname"
 							$destserver.JobServer.Jobs[$job.name].Drop()
 						}
-						catch { Write-Exception $_ }
+						catch 
+						{ 
+							Write-Exception $_ 
+							continue
+						}
 					}
 				}
 			}
