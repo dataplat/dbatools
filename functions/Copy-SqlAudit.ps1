@@ -152,7 +152,7 @@ Shows what would happen if the command were executed using force.
 			{
 				if ($Force -eq $false)
 				{
-					Write-Warning "$($audit.Filepath) does not exist. Skipping $auditname."
+					Write-Warning "$($audit.Filepath) does not exist on $destination. Skipping $auditname."
 					Write-Warning "Specify -Force to create the directory"
 					continue
 				}
