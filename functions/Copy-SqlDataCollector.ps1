@@ -116,7 +116,12 @@ Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlse
 	}
 	process
 	{
-		throw "This function is not quite ready yet."
+		if ($NoServerReconfig -eq $false) 
+		{
+			Write-Warning "Server reconfiguration not yet supported. Only Collection Set migration will be migrated at this time."
+			$NoServerReconfig = $true
+		}
+		
 		$sourceSqlConn = $sourceserver.ConnectionContext.SqlConnectionObject
 		$sourceSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sourceSqlConn
 		$sourceStore = New-Object Microsoft.SqlServer.Management.Collector.CollectorConfigStore $sourceSqlStoreConnection
@@ -134,11 +139,21 @@ Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlse
 			{
 				try
 				{
+					$sql = "Unknown at this time"
 					$destserver.ConnectionContext.ExecuteNonQuery($sql)
 					$destStore.Alter()
 				}
-				catch { Write-Exception $_ }
+				catch 
+				{ 
+					Write-Exception $_ 
+				}
 			}
+		}
+		
+		if ($deststore.Enabled -eq $false) {
+			Write-Warning "The Data Collector must be setup initially for Collection Sets to be migrated. "
+			Write-Warning "Setup the Data Collector and try again."
+			return
 		}
 		
 		$storeCollectionSets = $sourceStore.CollectionSets | Where-Object { $_.isSystem -eq $false }
