@@ -547,10 +547,10 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 		if (!$NoJobServer)
 		{
 			Write-Output "`n`nMigrating job server"
-			if ($force) { Write-Warning " Copy-SqlJobServer currently does not support force." }
+			if ($force) { Write-Warning " Copy-SqlServerAgent currently does not support force." }
 			try
 			{
-				Copy-SqlJobServer -Source $sourceserver -Destination $destserver
+				Copy-SqlServerAgent -Source $sourceserver -Destination $destserver
 			}
 			catch { Write-Error "Job Server migration reported the following error $($_.Exception.Message) " }
 		}

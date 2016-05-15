@@ -1,4 +1,4 @@
-Function Copy-SqlJobServer
+Function Copy-SqlServerAgent
 {
 <#
 .SYNOPSIS
@@ -60,15 +60,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlJobServer
+https://dbatools.io/Copy-SqlServerAgent
 
 .EXAMPLE   
-Copy-SqlJobServer -Source sqlserver2014a -Destination sqlcluster
+Copy-SqlServerAgent -Source sqlserver2014a -Destination sqlcluster
 
 Copies all job server objects from sqlserver2014a to sqlcluster, using Windows credentials. If job objects with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-SqlJobServer -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+Copy-SqlServerAgent -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
 Copies all job objects from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a
 and Windows credentials for sqlcluster.

@@ -29,7 +29,7 @@ This will install the following commands
 	Copy-SqlResourceGovernor
 	Copy-SqlExtendedEvent
 	Copy-SqlDatabaseMail
-	Copy-SqlJobServer
+	Copy-SqlServerAgent
 	Copy-SqlCentralManagementServer
     Import-SqlSpConfigure
     Export-SqlSpConfigure
@@ -151,7 +151,7 @@ License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
 	
 Copy-SqlDatabaseMail
 --------------
-Copy-SqlDatabaseMail imports *all * database mail profiles. Like the Copy-SqlJobServer, it doesn't have many features, but it does support SQL Authentication, and it works ;).
+Copy-SqlDatabaseMail imports *all * database mail profiles. Like the Copy-SqlServerAgent, it doesn't have many features, but it does support SQL Authentication, and it works ;).
 
 	 Copy-SqlDatabaseMail -Source sqlserver\instance -Destination sqlcluster
 	 
