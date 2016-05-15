@@ -1,4 +1,4 @@
-﻿Function Copy-SqlResourceGovernor 
+﻿Function Copy-SqlResourceGovernor
 {
 <#
 .SYNOPSIS
@@ -88,8 +88,9 @@ Shows what would happen if the command were executed.
 	
 	DynamicParam { if ($source) { return (Get-ParamSqlResourceGovernor -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	process
+	BEGIN
 	{
+		
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 		
@@ -98,13 +99,14 @@ Shows what would happen if the command were executed.
 		
 		$respools = $psboundparameters.ResourcePools
 		
-		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
-		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
-		
 		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
 		{
 			throw "Resource Governor is only supported in SQL Server 2008 and above. Quitting."
 		}
+	}
+	PROCESS
+	{
+		
 		
 		if ($Pscmdlet.ShouldProcess($destination, "Updating Resource Governor settings"))
 		{

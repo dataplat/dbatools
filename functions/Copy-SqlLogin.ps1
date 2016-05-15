@@ -792,26 +792,6 @@ Internal function. Skips migration, and just syncs permission sets, roles, datab
 			}
 		}
 		
-	}
-	
-	
-	PROCESS
-	{
-		
-		$elapsed = [System.Diagnostics.Stopwatch]::StartNew()
-		$started = Get-Date
-		
-		If ($Pscmdlet.ShouldProcess("console", "Showing time elapsed message"))
-		{
-			Write-Output "Migration started: $started"
-		}
-		
-		if ($pipelogin.Length -gt 0)
-		{
-			$Source = $pipelogin[0].parent.name
-			$logins = $pipelogin.name
-		}
-		
 		if ($source -eq $destination) { throw "Source and Destination SQL Servers are the same. Quitting." }
 		
 		$script:skippedlogin = @{ }; $script:migratedlogin = @{ };
@@ -823,10 +803,26 @@ Internal function. Skips migration, and just syncs permission sets, roles, datab
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
 		
-		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
-		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
-		
 		if ($sourceserver.versionMajor -lt 8 -or $destserver.versionMajor -lt 8) { throw "SQL Server 7 and below not supported. Quitting." }
+		
+		$elapsed = [System.Diagnostics.Stopwatch]::StartNew()
+		$started = Get-Date
+		
+		If ($Pscmdlet.ShouldProcess("console", "Showing time elapsed message"))
+		{
+			Write-Output "Migration started: $started"
+		}
+		
+	}
+	
+	
+	PROCESS
+	{
+		if ($pipelogin.Length -gt 0)
+		{
+			$Source = $pipelogin[0].parent.name
+			$logins = $pipelogin.name
+		}
 		
 	<# ----------------------------------------------------------
 		Preps

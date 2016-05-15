@@ -94,7 +94,7 @@ Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sq
 	
 	DynamicParam { if ($source) { return (Get-ParamSqlPolicyManagement -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	process
+	BEGIN
 	{
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
@@ -104,13 +104,15 @@ Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sq
 		$policies = $psboundparameters.policies
 		$conditions = $psboundparameters.conditions
 		
-		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
-		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
-		
 		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
 		{
 			throw "Policy Management is only supported in SQL Server 2008 and above. Quitting."
 		}
+		
+	}
+	PROCESS
+	{
+		
 		
 		$sourceSqlConn = $sourceserver.ConnectionContext.SqlConnectionObject
 		$sourceSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sourceSqlConn
@@ -132,6 +134,7 @@ Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sq
 		<# 
 						Conditions
 		#>
+		
 		Write-Output "Migrating conditions"
 		foreach ($condition in $storeconditions)
 		{
@@ -184,6 +187,7 @@ Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sq
 		<# 
 						Policies
 		#>
+		
 		Write-Output "Migrating policies"
 		foreach ($policy in $storepolicies)
 		{

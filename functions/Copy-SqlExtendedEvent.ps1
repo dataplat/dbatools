@@ -93,8 +93,7 @@ Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from s
 	
 	DynamicParam { if ($source) { return (Get-ParamSqlExtendedEvents -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	process
-	{
+	BEGIN {
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 		
@@ -102,13 +101,14 @@ Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from s
 		$destination = $destserver.DomainInstanceName
 		$sessions = $psboundparameters.Sessions
 		
-		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
-		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 		
 		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
 		{
 			throw "Extended Events are only supported in SQL Server 2008 and above. Quitting."
 		}
+	}
+	process
+	{
 		
 		$sourceSqlConn = $sourceserver.ConnectionContext.SqlConnectionObject
 		$sourceSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sourceSqlConn

@@ -82,7 +82,7 @@ Shows what would happen if the command were executed using force.
 	)
 	DynamicParam { if ($source) { return (Get-ParamSqlServerTriggers -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	PROCESS
+	BEGIN
 	{
 		$triggers = $psboundparameters.Triggers
 		
@@ -92,9 +92,6 @@ Shows what would happen if the command were executed using force.
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
 		
-		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
-		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
-		
 		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
 		{
 			throw "Server Triggers are only supported in SQL Server 2005 and above. Quitting."
@@ -103,6 +100,9 @@ Shows what would happen if the command were executed using force.
 		$servertriggers = $sourceserver.Triggers
 		$desttriggers = $destserver.Triggers
 		
+	}
+	PROCESS
+	{
 		foreach ($trigger in $servertriggers)
 		{
 			$triggername = $trigger.name

@@ -95,8 +95,7 @@ Shows what would happen if the command were executed.
 		
 	)
 	
-	PROCESS
-	{
+	BEGIN  {
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 		
@@ -106,10 +105,12 @@ Shows what would happen if the command were executed.
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
 		
-		if (!(Test-SqlAgent $sourceserver)) { Write-Error "SQL Agent not running on $source. Halting job import."; return }
-		if (!(Test-SqlAgent $destserver)) { Write-Error "SQL Agent not running on $destination. Halting job import."; return }
-		
 		$sourceagent = $sourceserver.jobserver
+	}
+	
+	PROCESS
+	{
+		
 		$migratedjob = @{ }; $skippedjob = @{ }
 		
 		$jobobjects = "ProxyAccounts", "JobSchedule", "SharedSchedules", "AlertSystem", "JobCategories", "OperatorCategories"

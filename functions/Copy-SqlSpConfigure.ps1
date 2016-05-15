@@ -80,7 +80,7 @@ Shows what would happen if the command were executed.
 	
 	DynamicParam { if ($source) { return (Get-ParamSqlServerConfigs -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	PROCESS
+	BEGIN
 	{
 		$configs = $psboundparameters.Configs
 		
@@ -89,10 +89,10 @@ Shows what would happen if the command were executed.
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
-		
-		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
-		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
-		
+	}
+	
+	PROCESS
+	{
 		# if it doesn't exist on destination, don't try to mod.
 		# notcontains $server.Configuration.Properties.DisplayName
 		
