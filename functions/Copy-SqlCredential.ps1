@@ -280,7 +280,7 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 					}
 					else
 					{
-						If ($Pscmdlet.ShouldProcess($destination, "Dropping $identity"))
+						If ($Pscmdlet.ShouldProcess($destination.name, "Dropping $identity"))
 						{
 							$destserver.credentials[$credentialname].Drop()
 							$destserver.credentials.refresh()
@@ -296,7 +296,7 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 					$identity = $currentcred.Identity
 					$password = $currentcred.Password
 					
-					If ($Pscmdlet.ShouldProcess($destination, "Copying $identity"))
+					If ($Pscmdlet.ShouldProcess($destination.name, "Copying $identity"))
 					{
 						$sql = "CREATE CREDENTIAL [$credentialname] WITH IDENTITY = N'$identity', SECRET = N'$password'"
 						Write-Verbose $sql
