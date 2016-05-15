@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.7.9.3'
+	ModuleVersion = '0.7.9.4'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -74,7 +74,7 @@
 	'Copy-SqlDatabase', 'Copy-SqlJobServer', 'Start-SqlMigration','Import-SqlSpConfigure', 'Export-SqlSpConfigure', 'Watch-SqlDbLogin', 
 	'Reset-SqlAdmin', 'Get-SqlServerKey', 'Set-SqlMaxMemory','Get-SqlMaxMemory', 'Get-DetachedDBInfo', 'Restore-HallengrenBackup', 
 	'Test-SqlConnection', 'Import-CsvToSql', 'Update-dbatools','Copy-SqlSpConfigure', 'Test-SqlPath', 'Copy-SqlDatabaseAssembly', 
-	'Copy-SqlPolicyManagement', 'Copy-SqlProxyAccount','Copy-SqlSharedSchedule','Copy-SqlAgentCategory')
+	'Copy-SqlPolicyManagement', 'Copy-SqlProxyAccount','Copy-SqlSharedSchedule','Copy-SqlAgentCategory','Copy-SqlAlert')
 	
 	# 'Copy-SqlDataCollector',
 	
