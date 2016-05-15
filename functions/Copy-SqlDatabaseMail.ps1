@@ -110,26 +110,22 @@ Shows what would happen if the command were executed.
 		Function Copy-SqlDatabaseMailAccount
 		{
 			Write-Output "Migrating mail accounts"
-			foreach ($acct in $mail.Accounts)
+			foreach ($account in $mail.Accounts)
 			{
 				
 				# ADD DROP CODE HERE
-				if ($Pscmdlet.ShouldProcess($destination, "Migrating mail account $acct"))
+				if ($Pscmdlet.ShouldProcess($destination, "Migrating mail account $account"))
 				{
 					try
 					{
-						$sql = $acct.Script() | Out-String
+						$sql = $account.Script() | Out-String
 						$sql = $sql -replace "'$source'", "'$destination'"
 						Write-Verbose $sql
 						$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 					}
 					catch
 					{
-						if ($_.Exception -like '*duplicate*' -or $_.Exception -like '*exist*')
-						{
-							Write-Warning "Mail account '$acct' was skipped because it already exists on $destination"
-						}
-						else { Write-Exception $_ }
+						Write-Exception $_ 
 					}
 				}
 			}
@@ -140,23 +136,21 @@ Shows what would happen if the command were executed.
 			Write-Output "Migrating mail profiles"
 			foreach ($profile in $mail.Profiles)
 			{
-				$sql = $profile.Script() | Out-String
-				$sql = $sql -replace "'$source'", "'$destination'"
-				Write-Verbose $sql
 				
+				# ADD DROP CODE HERE
 				if ($Pscmdlet.ShouldProcess($destination, "Migrating mail profile $profile"))
 				{
 					try
 					{
+						$sql = $profile.Script() | Out-String
+						$sql = $sql -replace "'$source'", "'$destination'"
+						Write-Verbose $sql
 						$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 					}
 					catch
 					{
-						if ($_.Exception -like '*duplicate*' -or $_.Exception -like '*exist*')
-						{
-							Write-Warning "Mail profile '$profile' was skipped because it already exists on $destination"
-						}
-						else { Write-Exception $_ }
+	
+						Write-Exception $_ 
 					}
 				}
 			}
@@ -164,30 +158,49 @@ Shows what would happen if the command were executed.
 		
 		Function Copy-SqlDatabaseMailProfile
 		{
+			
+			$sourcemailservers = $sourceserver.Mail.Accounts.MailServers
+			$destmailservers = $destserver.Mail.Accounts.MailServers
+			
 			Write-Output "Updating account mail servers"
-			foreach ($mailsrv in $mail.Accounts.MailServers)
+			foreach ($mailserver in $sourcemailservers)
 			{
+				$mailservername = $mailserver.name
+				if ($mailservers.count -gt 0 -and $mailservers -notcontains $mailservername) { continue }
 				
-				
-				if ($Pscmdlet.ShouldProcess($destination, "Migrating account mail server $mailsrv"))
+				if ($destmailservers.name -contains $mailservername)
+				{
+					if ($force -eq $false)
+					{
+						Write-Warning "Mail server $mailservername exists at destination. Use -Force to drop and migrate."
+						continue
+					}
+					
+					If ($Pscmdlet.ShouldProcess($destination, "Dropping mail server $mailservername and recreating"))
+					{
+						try
+						{
+							Write-Verbose "Dropping mail server $mailservername"
+							$destserver.Mail.Accounts.MailServers[$mailservername].Drop()
+						}
+						catch {
+							Write-Exception $_
+							continue
+						}
+					}
+				}
+				if ($Pscmdlet.ShouldProcess($destination, "Migrating account mail server $mailserver"))
 				{
 					try
 					{
-						$sql = $mailsrv.Script() | Out-String
+						$sql = $mailserver.Script() | Out-String
 						$sql = $sql -replace "'$source'", "'$destination'"
 						Write-Verbose $sql
 						$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 					}
 					catch
 					{
-						if ($_.Exception -like '*duplicate*' -or $_.Exception -like '*exist*')
-						{
-							Write-Warning "Mail account '$mailsrv' was skipped because it already exists on $destination"
-						}
-						else { 
-							Write-Exception $_ 
-							continue
-						}
+						Write-Exception $_
 					}
 				}
 			}
