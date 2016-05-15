@@ -117,7 +117,7 @@ Shows what would happen if the command were executed using force.
 				continue
 			}
 			
-			if ($destproxyaccounts.name -contains $proxyname)
+			if ($destproxyaccounts.name -contains $proxyaccount.name)
 			{
 				if ($force -eq $false)
 				{
@@ -131,7 +131,7 @@ Shows what would happen if the command were executed using force.
 						try
 						{
 							Write-Verbose "Dropping server proxy account $proxyname"
-							$destserver.jobserver.proxyaccounts[$proxyname].Drop()
+							$destserver.jobserver.proxyaccounts[$proxyaccount.name].Drop()
 						}
 						catch 
 						{ 

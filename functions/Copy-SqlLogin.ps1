@@ -398,8 +398,7 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 			# Server Roles: sysadmin, bulklogin, etc
 			foreach ($role in $sourceserver.roles)
 			{
-				$rolename = $role.name
-				$destrole = $destserver.roles[$rolename]
+				$destrole = $destserver.roles[$role.name]
 				if ($destrole -ne $null)
 				{
 					try { $destrolemembers = $destrole.EnumMemberNames() }
@@ -411,16 +410,16 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 				{
 					if ($destrole -ne $null)
 					{
-						If ($Pscmdlet.ShouldProcess($destination, "Adding $username to$rolename server role"))
+						If ($Pscmdlet.ShouldProcess($destination, "Adding $username to $($role.name) server role"))
 						{
 							try
 							{
 								$destrole.AddMember($username)
-								Write-Output "Added $username to$rolename server role."
+								Write-Output "Added $username to $($role.name) server role."
 							}
 							catch
 							{
-								Write-Warning "Failed to add $username to$rolename server role."
+								Write-Warning "Failed to add $username to $($role.name) server role."
 								Write-Exception $_
 							}
 						}
@@ -430,16 +429,16 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 				# Remove for Syncs
 				if ($rolemembers -notcontains $username -and $destrolemembers -contains $username -and $destrole -ne $null)
 				{
-					If ($Pscmdlet.ShouldProcess($destination, "Adding $username to$rolename server role"))
+					If ($Pscmdlet.ShouldProcess($destination, "Adding $username to $($role.name) server role"))
 					{
 						try
 						{
 							$destrole.DropMember($username)
-							Write-Output "Removed $username from $destrolename server role on $($destserver.name)."
+							Write-Output "Removed $username from $($destrole.name) server role on $($destserver.name)."
 						}
 						catch
 						{
-							Write-Warning "Failed to remove $username from $destrolename server role on $($destserver.name)."
+							Write-Warning "Failed to remove $username from $($destrole.name) server role on $($destserver.name)."
 							Write-Exception $_
 						}
 					}
@@ -581,25 +580,24 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 					# TODO: reassign if dbo, application roles
 					foreach ($destrole in $destdb.roles)
 					{
-						$destrolename = $destrole.name
-						$sourcerole = $sourcedb.roles[$destrolename]
+						$sourcerole = $sourcedb.roles[$destrole.name]
 						if ($sourcerole -ne $null)
 						{
 							if ($sourcerole.EnumMembers() -notcontains $dbusername -and $destrole.EnumMembers() -contains $dbusername)
 							{
 								if ($dbusername -ne "dbo")
 								{
-									If ($Pscmdlet.ShouldProcess($destination, "Dropping $username from $destrolename database role on $dbname"))
+									If ($Pscmdlet.ShouldProcess($destination, "Dropping $username from $($destrole.name) database role on $dbname"))
 									{
 										try
 										{
 											$destrole.DropMember($dbusername)
 											$destdb.Alter()
-											Write-Output "Dropped username $dbusername (login: $dblogin) from $destrolename on $destination"
+											Write-Output "Dropped username $dbusername (login: $dblogin) from ($destrole.name) on $destination"
 										}
 										catch
 										{
-											Write-Warning "Failed to remove $dbusername from $destrolename database role on $dbname."
+											Write-Warning "Failed to remove $dbusername from $($destrole.name) database role on $dbname."
 											Write-Exception $_
 										}
 									}
@@ -691,21 +689,21 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 					{
 						if ($role.EnumMembers() -contains $username)
 						{
-							$destdbrole = $destdb.roles[$rolename]
+							$destdbrole = $destdb.roles[$role.name]
 							if ($destdbrole -ne $null -and $dbusername -ne "dbo" -and $destdbrole.EnumMembers() -notcontains $username)
 							{
-								If ($Pscmdlet.ShouldProcess($destination, "Adding $username to$rolename database role on $dbname"))
+								If ($Pscmdlet.ShouldProcess($destination, "Adding $username to $($role.name) database role on $dbname"))
 								{
 									try
 									{
 										$destdbrole.AddMember($username)
 										$destdb.Alter()
-										Write-Output "Added $username to$rolename database role on $dbname."
+										Write-Output "Added $username to $($role.name) database role on $dbname."
 										
 									}
 									catch
 									{
-										Write-Warning "Failed to add $username to$rolename database role on $dbname."
+										Write-Warning "Failed to add $username to $($role.name) database role on $dbname."
 										Write-Exception $_
 									}
 								}

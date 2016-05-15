@@ -101,26 +101,25 @@ BEGIN {
 		
 		foreach ($role in $serverroles)
 		{
-			$rolename = $role.name
-			if ($roles.length -gt 0 -and $roles -notcontains $rolename) { continue }
+			if ($roles.length -gt 0 -and $roles -notcontains $role.name) { continue }
 			
-			if ($destroles.name -contains $rolename)
+			if ($destroles.name -contains $role.name)
 			{
-				if ($role.IsFixedRole -eq $true -or $rolename -eq "public") { continue }
+				if ($role.IsFixedRole -eq $true -or $role.name -eq "public") { continue }
 				
 				if ($force -eq $false)
 				{
-					Write-Warning "Server role $rolename exists at destination. Use -Force to drop and migrate."
+					Write-Warning "Server role $($role.name) exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else
 				{
-					If ($Pscmdlet.ShouldProcess($destination, "Dropping server role $rolename"))
+					If ($Pscmdlet.ShouldProcess($destination, "Dropping server role $($role.name)"))
 					{
 						try
 						{
-							Write-Verbose "Dropping server role $rolename"
-							$destserver.roles[$rolename].Drop()
+							Write-Verbose "Dropping server role $($role.name)"
+							$destserver.roles[$role.name].Drop()
 						}
 						catch
 						{
@@ -130,15 +129,15 @@ BEGIN {
 				}
 			}
 			
-			If ($Pscmdlet.ShouldProcess($destination, "Creating server role $rolename"))
+			If ($Pscmdlet.ShouldProcess($destination, "Creating server role $($role.name)"))
 			{
 				try
 				{
-					Write-Output "Copying server role $rolename"
+					Write-Output "Copying server role $($role.name)"
 					$destserver.ConnectionContext.ExecuteNonQuery($role.Script()) | Out-Null
 					$destserver.Refresh()
 					$destserver.roles.Refresh()
-					$newrole = $destserver.roles[$rolename]
+					$newrole = $destserver.roles[$role.name]
 					
 					try { $rolemembers = $role.EnumMemberNames() }
 					catch { $rolemembers = $role.EnumServerRoleMembers() }
@@ -156,7 +155,7 @@ BEGIN {
 						# These operations are only supported by SQL Server 2005 and above.
 						# Securables: Connect SQL, View any database, Administer Bulk Operations, etc.
 						
-						$perms = $sourceserver.EnumServerPermissions($($rolename))
+						$perms = $sourceserver.EnumServerPermissions($($role.name))
 						foreach ($perm in $perms)
 						{
 							$permstate = $perm.permissionstate

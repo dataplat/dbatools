@@ -116,26 +116,17 @@ Shows what would happen if the command were executed using force.
 				}
 				else
 				{
-					if ($destserver.JobServer.jobs.Jobschedules.name -contains $schedulename)
-					{ 
-						Write-Warning "Schedule $schedulename has associated jobs. Skipping."
-						continue
-					}
-					else 
+					If ($Pscmdlet.ShouldProcess($destination, "Dropping schedule $schedulename and recreating"))
 					{
-					
-						if ($Pscmdlet.ShouldProcess($destination, "Dropping schedule $schedulename and recreating"))
+						try
 						{
-							try
-							{
-								Write-Verbose "Dropping schedule $schedulename"
-								$destserver.JobServer.SharedSchedules[$schedulename].Drop()
-							}
-							catch 
-							{ 
-								Write-Exception $_ 
-								continue
-							}
+							Write-Verbose "Dropping schedule $schedulename"
+							$destserver.JobServer.SharedSchedules[$schedulename].Drop()
+						}
+						catch 
+						{ 
+							Write-Exception $_ 
+							continue
 						}
 					}
 				}

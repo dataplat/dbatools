@@ -197,7 +197,7 @@ Function Get-ParamSqlServerRoles
 	$roles = $server.roles | Where-Object { $_.IsFixedRole -eq $false -and $_.Name -ne 'public' }
 	foreach ($role in $roles)
 	{
-		$rolelist += $rolename
+		$rolelist += $role.name
 	}
 	
 	# Reusable parameter setup
@@ -332,7 +332,7 @@ Function Get-ParamSqlServerServerAuditSpecifications
 	$auditspeclist = @()
 	foreach ($auditspec in $server.ServerAuditSpecifications)
 	{
-		$auditspeclist += $auditspecname
+		$auditspeclist += $auditspec.name
 	}
 	
 	# Reusable parameter setup
@@ -422,7 +422,7 @@ Function Get-ParamSqlServerEndpoints
 	$usernedponit = $server.Endpoints | Where-Object { $_.IsSystemObject -eq $false }
 	foreach ($endpoint in $server.Endpoints)
 	{
-		$endpointlist += $endpointname
+		$endpointlist += $endpoint.name
 	}
 	
 	# Reusable parameter setup

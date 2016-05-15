@@ -61,7 +61,7 @@ Shows what would happen if the command were executed using force.
 						try
 						{
 							Write-Verbose "Dropping Operator $operatorname"
-							$destserver.jobserver.operators[$operatorname].Drop()
+							$destserver.jobserver.operators[$operator.name].Drop()
 						}
 						catch 
 						{ 
