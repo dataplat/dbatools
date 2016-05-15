@@ -192,6 +192,7 @@ Shows what would happen if the command were executed using force.
 			{
 				try
 				{
+					Write-Output "File path $($audit.Filepath) exists on $Destination."
 					Write-Output "Copying server audit $auditname"
 					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 				}
