@@ -1,18 +1,12 @@
-Function Copy-SqlLogin
+Function Sync-SqlLoginPermissions
 {
 <#
 .SYNOPSIS
-Migrates logins from source to destination SQL Servers. Supports SQL Server versions 2000 and above.
+Copies SQL login permission from one server to another.
 
 .DESCRIPTION
-SQL Server 2000: Migrates logins with SIDs, passwords, server roles and database roles.
-
-SQL Server 2005 & above: Migrates logins with SIDs, passwords, defaultdb, server roles & securables,
-database permissions & securables, login attributes (enforce password policy, expiration, etc)
-
-The login hash algorithm changed in SQL Server 2012, and is not backwards compatible with previous SQL
-versions. This means that while SQL Server 2000 logins can be migrated to SQL Server 2012, logins
-created in SQL Server 2012 can only be migrated to SQL Server 2012 and above.
+Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins. If a matching login does not exist on the destination, the login will be skipped. 
+Credential removal not currently supported for Syncs. TODO: Application role sync
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
@@ -44,12 +38,6 @@ Excludes specified logins. This list is auto-populated for tab completion.
 .PARAMETER Login
 Migrates ONLY specified logins. This list is auto-populated for tab completion. Multiple logins allowed.
 
-.PARAMETER SyncOnly
-Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. If a matching login does not exist on the destination, the login will be skipped. 
-Credential removal not currently supported for Syncs. TODO: Application role sync
-
-.PARAMETER Force
-Force drops and recreates logins. Logins that own jobs cannot be dropped at this time.
 
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
@@ -72,28 +60,27 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlLogin
+https://dbatools.io/Sync-SqlLoginPermissions
 
 .EXAMPLE
-Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -Force
+Sync-SqlLoginPermissions -Source sqlserver2014a -Destination sqlcluster -
 
-Copies all logins from source server to destination server. If a SQL login on source exists on the destination,
-the destination login will be dropped and recreated.
+Copies all logins from source server to destination server.
 
 .EXAMPLE
-Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred
+Sync-SqlLoginPermissions -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred
 
 Authenticates to SQL Servers using SQL Authentication.
 
-Copies all logins except for realcajun. If a login already exists on the destination, the login will not be migrated.
+Copies all logins permissions except for realcajun. If a login already exists on the destination, the login will not be migrated.
 
 .EXAMPLE
-Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds -force
+Sync-SqlLoginPermissions -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds
 
-Copies ONLY logins netnerds and realcajun. If login realcajun or netnerds exists on the destination, they will be dropped and recreated.
+Copies permissions ONLY for logins netnerds and realcajun.
 
 .EXAMPLE
-Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -SyncOnly
+Sync-SqlLoginPermissions -Source sqlserver2014a -Destination sqlcluster
 
 Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. If a matching login does not exist on the destination, the login will be skipped.
 
@@ -104,7 +91,7 @@ Requires: sysadmin access on SQL Servers
 Limitations: Does not support Application Roles yet
 
 .LINK 
-https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a0cf05
+https://dbatools.io/Sync-SqlLoginPermissions 
 
 #>
 	
@@ -116,8 +103,6 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 		[object]$Destination,
 		[object]$SourceSqlCredential,
 		[object]$DestinationSqlCredential,
-		[switch]$SyncOnly,
-		[switch]$Force,
 		[parameter(ValueFromPipeline = $true, DontShow)]
 		[object]$pipelogin
 	)
@@ -126,255 +111,9 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 	
 	BEGIN
 	{
-		
-		Function Copy-Login
-		{
-<#
-	.SYNOPSIS
-	Internal function
-#>			
-			[cmdletbinding(SupportsShouldProcess = $true)]
-			param (
-				[Parameter(Mandatory = $true)]
-				[ValidateNotNullOrEmpty()]
-				[object]$sourceserver,
-				[Parameter(Mandatory = $true)]
-				[ValidateNotNullOrEmpty()]
-				[object]$destserver,
-				[Parameter()]
-				[string[]]$Logins,
-				[Parameter()]
-				[string[]]$Exclude,
-				[Parameter()]
-				[bool]$Force
-			)
-			
-			if ($sourceserver.versionMajor -gt 10 -and $destserver.versionMajor -lt 11)
-			{
-				throw "SQL login migration from SQL Server version $($sourceserver.versionMajor) to $($destserver.versionMajor) not supported. Halting."
-			}
-			
-			$source = $sourceserver.DomainInstanceName
-			$destination = $destserver.DomainInstanceName
-			
-			foreach ($sourcelogin in $sourceserver.logins)
-			{
-				
-				$username = $sourcelogin.name
-				if ($Logins -ne $null -and $Logins -notcontains $username) { continue }
-				if ($Exclude -contains $username -or $username.StartsWith("##") -or $username -eq 'sa') { Write-Output "Skipping $username"; continue }
-				$servername = Get-NetBiosName $sourceserver
-				
-				$currentlogin = $sourceserver.ConnectionContext.truelogin
-				
-				if ($currentlogin -eq $username -and $force)
-				{
-					If ($Pscmdlet.ShouldProcess("console", "Stating $username is skipped because it is performing the migration."))
-					{
-						Write-Warning "Cannot drop login performing the migration. Skipping"
-					}
-					continue
-				}
-				
-				$userbase = ($username.Split("\")[0]).ToLower()
-				if ($servername -eq $userbase -or $username.StartsWith("NT "))
-				{
-					If ($Pscmdlet.ShouldProcess("console", "Stating $username is skipped because it is a local machine name."))
-					{
-						Write-Output "Stating $username is skipped because it is a local machine name."
-					}
-					continue
-				}
-				
-				if (($login = $destserver.Logins.Item($username)) -ne $null -and !$force)
-				{
-					If ($Pscmdlet.ShouldProcess("console", "Stating $username is skipped because it exists at destination."))
-					{
-						Write-Output "$username already exists in destination. Use -force to drop and recreate."
-					}
-					continue
-				}
-				
-				if ($login -ne $null -and $force)
-				{
-					if ($username -eq $destserver.ServiceAccount) { Write-Warning "$username is the destination service account. Skipping drop."; continue }
-					If ($Pscmdlet.ShouldProcess($destination, "Dropping $username"))
-					{
-						# Kill connections, delete user
-						Write-Output "Attempting to migrate $username"
-						Write-Output "Force was specified. Attempting to drop $username on $destination"
-						try
-						{
-							$destserver.EnumProcesses() | Where { $_.Login -eq $username } | ForEach-Object { $destserver.KillProcess($_.spid) }
-							
-							$owneddbs = $destserver.Databases | Where { $_.Owner -eq $username }
-							foreach ($owneddb in $owneddbs)
-							{
-								Write-Output "Changing database owner for $($owneddb.name) from $username to sa"
-								$owneddb.SetOwner('sa')
-								$owneddb.Alter()
-							}
-							
-							$ownedjobs = $destserver.JobServer.Jobs | Where { $_.OwnerLoginName -eq $username }
-							foreach ($ownedjob in $ownedjobs)
-							{
-								Write-Output "Changing job owner for $($ownedjob.name) from $username to sa"
-								$ownedjob.set_OwnerLoginName('sa')
-								$ownedjob.Alter()
-							}
-							
-							$login.drop()
-							Write-Output "Successfully dropped $username on $destination"
-						}
-						catch
-						{
-							$ex = $_.Exception.Message
-							if ($ex -ne $null) { $ex.trim() }
-							Write-Error "Could not drop $username`: $ex"
-							Write-Exception $_
-							continue
-						}
-					}
-				}
-				
-				If ($Pscmdlet.ShouldProcess($destination, "Adding SQL login $username"))
-				{
-					Write-Output "Attempting to add $username to $destination"
-					$destlogin = New-Object Microsoft.SqlServer.Management.Smo.Login($destserver, $username)
-					Write-Output "Setting $username SID to source username SID"
-					$destlogin.set_Sid($sourcelogin.get_Sid())
-					
-					$defaultdb = $sourcelogin.DefaultDatabase
-					Write-Output "Setting login language to $($sourcelogin.Language)"
-					$destlogin.Language = $sourcelogin.Language
-					
-					if ($destserver.databases[$defaultdb] -eq $null)
-					{
-						Write-Warning "$defaultdb does not exist on destination. Setting defaultdb to master."
-						$defaultdb = "master"
-					}
-					Write-Output "Set $username defaultdb to $defaultdb"
-					$destlogin.DefaultDatabase = $defaultdb
-					
-					$checkexpiration = "ON"; $checkpolicy = "ON"
-					if ($sourcelogin.PasswordPolicyEnforced -eq $false) { $checkpolicy = "OFF" }
-					if (!$sourcelogin.PasswordExpirationEnabled) { $checkexpiration = "OFF" }
-					
-					$destlogin.PasswordPolicyEnforced = $sourcelogin.PasswordPolicyEnforced
-					$destlogin.PasswordExpirationEnabled = $sourcelogin.PasswordExpirationEnabled
-					
-					# Attempt to add SQL Login User
-					if ($sourcelogin.LoginType -eq "SqlLogin")
-					{
-						$destlogin.LoginType = "SqlLogin"
-						$sourceloginname = $sourcelogin.name
-						
-						switch ($sourceserver.versionMajor)
-						{
-							0 { $sql = "SELECT convert(varbinary(256),password) as hashedpass FROM master.dbo.syslogins WHERE loginname='$sourceloginname'" }
-							8 { $sql = "SELECT convert(varbinary(256),password) as hashedpass FROM dbo.syslogins WHERE name='$sourceloginname'" }
-							9 { $sql = "SELECT convert(varbinary(256),password_hash) as hashedpass FROM sys.sql_logins where name='$sourceloginname'" }
-							default
-							{
-								$sql = "SELECT CAST(CONVERT(varchar(256), CAST(LOGINPROPERTY(name,'PasswordHash') 
-						AS varbinary (256)), 1) AS nvarchar(max)) as hashedpass FROM sys.server_principals
-						WHERE principal_id = $($sourcelogin.id)"
-							}
-						}
-						
-						try { $hashedpass = $sourceserver.ConnectionContext.ExecuteScalar($sql) }
-						catch
-						{
-							$hashedpassdt = $sourceserver.databases['master'].ExecuteWithResults($sql)
-							$hashedpass = $hashedpassdt.Tables[0].Rows[0].Item(0)
-						}
-						
-						if ($hashedpass.gettype().name -ne "String")
-						{
-							$passtring = "0x"; $hashedpass | % { $passtring += ("{0:X}" -f $_).PadLeft(2, "0") }
-							$hashedpass = $passtring
-						}
-						
-						try
-						{
-							$destlogin.Create($hashedpass, [Microsoft.SqlServer.Management.Smo.LoginCreateOptions]::IsHashed)
-							$destlogin.refresh()
-							Write-Output "Successfully added $username to $destination"
-						}
-						catch
-						{
-							try
-							{
-								$sid = "0x"; $sourcelogin.sid | % { $sid += ("{0:X}" -f $_).PadLeft(2, "0") }
-								$sqlfailsafe = "CREATE LOGIN [$username] WITH PASSWORD = $hashedpass HASHED, SID = $sid, 
-						DEFAULT_DATABASE = [$defaultdb], CHECK_POLICY = $checkpolicy, CHECK_EXPIRATION = $checkexpiration"
-								$null = $destserver.ConnectionContext.ExecuteNonQuery($sqlfailsafe)
-								$destlogin = $destserver.logins[$username]
-								Write-Output "Successfully added $username to $destination"
-							}
-							catch
-							{
-								Write-Warning "Failed to add $username to $destination`: $_"
-								Write-Exception $_
-								continue
-							}
-						}
-					}
-					# Attempt to add Windows User
-					elseif ($sourcelogin.LoginType -eq "WindowsUser" -or $sourcelogin.LoginType -eq "WindowsGroup")
-					{
-						Write-Output "Adding as login type $($sourcelogin.LoginType)"
-						$destlogin.LoginType = $sourcelogin.LoginType
-						Write-Output "Setting language as $($sourcelogin.Language)"
-						$destlogin.Language = $sourcelogin.Language
-						
-						try
-						{
-							$destlogin.Create()
-							$destlogin.Refresh()
-							Write-Output "Successfully added $username to $destination"
-						}
-						catch
-						{
-							Write-Warning "Failed to add $username to $destination"
-							Write-Exception $_
-							continue
-						}
-					}
-					# This script does not currently support certificate mapped or asymmetric key users.
-					else
-					{
-						Write-Warning "$($sourcelogin.LoginType) logins not supported. $($sourcelogin.name) skipped."
-						continue
-					}
-					
-					if ($sourcelogin.IsDisabled)
-					{
-						try { $destlogin.Disable() }
-						catch { Write-Warning "$username disabled on source, but could not be disabled on destination."; Write-Exception $_ }
-					}
-					if ($sourcelogin.DenyWindowsLogin)
-					{
-						try { $destlogin.DenyWindowsLogin = $true }
-						catch { Write-Warning "$username denied login on source, but could not be denied login on destination."; Write-Exception $_ }
-					}
-				}
-				If ($Pscmdlet.ShouldProcess($destination, "Updating SQL login $username permissions"))
-				{
-					Update-SqlPermissions -sourceserver $sourceserver -sourcelogin $sourcelogin -destserver $destserver -destlogin $destlogin
-				}
-			}
-			
-		}
-		
+	
 		Function Update-SqlPermissions
 		{
- <#
- 
-.SYNOPSIS
- Internal function. Updates permission sets, roles, database mappings on server and databases
-
- #>
 			[CmdletBinding()]
 			param (
 				[Parameter(Mandatory = $true)]
@@ -741,11 +480,6 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 		
 		Function Sync-Only
 		{
-<#
-.SYNOPSIS
-Internal function. Skips migration, and just syncs permission sets, roles, database mappings on server and databases
-
-#>
 			[CmdletBinding()]
 			param (
 				[Parameter(Mandatory = $true)]
@@ -757,7 +491,6 @@ Internal function. Skips migration, and just syncs permission sets, roles, datab
 			)
 			
 			$source = $sourceserver.DomainInstanceName; $destination = $destserver.DomainInstanceName
-			$exclude | Where-Object { !([string]::IsNullOrEmpty($_)) } | ForEach-Object { $skippedlogin.Add($_, "Explicitly Skipped") }
 			
 			foreach ($sourcelogin in $sourceserver.logins)
 			{
@@ -792,14 +525,10 @@ Internal function. Skips migration, and just syncs permission sets, roles, datab
 		$destination = $destserver.DomainInstanceName
 		
 		if ($sourceserver.versionMajor -lt 8 -or $destserver.versionMajor -lt 8) { throw "SQL Server 7 and below not supported. Quitting." }
-		
-		$elapsed = [System.Diagnostics.Stopwatch]::StartNew()
-		$started = Get-Date
-		
-		If ($Pscmdlet.ShouldProcess("console", "Showing time elapsed message"))
-		{
-			Write-Output "Migration started: $started"
-		}
+					
+		# Convert from RuntimeDefinedParameter  object to regular array
+		$Logins = $psboundparameters.Logins
+		$Exclude = $psboundparameters.Exclude
 		
 	}
 	
@@ -811,40 +540,20 @@ Internal function. Skips migration, and just syncs permission sets, roles, datab
 			$Source = $pipelogin[0].parent.name
 			$logins = $pipelogin.name
 		}
-		
-	<# ----------------------------------------------------------
-		Preps
-	---------------------------------------------------------- #>
-		
-		# Convert from RuntimeDefinedParameter  object to regular array
-		$Logins = $psboundparameters.Logins
-		$Exclude = $psboundparameters.Exclude
-		
-	<# ----------------------------------------------------------
-		Run
-	---------------------------------------------------------- #>
-		
-		if ($SyncOnly)
-		{
-			Write-Output "Syncing Login Permissions";
-			Sync-Only -sourceserver $sourceserver -destserver $destserver -Logins $Logins -Exclude $Exclude
-			return
-		}
-		
-		Write-Output "Attempting Login Migration";
-		Copy-Login -sourceserver $sourceserver -destserver $destserver -Logins $Logins -Exclude $Exclude -Force $force
+
+		Write-Output "Syncing Login Permissions";
+		Sync-Only -sourceserver $sourceserver -destserver $destserver -Logins $Logins -Exclude $Exclude
+	
 	}
 	
 	END
 	{
 		
-		If ($Pscmdlet.ShouldProcess("console", "Showing time elapsed message"))
+		If ($Pscmdlet.ShouldProcess("console", "Showing final message"))
 		{
-			Write-Output "Login migration completed: $(Get-Date)"
-			$totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
+			Write-Output "Permission sync complete."
 			$sourceserver.ConnectionContext.Disconnect()
 			$destserver.ConnectionContext.Disconnect()
-			Write-Output "Total elapsed time: $totaltime"
 		}
 	}
 }
