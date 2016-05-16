@@ -360,7 +360,6 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 			throw "Can't connect to remote registry on $source. Quitting." 
 		}
 		
-		Write-Output "Copying credentials"
 		Copy-Credential $sourceserver $destserver -Credentials $credentials -force:$force
 		
 	}
