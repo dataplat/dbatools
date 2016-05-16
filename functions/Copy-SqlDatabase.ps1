@@ -616,14 +616,12 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				if ($database.IsAccessible -eq $false)
 				{
 					Write-Warning "Skipping $dbname. Database is inaccessible."
-					$skippedb.Add($dbname, "Skipped. Database is inaccessible.")
 					continue
 				}
 				
 				if ($fswarning -and ($database.FileGroups | Where { $_.isFilestream }) -ne $null)
 				{
 					Write-Warning "Skipping $dbname (contains FILESTREAM)"
-					$skippedb.Add($dbname, "Skipped. Database contains FILESTREAM and FILESTREAM is disabled on $destination.")
 					continue
 				}
 				
@@ -727,7 +725,6 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						else
 						{
 							Write-Output "Failed to restore $dbname"
-							$skippedb[$dbname] = $result
 						}
 					}
 				} # End of backup
@@ -849,7 +846,11 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 								$destserver.databases[$dbname].alter()
 								Write-Output "Successfully updated BrokerEnabled to $sourcedbbrokerenabled for $dbname on $destination"
 							}
-							catch { Write-Error "Failed to update BrokerEnabled to $sourcedbbrokerenabled for $dbname on $destination"; Write-Exception $_ }
+							catch
+							{
+								Write-Error "Failed to update BrokerEnabled to $sourcedbbrokerenabled for $dbname on $destination"
+								Write-Exception $_
+							}
 						}
 					}
 				}
