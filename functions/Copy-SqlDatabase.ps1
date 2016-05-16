@@ -72,6 +72,9 @@ Sets restore to NoRecovery. Ideal for staging.
 .PARAMETER WithReplace
 It's exactly WITH REPLACE. This is useful if you want to stage some complex file paths.
 
+.PARAMETER CsvLog
+Outputs a log in CSV format
+
 .PARAMETER Force
 Drops existing databases with matching names. If using -DetachAttach, -Force will break mirrors and drop dbs from Availability Groups.
 
@@ -148,7 +151,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		[parameter(Position = 11, ParameterSetName = "DbBackup")]
 		[parameter(Position = 12, ParameterSetName = "DbAttachDetach")]
 		[switch]$SetSourceReadOnly,
-		[Alias("ReuseFolderStructure")]
+		[Alias("ReuseFolderstructure")]
 		[parameter(Position = 13, ParameterSetName = "DbBackup")]
 		[parameter(Position = 14, ParameterSetName = "DbAttachDetach")]
 		[switch]$ReuseSourceFolderStructure,
@@ -169,19 +172,40 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 	
 	BEGIN
 	{
+		
+		# Global Database Function
 		Function Get-SqlFileStructure
 		{
+<#
+
+.SYNOPSIS
+Internal function.
+
+#>
+			[CmdletBinding()]
+			param (
+				[Parameter(Mandatory = $true, Position = 0)]
+				[ValidateNotNullOrEmpty()]
+				[object]$sourceserver,
+				[Parameter(Mandatory = $true, Position = 1)]
+				[ValidateNotNullOrEmpty()]
+				[object]$destserver,
+				[Parameter(Mandatory = $false, Position = 2)]
+				[bool]$ReuseSourceFolderStructure
+			)
+			
+			$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+			$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+			
+			$sourcenetbios = Get-NetBIOSName $sourceserver
+			$destnetbios = Get-NetBIOSName $destserver
+			
 			$dbcollection = @{ };
 			
 			foreach ($db in $sourceserver.databases)
 			{
 				$dbstatus = $db.status.toString()
-				
-				if ($dbstatus.StartsWith("Normal") -eq $false)
-				{
-					continue
-				}
-				
+				if ($dbstatus.StartsWith("Normal") -eq $false) { continue }
 				$destinationfiles = @{ }; $sourcefiles = @{ }
 				
 				# Data Files
@@ -236,7 +260,6 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 							$filename = Split-Path($physical) -leaf
 							$d.physical = "$directory\$filename"
 						}
-						
 						$d.logical = $logical
 						$d.remotefilename = Join-AdminUNC $destnetbios $d.physical
 						$destinationfiles.add($logical, $d)
@@ -293,15 +316,21 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		# Backup Restore
 		Function Backup-SqlDatabase
 		{
+<#
+
+.SYNOPSIS
+Internal function.
+
+#>
 			[CmdletBinding()]
 			param (
-				[parameter(Mandatory = $true)]
+				[Parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[object]$server,
-				[parameter(Mandatory = $true)]
+				[Parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[string]$dbname,
-				[parameter(Mandatory = $true)]
+				[Parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[string]$backupfile
 			)
@@ -316,8 +345,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			$backup.Devices.Add($device)
 			$backup.Database = $dbname
 			
-			$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler]
-			{
+			$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
 				Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
 			}
 			$backup.add_PercentComplete($percent)
@@ -343,18 +371,24 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		
 		Function Restore-SqlDatabase
 		{
+<#
+
+.SYNOPSIS
+Internal function.
+
+#>
 			[CmdletBinding()]
 			param (
-				[parameter(Mandatory = $true)]
+				[Parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[object]$server,
-				[parameter(Mandatory = $true)]
+				[Parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[string]$dbname,
-				[parameter(Mandatory = $true)]
+				[Parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[string]$backupfile,
-				[parameter(Mandatory = $true)]
+				[Parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[object]$filestructure
 				
@@ -380,11 +414,9 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			try
 			{
 				
-				$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler]
-				{
+				$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
 					Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
 				}
-				
 				$restore.add_PercentComplete($percent)
 				$restore.PercentCompleteNotification = 1
 				$restore.add_Complete($complete)
@@ -413,6 +445,30 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		
 		Function Start-SqlBackupRestore
 		{
+<#
+
+.SYNOPSIS
+Internal function.
+
+#>
+			[CmdletBinding()]
+			param (
+				[Parameter(Mandatory = $true)]
+				[ValidateNotNullOrEmpty()]
+				[object]$sourceserver,
+				[Parameter(Mandatory = $true)]
+				[ValidateNotNullOrEmpty()]
+				[object]$destserver,
+				[Parameter(Mandatory = $true)]
+				[ValidateNotNullOrEmpty()]
+				[string]$dbname,
+				[Parameter(Mandatory = $true)]
+				[ValidateNotNullOrEmpty()]
+				[ValidateScript({ Test-Path $_ })]
+				[string]$networkshare,
+				[Parameter()]
+				[bool]$force
+			)
 			
 			$filestructure = Get-SqlFileStructure $sourceserver $destserver $ReuseSourceFolderStructure
 			$filename = "$dbname-$timenow.bak"
@@ -458,19 +514,24 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		# Detach Attach 
 		Function Dismount-SqlDatabase
 		{
+<#
+
+.SYNOPSIS
+Internal function.
+
+#>
 			[CmdletBinding()]
 			param (
-				[parameter(Mandatory = $true)]
+				[Parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[object]$server,
-				[parameter(Mandatory = $true)]
+				[Parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[string]$dbname
 				
 			)
 			
 			$database = $server.databases[$dbname]
-			
 			if ($database.IsMirroringEnabled)
 			{
 				try
@@ -480,12 +541,9 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					$database.Alter()
 					$database.Refresh()
 					Write-Warning "Could not break mirror for $dbname. Skipping."
+					
 				}
-				catch
-				{
-					Write-Exception $_
-					return $false
-				}
+				catch { Write-Exception $_; return $false }
 			}
 			
 			if ($database.AvailabilityGroupName.Length -gt 0)
@@ -497,11 +555,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					$server.AvailabilityGroups[$database.AvailabilityGroupName].AvailabilityDatabases[$dbname].Drop()
 					Write-Output "Successfully removed $dbname from  detach from $agname on $($server.name)"
 				}
-				catch
-				{
-					Write-Error "Could not remove $dbname from $agname on $($server.name)"; Write-Exception $_
-					return $false
-				}
+				catch { Write-Error "Could not remove $dbname from $agname on $($server.name)"; Write-Exception $_; return $false }
 			}
 			
 			Write-Output "Attempting detach from $dbname from $source"
@@ -538,26 +592,46 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		
 		Function Copy-SqlDatabase
 		{
+<#
+
+.SYNOPSIS
+Internal function.
+
+#>
+			[cmdletbinding(SupportsShouldProcess = $true)]
+			param (
+				[Parameter(Mandatory = $true)]
+				[ValidateNotNullOrEmpty()]
+				[object]$sourceserver,
+				[Parameter(Mandatory = $true)]
+				[ValidateNotNullOrEmpty()]
+				[object]$destserver,
+				[Parameter()]
+				[bool]$AllDatabases,
+				[Parameter()]
+				[string[]]$Databases,
+				[Parameter()]
+				[string[]]$Exclude,
+				[Parameter()]
+				[string]$IncludeSupportDBs,
+				[Parameter()]
+				[bool]$force
+				
+			)
 			
-		<# ###############################################################
+	<# ###############################################################
+	
+							Server Checks
 		
-								Server Checks
+	############################################################### #>
 			
-		############################################################### #>
-			
-			if ($sourceserver.Databases.count -le 4)
-			{
-				throw "No user databases to migrate. Quitting."
-			}
+			if ($sourceserver.Databases.count -le 4) { throw "No user databases to migrate. Quitting." }
 			
 			if ([version]$sourceserver.ResourceVersionString -gt [version]$destserver.ResourceVersionString)
 			{
 				throw "Source Sql Server version build must be <= destination Sql Server for database migration."
 			}
-			if ($fswarning)
-			{
-				Write-Warning "FILESTREAM enabled on $source but not $destination. Databases that use FILESTREAM will be skipped."
-			}
+			if ($fswarning) { Write-Warning "FILESTREAM enabled on $source but not $destination. Databases that use FILESTREAM will be skipped." }
 			
 			Write-Output "Checking access to remote directories..."
 			Write-Output "Resolving NetBIOS name for $source..."
@@ -588,6 +662,8 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			$SupportDBs = "ReportServer", "ReportServerTempDB", "distribution"
 			$sa = $changedbowner
 			
+			$exclude | Where-Object { !([string]::IsNullOrEmpty($_)) } | ForEach-Object { $skippedb.Add($_, "Explicitly Skipped") }
+			
 			$filestructure = Get-SqlFileStructure $sourceserver $destserver $ReuseSourceFolderStructure
 			
 			foreach ($database in $sourceserver.databases)
@@ -596,11 +672,12 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				$dbname = $database.name
 				$dbowner = $database.Owner
 				
-				<# ###############################################################
 				
-									Database Checks
-					
-				############################################################### #>
+		<# ###############################################################
+		
+							Database Checks
+			
+		############################################################### #>
 				
 				if ($database.id -le 4) { continue }
 				
@@ -614,7 +691,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				Write-Output "`n######### Database: $dbname #########"
 				$dbstart = Get-Date
 				
-				if ($exclude -and $Databases -eq $null)
+				if ($skippedb.ContainsKey($dbname) -and $Databases -eq $null)
 				{
 					Write-Output "`nSkipping $dbname"
 					continue
@@ -623,12 +700,14 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				if ($database.IsAccessible -eq $false)
 				{
 					Write-Warning "Skipping $dbname. Database is inaccessible."
+					$skippedb.Add($dbname, "Skipped. Database is inaccessible.")
 					continue
 				}
 				
 				if ($fswarning -and ($database.FileGroups | Where { $_.isFilestream }) -ne $null)
 				{
 					Write-Warning "Skipping $dbname (contains FILESTREAM)"
+					$skippedb.Add($dbname, "Skipped. Database contains FILESTREAM and FILESTREAM is disabled on $destination.")
 					continue
 				}
 				
@@ -637,16 +716,14 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					$remotepath = Split-Path ($database.FileGroups[0].Files.FileName)
 					$remotepath = Join-AdminUNC $destnetbios $remotepath
 					
-					if (!(Test-Path $remotepath))
-					{
-						throw "Cannot resolve $remotepath. `n`nYou have specified ReuseSourceFolderStructure and exact folder structure does not exist. Halting script."
-					}
+					if (!(Test-Path $remotepath)) { throw "Cannot resolve $remotepath. `n`nYou have specified ReuseSourceFolderStructure and exact folder structure does not exist. Halting script." }
 				}
 				
 				if ($database.AvailabilityGroupName.Length -gt 0 -and !$force -and $DetachAttach)
 				{
 					$agname = $database.AvailabilityGroupName
 					Write-Warning "Database is part of an Availability Group ($agname). Use -Force to drop from $agname and migrate. Alternatively, you can use the safer backup/restore method."
+					$skippedb[$dbname] = "Database is part of an Availability Group ($agname) and -force was not specified. Skipped."
 					continue
 				}
 				
@@ -668,12 +745,14 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				if ($database.IsMirroringEnabled -and !$force -and $DetachAttach)
 				{
 					Write-Warning "Database is being mirrored. Use -Force to break mirror and migrate. Alternatively, you can use the safer backup/restore method."
+					$skippedb[$dbname] = "Database is being mirrored and -force was not specified. Skipped."
 					continue
 				}
 				
 				if (($destserver.Databases[$dbname] -ne $null) -and !$force -and !$WithReplace)
 				{
 					Write-Warning "Database exists at destination. Use -Force to drop and migrate."
+					$skippedb[$dbname] = "Database exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				elseif ($destserver.Databases[$dbname] -ne $null -and $force)
@@ -682,10 +761,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					{
 						Write-Output "$dbname already exists. -Force was specified. Dropping $dbname on $destination."
 						$dropresult = Remove-SqlDatabase $destserver $dbname
-						if ($dropresult -eq $false)
-						{
-							continue
-						}
+						if ($dropresult -eq $false) { $skippedb[$dbname] = "Database exists and could not be dropped."; continue }
 					}
 				}
 				
@@ -709,6 +785,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				{
 					If ($Pscmdlet.ShouldProcess($source, "Set $dbname to read-only"))
 					{
+						Write-Output "Setting database to read-only"
 						$result = Update-SqldbReadOnly $sourceserver $dbname $true
 					}
 				}
@@ -719,19 +796,16 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					{
 						$result = (Start-SqlBackupRestore $sourceserver $destserver $dbname $networkshare $force)
 						$dbfinish = Get-Date
-						
 						if ($result -eq $true)
 						{
 							Write-Output "Successfully restored $dbname"
-							
-							if (!$norecovery)
-							{
-								$result = Update-Sqldbowner $sourceserver $destserver -dbname $dbname
-							}
+							$migrateddb.Add($dbname, "Successfully migrated,$dbstart,$dbfinish")
+							if (!$norecovery) { $result = Update-Sqldbowner $sourceserver $destserver -dbname $dbname }
 						}
 						else
 						{
 							Write-Output "Failed to restore $dbname"
+							$skippedb[$dbname] = $result
 						}
 					}
 				} # End of backup
@@ -739,34 +813,23 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				elseif ($DetachAttach)
 				{
 					$sourcefilestructure = New-Object System.Collections.Specialized.StringCollection
+					foreach ($file in $filestructure.databases[$dbname].source.values) { $null = $sourcefilestructure.add($file.physical) }
 					
-					foreach ($file in $filestructure.databases[$dbname].source.values)
-					{
-						$null = $sourcefilestructure.add($file.physical)
-					}
-					
-					$dbowner = $sourceserver.databases[$dbname].owner
-					
-					if ($dbowner -eq $null)
-					{
-						$dbowner = "sa"
-					}
+					$dbowner = $sourceserver.databases[$dbname].owner; if ($dbowner -eq $null) { $dbowner = "sa" }
 					
 					If ($Pscmdlet.ShouldProcess($destination, "Detach $dbname from $source and attach, then update dbowner"))
 					{
 						$result = Start-SqlDetachAttach $sourceserver $destserver $filestructure $dbname $force
 						$dbfinish = Get-Date
-						
 						if ($result -eq $true)
 						{
-							if (!$norecovery)
-							{
-								$result = Update-Sqldbowner $sourceserver $destserver -dbname $dbname
-							}
+							$migrateddb.Add($dbname, "Successfully migrated,$dbstart,$dbfinish")
+							if (!$norecovery) { $result = Update-Sqldbowner $sourceserver $destserver -dbname $dbname }
 						}
 						else
 						{
 							Write-Output "Failed to attach $dbname"
+							$skippedb[$dbname] = $result
 						}
 						
 						if ($Reattach)
@@ -779,30 +842,20 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 								$sourceserver.databases[$dbname].Trustworthy = $sourcedbtrustworthy
 								$sourceserver.databases[$dbname].BrokerEnabled = $sourcedbbrokerenabled
 								$sourceserver.databases[$dbname].alter()
-								
 								if ($SetSourceReadOnly)
 								{
 									$null = Update-SqldbReadOnly $sourceserver $dbname $true
 								}
-								
-								else
-								{
-									$null = Update-SqldbReadOnly $sourceserver $dbname $sourcedbreadonly
-								}
-								
+								else { $null = Update-SqldbReadOnly $sourceserver $dbname $sourcedbreadonly }
 								Write-Output "Successfully reattached $dbname to $source"
 								
 							}
-							else
-							{
-								Write-Warning "Could not reattach $dbname to $source."
-							}
+							else { Write-Warning "Could not reattach $dbname to $source." }
 						}
 					}
 				} #end of if detach/backup
 				
 				# restore poentially lost settings
-				# NEED TO SET A FLAG HERE
 				
 				if ($destserver.versionMajor -ge 9 -and $norecovery -eq $false)
 				{
@@ -817,11 +870,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 								$destserver.databases[$dbname].alter()
 								Write-Output "Successfully updated DatabaseOwnershipChaining for $sourcedbownerchaining on $dbname on $destination"
 							}
-							catch
-							{
-								Write-Error "Failed to update DatabaseOwnershipChaining for $sourcedbownerchaining on $dbname on $destination"
-								Write-Exception $_
-							}
+							catch { Write-Error "Failed to update DatabaseOwnershipChaining for $sourcedbownerchaining on $dbname on $destination"; Write-Exception $_ }
 						}
 					}
 					
@@ -835,11 +884,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 								$destserver.databases[$dbname].alter()
 								Write-Output "Successfully updated Trustworthy to $sourcedbtrustworthy for $dbname on $destination"
 							}
-							catch
-							{
-								Write-Error "Failed to update Trustworthy to $sourcedbtrustworthy for $dbname on $destination"
-								Write-Exception $_
-							}
+							catch { Write-Error "Failed to update Trustworthy to $sourcedbtrustworthy for $dbname on $destination"; Write-Exception $_ }
 						}
 					}
 					
@@ -853,11 +898,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 								$destserver.databases[$dbname].alter()
 								Write-Output "Successfully updated BrokerEnabled to $sourcedbbrokerenabled for $dbname on $destination"
 							}
-							catch
-							{
-								Write-Error "Failed to update BrokerEnabled to $sourcedbbrokerenabled for $dbname on $destination"
-								Write-Exception $_
-							}
+							catch { Write-Error "Failed to update BrokerEnabled to $sourcedbbrokerenabled for $dbname on $destination"; Write-Exception $_ }
 						}
 					}
 				}
@@ -869,17 +910,8 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						try
 						{
 							$result = Update-SqldbReadOnly $destserver $dbname $sourcedbreadonly
-							
-							if ($sourcedbreadonly -eq $true)
-							{
-								Write-Output "Successfully updated Read-Only to $sourcedbreadonly for $dbname on $destination"
-							}
 						}
-						catch
-						{
-							Write-Error "Failed to update ReadOnly status on $dbname"
-							Write-Exception $_
-						}
+						catch { Write-Error "Failed to update ReadOnly status on $dbname"; Write-Exception $_ }
 					}
 				}
 				
@@ -898,18 +930,24 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		
 		Function Mount-SqlDatabase
 		{
+<#
+
+.SYNOPSIS
+Internal function.
+
+#>
 			[CmdletBinding()]
 			param (
-				[parameter(Mandatory = $true)]
+				[Parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[object]$server,
-				[parameter(Mandatory = $true)]
+				[Parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[string]$dbname,
-				[parameter(Mandatory = $true)]
+				[Parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[object]$filestructure,
-				[parameter(Mandatory = $true)]
+				[Parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[string]$dbowner
 			)
@@ -920,23 +958,27 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				$null = $server.AttachDatabase($dbname, $filestructure, $dbowner, [Microsoft.SqlServer.Management.Smo.AttachOptions]::None)
 				return $true
 			}
-			catch
-			{
-				Write-Exception $_
-				return $false
-			}
+			catch { Write-Exception $_; return $false }
 		}
 		
 		Function Start-SqlFileTransfer
 		{
-			<#
+<#
 
-			SYNOPSIS
-			Internal function. Uses BITS to transfer detached files (.mdf, .ndf, .ldf, and filegroups) to 
-			another server over admin UNC paths. Locations of data files are kept in the
-			custom object generated by Get-SqlFileStructure
+SYNOPSIS
+Internal function. Uses BITS to transfer detached files (.mdf, .ndf, .ldf, and filegroups) to 
+another server over admin UNC paths. Locations of data files are kept in the
+custom object generated by Get-SqlFileStructure
 
-			#>			
+#>			
+			param (
+				[Parameter(Mandatory = $true)]
+				[ValidateNotNullOrEmpty()]
+				[object]$filestructure,
+				[Parameter(Mandatory = $true)]
+				[ValidateNotNullOrEmpty()]
+				[string]$dbname
+			)
 			
 			$copydb = $filestructure.databases[$dbname]
 			$dbsource = $copydb.source
@@ -946,7 +988,6 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			{
 				$remotefilename = $dbdestination[$file].remotefilename
 				$from = $dbsource[$file].remotefilename
-				$fn = Split-Path $($dbdestination[$file].physical) -leaf
 				try
 				{
 					if (Test-Path $from -pathtype container)
@@ -967,7 +1008,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						Write-Host "Copying $fn for $dbname"
 						Start-BitsTransfer -Source $from -Destination $remotefilename
 					}
-					
+					$fn = Split-Path $($dbdestination[$file].physical) -leaf
 				}
 				catch
 				{
@@ -987,25 +1028,38 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		
 		Function Start-SqlDetachAttach
 		{
+<#
+
+.SYNOPSIS
+Internal function. Performs checks, then executes Dismount-SqlDatabase on a database, copies its files to the new server, 
+then performs Mount-SqlDatabase. $sourceserver and $destserver are SMO server objects.
+$filestructure is a custom object generated by Get-SqlFileStructure
+
+#>
+			[CmdletBinding()]
+			param (
+				[Parameter(Mandatory = $true)]
+				[ValidateNotNullOrEmpty()]
+				[object]$sourceserver,
+				[Parameter(Mandatory = $true)]
+				[ValidateNotNullOrEmpty()]
+				[object]$destserver,
+				[Parameter(Mandatory = $true)]
+				[ValidateNotNullOrEmpty()]
+				[object]$filestructure,
+				[Parameter(Mandatory = $true)]
+				[ValidateNotNullOrEmpty()]
+				[string]$dbname,
+				[Parameter()]
+				[bool]$force
+			)
 			
 			$destfilestructure = New-Object System.Collections.Specialized.StringCollection
 			$sourcefilestructure = New-Object System.Collections.Specialized.StringCollection
-			$dbowner = $sourceserver.databases[$dbname].owner
+			$dbowner = $sourceserver.databases[$dbname].owner; if ($dbowner -eq $null) { $dbowner = 'sa' }
 			
-			if ($dbowner -eq $null)
-			{
-				$dbowner = 'sa'
-			}
-			
-			foreach ($file in $filestructure.databases[$dbname].destination.values)
-			{
-				$null = $destfilestructure.add($file.physical)
-			}
-			
-			foreach ($file in $filestructure.databases[$dbname].source.values)
-			{
-				$null = $sourcefilestructure.add($file.physical)
-			}
+			foreach ($file in $filestructure.databases[$dbname].destination.values) { $null = $destfilestructure.add($file.physical) }
+			foreach ($file in $filestructure.databases[$dbname].source.values) { $null = $sourcefilestructure.add($file.physical) }
 			
 			$detachresult = Dismount-SqlDatabase $sourceserver $dbname
 			
@@ -1013,11 +1067,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			{
 				
 				$transfer = Start-SqlFileTransfer $filestructure $dbname
-				if ($transfer -eq $false)
-				{
-					Write-Warning "Could not copy files."; return "Could not copy files."
-				}
-				
+				if ($transfer -eq $false) { Write-Warning "Could not copy files."; return "Could not copy files." }
 				$attachresult = Mount-SqlDatabase $destserver $dbname $destfilestructure $dbowner
 				
 				if ($attachresult -eq $true)
@@ -1041,6 +1091,11 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			}
 		}
 		
+	}
+	
+	PROCESS
+	{
+		
 		$elapsed = [System.Diagnostics.Stopwatch]::StartNew()
 		$started = Get-Date
 		$script:timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
@@ -1055,10 +1110,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			$databases = $pipedatabase.name
 		}
 		
-		if ($databases -contains "master" -or $databases -contains "msdb" -or $databases -contains "tempdb")
-		{
-			throw "Migrating system databases is not currently supported."
-		}
+		if ($databases -contains "master" -or $databases -contains "msdb" -or $databases -contains "tempdb") { throw "Migrating system databases is not currently supported." }
 		
 		Write-Output "Attempting to connect to Sql Servers.."
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
@@ -1083,10 +1135,9 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		Invoke-SmoCheck -SqlServer $sourceserver
 		Invoke-SmoCheck -SqlServer $destserver
 		
-		if ($source -eq $destination)
-		{
-			throw "Source and Destination Sql Servers are the same. Quitting."
-		}
+		$migrateddb = @{ }; $skippedb = @{ }
+		
+		if ($source -eq $destination) { throw "Source and Destination Sql Servers are the same. Quitting." }
 		
 		if (($AllDatabases -or $IncludeSupportDbs -or $Databases) -and !$DetachAttach -and !$BackupRestore)
 		{
@@ -1106,6 +1157,9 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			}
 		}
 		
+		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
+		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
+		
 		if ($sourceserver.versionMajor -lt 8 -and $destserver.versionMajor -lt 8)
 		{
 			throw "This script can only be run on Sql Server 2000 and above. Quitting."
@@ -1115,21 +1169,18 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		{
 			throw "Detach/Attach not supported when destination Sql Server is version 2000. Quitting."
 		}
-		
 		if ($sourceserver.versionMajor -lt 9 -and $destserver.versionMajor -gt 10)
 		{
 			throw "Sql Server 2000 databases cannot be migrated to Sql Server versions 2012 and above. Quitting."
 		}
-		
 		if ($sourceserver.versionMajor -lt 9 -and $Reattach)
 		{
 			throw "-Reattach was specified, but is not supported in Sql Server 2000. Quitting."
 		}
-		
 		if ($sourceserver.versionMajor -eq 9 -and $destserver.versionMajor -gt 9 -and !$BackupRestore -and !$Force -and $DetachAttach)
 		{
 			throw "Backup and restore is the safest method for migrating from Sql Server 2005 to other Sql Server versions.
-				Please use the -BackupRestore switch or override this requirement by specifying -Force."
+		Please use the -BackupRestore switch or override this requirement by specifying -Force."
 		}
 		
 		if ($sourceserver.collation -ne $destserver.collation)
@@ -1137,14 +1188,9 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			Write-Warning "Collation on $Source, $($sourceserver.collation) differs from the $Destination, $($destserver.collation)."
 		}
 		
-	}
-	
-	PROCESS
-	{
-		
-		<# ----------------------------------------------------------
-			Preps
-		---------------------------------------------------------- #>
+	<# ----------------------------------------------------------
+		Preps
+	---------------------------------------------------------- #>
 		
 		if (($Databases -or $Exclude -or $IncludeSupportDbs) -and (!$DetachAttach -and !$BackupRestore))
 		{
@@ -1160,11 +1206,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		$sql = "select coalesce(SERVERPROPERTY('FilestreamConfiguredLevel'),0) as fs"
 		$sourcefilestream = $sourceserver.ConnectionContext.ExecuteScalar($sql)
 		$destfilestream = $destserver.ConnectionContext.ExecuteScalar($sql)
-		
-		if ($sourcefilestream -gt 0 -and $destfilestream -eq 0)
-		{
-			$fswarning = $true
-		}
+		if ($sourcefilestream -gt 0 -and $destfilestream -eq 0) { $fswarning = $true }
 		
 	<# ----------------------------------------------------------
 		Run
@@ -1173,17 +1215,24 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		
 		if ($AllDatabases -or $Exclude.length -gt 0 -or $IncludeSupportDbs -or $Databases.length -gt 0)
 		{
-			$params = @{
-				Sourceserver = $sourceserver
-				Destserver = $destserver
-				All = $AllDatabases
-				Databases = $Databases
-				Exclude = $Exclude
-				IncludeSupportDbs = $IncludeSupportDbs
-				Force = $force
-			}
+			Copy-SqlDatabase -sourceserver $sourceserver -destserver $destserver -AllDatabases $AllDatabases `
+							 -Databases $Databases -Exclude $Exclude -IncludeSupportDbs $IncludeSupportDbs -Force $force
+		}
+		
+		if ($csvlog)
+		{
 			
-			Copy-SqlDatabase
+			$script:csvfilename = "$($sourceserver.name.replace('\', '$'))-to-$($destserver.name.replace('\', '$'))-$timenow-db.csv"
+			Set-Content -Path "$csvfilename" "Database Name, Result, Start, Finish"
+			
+			$migrateddb.GetEnumerator() | Sort-Object value; $skippedb.GetEnumerator() | Sort-Object value
+			
+			foreach ($db in $migrateddb.GetEnumerator()) { Add-Content -Path $csvfilename "$($db.name),$($db.value)" }
+			foreach ($db in $migrateddb.GetEnumerator()) { Add-Content -Path $csvfilename "$($db.name),$($db.value)" }
+			
+			$alldbtotaltime = ($alldbelapsed.Elapsed.toString().Split(".")[0])
+			Add-Content -Path $csvfilename "`r`nElapsed time,$alldbtotaltime"
+			
 		}
 	}
 	
@@ -1198,11 +1247,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			Write-Output "Migration started: $started"
 			Write-Output "Migration completed: $(Get-Date)"
 			Write-Output "Total Elapsed time: $totaltime"
-			
-			if ($networkshare.length -gt 0)
-			{
-				Write-Warning "This script does not delete backup files. Backups still exist at $networkshare."
-			}
+			if ($networkshare.length -gt 0 -and $migrateddb.count -gt 0) { Write-Warning "This script does not delete backup files. Backups still exist at $networkshare." }
 		}
 	}
 }
