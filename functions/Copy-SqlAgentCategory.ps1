@@ -215,6 +215,7 @@ Shows what would happen if the command were executed using force.
 						if ($force -eq $false)
 						{
 							Write-Warning "Operator category $categoryname exists at destination. Use -Force to drop and migrate."
+							continue
 						}
 						else
 						{
@@ -298,6 +299,7 @@ Shows what would happen if the command were executed using force.
 						if ($force -eq $false)
 						{
 							Write-Warning "Alert category $categoryname exists at destination. Use -Force to drop and migrate."
+							continue
 						}
 						else
 						{
