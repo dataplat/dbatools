@@ -63,7 +63,7 @@ Copies all server endpoints from sqlserver2014a to sqlcluster, using Windows cre
 Copy-SqlEndpoint -Source sqlserver2014a -Destination sqlcluster -Endpoint tg_noDbDrop -SourceSqlCredential $cred -Force
 
 Copies a single endpoint, the tg_noDbDrop endpoint from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a
-and Windows credentials for sqlcluster. If a endpoint with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+and Windows credentials for sqlcluster. If an endpoint with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 .EXAMPLE   
 Copy-SqlEndpoint -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force

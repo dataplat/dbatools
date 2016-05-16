@@ -63,7 +63,7 @@ Copies all server audits from sqlserver2014a to sqlcluster, using Windows creden
 Copy-SqlAuditSpecification -Source sqlserver2014a -Destination sqlcluster -ServerAuditSpecifications tg_noDbDrop -SourceSqlCredential $cred -Force
 
 Copies a single audit, the tg_noDbDrop audit from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a
-and Windows credentials for sqlcluster. If a audit with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+and Windows credentials for sqlcluster. If an audit with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 .EXAMPLE   
 Copy-SqlAuditSpecification -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
