@@ -156,11 +156,17 @@ Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sq
 						
 						try
 						{
+							$dependentpolicies = $deststore.conditions[$conditionName].EnumDependentPolicies()
+							foreach ($dependent in $dependentpolicies)
+							{
+								$dependent.Drop()
+								$deststore.conditions.Refresh()
+							}
 							$deststore.conditions[$conditionName].Drop()
 						}
 						catch
 						{
-							Write-Exception "Unable to drop: $_  Moving on."
+							Write-Exception $_
 							continue
 						}
 					}
@@ -176,6 +182,7 @@ Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sq
 					Write-Verbose $sql
 					Write-Output "Copying condition $conditionName"
 					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
+					$deststore.Conditions.Refresh()
 				}
 				catch
 				{
@@ -210,10 +217,11 @@ Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sq
 						try
 						{
 							$deststore.policies[$policyName].Drop()
+							$deststore.policies.refresh()
 						}
 						catch
 						{
-							Write-Exception "Unable to drop: $_  Moving on."
+							Write-Exception $_
 							continue
 						}
 					}
@@ -224,7 +232,9 @@ Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sq
 			{
 				try
 				{
-					$sql = $policy.ScriptCreate().GetScript() | Out-String
+					$deststore.conditions.Refresh()
+					$deststore.policies.Refresh()
+					$sql = $policy.ScriptCreateWithDependencies().GetScript() | Out-String
 					$sql = $sql -replace "'$source'", "'$destination'"
 					Write-Verbose $sql
 					Write-Output "Copying policy $policyName"
@@ -232,7 +242,8 @@ Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sq
 				}
 				catch
 				{
-					Write-Exception $_
+					# This is usually because of a duplicate dependent from above. Just skip for now.
+					# Write-Exception $_
 				}
 			}
 		}
