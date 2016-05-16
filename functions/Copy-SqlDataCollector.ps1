@@ -3,11 +3,12 @@ Function Copy-SqlDataCollector
 <#
 # not quite done yet
 
-	.SYNOPSIS
-Migrates user SQL Data Collector configuration and collection sets.
+.SYNOPSIS
+
+Migrates user SQL Data Collector collection sets. SQL Data Collector configuration is on the agenda, but it's hard.
 
 .DESCRIPTION
-By default, all data collector objects and configs are migrated. If the event already exists on the destination, it will be skipped unless -Force is used. 
+By default, all data collector objects are migrated. If the object already exists on the destination, it will be skipped unless -Force is used. 
 	
 The -CollectionSets parameter is autopopulated for command-line completion and can be used to copy only specific objects.
 
@@ -200,6 +201,13 @@ Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlse
 					Write-Verbose $sql
 					Write-Output "Migrating collection set $collectionName"
 					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
+					
+					if ($set.IsRunning)
+					{
+						Write-Output "Starting collection set $collectionName"
+						$deststore.CollectionSets.Refresh()
+						$deststore.CollectionSets[$collectionName].Start()
+					}
 				}
 				catch
 				{
