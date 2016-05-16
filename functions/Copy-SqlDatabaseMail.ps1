@@ -119,6 +119,7 @@ Shows what would happen if the command were executed.
 					$sql = $sql -replace "'$source'", "'$destination'"
 					Write-Verbose $sql
 					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+					$mail.ConfigurationValues.Refresh()
 				}
 				catch
 				{
@@ -152,6 +153,7 @@ Shows what would happen if the command were executed.
 						{
 							Write-Verbose "Dropping account $accountname"
 							$destserver.Mail.Accounts[$accountname].Drop()
+							$destserver.Mail.Accounts.Refresh()
 						}
 						catch {
 							Write-Exception $_
@@ -205,6 +207,7 @@ Shows what would happen if the command were executed.
 						{
 							Write-Verbose "Dropping profile $profilename"
 							$destserver.Mail.Profiles[$profilename].Drop()
+							$destserver.Mail.Profiles.Refresh()
 						}
 						catch {
 							Write-Exception $_
@@ -222,6 +225,7 @@ Shows what would happen if the command were executed.
 						$sql = $sql -replace "'$source'", "'$destination'"
 						Write-Verbose $sql
 						$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+						$destserver.Mail.Profiles.Refresh()
 					}
 					catch
 					{
@@ -307,18 +311,22 @@ Shows what would happen if the command were executed.
 			{
 				"ConfigurationValues" {
 					Copy-SqlDatabaseMailConfig
+					$destserver.Mail.Refresh()
 				}
 				
 				"Profiles" {
 					Copy-SqlDatabaseMailProfile
+					$destserver.Mail.Refresh()
 				}
 				
 				"Accounts" {
 					Copy-SqlDatabaseAccount
+					$destserver.Mail.Refresh()
 				}
 				
 				"MailServers" {
 					Copy-SqlDatabaseMailServer
+					$destserver.Mail.Refresh()
 				}
 			}
 			
@@ -335,26 +343,33 @@ Shows what would happen if the command were executed.
 			
 			if ($profiles.count -gt 0)
 			{
-				Copy-SqlDatabaseMailProfile -Profiles $profiles 
+				Copy-SqlDatabaseMailProfile -Profiles $profiles
+				$destserver.Mail.Refresh()
 			}
 			
 			if ($accounts.count -gt 0)
 			{
-				Copy-SqlDatabaseAccount -Accounts $accounts 
+				Copy-SqlDatabaseAccount -Accounts $accounts
+				$destserver.Mail.Refresh()
 			}
 			
 			if ($mailServers.count -gt 0)
 			{
-				Copy-SqlDatabaseMailServer -MailServers $mailServers 
+				Copy-SqlDatabaseMailServer -MailServers $mailServers
+				$destserver.Mail.Refresh()
 			}
 			
 			return
 		}
 		
 		Copy-SqlDatabaseMailConfig
+		$destserver.Mail.Refresh()
 		Copy-SqlDatabaseAccount
+		$destserver.Mail.Refresh()
 		Copy-SqlDatabaseMailProfile
+		$destserver.Mail.Refresh()
 		Copy-SqlDatabaseMailServer
+		$destserver.Mail.Refresh()
 	}
 	
 	end
