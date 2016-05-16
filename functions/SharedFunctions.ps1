@@ -447,7 +447,7 @@ Internal function. Returns dictionary object that contains file structures for S
 		[Parameter(Mandatory = $true, Position = 2)]
 		[object]$filelist,
 		[Parameter(Mandatory = $false, Position = 3)]
-		[bool]$ReuseFolderstructure,
+		[bool]$ReuseSourceFolderStructure,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
@@ -470,7 +470,7 @@ Internal function. Returns dictionary object that contains file structures for S
 	{
 		# Destination File Structure
 		$d = @{ }
-		if ($ReuseFolderstructure -eq $true)
+		if ($ReuseSourceFolderStructure -eq $true)
 		{
 			$d.physical = $file.PhysicalName
 		}
@@ -489,7 +489,7 @@ Internal function. Returns dictionary object that contains file structures for S
 	foreach ($file in $logfiles)
 	{
 		$d = @{ }
-		if ($ReuseFolderstructure)
+		if ($ReuseSourceFolderStructure)
 		{
 			$d.physical = $file.PhysicalName
 		}
@@ -523,7 +523,7 @@ source and destination servers.
 		[ValidateNotNullOrEmpty()]
 		[object]$destination,
 		[Parameter(Mandatory = $false, Position = 2)]
-		[bool]$ReuseFolderstructure,
+		[bool]$ReuseSourceFolderStructure,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential
 	)
@@ -551,7 +551,7 @@ source and destination servers.
 			{
 				# Destination File Structure
 				$d = @{ }
-				if ($ReuseFolderstructure)
+				if ($ReuseSourceFolderStructure)
 				{
 					$d.physical = $file.filename
 				}
@@ -585,7 +585,7 @@ source and destination servers.
 				$name = $ftc.name
 				$physical = $ftc.RootPath
 				$logical = "$pre$name"
-				if ($ReuseFolderstructure)
+				if ($ReuseSourceFolderStructure)
 				{
 					$d.physical = $physical
 				}
@@ -618,7 +618,7 @@ source and destination servers.
 		foreach ($file in $db.logfiles)
 		{
 			$d = @{ }
-			if ($ReuseFolderstructure)
+			if ($ReuseSourceFolderStructure)
 			{
 				$d.physical = $file.filename
 			}
