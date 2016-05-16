@@ -113,8 +113,8 @@ Shows what would happen if the command were executed using force.
 			
 			if ($jobs.count -gt 0 -and $jobs -notcontains $jobname) { continue }
 			
-			$dbnames = $job.JobSteps.Databasename.Where{ $_.length -gt 0 }
-			$missingdb = $dbnames.Where{ $destserver.Databases.Name -notcontains $_ } 
+			$dbnames = $job.JobSteps.Databasename | Where-Object { $_.length -gt 0 }
+			$missingdb = $dbnames | Where-Object { $destserver.Databases.Name -notcontains $_ } 
 			
 			if ($missingdb.count -gt 0 -and $dbnames.count -gt 0)
 			{
@@ -123,7 +123,7 @@ Shows what would happen if the command were executed using force.
 				continue
 			}
 			
-			$missinglogin = $job.OwnerLoginName.Where{ $destserver.Logins.Name -notcontains $_ }
+			$missinglogin = $job.OwnerLoginName | Where-Object { $destserver.Logins.Name -notcontains $_ }
 			
 			if ($missinglogin.count -gt 0)
 			{
@@ -132,8 +132,8 @@ Shows what would happen if the command were executed using force.
 				continue
 			}
 			
-			$proxynames = $job.JobSteps.ProxyName.Where{ $_.length -gt 0 }
-			$missingproxy = $proxynames.Where{ $destserver.JobServer.ProxyAccounts.Name -notcontains $_ }
+			$proxynames = $job.JobSteps.ProxyName | Where-Object { $_.length -gt 0 }
+			$missingproxy = $proxynames | Where-Object { $destserver.JobServer.ProxyAccounts.Name -notcontains $_ }
 			
 			if ($missingproxy.count -gt 0 -and $proxynames.count -gt 0)
 			{
@@ -147,6 +147,7 @@ Shows what would happen if the command were executed using force.
 				if ($force -eq $false)
 				{
 					Write-Warning "Job $jobname exists at destination. Use -Force to drop and migrate."
+					continue
 				}
 				else
 				{
