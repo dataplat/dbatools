@@ -247,7 +247,6 @@ the server name of the migrating instance is "sqlcluster", it will be switched t
 		
 		$SqlCmsGroups = $psboundparameters.SqlCmsGroups
 		
-		Write-Output "Connecting to SQL Servers"
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 		
