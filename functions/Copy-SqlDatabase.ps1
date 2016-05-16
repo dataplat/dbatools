@@ -501,10 +501,12 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			
 			####### Using Sql to detach does not modify the $database collection #######
 			
+			$server.KillAllProcesses($dbname)
 			
 			try
 			{
 				$sql = "ALTER DATABASE [$dbname] SET SINGLE_USER WITH ROLLBACK IMMEDIATE"
+				Write-Verbose $sql
 				$null = $server.ConnectionContext.ExecuteNonQuery($sql)
 				Write-Output "Successfully set $dbname to single-user from $source"
 			}
@@ -516,6 +518,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			try
 			{
 				$sql = "EXEC master.dbo.sp_detach_db N'$dbname'"
+				Write-Verbose $sql
 				$null = $server.ConnectionContext.ExecuteNonQuery($sql)
 				Write-Output "Successfully detached $dbname from $source"
 			}
@@ -604,7 +607,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				Write-Output "`n######### Database: $dbname #########"
 				$dbstart = Get-Date
 				
-				if ($skippedb.ContainsKey($dbname) -and $Databases -eq $null)
+				if ($exclude -and $Databases -eq $null)
 				{
 					Write-Output "`nSkipping $dbname"
 					continue
@@ -715,7 +718,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						if ($result -eq $true)
 						{
 							Write-Output "Successfully restored $dbname"
-							$migrateddb.Add($dbname, "Successfully migrated,$dbstart,$dbfinish")
+							
 							if (!$norecovery)
 							{
 								$result = Update-Sqldbowner $sourceserver $destserver -dbname $dbname
@@ -752,7 +755,6 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						
 						if ($result -eq $true)
 						{
-							$migrateddb.Add($dbname, "Successfully migrated,$dbstart,$dbfinish")
 							if (!$norecovery)
 							{
 								$result = Update-Sqldbowner $sourceserver $destserver -dbname $dbname
@@ -936,6 +938,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			{
 				$remotefilename = $dbdestination[$file].remotefilename
 				$from = $dbsource[$file].remotefilename
+				$fn = Split-Path $($dbdestination[$file].physical) -leaf
 				try
 				{
 					if (Test-Path $from -pathtype container)
@@ -956,7 +959,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						Write-Host "Copying $fn for $dbname"
 						Start-BitsTransfer -Source $from -Destination $remotefilename
 					}
-					$fn = Split-Path $($dbdestination[$file].physical) -leaf
+						
 				}
 				catch
 				{
@@ -1188,7 +1191,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			Write-Output "Migration completed: $(Get-Date)"
 			Write-Output "Total Elapsed time: $totaltime"
 			
-			if ($networkshare.length -gt 0 -and $migrateddb.count -gt 0)
+			if ($networkshare.length -gt 0)
 			{
 				Write-Warning "This script does not delete backup files. Backups still exist at $networkshare."
 			}
