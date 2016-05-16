@@ -83,12 +83,13 @@ filled with database list from specified SQL Server server.
 	
 	# Reusable parameter setup
 	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
 	
 	# Provide backwards compatability for improperly named parameter
 	# Scratch that. I'm going with plural. Sorry, Snoves!
 	$alias = New-Object System.Management.Automation.AliasAttribute "Database"
 	
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
 	$attributes.ParameterSetName = "__AllParameterSets"
 	$attributes.Mandatory = $false
 	$attributes.Position = 3
@@ -101,8 +102,13 @@ filled with database list from specified SQL Server server.
 	$attributeCollection.Add($alias)
 	$Databases = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Databases", [String[]], $attributeCollection)
 	
+	
+	$eattributes = New-Object System.Management.Automation.ParameterAttribute
+	$eattributes.ParameterSetName = "__AllParameterSets"
+	$eattributes.Mandatory = $false
+	$eattributes.Position = 20
 	$dbexcludeattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-	$dbexcludeattributes.Add($attributes)
+	$dbexcludeattributes.Add($eattributes)
 	if ($databaselist) { $dbexcludeattributes.Add($dbvalidationset) }
 	$Exclude = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Exclude", [String[]], $dbexcludeattributes)
 	
