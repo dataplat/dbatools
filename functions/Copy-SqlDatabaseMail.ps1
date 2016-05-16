@@ -352,8 +352,8 @@ Shows what would happen if the command were executed.
 		}
 		
 		Copy-SqlDatabaseMailConfig
-		Copy-SqlDatabaseMailProfile 
 		Copy-SqlDatabaseAccount
+		Copy-SqlDatabaseMailProfile
 		Copy-SqlDatabaseMailServer
 	}
 	
