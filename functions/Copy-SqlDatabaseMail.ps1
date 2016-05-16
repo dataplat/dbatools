@@ -266,7 +266,6 @@ Shows what would happen if the command were executed.
 						{
 							Write-Verbose "Dropping mail server $mailservername"
 							$destserver.Mail.Accounts.MailServers[$mailservername].Drop()
-							$destserver.Mail.Accounts.MailServers.Refresh()
 						}
 						catch
 						{
@@ -285,7 +284,6 @@ Shows what would happen if the command were executed.
 						$sql = $sql -replace "'$source'", "'$destination'"
 						Write-Verbose $sql
 						$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-						$destserver.Mail.Accounts.MailServers.Refresh()
 					}
 					catch
 					{
@@ -334,7 +332,6 @@ Shows what would happen if the command were executed.
 				
 				"MailServers" {
 					Copy-SqlDatabaseMailServer
-					$destserver.Mail.Accounts.MailServers.Refresh()
 				}
 			}
 			
@@ -364,7 +361,6 @@ Shows what would happen if the command were executed.
 			if ($mailServers.count -gt 0)
 			{
 				Copy-SqlDatabaseMailServer -MailServers $mailServers
-				$destserver.Mail.Accounts.MailServers.Refresh()
 			}
 			
 			return
@@ -377,7 +373,6 @@ Shows what would happen if the command were executed.
 		Copy-SqlDatabaseMailProfile
 		$destserver.Mail.Profiles.Refresh()
 		Copy-SqlDatabaseMailServer
-		$destserver.Mail.Accounts.MailServers.Refresh()
 	}
 	
 	end
