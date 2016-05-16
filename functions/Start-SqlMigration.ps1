@@ -36,7 +36,7 @@ Copies All Data Collector collection sets. Does not configure the server. Use -N
 
 This script provides the ability to migrate databases using detach/copy/attach or backup/restore. SQL Server logins, including passwords, SID and database/server roles can also be migrated. In addition, job server objects can be migrated and server configuration settings can be exported or migrated. This script works with named instances, clusters and SQL Express.
 
-By default, databases will be migrated to the destination SQL Server's default data and log directories. You can override this by specifying -ReuseFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.
+By default, databases will be migrated to the destination SQL Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
@@ -69,8 +69,8 @@ Uses the detach/copy/attach method to perform database migrations. No files are 
 .PARAMETER Reattach
 Reattaches all source databases after DetachAttach migration.
 
-.PARAMETER ReuseFolderStructure
-By default, databases will be migrated to the destination SQL Server's default data and log directories. You can override this by specifying -ReuseFolderStructure. The same structure will be kept exactly, so consider this if you're migrating between different versions and use part of Microsoft's default SQL structure (MSSQL12.INSTANCE, etc)
+.PARAMETER ReuseSourceFolderStructure
+By default, databases will be migrated to the destination SQL Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. The same structure will be kept exactly, so consider this if you're migrating between different versions and use part of Microsoft's default SQL structure (MSSQL12.INSTANCE, etc)
 
 .PARAMETER NetworkShare
 Specifies the network location for the backup files. The SQL Service service accounts must read/write permission to access this location.
@@ -189,7 +189,7 @@ Description
 All databases, logins, job objects and sp_configure options will be migrated from sqlserver\instance to sqlcluster. Databases will be migrated using the detach/copy files/attach method. Dbowner will be updated. User passwords, SIDs, database roles and server roles will be migrated along with the login.
 
 .EXAMPLE  
-Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -SourceSqlCredential $scred -ReuseFolderstructure -DestinationSqlCredential $cred -Force -NetworkShare \\fileserver\share\sqlbackups\Migration -BackupRestore
+Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -SourceSqlCredential $scred -ReuseSourceFolderStructure -DestinationSqlCredential $cred -Force -NetworkShare \\fileserver\share\sqlbackups\Migration -BackupRestore
 
 Migrate databases uses backup/restore. Also migrate logins, database mail, credentials, SQL Agent, Central Management Server, SQL global configuration.
 
@@ -206,24 +206,39 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 #>	
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	Param (
-		[parameter(Mandatory = $true)]
+		[parameter(Position=1, Mandatory = $true)]
 		[object]$Source,
-		[parameter(Mandatory = $true)]
+		[parameter(Position=2, Mandatory = $true)]
 		[object]$Destination,
+		[parameter(Position=3, Mandatory = $true, ParameterSetName = "DbAttachDetach")]
 		[switch]$DetachAttach,
-		[switch]$BackupRestore,
-		[switch]$ReuseFolderstructure,
+		[parameter(Position=4, ParameterSetName = "DbAttachDetach")]
 		[switch]$Reattach,
+		[parameter(Position=5, Mandatory = $true, ParameterSetName = "DbBackup")]
+		[switch]$BackupRestore,
+		[parameter(Position=6, Mandatory = $true, ParameterSetName = "DbBackup",
+				   HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and both Sql Server service accounts.")]
 		[string]$NetworkShare,
-		[switch]$SetSourceReadOnly,
-		[switch]$NoRecovery,
-		[Parameter(ParameterSetName = "DbBackup")]
+		[parameter(Position=7, ParameterSetName = "DbBackup")]
 		[switch]$WithReplace,
+		[parameter(Position=8, ParameterSetName = "DbBackup")]
+		[switch]$NoRecovery,
+		[parameter(Position=9, ParameterSetName = "DbBackup")]
+		[parameter(Position=10, ParameterSetName = "DbAttachDetach")]
+		[switch]$SetSourceReadOnly,
+		[Alias("ReuseFolderStructure")]
+		[parameter(Position=11, ParameterSetName = "DbBackup")]
+		[parameter(Position=12, ParameterSetName = "DbAttachDetach")]
+		[switch]$ReuseSourceFolderStructure,
+		[parameter(Position=13, ParameterSetName = "DbBackup")]
+		[parameter(Position=14, ParameterSetName = "DbAttachDetach")]
+		[switch]$IncludeSupportDbs,
+		[parameter(Position=15)]
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
+		[parameter(Position=16)]
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[Alias("SkipDatabases")]
 		[switch]$NoDatabases,
-		[Alias("SkipLogins")]
 		[switch]$NoLogins,
 		[Alias("SkipJobServer","NoJobServer")]
 		[switch]$NoAgentServer,
@@ -425,11 +440,11 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			{
 				if ($BackupRestore)
 				{
-					Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace
+					Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace
 				}
 				else
 				{
-					Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseFolderstructure:$ReuseFolderstructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force
+					Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force
 				}
 			}
 			catch { Write-Error "Database migration reported the following error $($_.Exception.Message)" }
