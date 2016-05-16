@@ -311,22 +311,22 @@ Shows what would happen if the command were executed.
 			{
 				"ConfigurationValues" {
 					Copy-SqlDatabaseMailConfig
-					$destserver.Mail.Refresh()
+					$destserver.Mail.ConfigurationValues.Refresh()
 				}
 				
 				"Profiles" {
 					Copy-SqlDatabaseMailProfile
-					$destserver.Mail.Refresh()
+					$destserver.Mail.Profiles.Refresh()
 				}
 				
 				"Accounts" {
 					Copy-SqlDatabaseAccount
-					$destserver.Mail.Refresh()
+					$destserver.Mail.Accounts.Refresh()
 				}
 				
 				"MailServers" {
 					Copy-SqlDatabaseMailServer
-					$destserver.Mail.Refresh()
+					$destserver.Mail.MailServers.Refresh()
 				}
 			}
 			
@@ -344,32 +344,32 @@ Shows what would happen if the command were executed.
 			if ($profiles.count -gt 0)
 			{
 				Copy-SqlDatabaseMailProfile -Profiles $profiles
-				$destserver.Mail.Refresh()
+				$destserver.Mail.Profiles.Refresh()
 			}
 			
 			if ($accounts.count -gt 0)
 			{
 				Copy-SqlDatabaseAccount -Accounts $accounts
-				$destserver.Mail.Refresh()
+				$destserver.Mail.Accounts.Refresh()
 			}
 			
 			if ($mailServers.count -gt 0)
 			{
 				Copy-SqlDatabaseMailServer -MailServers $mailServers
-				$destserver.Mail.Refresh()
+				$destserver.Mail.MailServers.Refresh()
 			}
 			
 			return
 		}
 		
 		Copy-SqlDatabaseMailConfig
-		$destserver.Mail.Refresh()
+		$destserver.Mail.ConfigurationValues.Refresh()
 		Copy-SqlDatabaseAccount
-		$destserver.Mail.Refresh()
+		$destserver.Mail.Accounts.Refresh()
 		Copy-SqlDatabaseMailProfile
-		$destserver.Mail.Refresh()
+		$destserver.Mail.Profiles.Refresh()
 		Copy-SqlDatabaseMailServer
-		$destserver.Mail.Refresh()
+		$destserver.Mail.MailServers.Refresh()
 	}
 	
 	end
