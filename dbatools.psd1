@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.0.0'
+	ModuleVersion = '0.8.0.1'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -68,13 +68,14 @@
 	NestedModules = @()
 	
 	# Functions to export from this module
-	FunctionsToExport = @('Copy-SqlCustomError','Copy-SqlAuditSpecification','Copy-SqlEndpoint', 'Copy-SqlAudit', 'Copy-SqlServerRole', 
-	'Copy-SqlResourceGovernor','Copy-SqlExtendedEvent', 'Copy-SqlBackupDevice', 'Copy-SqlServerTrigger', 'Copy-SqlLogin', 
-	'Copy-SqlLinkedServer', 'Copy-SqlCredential','Copy-SqlCentralManagementServer', 'Copy-SqlSysDbUserObjects', 'Copy-SqlDatabaseMail', 
-	'Copy-SqlDatabase', 'Copy-SqlServerAgent', 'Start-SqlMigration','Import-SqlSpConfigure', 'Export-SqlSpConfigure', 'Watch-SqlDbLogin', 
-	'Reset-SqlAdmin', 'Get-SqlServerKey', 'Set-SqlMaxMemory','Get-SqlMaxMemory', 'Get-DetachedDBInfo', 'Restore-HallengrenBackup', 
-	'Test-SqlConnection', 'Import-CsvToSql', 'Update-dbatools','Copy-SqlSpConfigure', 'Test-SqlPath', 'Copy-SqlDatabaseAssembly', 
-	'Copy-SqlPolicyManagement', 'Copy-SqlProxyAccount','Copy-SqlSharedSchedule','Copy-SqlAgentCategory','Copy-SqlAlert',
+	FunctionsToExport = @('Start-SqlMigration','Copy-SqlDatabase', 'Copy-SqlLogin', 'Copy-SqlServerAgent', 'Copy-SqlSpConfigure',
+	'Copy-SqlLinkedServer','Copy-SqlDatabaseMail', 'Get-SqlServerKey', 'Set-SqlMaxMemory', 'Reset-SqlAdmin',
+	'Copy-SqlCustomError','Copy-SqlAuditSpecification','Copy-SqlEndpoint', 'Copy-SqlAudit', 'Copy-SqlServerRole', 
+	'Copy-SqlResourceGovernor','Copy-SqlExtendedEvent', 'Copy-SqlBackupDevice', 'Copy-SqlServerTrigger', 
+	'Copy-SqlCredential','Copy-SqlCentralManagementServer', 'Copy-SqlSysDbUserObjects', 'Copy-SqlProxyAccount',
+	'Import-SqlSpConfigure', 'Export-SqlSpConfigure', 'Watch-SqlDbLogin', 'Get-SqlMaxMemory', 'Copy-SqlAlert',
+	'Get-DetachedDBInfo', 'Restore-HallengrenBackup', 'Test-SqlConnection', 'Import-CsvToSql', 'Copy-SqlAgentCategory',
+	'Update-dbatools', 'Test-SqlPath', 'Copy-SqlDatabaseAssembly', 'Copy-SqlPolicyManagement','Copy-SqlSharedSchedule',
 	'Copy-SqlOperator','Copy-SqlJob','Copy-SqlDataCollector')
 	
 	# 'Copy-SqlDataCollector',
