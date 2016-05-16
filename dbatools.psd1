@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.7.9.9'
+	ModuleVersion = '0.8.0.0'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -26,7 +26,7 @@
 	Copyright = '2016 Chrissy LeMaire'
 	
 	# Description of the functionality provided by this module
-	Description = 'Provides extra functionality for SQL Server Database admins'
+	Description = 'Provides extra functionality for SQL Server Database admins and enables SQL Server instance migrations.'
 	
 	# Minimum version of the Windows PowerShell engine required by this module
 	PowerShellVersion = '3.0'
