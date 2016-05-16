@@ -14,7 +14,7 @@ Required. The SQL Server to which you will be restoring the databases.
 .PARAMETER Path
 Required. The directory that contains the database backups (ex. \\fileserver\share\sqlbackups\SQLSERVERA)
 
-.PARAMETER ReuseFolderStructure
+.PARAMETER ReuseSourceFolderStructure
 Restore-HallengrenBackup will restore to the default user data and log directories, unless this switch is used. Useful if you're restoring from a server that had a complex db file structure.
 
 .PARAMETER Databases
@@ -73,7 +73,8 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 		[parameter(Mandatory = $true)]
 		[string]$Path,
 		[switch]$NoRecovery,
-		[switch]$ReuseFolderStructure,
+		[Alias("ReuseFolderStructure")]
+		[switch]$ReuseSourceFolderStructure,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$Force
 		
@@ -205,7 +206,7 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 			try { $filelist = $restore.ReadFileList($server) }
 			catch { throw "File list could not be determined. This is likely due to connectivity issues or tiemouts with the SQL Server, the database version is incorrect, or the SQL Server service account does not have access to the file share. Script terminating." }
 			
-			$filestructure = Get-OfflineSqlFileStructure $server $dbname $filelist $ReuseFolderstructure
+			$filestructure = Get-OfflineSqlFileStructure $server $dbname $filelist $ReuseSourceFolderStructure
 			
 			if ($filestructure -eq $false)
 			{
