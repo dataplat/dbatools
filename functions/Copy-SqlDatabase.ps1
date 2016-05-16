@@ -7,7 +7,7 @@ Migrates Sql Server databases from one Sql Server to another.
 .DESCRIPTION 
 This script provides the ability to migrate databases using detach/copy/attach or backup/restore. This script works with named instances, clusters and Sql Express.
 
-By default, databases will be migrated to the destination Sql Server's default data and log directories. You can override this by specifying -ReuseFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.
+By default, databases will be migrated to the destination Sql Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
@@ -31,7 +31,7 @@ $dcred = Get-Credential, this pass this $dcred to the param.
 
 Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
-.PARAMETER All
+.PARAMETER AllDatabases
 This is a parameter that was included for safety, so you don't accidentally detach/attach all databases without specifying. Migrates user databases. Does not migrate system or support databases. Requires -BackupRestore or -DetachAttach. 
 
 .PARAMETER IncludeSupportDbs
@@ -46,9 +46,9 @@ Uses the detach/copy/attach method to perform database migrations. No files are 
 .PARAMETER Reattach
 Reattaches all source databases after DetachAttach migration.
 
-.PARAMETER ReuseFolderStructure
+.PARAMETER ReuseSourceFolderStructure
 By default, databases will be migrated to the destination Sql Server's default data and log directories. 
-You can override this by specifying -ReuseFolderStructure. 
+You can override this by specifying -ReuseSourceFolderStructure. 
 The same structure on the SOURCE will be kept exactly, so consider this if you're migrating between 
 different versions and use part of Microsoft's default Sql structure (MSSql12.INSTANCE, etc)
 
@@ -58,7 +58,7 @@ different versions and use part of Microsoft's default Sql structure (MSSql12.IN
 Specifies the network location for the backup files. The Sql Service service accounts must read/write permission to access this location.
 
 .PARAMETER Exclude
-Excludes specified databases when performing -All migrations. This list is auto-populated for tab completion.
+Excludes specified databases when performing -AllDatabases migrations. This list is auto-populated for tab completion.
 
 .PARAMETER Database
 Migrates ONLY specified databases. This list is auto-populated for tab completion. Multiple databases are allowed.
@@ -122,38 +122,45 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 #>	
 	[CmdletBinding(DefaultParameterSetName = "DbMigration", SupportsShouldProcess = $true)]
 	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $True)]
+		[parameter(Position = 1, Mandatory = $true, ValueFromPipeline = $True)]
 		[object]$Source,
-		[parameter(Mandatory = $true)]
+		[parameter(Position = 2, Mandatory = $true)]
 		[object]$Destination,
-		[Parameter(Mandatory = $true, ParameterSetName = "DbAttachDetach")]
+		# Skips to 4 because dynamic param Databases is su pposed to go here but it doesn't work.
+
+		[Alias("All")]
+		[parameter(Position = 4, ParameterSetName = "DbBackup")]
+		[parameter(Position = 4, ParameterSetName = "DbAttachDetach")]
+		[switch]$AllDatabases,
+		[parameter(Position = 5, Mandatory = $true, ParameterSetName = "DbAttachDetach")]
 		[switch]$DetachAttach,
-		[Parameter(Mandatory = $true, ParameterSetName = "DbBackup")]
-		[switch]$BackupRestore,
-		[Parameter(ParameterSetName = "DbBackup")]
-		[Parameter(ParameterSetName = "DbAttachDetach")]
-		[switch]$ReuseFolderstructure,
-		[Parameter(ParameterSetName = "DbBackup")]
-		[Parameter(ParameterSetName = "DbAttachDetach")]
-		[switch]$All,
-		[Parameter(ParameterSetName = "DbBackup")]
-		[Parameter(ParameterSetName = "DbAttachDetach")]
-		[switch]$IncludeSupportDbs,
-		[Parameter(ParameterSetName = "DbAttachDetach")]
+		[parameter(Position = 6, ParameterSetName = "DbAttachDetach")]
 		[switch]$Reattach,
-		[Parameter(Mandatory = $true, ParameterSetName = "DbBackup",
+		[parameter(Position = 7, Mandatory = $true, ParameterSetName = "DbBackup")]
+		[switch]$BackupRestore,
+		[parameter(Position = 8, Mandatory = $true, ParameterSetName = "DbBackup",
 				   HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and both Sql Server service accounts.")]
 		[string]$NetworkShare,
-		[Parameter(ParameterSetName = "DbBackup")]
-		[Parameter(ParameterSetName = "DbAttachDetach")]
-		[switch]$SetSourceReadOnly,
-		[Parameter(ParameterSetName = "DbBackup")]
-		[switch]$NoRecovery,
-		[Parameter(ParameterSetName = "DbBackup")]
+		[parameter(Position = 9, ParameterSetName = "DbBackup")]
 		[switch]$WithReplace,
-		[switch]$Force,
+		[parameter(Position = 10, ParameterSetName = "DbBackup")]
+		[switch]$NoRecovery,
+		[parameter(Position = 11, ParameterSetName = "DbBackup")]
+		[parameter(Position = 12, ParameterSetName = "DbAttachDetach")]
+		[switch]$SetSourceReadOnly,
+		[Alias("ReuseFolderStructure")]
+		[parameter(Position = 13, ParameterSetName = "DbBackup")]
+		[parameter(Position = 14, ParameterSetName = "DbAttachDetach")]
+		[switch]$ReuseSourceFolderStructure,
+		[parameter(Position = 15, ParameterSetName = "DbBackup")]
+		[parameter(Position = 16, ParameterSetName = "DbAttachDetach")]
+		[switch]$IncludeSupportDbs,
+		[parameter(Position = 17)]
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
+		[parameter(Position = 18)]
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+		[parameter(Position = 19)]
+		[switch]$Force,
 		[parameter(ValueFromPipeline = $true, DontShow)]
 		[object]$pipedatabase
 	)
@@ -161,7 +168,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 	DynamicParam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential } }
 	
 	BEGIN
-	{	
+	{
 		Function Get-SqlFileStructure
 		{
 			$dbcollection = @{ };
@@ -184,7 +191,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					{
 						# Destination File Structure
 						$d = @{ }
-						if ($ReuseFolderstructure)
+						if ($ReuseSourceFolderStructure)
 						{
 							$d.physical = $file.filename
 						}
@@ -218,7 +225,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						$name = $ftc.name
 						$physical = $ftc.RootPath
 						$logical = "$pre$name"
-						if ($ReuseFolderstructure)
+						if ($ReuseSourceFolderStructure)
 						{
 							$d.physical = $physical
 						}
@@ -252,7 +259,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				foreach ($file in $db.logfiles)
 				{
 					$d = @{ }
-					if ($ReuseFolderstructure)
+					if ($ReuseSourceFolderStructure)
 					{
 						$d.physical = $file.filename
 					}
@@ -288,13 +295,13 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		{
 			[CmdletBinding()]
 			param (
-				[Parameter(Mandatory = $true)]
+				[parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[object]$server,
-				[Parameter(Mandatory = $true)]
+				[parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[string]$dbname,
-				[Parameter(Mandatory = $true)]
+				[parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[string]$backupfile
 			)
@@ -338,16 +345,16 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		{
 			[CmdletBinding()]
 			param (
-				[Parameter(Mandatory = $true)]
+				[parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[object]$server,
-				[Parameter(Mandatory = $true)]
+				[parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[string]$dbname,
-				[Parameter(Mandatory = $true)]
+				[parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[string]$backupfile,
-				[Parameter(Mandatory = $true)]
+				[parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[object]$filestructure
 				
@@ -407,7 +414,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		Function Start-SqlBackupRestore
 		{
 			
-			$filestructure = Get-SqlFileStructure $sourceserver $destserver $ReuseFolderstructure
+			$filestructure = Get-SqlFileStructure $sourceserver $destserver $ReuseSourceFolderStructure
 			$filename = "$dbname-$timenow.bak"
 			$backupfile = Join-Path $networkshare $filename
 			
@@ -427,10 +434,10 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				else
 				{
 					# RESTORE was unsuccessful
-					if ($ReuseFolderStructure)
+					if ($ReuseSourceFolderStructure)
 					{
-						Write-Error "Failed to restore $dbname to $destination. You specified -ReuseFolderStructure. Does the exact same destination directory structure exist?"
-						return "Failed to restore $dbname to $destination using ReuseFolderStructure."
+						Write-Error "Failed to restore $dbname to $destination. You specified -ReuseSourceFolderStructure. Does the exact same destination directory structure exist?"
+						return "Failed to restore $dbname to $destination using ReuseSourceFolderStructure."
 					}
 					else
 					{
@@ -453,10 +460,10 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		{
 			[CmdletBinding()]
 			param (
-				[Parameter(Mandatory = $true)]
+				[parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[object]$server,
-				[Parameter(Mandatory = $true)]
+				[parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[string]$dbname
 				
@@ -581,7 +588,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			$SupportDBs = "ReportServer", "ReportServerTempDB", "distribution"
 			$sa = $changedbowner
 			
-			$filestructure = Get-SqlFileStructure $sourceserver $destserver $ReuseFolderstructure
+			$filestructure = Get-SqlFileStructure $sourceserver $destserver $ReuseSourceFolderStructure
 			
 			foreach ($database in $sourceserver.databases)
 			{
@@ -601,7 +608,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				if ($IncludeSupportDBs -eq $false -and $SupportDBs -contains $dbname) { continue }
 				if ($IncludeSupportDBs -eq $true -and $SupportDBs -notcontains $dbname)
 				{
-					if ($All -eq $false -and $Databases.length -eq 0) { continue }
+					if ($AllDatabases -eq $false -and $Databases.length -eq 0) { continue }
 				}
 				
 				Write-Output "`n######### Database: $dbname #########"
@@ -625,14 +632,14 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					continue
 				}
 				
-				if ($ReuseFolderstructure)
+				if ($ReuseSourceFolderStructure)
 				{
 					$remotepath = Split-Path ($database.FileGroups[0].Files.FileName)
 					$remotepath = Join-AdminUNC $destnetbios $remotepath
 					
 					if (!(Test-Path $remotepath))
 					{
-						throw "Cannot resolve $remotepath. `n`nYou have specified ReuseFolderstructure and exact folder structure does not exist. Halting script."
+						throw "Cannot resolve $remotepath. `n`nYou have specified ReuseSourceFolderStructure and exact folder structure does not exist. Halting script."
 					}
 				}
 				
@@ -893,16 +900,16 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		{
 			[CmdletBinding()]
 			param (
-				[Parameter(Mandatory = $true)]
+				[parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[object]$server,
-				[Parameter(Mandatory = $true)]
+				[parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[string]$dbname,
-				[Parameter(Mandatory = $true)]
+				[parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[object]$filestructure,
-				[Parameter(Mandatory = $true)]
+				[parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[string]$dbowner
 			)
@@ -960,7 +967,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						Write-Host "Copying $fn for $dbname"
 						Start-BitsTransfer -Source $from -Destination $remotefilename
 					}
-						
+					
 				}
 				catch
 				{
@@ -1081,7 +1088,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			throw "Source and Destination Sql Servers are the same. Quitting."
 		}
 		
-		if (($All -or $IncludeSupportDbs -or $Databases) -and !$DetachAttach -and !$BackupRestore)
+		if (($AllDatabases -or $IncludeSupportDbs -or $Databases) -and !$DetachAttach -and !$BackupRestore)
 		{
 			throw "You must specify -DetachAttach or -BackupRestore when migrating databases."
 		}
@@ -1144,9 +1151,9 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			throw "You did not select a migration method. Please use -BackupRestore or -DetachAttach"
 		}
 		
-		if ((!$Databases -and !$All -and !$IncludeSupportDbs) -and ($DetachAttach -or $BackupRestore))
+		if ((!$Databases -and !$AllDatabases -and !$IncludeSupportDbs) -and ($DetachAttach -or $BackupRestore))
 		{
-			throw "You did not select any databases to migrate. Please use -All or -Databases or -IncludeSupportDbs"
+			throw "You did not select any databases to migrate. Please use -AllDatabases or -Databases or -IncludeSupportDbs"
 		}
 		
 		# SMO's filestreamlevel is sometimes null
@@ -1163,20 +1170,20 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		Run
 	---------------------------------------------------------- #>
 		$alldbelapsed = [System.Diagnostics.Stopwatch]::StartNew()
-
-		if ($All -or $Exclude.length -gt 0 -or $IncludeSupportDbs -or $Databases.length -gt 0)
+		
+		if ($AllDatabases -or $Exclude.length -gt 0 -or $IncludeSupportDbs -or $Databases.length -gt 0)
 		{
 			$params = @{
 				Sourceserver = $sourceserver
 				Destserver = $destserver
-				All = $All
+				All = $AllDatabases
 				Databases = $Databases
 				Exclude = $Exclude
 				IncludeSupportDbs = $IncludeSupportDbs
 				Force = $force
 			}
 			
-			Copy-SqlDatabase $params
+			Copy-SqlDatabase
 		}
 	}
 	
