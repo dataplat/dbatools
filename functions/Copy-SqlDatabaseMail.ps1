@@ -137,7 +137,10 @@ Shows what would happen if the command were executed.
 			foreach ($account in $sourceaccounts)
 			{
 				$accountname = $account.name
-				if ($accounts.count -gt 0 -and $accounts -notcontains $accountname) { continue }
+				if ($accounts.count -gt 0 -and $accounts -notcontains $accountname)
+				{
+					continue
+				}
 				
 				if ($destaccounts.name -contains $accountname)
 				{
@@ -155,7 +158,8 @@ Shows what would happen if the command were executed.
 							$destserver.Mail.Accounts[$accountname].Drop()
 							$destserver.Mail.Accounts.Refresh()
 						}
-						catch {
+						catch
+						{
 							Write-Exception $_
 							continue
 						}
@@ -209,7 +213,8 @@ Shows what would happen if the command were executed.
 							$destserver.Mail.Profiles[$profilename].Drop()
 							$destserver.Mail.Profiles.Refresh()
 						}
-						catch {
+						catch
+						{
 							Write-Exception $_
 							continue
 						}
@@ -263,7 +268,8 @@ Shows what would happen if the command were executed.
 							$destserver.Mail.Accounts.MailServers[$mailservername].Drop()
 							$destserver.Mail.Accounts.MailServers.Refresh()
 						}
-						catch {
+						catch
+						{
 							Write-Exception $_
 							continue
 						}
@@ -371,7 +377,7 @@ Shows what would happen if the command were executed.
 		Copy-SqlDatabaseMailProfile
 		$destserver.Mail.Profiles.Refresh()
 		Copy-SqlDatabaseMailServer
-		$destserver.Mail.MailServers.Refresh()
+		$destserver.Mail.Accounts.MailServers.Refresh()
 	}
 	
 	end
