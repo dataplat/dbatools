@@ -150,16 +150,16 @@ https://dbatools.io/Sync-SqlLoginPermissions
 				{
 					if ($destrole -ne $null)
 					{
-						If ($Pscmdlet.ShouldProcess($destination, "Adding $username to$rolename server role"))
+						If ($Pscmdlet.ShouldProcess($destination, "Adding $username to $rolename server role"))
 						{
 							try
 							{
 								$destrole.AddMember($username)
-								Write-Output "Added $username to$rolename server role."
+								Write-Output "Added $username to $rolename server role."
 							}
 							catch
 							{
-								Write-Warning "Failed to add $username to$rolename server role."
+								Write-Warning "Failed to add $username to $rolename server role."
 								Write-Exception $_
 							}
 						}
@@ -169,7 +169,7 @@ https://dbatools.io/Sync-SqlLoginPermissions
 				# Remove for Syncs
 				if ($rolemembers -notcontains $username -and $destrolemembers -contains $username -and $destrole -ne $null)
 				{
-					If ($Pscmdlet.ShouldProcess($destination, "Adding $username to$rolename server role"))
+					If ($Pscmdlet.ShouldProcess($destination, "Adding $username to $rolename server role"))
 					{
 						try
 						{
@@ -433,18 +433,18 @@ https://dbatools.io/Sync-SqlLoginPermissions
 							$destdbrole = $destdb.roles[$rolename]
 							if ($destdbrole -ne $null -and $dbusername -ne "dbo" -and $destdbrole.EnumMembers() -notcontains $username)
 							{
-								If ($Pscmdlet.ShouldProcess($destination, "Adding $username to$rolename database role on $dbname"))
+								If ($Pscmdlet.ShouldProcess($destination, "Adding $username to $rolename database role on $dbname"))
 								{
 									try
 									{
 										$destdbrole.AddMember($username)
 										$destdb.Alter()
-										Write-Output "Added $username to$rolename database role on $dbname."
+										Write-Output "Added $username to $rolename database role on $dbname."
 										
 									}
 									catch
 									{
-										Write-Warning "Failed to add $username to$rolename database role on $dbname."
+										Write-Warning "Failed to add $username to $rolename database role on $dbname."
 										Write-Exception $_
 									}
 								}
