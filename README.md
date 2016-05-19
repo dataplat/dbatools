@@ -67,4 +67,4 @@ A few important notes
 
 dbatools.io is awesome
 --------------
-I documented the module in its entirety pretty much, using markdown, at [dbatools.io](https://dbatools.io). Please go visit there, it's pretty. To skip right to the documentation, [visit the functions page](dbatools.io)
+I documented the module in its entirety pretty much, using markdown, at [dbatools.io](https://dbatools.io). Please go visit there, it's pretty. To skip right to the documentation, [visit the functions page](https://dbatools.io/functions/)
