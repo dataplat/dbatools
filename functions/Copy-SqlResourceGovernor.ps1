@@ -110,17 +110,24 @@ Shows what would happen if the command were executed.
 		
 		if ($Pscmdlet.ShouldProcess($destination, "Updating Resource Governor settings"))
 		{
-			try
+			if ($destserver.Edition -notmatch 'Enterprise' -and $destserver.Edition -notmatch 'Datacenter' -and $destserver.Edition -notmatch 'Developer')
 			{
-				$sql = $sourceserver.resourceGovernor.Script() | Out-String
-				$sql = $sql -replace "'$source'", "'$destination'"
-				Write-Verbose $sql
-				Write-Output "Updating Resource Governor settings"
-				$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
+				Write-Warning "The resource governor is not available in this edition of SQL Server. You can manipulate resource governor metadata but you will not be able to apply resource governor configuration. Only Enterprise edition of SQL Server supports resource governor."
 			}
-			catch
+			else
 			{
-				Write-Exception $_
+				try
+				{
+					$sql = $sourceserver.resourceGovernor.Script() | Out-String
+					$sql = $sql -replace "'$source'", "'$destination'"
+					Write-Verbose $sql
+					Write-Output "Updating Resource Governor settings"
+					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
+				}
+				catch
+				{
+					Write-Exception $_
+				}
 			}
 		}
 		
@@ -206,10 +213,7 @@ Shows what would happen if the command were executed.
 		{
 			if ($destserver.Edition -notmatch 'Enterprise' -and $destserver.Edition -notmatch 'Datacenter' -and $destserver.Edition -notmatch 'Developer')
 			{
-				Write-Warning "The resource governor is not available in this edition of SQL Server. 
-								You can manipulate resource governor metadata but you will not be able 
-								to apply resource governor configuration. Only Enterprise edition of SQL Server 
-								supports resource governor."
+				Write-Warning "The resource governor is not available in this edition of SQL Server. You can manipulate resource governor metadata but you will not be able to apply resource governor configuration. Only Enterprise edition of SQL Server supports resource governor."
 			}
 			else
 			{
