@@ -204,9 +204,19 @@ Shows what would happen if the command were executed.
 		
 		if ($Pscmdlet.ShouldProcess($destination, "Reconfiguring"))
 		{
-			Write-Output "Reconfiguring Resource Governor"
-			$sql = "ALTER RESOURCE GOVERNOR RECONFIGURE"
-			$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
+			if ($destserver.Edition -notmatch 'Enterprise' -and $destserver.Edition -notmatch 'Datacenter' -and $destserver.Edition -notmatch 'Developer')
+			{
+				Write-Warning "The resource governor is not available in this edition of SQL Server. 
+								You can manipulate resource governor metadata but you will not be able 
+								to apply resource governor configuration. Only Enterprise edition of SQL Server 
+								supports resource governor."
+			}
+			else
+			{
+				Write-Output "Reconfiguring Resource Governor"
+				$sql = "ALTER RESOURCE GOVERNOR RECONFIGURE"
+				$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
+			}
 		}
 		
 	}
