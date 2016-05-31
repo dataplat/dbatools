@@ -142,7 +142,18 @@ Internal function.
 	
 	PROCESS
 	{
-		
+	        # Before we continue, we need confirmation.
+	        Write-Output "SQL Server needs to restart several times during this process. Databases will be inaccessable in a short period of time."
+	        write-Output "Be sure that your applications won't stop working after changing password on an existing user."
+			do { $confirm = Read-Host "Enter Y to continue, N to quit" }
+			while ($confirm -notin ('Y','N'))	
+	        
+	        if($confirm -eq 'N'){
+	            Write-host "Script terminated!"
+	            Exit
+	        }
+	        # No need to check Y since While loop won't exit before N or Y is entered. 
+	        
 		# Get hostname
 		$baseaddress = $sqlserver.Split("\")[0]
 		if ($baseaddress -eq "." -or $baseaddress -eq $env:COMPUTERNAME)
