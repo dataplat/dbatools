@@ -430,6 +430,7 @@ https://dbatools.io/Sync-SqlLoginPermissions
 					{
 						if ($role.EnumMembers() -contains $username)
 						{
+							$rolename = $role.name
 							$destdbrole = $destdb.roles[$rolename]
 							if ($destdbrole -ne $null -and $dbusername -ne "dbo" -and $destdbrole.EnumMembers() -notcontains $username)
 							{

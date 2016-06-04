@@ -691,7 +691,9 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 					{
 						if ($role.EnumMembers() -contains $username)
 						{
+							$rolename = $role.name
 							$destdbrole = $destdb.roles[$rolename]
+							
 							if ($destdbrole -ne $null -and $dbusername -ne "dbo" -and $destdbrole.EnumMembers() -notcontains $username)
 							{
 								If ($Pscmdlet.ShouldProcess($destination, "Adding $username to $rolename database role on $dbname"))
@@ -741,11 +743,11 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 		
 		Function Sync-Only
 		{
-<#
-.SYNOPSIS
-Internal function. Skips migration, and just syncs permission sets, roles, database mappings on server and databases
+			<#
+			.SYNOPSIS
+			Internal function. Skips migration, and just syncs permission sets, roles, database mappings on server and databases
 
-#>
+			#>
 			[CmdletBinding()]
 			param (
 				[Parameter(Mandatory = $true)]
