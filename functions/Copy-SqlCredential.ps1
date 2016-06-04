@@ -197,10 +197,18 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 						$conn.Dispose()
 						return $dt
 					}
-					catch { throw "Can't open DAC connection :(" }
+					catch 
+					{
+						Write-Warning "Can't establish local DAC connection to $sourcename from $sourcename or other error. Quitting." 
+						Write-Exception $_
+					}
 				}
 			}
-			catch { throw "Can't establish DAC connection to $sourcename from $sourcename. Quitting." }
+			catch 
+			{
+				Write-Warning "Can't establish local DAC connection to $sourcename from $sourcename or other error. Quitting." 
+				Write-Exception $_
+			}
 			
 			$decryptedlogins = New-Object "System.Data.DataTable"
 			[void]$decryptedlogins.Columns.Add("Credential")

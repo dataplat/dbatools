@@ -189,7 +189,11 @@ License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
 					return $dt
 				}
 			}
-			catch { throw "Can't establish DAC connection to $sourcename from $sourcename. Quitting." }
+			catch 
+			{
+				Write-Warning "Can't establish local DAC connection to $sourcename from $sourcename or other error. Quitting." 
+				Write-Exception $_
+			}
 			
 			$decryptedlogins = New-Object "System.Data.DataTable"
 			[void]$decryptedlogins.Columns.Add("LinkedServer")
