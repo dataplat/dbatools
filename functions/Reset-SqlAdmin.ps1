@@ -39,6 +39,9 @@ currently exist, it will be added.
 When adding a Windows login to remote servers, ensure the SQL Server can add the login (ie, don't add WORKSTATION\Admin to remoteserver\instance. Domain users and 
 Groups are valid input.
 
+.PARAMETER Force
+By default, a confirmation is presented to ensure the person executing the script knows that a service restart will occur. Force basically performs a -Confirm:$false. This will restart the SQL Service without prompting.
+
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: Admin access to server (not SQL Services), 
@@ -71,13 +74,15 @@ Prompts for password, then resets the "sa" account password on sqlcluster.
 .EXAMPLE   
 Reset-SqlAdmin -SqlServer sqlserver\sqlexpress -Login ad\administrator
 
+Prompts user to confirm that they understand the SQL Service will be restarted.
+
 Adds the domain account "ad\administrator" as a sysadmin to the SQL instance. 
 If the account already exists, it will be added to the sysadmin role.
 
 .EXAMPLE   
-Reset-SqlAdmin -SqlServer sqlserver\sqlexpress -Login sqladmin
+Reset-SqlAdmin -SqlServer sqlserver\sqlexpress -Login sqladmin -Force
 
-Prompts for passsword, then adds a SQL Login "sqladmin" with sysadmin privleges. 
+Skips restart confirmation, prompts for passsword, then adds a SQL Login "sqladmin" with sysadmin privleges. 
 If the account already exists, it will be added to the sysadmin role and the password will be reset.
 
 #>	
@@ -85,7 +90,8 @@ If the account already exists, it will be added to the sysadmin role and the pas
 	param (
 		[Parameter(Mandatory = $true)]
 		[string]$SqlServer,
-		[string]$Login = "sa"
+		[string]$Login = "sa",
+		[switch]$Force
 	)
 	
 	BEGIN
@@ -142,11 +148,15 @@ Internal function.
 	
 	PROCESS
 	{
+			if ($Force) { $ConfirmPreference="none" }
+			
+			$baseaddress = $sqlserver.Split("\")[0]
+			
 	        # Before we continue, we need confirmation.
-	        if ($pscmdlet.ShouldProcess($SqlServer, "Reset-SqlAdmin (Instance will restart)"))
+	        if ($pscmdlet.ShouldProcess($baseaddress, "Reset-SqlAdmin (SQL Server instance $sqlserver will restart)"))
 	        {
 			# Get hostname
-			$baseaddress = $sqlserver.Split("\")[0]
+			
 			if ($baseaddress -eq "." -or $baseaddress -eq $env:COMPUTERNAME)
 			{
 				$ipaddr = "."
