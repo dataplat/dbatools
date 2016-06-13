@@ -126,7 +126,7 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 			try { $smkbytes = $server.ConnectionContext.ExecuteScalar($sql) }
 			catch { throw "Can't execute SQL on $sourcename" }
 			
-			$sourcenetbios = Get-NetBiosName $server
+			$sourcenetbios = Resolve-NetBiosName $server
 			$instance = $server.InstanceName
 			$serviceInstanceId = $server.serviceInstanceId
 			
@@ -348,7 +348,7 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 		
 		
 		Write-Output "Getting NetBios name"
-		$sourcenetbios = Get-NetBiosName $sourceserver
+		$sourcenetbios = Resolve-NetBiosName $sourceserver
 		
 		Write-Output "Checking if remote access is enabled"
 		winrm id -r:$sourcenetbios 2>$null | Out-Null

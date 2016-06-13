@@ -197,8 +197,8 @@ Internal function.
 			$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 			$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 			
-			$sourcenetbios = Get-NetBIOSName $sourceserver
-			$destnetbios = Get-NetBIOSName $destserver
+			$sourcenetbios = Resolve-NetBiosName $sourceserver
+			$destnetbios = Resolve-NetBiosName $destserver
 			
 			$dbcollection = @{ };
 			
@@ -635,9 +635,9 @@ Internal function.
 			
 			Write-Output "Checking access to remote directories..."
 			Write-Output "Resolving NetBIOS name for $source..."
-			$sourcenetbios = Get-NetBIOSName $sourceserver
+			$sourcenetbios = Resolve-NetBiosName $sourceserver
 			Write-Output "Resolving NetBIOS name for $destination..."
-			$destnetbios = Get-NetBIOSName $destserver
+			$destnetbios = Resolve-NetBiosName $destserver
 			$remotesourcepath = Join-AdminUNC $sourcenetbios (Get-SqlDefaultPaths $sourceserver data)
 			
 			If ((Test-Path $remotesourcepath) -ne $true -and $DetachAttach)

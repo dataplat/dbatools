@@ -121,7 +121,7 @@ License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
 			try { $smkbytes = $server.ConnectionContext.ExecuteScalar($sql) }
 			catch { throw "Can't execute SQL on $sourcename" }
 			
-			$sourcenetbios = Get-NetBiosName $server
+			$sourcenetbios = Resolve-NetBiosName $server
 			$instance = $server.InstanceName
 			$serviceInstanceId = $server.serviceInstanceId
 			
@@ -377,7 +377,7 @@ Internal function.
 		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 		
 		Write-Output "Getting NetBios name"
-		$sourcenetbios = Get-NetBiosName $sourceserver
+		$sourcenetbios = Resolve-NetBiosName $sourceserver
 		
 		Write-Output "Checking if remote access is enabled"
 		winrm id -r:$sourcenetbios 2>$null | Out-Null

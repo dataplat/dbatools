@@ -98,8 +98,8 @@ Shows what would happen if the command were executed using force.
 		$destbackupdevices = $destserver.BackupDevices
 		
 		Write-Output "Resolving NetBios name"
-		$destnetbios = Get-NetBiosName $destserver
-		$sourcenetbios = Get-NetBiosName $sourceserver
+		$destnetbios = Resolve-NetBiosName $destserver
+		$sourcenetbios = Resolve-NetBiosName $sourceserver
 		
 	}
 	PROCESS

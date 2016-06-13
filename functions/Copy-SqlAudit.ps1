@@ -160,7 +160,7 @@ Shows what would happen if the command were executed using force.
 				{
 					Write-Verbose "Force specified. Creating directory."
 					
-					$destnetbios = Get-NetBiosName $destserver
+					$destnetbios = Resolve-NetBiosName $destserver
 					$path = Join-AdminUnc $destnetbios $audit.Filepath
 					$root = $audit.Filepath.Substring(0, 3)
 					$rootunc = Join-AdminUnc $destnetbios $root
