@@ -42,6 +42,8 @@ Shows what would happen if the command were executed using force.
 		$serveroperators = $sourceserver.JobServer.Operators
 		$destoperators = $destserver.JobServer.Operators
 		
+		$failsafe = $server.jobserver.alertsystem | Select failsafeoperator
+		
 		foreach ($operator in $serveroperators)
 		{
 			$operatorname = $operator.name
@@ -56,6 +58,12 @@ Shows what would happen if the command were executed using force.
 				}
 				else
 				{
+					if ($failsafe.FailSafeOperator -eq $operatorname)
+					{
+						Write-Warning "$operatorname is the failsafe operator. Skipping drop."
+						continue
+					}
+					
 					If ($Pscmdlet.ShouldProcess($destination, "Dropping operator $operatorname and recreating"))
 					{
 						try
