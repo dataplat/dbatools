@@ -189,6 +189,7 @@ Shows what would happen if the command were executed using force.
 				if ($DisableOnDestination)
 				{
 					Write-Output "Disabling $jobname on $destination"
+					$destserver.JobServer.Jobs.Refresh()
 					$destserver.JobServer.Jobs[$job.name].IsEnabled = $False
 				}
 				

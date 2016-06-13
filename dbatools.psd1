@@ -76,7 +76,7 @@
 	'Import-SqlSpConfigure', 'Export-SqlSpConfigure', 'Watch-SqlDbLogin', 'Get-SqlMaxMemory', 'Copy-SqlAlert',
 	'Get-DetachedDBInfo', 'Restore-HallengrenBackup', 'Test-SqlConnection', 'Import-CsvToSql', 'Copy-SqlAgentCategory',
 	'Update-dbatools', 'Test-SqlPath', 'Copy-SqlDatabaseAssembly', 'Copy-SqlPolicyManagement','Copy-SqlSharedSchedule',
-	'Copy-SqlOperator','Copy-SqlJob','Copy-SqlDataCollector','Sync-SqlLoginPermissions')
+	'Copy-SqlOperator','Copy-SqlJob','Copy-SqlDataCollector','Sync-SqlLoginPermissions', 'Export-SqlLogin')
 	
 	# 'Copy-SqlDataCollector',
 	
