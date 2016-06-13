@@ -50,6 +50,7 @@ Get-DetachedDbInfo -SqlServer sqlserver -SqlCredential $SqlCredential -MDF M:\Ar
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	Param (
 		[parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[string]$SqlServer,
 		[parameter(Mandatory = $true)]
 		[string]$MDF,
@@ -64,6 +65,7 @@ Get-DetachedDbInfo -SqlServer sqlserver -SqlCredential $SqlCredential -MDF M:\Ar
 			param (
 				[Parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
+				[Alias("ServerInstance","SqlInstance")]
 				[object]$SqlServer,
 				[string]$mdf,
 				[System.Management.Automation.PSCredential]$SqlCredential
