@@ -206,41 +206,41 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 #>	
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	Param (
-		[parameter(Position=1, Mandatory = $true)]
+		[parameter(Position = 1, Mandatory = $true)]
 		[object]$Source,
-		[parameter(Position=2, Mandatory = $true)]
+		[parameter(Position = 2, Mandatory = $true)]
 		[object]$Destination,
-		[parameter(Position=3, Mandatory = $true, ParameterSetName = "DbAttachDetach")]
+		[parameter(Position = 3, Mandatory = $true, ParameterSetName = "DbAttachDetach")]
 		[switch]$DetachAttach,
-		[parameter(Position=4, ParameterSetName = "DbAttachDetach")]
+		[parameter(Position = 4, ParameterSetName = "DbAttachDetach")]
 		[switch]$Reattach,
-		[parameter(Position=5, Mandatory = $true, ParameterSetName = "DbBackup")]
+		[parameter(Position = 5, Mandatory = $true, ParameterSetName = "DbBackup")]
 		[switch]$BackupRestore,
-		[parameter(Position=6, Mandatory = $true, ParameterSetName = "DbBackup",
+		[parameter(Position = 6, Mandatory = $true, ParameterSetName = "DbBackup",
 				   HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and both Sql Server service accounts.")]
 		[string]$NetworkShare,
-		[parameter(Position=7, ParameterSetName = "DbBackup")]
+		[parameter(Position = 7, ParameterSetName = "DbBackup")]
 		[switch]$WithReplace,
-		[parameter(Position=8, ParameterSetName = "DbBackup")]
+		[parameter(Position = 8, ParameterSetName = "DbBackup")]
 		[switch]$NoRecovery,
-		[parameter(Position=9, ParameterSetName = "DbBackup")]
-		[parameter(Position=10, ParameterSetName = "DbAttachDetach")]
+		[parameter(Position = 9, ParameterSetName = "DbBackup")]
+		[parameter(Position = 10, ParameterSetName = "DbAttachDetach")]
 		[switch]$SetSourceReadOnly,
 		[Alias("ReuseFolderStructure")]
-		[parameter(Position=11, ParameterSetName = "DbBackup")]
-		[parameter(Position=12, ParameterSetName = "DbAttachDetach")]
+		[parameter(Position = 11, ParameterSetName = "DbBackup")]
+		[parameter(Position = 12, ParameterSetName = "DbAttachDetach")]
 		[switch]$ReuseSourceFolderStructure,
-		[parameter(Position=13, ParameterSetName = "DbBackup")]
-		[parameter(Position=14, ParameterSetName = "DbAttachDetach")]
+		[parameter(Position = 13, ParameterSetName = "DbBackup")]
+		[parameter(Position = 14, ParameterSetName = "DbAttachDetach")]
 		[switch]$IncludeSupportDbs,
-		[parameter(Position=15)]
+		[parameter(Position = 15)]
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[parameter(Position=16)]
+		[parameter(Position = 16)]
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[Alias("SkipDatabases")]
 		[switch]$NoDatabases,
 		[switch]$NoLogins,
-		[Alias("SkipJobServer","NoJobServer")]
+		[Alias("SkipJobServer", "NoJobServer")]
 		[switch]$NoAgentServer,
 		[Alias("SkipCredentials")]
 		[switch]$NoCredentials,
@@ -276,11 +276,13 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 		$whatif
 		$transcript = ".\dbatools-startmigration-transcript.txt"
 		
-		if (Test-Path $transcript) { 
-			Start-Transcript -Path $transcript -Append 
+		if (Test-Path $transcript)
+		{
+			Start-Transcript -Path $transcript -Append
 		}
-		else { 
-			Start-Transcript -Path $transcript 
+		else
+		{
+			Start-Transcript -Path $transcript
 		}
 		
 		$elapsed = [System.Diagnostics.Stopwatch]::StartNew()
@@ -295,8 +297,8 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 	
 	PROCESS
 	{
-	
-		if ($BackupRestore -eq $false -and $DetachAttach -eq $false -and $NoDatabases -eq $false) 
+		
+		if ($BackupRestore -eq $false -and $DetachAttach -eq $false -and $NoDatabases -eq $false)
 		{
 			throw "You must specify a database migration method (-BackupRestore or -DetachAttach) or -NoDatabases"
 		}
@@ -473,12 +475,19 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 		
 		if (!$NoDataCollector)
 		{
-			Write-Output "`n`nMigrating Data Collector collection sets"
-			try
+			if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
 			{
-				Copy-SqlDataCollector -Source $sourceserver -Destination $destserver -Force:$Force
+				Write-Output "Data Collection sets are only supported in SQL Server 2008 and above. Skipping."
 			}
-			catch { Write-Error "Job Server migration reported the following error $($_.Exception.Message) " }
+			else
+			{
+				Write-Output "`n`nMigrating Data Collector collection sets"
+				try
+				{
+					Copy-SqlDataCollector -Source $sourceserver -Destination $destserver -Force:$Force
+				}
+				catch { Write-Error "Job Server migration reported the following error $($_.Exception.Message) " }
+			}
 		}
 		
 		
