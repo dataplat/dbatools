@@ -64,6 +64,7 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	Param (
 		[parameter(Position = 0)]
+		[Alias("ServerInstance","SqlInstance")]
 		[string[]]$SqlServers,
 		# Central Management Server
 

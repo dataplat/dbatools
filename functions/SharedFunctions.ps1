@@ -54,6 +54,7 @@ RemotingPortOpen   : True
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)

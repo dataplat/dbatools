@@ -16,6 +16,7 @@ Function Get-ParamSqlServerConfigs
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -62,6 +63,7 @@ filled with database list from specified SQL Server server.
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -130,6 +132,7 @@ Function Get-ParamSqlLogins
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -191,6 +194,7 @@ Function Get-ParamSqlServerRoles
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -237,6 +241,7 @@ filled with SQL Credentials from specified SQL Server server name.
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -282,6 +287,7 @@ Function Get-ParamSqlServerAudits
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -327,6 +333,7 @@ Function Get-ParamSqlServerServerAuditSpecifications
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -372,6 +379,7 @@ Function Get-ParamSqlBackupDevices
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -416,6 +424,7 @@ Function Get-ParamSqlServerEndpoints
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -462,6 +471,7 @@ filled with Linked Servers from specified server name.
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -511,6 +521,7 @@ Function Get-ParamSqlPolicyManagement
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -560,6 +571,7 @@ Function Get-ParamSqlResourceGovernor
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -597,6 +609,7 @@ Function Get-ParamSqlExtendedEvents
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -645,6 +658,7 @@ Function Get-ParamSqlDatabaseMail
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -689,6 +703,7 @@ Function Get-ParamSqlJobServer
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -733,6 +748,7 @@ filled with server groups from specified SQL Server Central Management server na
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 		
@@ -782,6 +798,7 @@ Function Get-ParamSqlServerTriggers
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -828,6 +845,7 @@ Function Get-ParamSqlCustomErrors
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -876,6 +894,7 @@ Function Get-ParamSqlDatabaseAssemblies
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -937,6 +956,7 @@ Function Get-ParamSqlDataCollectionSets
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -989,6 +1009,7 @@ Function Get-ParamSqlAlerts
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1031,6 +1052,7 @@ Function Get-ParamSqlOperators
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1072,6 +1094,7 @@ Function Get-ParamSqlOperatorCategories
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1114,6 +1137,7 @@ Function Get-ParamSqlProxyAccounts
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1157,6 +1181,7 @@ Function Get-ParamSqlSharedSchedules
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1198,6 +1223,7 @@ Function Get-ParamSqlJobCategories
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1239,6 +1265,7 @@ Function Get-ParamSqlAlertCategories
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1280,6 +1307,7 @@ Function Get-ParamSqlTargetServers
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1321,6 +1349,7 @@ Function Get-ParamSqlTargetServerGroups
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1362,6 +1391,7 @@ Function Get-ParamSqlJobs
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1403,6 +1433,7 @@ Function Get-ParamSqlAgentCategories
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)

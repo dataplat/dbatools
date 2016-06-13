@@ -89,6 +89,7 @@ If the account already exists, it will be added to the sysadmin role and the pas
 	[CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact="High")]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[string]$SqlServer,
 		[string]$Login = "sa",
 		[switch]$Force
@@ -126,6 +127,7 @@ Internal function.
 			[CmdletBinding()]
 			param (
 				[Parameter(Mandatory = $true)]
+				[Alias("ServerInstance","SqlInstance")]
 				[string]$sqlserver,
 				[string]$sql
 			)

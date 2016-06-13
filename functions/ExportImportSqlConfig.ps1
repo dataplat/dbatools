@@ -15,6 +15,7 @@ Function Export-SqlSpConfigure
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[string]$Path,
 		[System.Management.Automation.PSCredential]$SqlCredential
@@ -88,6 +89,7 @@ Function Import-SqlSpConfigure
 		[object]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[string]$Path,
 		[System.Management.Automation.PSCredential]$SqlCredential,

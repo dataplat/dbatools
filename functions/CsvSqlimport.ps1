@@ -160,6 +160,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 	Param (
 		[string[]]$Csv,
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance","SqlInstance")]
 		[string]$SqlServer,
 		[object]$SqlCredential,
 		[string]$Table,
@@ -328,6 +329,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 	 #>
 			param (
 				[Parameter(Mandatory = $true)]
+				[Alias("ServerInstance","SqlInstance")]
 				[string]$SqlServer,
 				[object]$SqlCredential
 			)
@@ -373,6 +375,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 	 #>
 			param (
 				[Parameter(Mandatory = $true)]
+				[Alias("ServerInstance","SqlInstance")]
 				[string]$SqlServer,
 				[object]$SqlCredential
 			)
@@ -417,6 +420,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 	 #>
 			param (
 				[Parameter(Mandatory = $true)]
+				[Alias("ServerInstance","SqlInstance")]
 				[string]$SqlServer,
 				[string]$Database,
 				[object]$SqlCredential
