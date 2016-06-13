@@ -295,7 +295,8 @@ https://dbatools.io/Sync-SqlLoginPermissions
 				$dbname = $db.dbname
 				$destdb = $destserver.databases[$dbname]
 				$sourcedb = $sourceserver.databases[$dbname]
-				$dbusername = $db.username; $dblogin = $db.loginName
+				$dbusername = $db.username
+				$dblogin = $db.loginName
 				
 				if ($sourcedb -ne $null)
 				{
@@ -305,8 +306,16 @@ https://dbatools.io/Sync-SqlLoginPermissions
 						{
 							try
 							{
-								$destdb.users[$dbusername].Drop()
-								Write-Output "Dropped user $dbusername (login: $dblogin) from $dbname on destination. User may own a schema."
+								if ($destdb.schemas.owner -contains $dbusername)
+								{
+									Write-Output "$dbusername (login: $dblogin) in $dbname owns a schema. Drop skipped."
+								}
+								else
+								{
+									$destdb.users[$dbusername].Drop()
+									Write-Output "Dropped user $dbusername (login: $dblogin) from $dbname on destination."
+									Write-Exception $_
+								}
 							}
 							catch
 							{
@@ -408,20 +417,19 @@ https://dbatools.io/Sync-SqlLoginPermissions
 					}
 					
 					# Db owner
-					If ($sourcedb.owner -eq $username)
+					If ($sourcedb.owner -eq $username -and $destdb.owner -ne $username)
 					{
 						If ($Pscmdlet.ShouldProcess($destination, "Changing $dbname dbowner to $username"))
 						{
 							try
 							{
 								$result = Update-SqlDbOwner $sourceserver $destserver -dbname $dbname
-								if ($result -eq $true)
-								{
-									Write-Output "Changed $($destdb.name) owner to $($sourcedb.owner)."
-								}
-								else { Write-Warning "Failed to update $($destdb.name) owner to $($sourcedb.owner)." }
+								Write-Output "Changed $($destdb.name) owner to $($sourcedb.owner)."
 							}
-							catch { Write-Warning "Failed to update $($destdb.name) owner to $($sourcedb.owner)." }
+							catch
+							{
+								Write-Warning "Failed to update $($destdb.name) owner to $($sourcedb.owner)."
+							}
 						}
 					}
 					
@@ -507,7 +515,7 @@ https://dbatools.io/Sync-SqlLoginPermissions
 					continue
 				}
 				
-				$servername = Get-NetBiosName $sourceserver
+				$servername = Resolve-NetBiosName $sourceserver
 				$userbase = ($username.Split("\")[0]).ToLower()
 				if ($servername -eq $userbase -or $username.StartsWith("NT ")) { continue }
 				if (($destlogin = $destserver.Logins.Item($username)) -eq $null) { continue }
@@ -526,11 +534,20 @@ https://dbatools.io/Sync-SqlLoginPermissions
 		$destination = $destserver.DomainInstanceName
 		
 		if ($sourceserver.versionMajor -lt 8 -or $destserver.versionMajor -lt 8) { throw "SQL Server 7 and below not supported. Quitting." }
-					
-		# Convert from RuntimeDefinedParameter  object to regular array
+		
+		# Convert from RuntimeDefinedParameter object to regular array
 		$Logins = $psboundparameters.Logins
 		$Exclude = $psboundparameters.Exclude
 		
+		if ($Logins.length -eq 0)
+		{
+			$Logins = $sourceserver.logins.name
+		}
+		
+		If ($Pscmdlet.ShouldProcess("console", "Showing sync start message"))
+		{
+			Write-Output "Syncing Login Permissions"
+		}
 	}
 	
 	
@@ -542,7 +559,6 @@ https://dbatools.io/Sync-SqlLoginPermissions
 			$logins = $pipelogin.name
 		}
 
-		Write-Output "Syncing Login Permissions";
 		Sync-Only -sourceserver $sourceserver -destserver $destserver -Logins $Logins -Exclude $Exclude
 	
 	}
