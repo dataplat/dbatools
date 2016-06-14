@@ -103,7 +103,7 @@ https://dbatools.io/Sync-SqlLoginPermissions
 		[object]$Destination,
 		[object]$SourceSqlCredential,
 		[object]$DestinationSqlCredential,
-		[parameter(ValueFromPipeline = $true, DontShow)]
+		[parameter(ValueFromPipeline = $true)]
 		[object]$pipelogin
 	)
 	

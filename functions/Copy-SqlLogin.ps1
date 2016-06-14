@@ -120,7 +120,7 @@ Limitations: Does not support Application Roles yet
 		[string]$OutFile,
 		[parameter(ParameterSetName = "Live")]
 		[switch]$Force,
-		[parameter(ValueFromPipeline = $true, DontShow)]
+		#[parameter(ValueFromPipeline = $true, DontShow)]
 		[object]$pipelogin
 	)
 	

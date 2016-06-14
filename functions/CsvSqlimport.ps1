@@ -181,9 +181,9 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		[switch]$FireTriggers,
 		[switch]$KeepIdentity,
 		[switch]$KeepNulls,
-		[Parameter(DontShow)]
+		#[Parameter(DontShow)]
 		[switch]$shellswitch,
-		[Parameter(DontShow)]
+		#[Parameter(DontShow)]
 		[string]$SqlCredentialPath
 	)
 	

@@ -91,7 +91,7 @@ https://dbatools.io/Export-SqlLogin
 		[Alias("NoOverwrite")]
 		[switch]$NoClobber,
 		[switch]$Append,
-		[parameter(ValueFromPipeline = $true, DontShow)]
+		#[parameter(ValueFromPipeline = $true, DontShow)]
 		[object]$pipelogin
 	)
 	
