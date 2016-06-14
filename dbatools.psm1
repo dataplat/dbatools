@@ -11,6 +11,10 @@ Set-Alias -Name Reset-SqlSaPassword -Value Reset-SqlAdmin
 Set-Alias -Name Copy-SqlUserDefinedMessage -Value Copy-SqlCustomError
 Set-Alias -Name Copy-SqlJobServer -Value Copy-SqlServerAgent
 
-
 # Strictmode coming when I've got time.
 # Set-StrictMode -Version Latest
+
+# In order to keep backwards compatability, these are loaded here instead of in the manifest.
+$null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.Sdk.Sfc")
+$null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SqlEnum")
+$null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers")
