@@ -414,7 +414,7 @@ https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a
 
 		if ($OutFile)
 		{
-			Export-SqlLogin -SqlServer $source -OutFile $OutFile $loginparms
+			Export-SqlLogin -SqlServer $source -FilePath $OutFile $loginparms
 			return
 		}
 		

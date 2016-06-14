@@ -2,43 +2,40 @@
 {
 <#
 .SYNOPSIS
-Copies SQL login permission from one server to another.
+Exports SQL logins to T-SQL file.
 
 .DESCRIPTION
-Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins. If a matching login does not exist on the destination, the login will be skipped. 
-Credential removal not currently supported for Syncs. TODO: Application role sync
+Exports Windows and SQL Logins to a T-SQL file. Export includes login, SID, password, default database, default language, server permissions, server roles, db permissions, db roles.
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
-.PARAMETER Source
-Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+.PARAMETER SqlServer
+The SQL Server to export the logins from. SQL Server 2000 and above supported.
 
-.PARAMETER SourceSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+.PARAMETER FileName
+The file to write to.
 
-$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
-
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-To connect as a different Windows user, run PowerShell as that user.
-
-.PARAMETER DestinationSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
-
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-To connect as a different Windows user, run PowerShell as that user.
-
+.PARAMETER NoClobber
+Do not overwrite file
+	
+.PARAMETER Append
+Append to file
+	
 .PARAMETER Exclude
 Excludes specified logins. This list is auto-populated for tab completion.
 
 .PARAMETER Login
 Migrates ONLY specified logins. This list is auto-populated for tab completion. Multiple logins allowed.
 
+.PARAMETER SqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
+$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+
+SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+	
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
-Requires: sysadmin access on SQL Servers
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
@@ -57,38 +54,28 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Sync-SqlLoginPermissions
+https://dbatools.io/Export-SqlLogin
 
 .EXAMPLE
-Sync-SqlLoginPermissions -Source sqlserver2014a -Destination sqlcluster -
+Export-SqlLogin -SqlServer sql2005 -FileName C:\temp\sql2005-logins.sql
 
-Copies all logins from source server to destination server.
-
-.EXAMPLE
-Sync-SqlLoginPermissions -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred
-
-Authenticates to SQL Servers using SQL Authentication.
-
-Copies all logins permissions except for realcajun. If a login already exists on the destination, the login will not be migrated.
+Exports SQL for the logins in server "sql2005" and writes them to the file "C:\temp\sql2005-logins.sql"
 
 .EXAMPLE
-Sync-SqlLoginPermissions -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds
+Export-SqlLogin -SqlServer sqlserver2014a -Exclude realcajun -SqlCredential $scred -FileName C:\temp\logins.sql -Append
 
-Copies permissions ONLY for logins netnerds and realcajun.
+Authenticates to sqlserver2014a using SQL Authentication. Exports all logins except for realcajun to C:\temp\logins.sql, and appends to the file if it exists. If not, the file will be created.
 
 .EXAMPLE
-Sync-SqlLoginPermissions -Source sqlserver2014a -Destination sqlcluster
+Export-SqlLogin -SqlServer sqlserver2014a -Login realcajun, netnerds -FileName C:\temp\logins.sql
 
-Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. If a matching login does not exist on the destination, the login will be skipped.
-
+Exports ONLY logins netnerds and realcajun fron sqlsever2014a to the file  C:\temp\logins.sql
 
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
-Requires: sysadmin access on SQL Servers
-Limitations: Does not support Application Roles yet
 
 .LINK 
-https://dbatools.io/Sync-SqlLoginPermissions 
+https://dbatools.io/Export-SqlLogin
 
 #>
 	
@@ -98,7 +85,8 @@ https://dbatools.io/Sync-SqlLoginPermissions
 		[Alias("ServerInstance", "SqlInstance")]
 		[string]$SqlServer,
 		[parameter(Mandatory = $true)]
-		[string]$OutFile,
+		[Alias("OutFile", "Path")]
+		[string]$FilePath,
 		[object]$SqlCredential,
 		[Alias("NoOverwrite")]
 		[switch]$NoClobber,
@@ -111,7 +99,7 @@ https://dbatools.io/Sync-SqlLoginPermissions
 	
 	BEGIN
 	{
-		$directory = Split-Path $OutFile
+		$directory = Split-Path $FilePath
 		$exists = Test-Path $directory
 		
 		if ($exists -eq $false)
@@ -364,11 +352,11 @@ https://dbatools.io/Sync-SqlLoginPermissions
 		
 		$sql = $outsql -join "`r`nGO`r`n"
 		
-		$sql | Out-File -FilePath $OutFile -Append:$Append -NoClobber:$NoClobber
+		$sql | Out-File -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
 		
 		If ($Pscmdlet.ShouldProcess("console", "Showing final message"))
 		{
-			Write-Output "SQL Login export to $outfile complete"
+			Write-Output "SQL Login export to $FilePath complete"
 			$sourceserver.ConnectionContext.Disconnect()
 		}
 	}
