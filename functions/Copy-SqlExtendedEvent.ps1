@@ -96,13 +96,9 @@ Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from s
 	BEGIN
 	{
 		
-		try
+		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null)
 		{
-			Add-Type -AssemblyName Microsoft.SqlServer.Management.XEvent
-		}
-		catch
-		{
-			throw "SMO version is too old. To migrate Extended Events, you must have SQL Server Managenet Studio 2008 R2 or higher installed."
+			throw "SMO version is too old. To migrate Extended Events, you must have SQL Server Management Studio 2008 R2 or higher installed."
 		}
 		
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
