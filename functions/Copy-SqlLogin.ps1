@@ -48,6 +48,9 @@ Migrates ONLY specified logins. This list is auto-populated for tab completion. 
 Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. If a matching login does not exist on the destination, the login will be skipped. 
 Credential removal not currently supported for Syncs. TODO: Application role sync
 
+.PARAMETER OutFile
+Calls Export-SqlLogin and exports all logins to a T-SQL formatted file. This does not perform a copy, so no destination is required.
+	
 .PARAMETER Force
 Force drops and recreates logins. Logins that own jobs cannot be dropped at this time.
 
@@ -97,14 +100,10 @@ Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -SyncOnly
 
 Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. If a matching login does not exist on the destination, the login will be skipped.
 
-
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 Limitations: Does not support Application Roles yet
-
-.LINK 
-https://gallery.technet.microsoft.com/scriptcenter/Fully-TransferMigrate-Sql-25a0cf05
 
 #>
 	
