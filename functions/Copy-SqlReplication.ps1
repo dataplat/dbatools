@@ -4,7 +4,7 @@
 # Load SMO, create server object, test connection, disconnect
 [void][Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SMO") 
 [void][Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.RMO") 
-
+Microsoft.SqlServer.Rmo
 $server = New-Object Microsoft.SqlServer.Management.Smo.Server "sqlserver"
 try { $server.ConnectionContext.Connect() } catch { throw "Can't connect to SQL Server." }
 Write-Host "Connection succeeded." -ForegroundColor Green

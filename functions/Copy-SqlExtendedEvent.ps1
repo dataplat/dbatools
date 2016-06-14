@@ -93,7 +93,18 @@ Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from s
 	
 	DynamicParam { if ($source) { return (Get-ParamSqlExtendedEvents -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	BEGIN {
+	BEGIN
+	{
+		
+		try
+		{
+			Add-Type -AssemblyName Microsoft.SqlServer.Management.XEvent
+		}
+		catch
+		{
+			throw "SMO version is too old. To migrate Extended Events, you must have SQL Server Managenet Studio 2008 R2 or higher installed."
+		}
+		
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 		
