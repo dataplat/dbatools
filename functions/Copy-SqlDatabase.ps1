@@ -164,7 +164,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[parameter(Position = 19)]
 		[switch]$Force,
-		[parameter(ValueFromPipeline = $true, DontShow)]
+		[parameter(ValueFromPipeline = $true)]
 		[object]$pipedatabase
 	)
 	
