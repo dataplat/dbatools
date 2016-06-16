@@ -68,123 +68,110 @@ Copy-SqlSpConfigure -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
 Shows what would happen if the command were executed.
 #>
-	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-	param (
-		[parameter(Mandatory = $true)]
-		[object]$Source,
-		[parameter(Mandatory = $true)]
-		[object]$Destination,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential
-	)
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    param (
+	    [parameter(Mandatory = $true)]
+	    [object]$Source,
+	    [parameter(Mandatory = $true)]
+	    [object]$Destination,
+	    [System.Management.Automation.PSCredential]$SourceSqlCredential,
+	    [System.Management.Automation.PSCredential]$DestinationSqlCredential
+    )
 	
-	DynamicParam { if ($source) { return (Get-ParamSqlServerConfigs -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+    DynamicParam { if ($source) { return (Get-ParamSqlServerConfigs -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	BEGIN
-	{
-		$configs = $psboundparameters.Configs
+    BEGIN
+    {
+	    $configs = $psboundparameters.Configs
 		
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+	    $sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+	    $destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 		
-		$source = $sourceserver.DomainInstanceName
-		$destination = $destserver.DomainInstanceName
-	}
-	
-	PROCESS
-	{
-		# if it doesn't exist on destination, don't try to mod.
-		# notcontains $server.Configuration.Properties.DisplayName
+	    $source = $sourceserver.DomainInstanceName
+	    $destination = $destserver.DomainInstanceName
+    }
+    PROCESS
+    {
+	    If ($Pscmdlet.ShouldProcess("both servers", "Updating sp_configure to show advanced options"))
+	    {
+		    $sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
+		    $sourceserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
+		    $destserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
+		    $destserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
+	    }
 		
-		If ($Pscmdlet.ShouldProcess("both servers", "Updating sp_configure to show advanced options"))
-		{
-			$sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
-			$sourceserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
-			$destserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
-			$destserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
-		}
+	    $destprops = $destserver.Configuration.Properties
 		
-		$destprops = $destserver.Configuration.Properties
+	    # crude but i suck with properties
+	    $lookups = $sourceserver.Configuration.PsObject.Properties.Name | Where-Object { $_ -notin "Parent", "Properties" }
 		
-		# crude but i suck with properties
-		$lookups = $sourceserver.Configuration.PsObject.Properties.Name | Where-Object { $_ -notin "Parent", "Properties" }
-		$proplookup = @()
-		foreach ($lookup in $lookups)
-		{
-			$proplookup += [PSCustomObject]@{
-				ShortName = $lookup
-				DisplayName = $sourceserver.Configuration.$lookup.Displayname
-			}
-		}
+	    $proplookup = @()
+	    foreach ($lookup in $lookups)
+	    {
+		    $proplookup += [PSCustomObject]@{
+			    ShortName = $lookup
+			    DisplayName = $sourceserver.Configuration.$lookup.Displayname
+		    }
+	    }
 		
-		foreach ($sourceprop in $sourceserver.Configuration.Properties)
-		{
-			$displayname = $sourceprop.DisplayName
-			$lookup = $proplookup | Where-Object { $_.DisplayName -eq $displayname }
+	    foreach ($sourceprop in $sourceserver.Configuration.Properties)
+	    {
+		    $displayname = $sourceprop.DisplayName
+		    $lookup = $proplookup | Where-Object { $_.DisplayName -eq $displayname }
 			
-			if ($configs.length -gt 0 -and $configs -notcontains $lookup.ShortName) { continue }
+		    if ($configs.length -gt 0 -and $configs -notcontains $lookup.ShortName) { continue }
 			
-			$destprop = $destprops | where-object{ $_.Displayname -eq $displayname }
-			if ($destprop -ne $null)
-			{
-				If ($Pscmdlet.ShouldProcess($destination, "Updating $displayname"))
-				{
-					try
-					{
-						$destprop.configvalue = $sourceprop.configvalue
-						$destserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
-						Write-Output "Updated $($destprop.displayname) to $($sourceprop.configvalue)"
-					}
-					catch
-					{
-						Write-Error "Could not $($destprop.displayname) to $($sourceprop.configvalue). Feature may not be supported."
-					}
-				}
-				
-				If ($Pscmdlet.ShouldProcess($destination, "Altering configuration"))
-				{
-					try 
-					{ 
-						$destserver.Configuration.Alter() 
-					}
-					catch 
-					{ 
-						$needsrestart = $true 
-					}
-				}
-			}
-		}
+		    $destprop = $destprops | Where-Object{ $_.Displayname -eq $displayname }
+		    if ($destprop -eq $null)
+		    {
+			    Write-Warning "Configuration option '$displayname' does not exists on the destination instance."
+			    continue
+		    }
+			
+		    If ($Pscmdlet.ShouldProcess($destination, "Updating $displayname"))
+		    {
+			    try
+			    {
+				    $destOldPropValue = $destprop.configvalue
+				    $destprop.configvalue = $sourceprop.configvalue
+				    $destserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
+				    Write-Output "Updated $($destprop.displayname) from $destOldPropValue to $($sourceprop.configvalue)"
+			    }
+			    catch
+			    {
+				    Write-Error "Could not $($destprop.displayname) to $($sourceprop.configvalue). Feature may not be supported."
+			    }
+		    }
+			
+		    If ($Pscmdlet.ShouldProcess($destination, "Altering configuration"))
+		    {
+			    try
+			    {
+				    $destserver.Configuration.Alter()
+			    }
+			    catch
+			    {
+				    Write-Warning "Configuration option '$displayname' requires restart."
+			    }
+		    }
+	    }
 		
-		If ($Pscmdlet.ShouldProcess("both servers", "Updating sp_configure so that it does not show advanced options"))
-		{
-			$sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
-			$sourceserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
-			$destserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
-			$destserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
-		}
-		
-		If ($Pscmdlet.ShouldProcess("console", "Showing concluding output"))
-		{
-			if ($needsrestart -eq $true)
-			{
-				Write-Warning "Some configuration options will be updated once SQL Server is restarted."
-			}
-			else
-			{
-				Write-Output "Configuration option has been updated."
-			}
-		}
-		
-	}
+	    If ($Pscmdlet.ShouldProcess("both servers", "Updating sp_configure so that it does not show advanced options"))
+	    {
+		    $sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
+		    $sourceserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
+		    $destserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
+		    $destserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
+	    }
+    }
+    END
+    {
+	    $sourceserver.ConnectionContext.Disconnect()
+	    $destserver.ConnectionContext.Disconnect()
 	
-	END
-	{
-		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
-		
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message"))
-		{
-			Write-Output "Server configuration update finished"
-		}
-	}
+	    If ($Pscmdlet.ShouldProcess("console", "Showing finished message"))
+	    {
+		    Write-Output "Server configuration update finished"
+	    }
+    }
 }
