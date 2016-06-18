@@ -19,3 +19,6 @@ $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.M
 $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SqlEnum")
 $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers")
 $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent")
+$null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Dmf")
+$null = [void][Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers")
+$null = [void][Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.ConnectionInfo")

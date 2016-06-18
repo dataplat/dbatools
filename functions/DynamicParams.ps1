@@ -529,6 +529,11 @@ Function Get-ParamSqlPolicyManagement
 	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
+	if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Dmf") -eq $null)
+		{
+			return
+		}
+	
 	$sqlconn = $server.ConnectionContext.SqlConnectionObject
 	$sqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sqlconn
 	
@@ -759,6 +764,11 @@ filled with server groups from specified SQL Server Central Management server na
 		
 	)
 	
+	if ([Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers") -eq $null)
+		{
+			return
+		}
+		
 	try { $SqlCms = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
@@ -969,6 +979,11 @@ Function Get-ParamSqlDataCollectionSets
 	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
+	if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.Collector") -eq $null)
+		{
+			return
+		}
+		
 	$sqlconn = $server.ConnectionContext.SqlConnectionObject
 	$storeconn = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sqlconn
 	$store = New-Object Microsoft.SqlServer.Management.Collector.CollectorConfigStore $storeconn
