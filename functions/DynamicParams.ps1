@@ -614,6 +614,11 @@ Function Get-ParamSqlExtendedEvents
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
+	if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null)
+	{
+		return
+	}
+	
 	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
