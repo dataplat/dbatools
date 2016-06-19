@@ -165,7 +165,7 @@ Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from s
 				try
 				{
 					$sql = $session.ScriptCreate().GetScript() | Out-String
-					$sql = $sql -replace "'$source'", "'$destination'"
+					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
 					Write-Verbose $sql
 					Write-Output "Migrating session $sessionName"
 					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)

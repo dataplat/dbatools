@@ -110,7 +110,7 @@ Shows what would happen if the command were executed using force.
 				{
 					Write-Output "Copying Alert Defaults"
 					$sql = $sourceserver.JobServer.AlertSystem.Script() | Out-String
-					$sql = $sql -replace "'$source'", "'$destination'"
+					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
 					Write-Verbose $sql
 					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 				}
@@ -154,7 +154,7 @@ Shows what would happen if the command were executed using force.
 				{
 					Write-Output "Copying Alert $alertname"
 					$sql = $alert.Script() | Out-String
-					$sql = $sql -replace "'$source'", "'$destination'"
+					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
 					Write-Verbose $sql
 					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 				}

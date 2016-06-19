@@ -113,7 +113,7 @@ Shows what would happen if the command were executed using force.
 			}
 			
 			$sql = $audit.Script() | Out-String
-			$sql = $sql -replace "'$source'", "'$destination'"
+			$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
 			
 			if ($destaudits.name -contains $auditname)
 			{

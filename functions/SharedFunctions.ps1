@@ -969,7 +969,18 @@ Internal function. Updates specified database dbowner.
 		if ($destdb.owner -ne $dbowner)
 		{
 			if ($destdb.Status -ne 'Normal') { Write-Output "Database status not normal. Skipping dbowner update."; continue }
-			if ($dbowner -eq $null -or $destserver.logins[$dbowner] -eq $null) { $dbowner = 'sa' }
+			
+			if ($dbowner -eq $null -or $destserver.logins[$dbowner] -eq $null)
+			{
+				try
+				{
+					$dbowner = ($destserver.logins | Where-Object { $_.id -eq 1 }).Name
+				}
+				catch
+				{
+					$dbowner = "sa"
+				}
+			}
 			
 			try
 			{
@@ -1395,7 +1406,7 @@ Function Update-SqlPermissions
 				If ($Pscmdlet.ShouldProcess($destination, "Adding $dbusername to $dbname"))
 				{
 					$sql = $sourceserver.databases[$dbname].users[$dbusername].script() | Out-String
-					$sql = $sql -replace "'$source'", "'$destination'"
+					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
 					try
 					{
 						$destdb.ExecuteNonQuery($sql)

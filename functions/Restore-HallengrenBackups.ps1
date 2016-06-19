@@ -252,10 +252,19 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 				}
 				catch { Write-Error "$dbname could not be set to recovered." }
 				
-				try
-				{
+					try
+					{
+						try
+						{
+							$sa = ($destserver.logins | Where-Object { $_.id -eq 1 }).Name
+						}
+						catch
+						{
+							$sa = "sa"
+						}
+					
 					$server.databases.refresh()
-					$server.databases[$dbname].SetOwner('sa')
+					$server.databases[$dbname].SetOwner($sa)
 					$server.databases[$dbname].Alter()
 					Write-Output "Successfully changed $dbname dbowner to sa"
 				}

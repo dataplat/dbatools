@@ -309,7 +309,7 @@ Internal function.
 					try
 					{
 						$sql = $linkedserver.Script() | Out-String
-						$sql = $sql -replace "'$source'", "'$destination'"
+						$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
 						Write-Verbose $sql
 						
 						[void]$destserver.ConnectionContext.ExecuteNonQuery($sql)

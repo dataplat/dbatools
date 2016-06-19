@@ -402,7 +402,7 @@ https://dbatools.io/Sync-SqlLoginPermissions
 						If ($Pscmdlet.ShouldProcess($destination, "Adding $dbusername to $dbname"))
 						{
 							$sql = $sourceserver.databases[$dbname].users[$dbusername].script() | Out-String
-							$sql = $sql -replace "'$source'", "'$destination'"
+							$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
 							try
 							{
 								$destdb.ExecuteNonQuery($sql)
@@ -501,13 +501,22 @@ https://dbatools.io/Sync-SqlLoginPermissions
 			
 			$source = $sourceserver.DomainInstanceName; $destination = $destserver.DomainInstanceName
 			
+			try
+			{
+				$sa = ($destserver.logins | Where-Object { $_.id -eq 1 }).Name
+			}
+			catch
+			{
+				$sa = "sa"
+			}
+			
 			foreach ($sourcelogin in $sourceserver.logins)
 			{
 				
 				$username = $sourcelogin.name
 				$currentlogin = $sourceserver.ConnectionContext.truelogin
 				if ($Logins -ne $null -and $Logins -notcontains $username) { continue }
-				if ($exclude -contains $username -or $username.StartsWith("##") -or $username -eq 'sa') { continue }
+				if ($exclude -contains $username -or $username.StartsWith("##") -or $username -eq $sa) { continue }
 				
 				if ($currentlogin -eq $username)
 				{
