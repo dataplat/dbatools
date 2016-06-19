@@ -183,7 +183,7 @@ Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sq
 				try
 				{
 					$sql = $condition.ScriptCreate().GetScript() | Out-String
-					$sql = $sql -replace "'$source'", "'$destination'"
+					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
 					Write-Verbose $sql
 					Write-Output "Copying condition $conditionName"
 					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
@@ -240,7 +240,7 @@ Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sq
 					$deststore.conditions.Refresh()
 					$deststore.policies.Refresh()
 					$sql = $policy.ScriptCreateWithDependencies().GetScript() | Out-String
-					$sql = $sql -replace "'$source'", "'$destination'"
+					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
 					Write-Verbose $sql
 					Write-Output "Copying policy $policyName"
 					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)

@@ -201,7 +201,7 @@ Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlse
 				try
 				{
 					$sql = $set.ScriptCreate().GetScript() | Out-String
-					$sql = $sql -replace "'$source'", "'$destination'"
+					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
 					Write-Verbose $sql
 					Write-Output "Migrating collection set $collectionName"
 					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)

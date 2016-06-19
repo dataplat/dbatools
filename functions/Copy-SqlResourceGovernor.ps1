@@ -119,7 +119,7 @@ Shows what would happen if the command were executed.
 				try
 				{
 					$sql = $sourceserver.resourceGovernor.Script() | Out-String
-					$sql = $sql -replace "'$source'", "'$destination'"
+					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
 					Write-Verbose $sql
 					Write-Output "Updating Resource Governor settings"
 					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
@@ -185,7 +185,7 @@ Shows what would happen if the command were executed.
 				try
 				{
 					$sql = $pool.Script() | Out-String
-					$sql = $sql -replace "'$source'", "'$destination'"
+					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
 					Write-Verbose $sql
 					Write-Output "Copying pool $poolName"
 					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
@@ -195,7 +195,7 @@ Shows what would happen if the command were executed.
 					{
 						$workgroupname = $workloadgroup.name
 						$sql = $workloadgroup.script() | Out-String
-						$sql = $sql -replace "'$source'", "'$destination'"
+						$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
 						Write-Verbose $sql
 						Write-Output "Copying $workgroupname"
 						$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)

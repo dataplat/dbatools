@@ -86,7 +86,7 @@ Shows what would happen if the command were executed using force.
 				{
 					Write-Output "Copying Operator $operatorname"
 					$sql = $operator.Script() | Out-String
-					$sql = $sql -replace "'$source'", "'$destination'"
+					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
 					Write-Verbose $sql
 					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 				}

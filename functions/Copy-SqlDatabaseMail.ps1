@@ -116,7 +116,7 @@ Shows what would happen if the command were executed.
 				try
 				{
 					$sql = $mail.ConfigurationValues.Script() | Out-String
-					$sql = $sql -replace "'$source'", "'$destination'"
+					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
 					Write-Verbose $sql
 					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 					$mail.ConfigurationValues.Refresh()
@@ -172,7 +172,7 @@ Shows what would happen if the command were executed.
 					{
 						Write-Output "Copying mail account $accountname"
 						$sql = $account.Script() | Out-String
-						$sql = $sql -replace "'$source'", "'$destination'"
+						$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
 						Write-Verbose $sql
 						$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 					}
@@ -227,7 +227,7 @@ Shows what would happen if the command were executed.
 					{
 						Write-Output "Copying mail profile $profilename"
 						$sql = $profile.Script() | Out-String
-						$sql = $sql -replace "'$source'", "'$destination'"
+						$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
 						Write-Verbose $sql
 						$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 						$destserver.Mail.Profiles.Refresh()
@@ -281,7 +281,7 @@ Shows what would happen if the command were executed.
 					{
 						Write-Output "Copying mail server $mailservername"
 						$sql = $mailserver.Script() | Out-String
-						$sql = $sql -replace "'$source'", "'$destination'"
+						$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
 						Write-Verbose $sql
 						$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 					}
