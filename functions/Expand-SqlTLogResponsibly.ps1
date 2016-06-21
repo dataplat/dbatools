@@ -96,29 +96,29 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .EXAMPLE
-    Expand-DatabaseTLogFileResponsibly -SqlServer '.' -Databases 'Test' -TargetLogSizeMB 50000
+    Expand-SqlTLogResponsibly -SqlServer '.' -Databases 'Test' -TargetLogSizeMB 50000
     This is the simplest example. The increment value will be calculated and will grow the T-Log of 'Test' database on 'Localhost' instance 
     to 50000 MB.
 
 .EXAMPLE
-    Expand-DatabaseTLogFileResponsibly -SqlServer '.' -Databases 'Test' -TargetLogSizeMB 10000 -IncrementSizeMB 200
+    Expand-SqlTLogResponsibly -SqlServer '.' -Databases 'Test' -TargetLogSizeMB 10000 -IncrementSizeMB 200
     Grows the T-Log of 'Test' database on 'Localhost' instance to 1000MB. The increment value will be asked if want to use the input value or 
     the suggested one (calculated automatically)
 
 .EXAMPLE
-    Expand-DatabaseTLogFileResponsibly -SqlServer '.' -Databases 'Test' -TargetLogSizeMB 10000 -LogFileNumber 9
-    Grows the T-Log with FielId 9 of 'Test' database on 'Localhost' instance to 10000MB.
+    Expand-SqlTLogResponsibly -SqlServer sqlcluster -Databases test -TargetLogSizeMB 10000 -LogFileNumber 9
+    Grows the T-Log with FielId 9 of 'Test' database on sqlcluster instance to 10000MB.
 
 .EXAMPLE
-    Expand-DatabaseTLogFileResponsibly -SqlServer '.' -Databases (gc D:\DBs.txt) -TargetLogSizeMB 50000
+    Expand-SqlTLogResponsibly -SqlServer . -Databases (Get-Content D:\DBs.txt) -TargetLogSizeMB 50000
     Grows the T-Log of the databases specified in the file 'D:\DBs.txt' on 'Localhost' instance to 50000MB.
 
 .EXAMPLE
-    Expand-DatabaseTLogFileResponsibly -SqlServer '.' -Databases @("DB1", "DB2") -TargetLogSizeMB 50000
+    Expand-SqlTLogResponsibly -SqlServer . -Databases db1, db2 -TargetLogSizeMB 50000
     Grows the T-Log of the databases DB1 and DB2 on 'Localhost' instance to 50000MB.
 
 .EXAMPLE
-    Expand-DatabaseTLogFileResponsibly -SqlServer '.' -Databases 'Test' -TargetLogSizeMB 50000 -Verbose
+    Expand-SqlTLogResponsibly -SqlServer . -Databases 'db with space' -TargetLogSizeMB 50000 -Verbose
     Use -Verbose to view in detail all actions performed by this script
 #>
 	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
