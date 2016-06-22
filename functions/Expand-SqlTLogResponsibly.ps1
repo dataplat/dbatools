@@ -106,7 +106,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     the suggested one (calculated automatically)
 
 .EXAMPLE
-    Expand-SqlTLogResponsibly -SqlServer sqlcluster -Databases test -TargetLogSizeMB 10000 -LogFileNumber 9
+    Expand-SqlTLogResponsibly -SqlServer sqlcluster -Databases test -TargetLogSizeMB 10000 -LogFileId 9
     Grows the T-Log with FielId 9 of 'Test' database on sqlcluster instance to 10000MB.
 
 .EXAMPLE
