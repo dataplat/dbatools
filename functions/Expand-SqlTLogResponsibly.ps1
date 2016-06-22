@@ -207,8 +207,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 					Write-Verbose "$step - Log file current size: $([System.Math]::Round($($CurrSize/1024.0), 2)) MB "
 					[long]$requiredSpace = ($TargetLogSizeKB - $CurrSize)
 					
-					Write-Output $logfile
-					
 					Write-Verbose "Verifying if exists sufficient space ($([System.Math]::Round($($requiredSpace / 1024.0), 2))MB) on the volume to performe this task"
 					
 					#Only available from 2008 R2 towards... maybe validate the version and issue a warning saying "can't verify volume free space"
