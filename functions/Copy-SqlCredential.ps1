@@ -175,8 +175,28 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 			# Query link server password information from the Db. Remove header from pwdhash, extract IV (as iv) and ciphertext (as pass)
 			# Ignore links with blank credentials (integrated auth ?)
 			
-			if ($server.IsClustered -eq $false) { $connstring = "Server=ADMIN:$sourcenetbios\$instance;Trusted_Connection=True" }
-			else { $connstring = "Server=ADMIN:$sourcename;Trusted_Connection=True" }
+			if ($server.IsClustered -eq $false)
+			{
+				$connstring = "Server=ADMIN:$sourcenetbios\$instance;Trusted_Connection=True"
+			}
+			else
+			{
+				$dacenabled = $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue
+				
+				
+				if ($dacenabled -eq $false)
+				{
+					If ($Pscmdlet.ShouldProcess($server.name, "Enabling DAC on clustered instance"))
+					{
+						Write-Verbose "DAC must be enabled for clusters, even when accessed from active node. Enabling."
+						$server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
+						$server.Configuration.Alter()
+					}
+				}
+				
+				$connstring = "Server=ADMIN:$sourcename;Trusted_Connection=True"
+			}
+			
 			
 			$sql = "SELECT name,credential_identity,substring(imageval,5,$ivlen) iv, substring(imageval,$($ivlen + 5),len(imageval)-$($ivlen + 4)) pass from sys.credentials cred inner join sys.sysobjvalues obj on cred.credential_id = obj.objid where valclass=28 and valnum=2"
 			
@@ -199,15 +219,23 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 					}
 					catch 
 					{
-						Write-Warning "Can't establish local DAC connection to $sourcename from $sourcename or other error. Quitting." 
-						Write-Exception $_
+						Write-Warning "Can't establish local DAC connection to $sourcename from $sourcename or other error. Quitting."
 					}
 				}
 			}
 			catch 
 			{
-				Write-Warning "Can't establish local DAC connection to $sourcename from $sourcename or other error. Quitting." 
-				Write-Exception $_
+				Write-Warning "Can't establish local DAC connection to $sourcename from $sourcename or other error. Quitting."
+			}
+			
+			if ($server.IsClustered -and $dacenabled -eq $false)
+			{
+				If ($Pscmdlet.ShouldProcess($server.name, "Disabling DAC on clustered instance"))
+				{
+					Write-Verbose "Setting DAC config back to 0"
+					$server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $false
+					$server.Configuration.Alter()
+				}
 			}
 			
 			$decryptedlogins = New-Object "System.Data.DataTable"

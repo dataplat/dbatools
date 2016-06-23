@@ -167,8 +167,26 @@ License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
 			# Query link server password information from the Db. Remove header from pwdhash, extract IV (as iv) and ciphertext (as pass)
 			# Ignore links with blank credentials (integrated auth ?)
 			
-			if ($server.IsClustered -eq $false) { $connstring = "Server=ADMIN:$sourcenetbios\$instance;Trusted_Connection=True" }
-			else { $connstring = "Server=ADMIN:$sourcename;Trusted_Connection=True" }
+			if ($server.IsClustered -eq $false)
+			{
+				$connstring = "Server=ADMIN:$sourcenetbios\$instance;Trusted_Connection=True"
+			}
+			else
+			{
+				$dacenabled = $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue
+				
+				if ($dacenabled -eq $false)
+				{
+					If ($Pscmdlet.ShouldProcess($server.name, "Enabling DAC on clustered instance"))
+					{
+						Write-Verbose "DAC must be enabled for clusters, even when accessed from active node. Enabling."
+						$server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
+						$server.Configuration.Alter()
+					}
+				}
+				
+				$connstring = "Server=ADMIN:$sourcename;Trusted_Connection=True"
+			}
 			
 			$sql = "SELECT sysservers.srvname,syslnklgns.name,substring(syslnklgns.pwdhash,5,$ivlen) iv,substring(syslnklgns.pwdhash,$($ivlen + 5),
 	len(syslnklgns.pwdhash)-$($ivlen + 4)) pass FROM master.sys.syslnklgns inner join master.sys.sysservers on syslnklgns.srvid=sysservers.srvid WHERE len(pwdhash)>0"
@@ -192,7 +210,16 @@ License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
 			catch 
 			{
 				Write-Warning "Can't establish local DAC connection to $sourcename from $sourcename or other error. Quitting." 
-				Write-Exception $_
+			}
+			
+			if ($server.IsClustered -and $dacenabled -eq $false)
+			{
+				If ($Pscmdlet.ShouldProcess($server.name, "Disabling DAC on clustered instance"))
+				{
+					Write-Verbose "Setting DAC config back to 0"
+					$server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $false
+					$server.Configuration.Alter()
+				}
 			}
 			
 			$decryptedlogins = New-Object "System.Data.DataTable"
