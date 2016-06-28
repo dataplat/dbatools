@@ -109,6 +109,7 @@ Shows what would happen if the command were executed.
 	PROCESS
 	{
 		
+		# All of these support whatif inside of them
 		Copy-SqlAgentCategory -Source $sourceserver -Destination $destserver -Force:$force
 		Copy-SqlAlert -Source $sourceserver -Destination $destserver -Force:$force -IncludeDefaults
 		Copy-SqlOperator -Source $sourceserver -Destination $destserver -Force:$force
@@ -116,11 +117,30 @@ Shows what would happen if the command were executed.
 		Copy-SqlSharedSchedule -Source $sourceserver -Destination $destserver -Force:$force
 		Copy-SqlJob -Source $sourceserver -Destination $destserver -Force:$force -DisableOnDestination:$DisableJobsOnDestination -DisableOnSource:$DisableJobsOnSource
 		
+		# To do
 		<# 
 			Copy-SqlMasterServer -Source $sourceserver -Destination $destserver -Force:$force
 			Copy-SqlTargetServer -Source $sourceserver -Destination $destserver -Force:$force
 			Copy-SqlTargetServerGroup -Source $sourceserver -Destination $destserver -Force:$force
 		#>
+		
+		# Here are the properties, which must be migrated seperately 
+		If ($Pscmdlet.ShouldProcess($destination, "Copying Agent Properties"))
+		{
+			try
+			{
+				Write-Output "Copying SQL Agent Properties"
+				$sql = $sourceagent.Script() | Out-String
+				$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+				$sql = $sql -replace [Regex]::Escape("@errorlog_file="), [Regex]::Escape("--@errorlog_file=")
+				Write-Verbose $sql
+				$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+			}
+			catch
+			{
+				Write-Exception $_
+			}
+		}
 	}
 	
 	END
