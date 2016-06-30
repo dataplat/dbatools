@@ -133,7 +133,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		[parameter(Position = 5)]
 		[int]$IncrementSizeMB = -1,
 		[parameter(Position = 6)]
-		[int]$LogFileId = -1
+		[int]$LogFileId = -1,
+		[parameter(Position = 7)]
+		[bool]$ShrinkLogFile,
+		[parameter(Position = 8)]
+		[int]$ShrinkSizeMB,
+		[parameter(Position = 9)]
+		[AllowEmptyString()]
+		[string]$bdir
 	)
 	
 	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SourceSqlCredential } }
@@ -147,6 +154,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		Write-Verbose "Convert variables MB to KB (SMO works in KB)"
 		[int]$TargetLogSizeKB = $TargetLogSizeMB * 1024
 		[int]$LogIncrementSize = $incrementSizeMB * 1024
+		[int]$ShrinkSize = $ShrinkSizeMB * 1024
 		[int]$SuggestLogIncrementSize = 0
 		[bool]$LogByFileID = if ($LogFileId -eq -1)
 		{
@@ -207,7 +215,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 					Write-Verbose "$step - Log file current size: $([System.Math]::Round($($CurrSize/1024.0), 2)) MB "
 					[long]$requiredSpace = ($TargetLogSizeKB - $CurrSize)
 					
-					Write-Verbose "Verifying if exists sufficient space ($([System.Math]::Round($($requiredSpace / 1024.0), 2))MB) on the volume to performe this task"
+					Write-Verbose "Verifying if exists sufficient space ($([System.Math]::Round($($requiredSpace / 1024.0), 2))MB) on the volume to perform this task"
 					
 					#Only available from 2008 R2 towards... maybe validate the version and issue a warning saying "can't verify volume free space"
 					if ($requiredSpace -gt $logfile.VolumeFreeSpace)
@@ -260,7 +268,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 								}
 							}
 							else # 2008 R2 or under
-
 							{
 								switch ($TargetLogSizeMB)
 								{
@@ -284,7 +291,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 							
 							# SMO use values in KB
 							$SuggestLogIncrementSize = $SuggestLogIncrementSize * 1024
-							
+														
 							# If default will use $SuggestedLogIncrementSize
 							if ($IncrementSizeMB -eq -1)
 							{
@@ -293,14 +300,87 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 							else
 							{
 								if ($PSCmdlet.ShouldProcess("Confirm increment value", `
-								"The input value is $([System.Math]::Round($LogIncrementSize/1024, 0))MB. However the suggested value for increment is $($SuggestLogIncrementSize/1024)MB.`r`n Do you want to use the suggested value of $([System.Math]::Round($SuggestLogIncrementSize/1024, 0))MB insted of $([System.Math]::Round($LogIncrementSize/1024, 0))MB",
-								"Choose increment value:"))
+										"The input value is $([System.Math]::Round($LogIncrementSize/1024, 0))MB. However the suggested value for increment is $($SuggestLogIncrementSize/1024)MB.`r`n Do you want to use the suggested value of $([System.Math]::Round($SuggestLogIncrementSize/1024, 0))MB insted of $([System.Math]::Round($LogIncrementSize/1024, 0))MB",
+										"Choose increment value:"))
 								{
 									$LogIncrementSize = $SuggestLogIncrementSize
 								}
 							}
 							Write-Output "Chunk size: $($LogIncrementSize/1024)MB"
 							
+							# Shrink Log File to desired size before re-growth to desired size (You need to remove as many VLF's as possible to ensure proper growth)
+							$ShrinkSizeMB = $ShrinkSize/1024
+							if ($ShrinkLogFile -eq $true)
+							{
+								Write-Verbose "We are about to Shrink the file"
+								$backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
+								$backup.Action = [Microsoft.SqlServer.Management.Smo.BackupActionType]::Log
+								$backup.BackupSetDescription = "Transaction Log backup of " + $db
+								$backup.BackupSetName = $db + " Backup"
+								$backup.Database = $db
+								$backup.MediaDescription = "Disk"
+								$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] 
+											{
+											Write-Progress -id 1 -activity "Backing up logfile $db to $bdir" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
+											}
+								$backup.add_PercentComplete($percent)
+								$backup.add_Complete($complete)
+								
+								Write-Progress -id 1 -activity "Backing up logfile $db to $bdir" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+								Write-Output "Backing up $db"
+			
+								$CurrSizeMB = $CurrSize/1024
+								"Starting Size = $CurrSizeMB"
+
+								if ($bdir -ne $null)
+								{
+									If (!(Test-Path $bdir))
+									{
+										New-Item -Path $bdir -ItemType Directory
+									}
+									else
+									{
+										Write-Verbose "Directory already exists!"
+									}	
+								}
+								else
+								{
+									$bdir = $server.Settings.BackupDirectory
+								}
+								if ($CurrSizeMB -gt $ShrinkSizeMB)
+									{
+										$ = 1
+										Do
+										{
+										$i
+										$i++
+										}
+										while ($CurrSizeMB -gt $ShrinkSizeMB -and $i -le 5)
+										{
+											$dt = get-date -format yyyyMMddHHmmss
+											$backup.Devices.AddDevice($bdir + "\" + $db + "_db_" + $dt + ".trn", 'File')
+												try
+												{
+													$backup.SqlBackup($server)
+													Write-Progress -id 1 -activity "Backing up logfile $db to $bdir" -status "Complete" -Completed
+													Write-Output "Backup succeeded"
+													return $true
+												}
+												catch
+												{
+													Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
+													Write-Exception $_
+													return $false
+												}
+											$logfile.Shrink($CurrSizeMB - $SuggestLogIncrementSize, [Microsoft.SQLServer.Management.SMO.ShrinkMethod]::Default)
+											$Server.Refresh()
+											$Database.Refresh()
+											$logfile.Refresh()
+											$NewSize = $logfile.Size/1024
+											Write-Output "Size after shrink = $NewSize and iteration $i of 5"
+										}
+									}
+							}
 							#start grow file
 							Write-Verbose "$step - While current size less than wanted log size"
 							while ($CurrSize -lt $TargetLogSizeKB)
@@ -346,7 +426,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 					} #else space available
 				}
 				else #else verifying existance
-
 				{
 					Write-Output "Database '$db' not exists on instance '$SqlServer'"
 				}
