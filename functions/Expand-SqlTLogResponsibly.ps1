@@ -352,12 +352,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 										$ = 1
 										Do
 										{
-										$i
-										$i++
-										}
-										while ($CurrSizeMB -gt $ShrinkSizeMB -and $i -le 5)
-										{
-											$dt = get-date -format yyyyMMddHHmmss
+										$dt = get-date -format yyyyMMddHHmmss
 											$backup.Devices.AddDevice($bdir + "\" + $db + "_db_" + $dt + ".trn", 'File')
 												try
 												{
@@ -379,6 +374,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 											$NewSize = $logfile.Size/1024
 											Write-Output "Size after shrink = $NewSize and iteration $i of 5"
 										}
+										while ($CurrSizeMB -gt $ShrinkSizeMB -and ++$i -lt 5)
 									}
 							}
 							#start grow file
