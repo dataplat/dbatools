@@ -263,20 +263,26 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 		if ($RegularUser -eq $false) {
 			if (!(Test-SqlSa -SqlServer $SqlServer)) { throw "Not a sysadmin on $source. Quitting." }
 		}
+		
 		if ($ParameterConnection)
 		{
 			$paramserver = New-Object Microsoft.SqlServer.Management.Smo.Server
 			$paramserver.ConnectionContext.ConnectTimeout = 2
+			$paramserver.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
 			$paramserver.ConnectionContext.ConnectionString = $SqlServer.ConnectionContext.ConnectionString
 			$paramserver.ConnectionContext.Connect()
 			return $paramserver
 		}
 		
-		if ($SqlServer.ConnectionContext.IsOpen -eq $false) { $SqlServer.ConnectionContext.Connect() }
+		if ($SqlServer.ConnectionContext.IsOpen -eq $false)
+		{
+			$SqlServer.ConnectionContext.Connect()
+		}
 		return $SqlServer
 	}
 	
 	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlServer
+	$server.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
 	
 	try
 	{
