@@ -31,19 +31,29 @@ Shows what would happen if the command were executed using force.
 		[object]$Source,
 		[parameter(Mandatory = $true)]
 		[object]$Destination,
-		[string[]]$Operators,
+		[System.Management.Automation.PSCredential]$SourceSqlCredential,
+		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
+    DynamicParam { if ($source) { return (Get-ParamSqlOperators -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	PROCESS
-	{
+    BEGIN {
+
 		$operators = $psboundparameters.Operators
+
+		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 		
 		$serveroperators = $sourceserver.JobServer.Operators
 		$destoperators = $destserver.JobServer.Operators
 		
-		$failsafe = $server.jobserver.alertsystem | Select failsafeoperator
-		
+		$failsafe = $server.JobServer.AlertSystem | Select FailSafeOperator
+
+    }
+
+	PROCESS
+	{
+
 		foreach ($operator in $serveroperators)
 		{
 			$operatorname = $operator.name
