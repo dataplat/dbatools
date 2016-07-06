@@ -173,6 +173,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	
 	PROCESS
 	{
+		
 		try
 		{
 			$databases = $psboundparameters.Databases
@@ -245,7 +246,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 							
 						}
 						
-						if ($CurrSize -ige $TargetLogSizeKB)
+						if ($CurrSize -ige $TargetLogSizeKB -and ($ShrinkLogFile -eq 0 -or $ShrinkLogFile -eq $null))
 						{
 							Write-Output "$step - [INFO] The T-Log file '$logfile' size is already equal or greater than target size - No action required"
 						}
@@ -291,7 +292,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 							
 							# SMO use values in KB
 							$SuggestLogIncrementSize = $SuggestLogIncrementSize * 1024
-														
+							
 							# If default will use $SuggestedLogIncrementSize
 							if ($IncrementSizeMB -eq -1)
 							{
@@ -312,26 +313,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 							$ShrinkSizeMB = $ShrinkSize/1024
 							if ($ShrinkLogFile -eq $true)
 							{
-								Write-Verbose "We are about to Shrink the file"
-								$backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
-								$backup.Action = [Microsoft.SqlServer.Management.Smo.BackupActionType]::Log
-								$backup.BackupSetDescription = "Transaction Log backup of " + $db
-								$backup.BackupSetName = $db + " Backup"
-								$backup.Database = $db
-								$backup.MediaDescription = "Disk"
-								$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] 
-											{
-											Write-Progress -id 1 -activity "Backing up logfile $db to $bdir" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
-											}
-								$backup.add_PercentComplete($percent)
-								$backup.add_Complete($complete)
-								
-								Write-Progress -id 1 -activity "Backing up logfile $db to $bdir" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-								Write-Output "Backing up $db"
-			
+								Write-Verbose "We are about to Shrink the Log file"
 								$CurrSizeMB = $CurrSize/1024
 								"Starting Size = $CurrSizeMB"
-
 								if ($bdir -ne $null)
 								{
 									If (!(Test-Path $bdir))
@@ -340,44 +324,65 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 									}
 									else
 									{
-										Write-Verbose "Directory already exists!"
-									}	
+										Write-Output "Directory already exists!"
+									}
 								}
 								else
 								{
 									$bdir = $server.Settings.BackupDirectory
 								}
+								Write-Output "Backup Directory Location $bdir"
+								
 								if ($CurrSizeMB -gt $ShrinkSizeMB)
+								{
+									$i = 1
+									Do
 									{
-										$ = 1
-										Do
+										try
 										{
-										$dt = get-date -format yyyyMMddHHmmss
-											$backup.Devices.AddDevice($bdir + "\" + $db + "_db_" + $dt + ".trn", 'File')
-												try
-												{
-													$backup.SqlBackup($server)
-													Write-Progress -id 1 -activity "Backing up logfile $db to $bdir" -status "Complete" -Completed
-													Write-Output "Backup succeeded"
-													return $true
-												}
-												catch
-												{
-													Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
-													Write-Exception $_
-													return $false
-												}
-											$logfile.Shrink($CurrSizeMB - $SuggestLogIncrementSize, [Microsoft.SQLServer.Management.SMO.ShrinkMethod]::Default)
-											$Server.Refresh()
-											$Database.Refresh()
-											$logfile.Refresh()
-											$NewSize = $logfile.Size/1024
-											Write-Output "Size after shrink = $NewSize and iteration $i of 5"
+											$DefaultCompression = $server.Configuration.DefaultBackupCompression.ConfigValue
+											$backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
+											$backup.Action = [Microsoft.SqlServer.Management.Smo.BackupActionType]::Log
+											$backup.BackupSetDescription = "Transaction Log backup of " + $db
+											$backup.BackupSetName = $db + " Backup"
+											$backup.Database = $db
+											$backup.MediaDescription = "Disk"
+											$dt = get-date -format yyyyMMddHHmmssms
+											$dir = $backup.Devices.AddDevice($bdir + "\" + $db + "_db_" + $dt + ".trn", 'File')
+											if ($DefaultCompression = $true)
+											{
+												$backup.CompressionOption = "1"
+											}
+											else
+											{
+												$backup.CompressionOption = "0"
+											}
+											$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
+												Write-Progress -id 1 -activity "Backing up $db to $server" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
+											}
+											$backup.add_PercentComplete($percent)
+											$backup.PercentCompleteNotification = 1
+											$backup.add_Complete($complete)
+											Write-Progress -id 1 -activity "Backing up $db to $server" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+											$backup.SqlBackup($server)
+											Write-Progress -id 1 -activity "Backing up $db to $server" -status "Complete" -Completed
+											$logfile.Shrink($CurrSize - $ShrinkSize, [Microsoft.SQLServer.Management.SMO.ShrinkMethod]::Default)
 										}
-										while ($CurrSizeMB -gt $ShrinkSizeMB -and ++$i -lt 5)
+										catch
+										{
+											Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
+											Write-Output "Backup failed with the following exception $dir"
+											Write-Exception $_
+											return $false
+										}
+										
 									}
+									while ($CurrSizeMB -gt $ShrinkSizeMB -and ++$i -lt 5)
+								}
 							}
+							
 							#start grow file
+							$CurrSize = $logfile.Refresh()
 							Write-Verbose "$step - While current size less than wanted log size"
 							while ($CurrSize -lt $TargetLogSizeKB)
 							{
