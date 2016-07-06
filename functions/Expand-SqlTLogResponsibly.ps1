@@ -119,6 +119,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .EXAMPLE
     Expand-SqlTLogResponsibly -SqlServer . -Databases 'db with space' -TargetLogSizeMB 50000 -Verbose
+    Expand-SqlTLogResponsibly -SqlServer 'Server' -Databases 'db' -TargetLogSizeMB 100 -IncrementSizeMB 10 -ShrinkLogFile 1 -ShrinkSizeMB 10 -bdir R:\MSSQL\Backup
     Use -Verbose to view in detail all actions performed by this script
 #>
 	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
