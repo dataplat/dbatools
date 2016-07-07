@@ -261,11 +261,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 								switch ($TargetLogSizeMB)
 								{
 									{ $_ -le 64 } { $SuggestLogIncrementSize = 64 }
-									{ $_ -gt 64 -and $_ -lt 256 } { $SuggestLogIncrementSize = 256 }
-									{ $_ -gt 256 -and $_ -lt 1024 } { $SuggestLogIncrementSize = 512 }
-									{ $_ -gt 1024 -and $_ -lt 4096 } { $SuggestLogIncrementSize = 1024 }
-									{ $_ -gt 4096 -and $_ -lt 8192 } { $SuggestLogIncrementSize = 2048 }
-									{ $_ -gt 8192 -and $_ -lt 16384 } { $SuggestLogIncrementSize = 4096 }
+									{ $_ -ge 64 -and $_ -lt 256 } { $SuggestLogIncrementSize = 256 }
+									{ $_ -ge 256 -and $_ -lt 1024 } { $SuggestLogIncrementSize = 512 }
+									{ $_ -ge 1024 -and $_ -lt 4096 } { $SuggestLogIncrementSize = 1024 }
+									{ $_ -ge 4096 -and $_ -lt 8192 } { $SuggestLogIncrementSize = 2048 }
+									{ $_ -ge 8192 -and $_ -lt 16384 } { $SuggestLogIncrementSize = 4096 }
 									{ $_ -ge 16384 } { $SuggestLogIncrementSize = 8192 }
 								}
 							}
@@ -274,11 +274,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 								switch ($TargetLogSizeMB)
 								{
 									{ $_ -le 64 } { $SuggestLogIncrementSize = 64 }
-									{ $_ -gt 64 -and $_ -lt 256 } { $SuggestLogIncrementSize = 256 }
-									{ $_ -gt 256 -and $_ -lt 1024 } { $SuggestLogIncrementSize = 512 }
-									{ $_ -gt 1024 -and $_ -lt 4096 } { $SuggestLogIncrementSize = 1024 }
-									{ $_ -gt 4096 -and $_ -lt 8192 } { $SuggestLogIncrementSize = 2048 }
-									{ $_ -gt 8192 -and $_ -lt 16384 } { $SuggestLogIncrementSize = 4000 }
+									{ $_ -ge 64 -and $_ -lt 256 } { $SuggestLogIncrementSize = 256 }
+									{ $_ -ge 256 -and $_ -lt 1024 } { $SuggestLogIncrementSize = 512 }
+									{ $_ -ge 1024 -and $_ -lt 4096 } { $SuggestLogIncrementSize = 1024 }
+									{ $_ -ge 4096 -and $_ -lt 8192 } { $SuggestLogIncrementSize = 2048 }
+									{ $_ -ge 8192 -and $_ -lt 16384 } { $SuggestLogIncrementSize = 4000 }
 									{ $_ -ge 16384 } { $SuggestLogIncrementSize = 8000 }
 								}
 								
