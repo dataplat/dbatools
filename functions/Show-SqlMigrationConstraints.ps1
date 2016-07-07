@@ -75,7 +75,7 @@ All databases will be verified for features in use that can't be supported on th
 and Windows credentials for sqlcluster.
 
 .EXAMPLE   
-Copy-SqlPolicyManagement -Source sqlserver2014a -Destination sqlcluster -Databases db1
+Show-SqlMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -Databases db1
 Only db1 database will be verified for features in use that can't be supported on the destination server
 	
 #>
@@ -94,16 +94,18 @@ Only db1 database will be verified for features in use that can't be supported o
 
     BEGIN
 	{
-        #1804890536 = Enterprise
-        #1872460670 = Enterprise Edition: Core-based Licensing
-        #610778273 = Enterprise Evaluation
-        #284895786 = Business Intelligence
-        #-2117995310 = Developer
-        #-1592396055 = Express
-        #-133711905= Express with Advanced Services
-        #-1534726760 = Standard
-        #1293598313 = Web
-        #1674378470 = SQL Database
+	    <#
+			1804890536 = Enterprise
+	        1872460670 = Enterprise Edition: Core-based Licensing
+	        610778273 = Enterprise Evaluation
+	        284895786 = Business Intelligence
+	        -2117995310 = Developer
+	        -1592396055 = Express
+	        -133711905= Express with Advanced Services
+	        -1534726760 = Standard
+	        1293598313 = Web
+	        1674378470 = SQL Database
+		#>
 
         $editions = @{"Enterprise" = 10; "Developer" = 10; "Evaluation" = 10; "Standard" = 5; "Express" = 1}
     }
