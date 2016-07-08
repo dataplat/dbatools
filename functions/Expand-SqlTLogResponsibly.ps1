@@ -218,32 +218,32 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 					
 					Write-Verbose "Verifying if exists sufficient space ($([System.Math]::Round($($requiredSpace / 1024.0), 2))MB) on the volume to perform this task"
 					
-					#Only available from 2008 R2 towards... maybe validate the version and issue a warning saying "can't verify volume free space"
-					if ($requiredSpace -gt $logfile.VolumeFreeSpace)
+					# SQL 2005 or lower version. The "VolumeFreeSpace" property is empty
+                    if ($logfile.VolumeFreeSpace -eq $null -and ($server.VersionMajor -eq 9))
+					{
+                        $title = "Choose increment value for database '$db':"
+                        $message = "Cannot validate freespace on drive where log file resides? Do you wish to continue (Y/N)"
+                        $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Will continue"
+                        $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Will exit"
+                        $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+                        $result = $host.ui.PromptForChoice($title, $message, $options, 0)
+                        #no
+                        if ($result -eq 1) 
+                        {
+                            Write-Warning "You have cancelled the execution"
+							return 
+                        }
+                    }
+                    #Only available from 2008 R2 towards... maybe validate the version and issue a warning saying "can't verify volume free space"
+                    if (($requiredSpace -gt $logfile.VolumeFreeSpace) -and ($server.VersionMajor -gt 9))
 					{
 						Write-Output "There is not enough space on volume to perform this task. `r`n" `
-									 "Available space: $([System.Math]::Round($($logfile.VolumeFreeSpace / 1024.0), 2))MB;`r`n" `
-									 "Required space: $([System.Math]::Round($($requiredSpace / 1024.0), 2))MB;"
+									    "Available space: $([System.Math]::Round($($logfile.VolumeFreeSpace / 1024.0), 2))MB;`r`n" `
+									    "Required space: $([System.Math]::Round($($requiredSpace / 1024.0), 2))MB;"
 						return
 					}
 					else
 					{
-						# SQL 2005 or lower version. The "VolumeFreeSpace" property is empty
-						if ($logfile.VolumeFreeSpace -eq $null)
-						{
-							$choice = ""
-							while ($choice -notmatch "[y|n]")
-							{
-								$choice = Read-Host "Cannot validate freespace on drive where log file resides? Do you wish to continue (Y/N)"
-							}
-							
-							if ($choice.ToLower() -eq "n")
-							{
-								Write-Output "You have cancelled the execution"
-								return
-							}
-							
-						}
 						
 						if ($currentSize -ige $TargetLogSizeKB -and ($ShrinkLogFile -eq $false))
 						{
@@ -344,13 +344,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 											{
 												$backup.CompressionOption = 0
 											}
-											$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
+											$percnt = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
 												Write-Progress -id 2 -ParentId 1 -activity "Backing up $db to $server" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
 											}
 											$backup.add_PercentComplete($percent)
 											$backup.PercentCompleteNotification = 10
 											$backup.add_Complete($complete)
-											Write-Progress -id 2 -ParentId 1 -activity "Backing up $db to $server" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+								Write-Progress -id 2 -ParentId 1 -activity "Backing up $db to $server" -percentcomplete 0 -statu ([System.String]::Format("Progress: {0} %", 0))
 											$backup.SqlBackup($server)
 											Write-Progress -id 2 -ParentId 1 -activity "Backing up $db to $server" -status "Complete" -Completed
 											$logfile.Shrink($ShrinkSizeMB, [Microsoft.SQLServer.Management.SMO.ShrinkMethod]::TruncateOnly)
@@ -402,11 +402,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 							{
 								
 								Write-Progress `
-											   -Id 2 `
-											   -ParentId 1 `
-											   -Activity "Growing file $logfile on '$db' database" `
-											   -PercentComplete ($currentSize / $TargetLogSizeKB * 100) `
-											   -Status "Remaining - $([System.Math]::Round($($($TargetLogSizeKB - $currentSize) / 1024.0), 2)) MB"
+											    -Id 2 `
+											    -ParentId 1 `
+											    -Activity "Growing file $logfile on '$db' database" `
+											    -PercentComplete ($currentSize / $TargetLogSizeKB * 100) `
+											    -Status "Remaining - $([System.Math]::Round($($($TargetLogSizeKB - $currentSize) / 1024.0), 2)) MB"
 								
 								Write-Verbose "$step - Verifying if the log can grow or if has already the desired space allocated"
 								if (($TargetLogSizeKB - $currentSize) -lt $LogIncrementSize)
