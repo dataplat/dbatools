@@ -315,6 +315,27 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 		if ($server.ConnectionContext.FixedServerRoles -notmatch "SysAdmin") { throw "Not a sysadmin on $source. Quitting." }
 	}
 	
+	if ($server.VersionMajor -eq 8)
+	{
+		# 2000
+		$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ActiveConnections', 'Collation', 'CompatibilityLevel', 'CreateDate', 'DataSpaceUsage', 'ID', 'IndexSpaceUsage', 'IsAccessible', 'IsFullTextEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Size', 'SpaceAvailable', 'Status', 'Version')
+		$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'CreateDate', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'Name', 'Sid', 'WindowsLoginAccessType')
+	}
+	
+	elseif ($server.VersionMajor -eq 9 -or $server.VersionMajor -eq 10)
+	{
+		# 2005 and 2008
+		$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ActiveConnections', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'CreateDate', 'DataSpaceUsage', 'ID', 'IndexSpaceUsage', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Size', 'SpaceAvailable', 'Status', 'Trustworthy', 'Version')
+		$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
+	}
+	
+	else
+	{
+		# 2012 and above
+		$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ActiveConnections', 'AvailabilityDatabaseSynchronizationState', 'AvailabilityGroupName', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'ContainmentType', 'CreateDate', 'DataSpaceUsage', 'FilestreamDirectoryName', 'ID', 'IndexSpaceUsage', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Size', 'SpaceAvailable', 'Status', 'Trustworthy', 'Version')
+		$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordHashAlgorithm', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
+	}
+	
 	return $server
 }
 
