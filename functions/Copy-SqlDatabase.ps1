@@ -748,17 +748,17 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			}
 		}
 		
-		Write-Output "Resolving NetBIOS name for $source..."
+		Write-Output "Resolving NetBIOS names"
 		$sourcenetbios = Resolve-NetBiosName $sourceserver
-		Write-Output "Resolving NetBIOS name for $destination..."
 		$destnetbios = Resolve-NetBiosName $destserver
 		
+		Write-Output "Performing SMO version check"
 		Invoke-SmoCheck -SqlServer $sourceserver
 		Invoke-SmoCheck -SqlServer $destserver
 		
 		$migrateddb = @{ }; $skippedb = @{ }
 		
-		Write-Verbose "Checking to ensure the source isn't the same as the destination"
+		Write-Output "Checking to ensure the source isn't the same as the destination"
 		if ($sourceserver.DomainInstanceName -eq $destserver.DomainInstanceName)
 		{
 			if ($sourceserver.ServiceName -eq $destserver.ServiceName)
@@ -767,7 +767,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			}
 		}
 		
-		Write-Verbose "Checking to ensure network path is valid"
+			Write-Output "Checking to ensure network path is valid"
 		if ($NetworkShare.Length -gt 0)
 		{
 			if (!($NetworkShare.StartsWith("\\")))
@@ -781,19 +781,19 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			}
 		}
 		
-		Write-Verbose "Checking to ensure server is not SQL Server 7 or below"
+		Write-Output "Checking to ensure server is not SQL Server 7 or below"
 		if ($sourceserver.versionMajor -lt 8 -and $destserver.versionMajor -lt 8)
 		{
 			throw "This script can only be run on Sql Server 2000 and above. Quitting."
 		}
 		
-		Write-Verbose "Checking to ensure detach/attach is not attempted on SQL Server 2000"
+		Write-Output "Checking to ensure detach/attach is not attempted on SQL Server 2000"
 		if ($destserver.versionMajor -lt 9 -and $DetachAttach)
 		{
 			throw "Detach/Attach not supported when destination Sql Server is version 2000. Quitting."
 		}
 		
-		Write-Verbose "Checking to ensure SQL Server 2000 migration isn't directly attempted to SQL Server 2012"
+		Write-Output "Checking to ensure SQL Server 2000 migration isn't directly attempted to SQL Server 2012"
 		if ($sourceserver.versionMajor -lt 9 -and $destserver.versionMajor -gt 10)
 		{
 			throw "Sql Server 2000 databases cannot be migrated to Sql Server versions 2012 and above. Quitting."
@@ -806,26 +806,27 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		Please use the -BackupRestore switch or override this requirement by specifying -Force."
 		}
 		
-		Write-Verbose "Warning on different collation"
+		
 		if ($sourceserver.collation -ne $destserver.collation)
 		{
+			Write-Output "Warning on different collation"
 			Write-Warning "Collation on $Source, $($sourceserver.collation) differs from the $Destination, $($destserver.collation)."
 		}
 		
-		Write-Verbose "Ensuring user databases exist"
+		Write-Output "Ensuring user databases exist (counting databases)"
 		$dbtotal = $sourceserver.Databases.count
 		if ($dbtotal -le 4)
 		{
 			throw "No user databases to migrate. Quitting."
 		}
 		
-		Write-Verbose "Ensuring destination server version is equal to or greater than source"
+		Write-Output "Ensuring destination server version is equal to or greater than source"
 		if ([version]$sourceserver.ResourceVersionString -gt [version]$destserver.ResourceVersionString)
 		{
 			throw "Source Sql Server version build must be <= destination Sql Server for database migration."
 		}
 		
-		Write-Verbose "Writing warning about filestream being enabled"
+		Write-Output "Writing warning about filestream being enabled"
 		if ($fswarning) { Write-Warning "FILESTREAM enabled on $source but not $destination. Databases that use FILESTREAM will be skipped." }
 		
 		if ($DetachAttach -eq $true)
@@ -866,7 +867,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		$sourcefilestream = $sourceserver.ConnectionContext.ExecuteScalar($sql)
 		$destfilestream = $destserver.ConnectionContext.ExecuteScalar($sql)
 		if ($sourcefilestream -gt 0 -and $destfilestream -eq 0) { $fswarning = $true }
-		
+
 		Write-Output "Building database list"
 		$databaselist = New-Object System.Collections.ArrayList
 		$SupportDBs = "ReportServer", "ReportServerTempDB", "distribution"
@@ -876,7 +877,6 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			$dbowner = $database.Owner
 			
 			if ($database.id -le 4) { continue }
-			
 			if ($Databases -and $Databases -notcontains $dbname) { continue }
 			if ($IncludeSupportDBs -eq $false -and $SupportDBs -contains $dbname) { continue }
 			if ($IncludeSupportDBs -eq $true -and $SupportDBs -notcontains $dbname)
