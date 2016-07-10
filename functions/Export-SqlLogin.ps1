@@ -229,14 +229,15 @@ https://dbatools.io/Export-SqlLogin
 					}
 					
 					$sid = "0x"; $sourcelogin.sid | ForEach-Object { $sid += ("{0:X}" -f $_).PadLeft(2, "0") }
-					
-					$outsql += "CREATE LOGIN [$username] WITH PASSWORD = $hashedpass HASHED, SID = $sid, DEFAULT_DATABASE = [$defaultdb], CHECK_POLICY = $checkpolicy, CHECK_EXPIRATION = $checkexpiration, DEFAULT_LANGUAGE = [$language]"
+					$outsql += "IF NOT EXISTS (SELECT loginname from master.dbo.syslogins where name = '$username')
+CREATE LOGIN [$username] WITH PASSWORD = $hashedpass HASHED, SID = $sid, DEFAULT_DATABASE = [$defaultdb], CHECK_POLICY = $checkpolicy, CHECK_EXPIRATION = $checkexpiration, DEFAULT_LANGUAGE = [$language]"
 				}
 				
 				# Attempt to script out Windows User
 				elseif ($sourcelogin.LoginType -eq "WindowsUser" -or $sourcelogin.LoginType -eq "WindowsGroup")
 				{
-					$outsql += "CREATE LOGIN [$username] FROM WINDOWS WITH DEFAULT_DATABASE = [$defaultdb], DEFAULT_LANGUAGE = [$language]"
+					$outsql += "IF NOT EXISTS (SELECT loginname from master.dbo.syslogins where name = '$username')
+CREATE LOGIN [$username] FROM WINDOWS WITH DEFAULT_DATABASE = [$defaultdb], DEFAULT_LANGUAGE = [$language]"
 				}
 				
 				# This script does not currently support certificate mapped or asymmetric key users.
