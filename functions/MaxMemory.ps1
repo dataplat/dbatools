@@ -12,20 +12,8 @@ Jonathan notes that the formula used provides a *general recommendation* that do
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
-.PARAMETER SqlServers
+.PARAMETER SqlServer
 Allows you to specify a comma separated list of servers to query.
-
-.PARAMETER ServersFromFile
-Allows you to specify a list that's been populated by a list of servers to query. The format is as follows
-server1
-server2
-server3
-
-.PARAMETER SqlCms
-Reports on a list of servers populated by the specified SQL Server Central Management Server.
-
-.PARAMETER SqlCmsGroups
-This is a parameter that appears when SqlCms has been specified. It is populated by Server Groups within the given Central Management Server.
 
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -59,50 +47,39 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Get-SqlMaxMemory
 
 .EXAMPLE   
-Get-SqlMaxMemory -SqlCms sqlcluster
+Get-SqlMaxMemory -SqlServer sqlcluster,sqlserver2012
 
 Get Memory Settings for all servers within the SQL Server Central Management Server "sqlcluster"
 
 .EXAMPLE 
-Get-SqlMaxMemory -SqlCms sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-SqlMaxMemory -UseRecommended
+Get-SqlMaxMemory -SqlServer sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-SqlMaxMemory 
 
 Find all servers in CMS that have Max SQL memory set to higher than the total memory of the server (think 2147483647)
 
 #>
 	[CmdletBinding()]
 	Param (
-		[parameter(Position = 0)]
-		[string[]]$SqlServers,
-		# File with one server per line
-
-		[string]$SqlServersFromFile,
-		# Central Management Server
-
-		[string]$SqlCms,
+		[parameter(Position = 0, Mandatory=$true)]
+		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
+		[string[]]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	DynamicParam { if ($SqlCms) { return (Get-ParamSqlCmsGroups -SqlServer $SqlCms -SqlCredential $SqlCredential) } }
-	
 	PROCESS
 	{
-		
-		if ([string]::IsNullOrEmpty($SqlCms) -and [string]::IsNullOrEmpty($SqlServersFromFile) -and [string]::IsNullOrEmpty($SqlServers))
-		{ throw "You must specify a server list source using -SqlServers or -SqlCms or -SqlServersFromFile" }
-		
-		if ([Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers") -eq $null)
-		{ throw "Quitting: SMO Required. You can download it from http://goo.gl/R4yA6u" }
-		
-		$SqlCmsGroups = $psboundparameters.SqlCmsGroups
-		if ($SqlCms) { $SqlServers = Get-SqlCmsRegServers -SqlServer $SqlCms -SqlCredential $SqlCredential -groups $SqlCmsGroups }
-		If ($SqlServersFromFile) { $SqlServers = Get-Content $SqlServersFromFile }
-		
 		$collection = @()
-		foreach ($SqlServer in $SqlServers)
+		foreach ($servername in $sqlserver)
 		{
-			Write-Verbose "Attempting to connect to $sqlserver"
-			try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential }
-			catch { Write-Warning "Can't connect to $sqlserver or access denied. Skipping."; continue }
+			Write-Verbose "Attempting to connect to $servername"
+			try
+			{
+				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
+			}
+			catch
+			{
+				Write-Warning "Can't connect to $servername or access denied. Skipping."
+				continue
+			}
 			
 			$maxmem = $server.Configuration.MaxServerMemory.ConfigValue
 			
@@ -112,7 +89,6 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 			
 			# Some servers underreport by 1MB.
 			if (($totalmemory % 1024) -ne 0) { $totalMemory = $totalMemory + 1 }
-			
 			
 			if ($totalMemory -ge 4096)
 			{
@@ -156,28 +132,15 @@ Sets SQL Server max memory then displays information relating to SQL Server Max 
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
-.PARAMETER SqlServers
-Allows you to specify a comma separated list of servers to query.
-
-.PARAMETER ServersFromFile
-Allows you to specify a list that's been populated by a list of servers to query. The format is as follows
-server1
-server2
-server3
-
-.PARAMETER SqlCms
-Reports on a list of servers populated by the specified SQL Server Central Management Server.
-
-.PARAMETER SqlCmsGroups
-This is a parameter that appears when SqlCms has been specified. It is populated by Server Groups within the given Central Management Server.
-
-.PARAMETER MaxMB
-Specifies the max megabytes
-
-.PARAMETER UseRecommended
 Inspired by Jonathan Kehayias's post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this uses a formula to determine the default optimum RAM to use, then sets the SQL max value to that number.
 
 Jonathan notes that the formula used provides a *general recommendation* that doesn't account for everything that may be going on in your specific environment. 
+
+.PARAMETER SqlServer
+Allows you to specify a comma separated list of servers to query.
+
+.PARAMETER MaxMb
+Specifies the max megabytes
 
 .NOTES 
 Author  : Chrissy LeMaire (@cl), netnerds.net
@@ -192,7 +155,7 @@ Set-SqlMaxMemory sqlserver1 2048
 Set max memory to 2048 MB on just one server, "sqlserver1"
 
 .EXAMPLE 
-Get-SqlMaxMemory -SqlCms sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-SqlMaxMemory -UseRecommended
+Get-SqlMaxMemory -SqlServer sqlserver2014 | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-SqlMaxMemory
 
 Find all servers in CMS that have Max SQL memory set to higher than the total memory of the server (think 2147483647),
 then pipe those to Set-SqlMaxMemory and use the default recommendation
@@ -205,35 +168,30 @@ Specifically set memory to 512 MB for all servers within the "Express" server gr
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0)]
-		[string[]]$SqlServers,
+		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
+		[string[]]$SqlServer,
 		[parameter(Position = 1)]
-		[int]$MaxMB,
-		[string]$SqlServersFromFile,
-		[string]$SqlCms,
-		[switch]$UseRecommended,
+		[int]$MaxMb,
 		[Parameter(ValueFromPipeline = $True)]
 		[object]$collection,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
-	
-	DynamicParam { if ($SqlCms) { return (Get-ParamSqlCmsGroups -SqlServer $SqlCms -SqlCredential $SqlCredential) } }
-	
 	PROCESS
 	{
 		
-		if ([string]::IsNullOrEmpty($SqlCms) -and [string]::IsNullOrEmpty($SqlServersFromFile) -and [string]::IsNullOrEmpty($SqlServers) -and $collection -eq $null)
-		{ throw "You must specify a server list source using -SqlServers or -SqlCms or -SqlServersFromFile or you can pipe results from Get-SqlMaxMemory" }
+		if ($SqlServer.length -eq 0 -and $collection -eq $null)
+		{
+			throw "You must specify a server list source using -SqlServer or you can pipe results from Get-SqlMaxMemory"
+		}
 		
-		if ($MaxMB -eq 0 -and $UseRecommended -eq $false -and $collection -eq $null) { throw "You must specify -MaxMB or -UseRecommended" }
+		if ($MaxMB -eq 0)
+		{
+			$UseRecommended = $true
+		}
 		
 		if ($collection -eq $null)
 		{
-			$SqlCmsGroups = $psboundparameters.SqlCmsGroups
-			if ($SqlCmsGroups -ne $null)
-			{
-				$collection = Get-SqlMaxMemory -SqlServers $SqlServers -SqlCms $SqlCms -SqlServersFromFile $SqlServersFromFile -SqlCmsGroups $SqlCmsGroups
-			}
-			else { $collection = Get-SqlMaxMemory -SqlServers $SqlServers -SqlCms $SqlCms -SqlServersFromFile $SqlServersFromFile }
+			$collection = Get-SqlMaxMemory -SqlServer $SqlServer
 		}
 		
 		$collection | Add-Member -NotePropertyName OldMaxValue -NotePropertyValue 0
@@ -242,8 +200,15 @@ Specifically set memory to 512 MB for all servers within the "Express" server gr
 		{
 			
 			Write-Verbose "Attempting to connect to $sqlserver"
-			try { $server = Connect-SqlServer -SqlServer $row.server -SqlCredential $SqlCredential }
-			catch { Write-Warning "Can't connect to $sqlserver or access denied. Skipping."; continue }
+			try
+			{
+				$server = Connect-SqlServer -SqlServer $row.server -SqlCredential $SqlCredential
+			}
+			catch
+			{
+				Write-Warning "Can't connect to $sqlserver or access denied. Skipping."
+				continue
+			}
 			
 			if (!(Test-SqlSa -SqlServer $server))
 			{
