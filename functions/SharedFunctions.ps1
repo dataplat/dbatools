@@ -288,7 +288,7 @@ RemotingPortOpen   : True
 	else { $serverinfo.DefaultSQLPortOpen = "N/A" }
 	
 	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlServer
-	
+
 	try
 	{
 		if ($SqlCredential -ne $null)
@@ -429,44 +429,6 @@ Checks for PowerShell SMO version vs SQL Server's SMO version.
 	}
 }
 
-Function Get-SqlCmsRegServers
-{
-<# 
- .SYNOPSIS 
- Internal function. Returns array of server names from CMS Server. If -Groups is specified,
- only servers within the given groups are returned.
-#>	
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[object]$SqlServer,
-		[string[]]$groups,
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	$SqlCms = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-	$sqlconnection = $SqlCms.ConnectionContext.SqlConnectionObject
-	
-	try { $cmstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sqlconnection) }
-	catch { throw "Cannot access Central Management Server" }
-	
-	$servers = @()
-	if ($groups -ne $null)
-	{
-		foreach ($group in $groups)
-		{
-			$cms = $cmstore.ServerGroups["DatabaseEngineServerGroup"].ServerGroups[$group]
-			$servers += ($cms.GetDescendantRegisteredServers()).servername
-		}
-	}
-	else
-	{
-		$cms = $cmstore.ServerGroups["DatabaseEngineServerGroup"]
-		$servers = ($cms.GetDescendantRegisteredServers()).servername
-	}
-	
-	return $servers
-}
 
 Function Get-OfflineSqlFileStructure
 {

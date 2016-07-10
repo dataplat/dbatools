@@ -801,14 +801,14 @@ filled with server groups from specified SQL Server Central Management server na
 		
 	try { $SqlCms = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
-	
+
 	$sqlconnection = $SqlCms.ConnectionContext.SqlConnectionObject
 	
 	try { $cmstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sqlconnection) }
 	catch { return }
 	
 	if ($cmstore -eq $null) { return }
-	
+
 	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
 	$paramattributes = New-Object System.Management.Automation.ParameterAttribute
 	$paramattributes.ParameterSetName = "__AllParameterSets"
@@ -820,13 +820,14 @@ filled with server groups from specified SQL Server Central Management server na
 	if ($argumentlist -ne $null)
 	{
 		$validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $argumentlist
-		
+
 		$combinedattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
 		$combinedattributes.Add($paramattributes)
 		$combinedattributes.Add($validationset)
-		
 		$SqlCmsGroups = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("SqlCmsGroups", [String[]], $combinedattributes)
 		$newparams.Add("SqlCmsGroups", $SqlCmsGroups)
+		$Group = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Group", [String[]], $combinedattributes)
+		$newparams.Add("Group", $Group)
 		
 		return $newparams
 	}
