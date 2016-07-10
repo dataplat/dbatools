@@ -71,8 +71,6 @@ filled with database list from specified SQL Server server.
 	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
-	$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'Name')
-	
 	$SupportDbs = "ReportServer", "ReportServerTempDb", "distribution"
 	
 	# Populate arrays
