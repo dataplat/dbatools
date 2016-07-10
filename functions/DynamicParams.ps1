@@ -68,11 +68,15 @@ filled with database list from specified SQL Server server.
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	return 
 	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
-	if ($server.databases.count -gt 255)
+	$SupportDbs = "ReportServer", "ReportServerTempDb", "distribution"
+	
+	# Populate arrays
+	$databaselist = @()
+	
+	if ($server.Databases.Count -gt 255)
 	{
 		# Don't slow them down by building a list that likely won't be used anyway
 		$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
@@ -86,14 +90,11 @@ filled with database list from specified SQL Server server.
 		return $newparams
 	}
 	
-	# Populate arrays
-	$databaselist = @()
-	
-	foreach ($database in $server.databases.name)
+	foreach ($database in $server.databases)
 	{
-		if ($server.databases[$database].IsSystemObject -eq $false -and "ReportServer", "ReportServerTempDb", "distribution" -notcontains $database)
+		if ((!$database.IsSystemObject) -and $SupportDbs -notcontains $database.name)
 		{
-			$databaselist += $database
+			$databaselist += $database.name
 		}
 	}
 	
@@ -152,6 +153,7 @@ Function Get-ParamSqlLogins
 	
 	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
+	
 	
 	if ($server.logins.count -gt 255)
 	{
