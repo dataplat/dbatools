@@ -120,7 +120,7 @@ Limitations: Does not support Application Roles yet
 		[string]$OutFile,
 		[parameter(ParameterSetName = "Live")]
 		[switch]$Force,
-		#[parameter(ValueFromPipeline = $true, DontShow)]
+		[switch]$NoSaRename,
 		[object]$pipelogin
 	)
 	
@@ -136,6 +136,7 @@ Limitations: Does not support Application Roles yet
 				
 				$username = $sourcelogin.name
 				if ($Logins -ne $null -and $Logins -notcontains $username) { continue }
+				if ($sourcelogin.id -eq 1) { continue }
 				if ($Exclude -contains $username -or $username.StartsWith("##") -or $username -eq 'sa') { Write-Output "Skipping $username"; continue }
 				$servername = Resolve-NetBiosName $sourceserver
 				
@@ -410,7 +411,7 @@ Limitations: Does not support Application Roles yet
 			Sync-SqlLoginPermissions -Source $Source -Destination $Destination $loginparms
 			return
 		}
-
+		
 		if ($OutFile)
 		{
 			Export-SqlLogin -SqlServer $source -FilePath $OutFile $loginparms
@@ -423,6 +424,20 @@ Limitations: Does not support Application Roles yet
 		}
 		
 		Copy-Login -sourceserver $sourceserver -destserver $destserver -Logins $Logins -Exclude $Exclude -Force $force
+		
+		$sa = $sourceserver.Logins | Where-Object { $_.id -eq 1 }
+		$destsa = $destserver.Logins | Where-Object { $_.id -eq 1 }
+		$saname = $sa.name
+		
+		if ($saname -ne $destsa.name -and $NoSaRename -eq $false)
+		{
+			Write-Output "Changing sa username to match source ($saname)"
+			If ($Pscmdlet.ShouldProcess($destination, "Changing sa username to match source ($saname)"))
+			{
+				$destsa.Rename($saname)
+				$destsa.alter()
+			}
+		}
 	}
 	
 	END
