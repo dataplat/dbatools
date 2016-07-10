@@ -42,23 +42,17 @@ https://dbatools.io/Get-SqlRegisteredServerName
 .EXAMPLE 
 Get-SqlRegisteredServerName -SqlServer sqlserver2014a
 
-Gets a list of server names from the Central Management Server on sqlserver2014a, using Windows Credentials
+Gets a list of all server names from the Central Management Server on sqlserver2014a, using Windows Credentials
 
 .EXAMPLE 
 Get-SqlRegisteredServerName -SqlServer sqlserver2014a -SqlCredential $credential
 
-Copies all policies and conditions from sqlserver2014a to sqlcluster, using Windows credentials. 
-
-.EXAMPLE 
-Get-SqlRegisteredServerName -SqlServer sqlserver2014a -SqlCredential $credential
-
-Copies all policies and conditions from sqlserver2014a to sqlcluster, using Windows credentials. 
+Gets a list of all server names from the Central Management Server on sqlserver2014a, using SQL Authentication
 		
-
 .EXAMPLE 
-Get-SqlRegisteredServerName -SqlServer sqlserver2014a -SqlCredential $credential
-
-Copies all policies and conditions from sqlserver2014a to sqlcluster, using Windows credentials. 
+Get-SqlRegisteredServerName -SqlServer sqlserver2014a -Groups HR, Accounting
+	
+Gets a list of server names in the HR and Accouting groups from the Central Management Server on sqlserver2014a.
 	
 #>
 	Param (
