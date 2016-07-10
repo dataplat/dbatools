@@ -267,7 +267,6 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 			$paramserver.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
 			$paramserver.ConnectionContext.ConnectionString = $SqlServer.ConnectionContext.ConnectionString
 			$paramserver.ConnectionContext.Connect()
-			$paramserver.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'Name')
 			return $paramserver
 		}
 		
@@ -297,7 +296,6 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 		if ($ParameterConnection)
 		{
 			$server.ConnectionContext.ConnectTimeout = 2
-			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'Name')
 		}
 		else
 		{
@@ -343,7 +341,6 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 		$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions','ActiveConnections', 'AvailabilityDatabaseSynchronizationState' , 'AvailabilityGroupName' , 'BrokerEnabled', 'Collation', 'CompatibilityLevel' , 'ContainmentType', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
 		$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordHashAlgorithm', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
 	}
-	#>
 	return $server
 }
 
