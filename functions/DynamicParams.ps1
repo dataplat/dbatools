@@ -68,24 +68,37 @@ filled with database list from specified SQL Server server.
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
+	return 
 	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
-	$SupportDbs = "ReportServer", "ReportServerTempDb", "distribution"
+	if ($server.databases.count -gt 255)
+	{
+		# Don't slow them down by building a list that likely won't be used anyway
+		$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+		$attributes = New-Object System.Management.Automation.ParameterAttribute
+		$attributes.ParameterSetName = "__AllParameterSets"
+		$attributes.Mandatory = $false
+		$Databases = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Databases", [String[]], $attributes)
+		$newparams.Add("Databases", $Databases)
+		$Exclude = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Exclude", [String[]], $attributes)
+		$newparams.Add("Exclude", $Exclude)
+		return $newparams
+	}
 	
 	# Populate arrays
 	$databaselist = @()
-	foreach ($database in $server.databases)
+	
+	foreach ($database in $server.databases.name)
 	{
-		if ((!$database.IsSystemObject) -and $SupportDbs -notcontains $database.name)
+		if ($server.databases[$database].IsSystemObject -eq $false -and "ReportServer", "ReportServerTempDb", "distribution" -notcontains $database)
 		{
-			$databaselist += $database.name
+			$databaselist += $database
 		}
 	}
 	
 	# Reusable parameter setup
 	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-	
 	
 	# Provide backwards compatability for improperly named parameter
 	# Scratch that. I'm going with plural. Sorry, Snoves!
@@ -139,6 +152,21 @@ Function Get-ParamSqlLogins
 	
 	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
+	
+	if ($server.logins.count -gt 255)
+	{
+		# Don't slow them down by building a list that likely won't be used anyway
+		$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+		$attributes = New-Object System.Management.Automation.ParameterAttribute
+		$attributes.ParameterSetName = "__AllParameterSets"
+		$attributes.Mandatory = $false
+		$Logins = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Logins", [String[]], $attributes)
+		$newparams.Add("Logins", $Logins)
+		$Exclude = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Exclude", [String[]], $attributes)
+		$newparams.Add("Exclude", $Exclude)
+		return $newparams
+	}
+	
 	$loginlist = @()
 	
 	foreach ($login in $server.logins)
