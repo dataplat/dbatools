@@ -78,7 +78,7 @@ Gets a list of server names in the HR and Accouting groups from the Central Mana
 			throw "Cannot access Central Management Server"
 		}
 		
-		$groups = $psboundparameters.Groups
+		$groups = $psboundparameters.Group
 	}
 	
 	PROCESS
@@ -105,6 +105,6 @@ Gets a list of server names in the HR and Accouting groups from the Central Mana
 	
 	END
 	{
-		$sourceserver.ConnectionContext.Disconnect()
+		$server.ConnectionContext.Disconnect()
 	}
 }
