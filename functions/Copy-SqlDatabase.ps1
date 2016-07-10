@@ -172,7 +172,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		[parameter(Position = 20)]
 		[switch]$Force,
 		[parameter(ValueFromPipeline=$True)]
-		[object]$DatabasePipeline
+		[object]$DbPipeline
 	)
 	
 	DynamicParam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential } }
@@ -687,10 +687,16 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
 		
-		if ($DatabasePipeline.Length -gt 0)
+		if (($AllDatabases -or $IncludeSupportDbs -or $Databases) -and !$DetachAttach -and !$BackupRestore)
 		{
-			$Source = $DatabasePipeline[0].parent.name
-			$Databases = $DatabasePipeline.name
+			throw "You must specify -DetachAttach or -BackupRestore when migrating databases."
+		}
+		
+		
+		if ($DbPipeline.Length -gt 0)
+		{
+			$Source = $DbPipeline[0].parent.name
+			$Databases = $DbPipeline.name
 		}
 		
 		if ($databases -contains "master" -or $databases -contains "msdb" -or $databases -contains "tempdb") { throw "Migrating system databases is not currently supported." }
@@ -732,11 +738,6 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			{
 				throw "Source and Destination Sql Servers instances are the same. Quitting."
 			}
-		}
-		
-		if (($AllDatabases -or $IncludeSupportDbs -or $Databases) -and !$DetachAttach -and !$BackupRestore)
-		{
-			throw "You must specify -DetachAttach or -BackupRestore when migrating databases."
 		}
 		
 		Write-Verbose "Checking to ensure network path is valid"
