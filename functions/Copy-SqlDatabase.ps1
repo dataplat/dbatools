@@ -767,9 +767,9 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			}
 		}
 		
-			Write-Output "Checking to ensure network path is valid"
 		if ($NetworkShare.Length -gt 0)
 		{
+			Write-Output "Checking to ensure network path is valid"
 			if (!($NetworkShare.StartsWith("\\")))
 			{
 				throw "Network share must be a valid UNC path (\\server\share)."
