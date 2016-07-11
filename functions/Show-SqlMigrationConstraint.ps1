@@ -1,4 +1,4 @@
-﻿Function Show-SqlMigrationConstraints
+﻿Function Show-SqlMigrationConstraint
 {
 <#
 .SYNOPSIS
@@ -10,7 +10,7 @@ This function will validate if you have any of this features in use and will rep
 The validation will be made ONLY on on SQL Server 2008 or higher using the 'sys.dm_db_persisted_sku_features' dmv.
 
 This function only validate SQL Server 2008 versions or higher.
-The edition supported by this function are:
+The editions supported by this function are:
     - Enterprise
     - Developer
     - Evaluation
@@ -56,10 +56,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Show-SqlMigrationConstraints
+https://dbatools.io/Show-SqlMigrationConstraint
 
 .EXAMPLE
-Show-SqlMigrationConstraints -Source sqlserver2014a -Destination sqlcluster
+Show-SqlMigrationConstraint -Source sqlserver2014a -Destination sqlcluster
 
 Description
 
@@ -67,7 +67,7 @@ All databases will be verified for features in use that can't be supported on th
 
 
 .EXAMPLE   
-Show-SqlMigrationConstraints -Source sqlserver2014a -Destination sqlcluster -SqlCredential $cred
+Show-SqlMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -SqlCredential $cred
 
 Description
 
@@ -136,11 +136,6 @@ Only db1 database will be verified for features in use that can't be supported o
             { 
                 throw "Migrating system databases is not currently supported." 
             }
-
-            if ($sourceserver.versionMajor -lt 8 -and $destserver.versionMajor -lt 8)
-		    {
-			    throw "This script can only be run on Sql Server 2000 and above. Quitting."
-		    }
 
             if ($sourceserver.versionMajor -lt 9 -and $destserver.versionMajor -gt 10)
 		    {
