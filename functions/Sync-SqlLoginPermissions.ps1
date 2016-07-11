@@ -102,9 +102,7 @@ https://dbatools.io/Sync-SqlLoginPermissions
 		[parameter(Mandatory = $true)]
 		[object]$Destination,
 		[object]$SourceSqlCredential,
-		[object]$DestinationSqlCredential,
-		[parameter(ValueFromPipeline = $true)]
-		[object]$pipelogin
+		[object]$DestinationSqlCredential
 	)
 	
 	DynamicParam { if ($source) { return Get-ParamSqlLogins -SqlServer $source -SqlCredential $SourceSqlCredential } }
@@ -169,7 +167,7 @@ https://dbatools.io/Sync-SqlLoginPermissions
 				# Remove for Syncs
 				if ($rolemembers -notcontains $username -and $destrolemembers -contains $username -and $destrole -ne $null)
 				{
-					If ($Pscmdlet.ShouldProcess($destination, "Adding $username to $rolename server role"))
+					If ($Pscmdlet.ShouldProcess($destination, "Removing $username from $rolename server role"))
 					{
 						try
 						{
@@ -298,7 +296,7 @@ https://dbatools.io/Sync-SqlLoginPermissions
 				$dbusername = $db.username
 				$dblogin = $db.loginName
 				
-				if ($sourcedb -ne $null)
+				if ($sourcedb -ne $null -and $sourcedb.IsAccessible)
 				{
 					if ($sourcedb.users[$dbusername] -eq $null -and $destdb.users[$dbusername] -ne $null)
 					{
@@ -371,8 +369,15 @@ https://dbatools.io/Sync-SqlLoginPermissions
 								try
 								{
 									$permset = New-Object Microsoft.SqlServer.Management.Smo.DatabasePermissionSet($perm.permissiontype)
-									if ($permstate -eq "GrantWithGrant") { $grantwithgrant = $true; $permstate = "grant" }
-									else { $grantwithgrant = $false }
+									if ($permstate -eq "GrantWithGrant")
+									{
+										$grantwithgrant = $true
+										$permstate = "grant"
+									}
+									else
+									{
+										$grantwithgrant = $false
+									}
 									$destdb.PSObject.Methods["Revoke"].Invoke($permset, $username, $false, $grantwithgrant)
 									Write-Output "Successfully revoked $($perm.permissiontype) from $username on $dbname on $destination"
 								}
@@ -466,8 +471,16 @@ https://dbatools.io/Sync-SqlLoginPermissions
 					foreach ($perm in $perms)
 					{
 						$permstate = $perm.permissionstate
-						if ($permstate -eq "GrantWithGrant") { $grantwithgrant = $true; $permstate = "grant" }
-						else { $grantwithgrant = $false }
+						if ($permstate -eq "GrantWithGrant")
+						{
+							$grantwithgrant = $true
+							$permstate = "grant"
+						}
+						else
+						{
+							$grantwithgrant = $false
+						}
+						
 						$permset = New-Object Microsoft.SqlServer.Management.Smo.DatabasePermissionSet($perm.permissiontype)
 						If ($Pscmdlet.ShouldProcess($destination, "Performing $permstate on $($perm.permissiontype) for $username on $dbname"))
 						{
@@ -562,10 +575,10 @@ https://dbatools.io/Sync-SqlLoginPermissions
 	
 	PROCESS
 	{
-		if ($pipelogin.Length -gt 0)
+		if ($pipelinevariable.Length -gt 0)
 		{
-			$Source = $pipelogin[0].parent.name
-			$logins = $pipelogin.name
+			$Source = $pipelinevariable[0].parent.name
+			$logins = $pipelinevariable.name
 		}
 
 		Sync-Only -sourceserver $sourceserver -destserver $destserver -Logins $Logins -Exclude $Exclude

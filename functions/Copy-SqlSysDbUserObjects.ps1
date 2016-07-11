@@ -34,10 +34,10 @@ https://dbatools.io/Get-DetachedDbInfo
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
-		[object]$source,
+		[object]$Source,
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
-		[object]$destination,
+		[object]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential
 	)
@@ -87,16 +87,27 @@ https://dbatools.io/Get-DetachedDbInfo
 		try
 		{
 			$sqlQueries = $transfer.scriptTransfer()
+			
 			foreach ($query in $sqlQueries)
 			{
-				if ($PSCmdlet.ShouldProcess($DestServer, $query))
+				Write-Verbose $query
+				if ($PSCmdlet.ShouldProcess($destserver, $query))
 				{
-					try { $destserver.Databases[$systemdb].ExecuteNonQuery($query) }
-					catch { } # This usually occurs if there are existing objects in destination
+					try
+					{
+						$destserver.Databases[$systemdb].ExecuteNonQuery($query)
+					}
+					catch
+					{
+						# This usually occurs if there are existing objects in destination
+					}
 				}
 			}
 		}
-		catch { Write-Output "Exception caught." }
+		catch
+		{
+			Write-Output "Exception caught."
+		}
 	}
 	Write-Output "Migrating user objects in system databases finished"
 }

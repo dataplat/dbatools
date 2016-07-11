@@ -13,6 +13,122 @@ Update-dbatools
 	Invoke-Expression (Invoke-WebRequest -UseBasicParsing http://git.io/vn1hQ).Content
 }
 
+Function Connect-SqlServer
+{
+<# 
+.SYNOPSIS 
+Internal function that creates SMO server object. Input can be text or SMO.Server.
+#>	
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[switch]$ParameterConnection,
+		[switch]$RegularUser
+	)
+	
+	
+	$username = $SqlCredential.username
+	if ($username -ne $null)
+	{
+		$username = $username.TrimStart("\")
+		if ($username -like "*\*") { throw "Only SQL Logins can be specified when using the Credential parameter. To connect as to SQL Server a different Windows user, you must start PowerShell as that user." }
+	}
+	
+	if ($SqlServer.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
+	{
+		
+		if ($ParameterConnection)
+		{
+			$paramserver = New-Object Microsoft.SqlServer.Management.Smo.Server
+			$paramserver.ConnectionContext.ConnectTimeout = 2
+			$paramserver.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
+			$paramserver.ConnectionContext.ConnectionString = $SqlServer.ConnectionContext.ConnectionString
+			$paramserver.ConnectionContext.Connect()
+			return $paramserver
+		}
+		
+		if ($SqlServer.ConnectionContext.IsOpen -eq $false)
+		{
+			$SqlServer.ConnectionContext.Connect()
+		}
+		return $SqlServer
+	}
+	
+	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlServer
+	$server.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
+	
+	try
+	{
+		if ($SqlCredential.username -ne $null)
+		{
+			$server.ConnectionContext.LoginSecure = $false
+			$server.ConnectionContext.set_Login($username)
+			$server.ConnectionContext.set_SecurePassword($SqlCredential.Password)
+		}
+	}
+	catch { }
+	
+	try
+	{
+		if ($ParameterConnection)
+		{
+			$server.ConnectionContext.ConnectTimeout = 2
+		}
+		else
+		{
+			$server.ConnectionContext.ConnectTimeout = 3
+		}
+		
+		$server.ConnectionContext.Connect()
+	}
+	catch
+	{
+		$message = $_.Exception.InnerException.InnerException
+		$message = $message.ToString()
+		$message = ($message -Split '-->')[0]
+		$message = ($message -Split 'at System.Data.SqlClient')[0]
+		$message = ($message -Split 'at System.Data.ProviderBase')[0]
+		throw "Can't connect to $sqlserver`: $message "
+	}
+	
+	if ($RegularUser -eq $false)
+	{
+		if ($server.ConnectionContext.FixedServerRoles -notmatch "SysAdmin")
+		{
+			throw "Not a sysadmin on $source. Quitting."
+		}
+	}
+	
+	if ($ParameterConnection -eq $false)
+	{
+		if ($server.VersionMajor -eq 8)
+		{
+			# 2000
+			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions','Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Version')
+			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'CreateDate', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'Name', 'Sid', 'WindowsLoginAccessType')
+		}
+		
+		
+		elseif ($server.VersionMajor -eq 9 -or $server.VersionMajor -eq 10)
+		{
+			# 2005 and 2008
+			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions','BrokerEnabled', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
+			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
+		}
+		
+		else
+		{
+			# 2012 and above
+			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions','ActiveConnections', 'AvailabilityDatabaseSynchronizationState', 'AvailabilityGroupName', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'ContainmentType', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
+			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordHashAlgorithm', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
+		}
+	}
+	
+	return $server
+}
+
 Function Test-SqlConnection
 {
 <# 
@@ -54,7 +170,7 @@ RemotingPortOpen   : True
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -172,7 +288,7 @@ RemotingPortOpen   : True
 	else { $serverinfo.DefaultSQLPortOpen = "N/A" }
 	
 	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlServer
-	
+
 	try
 	{
 		if ($SqlCredential -ne $null)
@@ -233,90 +349,6 @@ RemotingPortOpen   : True
 		All functions below are internal to the module and cannot be executed via command line.
 				
 #>
-
-Function Connect-SqlServer
-{
-<# 
-.SYNOPSIS 
-Internal function that creates SMO server object. Input can be text or SMO.Server.
-#>	
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential,
-		[switch]$ParameterConnection,
-		[switch]$RegularUser
-	)
-	
-		
-	$username = $SqlCredential.username
-	if ($username -ne $null)
-	{
-		$username = $username.TrimStart("\")
-		if ($username -like "*\*") { throw "Only SQL Logins can be specified when using the Credential parameter. To connect as to SQL Server a different Windows user, you must start PowerShell as that user." }
-	}
-	
-	if ($SqlServer.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
-	{
-	
-		if ($RegularUser -eq $false) {
-			if (!(Test-SqlSa -SqlServer $SqlServer)) { throw "Not a sysadmin on $source. Quitting." }
-		}
-		
-		if ($ParameterConnection)
-		{
-			$paramserver = New-Object Microsoft.SqlServer.Management.Smo.Server
-			$paramserver.ConnectionContext.ConnectTimeout = 2
-			$paramserver.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
-			$paramserver.ConnectionContext.ConnectionString = $SqlServer.ConnectionContext.ConnectionString
-			$paramserver.ConnectionContext.Connect()
-			return $paramserver
-		}
-		
-		if ($SqlServer.ConnectionContext.IsOpen -eq $false)
-		{
-			$SqlServer.ConnectionContext.Connect()
-		}
-		return $SqlServer
-	}
-	
-	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlServer
-	$server.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
-	
-	try
-	{
-		if ($SqlCredential.username -ne $null)
-		{
-			$server.ConnectionContext.LoginSecure = $false
-			$server.ConnectionContext.set_Login($username)
-			$server.ConnectionContext.set_SecurePassword($SqlCredential.Password)
-		}
-	}
-	catch { }
-	
-	try
-	{
-		if ($ParameterConnection) { $server.ConnectionContext.ConnectTimeout = 2 }
-		else { $server.ConnectionContext.ConnectTimeout = 3 }
-		$server.ConnectionContext.Connect()
-	}
-	catch
-	{
-		$message = $_.Exception.InnerException.InnerException
-		$message = $message.ToString()
-		$message = ($message -Split '-->')[0]
-		$message = ($message -Split 'at System.Data.SqlClient')[0]
-		$message = ($message -Split 'at System.Data.ProviderBase')[0]
-		throw "Can't connect to $sqlserver`: $message "
-	}
-	
-	if ($RegularUser -eq $false) {
-		if ($server.ConnectionContext.FixedServerRoles -notmatch "SysAdmin") { throw "Not a sysadmin on $source. Quitting." }
-	}
-	
-	return $server
-}
 
 Function Connect-AsServer
 {
@@ -384,7 +416,6 @@ Checks for PowerShell SMO version vs SQL Server's SMO version.
 	if ($script:smocheck -ne $true)
 	{
 		$script:smocheck = $true
-		Write-Output "Performing SMO version check"
 		$smo = (([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }).FullName -Split ", ")[1]
 		$smo = ([version]$smo.TrimStart("Version=")).Major
 		$serverversion = $SqlServer.version.major
@@ -398,44 +429,6 @@ Checks for PowerShell SMO version vs SQL Server's SMO version.
 	}
 }
 
-Function Get-SqlCmsRegServers
-{
-<# 
- .SYNOPSIS 
- Internal function. Returns array of server names from CMS Server. If -Groups is specified,
- only servers within the given groups are returned.
-#>	
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[object]$SqlServer,
-		[string[]]$groups,
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	$SqlCms = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-	$sqlconnection = $SqlCms.ConnectionContext.SqlConnectionObject
-	
-	try { $cmstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sqlconnection) }
-	catch { throw "Cannot access Central Management Server" }
-	
-	$servers = @()
-	if ($groups -ne $null)
-	{
-		foreach ($group in $groups)
-		{
-			$cms = $cmstore.ServerGroups["DatabaseEngineServerGroup"].ServerGroups[$group]
-			$servers += ($cms.GetDescendantRegisteredServers()).servername
-		}
-	}
-	else
-	{
-		$cms = $cmstore.ServerGroups["DatabaseEngineServerGroup"]
-		$servers = ($cms.GetDescendantRegisteredServers()).servername
-	}
-	
-	return $servers
-}
 
 Function Get-OfflineSqlFileStructure
 {
@@ -666,7 +659,7 @@ Internal function. Returns the default data and log paths for SQL Server. Needed
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
@@ -733,7 +726,7 @@ $true or $false
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
@@ -793,7 +786,7 @@ Internal function. Ensures sysadmin account access on SQL Server.
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -822,7 +815,7 @@ Internal function. Takes a best guess at the NetBIOS name of a server.
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -850,7 +843,7 @@ Function Restore-Database
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
@@ -921,7 +914,7 @@ Internal function. Checks to see if SQL Server Agent is running on a server.
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1024,7 +1017,7 @@ Internal function. Updates specified database to read-only or read-write. Necess
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
@@ -1068,7 +1061,7 @@ an SMO server object.
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
