@@ -74,7 +74,7 @@
 	'Get-DetachedDBInfo', 'Restore-HallengrenBackup', 'Test-SqlConnection', 'Import-CsvToSql', 'Copy-SqlAgentCategory',
 	'Update-dbatools', 'Test-SqlPath', 'Copy-SqlDatabaseAssembly', 'Copy-SqlPolicyManagement','Copy-SqlSharedSchedule',
 	'Copy-SqlOperator','Copy-SqlJob','Copy-SqlDataCollector','Sync-SqlLoginPermissions', 'Export-SqlLogin','Expand-SqlTLogResponsibly',
-    'Show-SqlMigrationConstraints')
+    'Show-SqlMigrationConstraint')
 	
 	# 'Copy-SqlDataCollector',
 	
