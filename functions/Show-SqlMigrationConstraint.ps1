@@ -127,7 +127,7 @@ Only db1 database will be verified for features in use that can't be supported o
 
         if ($databases.Count -eq 0)
         {
-            $databases = ($sourceserver.Databases | Where-Object {$_.isSystemObject -eq 0 -and $_.Status -ne "Offline"}).Name
+            $databases = $sourceserver.Databases | Where-Object {$_.isSystemObject -eq 0}
         }
 
         if ($databases.Count -gt 0)
@@ -165,53 +165,70 @@ Only db1 database will be verified for features in use that can't be supported o
                 foreach ($db in $databases)
                 {
                     Write-Host "`r`nChecking database: '$db'"
-                    if ($editions.Item($destserver.Edition.ToString().Split(" ")[0]) -lt $editions.Item($sourceserver.Edition.ToString().Split(" ")[0]))
+
+                    if ([string]::IsNullOrEmpty($db.Status))          
+                    {                        
+                        $dbstatus = ($sourceserver.Databases | Where-Object {$_.Name -eq $db}).Status.ToString()
+                    }
+                    else
                     {
-                        #validate if any features are being used
-                        Write-Verbose "Source Server Edition: $($sourceserver.Edition) (Weight: $($editions.Item($sourceserver.Edition.ToString().Split(" ")[0])))"
-                        Write-Verbose "Destination Server Edition: $($destserver.Edition) (Weight: $($editions.Item($destserver.Edition.ToString().Split(" ")[0])))"
+                        $dbstatus = $db.Status.ToString()
+                    }
 
-			            try 
-                        { 
-                            $skufeatures = New-Object System.Data.DataTable
+                    if ($dbstatus.Contains("Offline") -eq $false)
+                    {
+                        if ($editions.Item($destserver.Edition.ToString().Split(" ")[0]) -lt $editions.Item($sourceserver.Edition.ToString().Split(" ")[0]))
+                        {
+                            #validate if any features are being used
+                            Write-Verbose "Source Server Edition: $($sourceserver.Edition) (Weight: $($editions.Item($sourceserver.Edition.ToString().Split(" ")[0])))"
+                            Write-Verbose "Destination Server Edition: $($destserver.Edition) (Weight: $($editions.Item($destserver.Edition.ToString().Split(" ")[0])))"
 
-                            $sql = "SELECT * FROM [$db].sys.dm_db_persisted_sku_features"
+			                try 
+                            { 
+                                $skufeatures = New-Object System.Data.DataTable
 
-                            Write-Verbose "Checking features in use."
-                            $tableconn = New-Object System.Data.SqlClient.SqlConnection
-                            $tableconn.ConnectionString = "Data Source=$Source;Integrated Security=True;Connection Timeout=3" #$sourceserver.ConnectionString #"Data Source=$sqlserver;Integrated Security=True;Connection Timeout=3"
-                            $tableconn.Open()
-				            $tablecmd = New-Object System.Data.SqlClient.SqlCommand($sql, $tableconn, $null)
+                                $sql = "SELECT * FROM [$db].sys.dm_db_persisted_sku_features"
 
-                            [void]$skufeatures.Load($tablecmd.ExecuteReader())
+                                Write-Verbose "Checking features in use."
+                                $tableconn = New-Object System.Data.SqlClient.SqlConnection
+                                $tableconn.ConnectionString = "Data Source=$Source;Integrated Security=True;Connection Timeout=3" #$sourceserver.ConnectionString #"Data Source=$sqlserver;Integrated Security=True;Connection Timeout=3"
+                                $tableconn.Open()
+				                $tablecmd = New-Object System.Data.SqlClient.SqlCommand($sql, $tableconn, $null)
 
-                            if ($skufeatures.Rows.Count -gt 0)
-                            {
-                                $feature = ""
+                                [void]$skufeatures.Load($tablecmd.ExecuteReader())
 
-                                foreach ($row in $skufeatures.Rows)
+                                if ($skufeatures.Rows.Count -gt 0)
                                 {
-                                    $feature += "$($row["feature_name"])`r`n"
-                                }
-                            
-                                $message = "'$db' cannot be migrated to '$($destserver.Name)' ($($destserver.Edition). The following features are unsupported::`r`n$($feature)"
-                                Write-Warning $message
+                                    $feature = ""
 
-                                $dbFail = $true
+                                    foreach ($row in $skufeatures.Rows)
+                                    {
+                                        $feature += "$($row["feature_name"])`r`n"
+                                    }
+                            
+                                    $message = "'$db' cannot be migrated to '$($destserver.Name)' ($($destserver.Edition). The following features are unsupported::`r`n$($feature)"
+                                    Write-Warning $message
+
+                                    $dbFail = $true
+                                }
+                                else
+                                {
+                                    Write-Output "You can migrate database '$db'! Does not exist any feature in use that you can't use on the destination version."
+                                }
                             }
-                            else
-                            {
-                                Write-Output "You can migrate database '$db'! Does not exist any feature in use that you can't use on the destination version."
+			                catch
+                            { 
+                                throw "Can't execute SQL on $sourceserver. `r`n $($_)"
                             }
                         }
-			            catch
-                        { 
-                            throw "Can't execute SQL on $sourceserver. `r`n $($_)"
+                        else
+                        {
+                            Write-Output "You can migrate database '$db'! The destination version and edition are equal or higher."
                         }
                     }
                     else
                     {
-                        Write-Output "You can migrate database '$db'! The destination version and edition are equal or higher."
+                        Write-Warning "Database '$db' is offline. Bring database online and re-run the command"
                     }
                 
                 }
