@@ -1,4 +1,4 @@
-Function Get-DetachedDBinfo
+Function Get-DetachedDbInfo
 {
 <#  
 .SYNOPSIS  
