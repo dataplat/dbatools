@@ -18,7 +18,9 @@ Windows Authentication will be used if SqlCredential is not specified. SQL Serve
 .PARAMETER Group
 Auto-populated list of groups in SQL Server Central Management Server. You can specify one or more, comma separated.
 		
-		
+.PARAMETER NoCmsServer
+By default, the Central Management Server name is included in the list. use -NoCmsServer to exclude the CMS itself.
+	
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
@@ -59,7 +61,8 @@ Gets a list of server names in the HR and Accouting groups from the Central Mana
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
-		[object]$SqlCredential
+		[object]$SqlCredential,
+		[switch]$NoCmsServer
 	)
 	
 	DynamicParam { if ($sqlserver) { return Get-ParamSqlCmsGroups -SqlServer $sqlserver -SqlCredential $SqlCredential } }
@@ -100,6 +103,10 @@ Gets a list of server names in the HR and Accouting groups from the Central Mana
 			$servers = ($cms.GetDescendantRegisteredServers()).servername
 		}
 		
+		if ($NoCmsServer -eq $false)
+		{
+			$servers += $sqlserver
+		}
 		return $servers
 	}
 	
