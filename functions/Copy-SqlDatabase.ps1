@@ -728,6 +728,11 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		
 		if ($databases -contains "master" -or $databases -contains "msdb" -or $databases -contains "tempdb") { throw "Migrating system databases is not currently supported." }
 		
+		if (!$AllDatabases -and !$IncludeSupportDbs -and !$Databases)
+		{
+			throw "You must specify a -AllDatabases or -Database to continue."
+		}
+		
 		Write-Output "Attempting to connect to Sql Servers.."
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
