@@ -279,44 +279,66 @@ WHERE EXISTS (SELECT 1
             {
                 try
                 {
+                    Write-Output "Quering database '$db'"
+
                     $query = if ($IncludeOverlapping) {$overlappingQuery} else {$exactDuplicateQuery}
 
                     $duplicatedindex = $sourceserver.Databases[$db].ExecuteWithResults($query)
 
                     $scriptGenerated = $false
 
-                    if ($duplicatedindex.Tables.Count -gt 0)
+                    if ($duplicatedindex.Tables[0].Rows.Count -gt 0)
                     {
                         $indexesToDrop = $duplicatedindex.Tables[0] | Out-GridView -Title "Duplicate Indexes on $($db) database - Choose indexes to generate DROP script" -PassThru
 
                         #When only 1 line selected, the count does not work
                         if ($indexesToDrop.Count -gt 0 -or !([string]::IsNullOrEmpty($indexesToDrop)))
                         {
-                            $sqlDropScript = "/*`r`n"
-                            $sqlDropScript += "`tScript generated @ $(Get-Date -format "yyyy-MM-dd HH:mm:ss.ms")`r`n"
-                            $sqlDropScript += "`tDatabase: $($db)`r`n"
-                            $sqlDropScript += if (!$IncludeOverlapping)
-                                              {
-                                                "`tConfirm that you have choosen the right indexes before execute the drop script`r`n"
-                                              }
-                                              else
-                                              {
-                                                "`tChoose wisely when dropping a partial duplicate index. You may want to check index usage before drop it.`r`n"
-                                              }
-                            $sqlDropScript += "*/`r`n"
+                            #reset to #Yes
+                            $result = 0
 
-                            foreach ($index in $indexesToDrop)
+                            if ($duplicatedindex.Tables[0].Rows.Count -eq $indexesToDrop.Count)
                             {
-                                $sqlDropScript += "USE [$($index.DatabaseName)]`r`n"
-                                $sqlDropScript += "GO`r`n"
-                                $sqlDropScript += "IF EXISTS (SELECT 1 FROM sys.indexes WHERE [object_id] = OBJECT_ID('$($index.TableName)') AND name = '$($index.IndexName)')`r`n"
-                                $sqlDropScript += "    DROP INDEX $($index.TableName).$($index.IndexName)`r`n"
-                                $sqlDropScript += "GO`r`n`r`n"
+                                $title = "Indexes to drop on databases '$db':"
+                                $message = "You will generate drop statements to all indexes.`r`nPerhaps you want to keep at least one.`r`nDo you wish to generate the script anyway? (Y/N)"
+                                $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Will continue"
+                                $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Will exit"
+                                $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+                                $result = $host.ui.PromptForChoice($title, $message, $options, 0)
                             }
 
-                            Write-Output $sqlDropScript
+                            if ($result -eq 0) #default OR answer = YES
+                            {
+                                $sqlDropScript = "/*`r`n"
+                                $sqlDropScript += "`tScript generated @ $(Get-Date -format "yyyy-MM-dd HH:mm:ss.ms")`r`n"
+                                $sqlDropScript += "`tDatabase: $($db)`r`n"
+                                $sqlDropScript += if (!$IncludeOverlapping)
+                                                  {
+                                                    "`tConfirm that you have choosen the right indexes before execute the drop script`r`n"
+                                                  }
+                                                  else
+                                                  {
+                                                    "`tChoose wisely when dropping a partial duplicate index. You may want to check index usage before drop it.`r`n"
+                                                  }
+                                $sqlDropScript += "*/`r`n"
 
-                            $scriptGenerated = $true
+                                foreach ($index in $indexesToDrop)
+                                {
+                                    $sqlDropScript += "USE [$($index.DatabaseName)]`r`n"
+                                    $sqlDropScript += "GO`r`n"
+                                    $sqlDropScript += "IF EXISTS (SELECT 1 FROM sys.indexes WHERE [object_id] = OBJECT_ID('$($index.TableName)') AND name = '$($index.IndexName)')`r`n"
+                                    $sqlDropScript += "    DROP INDEX $($index.TableName).$($index.IndexName)`r`n"
+                                    $sqlDropScript += "GO`r`n`r`n"
+                                }
+
+                                Write-Output $sqlDropScript
+
+                                $scriptGenerated = $true
+                            }
+                            else #answer = no
+                            {
+                                Write-Warning "Script will not be generated for database '$db'"
+                            }
                         }
                         if ($scriptGenerated)
                         {
