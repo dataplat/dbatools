@@ -66,12 +66,17 @@ All user databases present on sqlserver2014a will be verified
 .EXAMPLE   
 Find-SqlDuplicateIndex -SqlServer sqlserver2014a -SqlCredential $cred
 	
-All user databases present on sqlserver2014a will be verified using SQL credentials. 
+Will find exact duplicate indexes on all user databases present on sqlserver2014a will be verified using SQL credentials. 
 	
 .EXAMPLE   
 Find-SqlDuplicateIndex -SqlServer sqlserver2014a -Databases db1, db2
 
-Will find duplicate indexes on both db1 and db2 databases
+Will find exact duplicate indexes on both db1 and db2 databases
+
+.EXAMPLE   
+Find-SqlDuplicateIndex -SqlServer sqlserver2014a -IncludeOverlapping
+
+Will find exact duplicate or overlapping indexes on all user databases 
 	
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
@@ -86,6 +91,159 @@ Will find duplicate indexes on both db1 and db2 databases
 	
 	BEGIN
 	{
+        $exactDuplicateQuery2005 = "WITH CTE_IndexCols AS
+(
+	SELECT 
+			 i.[object_id] AS id
+			,i.index_id AS indid
+			,OBJECT_SCHEMA_NAME(i.[object_id]) AS SchemaName
+			,OBJECT_NAME(i.[object_id]) AS TableName
+			,Name AS IndexName
+			,ISNULL(STUFF((SELECT ', ' + col.NAME + ' ' + CASE 
+														WHEN idxCol.is_descending_key = 1 THEN 'DESC'
+														ELSE 'ASC'
+													END -- Include column order (ASC / DESC)
+					FROM sys.index_columns idxCol 
+						INNER JOIN sys.columns col 
+						   ON idxCol.[object_id] = col.[object_id]
+						  AND idxCol.column_id = col.column_id
+					WHERE i.[object_id] = idxCol.[object_id]
+					  AND i.index_id = idxCol.index_id
+					  AND idxCol.is_included_column = 0
+					ORDER BY idxCol.key_ordinal
+			 FOR XML PATH('')), 1, 2, ''), '') AS KeyCols
+			,ISNULL(STUFF((SELECT ', ' + col.NAME + ' ' + CASE 
+														WHEN idxCol.is_descending_key = 1 THEN 'DESC'
+														ELSE 'ASC'
+													END -- Include column order (ASC / DESC)
+					FROM sys.index_columns idxCol 
+						INNER JOIN sys.columns col 
+						   ON idxCol.[object_id] = col.[object_id]
+						  AND idxCol.column_id = col.column_id
+					WHERE i.[object_id] = idxCol.[object_id]
+					  AND i.index_id = idxCol.index_id
+					  AND idxCol.is_included_column = 1
+					ORDER BY idxCol.key_ordinal
+			 FOR XML PATH('')), 1, 2, ''), '') AS IncludedCols
+			,i.[type_desc] AS IndexType
+            ,i.is_disabled AS IsDisabled
+	  FROM sys.indexes AS i
+	 WHERE i.[type_desc] IN ('CLUSTERED', 'NONCLUSTERED')
+),
+CTE_IndexSpace AS
+(
+	SELECT
+			 OBJECT_SCHEMA_NAME(i.[object_id]) AS SchemaName 
+			,OBJECT_NAME(i.[object_id]) AS TableName
+			,i.name AS IndexName
+			,SUM(s.[used_page_count]) * 8 / 1024.0 AS IndexSizeMB
+	  FROM sys.dm_db_partition_stats AS s
+		INNER JOIN sys.indexes AS i 
+		   ON s.[object_id] = i.[object_id]
+		  AND s.index_id = i.index_id
+	GROUP BY i.[object_id], i.name
+)
+SELECT 
+         DB_NAME() AS DatabaseName
+		,CI1.SchemaName + '.' + CI1.TableName AS 'TableName'
+		,CI1.IndexName
+		,CI1.KeyCols
+		,CI1.IncludedCols
+        ,CI1.IndexType
+		,CSPC.IndexSizeMB
+		,CI1.IsDisabled
+FROM CTE_IndexCols AS CI1
+	INNER JOIN CTE_IndexSpace AS CSPC
+	   ON CI1.SchemaName = CSPC.SchemaName
+	  AND CI1.TableName = CSPC.TableName
+	  AND CI1.IndexName = CSPC.IndexName
+WHERE EXISTS (SELECT 1 
+				FROM CTE_IndexCols CI2
+			   WHERE CI1.SchemaName = CI2.SchemaName
+				 AND CI1.TableName = CI2.TableName
+				 AND CI1.KeyCols = CI2.KeyCols
+				 AND CI1.IncludedCols = CI2.IncludedCols
+				 AND CI1.IndexName <> CI2.IndexName
+			 )"
+
+        $overlappingQuery2005 = "WITH CTE_IndexCols AS
+(
+	SELECT 
+			 i.[object_id] AS id
+			,i.index_id AS indid
+			,OBJECT_SCHEMA_NAME(i.[object_id]) AS SchemaName
+			,OBJECT_NAME(i.[object_id]) AS TableName
+			,Name AS IndexName
+			,ISNULL(STUFF((SELECT ', ' + col.NAME + ' ' + CASE 
+														WHEN idxCol.is_descending_key = 1 THEN 'DESC'
+														ELSE 'ASC'
+													END -- Include column order (ASC / DESC)
+					FROM sys.index_columns idxCol 
+						INNER JOIN sys.columns col 
+						   ON idxCol.[object_id] = col.[object_id]
+						  AND idxCol.column_id = col.column_id
+					WHERE i.[object_id] = idxCol.[object_id]
+					  AND i.index_id = idxCol.index_id
+					  AND idxCol.is_included_column = 0
+					ORDER BY idxCol.key_ordinal
+			 FOR XML PATH('')), 1, 2, ''), '') AS KeyCols
+			,ISNULL(STUFF((SELECT ', ' + col.NAME + ' ' + CASE 
+														WHEN idxCol.is_descending_key = 1 THEN 'DESC'
+														ELSE 'ASC'
+													END -- Include column order (ASC / DESC)
+					FROM sys.index_columns idxCol 
+						INNER JOIN sys.columns col 
+						   ON idxCol.[object_id] = col.[object_id]
+						  AND idxCol.column_id = col.column_id
+					WHERE i.[object_id] = idxCol.[object_id]
+					  AND i.index_id = idxCol.index_id
+					  AND idxCol.is_included_column = 1
+					ORDER BY idxCol.key_ordinal
+			 FOR XML PATH('')), 1, 2, ''), '') AS IncludedCols
+			,i.[type_desc] AS IndexType
+            ,i.is_disabled AS IsDisabled
+	  FROM sys.indexes AS i	
+	 WHERE i.[type_desc] IN ('CLUSTERED', 'NONCLUSTERED')
+),
+CTE_IndexSpace AS
+(
+	SELECT
+			 OBJECT_SCHEMA_NAME(i.[object_id]) AS SchemaName 
+			,OBJECT_NAME(i.[object_id]) AS TableName
+			,i.name AS IndexName
+			,SUM(s.[used_page_count]) * 8 / 1024.0 AS IndexSizeMB
+	  FROM sys.dm_db_partition_stats AS s
+		INNER JOIN sys.indexes AS i 
+		   ON s.[object_id] = i.[object_id]
+		  AND s.index_id = i.index_id
+	GROUP BY i.[object_id], i.name
+)
+SELECT 
+		 DB_NAME() AS DatabaseName
+        ,CI1.SchemaName + '.' + CI1.TableName AS 'TableName'
+		,CI1.IndexName
+		,CI1.KeyCols
+		,CI1.IncludedCols
+        ,CI1.IndexType
+		,CSPC.IndexSizeMB
+		,CI1.IsDisabled
+FROM CTE_IndexCols AS CI1
+	INNER JOIN CTE_IndexSpace AS CSPC
+	   ON CI1.SchemaName = CSPC.SchemaName
+	  AND CI1.TableName = CSPC.TableName
+	  AND CI1.IndexName = CSPC.IndexName
+WHERE EXISTS (SELECT 1
+				FROM CTE_IndexCols AS CI2
+			   WHERE  CI1.SchemaName = CI2.SchemaName
+			AND CI1.TableName = CI2.TableName
+			  AND (
+						(CI1.KeyCols like CI2.KeyCols + '%' and SUBSTRING(CI1.KeyCols,LEN(CI2.KeyCols)+1,1) = ' ')
+					 OR (CI2.KeyCols like CI1.KeyCols + '%' and SUBSTRING(CI2.KeyCols,LEN(CI1.KeyCols)+1,1) = ' ')
+				  )
+				AND CI1.IndexName <> CI2.IndexName
+			)"
+
+        # Support Compression 2008+
 		$exactDuplicateQuery = "WITH CTE_IndexCols AS
 (
 	SELECT 
@@ -254,9 +412,9 @@ WHERE EXISTS (SELECT 1
 	
 	PROCESS
 	{
-        if ($sourceserver.versionMajor -lt 10)
+        if ($sourceserver.versionMajor -lt 9)
 		{
-			throw "This function does not support versions lower than SQL Server 2008 (v10)"
+			throw "This function does not support versions lower than SQL Server 2005 (v9)"
 		}
 
         # Convert from RuntimeDefinedParameter object to regular array
@@ -279,9 +437,16 @@ WHERE EXISTS (SELECT 1
             {
                 try
                 {
-                    Write-Output "Quering database '$db'"
+                    Write-Output "Getting indexes from database '$db'"
 
-                    $query = if ($IncludeOverlapping) {$overlappingQuery} else {$exactDuplicateQuery}
+                    $query = if ($sourceserver.versionMajor -eq 9)
+                             {
+                                if ($IncludeOverlapping){$exactDuplicateQuery2005} else {$overlappingQuery2005}
+                             }
+                             else 
+                             {
+                                if ($IncludeOverlapping) {$overlappingQuery} else {$exactDuplicateQuery}
+                             }
 
                     $duplicatedindex = $sourceserver.Databases[$db].ExecuteWithResults($query)
 
