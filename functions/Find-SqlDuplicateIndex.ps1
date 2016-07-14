@@ -120,7 +120,8 @@ Will find duplicate indexes on both db1 and db2 databases
 					  AND idxCol.is_included_column = 1
 					ORDER BY idxCol.key_ordinal
 			 FOR XML PATH('')), 1, 2, ''), '') AS IncludedCols
-			,i.is_disabled AS IsDisabled
+			,i.[type_desc] AS IndexType
+            ,i.is_disabled AS IsDisabled
 			,p.data_compression_desc AS CompressionDesc
 	  FROM sys.indexes AS i
 		INNER JOIN sys.partitions p WITH (NOLOCK) 
@@ -147,6 +148,7 @@ SELECT
 		,CI1.IndexName
 		,CI1.KeyCols
 		,CI1.IncludedCols
+        ,CI1.IndexType
 		,CSPC.IndexSizeMB
 		,CI1.CompressionDesc
 		,CI1.IsDisabled
@@ -198,7 +200,8 @@ WHERE EXISTS (SELECT 1
 					  AND idxCol.is_included_column = 1
 					ORDER BY idxCol.key_ordinal
 			 FOR XML PATH('')), 1, 2, ''), '') AS IncludedCols
-			,i.is_disabled AS IsDisabled
+			,i.[type_desc] AS IndexType
+            ,i.is_disabled AS IsDisabled
 			,p.data_compression_desc AS CompressionDesc
 	  FROM sys.indexes AS i
 		INNER JOIN sys.partitions p WITH (NOLOCK) 
@@ -225,6 +228,7 @@ SELECT
 		,CI1.IndexName
 		,CI1.KeyCols
 		,CI1.IncludedCols
+        ,CI1.IndexType
 		,CSPC.IndexSizeMB
 		,CI1.CompressionDesc
 		,CI1.IsDisabled
@@ -266,7 +270,7 @@ WHERE EXISTS (SELECT 1
 
         if ($databases.Count -eq 0)
         {
-            $databases = $sourceserver.Databases | Where-Object {$_.isSystemObject -eq 0 -and $_.Status -ne "Offline"}
+            $databases = ($sourceserver.Databases | Where-Object {$_.isSystemObject -eq 0 -and $_.Status -ne "Offline"}).Name
         }
 
         if ($databases.Count -gt 0)
@@ -279,40 +283,45 @@ WHERE EXISTS (SELECT 1
 
                     $duplicatedindex = $sourceserver.Databases[$db].ExecuteWithResults($query)
 
+                    $scriptGenerated = $false
+
                     if ($duplicatedindex.Tables.Count -gt 0)
                     {
-                        $indexesToDrop = $duplicatedindex.Tables[0] | Out-GridView -Title "Duplicate Indexes - Choose indexes to generate DROP script" -PassThru
+                        $indexesToDrop = $duplicatedindex.Tables[0] | Out-GridView -Title "Duplicate Indexes on $($db) database - Choose indexes to generate DROP script" -PassThru
 
-                        $sqlDropScript = "/*`r`n"
-                        $sqlDropScript += "`tScript generated @ $(Get-Date -format "yyyy-MM-dd HH:mm:ss.ms")`r`n"
-                        $sqlDropScript += if (!$IncludeOverlapping)
-                                          {
-                                            "`tConfirm that you have choosen the right indexes before execute the drop script`r`n"
-                                          }
-                                          else
-                                          {
-                                            "`tChoose wisely when dropping a partial duplicate index. You may want to check index usage before drop it.`r`n"
-                                          }
-                        $sqlDropScript += "*/`r`n"
+                        #When only 1 line selected, the count does not work
+                        if ($indexesToDrop.Count -gt 0 -or !([string]::IsNullOrEmpty($indexesToDrop)))
+                        {
+                            $sqlDropScript = "/*`r`n"
+                            $sqlDropScript += "`tScript generated @ $(Get-Date -format "yyyy-MM-dd HH:mm:ss.ms")`r`n"
+                            $sqlDropScript += "`tDatabase: $($db)`r`n"
+                            $sqlDropScript += if (!$IncludeOverlapping)
+                                              {
+                                                "`tConfirm that you have choosen the right indexes before execute the drop script`r`n"
+                                              }
+                                              else
+                                              {
+                                                "`tChoose wisely when dropping a partial duplicate index. You may want to check index usage before drop it.`r`n"
+                                              }
+                            $sqlDropScript += "*/`r`n"
 
-                        foreach ($index in $indexesToDrop)
-                        {
-                            $sqlDropScript += "USE [$($index.DatabaseName)]`r`n"
-                            $sqlDropScript += "GO`r`n"
-                            $sqlDropScript += "IF EXISTS (SELECT 1 FROM sys.indexes WHERE [object_id] = OBJECT_ID('$($index.TableName)') AND name = '$($index.IndexName)')`r`n"
-                            $sqlDropScript += "    DROP INDEX $($index.TableName).$($index.IndexName)`r`n"
-                            $sqlDropScript += "GO`r`n"
+                            foreach ($index in $indexesToDrop)
+                            {
+                                $sqlDropScript += "USE [$($index.DatabaseName)]`r`n"
+                                $sqlDropScript += "GO`r`n"
+                                $sqlDropScript += "IF EXISTS (SELECT 1 FROM sys.indexes WHERE [object_id] = OBJECT_ID('$($index.TableName)') AND name = '$($index.IndexName)')`r`n"
+                                $sqlDropScript += "    DROP INDEX $($index.TableName).$($index.IndexName)`r`n"
+                                $sqlDropScript += "GO`r`n`r`n"
+                            }
+
+                            Write-Output $sqlDropScript
+
+                            $scriptGenerated = $true
                         }
-                        
-                        if (!$IncludeOverlapping)
+                        if ($scriptGenerated)
                         {
-                            Write-Warning "Confirm that you have choosen the right indexes before execute the drop script"
+                            Write-Warning "Confirm the generated script before execute!"
                         }
-                        else
-                        {
-                            Write-Warning "Choose wisely when dropping a partial duplicate index. You may want to check index usage before drop it."
-                        }
-                        Write-Output $sqlDropScript
                     }
                     else
                     {
