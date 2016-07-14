@@ -197,7 +197,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				if ($dbstatus.StartsWith("Normal") -eq $false) { continue }
 				$destinationfiles = @{ }; $sourcefiles = @{ }
 				
-				if ($server.versionMajor -eq 8)
+				if ($sourceserver.versionMajor -eq 8)
 				{
 					$where = "groupid = 1"
 				}
@@ -277,7 +277,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					}
 				}
 				
-				if ($server.versionMajor -eq 8)
+				if ($sourceserver.versionMajor -eq 8)
 				{
 					$where = "groupid <> 1"
 				}
