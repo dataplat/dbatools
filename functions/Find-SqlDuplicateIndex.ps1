@@ -2,22 +2,26 @@
 {
 <#
 .SYNOPSIS
-Find duplicated indexes
+Find duplicate and overlapping indexes
 
 .DESCRIPTION
-This function will find exactly duplicated indexes on a database and tell how much space you can recover by dropping the index.
+This function will find exact duplicated and overlapping indexes on a database.
+Also tells how much space you can sabe by dropping the index.
+We take into account the COMPRESSION used.
 
-For now only support CLUSTERED and NONCLUSTERED indexes
+You can select the indexes you want to drop on the gridview and by click OK the drop statement will be generated
 
-Server
-Databases
-SchemaName
-TableName
-IndexName
-KeyColumnList
-IncludeColumnList
-IsDisabled
-IndexSizeMB
+For now only supported for CLUSTERED and NONCLUSTERED indexes
+
+Output:
+    TableName
+    IndexName
+    KeyCols
+    IncludedCols
+    IndexSizeMB
+    IndexType
+    CompressionDesc
+    IsDisabled
 	
 .PARAMETER SqlServer
 The SQL Server instance.
@@ -28,7 +32,11 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
-	
+
+.PARAMETER IncludeOverlapping
+Allows to see indexes partial duplicate. 
+Example: If first key column is the same but one index has included columns and the other not, this will be shown.
+
 .NOTES 
 Original Author: Cláudio Silva (@ClaudioESSilva)
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -71,49 +79,53 @@ Will find duplicate indexes on both db1 and db2 databases
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
-		[object]$SqlCredential
+        [switch]$IncludeOverlapping
 	)
     DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }
 	
 	BEGIN
 	{
-        #$DSduplicatedindex = New-Object System.Data.DataSet
-        #$DTduplicatedindex = New-Object System.Data.DataTable
-
-        #$duplicatedindex = New-Object System.Data.DataTable
-
-		$findDuplicateIndexQuery = "WITH CTE_IndexCols AS
+		$exactDuplicateQuery = "WITH CTE_IndexCols AS
 (
 	SELECT 
-				[object_id] AS id
-			,index_id AS indid
-			,OBJECT_SCHEMA_NAME([object_id]) AS SchemaName
-			,OBJECT_NAME([object_id]) AS TableName
+			 i.[object_id] AS id
+			,i.index_id AS indid
+			,OBJECT_SCHEMA_NAME(i.[object_id]) AS SchemaName
+			,OBJECT_NAME(i.[object_id]) AS TableName
 			,Name AS IndexName
-			,(
-				SELECT 
-						CASE keyno
-							WHEN 0 THEN NULL
-							ELSE colid
-						END AS [data()]
-					FROM sys.sysindexkeys AS k
-					WHERE k.id = i.object_id
-					AND k.indid = i.index_id
-				ORDER BY keyno, colid
-				FOR XML path('')
-			) AS KeyCols
-			,(
-				SELECT CASE keyno
-							WHEN 0 THEN colid
-							ELSE NULL
-						END AS [data()]
-					FROM sys.sysindexkeys AS k
-					WHERE k.id = i.object_id
-					AND k.indid = i.index_id
-				ORDER BY colid
-				FOR XML path('')
-			) AS IncCols
+			,ISNULL(STUFF((SELECT ', ' + col.NAME + ' ' + CASE 
+														WHEN idxCol.is_descending_key = 1 THEN 'DESC'
+														ELSE 'ASC'
+													END -- Include column order (ASC / DESC)
+					FROM sys.index_columns idxCol 
+						INNER JOIN sys.columns col 
+						   ON idxCol.[object_id] = col.[object_id]
+						  AND idxCol.column_id = col.column_id
+					WHERE i.[object_id] = idxCol.[object_id]
+					  AND i.index_id = idxCol.index_id
+					  AND idxCol.is_included_column = 0
+					ORDER BY idxCol.key_ordinal
+			 FOR XML PATH('')), 1, 2, ''), '') AS KeyCols
+			,ISNULL(STUFF((SELECT ', ' + col.NAME + ' ' + CASE 
+														WHEN idxCol.is_descending_key = 1 THEN 'DESC'
+														ELSE 'ASC'
+													END -- Include column order (ASC / DESC)
+					FROM sys.index_columns idxCol 
+						INNER JOIN sys.columns col 
+						   ON idxCol.[object_id] = col.[object_id]
+						  AND idxCol.column_id = col.column_id
+					WHERE i.[object_id] = idxCol.[object_id]
+					  AND i.index_id = idxCol.index_id
+					  AND idxCol.is_included_column = 1
+					ORDER BY idxCol.key_ordinal
+			 FOR XML PATH('')), 1, 2, ''), '') AS IncludedCols
+			,i.is_disabled AS IsDisabled
+			,p.data_compression_desc AS CompressionDesc
 	  FROM sys.indexes AS i
+		INNER JOIN sys.partitions p WITH (NOLOCK) 
+		   ON i.[object_id] = p.[object_id] 
+		  AND i.index_id = p.index_id		
+	 WHERE i.[type_desc] IN ('CLUSTERED', 'NONCLUSTERED')
 ),
 CTE_IndexSpace AS
 (
@@ -121,32 +133,115 @@ CTE_IndexSpace AS
 			 OBJECT_SCHEMA_NAME(i.[object_id]) AS SchemaName 
 			,OBJECT_NAME(i.[object_id]) AS TableName
 			,i.name AS IndexName
-			,i.is_disabled AS IsDisabled
 			,SUM(s.[used_page_count]) * 8 / 1024.0 AS IndexSizeMB
 	  FROM sys.dm_db_partition_stats AS s
 		INNER JOIN sys.indexes AS i 
 		   ON s.[object_id] = i.[object_id]
 		  AND s.index_id = i.index_id
-	GROUP BY i.[object_id], i.name, i.is_disabled
+	GROUP BY i.[object_id], i.name
 )
 SELECT 
-		 CI1.SchemaName + '.' + CI1.TableName AS 'TableName'
-		,CI1.IndexName AS 'Index'
-		,CI2.IndexName AS 'ExactDuplicate'
+         DB_NAME() AS DatabaseName
+		,CI1.SchemaName + '.' + CI1.TableName AS 'TableName'
+		,CI1.IndexName
+		,CI1.KeyCols
+		,CI1.IncludedCols
 		,CSPC.IndexSizeMB
-		,CSPC.IsDisabled
+		,CI1.CompressionDesc
+		,CI1.IsDisabled
 FROM CTE_IndexCols AS CI1
-	INNER JOIN CTE_IndexCols AS CI2
-	   ON CI1.id = CI2.id
-	  AND CI1.indid < CI2.indid
-	  AND CI1.KeyCols = CI2.KeyCols
-	  AND CI1.IncCols = CI2.IncCols
 	INNER JOIN CTE_IndexSpace AS CSPC
 	   ON CI1.SchemaName = CSPC.SchemaName
 	  AND CI1.TableName = CSPC.TableName
 	  AND CI1.IndexName = CSPC.IndexName
+WHERE EXISTS (SELECT 1 
+				FROM CTE_IndexCols CI2
+			   WHERE CI1.SchemaName = CI2.SchemaName
+				 AND CI1.TableName = CI2.TableName
+				 AND CI1.KeyCols = CI2.KeyCols
+				 AND CI1.IncludedCols = CI2.IncludedCols
+				 AND CI1.IndexName <> CI2.IndexName
+			 )"
 
-                                    "
+        $overlappingQuery = "WITH CTE_IndexCols AS
+(
+	SELECT 
+			 i.[object_id] AS id
+			,i.index_id AS indid
+			,OBJECT_SCHEMA_NAME(i.[object_id]) AS SchemaName
+			,OBJECT_NAME(i.[object_id]) AS TableName
+			,Name AS IndexName
+			,ISNULL(STUFF((SELECT ', ' + col.NAME + ' ' + CASE 
+														WHEN idxCol.is_descending_key = 1 THEN 'DESC'
+														ELSE 'ASC'
+													END -- Include column order (ASC / DESC)
+					FROM sys.index_columns idxCol 
+						INNER JOIN sys.columns col 
+						   ON idxCol.[object_id] = col.[object_id]
+						  AND idxCol.column_id = col.column_id
+					WHERE i.[object_id] = idxCol.[object_id]
+					  AND i.index_id = idxCol.index_id
+					  AND idxCol.is_included_column = 0
+					ORDER BY idxCol.key_ordinal
+			 FOR XML PATH('')), 1, 2, ''), '') AS KeyCols
+			,ISNULL(STUFF((SELECT ', ' + col.NAME + ' ' + CASE 
+														WHEN idxCol.is_descending_key = 1 THEN 'DESC'
+														ELSE 'ASC'
+													END -- Include column order (ASC / DESC)
+					FROM sys.index_columns idxCol 
+						INNER JOIN sys.columns col 
+						   ON idxCol.[object_id] = col.[object_id]
+						  AND idxCol.column_id = col.column_id
+					WHERE i.[object_id] = idxCol.[object_id]
+					  AND i.index_id = idxCol.index_id
+					  AND idxCol.is_included_column = 1
+					ORDER BY idxCol.key_ordinal
+			 FOR XML PATH('')), 1, 2, ''), '') AS IncludedCols
+			,i.is_disabled AS IsDisabled
+			,p.data_compression_desc AS CompressionDesc
+	  FROM sys.indexes AS i
+		INNER JOIN sys.partitions p WITH (NOLOCK) 
+		   ON i.[object_id] = p.[object_id] 
+		  AND i.index_id = p.index_id		
+	 WHERE i.[type_desc] IN ('CLUSTERED', 'NONCLUSTERED')
+),
+CTE_IndexSpace AS
+(
+	SELECT
+			 OBJECT_SCHEMA_NAME(i.[object_id]) AS SchemaName 
+			,OBJECT_NAME(i.[object_id]) AS TableName
+			,i.name AS IndexName
+			,SUM(s.[used_page_count]) * 8 / 1024.0 AS IndexSizeMB
+	  FROM sys.dm_db_partition_stats AS s
+		INNER JOIN sys.indexes AS i 
+		   ON s.[object_id] = i.[object_id]
+		  AND s.index_id = i.index_id
+	GROUP BY i.[object_id], i.name
+)
+SELECT 
+		 DB_NAME() AS DatabaseName
+        ,CI1.SchemaName + '.' + CI1.TableName AS 'TableName'
+		,CI1.IndexName
+		,CI1.KeyCols
+		,CI1.IncludedCols
+		,CSPC.IndexSizeMB
+		,CI1.CompressionDesc
+		,CI1.IsDisabled
+FROM CTE_IndexCols AS CI1
+	INNER JOIN CTE_IndexSpace AS CSPC
+	   ON CI1.SchemaName = CSPC.SchemaName
+	  AND CI1.TableName = CSPC.TableName
+	  AND CI1.IndexName = CSPC.IndexName
+WHERE EXISTS (SELECT 1
+				FROM CTE_IndexCols AS CI2
+			   WHERE  CI1.SchemaName = CI2.SchemaName
+			AND CI1.TableName = CI2.TableName
+			  AND (
+						(CI1.KeyCols like CI2.KeyCols + '%' and SUBSTRING(CI1.KeyCols,LEN(CI2.KeyCols)+1,1) = ' ')
+					 OR (CI2.KeyCols like CI1.KeyCols + '%' and SUBSTRING(CI2.KeyCols,LEN(CI1.KeyCols)+1,1) = ' ')
+				  )
+				AND CI1.IndexName <> CI2.IndexName
+			)"
 
         Write-Output "Attempting to connect to Sql Server.."
 		$sourceserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
@@ -174,17 +269,44 @@ FROM CTE_IndexCols AS CI1
             {
                 try
                 {
-                    
-                    $duplicatedindex = $sourceserver.Databases[$db].ExecuteWithResults($findDuplicateIndexQuery)
+                    $query = if ($IncludeOverlapping) {$overlappingQuery} else {$exactDuplicateQuery}
+
+                    $duplicatedindex = $sourceserver.Databases[$db].ExecuteWithResults($query)
 
                     if ($duplicatedindex.Tables.Count -gt 0)
                     {
-                        $indexesToDrop = $duplicatedindex.Tables[0] | Out-GridView -Title "Duplicate Indexes" -PassThru
+                        $indexesToDrop = $duplicatedindex.Tables[0] | Out-GridView -Title "Duplicate Indexes - Choose indexes to generate DROP script" -PassThru
+
+                        $sqlDropScript = "/*`r`n"
+                        $sqlDropScript += "`tScript generated @ $(Get-Date -format "yyyy-MM-dd HH:mm:ss.ms")`r`n"
+                        $sqlDropScript += if (!$IncludeOverlapping)
+                                          {
+                                            "`tConfirm that you have choosen the right indexes before execute the drop script`r`n"
+                                          }
+                                          else
+                                          {
+                                            "`tChoose wisely when dropping a partial duplicate index. You may want to check index usage before drop it.`r`n"
+                                          }
+                        $sqlDropScript += "*/`r`n"
 
                         foreach ($index in $indexesToDrop)
                         {
-                            Write-Verbose $index.IndexName
+                            $sqlDropScript += "USE [$($index.DatabaseName)]`r`n"
+                            $sqlDropScript += "GO`r`n"
+                            $sqlDropScript += "IF EXISTS (SELECT 1 FROM sys.indexes WHERE [object_id] = OBJECT_ID('$($index.TableName)') AND name = '$($index.IndexName)')`r`n"
+                            $sqlDropScript += "    DROP INDEX $($index.TableName).$($index.IndexName)`r`n"
+                            $sqlDropScript += "GO`r`n"
                         }
+                        
+                        if (!$IncludeOverlapping)
+                        {
+                            Write-Warning "Confirm that you have choosen the right indexes before execute the drop script"
+                        }
+                        else
+                        {
+                            Write-Warning "Choose wisely when dropping a partial duplicate index. You may want to check index usage before drop it."
+                        }
+                        Write-Output $sqlDropScript
                     }
                     else
                     {
