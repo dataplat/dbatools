@@ -79,6 +79,7 @@ Will find duplicate indexes on both db1 and db2 databases
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
+        [object]$SqlCredential,
         [switch]$IncludeOverlapping
 	)
     DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }
@@ -249,6 +250,11 @@ WHERE EXISTS (SELECT 1
 	
 	PROCESS
 	{
+        if ($sourceserver.versionMajor -lt 10)
+		{
+			throw "This function does not support versions lower than SQL Server 2008 (v10)"
+		}
+
         # Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
 		
