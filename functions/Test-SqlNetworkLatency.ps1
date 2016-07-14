@@ -53,7 +53,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Test-SqlNetworkLatency
 
 .EXAMPLE
-Test-SqlNetworkLatency -SqlServer sqlserver2014a, qlcluster
+Test-SqlNetworkLatency -SqlServer sqlserver2014a, sqlcluster
 
 Times the roundtrip return of "SELECT TOP 100 * FROM sys.objects" on sqlserver2014a and sqlcluster using Windows credentials. 
 
