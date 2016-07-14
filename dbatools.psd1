@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.2.2'
+	ModuleVersion = '0.8.2.3'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -74,7 +74,8 @@
 	'Get-DetachedDBInfo', 'Restore-HallengrenBackup', 'Test-SqlConnection', 'Import-CsvToSql', 'Copy-SqlAgentCategory',
 	'Update-dbatools', 'Test-SqlPath', 'Copy-SqlDatabaseAssembly', 'Copy-SqlPolicyManagement','Copy-SqlSharedSchedule',
 	'Copy-SqlOperator','Copy-SqlJob','Copy-SqlDataCollector','Sync-SqlLoginPermissions', 'Export-SqlLogin','Expand-SqlTLogResponsibly',
-	'Show-SqlMigrationConstraint', 'Get-SqlRegisteredServerName','Test-SqlNetworkLatency', 'Find-SqlDuplicateIndex')
+	'Show-SqlMigrationConstraint', 'Get-SqlRegisteredServerName', 'Test-SqlNetworkLatency', 'Find-SqlDuplicateIndex',
+	'Move-SqlDatabaseFile')
 	
 	# Cmdlets to export from this module
 	CmdletsToExport = '*'

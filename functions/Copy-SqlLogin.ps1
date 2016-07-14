@@ -429,7 +429,7 @@ Limitations: Does not support Application Roles yet
 		$destsa = $destserver.Logins | Where-Object { $_.id -eq 1 }
 		$saname = $sa.name
 		
-		if ($saname -ne $destsa.name -and $NoSaRename -eq $false)
+		if ($saname -ne $destsa.name -and $NoSaRename -eq $false -and $psboundparameters.Logins.count -eq 0)
 		{
 			Write-Output "Changing sa username to match source ($saname)"
 			If ($Pscmdlet.ShouldProcess($destination, "Changing sa username to match source ($saname)"))
