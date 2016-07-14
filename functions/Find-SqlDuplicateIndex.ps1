@@ -5,11 +5,11 @@
 Find duplicate and overlapping indexes
 
 .DESCRIPTION
-This function will find exact duplicated and overlapping indexes on a database.
+This function will find exact duplicate and overlapping indexes on a database.
 Also tells how much space you can sabe by dropping the index.
-We take into account the COMPRESSION used.
+We show the type of compression so you can make a more considered decision
 
-You can select the indexes you want to drop on the gridview and by click OK the drop statement will be generated
+You can select the indexes you want to drop on the gridview and by click OK the drop statement will be generated.
 
 For now only supported for CLUSTERED and NONCLUSTERED indexes
 
@@ -20,7 +20,7 @@ Output:
     IncludedCols
     IndexSizeMB
     IndexType
-    CompressionDesc
+    CompressionDesc (When 2008+)
     IsDisabled
 	
 .PARAMETER SqlServer
@@ -36,6 +36,15 @@ Windows Authentication will be used if SqlCredential is not specified. SQL Serve
 .PARAMETER IncludeOverlapping
 Allows to see indexes partial duplicate. 
 Example: If first key column is the same but one index has included columns and the other not, this will be shown.
+
+.PARAMETER FileName
+The file to write to.
+
+.PARAMETER NoClobber
+Do not overwrite file
+	
+.PARAMETER Append
+Append to file
 
 .NOTES 
 Original Author: Cláudio Silva (@ClaudioESSilva)
@@ -59,9 +68,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Find-SqlDuplicateIndex
 
 .EXAMPLE
-Find-SqlDuplicateIndex -SqlServer sqlserver2014a 
+Find-SqlDuplicateIndex -SqlServer sql2005 -FileName C:\temp\sql2005-DuplicateIndexes.sql
 
-All user databases present on sqlserver2014a will be verified
+Exports SQL for the duplicate indexes in server "sql2005" choosen on grid-view and writes them to the file "C:\temp\sql2005-DuplicateIndexes.sql"
 
 .EXAMPLE   
 Find-SqlDuplicateIndex -SqlServer sqlserver2014a -SqlCredential $cred
@@ -85,7 +94,11 @@ Will find exact duplicate or overlapping indexes on all user databases
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
         [object]$SqlCredential,
-        [switch]$IncludeOverlapping
+        [switch]$IncludeOverlapping,
+        [Alias("OutFile", "Path")]
+		[string]$FilePath,
+        [switch]$NoClobber,
+		[switch]$Append
 	)
     DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }
 	
@@ -406,6 +419,17 @@ WHERE EXISTS (SELECT 1
 				AND CI1.IndexName <> CI2.IndexName
 			)"
 
+        if ($FilePath.Length -gt 0)
+		{
+			$directory = Split-Path $FilePath
+			$exists = Test-Path $directory
+			
+			if ($exists -eq $false)
+			{
+				throw "Parent directory $directory does not exist"
+			}
+		}
+
         Write-Output "Attempting to connect to Sql Server.."
 		$sourceserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 	}
@@ -489,6 +513,11 @@ WHERE EXISTS (SELECT 1
 
                                 foreach ($index in $indexesToDrop)
                                 {
+                                    if ($FilePath.Length -gt 0)
+				                    {
+					                    Write-Output "Exporting $($index.TableName).$($index.IndexName)"
+				                    }
+
                                     $sqlDropScript += "USE [$($index.DatabaseName)]`r`n"
                                     $sqlDropScript += "GO`r`n"
                                     $sqlDropScript += "IF EXISTS (SELECT 1 FROM sys.indexes WHERE [object_id] = OBJECT_ID('$($index.TableName)') AND name = '$($index.IndexName)')`r`n"
@@ -496,7 +525,14 @@ WHERE EXISTS (SELECT 1
                                     $sqlDropScript += "GO`r`n`r`n"
                                 }
 
-                                Write-Output $sqlDropScript
+                                if ($FilePath.Length -gt 0)
+		                        {
+			                        $sqlDropScript | Out-File -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+		                        }
+                                else
+                                {
+                                    Write-Output $sqlDropScript
+                                }
 
                                 $scriptGenerated = $true
                             }
@@ -504,10 +540,6 @@ WHERE EXISTS (SELECT 1
                             {
                                 Write-Warning "Script will not be generated for database '$db'"
                             }
-                        }
-                        if ($scriptGenerated)
-                        {
-                            Write-Warning "Confirm the generated script before execute!"
                         }
                     }
                     else
@@ -519,6 +551,15 @@ WHERE EXISTS (SELECT 1
                 {
                     throw $_
                 }
+            }
+
+            if ($scriptGenerated)
+            {
+                Write-Warning "Confirm the generated script before execute!"
+            }
+            if ($FilePath.Length -gt 0)
+            {
+                Write-Output "Script generated to $FilePath"
             }
         }
         else
