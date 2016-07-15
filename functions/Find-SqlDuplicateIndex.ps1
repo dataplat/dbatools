@@ -5,13 +5,14 @@
 Find duplicate and overlapping indexes
 
 .DESCRIPTION
-This function will find exact duplicate and overlapping indexes on a database.
-Also tells how much space you can sabe by dropping the index.
-We show the type of compression so you can make a more considered decision
+This command will help you to find duplicate and overlapping indexes on a database or a list of databases
+
+When 2008+ filtered property also come to comparison
+Also tells how much space you can save by dropping the index.
+We show the type of compression so you can make a more considered decision.
+For now only supported for CLUSTERED and NONCLUSTERED indexes
 
 You can select the indexes you want to drop on the gridview and by click OK the drop statement will be generated.
-
-For now only supported for CLUSTERED and NONCLUSTERED indexes
 
 Output:
     TableName
