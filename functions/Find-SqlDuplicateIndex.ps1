@@ -21,9 +21,7 @@ Output:
     IndexSizeMB
     IndexType
     CompressionDesc (When 2008+)
-    NumberRows
     IsDisabled
-    IsFiltered (When 2008+)
 	
 .PARAMETER SqlServer
 The SQL Server instance.
@@ -109,8 +107,8 @@ Will find exact duplicate or overlapping indexes on all user databases
         $exactDuplicateQuery2005 = "WITH CTE_IndexCols AS
 (
 	SELECT 
-			 i.[object_id]
-			,i.index_id
+			 i.[object_id] AS id
+			,i.index_id AS indid
 			,OBJECT_SCHEMA_NAME(i.[object_id]) AS SchemaName
 			,OBJECT_NAME(i.[object_id]) AS TableName
 			,Name AS IndexName
@@ -143,25 +141,20 @@ Will find exact duplicate or overlapping indexes on all user databases
 			,i.[type_desc] AS IndexType
             ,i.is_disabled AS IsDisabled
 	  FROM sys.indexes AS i
-	 WHERE i.index_id > 0 -- Exclude HEAPS
-	   AND i.[type_desc] IN ('CLUSTERED', 'NONCLUSTERED')
-	   AND OBJECT_SCHEMA_NAME(i.[object_id]) <> 'sys'
+	 WHERE i.[type_desc] IN ('CLUSTERED', 'NONCLUSTERED')
 ),
 CTE_IndexSpace AS
 (
-SELECT
-			 s.[object_id]
-			,s.index_id
+	SELECT
+			 OBJECT_SCHEMA_NAME(i.[object_id]) AS SchemaName 
+			,OBJECT_NAME(i.[object_id]) AS TableName
+			,i.name AS IndexName
 			,SUM(s.[used_page_count]) * 8 / 1024.0 AS IndexSizeMB
-			,SUM(p.[rows]) AS NumberRows
 	  FROM sys.dm_db_partition_stats AS s
-		INNER JOIN sys.partitions p WITH (NOLOCK) 
-		   ON s.[partition_id] = p.[partition_id]
-		  AND s.[object_id] = p.[object_id] 
-		  AND s.index_id = p.index_id	
-	  WHERE s.index_id > 0 -- Exclude HEAPS
-	    AND OBJECT_SCHEMA_NAME(s.[object_id]) <> 'sys'
-	GROUP BY s.[object_id], s.index_id
+		INNER JOIN sys.indexes AS i 
+		   ON s.[object_id] = i.[object_id]
+		  AND s.index_id = i.index_id
+	GROUP BY i.[object_id], i.name
 )
 SELECT 
          DB_NAME() AS DatabaseName
@@ -171,12 +164,12 @@ SELECT
 		,CI1.IncludedCols
         ,CI1.IndexType
 		,CSPC.IndexSizeMB
-		,CSPC.NumberRows
 		,CI1.IsDisabled
 FROM CTE_IndexCols AS CI1
 	INNER JOIN CTE_IndexSpace AS CSPC
-	   ON CI1.[object_id] = CSPC.[object_id]
-	  AND CI1.index_id = CSPC.index_id
+	   ON CI1.SchemaName = CSPC.SchemaName
+	  AND CI1.TableName = CSPC.TableName
+	  AND CI1.IndexName = CSPC.IndexName
 WHERE EXISTS (SELECT 1 
 				FROM CTE_IndexCols CI2
 			   WHERE CI1.SchemaName = CI2.SchemaName
@@ -189,8 +182,8 @@ WHERE EXISTS (SELECT 1
         $overlappingQuery2005 = "WITH CTE_IndexCols AS
 (
 	SELECT 
-			 i.[object_id]
-			,i.index_id
+			 i.[object_id] AS id
+			,i.index_id AS indid
 			,OBJECT_SCHEMA_NAME(i.[object_id]) AS SchemaName
 			,OBJECT_NAME(i.[object_id]) AS TableName
 			,Name AS IndexName
@@ -222,58 +215,53 @@ WHERE EXISTS (SELECT 1
 			 FOR XML PATH('')), 1, 2, ''), '') AS IncludedCols
 			,i.[type_desc] AS IndexType
             ,i.is_disabled AS IsDisabled
-	  FROM sys.indexes AS i
-	 WHERE i.index_id > 0 -- Exclude HEAPS
-	   AND i.[type_desc] IN ('CLUSTERED', 'NONCLUSTERED')
-	   AND OBJECT_SCHEMA_NAME(i.[object_id]) <> 'sys'
+	  FROM sys.indexes AS i	
+	 WHERE i.[type_desc] IN ('CLUSTERED', 'NONCLUSTERED')
 ),
 CTE_IndexSpace AS
 (
-SELECT
-			 s.[object_id]
-			,s.index_id
+	SELECT
+			 OBJECT_SCHEMA_NAME(i.[object_id]) AS SchemaName 
+			,OBJECT_NAME(i.[object_id]) AS TableName
+			,i.name AS IndexName
 			,SUM(s.[used_page_count]) * 8 / 1024.0 AS IndexSizeMB
-			,SUM(p.[rows]) AS NumberRows
 	  FROM sys.dm_db_partition_stats AS s
-		INNER JOIN sys.partitions p WITH (NOLOCK) 
-		   ON s.[partition_id] = p.[partition_id]
-		  AND s.[object_id] = p.[object_id] 
-		  AND s.index_id = p.index_id	
-	  WHERE s.index_id > 0 -- Exclude HEAPS
-	    AND OBJECT_SCHEMA_NAME(s.[object_id]) <> 'sys'
-	GROUP BY s.[object_id], s.index_id
+		INNER JOIN sys.indexes AS i 
+		   ON s.[object_id] = i.[object_id]
+		  AND s.index_id = i.index_id
+	GROUP BY i.[object_id], i.name
 )
 SELECT 
-         DB_NAME() AS DatabaseName
-		,CI1.SchemaName + '.' + CI1.TableName AS 'TableName'
+		 DB_NAME() AS DatabaseName
+        ,CI1.SchemaName + '.' + CI1.TableName AS 'TableName'
 		,CI1.IndexName
 		,CI1.KeyCols
 		,CI1.IncludedCols
         ,CI1.IndexType
 		,CSPC.IndexSizeMB
-		,CSPC.NumberRows
 		,CI1.IsDisabled
 FROM CTE_IndexCols AS CI1
 	INNER JOIN CTE_IndexSpace AS CSPC
-	   ON CI1.[object_id] = CSPC.[object_id]
-	  AND CI1.index_id = CSPC.index_id
-WHERE EXISTS (SELECT 1 
-				FROM CTE_IndexCols CI2
-			   WHERE CI1.SchemaName = CI2.SchemaName
-				 AND CI1.TableName = CI2.TableName
-				 AND (
-							(CI1.KeyCols like CI2.KeyCols + '%' and SUBSTRING(CI1.KeyCols,LEN(CI2.KeyCols)+1,1) = ' ')
-						 OR (CI2.KeyCols like CI1.KeyCols + '%' and SUBSTRING(CI2.KeyCols,LEN(CI1.KeyCols)+1,1) = ' ')
-					 )
-				 AND CI1.IndexName <> CI2.IndexName
-			 )"
+	   ON CI1.SchemaName = CSPC.SchemaName
+	  AND CI1.TableName = CSPC.TableName
+	  AND CI1.IndexName = CSPC.IndexName
+WHERE EXISTS (SELECT 1
+				FROM CTE_IndexCols AS CI2
+			   WHERE  CI1.SchemaName = CI2.SchemaName
+			AND CI1.TableName = CI2.TableName
+			  AND (
+						(CI1.KeyCols like CI2.KeyCols + '%' and SUBSTRING(CI1.KeyCols,LEN(CI2.KeyCols)+1,1) = ' ')
+					 OR (CI2.KeyCols like CI1.KeyCols + '%' and SUBSTRING(CI2.KeyCols,LEN(CI1.KeyCols)+1,1) = ' ')
+				  )
+				AND CI1.IndexName <> CI2.IndexName
+			)"
 
         # Support Compression 2008+
 		$exactDuplicateQuery = "WITH CTE_IndexCols AS
 (
 	SELECT 
-			 i.[object_id]
-			,i.index_id
+			 i.[object_id] AS id
+			,i.index_id AS indid
 			,OBJECT_SCHEMA_NAME(i.[object_id]) AS SchemaName
 			,OBJECT_NAME(i.[object_id]) AS TableName
 			,Name AS IndexName
@@ -305,28 +293,25 @@ WHERE EXISTS (SELECT 1
 			 FOR XML PATH('')), 1, 2, ''), '') AS IncludedCols
 			,i.[type_desc] AS IndexType
             ,i.is_disabled AS IsDisabled
-			,i.has_filter AS IsFiltered
+			,p.data_compression_desc AS CompressionDesc
 	  FROM sys.indexes AS i
-	 WHERE i.index_id > 0 -- Exclude HEAPS
-	   AND i.[type_desc] IN ('CLUSTERED', 'NONCLUSTERED')
-	   AND OBJECT_SCHEMA_NAME(i.[object_id]) <> 'sys'
+		INNER JOIN sys.partitions p WITH (NOLOCK) 
+		   ON i.[object_id] = p.[object_id] 
+		  AND i.index_id = p.index_id		
+	 WHERE i.[type_desc] IN ('CLUSTERED', 'NONCLUSTERED')
 ),
 CTE_IndexSpace AS
 (
-SELECT
-			 s.[object_id]
-			,s.index_id
+	SELECT
+			 OBJECT_SCHEMA_NAME(i.[object_id]) AS SchemaName 
+			,OBJECT_NAME(i.[object_id]) AS TableName
+			,i.name AS IndexName
 			,SUM(s.[used_page_count]) * 8 / 1024.0 AS IndexSizeMB
-			,SUM(p.[rows]) AS NumberRows
-			,p.data_compression_desc AS CompressionDesc
 	  FROM sys.dm_db_partition_stats AS s
-		INNER JOIN sys.partitions p WITH (NOLOCK) 
-		   ON s.[partition_id] = p.[partition_id]
-		  AND s.[object_id] = p.[object_id] 
-		  AND s.index_id = p.index_id	
-	  WHERE s.index_id > 0 -- Exclude HEAPS
-	    AND OBJECT_SCHEMA_NAME(s.[object_id]) <> 'sys'
-	GROUP BY s.[object_id], s.index_id, p.data_compression_desc
+		INNER JOIN sys.indexes AS i 
+		   ON s.[object_id] = i.[object_id]
+		  AND s.index_id = i.index_id
+	GROUP BY i.[object_id], i.name
 )
 SELECT 
          DB_NAME() AS DatabaseName
@@ -336,29 +321,27 @@ SELECT
 		,CI1.IncludedCols
         ,CI1.IndexType
 		,CSPC.IndexSizeMB
-		,CSPC.CompressionDesc
-		,CSPC.NumberRows
+		,CI1.CompressionDesc
 		,CI1.IsDisabled
-		,CI1.IsFiltered
 FROM CTE_IndexCols AS CI1
 	INNER JOIN CTE_IndexSpace AS CSPC
-	   ON CI1.[object_id] = CSPC.[object_id]
-	  AND CI1.index_id = CSPC.index_id
+	   ON CI1.SchemaName = CSPC.SchemaName
+	  AND CI1.TableName = CSPC.TableName
+	  AND CI1.IndexName = CSPC.IndexName
 WHERE EXISTS (SELECT 1 
 				FROM CTE_IndexCols CI2
 			   WHERE CI1.SchemaName = CI2.SchemaName
 				 AND CI1.TableName = CI2.TableName
 				 AND CI1.KeyCols = CI2.KeyCols
 				 AND CI1.IncludedCols = CI2.IncludedCols
-				 AND CI1.IsFiltered = CI2.IsFiltered
 				 AND CI1.IndexName <> CI2.IndexName
 			 )"
 
         $overlappingQuery = "WITH CTE_IndexCols AS
 (
 	SELECT 
-			 i.[object_id]
-			,i.index_id
+			 i.[object_id] AS id
+			,i.index_id AS indid
 			,OBJECT_SCHEMA_NAME(i.[object_id]) AS SchemaName
 			,OBJECT_NAME(i.[object_id]) AS TableName
 			,Name AS IndexName
@@ -390,56 +373,51 @@ WHERE EXISTS (SELECT 1
 			 FOR XML PATH('')), 1, 2, ''), '') AS IncludedCols
 			,i.[type_desc] AS IndexType
             ,i.is_disabled AS IsDisabled
-			,i.has_filter AS IsFiltered
+			,p.data_compression_desc AS CompressionDesc
 	  FROM sys.indexes AS i
-	 WHERE i.index_id > 0 -- Exclude HEAPS
-	   AND i.[type_desc] IN ('CLUSTERED', 'NONCLUSTERED')
-	   AND OBJECT_SCHEMA_NAME(i.[object_id]) <> 'sys'
+		INNER JOIN sys.partitions p WITH (NOLOCK) 
+		   ON i.[object_id] = p.[object_id] 
+		  AND i.index_id = p.index_id		
+	 WHERE i.[type_desc] IN ('CLUSTERED', 'NONCLUSTERED')
 ),
 CTE_IndexSpace AS
 (
-SELECT
-			 s.[object_id]
-			,s.index_id
+	SELECT
+			 OBJECT_SCHEMA_NAME(i.[object_id]) AS SchemaName 
+			,OBJECT_NAME(i.[object_id]) AS TableName
+			,i.name AS IndexName
 			,SUM(s.[used_page_count]) * 8 / 1024.0 AS IndexSizeMB
-			,SUM(p.[rows]) AS NumberRows
-			,p.data_compression_desc AS CompressionDesc
 	  FROM sys.dm_db_partition_stats AS s
-		INNER JOIN sys.partitions p WITH (NOLOCK) 
-		   ON s.[partition_id] = p.[partition_id]
-		  AND s.[object_id] = p.[object_id] 
-		  AND s.index_id = p.index_id	
-	  WHERE s.index_id > 0 -- Exclude HEAPS
-	    AND OBJECT_SCHEMA_NAME(s.[object_id]) <> 'sys'
-	GROUP BY s.[object_id], s.index_id, p.data_compression_desc
+		INNER JOIN sys.indexes AS i 
+		   ON s.[object_id] = i.[object_id]
+		  AND s.index_id = i.index_id
+	GROUP BY i.[object_id], i.name
 )
 SELECT 
-         DB_NAME() AS DatabaseName
-		,CI1.SchemaName + '.' + CI1.TableName AS 'TableName'
+		 DB_NAME() AS DatabaseName
+        ,CI1.SchemaName + '.' + CI1.TableName AS 'TableName'
 		,CI1.IndexName
 		,CI1.KeyCols
 		,CI1.IncludedCols
         ,CI1.IndexType
 		,CSPC.IndexSizeMB
-		,CSPC.CompressionDesc
-		,CSPC.NumberRows
+		,CI1.CompressionDesc
 		,CI1.IsDisabled
-		,CI1.IsFiltered
 FROM CTE_IndexCols AS CI1
 	INNER JOIN CTE_IndexSpace AS CSPC
-	   ON CI1.[object_id] = CSPC.[object_id]
-	  AND CI1.index_id = CSPC.index_id
-WHERE EXISTS (SELECT 1 
-				FROM CTE_IndexCols CI2
-			   WHERE CI1.SchemaName = CI2.SchemaName
-				 AND CI1.TableName = CI2.TableName
-				 AND (
-							(CI1.KeyCols like CI2.KeyCols + '%' and SUBSTRING(CI1.KeyCols,LEN(CI2.KeyCols)+1,1) = ' ')
-						 OR (CI2.KeyCols like CI1.KeyCols + '%' and SUBSTRING(CI2.KeyCols,LEN(CI1.KeyCols)+1,1) = ' ')
-					 )
-				 AND CI1.IsFiltered = CI2.IsFiltered
-				 AND CI1.IndexName <> CI2.IndexName
-			 )"
+	   ON CI1.SchemaName = CSPC.SchemaName
+	  AND CI1.TableName = CSPC.TableName
+	  AND CI1.IndexName = CSPC.IndexName
+WHERE EXISTS (SELECT 1
+				FROM CTE_IndexCols AS CI2
+			   WHERE  CI1.SchemaName = CI2.SchemaName
+			AND CI1.TableName = CI2.TableName
+			  AND (
+						(CI1.KeyCols like CI2.KeyCols + '%' and SUBSTRING(CI1.KeyCols,LEN(CI2.KeyCols)+1,1) = ' ')
+					 OR (CI2.KeyCols like CI1.KeyCols + '%' and SUBSTRING(CI2.KeyCols,LEN(CI1.KeyCols)+1,1) = ' ')
+				  )
+				AND CI1.IndexName <> CI2.IndexName
+			)"
 
         if ($FilePath.Length -gt 0)
 		{
@@ -487,7 +465,7 @@ WHERE EXISTS (SELECT 1
 
                     $query = if ($sourceserver.versionMajor -eq 9)
                              {
-                                if ($IncludeOverlapping){$overlappingQuery2005} else {$exactDuplicateQuery2005}
+                                if ($IncludeOverlapping){$exactDuplicateQuery2005} else {$overlappingQuery2005}
                              }
                              else 
                              {
