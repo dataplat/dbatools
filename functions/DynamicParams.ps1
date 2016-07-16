@@ -1515,3 +1515,61 @@ Function Get-ParamSqlAgentCategories
 	
 	return $newparams
 }
+
+Function Get-ParamSqlDatabaseFileTypes
+{
+<# 
+ .SYNOPSIS 
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+ filled with Server Configs from specified SQL Server.
+#>	
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	# Populate arrays
+	
+	if ($server.versionMajor -eq 8)
+	{
+		$sql = "select distinct CASE WHEN groupid = 1 THEN 'ROWS' WHEN groupid = 0 THEN 'LOG' END as filetype from sysaltfiles"
+	}
+	else
+	{
+		$sql = "SELECT distinct CASE type_desc WHEN 'ROWS' then 'DATA' ELSE type_desc END AS FileType FROM sys.master_files mf INNER JOIN sys.databases db ON db.database_id = mf.database_id"
+	}
+	
+	$dbfiletable = $server.ConnectionContext.ExecuteWithResults($sql)	
+	$filetypes = ($dbfiletable.Tables[0].Rows).FileType
+	
+	if ($server.versionMajor -eq 8)
+	{
+		$filetypes += "FULLTEXT"
+	}
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	$attributes.ParameterSetName = "FileTypes"
+	$attributes.Mandatory = $true
+	$attributes.Position = 3
+	
+	# Database list parameter setup
+	if ($filetypes) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $filetypes }
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($filetypes) { $attributeCollection.Add($validationset) }
+	$FileType = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("FileType", [String[]], $attributeCollection)
+	
+	$newparams.Add("FileType", $FileType)
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
