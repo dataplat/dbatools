@@ -277,8 +277,8 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 	
 	BEGIN
 	{
-		$whatif
-		$transcript = ".\dbatools-startmigration-transcript.txt"
+		$docs = [Environment]::GetFolderPath("mydocuments")
+		$transcript = "$docs\dbatools-startmigration-transcript.txt"
 		
 		if (Test-Path $transcript)
 		{
