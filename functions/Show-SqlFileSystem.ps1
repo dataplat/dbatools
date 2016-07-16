@@ -66,19 +66,42 @@ Shows a GUI
 			
 			$childitem = New-Object System.Windows.Controls.TreeViewItem
 			
+			$textblock = New-Object System.Windows.Controls.TextBlock
+			$textblock.Margin = "5,0"
+			
+			$stackpanel = New-Object System.Windows.Controls.StackPanel
+			$stackpanel.Orientation = "Horizontal"
+			
+			$image = New-Object System.Windows.Controls.Image
+			$image.Height = 20
+			$image.Width = 20
+			$image.Stretch = "Fill"
+			
 			if ($name.length -eq 1)
 			{
-				$childitem.Header = "$name`:"
+				$image.Source = "C:\temp\diskdrive.png"
+				$textblock.Text = "$name`:"
 				$childitem.Tag = "$name`:"
+				
+				[void]$stackpanel.Children.Add($image)
+				[void]$stackpanel.Children.Add($textblock)
+				
+				$childitem.Header = $stackpanel
 			}
 			else
 			{
-				$childitem.Header = $name
+				$image.source = "C:\temp\folder.png"
+				$textblock.Text = $name
 				$childitem.Tag = "$tag\$name"
+				
+				[void]$stackpanel.Children.Add($image)
+				[void]$stackpanel.Children.Add($textblock)
+				
+				$childitem.Header = $stackpanel
 			}
 			
-			[Void]$childitem.Items.Add("*")
-			[Void]$parent.Items.Add($childitem)
+			[void]$childitem.Items.Add("*")
+			[void]$parent.Items.Add($childitem)
 		}
 		
 		Function Get-SubDirectory
@@ -89,7 +112,6 @@ Shows a GUI
 			)
 			
 			$textbox.Text = $nameSpace
-			
 			$dirs = $server.EnumDirectories($nameSpace)
 			$subdirs = $dirs.Name
 			
@@ -115,22 +137,7 @@ Shows a GUI
         Title="Locate Folder" Height="620" Width="440" Background="#F0F0F0"
 		WindowStartupLocation="CenterScreen">
     <Grid>
-        <TreeView Name="treeview" Height="462" Width="391" Background="#FFFFFF" BorderBrush="#FFFFFF" Foreground="#FFFFFF" Margin="11,36,11,79">
-            <TreeView.Resources>
-                <Style TargetType="{x:Type TreeViewItem}">
-                    <Setter Property="HeaderTemplate">
-                        <Setter.Value>
-                            <DataTemplate>
-                                <StackPanel Name="stackpanel" Orientation="Horizontal">
-                                    <Image Name="image" Width="20" Height="20" Stretch="Fill" Source="C:\temp\diskdrive.png"/>
-                                    <TextBlock Text="{Binding}" Margin="5,0" />
-                                </StackPanel>
-                            </DataTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
-            </TreeView.Resources>
-        </TreeView>
+        <TreeView Name="treeview" Height="462" Width="391" Background="#FFFFFF" BorderBrush="#FFFFFF" Foreground="#FFFFFF" Margin="11,36,11,79"/>
         <Label x:Name="label" Content="Select the folder:" HorizontalAlignment="Left" Margin="15,4,0,0" VerticalAlignment="Top"/>
         <Label x:Name="path" Content="Selected Path" HorizontalAlignment="Left" Margin="15,502,0,0" VerticalAlignment="Top"/>
         <TextBox Name="textbox" HorizontalAlignment="Left" Height="23" Margin="111,504,0,0" TextWrapping="Wrap" Text="C:\blah" VerticalAlignment="Top" Width="292"/>
