@@ -4,7 +4,7 @@
 foreach ($function in (Get-ChildItem "$PSScriptRoot\Functions\*.ps1")) { . $function }
 
 # Not supporting the provider path at this time
-if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\")) { throw "Starting " }
+if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\")) { throw "Please change to another drive and reload the module." }
 
 # I renamed this function to be more accurate
 Set-Alias -Name Reset-SqlSaPassword -Value Reset-SqlAdmin
@@ -20,5 +20,5 @@ $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.S
 $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers")
 $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent")
 $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Dmf")
-$null = [void][Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers")
-$null = [void][Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.ConnectionInfo")
+$null = [Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers")
+$null = [Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.ConnectionInfo")

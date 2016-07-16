@@ -6,55 +6,69 @@ In my domain joined Windows 10, PowerShell v5, SMO v12 lab, these commands work 
 <p align="center"><img src=https://blog.netnerds.net/wp-content/uploads/2016/05/dbatools.png></p>
 
 Got any suggestions or bug reports? I check github, but I prefer <a href=https://trello.com/b/LcvGHeTF/dbatools>Trello</a>. Let me know what you'd like to see.
+
 Installer
 --------------
-This module is now in the PowerShell Gallery! Run Install-Module dbatools to install. Alternatively, you can perform a local install by running the following command:
+This module is now in the PowerShell Gallery! Run the following to install:
 
+    Install-Module dbatools
+    
+Or if you don't have a version of PowerShell that supports the Gallery, you can install it manually.
 
-	Invoke-Expression (Invoke-WebRequest https://git.io/vn1hQ)
+    Invoke-Expression (Invoke-WebRequest https://git.io/vn1hQ)
 
 This will install the following commands
 
-	Copy-SqlAgentCategory
-	Copy-SqlAlert
-	Copy-SqlAudit
-	Copy-SqlAuditSpecification
-	Copy-SqlBackupDevice
-	Copy-SqlCentralManagementServer
-	Copy-SqlCredential
-	Copy-SqlCustomError
-	Copy-SqlDatabase
-	Copy-SqlDatabaseAssembly
-	Copy-SqlDatabaseMail
-	Copy-SqlDataCollector
-	Copy-SqlEndpoint
-	Copy-SqlExtendedEvent
-	Copy-SqlJob
-	Copy-SqlLinkedServer
-	Copy-SqlLogin
-	Copy-SqlOperator
-	Copy-SqlPolicyManagement
-	Copy-SqlProxyAccount
-	Copy-SqlResourceGovernor
-	Copy-SqlServerAgent
-	Copy-SqlServerRole
-	Copy-SqlServerTrigger
-	Copy-SqlSharedSchedule
-	Copy-SqlSpConfigure
-	Copy-SqlSysDbUserObjects
-	Start-SqlMigration
+    Copy-SqlAgentCategory          
+    Copy-SqlAlert                  
+    Copy-SqlAudit                  
+    Copy-SqlAuditSpecification     
+    Copy-SqlBackupDevice           
+    Copy-SqlCentralManagementServer
+    Copy-SqlCredential             
+    Copy-SqlCustomError            
+    Copy-SqlDatabase               
+    Copy-SqlDatabaseAssembly       
+    Copy-SqlDatabaseMail           
+    Copy-SqlDataCollector          
+    Copy-SqlEndpoint               
+    Copy-SqlExtendedEvent          
+    Copy-SqlJob                    
+    Copy-SqlLinkedServer           
+    Copy-SqlLogin                  
+    Copy-SqlOperator               
+    Copy-SqlPolicyManagement       
+    Copy-SqlProxyAccount           
+    Copy-SqlResourceGovernor       
+    Copy-SqlServerAgent            
+    Copy-SqlServerRole             
+    Copy-SqlServerTrigger          
+    Copy-SqlSharedSchedule         
+    Copy-SqlSpConfigure            
+    Copy-SqlSysDbUserObjects
+	Start-SqlMigration 
 	
-	Set-SqlMaxMemory
-    Get-SqlMaxMemory
-    Get-SqlServerKey
-    Get-DetachedDBinfo
-	Import-CsvToSql
-    Reset-SqlAdmin
-    Restore-HallengrenBackup
-    Watch-SqlDbLogin
-	Test-SqlConnection
-	Test-SqlPath
-    Update-dbatools
+    Expand-SqlTLogResponsibly      
+    Export-SqlLogin                
+    Export-SqlSpConfigure          
+    Find-SqlDuplicateIndex         
+    Get-DetachedDbInfo             
+    Get-SqlMaxMemory               
+    Get-SqlRegisteredServerName    
+    Get-SqlServerKey               
+    Import-CsvToSql                
+    Import-SqlSpConfigure          
+    Move-SqlDatabaseFile           
+    Reset-SqlAdmin                 
+    Restore-HallengrenBackup       
+    Set-SqlMaxMemory               
+    Show-SqlMigrationConstraint
+    Sync-SqlLoginPermissions       
+    Test-SqlConnection             
+    Test-SqlNetworkLatency         
+    Test-SqlPath
+    Watch-SqlDbLogin 
+    Update-dbatools  
 
 A few important notes
 --------------
