@@ -897,7 +897,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		
 		if ($server.versionMajor -eq 8)
 		{
-			$sql = "select DB_NAME (dbid) as dbname, name, filename, groupid from sysaltfiles"
+			$sql = "select DB_NAME (dbid) as dbname, name, filename, CASE WHEN groupid = 1 THEN 'ROWS' WHEN groupid = 0 THEN 'LOG' END as filetype from sysaltfiles"
 		}
 		else
 		{
