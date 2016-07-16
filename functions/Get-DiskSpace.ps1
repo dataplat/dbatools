@@ -64,7 +64,6 @@ Returns a custom object filled with information for server1, server2 and server3
 		{
 			
 			$measure = "1$unit"
-			Write-Warning $measure
 			$query = "Select SystemName, Name, DriveType, FileSystem, FreeSpace, Capacity, Label from Win32_Volume where DriveType = 2 or DriveType = 3"
 			
 			$alldisks = @()
