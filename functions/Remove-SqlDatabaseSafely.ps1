@@ -160,7 +160,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 	
 	BEGIN
 	{
-		
+		$databases = $psboundparameters.Databases
 		$sourceserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $sqlCredential -ParameterConnection
 		
 		if ($SqlServer -ne $destination)
@@ -188,7 +188,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			$jobowner = Get-SqlSaLogin $destserver
 		}
 		
-		if ($alldatabases)
+		if ($alldatabases -or $databases.count -eq 0)
 		{
 			$databases = ($sourceserver.databases | Where-Object{ $_.IsSystemObject -eq $false }).Name
 		}
@@ -260,15 +260,15 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				[string]$dbname
 			)
 			
-			$server = $server.name
+			$servername = $server.name
 			$db = $server.databases[$dbname]
 			
-			if ($Pscmdlet.ShouldProcess($sourceserver, "Running dbcc check on $dbname on $sourceserver"))
+			if ($Pscmdlet.ShouldProcess($sourceserver, "Running dbcc check on $dbname on $servername"))
 			{
 				try
 				{
-					$db.CheckTables('None')
-					Write-Output "Dbcc CHECKDB finished successfully for $dbname on $server"
+					$null = $db.CheckTables('None')
+					Write-Output "Dbcc CHECKDB finished successfully for $dbname on $servername"
 				}
 				
 				catch
@@ -410,8 +410,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 	{
 		
 		$start = Get-Date
-		Write-Output "Starting Rationalisation Script for $databases on $server to $destination"
-		Write-Output "Started at $start"
+		Write-Output "Starting Rationalisation Script at $start"
 		
 		foreach ($dbname in $databases)
 		{
@@ -429,35 +428,39 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			$jobStepName = "Restore the $dbname database from Final Backup"
 			$jobServer = $destserver.JobServer
 			
-			if ($jobServer.Jobs[$jobname] -and $force -eq $false)
+			if ($jobServer.Jobs[$jobname].count -gt 0)
 			{
-				Write-Warning "FAILED: The Job $jobname already exists. Have you done this before? Rename the existing job and try again or use -Force to drop and recreate."
-				continue
-			}
-			else
-			{
-				if ($Pscmdlet.ShouldProcess($dbname, "Dropping $jobname on $source"))
+				if ($force -eq $false)
 				{
-					Write-Output  "Dropping $jobname on $source"
-					$jobServer.Jobs[$jobname].Drop()
-					$jobServer.Jobs.Refresh()
+					Write-Warning "FAILED: The Job $jobname already exists. Have you done this before? Rename the existing job and try again or use -Force to drop and recreate."
+					continue
+				}
+				else
+				{
+					if ($Pscmdlet.ShouldProcess($dbname, "Dropping $jobname on $source"))
+					{
+						Write-Output  "Dropping $jobname on $source"
+						$jobServer.Jobs[$jobname].Drop()
+						$jobServer.Jobs.Refresh()
+					}
 				}
 			}
+			
 			
 			Write-Output "Starting Rationalisation of $dbname"
 			## if we want to Dbcc before to abort if we have a corrupt database to start with
 			if ($NoCheck -eq $false)
 			{
-				if ($Pscmdlet.ShouldProcess($dbname, "Running dbcc check on $dbname on $sourceServer"))
+				if ($Pscmdlet.ShouldProcess($dbname, "Running dbcc check on $dbname on $source"))
 				{
-					Write-Output "Starting Dbcc CHECKDB for $dbname on $server"
-					$dbccgood = Start-DbccCheck -SqlServer $sourceserver -DBName $dbname
+					Write-Output "Starting Dbcc CHECKDB for $dbname on $source"
+					$dbccgood = Start-DbccCheck -Server $sourceserver -DBName $dbname
 					
 					if ($dbccgood -eq $false)
 					{
 						if ($force -eq $false)
 						{
-							Write-Outut "DBCC failed for $dbname (you should check that).  Aborting routine for this database"
+							Write-Output "DBCC failed for $dbname (you should check that).  Aborting routine for this database"
 							continue
 						}
 						else
@@ -468,12 +471,13 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				}
 			}
 			
-			if ($Pscmdlet.ShouldProcess($destination, "Backing up $dbname"))
+			if ($Pscmdlet.ShouldProcess($source, "Backing up $dbname"))
 			{
-				Write-Output "Starting Backup for $dbname on $server"
+				Write-Output "Starting Backup for $dbname on $source"
 				## Take a Backup
 				try
 				{
+					$timenow = [DateTime]::Now.ToString('yyyyMMdd_HHmmss')
 					$backup = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Backup
 					$backup.Action = [Microsoft.SqlServer.Management.SMO.BackupActionType]::Database
 					$backup.BackupSetDescription = "Final Full Backup of $dbname Prior to Dropping"
@@ -485,34 +489,37 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 					}
 					if ($force -and $dbccgood -eq $false)
 					{
-						$filename = $backupFolder + '\' + $dbname + '_' + 'DBCCERROR' + '_' + [DateTime]::Now.ToString('yyyyMMdd_HHmmss') + '.bak'
+						
+						$filename = "$backupFolder\$($dbname)_DBCCERROR_$timenow.bak"
 					}
 					else
 					{
-						$filename = $backupFolder + '\' + $dbname + '_' + 'Final_Before_Drop_' + [DateTime]::Now.ToString('yyyyMMdd_HHmmss') + '.bak'
+						$filename = "$backupFolder\$($dbname)_Final_Before_Drop_$timenow.bak"
 					}
+					
 					$devicetype = [Microsoft.SqlServer.Management.Smo.DeviceType]::File
 					$backupDevice = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem($filename, $devicetype)
+					
 					$backup.Devices.Add($backupDevice)
 					#Progress
 					$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-						Write-Progress -id 1 -activity "Backing up database $dbname on $server to $filename" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
+						Write-Progress -id 1 -activity "Backing up database $dbname on $source to $filename" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
 					}
 					$backup.add_PercentComplete($percent)
 					$backup.add_Complete($complete)
-					Write-Progress -id 1 -activity "Backing up database $dbname on $server to $filename" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+					Write-Progress -id 1 -activity "Backing up database $dbname on $source to $filename" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
 					$backup.SqlBackup($sourceserver)
-					$backup.Devices.Remove($backupDevice)
-					Write-Progress -id 1 -activity "Backing up database $dbname  on $server to $filename" -status "Complete" -Completed
-					Write-Output "Backup Completed for $dbname on $server "
+					$null = $backup.Devices.Remove($backupDevice)
+					Write-Progress -id 1 -activity "Backing up database $dbname  on $source to $filename" -status "Complete" -Completed
+					Write-Output "Backup Completed for $dbname on $source "
 					
-					Write-Output "Running Restore Verify only on Backup of $dbname on $server"
+					Write-Output "Running Restore Verify only on Backup of $dbname on $source"
 					try
 					{
 						$restoreverify = New-Object 'Microsoft.SqlServer.Management.Smo.Restore'
 						$restoreverify.Database = $dbname
 						$restoreverify.Devices.AddDevice($filename, $devicetype)
-						$result = $restoreverify.SqlVerify($server)
+						$result = $restoreverify.SqlVerify($sourceserver)
 						
 						if ($result -eq $false)
 						{
@@ -537,12 +544,12 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				}
 			}
 			
-			if ($Pscmdlet.ShouldProcess($destination, "Creating Automated Restore Job from Golden Backup for $dbname on $destination "))
+			if ($Pscmdlet.ShouldProcess($destination, "Creating Automated Restore Job from Golden Backup for $dbname on $destination"))
 			{
 				Write-Output "Creating Automated Restore Job from Golden Backup for $dbname on $destination "
 				try
 				{
-					if ($force -and $dbccgood -eq $false)
+					if ($force -eq $true -and $dbccgood -eq $false)
 					{
 						$jobName = $jobname -replace "Rationalised", "DBCC ERROR"
 					}
@@ -596,12 +603,12 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 						
 						$filestructure = Get-OfflineSqlFileStructure $destserver $dbname $filelist $ReuseSourceFolderStructure
 						
-						if ($filestructure -eq $false)
-						{
-							Write-Warning "$dbname contains FILESTREAM and filestreams are not supported by destination server. Skipping."
-							$skippedb[$dbname] = "Database contains FILESTREAM and filestreams are not supported by destination server."
-							continue
-						}
+						#if ($filestructure -eq $false)
+						#{
+						#	Write-Warning "$dbname contains FILESTREAM and filestreams are not supported by destination server. Skipping."
+						#	continue
+						#}
+						
 						$jobStepCommmand = Restore-Database $destserver $dbname $filename "Database" $filestructure -TSql -ErrorAction Stop
 						$jobStep = new-object Microsoft.SqlServer.Management.Smo.Agent.JobStep $job, $jobStepName
 						$jobStep.SubSystem = 'TransactSql' # 'PowerShell'
@@ -611,7 +618,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 						$jobStep.OnFailAction = 'QuitWithFailure'
 						if ($Pscmdlet.ShouldProcess($destination, "Creating Agent JobStep on $destination"))
 						{
-							$jobStep.Create()
+							$null = $jobStep.Create()
 						}
 						$jobStartStepid = $jobStep.ID
 						Write-Output "Created Agent JobStep $jobStepName on $destination "
@@ -643,8 +650,8 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				try
 				{
 					# Remove-SqlDatabase is a function in SharedFunctions.ps1 that tries 3 different ways to drop a database
-					Remove-SqlDatabase -SqlServer $source -DbName $dbname
-					Write-Output "Dropped $dbname Database  on $server prior to running the Agent Job"
+					Remove-SqlDatabase -SqlServer $sourceserver -DbName $dbname
+					Write-Output "Dropped $dbname Database  on $source prior to running the Agent Job"
 				}
 				catch
 				{
@@ -666,13 +673,15 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 					
 					while ($status -ne 'Idle')
 					{
-						Write-Output "Restore Job for $dbname  on $destination is $status"
+						Write-Output "Restore Job for $dbname on $destination is $status..."
 						$job.Refresh()
 						$status = $job.CurrentRunStatus
 						Start-Sleep -Seconds 5
 					}
+					
 					Write-Output "Restore Job $jobname has completed on $destination "
-					Start-Sleep -Seconds 5 ## This is required to ensure the next Dbcc Check succeeds
+					Write-Output "Sleeping for a few seconds to ensure the next step (DBCC) succeeds"
+					Start-Sleep -Seconds 5 ## This is required to ensure the next DBCC Check succeeds
 				}
 				catch
 				{
@@ -695,7 +704,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			if ($Pscmdlet.ShouldProcess($dbname, "Running Dbcc CHECKDB on $dbname on $destination"))
 			{
 				Write-Output "Starting Dbcc CHECKDB for $dbname on $destination"
-				Start-DbccCheck -SqlServer destserver-DBName $dbname
+				$null = Start-DbccCheck -Server $destserver -DbName $dbname
 			}
 			
 			if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination"))
@@ -703,7 +712,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				## Drop the database
 				try
 				{
-					Remove-SqlDatabase -SqlServer $source -DbName $dbname
+					$null = Remove-SqlDatabase -SqlServer $sourceserver -DbName $dbname
 					Write-Output "Dropped $dbname Database on $destination"
 				}
 				catch
@@ -725,7 +734,6 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		if ($Pscmdlet.ShouldProcess("console", "Showing final message"))
 		{
 			$End = Get-Date
-			Write-Output "Rationalisation Finished for $databases on $server to $destination"
 			Write-Output "Finished at $End"
 			$Duration = $End - $start
 			Write-Output "Script Duration: $Duration"
