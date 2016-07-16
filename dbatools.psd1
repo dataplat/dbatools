@@ -75,7 +75,7 @@
 	'Update-dbatools', 'Test-SqlPath', 'Copy-SqlDatabaseAssembly', 'Copy-SqlPolicyManagement','Copy-SqlSharedSchedule',
 	'Copy-SqlOperator','Copy-SqlJob','Copy-SqlDataCollector','Sync-SqlLoginPermissions', 'Export-SqlLogin','Expand-SqlTLogResponsibly',
 		'Show-SqlMigrationConstraint', 'Get-SqlRegisteredServerName', 'Test-SqlNetworkLatency', 'Find-SqlDuplicateIndex',
-		'Show-SqlFileSystem', 'Get-DiskSpace')
+		'Show-SqlServerFileSystem', 'Get-DiskSpace')
 	
 	# Cmdlets to export from this module
 	CmdletsToExport = '*'

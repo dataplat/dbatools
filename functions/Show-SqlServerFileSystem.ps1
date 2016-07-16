@@ -1,4 +1,4 @@
-﻿Function Show-SqlFileSystem
+﻿Function Show-SqlServerFileSystem
 {
 <#
 .SYNOPSIS
@@ -7,7 +7,7 @@ Shows file system on remote SQL Server and returns the directory name of the dir
 .DESCRIPTION
 Similar to the remote file system popup you see when browsing a remote SQL Server in SQL Server Management Studio, this command allows you to traverse the remote SQL Server's file structure.
 
-Show-SqlFileSystem uses SQL Management Objects to browse the directories and what you see is limited to the permissions of the account running the command.
+Show-SqlServerFileSystem uses SQL Management Objects to browse the directories and what you see is limited to the permissions of the account running the command.
 	
 .PARAMETER SqlServer
 The SQL Server instance.
@@ -37,15 +37,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Show-SqlFileSystem
+https://dbatools.io/Show-SqlServerFileSystem
 
 .EXAMPLE
-Show-SqlFileSystem -SqlServer sqlserver2014a
+Show-SqlServerFileSystem -SqlServer sqlserver2014a
 
 Shows a GUI and uses Windows Authentication to log into the SQL Server. Returns a string of the path you selected.
 	
 .EXAMPLE   
-Show-SqlFileSystem -Source sqlserver2014a -Destination sqlcluster -SqlCredential $cred
+Show-SqlServerFileSystem -Source sqlserver2014a -Destination sqlcluster -SqlCredential $cred
 
 Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a string of the path you selected.
 	
