@@ -148,10 +148,7 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
 	}
 	
 	PROCESS
-	{
-		# Extract icon from PowerShell to use as the NotifyIcon 
-		$icon = [System.Drawing.Icon]::ExtractAssociatedIcon("$pshome\powershell.exe")
-		
+	{		
 		# Create XAML form in Visual Studio, ensuring the ListView looks chromeless 
 		[xml]$xaml = '<Window 
 		xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" 
