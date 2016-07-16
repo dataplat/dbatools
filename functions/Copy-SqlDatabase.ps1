@@ -197,14 +197,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				if ($dbstatus.StartsWith("Normal") -eq $false) { continue }
 				$destinationfiles = @{ }; $sourcefiles = @{ }
 				
-				if ($sourceserver.versionMajor -eq 8)
-				{
-					$where = "groupid = 1"
-				}
-				else
-				{
-					$where = "Filetype <> 'LOG' and Filetype <> 'FULLTEXT'"
-				}
+				$where = "Filetype <> 'LOG' and Filetype <> 'FULLTEXT'"
 				
 				$datarows = $dbfiletable.Tables[0].Select("dbname = '$dbname' and $where")
 				
@@ -238,9 +231,17 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				# Add support for Full Text Catalogs in Sql Server 2005 and below
 				if ($sourceserver.VersionMajor -lt 10)
 				{
-					$fttable = $null = $sourceserver.Databases[$dbname].ExecuteWithResults('sp_help_fulltext_catalogs')
+					try
+					{
+						$fttable = $null = $sourceserver.Databases[$dbname].ExecuteWithResults('sp_help_fulltext_catalogs')
+						$allrows = $fttable.Tables[0].rows
+					}
+					catch
+					{
+						# Nothing, it's just not enabled	
+					}
 					
-					foreach ($ftc in $fttable.Tables[0].rows)
+					foreach ($ftc in $allrows)
 					{
 						# Destination File Structure
 						$d = @{ }
@@ -277,14 +278,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					}
 				}
 				
-				if ($sourceserver.versionMajor -eq 8)
-				{
-					$where = "groupid <> 1"
-				}
-				else
-				{
-					$where = "Filetype = 'LOG'"
-				}
+				$where = "Filetype = 'LOG'"
 				
 				$datarows = $dbfiletable.Tables[0].Select("dbname = '$dbname' and $where")
 				
@@ -895,7 +889,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		$dbcount = $databaselist.Count
 		Write-Output "Building file structure inventory for $dbcount databases"
 		
-		if ($server.versionMajor -eq 8)
+		if ($sourceserver.versionMajor -eq 8)
 		{
 			$sql = "select DB_NAME (dbid) as dbname, name, filename, CASE WHEN groupid = 1 THEN 'ROWS' WHEN groupid = 0 THEN 'LOG' END as filetype from sysaltfiles"
 		}
@@ -905,6 +899,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		}
 		
 		$dbfiletable = $sourceserver.Databases['master'].ExecuteWithResults($sql)
+
 		$filestructure = Get-SqlFileStructure -sourceserver $sourceserver -destserver $destserver -databaselist $databaselist -ReuseSourceFolderStructure $ReuseSourceFolderStructure
 		
 		$elapsed = [System.Diagnostics.Stopwatch]::StartNew()
