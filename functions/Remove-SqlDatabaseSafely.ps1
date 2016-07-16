@@ -26,8 +26,8 @@ Windows Authentication will be used if SqlCredential is not specified. SQL Serve
 .PARAMETER DestinationServer
 If specified this is the server that the Agent Jobs will be created on. By default this is the same server as the SQLServer.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-.PARAMETER DBNames
-The database name to remove or an array of database names eg $DBNames = 'DB1','DB2','DB3'
+.PARAMETER Databases
+The database name to remove or an array of database names eg $Databases = 'DB1','DB2','DB3'
 
 .PARAMETER NoDBCCCheck
 If this switch is used the initial DBCC CHECK DB will be skipped. This will make the process quicker but will also create an agent job to restore a database backup containing a corrupt database. 
@@ -45,8 +45,11 @@ Use the instance default file paths for the mdf and ldf files to restore the dat
 .PARAMETER DBCCErrorFolder 
 FolderPath for DBCC Error Output - defaults to C:\temp
 
-.PARAMETER AllDbs
+.PARAMETER AllDatabases
 Runs the script for every user databases on a server - Useful when decomissioning a server - That would need a DestinationServer set
+
+.PARAMETER Force
+This switch will continue to perform rest of the actions and will create an Agent Job with DBCCERROR in the name and a Backup file with DBCC in the name
 
 .NOTES 
 Original Author: Rob Sewell @SQLDBAWithBeard, sqldbawithabeard.com
@@ -74,254 +77,275 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Remove-SqlDatabaseSafely
 
 .EXAMPLE 
-Remove-SqlDatabaseSafely -SqlServer 'Fade2Black' -DBNames RideTheLightning -BackupFolder 'C:\MSSQL\Backup\Rationalised - DO NOT DELETE'
+Remove-SqlDatabaseSafely -SqlServer 'Fade2Black' -Databases RideTheLightning -BackupFolder 'C:\MSSQL\Backup\Rationalised - DO NOT DELETE'
 
 For the database RideTheLightning on the server Fade2Black Will perform a DBCC CHECKDB and if there are no errors 
 backup the database to the folder C:\MSSQL\Backup\Rationalised - DO NOT DELETE. It will then create an Agent Job to restore the database 
 from that backup. It will drop the database, run the agent job to restore it, perform a DBCC ChECK DB and then drop the database.
 
-Any DBCC errors will be located in C:\Temp
+Any DBCC errors will be written to your documents folder
 
 .EXAMPLE 
-$DBNames = 'DemoNCIndex','RemoveTestDatabase'
-Remove-SqlDatabaseSafely -SqlServer 'Fade2Black' -DBNames $DBNames -BackupFolder 'C:\MSSQL\Backup\Rationalised - DO NOT DELETE'
+$Databases = 'DemoNCIndex','RemoveTestDatabase'
+Remove-SqlDatabaseSafely -SqlServer 'Fade2Black' -Databases $Databases -BackupFolder 'C:\MSSQL\Backup\Rationalised - DO NOT DELETE'
 
 For the databases 'DemoNCIndex','RemoveTestDatabase' on the server Fade2Black Will perform a DBCC CHECKDB and if there are no errors 
 backup the database to the folder C:\MSSQL\Backup\Rationalised - DO NOT DELETE. It will then create an Agent Job for each database 
 to restore the database from that backup. It will drop the database, run the agent job, perform a DBCC ChECK DB and then drop the database
 
-Any DBCC errors will be located in C:\Temp
+Any DBCC errors will be written to your documents folder
 
 .EXAMPLE 
-Remove-SqlDatabaseSafely -SqlServer 'Fade2Black' -DestinationServer JusticeForAll -DBNames RideTheLightning -BackupFolder '\\BACKUPSERVER\BACKUPSHARE\MSSQL\Rationalised - DO NOT DELETE'
+Remove-SqlDatabaseSafely -SqlServer 'Fade2Black' -DestinationServer JusticeForAll -Databases RideTheLightning -BackupFolder '\\BACKUPSERVER\BACKUPSHARE\MSSQL\Rationalised - DO NOT DELETE'
 
 For the database RideTheLightning on the server Fade2Black Will perform a DBCC CHECKDB and if there are no errors 
 backup the database to the folder \\BACKUPSERVER\BACKUPSHARE\MSSQL\Rationalised - DO NOT DELETE It will then create an Agent Job on the server 
 JusticeForAll to restore the database from that backup. It will drop the database on Fade2Black, run the agent job to restore it on JusticeForAll, 
 perform a DBCC ChECK DB and then drop the database
 
-Any DBCC errors will be located in C:\Temp
+Any DBCC errors will be written to your documents folder
 .EXAMPLE 
-Remove-SqlDatabaseSafely -SqlServer IronMaiden -DBNames $DBNames -DestinationServer TheWildHearts -DBCCErrorFolder C:\DBCCErrors -BackupFolder z:\Backups -NoDBCCCheck -UseDefaultFilePaths -JobOwner 'THEBEARD\Rob' 
+Remove-SqlDatabaseSafely -SqlServer IronMaiden -Databases $Databases -DestinationServer TheWildHearts -DBCCErrorFolder C:\DBCCErrors -BackupFolder z:\Backups -NoDBCCCheck -UseDefaultFilePaths -JobOwner 'THEBEARD\Rob' 
 
-For the databases $DBNames on the server IronMaiden Will NOT perform a DBCC CHECKDB 
+For the databases $Databases on the server IronMaiden Will NOT perform a DBCC CHECKDB 
 It will backup the databases to the folder Z:\Backups It will then create an Agent Job on the server with a Job Owner of THEBEARD\Rob 
 TheWildHearts to restore the database from that backup using the instance default filepaths. 
 It will drop the database on IronMaiden, run the agent job to restore it on TheWildHearts using the default file paths for the instance, perform 
 a DBCC ChECK DB and then drop the database
 
-Any DBCC errors will be located in C:\Temp
+Any DBCC errors will be written to your documents folder
+
+.EXAMPLE 
+Remove-SqlDatabaseSafely -SqlServer IronMaiden -Databases $Databases -DestinationServer TheWildHearts -DBCCErrorFolder C:\DBCCErrors -BackupFolder z:\Backups -UseDefaultFilePaths -ContinueAfterDbccError
+
+For the databases $Databases on the server IronMaiden will backup the databases to the folder Z:\Backups It will then create an Agent Job
+TheWildHearts to restore the database from that backup using the instance default filepaths. 
+It will drop the database on IronMaiden, run the agent job to restore it on TheWildHearts using the default file paths for the instance, perform 
+a DBCC ChECK DB and then drop the database
+
+If there is a DBCC Error it will continue to perform rest of the actions and will create an Agent Job with DBCCERROR in the name and a Backup file with DBCCError in the name
+
 
 #>
-	[CmdletBinding(SupportsShouldProcess = $true)]
+	[CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
 	Param (
-		## Source SQL Server - Requires sysadmin access
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
-		## SQL Login for servers
-
 		[parameter(Mandatory = $false)]
 		[object]$SqlCredential,
-		## Destination SQL Server for agent job, restores and DBCC - Requires ssyadmin access
-
 		[parameter(Mandatory = $false)]
-		[object]$DestinationServer = $SqlServer,
-		## The Name of the database or an array of database names eg $DBNames = 'DB1','DB2','DB3' For all users databases on a server use -AllDBs
-
+		[object]$Destination = $SqlServer,
 		[parameter(Mandatory = $false)]
-		$DBNames,
-		## If this switch is used the initial DBCC CHECK DB will be skipped. This will make the process quicker but will also create an agent job to restore a database backup containing a corrupt database. 
-
-		## A second DBCC CHECKDB is performed on the restored database so you will still be notified BUT USE THIS WITH CARE
-
-		[parameter(Mandatory = $false)]
-		[switch]$NoDBCCCheck,
-		## Final (Golden) Backup Folder for storing the backups. Be Careful if you are using a source and destination server that you use the full UNC path eg \\SERVER1\BACKUPSHARE\
-
+		[switch]$NoCheck,
 		[parameter(Mandatory = $true)]
 		[string]$BackupFolder,
-		## Category Name for Agent Jobs -- defaults to Rationalisation
-
 		[parameter(Mandatory = $false)]
 		[string]$CategoryName = 'Rationalisation',
-		## Agent Job Owner - defaults to sa
-
 		[parameter(Mandatory = $false)]
-		[string]$JobOwner = 'sa',
-		## Use the instance default file paths for the mdf and ldf files to restore the database if not set will use the original file paths
-
-		[switch]$UseDefaultFilePaths,
-		## FolderPath for DBCC Error Output - defaults to C:\temp
-
+		[string]$JobOwner,
 		[parameter(Mandatory = $false)]
-		[string]$DBCCErrorFolder = 'C:\temp',
-		# no trailing slash
-
-		## Performs action for All user databases on a server - 
-
+		[string]$DbccErrorFolder = [Environment]::GetFolderPath("mydocuments"),
 		[parameter(Mandatory = $false)]
-		[switch]$AllDbs
+		[switch]$AllDatabases,
+		[ValidateSet("Default", "On", "Of")]
+		[string]$backupCompression = 'Default',
+		#[Alias("UseDefaultFilePaths")]
+		[switch]$ReuseSourceFolderStructure,
+		[switch]$Force
+		
 	)
-	DynamicParam { if ($sqlserver) { return Get-ParamSqlLogins -SqlServer $sqlserver -SqlCredential $SqlCredential } }
+	
+	DynamicParam { if ($sqlserver) { return Get-ParamSqlDatabases -SqlServer $sqlserver -SqlCredential $SqlCredential } }
+	
 	BEGIN
 	{
-		# Load SMO
 		
-		[void][Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SMO")
-		[void][Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SMO.SMOExtended")
-		# please continue to use these variable names for consistency
-		$sourceserver = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential -ParameterConnection
-		## Incase we want to add this as an option later
-		$BackupCompression = 'Default' # 'Default' 'on' or 'off'
+		$sourceserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $sqlCredential -ParameterConnection
 		
-		if ($SqlServer -ne $DestinationServer)
+		if ($SqlServer -ne $destination)
 		{
-			$DestServer = Connect-SqlServer -SqlServer $DestinationServer -SqlCredential $SqlCredential
+			$destserver = Connect-SqlServer -SqlServer $destination -SqlCredential $sqlCredential
+			
+			$sourcenb = $sourceserver.ComputerNamePhysicalNetBIOS
+			$destnb = $sourceserver.ComputerNamePhysicalNetBIOS
+			
+			if ($BackupFolder.StartsWith("\\") -eq $false -and $sourcenb -ne $destnb)
+			{
+				throw "Backup folder must be a network share if the source and destination servers are not the same."	
+			}
 		}
 		else
 		{
-			$DestinationServer = $SqlServer
-			$DestServer = $sourceserver
+			$destserver = $sourceserver
 		}
-		if ($AllDbs)
-		{
-			$DBNames = ($sourceserver.Databases | Where-Object{ $_.IsSystemObject -eq $false }).Name
-		}
+		
 		$source = $sourceserver.DomainInstanceName
-		$JobName = "Rationalised Final Database Restore for $DBName"
-		$JobStepName1 = "Restore the $DBName database from Final Backup"
-		if (!($DestServer.Logins | Where-Object{ $_.Name -eq $JobOwner }))
+		$destination = $destserver.DomainInstanceName
+		
+		if ($jobowner.Length -eq 0)
 		{
-			Write-Warning "$DestinationServer Doesnot contain the login $JobOwner - Please fix and try again - Aborting"
-			break
-		}
-		if ($DestinationServer -notcontains '\')
-		{
-			$AgentService = Get-Service -ComputerName $DestinationServer -Name SQLSERVERAGENT
-			if ($AgentService.Status -ne 'Running')
-			{
-				$AgentService.Start()
-			}
-			Start-Sleep -Seconds 5
-			$AgentService = Get-Service -ComputerName $DestinationServer -Name SQLSERVERAGENT
-			if ($AgentService.Status -ne 'Running')
-			{
-				Write-Warning "Cannot start Agent Service on $DestinationServer - Aborting"
-				break
-			}
-		}
-		Else
-		{
-			$s = $destinationserver.Split('\')[0]
-			$Agent = $destinationserver.Split('\')[1]
-			$AgentService = Get-Service -ComputerName $s -Name SQLAGENT*$Agent
-			if ($AgentService.Status -ne 'Running')
-			{
-				$AgentService.Start()
-			}
-			Start-Sleep -Seconds 5
-			$AgentService = Get-Service -ComputerName $s -Name SQLAGENT*$Agent
-			if ($AgentService.Status -ne 'Running')
-			{
-				Write-Warning "Cannot start Agent Service on $DestinationServer - Aborting"
-				break
-			}
+			$jobowner = Get-SqlSaLogin $destserver
 		}
 		
-		
-<# if(!(Test-Path $BackupFolder))
-{
-Write-Warning "Can't access $BackupFolder Please check if $env:USERDOMAIN\$env:USERNAME has permissions"
-break
-}#>
-		
-		function Start-DBCCCheck
+		if ($alldatabases)
 		{
-			param ([string]$SQLServer,
-				[string]$DBName)
-			$srv = New-Object Microsoft.SqlServer.Management.Smo.Server $SQLServer
-			$DB = $Srv.Databases[$DBName]
-			$DBCCGood = $True
+			$databases = ($sourceserver.databases | Where-Object{ $_.IsSystemObject -eq $false }).Name
+		}
+		
+		if (!(Test-SqlPath -SqlServer $destserver -Path $backupFolder))
+		{
+			$serviceaccount = $destserver.ServiceAccount
+			throw "Can't access $backupFolder Please check if $serviceaccount has permissions"
+		}
+		
+		$jobname = "Rationalised Final Database Restore for $dbname"
+		$jobStepName = "Restore the $dbname database from Final Backup"
+		
+		if (!($destserver.Logins | Where-Object{ $_.Name -eq $jobowner }))
+		{
+			throw "$destination does not contain the login $jobowner - Please fix and try again - Aborting"
+		}
+
+		function Start-SqlAgent
+		{
+			
+			if ($destserver.InstanceName -eq $null)
+			{
+				$serviceName = 'SqlServerAgent'
+			}
+			else
+			{
+				$instance = $destserver.InstanceName
+				$serviceName = "SQLAgent`$$instance"
+				$SqlServiceName = "MSSQL`$$instance"
+			}
+			
+			if ($Pscmdlet.ShouldProcess($destination, "Starting Sql Agent"))
+			{
 			try
 			{
-				$DB.CheckTables('None')
-				Write-Output "DBCC CHECKDB finished successfully for $DBName on $SQLServer"
-			}
+				$ipaddr = Resolve-SqlIpAddress $destination
+				$agentservice = Get-Service -ComputerName $ipaddr -Name $serviceName
+
+					if ($agentservice.Status -ne 'Running')
+					{
+						$agentservice.Start()
+						$timeout = new-timespan -seconds 60
+						$sw = [diagnostics.stopwatch]::StartNew()
+						$agentstatus = (Get-Service -ComputerName $ipaddr -Name $serviceName).Status
+						while ($dbStatus -ne 'Running' -and $sw.elapsed -lt $timeout)
+						{
+							$dbStatus = (Get-Service -ComputerName $ipaddr -Name $serviceName).Status
+						}
+					}
+				}
+
 			catch
 			{
-				$date = Get-Date -Format ddMMyyyy_HHmmss
-				[string]$ErrorFile = $DBCCErrorFolder + '\DBCC_Errors_for_' + $DBName + '_' + $SQLServer + '_' + $Date + '.txt'
-				
-				if (!(Test-Path $DBCCErrorFolder))
-				{
-					New-Item -Path $DBCCErrorFolder -ItemType Directory
+				Write-Exception $_
+			}
+			
+			if ($agentservice.Status -ne 'Running')
+			{
+				throw "Cannot start Agent Service on $destination - Aborting"
 				}
-				$_.Exception.InnerException | Out-File -Append $ErrorFile
-				$_.Exception.InnerException.InnerException.InnerException | Out-File -Append $ErrorFile
-				Write-Warning "UH-OH!! $DBName DBCC CHECKDB Error - Check this file $ErrorFile"
-				$DBCCGood = $false
-				return $DBCCGood
-				continue
 			}
 		}
-		function New-SQLAgentJobCategory
+		
+		Function Start-DbccCheck
 		{
-			param ([string]$CategoryName,
-				$JobServer)
-			if (!$JobServer.JobCategories[$CategoryName])
+			param (
+				[object]$server,
+				[string]$dbname
+			)
+			
+			$server = $server.name
+			$db = $server.databases[$dbname]
+			
+			if ($Pscmdlet.ShouldProcess($sourceserver, "Running dbcc check on $dbname on $sourceserver"))
 			{
 				try
 				{
-					Write-Output "Creating Agent Job Category $CategoryName"
-					$Category = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobCategory
-					$Category.Parent = $JobServer
-					$Category.Name = $CategoryName
-					$Category.Create()
-					Write-Output "Created Agent Job Category $CategoryName"
+					$db.CheckTables('None')
+					Write-Output "Dbcc CHECKDB finished successfully for $dbname on $server"
 				}
+				
 				catch
 				{
-					Write-Output "Creating Agent Job Category $CategoryName"
-					Write-Warning "FAILED : To Create Agent Job Category $CategoryName - Aborting"
+					Write-Warning "DBCC CHECKDB failed"
 					Write-Exception $_
-					continue
+					
+					if ($force)
+					{
+						return $true
+					}
+					else
+					{
+						return $false
+					}
 				}
 			}
 		}
+		
+		Function New-SqlAgentJobCategory
+		{
+			param ([string]$categoryname,
+				[object]$jobServer)
+			
+			if (!$jobServer.JobCategories[$categoryname])
+			{
+				if ($Pscmdlet.ShouldProcess($sourceserver, "Running dbcc check on $dbname on $sourceserver"))
+				{
+					try
+					{
+						Write-Output "Creating Agent Job Category $categoryname"
+						$category = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobCategory
+						$category.Parent = $jobServer
+						$category.Name = $categoryname
+						$category.Create()
+						Write-Output "Created Agent Job Category $categoryname"
+					}
+					catch
+					{
+						Write-Exception $_
+						throw "FAILED : To Create Agent Job Category $categoryname - Aborting"
+					}
+				}
+			}
+		}
+		
 		Function Restore-Database
 		{
-<# 
-	.SYNOPSIS
-	Internal function. Restores .bak file to SQL database. Creates db if it doesn't exist. $filestructure is
-	a custom object that contains logical and physical file locations.
+			<# 
+				.SYNOPSIS
+				Internal function. Restores .bak file to Sql database. Creates db if it doesn't exist. $filestructure is
+				a custom object that contains logical and physical file locations.
 
-    ALTERED To Add TSQL switch and remove norecovery switch default
-#>
+				ALTERED To Add TSql switch and remove norecovery switch default
+			#>
+			
 			[CmdletBinding()]
 			param (
 				[Parameter(Mandatory = $true)]
-				[ValidateNotNullOrEmpty()]
 				[Alias('ServerInstance', 'SqlInstance')]
-				[object]$SqlServer,
+				[object]$server,
 				[Parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[string]$dbname,
 				[Parameter(Mandatory = $true)]
-				[ValidateNotNullOrEmpty()]
 				[string]$backupfile,
 				[string]$filetype = 'Database',
 				[Parameter(Mandatory = $true)]
-				[ValidateNotNullOrEmpty()]
 				[object]$filestructure,
 				[switch]$norecovery,
-				[System.Management.Automation.PSCredential]$SqlCredential,
-				[switch]$TSQL = $false
+				[System.Management.Automation.PSCredential]$sqlCredential,
+				[switch]$TSql = $false
 			)
 			
-			$SQLServer = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-			$SQLServername = $SQLServer.name
-			$SQLServer.ConnectionContext.StatementTimeout = 0
+			$server = Connect-SqlServer -SqlServer $server -SqlCredential $sqlCredential
+			$servername = $server.name
+			$server.ConnectionContext.StatementTimeout = 0
 			$restore = New-Object 'Microsoft.SqlServer.Management.Smo.Restore'
 			$restore.ReplaceDatabase = $true
 			
@@ -335,7 +359,7 @@ break
 			
 			try
 			{
-				if ($TSQL)
+				if ($TSql)
 				{
 					$restore.PercentCompleteNotification = 1
 					$restore.add_Complete($complete)
@@ -347,13 +371,13 @@ break
 					$device.name = $backupfile
 					$device.devicetype = 'File'
 					$restore.Devices.Add($device)
-					$RestoreScript = $restore.script($SQLServer)
-					return $RestoreScript
+					$restorescript = $restore.script($server)
+					return $restorescript
 				}
 				else
 				{
 					$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-						Write-Progress -id 1 -activity "Restoring $dbname to $SQLServername" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
+						Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
 					}
 					$restore.add_PercentComplete($percent)
 					$restore.PercentCompleteNotification = 1
@@ -367,9 +391,9 @@ break
 					$device.devicetype = 'File'
 					$restore.Devices.Add($device)
 					
-					Write-Progress -id 1 -activity "Restoring $dbname to $SQLServername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-					$restore.sqlrestore($SQLServer)
-					Write-Progress -id 1 -activity "Restoring $dbname to $SQLServername" -status 'Complete' -Completed
+					Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+					$restore.sqlrestore($server)
+					Write-Progress -id 1 -activity "Restoring $dbname to $servername" -status 'Complete' -Completed
 					
 					return $true
 				}
@@ -384,258 +408,327 @@ break
 	}
 	PROCESS
 	{
-		$Start = Get-Date
-		Write-Output "Starting Rationalisation Script for $DBNames on $SQLServer to $DestinationServer"
-		Write-Output "Started at $Start"
-		foreach ($DBName in $DBNAMES)
+		
+		$start = Get-Date
+		Write-Output "Starting Rationalisation Script for $databases on $server to $destination"
+		Write-Output "Started at $start"
+		
+		foreach ($dbname in $databases)
 		{
-			$DBCCGood = $True
-			$DB = $sourceserver.Databases[$DBName]
-			$JobName = "Rationalised Database Restore Script for $DBName"
-			$JobStepName1 = "Restore the $DBName database from Final Backup"
-			if (!$DB)
+			
+			$db = $sourceserver.databases[$dbname]
+			
+			# The db check is needed when the number of databases exceeds 255, then it's no longer autopopulated
+			if (!$db)
 			{
-				Write-Warning "$DBName does not exist on $SQLServer"
+				Write-Warning "$dbname does not exist on $source. Aborting routine for this database"
 				continue
 			}
-			$JobServer = $DestServer.JobServer
-			If ($JobServer.Jobs[$JobName])
+			
+			$jobname = "Rationalised Database Restore Script for $dbname"
+			$jobStepName = "Restore the $dbname database from Final Backup"
+			$jobServer = $destserver.JobServer
+			
+			if ($jobServer.Jobs[$jobname] -and $force -eq $false)
 			{
-				Write-Warning "FAILED : The Job $JobName already exists. Have you done this before? Rename the existing job and try again"
+				Write-Warning "FAILED: The Job $jobname already exists. Have you done this before? Rename the existing job and try again or use -Force to drop and recreate."
 				continue
 			}
-			Write-Output "Starting Rationalisation of $DBName"
-			## If we want to DBCC before to abort if we have a corrupt database to start with
-			if (!$NoDBCCCheck)
+			else
 			{
-				Write-Output "Starting DBCC CHECKDB for $DBName on $SQLServer"
-				$DBCCGood = Start-DBCCCheck -SQLserver $SQLServer -DBName $DBName
+				if ($Pscmdlet.ShouldProcess($dbname, "Dropping $jobname on $source"))
+				{
+					Write-Output  "Dropping $jobname on $source"
+					$jobServer.Jobs[$jobname].Drop()
+					$jobServer.Jobs.Refresh()
+				}
 			}
-			## If we have no DBCC errors or we havent run DBCC
-			if ($DBCCGood)
+			
+			Write-Output "Starting Rationalisation of $dbname"
+			## if we want to Dbcc before to abort if we have a corrupt database to start with
+			if ($NoCheck -eq $false)
 			{
-				Write-Output "DBCC Completed for $DBName on $SQLServer without Errors"
-				Write-Output "Starting Backup for $DBName on $SqlServer"
+				if ($Pscmdlet.ShouldProcess($dbname, "Running dbcc check on $dbname on $sourceServer"))
+				{
+					Write-Output "Starting Dbcc CHECKDB for $dbname on $server"
+					$dbccgood = Start-DbccCheck -SqlServer $sourceserver -DBName $dbname
+					
+					if ($dbccgood -eq $false)
+					{
+						if ($force -eq $false)
+						{
+							Write-Outut "DBCC failed for $dbname (you should check that).  Aborting routine for this database"
+							continue
+						}
+						else
+						{
+							Write-Output "DBCC failed, but Force specified. Continuing."
+						}
+					}
+				}
+			}
+			
+			if ($Pscmdlet.ShouldProcess($destination, "Backing up $dbname"))
+			{
+				Write-Output "Starting Backup for $dbname on $server"
 				## Take a Backup
 				try
 				{
-					$Backup = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Backup
-					$Backup.Action = [Microsoft.SQLServer.Management.SMO.BackupActionType]::Database
-					$Backup.BackupSetDescription = "Final Full Backup of $DBName Prior to Dropping"
-					$Backup.Database = $DBName
-					$Backup.Checksum = $True
+					$backup = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Backup
+					$backup.Action = [Microsoft.SqlServer.Management.SMO.BackupActionType]::Database
+					$backup.BackupSetDescription = "Final Full Backup of $dbname Prior to Dropping"
+					$backup.Database = $dbname
+					$backup.Checksum = $True
 					if ($sourceserver.versionMajor -gt 9)
 					{
-						$Backup.CompressionOption = $BackupCompression
+						$backup.CompressionOption = $backupCompression
 					}
-					$FileName = $BackupFolder + '\' + $DbName + '_' + 'Final_Before_Drop_' + [DateTime]::Now.ToString('yyyyMMdd_HHmmss') + '.bak'
-					$DeviceType = [Microsoft.SqlServer.Management.Smo.DeviceType]::File
-					$BackupDevice = New-Object -TypeName Microsoft.SQLServer.Management.Smo.BackupDeviceItem($FileName, $DeviceType)
-					$Backup.Devices.Add($BackupDevice)
+					if ($force -and $dbccgood -eq $false)
+					{
+						$filename = $backupFolder + '\' + $dbname + '_' + 'DBCCERROR' + '_' + [DateTime]::Now.ToString('yyyyMMdd_HHmmss') + '.bak'
+					}
+					else
+					{
+						$filename = $backupFolder + '\' + $dbname + '_' + 'Final_Before_Drop_' + [DateTime]::Now.ToString('yyyyMMdd_HHmmss') + '.bak'
+					}
+					$devicetype = [Microsoft.SqlServer.Management.Smo.DeviceType]::File
+					$backupDevice = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem($filename, $devicetype)
+					$backup.Devices.Add($backupDevice)
 					#Progress
 					$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-						Write-Progress -id 1 -activity "Backing up database $DBName on $SqlServer to $FileName" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
+						Write-Progress -id 1 -activity "Backing up database $dbname on $server to $filename" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
 					}
-					$Backup.add_PercentComplete($percent)
-					$Backup.add_Complete($complete)
-					Write-Progress -id 1 -activity "Backing up database $DBName on $SqlServer to $FileName" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-					$Backup.SqlBackup($sourceserver)
-					$Backup.Devices.Remove($BackupDevice)
-					Write-Progress -id 1 -activity "Backing up database $DBName  on $SqlServer to $FileName" -status "Complete" -Completed
-					Write-Output "Backup Completed for $DBName on $SqlServer "
-					Write-Output "Running Restore Verify only on Backup of $DBName on $SQLServer"
+					$backup.add_PercentComplete($percent)
+					$backup.add_Complete($complete)
+					Write-Progress -id 1 -activity "Backing up database $dbname on $server to $filename" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+					$backup.SqlBackup($sourceserver)
+					$backup.Devices.Remove($backupDevice)
+					Write-Progress -id 1 -activity "Backing up database $dbname  on $server to $filename" -status "Complete" -Completed
+					Write-Output "Backup Completed for $dbname on $server "
+					
+					Write-Output "Running Restore Verify only on Backup of $dbname on $server"
 					try
 					{
 						$restoreverify = New-Object 'Microsoft.SqlServer.Management.Smo.Restore'
-						$restoreverify.Database = $DBName
-						$restoreverify.Devices.AddDevice($FileName, $DeviceType)
-						$result = $restoreverify.SqlVerify($SqlServer)
-						if (!$Result)
+						$restoreverify.Database = $dbname
+						$restoreverify.Devices.AddDevice($filename, $devicetype)
+						$result = $restoreverify.SqlVerify($server)
+						
+						if ($result -eq $false)
 						{
-							Write-Warning "FAILED : Restore Verify Only failed for $FileName on $SqlServer - Aborting"
+							Write-Warning "FAILED : Restore Verify Only failed for $filename on $server - aborting routine for this database"
 							continue
 						}
-						Write-Output "Restore Verify Only for $FileName Succeeded "
+						
+						Write-Output "Restore Verify Only for $filename Succeeded "
 					}
 					catch
 					{
-						Write-Warning "FAILED : Restore Verify Only failed for $FileName on $SqlServer - Aborting"
+						Write-Warning "FAILED : Restore Verify Only failed for $filename on $server - aborting routine for this database"
 						Write-Exception $_
 						continue
 					}
 				}
 				catch
 				{
-					Write-Warning "FAILED : To backup database $DBName on $SqlServer - Aborting"
 					Write-Exception $_
+					Write-Warning "FAILED : To backup database $dbname on $server - aborting routine for this database"
 					continue
-				} # End Backup
-				## SUGGESTION - Could add restore database onto another server
-				## SUGGESTION - COuld also add create the agent job on another server
-				Write-Output "Creating Automated Restore Job from Golden Backup for $DBName on $DestinationServer "
+				}
+			}
+			
+			if ($Pscmdlet.ShouldProcess($destination, "Creating Automated Restore Job from Golden Backup for $dbname on $destination "))
+			{
+				Write-Output "Creating Automated Restore Job from Golden Backup for $dbname on $destination "
 				try
 				{
-					## Create an agent job to restore the database
-					$Job = New-Object Microsoft.SqlServer.Management.Smo.Agent.Job $JobServer, $JobName
-					$Job.Name = $JobName
-					$Job.OwnerLoginName = $JobOwner
-					$Job.Description = "This job will restore the $DBName database using the final backup located at $FileName"
-					## Create a Job Category
-					if (!$JobServer.JobCategories[$CategoryName])
+					if ($force -and $dbccgood -eq $false)
 					{
-						New-SQLAgentJobCategory -JobServer $JobServer -CategoryName $CategoryName
+						$jobName = $jobname -replace "Rationalised", "DBCC ERROR"
 					}
-					$Job.Category = $CategoryName
+					
+					## Create an agent job to restore the database
+					$job = New-Object Microsoft.SqlServer.Management.Smo.Agent.Job $jobServer, $jobname
+					$job.Name = $jobname
+					$job.OwnerLoginName = $jobowner
+					$job.Description = "This job will restore the $dbname database using the final backup located at $filename"
+					
+					## Create a Job Category
+					if (!$jobServer.JobCategories[$categoryname])
+					{
+						New-SqlAgentJobCategory -JobServer $jobServer -categoryname $categoryname
+					}
+					
+					$job.Category = $categoryname
 					try
 					{
-						Write-Output "Created Agent Job $JobName on $DestinationServer "
-						$Job.Create()
+						if ($Pscmdlet.ShouldProcess($destination, "Creating Agent Job on $destination"))
+						{
+							Write-Output "Created Agent Job $jobname on $destination "
+							$job.Create()
+						}
 					}
 					catch
 					{
-						Write-Warning "FAILED : To Create Agent Job $JobName on $DestinationServer - Aborting"
+						Write-Warning "FAILED : To Create Agent Job $jobname on $destination - aborting routine for this database"
 						Write-Exception $_
 						continue
 					}
+					
 					## Create Job Step
 					## Aarons Suggestion: In the restore script, add a comment block that tells the last known size of each file in the database.
 					## Suggestion check for disk space before restore
 					## Create Restore Script
 					try
 					{
-						$restore = New-Object 'Microsoft.SqlServer.Management.Smo.Restore'
-						$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem $FileName, 'FILE'
+						$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
+						$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem $filename, 'FILE'
 						$restore.Devices.Add($device)
-						try { $filelist = $restore.ReadFileList($DestServer) }
-						catch { throw 'File list could not be determined. This is likely due to connectivity issues or tiemouts with the SQL Server, the database version is incorrect, or the SQL Server service account does not have access to the file share. Script terminating.' }
-						$ReuseSourceFolderStructure = $true
-						if ($UseDefaultFilePaths)
+						try
 						{
-							$ReuseSourceFolderStructure = $false
+							$filelist = $restore.ReadFileList($destserver)
 						}
-						$filestructure = Get-OfflineSqlFileStructure $DestServer $DBName $filelist $ReuseSourceFolderStructure
+						
+						catch
+						{
+							throw 'File list could not be determined. This is likely due to connectivity issues or tiemouts with the Sql Server, the database version is incorrect, or the Sql Server service account does not have access to the file share. Script terminating.'
+						}
+						
+						$filestructure = Get-OfflineSqlFileStructure $destserver $dbname $filelist $ReuseSourceFolderStructure
+						
 						if ($filestructure -eq $false)
 						{
 							Write-Warning "$dbname contains FILESTREAM and filestreams are not supported by destination server. Skipping."
 							$skippedb[$dbname] = "Database contains FILESTREAM and filestreams are not supported by destination server."
 							continue
 						}
-						$JobStepCommmand = Restore-Database $DestServer $DBName $FileName "Database" $filestructure -TSQL -ErrorAction Stop
-						$JobStep = new-object Microsoft.SqlServer.Management.Smo.Agent.JobStep $Job, $JobStepName1
-						$JobStep.SubSystem = 'TransactSql' # 'PowerShell'
-						$JobStep.DatabaseName = 'master'
-						$JobStep.Command = $JobStepCommmand
-						$JobStep.OnSuccessAction = 'QuitWithSuccess'
-						$JobStep.OnFailAction = 'QuitWithFailure'
-						$JobStep.Create()
-						$JobStartStepid = $JobStep.ID
-						Write-Output "Created Agent JobStep $JobStepName1 on $DestinationServer "
+						$jobStepCommmand = Restore-Database $destserver $dbname $filename "Database" $filestructure -TSql -ErrorAction Stop
+						$jobStep = new-object Microsoft.SqlServer.Management.Smo.Agent.JobStep $job, $jobStepName
+						$jobStep.SubSystem = 'TransactSql' # 'PowerShell'
+						$jobStep.DatabaseName = 'master'
+						$jobStep.Command = $jobStepCommmand
+						$jobStep.OnSuccessAction = 'QuitWithSuccess'
+						$jobStep.OnFailAction = 'QuitWithFailure'
+						if ($Pscmdlet.ShouldProcess($destination, "Creating Agent JobStep on $destination"))
+						{
+							$jobStep.Create()
+						}
+						$jobStartStepid = $jobStep.ID
+						Write-Output "Created Agent JobStep $jobStepName on $destination "
 					}
 					catch
 					{
-						Write-Warning "FAILED : To Create Agent JobStep $JobStepName1 on $DestinationServer - Aborting"
+						Write-Warning "FAILED : To Create Agent JobStep $jobStepName on $destination - Aborting"
 						Write-Exception $_
 						continue
 					}
-					$Job.ApplyToTargetServer($DestinationServer)
-					$Job.StartStepID = $JobStartStepid
-					$Job.Alter()
+					if ($Pscmdlet.ShouldProcess($destination, "Applying Agent Job $jobname to $destination"))
+					{
+						$job.ApplyToTargetServer($destination)
+						$job.StartStepID = $jobStartStepid
+						$job.Alter()
+					}
 				}
 				catch
 				{
-					Write-Warning "FAILED : To Create Agent Job $JobName on $DestinationServer - Aborting"
+					Write-Warning "FAILED : To Create Agent Job $jobname on $destination - aborting routine for $dbname"
 					Write-Exception $_
 					continue
 				}
-				## Create Restore Script and add to Job Step
-				
-				
+			}
+			
+			if ($Pscmdlet.ShouldProcess($destination, "Dropping Database $dbname on $sourceserver"))
+			{
 				## Drop the database
 				try
 				{
-					$sourceserver.KillAllProcesses($dbname)
-					$DB.drop()
-					Write-Output "Dropped $DBName Database  on $SQLServer prior to running the Agent Job"
+					# Remove-SqlDatabase is a function in SharedFunctions.ps1 that tries 3 different ways to drop a database
+					Remove-SqlDatabase -SqlServer $source -DbName $dbname
+					Write-Output "Dropped $dbname Database  on $server prior to running the Agent Job"
 				}
 				catch
 				{
-					Write-Warning "FAILED : To Drop database $DBName on $SQLServer - Aborting"
+					Write-Warning "FAILED : To Drop database $dbname on $server - aborting routine for $dbname"
 					Write-Exception $_
 					continue
 				}
-				## Remove the Logins who only have permissions to this database
+			}
+			
+			if ($Pscmdlet.ShouldProcess($destination, "Running Agent Job on $destination to restore $dbname"))
+			{
 				## Run the restore job to restore it
-				Write-Output "Starting $JobName on $DestinationServer "
+				Write-Output "Starting $jobname on $destination "
 				try
 				{
-					$JOb = $DestServer.JobServer.Jobs[$JobName]
-					$Job.Start()
-					$Status = $Job.CurrentRunStatus
-					While ($Status -ne 'Idle')
+					$job = $destserver.JobServer.Jobs[$jobname]
+					$job.Start()
+					$status = $job.CurrentRunStatus
+					
+					while ($status -ne 'Idle')
 					{
-						Write-Output "Restore Job for $DBName  on $DestinationServer is $Status"
-						$Job.Refresh()
-						$Status = $Job.CurrentRunStatus
+						Write-Output "Restore Job for $dbname  on $destination is $status"
+						$job.Refresh()
+						$status = $job.CurrentRunStatus
 						Start-Sleep -Seconds 5
 					}
-					Write-Output "Restore JOb $JobName has completed on $DestinationServer "
-					Start-Sleep -Seconds 5 ## This is required to ensure the next DBCC Check succeeds
+					Write-Output "Restore Job $jobname has completed on $destination "
+					Start-Sleep -Seconds 5 ## This is required to ensure the next Dbcc Check succeeds
 				}
 				catch
 				{
-					Write-Warning "FAILED : Restore JOb $JobName failed on $DestinationServer - Aborting"
+					Write-Warning "FAILED : Restore Job $jobname failed on $destination - aborting routine for $dbname"
 					Write-Exception $_
-					continue
-				}
-				If ($JOb.LastRunOutcome -ne 'Succeeded')
-				{
-					Write-Warning "FAILED : Restore JOb $JobName failed on $DestinationServer - Aborting"
-					Write-Warning "Check the Agent Job History on $DestinationServer - If you have SSMS2016 July release or later"
-					Write-Warning "Get-SqlAgentJobHistory -JobName $jobName -ServerInstance $DestinationServer -OutcomesType Failed "
 					continue
 				}
 				
-				## Run a DBCC No choice here
-				Write-Output "Starting DBCC CHECKDB for $DBName on $DestinationServer"
-				Start-DBCCCheck -SQLserver $DestinationServer -DBName $DBName
+				if ($job.LastRunOutcome -ne 'Succeeded')
+				{
+					# LOL, love the plug.
+					Write-Warning "FAILED : Restore Job $jobname failed on $destination - aborting routine for $dbname"
+					Write-Warning "Check the Agent Job History on $destination - if you have SSMS2016 July release or later"
+					Write-Warning "Get-SqlAgentJobHistory -JobName $jobname -ServerInstance $destination -OutcomesType Failed "
+					continue
+				}
+			}
+			
+			## Run a Dbcc No choice here
+			if ($Pscmdlet.ShouldProcess($dbname, "Running Dbcc CHECKDB on $dbname on $destination"))
+			{
+				Write-Output "Starting Dbcc CHECKDB for $dbname on $destination"
+				Start-DbccCheck -SqlServer destserver-DBName $dbname
+			}
+			
+			if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination"))
+			{
 				## Drop the database
 				try
 				{
-					$srv = New-Object Microsoft.SqlServer.Management.Smo.Server $DestinationServer
-					$srv.KillAllProcesses($dbname)
-					$DB = $Srv.Databases[$DBName]
-					$DB.drop()
-					Write-Output "Dropped $DBName Database on $DestinationServer"
+					Remove-SqlDatabase -SqlServer $source -DbName $dbname
+					Write-Output "Dropped $dbname Database on $destination"
 				}
 				catch
 				{
-					Write-Warning "FAILED : To Drop database $DBName on $DestinationServer - Aborting"
+					Write-Warning "FAILED : To Drop database $dbname on $destination - Aborting"
 					Write-Exception $_
 					continue
 				}
-				Write-Output "Rationalisation Finished for $DBName"
-				## Finish
-				continue
-			} # End DBCC if
-			else
-			{
-				Write-Warning "DBCC errors for $DBName - So Aborting"
-				continue
-			} # End DBCC else
-		} #End DB foreach
-		
-	} # End Process
+			}
+			Write-Output "Rationalisation Finished for $dbname"
+		}
+	}
+	
 	END
 	{
 		$sourceserver.ConnectionContext.Disconnect()
-		$DestServer.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing final message"))
+		$destserver.ConnectionContext.Disconnect()
+		
+		if ($Pscmdlet.ShouldProcess("console", "Showing final message"))
 		{
 			$End = Get-Date
-			Write-Output "Rationalisation Finished for $DBNames on $SQLServer to $DestinationServer"
+			Write-Output "Rationalisation Finished for $databases on $server to $destination"
 			Write-Output "Finished at $End"
-			$Duration = $End - $Start
-			Write-Output "Script Duration : - $Duration"
+			$Duration = $End - $start
+			Write-Output "Script Duration: $Duration"
 		}
 	}
 }
