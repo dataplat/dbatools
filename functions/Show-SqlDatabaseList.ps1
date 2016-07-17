@@ -1,13 +1,11 @@
-﻿Function Show-SqlDatabase
+﻿Function Show-SqlDatabaseList
 {
 <#
 .SYNOPSIS
-Shows file system on remote SQL Server and returns the directory name of the directory you select.
+Shows a list of databases in a GUI
 	
 .DESCRIPTION
-Similar to the remote file system popup you see when browsing a remote SQL Server in SQL Server Management Studio, this command allows you to traverse the remote SQL Server's file structure.
-
-Show-SqlServerFileSystem uses SQL Management Objects to browse the directories and what you see is limited to the permissions of the account running the command.
+Shows a list of databases in a GUI. Returns a simple string. Hitting cancel returns null.
 	
 .PARAMETER SqlServer
 The SQL Server instance.
@@ -37,17 +35,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Show-SqlServerFileSystem
+https://dbatools.io/Show-SqlDatabaseList
 
 .EXAMPLE
-Show-SqlServerFileSystem -SqlServer sqlserver2014a
+Show-SqlDatabaseList -SqlServer sqlserver2014a
 
-Shows a GUI and uses Windows Authentication to log into the SQL Server. Returns a string of the path you selected.
+Shows a GUI list of databases and uses Windows Authentication to log into the SQL Server. Returns a string of the selected database.
 	
 .EXAMPLE   
-Show-SqlServerFileSystem -Source sqlserver2014a -SqlCredential $cred
+Show-SqlDatabaseList -Source sqlserver2014a -SqlCredential $cred
 
-Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a string of the path you selected.
+Shows a GUI list of databases and SQL credentials to log into the SQL Server. Returns a string of the selected database.
 	
 #>
 	[CmdletBinding()]
@@ -72,13 +70,10 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
 			)
 			
 			$childitem = New-Object System.Windows.Controls.TreeViewItem
-			
 			$textblock = New-Object System.Windows.Controls.TextBlock
 			$textblock.Margin = "5,0"
-			
 			$stackpanel = New-Object System.Windows.Controls.StackPanel
 			$stackpanel.Orientation = "Horizontal"
-			
 			$image = New-Object System.Windows.Controls.Image
 			$image.Height = 20
 			$image.Width = 20
@@ -120,13 +115,14 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
 		xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" 
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" 
         Title="Select Database" SizeToContent="WidthAndHeight" Background="#F0F0F0"
-		WindowStartupLocation="CenterScreen">
+		WindowStartupLocation="CenterScreen" MaxHeight="600">
     <Grid>
         <TreeView Name="treeview" Height="Auto" Width="Auto" Background="#FFFFFF" BorderBrush="#FFFFFF" Foreground="#FFFFFF" Margin="11,36,11,79"/>
         <Label x:Name="label" Content="Select the database:" HorizontalAlignment="Left" Margin="15,4,0,0" VerticalAlignment="Top"/>
-        <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="10,10,10,10">
-		<Button Name="okbutton" Content="OK" HorizontalAlignment="Left" Margin="0,0,0,0" VerticalAlignment="Top" Width="75"/>
-        <Button Name="cancelbutton" Content="Cancel" HorizontalAlignment="Right" Margin="0,0,0,0" VerticalAlignment="Top" Width="75"/>
+        <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,50,10,30">
+		<Button Name="okbutton" Content="OK"  Margin="0,0,0,0" Width="75"/>
+		<Label Width="10"/>
+        <Button Name="cancelbutton" Content="Cancel" Margin="0,0,0,0" Width="75"/>
     </StackPanel>
 </Grid>
 </Window>
@@ -169,8 +165,18 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
 			})
 		
 		$cancelbutton.Add_Click({
-				$textbox.Text = $null
+				$script:selected = $null
 				$window.Close()
+			})
+		
+		$window.Add_SourceInitialized({
+				[System.Windows.RoutedEventHandler]$Event = {
+					if ($_.OriginalSource -is [System.Windows.Controls.TreeViewItem])
+					{
+						$script:selected = $_.OriginalSource.Tag
+					}
+				}
+				$treeview.AddHandler([System.Windows.Controls.TreeViewItem]::SelectedEvent, $Event)
 			})
 		
 		$null = $window.ShowDialog()
@@ -178,10 +184,9 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
 	
 	END
 	{
-		
-		if ($textbox.Text.length -gt 0)
+		if ($script:selected.length -gt 0)
 		{
-			return $textbox.Text
+			return $script:selected
 		}
 	}
 }
