@@ -724,52 +724,6 @@ Internal function. Gets the name of the sa login in case someone changed it.
 	
 }
 
-
-Function Test-SqlPath
-{
-<#
-.SYNOPSIS
-Tests if file or directory exists from the perspective of the SQL Server
-
-.DESCRIPTION
-Uses master.dbo.xp_fileexist to determine if a file or directory exists
-	
-.PARAMETER SqlServer
-The SQL Server you want to run the test on.
-	
-.PARAMETER Path
-The Path to tests. Can be a file or directory.
-	
-.OUTPUTS
-$true or $false
-	
-#>
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[string]$Path,
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-	$sql = "EXEC master.dbo.xp_fileexist '$path'"
-	$fileexist = $server.ConnectionContext.ExecuteWithResults($sql)
-	
-	if ($fileexist.tables.rows['File Exists'] -eq $true -or $fileexist.tables.rows['File is a Directory'] -eq $true)
-	{
-		return $true
-	}
-	else
-	{
-		return $false
-	}
-}
-
 Function Join-AdminUnc
 {
 <#
