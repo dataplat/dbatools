@@ -104,6 +104,10 @@ Will also remove all users that does not have their matching login
         {
             $databases = $sourceserver.Databases | Where-Object {$_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true}
         }
+        else
+        {
+            $databases = $sourceserver.Databases | Where-Object {$_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true -and ($databases -contains $_.Name)}
+        }
 
         if ($databases.Count -gt 0)
         {
@@ -111,6 +115,16 @@ Will also remove all users that does not have their matching login
             {
                 try
                 {
+                    #if SQL 2012 or higher only validate databases with ContainmentType = NONE
+                    if ($sourceserver.versionMajor -gt 10)
+		            {
+                        if ($db.ContainmentType -ne [Microsoft.SqlServer.Management.Smo.ContainmentType]::None)
+                        {
+                            Write-Warning "Database '$db' is a contained database. Contained databases can't have orphaned users. Skipping validation."
+                            Continue
+                        }
+                    }
+
                     Write-Output "Validating users on database '$db'"
 
                     $Users = $db.Users | Where {$_.Login -eq "" -and ("dbo","guest","sys","INFORMATION_SCHEMA" -notcontains $_.Name)}
@@ -154,11 +168,6 @@ Will also remove all users that does not have their matching login
                 {
                     throw $_
                 }
-            }
-
-            if ($scriptGenerated)
-            {
-                Write-Warning "Confirm the generated script before execute!"
             }
         }
         else
