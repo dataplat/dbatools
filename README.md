@@ -1,11 +1,13 @@
 # dbatools
-A collection of modules for SQL Server DBAs. It initially started out as 'sqlmigration', but has now grown into a collection of various commands that help automate DBA tasks.
+A collection of modules for SQL Server DBAs. It initially started out as 'sqlmigration', but has now grown into a collection of various commands that help automate DBA tasks and encourage best practices.
 
 In my domain joined Windows 10, PowerShell v5, SMO v12 lab, these commands work swimmingly on SQL Server 2000-2016. If you're still using SMO v10 (SQL Server 2008 R2) on your workstation, some functionality may be reduced, but give it a try anyway. 
 
 <p align="center"><img src=https://blog.netnerds.net/wp-content/uploads/2016/05/dbatools.png></p>
 
 Got any suggestions or bug reports? I check github, but I prefer <a href=https://trello.com/b/LcvGHeTF/dbatools>Trello</a>. Let me know what you'd like to see.
+
+We're also on the <a href="https://sqlcommunity.slack.com">SQL Server Community Slack</a> in the #dbatools channel. Need an invite? <a href="https://dbatools.io/slack/">Click here</a> for the self-invite page.
 
 Installer
 --------------
@@ -16,59 +18,6 @@ This module is now in the PowerShell Gallery! Run the following to install:
 Or if you don't have a version of PowerShell that supports the Gallery, you can install it manually.
 
     Invoke-Expression (Invoke-WebRequest https://git.io/vn1hQ)
-
-This will install the following commands
-
-    Copy-SqlAgentCategory          
-    Copy-SqlAlert                  
-    Copy-SqlAudit                  
-    Copy-SqlAuditSpecification     
-    Copy-SqlBackupDevice           
-    Copy-SqlCentralManagementServer
-    Copy-SqlCredential             
-    Copy-SqlCustomError            
-    Copy-SqlDatabase               
-    Copy-SqlDatabaseAssembly       
-    Copy-SqlDatabaseMail           
-    Copy-SqlDataCollector          
-    Copy-SqlEndpoint               
-    Copy-SqlExtendedEvent          
-    Copy-SqlJob                    
-    Copy-SqlLinkedServer           
-    Copy-SqlLogin                  
-    Copy-SqlOperator               
-    Copy-SqlPolicyManagement       
-    Copy-SqlProxyAccount           
-    Copy-SqlResourceGovernor       
-    Copy-SqlServerAgent            
-    Copy-SqlServerRole             
-    Copy-SqlServerTrigger          
-    Copy-SqlSharedSchedule         
-    Copy-SqlSpConfigure            
-    Copy-SqlSysDbUserObjects
-	Start-SqlMigration 
-	
-    Expand-SqlTLogResponsibly      
-    Export-SqlLogin                
-    Export-SqlSpConfigure          
-    Find-SqlDuplicateIndex         
-    Get-DetachedDbInfo             
-    Get-SqlMaxMemory               
-    Get-SqlRegisteredServerName    
-    Get-SqlServerKey               
-    Import-CsvToSql                
-    Import-SqlSpConfigure          
-    Move-SqlDatabaseFile           
-    Reset-SqlAdmin                 
-    Restore-HallengrenBackup       
-    Set-SqlMaxMemory               
-    Show-SqlMigrationConstraint
-    Sync-SqlLoginPermissions       
-    Test-SqlConnection             
-    Test-SqlNetworkLatency         
-    Test-SqlPath
-    Watch-SqlDbLogin 
-    Update-dbatools  
 
 A few important notes
 --------------
@@ -81,4 +30,4 @@ A few important notes
 
 dbatools.io is awesome
 --------------
-I documented the module in its entirety pretty much, using markdown, at [dbatools.io](https://dbatools.io). Please go visit there, it's pretty. To skip right to the documentation, [visit the functions page](https://dbatools.io/functions/)
+I documented the module in its entirety pretty much, using markdown, at [dbatools.io](https://dbatools.io). Please go visit there, it's pretty. To skip right to the documentation, [visit the functions page](https://dbatools.io/functions/) or you can start with the [getting started](https://dbatools.io/getting-started/) page.
