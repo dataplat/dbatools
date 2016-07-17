@@ -703,6 +703,28 @@ Internal function. Returns the default data and log paths for SQL Server. Needed
 	return $filepath
 }
 
+
+Function Get-SqlSaLogin
+{
+<#
+.SYNOPSIS
+Internal function. Gets the name of the sa login in case someone changed it.
+#>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+	$sa = $server.Logins | Where { $_.id -eq 1 }
+	
+	return $sa.name
+	
+}
+
+
 Function Test-SqlPath
 {
 <#
@@ -814,7 +836,6 @@ Internal function. Takes a best guess at the NetBIOS name of a server.
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
@@ -831,6 +852,23 @@ Internal function. Takes a best guess at the NetBIOS name of a server.
 	
 	return $($servernetbios.ToLower())
 }
+
+Function Resolve-SqlIpAddress
+{
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+	$servernetbios = $server.ComputerNamePhysicalNetBIOS
+	$ipaddr = (Test-Connection $servernetbios -count 1).Ipv4Address
+	return $ipaddr
+}
+
 
 Function Restore-Database
 {
@@ -1060,11 +1098,9 @@ an SMO server object.
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
 		[string]$DBName,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1095,11 +1131,29 @@ an SMO server object.
 	}
 }
 
+
+Function Get-SaLoginName
+{
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+
+	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+	$saname = ($server.logins | Where-Object { $_.id -eq 1 }).Name
+	
+	return $saname
+}
+
 Function Write-Exception
 {
 <#
 .SYNOPSIS
-Internal function. Writes exception to disk (.\dbatools-exceptions.txt) for later analysis.
+Internal function. Writes exception to disk (my docs\dbatools-exceptions.txt) for later analysis.
 #>
 	[CmdletBinding()]
 	param (
@@ -1107,7 +1161,8 @@ Internal function. Writes exception to disk (.\dbatools-exceptions.txt) for late
 		[object]$e
 	)
 	
-	$errorlog = ".\dbatools-exceptions.txt"
+	$docs = [Environment]::GetFolderPath("mydocuments")	
+	$errorlog = "$docs\dbatools-exceptions.txt"
 	$message = $e.Exception
 	
 	if ($e.Exception.InnerException -ne $null) { $messsage = $e.Exception.InnerException }
