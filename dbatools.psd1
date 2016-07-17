@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.3.0'
+	ModuleVersion = '0.8.3.1'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -71,7 +71,7 @@
 	'Copy-SqlResourceGovernor','Copy-SqlExtendedEvent', 'Copy-SqlBackupDevice', 'Copy-SqlServerTrigger', 
 	'Copy-SqlCredential','Copy-SqlCentralManagementServer', 'Copy-SqlSysDbUserObjects', 'Copy-SqlProxyAccount',
 	'Import-SqlSpConfigure', 'Export-SqlSpConfigure', 'Watch-SqlDbLogin', 'Get-SqlMaxMemory', 'Copy-SqlAlert',
-	'Get-DetachedDBInfo', 'Restore-HallengrenBackup', 'Test-SqlConnection', 'Import-CsvToSql', 'Copy-SqlAgentCategory',
+	'Get-DetachedDBInfo', 'Restore-SqlBackupFromDirectory', 'Test-SqlConnection', 'Import-CsvToSql', 'Copy-SqlAgentCategory',
 	'Update-dbatools', 'Test-SqlPath', 'Copy-SqlDatabaseAssembly', 'Copy-SqlPolicyManagement','Copy-SqlSharedSchedule',
 	'Copy-SqlOperator','Copy-SqlJob','Copy-SqlDataCollector','Sync-SqlLoginPermissions', 'Export-SqlLogin','Expand-SqlTLogResponsibly',
 	'Show-SqlMigrationConstraint', 'Get-SqlRegisteredServerName', 'Test-SqlNetworkLatency', 'Find-SqlDuplicateIndex',

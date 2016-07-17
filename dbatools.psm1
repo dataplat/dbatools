@@ -10,6 +10,7 @@ if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\")) { throw "Please change t
 Set-Alias -Name Reset-SqlSaPassword -Value Reset-SqlAdmin
 Set-Alias -Name Copy-SqlUserDefinedMessage -Value Copy-SqlCustomError
 Set-Alias -Name Copy-SqlJobServer -Value Copy-SqlServerAgent
+Set-Alias -Name Restore-HallengrenBackup -Value Restore-SqlBackupFromDirectory
 
 # Strictmode coming when I've got time.
 # Set-StrictMode -Version Latest
