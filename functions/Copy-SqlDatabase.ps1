@@ -692,7 +692,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				throw "$Source cannot access $NetworkShare"
 			}
 			
-			if ($(Test-SqlPath -SqlServer $sourceserver -Path $NetworkShare) -eq $false)
+			if ($(Test-SqlPath -SqlServer $destserver -Path $NetworkShare) -eq $false)
 			{
 				throw "$Destination cannot access $NetworkShare"
 			}
