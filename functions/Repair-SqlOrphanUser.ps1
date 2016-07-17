@@ -94,19 +94,21 @@ Will also remove all users that does not have their matching login
         # Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
 		
-		if ($pipedatabase.Length -gt 0)
-		{
-			$Source = $pipedatabase[0].parent.name
-			$databases = $pipedatabase.name
-		}
-
         if ($databases.Count -eq 0)
         {
             $databases = $sourceserver.Databases | Where-Object {$_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true}
         }
         else
         {
-            $databases = $sourceserver.Databases | Where-Object {$_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true -and ($databases -contains $_.Name)}
+            if ($pipedatabase.Length -gt 0)
+		    {
+			    $Source = $pipedatabase[0].parent.name
+			    $databases = $pipedatabase.name
+		    }
+            else
+            {
+                $databases = $sourceserver.Databases | Where-Object {$_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true -and ($databases -contains $_.Name)}
+            }
         }
 
         if ($databases.Count -gt 0)
