@@ -1,10 +1,10 @@
 # All supporting functions have been moved to Functions\SharedFunctions.ps1
 # If you're looking through the code, you pretty much have to work with two files
 # at any one time. The function you're working on, and SharedFunctions.ps1
-foreach ($function in (Get-ChildItem "$PSScriptRoot\Functions\*.ps1")) { . $function }
+foreach ($function in (Get-ChildItem "$PSScriptRoot\functions\*.ps1")) { . $function }
 
 # Not supporting the provider path at this time
-if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\")) { throw "Please change to another drive and reload the module." }
+# if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\")) { throw "Please change to another drive and reload the module." }
 
 # I renamed this function to be more accurate
 Set-Alias -Name Reset-SqlSaPassword -Value Reset-SqlAdmin
@@ -21,5 +21,5 @@ $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.S
 $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers")
 $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent")
 $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Dmf")
-$null = [Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers")
-$null = [Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.ConnectionInfo")
+$null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers")
+$null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.ConnectionInfo")
