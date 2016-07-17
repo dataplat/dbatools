@@ -91,7 +91,14 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 			$paramattributes.ParameterSetName = "__AllParameterSets"
 			$paramattributes.Mandatory = $false
 			$systemdbs = @("master", "msdb", "model", "SSIS")
-			$argumentlist = (Get-ChildItem -Path $Path -Directory).Name | Where-Object { $systemdbs -notcontains $_ }
+			$dblist = (Get-ChildItem -Path $Path -Directory).Name | Where-Object { $systemdbs -notcontains $_ }
+			$argumentlist = @()
+			
+			foreach ($db in $dblist)
+			{
+				$argumentlist += [Regex]::Escape($db)
+			}
+			
 			$validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $argumentlist
 			$combinedattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
 			$combinedattributes.Add($paramattributes)
@@ -251,12 +258,11 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 					Write-Output "Successfully restored $dbname."
 				}
 				catch { Write-Error "$dbname could not be set to recovered." }
-				
 					try
 					{
 						try
 						{
-							$sa = ($destserver.logins | Where-Object { $_.id -eq 1 }).Name
+							$sa = Get-SqlSaLogin $server
 						}
 						catch
 						{
