@@ -158,6 +158,12 @@ More text coming soon
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		
+		if ($datatable.Tables.Rows.Count -eq 0)
+		{
+			Write-Output "0 results returned"
+			return
+		}
+		
 		if ($OutputAs -eq "DataTable")
 		{
 			return $datatable
