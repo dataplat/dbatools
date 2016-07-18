@@ -146,7 +146,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
                     if ($StackSource -eq "Repair-SqlOrphanUser")
                     {
                         Write-Verbose "Call origin: Repair-SqlOrphanUser"
-                        #Will use parameter collection
+                        #Will use collection from parameter ($Users)
                     }
                     else
                     {
@@ -172,10 +172,19 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 
                     if ($Users.Count -gt 0)
                     {
-                        Write-Output "Orphan users found on database '$db'"
+                        Write-Output "Orphan users found"
                         foreach ($User in $Users)
                         {
-                            $query = "DROP USER " + $User
+                            
+                            if ($sourceserver.versionMajor -gt 8)
+                            {
+                                $query = "DROP USER " + $User
+                            }
+                            else
+                            {
+                                $query = "EXEC master.dbo.sp_droplogin @loginame = N'$User'"
+                            }
+
                             $ExistLogin = $null
 
                             if ($StackSource -ne "Repair-SqlOrphanUser")
@@ -191,8 +200,11 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
                             {
                                 if ($Force)
                                 {
-                                    $sourceserver.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
-                                    Write-Output "User '$($User.Name)' was dropped. -Force parameter was used!"
+                                    if ($Pscmdlet.ShouldProcess($db.Name, "Dropping user '$($User.Name)' using -Force"))
+				                    {
+                                        $sourceserver.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
+                                        Write-Output "User '$($User.Name)' was dropped. -Force parameter was used!"
+                                    }
                                 }
                                 else
                                 {
@@ -202,8 +214,11 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
                             }
                             else
                             {
-                                $sourceserver.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
-                                Write-Output "User '$($User.Name)' was dropped."
+                                if ($Pscmdlet.ShouldProcess($db.Name, "Dropping user '$($User.Name)'"))
+				                {
+                                    $sourceserver.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
+                                    Write-Output "User '$($User.Name)' was dropped."
+                                }
                             }
                         }
                     }

@@ -153,7 +153,7 @@ Will also remove all users that does not have their matching login by calling Re
                     {
                         if ($pipedatabase.Length -gt 0)
 		                {
-			                $Source = $pipedatabase[0].parent.name
+			                $Source = $pipedatabase[3].parent.name
 			                $Users = $pipedatabase.name
 		                }
                         else
@@ -164,7 +164,7 @@ Will also remove all users that does not have their matching login by calling Re
                     
                     if ($Users.Count -gt 0)
                     {
-                        Write-Output "Orphan users found"
+                        Write-Verbose "Orphan users found"
                         $UsersToRemove = @()
                         foreach ($User in $Users)
                         {
@@ -175,10 +175,20 @@ Will also remove all users that does not have their matching login by calling Re
 
                             if ($ExistLogin)
                             {
-                                $query = "ALTER USER " + $User + " WITH LOGIN = " + $User
-                                $sourceserver.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
-                                
-                                Write-Output "`r`nUser '$($User.Name)' mapped with their login"
+                                if ($sourceserver.versionMajor -gt 8)
+                                {
+                                    $query = "ALTER USER " + $User + " WITH LOGIN = " + $User
+                                }
+                                else
+                                {
+                                    $query = "exec sp_change_users_login 'update_one', '$User'"
+                                }
+
+                                if ($Pscmdlet.ShouldProcess($db.Name, "Mapping user '$($User.Name)'"))
+				                {
+                                    $sourceserver.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
+                                    Write-Output "`r`nUser '$($User.Name)' mapped with their login"
+                                }
                             }
                             else
                             {
@@ -197,7 +207,11 @@ Will also remove all users that does not have their matching login by calling Re
                         #With the colelction complete invoke remove.
                         if ($RemoveNotExisting -eq $true)
                         {
-                            Remove-SqlOrphanUser -SqlServer $SqlServer -SqlCredential $SqlCredential -Databases $db.Name -Users $UsersToRemove
+                            if ($Pscmdlet.ShouldProcess($db.Name, "Remove-SqlOrphanUser"))
+				            {
+                                Write-Verbose "Calling 'Remove-SqlOrphanUser'"
+                                Remove-SqlOrphanUser -SqlServer $SqlServer -SqlCredential $SqlCredential -Databases $db.Name -Users $UsersToRemove
+                            }
                         }
                     }
                     else
