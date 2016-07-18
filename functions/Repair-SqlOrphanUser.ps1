@@ -165,6 +165,7 @@ Will also remove all users that does not have their matching login by calling Re
                     if ($Users.Count -gt 0)
                     {
                         Write-Output "Orphan users found"
+                        $UsersToRemove = @()
                         foreach ($User in $Users)
                         {
                             $ExistLogin = $sourceserver.logins | Where-Object {$_.Isdisabled -eq $False -and 
@@ -183,13 +184,20 @@ Will also remove all users that does not have their matching login by calling Re
                             {
                                 if ($RemoveNotExisting -eq $true)
                                 {
-                                    Remove-SqlOrphanUser -SqlServer $SqlServer -SqlCredential $SqlCredential -Databases $db.Name -Users $User.Name
+                                    #add user to collection
+                                    $UsersToRemove += $User
                                 }
                                 else
                                 {
                                     Write-Warning "Orphan user $($User.Name) does not have matching login."
                                 }
                             }
+                        }
+
+                        #With the colelction complete invoke remove.
+                        if ($RemoveNotExisting -eq $true)
+                        {
+                            Remove-SqlOrphanUser -SqlServer $SqlServer -SqlCredential $SqlCredential -Databases $db.Name -Users $UsersToRemove
                         }
                     }
                     else

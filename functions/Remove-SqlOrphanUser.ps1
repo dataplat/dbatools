@@ -146,7 +146,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
                     if ($StackSource -eq "Repair-SqlOrphanUser")
                     {
                         Write-Verbose "Call origin: Repair-SqlOrphanUser"
-                        $Users = $db.Users | Where {$_.Name -eq $Users}
+                        #Will use parameter collection
                     }
                     else
                     {
@@ -175,12 +175,17 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
                         Write-Output "Orphan users found on database '$db'"
                         foreach ($User in $Users)
                         {
-                            $ExistLogin = $sourceserver.logins | Where-Object {$_.Isdisabled -eq $False -and 
-                                                                               $_.IsSystemObject -eq $False -and 
-                                                                               $_.IsLocked -eq $False -and 
-                                                                               $_.Name -eq $User.Name }
-
                             $query = "DROP USER " + $User
+                            $ExistLogin = $null
+
+                            if ($StackSource -ne "Repair-SqlOrphanUser")
+                            {
+                                #do not need to validate Existing Login because the call come from Repair-SqlOrphanUser
+                                $ExistLogin = $sourceserver.logins | Where-Object {$_.Isdisabled -eq $False -and 
+                                                                                   $_.IsSystemObject -eq $False -and 
+                                                                                   $_.IsLocked -eq $False -and 
+                                                                                   $_.Name -eq $User.Name }
+                            }
 
                             if ($ExistLogin)
                             {
@@ -230,7 +235,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
         #If the call don't come from Repair-SqlOrphanUser function, show elapsed time
 		if ($StackSource -ne "Repair-SqlOrphanUser")
         {
-            Write-Output "Total Elapsed time: $totaltime"
+           Write-Output "Total Elapsed time: $totaltime"
         }
 	}
 }
