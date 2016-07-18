@@ -125,11 +125,11 @@ More text coming soon
 		{
 			if ($database.length -eq 0)
 			{
-				$datatable = $sourceserver.databases["master"].ExecuteNonQuery($sql)
+				$datatable = $sourceserver.databases["master"].ExecuteWithResults($sql)
 			}
 			else
 			{
-				$datatable = $sourceserver.databases[$database].ExecuteNonQuery($sql)
+				$datatable = $sourceserver.databases[$database].ExecuteWithResults($sql)
 			}
 		}
 		catch
@@ -139,7 +139,7 @@ More text coming soon
 			Write-Warning $database
 			try
 			{
-				$datatable = $sourceserver.databases[$database].ExecuteNonQuery($sql)
+				$datatable = $sourceserver.databases[$database].ExecuteWithResults($sql)
 			}
 			catch
 			{
