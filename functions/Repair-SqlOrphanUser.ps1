@@ -100,7 +100,7 @@ Will also remove all users that does not have their matching login by calling Re
 	BEGIN
 	{
         Write-Output "Attempting to connect to Sql Server.."
-		$sourceserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 	}
 	
 	PROCESS
@@ -110,7 +110,7 @@ Will also remove all users that does not have their matching login by calling Re
 		
         if ($databases.Count -eq 0)
         {
-            $databases = $sourceserver.Databases | Where-Object {$_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true}
+            $databases = $server.Databases | Where-Object {$_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true}
         }
         else
         {
@@ -121,7 +121,7 @@ Will also remove all users that does not have their matching login by calling Re
 		    }
             else
             {
-                $databases = $sourceserver.Databases | Where-Object {$_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true -and ($databases -contains $_.Name)}
+                $databases = $server.Databases | Where-Object {$_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true -and ($databases -contains $_.Name)}
             }
         }
 
@@ -134,7 +134,7 @@ Will also remove all users that does not have their matching login by calling Re
                 try
                 {
                     #if SQL 2012 or higher only validate databases with ContainmentType = NONE
-                    if ($sourceserver.versionMajor -gt 10)
+                    if ($server.versionMajor -gt 10)
 		            {
                         if ($db.ContainmentType -ne [Microsoft.SqlServer.Management.Smo.ContainmentType]::None)
                         {
@@ -168,14 +168,14 @@ Will also remove all users that does not have their matching login by calling Re
                         $UsersToRemove = @()
                         foreach ($User in $Users)
                         {
-                            $ExistLogin = $sourceserver.logins | Where-Object {$_.Isdisabled -eq $False -and 
+                            $ExistLogin = $server.logins | Where-Object {$_.Isdisabled -eq $False -and 
                                                                                $_.IsSystemObject -eq $False -and 
                                                                                $_.IsLocked -eq $False -and 
                                                                                $_.Name -eq $User.Name }
 
                             if ($ExistLogin)
                             {
-                                if ($sourceserver.versionMajor -gt 8)
+                                if ($server.versionMajor -gt 8)
                                 {
                                     $query = "ALTER USER " + $User + " WITH LOGIN = " + $User
                                 }
@@ -186,7 +186,7 @@ Will also remove all users that does not have their matching login by calling Re
 
                                 if ($Pscmdlet.ShouldProcess($db.Name, "Mapping user '$($User.Name)'"))
 				                {
-                                    $sourceserver.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
+                                    $server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
                                     Write-Output "`r`nUser '$($User.Name)' mapped with their login"
                                 }
                             }
@@ -235,7 +235,7 @@ Will also remove all users that does not have their matching login by calling Re
 	
 	END
 	{
-        $sourceserver.ConnectionContext.Disconnect()
+        $server.ConnectionContext.Disconnect()
         
         $totaltime = ($start.Elapsed)
 		Write-Output "Total Elapsed time: $totaltime"

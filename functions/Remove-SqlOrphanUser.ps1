@@ -87,7 +87,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 	BEGIN
 	{
         Write-Output "Attempting to connect to Sql Server.."
-		$sourceserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 	}
 	
 	PROCESS
@@ -98,7 +98,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 		
         if ($databases.Count -eq 0)
         {
-            $databases = $sourceserver.Databases | Where-Object {$_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true}
+            $databases = $server.Databases | Where-Object {$_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true}
         }
         else
         {
@@ -109,7 +109,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 		    }
             else
             {
-                $databases = $sourceserver.Databases | Where-Object {$_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true -and ($databases -contains $_.Name)}
+                $databases = $server.Databases | Where-Object {$_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true -and ($databases -contains $_.Name)}
             }
         }
 
@@ -134,7 +134,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
                 try
                 {
                     #if SQL 2012 or higher only validate databases with ContainmentType = NONE
-                    if ($sourceserver.versionMajor -gt 10)
+                    if ($server.versionMajor -gt 10)
 		            {
                         if ($db.ContainmentType -ne [Microsoft.SqlServer.Management.Smo.ContainmentType]::None)
                         {
@@ -176,7 +176,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
                         foreach ($User in $Users)
                         {
                             
-                            if ($sourceserver.versionMajor -gt 8)
+                            if ($server.versionMajor -gt 8)
                             {
                                 $query = "DROP USER " + $User
                             }
@@ -190,7 +190,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
                             if ($StackSource -ne "Repair-SqlOrphanUser")
                             {
                                 #do not need to validate Existing Login because the call come from Repair-SqlOrphanUser
-                                $ExistLogin = $sourceserver.logins | Where-Object {$_.Isdisabled -eq $False -and 
+                                $ExistLogin = $server.logins | Where-Object {$_.Isdisabled -eq $False -and 
                                                                                    $_.IsSystemObject -eq $False -and 
                                                                                    $_.IsLocked -eq $False -and 
                                                                                    $_.Name -eq $User.Name }
@@ -202,7 +202,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
                                 {
                                     if ($Pscmdlet.ShouldProcess($db.Name, "Dropping user '$($User.Name)' using -Force"))
 				                    {
-                                        $sourceserver.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
+                                        $server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
                                         Write-Output "User '$($User.Name)' was dropped. -Force parameter was used!"
                                     }
                                 }
@@ -216,7 +216,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
                             {
                                 if ($Pscmdlet.ShouldProcess($db.Name, "Dropping user '$($User.Name)'"))
 				                {
-                                    $sourceserver.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
+                                    $server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
                                     Write-Output "User '$($User.Name)' was dropped."
                                 }
                             }
@@ -243,7 +243,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 	
 	END
 	{
-		$sourceserver.ConnectionContext.Disconnect()
+		$server.ConnectionContext.Disconnect()
 
         $totaltime = ($start.Elapsed)
 
