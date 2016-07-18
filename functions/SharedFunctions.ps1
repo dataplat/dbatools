@@ -703,49 +703,25 @@ Internal function. Returns the default data and log paths for SQL Server. Needed
 	return $filepath
 }
 
-Function Test-SqlPath
+
+Function Get-SqlSaLogin
 {
 <#
 .SYNOPSIS
-Tests if file or directory exists from the perspective of the SQL Server
-
-.DESCRIPTION
-Uses master.dbo.xp_fileexist to determine if a file or directory exists
-	
-.PARAMETER SqlServer
-The SQL Server you want to run the test on.
-	
-.PARAMETER Path
-The Path to tests. Can be a file or directory.
-	
-.OUTPUTS
-$true or $false
-	
+Internal function. Gets the name of the sa login in case someone changed it.
 #>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[string]$Path,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
-	
 	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-	$sql = "EXEC master.dbo.xp_fileexist '$path'"
-	$fileexist = $server.ConnectionContext.ExecuteWithResults($sql)
+	$sa = $server.Logins | Where { $_.id -eq 1 }
 	
-	if ($fileexist.tables.rows['File Exists'] -eq $true -or $fileexist.tables.rows['File is a Directory'] -eq $true)
-	{
-		return $true
-	}
-	else
-	{
-		return $false
-	}
+	return $sa.name
+	
 }
 
 Function Join-AdminUnc
@@ -814,7 +790,6 @@ Internal function. Takes a best guess at the NetBIOS name of a server.
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
@@ -831,6 +806,23 @@ Internal function. Takes a best guess at the NetBIOS name of a server.
 	
 	return $($servernetbios.ToLower())
 }
+
+Function Resolve-SqlIpAddress
+{
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+	$servernetbios = $server.ComputerNamePhysicalNetBIOS
+	$ipaddr = (Test-Connection $servernetbios -count 1).Ipv4Address
+	return $ipaddr
+}
+
 
 Function Restore-Database
 {
@@ -1060,11 +1052,9 @@ an SMO server object.
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
 		[string]$DBName,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1095,11 +1085,29 @@ an SMO server object.
 	}
 }
 
+
+Function Get-SaLoginName
+{
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+
+	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+	$saname = ($server.logins | Where-Object { $_.id -eq 1 }).Name
+	
+	return $saname
+}
+
 Function Write-Exception
 {
 <#
 .SYNOPSIS
-Internal function. Writes exception to disk (.\dbatools-exceptions.txt) for later analysis.
+Internal function. Writes exception to disk (my docs\dbatools-exceptions.txt) for later analysis.
 #>
 	[CmdletBinding()]
 	param (
@@ -1107,7 +1115,8 @@ Internal function. Writes exception to disk (.\dbatools-exceptions.txt) for late
 		[object]$e
 	)
 	
-	$errorlog = ".\dbatools-exceptions.txt"
+	$docs = [Environment]::GetFolderPath("mydocuments")	
+	$errorlog = "$docs\dbatools-exceptions.txt"
 	$message = $e.Exception
 	
 	if ($e.Exception.InnerException -ne $null) { $messsage = $e.Exception.InnerException }

@@ -87,7 +87,8 @@ Shows what would happen if the command were executed using force.
 	)
 	DynamicParam { if ($source) { return (Get-ParamSqlAlerts -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	BEGIN {
+	BEGIN
+	{
 		$alerts = $psboundparameters.Alerts
 		
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
@@ -95,7 +96,7 @@ Shows what would happen if the command were executed using force.
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
-	
+		
 	}
 	PROCESS
 	{
@@ -103,7 +104,8 @@ Shows what would happen if the command were executed using force.
 		$serveralerts = $sourceserver.JobServer.Alerts
 		$destalerts = $destserver.JobServer.Alerts
 		
-		if ($IncludeDefaults -eq $true) {
+		if ($IncludeDefaults -eq $true)
+		{
 			If ($Pscmdlet.ShouldProcess($destination, "Copying Alert Defaults"))
 			{
 				try
@@ -141,7 +143,8 @@ Shows what would happen if the command were executed using force.
 						Write-Verbose "Dropping Alert $alertname"
 						$destserver.JobServer.Alerts[$alertname].Drop()
 					}
-					catch {
+					catch
+					{
 						Write-Exception $_
 						continue
 					}
@@ -155,12 +158,45 @@ Shows what would happen if the command were executed using force.
 					Write-Output "Copying Alert $alertname"
 					$sql = $alert.Script() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+					$alertsql = $sql -replace "@job_id=N'........-....-....-....-............", "@job_id=N'00000000-0000-0000-0000-000000000000"
 					Write-Verbose $sql
-					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+					$destserver.ConnectionContext.ExecuteNonQuery($alertsql) | Out-Null
 				}
 				catch
 				{
 					Write-Exception $_
+				}
+			}
+			
+			$destserver.JobServer.Alerts.Refresh()
+			$destserver.JobServer.Jobs.Refresh()
+			
+			$newalert = $destserver.JobServer.Alerts[$alertname]	
+			$notifications = $alert.EnumNotifications()
+			$newnotifications = $newalert.EnumNotifications()
+			$job = $alert.JobId
+			$jobname = $alert.JobName
+			
+			# Super workaround but it works
+			if ($alert.JobId -ne '00000000-0000-0000-0000-000000000000')
+			{
+				
+				If ($Pscmdlet.ShouldProcess($destination, "Adding $alertname to $jobname"))
+				{
+					try
+					{
+						Write-Output  "Adding $alertname to $jobname"
+						$newjob = $destserver.JobServer.Jobs[$jobname]
+						$newjobid = ($newjob.JobId) -replace " ", ""
+						$alertsql = $alertsql -replace '00000000-0000-0000-0000-000000000000', $newjobid
+						$alertsql = $alertsql -replace 'sp_add_alert', 'sp_update_alert'
+						Write-Verbose $sql
+						$destserver.ConnectionContext.ExecuteNonQuery($alertsql) | Out-Null
+					}
+					catch
+					{
+						Write-Exception $_
+					}
 				}
 			}
 		}
