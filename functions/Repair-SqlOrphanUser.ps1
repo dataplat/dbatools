@@ -25,6 +25,9 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
+.PARAMETER Users
+List of users to repair
+
 .PARAMETER RemoveNotExisting
 If passed, all users that not have their matching login will be dropped from database
 
@@ -52,17 +55,27 @@ https://dbatools.io/Repair-SqlOrphanUser
 .EXAMPLE
 Repair-SqlOrphanUser -SqlServer sql2005 
 
-Will find all orphan users of all databases present on server 'sql2005'
+Will find and repair all orphan users of all databases present on server 'sql2005'
 
 .EXAMPLE   
 Repair-SqlOrphanUser -SqlServer sqlserver2014a -SqlCredential $cred
 	
-Will find all orphan users of all databases present on server 'sqlserver2014a'. Will be verified using SQL credentials. 
+Will find and repair all orphan users of all databases present on server 'sqlserver2014a'. Will be verified using SQL credentials. 
 	
 .EXAMPLE   
 Repair-SqlOrphanUser -SqlServer sqlserver2014a -Databases db1, db2
 
-Will find all orphan users on both db1 and db2 databases
+Will find and repair all orphan users on both db1 and db2 databases
+
+.EXAMPLE   
+Remove-SqlOrphanUser -SqlServer sqlserver2014a -Databases db1 -Users OrphanUser
+
+Will find and repair user 'OrphanUser' on 'db1' database
+
+.EXAMPLE   
+Remove-SqlOrphanUser -SqlServer sqlserver2014a -Users OrphanUser
+
+Will find and repair user 'OrphanUser' on all databases
 
 .EXAMPLE   
 Repair-SqlOrphanUser -SqlServer sqlserver2014a -RemoveNotExisting
@@ -77,6 +90,8 @@ Will also remove all users that does not have their matching login by calling Re
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
         [object]$SqlCredential,
+        [parameter(Mandatory = $false, ValueFromPipeline = $true)]
+        [object[]]$Users,
         [switch]$RemoveNotExisting
 	)
 
@@ -129,7 +144,22 @@ Will also remove all users that does not have their matching login by calling Re
 
                     Write-Output "Validating users on database '$db'"
 
-                    $Users = $db.Users | Where {$_.Login -eq "" -and ("dbo","guest","sys","INFORMATION_SCHEMA" -notcontains $_.Name)}
+                    if ($Users.Count -eq 0)
+                    {
+                        $Users = $db.Users | Where {$_.Login -eq "" -and ("dbo","guest","sys","INFORMATION_SCHEMA" -notcontains $_.Name)}
+                    }
+                    else
+                    {
+                        if ($pipedatabase.Length -gt 0)
+		                {
+			                $Source = $pipedatabase[0].parent.name
+			                $Users = $pipedatabase.name
+		                }
+                        else
+                        {
+                            $Users = $db.Users | Where {$_.Login -eq "" -and ($Users -contains $_.Name)}
+                        }
+                    }
                     
                     if ($Users.Count -gt 0)
                     {

@@ -19,7 +19,7 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER Users
-List of users to validate
+List of users to remove
 
 .PARAMETER Force
 If exists a login to map the drop will not be performed unless you specify this parameter.
