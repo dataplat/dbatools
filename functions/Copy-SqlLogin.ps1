@@ -50,6 +50,9 @@ Credential removal not currently supported for Syncs. TODO: Application role syn
 
 .PARAMETER OutFile
 Calls Export-SqlLogin and exports all logins to a T-SQL formatted file. This does not perform a copy, so no destination is required.
+
+.PARAMETER SyncSaName
+Want to sync up the name of the sa account on the source and destination? Use this switch.
 	
 .PARAMETER Force
 Force drops and recreates logins. Logins that own jobs cannot be dropped at this time.
@@ -120,7 +123,7 @@ Limitations: Does not support Application Roles yet
 		[string]$OutFile,
 		[parameter(ParameterSetName = "Live")]
 		[switch]$Force,
-		[switch]$NoSaRename,
+		[switch]$SyncSaName,
 		[object]$pipelogin
 	)
 	
@@ -429,7 +432,7 @@ Limitations: Does not support Application Roles yet
 		$destsa = $destserver.Logins | Where-Object { $_.id -eq 1 }
 		$saname = $sa.name
 		
-		if ($saname -ne $destsa.name -and $NoSaRename -eq $false)
+		if ($saname -ne $destsa.name -and $SyncSaName -eq $true)
 		{
 			Write-Output "Changing sa username to match source ($saname)"
 			If ($Pscmdlet.ShouldProcess($destination, "Changing sa username to match source ($saname)"))

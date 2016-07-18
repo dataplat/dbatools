@@ -137,7 +137,10 @@ Skips the Custom Error (User Defined Messages) migration.
 
 .PARAMETER NoDataCollector
 Skips the Data Collector migration.
-
+	
+.PARAMETER NoSaRename
+Skips renaming of the sa account to match on destination. 
+	
 .PARAMETER DisableJobsOnDestination
 Disables migrated SQL Agent jobs on destination server
 
@@ -268,13 +271,14 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 		[switch]$NoDataCollector,
 		[switch]$DisableJobsOnDestination,
 		[switch]$DisableJobsOnSource,
+		[switch]$NoSaRename,
 		[switch]$Force
 	)
 	
 	BEGIN
 	{
-		$whatif
-		$transcript = ".\dbatools-startmigration-transcript.txt"
+		$docs = [Environment]::GetFolderPath("mydocuments")
+		$transcript = "$docs\dbatools-startmigration-transcript.txt"
 		
 		if (Test-Path $transcript)
 		{
@@ -458,7 +462,14 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			Write-Output "`n`nMigrating logins"
 			try
 			{
-				Copy-SqlLogin -Source $sourceserver -Destination $destserver -Force:$Force
+				if ($NoSaRename -eq $false)
+				{
+					Copy-SqlLogin -Source $sourceserver -Destination $destserver -Force:$Force -SyncSaName
+				}
+				else
+				{
+					Copy-SqlLogin -Source $sourceserver -Destination $destserver -Force:$Force
+				}
 			}
 			catch { Write-Error "Login migration reported the following error $($_.Exception.Message) " }
 		}

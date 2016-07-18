@@ -109,6 +109,7 @@ https://dbatools.io/Export-SqlLogin
 	{
 		if ($FilePath.Length -gt 0)
 		{
+			if ($FilePath -notlike "*\*") { $FilePath = ".\$filepath" }
 			$directory = Split-Path $FilePath
 			$exists = Test-Path $directory
 			

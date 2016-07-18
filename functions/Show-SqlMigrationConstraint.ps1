@@ -127,7 +127,7 @@ Only db1 database will be verified for features in use that can't be supported o
 
         if ($databases.Count -eq 0)
         {
-            $databases = $sourceserver.Databases | Where-Object {$_.isSystemObject -eq 0}
+            $databases = $sourceserver.Databases | Where-Object {$_.isSystemObject -eq 0} | Select-Object Name, Status
         }
 
         if ($databases.Count -gt 0)
@@ -164,16 +164,17 @@ Only db1 database will be verified for features in use that can't be supported o
             {
                 foreach ($db in $databases)
                 {
-                    Write-Host "`r`nChecking database: '$db'"
-
                     if ([string]::IsNullOrEmpty($db.Status))          
                     {                        
                         $dbstatus = ($sourceserver.Databases | Where-Object {$_.Name -eq $db}).Status.ToString()
+                        $dbName = $db
                     }
                     else
                     {
                         $dbstatus = $db.Status.ToString()
+                        $dbName = $db.Name
                     }
+                    Write-Host "`r`nChecking database: '$dbName'"
 
                     if ($dbstatus.Contains("Offline") -eq $false)
                     {
@@ -184,36 +185,29 @@ Only db1 database will be verified for features in use that can't be supported o
                             Write-Verbose "Destination Server Edition: $($destserver.Edition) (Weight: $($editions.Item($destserver.Edition.ToString().Split(" ")[0])))"
 
 			                try 
-                            { 
-                                $skufeatures = New-Object System.Data.DataTable
+                            {
+                                $sql = "SELECT feature_name FROM sys.dm_db_persisted_sku_features"
 
-                                $sql = "SELECT * FROM [$db].sys.dm_db_persisted_sku_features"
+                                $skufeatures = $sourceserver.Databases[$dbName].ExecuteWithResults($sql)
 
-                                Write-Verbose "Checking features in use."
-                                $tableconn = New-Object System.Data.SqlClient.SqlConnection
-                                $tableconn.ConnectionString = "Data Source=$Source;Integrated Security=True;Connection Timeout=3" #$sourceserver.ConnectionString #"Data Source=$sqlserver;Integrated Security=True;Connection Timeout=3"
-                                $tableconn.Open()
-				                $tablecmd = New-Object System.Data.SqlClient.SqlCommand($sql, $tableconn, $null)
-
-                                [void]$skufeatures.Load($tablecmd.ExecuteReader())
-
-                                if ($skufeatures.Rows.Count -gt 0)
+                                Write-Verbose "Checking features in use..."
+                                if ($skufeatures.Tables[0].Rows.Count -gt 0)
                                 {
                                     $feature = ""
 
-                                    foreach ($row in $skufeatures.Rows)
+                                    foreach ($row in $skufeatures.Tables[0].Rows)
                                     {
                                         $feature += "$($row["feature_name"])`r`n"
                                     }
                             
-                                    $message = "'$db' cannot be migrated to '$($destserver.Name)' ($($destserver.Edition). The following features are unsupported::`r`n$($feature)"
+                                    $message = "'$dbName' cannot be migrated to '$($destserver.Name)' ($($destserver.Edition). The following features are unsupported:`r`n$($feature)"
                                     Write-Warning $message
 
                                     $dbFail = $true
                                 }
                                 else
                                 {
-                                    Write-Output "You can migrate database '$db'! Does not exist any feature in use that you can't use on the destination version."
+                                    Write-Output "You can migrate database '$dbName'! Does not exist any feature in use that you can't use on the destination version."
                                 }
                             }
 			                catch
@@ -223,12 +217,12 @@ Only db1 database will be verified for features in use that can't be supported o
                         }
                         else
                         {
-                            Write-Output "You can migrate database '$db'! The destination version and edition are equal or higher."
+                            Write-Output "You can migrate database '$dbName'! The destination version and edition are equal or higher."
                         }
                     }
                     else
                     {
-                        Write-Warning "Database '$db' is offline. Bring database online and re-run the command"
+                        Write-Warning "Database '$dbName' is offline. Bring database online and re-run the command"
                     }
                 
                 }

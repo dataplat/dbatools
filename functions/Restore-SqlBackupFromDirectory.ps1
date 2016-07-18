@@ -1,8 +1,8 @@
-Function Restore-HallengrenBackup
+Function Restore-SqlBackupFromDirectory
 {
 <# 
 .SYNOPSIS 
-Restores SQL Server databases from the backup directory structure created by Ola Hallengren's database maintenance scripts.
+Restores SQL Server databases from the backup directory structure created by Ola Hallengren's database maintenance scripts. Different structures coming soon.
 
 .DESCRIPTION 
 Many SQL Server database administrators use Ola Hallengren's SQL Server Maintenance Solution which can be found at http://ola.hallengren.com
@@ -15,7 +15,7 @@ Required. The SQL Server to which you will be restoring the databases.
 Required. The directory that contains the database backups (ex. \\fileserver\share\sqlbackups\SQLSERVERA)
 
 .PARAMETER ReuseSourceFolderStructure
-Restore-HallengrenBackup will restore to the default user data and log directories, unless this switch is used. Useful if you're restoring from a server that had a complex db file structure.
+Restore-SqlBackupFromDirectory will restore to the default user data and log directories, unless this switch is used. Useful if you're restoring from a server that had a complex db file structure.
 
 .PARAMETER Databases
 Migrates ONLY specified databases. This list is auto-populated for tab completion.
@@ -55,10 +55,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 .LINK 
-http://gallery.technet.microsoft.com/scriptcenter/Restore-Sql-Backups-cd958ec1
+https://dbatools.io/Restore-SqlBackupFromDirectory
 
 .EXAMPLE   
-Restore-HallengrenBackup -ServerName sqlcluster -Path \\fileserver\share\sqlbackups\SQLSERVER2014A
+Restore-SqlBackupFromDirectory -ServerName sqlcluster -Path \\fileserver\share\sqlbackups\SQLSERVER2014A
 
 Description
 
@@ -91,7 +91,14 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 			$paramattributes.ParameterSetName = "__AllParameterSets"
 			$paramattributes.Mandatory = $false
 			$systemdbs = @("master", "msdb", "model", "SSIS")
-			$argumentlist = (Get-ChildItem -Path $Path -Directory).Name | Where-Object { $systemdbs -notcontains $_ }
+			$dblist = (Get-ChildItem -Path $Path -Directory).Name | Where-Object { $systemdbs -notcontains $_ }
+			$argumentlist = @()
+			
+			foreach ($db in $dblist)
+			{
+				$argumentlist += [Regex]::Escape($db)
+			}
+			
 			$validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $argumentlist
 			$combinedattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
 			$combinedattributes.Add($paramattributes)
@@ -159,7 +166,30 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 		
 		foreach ($db in $dblist)
 		{
-			$dbname = Split-Path $db -leaf
+			$full = Get-ChildItem "$db\FULL\*.bak" | sort LastWriteTime | select -last 1
+			$since = $full.LastWriteTime; $full = $full.FullName
+			
+			$diff = $null; $logs = $null
+			if (Test-Path  "$db\DIFF")
+			{
+				$diff = Get-ChildItem "$db\DIFF\*.bak" | Where { $_.LastWriteTime -gt $since } | sort LastWriteTime | select -last 1
+				$since = $diff.LastWriteTime; $diff = $diff.fullname
+			}
+			if (Test-Path  "$db\LOG")
+			{
+				$logs = (Get-ChildItem "$db\LOG\*.trn" | Where { $_.LastWriteTime -gt $since })
+				$logs = ($logs | Sort-Object LastWriteTime).Fullname
+			}
+			
+			$restore = New-Object "Microsoft.SqlServer.Management.Smo.Restore"
+			$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem $full, "FILE"
+			$restore.Devices.Add($device)
+			try { $filelist = $restore.ReadFileList($server) }
+			catch { throw "File list could not be determined. This is likely due to connectivity issues or tiemouts with the SQL Server, the database version is incorrect, or the SQL Server service account does not have access to the file share. Script terminating." }
+			
+			$header = $restore.ReadBackupHeader($server)
+			$dbname = $header.DatabaseName
+			
 			if ($systemdbs -contains $dbname) { continue }
 			if (!([string]::IsNullOrEmpty($Databases)) -and $Databases -notcontains $dbname) { continue }
 			if (!([string]::IsNullOrEmpty($Exclude)) -and $Exclude -contains $dbname)
@@ -185,27 +215,6 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 					if (!$dropresult) { $skippedb[$dbname] = "Database exists and could not be dropped."; continue }
 				}
 			}
-			
-			$full = Get-ChildItem "$db\FULL\*.bak" | sort LastWriteTime | select -last 1
-			$since = $full.LastWriteTime; $full = $full.FullName
-			
-			$diff = $null; $logs = $null
-			if (Test-Path  "$db\DIFF")
-			{
-				$diff = Get-ChildItem "$db\DIFF\*.bak" | Where { $_.LastWriteTime -gt $since } | sort LastWriteTime | select -last 1
-				$since = $diff.LastWriteTime; $diff = $diff.fullname
-			}
-			if (Test-Path  "$db\LOG")
-			{
-				$logs = (Get-ChildItem "$db\LOG\*.trn" | Where { $_.LastWriteTime -gt $since })
-				$logs = ($logs | Sort-Object LastWriteTime).Fullname
-			}
-			
-			$restore = New-Object "Microsoft.SqlServer.Management.Smo.Restore"
-			$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem $full, "FILE"
-			$restore.Devices.Add($device)
-			try { $filelist = $restore.ReadFileList($server) }
-			catch { throw "File list could not be determined. This is likely due to connectivity issues or tiemouts with the SQL Server, the database version is incorrect, or the SQL Server service account does not have access to the file share. Script terminating." }
 			
 			$filestructure = Get-OfflineSqlFileStructure $server $dbname $filelist $ReuseSourceFolderStructure
 			
@@ -251,12 +260,11 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 					Write-Output "Successfully restored $dbname."
 				}
 				catch { Write-Error "$dbname could not be set to recovered." }
-				
 					try
 					{
 						try
 						{
-							$sa = ($destserver.logins | Where-Object { $_.id -eq 1 }).Name
+							$sa = Get-SqlSaLogin $server
 						}
 						catch
 						{
