@@ -1,19 +1,12 @@
-﻿Function Repair-SqlOrphanUser
+﻿Function Remove-SqlOrphanUser
 {
 <#
 .SYNOPSIS
-Find orphan users with existing login and map
+Drop orphan users with no existing login to map
 
 .DESCRIPTION
-An orphan user is defined by a user that does not have their matching login. (Login property = "")
-If the matching login exists it must be:
-    .Enabled
-    .Not a system object
-    .Not locked
-    .Have the same name that login
-
-You can drop users that does not have their matching login by especifing the parameter -RemoveNotExisting
-This will be made by calling Remove-SqlOrphanUser function
+An orphan user is defined by a user that does not have their matching login. (Login property = "").
+If exists a login to map the drop will not be performed unless you specify the -Force parameter.
 	
 .PARAMETER SqlServer
 The SQL Server instance.
@@ -25,8 +18,11 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER RemoveNotExisting
-If passed, all users that not have their matching login will be dropped from database
+.PARAMETER Users
+List of users to validate
+
+.PARAMETER Force
+If exists a login to map the drop will not be performed unless you specify this parameter.
 
 .NOTES 
 Original Author: Cláudio Silva (@ClaudioESSilva)
@@ -47,28 +43,32 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Repair-SqlOrphanUser
+https://dbatools.io/Remove-SqlOrphanUser
 
 .EXAMPLE
-Repair-SqlOrphanUser -SqlServer sql2005 
+Remove-SqlOrphanUser -SqlServer sql2005 
 
-Will find all orphan users of all databases present on server 'sql2005'
+Will find and drop all orphan users without matching login of all databases present on server 'sql2005'
 
 .EXAMPLE   
-Repair-SqlOrphanUser -SqlServer sqlserver2014a -SqlCredential $cred
+Remove-SqlOrphanUser -SqlServer sqlserver2014a -SqlCredential $cred
 	
-Will find all orphan users of all databases present on server 'sqlserver2014a'. Will be verified using SQL credentials. 
+Will find and drop all orphan users without matching login of all databases present on server 'sqlserver2014a'. Will be verified using SQL credentials. 
 	
 .EXAMPLE   
-Repair-SqlOrphanUser -SqlServer sqlserver2014a -Databases db1, db2
+Remove-SqlOrphanUser -SqlServer sqlserver2014a -Databases db1, db2 -Force
 
-Will find all orphan users on both db1 and db2 databases
+Will find all and drop orphan users even if exists their matching login on both db1 and db2 databases
 
 .EXAMPLE   
-Repair-SqlOrphanUser -SqlServer sqlserver2014a -RemoveNotExisting
+Remove-SqlOrphanUser -SqlServer sqlserver2014a -Users OrphanUser
 
-Will find all orphan users of all databases present on server 'sqlserver2014a'
-Will also remove all users that does not have their matching login by calling Remove-SqlOrphanUser function
+Will remove from all databases the user OrphanUser only if not have their matching login
+
+.EXAMPLE   
+Remove-SqlOrphanUser -SqlServer sqlserver2014a -Users OrphanUser -Force
+
+Will remove from all databases the user OrphanUser EVEN if exists their matching login.
 	
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
@@ -77,7 +77,9 @@ Will also remove all users that does not have their matching login by calling Re
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
         [object]$SqlCredential,
-        [switch]$RemoveNotExisting
+        [parameter(Mandatory = $false, ValueFromPipeline = $true)]
+        [object[]]$Users,
+        [switch]$Force
 	)
 
     DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }
@@ -111,6 +113,18 @@ Will also remove all users that does not have their matching login by calling Re
             }
         }
 
+
+        $CallStack = Get-PSCallStack | Select-Object -Property *
+        if ($CallStack.Count -eq 1) 
+        {
+            $StackSource = $CallStack[0].Command
+        } 
+        else 
+        {
+            #-2 because index base is 0 and we want the one before the last (the last is the actual command)
+            $StackSource = $CallStack[($CallStack.Count – 2)].Command
+        }
+
         if ($databases.Count -gt 0)
         {
             foreach ($db in $databases)
@@ -127,10 +141,33 @@ Will also remove all users that does not have their matching login by calling Re
                         }
                     }
 
-                    Write-Output "Validating users on database '$db'"
+                    if ($StackSource -eq "Repair-SqlOrphanUser")
+                    {
+                        Write-Verbose "Call origin: Repair-SqlOrphanUser"
+                        $Users = $db.Users | Where {$_.Name -eq $Users}
+                    }
+                    else
+                    {
+                        Write-Output "Validating users on database '$db'"
 
-                    $Users = $db.Users | Where {$_.Login -eq "" -and ("dbo","guest","sys","INFORMATION_SCHEMA" -notcontains $_.Name)}
-                    
+                        if ($Users.Count -eq 0)
+                        {
+                            $Users = $db.Users | Where {$_.Login -eq "" -and ("dbo","guest","sys","INFORMATION_SCHEMA" -notcontains $_.Name)}
+                        }
+                        else
+                        {
+                            if ($pipedatabase.Length -gt 0)
+		                    {
+			                    $Source = $pipedatabase[0].parent.name
+			                    $Users = $pipedatabase.name
+		                    }
+                            else
+                            {
+                                $Users = $db.Users | Where {$_.Login -eq "" -and ($Users -contains $_.Name)}
+                            }
+                        }
+                    }
+
                     if ($Users.Count -gt 0)
                     {
                         Write-Output "Orphan users found on database '$db'"
@@ -141,23 +178,25 @@ Will also remove all users that does not have their matching login by calling Re
                                                                                $_.IsLocked -eq $False -and 
                                                                                $_.Name -eq $User.Name }
 
+                            $query = "DROP USER " + $User
+
                             if ($ExistLogin)
                             {
-                                $query = "ALTER USER " + $User + " WITH LOGIN = " + $User
-                                $sourceserver.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
-                                
-                                Write-Output "User '$($User.Name)' mapped with their login"
-                            }
-                            else
-                            {
-                                if ($RemoveNotExisting -eq $true)
+                                if ($Force)
                                 {
-                                    Remove-SqlOrphanUser -SqlServer $SqlServer -SqlCredential $SqlCredential -Databases $db.Name -Users $User.Name
+                                    $sourceserver.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
+                                    Write-Output "User '$($User.Name)' was dropped. -Force parameter was used!"
                                 }
                                 else
                                 {
-                                    Write-Output "Orphan user $($User.Name) does not have matching login."
+                                    Write-Warning "Orphan user $($User.Name) have a matching login. The user will not be dropped. If you want to drop anyway, use -Force parameter."
+                                    Continue
                                 }
+                            }
+                            else
+                            {
+                                $sourceserver.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
+                                Write-Output "User '$($User.Name)' was dropped."
                             }
                         }
                     }

@@ -118,7 +118,9 @@
 		'Get-DiskSpace',
 		'Remove-SqlDatabaseSafely',
 		'Show-SqlDatabaseList',
-		'Show-SqlWhoIsActive'
+		'Show-SqlWhoIsActive',
+		'Repair-SqlOrphanUser',
+		'Remove-SqlOrphanUser'
 	)
 	
 	# Cmdlets to export from this module
