@@ -141,7 +141,6 @@ More text coming soon
 		{
 			Write-Output "Procedure not found, installing."
 			$database = Install-SpWhoisActive
-			Write-Warning $database
 			try
 			{
 				$datatable = $sourceserver.databases[$database].ExecuteWithResults($sql)
