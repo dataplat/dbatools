@@ -117,7 +117,9 @@
 		'Show-SqlServerFileSystem',
 		'Get-DiskSpace',
 		'Remove-SqlDatabaseSafely',
-		'Show-SqlDatabaseList')
+		'Show-SqlDatabaseList',
+		'Show-SqlWhoIsActive'
+	)
 	
 	# Cmdlets to export from this module
 	CmdletsToExport = '*'
