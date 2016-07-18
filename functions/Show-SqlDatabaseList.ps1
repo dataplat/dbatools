@@ -16,6 +16,15 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+	
+.PARAMETER Title
+Title of the Window. Default is "Select Database".
+	
+.PARAMETER Header
+Header right above the databases. Default is "Select the database:".
+	
+.PARAMETER DefaultDb
+Highlight (select) a specified database by default	
 
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -53,7 +62,10 @@ Shows a GUI list of databases and SQL credentials to log into the SQL Server. Re
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
-		[object]$SqlCredential
+		[object]$SqlCredential,
+		[string]$Title = "Select Database",
+		[string]$Header = "Select the database:",
+		[string]$DefaultDb
 	)
 	
 	BEGIN
@@ -81,6 +93,12 @@ Shows a GUI list of databases and SQL credentials to log into the SQL Server. Re
 			$image.Source = $dbicon
 			$textblock.Text = $name
 			$childitem.Tag = $name
+			
+			if ($name -eq $DefaultDb)
+			{
+				$childitem.IsSelected = $true
+				$script:selected = $name
+			}
 			
 			[void]$stackpanel.Children.Add($image)
 			[void]$stackpanel.Children.Add($textblock)
@@ -111,22 +129,21 @@ Shows a GUI list of databases and SQL credentials to log into the SQL Server. Re
 	PROCESS
 	{
 		# Create XAML form in Visual Studio, ensuring the ListView looks chromeless 
-		[xml]$xaml = '<Window 
-		xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" 
-		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" 
-        Title="Select Database" SizeToContent="WidthAndHeight" Background="#F0F0F0"
-		WindowStartupLocation="CenterScreen" MaxHeight="600">
+		[xml]$xaml = "<Window 
+		xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' 
+		xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml' 
+        Title='$Title' SizeToContent='WidthAndHeight' Background='#F0F0F0'
+		WindowStartupLocation='CenterScreen' MaxHeight='600'>
     <Grid>
-        <TreeView Name="treeview" Height="Auto" Width="Auto" Background="#FFFFFF" BorderBrush="#FFFFFF" Foreground="#FFFFFF" Margin="11,36,11,79"/>
-        <Label x:Name="label" Content="Select the database:" HorizontalAlignment="Left" Margin="15,4,0,0" VerticalAlignment="Top"/>
-        <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,50,10,30">
-		<Button Name="okbutton" Content="OK"  Margin="0,0,0,0" Width="75"/>
-		<Label Width="10"/>
-        <Button Name="cancelbutton" Content="Cancel" Margin="0,0,0,0" Width="75"/>
+        <TreeView Name='treeview' Height='Auto' Width='Auto' Background='#FFFFFF' BorderBrush='#FFFFFF' Foreground='#FFFFFF' Margin='11,36,11,79'/>
+        <Label x:Name='label' Content='$header' HorizontalAlignment='Left' Margin='15,4,10,0' VerticalAlignment='Top'/>
+        <StackPanel HorizontalAlignment='Right' Orientation='Horizontal' VerticalAlignment='Bottom' Margin='0,50,10,30'>
+		<Button Name='okbutton' Content='OK'  Margin='0,0,0,0' Width='75'/>
+		<Label Width='10'/>
+        <Button Name='cancelbutton' Content='Cancel' Margin='0,0,0,0' Width='75'/>
     </StackPanel>
 </Grid>
-</Window>
-'
+</Window>"
 		#second pushes it down
 		# Turn XAML into PowerShell objects 
 		$window = [Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader $xaml))

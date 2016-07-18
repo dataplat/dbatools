@@ -2,16 +2,26 @@
 {
 <#
 .SYNOPSIS
-Short description such as: Migrates SQL Policy Based Management Objects, including both policies and conditions.
+Output results of Adam Machanic's sp_WhoIsActive to a GridView (default) or DataTable, and installs it if necessary.
 
 .DESCRIPTION
-Longer description such as: By default, all policies and conditions are copied. If an object already exist on the destination, it will be skipped unless -Force is used. 
+GridView is good for analysis while DataTable is good for SqlBulkCopy uploads to keep track
 	
-The -Policies and -Conditions parameters are autopopulated for command-line completion and can be used to copy only specific objects.
-
+Initially, there will be a simple output, but eventually, we plan to support passing params and specifying columns.
+	
+This script was built with Adam's permission. To read more about sp_WhoIsActive, please visit:
+	
+Updates: http://sqlblog.com/blogs/adam_machanic/archive/tags/who+is+active/default.aspx
+"Beta" Builds: http://sqlblog.com/files/folders/beta/tags/who+is+active/default.aspx
+	
+Also, consider donating to Adam if you find this stored procedure helpful! http://tinyurl.com/WhoIsActiveDonate
+	
 .PARAMETER SqlServer
-The SQL Server instance.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
+.PARAMETER Database
+The database where sp_WhoIsActive is installed. Defaults to master. If the sp_WhoIsActive is not installed, it will install it for you.
+	
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
@@ -19,12 +29,7 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER Force
-If policies exists on destination server, it will be dropped and recreated.
-
 .NOTES 
-Original Author: You (@YourTwitter), yourblog.com
-
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -42,103 +47,124 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Verb-SqlNoun
-# I will create that link once we publish the function
+https://dbatools.io/Show-SqlWhoIsActive
 
-.EXAMPLE   (Try to have at least 3 for more advanced commands)
-Copy-SqlPolicyManagement -SqlServer sqlserver2014a
+.EXAMPLE
+Show-SqlWhoIsActive -SqlServer sqlserver2014a
 
-Copies all policies and conditions from sqlserver2014a to sqlcluster, using Windows credentials. 
-
-.EXAMPLE   
-Copy-SqlPolicyManagement -SqlServer sqlserver2014a -SqlCredential $cred
-
-Copies all policies and conditions from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a
-and Windows credentials for sqlcluster.
-
-.EXAMPLE   
-Copy-SqlPolicyManagement -SqlServer sqlserver2014 -WhatIf
-
-Shows what would happen if the command were executed.
+More text coming soon
 	
 .EXAMPLE   
-Copy-SqlPolicyManagement -SqlServer sqlserver2014a -Policy 'xp_cmdshell must be disabled'
+Show-SqlWhoIsActive -SqlServer sqlserver2014a -SqlCredential $credential
 
-Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sqlcluster. No conditions are migrated.
-	
+More text coming soon
 #>
 	
-	# This is a sample. Please continue to use aliases for discoverability. Also keep the [object] type for sqlserver.
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[object]$SqlCredential,
-		[string]$FilePath
+		[ValidateSet('Datatable', 'GridView')]
+		#PsCustomObject needed? What else?
+		[string]$OutputAs = 'GridView'
 	)
 	
-	# Please use dynamic parameters when possible. I've created most that you'll need in DynamicParams.ps1
-	# dynamic parameters are the things that autocomplete when you tab. So in this case, it would be
-	# -Logins <tab> and then it would fill in the logins from the SQL Server that you specified (-SqlServer)
-	DynamicParam { if ($sqlserver) { return Get-ParamSqlLogins -SqlServer $sqlserver -SqlCredential $SqlCredential } }
-	
-	# BEGIN is for private functions and starting connections. When using the pipeline, stuff in here will be executed first and only once.
+	DynamicParam { if ($SqlServer) { return (Get-ParamSqlDatabase -SqlServer $SqlServer -SqlCredential $SourceSqlCredential) } }
 	
 	BEGIN
 	{
-		# Create your supporting functions here. Check SharedFunctions.ps1 first to see if it already has what you need.
-		function Do-Something { }
-		
-		# By default, it's good to assume your function will likely be private. 
-		# If you write any additional commands that certainly can use the private function in here, then add it to SharedFunctions.ps1 and let me know. 
-		
-		Write-Output "Attempting to connect to SQL Server.."
-		
-		# please continue to use these variable names for consistency
-		$sourceserver = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
-		$source = $sourceserver.DomainInstanceName
-		
-		# Used a dynamic parameter? Convert from RuntimeDefinedParameter object to regular array
-		$Logins = $psboundparameters.Logins
-	}
-	
-	# PROCESS is for processing stuff. If using the pipeline, the things in here will be executed repeatedly.
-	PROCESS
-	{
-		foreach ($login in $logins)
+		function Install-SpWhoisActive
 		{
-			# Use SMO as much as possible. Using T-SQL is generally an exception.		
-			if ($login.LoginType -eq "WindowsUser" -or $login.LoginType -eq "WindowsGroup")
+			if ($database.length -eq 0)
 			{
-				# Making a change? ALWAYS surround it in ShouldProcess with a nice amount of detail.
-				If ($Pscmdlet.ShouldProcess($source, "Doing somethign to that"))
+				$database = Show-SqlDatabaseList -SqlServer $sourceserver -Title "Install sp_WhoisActive" -Header "Select a database. Adam installs it to master by default." -DefaultDb "master"
+				
+				if ($database.length -eq 0)
 				{
-					try
-					{
-						Do-Something $that
-					}
-					catch
-					{
-						# Always use the Write-Exception shared function.
-						Write-Exception $_
-						throw "sometimes I throw, but sometimes I continue. I always use write-exception, though so the person can see details."
-					}
+					throw "You must select a database to install the procedure"
 				}
 			}
 			
-		}
-		
-		# END is to disconnect from servers and finish up the script. When using the pipeline, things in here will be executed last and only once.
-		END
-		{
-			$sourceserver.ConnectionContext.Disconnect()
+			$parentPath = Split-Path -parent $PSScriptRoot
+			$sql = [IO.File]::ReadAllText("$parentPath\sql\sp_WhoIsActive.sql")
+			$sql = $sql -replace 'USE master', ''
+			$batches = $sql -split "GO\r\n"
 			
-			If ($Pscmdlet.ShouldProcess("console", "Showing final message"))
+			foreach ($batch in $batches)
 			{
-				Write-Output "SQL Login export to $FilePath complete"
-				
+				try
+				{
+					
+					$null = $sourceserver.databases[$database].ExecuteNonQuery($batch)
+					
+				}
+				catch
+				{
+					Write-Exception $_
+					throw "Can't install stored procedure. See exception text for details."
+				}
 			}
 			
+			return $database
+		}
+		
+		$sourceserver = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
+		$source = $sourceserver.DomainInstanceName
+		
+		if ($sourceserver.VersionMajor -lt 9)
+		{
+			throw "sp_WhoIsActive is only supported in SQL Server 2005 and above"
+		}
+		
+		$database = $psboundparameters.Database
+	}
+	
+	PROCESS
+	{
+		# Will build more on this later and do some parameterization
+		$sql = "dbo.sp_WhoIsActive"
+		
+		try
+		{
+			if ($database.length -eq 0)
+			{
+				$datatable = $sourceserver.databases["master"].ExecuteWithResults($sql)
+			}
+			else
+			{
+				$datatable = $sourceserver.databases[$database].ExecuteWithResults($sql)
+			}
+		}
+		catch
+		{
+			Write-Output "Procedure not found, installing."
+			$database = Install-SpWhoisActive
+			Write-Warning $database
+			try
+			{
+				$datatable = $sourceserver.databases[$database].ExecuteWithResults($sql)
+			}
+			catch
+			{
+				Write-Exception $_
+				throw "Cannot execute procedure."
+			}
 		}
 	}
+	
+	END
+	{
+		$sourceserver.ConnectionContext.Disconnect()
+		
+		if ($OutputAs -eq "DataTable")
+		{
+			return $datatable
+		}
+		else
+		{
+			$datatable.Tables.Rows | Out-GridView
+		}
+	}
+}
