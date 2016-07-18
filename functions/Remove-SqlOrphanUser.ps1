@@ -127,6 +127,8 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 
         if ($databases.Count -gt 0)
         {
+            $start = [System.Diagnostics.Stopwatch]::StartNew()
+
             foreach ($db in $databases)
             {
                 try
@@ -204,6 +206,8 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
                     {
                         Write-Output "No orphan users found on database '$db'"
                     }
+                    #reset collection
+                    $Users = $null
                 }
                 catch
                 {
@@ -220,5 +224,13 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 	END
 	{
 		$sourceserver.ConnectionContext.Disconnect()
+
+        $totaltime = ($start.Elapsed)
+
+        #If the call don't come from Repair-SqlOrphanUser function, show elapsed time
+		if ($StackSource -ne "Repair-SqlOrphanUser")
+        {
+            Write-Output "Total Elapsed time: $totaltime"
+        }
 	}
 }

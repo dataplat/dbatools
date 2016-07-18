@@ -105,7 +105,6 @@ Will also remove all users that does not have their matching login by calling Re
 	
 	PROCESS
 	{
-
         # Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
 		
@@ -128,6 +127,8 @@ Will also remove all users that does not have their matching login by calling Re
 
         if ($databases.Count -gt 0)
         {
+            $start = [System.Diagnostics.Stopwatch]::StartNew()
+
             foreach ($db in $databases)
             {
                 try
@@ -195,6 +196,8 @@ Will also remove all users that does not have their matching login by calling Re
                     {
                         Write-Output "No orphan users found on database '$db'"
                     }
+                    #reset collection
+                    $Users = $null
                 }
                 catch
                 {
@@ -210,6 +213,9 @@ Will also remove all users that does not have their matching login by calling Re
 	
 	END
 	{
-		$sourceserver.ConnectionContext.Disconnect()
+        $sourceserver.ConnectionContext.Disconnect()
+        
+        $totaltime = ($start.Elapsed)
+		Write-Output "Total Elapsed time: $totaltime"
 	}
 }
