@@ -2,21 +2,26 @@
 {
 <#
 .SYNOPSIS
-Output results of Adam Machanic's sp_WhoIsActive to a GridView, and installs it if necessary.
+Output results of Adam Machanic's sp_WhoIsActive to a GridView (default) or DataTable, and installs it if necessary.
 
 .DESCRIPTION
-More soon. Initially, there will be a simple output, but eventually, we plan to support passing params.
+GridView is good for analysis while DataTable is good for SqlBulkCopy uploads to keep track
+	
+Initially, there will be a simple output, but eventually, we plan to support passing params and specifying columns.
 	
 This script was built with Adam's permission. To read more about sp_WhoIsActive, please visit:
 	
 Updates: http://sqlblog.com/blogs/adam_machanic/archive/tags/who+is+active/default.aspx
 "Beta" Builds: http://sqlblog.com/files/folders/beta/tags/who+is+active/default.aspx
 	
-Also, consider donating if you love this proc! http://tinyurl.com/WhoIsActiveDonate
+Also, consider donating to Adam if you find this stored procedure helpful! http://tinyurl.com/WhoIsActiveDonate
 	
 .PARAMETER SqlServer
 The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
+.PARAMETER Database
+The database where sp_WhoIsActive is installed. Defaults to master. If the sp_WhoIsActive is not installed, it will install it for you.
+	
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
@@ -62,7 +67,7 @@ More text coming soon
 		[object]$SqlServer,
 		[object]$SqlCredential,
 		[ValidateSet('Datatable', 'GridView')]
-		#PsCustomObject needed?
+		#PsCustomObject needed? What else?
 		[string]$OutputAs = 'GridView'
 	)
 	
