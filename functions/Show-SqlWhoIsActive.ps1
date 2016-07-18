@@ -285,11 +285,16 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 		{
 			if ($database.length -eq 0)
 			{
-				$database = Show-SqlDatabaseList -SqlServer $sourceserver -Title "Install sp_WhoisActive" -Header "Select a database. The original script installs it to master by default." -DefaultDb "master"
+				$database = Show-SqlDatabaseList -SqlServer $sourceserver -Title "Install sp_WhoisActive" -Header "sp_WhoIsActive not found. To deploy, select a database or hit cancel to quit." -DefaultDb "master"
 				
 				if ($database.length -eq 0)
 				{
 					throw "You must select a database to install the procedure"
+				}
+
+				if ($database -ne 'master')
+				{
+					Write-Warning "You have selected a database other than master. When you run Show-SqlWhoIsActive in the future, you must specify -Database $database"
 				}
 			}
 			
@@ -405,8 +410,9 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 		{
 			if ($_.Exception.InnerException -Like "*Could not find*")
 			{
-				Write-Output "Procedure not found, installing."
-				
+				Write-Warning "Procedure not found, installing."
+				Write-Warning "The author of this stored procedure recommends deploying this procedure to your master database. `n         You will now be prompted to select a database to deploy this stored procedure to."
+
 				$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 				$sqlfile = (Get-ChildItem "$temp\who*active*.sql" | Select -First 1).FullName
 				
