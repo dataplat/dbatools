@@ -163,7 +163,7 @@ Will also remove all users that does not have their matching login by calling Re
                     
                     if ($Users.Count -gt 0)
                     {
-                        Write-Output "Orphan users found on database '$db'"
+                        Write-Output "Orphan users found"
                         foreach ($User in $Users)
                         {
                             $ExistLogin = $sourceserver.logins | Where-Object {$_.Isdisabled -eq $False -and 
@@ -176,7 +176,7 @@ Will also remove all users that does not have their matching login by calling Re
                                 $query = "ALTER USER " + $User + " WITH LOGIN = " + $User
                                 $sourceserver.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
                                 
-                                Write-Output "User '$($User.Name)' mapped with their login"
+                                Write-Output "`r`nUser '$($User.Name)' mapped with their login"
                             }
                             else
                             {
@@ -186,7 +186,7 @@ Will also remove all users that does not have their matching login by calling Re
                                 }
                                 else
                                 {
-                                    Write-Output "Orphan user $($User.Name) does not have matching login."
+                                    Write-Warning "Orphan user $($User.Name) does not have matching login."
                                 }
                             }
                         }
