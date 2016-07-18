@@ -179,6 +179,7 @@ Shows a GUI list of databases and SQL credentials to log into the SQL Server. Re
 		
 		$okbutton.Add_Click({
 				$window.Close()
+				$script:okay = $true
 			})
 		
 		$cancelbutton.Add_Click({
@@ -201,7 +202,7 @@ Shows a GUI list of databases and SQL credentials to log into the SQL Server. Re
 	
 	END
 	{
-		if ($script:selected.length -gt 0)
+		if ($script:selected.length -gt 0 -and $script:okay -eq $true)
 		{
 			return $script:selected
 		}
