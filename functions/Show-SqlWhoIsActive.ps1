@@ -79,7 +79,7 @@ More text coming soon
 		{
 			if ($database.length -eq 0)
 			{
-				$database = Show-SqlDatabaseList -SqlServer $sourceserver -Title "Install sp_WhoisActive" -Header "Select a database. Adam installs it to master by default." -DefaultDb "master"
+				$database = Show-SqlDatabaseList -SqlServer $sourceserver -Title "Install sp_WhoisActive" -Header "Select a database. The original script installs it to master by default." -DefaultDb "master"
 				
 				if ($database.length -eq 0)
 				{
