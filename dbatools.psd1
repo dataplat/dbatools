@@ -118,7 +118,8 @@
 		'Get-DiskSpace',
 		'Remove-SqlDatabaseSafely',
 		'Show-SqlDatabaseList',
-		'Show-SqlWhoIsActive'
+		'Show-SqlWhoIsActive',
+        'Set-SqlTempDBConfiguration'
 	)
 	
 	# Cmdlets to export from this module
