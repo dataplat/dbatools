@@ -110,7 +110,7 @@
 		'Reset-SqlAdmin',
 		'Watch-SqlDbLogin',
 		'Expand-SqlTLogResponsibly',
-		'Show-SqlMigrationConstraint',
+		'Test-SqlMigrationConstraint',
 		'Get-SqlRegisteredServerName',
 		'Test-SqlNetworkLatency',
 		'Find-SqlDuplicateIndex',
