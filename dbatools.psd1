@@ -119,6 +119,8 @@
 		'Remove-SqlDatabaseSafely',
 		'Show-SqlDatabaseList',
 		'Show-SqlWhoIsActive',
+        'Set-SqlTempDbConfiguration',
+        'Test-SqlTempDbConfiguration',
 		'Repair-SqlOrphanUser',
 		'Remove-SqlOrphanUser'
 	)
