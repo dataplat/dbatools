@@ -1,4 +1,4 @@
-﻿Function Show-SqlMigrationConstraint
+﻿Function Test-SqlMigrationConstraint
 {
 <#
 .SYNOPSIS
@@ -56,10 +56,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Show-SqlMigrationConstraint
+https://dbatools.io/Test-SqlMigrationConstraint
 
 .EXAMPLE
-Show-SqlMigrationConstraint -Source sqlserver2014a -Destination sqlcluster
+Test-SqlMigrationConstraint -Source sqlserver2014a -Destination sqlcluster
 
 Description
 
@@ -67,7 +67,7 @@ All databases will be verified for features in use that can't be supported on th
 
 
 .EXAMPLE   
-Show-SqlMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -SqlCredential $cred
+Test-SqlMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -SqlCredential $cred
 
 Description
 
@@ -75,7 +75,7 @@ All databases will be verified for features in use that can't be supported on th
 and Windows credentials for sqlcluster.
 
 .EXAMPLE   
-Show-SqlMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -Databases db1
+Test-SqlMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -Databases db1
 Only db1 database will be verified for features in use that can't be supported on the destination server
 	
 #>
