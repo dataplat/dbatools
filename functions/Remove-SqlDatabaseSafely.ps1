@@ -9,7 +9,7 @@ Performs a DBCC CHECKDB on the database, backs up the database with Checksum and
 performs a DBCC CHECKDB and drops the database
 
 By default the initial DBCC CHECKDB is performed
-By default the jobs and databases are created on the same server. Use -DestinationServer to use a seperate server
+By default the jobs and databases are created on the same server. Use -Destination to use a seperate server
 
 It will start the SQL Agent Service on the Destination Server if it is not running
 
