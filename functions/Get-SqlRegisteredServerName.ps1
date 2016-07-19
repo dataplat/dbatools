@@ -8,7 +8,7 @@ Gets list of SQL Server names stored in SQL Server Central Management Server
 Returns a simple array of server namess
 
 .PARAMETER SqlServer
-The SQL Server instance.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+The SQL Server instance. 
 
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:

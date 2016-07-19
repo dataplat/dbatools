@@ -49,6 +49,9 @@ Do not overwrite file
 .PARAMETER Append
 Append to file
 
+.PARAMETER Force
+Instead of export or output the script, it runs performing the drop instruction
+
 .NOTES 
 Original Author: Cláudio Silva (@ClaudioESSilva)
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -101,7 +104,8 @@ Will find exact duplicate or overlapping indexes on all user databases
         [Alias("OutFile", "Path")]
 		[string]$FilePath,
         [switch]$NoClobber,
-		[switch]$Append
+		[switch]$Append,
+        [switch]$Force
 	)
     DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }
 	
@@ -442,6 +446,10 @@ WHERE EXISTS (SELECT 1
 				 AND CI1.IndexName <> CI2.IndexName
 			 )"
 
+        $sqlGO = "GO`r`n"
+        $sqlFinalGO = "GO`r`n`r`n"
+        $sqlUSE = ""
+
         if ($FilePath.Length -gt 0)
 		{
 			$directory = Split-Path $FilePath
@@ -454,12 +462,12 @@ WHERE EXISTS (SELECT 1
 		}
 
         Write-Output "Attempting to connect to Sql Server.."
-		$sourceserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 	}
 	
 	PROCESS
 	{
-        if ($sourceserver.versionMajor -lt 9)
+        if ($server.versionMajor -lt 9)
 		{
 			throw "This function does not support versions lower than SQL Server 2005 (v9)"
 		}
@@ -475,7 +483,7 @@ WHERE EXISTS (SELECT 1
 
         if ($databases.Count -eq 0)
         {
-            $databases = ($sourceserver.Databases | Where-Object {$_.isSystemObject -eq 0 -and $_.Status -ne "Offline"}).Name
+            $databases = ($server.Databases | Where-Object {$_.isSystemObject -eq 0 -and $_.Status -ne "Offline"}).Name
         }
 
         if ($databases.Count -gt 0)
@@ -486,7 +494,7 @@ WHERE EXISTS (SELECT 1
                 {
                     Write-Output "Getting indexes from database '$db'"
 
-                    $query = if ($sourceserver.versionMajor -eq 9)
+                    $query = if ($server.versionMajor -eq 9)
                              {
                                 if ($IncludeOverlapping){$overlappingQuery2005} else {$exactDuplicateQuery2005}
                              }
@@ -495,13 +503,20 @@ WHERE EXISTS (SELECT 1
                                 if ($IncludeOverlapping) {$overlappingQuery} else {$exactDuplicateQuery}
                              }
 
-                    $duplicatedindex = $sourceserver.Databases[$db].ExecuteWithResults($query)
+                    $duplicatedindex = $server.Databases[$db].ExecuteWithResults($query)
 
                     $scriptGenerated = $false
 
                     if ($duplicatedindex.Tables[0].Rows.Count -gt 0)
                     {
-                        $indexesToDrop = $duplicatedindex.Tables[0] | Out-GridView -Title "Duplicate Indexes on $($db) database - Choose indexes to generate DROP script" -PassThru
+                        if ($Force)
+                        {
+                            $indexesToDrop = $duplicatedindex.Tables[0] | Out-GridView -Title "Duplicate Indexes on $($db) database - Choose indexes to DROP! (-Force was specified)" -PassThru
+                        }
+                        else
+                        {
+                            $indexesToDrop = $duplicatedindex.Tables[0] | Out-GridView -Title "Duplicate Indexes on $($db) database - Choose indexes to generate DROP script" -PassThru
+                        }
 
                         #When only 1 line selected, the count does not work
                         if ($indexesToDrop.Count -gt 0 -or !([string]::IsNullOrEmpty($indexesToDrop)))
@@ -541,23 +556,42 @@ WHERE EXISTS (SELECT 1
 					                    Write-Output "Exporting $($index.TableName).$($index.IndexName)"
 				                    }
 
-                                    $sqlDropScript += "USE [$($index.DatabaseName)]`r`n"
-                                    $sqlDropScript += "GO`r`n"
-                                    $sqlDropScript += "IF EXISTS (SELECT 1 FROM sys.indexes WHERE [object_id] = OBJECT_ID('$($index.TableName)') AND name = '$($index.IndexName)')`r`n"
-                                    $sqlDropScript += "    DROP INDEX $($index.TableName).$($index.IndexName)`r`n"
-                                    $sqlDropScript += "GO`r`n`r`n"
+                                    if ($Force)
+                                    {
+                                        $sqlDropScript += "USE [$($index.DatabaseName)]`r`n"
+                                        $sqlDropScript += "IF EXISTS (SELECT 1 FROM sys.indexes WHERE [object_id] = OBJECT_ID('$($index.TableName)') AND name = '$($index.IndexName)')`r`n"
+                                        $sqlDropScript += "    DROP INDEX $($index.TableName).$($index.IndexName)`r`n`r`n"
+
+                                        if ($Pscmdlet.ShouldProcess($db, "Dropping index '$($index.IndexName)' on table '$($index.TableName)' using -Force"))
+				                        {
+                                            $server.Databases[$db].ExecuteNonQuery($sqlDropScript) | Out-Null
+                                            Write-Output "Index '$($index.IndexName)' on table '$($index.TableName)' dropped"
+                                        }
+                                    }
+                                    else
+                                    {
+                                        $sqlDropScript += "USE [$($index.DatabaseName)]`r`n"
+                                        $sqlDropScript += $sqlGO
+                                        $sqlDropScript += "IF EXISTS (SELECT 1 FROM sys.indexes WHERE [object_id] = OBJECT_ID('$($index.TableName)') AND name = '$($index.IndexName)')`r`n"
+                                        $sqlDropScript += "    DROP INDEX $($index.TableName).$($index.IndexName)`r`n"
+                                        $sqlDropScript += $sqlFinalGO
+                                    }
                                 }
 
-                                if ($FilePath.Length -gt 0)
-		                        {
-			                        $sqlDropScript | Out-File -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
-		                        }
-                                else
+                                if (!$Force)
                                 {
-                                    Write-Output $sqlDropScript
+                                    if ($FilePath.Length -gt 0)
+		                            {
+			                            $sqlDropScript | Out-File -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+		                            }
+                                    else
+                                    {
+                                        Write-Output $sqlDropScript
+                                    }
+                                    $scriptGenerated = $true
                                 }
 
-                                $scriptGenerated = $true
+                                
                             }
                             else #answer = no
                             {
@@ -593,6 +627,6 @@ WHERE EXISTS (SELECT 1
 	
 	END
 	{
-		$sourceserver.ConnectionContext.Disconnect()
+		$server.ConnectionContext.Disconnect()
 	}
 }
