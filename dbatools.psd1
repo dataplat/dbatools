@@ -119,7 +119,8 @@
 		'Remove-SqlDatabaseSafely',
 		'Show-SqlDatabaseList',
 		'Show-SqlWhoIsActive',
-        'Set-SqlTempDBConfiguration'
+        'Set-SqlTempDBConfiguration',
+        'Test-SqlTempDBConfiguration'
 	)
 	
 	# Cmdlets to export from this module

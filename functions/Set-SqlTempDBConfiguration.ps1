@@ -85,7 +85,8 @@ Returns PSObject representing tempdb configuration.
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory=$true)]
+    [parameter(Mandatory = $true)]
+	[Alias("ServerInstance", "SqlInstance")]
     [System.Object]$SqlServer
     ,[System.Management.Automation.PSCredential]$SqlCredential
     ,[int]$DataFileCount
