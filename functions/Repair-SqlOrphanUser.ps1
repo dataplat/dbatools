@@ -11,7 +11,7 @@ If the matching login exists it must be:
     .Enabled
     .Not a system object
     .Not locked
-    .Have the same name that login
+    .Have the same name that user
 
 You can drop users that does not have their matching login by especifing the parameter -RemoveNotExisting This will be made by calling Remove-SqlOrphanUser function.
 	
@@ -68,12 +68,12 @@ Repair-SqlOrphanUser -SqlServer sqlserver2014a -Databases db1, db2
 Will find and repair all orphan users on both db1 and db2 databases
 
 .EXAMPLE   
-Remove-SqlOrphanUser -SqlServer sqlserver2014a -Databases db1 -Users OrphanUser
+Repair-SqlOrphanUser -SqlServer sqlserver2014a -Databases db1 -Users OrphanUser
 
 Will find and repair user 'OrphanUser' on 'db1' database
 
 .EXAMPLE   
-Remove-SqlOrphanUser -SqlServer sqlserver2014a -Users OrphanUser
+Repair-SqlOrphanUser -SqlServer sqlserver2014a -Users OrphanUser
 
 Will find and repair user 'OrphanUser' on all databases
 
