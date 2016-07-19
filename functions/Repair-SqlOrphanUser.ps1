@@ -2,18 +2,18 @@
 {
 <#
 .SYNOPSIS
-Find orphan users with existing login and map
+Find orphan users with existing login and remap.
 
 .DESCRIPTION
 An orphan user is defined by a user that does not have their matching login. (Login property = "")
+	
 If the matching login exists it must be:
     .Enabled
     .Not a system object
     .Not locked
     .Have the same name that login
 
-You can drop users that does not have their matching login by especifing the parameter -RemoveNotExisting
-This will be made by calling Remove-SqlOrphanUser function
+You can drop users that does not have their matching login by especifing the parameter -RemoveNotExisting This will be made by calling Remove-SqlOrphanUser function.
 	
 .PARAMETER SqlServer
 The SQL Server instance.
