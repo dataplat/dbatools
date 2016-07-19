@@ -122,7 +122,8 @@
         'Set-SqlTempDbConfiguration',
         'Test-SqlTempDbConfiguration',
 		'Repair-SqlOrphanUser',
-		'Remove-SqlOrphanUser'
+		'Remove-SqlOrphanUser',
+		'Find-SqlUnusedIndex'
 	)
 	
 	# Cmdlets to export from this module
