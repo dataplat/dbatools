@@ -1,4 +1,4 @@
-﻿Function Test-SqlTempDBConfiguration{
+﻿Function Test-SqlTempDbConfiguration{
 <#
 .SYNOPSIS
 Evaluates tempdb against several rules to match best practices.
@@ -44,7 +44,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Test-SqlTempDBConfiguration
+https://dbatools.io/Test-SqlTempDbConfiguration
 # I will create that link once we publish the function
 
 .EXAMPLE   (Try to have at least 3 for more advanced commands)
@@ -53,7 +53,7 @@ Copy-SqlPolicyManagement -SqlServer sqlserver2014a
 Copies all policies and conditions from sqlserver2014a to sqlcluster, using Windows credentials. 
 
 .EXAMPLE   
-Test-SqlTempDBConfiguration -SqlServer localhost
+Test-SqlTempDbConfiguration -SqlServer localhost
 
 Checks tempdb on the localhost machine.
 	

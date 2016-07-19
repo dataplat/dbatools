@@ -119,8 +119,8 @@
 		'Remove-SqlDatabaseSafely',
 		'Show-SqlDatabaseList',
 		'Show-SqlWhoIsActive',
-        'Set-SqlTempDBConfiguration',
-        'Test-SqlTempDBConfiguration'
+		'Repair-SqlOrphanUser',
+		'Remove-SqlOrphanUser'
 	)
 	
 	# Cmdlets to export from this module

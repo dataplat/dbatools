@@ -1,4 +1,4 @@
-﻿function Set-SqlTempDBConfiguration{
+﻿function Set-SqlTempDbConfiguration{
 <#
 .SYNOPSIS
 Sets tempdb data and log files according to best practices.
@@ -58,28 +58,28 @@ Switch to generate script for tempdb configuration.
 .PARAMETER WhatIf
 Switch to generate configuration object.
 .LINK
-https://dbatools.io/Set-SqlTempDBConfiguration
+https://dbatools.io/Set-SqlTempDbConfiguration
 
 .EXAMPLE
-Set-SqlTempDBConfiguration -SqlServer localhost -DataFileSizeMB 1000
+Set-SqlTempDbConfiguration -SqlServer localhost -DataFileSizeMB 1000
 
 Creates tempdb with a number of datafiles equal to the logical cores where
 each one is equal to 1000MB divided by number of logical cores and a log file
 of 250MB
 
 .EXAMPLE
-Set-SqlTempDBConfiguration -SqlServer localhost -DataFileSizeMB 1000 -DataFileCount 8
+Set-SqlTempDbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -DataFileCount 8
 
 Creates tempdb with a number of datafiles equal to the logical cores where
 each one is equal to 125MB and a log file of 250MB
 
 .EXAMPLE
-Set-SqlTempDBConfiguration -SqlServer localhost -DataFileSizeMB 1000 -Script
+Set-SqlTempDbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -Script
 
 Provides a SQL script output to configure tempdb according to the passed parameters
 
 .EXAMPLE
-Set-SqlTempDBConfiguration -SqlServer localhost -DataFileSizeMB 1000 -Script
+Set-SqlTempDbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -Script
 
 Returns PSObject representing tempdb configuration.
 #>
