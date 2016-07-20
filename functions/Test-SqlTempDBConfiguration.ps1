@@ -5,11 +5,11 @@ Evaluates tempdb against several rules to match best practices.
 
 .DESCRIPTION
 Evaluates tempdb aganst a set of rules to match best practices. The rules are:
--TF 1118 enabled: Is Trace Flag 1118 enabled (See KB328551).
-File Count: Does the count of data files in tempdb match the number of logical cores, up to 8.
-File Growth: Are any files set to have percentage growth, as best practice is all files have an explicit growth value.
-File Location: Is tempdb located on the C:\? Best practice says to locate it elsewhere.
-File MaxSize Set(optional): Do any files have a max size value? Max size could cause tempdb problems if it isn't allowed to grow.
+TF 1118 enabled - Is Trace Flag 1118 enabled (See KB328551).
+File Count - Does the count of data files in tempdb match the number of logical cores, up to 8.
+File Growth - Are any files set to have percentage growth, as best practice is all files have an explicit growth value.
+File Location - Is tempdb located on the C:\? Best practice says to locate it elsewhere.
+File MaxSize Set(optional) - Do any files have a max size value? Max size could cause tempdb problems if it isn't allowed to grow.
 
 Other rules can be added at a future date. If any of these rules don't match recommended values, a warning will be thrown.
 
@@ -45,12 +45,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
 https://dbatools.io/Test-SqlTempDbConfiguration
-# I will create that link once we publish the function
-
-.EXAMPLE   (Try to have at least 3 for more advanced commands)
-Copy-SqlPolicyManagement -SqlServer sqlserver2014a
-
-Copies all policies and conditions from sqlserver2014a to sqlcluster, using Windows credentials. 
 
 .EXAMPLE   
 Test-SqlTempDbConfiguration -SqlServer localhost
