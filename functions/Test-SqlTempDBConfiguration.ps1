@@ -72,14 +72,14 @@ Checks tempdb on the localhost machine.
 	{
         #test for TF 1118
         if($smosrv.VersionMajor -ge 13){
-            $value = [ordered]@{'Rule'='TF 1118 Enabled';'Recommended'='Yes';'CurrentSetting'='Yes';'Notes'='SQL 2016 has this functionality enabled by default'}
+            $value = [ordered]@{'Rule'='TF 1118 Enabled';'Recommended'=$true;'CurrentSetting'=$true;'Notes'='SQL 2016 has this functionality enabled by default'}
         } else {
             $sql="dbcc traceon (3604);dbcc tracestatus (-1)"
             $tfcheck=$smosrv.Databases['tempdb'].ExecuteWithResults($sql).Tables[0].TraceFlag
             if(($tfcheck -join ',').Contains('1118')){
-                $value = [ordered]@{'Rule'='TF 1118 Enabled';'Recommended'='Yes';'CurrentSetting'='Yes';'Notes'='KB328551 describes how TF 1118 can benefit performance.'}
+                $value = [ordered]@{'Rule'='TF 1118 Enabled';'Recommended'=$true;'CurrentSetting'=$true;'Notes'='KB328551 describes how TF 1118 can benefit performance.'}
             } else {
-                $value = [ordered]@{'Rule'='TF 1118 Enabled';'Recommended'='Yes';'CurrentSetting'='No';'Notes'='KB328551 describes how TF 1118 can benefit performance.'}
+                $value = [ordered]@{'Rule'='TF 1118 Enabled';'Recommended'=$true;'CurrentSetting'=$false;'Notes'='KB328551 describes how TF 1118 can benefit performance.'}
             }
         }
         Write-Verbose "TF 1118 evaluated"
