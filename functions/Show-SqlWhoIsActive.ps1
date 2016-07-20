@@ -323,6 +323,28 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 			return $database
 		}
 		
+		function Get-WindowTitle
+		{
+			$title = "sp_WhoIsActive "
+			foreach ($param in $passedparams)
+			{
+				$sqlparam = $paramdictionary[$param]
+				$value = $localparams[$param]
+				
+				switch ($value)
+				{
+					$true { $value = 1 }
+					$false { $value = 0 }
+				}
+				
+				$title = "$title $sqlparam = $value, "
+			}
+			
+			
+			$title = $title.TrimEnd(", ")
+			return $title
+		}
+		
 		Function Invoke-SpWhoisActive
 		{
 			$sqlconnection = New-Object System.Data.SqlClient.SqlConnection
@@ -338,7 +360,7 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 			$sqlcommand.CommandType = "StoredProcedure"
 			$sqlcommand.CommandText = "dbo.sp_WhoIsActive"
 			$sqlcommand.Connection = $sqlconnection
-			
+				
 			foreach ($param in $passedparams)
 			{
 				$sqlparam = $paramdictionary[$param]
@@ -460,13 +482,15 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 		
 		if ($OutputAs -eq "DataTable")
 		{
-			return $datatable
+			$datatable.Tables
 		}
 		else
 		{
+			$windowtitle = Get-WindowTitle
+			
 			foreach ($table in $datatable.Tables)
 			{
-				$table | Out-GridView -Title "sp_WhoIsActive"
+				$table | Out-GridView -Title $windowtitle
 			}
 		}
 	}

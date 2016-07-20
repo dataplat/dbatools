@@ -70,7 +70,7 @@ Returns a custom object filled with information for server1, server2 and server3
 			
 			try
 			{
-				$ipaddr = (Test-Connection $computername -count 1).Ipv4Address
+				$ipaddr = (Test-Connection $server -count 1).Ipv4Address | Select-Object -First 1
 				$disks = Get-WmiObject -ComputerName $ipaddr -Query $query | Sort-Object -Property Name
 			}
 			catch
