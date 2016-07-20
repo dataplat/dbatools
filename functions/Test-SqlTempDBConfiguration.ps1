@@ -91,7 +91,7 @@ Checks tempdb on the localhost machine.
         Write-Verbose "TempDB file objects gathered"
 
         #Test file count
-        $cores = (Get-WmiObject -Class Win32_Processor ).NumberOfLogicalProcessors
+        $cores = (Get-WmiObject -ComputerName $smosrv.ComputerNamePhysicalNetBIOS -Class Win32_Processor ).NumberOfLogicalProcessors
         if($cores -gt 8){$cores = 8}
         $filecount = $DataFiles.Count
         $value = [ordered]@{'Rule'='File Count';'Recommended'=$cores;'CurrentSetting'=$filecount;'Notes'="Microsoft recommends that the number of tempdb data files is equal to the number of logical cores up to 8."}
