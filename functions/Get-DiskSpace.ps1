@@ -107,7 +107,16 @@ Returns a custom object filled with information for server1, server2 and server3
 	{
 		foreach ($server in $ComputerName)
 		{
-			$null = $collection.Add((Get-AllDiskSpace $server))
+            $data = Get-AllDiskSpace $server
+            
+            if ($data.Count -gt 1) 
+            {
+                $data.GetEnumerator() | Foreach {  $null = $collection.Add($_) }
+            }
+            else
+            {
+                $null = $collection.Add($data)
+            }
 		}
 	}
 	
