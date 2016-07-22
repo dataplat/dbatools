@@ -5,11 +5,11 @@ Evaluates tempdb against several rules to match best practices.
 
 .DESCRIPTION
 Evaluates tempdb aganst a set of rules to match best practices. The rules are:
--TF 1118 enabled: Is Trace Flag 1118 enabled (See KB328551).
-File Count: Does the count of data files in tempdb match the number of logical cores, up to 8.
-File Growth: Are any files set to have percentage growth, as best practice is all files have an explicit growth value.
-File Location: Is tempdb located on the C:\? Best practice says to locate it elsewhere.
-File MaxSize Set(optional): Do any files have a max size value? Max size could cause tempdb problems if it isn't allowed to grow.
+TF 1118 enabled - Is Trace Flag 1118 enabled (See KB328551).
+File Count - Does the count of data files in tempdb match the number of logical cores, up to 8.
+File Growth - Are any files set to have percentage growth, as best practice is all files have an explicit growth value.
+File Location - Is tempdb located on the C:\? Best practice says to locate it elsewhere.
+File MaxSize Set(optional) - Do any files have a max size value? Max size could cause tempdb problems if it isn't allowed to grow.
 
 Other rules can be added at a future date. If any of these rules don't match recommended values, a warning will be thrown.
 
@@ -45,12 +45,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
 https://dbatools.io/Test-SqlTempDbConfiguration
-# I will create that link once we publish the function
-
-.EXAMPLE   (Try to have at least 3 for more advanced commands)
-Copy-SqlPolicyManagement -SqlServer sqlserver2014a
-
-Copies all policies and conditions from sqlserver2014a to sqlcluster, using Windows credentials. 
 
 .EXAMPLE   
 Test-SqlTempDbConfiguration -SqlServer localhost
@@ -78,14 +72,14 @@ Checks tempdb on the localhost machine.
 	{
         #test for TF 1118
         if($smosrv.VersionMajor -ge 13){
-            $value = [ordered]@{'Rule'='TF 1118 Enabled';'Recommended'='Yes';'CurrentSetting'='Yes';'Notes'='SQL 2016 has this functionality enabled by default'}
+            $value = [ordered]@{'Rule'='TF 1118 Enabled';'Recommended'=$true;'CurrentSetting'=$true;'Notes'='SQL 2016 has this functionality enabled by default'}
         } else {
             $sql="dbcc traceon (3604);dbcc tracestatus (-1)"
             $tfcheck=$smosrv.Databases['tempdb'].ExecuteWithResults($sql).Tables[0].TraceFlag
             if(($tfcheck -join ',').Contains('1118')){
-                $value = [ordered]@{'Rule'='TF 1118 Enabled';'Recommended'='Yes';'CurrentSetting'='Yes';'Notes'='KB328551 describes how TF 1118 can benefit performance.'}
+                $value = [ordered]@{'Rule'='TF 1118 Enabled';'Recommended'=$true;'CurrentSetting'=$true;'Notes'='KB328551 describes how TF 1118 can benefit performance.'}
             } else {
-                $value = [ordered]@{'Rule'='TF 1118 Enabled';'Recommended'='Yes';'CurrentSetting'='No';'Notes'='KB328551 describes how TF 1118 can benefit performance.'}
+                $value = [ordered]@{'Rule'='TF 1118 Enabled';'Recommended'=$true;'CurrentSetting'=$false;'Notes'='KB328551 describes how TF 1118 can benefit performance.'}
             }
         }
         Write-Verbose "TF 1118 evaluated"
@@ -97,7 +91,7 @@ Checks tempdb on the localhost machine.
         Write-Verbose "TempDB file objects gathered"
 
         #Test file count
-        $cores = (Get-WmiObject -Class Win32_Processor ).NumberOfLogicalProcessors
+        $cores = (Get-WmiObject -ComputerName $smosrv.ComputerNamePhysicalNetBIOS -Class Win32_Processor ).NumberOfLogicalProcessors
         if($cores -gt 8){$cores = 8}
         $filecount = $DataFiles.Count
         $value = [ordered]@{'Rule'='File Count';'Recommended'=$cores;'CurrentSetting'=$filecount;'Notes'="Microsoft recommends that the number of tempdb data files is equal to the number of logical cores up to 8."}
