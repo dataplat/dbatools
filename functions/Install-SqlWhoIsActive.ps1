@@ -62,7 +62,9 @@ Pops up a dialog box asking which database on sqlserver2014a you want to install
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[object]$SqlCredential,
-		[switch]$OutputDatabaseName
+		[string]$Path,
+		[switch]$OutputDatabaseName,
+		[string]$Header = "sp_WhoIsActive not found. To deploy, select a database or hit cancel to quit."
 	)
 	
 	DynamicParam { if ($sqlserver) { return Get-ParamSqlDatabase -SqlServer $sqlserver -SqlCredential $SqlCredential } }
@@ -73,9 +75,6 @@ Pops up a dialog box asking which database on sqlserver2014a you want to install
 		# please continue to use these variable names for consistency
 		$sourceserver = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
 		$source = $sourceserver.DomainInstanceName
-		
-		# Used a dynamic parameter? Convert from RuntimeDefinedParameter object to regular array
-		$Database = $psboundparameters.Database
 		
 		Function Get-SpWhoIsActive
 		{
@@ -106,6 +105,30 @@ Pops up a dialog box asking which database on sqlserver2014a you want to install
 			
 			Remove-Item -Path $zipfile
 		}
+		
+		# Used a dynamic parameter? Convert from RuntimeDefinedParameter object to regular array
+		$Database = $psboundparameters.Database
+		
+		if ($Header -like '*update*')
+		{
+			$action = "update"
+		}
+		else
+		{
+			$action = "install"
+		}
+		
+		$textinfo = (Get-Culture).TextInfo
+		$actiontitle = $textinfo.ToTitleCase($action)
+		
+		if ($action -eq "install")
+		{
+			$actioning = "installing"
+		}
+		else
+		{
+			$actioning = "updating"
+		}
 	}
 	
 	PROCESS
@@ -113,11 +136,11 @@ Pops up a dialog box asking which database on sqlserver2014a you want to install
 		
 		if ($database.length -eq 0)
 		{
-			$database = Show-SqlDatabaseList -SqlServer $sourceserver -Title "Install sp_WhoisActive" -Header "sp_WhoIsActive not found. To deploy, select a database or hit cancel to quit." -DefaultDb "master"
+			$database = Show-SqlDatabaseList -SqlServer $sourceserver -Title "$actiontitle sp_WhoisActive" -Header $header -DefaultDb "master"
 			
 			if ($database.length -eq 0)
 			{
-				throw "You must select a database to install the procedure"
+				throw "You must select a database to $action the procedure"
 			}
 			
 			if ($database -ne 'master')
@@ -126,26 +149,34 @@ Pops up a dialog box asking which database on sqlserver2014a you want to install
 			}
 		}
 		
-		$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-		$sqlfile = (Get-ChildItem "$temp\who*active*.sql" | Select -First 1).FullName
-		
-		if ($sqlfile.Length -eq 0)
+		if ($Path.Length -eq 0)
 		{
-			try
+			$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
+			$path = (Get-ChildItem "$temp\who*active*.sql" | Select -First 1).FullName
+			
+			if ($path.Length -eq 0)
 			{
-				Write-Output "Downloading sp_WhoIsActive zip file, unzipping and installing."
-				Get-SpWhoIsActive
+				try
+				{
+					Write-Output "Downloading sp_WhoIsActive zip file, unzipping and $actioning."
+					Get-SpWhoIsActive
+				}
+				catch
+				{
+					throw "Couldn't download sp_WhoIsActive. Please download and $action manually from http://sqlblog.com/files/folders/42453/download.aspx."
+				}
 			}
-			catch
-			{
-				throw "Couldn't download sp_WhoIsActive. Please download and install manually from http://sqlblog.com/files/folders/42453/download.aspx."
-			}
+			
+			$path = (Get-ChildItem "$temp\who*active*.sql" | Select -First 1).Name
+			$path = "$temp\$path"
 		}
 		
-		$sqlfile = (Get-ChildItem "$temp\who*active*.sql" | Select -First 1).Name
-		$sqlfile = "$temp\$sqlfile"
+		if ((Test-Path $Path) -eq $false)
+		{
+			throw "Invalid path at $path"	
+		}
 		
-		$sql = [IO.File]::ReadAllText($sqlfile)
+		$sql = [IO.File]::ReadAllText($path)
 		$sql = $sql -replace 'USE master', ''
 		$batches = $sql -split "GO\r\n"
 		
@@ -159,7 +190,7 @@ Pops up a dialog box asking which database on sqlserver2014a you want to install
 			catch
 			{
 				Write-Exception $_
-				throw "Can't install stored procedure. See exception text for details."
+				throw "Can't $action stored procedure. See exception text for details."
 			}
 		}
 	}
@@ -174,7 +205,7 @@ Pops up a dialog box asking which database on sqlserver2014a you want to install
 		}
 		else
 		{
-			Write-Output "Finished installing/updating sp_WhoIsActive in $database on $SqlServer "	
+			Write-Output "Finished $actioning sp_WhoIsActive in $database on $SqlServer "
 		}
 	}
 }
