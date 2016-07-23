@@ -362,7 +362,14 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 				Write-Warning "Procedure not found, installing."
 				Write-Warning "The author of this stored procedure recommends deploying this procedure to your master database. `n         You will now be prompted to select a database to deploy this stored procedure to."
 				
-				$database = Install-SqlWhoisActive -SqlServer $sourceserver -Database $database -OutputDatabaseName
+				if ($database.length -gt 0)
+				{
+					$database = Install-SqlWhoisActive -SqlServer $sourceserver -Database $database -OutputDatabaseName
+				}
+				else
+				{
+					$database = Install-SqlWhoisActive -SqlServer $sourceserver -OutputDatabaseName
+				}
 				
 				try
 				{
@@ -393,7 +400,7 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 		
 		if ($OutputAs -eq "DataTable")
 		{
-			$datatable.Tables
+			return $datatable.Tables
 		}
 		else
 		{
