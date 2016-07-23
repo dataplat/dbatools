@@ -64,7 +64,8 @@ Pops up a dialog box asking which database on sqlserver2014a you want to install
 		[object]$SqlCredential,
 		[string]$Path,
 		[switch]$OutputDatabaseName,
-		[string]$Header = "sp_WhoIsActive not found. To deploy, select a database or hit cancel to quit."
+		[string]$Header = "sp_WhoIsActive not found. To deploy, select a database or hit cancel to quit.",
+		[switch]$Force
 	)
 	
 	DynamicParam { if ($sqlserver) { return Get-ParamSqlDatabase -SqlServer $sqlserver -SqlCredential $SqlCredential } }
@@ -73,7 +74,7 @@ Pops up a dialog box asking which database on sqlserver2014a you want to install
 	{
 		
 		# please continue to use these variable names for consistency
-		$sourceserver = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
+		$sourceserver = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential -RegularUser
 		$source = $sourceserver.DomainInstanceName
 		
 		Function Get-SpWhoIsActive
@@ -152,9 +153,10 @@ Pops up a dialog box asking which database on sqlserver2014a you want to install
 		if ($Path.Length -eq 0)
 		{
 			$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-			$path = (Get-ChildItem "$temp\who*active*.sql" | Select -First 1).FullName
+			$file = Get-ChildItem "$temp\who*active*.sql" | Select -First 1
+			$path = $file.FullName
 			
-			if ($path.Length -eq 0)
+			if ($path.Length -eq 0 -or $force -eq $true)
 			{
 				try
 				{

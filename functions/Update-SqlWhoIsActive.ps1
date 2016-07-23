@@ -12,7 +12,18 @@ To read more about sp_WhoIsActive, please visit http://sqlblog.com/blogs/adam_ma
 Also, consider donating to Adam if you find this stored procedure helpful: http://tinyurl.com/WhoIsActiveDonate
 
 .PARAMETER SqlServer
-The SQL Server instance.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+The SQL Server instance.
+
+.PARAMETER Path
+Specify a path to file, otherwise it will automatically download it from the Internet. This is useful for disconnected networks.
+
+.PARAMETER OutputDatabaseName
+Return the name of the database intead of the success message
+	
+.PARAMETER Force
+The script checks to see if sp_whoisactivesql is in $temp already, then installs it (useful when updating muliple servers at once).
+	
+Use Force to go download the script from the Internet, even if it's already in temp. 
 
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -64,7 +75,8 @@ Pops up a dialog box asking which database on sqlserver2014a you want to install
 		[object]$SqlCredential,
 		[string]$Path,
 		[switch]$OutputDatabaseName,
-		[string]$Header = "To update, select a database or hit cancel to quit."
+		[string]$Header = "To update, select a database or hit cancel to quit.",
+		[switch]$Force
 	)
 	
 	DynamicParam { if ($sqlserver) { return Get-ParamSqlDatabase -SqlServer $sqlserver -SqlCredential $SqlCredential } }
@@ -75,11 +87,11 @@ Pops up a dialog box asking which database on sqlserver2014a you want to install
 	
 		if ($Database.length -eq 0)
 		{
-			Install-SqlWhoIsActive -SqlServer $sqlserver -SqlCredential $SqlCredential -Path $Path -Header $header
+			Install-SqlWhoIsActive -SqlServer $sqlserver -SqlCredential $SqlCredential -Path $Path -Header $header -Force:$force -OutputDatabaseName:$OutputDatabaseName
 		}
 		else
 		{
-			Install-SqlWhoIsActive -SqlServer $sqlserver -SqlCredential $SqlCredential -Path $Path -Header $header -Database $database
+			Install-SqlWhoIsActive -SqlServer $sqlserver -SqlCredential $SqlCredential -Path $Path -Header $header -Database $database -Force:$force -OutputDatabaseName:$OutputDatabaseName
 		}
 	}
 }
