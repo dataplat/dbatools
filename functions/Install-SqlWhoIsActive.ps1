@@ -160,7 +160,11 @@ Pops up a dialog box asking which database on sqlserver2014a you want to install
 			{
 				try
 				{
-					Write-Output "Downloading sp_WhoIsActive zip file, unzipping and $actioning."
+					if ($OutputDatabaseName -eq $false)
+					{
+						Write-Output "Downloading sp_WhoIsActive zip file, unzipping and $actioning."
+					}
+					
 					Get-SpWhoIsActive
 				}
 				catch
