@@ -66,9 +66,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Find-SqlUnusedIndex
 
 .EXAMPLE
-Find-SqlUnusedIndex -SqlServer sql2005 -FileName C:\temp\sql2005-UnusedIndexes.sql
+Find-SqlUnusedIndex -SqlServer sql2005 -FilePath C:\temp\sql2005-UnusedIndexes.sql
 
 Exports SQL for the Unused indexes in server "sql2005" choosen on grid-view and writes them to the file "C:\temp\sql2005-UnusedIndexes.sql"
+	
+.EXAMPLE
+Find-SqlUnusedIndex -SqlServer sql2005 -FilePath C:\temp\sql2005-UnusedIndexes.sql -Append
+
+Exports SQL for the Unused indexes in server "sql2005" choosen on grid-view and writes/appends them to the file "C:\temp\sql2005-UnusedIndexes.sql"
 
 .EXAMPLE   
 Find-SqlUnusedIndex -SqlServer sqlserver2016 -SqlCredential $cred

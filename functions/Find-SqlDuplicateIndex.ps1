@@ -40,7 +40,7 @@ Windows Authentication will be used if SqlCredential is not specified. SQL Serve
 Allows to see indexes partial duplicate. 
 Example: If first key column is the same but one index has included columns and the other not, this will be shown.
 
-.PARAMETER FileName
+.PARAMETER FilePath
 The file to write to.
 
 .PARAMETER NoClobber
@@ -74,10 +74,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Find-SqlDuplicateIndex
 
 .EXAMPLE
-Find-SqlDuplicateIndex -SqlServer sql2005 -FileName C:\temp\sql2005-DuplicateIndexes.sql
+Find-SqlDuplicateIndex -SqlServer sql2005 -FilePath C:\temp\sql2005-DuplicateIndexes.sql
 
 Exports SQL for the duplicate indexes in server "sql2005" choosen on grid-view and writes them to the file "C:\temp\sql2005-DuplicateIndexes.sql"
 
+.EXAMPLE
+Find-SqlDuplicateIndex -SqlServer sql2005 -FilePath C:\temp\sql2005-DuplicateIndexes.sql -Append
+
+Exports SQL for the duplicate indexes in server "sql2005" choosen on grid-view and writes/appends them to the file "C:\temp\sql2005-DuplicateIndexes.sql"
+	
 .EXAMPLE   
 Find-SqlDuplicateIndex -SqlServer sqlserver2014a -SqlCredential $cred
 	
