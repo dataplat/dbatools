@@ -111,20 +111,11 @@ Checks tempdb on the localhost machine.
 		
 		#get files and log files
 		# should be rewritten in T-SQL because $server.Databases['tempdb'].FileGroups[0]. causes enumeration
-		$datafiles = $server.Databases['tempdb'].FileGroups[0].Files
-		$logfiles = $server.Databases['tempdb'].LogFiles
 		
 		Write-Verbose "TempDB file objects gathered"
 		
-		try
-		{
-			#Test file count
-			$cores = (Get-WmiObject -ComputerName $server.ComputerNamePhysicalNetBIOS -Class Win32_Processor).NumberOfLogicalProcessors
-		}
-		catch
-		{
-			throw "Could not connect to $computername using WMI. Ensure the port is open and you have proper permission."
-		}
+		$cores = $server.Processors
+
 		if ($cores -gt 8) { $cores = 8 }
 		
 		$filecount = $datafiles.Count
