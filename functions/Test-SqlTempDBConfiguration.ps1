@@ -110,9 +110,8 @@ Checks tempdb on the localhost machine.
 		$return += $value
 		
 		#get files and log files
-		# should be rewritten in T-SQL because $server.Databases['tempdb'].FileGroups[0]. causes enumeration
-		$datafiles = $server.Databases['tempdb'].ExecuteWithResults("SELECT physical_name as FileName, max_size as MaxSize, CASE WHEN is_percent_growth = 0 THEN 'KB' WHEN groupid = 1 THEN 'Percent' END as GrowthType from sys.database_files WHERE type_desc = 'ROWS'").Tables[0]
-		$logfiles =  $server.Databases['tempdb'].ExecuteWithResults("SELECT physical_name as FileName, max_size as MaxSize, CASE WHEN is_percent_growth = 0 THEN 'KB' WHEN groupid = 1 THEN 'Percent' END as GrowthType from sys.database_files WHERE type_desc = 'LOG'").Tables[0]
+		$datafiles = $server.Databases['tempdb'].ExecuteWithResults("SELECT physical_name as FileName, max_size as MaxSize, CASE WHEN is_percent_growth = 0 THEN 'KB' WHEN is_percent_growth = 1 THEN 'Percent' END as GrowthType from sys.database_files WHERE type_desc = 'ROWS'").Tables[0]
+		$logfiles =  $server.Databases['tempdb'].ExecuteWithResults("SELECT physical_name as FileName, max_size as MaxSize, CASE WHEN is_percent_growth = 0 THEN 'KB' WHEN is_percent_growth = 1 THEN 'Percent' END as GrowthType from sys.database_files WHERE type_desc = 'LOG'").Tables[0]
 		
 		Write-Verbose "TempDB file objects gathered"
 		
@@ -171,9 +170,9 @@ Checks tempdb on the localhost machine.
 	
 	END
 	{
-		$WarningCount = ($return | Where-Object { $_.Recommended -ne $_.CurrentSetting -and $_.Recommended -ne $null }).Count
+		$warningcount = ($return | Where-Object { $_.Recommended -ne $_.CurrentSetting -and $_.Recommended -ne $null }).Count
 		
-		if ($WarningCount -gt 0)
+		if ($warningcount -gt 0)
 		{
 			Write-Warning 'Some settings to not match recommended best practices.'
 		}
