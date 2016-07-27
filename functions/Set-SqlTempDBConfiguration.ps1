@@ -203,12 +203,12 @@ Returns PSObject representing tempdb configuration.
 					$filename = Split-Path $filename -Leaf
 					$logicalname = $file.Name
 					$newpath = Join-Path $datapath -ChildPath $filename
-					$sql += "ALTER DATABASE tempdb MODIFY FILE(name=$logicalname,filename='$newpath',size=$dataFilesizeSingleMB`MB,filegrowth=512MB);"
+					$sql += "ALTER DATABASE tempdb MODIFY FILE(name=$logicalname,filename='$newpath',size=$dataFilesizeSingleMB MB,filegrowth=512MB);"
 				}
 				else
 				{
 					$newpath = Join-Path $datapath -ChildPath "tempdev$i.ndf"
-					$sql += "ALTER DATABASE tempdb ADD FILE(name=tempdev$i,filename='$newpath',size=$dataFilesizeSingleMB`MB,filegrowth=512MB);"
+					$sql += "ALTER DATABASE tempdb ADD FILE(name=tempdev$i,filename='$newpath',size=$dataFilesizeSingleMB MB,filegrowth=512MB);"
 				}
 			}
 			
@@ -221,7 +221,7 @@ Returns PSObject representing tempdb configuration.
 			$filename = Split-Path $logfile.FileName -Leaf
 			$logicalname = $logfile.Name
 			$newpath = Join-Path $logpath -ChildPath $filename
-			$sql += "ALTER DATABASE tempdb MODIFY FILE(name=$logicalname,filename='$newpath',size=$LogFileSizeMB`MB,filegrowth=512MB);"
+			$sql += "ALTER DATABASE tempdb MODIFY FILE(name=$logicalname,filename='$newpath',size=$LogFileSizeMB MB,filegrowth=512MB);"
 			
 			Write-Verbose "SQL Statement to resize tempdb `n ($sql -join "`n")"
 			
