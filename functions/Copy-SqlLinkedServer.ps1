@@ -50,18 +50,11 @@ This just copies the SQL portion. It does not copy files (ie. a local SQLITE dat
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
 https://dbatools.io/Copy-SqlLinkedServer 
@@ -254,7 +247,7 @@ License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
 			return $decryptedlogins
 		}
 		
-		Function Copy-LinkedServers
+		Function Copy-SqlLinkedServers
 		{
 <#
 
@@ -408,14 +401,14 @@ Internal function.
 		
 		Write-Output "Checking if remote access is enabled"
 		winrm id -r:$sourcenetbios 2>$null | Out-Null
-		if ($LastExitCode -ne 0) { throw "Remote PowerShell access not enabled on on $source or access denied. Windows admin acccess required. Quitting." }
+		if ($LastExitCode -ne 0) { throw "Remote PowerShell access not enabled on $source or access denied. Windows admin acccess required. Quitting." }
 		
 		Write-Output "Checking if Remote Registry is enabled"
 		try { Invoke-Command -ComputerName $sourcenetbios { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } }
 		catch { throw "Can't connect to registry on $source. Quitting." }
 		
 		# Magic happens here
-		Copy-LinkedServers $sourceserver $destserver $linkedservers -force:$force
+		Copy-SqlLinkedServers $sourceserver $destserver $linkedservers -force:$force
 		
 	}
 	
