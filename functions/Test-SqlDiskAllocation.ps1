@@ -2,18 +2,24 @@
 {
 <#
 .SYNOPSIS
-Checks if disk are formatted to 64k
+Checks all disks on a computer to see if they are formatted to 64k. 
 	
 .DESCRIPTION
+Returns $true or $false by default for one server. Returns Server name and IsBestPractice for more than one server.
+	
+Specify -Detailed for details.
 	
 .PARAMETER ComputerName
 The SQL Server (or server in general) that you're connecting to. The -SqlServer parameter also works.
 
 .PARAMETER CheckForSql
+Check to see if any SQL Data or Log files exists on the disk. Uses Windows authentication to connect by default.
 
 .PARAMETER SqlCredential
-	
+If you want to use SQL Server Authentication to connect.
+
 .PARAMETER Detailed
+Show a detailed list.
 
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -34,7 +40,6 @@ Test-SqlDiskAllocation -ComputerName sqlserver2014a
 .EXAMPLE   
 Test-SqlDiskAllocation -ComputerName sqlserver2014a -CheckForSql
 
-
 .EXAMPLE   
 Test-SqlDiskAllocation -ComputerName sqlserver2014a -CheckForSql -Detailed
 	
@@ -54,26 +59,43 @@ Test-SqlDiskAllocation -ComputerName sqlserver2014a -CheckForSql -Detailed
 	{
 		Function Get-AllDiskAllocation
 		{
+			$alldisks = @()
+			$sqlservers = @()
 			try
 			{
-				$alldisks = @()
+				Write-Verbose "Testing connection to $server and resolving IP address"
+				$ipaddr = (Test-Connection $server -Count 1 -ErrorAction SilentlyContinue).Ipv4Address | Select-Object -First 1
+				
+			}
+			catch
+			{
+				Write-Warning "Can't connect to $server"
+				return
+			}
+			
+			try
+			{
+				Write-Verbose "Getting disk information from $server"
 				$query = "Select Label, BlockSize, Name from Win32_Volume WHERE FileSystem='NTFS'"
-				$ipaddr = (Test-Connection $server -count 1).Ipv4Address | Select-Object -First 1
 				$disks = Get-WmiObject -ComputerName $ipaddr -Query $query | Sort-Object -Property Name
 			}
 			catch
 			{
-				throw "Can't connect to $server"
+				Write-Warning "Can't connect to WMI on $server"
+				return
 			}
 			
 			if ($CheckForSql -eq $true)
 			{
-				$sqlservers = @()
+				Write-Verbose "Checking for SQL Services"
 				$sqlservices = Get-Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like 'SQL Server (*' }
 				foreach ($service in $sqlservices)
 				{
 					$instance = $service.DisplayName.Replace('SQL Server (', '')
 					$instance = $instance.TrimEnd(')')
+					
+					$instancename = $instance.Replace("MSSQLSERVER", "Default")
+					Write-Verbose "Found instance $instancename"
 					
 					if ($instance -eq 'MSSQLSERVER')
 					{
@@ -84,6 +106,8 @@ Test-SqlDiskAllocation -ComputerName sqlserver2014a -CheckForSql -Detailed
 						$sqlservers += "$ipaddr\$instance"
 					}
 				}
+				$sqlcount = $sqlservers.Count
+				Write-Verbose "$sqlcount instance(s) found"
 			}
 			
 			foreach ($disk in $disks)
@@ -91,11 +115,14 @@ Test-SqlDiskAllocation -ComputerName sqlserver2014a -CheckForSql -Detailed
 				if (!$disk.name.StartsWith("\\"))
 				{
 					$diskname = $disk.Name
+					
 					if ($CheckForSql -eq $true)
 					{
 						$sqldisk = $false
+						
 						foreach ($sqlserver in $sqlservers)
 						{
+							Write-Verbose "Connecting to SQL instance ($sqlserver)"
 							try
 							{
 								$smoserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
@@ -109,10 +136,19 @@ Test-SqlDiskAllocation -ComputerName sqlserver2014a -CheckForSql -Detailed
 							}
 							catch
 							{
-								Write-Verbose "Can't connect to $sqlserver"
+								Write-Warning "Can't connect to $server ($sqlserver)"
 								continue
 							}
 						}
+					}
+					
+					if ($disk.BlockSize -eq 65536)
+					{
+						$IsBestPractice = $true
+					}
+					else
+					{
+						$IsBestPractice = $false
 					}
 					
 					if ($CheckForSql -eq $true)
@@ -122,7 +158,8 @@ Test-SqlDiskAllocation -ComputerName sqlserver2014a -CheckForSql -Detailed
 							Name = $diskname
 							Label = $disk.Label
 							BlockSize = $disk.BlockSize
-							SqlDisk = $sqldisk
+							IsSqlDisk = $sqldisk
+							IsBestPractice = $IsBestPractice
 						}
 					}
 					else
@@ -132,6 +169,7 @@ Test-SqlDiskAllocation -ComputerName sqlserver2014a -CheckForSql -Detailed
 							Name = $diskname
 							Label = $disk.Label
 							BlockSize = $disk.BlockSize
+							IsBestPractice = $IsBestPractice
 						}
 					}
 				}
@@ -140,12 +178,30 @@ Test-SqlDiskAllocation -ComputerName sqlserver2014a -CheckForSql -Detailed
 		}
 		
 		$collection = New-Object System.Collections.ArrayList
+		$processed = New-Object System.Collections.ArrayList
 	}
 	
 	PROCESS
 	{
+		
+		
 		foreach ($server in $ComputerName)
 		{
+			if ($server -match '\\')
+			{
+				$server = $server.Split('\')[0]
+			}
+			
+			if ($server -notin $processed)
+			{
+				$null = $processed.Add($server)
+				Write-Verbose "Connecting to $server"
+			}
+			else
+			{
+				continue
+			}
+			
 			$data = Get-AllDiskAllocation $server
 			
 			if ($data.Count -gt 1)
@@ -161,9 +217,44 @@ Test-SqlDiskAllocation -ComputerName sqlserver2014a -CheckForSql -Detailed
 	
 	END
 	{
+		
 		if ($Detailed -eq $true)
 		{
 			return $collection
+		}
+		elseif ($processed.Count -gt 1)
+		{
+			$newcollection = @()
+			# brain melt, this is ugly
+			foreach ($computer in $collection)
+			{
+				if ($newcollection.Server -contains $computer.Server) { continue }
+				
+				if ($CheckForSql -eq $true)
+				{
+					$falsecount = $computer | Where-Object { $_.IsBestPractice -eq $false -and $_.IsSqlDisk -eq $true}
+				}
+				else
+				{
+					$falsecount = $computer | Where-Object { $_.IsBestPractice -eq $false }
+				}
+				
+				if ($falsecount -eq $null)
+				{
+					$IsBestPractice = $true
+					
+				}
+				else
+				{
+					$IsBestPractice = $false
+				}
+				
+				$newcollection += [PSCustomObject]@{
+					Server = $computer.Server
+					IsBestPractice = $IsBestPractice
+				}
+			}
+			return $newcollection
 		}
 		else
 		{
@@ -184,7 +275,7 @@ Test-SqlDiskAllocation -ComputerName sqlserver2014a -CheckForSql -Detailed
 					}
 				}
 			}
-			return $true 
+			return $true
 		}
 	}
-}
+	}
