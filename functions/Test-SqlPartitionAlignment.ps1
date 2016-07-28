@@ -57,28 +57,109 @@ Does this
 		[switch]$Detailed
 	)
 	
-	
-	DynamicParam { if ($sqlserver) { return Get-ParamSqlDatabases -SqlServer $sqlserver -SqlCredential $SqlCredential } }
-	
 	BEGIN
 	{
+		Function Get-SqlDisks
+		{
+			
+		}
 		
 		$sourceserver = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
 		$source = $sourceserver.DomainInstanceName
 		
-		$Databases = $psboundparameters.Databases
+		$alldisks = @()
+		
+		Function Get-DiskAlignment
+		{
+			try
+			{
+				$ipaddr = (Test-Connection $server -count 1).Ipv4Address | Select-Object -First 1
+				$disks = Get-WmiObject Win32_DiskPartition -ComputerName $ipaddr | Select-Object Name, Index, BlockSize, StartingOffset
+				
+			}
+			catch
+			{
+				throw "Can't connect to $server"
+			}
+			
+			foreach ($disk in $disks)
+			{
+				<#
+				Connect-VIServer  myserver.fqdn.com
+$Cluster = (Read-Host "Enter cluster name")
+ 
+$myCol = @()
+$vms = Get-Cluster $Cluster | get-vm | where {$_.PowerState -eq "PoweredOn" -and `
+$_.Guest.OSFullName -match "Microsoft Windows*" } | Sort Name 
+ 
+foreach($vm in $vms){
+try {
+$wmi = get-wmiobject -class "Win32_DiskPartition" `
+-namespace "root\CIMV2" -ComputerName $vm           
+    foreach ($objItem in $wmi){
+        $Details = "" | Select-Object VMName, Partition, StartingOffset ,Status
+        if ($objItem.StartingOffset) {
+        $Details.StartingOffset = $objItem.StartingOffset
+        $objItem.StartingOffset = $objItem.StartingOffset / 4096
+#               Write $objItem.StartingOffset.gettype().name
+            if ($objItem.StartingOffset.gettype().name -eq "UInt64"){
+                $Details.VMName = $objItem.SystemName
+                   $Details.Partition = $objItem.Name
+                $Details.Status = "Partition aligned"
+            }
+            else{
+                $Details.VMName = $objItem.SystemName
+                   $Details.Partition = $objItem.Name
+                $Details.Status = "Partition NOT aligned"
+            }
+    $myCol += $Details
+    }
+    }
+				#>
+				# StartingOffset / BlockSize / 128 look for decimals
+				if (!$disk.name.StartsWith("\\"))
+				{
+					$total = "{0:n2}" -f ($disk.Capacity/$measure)
+					$free = "{0:n2}" -f ($disk.Freespace/$measure)
+					$percentfree = "{0:n2}" -f (($disk.Freespace / $disk.Capacity) * 100)
+					
+					$alldisks += [PSCustomObject]@{
+						Server = $server
+						Name = $disk.Name
+						Label = $disk.Label
+						"SizeIn$unit" = $total
+						"FreeIn$unit" = $free
+						PercentFree = $percentfree
+					}
+				}
+				return $alldisks
+			}
+		}
+		$collection = New-Object System.Collections.ArrayList
 	}
+	
 	
 	PROCESS
 	{
-		
-		
+		foreach ($server in $ComputerName)
+		{
+			$data = Get-DiskAlignment $server
+			
+			if ($data.Count -gt 1)
+			{
+				$data.GetEnumerator() | ForEach-Object { $null = $collection.Add($_) }
+			}
+			else
+			{
+				$null = $collection.Add($data)
+			}
+		}
 	}
 	
 	END
 	{
 		$sourceserver.ConnectionContext.Disconnect()
-		
+		return $collection
 		
 	}
 }
