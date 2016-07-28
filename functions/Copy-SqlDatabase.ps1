@@ -49,10 +49,8 @@ Uses the detach/copy/attach method to perform database migrations. No files are 
 Reattaches all source databases after DetachAttach migration.
 
 .PARAMETER ReuseSourceFolderStructure
-By default, databases will be migrated to the destination Sql Server's default data and log directories. 
-You can override this by specifying -ReuseSourceFolderStructure. 
-The same structure on the SOURCE will be kept exactly, so consider this if you're migrating between 
-different versions and use part of Microsoft's default Sql structure (MSSql12.INSTANCE, etc)
+By default, databases will be migrated to the destination Sql Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. 
+The same structure on the SOURCE will be kept exactly, so consider this if you're migrating between different versions and use part of Microsoft's default Sql structure (MSSql12.INSTANCE, etc)
 
 * note, to reuse destination folder structure, specify -WithReplace
 
@@ -90,18 +88,11 @@ Limitations: Doesn't cover what it doesn't cover (replication, certificates, etc
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 .LINK
