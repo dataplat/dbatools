@@ -15,12 +15,10 @@ The SQL Server Central Management Server you are migrating to.
 
 .PARAMETER CMSGroups
 This is an auto-populated array that contains your Central Management Server top-level groups on $Source. You can specify one, many or none.
-If -CMSGroups is not specified, the Copy-SqlCentralManagementServer script will migrate all groups in your Central Management Server. Note this 
-variable is only populated by top level groups.
+If -CMSGroups is not specified, the Copy-SqlCentralManagementServer script will migrate all groups in your Central Management Server. Note this variable is only populated by top level groups.
 
 .PARAMETER SwitchServerName
-Central Management Server does not allow you to add a shared registered server with the same name as the Configuration Server. If you wish to 
-change all migrating instance names of $Destination to $Source, use this switch.
+Central Management Server does not allow you to add a shared registered server with the same name as the Configuration Server. If you wish to change all migrating instance names of $Destination to $Source, use this switch.
 
 .PARAMETER SourceSqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -45,18 +43,11 @@ Requires: sysadmin access on SQL Servers
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
 https://dbatools.io/Copy-SqlCentralManagementServer
@@ -74,8 +65,7 @@ In the above example, top level Group1 and Group3, along with its subgroups and 
 .EXAMPLE   
 Copy-SqlCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -CMSGroups Group1,Group3 -SwitchServerName -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential
 
-In the above example, top level Group1 and Group3, along with its subgroups and server instances are copied from sqlserver to sqlcluster. When adding sql instances to sqlcluster, if
-the server name of the migrating instance is "sqlcluster", it will be switched to "sqlserver". If SwitchServerName is not specified, "sqlcluster" will be skipped.
+In the above example, top level Group1 and Group3, along with its subgroups and server instances are copied from sqlserver to sqlcluster. When adding sql instances to sqlcluster, if the server name of the migrating instance is "sqlcluster", it will be switched to "sqlserver". If SwitchServerName is not specified, "sqlcluster" will be skipped.
 
 #>	
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
