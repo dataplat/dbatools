@@ -1,27 +1,29 @@
-﻿Function Get-DiskSpace
+﻿Function Test-SqlDiskAllocation
 {
 <#
 .SYNOPSIS
-Displays Disk information for all local drives on a server
+Checks all disks on a computer to see if they are formatted to 64k. 
 	
 .DESCRIPTION
-Returns a custom object with Server name, name of disk, label of disk, total size, free size and percent free.
+Returns $true or $false by default for one server. Returns Server name and IsBestPractice for more than one server.
+	
+Specify -Detailed for details.
 	
 .PARAMETER ComputerName
 The SQL Server (or server in general) that you're connecting to. The -SqlServer parameter also works.
 
-.PARAMETER Unit
-Display the disk space information in a specific unit. Valid values incldue 'KB', 'MB', 'GB', 'TB', and 'PB'. Default is GB.
-	
 .PARAMETER CheckForSql
 Check to see if any SQL Data or Log files exists on the disk. Uses Windows authentication to connect by default.
 
 .PARAMETER SqlCredential
 If you want to use SQL Server Authentication to connect.
 
-.NOTES
-Requires: Windows sysadmin access on SQL Servers
+.PARAMETER Detailed
+Show a detailed list.
 
+.NOTES 
+Requires: Windows sysadmin access on SQL Servers
+	
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -32,22 +34,17 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Get-DiskSpace
+https://dbatools.io/Test-SqlDiskAllocation
 
 .EXAMPLE
-Get-DiskSpace -ComputerName sqlserver2014a
-
-Shows disk space for sqlserver2014a in GB
+Test-SqlDiskAllocation -ComputerName sqlserver2014a
 
 .EXAMPLE   
-Get-DiskSpace -ComputerName sqlserver2014a -Unit TB
-
-Shows disk space for sqlserver2014a in TB
+Test-SqlDiskAllocation -ComputerName sqlserver2014a -CheckForSql
 
 .EXAMPLE   
-Get-DiskSpace -ComputerName server1, server2, server3 -Unit MB
-
-Returns a custom object filled with information for server1, server2 and server3, in MB
+Test-SqlDiskAllocation -ComputerName sqlserver2014a -CheckForSql -Detailed
+	
 	
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
@@ -55,22 +52,20 @@ Returns a custom object filled with information for server1, server2 and server3
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServer")]
 		[string[]]$ComputerName,
-		[ValidateSet('KB', 'MB', 'GB', 'TB', 'PB')]
-		[String]$Unit = "GB",
 		[switch]$CheckForSql,
-		[object]$SqlCredential
+		[object]$SqlCredential,
+		[switch]$Detailed
 	)
 	
 	BEGIN
 	{
-		Function Get-AllDiskSpace
+		Function Get-AllDiskAllocation
 		{
-			
-			$measure = "1$unit"
 			$alldisks = @()
-			
+			$sqlservers = @()
 			try
 			{
+				Write-Verbose "Testing connection to $server and resolving IP address"
 				$ipaddr = (Test-Connection $server -Count 1 -ErrorAction SilentlyContinue).Ipv4Address | Select-Object -First 1
 				
 			}
@@ -82,7 +77,8 @@ Returns a custom object filled with information for server1, server2 and server3
 			
 			try
 			{
-				$query = "Select SystemName, Name, DriveType, FileSystem, FreeSpace, Capacity, Label, BlockSize from Win32_Volume where DriveType = 2 or DriveType = 3"
+				Write-Verbose "Getting disk information from $server"
+				$query = "Select Label, BlockSize, Name from Win32_Volume WHERE FileSystem='NTFS'"
 				$disks = Get-WmiObject -ComputerName $ipaddr -Query $query | Sort-Object -Property Name
 			}
 			catch
@@ -93,12 +89,15 @@ Returns a custom object filled with information for server1, server2 and server3
 			
 			if ($CheckForSql -eq $true)
 			{
-				$sqlservers = @()
+				Write-Verbose "Checking for SQL Services"
 				$sqlservices = Get-Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like 'SQL Server (*' }
 				foreach ($service in $sqlservices)
 				{
 					$instance = $service.DisplayName.Replace('SQL Server (', '')
 					$instance = $instance.TrimEnd(')')
+					
+					$instancename = $instance.Replace("MSSQLSERVER", "Default")
+					Write-Verbose "Found instance $instancename"
 					
 					if ($instance -eq 'MSSQLSERVER')
 					{
@@ -109,40 +108,50 @@ Returns a custom object filled with information for server1, server2 and server3
 						$sqlservers += "$ipaddr\$instance"
 					}
 				}
+				$sqlcount = $sqlservers.Count
+				Write-Verbose "$sqlcount instance(s) found"
 			}
 			
 			foreach ($disk in $disks)
 			{
-				$diskname = $disk.Name
-				if ($CheckForSql -eq $true)
+				if (!$disk.name.StartsWith("\\"))
 				{
-					$sqldisk = $false
-					foreach ($sqlserver in $sqlservers)
+					$diskname = $disk.Name
+					
+					if ($CheckForSql -eq $true)
 					{
-						try
+						$sqldisk = $false
+						
+						foreach ($sqlserver in $sqlservers)
 						{
-							$smoserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-							$sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
-							$sqlcount = $smoserver.Databases['master'].ExecuteWithResults($sql).Tables[0].Count
-							if ($sqlcount -gt 0)
+							Write-Verbose "Connecting to SQL instance ($sqlserver)"
+							try
 							{
-								$sqldisk = $true
-								break
+								$smoserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+								$sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
+								$sqlcount = $smoserver.Databases['master'].ExecuteWithResults($sql).Tables[0].Count
+								if ($sqlcount -gt 0)
+								{
+									$sqldisk = $true
+									break
+								}
+							}
+							catch
+							{
+								Write-Warning "Can't connect to $server ($sqlserver)"
+								continue
 							}
 						}
-						catch
-						{
-							Write-Warning "Can't connect to $server ($sqlserver)"
-							continue
-						}
 					}
-				}
-				
-				if (!$diskname.StartsWith("\\"))
-				{
-					$total = "{0:n2}" -f ($disk.Capacity/$measure)
-					$free = "{0:n2}" -f ($disk.Freespace/$measure)
-					$percentfree = "{0:n2}" -f (($disk.Freespace / $disk.Capacity) * 100)
+					
+					if ($disk.BlockSize -eq 65536)
+					{
+						$IsBestPractice = $true
+					}
+					else
+					{
+						$IsBestPractice = $false
+					}
 					
 					if ($CheckForSql -eq $true)
 					{
@@ -150,11 +159,9 @@ Returns a custom object filled with information for server1, server2 and server3
 							Server = $server
 							Name = $diskname
 							Label = $disk.Label
-							"SizeIn$unit" = $total
-							"FreeIn$unit" = $free
-							PercentFree = $percentfree
 							BlockSize = $disk.BlockSize
 							IsSqlDisk = $sqldisk
+							IsBestPractice = $IsBestPractice
 						}
 					}
 					else
@@ -163,10 +170,8 @@ Returns a custom object filled with information for server1, server2 and server3
 							Server = $server
 							Name = $diskname
 							Label = $disk.Label
-							"SizeIn$unit" = $total
-							"FreeIn$unit" = $free
-							PercentFree = $percentfree
 							BlockSize = $disk.BlockSize
+							IsBestPractice = $IsBestPractice
 						}
 					}
 				}
@@ -180,6 +185,7 @@ Returns a custom object filled with information for server1, server2 and server3
 	
 	PROCESS
 	{
+		
 		
 		foreach ($server in $ComputerName)
 		{
@@ -198,7 +204,7 @@ Returns a custom object filled with information for server1, server2 and server3
 				continue
 			}
 			
-			$data = Get-AllDiskSpace $server
+			$data = Get-AllDiskAllocation $server
 			
 			if ($data.Count -gt 1)
 			{
@@ -213,6 +219,65 @@ Returns a custom object filled with information for server1, server2 and server3
 	
 	END
 	{
-		return $collection
+		
+		if ($Detailed -eq $true)
+		{
+			return $collection
+		}
+		elseif ($processed.Count -gt 1)
+		{
+			$newcollection = @()
+			# brain melt, this is ugly
+			foreach ($computer in $collection)
+			{
+				if ($newcollection.Server -contains $computer.Server) { continue }
+				
+				if ($CheckForSql -eq $true)
+				{
+					$falsecount = $computer | Where-Object { $_.IsBestPractice -eq $false -and $_.IsSqlDisk -eq $true}
+				}
+				else
+				{
+					$falsecount = $computer | Where-Object { $_.IsBestPractice -eq $false }
+				}
+				
+				if ($falsecount -eq $null)
+				{
+					$IsBestPractice = $true
+					
+				}
+				else
+				{
+					$IsBestPractice = $false
+				}
+				
+				$newcollection += [PSCustomObject]@{
+					Server = $computer.Server
+					IsBestPractice = $IsBestPractice
+				}
+			}
+			return $newcollection
+		}
+		else
+		{
+			foreach ($computer in $collection)
+			{
+				if ($CheckForSql -eq $true)
+				{
+					if ($computer.BlockSize -ne 65536 -and $computer.SqlDisk -eq $true)
+					{
+						return $false
+					}
+				}
+				else
+				{
+					if ($computer.BlockSize -ne 65536)
+					{
+						return $false
+					}
+				}
+			}
+			return $true
+		}
 	}
-}
+	}
