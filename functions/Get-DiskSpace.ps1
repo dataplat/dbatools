@@ -19,9 +19,8 @@ Check to see if any SQL Data or Log files exists on the disk. Uses Windows authe
 .PARAMETER SqlCredential
 If you want to use SQL Server Authentication to connect.
 
-.NOTES 
-Author: Chrissy LeMaire (@cl), netnerds.net
-Requires: sysadmin access on SQL Servers
+.NOTES
+Requires: Windows sysadmin access on SQL Servers
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire

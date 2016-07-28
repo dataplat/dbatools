@@ -22,6 +22,8 @@ If you want to use SQL Server Authentication to connect.
 Show a detailed list.
 
 .NOTES 
+Requires: Windows sysadmin access on SQL Servers
+	
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
