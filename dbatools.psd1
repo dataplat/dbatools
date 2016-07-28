@@ -125,7 +125,8 @@
 		'Remove-SqlOrphanUser',
 		'Find-SqlUnusedIndex',
 		'Install-SqlWhoIsActive',
-		'Update-SqlWhoIsActive'
+		'Update-SqlWhoIsActive',
+		'Test-SqlDiskAllocation'
 	)
 	
 	# Cmdlets to export from this module

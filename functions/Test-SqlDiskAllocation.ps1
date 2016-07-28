@@ -2,73 +2,62 @@
 {
 <#
 .SYNOPSIS
-Displays Disk information for all local drives on a server
+Checks if disk are formatted to 64k
 	
 .DESCRIPTION
-Returns a custom object with Server name, name of disk, label of disk, total size, free size and percent free.
 	
 .PARAMETER ComputerName
 The SQL Server (or server in general) that you're connecting to. The -SqlServer parameter also works.
 
-.PARAMETER Unit
-Display the disk space information in a specific unit. Valid values incldue 'KB', 'MB', 'GB', 'TB', and 'PB'. Default is GB.
+.PARAMETER CheckForSql
+
+.PARAMETER SqlCredential
 	
+.PARAMETER Detailed
+
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Get-DiskSpace
+https://dbatools.io/Test-SqlDiskAllocation
 
 .EXAMPLE
-Get-DiskSpace -ComputerName sqlserver2014a
-
-Shows disk space for sqlserver2014a in GB
+Test-SqlDiskAllocation -ComputerName sqlserver2014a
 
 .EXAMPLE   
-Get-DiskSpace -ComputerName sqlserver2014a -Unit TB
+Test-SqlDiskAllocation -ComputerName sqlserver2014a -CheckForSql
 
-Shows disk space for sqlserver2014a in TB
 
 .EXAMPLE   
-Get-DiskSpace -ComputerName server1, server2, server3 -Unit MB
-
-Returns a custom object filled with information for server1, server2 and server3, in MB
+Test-SqlDiskAllocation -ComputerName sqlserver2014a -CheckForSql -Detailed
+	
 	
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServer")]
-		[string[]]$ComputerName
+		[string[]]$ComputerName,
+		[switch]$CheckForSql,
+		[object]$SqlCredential,
+		[switch]$Detailed
 	)
 	
 	BEGIN
 	{
-		$sourceserver = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
-		
 		Function Get-AllDiskAllocation
 		{
-			
-			$query = "Select Label, BlockSize, Name from Win32_Volume WHERE FileSystem='NTFS'"
-			
-			$alldisks = @()
-			
 			try
 			{
+				$alldisks = @()
+				$query = "Select Label, BlockSize, Name from Win32_Volume WHERE FileSystem='NTFS'"
 				$ipaddr = (Test-Connection $server -count 1).Ipv4Address | Select-Object -First 1
 				$disks = Get-WmiObject -ComputerName $ipaddr -Query $query | Sort-Object -Property Name
 			}
@@ -77,22 +66,73 @@ Returns a custom object filled with information for server1, server2 and server3
 				throw "Can't connect to $server"
 			}
 			
+			if ($CheckForSql -eq $true)
+			{
+				$sqlservers = @()
+				$sqlservices = Get-Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like 'SQL Server (*' }
+				foreach ($service in $sqlservices)
+				{
+					$instance = $service.DisplayName.Replace('SQL Server (', '')
+					$instance = $instance.TrimEnd(')')
+					
+					if ($instance -eq 'MSSQLSERVER')
+					{
+						$sqlservers += $ipaddr
+					}
+					else
+					{
+						$sqlservers += "$ipaddr\$instance"
+					}
+				}
+			}
+			
 			foreach ($disk in $disks)
 			{
-				
 				if (!$disk.name.StartsWith("\\"))
 				{
 					$diskname = $disk.Name
-					$sqldisk = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
-					$sourceserver.Databases['master'].ExecuteWithResults($sqldisk).Tables[0].Count
-					if ($sqlcount -gt 0) { $hasql = 1 } else { $hasql = 0 }
+					if ($CheckForSql -eq $true)
+					{
+						$sqldisk = $false
+						foreach ($sqlserver in $sqlservers)
+						{
+							try
+							{
+								$smoserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+								$sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
+								$sqlcount = $smoserver.Databases['master'].ExecuteWithResults($sql).Tables[0].Count
+								if ($sqlcount -gt 0)
+								{
+									$sqldisk = $true
+									break
+								}
+							}
+							catch
+							{
+								Write-Verbose "Can't connect to $sqlserver"
+								continue
+							}
+						}
+					}
 					
-					$alldisks += [PSCustomObject]@{
-						Server = $server
-						Name = $diskname
-						Label = $disk.Label
-						BlockSize = $disk.BlockSize
-						HasSql = $sqldisk
+					if ($CheckForSql -eq $true)
+					{
+						$alldisks += [PSCustomObject]@{
+							Server = $server
+							Name = $diskname
+							Label = $disk.Label
+							BlockSize = $disk.BlockSize
+							SqlDisk = $sqldisk
+						}
+					}
+					else
+					{
+						$alldisks += [PSCustomObject]@{
+							Server = $server
+							Name = $diskname
+							Label = $disk.Label
+							BlockSize = $disk.BlockSize
+						}
 					}
 				}
 			}
@@ -121,6 +161,30 @@ Returns a custom object filled with information for server1, server2 and server3
 	
 	END
 	{
-		return $collection
+		if ($Detailed -eq $true)
+		{
+			return $collection
+		}
+		else
+		{
+			foreach ($computer in $collection)
+			{
+				if ($CheckForSql -eq $true)
+				{
+					if ($computer.BlockSize -ne 65536 -and $computer.SqlDisk -eq $true)
+					{
+						return $false
+					}
+				}
+				else
+				{
+					if ($computer.BlockSize -ne 65536)
+					{
+						return $false
+					}
+				}
+			}
+			return $true 
+		}
 	}
 }
