@@ -9,6 +9,10 @@ Returns $true or $false by default for one server. Returns Server name and IsBes
 	
 Specify -Detailed for details.
 	
+References:
+https://technet.microsoft.com/en-us/library/dd758814(v=sql.100).aspx - "The performance question here is usually not one of correlation per the formula, but whether the cluster size ..has been explicitly defined at 64 KB, which is a best practice for SQL Server."
+http://tk.azurewebsites.net/2012/08/
+	
 .PARAMETER ComputerName
 The SQL Server (or server in general) that you're connecting to. The -SqlServer parameter also works.
 
@@ -39,12 +43,17 @@ https://dbatools.io/Test-SqlDiskAllocation
 .EXAMPLE
 Test-SqlDiskAllocation -ComputerName sqlserver2014a
 
+To return true or false for any disk not being formatted to 64k
+	
 .EXAMPLE   
 Test-SqlDiskAllocation -ComputerName sqlserver2014a -CheckForSql
 
+To return true or false for disks containing SQL data from any instance being formatted to 64k
+	
 .EXAMPLE   
 Test-SqlDiskAllocation -ComputerName sqlserver2014a -CheckForSql -Detailed
 	
+To return detailed information about disks containing SQL data from any instance being formatted to 64k
 	
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
