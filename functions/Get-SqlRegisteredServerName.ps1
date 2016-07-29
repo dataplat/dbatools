@@ -156,7 +156,7 @@ Gets a list of server IP addresses in the HR and Accouting groups from the Centr
 					continue
 				}
 				
-				$ipcollection += $ipaddress
+				if ($ipcollection -notcontains $ipaddress) { $ipcollection += $ipaddress }
 				
 				if ($NetBiosName)
 				{
@@ -171,7 +171,7 @@ Gets a list of server IP addresses in the HR and Accouting groups from the Centr
 						continue
 					}
 					
-					$netbioscollection += $hostname
+					if ($netbioscollection -notcontains $hostname) { $netbioscollection += $hostname }
 				}
 			}
 			
