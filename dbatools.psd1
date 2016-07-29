@@ -126,7 +126,9 @@
 		'Find-SqlUnusedIndex',
 		'Install-SqlWhoIsActive',
 		'Update-SqlWhoIsActive',
-		'Test-SqlDiskAllocation'
+		'Test-SqlDiskAllocation',
+		'Test-SqlPowerPlan',
+		'Set-PowerPlan'
 	)
 	
 	# Cmdlets to export from this module
