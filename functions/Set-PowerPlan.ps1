@@ -115,18 +115,30 @@ To return detailed information Power Plans
 			return $planinfo
 		}
 		
+		
 		$collection = New-Object System.Collections.ArrayList
 		$processed = New-Object System.Collections.ArrayList
 	}
 	
 	PROCESS
 	{
+			
 		foreach ($server in $ComputerName)
 		{
+			if ($server -match 'Server\=')
+			{
+				# I couldn't properly unwrap the output 
+				# from  Test-SqlPowerPlan so here goes.
+				$lol = $server.Split(";")[0]
+				$lol = $lol.TrimEnd("}")
+				$server = $lol.TrimStart("@{Server=")
+			}
+			
 			if ($server -match '\\')
 			{
 				$server = $server.Split('\')[0]
 			}
+			
 			
 			if ($server -notin $processed)
 			{
