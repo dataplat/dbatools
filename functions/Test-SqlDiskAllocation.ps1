@@ -162,6 +162,8 @@ To return detailed information about disks containing SQL data from any instance
 						$IsBestPractice = $false
 					}
 					
+					if ($diskname -eq "C:\") { $IsBestPractice = $false }
+					
 					if ($CheckForSql -eq $true)
 					{
 						$alldisks += [PSCustomObject]@{
