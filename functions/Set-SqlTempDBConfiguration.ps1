@@ -185,6 +185,13 @@ Returns PSObject representing tempdb configuration.
 			throw "Current tempdb not suitable to be reconfigured. The current tempdb is larger than the calculated configuration."
 		}
 		
+		$equalcount = $server.Databases['tempdb'].ExecuteWithResults("SELECT count(1) as FileCount FROM sys.database_files WHERE size/128 = $dataFilesizeSingleMB AND type = 0").Tables[0].FileCount
+		
+		if ($equalcount -gt 0)
+		{
+			throw "Current tempdb not suitable to be reconfigured. The current tempdb is the same size as the specified DataFileSizeMB."
+		}
+		
 		Write-Verbose "tempdb configuration validated."
 		
 		$datafiles = $server.Databases['tempdb'].ExecuteWithResults("select f.Name, f.physical_name as FileName from sys.filegroups fg join sys.database_files f on fg.data_space_id = fg.data_space_id where fg.name = 'PRIMARY' and f.type_desc = 'ROWS'").Tables[0]
