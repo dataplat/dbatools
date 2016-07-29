@@ -163,6 +163,8 @@ Gets a list of server IP addresses in the HR and Accouting groups from the Centr
 					try
 					{
 						$hostname = (Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter IPEnabled=TRUE -ComputerName $ipaddress -ErrorAction SilentlyContinue).PSComputerName
+						if ($hostname -is [array]) { $hostname = $hostname[0] }
+						Write-Verbose "Hostname resolved to $hostname"
 						if ($hostname -eq $null) { $hostname = (nbtstat -A $ipaddress | Where-Object { $_ -match '\<00\>  UNIQUE' } | ForEach-Object { $_.SubString(4, 14) }).Trim() }
 					}
 					catch
