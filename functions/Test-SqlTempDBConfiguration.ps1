@@ -150,10 +150,11 @@ Checks tempdb on the localhost machine.
 		$perclog =  $logfiles.Rows  | Where-Object { $_.GrowthType -ne 'KB' }
 		
 		$totalcount = $percdata.rows.count + $perclog.rows.count
+		if ($totalcount -gt 0) { $totalcount = $true } else { $totalcount = $false }
 		
 		$value = [PSCustomObject]@{
-			Rule = 'File Growth'
-			Recommended = 0
+			Rule = 'File Growth in Percent'
+			Recommended = $false
 			CurrentSetting = $totalcount
 		}
 		
@@ -174,10 +175,11 @@ Checks tempdb on the localhost machine.
 		#test file Location
 		
 		$cdata = ($datafiles.rows | Where-Object { $_.FileName -like 'C:*' }).Rows.Count + ($logfiles | Where-Object { $_.FileName -like 'C:*' }).Rows.Count
+		if ($cdata -gt 0) { $cdata = $true } else { $cdata = $false }
 		
 		$value = [PSCustomObject]@{
 			Rule = 'File Location'
-			Recommended = 0
+			Recommended = $false
 			CurrentSetting = $cdata
 		}
 		
@@ -198,7 +200,7 @@ Checks tempdb on the localhost machine.
 		
 		#Test growth limits
 		$growthlimits = ($datafiles.rows | Where-Object { $_.MaxSize -gt 0 }).Count + ($logfiles.rows | Where-Object { $_.MaxSize -gt 0 }).Count
-		if ($growthlimits -gt 0) { $growthlimits = $true }
+		if ($growthlimits -gt 0) { $growthlimits = $true } else { $growthlimits = $false }
 		
 		$value = [PSCustomObject]@{
 			Rule = 'File MaxSize Set'
