@@ -16,9 +16,9 @@ http://tk.azurewebsites.net/2012/08/
 .PARAMETER ComputerName
 The SQL Server (or server in general) that you're connecting to. The -SqlServer parameter also works.
 
-.PARAMETER CheckForSql
-Check to see if any SQL Data or Log files exists on the disk. Uses Windows authentication to connect by default.
-
+.PARAMETER NoSqlCheck
+Check to skip the check for SQL Data or Log files existing on the disk. 
+	
 .PARAMETER SqlCredential
 If you want to use SQL Server Authentication to connect.
 
@@ -44,16 +44,16 @@ https://dbatools.io/Test-SqlDiskAllocation
 Test-SqlDiskAllocation -ComputerName sqlserver2014a
 
 To return true or false for any disk not being formatted to 64k
-	
-.EXAMPLE   
-Test-SqlDiskAllocation -ComputerName sqlserver2014a -CheckForSql
 
-To return true or false for disks containing SQL data from any instance being formatted to 64k
-	
 .EXAMPLE   
-Test-SqlDiskAllocation -ComputerName sqlserver2014a -CheckForSql -Detailed
+Test-SqlDiskAllocation -ComputerName sqlserver2014 -Detailed
 	
 To return detailed information about disks containing SQL data from any instance being formatted to 64k
+	
+.EXAMPLE   
+Test-SqlDiskAllocation -ComputerName sqlserver2014a -NoSqlCheck
+
+To return true or false for ALL disks being formatted to 64k
 	
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
@@ -61,7 +61,7 @@ To return detailed information about disks containing SQL data from any instance
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServer")]
 		[string[]]$ComputerName,
-		[switch]$CheckForSql,
+		[switch]$NoSqlCheck,
 		[object]$SqlCredential,
 		[switch]$Detailed
 	)
@@ -96,7 +96,7 @@ To return detailed information about disks containing SQL data from any instance
 				return
 			}
 			
-			if ($CheckForSql -eq $true)
+			if ($NoSqlCheck -eq $false)
 			{
 				Write-Verbose "Checking for SQL Services"
 				$sqlservices = Get-Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like 'SQL Server (*' }
@@ -127,7 +127,7 @@ To return detailed information about disks containing SQL data from any instance
 				{
 					$diskname = $disk.Name
 					
-					if ($CheckForSql -eq $true)
+					if ($NoSqlCheck -eq $false)
 					{
 						$sqldisk = $false
 						
@@ -164,7 +164,7 @@ To return detailed information about disks containing SQL data from any instance
 					
 					if ($diskname -eq "C:\") { $IsBestPractice = $false }
 					
-					if ($CheckForSql -eq $true)
+					if ($NoSqlCheck -eq $false)
 					{
 						$alldisks += [PSCustomObject]@{
 							Server = $server
@@ -243,16 +243,16 @@ To return detailed information about disks containing SQL data from any instance
 			{
 				if ($newcollection.Server -contains $computer.Server) { continue }
 				
-				if ($CheckForSql -eq $true)
+				if ($NoSqlCheck -eq $false)
 				{
-					$falsecount = $computer | Where-Object { $_.IsBestPractice -eq $false -and $_.IsSqlDisk -eq $true}
+					$falsecount = $computer | Where-Object { $_.IsBestPractice -eq $false -and $_.IsSqlDisk -eq $true }
 				}
 				else
 				{
 					$falsecount = $computer | Where-Object { $_.IsBestPractice -eq $false }
 				}
 				
-				if ($falsecount -eq $null)
+				if ($falsecount.count -eq 0)
 				{
 					$IsBestPractice = $true
 					
@@ -269,26 +269,27 @@ To return detailed information about disks containing SQL data from any instance
 			}
 			return $newcollection
 		}
-		else
+		else # single return
 		{
-			foreach ($computer in $collection)
+			$computer = $collection[0]
+			
+			if ($NoSqlCheck -eq $false)
 			{
-				if ($CheckForSql -eq $true)
-				{
-					if ($computer.BlockSize -ne 65536 -and $computer.SqlDisk -eq $true)
-					{
-						return $false
-					}
-				}
-				else
-				{
-					if ($computer.BlockSize -ne 65536)
-					{
-						return $false
-					}
-				}
+				$falsecount = ($computer | Where-Object { $_.IsBestPractice -eq $false -and $_.IsSqlDisk -eq $true } | Measure-Object | Select-Object Count).Count
 			}
-			return $true
+			else
+			{
+				$falsecount = ($computer | Where-Object { $_.IsBestPractice -eq $false } | Measure-Object | Select-Object Count).Count
+			}
+			
+			if ($falsecount -eq 0)
+			{
+				return $true
+			}
+			else
+			{
+				return $false
+			}
 		}
 	}
-	}
+}
