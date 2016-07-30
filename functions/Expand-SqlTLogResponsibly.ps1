@@ -3,19 +3,22 @@ function Expand-SqlTLogResponsibly
 <#
 	
 .SYNOPSIS
-This module will help you to automatically grow your T-Log database file in a responsible way (preventing generation of too many VLFs).
+This command will help you to automatically grow your T-Log database file in a responsible way (preventing the generation of too many VLFs).
 .DESCRIPTION
 As you may already know, having a TLog file with too many VLFs can hurt your database performance in many ways.
+
 Example:
-    Too many virtual log files can cause transaction log backups to slow down and can also slow down database recovery, and in extreme cases, even affect insert/update/delete performance. 
+    Too many virtual log files can cause transaction log backups to slow down and can also slow down database recovery and, in extreme cases, even affect insert/update/delete performance. 
     References:
         http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/
         http://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx
         http://www.brentozar.com/blitz/high-virtual-log-file-vlf-count/
-    In order to get rid of this fragmentation we need to growth the file taking the following consideration:
-        - How many VLFs are created when we do a grow or when auto-grows hits
+    
+	In order to get rid of this fragmentation we need to grow the file taking the following into consideration:
+        - How many VLFs are created when we perform a grow operation or when an auto-grow is invoked?
     Note: In SQL Server 2014 this algorithm has changed (http://www.sqlskills.com/blogs/paul/important-change-vlf-creation-algorithm-sql-server-2014/)
-Atention:
+
+Attention:
     We are growing in MB instead of GB because of known issue prior to SQL 2012:
         More detail here: 
             http://www.sqlskills.com/BLOGS/PAUL/post/Bug-log-file-growth-broken-for-multiples-of-4GB.aspx
@@ -23,86 +26,91 @@ Atention:
             http://connect.microsoft.com/SQLServer/feedback/details/481594/log-growth-not-working-properly-with-specific-growth-sizes-vlfs-also-not-created-appropriately
 	    or 
             https://connect.microsoft.com/SQLServer/feedback/details/357502/transaction-log-file-size-will-not-grow-exactly-4gb-when-filegrowth-4gb
-.NOTES
-    What this script will NOT DO for you:
-        1. Analyse the actual number of VLFs (use DBCC LOGINFO)
-        2. T-Log backups (BACKUP LOG <databasename> TO DISK="<path>" or using third-party tools)
-        3. Truncate your transaction log (DBCC SHRINKFILE (N'<database_log>', TRUNCATEONLY).
-        *************************************************************************************************************
-        4. Repeat steps 2 and 3 until you have your T-Log with the desired initial size. Then you may run this script.
-		   Steps 2 and 3 are likely to be automated in the future.
-        *************************************************************************************************************
-    You have to make those analysis and take these actions before run this script otherwise only half of the correct process will be made
-.LINK
-    Understand related problems:
+
+Understanding related problems:
         http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/
         http://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx
         http://www.brentozar.com/blitz/high-virtual-log-file-vlf-count/
     
-    Known BUG before SQL Server 2012
+Known bug before SQL Server 2012
         http://www.sqlskills.com/BLOGS/PAUL/post/Bug-log-file-growth-broken-for-multiples-of-4GB.aspx
         http://connect.microsoft.com/SQLServer/feedback/details/481594/log-growth-not-working-properly-with-specific-growth-sizes-vlfs-also-not-created-appropriately
         https://connect.microsoft.com/SQLServer/feedback/details/357502/transaction-log-file-size-will-not-grow-exactly-4gb-when-filegrowth-4gb
+
 .PARAMETER SqlServer 
-    Represents the name/ip of the instance where the database(s) that you want to grow exists
+    Represents the name/ip of the instance where the database(s) that you want to grow exist
      
 .PARAMETER Databases
-    This is the list of databases within Instance that this script will grow their t-log files.
-    You can pass only one or many. Can be input by pipeline. (view examples)
+    This is a list of databases that this command will execute against. You can pass one or many. The database parameter can be passed via the pipeline (see examples).
+	
 .PARAMETER TargetLogSizeMB
-    Represents the target log size that log will grow. Expressed in MB.
+    Represents the target size of the log file, expressed in MB.
     
 .PARAMETER IncrementSizeMB
-    Represents the size of each grow will perform. Expressed in MB.
-    If you don't provide this parameter the value will be calculated automatically. Otherwise, the input value will be compared with the suggested 
-    for your target size. If it is different will ask which one you would like to assume.
+    Represents the incremental size of each growth, expressed in MB.
+    If you don't provide this parameter, the value will be calculated automatically. Otherwise, the input value will be compared with the suggested value for your target size. If these values differ, you will be prompted to confirm your choice. 
+
 .PARAMETER LogFileId
-    If you want to grow a secondary, tertiary, other T-Log file you can mention the log file number (FileId column from DBCC LOGINFO output).
-    When not provided, will do on the first T-Log file.
+    If you want to grow additional T-Log files, you can specify the log file number (FileId column from DBCC LOGINFO output). If you do not specify the log file number, only the first T-log file will be processed.
+    
 .PARAMETER ShrinkLogFile
-	
+This command can automatically shrink your log files for you.
+
 .PARAMETER ShrinkSizeMB
-	
+The target size of the log file after the shrink is performed.
+
 .PARAMETER BackupDirectory
-	
-.NOTES 
-Author: Cláudio Silva (@claudioessilva)
+Backups must be performed in order to shrink the T-log. Designate a location for your backups. If you do not specify the backup directory, the SQL Server's default backup directory will be used. 
+
+.NOTES
+    This script will not analyze the actual number of VLFs (use DBCC LOGINFO)
+       
+Original Author: Clï¿½udio Silva (@ClaudioESSilva)
 Requires: ALTER DATABASE permission
-Limitations: On SQL Server 2005 cannot validate freespace on drive where log file resides.
-.NOTES 
-Original Author: Cláudio Silva (@ClaudioESSilva)
+Limitations: Freespace cannot be validated on the directory where the log file resides in SQL Server 2005.
+
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+.LINK
+https://dbatools.io/Expand-SqlTLogResponsibly
+	
 .EXAMPLE
-    Expand-SqlTLogResponsibly -SqlServer . -Databases Test -TargetLogSizeMB 50000
-    This is the simplest example. The increment value will be calculated and will grow the T-Log of 'Test' database on 'Localhost' instance 
-    to 50000 MB.
+    Expand-SqlTLogResponsibly -SqlServer sqlcluster -Databases db1 -TargetLogSizeMB 50000
+
+    This is the simplest example. The increment value will be calculated and will grow the T-Log of the db1 database on sqlcluster to 50000 MB.
+
 .EXAMPLE
-    Expand-SqlTLogResponsibly -SqlServer . -Databases Test,Testdb2 -TargetLogSizeMB 10000 -IncrementSizeMB 200
-    Grows the T-Log of test and test2 databases on 'Localhost' instance to 1000MB. The increment value will be asked if want to use the input value or 
-    the suggested one (calculated automatically)
+    Expand-SqlTLogResponsibly -SqlServer sqlcluster -Databases db1, db2 -TargetLogSizeMB 10000 -IncrementSizeMB 200
+    
+	Grows the T-Log of db1 and db2 databases on sqlcluster to 1000MB. If you don't provide this parameter, the value will be calculated automatically. Otherwise, the input value will be compared with the suggested value for your target size. If these values differ, you will be prompted to confirm your choice. 
+
 .EXAMPLE
-    Expand-SqlTLogResponsibly -SqlServer sqlcluster -Databases test -TargetLogSizeMB 10000 -LogFileId 9
-    Grows the T-Log with FielId 9 of 'Test' database on sqlcluster instance to 10000MB.
+    Expand-SqlTLogResponsibly -SqlServer sqlcluster -Databases db1 -TargetLogSizeMB 10000 -LogFileId 9
+
+    Grows the T-Log with FielId 9 of the db1 database on sqlcluster instance to 10000MB.
+
 .EXAMPLE
-    Expand-SqlTLogResponsibly -SqlServer . -Databases (Get-Content D:\DBs.txt) -TargetLogSizeMB 50000
-    Grows the T-Log of the databases specified in the file 'D:\DBs.txt' on 'Localhost' instance to 50000MB.
+    Expand-SqlTLogResponsibly -SqlServer sqlcluster -Databases (Get-Content D:\DBs.txt) -TargetLogSizeMB 50000
+
+    Grows the T-Log of the databases specified in the file 'D:\DBs.txt' on sqlcluster instance to 50000MB.
+
 .EXAMPLE
-    Expand-SqlTLogResponsibly -SqlServer . -Databases db1, db2 -TargetLogSizeMB 50000
-    Grows the T-Log of the databases DB1 and DB2 on 'Localhost' instance to 50000MB.
+    Expand-SqlTLogResponsibly -SqlServer sqlcluster -Databases db1, db2 -TargetLogSizeMB 50000
+
+    Grows the T-Log of the databases db1 and db2 on the sqlcluster instance to 50000MB.
+
 .EXAMPLE
-    Expand-SqlTLogResponsibly -SqlServer . -Databases 'db with space' -TargetLogSizeMB 50000 -Verbose
+    Expand-SqlTLogResponsibly -SqlServer sqlcluster -Databases 'db with space' -TargetLogSizeMB 50000 -Verbose
+
     Use -Verbose to view in detail all actions performed by this script
+
 .EXAMPLE
 	Expand-SqlTLogResponsibly -SqlServer sqlserver -Databases db1,db2 -TargetLogSizeMB 100 -IncrementSizeMB 10 -ShrinkLogFile -ShrinkSizeMB 10 -BackupDirectory R:\MSSQL\Backup
     
@@ -200,7 +208,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 								   -PercentComplete ($databaseProgressbar / $Databases.Count * 100) `
 								   -Status "Processing - $databaseProgressbar of $($Databases.Count)"
 					
-					#Validate which log that file will grow
+					#Validate which file will grow
 					if ($LogByFileID)
 					{
 						$logfile = $server.Databases[$db].LogFiles.ItemById($LogFileId)
@@ -216,13 +224,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 					Write-Verbose "$step - Log file current size: $([System.Math]::Round($($currentSize/1024.0), 2)) MB "
 					[long]$requiredSpace = ($TargetLogSizeKB - $currentSize)
 					
-					Write-Verbose "Verifying if exists sufficient space ($([System.Math]::Round($($requiredSpace / 1024.0), 2))MB) on the volume to perform this task"
+					Write-Verbose "Verifying if sufficient space exists ($([System.Math]::Round($($requiredSpace / 1024.0), 2))MB) on the volume to perform this task"
 					
 					# SQL 2005 or lower version. The "VolumeFreeSpace" property is empty
                     if ($logfile.VolumeFreeSpace -eq $null -and ($server.VersionMajor -eq 9))
 					{
                         $title = "Choose increment value for database '$db':"
-                        $message = "Cannot validate freespace on drive where log file resides? Do you wish to continue (Y/N)"
+                        $message = "Cannot validate freespace on drive where the log file resides. Do you wish to continue? (Y/N)"
                         $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Will continue"
                         $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Will exit"
                         $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
@@ -234,7 +242,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 							return 
                         }
                     }
-                    #Only available from 2008 R2 towards... maybe validate the version and issue a warning saying "can't verify volume free space"
+                    #Only available from 2008 R2 onwards. Validate the version and issue a warning saying "cannot verify volume free space"
                     if (($requiredSpace -gt $logfile.VolumeFreeSpace) -and ($server.VersionMajor -gt 9))
 					{
 						Write-Output "There is not enough space on volume to perform this task. `r`n" `
@@ -253,7 +261,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 						{
 							Write-Verbose "$step - [OK] There is sufficient free space to perform this task"
 							
-							# If SQL Server version is greater or equal 2012
+							# If SQL Server version is greater or equal to 2012
 							if ($server.Version.Major -ge "11")
 							{
 								switch ($TargetLogSizeMB)
@@ -282,7 +290,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 								
 								if (($IncrementSizeMB % 4096) -eq 0)
 								{
-									Write-Output "Your instance version is below SQL 2012, remember the known BUG mentioned on HELP. `r`nUse Get-Help Expand-SqlTLogFileResponsibly to read help`r`nUse a different value for incremente size`r`n"
+									Write-Output "Your instance version is below SQL 2012, remember the known BUG mentioned on HELP. `r`nUse Get-Help Expand-SqlTLogFileResponsibly to read help`r`nUse a different value for incremental size`r`n"
 									return
 								}
 							}
@@ -294,7 +302,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 							{
                                 if ($server.Databases[$db].RecoveryModel -eq [Microsoft.SqlServer.Management.Smo.RecoveryModel]::Simple)
                                 { 
-                                    Write-Warning "Database '$db' is in Simple RecoveryModel which does not allow log backups. Do not specified -ShrinkLogFile and -ShrinkSizeMB parameters."
+                                    Write-Warning "Database '$db' is in Simple RecoveryModel which does not allow log backups. Do not specify -ShrinkLogFile and -ShrinkSizeMB parameters."
                                     Continue
                                 }
                                 
@@ -305,7 +313,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	                                if ($sqlResult.Tables[0].Rows[0]["last_log_backup_lsn"] -is [System.DBNull])
 		                            { 
-                                        Write-Warning  "You need to make a first full backup before you can do Tlog backup on database '$db' (last_log_backup_lsn is null)"
+                                        Write-Warning  "First, you need to make a full backup before you can do Tlog backup on database '$db' (last_log_backup_lsn is null)"
                                         Continue
                                     }
                                 }
@@ -408,7 +416,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 											    -PercentComplete ($currentSize / $TargetLogSizeKB * 100) `
 											    -Status "Remaining - $([System.Math]::Round($($($TargetLogSizeKB - $currentSize) / 1024.0), 2)) MB"
 								
-								Write-Verbose "$step - Verifying if the log can grow or if has already the desired space allocated"
+								Write-Verbose "$step - Verifying if the log can grow or if it's already at the desired size"
 								if (($TargetLogSizeKB - $currentSize) -lt $LogIncrementSize)
 								{
 									Write-Verbose "$step - Log size is lower than the increment size. Setting current size equals $TargetLogSizeKB"
@@ -443,7 +451,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 				else #else verifying existance
 
 				{
-					Write-Output "Database '$db' not exists on instance '$SqlServer'"
+					Write-Output "Database '$db' does not exist on instance '$SqlServer'"
 				}
 			}
 		}
