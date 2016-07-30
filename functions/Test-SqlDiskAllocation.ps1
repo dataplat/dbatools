@@ -162,9 +162,9 @@ To return true or false for ALL disks being formatted to 64k
 						$IsBestPractice = $false
 					}
 					
-					$cdrive = "$env:SystemDrive\"
+					$windowsdrive = "$env:SystemDrive\"
 					
-					if ($diskname -eq $cdrive ) { $IsBestPractice = $false }
+					if ($diskname -eq $windowsdrive) { $IsBestPractice = $false }
 					
 					if ($NoSqlCheck -eq $false)
 					{
@@ -198,8 +198,6 @@ To return true or false for ALL disks being formatted to 64k
 	
 	PROCESS
 	{
-		
-		
 		foreach ($server in $ComputerName)
 		{
 			if ($server -match '\\')
@@ -219,6 +217,13 @@ To return true or false for ALL disks being formatted to 64k
 			
 			$data = Get-AllDiskAllocation $server
 			
+			if ($data.Server -eq $null)
+			{
+				Write-Verbose "Server query failed. Removing from processed collection"
+				$null = $processed.Remove($server)
+				continue
+			}
+			
 			if ($data.Count -gt 1)
 			{
 				$data.GetEnumerator() | ForEach-Object { $null = $collection.Add($_) }
@@ -232,66 +237,41 @@ To return true or false for ALL disks being formatted to 64k
 	
 	END
 	{
-		
 		if ($Detailed -eq $true)
 		{
 			return $collection
 		}
-		elseif ($processed.Count -gt 1)
+		else
 		{
 			$newcollection = @()
-			# brain melt, this is ugly
-			foreach ($computer in $collection)
+			foreach ($server in $processed)
 			{
-				if ($newcollection.Server -contains $computer.Server) { continue }
+				$disks = $collection | Where-Object { $_.Server -eq $Server }
 				
-				if ($NoSqlCheck -eq $false)
+				if ($NoSqlCheck -eq $true)
 				{
-					$falsecount = $computer | Where-Object { $_.IsBestPractice -eq $false -and $_.IsSqlDisk -eq $true }
+					$falsecount = $disks | Where-Object { $_.IsBestPractice -eq $false }
 				}
 				else
 				{
-					$falsecount = $computer | Where-Object { $_.IsBestPractice -eq $false }
+					$falsecount = $disks | Where-Object { $_.IsBestPractice -eq $false -and $_.IsSqlDisk -eq $true }
 				}
 				
-				if ($falsecount.count -eq 0)
+				$IsBestPractice = $true # Being optimistic ;)
+				
+				if ($falsecount.count -gt 0)
 				{
-					$IsBestPractice = $true
-					
+					$IsBestPractice = $false # D'oh!
 				}
-				else
-				{
-					$IsBestPractice = $false
-				}
+				
+				if ($processed.Count -eq 1) { return $IsBestPractice }
 				
 				$newcollection += [PSCustomObject]@{
-					Server = $computer.Server
+					Server = $server
 					IsBestPractice = $IsBestPractice
 				}
 			}
 			return $newcollection
-		}
-		else # single return
-		{
-			$computer = $collection[0]
-			
-			if ($NoSqlCheck -eq $false)
-			{
-				$falsecount = ($computer | Where-Object { $_.IsBestPractice -eq $false -and $_.IsSqlDisk -eq $true } | Measure-Object | Select-Object Count).Count
-			}
-			else
-			{
-				$falsecount = ($computer | Where-Object { $_.IsBestPractice -eq $false } | Measure-Object | Select-Object Count).Count
-			}
-			
-			if ($falsecount -eq 0)
-			{
-				return $true
-			}
-			else
-			{
-				return $false
-			}
 		}
 	}
 }
