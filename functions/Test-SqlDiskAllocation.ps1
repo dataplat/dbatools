@@ -162,7 +162,9 @@ To return true or false for ALL disks being formatted to 64k
 						$IsBestPractice = $false
 					}
 					
-					if ($diskname -eq "C:\") { $IsBestPractice = $false }
+					$cdrive = "$env:SystemDrive\"
+					
+					if ($diskname -eq $cdrive ) { $IsBestPractice = $false }
 					
 					if ($NoSqlCheck -eq $false)
 					{
