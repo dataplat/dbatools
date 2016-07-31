@@ -1,4 +1,4 @@
-﻿Function Test-SqlPowerPlan
+﻿Function Test-dbaPowerPlan
 {
 <#
 .SYNOPSIS
@@ -35,20 +35,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Test-SqlPowerPlan
+https://dbatools.io/Test-dbaPowerPlan
 
 .EXAMPLE
-Test-SqlPowerPlan -ComputerName sqlserver2014a
+Test-dbaPowerPlan -ComputerName sqlserver2014a
 
 To return true or false for Power Plan being set to High Performance
 
 .EXAMPLE   
-Test-SqlPowerPlan -ComputerName sqlserver2014a -CustomPowerPlan 'Maximum Performance'
+Test-dbaPowerPlan -ComputerName sqlserver2014a -CustomPowerPlan 'Maximum Performance'
 	
 To return true or false for Power Plan being set to the custom power plan called Maximum Performance
 	
 .EXAMPLE   
-Test-SqlPowerPlan -ComputerName sqlserver2014a -Detailed
+Test-dbaPowerPlan -ComputerName sqlserver2014a -Detailed
 	
 To return detailed information Power Plans
 	
@@ -89,7 +89,7 @@ To return detailed information Power Plans
 			{
 				Write-Verbose "Getting Power Plan information from $server"
 				$query = "Select ElementName from Win32_PowerPlan WHERE IsActive = 'true'"
-				$powerplan = Get-WmiObject -Namespace Root\CIMV2\Power -ComputerName $ipaddr -Query $query
+				$powerplan = Get-WmiObject -Namespace Root\CIMV2\Power -ComputerName $ipaddr -Query $query -ErrorAction SilentlyContinue
 				$powerplan = $powerplan.ElementName
 			}
 			catch 
@@ -98,7 +98,11 @@ To return detailed information Power Plans
 				return
 			}
 			
-			# (Get-WmiObject -Name root\cimv2\power -Class Win32_PowerPlan -Filter 'ElementName="High Performance"').Activate()
+			if ($powerplan -eq $null)
+			{
+				# the try/catch above isn't working, so make it silent and handle it here.
+				$powerplan = "Unknown"
+			}
 			
 			if ($powerplan -eq $bpPowerPlan)
 			{
@@ -128,6 +132,7 @@ To return detailed information Power Plans
 		{
 			if ($server -match '\\')
 			{
+				Write-Verbose "SQL Server naming convention detected. Getting hostname."
 				$server = $server.Split('\')[0]
 			}
 			
