@@ -254,12 +254,12 @@ To return true or false for ALL disks being formatted to 64k
 				}
 				else
 				{
-					$falsecount = $disks | Where-Object { $_.IsBestPractice -eq $false -and $_.IsSqlDisk -eq $true }
+					$falsecount = $disks | Where-Object { $_.IsSqlDisk -eq $true -and $_.IsBestPractice -eq $false  }
 				}
 				
 				$IsBestPractice = $true # Being optimistic ;)
-				
-				if ($falsecount.count -gt 0)
+
+				if ($falsecount.name.count -gt 0)
 				{
 					$IsBestPractice = $false # D'oh!
 				}
