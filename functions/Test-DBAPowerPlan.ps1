@@ -1,4 +1,4 @@
-﻿Function Set-PowerPlan
+﻿Function Test-dbaPowerPlan
 {
 <#
 .SYNOPSIS
@@ -9,23 +9,18 @@ Returns $true or $false by default for one server. Returns Server name and IsBes
 	
 Specify -Detailed for details.
 	
-If your organization uses a custom power plan that is considered best practice, specify -PowerPlan
-	
 References:
 https://support.microsoft.com/en-us/kb/2207548
 http://www.sqlskills.com/blogs/glenn/windows-power-plan-effects-on-newer-intel-processors/
 	
 .PARAMETER ComputerName
-The SQL Server (or server in general) that you're connecting to. The -SqlServer parameter also works. This command handles named instances.
-
-.PARAMETER Detailed
-Show a detailed list.
-	
-.PARAMETER PowerPlan
-The Power Plan that you wish to use. These are validated to Windows default Power Plans (Power saver, Balanced, High Performance)
+The SQL Server (or server in general) that you're connecting to. The -SqlServer parameter also works.
 	
 .PARAMETER CustomPowerPlan
-If you use a custom power plan instead of Windows default, use CustomPowerPlan
+If your organization uses a custom power plan that's considered best practice, specify it here.
+	
+.PARAMETER Detailed
+Show a detailed list.
 
 .NOTES 
 Requires: WMI access to servers
@@ -40,15 +35,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Set-PowerPlan
+https://dbatools.io/Test-dbaPowerPlan
 
 .EXAMPLE
-Set-PowerPlan -ComputerName sqlserver2014a
+Test-dbaPowerPlan -ComputerName sqlserver2014a
 
 To return true or false for Power Plan being set to High Performance
+
+.EXAMPLE   
+Test-dbaPowerPlan -ComputerName sqlserver2014a -CustomPowerPlan 'Maximum Performance'
+	
+To return true or false for Power Plan being set to the custom power plan called Maximum Performance
 	
 .EXAMPLE   
-Set-PowerPlan -ComputerName sqlserver2014a -Detailed
+Test-dbaPowerPlan -ComputerName sqlserver2014a -Detailed
 	
 To return detailed information Power Plans
 	
@@ -58,16 +58,20 @@ To return detailed information Power Plans
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServer")]
 		[string[]]$ComputerName,
-		[ValidateSet('High Performance', 'Balanced', 'Power saver')]
-		[string]$PowerPlan = 'High Performance',
-		[string]$CustomPowerPlan
+		[string]$CustomPowerPlan,
+		[switch]$Detailed
 	)
 	
 	BEGIN
 	{
-		if ($CustomPowerPlan.Length -gt 0) { $PowerPlan = $CustomPowerPlan }
+		$bpPowerPlan = 'High Performance'
 		
-		Function Set-PowerPlan
+		if ($CustomPowerPlan.Length -gt 0)
+		{
+			$bpPowerPlan = $CustomPowerPlan
+		}
+		
+		Function Get-PowerPlan
 		{
 			try
 			{
@@ -85,36 +89,38 @@ To return detailed information Power Plans
 			{
 				Write-Verbose "Getting Power Plan information from $server"
 				$query = "Select ElementName from Win32_PowerPlan WHERE IsActive = 'true'"
-				$currentplan = Get-WmiObject -Namespace Root\CIMV2\Power -ComputerName $ipaddr -Query $query
-				$currentplan = $currentplan.ElementName
+				$powerplan = Get-WmiObject -Namespace Root\CIMV2\Power -ComputerName $ipaddr -Query $query -ErrorAction SilentlyContinue
+				$powerplan = $powerplan.ElementName
 			}
-			catch
+			catch 
 			{
 				Write-Warning "Can't connect to WMI on $server"
 				return
 			}
 			
+			if ($powerplan -eq $null)
+			{
+				# the try/catch above isn't working, so make it silent and handle it here.
+				$powerplan = "Unknown"
+			}
+			
+			if ($powerplan -eq $bpPowerPlan)
+			{
+				$IsBestPractice = $true
+			}
+			else
+			{
+				$IsBestPractice = $false
+			}
+			
 			$planinfo = [PSCustomObject]@{
 				Server = $server
-				PreviousPowerPlan = $currentplan
-				ActivePowerPlan = $PowerPlan
+				ActivePowerPlan = $powerplan
+				RecommendedPowerPlan = $bpPowerPlan
+				IsBestPractice = $IsBestPractice
 			}
-			
-			try
-			{
-				Write-Verbose "Setting Power Plan to $PowerPlan"
-				$null = (Get-WmiObject -Name root\cimv2\power -ComputerName $ipaddr -Class Win32_PowerPlan -Filter "ElementName='$PowerPlan'").Activate()
-			}
-			catch
-			{
-				Write-Exception $_
-				Write-Warning "Couldn't set Power Plan on $server"
-				return
-			}
-			
 			return $planinfo
 		}
-		
 		
 		$collection = New-Object System.Collections.ArrayList
 		$processed = New-Object System.Collections.ArrayList
@@ -122,23 +128,13 @@ To return detailed information Power Plans
 	
 	PROCESS
 	{
-			
 		foreach ($server in $ComputerName)
 		{
-			if ($server -match 'Server\=')
-			{
-				# I couldn't properly unwrap the output 
-				# from  Test-SqlPowerPlan so here goes.
-				$lol = $server.Split(";")[0]
-				$lol = $lol.TrimEnd("}")
-				$server = $lol.TrimStart("@{Server=")
-			}
-			
 			if ($server -match '\\')
 			{
+				Write-Verbose "SQL Server naming convention detected. Getting hostname."
 				$server = $server.Split('\')[0]
 			}
-			
 			
 			if ($server -notin $processed)
 			{
@@ -150,7 +146,7 @@ To return detailed information Power Plans
 				continue
 			}
 			
-			$data = Set-PowerPlan $server
+			$data = Get-PowerPlan $server
 			
 			if ($data.Count -gt 1)
 			{
@@ -165,6 +161,30 @@ To return detailed information Power Plans
 	
 	END
 	{
-		return $collection
+		if ($Detailed -eq $true)
+		{
+			return $collection
+		}
+		elseif ($processed.Count -gt 1)
+		{
+			$newcollection = @()
+			foreach ($computer in $collection)
+			{
+				if ($newcollection.Server -contains $computer.Server) { continue }
+								
+				$newcollection += [PSCustomObject]@{
+					Server = $computer.Server
+					IsBestPractice = $computer.IsBestPractice
+				}
+			}
+			return $newcollection
+		}
+		else
+		{
+			foreach ($computer in $collection)
+			{
+				return $computer.IsBestPractice
+			}
+		}
 	}
 }
