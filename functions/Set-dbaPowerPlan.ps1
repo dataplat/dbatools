@@ -1,4 +1,4 @@
-﻿Function Set-PowerPlan
+﻿Function Set-dbaPowerPlan
 {
 <#
 .SYNOPSIS
@@ -40,15 +40,15 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Set-PowerPlan
+https://dbatools.io/Set-dbaPowerPlan
 
 .EXAMPLE
-Set-PowerPlan -ComputerName sqlserver2014a
+Set-dbaPowerPlan -ComputerName sqlserver2014a
 
 To return true or false for Power Plan being set to High Performance
 	
 .EXAMPLE   
-Set-PowerPlan -ComputerName sqlserver2014a -Detailed
+Set-dbaPowerPlan -ComputerName sqlserver2014a -Detailed
 	
 To return detailed information Power Plans
 	
@@ -67,7 +67,7 @@ To return detailed information Power Plans
 	{
 		if ($CustomPowerPlan.Length -gt 0) { $PowerPlan = $CustomPowerPlan }
 		
-		Function Set-PowerPlan
+		Function Set-dbaPowerPlan
 		{
 			try
 			{
@@ -85,12 +85,19 @@ To return detailed information Power Plans
 			{
 				Write-Verbose "Getting Power Plan information from $server"
 				$query = "Select ElementName from Win32_PowerPlan WHERE IsActive = 'true'"
-				$currentplan = Get-WmiObject -Namespace Root\CIMV2\Power -ComputerName $ipaddr -Query $query
+				$currentplan = Get-WmiObject -Namespace Root\CIMV2\Power -ComputerName $ipaddr -Query $query -ErrorAction SilentlyContinue
 				$currentplan = $currentplan.ElementName
 			}
 			catch
 			{
 				Write-Warning "Can't connect to WMI on $server"
+				return
+			}
+			
+			if ($currentplan -eq $null)
+			{
+				# the try/catch above isn't working, so make it silent and handle it here.
+				Write-Warning "Cannot get Power Plan for $server"
 				return
 			}
 			
@@ -122,23 +129,23 @@ To return detailed information Power Plans
 	
 	PROCESS
 	{
-			
 		foreach ($server in $ComputerName)
 		{
 			if ($server -match 'Server\=')
 			{
-				# I couldn't properly unwrap the output 
-				# from  Test-SqlPowerPlan so here goes.
-				$lol = $server.Split(";")[0]
-				$lol = $lol.TrimEnd("}")
-				$server = $lol.TrimStart("@{Server=")
+				Write-Verbose "Matched that value was piped from Test-DBAPowerPlan"
+				# I couldn't properly unwrap the output from  Test-dbaPowerPlan so here goes.
+				$lol = $server.Split("\;")[0]
+				$lol = $lol.TrimEnd("\}")
+				$lol = $lol.TrimStart("\@\{Server")
+				# There was some kind of parsing bug here, don't clown
+				$server = $lol.TrimStart("\=")
 			}
 			
 			if ($server -match '\\')
 			{
-				$server = $server.Split('\')[0]
+				$server = $server.Split('\\')[0]
 			}
-			
 			
 			if ($server -notin $processed)
 			{
@@ -150,7 +157,7 @@ To return detailed information Power Plans
 				continue
 			}
 			
-			$data = Set-PowerPlan $server
+			$data = Set-dbaPowerPlan $server
 			
 			if ($data.Count -gt 1)
 			{
