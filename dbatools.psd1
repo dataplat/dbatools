@@ -126,9 +126,9 @@
 		'Find-SqlUnusedIndex',
 		'Install-SqlWhoIsActive',
 		'Update-SqlWhoIsActive',
-		'Test-SqlDiskAllocation',
-		'Test-SqlPowerPlan',
-		'Set-PowerPlan'
+		'Test-DBADiskAllocation',
+		'Test-DBAPowerPlan',
+		'Set-DBAPowerPlan'
 	)
 	
 	# Cmdlets to export from this module
@@ -138,7 +138,14 @@
 	VariablesToExport = '*'
 	
 	# Aliases to export from this module
-	AliasesToExport = 'Reset-SqlSaPassword','Copy-SqlUserDefinedMessage','Copy-SqlJobServer','Restore-HallengrenBackup', 'Update-SqlWhoIsActive', 'Show-SqlMigrationConstraint'
+	# Aliases are stored in dbatools.psm1
+	AliasesToExport = 'Reset-SqlSaPassword',
+	'Copy-SqlUserDefinedMessage',
+	'Copy-SqlJobServer',
+	'Restore-HallengrenBackup',
+	'Update-SqlWhoIsActive',
+	'Show-SqlMigrationConstraint',
+	'Test-SqlDiskAllocation'
 	
 	# List of all modules packaged with this module
 	ModuleList = @()

@@ -12,6 +12,7 @@ Set-Alias -Name Copy-SqlUserDefinedMessage -Value Copy-SqlCustomError
 Set-Alias -Name Copy-SqlJobServer -Value Copy-SqlServerAgent
 Set-Alias -Name Restore-HallengrenBackup -Value Restore-SqlBackupFromDirectory
 Set-Alias -Name Show-SqlMigrationConstraint -Value Test-SqlMigrationConstraint
+Set-Alias -Name Test-SqlDiskAllocation -Value Test-DBADiskAllocation
 
 # Strictmode coming when I've got time.
 # Set-StrictMode -Version Latest
