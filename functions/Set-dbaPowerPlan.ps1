@@ -133,18 +133,19 @@ To return detailed information Power Plans
 		{
 			if ($server -match 'Server\=')
 			{
-				# I couldn't properly unwrap the output 
-				# from  Test-dbaPowerPlan so here goes.
+				Write-Verbose "Matched that value was piped from Test-DBAPowerPlan"
+				# I couldn't properly unwrap the output from  Test-dbaPowerPlan so here goes.
 				$lol = $server.Split("\;")[0]
 				$lol = $lol.TrimEnd("\}")
-				$server = $lol.TrimStart("\@\{Server\=")
+				$lol = $lol.TrimStart("\@\{Server")
+				# There was some kind of parsing bug here, don't clown
+				$server = $lol.TrimStart("\=")
 			}
 			
 			if ($server -match '\\')
 			{
-				$server = $server.Split('\')[0]
+				$server = $server.Split('\\')[0]
 			}
-			
 			
 			if ($server -notin $processed)
 			{
