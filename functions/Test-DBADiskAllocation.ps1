@@ -1,4 +1,4 @@
-﻿Function Test-SqlDiskAllocation
+﻿Function Test-DBADiskAllocation
 {
 <#
 .SYNOPSIS
@@ -16,9 +16,9 @@ http://tk.azurewebsites.net/2012/08/
 .PARAMETER ComputerName
 The SQL Server (or server in general) that you're connecting to. The -SqlServer parameter also works.
 
-.PARAMETER CheckForSql
-Check to see if any SQL Data or Log files exists on the disk. Uses Windows authentication to connect by default.
-
+.PARAMETER NoSqlCheck
+Check to skip the check for SQL Data or Log files existing on the disk. 
+	
 .PARAMETER SqlCredential
 If you want to use SQL Server Authentication to connect.
 
@@ -38,22 +38,22 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Test-SqlDiskAllocation
+https://dbatools.io/Test-DBADiskAllocation
 
 .EXAMPLE
-Test-SqlDiskAllocation -ComputerName sqlserver2014a
+Test-DBADiskAllocation -ComputerName sqlserver2014a
 
 To return true or false for any disk not being formatted to 64k
-	
-.EXAMPLE   
-Test-SqlDiskAllocation -ComputerName sqlserver2014a -CheckForSql
 
-To return true or false for disks containing SQL data from any instance being formatted to 64k
-	
 .EXAMPLE   
-Test-SqlDiskAllocation -ComputerName sqlserver2014a -CheckForSql -Detailed
+Test-DBADiskAllocation -ComputerName sqlserver2014 -Detailed
 	
 To return detailed information about disks containing SQL data from any instance being formatted to 64k
+	
+.EXAMPLE   
+Test-DBADiskAllocation -ComputerName sqlserver2014a -NoSqlCheck
+
+To return true or false for ALL disks being formatted to 64k
 	
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
@@ -61,7 +61,7 @@ To return detailed information about disks containing SQL data from any instance
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServer")]
 		[string[]]$ComputerName,
-		[switch]$CheckForSql,
+		[switch]$NoSqlCheck,
 		[object]$SqlCredential,
 		[switch]$Detailed
 	)
@@ -96,7 +96,7 @@ To return detailed information about disks containing SQL data from any instance
 				return
 			}
 			
-			if ($CheckForSql -eq $true)
+			if ($NoSqlCheck -eq $false)
 			{
 				Write-Verbose "Checking for SQL Services"
 				$sqlservices = Get-Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like 'SQL Server (*' }
@@ -127,7 +127,7 @@ To return detailed information about disks containing SQL data from any instance
 				{
 					$diskname = $disk.Name
 					
-					if ($CheckForSql -eq $true)
+					if ($NoSqlCheck -eq $false)
 					{
 						$sqldisk = $false
 						
@@ -162,7 +162,11 @@ To return detailed information about disks containing SQL data from any instance
 						$IsBestPractice = $false
 					}
 					
-					if ($CheckForSql -eq $true)
+					$windowsdrive = "$env:SystemDrive\"
+					
+					if ($diskname -eq $windowsdrive) { $IsBestPractice = $false }
+					
+					if ($NoSqlCheck -eq $false)
 					{
 						$alldisks += [PSCustomObject]@{
 							Server = $server
@@ -194,8 +198,6 @@ To return detailed information about disks containing SQL data from any instance
 	
 	PROCESS
 	{
-		
-		
 		foreach ($server in $ComputerName)
 		{
 			if ($server -match '\\')
@@ -215,6 +217,13 @@ To return detailed information about disks containing SQL data from any instance
 			
 			$data = Get-AllDiskAllocation $server
 			
+			if ($data.Server -eq $null)
+			{
+				Write-Verbose "Server query failed. Removing from processed collection"
+				$null = $processed.Remove($server)
+				continue
+			}
+			
 			if ($data.Count -gt 1)
 			{
 				$data.GetEnumerator() | ForEach-Object { $null = $collection.Add($_) }
@@ -228,65 +237,41 @@ To return detailed information about disks containing SQL data from any instance
 	
 	END
 	{
-		
 		if ($Detailed -eq $true)
 		{
 			return $collection
 		}
-		elseif ($processed.Count -gt 1)
+		else
 		{
 			$newcollection = @()
-			# brain melt, this is ugly
-			foreach ($computer in $collection)
+			foreach ($server in $processed)
 			{
-				if ($newcollection.Server -contains $computer.Server) { continue }
+				$disks = $collection | Where-Object { $_.Server -eq $Server }
 				
-				if ($CheckForSql -eq $true)
+				if ($NoSqlCheck -eq $true)
 				{
-					$falsecount = $computer | Where-Object { $_.IsBestPractice -eq $false -and $_.IsSqlDisk -eq $true}
+					$falsecount = $disks | Where-Object { $_.IsBestPractice -eq $false }
 				}
 				else
 				{
-					$falsecount = $computer | Where-Object { $_.IsBestPractice -eq $false }
+					$falsecount = $disks | Where-Object { $_.IsSqlDisk -eq $true -and $_.IsBestPractice -eq $false  }
 				}
 				
-				if ($falsecount -eq $null)
+				$IsBestPractice = $true # Being optimistic ;)
+
+				if ($falsecount.name.count -gt 0)
 				{
-					$IsBestPractice = $true
-					
+					$IsBestPractice = $false # D'oh!
 				}
-				else
-				{
-					$IsBestPractice = $false
-				}
+				
+				if ($processed.Count -eq 1) { return $IsBestPractice }
 				
 				$newcollection += [PSCustomObject]@{
-					Server = $computer.Server
+					Server = $server
 					IsBestPractice = $IsBestPractice
 				}
 			}
 			return $newcollection
 		}
-		else
-		{
-			foreach ($computer in $collection)
-			{
-				if ($CheckForSql -eq $true)
-				{
-					if ($computer.BlockSize -ne 65536 -and $computer.SqlDisk -eq $true)
-					{
-						return $false
-					}
-				}
-				else
-				{
-					if ($computer.BlockSize -ne 65536)
-					{
-						return $false
-					}
-				}
-			}
-			return $true
-		}
 	}
-	}
+}
