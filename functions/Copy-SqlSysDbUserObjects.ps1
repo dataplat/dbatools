@@ -2,8 +2,7 @@ Function Copy-SqlSysDbUserObjects
 {
 <#
 .SYNOPSIS
-Imports *all* user objects found in source SQL Server's master, msdb and model databases to the destination.
-This is useful because many DBA's store backup/maintenance procs/tables/triggers/etc (among other things) in master or msdb.
+Imports *all* user objects found in source SQL Server's master, msdb and model databases to the destination. This is useful because many DBA's store backup/maintenance procs/tables/triggers/etc (among other things) in master or msdb.
 
 It is also useful for migrating objects within the model database.
 
@@ -13,18 +12,11 @@ Copy-SqlSysDbUserObjects $sourceserver $destserver
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
 https://dbatools.io/Get-DetachedDbInfo
