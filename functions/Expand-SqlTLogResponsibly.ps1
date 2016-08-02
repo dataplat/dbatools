@@ -1,9 +1,10 @@
 function Expand-SqlTLogResponsibly
 {
 <#
-	
+
 .SYNOPSIS
 This command will help you to automatically grow your T-Log database file in a responsible way (preventing the generation of too many VLFs).
+
 .DESCRIPTION
 As you may already know, having a TLog file with too many VLFs can hurt your database performance in many ways.
 
@@ -63,9 +64,9 @@ The target size of the log file after the shrink is performed.
 Backups must be performed in order to shrink the T-log. Designate a location for your backups. If you do not specify the backup directory, the SQL Server's default backup directory will be used. 
 
 .NOTES
-    This script will not analyze the actual number of VLFs (use DBCC LOGINFO)
+This script will not analyze the actual number of VLFs (use DBCC LOGINFO)
        
-Original Author: Cl�udio Silva (@ClaudioESSilva)
+Original Author: Cláudio Silva (@ClaudioESSilva)
 Requires: ALTER DATABASE permission
 Limitations: Freespace cannot be validated on the directory where the log file resides in SQL Server 2005.
 
