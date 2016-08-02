@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.4.6'
+	ModuleVersion = '0.8.5.0'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -20,7 +20,7 @@
 	Author = 'Chrissy LeMaire'
 	
 	# Company or vendor of this module
-	CompanyName = 'netnerds.net'
+	CompanyName = 'dbatools.io'
 	
 	# Copyright statement for this module
 	Copyright = '2016 Chrissy LeMaire'
@@ -125,7 +125,10 @@
 		'Remove-SqlOrphanUser',
 		'Find-SqlUnusedIndex',
 		'Install-SqlWhoIsActive',
-		'Update-SqlWhoIsActive'
+		'Update-SqlWhoIsActive',
+		'Test-DBADiskAllocation',
+		'Test-DBAPowerPlan',
+		'Set-DBAPowerPlan'
 	)
 	
 	# Cmdlets to export from this module
@@ -135,7 +138,14 @@
 	VariablesToExport = '*'
 	
 	# Aliases to export from this module
-	AliasesToExport = 'Reset-SqlSaPassword','Copy-SqlUserDefinedMessage','Copy-SqlJobServer','Restore-HallengrenBackup', 'Update-SqlWhoIsActive', 'Show-SqlMigrationConstraint'
+	# Aliases are stored in dbatools.psm1
+	AliasesToExport = 'Reset-SqlSaPassword',
+	'Copy-SqlUserDefinedMessage',
+	'Copy-SqlJobServer',
+	'Restore-HallengrenBackup',
+	'Update-SqlWhoIsActive',
+	'Show-SqlMigrationConstraint',
+	'Test-SqlDiskAllocation'
 	
 	# List of all modules packaged with this module
 	ModuleList = @()
