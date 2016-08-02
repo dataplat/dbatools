@@ -107,16 +107,29 @@ To return detailed information Power Plans
 				ActivePowerPlan = $PowerPlan
 			}
 			
-			try
+			if ($PowerPlan -ne $currentplan)
 			{
-				Write-Verbose "Setting Power Plan to $PowerPlan"
-				$null = (Get-WmiObject -Name root\cimv2\power -ComputerName $ipaddr -Class Win32_PowerPlan -Filter "ElementName='$PowerPlan'").Activate()
+				If ($Pscmdlet.ShouldProcess($server, "Changing Power Plan from $CurrentPlan to $PowerPlan"))
+				{
+					try
+					{
+						Write-Verbose "Setting Power Plan to $PowerPlan"
+						$null = (Get-WmiObject -Name root\cimv2\power -ComputerName $ipaddr -Class Win32_PowerPlan -Filter "ElementName='$PowerPlan'").Activate()
+					}
+					catch
+					{
+						Write-Exception $_
+						Write-Warning "Couldn't set Power Plan on $server"
+						return
+					}
+				}
 			}
-			catch
+			else
 			{
-				Write-Exception $_
-				Write-Warning "Couldn't set Power Plan on $server"
-				return
+				If ($Pscmdlet.ShouldProcess($server, "Stating power plan is already set to $PowerPlan, won't change."))
+				{
+					Write-Warning "PowerPlan on $server is already set to $PowerPlan. Skipping."
+				}
 			}
 			
 			return $planinfo
@@ -172,6 +185,9 @@ To return detailed information Power Plans
 	
 	END
 	{
-		return $collection
+		If ($Pscmdlet.ShouldProcess("console", "Showing results"))
+		{
+			return $collection
+		}
 	}
 }
