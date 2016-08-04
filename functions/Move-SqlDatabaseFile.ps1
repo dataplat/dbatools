@@ -2,6 +2,7 @@
 {
 <#
 .SYNOPSIS
+Helps moving databases files to another location with safety.
 Is usefull when a new drive is delivered or when need to move files to another drive to free space.
 
 .DESCRIPTION
@@ -11,6 +12,10 @@ This function will perform the following steps:
     3. Alter database files location on database metadata (using ALTER DATABASE [db] MODIFY FILE command)
     4. Bring databases Online
     5. If database is Online remove the old file.
+
+If running on local, will use BitsTransfer (can't use remotely).
+When running remotely try to use robocopy (not all SO have it??)
+If not exists robocopy will use Copy-Item
 	
 The -Databases parameter is autopopulated for command-line completion and can be used to copy only specific objects.
 
@@ -121,6 +126,37 @@ Will show a grid to select the file(s), then a treeview to select the destinatio
 			$null = $dbfiletable.Tables.Add($ftfiletable)
 			return $dbfiletable
 		}
+
+        function Set-SqlDatabaseOnline
+        {
+            Write-Output "Modifying file path to new location"
+            $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] MODIFY FILE (NAME = $($SelectedFile.Name), FILENAME = '$CompleteFilePath');") | Out-Null
+       
+            Write-Output "Set database '$database' Online!"
+            $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] SET ONLINE") | Out-Null
+
+            $WaitingTime = 0
+            do
+            {
+                $server.Databases[$database].Refresh()
+                Start-Sleep -Seconds 1
+                $WaitingTime += 1
+                Write-Output "Database status: $($server.Databases[$database].Status.ToString())"
+                Write-Output "WaitingTime: $WaitingTime"
+            }
+            while (($server.Databases[$database].Status.ToString().Contains("Normal") -eq $false) -and $WaitingTime -le 10)
+
+            if ($server.Databases[$database].Status.ToString().Contains("Normal") -eq $false)
+            {
+                throw "Database is not in Online status."
+            }
+            else
+            {
+                $server.Databases[$database].Status.ToString()
+            }
+            
+            Write-Output "Database '$database' in Online!"
+        }
 		
 		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 
@@ -134,9 +170,9 @@ Will show a grid to select the file(s), then a treeview to select the destinatio
 		Write-Output "Get database file inventory"
 		$filestructure = Get-SqlFileStructure
 		
-		# This will be used in Invoke-Command
-		Write-Output "Resolving NetBIOS name"
-		$sourcenetbios = Resolve-NetBiosName $server
+        #Which method will be used?
+        Write-Output "Resolving NetBIOS name"
+        $sourcenetbios = Resolve-NetBiosName $server
 
         Write-Output "SourceNetBios: $sourcenetbios"
 	
@@ -170,9 +206,16 @@ Will show a grid to select the file(s), then a treeview to select the destinatio
                 throw "No path chossen"
                 return
             }
+
+            if ($filepathToMove -eq (Split-Path -Path $($SelectedFile.FileName)))
+            {
+                throw "Destination path is the same as source! Quitting!"
+                return
+            }
 		}
 		else
 		{
+            #Need to move to PS-Session block
 			$exists = Test-SqlPath -SqlServer $server -Path $FilePath
 			if ($exists -eq $false)
 			{
@@ -180,6 +223,7 @@ Will show a grid to select the file(s), then a treeview to select the destinatio
 			}
 		}
 		
+        Write-Output "Set database '$database' Offline!"
         $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] SET OFFLINE WITH ROLLBACK IMMEDIATE")
 
         #Validate 
@@ -206,110 +250,106 @@ Will show a grid to select the file(s), then a treeview to select the destinatio
         Write-Output "DestinationPath and filename: $CompleteFilePath"
 
 
-        #Import-Module BitsTransfer -Verbose
-
-        #Se não estiver configurado pode ser corrido este comando no destino.
-        #Demasiados passos?
-        #Enable-PSRemoting -force
-
-        Write-Output "Server to winrm: $sourcenetbios"
+        if ($env:computername -eq $sourcenetbios)
+        {
+            Write-Output "Using Bits to copy the files"
+            $copymethod = "BITS"
         
-        # Test for WinRM #Test-WinRM neh. 
-		winrm id -r:$sourcenetbios 2>$null | Out-Null
-		if ($LastExitCode -ne 0) { throw "Remote PowerShell access not enabled on on $source or access denied. Quitting." }
+            #Import-Module BitsTransfer -Verbose
+            $output = Start-BitsTransfer -Source $SourceFilePath -Destination $CompleteFilePath -RetryInterval 60 -RetryTimeout 60 `
+                                         -DisplayName "Copying file" -Description "Copying '$fileToCopy' to $DestinationPath"
 
-        $remotepssession = New-PSSession -ComputerName $sourcenetbios
+            #Bring database online
+            Set-SqlDatabaseOnline
 
-        #$remotepssession = Enter-PSSession -ComputerName $sourcenetbios
+            #Get-BitsTransfer
 
-        Write-Output $remotepssession.Id
+            #Em caso de erro remover o job da queue
+            #Remove-BitsTransfer
 
-        Enter-PSSession -Session $remotepssession
+        }
+        else
+        {
 
-        #Get-PSSession
+            #Se não estiver configurado pode ser corrido este comando no destino.
+            #Demasiados passos?
+            #Enable-PSRemoting -force
 
-        Write-Output $fileToMove
+            # Test for WinRM #Test-WinRM neh. 
+		    winrm id -r:$sourcenetbios 2>$null | Out-Null
+		    if ($LastExitCode -ne 0) { throw "Remote PowerShell access not enabled on $source or access denied. Quitting." }
+
+            $remotepssession = New-PSSession -ComputerName $sourcenetbios
+
+            #$remotepssession = Enter-PSSession -ComputerName $sourcenetbios
+
+            Write-Output $remotepssession.Id
+
+            Enter-PSSession -Session $remotepssession
+
+            Write-Output "Verifying if robocopy.exe exists on default path."
+            $scriptblock = {param($SourceFilePath) Test-Path -Path "C:\Windows\System32\Robocopy.exe"}
+            $RobocopyExists = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourceFilePath
+            
+            if ($RobocopyExists)
+            {
+                Write-Output "Using Robocopy.exe to copy the files"
+                $copymethod = "ROBOCOPY"
+            
+                #Get-PSSession
+
+                Write-Output $fileToMove
         
-        $scriptblock = {param($SourcePath, $DestinationPath, $fileToCopy) Start-Process robocopy.exe -ArgumentList "`"$SourcePath`" `"$DestinationPath`" `"$fileToCopy`" /COPYALL /Z /MT:12" -PassThru}
+                $scriptblock = {param($SourcePath, $DestinationPath, $fileToCopy) Start-Process robocopy.exe -ArgumentList "`"$SourcePath`" `"$DestinationPath`" `"$fileToCopy`" /COPYALL /Z /MT:12" -PassThru}
 
-        #http://infoworks.tv/bits-transfer-is-not-allowed-in-remote-powershell/
-        $CopyList = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourcePath, $DestinationPath, $fileToCopy
-
-        Write-Warning "Antes"
-        $CopyList
-        Write-Warning "Depois"
-        $CopyList | Select-Object *
-
-        #Add progressbar http://stackoverflow.com/questions/13883404/custom-robocopy-progress-bar-in-powershell
-        Write-Output 'Waiting for file copies to complete...'		
-		do
-		{
-            Write-Warning "While!"
-            $CopyList = $scriptblock = {Get-Process "robocopy*"}
-            Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock
-            Write-Warning "End Get-Process"
+                #http://infoworks.tv/bits-transfer-is-not-allowed-in-remote-powershell/
+                $CopyList = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourcePath, $DestinationPath, $fileToCopy
+        
+                #Add progressbar http://stackoverflow.com/questions/13883404/custom-robocopy-progress-bar-in-powershell
+                Write-Output 'Waiting for file copies to complete...'		
+		        do
+		        {
+                    Write-Warning "While!"
+                    $CopyList = $scriptblock = {Get-Process "robocopy*"}
+                    Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock
+                    Write-Warning "End Get-Process"
 			
-            Start-Sleep -Seconds 3
-		}
-        while (@($CopyList | Where-Object {$_.HasExited -eq $false}).Count -gt 0)
+                    Start-Sleep -Seconds 3
+		        }
+                while (@($CopyList | Where-Object {$_.HasExited -eq $false}).Count -gt 0)
 
-        #$output = Start-BitsTransfer -Source $fileToMove -Destination $filepathToMove
+                #Bring database online
+                Set-SqlDatabaseOnline
 
-        #Get-BitsTransfer
+                #Delete old file already copied to the new path
+                Write-Output "Deleting file '$SourceFilePath'"
+                $scriptblock = {param($SourceFilePath) Remove-Item -Path $SourceFilePath}
+                Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourceFilePath
 
+                #Verify if file was deleted
+                $scriptblock = {param($SourceFilePath) Test-Path -Path $SourceFilePath}
+                $FileExists = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourceFilePath
+                if ($FileExists)
+                {
+                    Write-Warning "Can't delete the file '$SourceFilePath'. Delete it manualy"
+                }
+                else
+                {
+                    Write-Output "File '$SourceFilePath' deleted"    
+                }
 
+                Write-Verbose "Exiting-PSSession"
+                Exit-PSSession
 
-        #Em caso de erro remover o job da queue
-        #Remove-BitsTransfer
+                Write-Verbose "Removing PSSession with id $($remotepssession.Id)"
+                Remove-PSSession $remotepssession.Id
 
-
-        $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] MODIFY FILE (NAME = $($SelectedFile.Name), FILENAME = '$CompleteFilePath');") | Out-Null
-       
-        $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] SET ONLINE") | Out-Null
-
-        $WaitingTime = 0
-        do
-        {
-            $server.Databases[$database].Refresh()
-            Start-Sleep -Seconds 1
-            $WaitingTime += 1
-            Write-Output "Database status: $($server.Databases[$database].Status.ToString())"
-            Write-Output "WaitingTime: $WaitingTime"
-        }
-        while (($server.Databases[$database].Status.ToString().Contains("Normal") -eq $false) -and $WaitingTime -le 10)
-
-        if ($server.Databases[$database].Status.ToString().Contains("Normal") -eq $false)
-        {
-            throw "Database is not in Online status."
-        }
-        else
-        {
-            $server.Databases[$database].Status.ToString()
-        }
-
-
-        #Delete old file already copied to the new path
-        Write-Output "Deleting file '$SourceFilePath'"
-        $scriptblock = {param($SourceFilePath) Remove-Item -Path $SourceFilePath}
-        Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourceFilePath
-
-        #Verify if file was deleted
-        $scriptblock = {param($SourceFilePath) Test-Path -Path $SourceFilePath}
-        $FileExists = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourceFilePath
-        if ($FileExists)
-        {
-            Write-Warning "Can't delete the file '$SourceFilePath'. Delete it manualy"
-        }
-        else
-        {
-            Write-Output "File '$SourceFilePath' deleted"    
-        }
-
-        Write-Verbose "Exiting-PSSession"
-        Exit-PSSession
-
-        Write-Verbose "Removing PSSession with id $($remotepssession.Id)"
-        Remove-PSSession $remotepssession.Id
+            }
+            else
+            {
+                $copymethod = "COPYITEM"
+            }
+        }  
 		
 	}
 	
