@@ -168,8 +168,22 @@ Will find exact Unused indexes on all user databases
 		{
 			throw "This function does not support versions lower than SQL Server 2005 (v9)"
 		}
-
-        # Convert from RuntimeDefinedParameter object to regular array
+		
+		$lastrestart = $sourceserver.Databases['tempdb'].CreateDate
+		$enddate = Get-Date -Date $lastrestart
+		$diffdays = (New-TimeSpan -Start $enddate -End (Get-Date)).Days
+		
+		if ($diffdays -le 6)
+		{
+			throw "The SQL Service was restarted on $lastrestart, which is not long enough for a solid evaluation."
+		}
+		
+		if ($diffdays -le 33)
+		{
+			Write-Warning "The SQL Service was restarted on $lastrestart, which may not be long enough for a solid evaluation."
+		}
+		
+		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
 		
 		if ($pipedatabase.Length -gt 0)
