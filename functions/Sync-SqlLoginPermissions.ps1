@@ -63,27 +63,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Sync-SqlLoginPermissions
 
 .EXAMPLE
-Sync-SqlLoginPermissions -Source sqlserver2014a -Destination sqlcluster -
+Sync-SqlLoginPermissions -Source sqlserver2014a -Destination sqlcluster
 
-Copies all logins from source server to destination server.
+Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. To copy logins and their permissions, use Copy-SqlLogin.
 
 .EXAMPLE
 Sync-SqlLoginPermissions -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred
 
 Authenticates to SQL Servers using SQL Authentication.
 
-Copies all logins permissions except for realcajun. If a login already exists on the destination, the login will not be migrated.
+Copies all login permissions except for realcajun. If a login already exists on the destination, the permissions will not be migrated.
 
 .EXAMPLE
 Sync-SqlLoginPermissions -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds
 
 Copies permissions ONLY for logins netnerds and realcajun.
-
-.EXAMPLE
-Sync-SqlLoginPermissions -Source sqlserver2014a -Destination sqlcluster
-
-Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. If a matching login does not exist on the destination, the login will be skipped.
-
 
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
