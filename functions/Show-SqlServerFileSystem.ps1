@@ -159,7 +159,7 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
         <TreeView Name="treeview" Height="462" Width="391" Background="#FFFFFF" BorderBrush="#FFFFFF" Foreground="#FFFFFF" Margin="11,36,11,79"/>
         <Label x:Name="label" Content="Select the folder:" HorizontalAlignment="Left" Margin="15,4,0,0" VerticalAlignment="Top"/>
         <Label x:Name="path" Content="Selected Path" HorizontalAlignment="Left" Margin="15,502,0,0" VerticalAlignment="Top"/>
-        <TextBox Name="textbox" HorizontalAlignment="Left" Height="Auto" Margin="111,504,0,0" TextWrapping="Wrap" Text="C:\" VerticalAlignment="Top" Width="292"/>
+        <TextBox Name="textbox" HorizontalAlignment="Left" Height="Auto" Margin="111,504,0,0" TextWrapping="NoWrap" Text="C:\" VerticalAlignment="Top" Width="292"/>
         <Button Name="okbutton" Content="OK" HorizontalAlignment="Left" Margin="241,540,0,0" VerticalAlignment="Top" Width="75"/>
         <Button Name="cancelbutton" Content="Cancel" HorizontalAlignment="Left" Margin="328.766,540,0,0" VerticalAlignment="Top" Width="75"/>
     </Grid>
