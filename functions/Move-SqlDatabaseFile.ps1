@@ -55,10 +55,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Move-SqlDatabaseFile
 
 .EXAMPLE 
-Move-SqlDatabaseFile -Source sqlserver2014a -Databases db1 
+Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1 
 
 Will show a grid to select the file(s), then a treeview to select the destination path and perform the move (copy&paste&delete)
-	
+
+.EXAMPLE 
+Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1 -ExportExistingFiles -OutputFilePath "C:\temp\files.csv"
+
+Will generate a files.csv files to C:\temp folder with the list of all files within database 'db1'.
+This file will have an empty column called 'destination' that should be filled by user and run the command again passing this file. 
+
 #>	
 	[CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName="Default")]
 	Param (
@@ -67,11 +73,17 @@ Will show a grid to select the file(s), then a treeview to select the destinatio
 		[object]$SqlServer,
 		[object]$SqlCredential,
 		[parameter(Mandatory = $true, ParameterSetName= "FileTypes")]
-		[string]$FilePath,
-		[parameter(Mandatory = $true, ParameterSetName = "LogicalNames")]
-		[hashtable]$TheHashforLogicalNamesNoIdeaWhatItcanbecalled,
-		[parameter(Mandatory = $true, ParameterSetName = "Hashes")]
-		[hashtable]$TheHashforTypesToDestinationNoIdeaWhatItcanbecalled
+		[string]$FileType,
+		[parameter(Mandatory = $true, ParameterSetName = "ExportExistingFiles")]
+		[switch]$ExportExistingFiles,
+		[parameter(Mandatory = $true, ParameterSetName = "ExportExistingFiles")]
+        [Alias("OutFile", "OutputPath")]
+		[string]$OutputFilePath,
+        [parameter(Mandatory = $true, ParameterSetName = "MoveFromCSV")]
+		[switch]$MoveFromCSV,
+		[parameter(Mandatory = $true, ParameterSetName = "MoveFromCSV")]
+        [Alias("InputFile", "InputPath")]
+		[string]$InputFilePath
 	)
 	
 	DynamicParam 
@@ -94,11 +106,11 @@ Will show a grid to select the file(s), then a treeview to select the destinatio
 		{
 			if ($server.versionMajor -eq 8)
 			{
-				$sql = "select DB_NAME (dbid) as dbname, name, filename, groupid from sysaltfiles"
+				$sql = "select DB_NAME (dbid) as dbname, name, filename, '' AS destination, groupid from sysaltfiles"
 			}
 			else
 			{
-				$sql = "SELECT db.name AS dbname, type_desc AS FileType, mf.name, Physical_Name AS filename FROM sys.master_files mf INNER JOIN  sys.databases db ON db.database_id = mf.database_id"
+				$sql = "SELECT db.name AS dbname, type_desc AS FileType, mf.name, Physical_Name AS filename, '' AS destination FROM sys.master_files mf INNER JOIN  sys.databases db ON db.database_id = mf.database_id"
 			}
 			
 			$dbfiletable = $server.ConnectionContext.ExecuteWithResults($sql)
@@ -127,12 +139,25 @@ Will show a grid to select the file(s), then a treeview to select the destinatio
 			return $dbfiletable
 		}
 
+        function Set-SqlDatabaseOffline
+        {
+            Write-Output "Set database '$database' Offline!"
+            $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] SET OFFLINE WITH ROLLBACK IMMEDIATE")
+
+            #Validate 
+            if ($server.Databases[$database].Status.ToString().Contains("Offline") -eq $false)
+            {
+                throw "Database is not in OFFLINE status."
+            }
+            else
+            {
+                Write-Output "Database set OFFLINE succefull! $($server.Databases[$database].Status.ToString())"
+            }
+        }
+
         function Set-SqlDatabaseOnline
         {
-            Write-Output "Modifying file path to new location"
-            $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] MODIFY FILE (NAME = $($SelectedFile.Name), FILENAME = '$CompleteFilePath');") | Out-Null
-       
-            Write-Output "Set database '$database' Online!"
+           Write-Output "Set database '$database' Online!"
             $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] SET ONLINE") | Out-Null
 
             $WaitingTime = 0
@@ -157,6 +182,12 @@ Will show a grid to select the file(s), then a treeview to select the destinatio
             
             Write-Output "Database '$database' in Online!"
         }
+
+        function Set-SqlDatabaseFileLocation
+        {
+            Write-Output "Modifying file path to new location"
+            $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] MODIFY FILE (NAME = $($SelectedFile.Name), FILENAME = '$CompleteFilePath');") | Out-Null
+        }
 		
 		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 
@@ -169,7 +200,7 @@ Will show a grid to select the file(s), then a treeview to select the destinatio
 	{
 		Write-Output "Get database file inventory"
 		$filestructure = Get-SqlFileStructure
-		
+
         #Which method will be used?
         Write-Output "Resolving NetBIOS name"
         $sourcenetbios = Resolve-NetBiosName $server
@@ -177,10 +208,7 @@ Will show a grid to select the file(s), then a treeview to select the destinatio
         Write-Output "SourceNetBios: $sourcenetbios"
 	
 		foreach ($database in $Databases)
-		{
-			#$dbname = $database.name
-			Write-Warning $database
-			
+		{			
 			$where = "dbname = '$database'"
 			
 			if ($FileType.Length -gt 0)
@@ -191,6 +219,17 @@ Will show a grid to select the file(s), then a treeview to select the destinatio
 			
 			$files = $filestructure.Tables.Select($where)
 		}
+
+        if ($ExportExistingFiles)
+        {
+            if ($OutputFilePath.Length -gt 0)
+            {
+                $files | Export-Csv -LiteralPath $OutputFilePath -NoTypeInformation
+                Write-Output "Edit the file $OutputFilePath. Keep only the rows matching the fies you want to move. Fill 'destination' column for each file.`r`n"
+                Write-Output "Use the following command to move the files:`r`nMove-SqlDatabaseFiles -SqlServer $SqlServer -Databases $database -MoveFromCSV $MoveFromCSV -InputFilePath "$OutputFilePath""
+            }
+            return
+        }
 		
         #Select one file to move
 		$SelectedFile = $files | Out-GridView -PassThru
@@ -222,19 +261,6 @@ Will show a grid to select the file(s), then a treeview to select the destinatio
 				throw "Directory does not exist"
 			}
 		}
-		
-        Write-Output "Set database '$database' Offline!"
-        $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] SET OFFLINE WITH ROLLBACK IMMEDIATE")
-
-        #Validate 
-        if ($server.Databases[$database].Status.ToString().Contains("Offline") -eq $false)
-        {
-            throw "Database is not in OFFLINE status."
-        }
-        else
-        {
-            Write-Output "Database set OFFLINE succefull! $($server.Databases[$database].Status.ToString())"
-        }
 
         $DestinationPath = $filepathToMove
         
@@ -252,6 +278,8 @@ Will show a grid to select the file(s), then a treeview to select the destinatio
 
         if ($env:computername -eq $sourcenetbios)
         {
+            Set-SqlDatabaseOffline
+
             Write-Output "Using Bits to copy the files"
             $copymethod = "BITS"
         
@@ -259,8 +287,24 @@ Will show a grid to select the file(s), then a treeview to select the destinatio
             $output = Start-BitsTransfer -Source $SourceFilePath -Destination $CompleteFilePath -RetryInterval 60 -RetryTimeout 60 `
                                          -DisplayName "Copying file" -Description "Copying '$fileToCopy' to $DestinationPath"
 
-            #Bring database online
+
+            Set-SqlDatabaseFileLocation
+
             Set-SqlDatabaseOnline
+
+            #Delete old file already copied to the new path
+            Write-Output "Deleting file '$SourceFilePath'"
+            Remove-Item -Path $SourceFilePath
+
+            #Verify if file was deleted
+            if (Test-Path -Path $SourceFilePath)
+            {
+                Write-Warning "Can't delete the file '$SourceFilePath'. Delete it manualy"
+            }
+            else
+            {
+                Write-Output "File '$SourceFilePath' deleted"    
+            }
 
             #Get-BitsTransfer
 
@@ -293,6 +337,8 @@ Will show a grid to select the file(s), then a treeview to select the destinatio
             
             if ($RobocopyExists)
             {
+                Set-SqlDatabaseOffline
+
                 Write-Output "Using Robocopy.exe to copy the files"
                 $copymethod = "ROBOCOPY"
             
@@ -318,7 +364,8 @@ Will show a grid to select the file(s), then a treeview to select the destinatio
 		        }
                 while (@($CopyList | Where-Object {$_.HasExited -eq $false}).Count -gt 0)
 
-                #Bring database online
+                Set-SqlDatabaseFileLocation
+
                 Set-SqlDatabaseOnline
 
                 #Delete old file already copied to the new path
@@ -343,7 +390,6 @@ Will show a grid to select the file(s), then a treeview to select the destinatio
 
                 Write-Verbose "Removing PSSession with id $($remotepssession.Id)"
                 Remove-PSSession $remotepssession.Id
-
             }
             else
             {
