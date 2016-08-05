@@ -65,6 +65,11 @@ Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1 -ExportExistingFil
 Will generate a files.csv files to C:\temp folder with the list of all files within database 'db1'.
 This file will have an empty column called 'destination' that should be filled by user and run the command again passing this file. 
 
+.EXAMPLE 
+Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1 -FileType DATA
+
+Will show a treeview to select the destination path and perform the move (copy&paste&delete) of every file of DATA (ROWS) type
+
 #>	
 	[CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName="Default")]
 	Param (
@@ -72,8 +77,6 @@ This file will have an empty column called 'destination' that should be filled b
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[object]$SqlCredential,
-		[parameter(Mandatory = $true, ParameterSetName= "FileTypes")]
-		[string]$FileType,
 		[parameter(Mandatory = $true, ParameterSetName = "ExportExistingFiles")]
 		[switch]$ExportExistingFiles,
 		[parameter(Mandatory = $true, ParameterSetName = "ExportExistingFiles")]
@@ -88,15 +91,13 @@ This file will have an empty column called 'destination' that should be filled b
 	
 	DynamicParam 
     { 
-        if ($SqlServer) 
-        {
-            #$dbparams = Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SourceSqlCredential 
-			##$allparams = Get-ParamSqlDatabaseFiles -SqlServer $sqlserver -SqlCredential $SqlCredential
-			#$null = $allparams.Add("Databases", $dbparams.Databases)
-			#return $allparams
- 
-            return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SourceSqlCredential 
-        } 
+        if ($sqlserver)
+		{
+			$dbparams = Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential
+			$allparams = Get-ParamSqlDatabaseFileTypes -SqlServer $SqlServer -SqlCredential $SqlCredential
+			$null = $allparams.Add("Databases", $dbparams.Databases)
+			return $allparams
+		}
     }
 	
 	BEGIN
@@ -142,7 +143,7 @@ This file will have an empty column called 'destination' that should be filled b
         function Set-SqlDatabaseOffline
         {
             Write-Output "Set database '$database' Offline!"
-            $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] SET OFFLINE WITH ROLLBACK IMMEDIATE")
+            $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] SET OFFLINE WITH ROLLBACK IMMEDIATE") | Out-Null
 
             #Validate 
             if ($server.Databases[$database].Status.ToString().Contains("Offline") -eq $false)
@@ -185,8 +186,17 @@ This file will have an empty column called 'destination' that should be filled b
 
         function Set-SqlDatabaseFileLocation
         {
+            Param 
+            (
+                [parameter(Mandatory = $true)]
+		        [string]$Database,
+                [parameter(Mandatory = $true)]
+		        [string]$LogicalFileName,
+                [parameter(Mandatory = $true)]
+		        [string]$PhysicalFileLocation
+            )
             Write-Output "Modifying file path to new location"
-            $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] MODIFY FILE (NAME = $($SelectedFile.Name), FILENAME = '$CompleteFilePath');") | Out-Null
+            $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] MODIFY FILE (NAME = $LogicalFileName, FILENAME = '$PhysicalFileLocation');") | Out-Null
         }
 		
 		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
@@ -194,6 +204,9 @@ This file will have an empty column called 'destination' that should be filled b
 		$source = $server.DomainInstanceName
 		
 		$Databases = $psboundparameters.Databases
+		$FileType = $psboundparameters.FileType
+
+        if ($Filetype -eq 'DATA') { $Filetype = 'ROWS' }
 	}
 	
 	PROCESS
@@ -222,60 +235,86 @@ This file will have an empty column called 'destination' that should be filled b
 
         if ($ExportExistingFiles)
         {
-            if ($OutputFilePath.Length -gt 0)
+            if (($OutputFilePath.Length -gt 0) -and (Test-Path -Path $OutputFilePath))
             {
                 $files | Export-Csv -LiteralPath $OutputFilePath -NoTypeInformation
                 Write-Output "Edit the file $OutputFilePath. Keep only the rows matching the fies you want to move. Fill 'destination' column for each file.`r`n"
-                Write-Output "Use the following command to move the files:`r`nMove-SqlDatabaseFiles -SqlServer $SqlServer -Databases $database -MoveFromCSV $MoveFromCSV -InputFilePath "$OutputFilePath""
+                Write-Output "Use the following command to move the files:`r`nMove-SqlDatabaseFiles -SqlServer $SqlServer -Databases $database -MoveFromCSV -InputFilePath '$OutputFilePath'"
             }
-            return
+            else
+            {
+                throw "The choosed file path does not exists"
+            }
         }
-		
-        #Select one file to move
-		$SelectedFile = $files | Out-GridView -PassThru
-		
-		# This will go above
-		if ($filepath.length -eq 0)
-		{
-			#Open dialog box with GUI
-            $filepathToMove = Show-SqlServerFileSystem -SqlServer $server -SqlCredential $SqlCredential
 
-            if ($filepathToMove.length -le 0)
+
+        if ($MoveFromCSV)
+        {
+            if (($InputFilePath.Length -gt 0) -and (Test-Path -Path $InputFilePath))
             {
-                throw "No path chossen"
-                return
+                $FilesToMove = Import-Csv -LiteralPath $InputFilePath
+            }
+            else
+            {
+                throw "The choosed file path does not exists"
+            }
+        }
+        else
+        {
+            if (([string]::IsNullOrEmpty($FileType)))
+            {
+                #Select one file to move
+		        $FilesToMove = $files | Out-GridView -PassThru
+            }
+            else
+            {
+                Write-Output "Will move all files of type '$FileType'"
+                $FilesToMove = $files
             }
 
-            if ($filepathToMove -eq (Split-Path -Path $($SelectedFile.FileName)))
+            if ($FilesToMove.Count -gt 0)		
             {
-                throw "Destination path is the same as source! Quitting!"
-                return
-            }
-		}
-		else
-		{
-            #Need to move to PS-Session block
-			$exists = Test-SqlPath -SqlServer $server -Path $FilePath
-			if ($exists -eq $false)
-			{
-				throw "Directory does not exist"
-			}
-		}
+		        # This will go above
+		        if ($filepath.length -eq 0)
+		        {
+			        #Open dialog box with GUI
+                    $filepathToMove = Show-SqlServerFileSystem -SqlServer $server -SqlCredential $SqlCredential
 
-        $DestinationPath = $filepathToMove
+                    if ($filepathToMove.length -le 0)
+                    {
+                        throw "No path chossen"
+                        return
+                    }
+
+                    foreach ($File in $FilesToMove)
+                    {
+                        $File.Destination = $filepathToMove
+                    }
+		        }
+		        else
+		        {
+                    #Need to move to PS-Session block
+			        $exists = Test-SqlPath -SqlServer $server -Path $FilePath
+			        if ($exists -eq $false)
+			        {
+				        throw "Directory does not exist"
+			        }
+		        }
+            }
+                else
+                {
+                    throw "No files were selected!"
+                }
+            
+        }
         
-        $SourceFilePath = $($SelectedFile.FileName)
-        $SourcePath = Split-Path -Path $($SelectedFile.FileName)
-        $fileToCopy = Split-Path -Path $($SelectedFile.FileName) -leaf
-
-        $CompleteFilePath = $(Join-Path $DestinationPath $fileToCopy)
-
-        Write-Output "Copy file from path: $SourcePath"
-        Write-Output "Copy file to path: $DestinationPath"
-        Write-Output "Copy file: $fileToCopy"
-        Write-Output "DestinationPath and filename: $CompleteFilePath"
-
-
+        <#
+            Validate type of copy
+            Can be:
+             - Local with bits
+             - Remote with PSSession $ Robocopy
+             - Remote with Copy-Item
+        #>
         if ($env:computername -eq $sourcenetbios)
         {
             Set-SqlDatabaseOffline
@@ -284,32 +323,98 @@ This file will have an empty column called 'destination' that should be filled b
             $copymethod = "BITS"
         
             #Import-Module BitsTransfer -Verbose
-            $output = Start-BitsTransfer -Source $SourceFilePath -Destination $CompleteFilePath -RetryInterval 60 -RetryTimeout 60 `
-                                         -DisplayName "Copying file" -Description "Copying '$fileToCopy' to $DestinationPath"
 
+            $databaseProgressbar = 0
+            $SuccessfullCopied = 0
 
-            Set-SqlDatabaseFileLocation
+            foreach ($file in $FilesToMove)
+            {
+                $databaseProgressbar += 1
+
+                $dbName = $File.dbname
+                $DestinationPath = $file.Destination
+                $SourceFilePath = $file.FileName
+                $LogicalName = $file.Name
+                $SourcePath = Split-Path -Path $($file.FileName)
+                $FileToCopy = Split-Path -Path $($file.FileName) -leaf
+
+                $ValidDestinationPath = !([string]::IsNullOrEmpty($DestinationPath))
+                
+                Write-Progress `
+							-Id 1 `
+							-Activity "Working on file: $LogicalName on database: '$dbName'" `
+							-PercentComplete ($databaseProgressbar / $FilesToMove.Count * 100) `
+							-Status "Processing - $databaseProgressbar of $($FilesToMove.Count) files"
+
+                if ($ValidDestinationPath)
+                {
+                    $DestinationFilePath = $(Join-Path $DestinationPath $fileToCopy)
+
+                    if (!(Test-SqlPath -SqlServer $server -Path $DestinationPath))
+                    {
+                        Write-Warning "Destination path  for logical name '$LogicalName' does not exists. '$DestinationPath'"
+                        Continue
+                    }
+                }
+                else
+                {
+                    Write-Warning "Destination path for logical name '$LogicalName' is not valid."
+                    Continue
+                }
+
+                if (!(Test-SqlPath -SqlServer $server -Path $SourceFilePath))
+                {
+                    Write-Warning "Source file or path for logical name '$LogicalName' does not exists. '$SourceFilePath'"
+                    Continue
+                }
+
+                if (($DestinationPath -eq $SourcePath) -or ([string]::IsNullOrEmpty($DestinationPath)))
+                {
+                    Write-Warning "Destination path for file '$LogicalName' is the same of source path or is empty. Skipping"
+                    continue
+                }
+
+                Write-Verbose "Copy file from path: $SourcePath"
+                Write-Verbose "Copy file to path: $DestinationPath"
+                Write-Verbose "Copy file: $fileToCopy"
+                Write-Verbose "DestinationPath and filename: $DestinationFilePath"
+
+                $output = Start-BitsTransfer -Source $SourceFilePath -Destination $DestinationFilePath -RetryInterval 60 -RetryTimeout 60 `
+                                             -DisplayName "Copying file" -Description "Copying '$FileToCopy' to $DestinationPath"
+
+                $SuccessfullCopied += 1
+
+                Set-SqlDatabaseFileLocation -Database $dbName -LogicalFileName $LogicalName -PhysicalFileLocation $DestinationFilePath
+
+                #Delete old file already copied to the new path
+                Write-Output "Deleting file '$SourceFilePath'"
+                Remove-Item -Path $SourceFilePath
+
+                #Verify if file was deleted
+                if (Test-Path -Path $SourceFilePath)
+                {
+                    Write-Warning "Can't delete the file '$SourceFilePath'. Delete it manualy"
+                }
+                else
+                {
+                    Write-Output "File '$SourceFilePath' deleted"    
+                }
+
+            }
 
             Set-SqlDatabaseOnline
 
-            #Delete old file already copied to the new path
-            Write-Output "Deleting file '$SourceFilePath'"
-            Remove-Item -Path $SourceFilePath
-
-            #Verify if file was deleted
-            if (Test-Path -Path $SourceFilePath)
+            if ($SuccessfullCopied -gt 0)
             {
-                Write-Warning "Can't delete the file '$SourceFilePath'. Delete it manualy"
+                #Get-BitsTransfer
+
+                #Em caso de erro remover o job da queue
+                #Remove-BitsTransfer
             }
             else
             {
-                Write-Output "File '$SourceFilePath' deleted"    
+                Write-Warning "No files were copied!"
             }
-
-            #Get-BitsTransfer
-
-            #Em caso de erro remover o job da queue
-            #Remove-BitsTransfer
 
         }
         else
