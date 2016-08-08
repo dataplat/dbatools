@@ -239,7 +239,7 @@ Test-DbaDiskAlignment -ComputerName sqlserver2014a, sqlserver2014b, sqlserver201
         else {
           $IsDynamicDisk = $false
         }
-        # as we cant tell the actual size of the allocation unit, just check all the sizes I know about
+        
         Write-Verbose "Checking for best practices offsets"        
         if ($offset -ne 64 -and $offset -ne 128 -and $offset -ne 256 -and $offset -ne 512 -and $offset -ne 1024 )
         {
@@ -247,10 +247,12 @@ Test-DbaDiskAlignment -ComputerName sqlserver2014a, sqlserver2014b, sqlserver201
         }
         else {
           $IsOffsetBestPractice = $true
-        }                       
+        }
+
+        # as we cant tell the actual size of the file strip unit, just check all the sizes I know about                       
         foreach ($size in $stripe_units)
         {                     
-          if ($offset % $size -eq 0) # for proper alignment we really only need to know that your offset divided by your allocation unit size has no remainder
+          if ($offset % $size -eq 0) # for proper alignment we really only need to know that your offset divided by your stripe unit size has a remainer of 0 
           {         
             $OffsetModuloKB = "$($offset % $size)"            
             $isBestPractice = $true
@@ -266,11 +268,11 @@ Test-DbaDiskAlignment -ComputerName sqlserver2014a, sqlserver2014b, sqlserver201
             Name = "$($partition.Name)"
             PartitonSizeInMB = $($partition.Size/ 1MB)
             PartitionType = $partition.Type
-            TestingAllocationUnitSizeKB = $size           
+            TestingStripeSizeKB = $size           
             OffsetModuluCalculationKB = $OffsetModuloKB                       
             StartingOffsetKB = $offset                        
             IsOffsetBestPractice = $IsOffsetBestPractice
-            isBestPractice = $isBestPractice
+            IsBestPractice = $isBestPractice
             NumberOfBlocks = $partition.NumberOfBlocks
             BootPartition = $partition.BootPartition
             PartitionBlockSize = $partition.BlockSize           
