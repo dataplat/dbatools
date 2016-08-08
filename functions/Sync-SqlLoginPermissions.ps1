@@ -166,11 +166,11 @@ https://dbatools.io/Sync-SqlLoginPermissions
 						try
 						{
 							$destrole.DropMember($username)
-							Write-Output "Removed $username from $destrolename server role on $($destserver.name)."
+							Write-Output "Removed $username from $rolename server role on $($destserver.name)."
 						}
 						catch
 						{
-							Write-Warning "Failed to remove $username from $destrolename server role on $($destserver.name)."
+							Write-Warning "Failed to remove $username from $rolename server role on $($destserver.name)."
 							Write-Exception $_
 						}
 					}
