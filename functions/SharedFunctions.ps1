@@ -29,13 +29,6 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 	)
 	
 	
-	$username = $SqlCredential.username
-	if ($username -ne $null)
-	{
-		$username = $username.TrimStart("\")
-		if ($username -like "*\*") { throw "Only SQL Logins can be specified when using the Credential parameter. To connect as to SQL Server a different Windows user, you must start PowerShell as that user." }
-	}
-	
 	if ($SqlServer.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
 	{
 		
@@ -45,6 +38,29 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 			$paramserver.ConnectionContext.ConnectTimeout = 2
 			$paramserver.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
 			$paramserver.ConnectionContext.ConnectionString = $SqlServer.ConnectionContext.ConnectionString
+			
+			if ($SqlCredential.username -ne $null)
+			{
+				$username = ($SqlCredential.username).TrimStart("\")
+				
+				if ($username -like "*\*")
+				{
+					$username = $username.Split("\")[1]
+					$authtype = "Windows Authentication with Credential"
+					$server.ConnectionContext.LoginSecure = $true
+					$server.ConnectionContext.ConnectAsUser = $true
+					$server.ConnectionContext.ConnectAsUserName = $username
+					$server.ConnectionContext.ConnectAsUserPassword = ($SqlCredential).GetNetworkCredential().Password
+				}
+				else
+				{
+					$authtype = "SQL Authentication"
+					$server.ConnectionContext.LoginSecure = $false
+					$server.ConnectionContext.set_Login($username)
+					$server.ConnectionContext.set_SecurePassword($SqlCredential.Password)
+				}
+			}
+			
 			$paramserver.ConnectionContext.Connect()
 			return $paramserver
 		}
@@ -63,9 +79,24 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 	{
 		if ($SqlCredential.username -ne $null)
 		{
-			$server.ConnectionContext.LoginSecure = $false
-			$server.ConnectionContext.set_Login($username)
-			$server.ConnectionContext.set_SecurePassword($SqlCredential.Password)
+			$username = ($SqlCredential.username).TrimStart("\")
+			
+			if ($username -like "*\*")
+			{
+				$username = $username.Split("\")[1]
+				$authtype = "Windows Authentication with Credential"
+				$server.ConnectionContext.LoginSecure = $true
+				$server.ConnectionContext.ConnectAsUser = $true
+				$server.ConnectionContext.ConnectAsUserName = $username
+				$server.ConnectionContext.ConnectAsUserPassword = ($SqlCredential).GetNetworkCredential().Password
+			}
+			else
+			{
+				$authtype = "SQL Authentication"
+				$server.ConnectionContext.LoginSecure = $false
+				$server.ConnectionContext.set_Login($username)
+				$server.ConnectionContext.set_SecurePassword($SqlCredential.Password)
+			}
 		}
 	}
 	catch { }
@@ -97,7 +128,7 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 	{
 		if ($server.ConnectionContext.FixedServerRoles -notmatch "SysAdmin")
 		{
-			throw "Not a sysadmin on $source. Quitting."
+			throw "Not a sysadmin on $SqlServer. Quitting."
 		}
 	}
 	
@@ -106,7 +137,7 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 		if ($server.VersionMajor -eq 8)
 		{
 			# 2000
-			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions','Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Version')
+			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Version')
 			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'CreateDate', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'Name', 'Sid', 'WindowsLoginAccessType')
 		}
 		
@@ -114,14 +145,14 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 		elseif ($server.VersionMajor -eq 9 -or $server.VersionMajor -eq 10)
 		{
 			# 2005 and 2008
-			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions','BrokerEnabled', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
+			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
 			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
 		}
 		
 		else
 		{
 			# 2012 and above
-			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions','ActiveConnections', 'AvailabilityDatabaseSynchronizationState', 'AvailabilityGroupName', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'ContainmentType', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
+			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'ActiveConnections', 'AvailabilityDatabaseSynchronizationState', 'AvailabilityGroupName', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'ContainmentType', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
 			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordHashAlgorithm', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
 		}
 	}
@@ -175,16 +206,10 @@ RemotingPortOpen   : True
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	$username = $SqlCredential.username
-	if ($username -ne $null)
-	{
-		$username = $username.TrimStart("\")
-		if ($username -like "*\*") { throw "Only SQL Logins can be specified when using the Credential parameter. To connect as to SQL Server a different Windows user, you must start PowerShell as that user." }
-	}
 	
 	# Get local enviornment
 	Write-Output "Getting local enivornment information"
-	$localinfo = @{ } | Select Windows, PowerShell, CLR, SMO, DomainUser, RunAsAdmin
+	$localinfo = @{ } | Select-Object Windows, PowerShell, CLR, SMO, DomainUser, RunAsAdmin
 	$localinfo.Windows = [environment]::OSVersion.Version.ToString()
 	$localinfo.PowerShell = $PSVersionTable.PSversion.ToString()
 	$localinfo.CLR = $PSVersionTable.CLRVersion.ToString()
@@ -196,7 +221,7 @@ RemotingPortOpen   : True
 	# SQL Server
 	if ($SqlServer.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) { $SqlServer = $SqlServer.Name.ToString() }
 	
-	$serverinfo = @{ } | Select ServerName, BaseName, InstanceName, AuthType, ConnectingAsUser, ConnectSuccess, SqlServerVersion, AddlConnectInfo, RemoteServer, IPAddress, NetBIOSname, RemotingAccessible, Pingable, DefaultSQLPortOpen, RemotingPortOpen
+	$serverinfo = @{ } | Select-Object ServerName, BaseName, InstanceName, AuthType, ConnectingAsUser, ConnectSuccess, SqlServerVersion, AddlConnectInfo, RemoteServer, IPAddress, NetBIOSname, RemotingAccessible, Pingable, DefaultSQLPortOpen, RemotingPortOpen
 	
 	$serverinfo.ServerName = $sqlserver
 	
@@ -222,7 +247,7 @@ RemotingPortOpen   : True
 	try
 	{
 		$hostentry = [System.Net.Dns]::GetHostEntry($baseaddress)
-		$ipaddr = ($hostentry.AddressList | Where-Object { $_ -notlike '169.*' } | Select -First 1).IPAddressToString
+		$ipaddr = ($hostentry.AddressList | Where-Object { $_ -notlike '169.*' } | Select-Object -First 1).IPAddressToString
 	}
 	catch { $ipaddr = "Unable to resolve" }
 	
@@ -288,16 +313,29 @@ RemotingPortOpen   : True
 	else { $serverinfo.DefaultSQLPortOpen = "N/A" }
 	
 	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlServer
-
+	
 	try
 	{
 		if ($SqlCredential -ne $null)
 		{
-			$authtype = "SQL Authentication"
 			$username = ($SqlCredential.username).TrimStart("\")
-			$server.ConnectionContext.LoginSecure = $false
-			$server.ConnectionContext.set_Login($username)
-			$server.ConnectionContext.set_SecurePassword($SqlCredential.Password)
+
+			if ($username -like "*\*")
+			{
+				$username = $username.Split("\")[1]
+				$authtype = "Windows Authentication with Credential"
+				$server.ConnectionContext.LoginSecure = $true
+				$server.ConnectionContext.ConnectAsUser = $true
+				$server.ConnectionContext.ConnectAsUserName = $username
+				$server.ConnectionContext.ConnectAsUserPassword = ($SqlCredential).GetNetworkCredential().Password
+			}
+			else
+			{
+				$authtype = "SQL Authentication"
+				$server.ConnectionContext.LoginSecure = $false
+				$server.ConnectionContext.set_Login($username)
+				$server.ConnectionContext.set_SecurePassword($SqlCredential.Password)
+			}
 		}
 		else
 		{
@@ -307,6 +345,7 @@ RemotingPortOpen   : True
 	}
 	catch
 	{
+		Write-Exception $_
 		$authtype = "Windows Authentication (Trusted)"
 		$username = "$env:USERDOMAIN\$env:username"
 	}
@@ -337,10 +376,10 @@ RemotingPortOpen   : True
 	$serverinfo.AddlConnectInfo = $addlinfo
 	
 	Write-Output "`nLocal PowerShell Enviornment"
-	$localinfo | Select Windows, PowerShell, CLR, SMO, DomainUser, RunAsAdmin
+	$localinfo | Select-Object Windows, PowerShell, CLR, SMO, DomainUser, RunAsAdmin
 	
 	Write-Output "SQL Server Connection Information`n"
-	$serverinfo | Select ServerName, BaseName, InstanceName, AuthType, ConnectingAsUser, ConnectSuccess, SqlServerVersion, AddlConnectInfo, RemoteServer, IPAddress, NetBIOSname, RemotingAccessible, Pingable, DefaultSQLPortOpen, RemotingPortOpen
+	$serverinfo | Select-Object ServerName, BaseName, InstanceName, AuthType, ConnectingAsUser, ConnectSuccess, SqlServerVersion, AddlConnectInfo, RemoteServer, IPAddress, NetBIOSname, RemotingAccessible, Pingable, DefaultSQLPortOpen, RemotingPortOpen
 	
 }
 
@@ -718,7 +757,7 @@ Internal function. Gets the name of the sa login in case someone changed it.
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-	$sa = $server.Logins | Where { $_.id -eq 1 }
+	$sa = $server.Logins | Where-Object { $_.id -eq 1 }
 	
 	return $sa.name
 	
@@ -1096,7 +1135,7 @@ Function Get-SaLoginName
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-
+	
 	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 	$saname = ($server.logins | Where-Object { $_.id -eq 1 }).Name
 	
@@ -1115,7 +1154,7 @@ Internal function. Writes exception to disk (my docs\dbatools-exceptions.txt) fo
 		[object]$e
 	)
 	
-	$docs = [Environment]::GetFolderPath("mydocuments")	
+	$docs = [Environment]::GetFolderPath("mydocuments")
 	$errorlog = "$docs\dbatools-exceptions.txt"
 	$message = $e.Exception
 	
@@ -1206,7 +1245,7 @@ Function Update-SqlPermissions
 		}
 	}
 	
-	$ownedjobs = $sourceserver.JobServer.Jobs | Where { $_.OwnerLoginName -eq $username }
+	$ownedjobs = $sourceserver.JobServer.Jobs | Where-Object { $_.OwnerLoginName -eq $username }
 	foreach ($ownedjob in $ownedjobs)
 	{
 		if ($destserver.JobServer.Jobs[$ownedjob.name] -ne $null)
@@ -1216,7 +1255,7 @@ Function Update-SqlPermissions
 				try
 				{
 					Write-Output "Changing job owner to $username for $($ownedjob.name)"
-					$destownedjob = $destserver.JobServer.Jobs | Where { $_.name -eq $ownedjobs.name }
+					$destownedjob = $destserver.JobServer.Jobs | Where-Object { $_.name -eq $ownedjobs.name }
 					$destownedjob.set_OwnerLoginName($username)
 					$destownedjob.Alter()
 				}
