@@ -1,13 +1,13 @@
 Function Copy-SqlJob
 {
 <#
-.SYNOPSIS 
-Copy-SqlJob migrates jobs from one SQL Server to another. 
+.SYNOPSIS
+Copy-SqlJob migrates jobs from one SQL Server to another.
 
 .DESCRIPTION
 By default, all jobs are copied. The -Jobs parameter is autopopulated for command-line completion and can be used to copy only specific jobs.
 
-If the job already exists on the destination, it will be skipped unless -Force is used.  
+If the job already exists on the destination, it will be skipped unless -Force is used.
 
 .PARAMETER Source
 Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -18,17 +18,17 @@ Destination Sql Server. You must have sysadmin access and server version must be
 .PARAMETER SourceSqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
+$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER DestinationSqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
+$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
 To connect as a different Windows user, run PowerShell as that user.
 
@@ -37,8 +37,8 @@ Disable the job on the source server
 
 .PARAMETER DisableOnDestination
 Disable the newly migrated job on the destination server
-		
-.NOTES 
+
+.NOTES
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
@@ -54,17 +54,17 @@ You should have received a copy of the GNU General Public License along with thi
 .LINK
 https://dbatools.io/Copy-SqlJob
 
-.EXAMPLE   
+.EXAMPLE
 Copy-SqlJob -Source sqlserver2014a -Destination sqlcluster
 
 Copies all jobs from sqlserver2014a to sqlcluster, using Windows credentials. If jobs with the same name exist on sqlcluster, they will be skipped.
 
-.EXAMPLE   
+.EXAMPLE
 Copy-SqlJob -Source sqlserver2014a -Destination sqlcluster -Job PSJob -SourceSqlCredential $cred -Force
 
 Copies a single job, the PSJob job from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a job with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
-.EXAMPLE   
+.EXAMPLE
 Copy-SqlJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
@@ -82,58 +82,59 @@ Shows what would happen if the command were executed using force.
 		[switch]$Force
 	)
 	DynamicParam { if ($source) { return (Get-ParamSqlJobs -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
-	
+
 	BEGIN {
 		$jobs = $psboundparameters.Jobs
-		
+		$excludes = $psboundparameters.Excludes
+
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
-		
+
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
-	
+
 	}
 	PROCESS
 	{
-		
-		$serverjobs = $sourceserver.JobServer.Jobs
+
+		$serverjobs = $sourceserver.JobServer.Jobs | Where-Object {$excludes -notcontains $_.name}
 		$destjobs = $destserver.JobServer.Jobs
-		
+
 		foreach ($job in $serverjobs)
 		{
 			$jobname = $job.name
-			
+
 			if ($jobs.count -gt 0 -and $jobs -notcontains $jobname) { continue }
-			
+
 			$dbnames = $job.JobSteps.Databasename | Where-Object { $_.length -gt 0 }
-			$missingdb = $dbnames | Where-Object { $destserver.Databases.Name -notcontains $_ } 
-			
+			$missingdb = $dbnames | Where-Object { $destserver.Databases.Name -notcontains $_ }
+
 			if ($missingdb.count -gt 0 -and $dbnames.count -gt 0)
 			{
 				$missingdb = ($missingdb | Sort-Object | Get-Unique) -join ", "
 				Write-Warning "Database(s) $missingdb doesn't exist on destination. Skipping."
 				continue
 			}
-			
+
 			$missinglogin = $job.OwnerLoginName | Where-Object { $destserver.Logins.Name -notcontains $_ }
-			
+
 			if ($missinglogin.count -gt 0)
 			{
 				$missinglogin = ($missinglogin | Sort-Object | Get-Unique) -join ", "
 				Write-Warning "Login(s) $missinglogin doesn't exist on destination. Skipping."
 				continue
 			}
-			
+
 			$proxynames = $job.JobSteps.ProxyName | Where-Object { $_.length -gt 0 }
 			$missingproxy = $proxynames | Where-Object { $destserver.JobServer.ProxyAccounts.Name -notcontains $_ }
-			
+
 			if ($missingproxy.count -gt 0 -and $proxynames.count -gt 0)
 			{
 				$missingproxy = ($missingproxy | Sort-Object | Get-Unique) -join ", "
 				Write-Warning "Proxy Account(s) $($proxynames[0]) doesn't exist on destination. Skipping."
 				continue
 			}
-			
+
 			if ($destjobs.name -contains $job.name)
 			{
 				if ($force -eq $false)
@@ -150,15 +151,15 @@ Shows what would happen if the command were executed using force.
 							Write-Verbose "Dropping Job $jobname"
 							$destserver.JobServer.Jobs[$job.name].Drop()
 						}
-						catch 
-						{ 
-							Write-Exception $_ 
+						catch
+						{
+							Write-Exception $_
 							continue
 						}
 					}
 				}
 			}
-		
+
 			If ($Pscmdlet.ShouldProcess($destination, "Creating Job $jobname"))
 			{
 				try
@@ -175,7 +176,7 @@ Shows what would happen if the command were executed using force.
 					continue
 				}
 			}
-			
+
 			If ($Pscmdlet.ShouldProcess($destination, "Creating Job $jobname"))
 			{
 				if ($DisableOnDestination)
@@ -184,7 +185,7 @@ Shows what would happen if the command were executed using force.
 					$destserver.JobServer.Jobs.Refresh()
 					$destserver.JobServer.Jobs[$job.name].IsEnabled = $False
 				}
-				
+
 				if ($DisableOnSource)
 				{
 					Write-Output "Disabling $jobname on $source"
@@ -193,7 +194,7 @@ Shows what would happen if the command were executed using force.
 			}
 		}
 	}
-	
+
 	END
 	{
 		$sourceserver.ConnectionContext.Disconnect()
