@@ -174,7 +174,7 @@ Checks tempdb on the localhost machine.
 		Write-Verbose "File growth settings evaluated"
 		#test file Location
 		
-		$cdata = ($datafiles.rows | Where-Object { $_.FileName -like 'C:*' }).Rows.Count + ($logfiles | Where-Object { $_.FileName -like 'C:*' }).Rows.Count
+		$cdata = ($datafiles.rows | Where-Object { $_.FileName -like 'C:*' }).Count + ($logfiles | Where-Object { $_.FileName -like 'C:*' }).Count
 		if ($cdata -gt 0) { $cdata = $true } else { $cdata = $false }
 		
 		$value = [PSCustomObject]@{
