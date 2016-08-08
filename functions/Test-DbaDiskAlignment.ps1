@@ -7,22 +7,23 @@ Verifies that your non-dynamic disks are aligned according to physical constrain
 .DESCRIPTION
 Returns $true or $false by default for one server. Returns Server name and IsBestPractice for more than one server.
   
-Specify -Detailed for additional information.
-  
+Specify -Detailed for additional information which returns some additional optional "best practice" columns, which may show false even though you pass the alignment test.
+This is because your offset is not one of the "expected" values that Windows uses, but your disk is still physically aligned.
+
 Please refer to your storage vendor best practices before following any advice below. 
   By default issues with disk alignment should be resolved by a new installation of Windows Server 2008, Windows Vista, or later operating systems, but verifying disk alignment continues to be recommended as a best practice.
   While some versions of Windows use different starting alignments, if you are starting anew 1MB is generally the best practice offset for current operating systems (because it ensures that the partition offset % common stripe unit sizes == 0 ) 
 
 Caveats:  
   Dynamic drives (or those provisioned via third party software) may or may not have accurate results when polled by any of the built in tools, see your vendor for details.
-    Windows does not have a reliable way to determine stripe unit Sizes. These values are obtained from vendor disk management software or from your SAN administrator.
+  Windows does not have a reliable way to determine stripe unit Sizes. These values are obtained from vendor disk management software or from your SAN administrator.
   System drives in versions previous to Windows Server 2008 cannot be aligned, but it is generally not recommended to place SQL Server databases on system drives.
   
 .PARAMETER ComputerName
 The SQL Server(s) you would like to connect to and check disk alignment.
 
 .PARAMETER Detailed
-Show additional disk details such as offset calculations and additionally if the offset is a best practice.
+Show additional disk details such as offset calculations and IsOffsetBestPractice, which returns false if you do not have one of the offsets described by Microsoft. Returning false does not mean you are not phyiscally aligned.
 
 .PARAMETER Credential
 An alternate domain/username when enumerating the drives on the SQL Server(s), if needed password will be requested when queries run. May require Administrator privileges.
@@ -37,10 +38,6 @@ Skip checking for the presence of SQL Server and simply check all disks for alig
 The preferred way to determine if your disks are aligned (or not) is to calculate:
   1. Partition offset ÷ stripe unit size
   2. Stripe unit size ÷ File allocation unit size
-
-Unfortunately Windows does not provide a way to determine your stripe unit size and so this process effectively tests common stripe unit sizes and verifies that your offset would be aligned with ALL of them.
-Detailed mode returns some additional optional "best practice" columns, which may show false even though you pass the alignment test because your offset is not one of the "expected" values.
-In practice physical alignment does not require choosing a best practice offset.
 
 References:
     Disk Partition Alignment Best Practices for SQL Server - https://technet.microsoft.com/en-us/library/dd758814(v=sql.100).aspx
