@@ -97,14 +97,14 @@ Shows what would happen if the command were executed using force.
 	PROCESS
 	{
 
-		$serverjobs = $sourceserver.JobServer.Jobs | Where-Object {$excludes -notcontains $_.name}
+		$serverjobs = $sourceserver.JobServer.Jobs
 		$destjobs = $destserver.JobServer.Jobs
 
 		foreach ($job in $serverjobs)
 		{
 			$jobname = $job.name
 
-			if ($jobs.count -gt 0 -and $jobs -notcontains $jobname) { continue }
+			if ($jobs.count -gt 0 -and $jobs -notcontains $jobname -or $excludes -contains $jobname) { continue }
 
 			$dbnames = $job.JobSteps.Databasename | Where-Object { $_.length -gt 0 }
 			$missingdb = $dbnames | Where-Object { $destserver.Databases.Name -notcontains $_ }
