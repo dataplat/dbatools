@@ -146,10 +146,10 @@ Checks tempdb on the localhost machine.
 		Write-Verbose "File counts evaluated"
 		
 		#test file growth
-		$percdata = $datafiles.Rows | Where-Object { $_.GrowthType -ne 'KB' }
-		$perclog =  $logfiles.Rows  | Where-Object { $_.GrowthType -ne 'KB' }
+		$percdata = $datafiles | Where-Object { $_.GrowthType -ne 'KB' } | Measure-Object
+		$perclog =  $logfiles  | Where-Object { $_.GrowthType -ne 'KB' } | Measure-Object
 		
-		$totalcount = $percdata.rows.count + $perclog.rows.count
+		$totalcount = $percdata.count + $perclog.count
 		if ($totalcount -gt 0) { $totalcount = $true } else { $totalcount = $false }
 		
 		$value = [PSCustomObject]@{
@@ -174,7 +174,7 @@ Checks tempdb on the localhost machine.
 		Write-Verbose "File growth settings evaluated"
 		#test file Location
 		
-		$cdata = ($datafiles.rows | Where-Object { $_.FileName -like 'C:*' }).Rows.Count + ($logfiles | Where-Object { $_.FileName -like 'C:*' }).Rows.Count
+		$cdata = ($datafiles | Where-Object { $_.FileName -like 'C:*' } | Measure-Object).Count + ($logfiles | Where-Object { $_.FileName -like 'C:*' } | Measure-Object).Count
 		if ($cdata -gt 0) { $cdata = $true } else { $cdata = $false }
 		
 		$value = [PSCustomObject]@{
@@ -199,7 +199,7 @@ Checks tempdb on the localhost machine.
 		Write-Verbose "File locations evaluated"
 		
 		#Test growth limits
-		$growthlimits = ($datafiles.rows | Where-Object { $_.MaxSize -gt 0 }).Count + ($logfiles.rows | Where-Object { $_.MaxSize -gt 0 }).Count
+		$growthlimits = ($datafiles | Where-Object { $_.MaxSize -gt 0 } | Measure-Object).Count + ($logfiles | Where-Object { $_.MaxSize -gt 0 } | Measure-Object).Count
 		if ($growthlimits -gt 0) { $growthlimits = $true } else { $growthlimits = $false }
 		
 		$value = [PSCustomObject]@{

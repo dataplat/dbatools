@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.5.0'
+	ModuleVersion = '0.8.5.2'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -126,9 +126,11 @@
 		'Find-SqlUnusedIndex',
 		'Install-SqlWhoIsActive',
 		'Update-SqlWhoIsActive',
-		'Test-DBADiskAllocation',
-		'Test-DBAPowerPlan',
-		'Set-DBAPowerPlan'
+		'Test-DbaDiskAllocation',
+		'Test-DbaPowerPlan',
+		'Set-DbaPowerPlan',
+		'Test-DbaDiskAlignment',
+		'Get-DbaDatabaseFreespace'
 	)
 	
 	# Cmdlets to export from this module
