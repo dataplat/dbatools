@@ -126,9 +126,10 @@
 		'Find-SqlUnusedIndex',
 		'Install-SqlWhoIsActive',
 		'Update-SqlWhoIsActive',
-		'Test-DBADiskAllocation',
-		'Test-DBAPowerPlan',
-		'Set-DBAPowerPlan'
+		'Test-DbaDiskAllocation',
+		'Test-DbaPowerPlan',
+		'Set-DbaPowerPlan',
+		'Test-DbaDiskAlignment'
 	)
 	
 	# Cmdlets to export from this module
