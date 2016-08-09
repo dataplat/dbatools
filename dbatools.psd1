@@ -128,8 +128,7 @@
 		'Update-SqlWhoIsActive',
 		'Test-DBADiskAllocation',
 		'Test-DBAPowerPlan',
-		'Set-DBAPowerPlan',
-        'Get-DbaDatabaseFreespace
+		'Set-DBAPowerPlan'
 	)
 	
 	# Cmdlets to export from this module
