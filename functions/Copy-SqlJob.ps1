@@ -85,7 +85,7 @@ Shows what would happen if the command were executed using force.
 
 	BEGIN {
 		$jobs = $psboundparameters.Jobs
-		$excludes = $psboundparameters.Excludes
+		$exclude = $psboundparameters.Exclude
 
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
@@ -104,7 +104,7 @@ Shows what would happen if the command were executed using force.
 		{
 			$jobname = $job.name
 
-			if ($jobs.count -gt 0 -and $jobs -notcontains $jobname -or $excludes -contains $jobname) { continue }
+			if ($jobs.count -gt 0 -and $jobs -notcontains $jobname -or $exclude -contains $jobname) { continue }
 
 			$dbnames = $job.JobSteps.Databasename | Where-Object { $_.length -gt 0 }
 			$missingdb = $dbnames | Where-Object { $destserver.Databases.Name -notcontains $_ }
