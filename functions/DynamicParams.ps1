@@ -1524,10 +1524,10 @@ Function Get-ParamSqlJobs
 	$attributeCollection.Add($attributes)
 	if ($list) { $attributeCollection.Add($validationset) }
 	$Jobs = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Jobs", [String[]], $attributeCollection)
-	$Excludes = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Excludes",[String[]],$attributeCollection)
+	$Exclude = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Exclude", [String[]], $attributeCollection)
 
 	$newparams.Add("Jobs", $Jobs)
-	$newparams.Add("Excludes", $Excludes)
+	$newparams.Add("Exclude", $Exclude)
 	$server.ConnectionContext.Disconnect()
 
 	return $newparams
