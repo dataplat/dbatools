@@ -235,11 +235,12 @@ Will show a treeview to select the destination path and perform the move (copy&p
 
         if ($ExportExistingFiles)
         {
-            if (($OutputFilePath.Length -gt 0) -and (Test-Path -Path $OutputFilePath))
+            if (($OutputFilePath.Length -gt 0)) #-and (!(Test-Path -Path $OutputFilePath)))
             {
                 $files | Export-Csv -LiteralPath $OutputFilePath -NoTypeInformation
                 Write-Output "Edit the file $OutputFilePath. Keep only the rows matching the fies you want to move. Fill 'destination' column for each file.`r`n"
-                Write-Output "Use the following command to move the files:`r`nMove-SqlDatabaseFiles -SqlServer $SqlServer -Databases $database -MoveFromCSV -InputFilePath '$OutputFilePath'"
+                Write-Output "Use the following command to move the files:`r`nMove-SqlDatabaseFile -SqlServer $SqlServer -Databases $database -MoveFromCSV -InputFilePath '$OutputFilePath'"
+                return
             }
             else
             {
@@ -319,7 +320,7 @@ Will show a treeview to select the destination path and perform the move (copy&p
         {
             Set-SqlDatabaseOffline
 
-            Write-Output "Using Bits to copy the files"
+            Write-Output "You are running this command localy. Using Bits to copy the files"
             $copymethod = "BITS"
         
             #Import-Module BitsTransfer -Verbose
@@ -402,6 +403,8 @@ Will show a treeview to select the destination path and perform the move (copy&p
 
             }
 
+            #TODO: Remove Progressbar!
+
             Set-SqlDatabaseOnline
 
             if ($SuccessfullCopied -gt 0)
@@ -424,80 +427,146 @@ Will show a treeview to select the destination path and perform the move (copy&p
             #Demasiados passos?
             #Enable-PSRemoting -force
 
+            Write-Output "You are running this command remotely. Will try use Remote PS with robocopy to copy the files"
+
             # Test for WinRM #Test-WinRM neh. 
 		    winrm id -r:$sourcenetbios 2>$null | Out-Null
-		    if ($LastExitCode -ne 0) { throw "Remote PowerShell access not enabled on $source or access denied. Quitting." }
+		    if ($LastExitCode -eq 0) 
+            { 
+                #$credential = Get-Credential -Credential "base\csilva"
 
-            $remotepssession = New-PSSession -ComputerName $sourcenetbios
+                $remotepssession = New-PSSession -ComputerName $sourcenetbios #-Credential $credential
+                Write-Output $credential
 
-            #$remotepssession = Enter-PSSession -ComputerName $sourcenetbios
+                #$remotepssession = Enter-PSSession -ComputerName $sourcenetbios
 
-            Write-Output $remotepssession.Id
+                Write-Output "remotepssession: $($remotepssession.Id)"
 
-            Enter-PSSession -Session $remotepssession
+                Enter-PSSession -Session $remotepssession
 
-            Write-Output "Verifying if robocopy.exe exists on default path."
-            $scriptblock = {param($SourceFilePath) Test-Path -Path "C:\Windows\System32\Robocopy.exe"}
-            $RobocopyExists = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourceFilePath
+                Write-Output "Verifying if robocopy.exe exists on default path."
+                $scriptblock = {param($SourceFilePath) Test-Path -Path "C:\Windows\System32\Robocopy.exe"}
+                $RobocopyExists = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourceFilePath
             
-            if ($RobocopyExists)
-            {
-                Set-SqlDatabaseOffline
+                if ($RobocopyExists)
+                {
+                    Set-SqlDatabaseOffline
 
-                Write-Output "Using Robocopy.exe to copy the files"
-                $copymethod = "ROBOCOPY"
+                    Write-Output "Using Robocopy.exe to copy the files"
+                    $copymethod = "ROBOCOPY"
             
-                #Get-PSSession
+                    #Get-PSSession
 
-                Write-Output $fileToMove
-        
-                $scriptblock = {param($SourcePath, $DestinationPath, $fileToCopy) Start-Process robocopy.exe -ArgumentList "`"$SourcePath`" `"$DestinationPath`" `"$fileToCopy`" /COPYALL /Z /MT:12" -PassThru}
+                    foreach ($file in $FilesToMove)
+                    {
+                        #$databaseProgressbar += 1
 
-                #http://infoworks.tv/bits-transfer-is-not-allowed-in-remote-powershell/
-                $CopyList = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourcePath, $DestinationPath, $fileToCopy
+                        $dbName = $File.dbname
+                        $DestinationPath = $file.Destination
+                        $SourceFilePath = $file.FileName
+                        $LogicalName = $file.Name
+                        $SourcePath = Split-Path -Path $($file.FileName)
+                        $FileToCopy = Split-Path -Path $($file.FileName) -leaf
+
+                        $ValidDestinationPath = !([string]::IsNullOrEmpty($DestinationPath))
+                
+                        Write-Verbose "Using RemoteSession - Copy file from path: $SourcePath"
+                        Write-Verbose "Using RemoteSession - Copy file to path: $DestinationPath"
+                        Write-Verbose "Using RemoteSession - Copy file: $fileToCopy"
+                        Write-Verbose "Using RemoteSession - DestinationPath and filename: $DestinationFilePath"
+                        #Write-Progress `
+						#	        -Id 1 `
+						#	        -Activity "Working on file: $LogicalName on database: '$dbName'" `
+						#	        -PercentComplete ($databaseProgressbar / $FilesToMove.Count * 100) `
+						#	        -Status "Processing - $databaseProgressbar of $($FilesToMove.Count) files"
+
+                        if ($ValidDestinationPath)
+                        {
+                            $DestinationFilePath = $(Join-Path $DestinationPath $fileToCopy)
+
+                            if (!(Test-SqlPath -SqlServer $server -Path $DestinationPath))
+                            {
+                                Write-Warning "Destination path  for logical name '$LogicalName' does not exists. '$DestinationPath'"
+                                Continue
+                            }
+                        }
+                        else
+                        {
+                            Write-Warning "Destination path for logical name '$LogicalName' is not valid."
+                            Continue
+                        }
         
-                #Add progressbar http://stackoverflow.com/questions/13883404/custom-robocopy-progress-bar-in-powershell
-                Write-Output 'Waiting for file copies to complete...'		
-		        do
-		        {
-                    Write-Warning "While!"
-                    $CopyList = $scriptblock = {Get-Process "robocopy*"}
-                    Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock
-                    Write-Warning "End Get-Process"
+                           
+
+
+                        
+
+
+
+
+
+
+
+                        $scriptblock = {param($SourcePath, $DestinationPath, $fileToCopy) Start-Process robocopy.exe -ArgumentList "`"$SourcePath`" `"$DestinationPath`" `"$fileToCopy`" /COPYALL /Z /MT:12" -PassThru}
+
+                        #http://infoworks.tv/bits-transfer-is-not-allowed-in-remote-powershell/
+                        $CopyList = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourcePath, $DestinationPath, $fileToCopy
+        
+                        #Add progressbar http://stackoverflow.com/questions/13883404/custom-robocopy-progress-bar-in-powershell
+                        Write-Output 'Waiting for file copies to complete...'		
+		                do
+		                {
+                            Start-Sleep -Seconds 3
+                            Write-Warning "While!"
+                            $CopyList = $scriptblock = {Get-Process "robocopy*"}
+                            Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock
+                            Write-Warning "End Get-Process"
+
+                            #Write-Progress -Activity Robocopy -Status ("Copied {0} of {1} files; Copied {2} of {3} bytes" -f $CopiedFileCount, $TotalFileCount, $BytesCopied, $BytesTotal) -PercentComplete $Percentage
 			
-                    Start-Sleep -Seconds 3
-		        }
-                while (@($CopyList | Where-Object {$_.HasExited -eq $false}).Count -gt 0)
+                            
+		                }
+                        while (@($CopyList | Where-Object {$_.HasExited -eq $false}).Count -gt 0)
 
-                Set-SqlDatabaseFileLocation
+                        Set-SqlDatabaseFileLocation -Database $dbName -LogicalFileName $LogicalName -PhysicalFileLocation $DestinationFilePath
 
-                Set-SqlDatabaseOnline
+                        #Delete old file already copied to the new path
+                        Write-Output "Deleting file '$SourceFilePath'"
+                        $scriptblock = {param($SourceFilePath) Remove-Item -Path $SourceFilePath}
+                        Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourceFilePath
 
-                #Delete old file already copied to the new path
-                Write-Output "Deleting file '$SourceFilePath'"
-                $scriptblock = {param($SourceFilePath) Remove-Item -Path $SourceFilePath}
-                Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourceFilePath
+                        #Verify if file was deleted
+                        try
+                        {
+                            if (Test-SqlPath -SqlServer $server -Path $SourceFilePath)
+                            {
+                                Write-Warning "Can't delete the file '$SourceFilePath'. Delete it manualy"
+                            }
+                            else
+                            {
+                                Write-Output "File '$SourceFilePath' deleted"    
+                            }
+                        }
+                        catch
+                        {
+                            Write-Exception $_ 
+                            Write-Output $SourceFilePath
+                        }
 
-                #Verify if file was deleted
-                $scriptblock = {param($SourceFilePath) Test-Path -Path $SourceFilePath}
-                $FileExists = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourceFilePath
-                if ($FileExists)
-                {
-                    Write-Warning "Can't delete the file '$SourceFilePath'. Delete it manualy"
+                    }
+
+                    Set-SqlDatabaseOnline
+
+                    Write-Verbose "Exiting-PSSession"
+                    Exit-PSSession
+
+                    Write-Verbose "Removing PSSession with id $($remotepssession.Id)"
+                    Remove-PSSession $remotepssession.Id
                 }
-                else
-                {
-                    Write-Output "File '$SourceFilePath' deleted"    
-                }
-
-                Write-Verbose "Exiting-PSSession"
-                Exit-PSSession
-
-                Write-Verbose "Removing PSSession with id $($remotepssession.Id)"
-                Remove-PSSession $remotepssession.Id
             }
             else
             {
+                Write-Ouput "Remote PowerShell access not enabled on $source or access denied. Will try using Copy-Item cmdlet" 
                 $copymethod = "COPYITEM"
             }
         }  
@@ -508,6 +577,8 @@ Will show a treeview to select the destination path and perform the move (copy&p
 	END
 	{
 		$server.ConnectionContext.Disconnect()
+
+        #Remove-PSSession $remotepssession.Id
 		If ($Pscmdlet.ShouldProcess("console", "Showing final message"))
 		{
 			
