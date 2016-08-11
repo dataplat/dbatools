@@ -158,8 +158,15 @@ Will show a treeview to select the destination path and perform the move (copy&p
 
         function Set-SqlDatabaseOnline
         {
-           Write-Output "Set database '$database' Online!"
-            $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] SET ONLINE") | Out-Null
+            Write-Output "Set database '$database' Online!"
+            try
+            {
+                $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] SET ONLINE") | Out-Null
+            }
+            catch
+            {
+                Write-Warning $_
+            }
 
             $WaitingTime = 0
             do
@@ -480,6 +487,12 @@ Will show a treeview to select the destination path and perform the move (copy&p
 						#	        -PercentComplete ($databaseProgressbar / $FilesToMove.Count * 100) `
 						#	        -Status "Processing - $databaseProgressbar of $($FilesToMove.Count) files"
 
+                        if ($DestinationPath -eq $SourcePath)
+                        {
+                            Write-Warning "File not moved because target and destination path are the same"
+                            Continue
+                        }
+
                         if ($ValidDestinationPath)
                         {
                             $DestinationFilePath = $(Join-Path $DestinationPath $fileToCopy)
@@ -499,32 +512,99 @@ Will show a treeview to select the destination path and perform the move (copy&p
                            
 
 
+                        # Define regular expression that will gather number of bytes copied
+                        $RegexBytes = '(?<=\s+)\d+(?=\s+)';
+
+                        #region Robocopy params
+                        # MIR = Mirror mode
+                        # NP  = Don't show progress percentage in log
+                        # NC  = Don't log file classes (existing, new file, etc.)
+                        # BYTES = Show file sizes in bytes
+                        # NJH = Do not display robocopy job header (JH)
+                        # NJS = Do not display robocopy job summary (JS)
+                        # TEE = Display log in stdout AND in target log file
+                        #$CommonRobocopyParams = '/MIR /NP /NDL /NC /BYTES /NJH /NJS';
+                        #$CommonRobocopyParams = '/NP /NDL /NC /BYTES /NJH /NJS /BYTES /COPYALL /Z /MT:12';
+                        $CommonRobocopyParams = '/ndl /TEE /bytes /nfl /L';
+
+                        #endregion Robocopy params
+
+                        #region Robocopy Staging
+                        Write-Verbose -Message 'Analyzing robocopy job ...';
+                        $StagingLogPath = '{0}\temp\{1}robocopystaging.log' -f $env:windir, (Get-Date -Format 'yyyyMMddhhmmss');
+
+                        #$ScanArgs = $RobocopyArgs + " /Log:$ScanLog ".Split(" ")
+                        #$RoboArgs = $RobocopyArgs + "/ndl /TEE /bytes /Log:$RoboLog ".Split(" ")
+
+                        $StagingArgumentList = '"{0}" "{1}" "{2}" /LOG:"{3}" {4}' -f $SourcePath, $DestinationPath, $fileToCopy, $StagingLogPath, $CommonRobocopyParams;
+                        Write-Verbose -Message ('Staging arguments: {0}' -f $StagingArgumentList);
+                        $scriptblock = {param($StagingArgumentList) Start-Process -Wait -FilePath robocopy -PassThru -WindowStyle Hidden -ArgumentList $StagingArgumentList}
+                        $Robocopy = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $StagingArgumentList
+
+                        Start-Sleep -Milliseconds 100;
                         
+                        # Get the total number of files that will be copied
+                        $scriptblock = {param($StagingLogPath) Get-Content $StagingLogPath}
+                        $StagingContent = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $StagingLogPath
+
+                        #region Start Robocopy
+                        # Begin the robocopy process
+                        $RobocopyLogPath = '{0}\temp\{1}robocopy.log' -f $env:windir, (Get-Date -Format 'yyyyMMddhhmmss');
+                        #$ArgumentList = '"{0}" "{1}" /LOG:"{2}"' -f $SourcePath, $DestinationPath, $fileToCopy, $RobocopyLogPath;
+                        #Write-Verbose -Message ('Beginning the robocopy process with arguments: {0}' -f $ArgumentList);
+                        
+                        $CommonRobocopyParams = '/ndl /TEE /bytes /NC';
 
 
+                        $ArgumentList = '"{0}" "{1}" "{2}" /LOG:"{3}" {4}' -f $SourcePath, $DestinationPath, $fileToCopy, $RobocopyLogPath, $CommonRobocopyParams;
+                        Write-Verbose -Message ('Execution arguments: {0}' -f $ArgumentList);
+                        $scriptblock = {param($ArgumentList) Start-Process robocopy -PassThru -WindowStyle Hidden -ArgumentList $ArgumentList}                        
+                        $CopyList = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $ArgumentList
 
+                        Start-Sleep -Milliseconds 500;
 
-
-
-
-                        $scriptblock = {param($SourcePath, $DestinationPath, $fileToCopy) Start-Process robocopy.exe -ArgumentList "`"$SourcePath`" `"$DestinationPath`" `"$fileToCopy`" /COPYALL /Z /MT:12" -PassThru}
+                        #$scriptblock = {param($SourcePath, $DestinationPath, $fileToCopy) Start-Process robocopy.exe -ArgumentList "`"$SourcePath`" `"$DestinationPath`" `"$fileToCopy`" /COPYALL /Z /MT:12" -PassThru}
 
                         #http://infoworks.tv/bits-transfer-is-not-allowed-in-remote-powershell/
-                        $CopyList = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourcePath, $DestinationPath, $fileToCopy
+                        #$CopyList = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourcePath, $DestinationPath, $fileToCopy
         
+                        $FileSize = [regex]::Match($StagingContent[-4],".+:\s+(\d+)\s+(\d+)").Groups[2].Value
+                        write-verbose ("Robocopy Bytes: $FileSize `n" +($StagingContent -join "`n"))
+
                         #Add progressbar http://stackoverflow.com/questions/13883404/custom-robocopy-progress-bar-in-powershell
                         Write-Output 'Waiting for file copies to complete...'		
 		                do
 		                {
-                            Start-Sleep -Seconds 3
+                            Start-Sleep -Milliseconds 100
                             Write-Warning "While!"
-                            $CopyList = $scriptblock = {Get-Process "robocopy*"}
-                            Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock
+                            $scriptblock = {Get-Process "robocopy*"}
+                            $CopyList = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock
                             Write-Warning "End Get-Process"
 
-                            #Write-Progress -Activity Robocopy -Status ("Copied {0} of {1} files; Copied {2} of {3} bytes" -f $CopiedFileCount, $TotalFileCount, $BytesCopied, $BytesTotal) -PercentComplete $Percentage
-			
+                            $BytesCopied = 0;
                             
+                            $scriptblock = {param($RobocopyLogPath) Get-Content $RobocopyLogPath}
+                            $LogContent = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $RobocopyLogPath
+                            Write-Warning "Log Content"
+                            $LogContent
+                            $Files = $LogContent -match "^\s*(\d+)\s+(\S+)"
+                            Write-Warning "Files"
+                            $Files
+                            if ($Files -ne $Null )
+                            {
+	                            $copied = ($Files[0..($Files.Length-2)] | %{$_.Split("`t")[-2]} | Measure -sum).Sum
+	                            if ($LogContent[-1] -match "(100|\d?\d\.\d)\%")
+	                            {
+		                            write-progress Copy -percentComplete $LogContent[-1].Trim("% `t") $LogContent[-1]
+		                            $Copied += $Files[-1].Split("`t")[-2] /100 * ($LogContent[-1].Trim("% `t"))
+	                            }
+	                            else
+	                            {
+		                            write-progress Copy -Complete
+	                            }
+                                $PercentComplete = [math]::min(100,(100*$Copied/[math]::max($Copied,$FileSize)))
+	                            write-progress ROBOCOPY -PercentComplete $PercentComplete $Files[-1].Split("`t")[-1]
+                            }
 		                }
                         while (@($CopyList | Where-Object {$_.HasExited -eq $false}).Count -gt 0)
 
@@ -532,7 +612,7 @@ Will show a treeview to select the destination path and perform the move (copy&p
 
                         #Delete old file already copied to the new path
                         Write-Output "Deleting file '$SourceFilePath'"
-                        $scriptblock = {param($SourceFilePath) Remove-Item -Path $SourceFilePath}
+                        $scriptblock = {param($SourceFilePath) Remove-Item $SourceFilePath}
                         Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourceFilePath
 
                         #Verify if file was deleted
