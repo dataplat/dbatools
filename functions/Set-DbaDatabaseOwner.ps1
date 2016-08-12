@@ -47,13 +47,13 @@ Set-DbaDatabaseOwner -SqlServer localhost
 Sets database owner to 'sa' on all databases where the owner does not match 'sa'.
 
 .EXAMPLE
-Test-DbaDatabaseOwner -SqlServer localhost -TargetLogin 'DOMAIN\account'
+Set-DbaDatabaseOwner -SqlServer localhost -TargetLogin 'DOMAIN\account'
 
 Sets database owner to sa on all databases where the owner does not match 'DOMAIN\account'. Note
 that TargetLogin must be a valid security principal that exists on the target server.
 
 .EXAMPLE
-Test-DbaDatabaseOwner -SqlServer localhost -Databases 'junk,dummy'
+Set-DbaDatabaseOwner -SqlServer localhost -Databases 'junk,dummy'
 
 Sets database owner to 'sa' on the junk and dummy databases if their current owner does not match 'sa'.
 #>
