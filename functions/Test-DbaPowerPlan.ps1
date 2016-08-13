@@ -1,4 +1,4 @@
-﻿Function Test-dbaPowerPlan
+﻿Function Test-DbaPowerPlan
 {
 <#
 .SYNOPSIS
@@ -35,20 +35,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Test-dbaPowerPlan
+https://dbatools.io/Test-DbaPowerPlan
 
 .EXAMPLE
-Test-dbaPowerPlan -ComputerName sqlserver2014a
+Test-DbaPowerPlan -ComputerName sqlserver2014a
 
 To return true or false for Power Plan being set to High Performance
 
 .EXAMPLE   
-Test-dbaPowerPlan -ComputerName sqlserver2014a -CustomPowerPlan 'Maximum Performance'
+Test-DbaPowerPlan -ComputerName sqlserver2014a -CustomPowerPlan 'Maximum Performance'
 	
 To return true or false for Power Plan being set to the custom power plan called Maximum Performance
 	
 .EXAMPLE   
-Test-dbaPowerPlan -ComputerName sqlserver2014a -Detailed
+Test-DbaPowerPlan -ComputerName sqlserver2014a -Detailed
 	
 To return detailed information Power Plans
 	

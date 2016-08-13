@@ -1,4 +1,4 @@
-﻿Function Test-DBADiskAllocation
+﻿Function Test-DbaDiskAllocation
 {
 <#
 .SYNOPSIS
@@ -38,20 +38,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Test-DBADiskAllocation
+https://dbatools.io/Test-DbaDiskAllocation
 
 .EXAMPLE
-Test-DBADiskAllocation -ComputerName sqlserver2014a
+Test-DbaDiskAllocation -ComputerName sqlserver2014a
 
 To return true or false for any disk not being formatted to 64k
 
 .EXAMPLE   
-Test-DBADiskAllocation -ComputerName sqlserver2014 -Detailed
+Test-DbaDiskAllocation -ComputerName sqlserver2014 -Detailed
 	
 To return detailed information about disks containing SQL data from any instance being formatted to 64k
 	
 .EXAMPLE   
-Test-DBADiskAllocation -ComputerName sqlserver2014a -NoSqlCheck
+Test-DbaDiskAllocation -ComputerName sqlserver2014a -NoSqlCheck
 
 To return true or false for ALL disks being formatted to 64k
 	

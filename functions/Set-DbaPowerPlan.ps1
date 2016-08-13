@@ -1,4 +1,4 @@
-﻿Function Set-DBAPowerPlan
+﻿Function Set-DbaPowerPlan
 {
 <#
 .SYNOPSIS
@@ -40,15 +40,15 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Set-DBAPowerPlan
+https://dbatools.io/Set-DbaPowerPlan
 
 .EXAMPLE
-Set-DBAPowerPlan -ComputerName sqlserver2014a
+Set-DbaPowerPlan -ComputerName sqlserver2014a
 
 To return true or false for Power Plan being set to High Performance
 	
 .EXAMPLE   
-Set-DBAPowerPlan -ComputerName sqlserver2014a -Detailed
+Set-DbaPowerPlan -ComputerName sqlserver2014a -Detailed
 	
 To return detailed information Power Plans
 	
@@ -67,7 +67,7 @@ To return detailed information Power Plans
 	{
 		if ($CustomPowerPlan.Length -gt 0) { $PowerPlan = $CustomPowerPlan }
 		
-		Function Set-DBAPowerPlan
+		Function Set-DbaPowerPlan
 		{
 			try
 			{
@@ -146,8 +146,8 @@ To return detailed information Power Plans
 		{
 			if ($server -match 'Server\=')
 			{
-				Write-Verbose "Matched that value was piped from Test-DBAPowerPlan"
-				# I couldn't properly unwrap the output from  Test-DBAPowerPlan so here goes.
+				Write-Verbose "Matched that value was piped from Test-DbaPowerPlan"
+				# I couldn't properly unwrap the output from  Test-DbaPowerPlan so here goes.
 				$lol = $server.Split("\;")[0]
 				$lol = $lol.TrimEnd("\}")
 				$lol = $lol.TrimStart("\@\{Server")
@@ -170,7 +170,7 @@ To return detailed information Power Plans
 				continue
 			}
 			
-			$data = Set-DBAPowerPlan $server
+			$data = Set-DbaPowerPlan $server
 			
 			if ($data.Count -gt 1)
 			{

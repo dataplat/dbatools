@@ -115,12 +115,12 @@
 		'Test-SqlNetworkLatency',
 		'Find-SqlDuplicateIndex',
 		'Show-SqlServerFileSystem',
-		'Get-DiskSpace',
+		'Get-DbaDiskSpace',
 		'Remove-SqlDatabaseSafely',
 		'Show-SqlDatabaseList',
 		'Show-SqlWhoIsActive',
-        'Set-SqlTempDbConfiguration',
-        'Test-SqlTempDbConfiguration',
+		'Set-SqlTempDbConfiguration',
+		'Test-SqlTempDbConfiguration',
 		'Repair-SqlOrphanUser',
 		'Remove-SqlOrphanUser',
 		'Find-SqlUnusedIndex',
@@ -130,7 +130,10 @@
 		'Test-DbaPowerPlan',
 		'Set-DbaPowerPlan',
 		'Test-DbaDiskAlignment',
-		'Get-DbaDatabaseFreespace'
+		'Get-DbaDatabaseFreespace',
+		'Get-DbaClusterActiveNode',
+		'Test-DbaDatabaseOwner',
+		'Set-DbaDatabaseOwner'
 	)
 	
 	# Cmdlets to export from this module
@@ -147,7 +150,8 @@
 	'Restore-HallengrenBackup',
 	'Update-SqlWhoIsActive',
 	'Show-SqlMigrationConstraint',
-	'Test-SqlDiskAllocation'
+	'Test-SqlDiskAllocation',
+	'Get-DiskSpace'
 	
 	# List of all modules packaged with this module
 	ModuleList = @()
