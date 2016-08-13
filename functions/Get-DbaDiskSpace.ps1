@@ -1,4 +1,4 @@
-﻿Function Get-DiskSpace
+﻿Function Get-DbaDiskSpace
 {
 <#
 .SYNOPSIS
@@ -32,20 +32,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Get-DiskSpace
+https://dbatools.io/Get-DbaDiskSpace
 
 .EXAMPLE
-Get-DiskSpace -ComputerName sqlserver2014a
+Get-DbaDiskSpace -ComputerName sqlserver2014a
 
 Shows disk space for sqlserver2014a in GB
 
 .EXAMPLE   
-Get-DiskSpace -ComputerName sqlserver2014a -Unit TB
+Get-DbaDiskSpace -ComputerName sqlserver2014a -Unit TB
 
 Shows disk space for sqlserver2014a in TB
 
 .EXAMPLE   
-Get-DiskSpace -ComputerName server1, server2, server3 -Unit MB
+Get-DbaDiskSpace -ComputerName server1, server2, server3 -Unit MB
 
 Returns a custom object filled with information for server1, server2 and server3, in MB
 	
