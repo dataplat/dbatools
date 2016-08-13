@@ -691,7 +691,7 @@ Will show a treeview to select the destination path and perform the move (copy&p
                     $dbName = $File.dbname
                     $DestinationPath = $file.Destination
                     $SourceFilePath = $file.FileName
-                    $UNCSourceFilePath = "\\$sourcenetbios\$($file.FileName.Replace(':', '$'))" #$file.FileName
+                    $UNCSourceFilePath = Join-AdminUnc -servername $sourcenetbios -FilePath $file.FileName
                     $LogicalName = $file.Name
                     $SourcePath = Split-Path -Path $($file.FileName)
                     $FileToCopy = Split-Path -Path $($file.FileName) -leaf
@@ -707,7 +707,7 @@ Will show a treeview to select the destination path and perform the move (copy&p
                     {
                         $DestinationFilePath = $(Join-Path $DestinationPath $fileToCopy)
 
-                        $UNCDestinationFilePath = "\\$sourcenetbios\$($DestinationFilePath.Replace(':', '$'))"
+                        $UNCDestinationFilePath = Join-AdminUnc -servername $sourcenetbios -FilePath $DestinationFilePath
 
                         #Validate access using UNC
                         if (!(Test-Path $DestinationPath -IsValid))
