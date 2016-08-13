@@ -12,7 +12,8 @@ File Growth - Are any files set to have percentage growth, as best practice is a
 File Location - Is tempdb located on the C:\? Best practice says to locate it elsewhere.
 File MaxSize Set(optional) - Do any files have a max size value? Max size could cause tempdb problems if it isn't allowed to grow.
 
-Other rules can be added at a future date. If any of these rules don't match recommended values, a warning will be thrown.
+Other rules can be added at a future date. Only results that don't match best practices will be displayed. To display all results,
+use the -Detailed switch.
 
 .PARAMETER SqlServer
 The SQL Server instance.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
@@ -23,6 +24,9 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+
+.PARAMETER Detailed
+Switch that allows you to display all test results.
 
 .NOTES 
 Original Author: Michael Fal (@Mike_Fal), http://mikefal.net
@@ -44,6 +48,11 @@ https://dbatools.io/Test-SqlTempDbConfiguration
 Test-SqlTempDbConfiguration -SqlServer localhost
 
 Checks tempdb on the localhost machine.
+
+.EXAMPLE   
+Test-SqlTempDbConfiguration -SqlServer localhost -Detailed
+
+Checks tempdb on the localhost machine. All rest results are shown.
 	
 #>
 	
@@ -52,7 +61,8 @@ Checks tempdb on the localhost machine.
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
-		[object]$SqlCredential
+		[object]$SqlCredential,
+        [Switch]$Detailed
 	)
 	
 	BEGIN
@@ -226,6 +236,10 @@ Checks tempdb on the localhost machine.
 	
 	END
 	{
-		return $return	
+        if($Detailed){
+		    return $return
+        } else {
+            return ($return | Where-Object {$_.isBestPractice -eq $false})
+        }
 	}
 }
