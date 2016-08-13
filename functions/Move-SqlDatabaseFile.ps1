@@ -321,7 +321,7 @@ Will show a treeview to select the destination path and perform the move (copy&p
             Can be:
              - Local with bits
              - Remote with PSSession $ Robocopy
-             - Remote with Copy-Item
+             - Remote with Copy-Item (using UNC)
         #>
         if ($env:computername -eq $sourcenetbios)
         {
@@ -331,110 +331,110 @@ Will show a treeview to select the destination path and perform the move (copy&p
         
             #Import-Module BitsTransfer -Verbose
 
-            $databaseProgressbar = 0
-            $SuccessfullCopied = 0
+            $filesProgressbar = 0
 
-            If ($FilesToMove.Count -gt 0)
+            Set-SqlDatabaseOffline
+
+            foreach ($file in $FilesToMove)
             {
-                Set-SqlDatabaseOffline
+                $filesProgressbar += 1
 
-                foreach ($file in $FilesToMove)
-                {
-                    $databaseProgressbar += 1
-
-                    $dbName = $File.dbname
-                    $DestinationPath = $file.Destination
-                    $SourceFilePath = $file.FileName
-                    $LogicalName = $file.Name
-                    $SourcePath = Split-Path -Path $($file.FileName)
-                    $FileToCopy = Split-Path -Path $($file.FileName) -leaf
-
-                    $ValidDestinationPath = !([string]::IsNullOrEmpty($DestinationPath))
+                $dbName = $File.dbname
+                $DestinationPath = $file.Destination
+                $SourceFilePath = $file.FileName
+                $LogicalName = $file.Name
+                $SourcePath = Split-Path -Path $($file.FileName)
+                $FileToCopy = Split-Path -Path $($file.FileName) -leaf
+                $ValidDestinationPath = !([string]::IsNullOrEmpty($DestinationPath))
                 
-                    Write-Progress `
-							    -Id 1 `
-							    -Activity "Working on file: $LogicalName on database: '$dbName'" `
-							    -PercentComplete ($databaseProgressbar / $FilesToMove.Count * 100) `
-							    -Status "Processing - $databaseProgressbar of $($FilesToMove.Count) files"
+                Write-Progress `
+							-Id 1 `
+							-Activity "Working on file: $LogicalName on database: '$dbName'" `
+							-PercentComplete ($filesProgressbar / $FilesToMove.Count * 100) `
+							-Status "Copying - $filesProgressbar of $($FilesToMove.Count) files"
 
-                    if ($ValidDestinationPath)
+                if ($ValidDestinationPath)
+                {
+                    $DestinationFilePath = $(Join-Path $DestinationPath $fileToCopy)
+
+                    if (!(Test-SqlPath -SqlServer $server -Path $DestinationPath))
                     {
-                        $DestinationFilePath = $(Join-Path $DestinationPath $fileToCopy)
+                        Write-Warning "Destination path  for logical name '$LogicalName' does not exists. '$DestinationPath'"
+                        Continue
+                    }
+                }
+                else
+                {
+                    Write-Warning "Destination path for logical name '$LogicalName' is not valid."
+                    Continue
+                }
 
-                        if (!(Test-SqlPath -SqlServer $server -Path $DestinationPath))
+                if (!(Test-SqlPath -SqlServer $server -Path $SourceFilePath))
+                {
+                    Write-Warning "Source file or path for logical name '$LogicalName' does not exists. '$SourceFilePath'"
+                    Continue
+                }
+
+                if (($DestinationPath -eq $SourcePath) -or ([string]::IsNullOrEmpty($DestinationPath)))
+                {
+                    Write-Warning "Destination path for file '$LogicalName' is the same of source path or is empty. Skipping"
+                    continue
+                }
+
+                Write-Verbose "Copy file from path: $SourcePath"
+                Write-Verbose "Copy file to path: $DestinationPath"
+                Write-Verbose "Copy file: $fileToCopy"
+                Write-Verbose "DestinationPath and filename: $DestinationFilePath"
+
+                try
+                {
+                    $BITSoutput = Start-BitsTransfer -Source $SourceFilePath -Destination $DestinationFilePath -RetryInterval 60 -RetryTimeout 60 `
+                                                    -DisplayName "Copying file" -Description "Copying '$FileToCopy' to $DestinationPath"
+
+                    Set-SqlDatabaseFileLocation -Database $dbName -LogicalFileName $LogicalName -PhysicalFileLocation $DestinationFilePath
+
+
+                    #Verify if file exists on both folders (source and destination)
+                    if ((Test-SqlPath -SqlServer $server -Path $DestinationFilePath) -and (Test-SqlPath -SqlServer $server -Path $SourceFilePath))
+                    {
+                        try
                         {
-                            Write-Warning "Destination path  for logical name '$LogicalName' does not exists. '$DestinationPath'"
-                            Continue
+                            #Delete old file already copied to the new path
+                            Write-Output "Deleting file '$SourceFilePath'"
+                                
+                            Remove-Item -Path $SourceFilePath
+
+                            Write-Output "File '$SourceFilePath' deleted" 
+                        }
+                        catch
+                        {
+                            Write-Exception $_
+                            Write-Warning "Can't delete the file '$SourceFilePath'. Delete it manualy"
                         }
                     }
                     else
                     {
-                        Write-Warning "Destination path for logical name '$LogicalName' is not valid."
-                        Continue
+                        Write-Warning "File $SourceFilePath does not exists! No file copied!"
                     }
-
-                    if (!(Test-SqlPath -SqlServer $server -Path $SourceFilePath))
-                    {
-                        Write-Warning "Source file or path for logical name '$LogicalName' does not exists. '$SourceFilePath'"
-                        Continue
-                    }
-
-                    if (($DestinationPath -eq $SourcePath) -or ([string]::IsNullOrEmpty($DestinationPath)))
-                    {
-                        Write-Warning "Destination path for file '$LogicalName' is the same of source path or is empty. Skipping"
-                        continue
-                    }
-
-                    Write-Verbose "Copy file from path: $SourcePath"
-                    Write-Verbose "Copy file to path: $DestinationPath"
-                    Write-Verbose "Copy file: $fileToCopy"
-                    Write-Verbose "DestinationPath and filename: $DestinationFilePath"
-
-                    $output = Start-BitsTransfer -Source $SourceFilePath -Destination $DestinationFilePath -RetryInterval 60 -RetryTimeout 60 `
-                                                 -DisplayName "Copying file" -Description "Copying '$FileToCopy' to $DestinationPath"
-
-                    $SuccessfullCopied += 1
-
-                    Set-SqlDatabaseFileLocation -Database $dbName -LogicalFileName $LogicalName -PhysicalFileLocation $DestinationFilePath
-
-                    #Delete old file already copied to the new path
-                    Write-Output "Deleting file '$SourceFilePath'"
-                    Remove-Item -Path $SourceFilePath
-
-                    #Verify if file was deleted
-                    if (Test-Path -Path $SourceFilePath)
-                    {
-                        Write-Warning "Can't delete the file '$SourceFilePath'. Delete it manualy"
-                    }
-                    else
-                    {
-                        Write-Output "File '$SourceFilePath' deleted"    
-                    }
-
                 }
-
-                Set-SqlDatabaseOnline
-
-                if ($SuccessfullCopied -gt 0)
+                catch
                 {
-                    #Get-BitsTransfer
-
-                    #Em caso de erro remover o job da queue
-                    #Remove-BitsTransfer
-                }
-                else
-                {
-                    Write-Warning "No files were copied!"
+                    Write-Exception $_
                 }
             }
-            else
-            {
-                Write-Warning "No files selected to move!"
-            }
+
+            Write-Progress `
+							-Id 1 `
+                            -Activity "Files copied!"`
+                            -Completed
+
+            Set-SqlDatabaseOnline
             #TODO: Remove Progressbar!
         }
         else
         {
+            #Reset variable
+            $IsRemote = $false
 
             #Se não estiver configurado pode ser corrido este comando no destino.
             #Demasiados passos?
@@ -446,36 +446,42 @@ Will show a treeview to select the destination path and perform the move (copy&p
 		    winrm id -r:$sourcenetbios 2>$null | Out-Null
 		    if ($LastExitCode -eq 0) 
             { 
-                #$credential = Get-Credential -Credential "base\csilva"
+                $remotepssession = New-PSSession -ComputerName $sourcenetbios
 
-                $remotepssession = New-PSSession -ComputerName $sourcenetbios #-Credential $credential
-                Write-Output $credential
-
-                #$remotepssession = Enter-PSSession -ComputerName $sourcenetbios
-
-                Write-Output "remotepssession: $($remotepssession.Id)"
-
-                Enter-PSSession -Session $remotepssession
-
-                Write-Output "Verifying if robocopy.exe exists on default path."
-                $scriptblock = {param($SourceFilePath) Test-Path -Path "C:\Windows\System32\Robocopy.exe"}
-                $RobocopyExists = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourceFilePath
-            
-                if ($RobocopyExists)
+                if([string]::IsNullOrEmpty($remotepssession))
                 {
+                    $IsRemote = $false
+                    Write-Warning "Connecting to remote server '$sourcenetbios' failed. We will try with Copy-Item method."
+                }
+                else
+                {
+                    $IsRemote = $true
+                
 
-                    Write-Output "Using Robocopy.exe to copy the files"
-                    $copymethod = "ROBOCOPY"
+                    Write-Output "LastExitCode: $LastExitCode"
+                    #$remotepssession = Enter-PSSession -ComputerName $sourcenetbios
+
+                    Write-Output "remotepssession: $($remotepssession.Id)"
+
+                    Enter-PSSession -Session $remotepssession
+
+                    Write-Output "Verifying if robocopy.exe exists on default path."
+                    $scriptblock = {param($SourceFilePath) Test-Path -Path "C:\Windows\System32\Robocopy.exe"}
+                    $RobocopyExists = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourceFilePath
             
-                    #Get-PSSession
-
-                    if ($FilesToMove.Count -gt 0)
+                    if ($RobocopyExists)
                     {
+
+                        Write-Output "Using Robocopy.exe to copy the files"
+                        $copymethod = "ROBOCOPY"
+            
+                        #Get-PSSession
+
                         Set-SqlDatabaseOffline
 
                         foreach ($file in $FilesToMove)
                         {
-                            #$databaseProgressbar += 1
+                            #$filesProgressbar += 1
 
                             $dbName = $File.dbname
                             $DestinationPath = $file.Destination
@@ -493,14 +499,8 @@ Will show a treeview to select the destination path and perform the move (copy&p
                             #Write-Progress `
 						    #	        -Id 1 `
 						    #	        -Activity "Working on file: $LogicalName on database: '$dbName'" `
-						    #	        -PercentComplete ($databaseProgressbar / $FilesToMove.Count * 100) `
-						    #	        -Status "Processing - $databaseProgressbar of $($FilesToMove.Count) files"
-
-                            if ($DestinationPath -eq $SourcePath)
-                            {
-                                Write-Warning "File not moved because target and destination path are the same"
-                                Continue
-                            }
+						    #	        -PercentComplete ($filesProgressbar / $FilesToMove.Count * 100) `
+						    #	        -Status "Processing - $filesProgressbar of $($FilesToMove.Count) files"
 
                             if ($ValidDestinationPath)
                             {
@@ -516,6 +516,18 @@ Will show a treeview to select the destination path and perform the move (copy&p
                             {
                                 Write-Warning "Destination path for logical name '$LogicalName' is not valid."
                                 Continue
+                            }
+
+                            if (!(Test-SqlPath -SqlServer $server -Path $SourceFilePath))
+                            {
+                                Write-Warning "Source file or path for logical name '$LogicalName' does not exists. '$SourceFilePath'"
+                                Continue
+                            }
+
+                            if (($DestinationPath -eq $SourcePath) -or ([string]::IsNullOrEmpty($DestinationPath)))
+                            {
+                                Write-Warning "Destination path for file '$LogicalName' is the same of source path or is empty. Skipping"
+                                continue
                             }
         
                            
@@ -624,102 +636,152 @@ Will show a treeview to select the destination path and perform the move (copy&p
                             $scriptblock = {param($SourceFilePath) Remove-Item $SourceFilePath}
                             Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourceFilePath
 
-                            #Verify if file was deleted
-                            try
+                            #Verify if file exists on both folders (source and destination)
+                            if ((Test-SqlPath -SqlServer $server -Path $DestinationFilePath) -and (Test-SqlPath -SqlServer $server -Path $SourceFilePath))
                             {
-                                if (Test-SqlPath -SqlServer $server -Path $SourceFilePath)
+                                try
                                 {
+                                    #Delete old file already copied to the new path
+                                    Write-Output "Deleting file '$SourceFilePath'"
+                                
+                                    Remove-Item -Path $SourceFilePath
+
+                                    Write-Output "File '$SourceFilePath' deleted" 
+                                }
+                                catch
+                                {
+                                    Write-Exception $_
                                     Write-Warning "Can't delete the file '$SourceFilePath'. Delete it manualy"
                                 }
-                                else
-                                {
-                                    Write-Output "File '$SourceFilePath' deleted"    
-                                }
                             }
-                            catch
+                            else
                             {
-                                Write-Exception $_ 
-                                Write-Output $SourceFilePath
+                                Write-Warning "File $SourceFilePath does not exists! No file copied!"
                             }
 
+                            Set-SqlDatabaseOnline
+                        }
+                        else
+                        {
+                            Write-Warning "No files selected to move!"
                         }
 
-                        Set-SqlDatabaseOnline
+                        Write-Verbose "Exiting-PSSession"
+                        Exit-PSSession
+
+                        Write-Verbose "Removing PSSession with id $($remotepssession.Id)"
+                        Remove-PSSession $remotepssession.Id
+                    }
+                }
+            }
+
+            if (!($IsRemote))
+            {
+                Write-Output "Remote PowerShell access not enabled on '$source' or access denied. Will try using Copy-Item method" 
+                $copymethod = "COPYITEM"
+                
+                Set-SqlDatabaseOffline
+                
+                $filesProgressbar = 0
+
+                foreach ($file in $FilesToMove)
+                {
+                    $filesProgressbar += 1
+
+                    $dbName = $File.dbname
+                    $DestinationPath = $file.Destination
+                    $SourceFilePath = $file.FileName
+                    $UNCSourceFilePath = "\\$sourcenetbios\$($file.FileName.Replace(':', '$'))" #$file.FileName
+                    $LogicalName = $file.Name
+                    $SourcePath = Split-Path -Path $($file.FileName)
+                    $FileToCopy = Split-Path -Path $($file.FileName) -leaf
+                    $ValidDestinationPath = !([string]::IsNullOrEmpty($DestinationPath))
+
+                    Write-Progress `
+							-Id 1 `
+							-Activity "Working on file: $LogicalName on database: '$dbName'" `
+							-PercentComplete ($filesProgressbar / $FilesToMove.Count * 100) `
+							-Status "Copying - $filesProgressbar of $($FilesToMove.Count) files"
+
+                    if ($ValidDestinationPath)
+                    {
+                        $DestinationFilePath = $(Join-Path $DestinationPath $fileToCopy)
+
+                        $UNCDestinationFilePath = "\\$sourcenetbios\$($DestinationFilePath.Replace(':', '$'))"
+
+                        #Validate access using UNC
+                        if (!(Test-Path $DestinationPath -IsValid))
+                        {
+                            Write-Warning "Destination path  for logical name '$LogicalName' does not exists. '$DestinationPath'"
+                            Continue
+                        }
                     }
                     else
                     {
-                        Write-Warning "No files selected to move!"
+                        Write-Warning "Destination path for logical name '$LogicalName' is not valid."
+                        Continue
                     }
 
-                    Write-Verbose "Exiting-PSSession"
-                    Exit-PSSession
-
-                    Write-Verbose "Removing PSSession with id $($remotepssession.Id)"
-                    Remove-PSSession $remotepssession.Id
-                }
-            }
-            else
-            {
-                Write-Ouput "Remote PowerShell access not enabled on '$source' or access denied. Will try using Copy-Item method" 
-                $copymethod = "COPYITEM"
-                
-                if ($FilesToMove.Count -eq 0)
-                {
-                    #Set-SqlDatabaseOffline
-                
-                    foreach ($file in $FilesToMove)
+                    if (!(Test-SqlPath -SqlServer $server -Path $SourceFilePath))
                     {
-                        $dbName = $File.dbname
-                        $DestinationPath = $file.Destination
-                        $SourceFilePath = "\\$sourcenetbios\$($file.FileName.Replace(':', '$'))" #$file.FileName
-                        $LogicalName = $file.Name
-                        $SourcePath = Split-Path -Path $($file.FileName)
-                        $FileToCopy = Split-Path -Path $($file.FileName) -leaf
+                        Write-Warning "Source file or path for logical name '$LogicalName' does not exists. '$SourceFilePath'"
+                        Continue
+                    }
 
-                        $ValidDestinationPath = !([string]::IsNullOrEmpty($DestinationPath))
+                    if (($DestinationPath -eq $SourcePath) -or ([string]::IsNullOrEmpty($DestinationPath)))
+                    {
+                        Write-Warning "Destination path for file '$LogicalName' is the same of source path or is empty. Skipping"
+                        continue
+                    }
+           
+                    Write-Verbose "Copy-Item - Copy file to path: $DestinationPath"
+                    Write-Verbose "Copy-Item - Copy file: $fileToCopy"
+                    Write-Verbose "Copy-Item - Source Path and filename: $UNCSourceFilePath"
+                    Write-Verbose "Copy-Item - Destination Path and filename: $UNCDestinationFilePath"
 
-                        if ($DestinationPath -eq $SourcePath)
+                    #Copy using UNC paths
+                    try
+                    {
+                        Copy-Item -LiteralPath $UNCSourceFilePath -Destination $UNCDestinationFilePath
+                        Write-Output "File copied to $UNCDestinationFilePath"
+
+                        Set-SqlDatabaseFileLocation -Database $dbName -LogicalFileName $LogicalName -PhysicalFileLocation $DestinationFilePath
+
+                        #Verify if file exists on both folders (source and destination)
+                        if ((Test-Path -Path $UNCSourceFilePath) -and (Test-Path -Path $UNCSourceFilePath))
                         {
-                            Write-Warning "File not moved because target and destination path are the same"
-                            Continue
-                        }
-
-                        if ($ValidDestinationPath)
-                        {
-                            $DestinationFilePath = $(Join-Path $DestinationPath $fileToCopy)
-
-                            $DestinationFilePath = "\\$sourcenetbios\$($DestinationFilePath.Replace(':', '$'))"
-                            Write-Verbose "DestinationFilePath:" $DestinationFilePath
-
-                            if (!(Test-Path $DestinationPath -IsValid))
+                            try
                             {
-                                Write-Warning "Destination path  for logical name '$LogicalName' does not exists. '$DestinationPath'"
-                                Continue
+                                #Delete old file already copied to the new path
+                                Write-Output "Deleting file '$UNCSourceFilePath'"
+                                
+                                Remove-Item -Path $UNCSourceFilePath
+
+                                Write-Output "File '$UNCSourceFilePath' deleted" 
+                            }
+                            catch
+                            {
+                                Write-Exception $_
+                                Write-Warning "Can't delete the file '$UNCSourceFilePath'. Delete it manualy"
                             }
                         }
                         else
                         {
-                            Write-Warning "Destination path for logical name '$LogicalName' is not valid."
-                            Continue
+                            Write-Warning "File $UNCSourceFilePath does not exists! No file copied!"
                         }
-           
-                        Write-Verbose "Copy-Item - Copy file from path: $SourcePath"
-                        Write-Verbose "Copy-Item - Copy file to path: $DestinationPath"
-                        Write-Verbose "Copy-Item - Copy file: $fileToCopy"
-                        Write-Verbose "Copy-Item - DestinationPath and filename: $DestinationFilePath"
-                    
-                        
-                        #Copy-Item -LiteralPath $SourceFilePath -Destination $DestinationFilePath
-
                     }
-
-                    #Set-SqlDatabaseOffline
-                }
-                else
-                {
-                    Write-Warning "No files selected to move!"
+                    catch
+                    {
+                        Write-Exception $_
+                    }
                 }
 
+                Write-Progress `
+							-Id 1 `
+                            -Activity "Files copied!"`
+                            -Completed
+
+                Set-SqlDatabaseOnline
             }
         }  
 		
