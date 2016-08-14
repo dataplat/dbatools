@@ -37,12 +37,12 @@ PSCredential object to connect under. If not specified, currend Windows login wi
 
 .PARAMETER IncludeSystemDBs
 Switch parameter that when used will display system database information
-
+	
 .PARAMETER Databases
-Auto populating parameter that shows only specific databases
+Specify one or more databases to process. 
 
 .PARAMETER Exclude
-Auto populating parameter that shows all but specified databases
+Specify one or more databases to exclude.
 	
 .LINK
 https://dbatools.io/Get-DbaDatabaseFreespace
@@ -63,15 +63,20 @@ the output object by any files that have a percent used of greater than 80%.
 
 Returns all user database files and free space information for the localhost and
 localhost\namedinstance SQL Server instances. Processes data via the pipeline.
+
+.EXAMPLE
+Get-DbaDatabaseFreespace -SqlServer localhost -Databases db1, db2
+
+Returns database files and free space information for the db1 and db2 on localhost. 
 #>
-	[CmdletBinding(SupportsShouldProcess = $true)]
+	[CmdletBinding()]
 	param ([parameter(ValueFromPipeline, Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$IncludeSystemDBs)
 	
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SourceSqlCredential } }
+	DynamicParam { if ($SqlServer[0]) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
 	
 	BEGIN
 	{
@@ -99,8 +104,8 @@ localhost\namedinstance SQL Server instances. Processes data via the pipeline.
 		foreach ($s in $SqlServer)
 		{
 			#For each SQL Server in collection, connect and get SMO object
-			Write-Verbose "Connecting to $SqlServer"
-			$server = Connect-SqlServer $SqlServer -SqlCredential $SqlCredential
+			Write-Verbose "Connecting to $s"
+			$server = Connect-SqlServer $s -SqlCredential $SqlCredential
 			#If IncludeSystemDBs is true, include systemdbs
 			#only look at online databases (Status equal normal)
 			try
