@@ -76,7 +76,7 @@ Returns database files and free space information for the db1 and db2 on localho
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$IncludeSystemDBs)
 	
-	DynamicParam { if ($SqlServer[0]) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
+	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
 	
 	BEGIN
 	{
