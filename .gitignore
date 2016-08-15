@@ -1,3 +1,5 @@
 dbatools-startmigration-transcript.txt
 dbatools-exceptions.txt
 *TempPoint*
+/dbatools-dev.sln
+/dbatools-dev.pssproj
