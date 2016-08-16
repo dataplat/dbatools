@@ -56,7 +56,8 @@ that TargetLogin must be a valid security principal that exists on the target se
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[object]$SqlCredential,
-        [string]$TargetLogin = 'sa'
+        [string]$TargetLogin = 'sa',
+        [Switch]$Detailed
 	)
 
     BEGIN{
@@ -66,7 +67,7 @@ that TargetLogin must be a valid security principal that exists on the target se
 		$server = Connect-SqlServer $SqlServer -SqlCredential $SqlCredential
         
         #Validate login
-        if(($server.Logins.Name) -notcontains $TargetLogin){
+        if(($server.Logins | Where-Object {$_.LoginType -ne 'WindowsGroup'}).Name -notcontains $TargetLogin){
             throw "Invalid login: $TargetLogin"
             return $null
         }
