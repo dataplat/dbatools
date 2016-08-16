@@ -60,7 +60,7 @@ Specifies the network location for the backup files. The Sql Service service acc
 .PARAMETER Exclude
 Excludes specified databases when performing -AllDatabases migrations. This list is auto-populated for tab completion.
 
-.PARAMETER Database
+.PARAMETER Databases
 Migrates ONLY specified databases. This list is auto-populated for tab completion. Multiple databases are allowed.
 
 .PARAMETER SetSourceReadOnly
