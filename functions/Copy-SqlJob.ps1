@@ -112,7 +112,7 @@ Shows what would happen if the command were executed using force.
 			if ($missingdb.count -gt 0 -and $dbnames.count -gt 0)
 			{
 				$missingdb = ($missingdb | Sort-Object | Get-Unique) -join ", "
-				Write-Warning "Database(s) $missingdb doesn't exist on destination. Skipping."
+				Write-Warning "[Job: $jobname] Database(s) $missingdb doesn't exist on destination. Skipping."
 				continue
 			}
 
@@ -121,7 +121,7 @@ Shows what would happen if the command were executed using force.
 			if ($missinglogin.count -gt 0)
 			{
 				$missinglogin = ($missinglogin | Sort-Object | Get-Unique) -join ", "
-				Write-Warning "Login(s) $missinglogin doesn't exist on destination. Skipping."
+				Write-Warning "[Job: $jobname] Login(s) $missinglogin doesn't exist on destination. Skipping."
 				continue
 			}
 
@@ -131,7 +131,7 @@ Shows what would happen if the command were executed using force.
 			if ($missingproxy.count -gt 0 -and $proxynames.count -gt 0)
 			{
 				$missingproxy = ($missingproxy | Sort-Object | Get-Unique) -join ", "
-				Write-Warning "Proxy Account(s) $($proxynames[0]) doesn't exist on destination. Skipping."
+				Write-Warning "[Job: $jobname] Proxy Account(s) $($proxynames[0]) doesn't exist on destination. Skipping."
 				continue
 			}
 
@@ -139,7 +139,7 @@ Shows what would happen if the command were executed using force.
 			{
 				if ($force -eq $false)
 				{
-					Write-Warning "Job $jobname exists at destination. Use -Force to drop and migrate."
+					Write-Warning "[Job: $jobname] Job $jobname exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else
@@ -176,19 +176,22 @@ Shows what would happen if the command were executed using force.
 					continue
 				}
 			}
-
-			If ($Pscmdlet.ShouldProcess($destination, "Creating Job $jobname"))
+			
+			if ($DisableOnDestination)
 			{
-				if ($DisableOnDestination)
-				{
+                If ($Pscmdlet.ShouldProcess($destination, "Disabling $jobname"))
+			    {
 					Write-Output "Disabling $jobname on $destination"
 					$destserver.JobServer.Jobs.Refresh()
 					$destserver.JobServer.Jobs[$job.name].IsEnabled = $False
 					$destserver.JobServer.Jobs[$job.name].Alter()
 				}
+            }
 
-				if ($DisableOnSource)
-				{
+			if ($DisableOnSource)
+			{
+                If ($Pscmdlet.ShouldProcess($source, "Disabling $jobname"))
+			    {
 					Write-Output "Disabling $jobname on $source"
 					$job.IsEnabled = $false
 					$job.Alter()

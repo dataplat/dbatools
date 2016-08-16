@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.5.2'
+	ModuleVersion = '0.8.5.3'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -133,7 +133,10 @@
 		'Get-DbaDatabaseFreespace',
 		'Get-DbaClusterActiveNode',
 		'Test-DbaDatabaseOwner',
-		'Set-DbaDatabaseOwner'
+		'Set-DbaDatabaseOwner',
+		'Test-DbaJobOwner',
+		'Set-DbaJobOwner',
+		'Test-DbaVirtualLogFile'
 	)
 	
 	# Cmdlets to export from this module
