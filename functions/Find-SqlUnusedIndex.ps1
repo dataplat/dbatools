@@ -182,7 +182,7 @@ Will find exact Unused indexes on all user databases
             Validate if server version is:
                 - sql 2012 and if have SP3 CU3 (Build 6537) or higher
                 - sql 2014 and if have SP2 (Build 5000) or higher
-            If lower this major version but lower build throw message
+            If the major version is the same but the build is lower, throws the message
         #>
         if (
                 ($server.VersionMajor -eq 11 -and $server.BuildNumber -lt 6537) `
