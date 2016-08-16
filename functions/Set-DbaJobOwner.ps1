@@ -73,8 +73,13 @@ Sets SQL Agent Job owner to 'sa' on the junk and dummy jobs if their current own
 		$server = Connect-SqlServer $SqlServer -SqlCredential $SqlCredential
         
         #Validate login
-        if(($server.Logins | Where-Object {$_.LoginType -ne 'WindowsGroup'}).Name -notcontains $TargetLogin){
+        if($server.Logins.Name -notcontains $TargetLogin){
             throw "Invalid login: $TargetLogin"
+            return $null
+        }
+
+        if($server.logins[$TargetLogin].LoginType -eq 'WindowsGroup'){
+            throw "$TargetLogin is a Windows Group and can not be a job owner."
             return $null
         }
     }
