@@ -463,7 +463,7 @@ Will show a treeview to select the destination path and perform the move (copy&p
 
                     Write-Output "remotepssession: $($remotepssession.Id)"
 
-                    Enter-PSSession -Session $remotepssession
+                    #Enter-PSSession -Session $remotepssession
 
                     Write-Output "Verifying if robocopy.exe exists on default path."
                     $scriptblock = {param($SourceFilePath) Test-Path -Path "C:\Windows\System32\Robocopy.exe"}
@@ -475,12 +475,14 @@ Will show a treeview to select the destination path and perform the move (copy&p
                         Write-Output "Using Robocopy.exe to copy the files"
                         $copymethod = "ROBOCOPY"
             
-                        #Get-PSSession
+                        Get-PSSession
 
                         Set-SqlDatabaseOffline
 
                         foreach ($file in $FilesToMove)
                         {
+                            
+                            Connect-PSSession -Session $remotepssession
                             #$filesProgressbar += 1
 
                             $dbName = $File.dbname
@@ -492,10 +494,8 @@ Will show a treeview to select the destination path and perform the move (copy&p
 
                             $ValidDestinationPath = !([string]::IsNullOrEmpty($DestinationPath))
                 
-                            Write-Verbose "Using RemoteSession - Copy file from path: $SourcePath"
-                            Write-Verbose "Using RemoteSession - Copy file to path: $DestinationPath"
-                            Write-Verbose "Using RemoteSession - Copy file: $fileToCopy"
-                            Write-Verbose "Using RemoteSession - DestinationPath and filename: $DestinationFilePath"
+                            $DestinationFilePath = $null
+                            
                             #Write-Progress `
 						    #	        -Id 1 `
 						    #	        -Activity "Working on file: $LogicalName on database: '$dbName'" `
@@ -530,7 +530,10 @@ Will show a treeview to select the destination path and perform the move (copy&p
                                 continue
                             }
         
-                           
+                            Write-Verbose "Using RemoteSession - Copy file from path: $SourcePath"
+                            Write-Verbose "Using RemoteSession - Copy file to path: $DestinationPath"
+                            Write-Verbose "Using RemoteSession - Copy file: $fileToCopy"
+                            Write-Verbose "Using RemoteSession - DestinationPath and filename: $DestinationFilePath"
 
 
                             # Define regular expression that will gather number of bytes copied
@@ -560,13 +563,15 @@ Will show a treeview to select the destination path and perform the move (copy&p
                             $StagingArgumentList = '"{0}" "{1}" "{2}" /LOG:"{3}" {4}' -f $SourcePath, $DestinationPath, $fileToCopy, $StagingLogPath, $CommonRobocopyParams;
                             Write-Verbose -Message ('Staging arguments: {0}' -f $StagingArgumentList);
                             $scriptblock = {param($StagingArgumentList) Start-Process -Wait -FilePath robocopy -PassThru -WindowStyle Hidden -ArgumentList $StagingArgumentList}
-                            $Robocopy = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $StagingArgumentList
 
+                            Write-Output $scriptblock 
+                            $Robocopy = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $StagingArgumentList
+                            Write-Output "Robocopy: $Robocopy"
                             Start-Sleep -Milliseconds 100;
                         
                             # Get the total number of files that will be copied
                             $scriptblock = {param($StagingLogPath) Get-Content $StagingLogPath}
-                            $StagingContent = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $StagingLogPath
+                            $StagingContent = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $StagingLogPath 
 
                             #region Start Robocopy
                             # Begin the robocopy process
@@ -574,6 +579,8 @@ Will show a treeview to select the destination path and perform the move (copy&p
                             #$ArgumentList = '"{0}" "{1}" /LOG:"{2}"' -f $SourcePath, $DestinationPath, $fileToCopy, $RobocopyLogPath;
                             #Write-Verbose -Message ('Beginning the robocopy process with arguments: {0}' -f $ArgumentList);
                         
+                            Write-Verbose "RobocopyLogPath: $RobocopyLogPath"
+
                             $CommonRobocopyParams = '/ndl /TEE /bytes /NC';
 
 
@@ -592,22 +599,58 @@ Will show a treeview to select the destination path and perform the move (copy&p
                             $FileSize = [regex]::Match($StagingContent[-4],".+:\s+(\d+)\s+(\d+)").Groups[2].Value
                             write-verbose ("Robocopy Bytes: $FileSize `n" +($StagingContent -join "`n"))
 
+                            if (Get-PSSession -Id $remotepssession.Id)
+                            {
+                                Disconnect-PSSession $remotepssession
+                            }
+
+$remotepssessionCopy = New-PSSession -ComputerName $sourcenetbios
+#Enter-PSSession -Session $remotepssessionCopy
+
+Write-Output "remotepssession: $($remotepssessionCopy.Id)"
+
                             #Add progressbar http://stackoverflow.com/questions/13883404/custom-robocopy-progress-bar-in-powershell
                             Write-Output 'Waiting for file copies to complete...'		
 		                    do
 		                    {
+                                if (Get-PSSession -Id $remotepssession.Id)
+                                {
+                                    Connect-PSSession -Session $remotepssession
+                                }
+
                                 Start-Sleep -Milliseconds 100
                                 Write-Warning "While!"
                                 $scriptblock = {Get-Process "robocopy*"}
                                 $CopyList = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock
                                 Write-Warning "End Get-Process"
+                                
+                                if (Get-PSSession -Id $remotepssession.Id)
+                                {
+                                    Disconnect-PSSession -Session $remotepssession
+                                }
 
-                                $BytesCopied = 0;
-                            
-                                $scriptblock = {param($RobocopyLogPath) Get-Content $RobocopyLogPath}
-                                $LogContent = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $RobocopyLogPath
-                                Write-Warning "Log Content"
-                                $LogContent
+                                Write-Output "CopyList"
+                                $CopyList
+
+                                if (Get-PSSession -Id $remotepssessionCopy.Id)
+                                {
+                                    Enter-PSSession -Session $remotepssessionCopy
+                                }
+
+
+                                Write-Output "RobocopyLogPath: $RobocopyLogPath"
+                                $scriptblock = {param($RobocopyLogPath) Get-Content $RobocopyLogPath -ErrorAction Inquire }
+                                #$LogContent = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $RobocopyLogPath
+
+Write-Verbose "Before: LogContent = Invoke-Command"
+
+$LogContent = Invoke-Command -Session $remotepssessionCopy -ScriptBlock {param($RobocopyLogPath) Get-Content $RobocopyLogPath} -ArgumentList $RobocopyLogPath
+
+                                #$LogFile = Join-AdminUnc -servername $sourcenetbios -FilePath $RobocopyLogPath
+                                #$LogContent = Get-Content $LogFile
+                                #Write-Output "LogFile - $LogFile"
+                                Write-Verbose "After: LogContent = Invoke-Command"
+
                                 $Files = $LogContent -match "^\s*(\d+)\s+(\S+)"
                                 Write-Warning "Files"
                                 $Files
@@ -616,6 +659,8 @@ Will show a treeview to select the destination path and perform the move (copy&p
 	                                $copied = ($Files[0..($Files.Length-2)] | %{$_.Split("`t")[-2]} | Measure -sum).Sum
 	                                if ($LogContent[-1] -match "(100|\d?\d\.\d)\%")
 	                                {
+                                        Write-Output "-percentComplete: $($LogContent[-1].Trim("% `t"))" 
+                                        Write-Output "LogContent[-1]: $($LogContent[-1])"
 		                                write-progress Copy -percentComplete $LogContent[-1].Trim("% `t") $LogContent[-1]
 		                                $Copied += $Files[-1].Split("`t")[-2] /100 * ($LogContent[-1].Trim("% `t"))
 	                                }
@@ -623,11 +668,30 @@ Will show a treeview to select the destination path and perform the move (copy&p
 	                                {
 		                                write-progress Copy -Complete
 	                                }
-                                    $PercentComplete = [math]::min(100,(100*$Copied/[math]::max($Copied,$FileSize)))
-	                                write-progress ROBOCOPY -PercentComplete $PercentComplete $Files[-1].Split("`t")[-1]
+                                    
+                                    #$PercentComplete = [math]::min(1,(100*$Copied/[math]::max($Copied,$FileSize)))
+                                    #Write-Output "-percentComplete: $PercentComplete"
+                                    #Write-Output "Files[-1].Split(`t)[-1]: $($Files[-1].Split("`t")[-1])"
+	                                #Write-Progress ROBOCOPY -PercentComplete $PercentComplete $Files[-1].Split("`t")[-1]
                                 }
+                                
+                                
+                                if (Get-PSSession -Id $remotepssessionCopy.Id)
+                                {
+                                    Disconnect-PSSession $remotepssessionCopy
+                                }
+
 		                    }
                             while (@($CopyList | Where-Object {$_.HasExited -eq $false}).Count -gt 0)
+
+
+                            if (Get-PSSession -Id $remotepssession.Id)
+                            {
+                                Connect-PSSession -Session $remotepssession
+                            }
+
+                            Write-Verbose "Removing PSSession Copy with id $($remotepssessionCopy.Id)"
+                            Remove-PSSession $remotepssessionCopy.Id
 
                             Set-SqlDatabaseFileLocation -Database $dbName -LogicalFileName $LogicalName -PhysicalFileLocation $DestinationFilePath
 
@@ -658,16 +722,11 @@ Will show a treeview to select the destination path and perform the move (copy&p
                             {
                                 Write-Warning "File $SourceFilePath does not exists! No file copied!"
                             }
-
-                            Set-SqlDatabaseOnline
                         }
-                        else
-                        {
-                            Write-Warning "No files selected to move!"
-                        }
+                        Set-SqlDatabaseOnline
 
                         Write-Verbose "Exiting-PSSession"
-                        Exit-PSSession
+                        Disconnect-PSSession $remotepssession.Id
 
                         Write-Verbose "Removing PSSession with id $($remotepssession.Id)"
                         Remove-PSSession $remotepssession.Id
