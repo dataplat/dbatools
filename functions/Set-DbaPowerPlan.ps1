@@ -2,14 +2,12 @@
 {
 <#
 .SYNOPSIS
-Checks SQL Server Power Plan, which Best Practices recommends should be set to High Performance
+Sets the SQL Server OS's Power Plan. 
 	
 .DESCRIPTION
-Returns $true or $false by default for one server. Returns Server name and IsBestPractice for more than one server.
+Sets the SQL Server OS's Power Plan. It defaults to High Performance which is Best Practice.
 	
-Specify -Detailed for details.
-	
-If your organization uses a custom power plan that is considered best practice, specify -PowerPlan
+If your organization uses a custom power plan that is considered best practice, specify -CustomPowerPlan.
 	
 References:
 https://support.microsoft.com/en-us/kb/2207548
@@ -17,9 +15,6 @@ http://www.sqlskills.com/blogs/glenn/windows-power-plan-effects-on-newer-intel-p
 	
 .PARAMETER ComputerName
 The SQL Server (or server in general) that you're connecting to. The -SqlServer parameter also works. This command handles named instances.
-
-.PARAMETER Detailed
-Show a detailed list.
 	
 .PARAMETER PowerPlan
 The Power Plan that you wish to use. These are validated to Windows default Power Plans (Power saver, Balanced, High Performance)
