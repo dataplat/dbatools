@@ -71,12 +71,18 @@ https://dbatools.io/Test-DbaDiskAlignment
 
 .EXAMPLE   
 Test-DbaDiskAlignment -ComputerName sqlserver2014a 
-
+	
+Tests the disk alignment of a single server named sqlserver2014a
+	
 .EXAMPLE   
 Test-DbaDiskAlignment -ComputerName sqlserver2014a, sqlserver2014b, sqlserver2014c
 
+Tests the disk alignment of mulitiple servers
+	
 .EXAMPLE   
 Test-DbaDiskAlignment -ComputerName sqlserver2014a, sqlserver2014b, sqlserver2014c -Detailed
+
+Displays details about the disk alignmenet calcualtions from multiple servers
 
 #>	
 	Param (
