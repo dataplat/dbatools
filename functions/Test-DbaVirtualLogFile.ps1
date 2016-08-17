@@ -59,7 +59,7 @@ Returns user databases that have more than or equal to 50 VLFs
 .EXAMPLE
 @('sqlserver','sqlcluster') | Test-DbaVirtualLogFile
 
-Returns all user database files and free space information for the sqlserver and sqlcluster SQL Server instances. Processes data via the pipeline.
+Returns all VLF information for the sqlserver and sqlcluster SQL Server instances. Processes data via the pipeline.
 
 .EXAMPLE
 Test-DbaVirtualLogFile -SqlServer sqlcluster -Databases db1, db2
