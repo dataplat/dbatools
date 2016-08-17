@@ -821,7 +821,7 @@ Internal function. Ensures login has access on SQL Server.
 		{
 			$rows = $SqlServer.ConnectionContext.ExecuteScalar("EXEC xp_logininfo '$Login'")
 			
-			if ($rows.count -eq 0)
+			if (($rows | Measure-Object).Count -eq 0)
 			{
 				return $false
 			}
