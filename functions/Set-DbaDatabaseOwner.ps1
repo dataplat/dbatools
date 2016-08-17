@@ -1,14 +1,13 @@
-﻿function Set-DbaDatabaseOwner {
+﻿function Set-DbaDatabaseOwner
+{
 <#
 .SYNOPSIS
 Sets database owners with a desired login if databases do not match that owner.
 
 .DESCRIPTION
-This function will alter database ownershipt to match a specified login if their
-current owner does not match the target login. By default, the target login will
-be 'sa', but the fuction will allow the user to specify a different login for 
-ownership. The user can also apply this to all databases or only to a select list
-of databases (passed as either a comma separated list or a string array).
+This function will alter database ownershipt to match a specified login if their current owner does not match the target login. By default, the target login will be 'sa', but the fuction will allow the user to specify a different login for  ownership. The user can also apply this to all databases or only to a select list of databases (passed as either a comma separated list or a string array).
+
+Best Practice reference: http://weblogs.sqlteam.com/dang/archive/2008/01/13/Database-Owner-Troubles.aspx
 
 .NOTES 
 Original Author: Michael Fal (@Mike_Fal), http://mikefal.net
@@ -34,6 +33,9 @@ PSCredential object to connect under. If not specified, currend Windows login wi
 
 .PARAMETER Datbases
 List of databases to apply changes to. Will accept a comma separated list or a string array.
+	
+.PARAMETER Exclude
+List of databases to exclude
 
 .PARAMETER TargetLogin
 Specific login that you wish to check for ownership. This defaults to 'sa'.
@@ -59,52 +61,90 @@ Sets database owner to 'sa' on the junk and dummy databases if their current own
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
-		[parameter(Mandatory = $true)]
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[object[]]$SqlServer,
 		[object]$SqlCredential,
-        [object[]]$Databases,
-        [string]$TargetLogin = 'sa'
+		[string]$TargetLogin = 'sa'
 	)
-
-    BEGIN{
-        #connect to the instance
-		Write-Verbose "Connecting to $SqlServer"
-		$server = Connect-SqlServer $SqlServer -SqlCredential $SqlCredential
-        
-        #Validate login
-        if(($server.Logins.Name) -notcontains $TargetLogin){
-            throw "Invalid login: $TargetLogin"
-            return $null
-        }
-    }
-    PROCESS{
-        #Get database list. If value for -Databases is passed, massage to make it a string array.
-        #Otherwise, use all databases on the instance where owner not equal to -TargetLogin
-        Write-Verbose "Gathering databases to update"
-        if($Databases){
-            $check = (($databases -join ',') -split ',')
-            $dbs = $server.Databases | Where-Object {$_.Owner -ne $TargetLogin -and $check -contains $_.Name }
-        } else { 
-            $dbs = $server.Databases | Where-Object {$_.Owner -ne $TargetLogin}
-        }
-
-        Write-Verbose "Updating $($dbs.Count) database(s)."
-        foreach($db in $dbs){
-            If($PSCmdlet.ShouldProcess($db,"Setting database owner to $TargetLogin")){
-                try{
-                    #Set database owner to $TargetLogin (default 'sa')
-                    $db.SetOwner($TargetLogin)
-                } catch {
-                    # write-exception writes the full exception to file
-					Write-Exception $_
-					throw $_
-                }
-            }
-        }
-    }
-    END{
-        Write-Verbose "Closing connection"
-        $server.ConnectionContext.Disconnect()
-    }
+	
+	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
+	
+	BEGIN
+	{
+		$databases = $psboundparameters.Databases
+		$exclude = $psboundparameters.Exclude
+	}
+	
+	PROCESS
+	{
+		foreach ($servername in $SqlServer)
+		{
+			
+			#connect to the instance
+			Write-Verbose "Connecting to $servername"
+			$server = Connect-SqlServer $servername -SqlCredential $SqlCredential
+					
+			
+			# Even if the account is implied by a Windows group, it cannot be set as an owner unless it's listed as a Login
+			if (($server.Logins.Name) -notcontains $TargetLogin)
+			{
+				throw "$TargetLogin is not a valid login on $servername"
+			}
+			
+			#Get database list. If value for -Databases is passed, massage to make it a string array.
+			#Otherwise, use all databases on the instance where owner not equal to -TargetLogin
+			Write-Verbose "Gathering databases to update"
+			
+			if ($Databases.Length -gt 0)
+			{
+				$dbs = $server.Databases | Where-Object { $_.Owner -ne $TargetLogin -and $databases -contains $_.Name }
+			}
+			else
+			{
+				$dbs = $server.Databases | Where-Object { $_.Owner -ne $TargetLogin }
+			}
+			
+			if ($Exclude.Length -gt 0)
+			{
+				$dbs = $dbs | Where-Object { $Exclude -notcontains $_.Name }
+			}
+			
+			# system stuff can't be modified. Well, msdb can, but let's add it anyway.
+			$dbs = $dbs | Where-Object { 'master', 'model', 'msdb', 'tempdb', 'distribution' -notcontains $_.Name }
+			
+			
+			Write-Verbose "Updating $($dbs.Count) database(s)."
+			foreach ($db in $dbs)
+			{
+				$dbname = $db.name
+				If ($PSCmdlet.ShouldProcess($servername, "Setting database owner for $dbname to $TargetLogin"))
+				{					
+					try
+					{
+						Write-Output "Setting database owner for $dbname to $TargetLogin on $servername"
+						# Set database owner to $TargetLogin (default 'sa')
+						$db.SetOwner($TargetLogin)
+					}
+					catch
+					{
+						# write-exception writes the full exception to file
+						Write-Exception $_
+						throw $_
+					}
+				}
+			}
+		}
+	}
+	
+	END
+	{
+		if ($dbs.count -eq 0)
+		{
+			Write-Output "Lookin' good! Nothing to do."
+		}
+		
+		Write-Verbose "Closing connection"
+		$server.ConnectionContext.Disconnect()
+	}
 }
