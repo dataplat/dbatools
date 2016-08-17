@@ -48,15 +48,14 @@ Set-DbaDatabaseOwner -SqlServer localhost
 Sets database owner to 'sa' on all databases where the owner does not match 'sa'.
 
 .EXAMPLE
-Set-DbaDatabaseOwner -SqlServer localhost -TargetLogin 'DOMAIN\account'
+Set-DbaDatabaseOwner -SqlServer localhost -TargetLogin DOMAIN\account
 
-Sets database owner to sa on all databases where the owner does not match 'DOMAIN\account'. Note
-that TargetLogin must be a valid security principal that exists on the target server.
+To set the database owner to DOMAIN\account on all databases where the owner does not match DOMAIN\account. Note that TargetLogin must be a valid security principal that exists on the target server.
 
 .EXAMPLE
-Set-DbaDatabaseOwner -SqlServer localhost -Databases 'junk,dummy'
+Set-DbaDatabaseOwner -SqlServer sqlserver -Databases db1, db2
 
-Sets database owner to 'sa' on the junk and dummy databases if their current owner does not match 'sa'.
+Sets database owner to 'sa' on the db1 and db2 databases if their current owner does not match 'sa'.
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
