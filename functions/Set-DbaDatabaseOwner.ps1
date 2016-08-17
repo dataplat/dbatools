@@ -25,8 +25,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .PARAMETER SqlServer
-SQLServer name or SMO object representing the SQL Server to connect to. This can be a
-collection and recieve pipeline input
+SQLServer name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input
 
 .PARAMETER SqlCredential
 PSCredential object to connect under. If not specified, currend Windows login will be used.
@@ -38,7 +37,7 @@ List of databases to apply changes to. Will accept a comma separated list or a s
 List of databases to exclude
 
 .PARAMETER TargetLogin
-Specific login that you wish to check for ownership. This defaults to 'sa'.
+Specific login that you wish to check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed.
 
 .LINK
 https://dbatools.io/Set-DbaDatabaseOwner
@@ -65,7 +64,7 @@ Sets database owner to 'sa' on the junk and dummy databases if their current own
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
 		[object]$SqlCredential,
-		[string]$TargetLogin = 'sa'
+		[string]$TargetLogin
 	)
 	
 	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
@@ -84,8 +83,13 @@ Sets database owner to 'sa' on the junk and dummy databases if their current own
 			#connect to the instance
 			Write-Verbose "Connecting to $servername"
 			$server = Connect-SqlServer $servername -SqlCredential $SqlCredential
-					
 			
+			# dynamic sa name for orgs who have changed their sa name
+			if ($psboundparameters.TargetLogin.length -eq 0)
+			{
+				$TargetLogin = ($server.logins | Where-Object { $_.id -eq 1 }).Name
+			}
+						
 			# Even if the account is implied by a Windows group, it cannot be set as an owner unless it's listed as a Login
 			if (($server.Logins.Name) -notcontains $TargetLogin)
 			{
