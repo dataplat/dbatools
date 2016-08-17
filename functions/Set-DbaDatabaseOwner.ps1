@@ -89,11 +89,19 @@ Sets database owner to 'sa' on the junk and dummy databases if their current own
 			{
 				$TargetLogin = ($server.logins | Where-Object { $_.id -eq 1 }).Name
 			}
-						
-			# Even if the account is implied by a Windows group, it cannot be set as an owner unless it's listed as a Login
+			
+			#Validate login
 			if (($server.Logins.Name) -notcontains $TargetLogin)
 			{
-				throw "$TargetLogin is not a valid login on $servername"
+				if ($sqlserver.count -eq 1)
+				{
+					throw "Invalid login: $TargetLogin"
+				}
+				else
+				{
+					Write-Warning "$TargetLogin is not a valid login on $servername. Moving on."
+					Continue
+				}
 			}
 			
 			#Get database list. If value for -Databases is passed, massage to make it a string array.

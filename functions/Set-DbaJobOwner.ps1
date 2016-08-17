@@ -99,9 +99,17 @@ Sets SQL Agent Job owner to 'sa' on the junk and dummy jobs if their current own
 			}
 			
 			#Validate login
-			if ($server.Logins.Name -notcontains $TargetLogin)
+			if (($server.Logins.Name) -notcontains $TargetLogin)
 			{
-				throw "Invalid login: $TargetLogin"
+				if ($sqlserver.count -eq 1)
+				{
+					throw "Invalid login: $TargetLogin"
+				}
+				else
+				{
+					Write-Warning "$TargetLogin is not a valid login on $servername. Moving on."
+					Continue
+				}
 			}
 			
 			if ($server.logins[$TargetLogin].LoginType -eq 'WindowsGroup')
