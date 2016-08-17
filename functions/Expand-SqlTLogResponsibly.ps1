@@ -64,7 +64,8 @@ The target size of the log file after the shrink is performed.
 Backups must be performed in order to shrink the T-log. Designate a location for your backups. If you do not specify the backup directory, the SQL Server's default backup directory will be used. 
 
 .NOTES
-This script will not analyze the actual number of VLFs (use DBCC LOGINFO)
+This script will not analyze the actual number of VLFs. Use Test-DbaVirtualLogFile or run t-sql "DBCC LOGINFO" statements
+This script uses Get-DbaDiskSpace dbatools command to get the TLog's drive free space
        
 Original Author: Cláudio Silva (@ClaudioESSilva)
 Requires: ALTER DATABASE permission
@@ -192,6 +193,9 @@ https://dbatools.io/Expand-SqlTLogResponsibly
 			
 			#control the iteration number
 			$databaseProgressbar = 0;
+
+            Write-Output "Resolving NetBIOS name"
+            $sourcenetbios = Resolve-NetBiosName $server
 			
 			#go through all databases
 			Write-Verbose "Processing...foreach database..."
@@ -221,15 +225,41 @@ https://dbatools.io/Expand-SqlTLogResponsibly
 					}
 					
 					Write-Verbose "$step - Use log file: $logfile"
-					$currentSize = $logfile.Size
-					
+					$currentSize = $logfile.Size				
+
 					Write-Verbose "$step - Log file current size: $([System.Math]::Round($($currentSize/1024.0), 2)) MB "
 					[long]$requiredSpace = ($TargetLogSizeKB - $currentSize)
 					
 					Write-Verbose "Verifying if sufficient space exists ($([System.Math]::Round($($requiredSpace / 1024.0), 2))MB) on the volume to perform this task"
 					
 					# SQL 2005 or lower version. The "VolumeFreeSpace" property is empty
-					if ($logfile.VolumeFreeSpace -eq $null -and ($server.VersionMajor -eq 9))
+                    # When using SMO v12 and validating SQL 2008 also empty (BUG?)
+                    [long]$TotalTLogFreeDiskSpaceKB = 0
+                    Write-Output "Get TLog drive free space"
+                    [object]$AllDrivesFreeDiskSpace = Get-DbaDiskSpace -ComputerName $sourcenetbios -Unit KB | Select-Object Name, SizeInKB
+                    
+                    #Verfiy path using Split-Path on $logfile.FileName in backwards. This way we will catch the LUNs. Example: "K:\Log01" as LUN name
+                    $DrivePath = Split-Path $logfile.FileName -parent
+                    Do  
+                    {
+                        if ($AllDrivesFreeDiskSpace | Where-Object {$DrivePath -eq "$($_.Name)"})
+                        {
+                            $TotalTLogFreeDiskSpaceKB = ($AllDrivesFreeDiskSpace | Where-Object {$DrivePath -eq $_.Name}).SizeInKB
+                            $match = $true
+                            break
+                        }
+                        else
+                        {
+                            $match = $false
+                            $DrivePath = Split-Path $DrivePath -parent
+                        }
+
+                    }
+                    while (!$match -or ([string]::IsNullOrEmpty($DrivePath)))
+
+                    Write-Verbose "Total TLog Free Disk Space in MB: $([System.Math]::Round($($TotalTLogFreeDiskSpaceKB / 1024.0), 2))"
+
+					if (($TotalTLogFreeDiskSpaceKB -le 0) -or ([string]::IsNullOrEmpty($TotalTLogFreeDiskSpaceKB)))
 					{
 						$title = "Choose increment value for database '$db':"
 						$message = "Cannot validate freespace on drive where the log file resides. Do you wish to continue? (Y/N)"
@@ -244,17 +274,16 @@ https://dbatools.io/Expand-SqlTLogResponsibly
 							return
 						}
 					}
-					#Only available from 2008 R2 onwards. Validate the version and issue a warning saying "cannot verify volume free space"
-					if (($requiredSpace -gt $logfile.VolumeFreeSpace) -and ($server.VersionMajor -gt 9))
+
+					if ($requiredSpace -gt $TotalTLogFreeDiskSpaceKB)
 					{
 						Write-Output "There is not enough space on volume to perform this task. `r`n" `
-									 "Available space: $([System.Math]::Round($($logfile.VolumeFreeSpace / 1024.0), 2))MB;`r`n" `
+									 "Available space: $([System.Math]::Round($($TotalTLogFreeDiskSpaceKB / 1024.0), 2))MB;`r`n" `
 									 "Required space: $([System.Math]::Round($($requiredSpace / 1024.0), 2))MB;"
 						return
 					}
 					else
 					{
-						
 						if ($currentSize -ige $TargetLogSizeKB -and ($ShrinkLogFile -eq $false))
 						{
 							Write-Output "$step - [INFO] The T-Log file '$logfile' size is already equal or greater than target size - No action required"
