@@ -71,15 +71,14 @@ Pops up a dialog box asking which database on sqlserver2014a you want to install
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[object[]]$SqlServer,
 		[object]$SqlCredential,
-		[string]$Path,
 		[switch]$OutputDatabaseName,
 		[string]$Header = "To update, select a database or hit cancel to quit.",
 		[switch]$Force
 	)
 	
-	DynamicParam { if ($sqlserver) { return Get-ParamSqlDatabase -SqlServer $sqlserver -SqlCredential $SqlCredential } }
+	DynamicParam { if ($sqlserver) { return Get-ParamSqlDatabase -SqlServer $sqlserver[0] -SqlCredential $SqlCredential } }
 	
 	END
 	{
@@ -87,11 +86,11 @@ Pops up a dialog box asking which database on sqlserver2014a you want to install
 	
 		if ($Database.length -eq 0)
 		{
-			Install-SqlWhoIsActive -SqlServer $sqlserver -SqlCredential $SqlCredential -Path $Path -Header $header -Force:$force -OutputDatabaseName:$OutputDatabaseName
+			Install-SqlWhoIsActive -SqlServer $sqlserver -SqlCredential $SqlCredential -OutputDatabaseName:$OutputDatabaseName
 		}
 		else
 		{
-			Install-SqlWhoIsActive -SqlServer $sqlserver -SqlCredential $SqlCredential -Path $Path -Header $header -Database $database -Force:$force -OutputDatabaseName:$OutputDatabaseName
+			Install-SqlWhoIsActive -SqlServer $sqlserver -SqlCredential $SqlCredential -Database $database -OutputDatabaseName:$OutputDatabaseName
 		}
 	}
 }
