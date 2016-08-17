@@ -357,7 +357,15 @@ Test-DbaDiskAlignment -ComputerName sqlserver2014a, sqlserver2014b, sqlserver201
 					IsBestPractice = $_.Value
 				}
 			}
-			return $newcollection
+			
+			if ($serverlist.count -eq 1)
+			{
+				return $newcollection.IsBestPractice
+			}
+			else
+			{
+				return $newcollection
+			}
 		}
 	}
 }
