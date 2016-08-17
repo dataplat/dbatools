@@ -9,7 +9,9 @@ current owner does not match the target login. By default, the target login will
 be 'sa', but the fuction will allow the user to specify a different login for 
 ownership. The user can also apply this to all jobs or only to a select list
 of jobs (passed as either a comma separated list or a string array).
-
+	
+Best practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account
+	
 .NOTES 
 Original Author: Michael Fal (@Mike_Fal), http://mikefal.net
 

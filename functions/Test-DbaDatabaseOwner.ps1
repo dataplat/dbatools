@@ -10,6 +10,8 @@ ownership, but the user can pass a specific login if they use something else. On
 that do not match this ownership will be displayed, but if the -Detailed switch is set all
 databases will be shown.
 
+Best Practice reference: http://weblogs.sqlteam.com/dang/archive/2008/01/13/Database-Owner-Troubles.aspx
+	
 .NOTES 
 Original Author: Michael Fal (@Mike_Fal), http://mikefal.net
 

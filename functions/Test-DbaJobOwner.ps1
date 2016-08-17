@@ -9,7 +9,9 @@ login owns those SQL Agent Jobs or not. By default, the function will check agai
 ownership, but the user can pass a specific login if they use something else. Only SQL Agent Jobs
 that do not match this ownership will be displayed, but if the -Detailed switch is set all
 SQL Agent Jobs will be shown.
-
+	
+Best practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account
+	
 .NOTES 
 Original Author: Michael Fal (@Mike_Fal), http://mikefal.net
 
