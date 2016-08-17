@@ -50,21 +50,23 @@ https://dbatools.io/Set-DbaJobOwner
 .EXAMPLE
 Set-DbaJobOwner -SqlServer localhost
 
-Sets SQL Agent Job owner to 'sa' on all jobs where the owner does not match 'sa'.
+Sets SQL Agent Job owner to sa on all jobs where the owner does not match sa.
 
 .EXAMPLE
-Set-DbaJobOwner -SqlServer localhost -TargetLogin 'DOMAIN\account'
+Set-DbaJobOwner -SqlServer localhost -TargetLogin DOMAIN\account
 
 Sets SQL Agent Job owner to sa on all jobs where the owner does not match 'DOMAIN\account'. Note
 that TargetLogin must be a valid security principal that exists on the target server.
 
 .EXAMPLE
-Set-DbaJobOwner -SqlServer localhost -Databases 'junk,dummy'
+Set-DbaJobOwner -SqlServer localhost -Job job1, job2
 
-Sets SQL Agent Job owner to 'sa' on the junk and dummy jobs if their current owner does not match 'sa'.
+Sets SQL Agent Job owner to 'sa' on the job1 and job2 jobs if their current owner does not match 'sa'.
 
 .EXAMPLE
-	 'sqlserver','sql2016' | Set-DbaJobOwner 
+'sqlserver','sql2016' | Set-DbaJobOwner 
+
+Sets SQL Agent Job owner to sa on all jobs where the owner does not match sa on both sqlserver and sql2016.
 	
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]

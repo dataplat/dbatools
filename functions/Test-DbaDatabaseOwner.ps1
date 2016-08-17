@@ -129,11 +129,11 @@ that TargetLogin must be a valid security principal that exists on the target se
 			{
 				Write-Verbose "Checking $db"
 				$row = [ordered]@{
-					'Server' = $server.Name
-					'Database' = $db.Name
-					'CurrentOwner' = $db.Owner
-					'TargetOwner' = $TargetLogin
-					'OwnerMatch' = ($db.owner -eq $TargetLogin)
+					Server = $server.Name
+					Database = $db.Name
+					CurrentOwner = $db.Owner
+					TargetOwner = $TargetLogin
+					OwnerMatch = ($db.owner -eq $TargetLogin)
 				}
 				
 				#add each custom object to the return array

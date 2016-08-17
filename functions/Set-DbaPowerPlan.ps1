@@ -40,12 +40,12 @@ https://dbatools.io/Set-DbaPowerPlan
 .EXAMPLE
 Set-DbaPowerPlan -ComputerName sqlserver2014a
 
-To return true or false for Power Plan being set to High Performance
+Sets the Power Plan to High Performance. Skips it if its already set.
 	
 .EXAMPLE   
-Set-DbaPowerPlan -ComputerName sqlserver2014a -Detailed
+Set-DbaPowerPlan -ComputerName sqlcluster -CustomPowerPlan 'Maximum Performance'
 	
-To return detailed information Power Plans
+Sets the Power Plan to the custom power plan called "Maximum Performance". Skips it if its already set.
 	
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
