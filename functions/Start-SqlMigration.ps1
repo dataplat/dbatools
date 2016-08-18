@@ -275,6 +275,8 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 		[switch]$Force
 	)
 	
+	DynamicParam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential } }
+	
 	BEGIN
 	{
 		$docs = [Environment]::GetFolderPath("mydocuments")
