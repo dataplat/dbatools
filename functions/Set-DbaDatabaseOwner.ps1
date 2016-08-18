@@ -107,24 +107,21 @@ Sets database owner to 'sa' on the db1 and db2 databases if their current owner 
 			#Otherwise, use all databases on the instance where owner not equal to -TargetLogin
 			Write-Verbose "Gathering databases to update"
 			
+            #use online/available dbs where owner and target login do not match
+            #exclude system dbs
+            $dbs = $server.Databases | Where-Object {$_.Status -eq 'Normal' -and $_.Owner -ne $TargetLogin -and @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name}
+
+            #filter collection based on -Databases/-Exclude parameters
 			if ($Databases.Length -gt 0)
 			{
-				$dbs = $server.Databases | Where-Object { $_.Owner -ne $TargetLogin -and $databases -contains $_.Name }
-			}
-			else
-			{
-				$dbs = $server.Databases | Where-Object { $_.Owner -ne $TargetLogin }
+				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
 			}
 			
 			if ($Exclude.Length -gt 0)
 			{
 				$dbs = $dbs | Where-Object { $Exclude -notcontains $_.Name }
 			}
-			
-			# system stuff can't be modified. Well, msdb can, but let's add it anyway.
-			$dbs = $dbs | Where-Object { 'master', 'model', 'msdb', 'tempdb', 'distribution' -notcontains $_.Name }
-			
-			
+						
 			Write-Verbose "Updating $($dbs.Count) database(s)."
 			foreach ($db in $dbs)
 			{
@@ -135,7 +132,12 @@ Sets database owner to 'sa' on the db1 and db2 databases if their current owner 
 					{
 						Write-Output "Setting database owner for $dbname to $TargetLogin on $servername"
 						# Set database owner to $TargetLogin (default 'sa')
-						$db.SetOwner($TargetLogin)
+                        #Database is ReadOnly/Not Updateable, print warning and skip.
+                        if($db.IsUpdateable -eq $false){
+                            Write-Warning "$dbname on $servername can not be altered as it is ReadOnly. It will be skipped."
+                        } else {
+                            $db.SetOwner($TargetLogin)
+                        }
 					}
 					catch
 					{
