@@ -75,7 +75,17 @@ Returns a datatable with details
 		}
 		else
 		{
-			return $computername
+			# support multiple active nodes on SQL Server 2012 and above.
+			if ($server.VersionMajor -ge 11)
+			{
+				$sql = "Select nodename FROM sys.dm_os_cluster_nodes where is_current_owner = 1"
+				$datatable = $server.ConnectionContext.ExecuteWithResults($sql).Tables.NodeName
+				return $datatable
+			}
+			else
+			{
+				return $computername
+			}
 		}
 	}
 	
