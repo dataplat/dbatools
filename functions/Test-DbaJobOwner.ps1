@@ -1,17 +1,17 @@
-﻿function Test-DbaDatabaseOwner
+﻿function Test-DbaJobOwner
 {
 <#
 .SYNOPSIS
-Checks database owners against a login to validate which databases do not match that owner.
+Checks SQL Agent Job owners against a login to validate which jobs do not match that owner.
 
 .DESCRIPTION
-This function will check all databases on an instance against a SQL login to validate if that
-login owns those databases or not. By default, the function will check against 'sa' for 
-ownership, but the user can pass a specific login if they use something else. Only databases
+This function will check all SQL Agent Job on an instance against a SQL login to validate if that
+login owns those SQL Agent Jobs or not. By default, the function will check against 'sa' for 
+ownership, but the user can pass a specific login if they use something else. Only SQL Agent Jobs
 that do not match this ownership will be displayed, but if the -Detailed switch is set all
-databases will be shown.
-
-Best Practice reference: http://weblogs.sqlteam.com/dang/archive/2008/01/13/Database-Owner-Troubles.aspx
+SQL Agent Jobs will be shown.
+	
+Best practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account
 	
 .NOTES 
 Original Author: Michael Fal (@Mike_Fal), http://mikefal.net
@@ -36,56 +36,56 @@ collection and recieve pipeline input
 PSCredential object to connect under. If not specified, currend Windows login will be used.
 
 .PARAMETER TargetLogin
-Specific login that you wish to check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed.
+Specific login that you wish to check for ownership. This defaults to 'sa'.
 
-.PARAMETER Detailed
-Switch parameter. When declared, function will return all databases and whether or not they
-match the declared owner.
 
-.PARAMETER Datbases
-Auto-populated list of databases to check.
-	
+.PARAMETER Jobs
+Auto-populated list of Jobs to apply changes to. Will accept a comma separated list or a string array.
+
 .PARAMETER Exclude
-Auto-populated list of databases to exclude from check.
-
+Jobs to exclude
+	
 .LINK
-https://dbatools.io/Test-DbaDatabaseOwner
+https://dbatools.io/Test-DbaJobOwner
 
 .EXAMPLE
-Test-DbaDatabaseOwner -SqlServer localhost
+Test-DbaJobOwner -SqlServer localhost
 
 Returns all databases where the owner does not match 'sa'.
 
 .EXAMPLE
-Test-DbaDatabaseOwner -SqlServer localhost -TargetLogin 'DOMAIN\account'
+Test-DbaJobOwner -SqlServer localhost -TargetLogin DOMAIN\account
 
-Returns all databases where the owner does not match 'DOMAIN\account'. Note
+Returns all databases where the owner does not match DOMAIN\account. Note
 that TargetLogin must be a valid security principal that exists on the target server.
 #>
 	[CmdletBinding()]
 	Param (
-		[parameter(Mandatory = $true)]
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
 		[object]$SqlCredential,
 		[string]$TargetLogin,
 		[Switch]$Detailed
 	)
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
+	
+	DynamicParam { if ($SqlServer) { return Get-ParamSqlJobs -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
 	
 	BEGIN
 	{
-		$databases = $psboundparameters.Databases
+		$jobs = $psboundparameters.Jobs
 		$exclude = $psboundparameters.Exclude
 		
 		#connect to the instance and set return array empty
 		$return = @()
 	}
 	
+	
 	PROCESS
 	{
 		foreach ($servername in $sqlserver)
 		{
+			#connect to the instance
 			Write-Verbose "Connecting to $servername"
 			$server = Connect-SqlServer $servername -SqlCredential $SqlCredential
 			
@@ -101,7 +101,6 @@ that TargetLogin must be a valid security principal that exists on the target se
 				if ($sqlserver.count -eq 1)
 				{
 					throw "Invalid login: $TargetLogin"
-					return $null
 				}
 				else
 				{
@@ -110,32 +109,41 @@ that TargetLogin must be a valid security principal that exists on the target se
 				}
 			}
 			
-			if ($Databases.Length -gt 0)
+			if ($server.logins[$TargetLogin].LoginType -eq 'WindowsGroup')
 			{
-				$dbs = $server.Databases | Where-Object { $databases -contains $_.Name }
+				throw "$TargetLogin is a Windows Group and can not be a job owner."
+			}
+			
+			#Get database list. If value for -Jobs is passed, massage to make it a string array.
+			#Otherwise, use all jobs on the instance where owner not equal to -TargetLogin
+			Write-Verbose "Gathering jobs to Check"
+			
+			if ($Jobs.Length -gt 0)
+			{
+				$jobcollection = $server.JobServer.Jobs | Where-Object { $jobs -contains $_.Name }
 			}
 			else
 			{
-				$dbs = $server.Databases
+				$jobcollection = $server.JobServer.Jobs
 			}
 			
 			if ($Exclude.Length -gt 0)
 			{
-				$dbs = $dbs | Where-Object { $Exclude -notcontains $_.Name }
+				$jobcollection = $jobcollection | Where-Object { $Exclude -notcontains $_.Name }
 			}
 			
 			#for each database, create custom object for return set.
-			foreach ($db in $dbs)
+			foreach ($job in $jobcollection)
 			{
-				Write-Verbose "Checking $db"
+				Write-Verbose "Checking $job"
 				$row = [ordered]@{
 					Server = $server.Name
-					Database = $db.Name
-					CurrentOwner = $db.Owner
+					Job = $job.Name
+					CurrentOwner = $job.OwnerLoginName
 					TargetOwner = $TargetLogin
-					OwnerMatch = ($db.owner -eq $TargetLogin)
+					OwnerMatch = ($job.OwnerLoginName -eq $TargetLogin)
+					
 				}
-				
 				#add each custom object to the return array
 				$return += New-Object PSObject -Property $row
 			}
@@ -156,4 +164,5 @@ that TargetLogin must be a valid security principal that exists on the target se
 			return ($return | Where-Object { $_.OwnerMatch -eq $false })
 		}
 	}
+	
 }

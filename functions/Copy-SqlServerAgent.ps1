@@ -103,8 +103,8 @@ Shows what would happen if the command were executed.
 		
 		# All of these support whatif inside of them
 		Copy-SqlAgentCategory -Source $sourceserver -Destination $destserver -Force:$force
-		Copy-SqlAlert -Source $sourceserver -Destination $destserver -Force:$force -IncludeDefaults
 		Copy-SqlOperator -Source $sourceserver -Destination $destserver -Force:$force
+		Copy-SqlAlert -Source $sourceserver -Destination $destserver -Force:$force -IncludeDefaults
 		Copy-SqlProxyAccount -Source $sourceserver -Destination $destserver -Force:$force
 		Copy-SqlSharedSchedule -Source $sourceserver -Destination $destserver -Force:$force
 		Copy-SqlJob -Source $sourceserver -Destination $destserver -Force:$force -DisableOnDestination:$DisableJobsOnDestination -DisableOnSource:$DisableJobsOnSource
