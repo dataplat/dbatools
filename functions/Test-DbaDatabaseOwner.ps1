@@ -110,7 +110,7 @@ that TargetLogin must be a valid security principal that exists on the target se
 				}
 			}
 			#use online/available dbs
-            $dbs = $server.Databases | Where-Object {$_.Status -eq 'Normal'}
+            $dbs = $server.Databases
 
             #filter database collection based on parameters
 			if ($Databases.Length -gt 0)
@@ -130,6 +130,7 @@ that TargetLogin must be a valid security principal that exists on the target se
 				$row = [ordered]@{
 					Server = $server.Name
 					Database = $db.Name
+					DBState = $db.State
 					CurrentOwner = $db.Owner
 					TargetOwner = $TargetLogin
 					OwnerMatch = ($db.owner -eq $TargetLogin)

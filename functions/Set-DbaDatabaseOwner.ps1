@@ -107,9 +107,9 @@ Sets database owner to 'sa' on the db1 and db2 databases if their current owner 
 			#Otherwise, use all databases on the instance where owner not equal to -TargetLogin
 			Write-Verbose "Gathering databases to update"
 			
-            #use online/available dbs where owner and target login do not match
+            #use where owner and target login do not match
             #exclude system dbs
-            $dbs = $server.Databases | Where-Object {$_.Status -eq 'Normal' -and $_.Owner -ne $TargetLogin -and @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name}
+            $dbs = $server.Databases | Where-Object {$_.Owner -ne $TargetLogin -and @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name}
 
             #filter collection based on -Databases/-Exclude parameters
 			if ($Databases.Length -gt 0)
@@ -132,10 +132,12 @@ Sets database owner to 'sa' on the db1 and db2 databases if their current owner 
 					{
 						Write-Output "Setting database owner for $dbname to $TargetLogin on $servername"
 						# Set database owner to $TargetLogin (default 'sa')
-                        #Database is ReadOnly/Not Updateable, print warning and skip.
-                        if($db.IsUpdateable -eq $false){
-                            Write-Warning "$dbname on $servername can not be altered as it is ReadOnly. It will be skipped."
-                        } else {
+                        # Database is ReadOnly/Not Updateable, print warning and skip.
+                        if($db.Status -ne 'Normal'){
+                            Write-Warning "$dbname on $servername is in a  $($db.Sate) state and can not be altered. It will be skipped."
+                        } elseif ($db.IsUpdateable -eq $false) {
+							Write-Warning "$dbname on $servername is not in an updateable state and can not be altered. It will be skipped."
+						} else {
                             $db.SetOwner($TargetLogin)
                         }
 					}
@@ -144,6 +146,7 @@ Sets database owner to 'sa' on the db1 and db2 databases if their current owner 
 						# write-exception writes the full exception to file
 						Write-Exception $_
 						throw $_
+						Continue
 					}
 				}
 			}
