@@ -136,7 +136,7 @@ Sets database owner to 'sa' on the db1 and db2 databases if their current owner 
                         
 						#Database is online and accessible 
                         if($db.Status -ne 'Normal'){
-                            Write-Warning "$dbname on $servername is in a  $($db.Sate) state and can not be altered. It will be skipped."						 
+                            Write-Warning "$dbname on $servername is in a  $($db.Status) state and can not be altered. It will be skipped."						 
                         } 
 						#Database is updatable, not read-only
 						elseif ($db.IsUpdateable -eq $false) {
