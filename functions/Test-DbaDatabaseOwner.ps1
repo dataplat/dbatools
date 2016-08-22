@@ -130,7 +130,7 @@ that TargetLogin must be a valid security principal that exists on the target se
 				$row = [ordered]@{
 					Server = $server.Name
 					Database = $db.Name
-					DBState = $db.State
+					DBState = $db.Status
 					CurrentOwner = $db.Owner
 					TargetOwner = $TargetLogin
 					OwnerMatch = ($db.owner -eq $TargetLogin)

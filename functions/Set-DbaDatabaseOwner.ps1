@@ -132,12 +132,21 @@ Sets database owner to 'sa' on the db1 and db2 databases if their current owner 
 					{
 						Write-Output "Setting database owner for $dbname to $TargetLogin on $servername"
 						# Set database owner to $TargetLogin (default 'sa')
-                        # Database is ReadOnly/Not Updateable, print warning and skip.
+						# Ownership validations checks
+                        
+						#Database is online and accessible 
                         if($db.Status -ne 'Normal'){
-                            Write-Warning "$dbname on $servername is in a  $($db.Sate) state and can not be altered. It will be skipped."
-                        } elseif ($db.IsUpdateable -eq $false) {
+                            Write-Warning "$dbname on $servername is in a  $($db.Sate) state and can not be altered. It will be skipped."						 
+                        } 
+						#Database is updatable, not read-only
+						elseif ($db.IsUpdateable -eq $false) {
 							Write-Warning "$dbname on $servername is not in an updateable state and can not be altered. It will be skipped."
-						} else {
+						} 
+						#Is the login mapped as a user? Logins already mapped in the database can not be the owner
+						elseif ($db.Users.name -contains $TargetLogin) {
+							Write-Warning "$dbname on $servername has $TargetLogin as a mapped user. Mapped users can not be database owners."
+						}
+						else {
                             $db.SetOwner($TargetLogin)
                         }
 					}
