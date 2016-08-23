@@ -1,4 +1,4 @@
-﻿Function Test-DbaConnectionAuthSheme
+﻿Function Test-DbaConnectionAuthScheme
 {
 <#
 .SYNOPSIS
@@ -32,20 +32,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Test-DbaConnectionAuthSheme
+https://dbatools.io/Test-DbaConnectionAuthScheme
 
 .EXAMPLE
-Test-DbaConnectionAuthSheme -SqlServer sqlserver2014a, sql2016
+Test-DbaConnectionAuthScheme -SqlServer sqlserver2014a, sql2016
 
 Returns server name, transport and auth scheme for sqlserver2014a and sql2016.
 
 .EXAMPLE   
-Test-DbaConnectionAuthSheme -SqlServer sqlserver2014a -Kerberos
+Test-DbaConnectionAuthScheme -SqlServer sqlserver2014a -Kerberos
 
 Returns $true or $false depending on if the connection is Kerberos or not.
 	
 .EXAMPLE   
-Test-DbaConnectionAuthSheme -SqlServer sqlserver2014a -Detailed
+Test-DbaConnectionAuthScheme -SqlServer sqlserver2014a -Detailed
 
 Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id = @@SPID"
 	
