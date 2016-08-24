@@ -80,6 +80,7 @@ Returns db/server collation information for every database on every server liste
 	{
 		foreach ($servername in $SqlServer)
 		{
+			Write-Verbose "Connecting to $servername"
 			try
 			{
 				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
@@ -113,6 +114,7 @@ Returns db/server collation information for every database on every server liste
 			
 			foreach ($db in $dbs)
 			{
+				Write-Verbose "Processing $($db.name) on $servername"
 				$null = $collection.Add([PSCustomObject]@{
 						Server = $server.name
 						ServerLevel = $serverversion
