@@ -128,6 +128,11 @@ Returns db/server collation information for every database on every server liste
 	
 	END
 	{
+		if ($Detailed -eq $true)
+		{
+			return $collection
+		}
+		
 		if ($databases.count -eq 1)
 		{
 			if ($sqlserver.count -eq 1)
@@ -139,13 +144,9 @@ Returns db/server collation information for every database on every server liste
 				return ($collection | Select-Object Server, isEqual)
 			}
 		}
-		elseif ($Detailed -eq $false)
-		{
-			return ($collection | Select-Object Server, Database, IsEqual)
-		}
 		else
 		{
-			return $collection
+			return ($collection | Select-Object Server, Database, IsEqual)
 		}
 	}
 }
