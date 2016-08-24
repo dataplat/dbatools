@@ -85,11 +85,11 @@ Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id =
 				
 				if ($detailed -eq $true)
 				{
-					$sql = "SELECT * from sys.dm_exec_connections WHERE session_id = @@SPID"
+					$sql = "SELECT @@SERVERNAME AS ServerName, * from sys.dm_exec_connections WHERE session_id = @@SPID"
 				}
 				else
 				{
-					$sql = "SELECT net_transport, auth_scheme from sys.dm_exec_connections WHERE session_id = @@SPID"
+					$sql = "SELECT @@SERVERNAME AS ServerName, net_transport, auth_scheme from sys.dm_exec_connections WHERE session_id = @@SPID"
 				}
 				
 				Write-Verbose "Getting results for the following query: $sql"
@@ -109,7 +109,7 @@ Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id =
 			{
 				$null = $collection.Add([PSCustomObject]@{
 					ConnectName = $servername
-					ServerName = $server.ConnectionContext.ExecuteScalar("select @@servername")
+					ServerName = $results.ServerName
 					Transport = $results.net_transport
 					AuthScheme = $results.auth_scheme
 				})
