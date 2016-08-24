@@ -5,7 +5,9 @@
 Returns the transport protocol and authentication scheme of the connection. This is useful to determine if your connection is using Kerberos.
 	
 .DESCRIPTION
-By default, this command will return the server name, transport protocol, and authentication scheme of the current connection.
+By default, this command will return the ConnectName, ServerName, Transport and AuthScheme of the current connection.
+	
+ConnectName is the name you used to connect. ServerName is the name that the SQL Server reports as its @@SERVERNAME which is used to register its SPN. If you were expecting a Kerberos connection and got NTLM instead, ensure ConnectName and ServerName match. 
 
 If -Kerberos or -Ntlm is specified, the $true/$false results of the test will be returned. Returns $true or $false by default for one server. Returns Server name and Results for more than one server.
 	
@@ -37,7 +39,7 @@ https://dbatools.io/Test-DbaConnectionAuthScheme
 .EXAMPLE
 Test-DbaConnectionAuthScheme -SqlServer sqlserver2014a, sql2016
 
-Returns server name, transport and auth scheme for sqlserver2014a and sql2016.
+Returns ConnectName, ServerName, Transport and AuthScheme for sqlserver2014a and sql2016.
 
 .EXAMPLE   
 Test-DbaConnectionAuthScheme -SqlServer sqlserver2014a -Kerberos
@@ -68,15 +70,15 @@ Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id =
 	
 	PROCESS
 	{
-		foreach ($server in $SqlServer)
+		foreach ($servername in $SqlServer)
 		{
 			try
 			{
-				$sourceserver = Connect-SqlServer -SqlServer $server -SqlCredential $Credential
+				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
 				
-				if ($sourceserver.versionMajor -lt 9)
+				if ($server.versionMajor -lt 9)
 				{
-					Write-Warning "This command only supports SQL Server 2005 and above. Moving on."
+					Write-Warning "This command only supports SQL Server 2005 and above. Skipping $servername and moving on."
 					continue
 				}
 				
@@ -89,7 +91,7 @@ Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id =
 					$sql = "SELECT net_transport, auth_scheme from sys.dm_exec_connections WHERE session_id = @@SPID"
 				}
 				
-				$results = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables
+				$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables
 			}
 			catch
 			{
@@ -104,8 +106,8 @@ Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id =
 			else
 			{
 				$collection += [PSCustomObject]@{
-					Server = $server
-					ServerNameInSettings = $sourceserver
+					ConnectName = $servername
+					ServerName = $server.ConnectionContext.ExecuteScalar("select @@servername")
 					Transport = $results.net_transport
 					AuthScheme = $results.auth_scheme
 				}
