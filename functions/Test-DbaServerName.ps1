@@ -2,22 +2,17 @@
 {
 <#
 .SYNOPSIS
-Compares Database Collations to Server Collation
+Tests to see if it's possible to easily rename the server at the SQL Server instance level
 	
 .DESCRIPTION
-Compares Database Collations to Server Collation
+	
+https://www.mssqltips.com/sqlservertip/2525/steps-to-change-the-server-name-for-a-sql-server-machine/
 	
 .PARAMETER SqlServer
 The SQL Server that you're connecting to.
 
 .PARAMETER Credential
 Credential object used to connect to the SQL Server as a different user
-
-.PARAMETER Databases
-Return information for only specific databases
-
-.PARAMETER Exclude
-Return information for all but these specific databases
 
 .PARAMETER Detailed
 Shows detailed information about the server and database collations
@@ -117,15 +112,47 @@ Returns db/server collation information for every database on every server liste
 			
 			if ($Detailed)
 			{
-				$sql = "select srl.remote_name as RemoteLoginName, sss.srvname from sys.remote_logins srl join sys.sysservers sss on srl.server_id = sss.srvid"
-				#Replication
-				$serverinfo | Add-Member -NotePropertyName CanChange -NotePropertyValue $canchange
+				# exec sp_dropdistributor @no_checks = 1
+				$reasons = @()
 				
-				if ($canchange -eq $false)
+				# check for mirroring
+				$mirroreddb = $server.Databases | Where-Object { $_.IsMirroringEnabled -eq $true }
+				
+				if ($mirroreddb.count -gt 0)
 				{
-					$serverinfo | Add-Member -NotePropertyName Reason -NotePropertyValue "Replication is prohibiting a server name change"
+					$dbs = $mirroreddb.name -join ", "
+					$reasons += "Databases are being mirrored: $dbs"
 				}
 				
+				# check for replication
+				$replicatedb = $server.Databases | Where-Object { $_.ReplicationOptions -ne "None" -or $_.Name -eq "distribution" }
+				
+				if ($replicatedb.count -gt 0)
+				{
+					$dbs = $replicatedb.name -join ", "
+					$reasons += "Databases are involved in replication: $dbs"
+				}
+				
+				# check for even more replication
+				$sql = "select srl.remote_name as RemoteLoginName from sys.remote_logins srl join sys.sysservers sss on srl.server_id = sss.srvid"
+				$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables
+				
+				if ($results.RemoteLoginName.count -gt 0)
+				{ 
+					$remotelogins = $results.RemoteLoginName -join ", "
+					$reasons += "Remote logins still exist: $remotelogins"
+					
+				}
+				
+				if ($reasons.count -gt 0)
+				{
+					$serverinfo | Add-Member -NotePropertyName CanChange -NotePropertyValue $false
+					$serverinfo | Add-Member -NotePropertyName Reason -NotePropertyValue $reasons
+				}
+				else
+				{
+					$serverinfo | Add-Member -NotePropertyName CanChange -NotePropertyValue $true
+				}
 			}
 			
 			$null = $collection.Add($serverinfo)
