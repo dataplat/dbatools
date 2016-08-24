@@ -117,6 +117,7 @@ Returns db/server collation information for every database on every server liste
 			
 			if ($Detailed)
 			{
+				$sql = "select srl.remote_name as RemoteLoginName, sss.srvname from sys.remote_logins srl join sys.sysservers sss on srl.server_id = sss.srvid"
 				#Replication
 				$serverinfo | Add-Member -NotePropertyName CanChange -NotePropertyValue $canchange
 				
