@@ -33,25 +33,25 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Test-DbaDatabaseCollation
+https://dbatools.io/Test-DbaDatabaseCompatability
 
 .EXAMPLE
-Test-DbaDatabaseCollation -SqlServer sqlserver2014a
+Test-DbaDatabaseCompatability -SqlServer sqlserver2014a
 
 Returns server name, databse name and true/false if the compatability level match for all databases on sqlserver2014a
 
 .EXAMPLE   
-Test-DbaDatabaseCollation -SqlServer sqlserver2014a -Databases db1, db2
+Test-DbaDatabaseCompatability -SqlServer sqlserver2014a -Databases db1, db2
 
 Returns server name, databse name and true/false if the compatability level match for the db1 and db2 databases on sqlserver2014a
 	
 .EXAMPLE   
-Test-DbaDatabaseCollation -SqlServer sqlserver2014a, sql2016 -Detailed -Exclude db1
+Test-DbaDatabaseCompatability -SqlServer sqlserver2014a, sql2016 -Detailed -Exclude db1
 
 Lots of detailed information for database and server compatability level for all databases except db1 on sqlserver2014a and sql2016
 
 .EXAMPLE   
-Get-SqlRegisteredServerName -SqlServer sql2016 | Test-DbaDatabaseCollation
+Get-SqlRegisteredServerName -SqlServer sql2014 | Test-DbaDatabaseCompatability
 
 Returns db/server collation information for every database on every server listed in the Central Management Server on sql2016
 	
@@ -97,7 +97,7 @@ Returns db/server collation information for every database on every server liste
 				}
 			}
 			
-			$serverversion = "Version$($server.VersionMajor)$($server.VersionMinor)"
+			$serverversion = "Version$($server.VersionMajor)0"
 			$dbs = $server.Databases
 			
 			if ($databases.count -gt 0)
