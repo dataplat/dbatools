@@ -44,24 +44,24 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Get-DbaRestoreHistory
 
 .EXAMPLE
-Get-DbaRestoreHistory -SqlServer sqlserver2014a, sql2016
+Get-DbaRestoreHistory -SqlServer sqlserver2014a
 
-Returns server name, database, username, restore type, date, from file and to files for all restored databases on sqlserver2014a and sql2016.
+Returns server name, database, username, restore type, date, from file and to files for all restored databases on sqlserver2014a.
 
 .EXAMPLE   
-Get-DbaRestoreHistory -SqlServer sqlserver2014a -Databases db1, db2
+Get-DbaRestoreHistory -SqlServer sqlserver2014a -Databases db1, db2 -Since '7/1/2016 10:47:00'
 
-Returns restore information only for databases db1 and db2 on sqlserve2014a
+Returns restore information only for databases db1 and db2 on sqlserve2014a since July 1, 2016 at 10:47 AM.
 	
 .EXAMPLE   
-Get-DbaRestoreHistory -SqlServer sqlserver2014a -Detailed -Exclude db1
+Get-DbaRestoreHistory -SqlServer sqlserver2014a, sql2016 -Detailed -Exclude db1
 
-Lots of detailed information for all databases on sqlserver2014a except db1
+Lots of detailed information for all databases except db1 on sqlserver2014a and sql2016
 
 .EXAMPLE   
 Get-SqlRegisteredServerName -SqlServer sql2016 | Get-DbaRestoreHistory
 
-Returns restore information for every server listed in the Central Management Server on sql2016
+Returns database restore information for every database on every server listed in the Central Management Server on sql2016
 	
 #>
 	[CmdletBinding()]
