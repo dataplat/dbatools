@@ -101,16 +101,16 @@ Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id =
 			
 			if ($detailed -eq $true)
 			{
-				$collection += $results.rows
+				$null = $collection.Add($results.rows)
 			}
 			else
 			{
-				$collection += [PSCustomObject]@{
+				$null = $collection.Add([PSCustomObject]@{
 					ConnectName = $servername
 					ServerName = $server.ConnectionContext.ExecuteScalar("select @@servername")
 					Transport = $results.net_transport
 					AuthScheme = $results.auth_scheme
-				}
+				})
 			}
 		}
 	}
