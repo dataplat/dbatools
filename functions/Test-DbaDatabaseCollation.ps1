@@ -113,6 +113,7 @@ Returns db/server collation information for every database on every server liste
 			
 			foreach ($db in $dbs)
 			{
+				Write-Verbose "Processing $($db.name) on $servername"
 				$null = $collection.Add([PSCustomObject]@{
 					Server = $server.name
 					ServerCollation = $server.collation
