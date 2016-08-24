@@ -74,6 +74,7 @@ Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id =
 		{
 			try
 			{
+				Write-Verbose "Connecting to $servername"
 				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
 				
 				if ($server.versionMajor -lt 9)
@@ -91,6 +92,7 @@ Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id =
 					$sql = "SELECT net_transport, auth_scheme from sys.dm_exec_connections WHERE session_id = @@SPID"
 				}
 				
+				Write-Verbose "Getting results for the following query: $sql"
 				$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables
 			}
 			catch
