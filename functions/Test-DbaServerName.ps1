@@ -115,6 +115,17 @@ Returns db/server collation information for every database on every server liste
 				# exec sp_dropdistributor @no_checks = 1
 				$reasons = @()
 				
+				$instance = $server.InstanceName
+				if ($instance.length -eq 0) { $instance = "MSSQLSERVER" }
+				$servicename = "SQL Server Reporting Services ($instance)"
+				$rs = Get-Service -ComputerName $server.ComputerNamePhysicalNetBIOS -DisplayName $servicename
+				
+				if ($rs.count -gt 0)
+				{
+					$rstext = "Reporting Services must be stopped and updated"
+					$serverinfo | Add-Member -NotePropertyName Warnings -NotePropertyValue $rstext
+				}
+				
 				# check for mirroring
 				$mirroreddb = $server.Databases | Where-Object { $_.IsMirroringEnabled -eq $true }
 				
@@ -125,9 +136,10 @@ Returns db/server collation information for every database on every server liste
 				}
 				
 				# check for replication
-				$replicatedb = $server.Databases | Where-Object { $_.ReplicationOptions -ne "None" -or $_.Name -eq "distribution" }
+				$sql = "select name from sys.databases where is_published = 1 or is_subscribed =1 or is_distributor = 1"
+				$replicatedb = $server.ConnectionContext.ExecuteWithResults($sql).Tables
 				
-				if ($replicatedb.count -gt 0)
+				if ($replicatedb.name.count -gt 0)
 				{
 					$dbs = $replicatedb.name -join ", "
 					$reasons += "Databases are involved in replication: $dbs"
@@ -146,12 +158,12 @@ Returns db/server collation information for every database on every server liste
 				
 				if ($reasons.count -gt 0)
 				{
-					$serverinfo | Add-Member -NotePropertyName CanChange -NotePropertyValue $false
-					$serverinfo | Add-Member -NotePropertyName Reason -NotePropertyValue $reasons
+					$serverinfo | Add-Member -NotePropertyName Updatable -NotePropertyValue $false
+					$serverinfo | Add-Member -NotePropertyName Errors -NotePropertyValue $reasons
 				}
 				else
 				{
-					$serverinfo | Add-Member -NotePropertyName CanChange -NotePropertyValue $true
+					$serverinfo | Add-Member -NotePropertyName Updatable -NotePropertyValue $true
 				}
 			}
 			
