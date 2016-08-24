@@ -65,16 +65,9 @@ Returns db/server collation information for every database on every server liste
 		[switch]$Detailed
 	)
 	
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential } }
-	
 	BEGIN
 	{
-		# Convert from RuntimeDefinedParameter object to regular array
-		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
-		
 		$collection = New-Object System.Collections.ArrayList
-		
 	}
 	
 	PROCESS
@@ -98,52 +91,60 @@ Returns db/server collation information for every database on every server liste
 				}
 			}
 			
-			$dbs = $server.Databases
 			
-			if ($databases.count -gt 0)
+			if ($server.isClustered)
 			{
-				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
+				if ($SqlServer.count -eq 1)
+				{
+					# If we ever decide with a -Force to support a cluster name change
+					# We would compare $server.NetName, and never ComputerNamePhysicalNetBIOS
+					throw "$servername is a cluster. Not messing with that."
+				}
+				else
+				{
+					Write-Warning "$servername is a cluster. Not messing with that."
+					Continue
+				}
 			}
 			
-			if ($exclude.count -gt 0)
-			{
-				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
+			$sqlservername = $server.ConnectionContext.ExecuteScalar("select @@servername")
+			
+			$serverinfo = [PSCustomObject]@{
+				ServerName = $server.NetName
+				SqlServerName = $sqlservername
+				IsEqual = $server.NetName -eq $sqlservername
 			}
 			
-			
-			foreach ($db in $dbs)
+			if ($Detailed)
 			{
-				$null = $collection.Add([PSCustomObject]@{
-						Server = $server.name
-						ServerCollation = $server.collation
-						Database = $db.name
-						DatabaseCollation = $db.collation
-						IsEqual = $db.collation -eq $server.collation
-					})
+				#Replication
+				$serverinfo | Add-Member -NotePropertyName CanChange -NotePropertyValue $canchange
+				
+				if ($canchange -eq $false)
+				{
+					$serverinfo | Add-Member -NotePropertyName Reason -NotePropertyValue "Replication is prohibiting a server name change"
+				}
+				
 			}
+			
+			$null = $collection.Add($serverinfo)
 		}
 	}
 	
 	END
 	{
-		if ($databases.count -eq 1)
+		if ($Detailed -eq $true)
 		{
-			if ($sqlserver.count -eq 1)
-			{
-				return $collection.IsEqual
-			}
-			else
-			{
-				return ($collection | Select-Object Server, isEqual)
-			}
+			return $collection
 		}
-		elseif ($Detailed -eq $false)
+		
+		if ($sqlserver.count -eq 1)
 		{
-			return ($collection | Select-Object Server, Database, IsEqual)
+			return $collection.IsEqual
 		}
 		else
 		{
-			return $collection
+			return ($collection | Select-Object Server, isEqual)
 		}
 	}
 }

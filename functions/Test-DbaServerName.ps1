@@ -109,28 +109,25 @@ Returns db/server collation information for every database on every server liste
 			
 			$sqlservername = $server.ConnectionContext.ExecuteScalar("select @@servername")
 			
-			foreach ($db in $dbs)
-			{
-				$serverinfo = [PSCustomObject]@{
-					ServerName = $server.NetName
-					SqlServerName = $sqlservername
-					IsEqual = $server.NetName -eq $sqlservername
-				}
-				
-				if ($Detailed)
-				{
-					#Replication
-					$serverinfo | Add-Member -NotePropertyName CanChange -NotePropertyValue $canchange
-					
-					if ($canchange -eq $false)
-					{
-						$serverinfo | Add-Member -NotePropertyName Reason -NotePropertyValue "Replication is prohibiting a server name change"
-					}
-					
-				}
-				
-				$null = $collection.Add($serverinfo)
+			$serverinfo = [PSCustomObject]@{
+				ServerName = $server.NetName
+				SqlServerName = $sqlservername
+				IsEqual = $server.NetName -eq $sqlservername
 			}
+			
+			if ($Detailed)
+			{
+				#Replication
+				$serverinfo | Add-Member -NotePropertyName CanChange -NotePropertyValue $canchange
+				
+				if ($canchange -eq $false)
+				{
+					$serverinfo | Add-Member -NotePropertyName Reason -NotePropertyValue "Replication is prohibiting a server name change"
+				}
+				
+			}
+			
+			$null = $collection.Add($serverinfo)
 		}
 	}
 	
