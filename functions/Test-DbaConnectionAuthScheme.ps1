@@ -120,7 +120,7 @@ Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id =
 		
 		if ($Detailed -eq $true -or ($Kerberos -eq $false -and $Ntlm -eq $false))
 		{
-			return $collection
+			return $collection.rows
 		}
 		
 		# Check if they specified auths
