@@ -101,7 +101,7 @@ Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id =
 			
 			if ($detailed -eq $true)
 			{
-				$collection += $results
+				$collection += $results.rows
 			}
 			else
 			{
@@ -120,7 +120,7 @@ Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id =
 		
 		if ($Detailed -eq $true -or ($Kerberos -eq $false -and $Ntlm -eq $false))
 		{
-			return $collection.rows
+			return $collection
 		}
 		
 		# Check if they specified auths
@@ -141,7 +141,7 @@ Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id =
 					foreach ($server in $collection)
 					{
 						$newcollection += [PSCustomObject]@{
-							Server = $server.Server
+							Server = $server.ConnectName
 							Result = ($server.AuthScheme -eq $auth)
 						}
 					}
