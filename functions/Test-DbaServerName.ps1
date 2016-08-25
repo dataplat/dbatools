@@ -89,37 +89,37 @@ Returns db/server collation information for every database on every server liste
 			
 			if ($server.isClustered)
 			{
-				if ($SqlServer.count -eq 1)
-				{
-					# If we ever decide with a -Force to support a cluster name change
-					# We would compare $server.NetName, and never ComputerNamePhysicalNetBIOS
-					throw "$servername is a cluster. Not messing with that."
-				}
-				else
-				{
-					Write-Warning "$servername is a cluster. Not messing with that."
-					Continue
-				}
+				Write-Warning "$servername is a cluster. Repair-DbaServerName does not support clusters."
 			}
 			
 			$sqlservername = $server.ConnectionContext.ExecuteScalar("select @@servername")
+			$instance = $server.InstanceName
+			
+			if ($instance.length -eq 0)
+			{
+				$serverinstancename = $server.NetName
+				$instance = "MSSQLSERVER"
+			}
+			else
+			{
+				$netname = $server.NetName
+				$serverinstancename = "$netname\$instance"
+			}
 			
 			$serverinfo = [PSCustomObject]@{
-				ServerName = $server.NetName
+				ServerInstanceName = $serverinstancename
 				SqlServerName = $sqlservername
-				IsEqual = $server.NetName -eq $sqlservername
+				RenameRequired = $serverinstancename -eq $sqlservername
 			}
 			
 			if ($Detailed)
 			{
-				# exec sp_dropdistributor @no_checks = 1
 				$reasons = @()
-				
-				$instance = $server.InstanceName
-				if ($instance.length -eq 0) { $instance = "MSSQLSERVER" }
 				$servicename = "SQL Server Reporting Services ($instance)"
-				$rs = Get-Service -ComputerName $server.ComputerNamePhysicalNetBIOS -DisplayName $servicename
 				
+				# try catch
+				$rs = Get-Service -ComputerName $server.ComputerNamePhysicalNetBIOS -DisplayName $servicename -ErrorAction SilentlyContinue
+								
 				if ($rs.count -gt 0)
 				{
 					$rstext = "Reporting Services must be stopped and updated"
@@ -150,7 +150,7 @@ Returns db/server collation information for every database on every server liste
 				$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables
 				
 				if ($results.RemoteLoginName.count -gt 0)
-				{ 
+				{
 					$remotelogins = $results.RemoteLoginName -join ", "
 					$reasons += "Remote logins still exist: $remotelogins"
 					
@@ -180,11 +180,11 @@ Returns db/server collation information for every database on every server liste
 		
 		if ($sqlserver.count -eq 1)
 		{
-			return $collection.IsEqual
+			return $collection.RenameRequired
 		}
 		else
 		{
-			return ($collection | Select-Object Server, isEqual)
+			return ($collection | Select-Object Server, RenameRequired)
 		}
 	}
 }

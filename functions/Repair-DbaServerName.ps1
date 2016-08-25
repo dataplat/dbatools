@@ -2,22 +2,17 @@
 {
 <#
 .SYNOPSIS
-Compares Database Collations to Server Collation
+Tests to see if it's possible to easily rename the server at the SQL Server instance level
 	
 .DESCRIPTION
-Compares Database Collations to Server Collation
+	
+https://www.mssqltips.com/sqlservertip/2525/steps-to-change-the-server-name-for-a-sql-server-machine/
 	
 .PARAMETER SqlServer
 The SQL Server that you're connecting to.
 
 .PARAMETER Credential
 Credential object used to connect to the SQL Server as a different user
-
-.PARAMETER Databases
-Return information for only specific databases
-
-.PARAMETER Exclude
-Return information for all but these specific databases
 
 .PARAMETER Detailed
 Shows detailed information about the server and database collations
@@ -56,17 +51,19 @@ Get-SqlRegisteredServerName -SqlServer sql2016 | Repair-DbaServerName
 Returns db/server collation information for every database on every server listed in the Central Management Server on sql2016
 	
 #>
-	[CmdletBinding()]
+	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
 		[PsCredential]$Credential,
-		[switch]$Detailed
+		[switch]$Force
 	)
 	
 	BEGIN
 	{
+		# if ($AutoFix -eq $true) { $ConfirmPreference = "High" }
+		if ($Force -eq $true) { $ConfirmPreference = "None" }
 		$collection = New-Object System.Collections.ArrayList
 	}
 	
@@ -91,7 +88,6 @@ Returns db/server collation information for every database on every server liste
 				}
 			}
 			
-			
 			if ($server.isClustered)
 			{
 				if ($SqlServer.count -eq 1)
@@ -107,44 +103,103 @@ Returns db/server collation information for every database on every server liste
 				}
 			}
 			
-			$sqlservername = $server.ConnectionContext.ExecuteScalar("select @@servername")
+			# Check to see if we can easily proceed
+			Write-Verbose "Executing Test-DbaServerName to see if the server is in a state to be renamed. "
 			
-			$serverinfo = [PSCustomObject]@{
-				ServerName = $server.NetName
-				SqlServerName = $sqlservername
-				IsEqual = $server.NetName -eq $sqlservername
+			$nametest = Test-DbaServerName $servername -Detailed
+			
+			$serverinstancename = $nametest.ServerInstanceName
+			$sqlservername = $nametest.SqlServerName
+			
+			if ($serverinstancename -eq $sqlservername)
+			{
+				return "$serverinstancename's @@SERVERNAME is perfect :) If you'd like to rename it, first rename the Windows server."
 			}
 			
-			if ($Detailed)
+			if ($nametest.updatable -eq $false)
 			{
-				#Replication
-				$serverinfo | Add-Member -NotePropertyName CanChange -NotePropertyValue $canchange
+				Write-Output "Test-DbaServerName reports that the rename cannot proceed with a rename in this $servername's current state."
 				
-				if ($canchange -eq $false)
+				$nametest
+				
+				foreach ($nametesterror in $nametest.Errors)
 				{
-					$serverinfo | Add-Member -NotePropertyName Reason -NotePropertyValue "Replication is prohibiting a server name change"
+					if ($nametesterror -like '*replication*')
+					{
+						$replication = $true
+						throw "Cannot proceed because some databases are involved in replication. You can run exec sp_dropdistributor @no_checks = 1 but that may be pretty dangerous. We may offer an AutoFix with confirmation prompts in the future. Let usk know if you're interested."
+					}
+					elseif ($Error -like '*mirror*')
+					{
+						throw "Cannot proceed because some databases are being mirrored. Stop mirroring to proceed. We may offer an AutoFix with confirmation prompts in the future. Let usk know if you're interested."
+					}
+				}
+			}
+			
+			if ($nametest.Warnings.length -gt 0)
+			{
+				$instancename = $instance = $server.InstanceName
+				if ($instance.length -eq 0) { $instance = "MSSQLSERVER" }
+				
+				$allsqlservices = Get-Service -ComputerName $server.ComputerNamePhysicalNetBIOS -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "SQL*$instance*" -and $_.Status -eq "Running" }
+				$reportingservice = Get-Service -ComputerName $server.ComputerNamePhysicalNetBIOS -DisplayName "SQL Server Reporting Services ($instance)" -ErrorAction SilentlyContinue
+				
+				if ($reportingservice.Status -eq "Running")
+				{
+					if ($Pscmdlet.ShouldProcess($server.name, "Reporting Services is running for this instance. Would you like to automatically stop this service?"))
+					{
+						$reportingservice | Stop-Service
+						Write-Warning "You must reconfigure Reporting Services using Reporting Services Configuration Manager or PowerShell once the server has been successfully renamed."
+					}
+				}
+			}
+			
+			if ($Pscmdlet.ShouldProcess($server.name, "Performing sp_dropserver to remove the old server name, $sqlservername, then sp_addserver to add $serverinstancename"))
+			{
+				$sql = "sp_dropserver '$sqlservername'"
+				try
+				{
+					$null = $server.ConnectionContext.ExecuteNonQuery($sql)
+					Write-Output "Successfully executed $sql"
+				}
+				catch
+				{
+					Write-Exception $_
+					throw $_
 				}
 				
+				$sql = "sp_addserver '$serverinstancename', local"
+				
+				try
+				{
+					$null = $server.ConnectionContext.ExecuteNonQuery($sql)
+					Write-Output "Successfully executed $sql"
+				}
+				catch
+				{
+					Write-Exception $_
+					throw $_
+				}
 			}
 			
-			$null = $collection.Add($serverinfo)
+			if ($Pscmdlet.ShouldProcess($server.ComputerNamePhysicalNetBIOS, "Rename complete! The SQL Service must be restarted to commit the changes. Would you like to restart this instance now?"))
+			{
+				try
+				{
+					$allsqlservices | Stop-Service -Force
+					$allsqlservices | Start-Service
+				}
+				catch
+				{
+					Write-Exception $_
+					throw "Could not restart SQL Service :("
+				}
+			}
 		}
 	}
 	
 	END
 	{
-		if ($Detailed -eq $true)
-		{
-			return $collection
-		}
 		
-		if ($sqlserver.count -eq 1)
-		{
-			return $collection.IsEqual
-		}
-		else
-		{
-			return ($collection | Select-Object Server, isEqual)
-		}
 	}
 }
