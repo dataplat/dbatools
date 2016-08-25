@@ -169,13 +169,12 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 				{
 					$remotelogins = $results.RemoteLoginName -join ", "
 					$reasons += "Remote logins still exist: $remotelogins"
-					
 				}
 				
 				if ($reasons.count -gt 0)
 				{
 					$serverinfo | Add-Member -NotePropertyName Updatable -NotePropertyValue $false
-					$serverinfo | Add-Member -NotePropertyName Errors -NotePropertyValue $reasons
+					$serverinfo | Add-Member -NotePropertyName Blockers -NotePropertyValue $reasons
 				}
 				else
 				{
