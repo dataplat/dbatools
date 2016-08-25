@@ -2,20 +2,28 @@
 {
 <#
 .SYNOPSIS
-Tests to see if it's possible to easily rename the server at the SQL Server instance level
+Tests to see if it's possible to easily rename the server at the SQL Server instance level, or if it even needs to be changed.
 	
 .DESCRIPTION
+When a SQL Server's host OS is renamed, the SQL Server should be as well. This helps with Availability Groups and Kerberos.
+
+This command helps determine if your OS and SQL Server names match, and thus, if a rename is required.
 	
+It then checks conditions that would prevent a rename like database mirroring and replication.
+		
 https://www.mssqltips.com/sqlservertip/2525/steps-to-change-the-server-name-for-a-sql-server-machine/
 	
 .PARAMETER SqlServer
 The SQL Server that you're connecting to.
 
 .PARAMETER Credential
-Credential object used to connect to the SQL Server as a different user
+Credential object used to connect to the SQL Server as a different user.
 
 .PARAMETER Detailed
-Shows detailed information about the server and database collations
+Specifies if the servername is updatable. If updatable -eq $false, it will return the reasons why.
+
+.PARAMETER NoWarnings
+This is an internal parameter used by Repair-DbaServerName which produces warnings of its own.
 
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -33,23 +41,20 @@ https://dbatools.io/Test-DbaServerName
 .EXAMPLE
 Test-DbaServerName -SqlServer sqlserver2014a
 
-If $true is returned, sqlserver2014a passes the test, meaning it's properly named
+Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a.
 
 .EXAMPLE   
 Test-DbaServerName -SqlServer sqlserver2014a, sql2016
 
-Returns server name, databse name and true/false if the collations match for the db1 and db2 databases on sqlserver2014a
-	
-.EXAMPLE   
-Test-DbaServerName -SqlServer sqlserver2014a, sql2016 -Detailed -Exclude db1
-
-Lots of detailed information for database and server collations for all databases except db1 on sqlserver2014a and sql2016
+Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.
 
 .EXAMPLE   
-Get-SqlRegisteredServerName -SqlServer sql2016 | Test-DbaServerName
+Test-DbaServerName -SqlServer sqlserver2014a, sql2016 -Detailed
 
-Returns db/server collation information for every database on every server listed in the Central Management Server on sql2016
+Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.
 	
+If a Rename is required, it will also show Updatable, and Reasons if the servername is not updatable.
+
 #>
 	[CmdletBinding()]
 	Param (

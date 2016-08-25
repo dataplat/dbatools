@@ -2,20 +2,26 @@
 {
 <#
 .SYNOPSIS
-Tests to see if it's possible to easily rename the server at the SQL Server instance level
+Renames @@SERVERNAME to match with the Windows name.
 	
 .DESCRIPTION
-	
+When a SQL Server's host OS is renamed, the SQL Server should be as well. This helps with Availability Groups and Kerberos.
+
+This command renames @@SERVERNAME to match with the Windows name.
+		
 https://www.mssqltips.com/sqlservertip/2525/steps-to-change-the-server-name-for-a-sql-server-machine/
 	
 .PARAMETER SqlServer
 The SQL Server that you're connecting to.
 
 .PARAMETER Credential
-Credential object used to connect to the SQL Server as a different user
+Credential object used to connect to the SQL Server as a different user.
 
 .PARAMETER Detailed
-Shows detailed information about the server and database collations
+Specifies if the servername is updatable. If updatable -eq $false, it will return the reasons why.
+
+.PARAMETER Force
+By default, this command produces a ton of confirm prompts. Force bypasses many of these confirms, but not all.
 
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -33,23 +39,20 @@ https://dbatools.io/Repair-DbaServerName
 .EXAMPLE
 Repair-DbaServerName -SqlServer sqlserver2014a
 
-Returns server name, databse name and true/false if the collations match for all databases on sqlserver2014a
+Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a.
 
 .EXAMPLE   
-Repair-DbaServerName -SqlServer sqlserver2014a -Databases db1, db2
+Repair-DbaServerName -SqlServer sqlserver2014a, sql2016
 
-Returns server name, databse name and true/false if the collations match for the db1 and db2 databases on sqlserver2014a
+Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.
+
+.EXAMPLE   
+Repair-DbaServerName -SqlServer sqlserver2014a, sql2016 -Detailed
+
+Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.
 	
-.EXAMPLE   
-Repair-DbaServerName -SqlServer sqlserver2014a, sql2016 -Detailed -Exclude db1
+If a Rename is required, it will also show Updatable, and Reasons if the servername is not updatable.
 
-Lots of detailed information for database and server collations for all databases except db1 on sqlserver2014a and sql2016
-
-.EXAMPLE   
-Get-SqlRegisteredServerName -SqlServer sql2016 | Repair-DbaServerName
-
-Returns db/server collation information for every database on every server listed in the Central Management Server on sql2016
-	
 #>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
 	Param (
@@ -57,12 +60,12 @@ Returns db/server collation information for every database on every server liste
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
 		[PsCredential]$Credential,
+		[switch]$AutoFix,
 		[switch]$Force
 	)
 	
 	BEGIN
 	{
-		# if ($AutoFix -eq $true) { $ConfirmPreference = "High" }
 		if ($Force -eq $true) { $ConfirmPreference = "None" }
 		$collection = New-Object System.Collections.ArrayList
 	}
@@ -106,7 +109,7 @@ Returns db/server collation information for every database on every server liste
 			# Check to see if we can easily proceed
 			Write-Verbose "Executing Test-DbaServerName to see if the server is in a state to be renamed. "
 			
-			$nametest = Test-DbaServerName $servername -Detailed -NoWarning			
+			$nametest = Test-DbaServerName $servername -Detailed -NoWarning
 			$serverinstancename = $nametest.ServerInstanceName
 			$sqlservername = $nametest.SqlServerName
 			
@@ -126,11 +129,86 @@ Returns db/server collation information for every database on every server liste
 					if ($nametesterror -like '*replication*')
 					{
 						$replication = $true
-						throw "Cannot proceed because some databases are involved in replication. You can run exec sp_dropdistributor @no_checks = 1 but that may be pretty dangerous. We may offer an AutoFix with confirmation prompts in the future. Let usk know if you're interested."
+						
+						if ($AutoFix -eq $false)
+						{
+							throw "Cannot proceed because some databases are involved in replication. You can run exec sp_dropdistributor @no_checks = 1 but that may be pretty dangerous. Alternatively, you can run -AutoFix to automatically fix this issue. AutoFix will also break all database mirrors."
+						}
+						else
+						{
+							$title = "You have chosen to AutoFix the blocker: replication."
+							$message = "We can run sp_dropdistributor which will pretty much destroy replication on this server. Do you wish to continue? (Y/N)"
+							$yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Will continue"
+							$no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Will exit"
+							$options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+							$result = $host.ui.PromptForChoice($title, $message, $options, 0)
+							
+							if ($result -eq 1)
+							{
+								Write-Output "Okay, moving on."
+							}
+							else
+							{
+								Write-Output "Performing sp_dropdistributor @no_checks = 1"
+								$sql = "EXEC sp_dropdistributor @no_checks = 1"
+								try
+								{
+									$null = $server.ConnectionContext.ExecuteNonQuery($sql)
+									Write-Output "`nSuccessfully executed $sql"
+								}
+								catch
+								{
+									Write-Exception $_
+									throw $_
+								}
+							}
+						}
 					}
 					elseif ($Error -like '*mirror*')
 					{
-						throw "Cannot proceed because some databases are being mirrored. Stop mirroring to proceed. We may offer an AutoFix with confirmation prompts in the future. Let usk know if you're interested."
+						if ($AutoFix -eq $false)
+						{
+							throw "Cannot proceed because some databases are being mirrored. Stop mirroring to proceed. Alternatively, you can run -AutoFix to automatically fix this issue. AutoFix will also stop replication."
+						}
+						else
+						{
+							$title = "You have chosen to AutoFix the blocker: mirroring."
+							$message = "We can run sp_dropdistributor which will pretty much destroy replication on this server. Do you wish to continue? (Y/N)"
+							$yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Will continue"
+							$no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Will exit"
+							$options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+							$result = $host.ui.PromptForChoice($title, $message, $options, 0)
+							
+							if ($result -eq 1)
+							{
+								Write-Output "Okay, moving on."
+							}
+							else
+							{
+								Write-Output "Removing Mirroring"
+								
+								foreach ($database in $server.Databases)
+								{
+									if ($database.IsMirroringEnabled)
+									{
+										$dbname = $database.name
+										
+										try
+										{
+											Write-Output "Breaking mirror for $dbname"
+											$database.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
+											$database.Alter()
+											$database.Refresh()
+										}
+										catch
+										{
+											Write-Exception $_
+											throw "Could not break mirror for $dbname. Skipping."
+										}
+									}
+								}
+							}
+						}
 					}
 				}
 			}
