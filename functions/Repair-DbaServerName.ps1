@@ -106,7 +106,9 @@ Returns db/server collation information for every database on every server liste
 			# Check to see if we can easily proceed
 			Write-Verbose "Executing Test-DbaServerName to see if the server is in a state to be renamed. "
 			
-			$nametest = Test-DbaServerName $servername -Detailed -NoWarning
+			$nametest = Test-DbaServerName $servername -Detailed -NoWarning			
+			$serverinstancename = $nametest.ServerInstanceName
+			$sqlservername = $nametest.SqlServerName
 			
 			if ($nametest.RenameRequired -eq $false)
 			{
@@ -132,9 +134,6 @@ Returns db/server collation information for every database on every server liste
 					}
 				}
 			}
-			
-			$serverinstancename = $nametest.ServerInstanceName
-			$sqlservername = $nametest.SqlServerName
 			
 			try
 			{
@@ -212,21 +211,20 @@ Returns db/server collation information for every database on every server liste
 					}
 				}
 			}
+			
+			if ($renamed -eq $true)
+			{
+				Write-Output "`n$servername successfully renamed from $sqlservername to $serverinstancename"
+			}
+			
+			if ($needsrestart -eq $true)
+			{
+				Write-Output "SQL Service restart for $serverinstancename still required"
+			}
 		}
 	}
-	
 	END
 	{
 		Write-Output "`nScript Complete"
-		
-		if ($renamed -eq $true)
-		{
-			Write-Output "Server successfully renamed"
-		}
-		
-		if ($needsrestart -eq $true)
-		{
-			Write-Output "SQL Service restart still required"
-		}
 	}
 }
