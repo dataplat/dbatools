@@ -106,12 +106,9 @@ Returns db/server collation information for every database on every server liste
 			# Check to see if we can easily proceed
 			Write-Verbose "Executing Test-DbaServerName to see if the server is in a state to be renamed. "
 			
-			$nametest = Test-DbaServerName $servername -Detailed
+			$nametest = Test-DbaServerName $servername -Detailed -NoWarning
 			
-			$serverinstancename = $nametest.ServerInstanceName
-			$sqlservername = $nametest.SqlServerName
-			
-			if ($serverinstancename -eq $sqlservername)
+			if ($nametest.RenameRequired -eq $false)
 			{
 				return "$serverinstancename's @@SERVERNAME is perfect :) If you'd like to rename it, first rename the Windows server."
 			}
@@ -136,12 +133,23 @@ Returns db/server collation information for every database on every server liste
 				}
 			}
 			
+			$serverinstancename = $nametest.ServerInstanceName
+			$sqlservername = $nametest.SqlServerName
+			
+			try
+			{
+				$allsqlservices = Get-Service -ComputerName $server.ComputerNamePhysicalNetBIOS -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "SQL*$instance*" -and $_.Status -eq "Running" }
+			}
+			catch
+			{
+				Write-Warning "Can't contact $servername using Get-Service. This means the script will not be able to automatically restart SQL services."
+			}
+			
 			if ($nametest.Warnings.length -gt 0)
 			{
 				$instancename = $instance = $server.InstanceName
 				if ($instance.length -eq 0) { $instance = "MSSQLSERVER" }
 				
-				$allsqlservices = Get-Service -ComputerName $server.ComputerNamePhysicalNetBIOS -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "SQL*$instance*" -and $_.Status -eq "Running" }
 				$reportingservice = Get-Service -ComputerName $server.ComputerNamePhysicalNetBIOS -DisplayName "SQL Server Reporting Services ($instance)" -ErrorAction SilentlyContinue
 				
 				if ($reportingservice.Status -eq "Running")
@@ -160,7 +168,7 @@ Returns db/server collation information for every database on every server liste
 				try
 				{
 					$null = $server.ConnectionContext.ExecuteNonQuery($sql)
-					Write-Output "Successfully executed $sql"
+					Write-Output "`nSuccessfully executed $sql"
 				}
 				catch
 				{
@@ -180,19 +188,28 @@ Returns db/server collation information for every database on every server liste
 					Write-Exception $_
 					throw $_
 				}
+				$renamed = $true
 			}
 			
-			if ($Pscmdlet.ShouldProcess($server.ComputerNamePhysicalNetBIOS, "Rename complete! The SQL Service must be restarted to commit the changes. Would you like to restart this instance now?"))
+			if ($allsqlservices -eq $null)
 			{
-				try
+				Write-Warning "Could not contact $($server.ComputerNamePhysicalNetBIOS) using Get-Service. You must manually restart the SQL Server instance."
+				$needsrestart = $true
+			}
+			else
+			{
+				if ($Pscmdlet.ShouldProcess($server.ComputerNamePhysicalNetBIOS, "Rename complete! The SQL Service must be restarted to commit the changes. Would you like to restart this instance now?"))
 				{
-					$allsqlservices | Stop-Service -Force
-					$allsqlservices | Start-Service
-				}
-				catch
-				{
-					Write-Exception $_
-					throw "Could not restart SQL Service :("
+					try
+					{
+						$allsqlservices | Stop-Service -Force
+						$allsqlservices | Where-Object { $_.DisplayName -notlike "*reporting*" } | Start-Service
+					}
+					catch
+					{
+						Write-Exception $_
+						throw "Could not restart at least one SQL Service :("
+					}
 				}
 			}
 		}
@@ -200,6 +217,16 @@ Returns db/server collation information for every database on every server liste
 	
 	END
 	{
+		Write-Output "`nScript Complete"
 		
+		if ($renamed -eq $true)
+		{
+			Write-Output "Server successfully renamed"
+		}
+		
+		if ($needsrestart -eq $true)
+		{
+			Write-Output "SQL Service restart still required"
+		}
 	}
 }

@@ -33,10 +33,10 @@ https://dbatools.io/Test-DbaServerName
 .EXAMPLE
 Test-DbaServerName -SqlServer sqlserver2014a
 
-Returns server name, databse name and true/false if the collations match for all databases on sqlserver2014a
+If $true is returned, sqlserver2014a passes the test, meaning it's properly named
 
 .EXAMPLE   
-Test-DbaServerName -SqlServer sqlserver2014a -Databases db1, db2
+Test-DbaServerName -SqlServer sqlserver2014a, sql2016
 
 Returns server name, databse name and true/false if the collations match for the db1 and db2 databases on sqlserver2014a
 	
@@ -57,7 +57,8 @@ Returns db/server collation information for every database on every server liste
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
 		[PsCredential]$Credential,
-		[switch]$Detailed
+		[switch]$Detailed,
+		[switch]$NoWarning
 	)
 	
 	BEGIN
@@ -109,7 +110,8 @@ Returns db/server collation information for every database on every server liste
 			$serverinfo = [PSCustomObject]@{
 				ServerInstanceName = $serverinstancename
 				SqlServerName = $sqlservername
-				RenameRequired = $serverinstancename -eq $sqlservername
+				IsEqual = $serverinstancename -eq $sqlservername
+				RenameRequired = $serverinstancename -ne $sqlservername
 			}
 			
 			if ($Detailed)
@@ -117,9 +119,18 @@ Returns db/server collation information for every database on every server liste
 				$reasons = @()
 				$servicename = "SQL Server Reporting Services ($instance)"
 				
-				# try catch
-				$rs = Get-Service -ComputerName $server.ComputerNamePhysicalNetBIOS -DisplayName $servicename -ErrorAction SilentlyContinue
-								
+				try
+				{
+					$rs = Get-Service -ComputerName $server.ComputerNamePhysicalNetBIOS -DisplayName $servicename -ErrorAction SilentlyContinue
+				}
+				catch
+				{
+					if ($NoWarnings -eq $false)
+					{
+						Write-Warning "Can't contact $($server.ComputerNamePhysicalNetBIOS) using Get-Service. This means the script will not be able to automatically restart SQL services."
+					}
+				}
+				
 				if ($rs.count -gt 0)
 				{
 					$rstext = "Reporting Services must be stopped and updated"
@@ -173,18 +184,6 @@ Returns db/server collation information for every database on every server liste
 	
 	END
 	{
-		if ($Detailed -eq $true)
-		{
-			return $collection
-		}
-		
-		if ($sqlserver.count -eq 1)
-		{
-			return $collection.RenameRequired
-		}
-		else
-		{
-			return ($collection | Select-Object Server, RenameRequired)
-		}
+		return $collection
 	}
 }
