@@ -7,8 +7,10 @@ Renames @@SERVERNAME to match with the Windows name.
 .DESCRIPTION
 When a SQL Server's host OS is renamed, the SQL Server should be as well. This helps with Availability Groups and Kerberos.
 
-This command renames @@SERVERNAME to match with the Windows name.
+This command renames @@SERVERNAME to match with the Windows name. The new name is automatically determined. It does not matter if you use an alias to connect to the SQL instance.
 		
+If the automatically determiend new name matches the old name, the command will not run.
+	
 https://www.mssqltips.com/sqlservertip/2525/steps-to-change-the-server-name-for-a-sql-server-machine/
 	
 .PARAMETER SqlServer
@@ -37,22 +39,20 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Repair-DbaServerName
 
 .EXAMPLE
-Repair-DbaServerName -SqlServer sqlserver2014a
+Repair-DbaServerName -SqlServer sql2014
 
-Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a.
+Checks to see if the server is updatable, prompts galore, changes name.
+
+.EXAMPLE
+Repair-DbaServerName -SqlServer sql2014 -AutoFix
+
+Even more prompts/confirms, but removes Replication or breaks mirroring if necessary.
 
 .EXAMPLE   
-Repair-DbaServerName -SqlServer sqlserver2014a, sql2016
-
-Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.
-
-.EXAMPLE   
-Repair-DbaServerName -SqlServer sqlserver2014a, sql2016 -Detailed
-
-Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.
+Repair-DbaServerName -SqlServer sql2014 -AutoFix -Force
 	
-If a Rename is required, it will also show Updatable, and Reasons if the servername is not updatable.
-
+Skips some prompts/confirms but not all of them.
+	
 #>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
 	Param (
@@ -124,7 +124,7 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 				
 				$nametest
 				
-				foreach ($nametesterror in $nametest.Errors)
+				foreach ($nametesterror in $nametest.Blockers)
 				{
 					if ($nametesterror -like '*replication*')
 					{
@@ -141,20 +141,20 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 							$yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Will continue"
 							$no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Will exit"
 							$options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
-							$result = $host.ui.PromptForChoice($title, $message, $options, 0)
+							$result = $host.ui.PromptForChoice($title, $message, $options, 1)
 							
 							if ($result -eq 1)
 							{
-								Write-Output "Okay, moving on."
+								throw "Cannot continue"
 							}
 							else
 							{
-								Write-Output "Performing sp_dropdistributor @no_checks = 1"
-								$sql = "EXEC sp_dropdistributor @no_checks = 1"
+								Write-Output "`nPerforming sp_dropdistributor @no_checks = 1"
+								$sql = "sp_dropdistributor @no_checks = 1"
 								try
 								{
 									$null = $server.ConnectionContext.ExecuteNonQuery($sql)
-									Write-Output "`nSuccessfully executed $sql"
+									Write-Output "Successfully executed $sql`n"
 								}
 								catch
 								{
@@ -177,7 +177,7 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 							$yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Will continue"
 							$no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Will exit"
 							$options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
-							$result = $host.ui.PromptForChoice($title, $message, $options, 0)
+							$result = $host.ui.PromptForChoice($title, $message, $options, 1)
 							
 							if ($result -eq 1)
 							{
@@ -258,7 +258,7 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 				try
 				{
 					$null = $server.ConnectionContext.ExecuteNonQuery($sql)
-					Write-Output "Successfully executed $sql"
+					Write-Output "Successfully executed $sql`n"
 				}
 				catch
 				{
