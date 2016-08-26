@@ -14,6 +14,7 @@ Set-Alias -Name Restore-HallengrenBackup -Value Restore-SqlBackupFromDirectory
 Set-Alias -Name Show-SqlMigrationConstraint -Value Test-SqlMigrationConstraint
 Set-Alias -Name Test-SqlDiskAllocation -Value Test-DbaDiskAllocation
 Set-Alias -Name Get-DiskSpace -Value Get-DbaDiskSpace
+Set-Alias -Name Test-SqlConnection -Value Test-DbaSqlConnection
 
 # Strictmode coming when I've got time.
 # Set-StrictMode -Version Latest
@@ -26,3 +27,4 @@ $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.M
 $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Dmf")
 $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers")
 $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.ConnectionInfo")
+$null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SqlWmiManagement")
