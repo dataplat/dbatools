@@ -1,5 +1,48 @@
 ﻿Function Connect-DbaManagedComputer
 {
+<#
+.SYNOPSIS
+Makes Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer more accessible.
+	
+.DESCRIPTION
+ManagedComputer is basically .NET's interface to SQL Server Configuration Manager.
+	
+.PARAMETER Server
+The SQL Server that you're connecting to. It can be the computer name, an SMO Computer object, or a sql server name, including the instance name. All of these formats are handled.
+
+.PARAMETER Credential
+Windows credential object used to connect to the server
+
+.NOTES 
+dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+Copyright (C) 2016 Chrissy LeMaire
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+.LINK
+https://dbatools.io/Connect-DbaManagedComputer
+
+.EXAMPLE
+Connect-DbaManagedComputer -Server sqlserver2014a
+
+Resolves sqlserver2014a to an IP address, connects to it via SMO WMI and returnsthe Smo.Wmi.ManagedComputer object.
+
+.EXAMPLE
+Connect-DbaManagedComputer -Server winserver\sqlexpress 
+
+Resolves winserver to an IP address, connects to it via SMO WMI and returnsthe Smo.Wmi.ManagedComputer object.
+
+.EXAMPLE
+$credential = Get-Credential
+Connect-DbaManagedComputer -Server winserver\sqlexpress -Credential $credential
+	
+Prompts for a Windows credential then connects to the Server instance with the Windows credential
+	
+#>	
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
@@ -35,7 +78,6 @@
 		}
 		
 		$server.Initialize()
-		
 	}
 	catch
 	{
