@@ -8,7 +8,9 @@ Makes Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer more accessible.
 ManagedComputer is basically .NET's interface to SQL Server Configuration Manager.
 	
 .PARAMETER Server
-The SQL Server that you're connecting to. It can be the computer name, an SMO Computer object, or a sql server name, including the instance name. All of these formats are handled.
+The SQL Server that you're connecting to. 
+	
+It can be the computer name, an SMO Computer object, or a sql server name, including the instance name. All of these formats are handled.
 
 .PARAMETER Credential
 Windows credential object used to connect to the server
@@ -52,7 +54,7 @@ Prompts for a Windows credential then connects to the Server instance with the W
 	
 	if ($server.GetType() -eq [Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer])
 	{
-		$server.Initialize()
+		$null = $server.Initialize()
 		return $server
 	}
 	
@@ -63,12 +65,12 @@ Prompts for a Windows credential then connects to the Server instance with the W
 	
 	# Remove instance name if it as passed
 	$server = ($Server.Split("\"))[0]
+	$ipaddr = (Test-Connection $server -count 1 -ErrorAction Stop).Ipv4Address
 	
 	try
 	{
 		if ($credential.username -ne $null)
 		{
-			$ipaddr = (Test-Connection $server -count 1).Ipv4Address
 			$username = ($Credential.username).TrimStart("\")
 			$server = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $ipaddr, $username, ($Credential).GetNetworkCredential().Password
 		}
@@ -76,13 +78,23 @@ Prompts for a Windows credential then connects to the Server instance with the W
 		{
 			$server = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $ipaddr
 		}
-		
-		$server.Initialize()
+		$null = $server.Initialize()
 	}
 	catch
 	{
+		<# 	
+			Wmi doesn't always work remotely, so I tried to return an object from Invoke-Command but it didn't work well at all.
+		   	Maybe something with $session could work. Here was my code.
+			
+			$server = [System.Net.Dns]::gethostentry($ipaddr)
+				$Server = Invoke-Command -ComputerName $server.hostname -ScriptBlock {
+					$null = [System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SqlWmiManagement')
+					return (New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $env:COMPUTERNAME)
+				}
+		#>
 		Write-Exception $_
 		throw $_
 	}
+	
 	return $server
 }
