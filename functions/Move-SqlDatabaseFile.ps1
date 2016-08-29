@@ -145,7 +145,17 @@ Will show a treeview to select the destination path and perform the move (copy&p
             Write-Output "Set database '$database' Offline!"
             $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] SET OFFLINE WITH ROLLBACK IMMEDIATE") | Out-Null
 
-            #Validate 
+            do
+            {
+                $server.Databases[$database].Refresh()
+                Start-Sleep -Seconds 1
+                $WaitingTime += 1
+                Write-Output "Database status: $($server.Databases[$database].Status.ToString())"
+                Write-Output "WaitingTime: $WaitingTime"
+            }
+            while (($server.Databases[$database].Status.ToString().Contains("Offline") -eq $false) -and $WaitingTime -le 10)
+
+            #Validate
             if ($server.Databases[$database].Status.ToString().Contains("Offline") -eq $false)
             {
                 throw "Database is not in OFFLINE status."
@@ -166,6 +176,7 @@ Will show a treeview to select the destination path and perform the move (copy&p
             catch
             {
                 Write-Warning $_
+                return $false
             }
 
             $WaitingTime = 0
@@ -187,8 +198,26 @@ Will show a treeview to select the destination path and perform the move (copy&p
             {
                 $server.Databases[$database].Status.ToString()
             }
-            
             Write-Output "Database '$database' in Online!"
+
+            Write-Output "Starting Dbcc CHECKDB for $dbname on $source"
+			$dbccgood = Start-DbccCheck -Server $server -DBName $dbname
+					
+			if ($dbccgood -eq $false)
+			{
+				if ($force -eq $false)
+				{
+					Write-Output "DBCC failed for $dbname (you should check that).  Aborting routine for this database"
+					continue
+				}
+				else
+				{
+					Write-Output "DBCC failed, but Force specified. Continuing."
+				}
+			}
+
+            return $true
+            
         }
 
         function Set-SqlDatabaseFileLocation
@@ -205,6 +234,71 @@ Will show a treeview to select the destination path and perform the move (copy&p
             Write-Output "Modifying file path to new location"
             $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] MODIFY FILE (NAME = $LogicalFileName, FILENAME = '$PhysicalFileLocation');") | Out-Null
         }
+
+        function Compare-FileHashes
+        {
+            Param
+            (
+                [parameter(Mandatory = $true)]
+		        [string]$SourceFilePath,
+                [parameter(Mandatory = $true)]
+		        [string]$DestinationFilePath
+            )
+            
+            Write-Output "Generating '$SourceFilePath' hash."
+            Write-Verbose "Generating '$SourceFilePath' hash."
+            $md5 = New-Object -TypeName System.Security.Cryptography.MD5CryptoServiceProvider
+            $SourceHash = [System.BitConverter]::ToString($md5.ComputeHash([System.IO.File]::ReadAllBytes($SourceFilePath)))
+            
+            Write-Output "Generating '$DestinationFilePath' hash."
+            Write-Verbose "Generating '$DestinationHash' hash."
+            $md5 = New-Object -TypeName System.Security.Cryptography.MD5CryptoServiceProvider
+            $DestinationHash = [System.BitConverter]::ToString($md5.ComputeHash([System.IO.File]::ReadAllBytes($DestinationFilePath)))
+            
+            Write-Verbose "SourceHash     : $SourceHash"
+            Write-Verbose "DestinationHash: $DestinationHash"
+            $SameHash = $SourceHash -eq $DestinationHash
+            Write-Verbose "Source file hash is equal?: $SameHash"
+
+            return $SameHash
+        }
+
+        #Maybe turn this into sharedfunction
+        Function Start-DbccCheck
+		{
+			param (
+				[object]$server,
+				[string]$dbname
+			)
+			
+			$servername = $server.name
+			$db = $server.databases[$dbname]
+			
+			if ($Pscmdlet.ShouldProcess($sourceserver, "Running dbcc check on $dbname on $servername"))
+			{
+				try
+				{
+                    #TODO: Ask Rob why only CheckTables (duration?)
+					$null = $db.CheckTables('None')
+					Write-Output "Dbcc CHECKDB finished successfully for $dbname on $servername"
+				}
+				
+				catch
+				{
+					Write-Warning "DBCC CHECKDB failed"
+					Write-Exception $_
+					
+					if ($force)
+					{
+						return $true
+					}
+					else
+					{
+						return $false
+					}
+				}
+			}
+		}
 		
 		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 
@@ -228,16 +322,23 @@ Will show a treeview to select the destination path and perform the move (copy&p
         Write-Output "SourceNetBios: $sourcenetbios"
 	
 		foreach ($database in $Databases)
-		{			
-			$where = "dbname = '$database'"
+		{
+            if ($server.Databases["$database"])
+	        {
+			    $where = "dbname = '$database'"
 			
-			if ($FileType.Length -gt 0)
-			{
+			    if ($FileType.Length -gt 0)
+			    {
 
-				$where = "$where and filetype = '$filetype'"
-			}
+				    $where = "$where and filetype = '$filetype'"
+			    }
 			
-			$files = $filestructure.Tables.Select($where)
+			    $files = $filestructure.Tables.Select($where)
+            }
+            else
+            {
+                Write-Warning "Database '$database' does not exists on server $($Server.name)"
+            }
 		}
 
         if ($ExportExistingFiles)
@@ -323,11 +424,28 @@ Will show a treeview to select the destination path and perform the move (copy&p
              - Remote with PSSession $ Robocopy
              - Remote with Copy-Item (using UNC)
         #>
+        #if ($true)
         if ($env:computername -eq $sourcenetbios)
         {
+            $copymethod = "Local_BITS"
+        }
+        else
+        {
+            #TODO: Find a way to validate some drive. C: exists everytime?
+            if (Join-AdminUnc -servername $sourcenetbios -FilePath "C:\")
+            {
+                $copymethod = "UNC_BITS"
+            }
+            else
+            {
+                $copymethod = "Full_Remote"
+            }
+        }
 
+        if ($copymethod -eq "UNC_BITS" -or $copymethod -eq "Local_BITS")
+        {
             Write-Output "You are running this command localy. Using Bits to copy the files"
-            $copymethod = "BITS"
+            #$copymethod = "BITS"
         
             #Import-Module BitsTransfer -Verbose
 
@@ -340,28 +458,59 @@ Will show a treeview to select the destination path and perform the move (copy&p
                 $filesProgressbar += 1
 
                 $dbName = $File.dbname
-                $DestinationPath = $file.Destination
-                $SourceFilePath = $file.FileName
                 $LogicalName = $file.Name
+                $DestinationPath = $file.Destination
                 $SourcePath = Split-Path -Path $($file.FileName)
                 $FileToCopy = Split-Path -Path $($file.FileName) -leaf
                 $ValidDestinationPath = !([string]::IsNullOrEmpty($DestinationPath))
                 
+                if (!([string]::IsNullOrEmpty($FilesToMove.Count)))
+                {
+                    $FilesCount = $FilesToMove.Count
+                }
+                else
+                {
+                    $FilesCount = @($FilesToMove).Count
+                }
+
                 Write-Progress `
 							-Id 1 `
 							-Activity "Working on file: $LogicalName on database: '$dbName'" `
-							-PercentComplete ($filesProgressbar / $FilesToMove.Count * 100) `
-							-Status "Copying - $filesProgressbar of $($FilesToMove.Count) files"
+							-PercentComplete ($filesProgressbar / $FilesCount * 100) `
+							-Status "Copying - $filesProgressbar of $FilesCount files"
 
                 if ($ValidDestinationPath)
                 {
-                    $DestinationFilePath = $(Join-Path $DestinationPath $fileToCopy)
+                    
+                    if ($copymethod -eq "UNC_BITS")
+                    {
+                        $SourceFilePath = Join-AdminUnc -servername $sourcenetbios -FilePath $file.FileName
+                        $LocalDestinationFilePath = $(Join-Path $DestinationPath $fileToCopy)
+                        $DestinationFilePath = Join-AdminUnc -servername $sourcenetbios -FilePath $LocalDestinationFilePath
+                    }
+                    else
+                    {
+                        $SourceFilePath = $file.FileName
+                        $LocalDestinationFilePath = $(Join-Path $DestinationPath $fileToCopy)
+                    }
 
-                    if (!(Test-SqlPath -SqlServer $server -Path $DestinationPath))
+
+
+                    if ($copymethod -eq "UNC_BITS")
+                    {
+                        $resultPath = (Test-Path -Path $DestinationPath -IsValid)
+                    }
+                    else
+                    {
+                        $resultPath = (Test-SqlPath -SqlServer $server -Path $DestinationPath)
+                    }
+
+                    if (!($resultPath))
                     {
                         Write-Warning "Destination path  for logical name '$LogicalName' does not exists. '$DestinationPath'"
                         Continue
                     }
+
                 }
                 else
                 {
@@ -389,32 +538,46 @@ Will show a treeview to select the destination path and perform the move (copy&p
                 try
                 {
                     $BITSoutput = Start-BitsTransfer -Source $SourceFilePath -Destination $DestinationFilePath -RetryInterval 60 -RetryTimeout 60 `
-                                                    -DisplayName "Copying file" -Description "Copying '$FileToCopy' to $DestinationPath"
+                                                    -DisplayName "Copying file" -Description "Copying '$FileToCopy' to '$DestinationPath' on '$sourcenetbios'"
 
-                    Set-SqlDatabaseFileLocation -Database $dbName -LogicalFileName $LogicalName -PhysicalFileLocation $DestinationFilePath
-
-
-                    #Verify if file exists on both folders (source and destination)
-                    if ((Test-SqlPath -SqlServer $server -Path $DestinationFilePath) -and (Test-SqlPath -SqlServer $server -Path $SourceFilePath))
+                    if (Compare-FileHashes -SourceFilePath $SourceFilePath -DestinationFilePath $DestinationFilePath)
                     {
-                        try
-                        {
-                            #Delete old file already copied to the new path
-                            Write-Output "Deleting file '$SourceFilePath'"
-                                
-                            Remove-Item -Path $SourceFilePath
+                        Write-Verbose "File copy OK! Hash is the same."
 
-                            Write-Output "File '$SourceFilePath' deleted" 
-                        }
-                        catch
+                        Write-Verbose "Change file path for logical file '$LogicalName' to '$DestinationFilePath'"
+                        Set-SqlDatabaseFileLocation -Database $dbName -LogicalFileName $LogicalName -PhysicalFileLocation $LocalDestinationFilePath
+                        Write-Verbose "File path changed"
+
+                        #Verify if file exists on both folders (source and destination)
+                        if ((Test-SqlPath -SqlServer $server -Path $DestinationFilePath) -and (Test-SqlPath -SqlServer $server -Path $SourceFilePath))
                         {
-                            Write-Exception $_
-                            Write-Warning "Can't delete the file '$SourceFilePath'. Delete it manualy"
+                            try
+                            {
+                                #TODO: ONLY REMOVE FILES AFTER BRINGONLY & DBCC CHECKDB??
+                                #Delete old file already copied to the new path
+                                Write-Output "Deleting file '$SourceFilePath'"
+                                
+                                Remove-Item -Path $SourceFilePath
+
+                                Write-Output "File '$SourceFilePath' deleted" 
+                            }
+                            catch
+                            {
+                                Write-Exception $_
+                                Write-Warning "Can't delete the file '$SourceFilePath'. Delete it manualy"
+                            }
+                        }
+                        else
+                        {
+                            Write-Warning "File $SourceFilePath does not exists! No file copied!"
                         }
                     }
                     else
                     {
-                        Write-Warning "File $SourceFilePath does not exists! No file copied!"
+                        Write-Verbose "File copy NOK! Hash is not the same."
+                        Write-Verbose "Deleting destination file '$DestinationFilePath'!"
+                        Remove-Item -Path $DestinationFilePath
+                        Write-Output "File '$DestinationFilePath' deleted" 
                     }
                 }
                 catch
@@ -428,11 +591,23 @@ Will show a treeview to select the destination path and perform the move (copy&p
                             -Activity "Files copied!"`
                             -Completed
 
-            Set-SqlDatabaseOnline
+            Write-Verbose "Copy done! Lets bring database Online!"
+            $resultDBOnline = Set-SqlDatabaseOnline
+
+            if ($resultDBOnline)
+            {
+                Write-Verbose "Database online and DBCC CHECKDB went OK!"
+            }
+            else
+            {
+                Write-Verbose "Some error happened! Check logs"
+            }
             #TODO: Remove Progressbar!
         }
         else
         {
+        #}
+
             #Reset variable
             $IsRemote = $false
 
@@ -777,7 +952,7 @@ $LogContent = Invoke-Command -Session $remotepssessionCopy -ScriptBlock {param($
                     }
                     else
                     {
-                        Write-Warning "Destination path for logical name '$LogicalName' is not valid."
+                        Write-Warning "Destination path for logical name '$LogicalName' is not valid. Please review the value you have set."
                         Continue
                     }
 
