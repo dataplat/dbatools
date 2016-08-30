@@ -247,13 +247,40 @@ Will show a treeview to select the destination path and perform the move (copy&p
             
             Write-Output "Generating '$SourceFilePath' hash."
             Write-Verbose "Generating '$SourceFilePath' hash."
-            $md5 = New-Object -TypeName System.Security.Cryptography.MD5CryptoServiceProvider
-            $SourceHash = [System.BitConverter]::ToString($md5.ComputeHash([System.IO.File]::ReadAllBytes($SourceFilePath)))
+            $fileToHash = Get-Item -LiteralPath $SourceFilePath 
+            $Provider = New-Object System.Security.Cryptography.MD5CryptoServiceProvider 
+            $SourceHash = New-Object System.Text.StringBuilder 
+            $stream = $fileToHash.OpenRead() 
+            if ($stream) 
+            { 
+                foreach ($byte in $Provider.ComputeHash($stream)) 
+                {
+                    [Void] $SourceHash.Append($byte.ToString("X2"))
+                } 
+                $stream.Close() 
+            } 
+
+
+            #$md5 = New-Object -TypeName System.Security.Cryptography.MD5CryptoServiceProvider
+            #$SourceHash = [System.BitConverter]::ToString($md5.ComputeHash([System.IO.File]::ReadAllBytes($SourceFilePath)))
             
             Write-Output "Generating '$DestinationFilePath' hash."
-            Write-Verbose "Generating '$DestinationHash' hash."
-            $md5 = New-Object -TypeName System.Security.Cryptography.MD5CryptoServiceProvider
-            $DestinationHash = [System.BitConverter]::ToString($md5.ComputeHash([System.IO.File]::ReadAllBytes($DestinationFilePath)))
+            Write-Verbose "Generating '$DestinationFilePath' hash."
+            $fileToHash = Get-Item -LiteralPath $SourceFilePath 
+            $Provider = New-Object System.Security.Cryptography.MD5CryptoServiceProvider 
+            $DestinationHash = New-Object System.Text.StringBuilder 
+            $stream = $fileToHash.OpenRead() 
+            if ($stream) 
+            { 
+                foreach ($byte in $Provider.ComputeHash($stream)) 
+                {
+                    [Void] $DestinationHash.Append($byte.ToString("X2"))
+                } 
+                $stream.Close() 
+            } 
+            
+            #$md5 = New-Object -TypeName System.Security.Cryptography.MD5CryptoServiceProvider
+            #$DestinationHash = [System.BitConverter]::ToString($md5.ComputeHash([System.IO.File]::ReadAllBytes($DestinationFilePath)))
             
             Write-Verbose "SourceHash     : $SourceHash"
             Write-Verbose "DestinationHash: $DestinationHash"
@@ -424,7 +451,9 @@ Will show a treeview to select the destination path and perform the move (copy&p
              - Remote with PSSession $ Robocopy
              - Remote with Copy-Item (using UNC)
         #>
-        #if ($true)
+        
+        $start = [System.Diagnostics.Stopwatch]::StartNew()
+
         if ($env:computername -eq $sourcenetbios)
         {
             $copymethod = "Local_BITS"
@@ -448,6 +477,15 @@ Will show a treeview to select the destination path and perform the move (copy&p
             #$copymethod = "BITS"
         
             #Import-Module BitsTransfer -Verbose
+
+            if (Test-Path -Path "C:\Windows\System32\Robocopy.exe" -IsValid)
+            {
+                $Robocopy = $true
+            }
+            else
+            {
+                $Robocopy = $false
+            }
 
             $filesProgressbar = 0
 
@@ -487,11 +525,18 @@ Will show a treeview to select the destination path and perform the move (copy&p
                         $SourceFilePath = Join-AdminUnc -servername $sourcenetbios -FilePath $file.FileName
                         $LocalDestinationFilePath = $(Join-Path $DestinationPath $fileToCopy)
                         $DestinationFilePath = Join-AdminUnc -servername $sourcenetbios -FilePath $LocalDestinationFilePath
+
+                        $LocalSourcePath = Split-Path -Path $SourceFilePath
+                        $LocalDestinationPath = Split-Path -Path $DestinationFilePath
                     }
                     else
                     {
                         $SourceFilePath = $file.FileName
                         $LocalDestinationFilePath = $(Join-Path $DestinationPath $fileToCopy)
+                        $DestinationFilePath = $LocalDestinationFilePath
+
+                        $LocalSourcePath = Split-Path -Path $SourceFilePath
+                        $LocalDestinationPath = Split-Path -Path $DestinationFilePath 
                     }
 
 
@@ -537,8 +582,93 @@ Will show a treeview to select the destination path and perform the move (copy&p
 
                 try
                 {
-                    $BITSoutput = Start-BitsTransfer -Source $SourceFilePath -Destination $DestinationFilePath -RetryInterval 60 -RetryTimeout 60 `
-                                                    -DisplayName "Copying file" -Description "Copying '$FileToCopy' to '$DestinationPath' on '$sourcenetbios'"
+                    $startRC = [System.Diagnostics.Stopwatch]::StartNew()
+
+                    if ($Robocopy)
+                    {
+                        # Define regular expression that will gather number of bytes copied
+                        $RegexBytes = '(?<=\s+)\d+(?=\s+)';
+
+                        #region Robocopy params
+                        # MIR = Mirror mode
+                        # NP  = Don't show progress percentage in log
+                        # NC  = Don't log file classes (existing, new file, etc.)
+                        # BYTES = Show file sizes in bytes
+                        # NJH = Do not display robocopy job header (JH)
+                        # NJS = Do not display robocopy job summary (JS)
+                        # TEE = Display log in stdout AND in target log file
+                        #$CommonRobocopyParams = '/MIR /NP /NDL /NC /BYTES /NJH /NJS';
+                        $CommonRobocopyParams = '/ndl /TEE /bytes /nfl /L';
+
+                        #endregion Robocopy params
+
+                        #region Robocopy Staging
+                        Write-Verbose -Message 'Analyzing robocopy job ...';
+                        $StagingLogPath = '{0}\temp\{1} robocopy staging.log' -f $env:windir, (Get-Date -Format 'yyyy-MM-dd hh-mm-ss');
+
+                        $StagingArgumentList = '"{0}" "{1}" "{2}" /LOG:"{3}" /L {4}' -f $LocalSourcePath, $LocalDestinationPath, $FileToCopy, $StagingLogPath, $CommonRobocopyParams;
+                        Write-Verbose -Message ('Staging arguments: {0}' -f $StagingArgumentList);
+                        Start-Process -Wait -FilePath robocopy.exe -ArgumentList $StagingArgumentList -NoNewWindow;
+                        # Get the total number of files that will be copied
+                        $StagingContent = Get-Content -Path $StagingLogPath;
+                        $TotalFileCount = $StagingContent.Count - 1;
+
+                        # Get the total number of bytes to be copied
+                        [RegEx]::Matches(($StagingContent -join "`n"), $RegexBytes) | % { $BytesTotal = 0; } { $BytesTotal += $_.Value; };
+                        Write-Verbose -Message ('Total bytes to be copied: {0}' -f $BytesTotal);
+                        #endregion Robocopy Staging
+
+                        #region Start Robocopy
+                        # Begin the robocopy process
+                        $CommonRobocopyParams = '/ndl /TEE /bytes /NC'; #/MT:2
+
+    
+
+                        $RobocopyLogPath = '{0}\temp\{1} robocopy.log' -f $env:windir, (Get-Date -Format 'yyyy-MM-dd hh-mm-ss');
+                        $ArgumentList = '"{0}" "{1}" "{2}" /LOG:"{3}" {4}' -f $LocalSourcePath, $LocalDestinationPath, $FileToCopy, $RobocopyLogPath, $CommonRobocopyParams;
+
+                        #$ArgumentList = '"{0}" "{1}" /LOG:"{2}" /ipg:{3} {4}' -f $Source, $Destination, $RobocopyLogPath, $Gap, $CommonRobocopyParams;
+                        Write-Verbose -Message ('Beginning the robocopy process with arguments: {0}' -f $ArgumentList);
+                        
+                        $Robocopy = Start-Process -FilePath robocopy.exe -ArgumentList $ArgumentList -Verbose -PassThru -NoNewWindow;
+                        Start-Sleep -Milliseconds 100;
+                        #endregion Start Robocopy
+
+                        ##region Progress bar loop
+                        do
+		                {
+                            $LogContent = Get-Content -Path $RobocopyLogPath;
+
+                            $Files = $LogContent -match "^\s*(\d+)\s+(\S+)"
+                            #Write-Warning "Files"
+                            #$Files
+                            if ($Files -ne $Null )
+                            {
+	                            $copied = ($Files[0..($Files.Length-2)] | %{$_.Split("`t")[-2]} | Measure -sum).Sum
+	                            if ($LogContent[-1] -match "(100|\d?\d\.\d)\%")
+	                            {
+                                    #Write-Output "-percentComplete: $($LogContent[-1].Trim("% `t"))" 
+                                    #Write-Output "LogContent[-1]: $($LogContent[-1])"
+		                            Write-progress Copy -PercentComplete $LogContent[-1].Trim("% `t") $LogContent[-1]
+		                            $Copied += $Files[-1].Split("`t")[-2] /100 * ($LogContent[-1].Trim("% `t"))
+	                            }
+	                            else
+	                            {
+		                            Write-progress Copy -Complete
+	                            }
+                            }
+                        }
+                        while (!$Robocopy.HasExited)
+                    }
+                    else
+                    {
+                        $BITSoutput = Start-BitsTransfer -Source $SourceFilePath -Destination $DestinationFilePath -RetryInterval 60 -RetryTimeout 60 `
+                                                        -DisplayName "Copying file" -Description "Copying '$FileToCopy' to '$DestinationPath' on '$sourcenetbios'" `
+                                                        -TransferType Upload
+                    }
+
+                    $totaltimeRC= ($startRC.Elapsed)
+                    Write-Output "Total Elapsed time robocopy: $totaltimeRC"
 
                     if (Compare-FileHashes -SourceFilePath $SourceFilePath -DestinationFilePath $DestinationFilePath)
                     {
@@ -553,7 +683,7 @@ Will show a treeview to select the destination path and perform the move (copy&p
                         {
                             try
                             {
-                                #TODO: ONLY REMOVE FILES AFTER BRINGONLY & DBCC CHECKDB??
+                                #TODO: ONLY REMOVE FILES AFTER BRINGONLINE & DBCC CHECKDB??
                                 #Delete old file already copied to the new path
                                 Write-Output "Deleting file '$SourceFilePath'"
                                 
@@ -589,7 +719,7 @@ Will show a treeview to select the destination path and perform the move (copy&p
             Write-Progress `
 							-Id 1 `
                             -Activity "Files copied!"`
-                            -Completed
+                            -Complete
 
             Write-Verbose "Copy done! Lets bring database Online!"
             $resultDBOnline = Set-SqlDatabaseOnline
@@ -908,115 +1038,6 @@ $LogContent = Invoke-Command -Session $remotepssessionCopy -ScriptBlock {param($
                     }
                 }
             }
-
-            if (!($IsRemote))
-            {
-                Write-Output "Remote PowerShell access not enabled on '$source' or access denied. Will try using Copy-Item method" 
-                $copymethod = "COPYITEM"
-                
-                Set-SqlDatabaseOffline
-                
-                $filesProgressbar = 0
-
-                foreach ($file in $FilesToMove)
-                {
-                    $filesProgressbar += 1
-
-                    $dbName = $File.dbname
-                    $DestinationPath = $file.Destination
-                    $SourceFilePath = $file.FileName
-                    $UNCSourceFilePath = Join-AdminUnc -servername $sourcenetbios -FilePath $file.FileName
-                    $LogicalName = $file.Name
-                    $SourcePath = Split-Path -Path $($file.FileName)
-                    $FileToCopy = Split-Path -Path $($file.FileName) -leaf
-                    $ValidDestinationPath = !([string]::IsNullOrEmpty($DestinationPath))
-
-                    Write-Progress `
-							-Id 1 `
-							-Activity "Working on file: $LogicalName on database: '$dbName'" `
-							-PercentComplete ($filesProgressbar / $FilesToMove.Count * 100) `
-							-Status "Copying - $filesProgressbar of $($FilesToMove.Count) files"
-
-                    if ($ValidDestinationPath)
-                    {
-                        $DestinationFilePath = $(Join-Path $DestinationPath $fileToCopy)
-
-                        $UNCDestinationFilePath = Join-AdminUnc -servername $sourcenetbios -FilePath $DestinationFilePath
-
-                        #Validate access using UNC
-                        if (!(Test-Path $DestinationPath -IsValid))
-                        {
-                            Write-Warning "Destination path  for logical name '$LogicalName' does not exists. '$DestinationPath'"
-                            Continue
-                        }
-                    }
-                    else
-                    {
-                        Write-Warning "Destination path for logical name '$LogicalName' is not valid. Please review the value you have set."
-                        Continue
-                    }
-
-                    if (!(Test-SqlPath -SqlServer $server -Path $SourceFilePath))
-                    {
-                        Write-Warning "Source file or path for logical name '$LogicalName' does not exists. '$SourceFilePath'"
-                        Continue
-                    }
-
-                    if (($DestinationPath -eq $SourcePath) -or ([string]::IsNullOrEmpty($DestinationPath)))
-                    {
-                        Write-Warning "Destination path for file '$LogicalName' is the same of source path or is empty. Skipping"
-                        continue
-                    }
-           
-                    Write-Verbose "Copy-Item - Copy file to path: $DestinationPath"
-                    Write-Verbose "Copy-Item - Copy file: $fileToCopy"
-                    Write-Verbose "Copy-Item - Source Path and filename: $UNCSourceFilePath"
-                    Write-Verbose "Copy-Item - Destination Path and filename: $UNCDestinationFilePath"
-
-                    #Copy using UNC paths
-                    try
-                    {
-                        Copy-Item -LiteralPath $UNCSourceFilePath -Destination $UNCDestinationFilePath
-                        Write-Output "File copied to $UNCDestinationFilePath"
-
-                        Set-SqlDatabaseFileLocation -Database $dbName -LogicalFileName $LogicalName -PhysicalFileLocation $DestinationFilePath
-
-                        #Verify if file exists on both folders (source and destination)
-                        if ((Test-Path -Path $UNCSourceFilePath) -and (Test-Path -Path $UNCSourceFilePath))
-                        {
-                            try
-                            {
-                                #Delete old file already copied to the new path
-                                Write-Output "Deleting file '$UNCSourceFilePath'"
-                                
-                                Remove-Item -Path $UNCSourceFilePath
-
-                                Write-Output "File '$UNCSourceFilePath' deleted" 
-                            }
-                            catch
-                            {
-                                Write-Exception $_
-                                Write-Warning "Can't delete the file '$UNCSourceFilePath'. Delete it manualy"
-                            }
-                        }
-                        else
-                        {
-                            Write-Warning "File $UNCSourceFilePath does not exists! No file copied!"
-                        }
-                    }
-                    catch
-                    {
-                        Write-Exception $_
-                    }
-                }
-
-                Write-Progress `
-							-Id 1 `
-                            -Activity "Files copied!"`
-                            -Completed
-
-                Set-SqlDatabaseOnline
-            }
         }  
 		
 	}
@@ -1025,6 +1046,9 @@ $LogContent = Invoke-Command -Session $remotepssessionCopy -ScriptBlock {param($
 	END
 	{
 		$server.ConnectionContext.Disconnect()
+
+        $totaltime = ($start.Elapsed)
+        Write-Output "Total Elapsed time: $totaltime"
 
         #Remove-PSSession $remotepssession.Id
 		If ($Pscmdlet.ShouldProcess("console", "Showing final message"))
