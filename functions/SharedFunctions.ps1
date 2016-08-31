@@ -1591,7 +1591,7 @@ Function Update-SqlPermissions
 }
 
 
-Function Invoke-DbaManagedComputer
+Function Invoke-ManagedComputerCommand
 {
 <#
 .SYNOPSIS
