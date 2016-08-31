@@ -1796,6 +1796,7 @@ Function Get-ParamSqlAllProcessInfo
 		switch ($propertyname)
 		{
 			"Exclude" { $items = $processes.Spid }
+			"Spid" { $items = $processes.Spid }
 			
 			Default
 			{
@@ -1809,7 +1810,6 @@ Function Get-ParamSqlAllProcessInfo
 			$attributeCollection.Add($attributes)
 			$attributeCollection.Add((New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $items))
 		}
-		
 		$newparams.Add($name, (New-Object -Type System.Management.Automation.RuntimeDefinedParameter($name, [String[]], $attributeCollection)))
 	}
 	$server.ConnectionContext.Disconnect()
