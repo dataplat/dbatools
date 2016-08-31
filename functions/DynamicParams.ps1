@@ -318,6 +318,51 @@ Function Get-ParamSqlServerRoles
 	return $newparams
 }
 
+
+Function Get-ParamSqlSpids
+{
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
+ filled with Server Roles from specified SQL Server.
+#>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	# Populate arrays
+	$spids = $server.EnumProcesses().Spid | Where-Object { $_ -gt 50 }
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	
+	# Database list parameter setup
+	if ($spids) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $spids }
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($spids) { $attributeCollection.Add($validationset) }
+	
+	$Spids = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Spids", [String[]], $attributeCollection)
+	$Exclude = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Exclude", [String[]], $attributeCollection)
+	
+	$newparams.Add("Spids", $Spids)
+	$newparams.Add("Exclude", $Exclude)
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
 Function Get-ParamSqlCredentials
 {
 <#
