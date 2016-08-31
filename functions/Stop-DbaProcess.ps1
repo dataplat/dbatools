@@ -1,11 +1,13 @@
 ﻿Function Stop-DbaProcess
 {
 <#
-.SYNOPSIS 
-This command kills all spids associated with a spid or login.
+.SYNOPSIS
+This command finds and kills SQL Server processes.
 
 .DESCRIPTION
-This command finds and kills spids. If you are killing your own login sessions, the process performing the kills will be skipped.
+This command kills all spids associated with a spid, login, host, program or database.
+	
+If you are attempting to kill your own login sessions, the process performing the kills will be skipped.
 
 .PARAMETER SqlServer
 The SQL Server instance.
