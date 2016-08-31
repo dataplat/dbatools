@@ -14,14 +14,25 @@ The SQL Server instance.
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. 
 
 .PARAMETER Spids
-This parameter is auto-populated from -SqlServer. You can specify one or more Spids.
+This parameter is auto-populated from -SqlServer. You can specify one or more Spids to be killed.
 
 .PARAMETER Logins
-This parameter is auto-populated from-SqlServer. You can specify one or more logins.
+This parameter is auto-populated from-SqlServer and allows only login names that have active processes. You can specify one or more logins whose processes will be killed.
+
+.PARAMETER Hosts
+This parameter is auto-populated from -SqlServer and allows only host names that have active processes. You can specify one or more Hosts whose processes will be killed.
+
+.PARAMETER Programs
+This parameter is auto-populated from -SqlServer and allows only program names that have active processes. You can specify one or more Programs whose processes will be killed.
+
+.PARAMETER Databases
+This parameter is auto-populated from -SqlServer and allows only database names that have active processes. You can specify one or more Databases whose processes will be killed.
 
 .PARAMETER Exclude
 This parameter is auto-populated from -SqlServer. You can specify one or more Spids to exclude from being killed (goes well with Logins).
 
+Exclude is the last filter to run, so even if a Spid matches, for example, Hosts, if it's listed in Exclude it wil be excluded.
+	
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
@@ -43,10 +54,20 @@ Finds all processes for base\ctrlb and sa on sqlserver2014a, then kills them. Us
 .EXAMPLE   
 Stop-DbaProcess -SqlServer sqlserver2014a -SqlCredential $credential -Spids 56, 77
 	
-Finds processes for spid 56 and 57, then kills them. Uses alternative credentials to login to sqlserver2014a.
+Finds processes for spid 56 and 57, then kills them. Uses alternative (SQL or Windows) credentials to login to sqlserver2014a.
 
 .EXAMPLE   
-Stop-DbaProcess -SqlServer sqlserver2014  -Logins ad\dba -Spids 56, 77 -WhatIf
+Stop-DbaProcess -SqlServer sqlserver2014a -Programs 'Microsoft SQL Server Management Studio'
+	
+Finds processes that were created in Microsoft SQL Server Management Studio, then kills them.
+
+.EXAMPLE   
+Stop-DbaProcess -SqlServer sqlserver2014a -Hosts workstationx, server100
+	
+Finds processes that were initiated by hosts (computers/clients) workstationx and server 1000, then kills them.
+
+.EXAMPLE   
+Stop-DbaProcess -SqlServer sqlserver2014  -Databases tempdb -WhatIf
 	
 Shows what would happen if the command were executed.
 	
@@ -59,17 +80,7 @@ Shows what would happen if the command were executed.
 		[object]$SqlCredential
 	)
 	
-	
-	DynamicParam
-	{
-		if ($sqlserver)
-		{
-			$loginparams = Get-ParamSqlLogins -SqlServer $sqlserver -SqlCredential $SqlCredential
-			$allparams = Get-ParamSqlSpids -SqlServer $sqlserver -SqlCredential $SqlCredential
-			$null = $allparams.Add("Logins", $loginparams.Logins)
-			return $allparams
-		}
-	}
+	DynamicParam { if ($sqlserver) { Get-ParamSqlAllProcessInfo -SqlServer $sqlserver -SqlCredential $SqlCredential } }
 	
 	BEGIN
 	{
@@ -79,95 +90,104 @@ Shows what would happen if the command were executed.
 		$logins = $psboundparameters.Logins
 		$spids = $psboundparameters.Spids
 		$exclude = $psboundparameters.Exclude
+		$hosts = $psboundparameters.Hosts
+		$programs = $psboundparameters.Programs
+		$databases = $psboundparameters.Databases
 		
-		if ($logins.count -eq 0 -and $spids.count -eq 0)
+		if ($logins.count -eq 0 -and $spids.count -eq 0 -and $hosts.count -eq 0 -and $programs.count -eq 0 -and $databases.count -eq 0)
 		{
-			throw "At least one login or spid must be specified."
+			throw "At least one login, spid, host, program or database must be specified."
 		}
 	}
 	
 	PROCESS
 	{
-		foreach ($spid in $spids)
+		$sessions = $sourceserver.EnumProcesses()
+		
+		if ($logins.count -gt 0)
 		{
-			$sessions = $sourceserver.EnumProcesses() | Where-Object { $_.Spid -eq $spid }
-			
-			if ($exclude.count -gt 0)
-			{
-				foreach ($spid in $exclude)
-				{
-					$sessions = $sessions | Where-Object { $_.Spid -ne $spid }
-				}
-			}
-			
-			if ($sessions.count -eq 0)
-			{
-				Write-Warning "No sessions found for spid $spid"
-			}
-			
-			foreach ($session in $sessions)
-			{
-				$spid = $session.spid
-				if ($sourceserver.ConnectionContext.ProcessID -eq $spid)
-				{
-					Write-Output "Skipping spid $spid because it's this process"
-					Continue
-				}
-				
-				If ($Pscmdlet.ShouldProcess($sqlserver, "Killing spid $spid"))
-				{
-					try
-					{
-						$sourceserver.KillProcess($spid)
-						Write-Output "Killed spid $spid"
-					}
-					catch
-					{
-						Write-Warning "Couldn't kill spid $spid"
-						Write-Exception $_
-					}
-				}
-			}
+			$sessions = $sessions | Where-Object { $logins -contains $_.Login }
 		}
 		
-		foreach ($login in $logins)
+		if ($spids.count -gt 0)
 		{
-			$sessions = $sourceserver.EnumProcesses() | Where-Object { $_.Login -eq $login }
+			$sessions = $sessions | Where-Object { $spids -contains $_.Spid }
+		}
+		
+		if ($hosts.count -gt 0)
+		{
+			$sessions = $sessions | Where-Object { $hosts -contains $_.Host }
+		}
+		
+		if ($programs.count -gt 0)
+		{
+			$sessions = $sessions | Where-Object { $programs -contains $_.Program }
+		}
+		
+		if ($databases.count -gt 0)
+		{
+			$sessions = $sessions | Where-Object { $databases -contains $_.Database }
+		}
+		
+		if ($exclude.count -gt 0)
+		{
+			$sessions = $sessions | Where-Object { $exclude -notcontains $_.Spid }
+		}
+		
+		if ($sessions.count -eq 0)
+		{
+			Write-Warning "No sessions found for spid $spid"
+		}
+		
+		foreach ($session in $sessions)
+		{
+			$spid = $session.spid
+			$login = $session.login
+			$database = $session.database
+			$program = $session.program
+			$host = $session.host
 			
-			if ($exclude.count -gt 0)
+			$info = @()
+			
+			if ($login.length -gt 1)
 			{
-				foreach ($spid in $exclude)
-				{
-					$sessions = $sessions | Where-Object { $_.Spid -ne $spid }
-				}
+				$info += "Login: $login"
 			}
 			
-			if ($sessions.count -eq 0)
+			if ($database.length -gt 1)
 			{
-				Write-Warning "No sessions found for $login"
+				$info += "Database: $database"
 			}
 			
-			foreach ($session in $sessions)
+			if ($program.length -gt 1)
 			{
-				$spid = $session.spid
-				if ($sourceserver.ConnectionContext.ProcessID -eq $spid)
+				$info += "Program: $program"
+			}
+			
+			if ($host.length -gt 1)
+			{
+				$info += "Host: $host"
+			}
+			
+			$info = $info -join ", "
+			
+			if ($sourceserver.ConnectionContext.ProcessID -eq $spid)
+			{
+				Write-Output "Skipping spid $spid because it's this process"
+				Continue
+			}
+			
+			If ($Pscmdlet.ShouldProcess($sqlserver, "Killing spid $spid ($info)"))
+			{
+				try
 				{
-					Write-Output "Skipping spid $spid because it's this process"
-					Continue
+					$sourceserver.KillProcess($spid)
+					Write-Output "Killed spid $spid ($info)"
 				}
-				
-				If ($Pscmdlet.ShouldProcess($sqlserver, "Killing spid $spid for login $login"))
+				catch
 				{
-					try
-					{
-						$sourceserver.KillProcess($spid)
-						Write-Output "Killed spid $spid for login $login"
-					}
-					catch
-					{
-						Write-Warning "Couldn't kill spid $spid for login $login"
-						Write-Exception $_
-					}
+					Write-Warning "Couldn't kill spid $spid ($info)"
+					Write-Exception $_
 				}
 			}
 		}
