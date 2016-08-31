@@ -1601,6 +1601,7 @@ Internal command
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ComputerName")]
 		[object]$Server,
 		[System.Management.Automation.PSCredential]$Credential,
 		[Parameter(Mandatory = $true)]
@@ -1647,11 +1648,11 @@ Internal command
 	{
 		if ($credential.username -ne $null)
 		{
-			Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential
+			$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential
 		}
 		else
 		{
-			Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList
+			$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList
 		}
 	}
 	catch
@@ -1666,11 +1667,11 @@ Internal command
 			
 			if ($credential.username -ne $null)
 			{
-				Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ComputerName $hostname
+				$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ComputerName $hostname
 			}
 			else
 			{
-				Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ComputerName $hostname
+				$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ComputerName $hostname
 				
 			}
 		}
@@ -1680,4 +1681,6 @@ Internal command
 			throw $_
 		}
 	}
+	
+	$result | Select-Object * -ExcludeProperty PSComputerName, RunSpaceID, PSShowComputerName
 }
