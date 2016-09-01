@@ -37,8 +37,27 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
+
+.PARAMETER ExportExistingFiles
+This switch with the -OutFile parameter will generate an CSV file with all database files. 
+The CSV have a column named 'Destination' which must be filled with the destination path you want.
+You must remove all lines that have files you don't want to move.
+
+.PARAMETER OutFile
+This must be specified when using -ExportExistingFiles switch. 
+This specifies the CSV file to write to. 
+Must include the path.
+
+.PARAMETER MoveFromCSV
+This switch indicate that you will specify an CSV input file using the -InputFile parameter to say which files want to move.
+
+.PARAMETER $InputFile,
+This must be specified when using -ExportExistingFiles switch.
+This specifies the CSV file to read from.
+Must include the path.  
+
 .PARAMETER Force
-If policies exists on destination server, it will be dropped and recreated.
+This switch will continue to perform rest of the actions even if DBCC produces an error.
 
 .NOTES 
 Original Author: Cláudio Silva (@ClaudioESSilva)
@@ -68,7 +87,7 @@ Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1
 Will show a grid to select the file(s), then a treeview to select the destination path and perform the move (copy&paste&delete)
 
 .EXAMPLE 
-Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1 -ExportExistingFiles -OutputFilePath "C:\temp\files.csv"
+Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1 -ExportExistingFiles -OutFile "C:\temp\files.csv"
 
 Will generate a files.csv files to C:\temp folder with the list of all files within database 'db1'.
 This file will have an empty column called 'destination' that should be filled by user and run the command again passing this file. 
@@ -88,13 +107,13 @@ Will show a treeview to select the destination path and perform the move (copy&p
 		[parameter(Mandatory = $true, ParameterSetName = "ExportExistingFiles")]
 		[switch]$ExportExistingFiles,
 		[parameter(Mandatory = $true, ParameterSetName = "ExportExistingFiles")]
-        [Alias("OutFile", "OutputPath")]
-		[string]$OutputFilePath,
+        [Alias("OutFilePath", "OutputPath")]
+		[string]$OutFile,
         [parameter(Mandatory = $true, ParameterSetName = "MoveFromCSV")]
 		[switch]$MoveFromCSV,
 		[parameter(Mandatory = $true, ParameterSetName = "MoveFromCSV")]
-        [Alias("InputFile", "InputPath")]
-		[string]$InputFilePath,
+        [Alias("InputFilePath", "InputPath")]
+		[string]$InputFile,
         [switch]$Force
 	)
 	
@@ -380,11 +399,11 @@ Will show a treeview to select the destination path and perform the move (copy&p
 
         if ($ExportExistingFiles)
         {
-            if (($OutputFilePath.Length -gt 0)) #-and (!(Test-Path -Path $OutputFilePath)))
+            if (($OutFile.Length -gt 0)) #-and (!(Test-Path -Path $OutFile)))
             {
-                $files | Export-Csv -LiteralPath $OutputFilePath -NoTypeInformation
-                Write-Output "Edit the file $OutputFilePath. Keep only the rows matching the fies you want to move. Fill 'destination' column for each file.`r`n"
-                Write-Output "Use the following command to move the files:`r`nMove-SqlDatabaseFile -SqlServer $SqlServer -Databases $database -MoveFromCSV -InputFilePath '$OutputFilePath'"
+                $files | Export-Csv -LiteralPath $OutFile -NoTypeInformation
+                Write-Output "Edit the file $OutFile. Keep only the rows matching the fies you want to move. Fill 'destination' column for each file.`r`n"
+                Write-Output "Use the following command to move the files:`r`nMove-SqlDatabaseFile -SqlServer $SqlServer -Databases $database -MoveFromCSV -InputFilePath '$OutFile'"
                 return
             }
             else
@@ -396,9 +415,9 @@ Will show a treeview to select the destination path and perform the move (copy&p
 
         if ($MoveFromCSV)
         {
-            if (($InputFilePath.Length -gt 0) -and (Test-Path -Path $InputFilePath))
+            if (($InputFile.Length -gt 0) -and (Test-Path -Path $InputFile))
             {
-                $FilesToMove = Import-Csv -LiteralPath $InputFilePath
+                $FilesToMove = Import-Csv -LiteralPath $InputFile
             }
             else
             {
