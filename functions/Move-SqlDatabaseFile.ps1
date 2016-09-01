@@ -56,6 +56,13 @@ This must be specified when using -ExportExistingFiles switch.
 This specifies the CSV file to read from.
 Must include the path.  
 
+.PARAMETER CheckFileHash
+This switch allows a validation using file's hashes. Generate hash for source and destination files and check if is the same.
+This may take a long time for bigger files.
+
+.PARAMETER NoDbccCheckDb
+If this switch is used the DBCC CHECK DB will be skipped. USE THIS WITH CARE
+
 .PARAMETER Force
 This switch will continue to perform rest of the actions even if DBCC produces an error.
 
@@ -114,6 +121,8 @@ Will show a treeview to select the destination path and perform the move (copy&p
 		[parameter(Mandatory = $true, ParameterSetName = "MoveFromCSV")]
         [Alias("InputFilePath", "InputPath")]
 		[string]$InputFile,
+        [switch]$CheckFileHash,
+        [switch]$NoDbccCheckDb,
         [switch]$Force
 	)
 	
@@ -228,21 +237,28 @@ Will show a treeview to select the destination path and perform the move (copy&p
             }
             Write-Output "Database '$database' in Online!"
 
-            Write-Output "Starting Dbcc CHECKDB for $dbname on $source"
-			$dbccgood = Start-DbccCheck -Server $server -DBName $dbname
+            if ($NoDbccCheckDb -eq $false)
+            {
+                Write-Output "Starting Dbcc CHECKDB for $dbname on $source"
+			    $dbccgood = Start-DbccCheck -Server $server -DBName $dbname
 					
-			if ($dbccgood -eq $false)
-			{
-				if ($force -eq $false)
-				{
-					Write-Output "DBCC failed for $dbname (you should check that).  Aborting routine for this database"
-					continue
-				}
-				else
-				{
-					Write-Output "DBCC failed, but Force specified. Continuing."
-				}
-			}
+			    if ($dbccgood -eq $false)
+			    {
+				    if ($force -eq $false)
+				    {
+					    Write-Output "DBCC failed for $dbname (you should check that).  Aborting routine for this database"
+					    continue
+				    }
+				    else
+				    {
+					    Write-Output "DBCC failed, but Force specified. Continuing."
+				    }
+			    }
+            }
+            else
+            {
+                Write-Warning "DBCC skipped. -NoDbccChecDB was used."
+            }
 
             return $true
             
@@ -260,11 +276,24 @@ Will show a treeview to select the destination path and perform the move (copy&p
 		        [string]$PhysicalFileLocation
             )
             Write-Output "Modifying file path to new location"
-            $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] MODIFY FILE (NAME = $LogicalFileName, FILENAME = '$PhysicalFileLocation');") | Out-Null
+
+            try
+            {
+                $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] MODIFY FILE (NAME = $LogicalFileName, FILENAME = '$PhysicalFileLocation');") | Out-Null
+            }
+            catch
+            {
+                Write-Exception $_
+            }      
         }
 
         function Compare-FileHashes
         {
+            <#
+                .SYNOPSIS
+                Get file's hashes and compare them
+                Return boolean value
+            #>
             Param
             (
                 [parameter(Mandatory = $true)]
@@ -289,18 +318,19 @@ Will show a treeview to select the destination path and perform the move (copy&p
 
         function Get-FileHash
         {
-            #TODO: Write Description
+            <#
+                .SYNOPSIS
+                Generate a file hash
+                
+                .NOTES
+                This can take some time on larger files.
+            #>
             Param
             (
                 [parameter(Mandatory = $true)]
 		        [string]$FilePath
             )
 
-            <#
-                Other Example:
-                #$md5 = New-Object -TypeName System.Security.Cryptography.MD5CryptoServiceProvider
-                #$Hash = [System.BitConverter]::ToString($md5.ComputeHash([System.IO.File]::ReadAllBytes($FilePath)))
-            #>
             Write-Output "Generating hash for file: '$FilePath'"
 
             $stream = New-Object io.FileStream ($FilePath, 'open')
@@ -355,6 +385,81 @@ Will show a treeview to select the destination path and perform the move (copy&p
 				}
 			}
 		}
+
+        Function Remove-OldFile
+        {
+            <#
+                .SYNOPSIS
+                Remove source file
+
+                .DESCRIPTION
+                To run after database come online with success!
+                Verify if both files exists. Then remove the old file.
+            #>
+            Param (
+				[string]$SourceFilePath,
+				[string]$DestinationFilePath
+			)
+
+            if (@("Local_Robocopy","Local_Bits") -contains $copymethod)
+            {
+                #Verify if file exists on both folders (source and destination)
+                if ((Test-SqlPath -SqlServer $server -Path $DestinationFilePath) -and (Test-SqlPath -SqlServer $server -Path $SourceFilePath))
+                {
+                    try
+                    {
+                        #TODO: ONLY REMOVE FILES AFTER BRINGONLINE & DBCC CHECKDB??
+                        #Delete old file already copied to the new path
+                        Write-Output "Deleting file '$SourceFilePath'"
+                                
+                        Remove-Item -Path $SourceFilePath
+        
+                        Write-Output "File '$SourceFilePath' deleted" 
+                    }
+                    catch
+                    {
+                        Write-Exception $_
+                        Write-Warning "Can't delete the file '$SourceFilePath'. Delete it manualy"
+                    }
+                }
+                else
+                {
+                    Write-Warning "File $SourceFilePath does not exists! No file copied!"
+                }
+            }
+            else #remotely
+            {
+                #Delete old file already copied to the new path
+                Write-Output "Deleting file '$SourceFilePath' remotely"
+                $scriptblock = {
+                                    param($SourceFilePath) 
+                                
+                                    #Verify if file exists on both folders (source and destination)
+                                    if ((Test-Path -Path $DestinationFilePath) -and (Test-Path -Path $SourceFilePath))
+                                    {
+                                        try
+                                        {
+                                            #Delete old file already copied to the new path
+                                            Write-Output "Deleting file '$SourceFilePath'"
+                                
+                                            Remove-Item -Path $SourceFilePath
+
+                                            Write-Output "File '$SourceFilePath' deleted" 
+                                        }
+                                        catch
+                                        {
+                                            Write-Exception $_
+                                            Write-Warning "Can't delete the file '$SourceFilePath'. Delete it manualy"
+                                        }
+                                    }
+                                    else
+                                    {
+                                        Write-Warning "File $SourceFilePath does not exists! No file copied!"
+                                    }
+                                }
+                Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourceFilePath
+            }
+        }
 		
 		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 
@@ -487,39 +592,55 @@ Will show a treeview to select the destination path and perform the move (copy&p
         
         $start = [System.Diagnostics.Stopwatch]::StartNew()
 
+        try
+        {
+            $testRobocopyExistance = robocopy
+            $RobocopyExistsLocally = $true
+            Write-Output "Robocopy exists locally."
+        }
+        catch
+        {
+            $RobocopyExistsLocally = $false
+            Write-Output "Cannot find robocopy."
+        }
+
         if ($env:computername -eq $sourcenetbios)
         {
-            $copymethod = "Local_BITS"
+            if ($RobocopyExistsLocally)
+            {
+                $copymethod = "Local_Robocopy"
+            }
+            else
+            {
+                $copymethod = "Local_Bits"
+            }
         }
         else
         {
             #TODO: Find a way to validate some drive. C: exists everytime?
-            if (Join-AdminUnc -servername $sourcenetbios -FilePath "C:\")
+            #Check if have permission to UNC path (this will be checked again for each file that needs to be move)
+            if (Test-Path -Path $(Join-AdminUnc -servername $sourcenetbios -FilePath "C:\") -IsValid)
             {
-                $copymethod = "UNC_BITS"
+                if ($RobocopyExistsLocally)
+                {
+                    $copymethod = "UNC_Robocopy"
+                }
+                else
+                {
+                    $copymethod = "UNC_Bits"
+                }
             }
             else
             {
-                $copymethod = "Full_Remote"
+                $copymethod = "PSSession_Remote"
             }
         }
 
-        if ($copymethod -eq "UNC_BITS" -or $copymethod -eq "Local_BITS")
+        if (@("Local_Robocopy","Local_Bits") -contains $copymethod)
         {
-            Write-Output "You are running this command localy. Using Bits to copy the files"
+            Write-Output "You are running this command locally. Using Bits to copy the files"
         
             #Import-Module BitsTransfer -Verbose
-        
-            try
-            {
-                $testRobocopyExistance = robocopy
-                $RobocopyExists = $true
-            }
-            catch
-            {
-                $RobocopyExists = $false
-                Write-Output "Cannot find robocopy."
-            }
         
             $filesProgressbar = 0
         
@@ -619,7 +740,7 @@ Will show a treeview to select the destination path and perform the move (copy&p
                 {
                     $startRC = [System.Diagnostics.Stopwatch]::StartNew()
         
-                    if ($RobocopyExists)
+                    if ($RobocopyExistsLocally)
                     {
                         # Define regular expression that will gather number of bytes copied
                         $RegexBytes = '(?<=\s+)\d+(?=\s+)';
@@ -698,52 +819,35 @@ Will show a treeview to select the destination path and perform the move (copy&p
                     else
                     {
                         $BITSoutput = Start-BitsTransfer -Source $SourceFilePath -Destination $DestinationFilePath -RetryInterval 60 -RetryTimeout 60 `
-                                                        -DisplayName "Copying file" -Description "Copying '$FileToCopy' to '$DestinationPath' on '$sourcenetbios'" `
-                                                        -TransferType Upload
+                                                         -DisplayName "Copying file" -Description "Copying '$FileToCopy' to '$DestinationPath' on '$sourcenetbios'" `
+                                                         -TransferType Upload
                     }
         
                     $totaltimeRC= ($startRC.Elapsed)
                     Write-Output "Total Elapsed time robocopy: $totaltimeRC"
-        
-                    if (Compare-FileHashes -SourceFilePath $SourceFilePath -DestinationFilePath $DestinationFilePath)
+                    
+                    if ($CheckFileHash)
                     {
-                        Write-Verbose "File copy OK! Hash is the same."
-        
-                        Write-Verbose "Change file path for logical file '$LogicalName' to '$DestinationFilePath'"
-                        Set-SqlDatabaseFileLocation -Database $dbName -LogicalFileName $LogicalName -PhysicalFileLocation $LocalDestinationFilePath
-                        Write-Verbose "File path changed"
-        
-                        #Verify if file exists on both folders (source and destination)
-                        if ((Test-SqlPath -SqlServer $server -Path $DestinationFilePath) -and (Test-SqlPath -SqlServer $server -Path $SourceFilePath))
+                        if (Compare-FileHashes -SourceFilePath $SourceFilePath -DestinationFilePath $DestinationFilePath)
                         {
-                            try
-                            {
-                                #TODO: ONLY REMOVE FILES AFTER BRINGONLINE & DBCC CHECKDB??
-                                #Delete old file already copied to the new path
-                                Write-Output "Deleting file '$SourceFilePath'"
-                                
-                                Remove-Item -Path $SourceFilePath
-        
-                                Write-Output "File '$SourceFilePath' deleted" 
-                            }
-                            catch
-                            {
-                                Write-Exception $_
-                                Write-Warning "Can't delete the file '$SourceFilePath'. Delete it manualy"
-                            }
+                            Write-Output "File copy OK! Hash is the same."
                         }
                         else
                         {
-                            Write-Warning "File $SourceFilePath does not exists! No file copied!"
+                            Write-Verbose "File copy NOK! Hash is not the same."
+                            Write-Verbose "Deleting destination file '$DestinationFilePath'!"
+                            Remove-Item -Path $DestinationFilePath
+                            Write-Output "File '$DestinationFilePath' deleted" 
                         }
                     }
                     else
                     {
-                        Write-Verbose "File copy NOK! Hash is not the same."
-                        Write-Verbose "Deleting destination file '$DestinationFilePath'!"
-                        Remove-Item -Path $DestinationFilePath
-                        Write-Output "File '$DestinationFilePath' deleted" 
+                        Write-Output "Check file's hashes skipped."
                     }
+
+                    Write-Verbose "Change file path for logical file '$LogicalName' to '$DestinationFilePath'"
+                    Set-SqlDatabaseFileLocation -Database $dbName -LogicalFileName $LogicalName -PhysicalFileLocation $LocalDestinationFilePath
+                    Write-Verbose "File path changed"
                 }
                 catch
                 {
@@ -756,29 +860,15 @@ Will show a treeview to select the destination path and perform the move (copy&p
                             -Activity "Files copied!"`
                             -Complete
         
-            Write-Verbose "Copy done! Lets bring database Online!"
-            $resultDBOnline = Set-SqlDatabaseOnline
-        
-            if ($resultDBOnline)
-            {
-                Write-Verbose "Database online and DBCC CHECKDB went OK!"
-            }
-            else
-            {
-                Write-Verbose "Some error happened! Check logs"
-            }
             #TODO: Remove Progressbar!
         }
-        else
+        else #$copymethod = "PSSession_Remote"
         {
-            #Reset variable
-            $IsRemote = $false
-
             #Se não estiver configurado pode ser corrido este comando no destino.
             #Demasiados passos?
             #Enable-PSRemoting -force
-
-            Write-Output "You are running this command remotely. Will try use Remote PS with robocopy to copy the files"
+            
+            Write-Output "You are running this command remotely. Will try use Remote PS with robocopy to copy the files."
 
             # Test for WinRM #Test-WinRM neh. 
 		    winrm id -r:$sourcenetbios 2>$null | Out-Null
@@ -992,47 +1082,47 @@ Will show a treeview to select the destination path and perform the move (copy&p
                             while (@($CopyList | Where-Object {$_.HasExited -eq $false}).Count -gt 0)
 
                             Set-SqlDatabaseFileLocation -Database $dbName -LogicalFileName $LogicalName -PhysicalFileLocation $DestinationFilePath
-
-                            #Delete old file already copied to the new path
-                            Write-Output "Deleting file '$SourceFilePath'"
-                            $scriptblock = {param($SourceFilePath) Remove-Item $SourceFilePath}
-                            Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourceFilePath
-
-                            #Verify if file exists on both folders (source and destination)
-                            if ((Test-SqlPath -SqlServer $server -Path $DestinationFilePath) -and (Test-SqlPath -SqlServer $server -Path $SourceFilePath))
-                            {
-                                try
-                                {
-                                    #Delete old file already copied to the new path
-                                    Write-Output "Deleting file '$SourceFilePath'"
-                                
-                                    Remove-Item -Path $SourceFilePath
-
-                                    Write-Output "File '$SourceFilePath' deleted" 
-                                }
-                                catch
-                                {
-                                    Write-Exception $_
-                                    Write-Warning "Can't delete the file '$SourceFilePath'. Delete it manualy"
-                                }
-                            }
-                            else
-                            {
-                                Write-Warning "File $SourceFilePath does not exists! No file copied!"
-                            }
                         }
-                        Set-SqlDatabaseOnline
-
-                        Write-Verbose "Exiting-PSSession"
-                        Disconnect-PSSession $remotepssession.Id
-
-                        Write-Verbose "Removing PSSession with id $($remotepssession.Id)"
-                        Remove-PSSession $remotepssession.Id
                     }
                 }
             }
+            else
+            {
+                throw "Remote PowerShell access not enabled on $sourcenetbios or access denied. Windows admin acccess required. Quitting." 
+            }
         }
+
+        Write-Verbose "Copy done! Lets bring database Online!"
+        $resultDBOnline = Set-SqlDatabaseOnline
         
+        if ($resultDBOnline)
+        {
+            Write-Verbose "Database online!"
+        }
+        else
+        {
+            Write-Verbose "Some error happened! Check logs."
+            throw "Some error happened! Check logs."
+        }
+
+        foreach ($file in $FilesToMove)
+        {
+            $FileToCopy = Split-Path -Path $($file.FileName) -leaf
+            $SourceFilePath = $file.FileName
+            $DestinationFilePath = $(Join-Path $DestinationPath $fileToCopy)
+
+            Remove-OldFile -SourceFilePath $SourceFilePath -DestinationFilePath $DestinationFilePath
+        }
+
+        #If remote session. Clear
+        if ($copymethod -eq "PSSession_Remote")
+        {
+            Write-Verbose "Exiting-PSSession"
+            Disconnect-PSSession $remotepssession.Id
+
+            Write-Verbose "Removing PSSession with id $($remotepssession.Id)"
+            Remove-PSSession $remotepssession.Id
+        }
 	}
 	
 	# END is to disconnect from servers and finish up the script. When using the pipeline, things in here will be executed last and only once.
