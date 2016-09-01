@@ -10,13 +10,21 @@ This function will perform the following steps:
     1. Set database offline
     2. Copy file(s) from source to destination
     3. Alter database files location on database metadata (using ALTER DATABASE [db] MODIFY FILE command)
-    4. Bring databases Online
-    5. If database is Online remove the old file.
+    4. Bring database Online
+    5. Perform DBCC CHECKDB 
+    6. If everything is OK remove the old files.
 
-If running on local, will use BitsTransfer (can't use remotely).
-When running remotely try to use robocopy (not all SO have it??)
-If not exists robocopy will use Copy-Item
-	
+
+Copy method:
+    If running localy
+        - Use Robocopy. If not exits use Start-BitsTransfer
+
+    If run remotely   
+        - Check if user have access to UNC paths (\\) 
+            - if yes uses robocopy
+            - If not, try Remote Session (PSSession)
+                uses robocopy on the machine if exists
+
 The -Databases parameter is autopopulated for command-line completion and can be used to copy only specific objects.
 
 .PARAMETER SqlServer
@@ -449,9 +457,13 @@ Will show a treeview to select the destination path and perform the move (copy&p
         <#
             Validate type of copy
             Can be (using this order):
-             - If robocopy exists - Using robocopy
-             - If not using BITS
-            NOTE: For now, no PSSession possible. (should use robocopy but can't show progress bar
+             - Local copy:
+                Use Robocopy. If not exits use Start-BitsTransfer
+             
+             - Remote copy 
+                If user have access to UNC paths (\\) uses robocopy
+             
+                If not, use Remote Session (uses robocopy on the machine if exists)
         #>
         
         $start = [System.Diagnostics.Stopwatch]::StartNew()
@@ -501,10 +513,6 @@ Will show a treeview to select the destination path and perform the move (copy&p
             {
                 $FilesCount = @($FilesToMove).Count
             }
-        
-            
-            #if ($FilesCount -gt 0)
-            #{
             
             #Call function to set database offline
             Set-SqlDatabaseOffline
@@ -520,8 +528,6 @@ Will show a treeview to select the destination path and perform the move (copy&p
                 $FileToCopy = Split-Path -Path $($file.FileName) -leaf
                 $ValidDestinationPath = !([string]::IsNullOrEmpty($DestinationPath))
                 
-                
-        
                 Write-Progress `
 							-Id 1 `
 							-Activity "Working on file: $LogicalName on database: '$dbName'" `
@@ -549,7 +555,6 @@ Will show a treeview to select the destination path and perform the move (copy&p
                         $LocalSourcePath = Split-Path -Path $SourceFilePath
                         $LocalDestinationPath = Split-Path -Path $DestinationFilePath 
                     }
-        
         
         
                     if ($copymethod -eq "UNC_BITS")
