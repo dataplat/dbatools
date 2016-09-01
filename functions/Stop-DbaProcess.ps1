@@ -104,45 +104,52 @@ Shows what would happen if the command were executed.
 	
 	PROCESS
 	{
-		$sessions = $sourceserver.EnumProcesses()
+		$allsessions = @()
+		
+		$processes = $sourceserver.EnumProcesses() | Where-Object { $_.spid -gt 50 }
 		
 		if ($logins.count -gt 0)
 		{
-			$sessions = $sessions | Where-Object { $logins -contains $_.Login }
+			$allsessions += $processes | Where-Object { $_.Login -in $Logins }
 		}
 		
 		if ($spids.count -gt 0)
 		{
-			$sessions = $sessions | Where-Object { $spids -contains $_.Spid }
+			$allsessions += $processes | Where-Object { $_.Spid -in $spids }
 		}
 		
 		if ($hosts.count -gt 0)
 		{
-			$sessions = $sessions | Where-Object { $hosts -contains $_.Host }
+			$allsessions += $processes | Where-Object { $_.Host -in $hosts }
 		}
 		
 		if ($programs.count -gt 0)
 		{
-			$sessions = $sessions | Where-Object { $programs -contains $_.Program }
+			$allsessions += $processes | Where-Object { $_.Program -in $programs }
 		}
 		
 		if ($databases.count -gt 0)
 		{
-			$sessions = $sessions | Where-Object { $databases -contains $_.Database }
+			$allsessions += $processes | Where-Object { $_.Database -in $databases }
 		}
 		
 		if ($exclude.count -gt 0)
 		{
-			$sessions = $sessions | Where-Object { $exclude -notcontains $_.Spid }
+			$allsessions = $allsessions | Where-Object { $exclude -notcontains $_.Spid }
 		}
 		
-		if ($sessions.count -eq 0)
+		if ($allsessions.urn.count -eq 0)
 		{
-			Write-Warning "No sessions found for spid $spid"
+			Write-Warning "No sessions found"
 		}
 		
-		foreach ($session in $sessions)
+		$duplicates = @()
+		
+		foreach ($session in $allsessions)
 		{
+			if ($session.spid -in $duplicates) { continue }
+			$duplicates += $session.spid
+			
 			$spid = $session.spid
 			$login = $session.login
 			$database = $session.database
