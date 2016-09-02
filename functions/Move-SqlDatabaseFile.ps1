@@ -38,21 +38,21 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
 
-.PARAMETER ExportExistingFiles
+.PARAMETER ExportDatabaseStructure
 This switch with the -OutFile parameter will generate an CSV file with all database files. 
 The CSV have a column named 'Destination' which must be filled with the destination path you want.
 You must remove all lines that have files you don't want to move.
 
 .PARAMETER OutFile
-This must be specified when using -ExportExistingFiles switch. 
+This must be specified when using -ExportDatabaseStructure switch. 
 This specifies the CSV file to write to. 
 Must include the path.
 
 .PARAMETER MoveFromCSV
 This switch indicate that you will specify an CSV input file using the -InputFile parameter to say which files want to move.
 
-.PARAMETER $InputFile,
-This must be specified when using -ExportExistingFiles switch.
+.PARAMETER InputFile,
+This must be specified when using -ExportDatabaseStructure switch.
 This specifies the CSV file to read from.
 Must include the path.  
 
@@ -62,6 +62,9 @@ This may take a long time for bigger files.
 
 .PARAMETER NoDbccCheckDb
 If this switch is used the DBCC CHECK DB will be skipped. USE THIS WITH CARE
+
+.PARAMETER DeleteSourceFiles
+If this switch is used the source files will be deleted after database comes online.
 
 .PARAMETER Force
 This switch will continue to perform rest of the actions even if DBCC produces an error.
@@ -94,7 +97,7 @@ Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1
 Will show a grid to select the file(s), then a treeview to select the destination path and perform the move (copy&paste&delete)
 
 .EXAMPLE 
-Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1 -ExportExistingFiles -OutFile "C:\temp\files.csv"
+Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1 -ExportDatabaseStructure -OutFile "C:\temp\files.csv"
 
 Will generate a files.csv files to C:\temp folder with the list of all files within database 'db1'.
 This file will have an empty column called 'destination' that should be filled by user and run the command again passing this file. 
@@ -111,9 +114,9 @@ Will show a treeview to select the destination path and perform the move (copy&p
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[object]$SqlCredential,
-		[parameter(Mandatory = $true, ParameterSetName = "ExportExistingFiles")]
-		[switch]$ExportExistingFiles,
-		[parameter(Mandatory = $true, ParameterSetName = "ExportExistingFiles")]
+		[parameter(Mandatory = $true, ParameterSetName = "ExportDatabaseStructure")]
+		[switch]$ExportDatabaseStructure,
+		[parameter(Mandatory = $true, ParameterSetName = "ExportDatabaseStructure")]
         [Alias("OutFilePath", "OutputPath")]
 		[string]$OutFile,
         [parameter(Mandatory = $true, ParameterSetName = "MoveFromCSV")]
@@ -123,6 +126,7 @@ Will show a treeview to select the destination path and perform the move (copy&p
 		[string]$InputFile,
         [switch]$CheckFileHash,
         [switch]$NoDbccCheckDb,
+        [switch]$DeleteSourceFiles,
         [switch]$Force
 	)
 	
@@ -401,7 +405,7 @@ Will show a treeview to select the destination path and perform the move (copy&p
 				[string]$DestinationFilePath
 			)
 
-            if (@("Local_Robocopy","Local_Bits") -contains $copymethod)
+            if (@("Local_Robocopy","Local_Bits", "UNC_Robocopy", "UNC_Bits") -contains $copymethod)
             {
                 #Verify if file exists on both folders (source and destination)
                 if ((Test-SqlPath -SqlServer $server -Path $DestinationFilePath) -and (Test-SqlPath -SqlServer $server -Path $SourceFilePath))
@@ -418,8 +422,8 @@ Will show a treeview to select the destination path and perform the move (copy&p
                     }
                     catch
                     {
-                        Write-Exception $_
                         Write-Warning "Can't delete the file '$SourceFilePath'. Delete it manualy"
+                        continue
                     }
                 }
                 else
@@ -442,14 +446,14 @@ Will show a treeview to select the destination path and perform the move (copy&p
                                             #Delete old file already copied to the new path
                                             Write-Output "Deleting file '$SourceFilePath'"
                                 
-                                            Remove-Item -Path $SourceFilePath
+                                            Remove-Item -Path $SourceFilePath 
 
                                             Write-Output "File '$SourceFilePath' deleted" 
                                         }
                                         catch
                                         {
-                                            Write-Exception $_
-                                            Write-Warning "Can't delete the file '$SourceFilePath'. Delete it manualy"
+                                            Write-Warning "Can't delete the file '$SourceFilePath'. Delete it manualy."
+                                            continue
                                         }
                                     }
                                     else
@@ -458,6 +462,56 @@ Will show a treeview to select the destination path and perform the move (copy&p
                                     }
                                 }
                 Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourceFilePath
+            }
+        }
+
+        Function Test-PathsAccess
+        {
+            <#
+                .SYNOPSIS
+                Will test if we have access to the specified paths.
+
+                .DESCRIPTION
+                Will create a file and delete it.
+                If can't delete will warn about it.
+            #>
+            Param (
+				[object]$PathsToUse
+			)
+            
+            foreach ($Path in $PathsToUse)
+            {
+                try
+                {
+                    $ValidPath = !([string]::IsNullOrEmpty($($Path.Destination)))
+                    $DestinationPathToUse = (Split-Path $($Path.Destination))
+
+                    if ($ValidPath)
+                    {
+                        $dummyFilePath = "$DestinationPathToUse\DBATools_dummy$(Get-Date -Format 'yyyy-MM-dd hh-mm-ss').log"
+                        New-Item -ItemType File -Path $dummyFilePath
+                        
+                        Write-Output "Can access on destination path."
+                        try
+                        {
+                            Remove-Item -Path $dummyFilePath
+                        }
+                        catch
+                        {
+                            Write-Warning "Can't delete dummy file '$dummyFilePath'. Please delete it manually."
+                        }
+                    }
+                    else
+                    {
+                        Write-Warning "The specified path '$DestinationPathToUse' is not valid."
+                        Write-Exception $_
+                    }
+                }
+                catch
+                {
+                    Write-Warning "Can't create files on path '$DestinationPathToUse'"
+                    continue
+                }
             }
         }
 		
@@ -502,12 +556,12 @@ Will show a treeview to select the destination path and perform the move (copy&p
             }
 		}
 
-        if ($ExportExistingFiles)
+        if ($ExportDatabaseStructure)
         {
             if (($OutFile.Length -gt 0)) #-and (!(Test-Path -Path $OutFile)))
             {
                 $files | Export-Csv -LiteralPath $OutFile -NoTypeInformation
-                Write-Output "Edit the file $OutFile. Keep only the rows matching the fies you want to move. Fill 'destination' column for each file.`r`n"
+                Write-Output "Edit the file $OutFile. Keep only the rows matching the fies you want to move. Fill 'destination' column for each file (path only).`r`n"
                 Write-Output "Use the following command to move the files:`r`nMove-SqlDatabaseFile -SqlServer $SqlServer -Databases $database -MoveFromCSV -InputFilePath '$OutFile'"
                 return
             }
@@ -533,8 +587,7 @@ Will show a treeview to select the destination path and perform the move (copy&p
         {
             if (([string]::IsNullOrEmpty($FileType)))
             {
-                #Select one file to move
-		        $FilesToMove = $files | Out-GridView -PassThru
+		        $FilesToMove = $files | Out-GridView -PassThru -Title "Select one or more files to move:"
             }
             else
             {
@@ -606,13 +659,16 @@ Will show a treeview to select the destination path and perform the move (copy&p
 
         if ($env:computername -eq $sourcenetbios)
         {
+
             if ($RobocopyExistsLocally)
             {
                 $copymethod = "Local_Robocopy"
+                
             }
             else
             {
                 $copymethod = "Local_Bits"
+                
             }
         }
         else
@@ -621,7 +677,7 @@ Will show a treeview to select the destination path and perform the move (copy&p
             #Check if have permission to UNC path (this will be checked again for each file that needs to be move)
             if (Test-Path -Path $(Join-AdminUnc -servername $sourcenetbios -FilePath "C:\") -IsValid)
             {
-                if ($RobocopyExistsLocally)
+                if ($RobocopyExistsRemotely)
                 {
                     $copymethod = "UNC_Robocopy"
                 }
@@ -636,12 +692,60 @@ Will show a treeview to select the destination path and perform the move (copy&p
             }
         }
 
-        if (@("Local_Robocopy","Local_Bits") -contains $copymethod)
+        if (@("Local_Robocopy","Local_Bits", "UNC_Robocopy", "UNC_Bits") -contains $copymethod)
         {
-            Write-Output "You are running this command locally. Using Bits to copy the files"
+            Write-Output "You are running this command locally."
+
+            switch ($copymethod)
+			{
+				"Local_Robocopy" {
+					Write-Output "We will use robocopy as copy method."
+				}
+
+                "Local_Bits" {
+					Write-Output "We will use BitsTransfer as copy method."
+				}
+
+                "UNC_Robocopy" {
+					Write-Output "We will use robocopy with UNC paths as copy method."
+				}
+
+                "UNC_Bits" {
+					Write-Output "We will use BitsTransfer with UNC paths as copy method."
+				}
+
+            }
+
+            $FilesToMove
+            
+
+            $FilesToMove | Add-Member -NotePropertyName FileToCopy -NotePropertyValue ""
+            $FilesToMove | Add-Member -NotePropertyName DestinationFileName -NotePropertyValue ""
+
+            $FilesToMove
+            #return
+
+            #Format files accordingly with copy type
+            if (@("UNC_Robocopy", "UNC_Bits") -contains $copymethod)
+            {
+                foreach ($file in $FilesToMove)
+                {
+                    $fileToCopy = Split-Path -Path $($file.FileName) -leaf
+
+                    $file.FileToCopy = $fileToCopy
+
+                    $file.DestinationFileName = $(Join-Path $file.Destination $fileToCopy)
+
+                    $file.FileName = Join-AdminUnc -servername $sourcenetbios -FilePath $file.FileName
+                    $file.Destination = Join-AdminUnc -servername $sourcenetbios -FilePath $file.DestinationFileName
+                }
+            }
+            $FilesToMove
+            return
+
+            Test-PathsAccess -PathsToUse $FilesToMove
         
-            #Import-Module BitsTransfer -Verbose
-        
+            Return
             $filesProgressbar = 0
         
             #Get number of files to move
@@ -879,7 +983,7 @@ Will show a treeview to select the destination path and perform the move (copy&p
                 if([string]::IsNullOrEmpty($remotepssession))
                 {
                     $IsRemote = $false
-                    Write-Warning "Connecting to remote server '$sourcenetbios' failed. We will try with Copy-Item method."
+                    throw "Can't create remote PowerShell session on $sourcenetbios. Quitting."
                 }
                 else
                 {
@@ -1052,10 +1156,11 @@ Will show a treeview to select the destination path and perform the move (copy&p
                                                 $file = [System.io.File]::Open($RobocopyLogPath, 'Open', 'Read', 'ReadWrite')
                                                 $reader = New-Object System.IO.StreamReader($file)
 
+                                                #done this way to replicate Get-Content output (is a collection :))
                                                 $text = @()
                                                 while(($line = $reader.ReadLine()) -ne $null)
                                                 {
-                                                    $text+= "$line `t`r`n";
+                                                    $text+= "$line`r`n";
                                                 }
                                                 $reader.Close()
                                                 $file.Close()
@@ -1105,13 +1210,18 @@ Will show a treeview to select the destination path and perform the move (copy&p
             throw "Some error happened! Check logs."
         }
 
-        foreach ($file in $FilesToMove)
+        if ($DeleteSourceFiles)
         {
-            $FileToCopy = Split-Path -Path $($file.FileName) -leaf
-            $SourceFilePath = $file.FileName
-            $DestinationFilePath = $(Join-Path $DestinationPath $fileToCopy)
+            Write-Output "-DeleteSourceFiles was specified. Will delete source files."
 
-            Remove-OldFile -SourceFilePath $SourceFilePath -DestinationFilePath $DestinationFilePath
+            foreach ($file in $FilesToMove)
+            {
+                $FileToCopy = Split-Path -Path $($file.FileName) -leaf
+                $SourceFilePath = $file.FileName
+                $DestinationFilePath = $(Join-Path $DestinationPath $fileToCopy)
+
+                Remove-OldFile -SourceFilePath $SourceFilePath -DestinationFilePath $DestinationFilePath
+            }
         }
 
         #If remote session. Clear
