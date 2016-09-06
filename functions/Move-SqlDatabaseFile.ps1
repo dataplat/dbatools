@@ -184,17 +184,21 @@ Will show a treeview to select the destination path and perform the move (copy&p
         function Set-SqlDatabaseOffline
         {
             Write-Output "Set database '$database' Offline!"
-            $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] SET OFFLINE WITH ROLLBACK IMMEDIATE") | Out-Null
 
-            do
+            if ($PSCmdlet.ShouldProcess("Setting database '$database' OFFLINE", "Set database offline"))
             {
-                $server.Databases[$database].Refresh()
-                Start-Sleep -Seconds 1
-                $WaitingTime += 1
-                Write-Verbose "Database status: $($server.Databases[$database].Status.ToString())"
-                Write-Verbose "Waiting for database become offline: $WaitingTime seconds passed"
+                $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] SET OFFLINE WITH ROLLBACK IMMEDIATE") | Out-Null
+
+                do
+                {
+                    $server.Databases[$database].Refresh()
+                    Start-Sleep -Seconds 1
+                    $WaitingTime += 1
+                    Write-Verbose "Database status: $($server.Databases[$database].Status.ToString())"
+                    Write-Verbose "Waiting for database become offline: $WaitingTime seconds passed"
+                }
+                while (($server.Databases[$database].Status.ToString().Contains("Offline") -eq $false) -and $WaitingTime -le 10)
             }
-            while (($server.Databases[$database].Status.ToString().Contains("Offline") -eq $false) -and $WaitingTime -le 10)
 
             #Validate
             if ($server.Databases[$database].Status.ToString().Contains("Offline") -eq $false)
@@ -210,27 +214,31 @@ Will show a treeview to select the destination path and perform the move (copy&p
         function Set-SqlDatabaseOnline
         {
             Write-Output "Set database '$database' Online!"
-            try
+            if ($PSCmdlet.ShouldProcess("Setting database '$database' ONLINE", "Set database online"))
             {
-                $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] SET ONLINE") | Out-Null
-            }
-            catch
-            {
-                Write-Warning $_
-                return $false
-            }
+                try
+                {
+                
+                        $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] SET ONLINE") | Out-Null
 
-            $WaitingTime = 0
-            do
-            {
-                $server.Databases[$database].Refresh()
-                Start-Sleep -Seconds 1
-                $WaitingTime += 1
-                Write-Output "Database status: $($server.Databases[$database].Status.ToString())"
-                Write-Output "WaitingTime: $WaitingTime"
-            }
-            while (($server.Databases[$database].Status.ToString().Contains("Normal") -eq $false) -and $WaitingTime -le 10)
+                }
+                catch
+                {
+                    Write-Warning $_
+                    return $false
+                }
 
+                $WaitingTime = 0
+                do
+                {
+                    $server.Databases[$database].Refresh()
+                    Start-Sleep -Seconds 1
+                    $WaitingTime += 1
+                    Write-Output "Database status: $($server.Databases[$database].Status.ToString())"
+                    Write-Output "WaitingTime: $WaitingTime"
+                }
+                while (($server.Databases[$database].Status.ToString().Contains("Normal") -eq $false) -and $WaitingTime -le 10)
+            }
             if ($server.Databases[$database].Status.ToString().Contains("Normal") -eq $false)
             {
                 throw "Database is not in Online status."
@@ -281,13 +289,16 @@ Will show a treeview to select the destination path and perform the move (copy&p
             )
             Write-Output "Modifying file path to new location"
 
-            try
+            if ($PSCmdlet.ShouldProcess($database, "Modifying file '$LogicalFileName' location to '$PhysicalFileLocation'"))
             {
-                $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] MODIFY FILE (NAME = $LogicalFileName, FILENAME = '$PhysicalFileLocation');") | Out-Null
-            }
-            catch
-            {
-                Write-Exception $_
+                try
+                {
+                    $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] MODIFY FILE (NAME = $LogicalFileName, FILENAME = '$PhysicalFileLocation');") | Out-Null
+                }
+                catch
+                {
+                    Write-Exception $_
+                }
             }      
         }
 
@@ -337,19 +348,22 @@ Will show a treeview to select the destination path and perform the move (copy&p
 
             Write-Output "Generating hash for file: '$FilePath'"
 
-            $stream = New-Object io.FileStream ($FilePath, 'open')
-            $Provider = New-Object System.Security.Cryptography.MD5CryptoServiceProvider 
-            $Hash = New-Object System.Text.StringBuilder 
-            if ($stream) 
-            { 
-                foreach ($byte in $Provider.ComputeHash($stream)) 
-                {
-                    [Void] $Hash.Append($byte.ToString("X2"))
-                } 
-                $stream.Close() 
-            }
+            if ($PSCmdlet.ShouldProcess($FilePath, "Generating hash for file '$FilePath'"))
+            {
+                $stream = New-Object io.FileStream ($FilePath, 'open')
+                $Provider = New-Object System.Security.Cryptography.MD5CryptoServiceProvider 
+                $Hash = New-Object System.Text.StringBuilder 
+                if ($stream) 
+                { 
+                    foreach ($byte in $Provider.ComputeHash($stream)) 
+                    {
+                        [Void] $Hash.Append($byte.ToString("X2"))
+                    } 
+                    $stream.Close() 
+                }
 
-            return $Hash
+                return $Hash
+            }
 
         }
 
@@ -415,8 +429,11 @@ Will show a treeview to select the destination path and perform the move (copy&p
                         #TODO: ONLY REMOVE FILES AFTER BRINGONLINE & DBCC CHECKDB??
                         #Delete old file already copied to the new path
                         Write-Output "Deleting file '$SourceFilePath'"
-                                
-                        Remove-Item -Path $SourceFilePath
+                        
+                        if ($PSCmdlet.ShouldProcess($SourceFilePath, "Deleting file '$SourceFilePath'"))
+                        {     
+                            Remove-Item -Path $SourceFilePath
+                        }
         
                         Write-Output "File '$SourceFilePath' deleted" 
                     }
@@ -461,7 +478,10 @@ Will show a treeview to select the destination path and perform the move (copy&p
                                         Write-Warning "File $SourceFilePath does not exists! No file copied!"
                                     }
                                 }
-                Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourceFilePath
+                if ($PSCmdlet.ShouldProcess($SourceFilePath, "Deleting file '$SourceFilePath'"))
+                { 
+                    Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $SourceFilePath
+                }
             }
         }
 
