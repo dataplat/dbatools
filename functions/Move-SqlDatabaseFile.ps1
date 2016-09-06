@@ -22,7 +22,7 @@ Copy method:
     If run remotely   
         - Check if user have access to UNC paths (\\) 
             - if yes uses robocopy
-            - If not, try Remote Session (PSSession)
+            - If not, try Remote Session (PSSession) -> if not enabled on target machine you can enable by using the following command: Enable-PSRemoting -force
                 uses robocopy on the machine if exists
 
 The -Databases parameter is autopopulated for command-line completion and can be used to copy only specific objects.
@@ -625,6 +625,28 @@ Will show a treeview to select the destination path and perform the move (copy&p
                 Write-Exception $_
             }
         }
+
+        Function Get-PSSessionRobocopyLogContent
+        {
+            $scriptblock = {
+                                param($RobocopyLogPath) 
+                                $file = [System.io.File]::Open($RobocopyLogPath, 'Open', 'Read', 'ReadWrite')
+                                $reader = New-Object System.IO.StreamReader($file)
+
+                                #done this way to replicate Get-Content output (is a collection :))
+                                $text = @()
+                                while(($line = $reader.ReadLine()) -ne $null)
+                                {
+                                    $text+= "$line"
+                                }
+                                $reader.Close()
+                                $file.Close()
+                                return $text
+                            }
+            $PSSessionRoboCopyLogContent = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $RobocopyLogPath
+
+            return $PSSessionRoboCopyLogContent
+        }
 		
 		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 
@@ -785,57 +807,57 @@ Will show a treeview to select the destination path and perform the move (copy&p
         }
         else
         {
-            #Check if have permission to UNC path (this will be checked again for each file that needs to be move)
-            if (Test-Path -Path $(Join-AdminUnc -servername $sourcenetbios -FilePath $(@($FilesToMove).Item(0).DestinationFolderPath)) -IsValid)
-            {
-                if ($RobocopyExists)
-                {
-                    $copymethod = "UNC_Robocopy"
-                }
-                else
-                {
-                    $copymethod = "UNC_Bits"
-                }
-            }
-            else
-            {
-               # Test for WinRM #Test-WinRM neh. 
-		       winrm id -r:$sourcenetbios 2>$null | Out-Null
-		       if ($LastExitCode -eq 0) 
-               { 
-                   $remotepssession = New-PSSession -ComputerName $sourcenetbios
-
-                   if([string]::IsNullOrEmpty($remotepssession))
-                   {
-                       throw "Can't create remote PowerShell session on $sourcenetbios. Quitting."
-                   }
-                   else
-                   {
-                        Write-Output "LastExitCode: $LastExitCode"
-                        Write-Verbose "Created remote pssession id: $($remotepssession.Id)"
- 
-                        Write-Output "Verifying if robocopy.exe exists on default path."
-                       
-                        $RemoteRobocopyExists = Invoke-Command -Session $remotepssession -ScriptBlock {robocopy} -ErrorAction SilentlyContinue
-
-                        if ($RemoteRobocopyExists)
-                        {
-                            $copymethod = "PSSession_Remote"
-                            #Write-Output "Using Robocopy to copy the files"
-                        }
-                        else
-                        {
-                            #Disconnect and remove PSSession
-                            Disconnect-RemovePSSession
-                            throw "Robocopy does not exists on remote machine '$sourcenetbios'. Quitting."
-                        }
-
-                   }
+           #Check if have permission to UNC path (this will be checked again for each file that needs to be move)
+           if (Test-Path -Path $(Join-AdminUnc -servername $sourcenetbios -FilePath $(@($FilesToMove).Item(0).DestinationFolderPath)) -IsValid)
+           {
+               if ($RobocopyExists)
+               {
+                   $copymethod = "UNC_Robocopy"
                }
                else
                {
-                   throw "Remote PowerShell access not enabled on $sourcenetbios or access denied. Windows admin acccess required. Quitting." 
+                   $copymethod = "UNC_Bits"
                }
+           }
+           else
+           {
+              # Test for WinRM #Test-WinRM neh. 
+		      winrm id -r:$sourcenetbios 2>$null | Out-Null
+		      if ($LastExitCode -eq 0) 
+              { 
+                  $remotepssession = New-PSSession -ComputerName $sourcenetbios
+
+                  if([string]::IsNullOrEmpty($remotepssession))
+                  {
+                      throw "Can't create remote PowerShell session on $sourcenetbios. Quitting."
+                  }
+                  else
+                  {
+                       Write-Output "LastExitCode: $LastExitCode"
+                       Write-Verbose "Created remote pssession id: $($remotepssession.Id)"
+ 
+                       Write-Output "Verifying if robocopy.exe exists on default path."
+                      
+                       $RemoteRobocopyExists = Invoke-Command -Session $remotepssession -ScriptBlock {robocopy} -ErrorAction SilentlyContinue
+
+                       if ($RemoteRobocopyExists)
+                       {
+                           $copymethod = "PSSession_Remote"
+                           #Write-Output "Using Robocopy to copy the files"
+                       }
+                       else
+                       {
+                           #Disconnect and remove PSSession
+                           Disconnect-RemovePSSession
+                           throw "Robocopy does not exists on remote machine '$sourcenetbios'. Quitting."
+                       }
+
+                  }
+              }
+              else
+              {
+                  throw "Remote PowerShell access not enabled on $sourcenetbios or access denied. Windows admin acccess required. Quitting." 
+              }
             }
         }
 
@@ -849,6 +871,9 @@ Will show a treeview to select the destination path and perform the move (copy&p
         #To use when changing file location metadata
         $FilesToMove | Add-Member -NotePropertyName LocalDestinationFilePath -NotePropertyValue ""
         $FilesToMove | Add-Member -NotePropertyName LocalDestinationFolderPath -NotePropertyValue ""
+
+        #Says if file is already handled with success. Used to print files to delete
+        $FilesToMove | Add-Member -NotePropertyName SuccefullHandled -NotePropertyValue $false
 
         #Format files accordingly with copy type
         foreach ($file in $FilesToMove)
@@ -902,6 +927,10 @@ Will show a treeview to select the destination path and perform the move (copy&p
         #Get number of files to move
         $FilesCount = @($FilesToMove).Count
 
+        #TODO: REMOVE
+        $copymethod = "Local_Bits1"
+        $RobocopyExists = $false
+
         if (@("Local_Robocopy","Local_Bits", "UNC_Robocopy", "UNC_Bits") -contains $copymethod)
         {
             Write-Output "You are running this command locally."
@@ -910,21 +939,27 @@ Will show a treeview to select the destination path and perform the move (copy&p
 			{
 				"Local_Robocopy" {
 					Write-Output "We will use robocopy as copy method."
+                    break
 				}
 
                 "Local_Bits" {
 					Write-Output "We will use BitsTransfer as copy method."
+                    break
 				}
 
                 "UNC_Robocopy" {
 					Write-Output "We will use robocopy with UNC paths as copy method."
+                    break
 				}
 
                 "UNC_Bits" {
 					Write-Output "We will use BitsTransfer with UNC paths as copy method."
+                    break
 				}
 
             }
+
+            
 
             $filesProgressbar = 0
 
@@ -1002,7 +1037,7 @@ Will show a treeview to select the destination path and perform the move (copy&p
                         $StagingLogPath = "$env:windir\temp\$((Get-Date -Format 'yyyyMMddhhmmss'))RobocopyStaging.log"
 
                         #format this way because the double-quotes ""
-                        $StagingArgumentList = '"{0}" "{1}" "{2}" /LOG:"{3}" /L {4}' -f $SourceFolderPath, $DestinationFolderPath, $FileToCopy, $StagingLogPath, $CommonRobocopyParams
+                        $StagingArgumentList = '"{0}" "{1}" "{2}" /LOG:"{3}" /L {4} ' -f $SourceFolderPath, $DestinationFolderPath, $FileToCopy, $StagingLogPath, $CommonRobocopyParams
                         Write-Verbose "Staging arguments: $StagingArgumentList"
                         
                         Start-Process -Wait -FilePath robocopy.exe -ArgumentList $StagingArgumentList -NoNewWindow
@@ -1016,16 +1051,17 @@ Will show a treeview to select the destination path and perform the move (copy&p
 
                             $RobocopyLogPath = "$env:windir\temp\$((Get-Date -Format 'yyyyMMddhhmmss'))Robocopy.log"
                             #format this way because the double-quotes ""
-                            $ArgumentList = '"{0}" "{1}" "{2}" /LOG:"{3}" {4}' -f $SourceFolderPath, $DestinationFolderPath, $FileToCopy, $RobocopyLogPath, $CommonRobocopyParams;
+                            $ArgumentList = '"{0}" "{1}" "{2}" /LOG:"{3}" {4} /R:10 /W:3' -f $SourceFolderPath, $DestinationFolderPath, $FileToCopy, $RobocopyLogPath, $CommonRobocopyParams;
                             Write-Verbose "Beginning the robocopy process with arguments: $ArgumentList"
                         
                             $Robocopy = Start-Process -FilePath robocopy.exe -ArgumentList $ArgumentList -Verbose -PassThru -NoNewWindow
                             Start-Sleep -Milliseconds 100;
 
+                            Write-Output 'Waiting for file copies to complete...'	
                             do
 		                    {
                                 $LogContent = Get-Content -Path $RobocopyLogPath;
-        
+
                                 $RobocopyLogFiltered = $LogContent -match "^\s*(\d+)\s+(\S+)"
 
                                 if ($RobocopyLogFiltered -ne $Null )
@@ -1036,12 +1072,33 @@ Will show a treeview to select the destination path and perform the move (copy&p
 	                                }
 	                                else
 	                                {
-		                                Write-progress -Id 2 -ParentId 1 -Activity "Progress" -Complete
+                                        if ($LogContent[-1].StartsWith("Waiting"))
+                                        {
+                                            Write-Warning "$($LogContent[-3]) - $($LogContent[-1])"
+                                            Start-Sleep -Milliseconds 3000;
+                                        }
+                                        else
+                                        {
+		                                    Write-progress -Id 2 -ParentId 1 -Activity "Progress" -Complete
+                                        }
 	                                }
                                 }
                                 Start-Sleep -Milliseconds 250;
                             }
                             while (!$Robocopy.HasExited)
+
+                            #Get content one last time to verify if it finished by "RETRY LIMIT EXCEEDED"
+                            $LogContent = Get-Content -Path $RobocopyLogPath;
+                            if ($LogContent | Where-Object { $_ -match "ERROR: RETRY LIMIT EXCEEDED." })
+                            {
+                                $file.SuccefullHandled = $false
+                                Write-Warning "Can not copy file '$FileToCopy'. Please confirm that you have permissions to paths '$SourceFolderPath' and '$DestinationFolderPath'"
+                                continue
+                            }
+                            else
+                            {
+                                $file.SuccefullHandled = $true
+                            }
 
                             Write-progress -Id 2 -ParentId 1 "Progress" -Complete
                         }
@@ -1053,9 +1110,18 @@ Will show a treeview to select the destination path and perform the move (copy&p
                     }
                     else
                     {
-                        $BITSoutput = Start-BitsTransfer -Source $SourceFilePath -Destination $LocalDestinationFilePath -RetryInterval 60 -RetryTimeout 60 `
-                                                         -DisplayName "Copying file" -Description "Copying '$FileToCopy' to '$DestinationFolderPath' on '$sourcenetbios'" `
-                                                         -TransferType Upload
+                        try
+                        {
+                            $BITSoutput = Start-BitsTransfer -Source $SourceFilePath -Destination $LocalDestinationFilePath -RetryInterval 60 -RetryTimeout 60 `
+                                                             -DisplayName "Copying file" -Description "Copying '$FileToCopy' to '$DestinationFolderPath' on '$sourcenetbios'" 
+                        
+                            $file.SuccefullHandled = $true
+                        }
+                        catch
+                        {
+                            Write-Error $_
+                            $file.SuccefullHandled = $false
+                        }
                     }
         
                     $totaltimeRC= ($startRC.Elapsed)
@@ -1097,14 +1163,7 @@ Will show a treeview to select the destination path and perform the move (copy&p
         }
         else #$copymethod = "PSSession_Remote"
         {
-            #Se não estiver configurado pode ser corrido este comando no destino.
-            #Demasiados passos?
-            #Enable-PSRemoting -force
-            
             Write-Output "You are running this command remotely. Will try use Remote PS Session with robocopy to copy the files."
-                    
-            #TODO: Delete
-            Get-PSSession
 
             Set-SqlDatabaseOffline
 
@@ -1119,7 +1178,10 @@ Will show a treeview to select the destination path and perform the move (copy&p
                 $FileToCopy = $file.FileToCopy
                 
                 $SourceFilePath = $file.SourceFilePath
-                $SourcePath = $file.SourceFolderPath
+                $SourceFolderPath = $file.SourceFolderPath
+
+                $DestinationFilePath = $file.DestinationFilePath
+                $DestinationFolderPath = $file.DestinationFolderPath
 
                 $LocalDestinationFilePath = $file.LocalDestinationFilePath
                 $LocalDestinationPath = $file.LocalDestinationFolderPath
@@ -1137,13 +1199,13 @@ Will show a treeview to select the destination path and perform the move (copy&p
                     Continue
                 }
 
-                if (($LocalDestinationPath -eq $SourcePath) -or ([string]::IsNullOrEmpty($LocalDestinationPath)))
+                if (($LocalDestinationPath -eq $SourceFolderPath) -or ([string]::IsNullOrEmpty($LocalDestinationPath)))
                 {
                     Write-Warning "Destination path for file '$LogicalName' is the same of source path or is empty. Skipping"
                     continue
                 }
         
-                Write-Verbose "Using RemoteSession - Copy file from path: $SourcePath"
+                Write-Verbose "Using RemoteSession - Copy file from path: $SourceFolderPath"
                 Write-Verbose "Using RemoteSession - Copy file to path: $DestinationPath"
                 Write-Verbose "Using RemoteSession - Copy file: $fileToCopy"
                 Write-Verbose "Using RemoteSession - DestinationPath and filename: $DestinationFilePath"
@@ -1158,37 +1220,33 @@ Will show a treeview to select the destination path and perform the move (copy&p
                 # NJH = Do not display robocopy job header (JH)
                 # NJS = Do not display robocopy job summary (JS)
                 # TEE = Display log in stdout AND in target log file
-                $CommonRobocopyParams = '/ndl /TEE /bytes /nfl /L';
+                $CommonRobocopyParams = '/ndl /TEE /bytes /nfl /L'
                             
-                Write-Verbose 'Analyzing robocopy job ...'
-                $StagingLogPath = '{0}\temp\{1}robocopystaging.log' -f $env:windir, (Get-Date -Format 'yyyyMMddhhmmss')
+                Write-Verbose "Analyzing robocopy job ..."
+                $StagingLogPath = "$env:windir\temp\$((Get-Date -Format 'yyyyMMddhhmmss'))RobocopyStaging.log"
 
-                $StagingArgumentList = '"{0}" "{1}" "{2}" /LOG:"{3}" {4}' -f $SourcePath, $LocalDestinationPath, $fileToCopy, $StagingLogPath, $CommonRobocopyParams
-                Write-Verbose 'Staging arguments: {0}' -f $StagingArgumentList
+                $StagingArgumentList = '"{0}" "{1}" "{2}" /LOG:"{3}" {4}' -f $SourceFolderPath, $LocalDestinationPath, $fileToCopy, $StagingLogPath, $CommonRobocopyParams
+                Write-Verbose "Staging arguments: $StagingArgumentList"
                 $scriptblock = {param($StagingArgumentList) Start-Process -Wait -FilePath robocopy -PassThru -WindowStyle Hidden -ArgumentList $StagingArgumentList}
 
-                Write-Output $scriptblock 
                 $Robocopy = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $StagingArgumentList
                 Write-Output "Robocopy: $Robocopy"
-                Start-Sleep -Milliseconds 100;
+                Start-Sleep -Milliseconds 100
                         
                 $scriptblock = {param($StagingLogPath) Get-Content $StagingLogPath}
                 $StagingContent = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $StagingLogPath 
 
-                $RobocopyLogPath = '{0}\temp\{1}robocopy.log' -f $env:windir, (Get-Date -Format 'yyyyMMddhhmmss');                       
+                $RobocopyLogPath = "$env:windir\temp\$((Get-Date -Format 'yyyyMMddhhmmss'))Robocopy.log"
                 Write-Verbose "RobocopyLogPath: $RobocopyLogPath"
 
-                $CommonRobocopyParams = '/ndl /TEE /bytes /NC';
+                $CommonRobocopyParams = '/ndl /TEE /bytes /NC'
 
-                $ArgumentList = '"{0}" "{1}" "{2}" /LOG:"{3}" {4}' -f $SourcePath, $LocalDestinationPath, $fileToCopy, $RobocopyLogPath, $CommonRobocopyParams;
-                Write-Verbose 'Execution arguments: {0}' -f $ArgumentList
+                $ArgumentList = '"{0}" "{1}" "{2}" /LOG:"{3}" {4} /R:10 /W:3' -f $SourceFolderPath, $LocalDestinationPath, $fileToCopy, $RobocopyLogPath, $CommonRobocopyParams
+                Write-Verbose "Execution arguments: $ArgumentList"
                 $scriptblock = {param($ArgumentList) Start-Process robocopy -PassThru -WindowStyle Hidden -ArgumentList $ArgumentList}                        
                 $CopyList = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $ArgumentList
 
-                Start-Sleep -Milliseconds 500;
-        
-                $FileSize = [regex]::Match($StagingContent[-4],".+:\s+(\d+)\s+(\d+)").Groups[2].Value
-                Write-Verbose ("Robocopy Bytes: $FileSize `n" +($StagingContent -join "`n"))
+                Start-Sleep -Milliseconds 500
 
                 #Add progressbar http://stackoverflow.com/questions/13883404/custom-robocopy-progress-bar-in-powershell
                 Write-Output 'Waiting for file copies to complete...'		
@@ -1198,41 +1256,48 @@ Will show a treeview to select the destination path and perform the move (copy&p
                     $scriptblock = {Get-Process "robocopy*"}
                     $CopyList = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock
 
-                    Write-Output "RobocopyLogPath: $RobocopyLogPath"
-                    $scriptblock = {
-                                    param($RobocopyLogPath) 
-                                    $file = [System.io.File]::Open($RobocopyLogPath, 'Open', 'Read', 'ReadWrite')
-                                    $reader = New-Object System.IO.StreamReader($file)
-
-                                    #done this way to replicate Get-Content output (is a collection :))
-                                    $text = @()
-                                    while(($line = $reader.ReadLine()) -ne $null)
-                                    {
-                                        $text+= "$line`r`n";
-                                    }
-                                    $reader.Close()
-                                    $file.Close()
-                                    return $text
-                                    }
-                    $LogContent = Invoke-Command -Session $remotepssession -ScriptBlock $scriptblock -ArgumentList $RobocopyLogPath
+                    $LogContent = Get-PSSessionRobocopyLogContent
 
                     $RobocopyLogFiltered = $LogContent -match "^\s*(\d+)\s+(\S+)"
 
-                    if ($RobocopyLogFiltered -ne $Null)
+                    if ($RobocopyLogFiltered -ne $Null )
                     {
-                        if ($LogContent[-1] -match "(100|\d?\d\.\d)\%")
+	                    if ($LogContent[-1] -match "(100|\d?\d\.\d)\%")
 	                    {
-                            #Write-Output "-percentComplete: $($LogContent[-1].Split("%")[0])"
-                            #Write-Output "LogContent[-1]: $($LogContent[-1])"
-                            Write-progress Copy -PercentComplete $LogContent[-1].Split("%")[0] $LogContent[-1]
+		                    Write-progress -Id 2 -ParentId 1 -Activity "Progress" -PercentComplete $LogContent[-1].Split("%")[0] $LogContent[-1]
 	                    }
 	                    else
 	                    {
-		                    Write-progress Copy -Complete
+                            if ($LogContent[-1].StartsWith("Waiting"))
+                            {
+                                Write-Warning "$($LogContent[-3]) - $($LogContent[-1])"
+                                Start-Sleep -Milliseconds 3000;
+                            }
+                            else
+                            {
+		                        Write-progress -Id 2 -ParentId 1 -Activity "Progress" -Complete
+                            }
 	                    }
                     }
+                    Start-Sleep -Milliseconds 250
 		        }
                 while (@($CopyList | Where-Object {$_.HasExited -eq $false}).Count -gt 0)
+
+                #Get content one last time to verify if it finished by "RETRY LIMIT EXCEEDED"
+                $LogContent = Get-PSSessionRobocopyLogContent
+
+                if ($LogContent | Where-Object { $_ -match "ERROR: RETRY LIMIT EXCEEDED." })
+                {
+                    $file.SuccefullHandled = $false
+                    Write-Warning "Can not copy file '$FileToCopy'. Please confirm that you have permissions to paths '$SourceFolderPath' and '$DestinationFolderPath'"
+                    continue
+                }
+                else
+                {
+                    $file.SuccefullHandled = $true
+                }
+
+                Write-progress -Id 2 -ParentId 1 "Progress" -Complete
 
                 Write-Verbose "Change file path for logical file '$LogicalName' to '$DestinationFilePath'"
                 Set-SqlDatabaseFileLocation -Database $dbName -LogicalFileName $LogicalName -PhysicalFileLocation $LocalDestinationFilePath
@@ -1264,10 +1329,13 @@ Will show a treeview to select the destination path and perform the move (copy&p
         }
         else
         {
-            Write-Warning "Source files were not deleted! You need to deleted manualy. After you check that everything is OK, you can run the following command(s)."
-            foreach ($file in $FilesToMove)
+            if ($FilesToMove | Where-Object { $_.SuccefullHandled -eq $true})
             {
-                Write-Output "Remove-Item -Path ""$($file.SourceFilePath)"""
+                Write-Warning "The -DeleteSourceFiles switch was not specified.`r`nSource files were not deleted! You need to manualy deleted all files copied.`r`nAfter you check that everything is OK, you can run the following command(s)."
+                foreach ($file in $FilesToMove | Where-Object { $_.SuccefullHandled -eq $true})
+                {
+                    Write-Output "Remove-Item -Path ""$($file.SourceFilePath)"""
+                }
             }
         }
 
