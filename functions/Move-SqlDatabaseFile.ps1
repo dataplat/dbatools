@@ -103,7 +103,7 @@ https://dbatools.io/Move-SqlDatabaseFile
 .EXAMPLE 
 Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1 
 
-Will show a grid to select the file(s), then a treeview to select the destination path and perform the move (copy&paste&delete)
+Will show a grid to select the file(s), then a treeview to select the destination path and perform the file copy
 
 .EXAMPLE 
 Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1 -ExportDatabaseStructure -OutFile "C:\temp\files.csv"
@@ -114,7 +114,27 @@ This file will have an empty column called 'DestinationFolderPath' that should b
 .EXAMPLE 
 Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1 -FileType DATA
 
-Will show a treeview to select the destination path and perform the move (copy&paste&delete) of every file of DATA (ROWS) type
+Will show a treeview to select the destination path and perform the file copy of every file of DATA (ROWS) type
+
+.EXAMPLE
+Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1 -DeleteSourceFiles
+
+Will show a grid to select the file(s), then a treeview to select the destination path and perform the move (copy&paste&delete) every selected file
+
+.EXAMPLE
+Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1 -NoDbccCheckDb
+
+Will show a grid to select the file(s), then a treeview to select the destination path and perform the copy every selected file. 
+Will NOT perform a DBCC CHECKDB!
+Usefull if you want to run it manually (for example, because database is big and will take too much time)
+
+.EXAMPLE
+Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1 -CheckFileHash
+
+Will show a grid to select the file(s), then a treeview to select the destination path and perform the copy every selected file. 
+Will perform a file hash validation for each file after his copy.
+Will perform a DBCC CHECKDB!
+Usefull if you want to run it manually (for example, because database is big and will take too much time)
 
 #>	
 	[CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName="Default")]
