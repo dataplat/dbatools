@@ -1618,9 +1618,9 @@ Function Get-ParamSqlDatabaseFileTypes
 
 	$attributes.ParameterSetName = "FileTypes"
 	$attributes.Mandatory = $true
-	$attributes.Position = 3
+	$attributes.Position = 4
 
-	# Database list parameter setup
+	# Datatypes list parameter setup
 	if ($filetypes) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $filetypes }
 	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
 	$attributeCollection.Add($attributes)
