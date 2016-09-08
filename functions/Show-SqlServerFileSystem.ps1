@@ -50,7 +50,7 @@ Show-SqlServerFileSystem -Source sqlserver2014a -SqlCredential $cred
 Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a string of the path you selected.
 	
 #>
-	[CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
