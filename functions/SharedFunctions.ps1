@@ -1622,7 +1622,7 @@ Internal command
 		$Server = 'localhost'
 		if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
 		{
-			throw "Get-DbaStartupParameter must be run with elevated privileges for the local host."
+			throw "This command must be run with elevated privileges for the local host."
 		}
 	}
 	
