@@ -666,7 +666,7 @@ Usefull if you want to run it manually (for example, because database is big and
                     #3rd compare with $InstanceSpace luns free space
                     foreach ($Drive in $TotalSpaceNeeded)
                     {
-                        [long]$FreeDiskSpace = ($AllDrivesFreeDiskSpace | Where-Object {$Drive.Name -eq $_.Name}).FreeInKB
+                        [long]$FreeDiskSpace = ($AllDrivesFreeDiskSpace | Where-Object {$Drive.Name -eq $_.Name}).FreeInKB.ToString().Replace(".", "")
                         $FreeDiskSpaceMB = [math]::Round($($FreeDiskSpace / 1024), 2)
                         $TotalSpaceNeededMB = [math]::Round($($Drive.TotalSpaceNeeded / 1024), 2)
 
@@ -955,8 +955,13 @@ Usefull if you want to run it manually (for example, because database is big and
             $fileToCopy = Split-Path -Path $($file.FileName) -leaf
 
             $file.FileToCopy = $fileToCopy
-                    
-            $file.LocalDestinationFilePath = Join-Path $file.DestinationFolderPath $fileToCopy
+           
+            Write-Host "DestinationFolderPath: $($file.DestinationFolderPath)"
+            Write-Host "DestinationFolderPath: $fileToCopy"
+
+            $file.LocalDestinationFilePath = [System.IO.Path]::Combine($file.DestinationFolderPath,$fileToCopy)
+
+            #$file.LocalDestinationFilePath = Join-Path $file.DestinationFolderPath $fileToCopy -
             $file.LocalDestinationFolderPath = $file.DestinationFolderPath
 
             if (@("UNC_Robocopy", "UNC_Bits") -contains $copymethod)
@@ -972,7 +977,10 @@ Usefull if you want to run it manually (for example, because database is big and
                                 
                 $file.SourceFolderPath = $ManageUNCPath
 
-                $file.DestinationFilePath = Join-AdminUnc -servername $sourcenetbios -FilePath $(Join-Path $file.DestinationFolderPath $fileToCopy)
+
+                $FileDestinationFolderPathFilename = [System.IO.Path]::Combine($file.DestinationFolderPath,$fileToCopy)
+                $file.DestinationFilePath = Join-AdminUnc -servername $sourcenetbios -FilePath $FileDestinationFolderPathFilename
+                #$file.DestinationFilePath = Join-AdminUnc -servername $sourcenetbios -FilePath $(Join-Path $file.DestinationFolderPath $fileToCopy)
                 
                 $ManageUNCPath = Join-AdminUnc -servername $sourcenetbios -FilePath $file.DestinationFolderPath
 
@@ -1053,6 +1061,8 @@ Usefull if you want to run it manually (for example, because database is big and
                 $dbName = $file.dbname
                 $LogicalName = $file.Name
                 $FileToCopy = $file.FileToCopy
+
+                $LocalFilePath = $file.filename
                 
                 $SourceFilePath = $file.SourceFilePath
                 $SourceFolderPath = $file.SourceFolderPath
@@ -1069,9 +1079,9 @@ Usefull if you want to run it manually (for example, because database is big and
 							-PercentComplete ($filesProgressbar / $FilesCount * 100) `
 							-Status "Copying - $filesProgressbar of $FilesCount files"
         
-                if (!(Test-SqlPath -SqlServer $server -Path $SourceFilePath))
+                if (!(Test-SqlPath -SqlServer $server -Path $LocalFilePath))#$SourceFilePath))
                 {
-                    Write-Warning "Source file or path for logical name '$LogicalName' does not exists. '$SourceFilePath'"
+                    Write-Warning "Source file or path for logical name '$LogicalName' does not exists. '$LocalFilePath'"
                     Continue
                 }
         
@@ -1099,7 +1109,7 @@ Usefull if you want to run it manually (for example, because database is big and
                         # NJH = Do not display robocopy job header (JH)
                         # NJS = Do not display robocopy job summary (JS)
                         # TEE = Display log in stdout AND in target log file
-                        $CommonRobocopyParams = '/ndl /TEE /bytes /NC /R:10 /W:3'; #/MT:2
+                        $CommonRobocopyParams = '/ndl /TEE /bytes /NC /COPY:DATS /R:10 /W:3'; #/MT:2
 
                         $RobocopyLogPath = "$env:windir\temp\$((Get-Date -Format 'yyyyMMddhhmmss'))Robocopy.log"
                         #format this way because the double-quotes ""
@@ -1272,7 +1282,7 @@ Usefull if you want to run it manually (for example, because database is big and
                 # NJH = Do not display robocopy job header (JH)
                 # NJS = Do not display robocopy job summary (JS)
                 # TEE = Display log in stdout AND in target log file
-                $CommonRobocopyParams = '/ndl /TEE /bytes /nfl /L /R:10 /W:3'
+                $CommonRobocopyParams = '/ndl /TEE /bytes /nfl /COPY:DATS /L /R:10 /W:3'
                 
                 $RobocopyLogPath = "$env:windir\temp\$((Get-Date -Format 'yyyyMMddhhmmss'))Robocopy.log"
                 Write-Verbose "RobocopyLogPath: $RobocopyLogPath"
