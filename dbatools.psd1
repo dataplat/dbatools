@@ -137,7 +137,6 @@
 		'Test-DbaJobOwner',
 		'Set-DbaJobOwner',
 		'Test-DbaVirtualLogFile',
-        'Move-SqlDatabaseFile'
 	)
 	
 	# Cmdlets to export from this module
