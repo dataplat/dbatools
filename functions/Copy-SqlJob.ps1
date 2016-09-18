@@ -79,6 +79,7 @@ Shows what would happen if the command were executed using force.
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$DisableOnSource,
 		[switch]$DisableOnDestination,
+		[switch]$IgnoreMaintenancePlan,
 		[switch]$Force
 	)
 	DynamicParam { if ($source) { return (Get-ParamSqlJobs -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
@@ -103,8 +104,23 @@ Shows what would happen if the command were executed using force.
 		foreach ($job in $serverjobs)
 		{
 			$jobname = $job.name
+			$jobId = $job.JobId
 
 			if ($jobs.count -gt 0 -and $jobs -notcontains $jobname -or $exclude -contains $jobname) { continue }
+
+			$qryValidateMaintPlan = "
+				SELECT sp.[name] AS MaintenancePlan_Name
+				FROM msdb.dbo.sysmaintplan_plans AS sp
+				INNER JOIN msdb.dbo.sysmaintplan_subplans AS sps
+					ON sps.plan_id = sp.id
+				WHERE job_id = '$($jobId)'"
+			$MaintenancePlan = $sourceserver.ConnectionContext.ExecuteWithResults($qryValidateMaintPlan).Tables.Rows
+			$MaintPlanName = $MaintenancePlan.MaintenancePlan_Name
+
+			if ($IgnoreMaintenancePlan -and $MaintenancePlan) {
+				Write-Warning "[Job: $jobname] Associated with Maintenance Plan: $($MaintPlanName). Skipping."
+				continue
+			}
 
 			$dbnames = $job.JobSteps.Databasename | Where-Object { $_.length -gt 0 }
 			$missingdb = $dbnames | Where-Object { $destserver.Databases.Name -notcontains $_ }
@@ -144,7 +160,7 @@ Shows what would happen if the command were executed using force.
 				}
 				else
 				{
-					If ($Pscmdlet.ShouldProcess($destination, "Dropping job $jobname and recreating"))
+					if ($Pscmdlet.ShouldProcess($destination, "Dropping job $jobname and recreating"))
 					{
 						try
 						{
@@ -160,7 +176,7 @@ Shows what would happen if the command were executed using force.
 				}
 			}
 
-			If ($Pscmdlet.ShouldProcess($destination, "Creating Job $jobname"))
+			if ($Pscmdlet.ShouldProcess($destination, "Creating Job $jobname"))
 			{
 				try
 				{
