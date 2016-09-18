@@ -62,6 +62,11 @@ Get-DbaRestoreHistory -SqlServer sqlserver2014a, sql2016 -Detailed -Exclude db1
 Lots of detailed information for all databases except db1 on sqlserver2014a and sql2016
 
 .EXAMPLE   
+Get-DbaRestoreHistory -SqlServer sql2014 -Databases AdventureWorks2014, pubs -Simple | Format-Table
+
+Removes From and To from output, returns information only for AdventureWorks2014 and pubs, and makes the output pretty
+
+.EXAMPLE   
 Get-SqlRegisteredServerName -SqlServer sql2016 | Get-DbaRestoreHistory
 
 Returns database restore information for every database on every server listed in the Central Management Server on sql2016
