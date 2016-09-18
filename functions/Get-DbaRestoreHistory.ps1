@@ -16,14 +16,17 @@ The SQL Server that you're connecting to.
 Credential object used to connect to the SQL Server as a different user
 
 .PARAMETER Databases
-Return restore information for only specific databases
-
+Return restore information for only specific databases. These are only the databases that currently exist on the server.
+	
 .PARAMETER Exclude
 Return restore information for all but these specific databases
 
 .PARAMETER Since
 Datetime object used to narrow the results to a date
 
+.PARAMETER Simple
+Removes the From and To fields
+	
 .PARAMETER Detailed
 Returns a ton of information about the backup history with a max of 1000 rows
 	
@@ -69,9 +72,11 @@ Returns database restore information for every database on every server listed i
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
+		[Alias("SqlCredential")]
 		[PsCredential]$Credential,
 		[datetime]$Since,
 		[switch]$Detailed,
+		[switch]$Simple,
 		[switch]$Force
 	)
 	
@@ -186,11 +191,11 @@ Returns database restore information for every database on every server listed i
 				{
 					$dbrows = $results.Rows | Where-Object { $_.Server -eq $db.Server -and $_.Database -eq $db.Database }
 					
-					$allfrom = ($dbrows | Select-Object From -Unique).From
-					$allto = ($dbrows | Select-Object To -Unique).To
+					$allfrom = ($dbrows | Select-Object From -Unique).From.Trim()
+					$allto = ($dbrows | Select-Object To -Unique).To.Trim()
 					
 					$collection += [PSCustomObject]@{
-						Server = $dbrows[0].Server
+						Server = $server
 						Database = $dbrows[0].Database
 						Username = $dbrows[0].Username
 						RestoreType = $dbrows[0].RestoreType
@@ -209,6 +214,13 @@ Returns database restore information for every database on every server listed i
 	
 	END
 	{
-		return $collection
+		if ($Simple -eq $true)
+		{
+			return ($collection | Select-Object * -ExcludeProperty From, To)
+		}
+		else
+		{
+			return $collection
+		}
 	}
 }
