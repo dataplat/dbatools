@@ -121,6 +121,19 @@ Shows what would happen if the command were executed using force.
 				Write-Warning "[Job: $jobname] Associated with Maintenance Plan: $($MaintPlanName). Skipping."
 				continue
 			}
+			if(!$IgnoreMaintenancePlan -and $MaintPlanName)
+			{
+				if ($force)
+				{
+					Write-Output "[Job: $jobname] associated with Maintenance Plan: $($MaintPlanName). Copying Maintenance Plan."
+					Copy-SqlMaintenancePlan -Source $Source -Destination $Destination -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential -MaintenancePlans $MaintenancePlan -Force
+				}
+				else
+				{
+					Write-Output "[Job: $jobname] associated with Maintenance Plan: $($MaintPlanName). Copying Maintenance Plan."
+					Copy-SqlMaintenancePlan -Source $Source -Destination $Destination -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential -MaintenancePlans $MaintenancePlan
+				}
+			}
 
 			$dbnames = $job.JobSteps.Databasename | Where-Object { $_.length -gt 0 }
 			$missingdb = $dbnames | Where-Object { $destserver.Databases.Name -notcontains $_ }
