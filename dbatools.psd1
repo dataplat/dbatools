@@ -136,7 +136,12 @@
 		'Set-DbaDatabaseOwner',
 		'Test-DbaJobOwner',
 		'Set-DbaJobOwner',
-		'Test-DbaVirtualLogFile'
+		'Test-DbaVirtualLogFile',
+		'Get-DbaRestoreHistory',
+		'Get-DbaTcpPort',
+		'Test-DbaDatabaseCompatibility',
+		'Test-DbaDatabaseCollation',
+		'Test-DbaConnectionAuthScheme'
 	)
 	
 	# Cmdlets to export from this module

@@ -26,3 +26,4 @@ $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.M
 $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Dmf")
 $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers")
 $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.ConnectionInfo")
+$null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SqlWmiManagement")
