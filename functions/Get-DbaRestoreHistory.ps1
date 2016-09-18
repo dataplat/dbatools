@@ -120,8 +120,9 @@ Returns database restore information for every database on every server listed i
 				else
 				{
 					$select = "Select
-					@@Servername AS [Server],
+					'$server' AS [Server],
 					rsh.destination_database_name AS [Database],
+					rsh.restore_history_id as RestoreHistoryID,
 					rsh.user_name AS [Username],
 					CASE WHEN rsh.restore_type = 'D' THEN 'Database'
 					WHEN rsh.restore_type = 'F' THEN 'File'
@@ -190,17 +191,17 @@ Returns database restore information for every database on every server listed i
 			
 			if ($Detailed -eq $false -and $Force -eq $false)
 			{
-				$dbs = $results.Rows | Select-Object Server, Database -Unique
+				$dbs = $results.Rows | Select-Object Server, Database, RestoreHistoryId -Unique
 				
 				foreach ($db in $dbs)
 				{
-					$dbrows = $results.Rows | Where-Object { $_.Server -eq $db.Server -and $_.Database -eq $db.Database }
+					$dbrows = $results.Rows | Where-Object { $_.Server -eq $db.Server -and $_.Database -eq $db.Database -and $_.RestoreHistoryId -eq $db.RestoreHistoryId }
 					
 					$allfrom = ($dbrows | Select-Object From -Unique).From.Trim()
 					$allto = ($dbrows | Select-Object To -Unique).To.Trim()
 					
 					$collection += [PSCustomObject]@{
-						Server = $server
+						Server = $dbrows[0].Server
 						Database = $dbrows[0].Database
 						Username = $dbrows[0].Username
 						RestoreType = $dbrows[0].RestoreType
