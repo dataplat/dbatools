@@ -23,12 +23,9 @@ Return restore information for all but these specific databases
 
 .PARAMETER Since
 Datetime object used to narrow the results to a date
-
-.PARAMETER Simple
-Removes the From and To fields
 	
 .PARAMETER Detailed
-Returns a ton of information about the backup history with a max of 1000 rows
+Returns default information plus From (\\server\backups\test.bak) and To (the mdf and ldf locations) information
 	
 .PARAMETER Force
 Returns a ton of information about the backup history with no max rows
@@ -49,7 +46,7 @@ https://dbatools.io/Get-DbaRestoreHistory
 .EXAMPLE
 Get-DbaRestoreHistory -SqlServer sqlserver2014a
 
-Returns server name, database, username, restore type, date, from file and to files for all restored databases on sqlserver2014a.
+Returns server name, database, username, restore type, date for all restored databases on sqlserver2014a.
 
 .EXAMPLE   
 Get-DbaRestoreHistory -SqlServer sqlserver2014a -Databases db1, db2 -Since '7/1/2016 10:47:00'
@@ -62,9 +59,9 @@ Get-DbaRestoreHistory -SqlServer sqlserver2014a, sql2016 -Detailed -Exclude db1
 Lots of detailed information for all databases except db1 on sqlserver2014a and sql2016
 
 .EXAMPLE   
-Get-DbaRestoreHistory -SqlServer sql2014 -Databases AdventureWorks2014, pubs -Simple | Format-Table
+Get-DbaRestoreHistory -SqlServer sql2014 -Databases AdventureWorks2014, pubs -Detailed | Format-Table
 
-Removes From and To from output, returns information only for AdventureWorks2014 and pubs, and makes the output pretty
+Adds From and To file information to output, returns information only for AdventureWorks2014 and pubs, and makes the output pretty
 
 .EXAMPLE   
 Get-SqlRegisteredServerName -SqlServer sql2016 | Get-DbaRestoreHistory
@@ -81,7 +78,6 @@ Returns database restore information for every database on every server listed i
 		[PsCredential]$Credential,
 		[datetime]$Since,
 		[switch]$Detailed,
-		[switch]$Simple,
 		[switch]$Force
 	)
 	
@@ -109,13 +105,9 @@ Returns database restore information for every database on every server listed i
 			{
 				$sourceserver = Connect-SqlServer -SqlServer $server -SqlCredential $Credential
 				
-				if ($detailed -eq $true)
+				if ($force -eq $true)
 				{
-					$select = "SELECT top 1000 *"
-				}
-				elseif ($force -eq $true)
-				{
-					$select = "SELECT * FROM"
+					$select = "SELECT * "
 				}
 				else
 				{
@@ -189,23 +181,23 @@ Returns database restore information for every database on every server listed i
 				continue
 			}
 			
-			if ($Detailed -eq $false -and $Force -eq $false)
+			if ($Force -eq $false)
 			{
-				$dbs = $results.Rows | Select-Object Server, Database, RestoreHistoryId -Unique
+				$restores = $results.Rows | Select-Object Server, Database, RestoreHistoryId -Unique
 				
-				foreach ($db in $dbs)
+				foreach ($restore in $restores)
 				{
-					$dbrows = $results.Rows | Where-Object { $_.Server -eq $db.Server -and $_.Database -eq $db.Database -and $_.RestoreHistoryId -eq $db.RestoreHistoryId }
+					$restorerows = $results.Rows | Where-Object { $_.Server -eq $restore.Server -and $_.Database -eq $restore.Database -and $_.RestoreHistoryId -eq $restore.RestoreHistoryId }
 					
-					$allfrom = ($dbrows | Select-Object From -Unique).From.Trim()
-					$allto = ($dbrows | Select-Object To -Unique).To.Trim()
+					$allfrom = ($restorerows | Select-Object From -Unique).From.Trim()
+					$allto = ($restorerows | Select-Object To -Unique).To.Trim()
 					
 					$collection += [PSCustomObject]@{
-						Server = $dbrows[0].Server
-						Database = $dbrows[0].Database
-						Username = $dbrows[0].Username
-						RestoreType = $dbrows[0].RestoreType
-						Date = $dbrows[0].Date
+						Server = $restorerows[0].Server
+						Database = $restorerows[0].Database
+						Username = $restorerows[0].Username
+						RestoreType = $restorerows[0].RestoreType
+						Date = $restorerows[0].Date
 						From = $allfrom
 						To = $allto
 					}
@@ -220,13 +212,11 @@ Returns database restore information for every database on every server listed i
 	
 	END
 	{
-		if ($Simple -eq $true)
-		{
-			return ($collection | Select-Object * -ExcludeProperty From, To)
-		}
-		else
+		if ($Detailed -eq $true -or $Force -eq $true)
 		{
 			return $collection
 		}
+		
+		return ($collection | Select-Object * -ExcludeProperty From, To)
 	}
 }
