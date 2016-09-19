@@ -1654,6 +1654,8 @@ Internal command
 		{
 			$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList
 		}
+		
+		Write-Verbose "Local connect worked"
 	}
 	catch
 	{
@@ -1672,7 +1674,6 @@ Internal command
 			else
 			{
 				$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ComputerName $hostname
-				
 			}
 		}
 		catch
