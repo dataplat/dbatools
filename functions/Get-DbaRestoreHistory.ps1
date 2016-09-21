@@ -172,7 +172,7 @@ Returns database restore information for every database on every server listed i
 				}
 				
 				$sql = "$select $from $where"
-				Write-Verbose $sql
+				Write-Debug $sql
 				$results = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables
 			}
 			catch
@@ -192,7 +192,7 @@ Returns database restore information for every database on every server listed i
 					$allfrom = ($restorerows | Select-Object From -Unique).From.Trim()
 					$allto = ($restorerows | Select-Object To -Unique).To.Trim()
 					
-					$collection += [PSCustomObject]@{
+					$null = $collection.Add([PSCustomObject]@{
 						Server = $restorerows[0].Server
 						Database = $restorerows[0].Database
 						Username = $restorerows[0].Username
@@ -200,12 +200,12 @@ Returns database restore information for every database on every server listed i
 						Date = $restorerows[0].Date
 						From = $allfrom
 						To = $allto
-					}
+					})
 				}
 			}
 			else
 			{
-				$collection += $results
+				$null = $collection.Add($results)
 			}
 		}
 	}
