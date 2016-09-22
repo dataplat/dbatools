@@ -72,6 +72,8 @@ Skips some prompts/confirms but not all of them.
 	
 	PROCESS
 	{
+		$servercount++
+		
 		foreach ($servername in $SqlServer)
 		{
 			try
@@ -80,7 +82,7 @@ Skips some prompts/confirms but not all of them.
 			}
 			catch
 			{
-				if ($SqlServer.count -eq 1)
+				if ($servercount -eq 1)
 				{
 					throw $_
 				}

@@ -73,6 +73,8 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 	
 	PROCESS
 	{
+		$servercount++
+		
 		foreach ($servername in $SqlServer)
 		{
 			try
@@ -81,7 +83,7 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 			}
 			catch
 			{
-				if ($SqlServer.count -eq 1)
+				if ($servercount -eq 1)
 				{
 					throw $_
 				}
