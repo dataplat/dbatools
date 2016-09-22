@@ -140,10 +140,11 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 				$servicename = "SQL Server Reporting Services ($instance)"
 				$netbiosname = $server.ComputerNamePhysicalNetBIOS
 				Write-Verbose "Checking for $servicename on $netbiosname"
+				$rs = $null
 				
 				try
 				{
-					$rs = Get-Service -ComputerName $netbiosname -DisplayName $servicename -ErrorAction SilentlyContinue
+					 $rs = Get-Service -ComputerName $netbiosname -DisplayName $servicename -ErrorAction SilentlyContinue
 				}
 				catch
 				{
