@@ -138,17 +138,18 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 			{
 				$reasons = @()
 				$servicename = "SQL Server Reporting Services ($instance)"
-				Write-Verbose "Checking for $servicename on $($server.ComputerNamePhysicalNetBIOS)"
+				$netbiosname = $server.ComputerNamePhysicalNetBIOS
+				Write-Verbose "Checking for $servicename on $netbiosname"
 				
 				try
 				{
-					$rs = Get-Service -ComputerName $server.ComputerNamePhysicalNetBIOS -DisplayName $servicename -ErrorAction SilentlyContinue
+					$rs = Get-Service -ComputerName $netbiosname -DisplayName $servicename -ErrorAction SilentlyContinue
 				}
 				catch
 				{
 					if ($NoWarnings -eq $false)
 					{
-						Write-Warning "Can't contact $($server.ComputerNamePhysicalNetBIOS) using Get-Service. This means the script will not be able to automatically restart SQL services."
+						Write-Warning "Can't contact $netbiosname using Get-Service. This means the script will not be able to automatically restart SQL services."
 					}
 				}
 				
@@ -167,6 +168,8 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 				
 				# check for mirroring
 				$mirroreddb = $server.Databases | Where-Object { $_.IsMirroringEnabled -eq $true }
+				
+				Write-Debug "Found the following mirrored dbs: $($mirroreddb.name)"
 				
 				if ($mirroreddb.length -gt 0)
 				{
