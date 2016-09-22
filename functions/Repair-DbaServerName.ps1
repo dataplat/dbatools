@@ -82,7 +82,7 @@ Skips some prompts/confirms but not all of them.
 			}
 			catch
 			{
-				if ($servercount -eq 1)
+				if ($servercount -eq 1 -and $SqlServer.count -eq 1)
 				{
 					throw $_
 				}
@@ -95,7 +95,7 @@ Skips some prompts/confirms but not all of them.
 			
 			if ($server.isClustered)
 			{
-				if ($SqlServer.count -eq 1)
+				if ($servercount -eq 1 -and $SqlServer.count -eq 1)
 				{
 					# If we ever decide with a -Force to support a cluster name change
 					# We would compare $server.NetName, and never ComputerNamePhysicalNetBIOS
@@ -104,6 +104,19 @@ Skips some prompts/confirms but not all of them.
 				else
 				{
 					Write-Warning "$servername is a cluster. Microsoft does not support renaming clusters."
+					Continue
+				}
+			}
+			
+			if ($server.VersionMajor -eq 8)
+			{
+				if ($servercount -eq 1 -and $SqlServer.count -eq 1)
+				{
+					throw "SQL Server 2000 not supported."
+				}
+				else
+				{
+					Write-Warning "SQL Server 2000 not supported. Skipping $servername."
 					Continue
 				}
 			}

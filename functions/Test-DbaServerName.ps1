@@ -83,7 +83,7 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 			}
 			catch
 			{
-				if ($servercount -eq 1)
+				if ($servercount -eq 1 -and $SqlServer.count -eq 1) # This helps with handling servernames being passed via commandline or via pipeline
 				{
 					throw $_
 				}
@@ -98,6 +98,19 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 			if ($server.isClustered)
 			{
 				Write-Warning "$servername is a cluster. Renaming clusters is not supported by Microsoft."
+			}
+			
+			if ($server.VersionMajor -eq 8)
+			{
+				if ($servercount -eq 1 -and $SqlServer.count -eq 1)
+				{
+					throw "SQL Server 2000 not supported."
+				}
+				else
+				{
+					Write-Warning "SQL Server 2000 not supported. Skipping $servername."
+					Continue
+				}
 			}
 			
 			$sqlservername = $server.ConnectionContext.ExecuteScalar("select @@servername")
