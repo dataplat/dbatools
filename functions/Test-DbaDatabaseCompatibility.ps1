@@ -1,11 +1,11 @@
-﻿Function Test-DbaDatabaseCompatability
+﻿Function Test-DbaDatabaseCompatibility
 {
 <#
 .SYNOPSIS
-Compares Database Compatability level to Server Compatability
+Compares Database Compatibility level to Server Compatibility
 	
 .DESCRIPTION
-Compares Database Compatability level to Server Compatability
+Compares Database Compatibility level to Server Compatibility
 	
 .PARAMETER SqlServer
 The SQL Server that you're connecting to.
@@ -20,7 +20,7 @@ Return information for only specific databases
 Return information for all but these specific databases
 
 .PARAMETER Detailed
-Shows detailed information about the server and database compatability level
+Shows detailed information about the server and database compatibility level
 
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -33,25 +33,25 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Test-DbaDatabaseCompatability
+https://dbatools.io/Test-DbaDatabaseCompatibility
 
 .EXAMPLE
-Test-DbaDatabaseCompatability -SqlServer sqlserver2014a
+Test-DbaDatabaseCompatibility -SqlServer sqlserver2014a
 
-Returns server name, databse name and true/false if the compatability level match for all databases on sqlserver2014a
+Returns server name, databse name and true/false if the compatibility level match for all databases on sqlserver2014a
 
 .EXAMPLE   
-Test-DbaDatabaseCompatability -SqlServer sqlserver2014a -Databases db1, db2
+Test-DbaDatabaseCompatibility -SqlServer sqlserver2014a -Databases db1, db2
 
-Returns server name, databse name and true/false if the compatability level match for the db1 and db2 databases on sqlserver2014a
+Returns server name, databse name and true/false if the compatibility level match for the db1 and db2 databases on sqlserver2014a
 	
 .EXAMPLE   
-Test-DbaDatabaseCompatability -SqlServer sqlserver2014a, sql2016 -Detailed -Exclude db1
+Test-DbaDatabaseCompatibility -SqlServer sqlserver2014a, sql2016 -Detailed -Exclude db1
 
-Lots of detailed information for database and server compatability level for all databases except db1 on sqlserver2014a and sql2016
+Lots of detailed information for database and server compatibility level for all databases except db1 on sqlserver2014a and sql2016
 
 .EXAMPLE   
-Get-SqlRegisteredServerName -SqlServer sql2014 | Test-DbaDatabaseCompatability
+Get-SqlRegisteredServerName -SqlServer sql2014 | Test-DbaDatabaseCompatibility
 
 Returns db/server collation information for every database on every server listed in the Central Management Server on sql2016
 	
