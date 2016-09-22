@@ -115,7 +115,7 @@ Skips some prompts/confirms but not all of them.
 			
 			if ($nametest.RenameRequired -eq $false)
 			{
-				return "$serverinstancename's @@SERVERNAME is perfect :) If you'd like to rename it, first rename the Windows server."
+				return "Good news! $serverinstancename's @@SERVERNAME does not need to be changed. If you'd like to rename it, first rename the Windows server."
 			}
 			
 			if ($nametest.updatable -eq $false)
@@ -213,6 +213,13 @@ Skips some prompts/confirms but not all of them.
 				}
 			}
 			
+			$instancename = $instance = $server.InstanceName
+			
+			if ($instancename.length -eq 0)
+			{
+				$instancename = $instance = "MSSQLSERVER"
+			}
+			
 			try
 			{
 				$allsqlservices = Get-Service -ComputerName $server.ComputerNamePhysicalNetBIOS -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "SQL*$instance*" -and $_.Status -eq "Running" }
@@ -223,10 +230,7 @@ Skips some prompts/confirms but not all of them.
 			}
 			
 			if ($nametest.Warnings.length -gt 0)
-			{
-				$instancename = $instance = $server.InstanceName
-				if ($instance.length -eq 0) { $instance = "MSSQLSERVER" }
-				
+			{				
 				$reportingservice = Get-Service -ComputerName $server.ComputerNamePhysicalNetBIOS -DisplayName "SQL Server Reporting Services ($instance)" -ErrorAction SilentlyContinue
 				
 				if ($reportingservice.Status -eq "Running")
@@ -258,7 +262,7 @@ Skips some prompts/confirms but not all of them.
 				try
 				{
 					$null = $server.ConnectionContext.ExecuteNonQuery($sql)
-					Write-Output "Successfully executed $sql`n"
+					Write-Output "Successfully executed $sql"
 				}
 				catch
 				{
@@ -275,12 +279,14 @@ Skips some prompts/confirms but not all of them.
 			}
 			else
 			{
-				if ($Pscmdlet.ShouldProcess($server.ComputerNamePhysicalNetBIOS, "Rename complete! The SQL Service must be restarted to commit the changes. Would you like to restart this instance now?"))
+				if ($Pscmdlet.ShouldProcess($server.ComputerNamePhysicalNetBIOS, "Rename complete! The SQL Service must be restarted to commit the changes. Would you like to restart the $instancname instance now?"))
 				{
 					try
 					{
-						$allsqlservices | Stop-Service -Force
-						$allsqlservices | Where-Object { $_.DisplayName -notlike "*reporting*" } | Start-Service
+						Write-Output "`nStopping SQL Services for the $instancename instance"
+						$allsqlservices | Stop-Service -Force -WarningAction SilentlyContinue # because it reports the wrong name
+						Write-Output "Starting SQL Services for the $instancename instance"
+						$allsqlservices | Where-Object { $_.DisplayName -notlike "*reporting*" } | Start-Service -WarningAction SilentlyContinue # because it reports the wrong name
 					}
 					catch
 					{
