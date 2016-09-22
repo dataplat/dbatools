@@ -160,7 +160,6 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 				# check for mirroring
 				$mirroreddb = $server.Databases | Where-Object { $_.IsMirroringEnabled -eq $true }
 				
-				if ($mirroreddb.count -gt 0)
 				{
 					$dbs = $mirroreddb.name -join ", "
 					$reasons += "Databases are being mirrored: $dbs"
