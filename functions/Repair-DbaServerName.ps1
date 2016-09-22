@@ -309,6 +309,6 @@ Skips some prompts/confirms but not all of them.
 	}
 	END
 	{
-		Write-Output "`nScript Complete"
+		# Nothing needed
 	}
 }
