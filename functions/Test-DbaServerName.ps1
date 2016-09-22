@@ -168,6 +168,7 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 				
 				# check for replication
 				$sql = "select name from sys.databases where is_published = 1 or is_subscribed =1 or is_distributor = 1"
+				Write-Debug $sql
 				$replicatedb = $server.ConnectionContext.ExecuteWithResults($sql).Tables
 				
 				if ($replicatedb.name.count -gt 0)
@@ -178,6 +179,7 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 				
 				# check for even more replication
 				$sql = "select srl.remote_name as RemoteLoginName from sys.remote_logins srl join sys.sysservers sss on srl.server_id = sss.srvid"
+				Write-Debug $sql
 				$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables
 				
 				if ($results.RemoteLoginName.count -gt 0)

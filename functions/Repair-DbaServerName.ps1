@@ -168,6 +168,7 @@ Skips some prompts/confirms but not all of them.
 								{
 									Write-Output "`nPerforming sp_dropdistributor @no_checks = 1"
 									$sql = "sp_dropdistributor @no_checks = 1"
+									Write-Debug $sql
 									try
 									{
 										$null = $server.ConnectionContext.ExecuteNonQuery($sql)
@@ -268,6 +269,7 @@ Skips some prompts/confirms but not all of them.
 			if ($Pscmdlet.ShouldProcess($server.name, "Performing sp_dropserver to remove the old server name, $sqlservername, then sp_addserver to add $serverinstancename"))
 			{
 				$sql = "sp_dropserver '$sqlservername'"
+				Write-Debug $sql
 				try
 				{
 					$null = $server.ConnectionContext.ExecuteNonQuery($sql)
@@ -280,6 +282,7 @@ Skips some prompts/confirms but not all of them.
 				}
 				
 				$sql = "sp_addserver '$serverinstancename', local"
+				Write-Debug $sql
 				
 				try
 				{
