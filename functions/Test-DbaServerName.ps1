@@ -151,15 +151,23 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 					}
 				}
 				
-				if ($rs.count -gt 0)
+				if ($rs.length -gt 0)
 				{
-					$rstext = "Reporting Services must be stopped and updated"
+					if ($rs.Status -eq 'Running')
+					{
+						$rstext = "Reporting Services must be stopped and updated."
+					}
+					else
+					{
+						$rstext = "Reporting Services exists. When it is started again, it must be updated."
+					}
 					$serverinfo | Add-Member -NotePropertyName Warnings -NotePropertyValue $rstext
 				}
 				
 				# check for mirroring
 				$mirroreddb = $server.Databases | Where-Object { $_.IsMirroringEnabled -eq $true }
 				
+				if ($mirroreddb.length -gt 0)
 				{
 					$dbs = $mirroreddb.name -join ", "
 					$reasons += "Databases are being mirrored: $dbs"
@@ -170,7 +178,7 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 				Write-Debug $sql
 				$replicatedb = $server.ConnectionContext.ExecuteWithResults($sql).Tables
 				
-				if ($replicatedb.name.count -gt 0)
+				if ($replicatedb.name.length -gt 0)
 				{
 					$dbs = $replicatedb.name -join ", "
 					$reasons += "Databases are involved in replication: $dbs"
@@ -181,13 +189,13 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 				Write-Debug $sql
 				$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables
 				
-				if ($results.RemoteLoginName.count -gt 0)
+				if ($results.RemoteLoginName.length -gt 0)
 				{
 					$remotelogins = $results.RemoteLoginName -join ", "
 					$reasons += "Remote logins still exist: $remotelogins"
 				}
 				
-				if ($reasons.count -gt 0)
+				if ($reasons.length -gt 0)
 				{
 					$serverinfo | Add-Member -NotePropertyName Updatable -NotePropertyValue $false
 					$serverinfo | Add-Member -NotePropertyName Blockers -NotePropertyValue $reasons
