@@ -138,30 +138,33 @@ Skips some prompts/confirms but not all of them.
 						}
 						else
 						{
-							$title = "You have chosen to AutoFix the blocker: replication."
-							$message = "We can run sp_dropdistributor which will pretty much destroy replication on this server. Do you wish to continue? (Y/N)"
-							$yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Will continue"
-							$no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Will exit"
-							$options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
-							$result = $host.ui.PromptForChoice($title, $message, $options, 1)
-							
-							if ($result -eq 1)
+							if ($Pscmdlet.ShouldProcess("console", "Prompt will appear for confirmation to break replication."))
 							{
-								throw "Cannot continue"
-							}
-							else
-							{
-								Write-Output "`nPerforming sp_dropdistributor @no_checks = 1"
-								$sql = "sp_dropdistributor @no_checks = 1"
-								try
+								$title = "You have chosen to AutoFix the blocker: replication."
+								$message = "We can run sp_dropdistributor which will pretty much destroy replication on this server. Do you wish to continue? (Y/N)"
+								$yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Will continue"
+								$no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Will exit"
+								$options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+								$result = $host.ui.PromptForChoice($title, $message, $options, 1)
+								
+								if ($result -eq 1)
 								{
-									$null = $server.ConnectionContext.ExecuteNonQuery($sql)
-									Write-Output "Successfully executed $sql`n"
+									throw "Cannot continue"
 								}
-								catch
+								else
 								{
-									Write-Exception $_
-									throw $_
+									Write-Output "`nPerforming sp_dropdistributor @no_checks = 1"
+									$sql = "sp_dropdistributor @no_checks = 1"
+									try
+									{
+										$null = $server.ConnectionContext.ExecuteNonQuery($sql)
+										Write-Output "Successfully executed $sql`n"
+									}
+									catch
+									{
+										Write-Exception $_
+										throw $_
+									}
 								}
 							}
 						}
@@ -174,38 +177,41 @@ Skips some prompts/confirms but not all of them.
 						}
 						else
 						{
-							$title = "You have chosen to AutoFix the blocker: mirroring."
-							$message = "We can run sp_dropdistributor which will pretty much destroy replication on this server. Do you wish to continue? (Y/N)"
-							$yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Will continue"
-							$no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Will exit"
-							$options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
-							$result = $host.ui.PromptForChoice($title, $message, $options, 1)
-							
-							if ($result -eq 1)
+							if ($Pscmdlet.ShouldProcess("console", "Prompt will appear for confirmation to break replication."))
 							{
-								Write-Output "Okay, moving on."
-							}
-							else
-							{
-								Write-Output "Removing Mirroring"
+								$title = "You have chosen to AutoFix the blocker: mirroring."
+								$message = "We can run sp_dropdistributor which will pretty much destroy replication on this server. Do you wish to continue? (Y/N)"
+								$yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Will continue"
+								$no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Will exit"
+								$options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+								$result = $host.ui.PromptForChoice($title, $message, $options, 1)
 								
-								foreach ($database in $server.Databases)
+								if ($result -eq 1)
 								{
-									if ($database.IsMirroringEnabled)
+									Write-Output "Okay, moving on."
+								}
+								else
+								{
+									Write-Output "Removing Mirroring"
+									
+									foreach ($database in $server.Databases)
 									{
-										$dbname = $database.name
-										
-										try
+										if ($database.IsMirroringEnabled)
 										{
-											Write-Output "Breaking mirror for $dbname"
-											$database.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
-											$database.Alter()
-											$database.Refresh()
-										}
-										catch
-										{
-											Write-Exception $_
-											throw "Could not break mirror for $dbname. Skipping."
+											$dbname = $database.name
+											
+											try
+											{
+												Write-Output "Breaking mirror for $dbname"
+												$database.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
+												$database.Alter()
+												$database.Refresh()
+											}
+											catch
+											{
+												Write-Exception $_
+												throw "Could not break mirror for $dbname. Skipping."
+											}
 										}
 									}
 								}
@@ -214,6 +220,7 @@ Skips some prompts/confirms but not all of them.
 					}
 				}
 			}
+			# ^ That's embarassing
 			
 			$instancename = $instance = $server.InstanceName
 			
