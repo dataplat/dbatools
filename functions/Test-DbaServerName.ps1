@@ -138,6 +138,7 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 			{
 				$reasons = @()
 				$servicename = "SQL Server Reporting Services ($instance)"
+				Write-Verbose "Checking for $servicename on $($server.ComputerNamePhysicalNetBIOS)"
 				
 				try
 				{
