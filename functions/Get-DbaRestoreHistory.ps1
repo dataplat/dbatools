@@ -111,29 +111,35 @@ Returns database restore information for every database on every server listed i
 				}
 				else
 				{
-					$select = "Select
-					'$server' AS [Server],
-					rsh.destination_database_name AS [Database],
-					rsh.restore_history_id as RestoreHistoryID,
-					rsh.user_name AS [Username],
-					CASE WHEN rsh.restore_type = 'D' THEN 'Database'
-					WHEN rsh.restore_type = 'F' THEN 'File'
-					WHEN rsh.restore_type = 'G' THEN 'Filegroup'
-					WHEN rsh.restore_type = 'I' THEN 'Differential'
-					WHEN rsh.restore_type = 'L' THEN 'Log'
-					WHEN rsh.restore_type = 'V' THEN 'Verifyonly'
-					WHEN rsh.restore_type = 'R' THEN 'Revert'
-					ELSE rsh.restore_type
-					END AS [RestoreType],
-						   rsh.restore_date AS [Date],
-						   bmf.physical_device_name AS [From],
-						   rf.destination_phys_name AS [To]"
+					$select = "SELECT 
+				     '$server' AS [Server],
+				     rsh.destination_database_name AS [Database],
+				     --rsh.restore_history_id as RestoreHistoryID,
+				     rsh.user_name AS [Username],
+				     CASE 
+						 WHEN rsh.restore_type = 'D' THEN 'Database'
+						 WHEN rsh.restore_type = 'F' THEN 'File'
+						 WHEN rsh.restore_type = 'G' THEN 'Filegroup'
+						 WHEN rsh.restore_type = 'I' THEN 'Differential'
+						 WHEN rsh.restore_type = 'L' THEN 'Log'
+						 WHEN rsh.restore_type = 'V' THEN 'Verifyonly'
+						 WHEN rsh.restore_type = 'R' THEN 'Revert'
+						 ELSE rsh.restore_type
+				     END AS [RestoreType],
+				     rsh.restore_date AS [Date],
+				     ISNULL(STUFF((SELECT ', ' + bmf.physical_device_name 
+									FROM msdb.dbo.backupmediafamily bmf
+								   WHERE bmf.media_set_id = bs.media_set_id
+								 FOR XML PATH('')), 1, 2, ''), '') AS [From],
+				     ISNULL(STUFF((SELECT ', ' + rf.destination_phys_name 
+									FROM msdb.dbo.restorefile rf
+								   WHERE rsh.restore_history_id = rf.restore_history_id
+								 FOR XML PATH('')), 1, 2, ''), '') AS [To]  
+				  "
 				}
 				
 				$from = " FROM msdb.dbo.restorehistory rsh
-				INNER JOIN msdb.dbo.backupset bs ON rsh.backup_set_id = bs.backup_set_id
-				INNER JOIN msdb.dbo.restorefile rf ON rsh.restore_history_id = rf.restore_history_id
-				INNER JOIN msdb.dbo.backupmediafamily bmf ON bmf.media_set_id = bs.media_set_id"
+					INNER JOIN msdb.dbo.backupset bs ON rsh.backup_set_id = bs.backup_set_id"
 				
 				if ($exclude.length -gt 0 -or $databases.length -gt 0 -or $Since.length -gt 0)
 				{
@@ -181,32 +187,7 @@ Returns database restore information for every database on every server listed i
 				continue
 			}
 			
-			if ($Force -eq $false)
-			{
-				$restores = $results.Rows | Select-Object Server, Database, RestoreHistoryId -Unique
-				
-				foreach ($restore in $restores)
-				{
-					$restorerows = $results.Rows | Where-Object { $_.Server -eq $restore.Server -and $_.Database -eq $restore.Database -and $_.RestoreHistoryId -eq $restore.RestoreHistoryId }
-					
-					$allfrom = ($restorerows | Select-Object From -Unique).From.Trim()
-					$allto = ($restorerows | Select-Object To -Unique).To.Trim()
-					
-					$null = $collection.Add([PSCustomObject]@{
-						Server = $restorerows[0].Server
-						Database = $restorerows[0].Database
-						Username = $restorerows[0].Username
-						RestoreType = $restorerows[0].RestoreType
-						Date = $restorerows[0].Date
-						From = $allfrom
-						To = $allto
-					})
-				}
-			}
-			else
-			{
-				$null = $collection.Add($results)
-			}
+			$null = $collection.Add($results)
 		}
 	}
 	
@@ -214,9 +195,9 @@ Returns database restore information for every database on every server listed i
 	{
 		if ($Detailed -eq $true -or $Force -eq $true)
 		{
-			return $collection
+			return $collection.rows
 		}
 		
-		return ($collection | Select-Object * -ExcludeProperty From, To)
+		return ($collection.rows | Select-Object * -ExcludeProperty From, To, RowError, Rowstate, table, itemarray, haserrors)
 	}
 }
