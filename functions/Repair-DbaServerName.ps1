@@ -97,11 +97,11 @@ Skips some prompts/confirms but not all of them.
 				{
 					# If we ever decide with a -Force to support a cluster name change
 					# We would compare $server.NetName, and never ComputerNamePhysicalNetBIOS
-					throw "$servername is a cluster. Microsoft does not support renaming clusters. Not messing with that."
+					throw "$servername is a cluster. Microsoft does not support renaming clusters."
 				}
 				else
 				{
-					Write-Warning "$servername is a cluster. Microsoft does not support renaming clusters. Not messing with that."
+					Write-Warning "$servername is a cluster. Microsoft does not support renaming clusters."
 					Continue
 				}
 			}
