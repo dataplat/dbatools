@@ -95,7 +95,7 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 			
 			if ($server.isClustered)
 			{
-				Write-Warning "$servername is a cluster. Repair-DbaServerName does not support clusters."
+				Write-Warning "$servername is a cluster. Renaming clusters is not supported by Microsoft."
 			}
 			
 			$sqlservername = $server.ConnectionContext.ExecuteScalar("select @@servername")
