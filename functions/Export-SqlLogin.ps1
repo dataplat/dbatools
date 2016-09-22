@@ -10,9 +10,9 @@ Exports Windows and SQL Logins to a T-SQL file. Export includes login, SID, pass
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
 .PARAMETER SqlServer
-The SQL Server to export the logins from. SQL Server 2000 and above supported.
+The SQL Server instance name. SQL Server 2000 and above supported.
 
-.PARAMETER FileName
+.PARAMETER FilePath
 The file to write to.
 
 .PARAMETER NoClobber
@@ -57,17 +57,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Export-SqlLogin
 
 .EXAMPLE
-Export-SqlLogin -SqlServer sql2005 -FileName C:\temp\sql2005-logins.sql
+Export-SqlLogin -SqlServer sql2005 -FilePath C:\temp\sql2005-logins.sql
 
 Exports SQL for the logins in server "sql2005" and writes them to the file "C:\temp\sql2005-logins.sql"
 
 .EXAMPLE
-Export-SqlLogin -SqlServer sqlserver2014a -Exclude realcajun -SqlCredential $scred -FileName C:\temp\logins.sql -Append
+Export-SqlLogin -SqlServer sqlserver2014a -Exclude realcajun -SqlCredential $scred -FilePath C:\temp\logins.sql -Append
 
 Authenticates to sqlserver2014a using SQL Authentication. Exports all logins except for realcajun to C:\temp\logins.sql, and appends to the file if it exists. If not, the file will be created.
 
 .EXAMPLE
-Export-SqlLogin -SqlServer sqlserver2014a -Login realcajun, netnerds -FileName C:\temp\logins.sql
+Export-SqlLogin -SqlServer sqlserver2014a -Login realcajun, netnerds -FilePath C:\temp\logins.sql
 
 Exports ONLY logins netnerds and realcajun fron sqlsever2014a to the file  C:\temp\logins.sql
 
@@ -84,7 +84,7 @@ https://dbatools.io/Export-SqlLogin
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[string]$SqlServer,
-		[Alias("OutFile", "Path")]
+		[Alias("OutFile", "Path","FileName")]
 		[string]$FilePath,
 		[object]$SqlCredential,
 		[Alias("NoOverwrite")]
