@@ -16,16 +16,16 @@ The SQL Server that you're connecting to.
 Credential object used to connect to the SQL Server as a different user
 
 .PARAMETER Databases
-Return restore information for only specific databases
-
+Return restore information for only specific databases. These are only the databases that currently exist on the server.
+	
 .PARAMETER Exclude
 Return restore information for all but these specific databases
 
 .PARAMETER Since
 Datetime object used to narrow the results to a date
-
+	
 .PARAMETER Detailed
-Returns a ton of information about the backup history with a max of 1000 rows
+Returns default information plus From (\\server\backups\test.bak) and To (the mdf and ldf locations) information
 	
 .PARAMETER Force
 Returns a ton of information about the backup history with no max rows
@@ -46,7 +46,7 @@ https://dbatools.io/Get-DbaRestoreHistory
 .EXAMPLE
 Get-DbaRestoreHistory -SqlServer sqlserver2014a
 
-Returns server name, database, username, restore type, date, from file and to files for all restored databases on sqlserver2014a.
+Returns server name, database, username, restore type, date for all restored databases on sqlserver2014a.
 
 .EXAMPLE   
 Get-DbaRestoreHistory -SqlServer sqlserver2014a -Databases db1, db2 -Since '7/1/2016 10:47:00'
@@ -59,6 +59,11 @@ Get-DbaRestoreHistory -SqlServer sqlserver2014a, sql2016 -Detailed -Exclude db1
 Lots of detailed information for all databases except db1 on sqlserver2014a and sql2016
 
 .EXAMPLE   
+Get-DbaRestoreHistory -SqlServer sql2014 -Databases AdventureWorks2014, pubs -Detailed | Format-Table
+
+Adds From and To file information to output, returns information only for AdventureWorks2014 and pubs, and makes the output pretty
+
+.EXAMPLE   
 Get-SqlRegisteredServerName -SqlServer sql2016 | Get-DbaRestoreHistory
 
 Returns database restore information for every database on every server listed in the Central Management Server on sql2016
@@ -69,6 +74,7 @@ Returns database restore information for every database on every server listed i
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
+		[Alias("SqlCredential")]
 		[PsCredential]$Credential,
 		[datetime]$Since,
 		[switch]$Detailed,
@@ -99,38 +105,41 @@ Returns database restore information for every database on every server listed i
 			{
 				$sourceserver = Connect-SqlServer -SqlServer $server -SqlCredential $Credential
 				
-				if ($detailed -eq $true)
+				if ($force -eq $true)
 				{
-					$select = "SELECT top 1000 *"
-				}
-				elseif ($force -eq $true)
-				{
-					$select = "SELECT * FROM"
+					$select = "SELECT * "
 				}
 				else
 				{
-					$select = "Select
-					@@Servername AS [Server],
-					rsh.destination_database_name AS [Database],
-					rsh.user_name AS [Username],
-					CASE WHEN rsh.restore_type = 'D' THEN 'Database'
-					WHEN rsh.restore_type = 'F' THEN 'File'
-					WHEN rsh.restore_type = 'G' THEN 'Filegroup'
-					WHEN rsh.restore_type = 'I' THEN 'Differential'
-					WHEN rsh.restore_type = 'L' THEN 'Log'
-					WHEN rsh.restore_type = 'V' THEN 'Verifyonly'
-					WHEN rsh.restore_type = 'R' THEN 'Revert'
-					ELSE rsh.restore_type
-					END AS [RestoreType],
-						   rsh.restore_date AS [Date],
-						   bmf.physical_device_name AS [From],
-						   rf.destination_phys_name AS [To]"
+					$select = "SELECT 
+				     '$server' AS [Server],
+				     rsh.destination_database_name AS [Database],
+				     --rsh.restore_history_id as RestoreHistoryID,
+				     rsh.user_name AS [Username],
+				     CASE 
+						 WHEN rsh.restore_type = 'D' THEN 'Database'
+						 WHEN rsh.restore_type = 'F' THEN 'File'
+						 WHEN rsh.restore_type = 'G' THEN 'Filegroup'
+						 WHEN rsh.restore_type = 'I' THEN 'Differential'
+						 WHEN rsh.restore_type = 'L' THEN 'Log'
+						 WHEN rsh.restore_type = 'V' THEN 'Verifyonly'
+						 WHEN rsh.restore_type = 'R' THEN 'Revert'
+						 ELSE rsh.restore_type
+				     END AS [RestoreType],
+				     rsh.restore_date AS [Date],
+				     ISNULL(STUFF((SELECT ', ' + bmf.physical_device_name 
+									FROM msdb.dbo.backupmediafamily bmf
+								   WHERE bmf.media_set_id = bs.media_set_id
+								 FOR XML PATH('')), 1, 2, ''), '') AS [From],
+				     ISNULL(STUFF((SELECT ', ' + rf.destination_phys_name 
+									FROM msdb.dbo.restorefile rf
+								   WHERE rsh.restore_history_id = rf.restore_history_id
+								 FOR XML PATH('')), 1, 2, ''), '') AS [To]  
+				  "
 				}
 				
 				$from = " FROM msdb.dbo.restorehistory rsh
-				INNER JOIN msdb.dbo.backupset bs ON rsh.backup_set_id = bs.backup_set_id
-				INNER JOIN msdb.dbo.restorefile rf ON rsh.restore_history_id = rf.restore_history_id
-				INNER JOIN msdb.dbo.backupmediafamily bmf ON bmf.media_set_id = bs.media_set_id"
+					INNER JOIN msdb.dbo.backupset bs ON rsh.backup_set_id = bs.backup_set_id"
 				
 				if ($exclude.length -gt 0 -or $databases.length -gt 0 -or $Since.length -gt 0)
 				{
@@ -169,7 +178,7 @@ Returns database restore information for every database on every server listed i
 				}
 				
 				$sql = "$select $from $where"
-				Write-Verbose $sql
+				Write-Debug $sql
 				$results = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables
 			}
 			catch
@@ -178,37 +187,17 @@ Returns database restore information for every database on every server listed i
 				continue
 			}
 			
-			if ($Detailed -eq $false -and $Force -eq $false)
-			{
-				$dbs = $results.Rows | Select-Object Server, Database -Unique
-				
-				foreach ($db in $dbs)
-				{
-					$dbrows = $results.Rows | Where-Object { $_.Server -eq $db.Server -and $_.Database -eq $db.Database }
-					
-					$allfrom = ($dbrows | Select-Object From -Unique).From
-					$allto = ($dbrows | Select-Object To -Unique).To
-					
-					$collection += [PSCustomObject]@{
-						Server = $dbrows[0].Server
-						Database = $dbrows[0].Database
-						Username = $dbrows[0].Username
-						RestoreType = $dbrows[0].RestoreType
-						Date = $dbrows[0].Date
-						From = $allfrom
-						To = $allto
-					}
-				}
-			}
-			else
-			{
-				$collection += $results
-			}
+			$null = $collection.Add($results)
 		}
 	}
 	
 	END
 	{
-		return $collection
+		if ($Detailed -eq $true -or $Force -eq $true)
+		{
+			return $collection.rows
+		}
+		
+		return ($collection.rows | Select-Object * -ExcludeProperty From, To, RowError, Rowstate, table, itemarray, haserrors)
 	}
 }
