@@ -38,6 +38,9 @@ Disable the job on the source server
 .PARAMETER DisableOnDestination
 Disable the newly migrated job on the destination server
 
+.PARAMETER IncludeMaintenancePlan
+Copies over any maintenance plan found on the source to the destination server
+
 .NOTES
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
@@ -68,6 +71,11 @@ Copies a single job, the PSJob job from sqlserver2014a to sqlcluster, using SQL 
 Copy-SqlJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
+
+.EXAMPLE
+Copy-SqlJob -Source sqlserver2014a -Destination sqlcluster -IncludeMaintenancePlan -Force
+
+Copies all jobs, and maintenance plans, from sqlserver2014a to sqlcluster. If job is associated with a maintenance plan the plan is copied over first.
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
@@ -79,7 +87,7 @@ Shows what would happen if the command were executed using force.
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$DisableOnSource,
 		[switch]$DisableOnDestination,
-		[switch]$IgnoreMaintenancePlan,
+		[switch]$IncludeMaintenancePlan,
 		[switch]$Force
 	)
 	DynamicParam { if ($source) { return (Get-ParamSqlJobs -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
@@ -117,11 +125,11 @@ Shows what would happen if the command were executed using force.
 			$MaintenancePlan = $sourceserver.ConnectionContext.ExecuteWithResults($qryValidateMaintPlan).Tables.Rows
 			$MaintPlanName = $MaintenancePlan.MaintenancePlan_Name
 
-			if ($IgnoreMaintenancePlan -and $MaintenancePlan) {
+			if ((!$IncludeMaintenancePlan) -and $MaintenancePlan) {
 				Write-Warning "[Job: $jobname] Associated with Maintenance Plan: $($MaintPlanName). Skipping."
 				continue
 			}
-			if(!$IgnoreMaintenancePlan -and $MaintPlanName)
+			if($IncludeMaintenancePlan -and $MaintPlanName)
 			{
 				if ($force)
 				{
