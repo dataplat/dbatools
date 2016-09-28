@@ -172,24 +172,17 @@ Returns PSObject representing tempdb configuration.
 		}
 		
 		# Check current tempdb. Throw an error if current tempdb is 'larger' than config.
-		$currentfilecount = $server.Databases['tempdb'].ExecuteWithResults('SELECT count(1) as FileCount FROM sys.database_files WHERE type=0').Tables[0].FileCount
-		$toobigcount = $server.Databases['tempdb'].ExecuteWithResults("SELECT count(1) as FileCount FROM sys.database_files WHERE size/128 > $dataFilesizeSingleMB AND type = 0").Tables[0].FileCount
+		$currentfilecount = $server.Databases['tempdb'].ExecuteWithResults('SELECT count(1) as FileCount FROM sys.database_files WHERE type=0').Tables[0].FileCount		
+		$freespacesize = $server.Databases['tempdb'].ExecuteWithResults("SELECT COUNT (1) AS FileCount FROM sys.dm_db_file_space_usage AS db WHERE (allocated_extent_page_count) * 1.0 / 128 >= $dataFilesizeSingleMB ;").Tables[0].FileCount
 		
 		if ($currentfilecount -gt $datafilecount)
 		{
 			throw "Current tempdb not suitable to be reconfigured. The current tempdb has a greater number of files than the calculated configuration."
 		}
 		
-		if ($toobigcount -gt 0)
+		if ($freespacesize -gt 0)
 		{
-			throw "Current tempdb not suitable to be reconfigured. The current tempdb is larger than the calculated configuration."
-		}
-		
-		$equalcount = $server.Databases['tempdb'].ExecuteWithResults("SELECT count(1) as FileCount FROM sys.database_files WHERE size/128 = $dataFilesizeSingleMB AND type = 0").Tables[0].FileCount
-		
-		if ($equalcount -gt 0)
-		{
-			throw "Current tempdb not suitable to be reconfigured. The current tempdb is the same size as the specified DataFileSizeMB."
+			throw "Current tempdb not suitable to be reconfigured. The current tempdb has at least one file which has greater than or equal to the amount of free space requested in all files."
 		}
 		
 		Write-Verbose "tempdb configuration validated."
