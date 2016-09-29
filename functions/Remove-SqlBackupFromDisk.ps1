@@ -11,18 +11,29 @@ The only addition is the ability to check the Archive bit on files before deleti
 backups have been archived to your archive location before removal.
 
 .PARAMETER BackupFolder
-Name of the base level folder to search for backup files.
+Name of the base level folder to search for backup files. 
+Deletion of backup files will be recursive from this location.
 
 .PARAMETER BackupFileExtenstion
 Extension of the backup files you wish to remove (typically bak or log)
 
-.PARAMETER RetentionTime
-Time span for file retention. 1w will retain 1 wee's worth of files. 1d will retain 1 day. 1M will retain 1 month.
+.PARAMETER RetentionPeriod
+Retention period for backup files. Correct format is ##U. 
 
-.PARAMETER Recurse
-Find all files below the BackupFolder recursively
+## is the retention value and must be an integer value
+U signifies the units where the valid units are:
+h = hours
+d = days
+w = weeks
+m = months
 
-.PARAMETER DeleteArchivedFilesOnly
+Formatting Examples: 
+'48h' = 48 hours
+'7d' = 7 days
+'4w' = 4 weeks
+'1m' = 1 month
+
+.PARAMETER CheckArchiveBit
 Check the archive bit on files before deletion
 
 .PARAMETER RemoveEmptyBackupFolders
@@ -51,13 +62,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Remove-SqlBackupFromDisk
 
 .EXAMPLE
-Remove-SqlBackupFromDisk -BackupFolder 'C:\MSSQL\Backup\' -FileExtension 'bak' -DeleteOlderThan '1w' -Recurse -DeleteArchivedFilesOnly
+Remove-SqlBackupFromDisk -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtenstion 'trn' -RetentionPeriod '48h'
 
-For the database RideTheLightning on the server Fade2Black Will perform a DBCC CHECKDB and if there are no errors
-backup the database to the folder C:\MSSQL\Backup\Rationalised - DO NOT DELETE. It will then create an Agent Job to restore the database
-from that backup. It will drop the database, run the agent job to restore it, perform a DBCC ChECK DB and then drop the database.
+The cmdlet will remove '*.trn' files from 'C:\MSSQL\Backup\' and all subdirectories that are more than 48 hours. 
 
-Any DBCC errors will be written to your documents folder
+.EXAMPLE
+Remove-SqlBackupFromDisk -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtenstion 'bak' -RetentionPeriod '7d' -CheckArchiveBit
+
+The cmdlet will remove '*.bak' files from 'C:\MSSQL\Backup\' and all subdirectories that are more than 7 days old. 
+It will also ensure that the bak files have been archived using the archive bit before removing them.
+
+.EXAMPLE
+Remove-SqlBackupFromDisk -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtenstion 'bak' -RetentionPeriod '1w' -RemoveEmptyBackupFolders
+
+The cmdlet will remove '*.bak' files from 'C:\MSSQL\Backup\' and all subdirectories that are more than 1 week old. 
+It will also remove any backup folders that no longer contain backup files.
+
+.EXAMPLE
+Remove-SqlBackupFromDisk -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtenstion 'bak' -RetentionPeriod '1m' CheckArchiveBit -RemoveEmptyBackupFolders
+
+The cmdlet will remove '*.bak' files from 'C:\MSSQL\Backup\' and all subdirectories that are more than 1 month old. It will also ensure that the bak files
+have been archived using the archive bit before removing them. It will also remove any backup folders that no longer contain backup files.
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
@@ -69,87 +94,111 @@ Any DBCC errors will be written to your documents folder
 		[parameter(Mandatory = $true)]
 		[string]$BackupFileExtenstion ,
 
-		[parameter(ParameterSetName='RetentionHours')]
-		[int]$RetentionHours ,
-
-        [parameter(ParameterSetName='RetentionDays')]
-		[int]$RetentionDays ,
-        
-        [parameter(ParameterSetName='RetentionMonths')]
-		[int]$RetentionMonths ,
-
-        [parameter(ParameterSetName='RetentionYears')]
-		[int]$RetentionYears ,
+		[parameter(Mandatory = $false)]
+		[string]$RetentionPeriod = '48h' ,
 
 		[parameter(Mandatory = $false)]
-		[switch]$Recurse = $false ,
-
-		[parameter(Mandatory = $false)]
-		[switch]$DeleteArchivedFilesOnly = $false ,
+		[switch]$CheckArchiveBit = $false ,
 
         [parameter(Mandatory = $false)]
 		[switch]$RemoveEmptyBackupFolders = $false
-
 	)
 
 	BEGIN
 	{
         ### Local Functions
-        function Remove-SQLBackupsFromFolder
+        function Convert-UserFriendlyRetentionToDatetime
         {
             [cmdletbinding()]
             param (
-                [string]$DatabaseFolderName , # Database Level Folder
-                [string]$BackupFileExtenstion ,
-                [datetime]$RetentionDate ,
-                [switch]$Recurse ,
-                [switch]$ArchiveBit
+                [string]$UserFriendlyRetention
             )
-            
-            # Remove the files that are older than CleanupDate where ARCHIVE bit is not set.
-            $FilesToDelete = Get-ChildItem "$DatabaseFolderName" -Filter "*.$BackupFileExtenstion" -Recurse:($Recurse.IsPresent) `
-                | Where-Object {$_.LastWriteTime -lt $RetentionDate}
-            
-            # Filter out unarchived files if -Archive is used
-            if ($ArchiveBit.IsPresent) {
-                $FilesToDelete = $FilesToDelete | Where-Object {$_.attributes -notmatch "Archive"} 
+
+            <# 
+            Convert a user friendly retention value into a datetime.
+            The last character of the string will indicate units (validated) 
+            Valid units are: (h = hours, d = days, w = weeks, m = months)
+
+            The preceeding characters are the value and must be an integer (validated)
+    
+            Examples: 
+                '48h' = 48 hours
+                '7d' = 7 days
+                '4w' = 4 weeks
+                '1m' = 1 month
+            #>
+
+            [int]$Length = ($UserFriendlyRetention).Length
+            $Value = ($UserFriendlyRetention).Substring(0,$Length-1)
+            $Units = ($UserFriendlyRetention).Substring($Length-1,1)   
+
+            # Validate that $Units is an accepted unit of measure
+            if ( $Units -notin @('h','d','w','m') ){
+                throw "RetentionPeriod '$UserFriendlyRetention' units invalid! See Get-Help for correct formatting and examples."
             }
-            
-            $FilesToDelete    #| Remove-Item -Force -Verbose
+
+            # Validate that $Value is an INT
+            if ( ![int]::TryParse($Value,[ref]"") ) {
+                throw "RetentionPeriod '$UserFriendlyRetention' format invalid! See Get-Help for correct formatting and examples."
+            }
+
+            switch ($Units)
+            {
+                'h' { $UnitString = 'Hours'; [datetime]$ReturnDatetime = (Get-Date).AddHours(-$Value)  }
+                'd' { $UnitString = 'Days';  [datetime]$ReturnDatetime = (Get-Date).AddDays(-$Value)   }
+                'w' { $UnitString = 'Weeks'; [datetime]$ReturnDatetime = (Get-Date).AddDays(-$Value*7) }
+                'm' { $UnitString = 'Months';[datetime]$ReturnDatetime = (Get-Date).AddMonths(-$Value) }
+            }
+            Write-Verbose "Retention set to '$Value' $UnitString. Retention date/time '$ReturnDatetime'"
+            $ReturnDatetime
         }
 
         # Initialize stuff
         $Start = Get-Date
-        
-        # Convert Retention Value to an actual DateTime
-        switch ($PSCmdlet.ParameterSetName)
-        {
-            'RetentionHours'  { $RetentionDate = $Start.AddHours(-$RetentionHours) }
-            'RetentionDays'   { $RetentionDate = $Start.AddDays(-$RetentionDays) }
-            'RetentionMonths' { $RetentionDate = $Start.AddMonths(-$RetentionMonths) }
-            'RetentionYears'  { $RetentionDate = $Start.AddYears(-$RetentionYears) }
-        }
-        Write-Verbose "RetentionDate: $RetentionDate"
 	}
 	PROCESS
 	{
 		# Process stuff
-        Write-Verbose ("Backup Root Folder: '$BackupFolder'")
-    
-        # Remove Backups in each database's backup folder based off OLA naming standard (c:\<sqlbackuplocation>\<instance>\<database>)
-        foreach ($DatabaseFolderName in (Get-ChildItem $BackupFolder)) {
-            Write-Verbose ("Cleaning '$BackupFileExtenstion' backups in '$DatabaseFolderName'")
+        Write-Output ("Started at $Start")
+        Write-Output ("Removing backups from '$BackupFolder'")
 
-            $RemoveBackupParams = @{
-                'DatabaseFolderName' = "$BackupFolder\$DatabaseFolderName" ; 
-                'BackupFileExtenstion' = $BackupFileExtenstion ;
-                'RetentionDate' = $RetentionDate ;
-                'Recurse' = $Recurse.IsPresent ;
-                'ArchiveBit' = $DeleteArchivedFilesOnly.IsPresent ;
-                'Verbose' = $true
+        # Convert Retention Value to an actual DateTime
+        try {
+            $RetentionDate = Convert-UserFriendlyRetentionToDatetime -UserFriendlyRetention $RetentionPeriod
+            Write-Output "Backup Retention Date set to '$RetentionDate'"
+        } catch {
+            throw $_
+        }
+
+        # Remove the files that are older than RetentionDate
+        $FilesToDelete = Get-ChildItem "$DatabaseFolderName" -Filter "*.$BackupFileExtenstion" -Recurse | `
+            Where-Object {$_.LastWriteTime -lt $RetentionDate}
+            
+        # Filter out unarchived files if -CheckArchiveBit parameter is used
+        if ($CheckArchiveBit.IsPresent) {
+            Write-Output 'Removing only archived file'
+            $FilesToDelete = $FilesToDelete | Where-Object {$_.attributes -notmatch "Archive"} 
+        }
+        
+        If ($Pscmdlet.ShouldProcess($env:computername, "Removing backup files from '$BackupFolder'")) {
+            try {
+                $FilesToDelete | Remove-Item -Force 
+            } catch {
+                throw $_
             }
-            Remove-SQLBackupsFromFolder @RemoveBackupParams
-        }  
+        }
+
+        # Remove empty backup folders if RemoveEmptyBackupFolders is passed in
+        if ($RemoveEmptyBackupFolders.IsPresent) {
+            If ($Pscmdlet.ShouldProcess($env:computername, "Removing empty folders under '$BackupFolder'")) {
+                try {
+                    Get-ChildItem -Path $BackupFolder -Recurse | Where-Object {$_.PSIsContainer -eq $true `
+                        -and (Get-ChildItem -Path $_.FullName) -eq $null} | Remove-Item -Force
+                } catch {
+                    throw $_
+                }
+            }           
+        }
 	}
 
 	END
@@ -164,16 +213,3 @@ Any DBCC errors will be written to your documents folder
 		}
 	}
 }
-
-
-$param1 = @{
-    	'BackupFolder' = 'C:\SQL\MSSQL11.INST1\MSSQL\Backup\BIGRED7$INST1';
-		'BackupFileExtenstion' = 'trn';
-        'RetentionDays' = 7 ;
-        'Recurse' = $true ;
-        'DeleteArchivedFilesOnly' = $false ;
-        'RemoveEmptyBackupFolders' = $false ;
-        'Verbose' = $true
-}
-
-Remove-SqlBackupFromDisk @param1
