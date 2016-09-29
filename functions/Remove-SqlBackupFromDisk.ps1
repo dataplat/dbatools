@@ -5,7 +5,7 @@
 Remove SQL Server backups from disk
 
 .DESCRIPTION
-Provides all of the same functionality for removing SQL backups from disk as a standard maintenance plan would. 
+Provides all of the same functionality for removing SQL backups from disk as a standard maintenance plan would.
 
 The only addition is the ability to check the Archive bit on files before deletion. This will allow you to ensure
 backups have been archived to your archive location before removal.
@@ -26,9 +26,9 @@ Find all files below the BackupFolder recursively
 Check the archive bit on files before deletion
 
 .PARAMETER RemoveEmptyBackupFolders
-Remove any empty folders after the cleanup process is complete. 
+Remove any empty folders after the cleanup process is complete.
 
-.NOTES 
+.NOTES
 Original Author: Chris Sommer @cjsommer, www.cjsommer.com
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -50,26 +50,36 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .LINK
 https://dbatools.io/Remove-SqlBackupFromDisk
 
-.EXAMPLE 
+.EXAMPLE
 Remove-SqlBackupFromDisk -BackupFolder 'C:\MSSQL\Backup\' -FileExtension 'bak' -DeleteOlderThan '1w' -Recurse -DeleteArchivedFilesOnly
 
-For the database RideTheLightning on the server Fade2Black Will perform a DBCC CHECKDB and if there are no errors 
-backup the database to the folder C:\MSSQL\Backup\Rationalised - DO NOT DELETE. It will then create an Agent Job to restore the database 
+For the database RideTheLightning on the server Fade2Black Will perform a DBCC CHECKDB and if there are no errors
+backup the database to the folder C:\MSSQL\Backup\Rationalised - DO NOT DELETE. It will then create an Agent Job to restore the database
 from that backup. It will drop the database, run the agent job to restore it, perform a DBCC ChECK DB and then drop the database.
 
 Any DBCC errors will be written to your documents folder
 
 #>
-	[CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
+	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[parameter(Mandatory = $true)]
+        [ValidateScript({Test-Path $_ -PathType 'Container'})]
 		[string]$BackupFolder ,
 
 		[parameter(Mandatory = $true)]
 		[string]$BackupFileExtenstion ,
 
-		[parameter(Mandatory = $true)]
-		[string]$RetentionTime ,
+		[parameter(ParameterSetName='RetentionHours')]
+		[int]$RetentionHours ,
+
+        [parameter(ParameterSetName='RetentionDays')]
+		[int]$RetentionDays ,
+        
+        [parameter(ParameterSetName='RetentionMonths')]
+		[int]$RetentionMonths ,
+
+        [parameter(ParameterSetName='RetentionYears')]
+		[int]$RetentionYears ,
 
 		[parameter(Mandatory = $false)]
 		[switch]$Recurse = $false ,
@@ -78,47 +88,70 @@ Any DBCC errors will be written to your documents folder
 		[switch]$DeleteArchivedFilesOnly = $false ,
 
         [parameter(Mandatory = $false)]
-		[switch]$RemoveEmptyBackupFolders = $false 
-        		
+		[switch]$RemoveEmptyBackupFolders = $false
+
 	)
-	
+
 	BEGIN
 	{
+        ### Local Functions
+        function Remove-SQLBackupsFromFolder
+        {
+            [cmdletbinding()]
+            param (
+                [string]$DatabaseFolderName , # Database Level Folder
+                [string]$BackupFileExtenstion ,
+                [datetime]$RetentionDate ,
+                [switch]$Recurse ,
+                [switch]$ArchiveBit
+            )
+            
+            # Remove the files that are older than CleanupDate where ARCHIVE bit is not set.
+            $FilesToDelete = Get-ChildItem "$DatabaseFolderName" -Filter "*.$BackupFileExtenstion" -Recurse:($Recurse.IsPresent) `
+                | Where-Object {$_.LastWriteTime -lt $RetentionDate}
+            
+            # Filter out unarchived files if -Archive is used
+            if ($ArchiveBit.IsPresent) {
+                $FilesToDelete = $FilesToDelete | Where-Object {$_.attributes -notmatch "Archive"} 
+            }
+            
+            $FilesToDelete    #| Remove-Item -Force -Verbose
+        }
+
         # Initialize stuff
         $Start = Get-Date
-
-        $a= '1month'
-
-        [regex]::match($a,”[A-Za-z]”)
-
-        # Convert RetentionTime to an actual DateTime
-        switch -Wildcard ($RetentionTime)
+        
+        # Convert Retention Value to an actual DateTime
+        switch ($PSCmdlet.ParameterSetName)
         {
-            "*h" { Write-Verbose 'Hours'
-            }
-
-            "*d" { Write-Verbose 'Days'
-            }
-
-            "*w" { Write-Verbose 'Weeks'
-            }
-
-            "*m" { Write-Verbose 'Months'
-            }
-
-            "*y" { Write-Verbose 'Years'
-            }
-
-            default { Write-Verbose 'Default (Hours)'
-            }
+            'RetentionHours'  { $RetentionDate = $Start.AddHours(-$RetentionHours) }
+            'RetentionDays'   { $RetentionDate = $Start.AddDays(-$RetentionDays) }
+            'RetentionMonths' { $RetentionDate = $Start.AddMonths(-$RetentionMonths) }
+            'RetentionYears'  { $RetentionDate = $Start.AddYears(-$RetentionYears) }
         }
-		
+        Write-Verbose "RetentionDate: $RetentionDate"
 	}
 	PROCESS
 	{
 		# Process stuff
+        Write-Verbose ("Backup Root Folder: '$BackupFolder'")
+    
+        # Remove Backups in each database's backup folder based off OLA naming standard (c:\<sqlbackuplocation>\<instance>\<database>)
+        foreach ($DatabaseFolderName in (Get-ChildItem $BackupFolder)) {
+            Write-Verbose ("Cleaning '$BackupFileExtenstion' backups in '$DatabaseFolderName'")
+
+            $RemoveBackupParams = @{
+                'DatabaseFolderName' = "$BackupFolder\$DatabaseFolderName" ; 
+                'BackupFileExtenstion' = $BackupFileExtenstion ;
+                'RetentionDate' = $RetentionDate ;
+                'Recurse' = $Recurse.IsPresent ;
+                'ArchiveBit' = $DeleteArchivedFilesOnly.IsPresent ;
+                'Verbose' = $true
+            }
+            Remove-SQLBackupsFromFolder @RemoveBackupParams
+        }  
 	}
-	
+
 	END
 	{
         # End cleanup
@@ -134,10 +167,10 @@ Any DBCC errors will be written to your documents folder
 
 
 $param1 = @{
-    	'BackupFolder' = 'c:\temp';
-		'BackupFileExtenstion' = 'bak';
-        'RetentionTime' = '1Y' ;
-        'Recurse' = $false ;
+    	'BackupFolder' = 'C:\SQL\MSSQL11.INST1\MSSQL\Backup\BIGRED7$INST1';
+		'BackupFileExtenstion' = 'trn';
+        'RetentionDays' = 7 ;
+        'Recurse' = $true ;
         'DeleteArchivedFilesOnly' = $false ;
         'RemoveEmptyBackupFolders' = $false ;
         'Verbose' = $true
