@@ -182,7 +182,7 @@ Returns PSObject representing tempdb configuration.
 		
 		if ($freespacesize -gt 0)
 		{
-			throw "Current tempdb not suitable to be reconfigured. The current tempdb has at least one file which has greater than or equal to the amount of free space requested in all files."
+			throw "Current tempdb not suitable to be reconfigured. Please verify if you can shrink the file(s) in this situation. If you don't feel confortable with it, we suggest you restart you instance (maintenance window) and perfom the configuration after."
 		}
 		
 		Write-Verbose "tempdb configuration validated."
