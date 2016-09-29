@@ -7,8 +7,10 @@ Remove SQL Server backups from disk
 .DESCRIPTION
 Provides all of the same functionality for removing SQL backups from disk as a standard maintenance plan would.
 
-The only addition is the ability to check the Archive bit on files before deletion. This will allow you to ensure
+As an addition you have the ability to check the Archive bit on files before deletion. This will allow you to ensure
 backups have been archived to your archive location before removal.
+
+Also included is the ability to remove empty folders as part of this cleanup activity.
 
 .PARAMETER BackupFolder
 Name of the base level folder to search for backup files. 
@@ -40,7 +42,7 @@ Check the archive bit on files before deletion
 Remove any empty folders after the cleanup process is complete.
 
 .NOTES
-Original Author: Chris Sommer @cjsommer, www.cjsommer.com
+Original Author: Chris Sommer, @cjsommer, www.cjsommer.com
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
@@ -67,6 +69,13 @@ Remove-SqlBackupFromDisk -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtenstion 
 The cmdlet will remove '*.trn' files from 'C:\MSSQL\Backup\' and all subdirectories that are more than 48 hours. 
 
 .EXAMPLE
+Remove-SqlBackupFromDisk -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtenstion 'trn' -RetentionPeriod '48h' -WhatIf
+ 
+Same as example #1, but using the WhatIf parameter. The WhatIf parameter will allow the cmdlet show you what it will do, without actually doing it.
+In this case, no trn files will be deleted. Instead, the cmdlet will output what it will do when it runs. This is a good preventatitive measure
+especially when you are first configuring the cmdlet calls. 
+
+.EXAMPLE
 Remove-SqlBackupFromDisk -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtenstion 'bak' -RetentionPeriod '7d' -CheckArchiveBit
 
 The cmdlet will remove '*.bak' files from 'C:\MSSQL\Backup\' and all subdirectories that are more than 7 days old. 
@@ -78,14 +87,10 @@ Remove-SqlBackupFromDisk -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtenstion 
 The cmdlet will remove '*.bak' files from 'C:\MSSQL\Backup\' and all subdirectories that are more than 1 week old. 
 It will also remove any backup folders that no longer contain backup files.
 
-.EXAMPLE
-Remove-SqlBackupFromDisk -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtenstion 'bak' -RetentionPeriod '1m' CheckArchiveBit -RemoveEmptyBackupFolders
 
-The cmdlet will remove '*.bak' files from 'C:\MSSQL\Backup\' and all subdirectories that are more than 1 month old. It will also ensure that the bak files
-have been archived using the archive bit before removing them. It will also remove any backup folders that no longer contain backup files.
 
 #>
-	[CmdletBinding(SupportsShouldProcess = $true)]
+	[CmdletBinding(SupportsShouldProcess=$true)]
 	Param (
 		[parameter(Mandatory = $true)]
         [ValidateScript({Test-Path $_ -PathType 'Container'})]
@@ -170,46 +175,49 @@ have been archived using the archive bit before removing them. It will also remo
             throw $_
         }
 
-        # Remove the files that are older than RetentionDate
-        $FilesToDelete = Get-ChildItem "$DatabaseFolderName" -Filter "*.$BackupFileExtenstion" -Recurse | `
+        # Generate list of files that are to be removed
+        $FilesToDelete = Get-ChildItem "$BackupFolder" -Filter "*.$BackupFileExtenstion" -Recurse | `
             Where-Object {$_.LastWriteTime -lt $RetentionDate}
             
         # Filter out unarchived files if -CheckArchiveBit parameter is used
         if ($CheckArchiveBit.IsPresent) {
-            Write-Output 'Removing only archived file'
+            Write-Output 'Removing only archived files'
             $FilesToDelete = $FilesToDelete | Where-Object {$_.attributes -notmatch "Archive"} 
         }
         
-        If ($Pscmdlet.ShouldProcess($env:computername, "Removing backup files from '$BackupFolder'")) {
+        # Perform the deletion or show which file will be deleted if WhatIf is used
+        If ($Pscmdlet.ShouldProcess($env:computername, "Removing backup files from '$BackupFolder\*'")) {
             try {
-                $FilesToDelete | Remove-Item -Force 
+                $FilesToDelete | Remove-Item -Force -Verbose 4>&1
             } catch {
-                throw $_
+                    throw $_
             }
         }
 
         # Remove empty backup folders if RemoveEmptyBackupFolders is passed in
-        if ($RemoveEmptyBackupFolders.IsPresent) {
-            If ($Pscmdlet.ShouldProcess($env:computername, "Removing empty folders under '$BackupFolder'")) {
-                try {
+        if ($RemoveEmptyBackupFolders.IsPresent -and $Pscmdlet.ShouldProcess($env:computername, "Removing empty folders under '$BackupFolder\*'")) {
+            try {
+                # Keep looping until we dont find any more
+                while (Get-ChildItem -Path $BackupFolder -Recurse | Where-Object {$_.PSIsContainer -eq $true `
+                    -and (Get-ChildItem -Path $_.FullName) -eq $null}) {
                     Get-ChildItem -Path $BackupFolder -Recurse | Where-Object {$_.PSIsContainer -eq $true `
-                        -and (Get-ChildItem -Path $_.FullName) -eq $null} | Remove-Item -Force
-                } catch {
-                    throw $_
+                        -and (Get-ChildItem -Path $_.FullName) -eq $null} | Remove-Item -Force -Verbose 4>&1
                 }
-            }           
+            } catch {
+                throw $_
+            }   
         }
 	}
 
 	END
 	{
         # End cleanup
-		if ($Pscmdlet.ShouldProcess("console", "Showing final message"))
+		if ($Pscmdlet.ShouldProcess($env:computername, "Showing final message"))
 		{
 			$End = Get-Date
 			Write-Output "Finished at $End"
 			$Duration = $End - $start
 			Write-Output "Script Duration: $Duration"
-		}
+		} 
 	}
 }

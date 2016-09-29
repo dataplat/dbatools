@@ -144,7 +144,8 @@
 		'Test-DbaConnectionAuthScheme',
 		'Test-DbaServerName',
 		'Repair-DbaServerName',
-		'Stop-DbaProcess'
+		'Stop-DbaProcess',
+        'Remove-SqlBackupFromDisk'
 	)
 	
 	# Cmdlets to export from this module
