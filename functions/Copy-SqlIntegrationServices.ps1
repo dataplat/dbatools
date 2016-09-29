@@ -3,9 +3,11 @@ Function Copy-SqlIntegrationServices
 {
 <#
 .SYNOPSIS 
-Copy-SqlIntegrationServices migrates SSIS projects from one SQL Server to another. 
+Copy-SqlIntegrationServices migrates Folders, SSIS projects, and environments from one SQL Server to another. 
 .DESCRIPTION
-By default, all folders and projects are copied. The -Project parameter can be specified to copy only one project, if desired.
+By default, all folders, projects, and environments are copied. 
+The -Project parameter can be specified to copy only one project, if desired.
+The parameters get more granular from the Folder level.  i.e. specifying folder will only deploy projects/environments from within that folder.
 This function must use Integrated security.
 .PARAMETER Source
 Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -15,6 +17,8 @@ Destination Sql Server. You must have sysadmin access and server version must be
 Specify a source Project name.
 .PARAMETER Folder
 Specify a source folder name.
+.PARAMETER Environment
+Specify an environment to copy over.
 .NOTES 
 Original Author: Phil Schwartz
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -26,7 +30,7 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Copy-SqlIntegrationServices
 .EXAMPLE   
 Copy-SqlIntegrationServices -Source sqlserver2014a -Destination sqlcluster
-Copies all ssis Projects from sqlserver2014a to sqlcluster, using Windows credentials. If Projects with the same name exist on sqlcluster, they will be skipped.
+Copies all folders, environments and all ssis Projects from sqlserver2014a to sqlcluster, using Windows credentials. If folders with the same name exist on the destination they will be skipped, but projects will be redeployed.
 .EXAMPLE   
 Copy-SqlIntegrationServices -Source sqlserver2014a -Destination sqlcluster -Project Archive_Tables -SourceSqlCredential $cred -Force
 Copies a single Project, the Archive_Tables Project from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a
@@ -43,6 +47,7 @@ Shows what would happen if the command were executed using force.
         [object]$Destination,
         [String]$Project,
         [String]$Folder,
+        [String]$Environment,
         [switch]$Force
     )
     
@@ -50,6 +55,7 @@ Shows what would happen if the command were executed using force.
     {
         $folder = $psboundparameters.Folder
         $project = $psboundparameters.Project
+        $environment = $psboundparameters.Environment
 
         $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
 
@@ -57,16 +63,34 @@ Shows what would happen if the command were executed using force.
         $destinationConnString = "Server=$Destination;Initial Catalog=master;Integrated Security=SSPI;"
         $sourceConnection = New-Object System.Data.SqlClient.SqlConnection $sourceConnString       
         $destinationConnection = New-Object System.Data.SqlClient.SqlConnection $destinationConnString
-   
+        
+        try {
+            $sourceConnection.Open()
+            $destinationConnection.Open()
+        }
+        catch {
+            If (!$sourceConnection.State -eq "Closed") {
+                $sourceConnection.Close()
+            }
+            If (!$destinationConnection.State -eq "Closed") {
+                $destinationConnection.Close()
+            }
+            Write-Exception $_
+        }
+
+        if ($sourceConnection.ServerVersion -lt 11 -or $destinationConnection.ServerVersion -lt 11) {
+            throw "SSISDB catalog is only available on Sql Server 2012 and above, exiting..."
+        }
+
         try { 
             Write-Verbose "Connecting to $Source integration services."
-            $sourceSSIS = New-Object $ISNamespace".IntegrationServices" $sourceConnection }
+            $sourceSSIS = New-Object "$ISNamespace.IntegrationServices" $sourceConnection }
         catch { 
             Write-Error $_ 
         }
         try { 
             Write-Verbose "Connecting to $Destination integration services."
-            $destinationSSIS = New-Object $ISNamespace".IntegrationServices" $destinationConnection 
+            $destinationSSIS = New-Object "$ISNamespace.IntegrationServices" $destinationConnection 
         }
         catch { 
             Write-Error $_ 
@@ -129,14 +153,38 @@ Shows what would happen if the command were executed using force.
                 $destinationCatalog.Alter()
                 $destinationCatalog.Refresh()
             }
-            $destFolder = New-Object $ISNamespace".CatalogFolder" ($destinationCatalog, $Folder, $Description)
+            $destFolder = New-Object "$ISNamespace.CatalogFolder" ($destinationCatalog, $Folder, $Description)
             $destFolder.Create()
             $destFolder.Alter()
             $destFolder.Refresh()
         }
         
         Function Create-Environment {
-            #http://www.anexinet.com/blog/how-to-copyclone-an-ssis-environment-in-powershell/
+            param(
+                [String]$Folder,
+                [String]$Environment,
+                [Switch]$Force
+            )
+            $f = $destinationFolders | ? { $_.Name -eq $Folder }
+            if ($force) {
+                $f.Environments[$Environment].Drop()
+                $f.Alter()
+                $f.Refresh()
+            }
+            $srcEnv = ($sourceFolders | ? { $_.Name -eq $Folder }).Environments[$Environment]
+            $targetEnv = New-Object "$ISNamespace.EnvironmentInfo" ($f, $($srcEnv.Name), $($srcEnv.Description))
+            foreach ($var in $srcEnv.Variables) {
+                if ($var.Value.ToString() -eq "") { 
+                    $finalValue= ""
+                }
+                else {
+                    $finalValue = $var.Value
+                }
+                $targetEnv.Variables.Add($var.Name, $var.Type, $finalValue, $var.Sensitive, $var.Description)
+            }
+            $targetEnv.Create()
+            $targetEnv.Alter()
+            $targetEnv.Refresh()
         }
     }
     PROCESS
@@ -156,7 +204,6 @@ Shows what would happen if the command were executed using force.
                 if ($($destinationFolders.Name) -contains $folder) {
                     if (!$force) {
                         Write-Warning "Integration services catalog folder $folder exists at destination. Use -Force to drop and recreate."
-                        break
                     }
                     else {
                         If ($Pscmdlet.ShouldProcess($Destination, "Dropping folder $folder and recreating")) {
@@ -216,7 +263,7 @@ Shows what would happen if the command were executed using force.
             }
         }
 
-        # Refresh folders for project deployment
+        # Refresh folders for project and environment deployment
         If ($Pscmdlet.ShouldProcess($Destination, "Refresh folders for project deployment")) {
             $destinationFolders.Alter()
             $destinationFolders.Refresh()
@@ -231,11 +278,18 @@ Shows what would happen if the command were executed using force.
         if ($project) {
             $folderDeploy = $sourceFolders | ? { $_.Projects.Name -eq $project }
             if(!$folderDeploy) {
-                Write-Error "The project $project in the source Integration Services catalog."
+                Write-Error "The project $project cannot be found in the source Integration Services catalog."
             }
             else {
-                If ($Pscmdlet.ShouldProcess($Destination, "Deploying project $project from folder $folderDeploy")) {
-                    Deploy-Project -Folder $($folderDeploy.Name) -Project $($proj.Name)
+                foreach ($f in $folderDeploy) {
+                    If ($Pscmdlet.ShouldProcess($Destination, "Deploying project $project from folder $($f.Name)")) {
+                        try {
+                            Deploy-Project -Folder $($f.Name) -Project $project
+                        }
+                        catch {
+                            Write-Exception $_
+                        }
+                    }
                 }
             }
         }
@@ -243,7 +297,80 @@ Shows what would happen if the command were executed using force.
             foreach ($curFolder in $sourceFolders) {
                 foreach ($proj in $curFolder.Projects) {
                     If ($Pscmdlet.ShouldProcess($Destination, "Deploying project $($proj.Name) from folder $($curFolder.Name)")) {
-                        Deploy-Project -Project $($proj.Name) -Folder $($curFolder.Name)
+                        try {
+                            Deploy-Project -Project $($proj.Name) -Folder $($curFolder.Name)
+                        }
+                        catch {
+                            Write-Exception $_
+                        }
+                    }
+                }
+            }
+        }
+
+        if ($environment) {
+            $folderDeploy = $sourceFolders | ? { $_.Environments.Name -eq $environment }
+            if(!$folderDeploy) {
+                Write-Error "The environment $environment cannot be found in the source Integration Services catalog."
+            }
+            else {
+                foreach ($f in $folderDeploy) {
+                    if ($destinationFolders[$($f.Name)].Environments.Name -notcontains $environment) {
+                        If ($Pscmdlet.ShouldProcess($Destination, "Deploying environment $environment from folder $($f.Name)")) {
+                            try {
+                                Create-Environment -Folder $($f.Name) -Environment $environment
+                            }
+                            catch {
+                                Write-Exception $_
+                            }
+                        }
+                    }
+                    else {
+                        if(!$force) {
+                            Write-Warning "Integration services catalog environment $environment exists in folder $($f.Name) at destination. Use -Force to drop and recreate."
+                        }
+                        else {
+                            If ($Pscmdlet.ShouldProcess($Destination, "Dropping existing environment $environment and deploying environment $environment from folder $($f.Name)")) {
+                                try {
+                                    Create-Environment -Folder $($f.Name) -Environment $environment -Force
+                                }
+                                catch {
+                                    Write-Exception $_
+                                }
+                            }  
+                        }
+                    }
+                }
+            }
+        }
+        else {
+            foreach ($curFolder in $sourceFolders) {
+                foreach ($env in $curFolder.Environments) {
+                    if ($destinationFolders[$($f.Name)].Environments.Name -notcontains $($env.Name)) {
+                        If ($Pscmdlet.ShouldProcess($Destination, "Deploying environment $($env.Name) from folder $($curFolder.Name)")) {
+                            try {
+                                Create-Environment -Environment $($env.Name) -Folder $($curFolder.Name)
+                            }
+                            catch {
+                                Write-Exception $_
+                            }
+                        }
+                    }
+                    else {
+                        if (!$force) {
+                            Write-Warning "Integration services catalog environment $($env.Name) exists in folder $($curFolder.Name) at destination. Use -Force to drop and recreate."
+                            continue   
+                        }
+                        else {
+                            If ($Pscmdlet.ShouldProcess($Destination, "Deploying environment $($env.Name) from folder $($curFolder.Name)")) {
+                                try {
+                                    Create-Environment -Environment $($env.Name) -Folder $($curFolder.Name) -Force
+                                }
+                                catch {
+                                    Write-Exception $_
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -252,6 +379,14 @@ Shows what would happen if the command were executed using force.
     
     END
     {
-        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Integration services migration finished" }
+        If ($sourceConnection.State -eq "Open") {
+            $sourceConnection.Close()
+        }
+        If ($destinationConnection.State -eq "Open") {
+            $destinationConnection.Close()
+        }
+        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { 
+            Write-Output "Integration services migration finished." 
+        }
     }
 }
