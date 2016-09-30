@@ -1500,7 +1500,7 @@ Function Update-SqlPermissions
 		{
 			if (!$destdb.IsAccessible)
 			{
-				Write-Output "Database is not accessible. Skipping"
+				Write-Output "Database [$($destdb.Name)] is not accessible. Skipping"
 				Continue
 			}
 			if ($destdb.users[$dbusername] -eq $null)
