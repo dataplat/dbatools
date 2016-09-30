@@ -147,8 +147,7 @@
 		'Stop-DbaProcess',
 		'Get-DbaProcess',
 		'Get-SqlAvailAbilityGroup',
-		'Copy-SqlMaintenancePlan',
-		'Copy-SqlIntegrationServices'
+		'Copy-SqlMaintenancePlan'
 	)
 	
 	# Cmdlets to export from this module
