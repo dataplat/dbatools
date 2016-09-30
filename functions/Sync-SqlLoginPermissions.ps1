@@ -398,7 +398,7 @@ https://dbatools.io/Sync-SqlLoginPermissions
 				{
 					if (!$destdb.IsAccessible)
 					{
-					    Write-Output "Database is not accessible. Skipping"
+					    Write-Output "Database [$($destdb.Name)] is not accessible. Skipping"
 					    Continue
 					}
 					
