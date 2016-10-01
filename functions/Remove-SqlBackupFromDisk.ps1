@@ -92,15 +92,15 @@ It will also remove any backup folders that no longer contain backup files.
 #>
 	[CmdletBinding(SupportsShouldProcess=$true)]
 	Param (
-		[parameter(Mandatory = $true)]
+		[parameter(Mandatory = $true,HelpMessage="Full path to the root level backup folder (ex. 'C:\SQL\Backups'")]
         [ValidateScript({Test-Path $_ -PathType 'Container'})]
 		[string]$BackupFolder ,
 
-		[parameter(Mandatory = $true)]
+		[parameter(Mandatory = $true,HelpMessage="Backup File extension to remove (ex. bak, trn, diff)")]
 		[string]$BackupFileExtenstion ,
 
-		[parameter(Mandatory = $false)]
-		[string]$RetentionPeriod = '48h' ,
+		[parameter(Mandatory = $true,HelpMessage="Backup retention period. (ex. 24h, 7d, 4w, 6m)")]
+		[string]$RetentionPeriod ,
 
 		[parameter(Mandatory = $false)]
 		[switch]$CheckArchiveBit = $false ,
@@ -186,14 +186,16 @@ It will also remove any backup folders that no longer contain backup files.
         }
         
         # Perform the deletion or show which file will be deleted if WhatIf is used
-        If ($Pscmdlet.ShouldProcess($env:computername, "Removing backup files from '$BackupFolder\*'")) {
-            try {
-                $FilesToDelete | Remove-Item -Force -Verbose 4>&1
-            } catch {
+        foreach ($file in $filestodelete) { 
+            If ($Pscmdlet.ShouldProcess($env:computername, "Deleting $($file.fullname)'")) {
+                try {
+                    $file.FullPath | Remove-Item -Force -Verbose 4>&1
+                } catch {
                     throw $_
+                }
             }
         }
-
+ 
         # Remove empty backup folders if RemoveEmptyBackupFolders is passed in
         if ($RemoveEmptyBackupFolders.IsPresent -and $Pscmdlet.ShouldProcess($env:computername, "Removing empty folders under '$BackupFolder\*'")) {
             try {
