@@ -96,8 +96,8 @@ Shows what would happen if the command were executed using force.
             Write-Error $_ 
         }
 
-        $sourceCatalog = $sourceSSIS.Catalogs | ? { $_.Name -eq "SSISDB" }  
-        $destinationCatalog = $destinationSSIS.Catalogs | ? { $_.Name -eq "SSISDB" } 
+        $sourceCatalog = $sourceSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }  
+        $destinationCatalog = $destinationSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" } 
         
         $sourceFolders = $sourceCatalog.Folders
         $destinationFolders = $destinationCatalog.Folders	
@@ -111,6 +111,7 @@ Shows what would happen if the command were executed using force.
                 $sourceConnection.Open() 
             }  
             try {
+                Write-Output "Deploying project $Project from folder $Folder."
                 $cmd = New-Object System.Data.SqlClient.SqlCommand  
                 $cmd.CommandType = "StoredProcedure"  
                 $cmd.connection = $sourceConnection  
@@ -119,9 +120,11 @@ Shows what would happen if the command were executed using force.
                 $cmd.Parameters.Add("@project_name",$Project) | out-null;  
                 [byte[]]$results = $cmd.ExecuteScalar();  
                 if($results -ne $null) {  
-                    $destFolder = $destinationFolders | ? { $_.Name -eq $Folder }
-                    $deployedProject = $destFolder.DeployProject($Project,$results)  
-                    Write-Output "Project: $Project - DeployStatus: $($deployedProject.Status)."
+                    $destFolder = $destinationFolders | Where-Object { $_.Name -eq $Folder }
+                    $deployedProject = $destFolder.DeployProject($Project,$results)
+                    if ($deployedProject.Status -ne "Success") {
+                        Write-Error "An error occured deploying project $Project."
+                    }
                 }  
                 else {  
                     Write-Error "Failed deploying $Project from folder $Folder."
@@ -140,7 +143,7 @@ Shows what would happen if the command were executed using force.
                 [Switch]$Force
             )
             if ($Force) {
-                $remove = $destinationFolders | ? { $_.Name -eq $Folder }
+                $remove = $destinationFolders | Where-Object { $_.Name -eq $Folder }
                 $envs = $remove.Environments.Name
                 foreach ($e in $envs) {
                     $remove.Environments[$e].Drop()
@@ -153,6 +156,7 @@ Shows what would happen if the command were executed using force.
                 $destinationCatalog.Alter()
                 $destinationCatalog.Refresh()
             }
+            Write-Output "Creating folder $Folder."
             $destFolder = New-Object "$ISNamespace.CatalogFolder" ($destinationCatalog, $Folder, $Description)
             $destFolder.Create()
             $destFolder.Alter()
@@ -165,14 +169,14 @@ Shows what would happen if the command were executed using force.
                 [String]$Environment,
                 [Switch]$Force
             )
-            $f = $destinationFolders | ? { $_.Name -eq $Folder }
+            $envDestFolder = $destinationFolders | Where-Object { $_.Name -eq $Folder }
             if ($force) {
-                $f.Environments[$Environment].Drop()
-                $f.Alter()
-                $f.Refresh()
+                $envDestFolder.Environments[$Environment].Drop()
+                $envDestFolder.Alter()
+                $envDestFolder.Refresh()
             }
-            $srcEnv = ($sourceFolders | ? { $_.Name -eq $Folder }).Environments[$Environment]
-            $targetEnv = New-Object "$ISNamespace.EnvironmentInfo" ($f, $($srcEnv.Name), $($srcEnv.Description))
+            $srcEnv = ($sourceFolders | Where-Object { $_.Name -eq $Folder }).Environments[$Environment]
+            $targetEnv = New-Object "$ISNamespace.EnvironmentInfo" ($envDestFolder, $srcEnv.Name, $srcEnv.Description)
             foreach ($var in $srcEnv.Variables) {
                 if ($var.Value.ToString() -eq "") { 
                     $finalValue= ""
@@ -182,6 +186,7 @@ Shows what would happen if the command were executed using force.
                 }
                 $targetEnv.Variables.Add($var.Name, $var.Type, $finalValue, $var.Sensitive, $var.Description)
             }
+            Write-Output "Creating environment $Environment."
             $targetEnv.Create()
             $targetEnv.Alter()
             $targetEnv.Refresh()
@@ -199,16 +204,16 @@ Shows what would happen if the command were executed using force.
             exit
         }
         if ($folder) {
-            if ($($sourceFolders.Name) -contains $folder) {
-                $srcFolder = $sourceFolders | ? { $_.Name -eq $folder }
-                if ($($destinationFolders.Name) -contains $folder) {
+            if ($sourceFolders.Name -contains $folder) {
+                $srcFolder = $sourceFolders | Where-Object { $_.Name -eq $folder }
+                if ($destinationFolders.Name -contains $folder) {
                     if (!$force) {
                         Write-Warning "Integration services catalog folder $folder exists at destination. Use -Force to drop and recreate."
                     }
                     else {
                         If ($Pscmdlet.ShouldProcess($Destination, "Dropping folder $folder and recreating")) {
                             try {
-                                Create-Folder -Folder $($srcFolder.Name) -Description $($srcFolder.Description) -Force
+                                Create-Folder -Folder $srcFolder.Name -Description $srcFolder.Description -Force
                             }
                             catch {
                                 Write-Exception $_
@@ -220,7 +225,7 @@ Shows what would happen if the command were executed using force.
                 else {
                     If ($Pscmdlet.ShouldProcess($Destination, "Creating folder $folder")) {
                         try {
-                            Create-Folder -Folder $($srcFolder.Name) -Description $($srcFolder.Description)
+                            Create-Folder -Folder $srcFolder.Name -Description $srcFolder.Description
                         }
                         catch {
                             Write-Exception $_
@@ -234,10 +239,10 @@ Shows what would happen if the command were executed using force.
         }
         else {
             foreach ($srcFolder in $sourceFolders) {
-                if($($destinationFolders.Name) -notcontains $($srcFolder.Name)) {  
+                if($destinationFolders.Name -notcontains $srcFolder.Name) {  
                     If ($Pscmdlet.ShouldProcess($Destination, "Creating folder $($srcFolder.Name)")) {
                         try {
-                            Create-Folder -Folder $($srcFolder.Name) -Description $($srcFolder.Description)
+                            Create-Folder -Folder $srcFolder.Name -Description $srcFolder.Description
                         }
                         catch {
                             Write-Exception $_
@@ -252,7 +257,7 @@ Shows what would happen if the command were executed using force.
                     else {
                         If ($Pscmdlet.ShouldProcess($Destination, "Dropping folder $($srcFolder.Name) and recreating")) {
                             try {
-                                Create-Folder -Folder $($srcFolder.Name) -Description $($srcFolder.Description) -Force
+                                Create-Folder -Folder $srcFolder.Name -Description $srcFolder.Description -Force
                             }
                             catch {
                                 Write-Exception $_
@@ -270,13 +275,13 @@ Shows what would happen if the command were executed using force.
         }
 
         if ($folder) {
-            $sourceFolders = $sourceFolders | ? { $_.Name -eq $folder }
+            $sourceFolders = $sourceFolders | Where-Object { $_.Name -eq $folder }
             if (!$sourceFolders) {
                 Write-Error "The source folder $folder does not exist in the source Integration Services catalog."
             }
         }
         if ($project) {
-            $folderDeploy = $sourceFolders | ? { $_.Projects.Name -eq $project }
+            $folderDeploy = $sourceFolders | Where-Object { $_.Projects.Name -eq $project }
             if(!$folderDeploy) {
                 Write-Error "The project $project cannot be found in the source Integration Services catalog."
             }
@@ -284,7 +289,7 @@ Shows what would happen if the command were executed using force.
                 foreach ($f in $folderDeploy) {
                     If ($Pscmdlet.ShouldProcess($Destination, "Deploying project $project from folder $($f.Name)")) {
                         try {
-                            Deploy-Project -Folder $($f.Name) -Project $project
+                            Deploy-Project -Folder $f.Name -Project $project
                         }
                         catch {
                             Write-Exception $_
@@ -298,7 +303,7 @@ Shows what would happen if the command were executed using force.
                 foreach ($proj in $curFolder.Projects) {
                     If ($Pscmdlet.ShouldProcess($Destination, "Deploying project $($proj.Name) from folder $($curFolder.Name)")) {
                         try {
-                            Deploy-Project -Project $($proj.Name) -Folder $($curFolder.Name)
+                            Deploy-Project -Project $proj.Name -Folder $curFolder.Name
                         }
                         catch {
                             Write-Exception $_
@@ -309,16 +314,16 @@ Shows what would happen if the command were executed using force.
         }
 
         if ($environment) {
-            $folderDeploy = $sourceFolders | ? { $_.Environments.Name -eq $environment }
+            $folderDeploy = $sourceFolders | Where-Object { $_.Environments.Name -eq $environment }
             if(!$folderDeploy) {
                 Write-Error "The environment $environment cannot be found in the source Integration Services catalog."
             }
             else {
                 foreach ($f in $folderDeploy) {
-                    if ($destinationFolders[$($f.Name)].Environments.Name -notcontains $environment) {
+                    if ($destinationFolders[$f.Name].Environments.Name -notcontains $environment) {
                         If ($Pscmdlet.ShouldProcess($Destination, "Deploying environment $environment from folder $($f.Name)")) {
                             try {
-                                Create-Environment -Folder $($f.Name) -Environment $environment
+                                Create-Environment -Folder $f.Name -Environment $environment
                             }
                             catch {
                                 Write-Exception $_
@@ -332,7 +337,7 @@ Shows what would happen if the command were executed using force.
                         else {
                             If ($Pscmdlet.ShouldProcess($Destination, "Dropping existing environment $environment and deploying environment $environment from folder $($f.Name)")) {
                                 try {
-                                    Create-Environment -Folder $($f.Name) -Environment $environment -Force
+                                    Create-Environment -Folder $f.Name -Environment $environment -Force
                                 }
                                 catch {
                                     Write-Exception $_
@@ -346,10 +351,10 @@ Shows what would happen if the command were executed using force.
         else {
             foreach ($curFolder in $sourceFolders) {
                 foreach ($env in $curFolder.Environments) {
-                    if ($destinationFolders[$($f.Name)].Environments.Name -notcontains $($env.Name)) {
+                    if ($destinationFolders[$f.Name].Environments.Name -notcontains $env.Name) {
                         If ($Pscmdlet.ShouldProcess($Destination, "Deploying environment $($env.Name) from folder $($curFolder.Name)")) {
                             try {
-                                Create-Environment -Environment $($env.Name) -Folder $($curFolder.Name)
+                                Create-Environment -Environment $env.Name -Folder $curFolder.Name
                             }
                             catch {
                                 Write-Exception $_
@@ -364,7 +369,7 @@ Shows what would happen if the command were executed using force.
                         else {
                             If ($Pscmdlet.ShouldProcess($Destination, "Deploying environment $($env.Name) from folder $($curFolder.Name)")) {
                                 try {
-                                    Create-Environment -Environment $($env.Name) -Folder $($curFolder.Name) -Force
+                                    Create-Environment -Environment $env.Name -Folder $curFolder.Name -Force
                                 }
                                 catch {
                                     Write-Exception $_
