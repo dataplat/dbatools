@@ -11,11 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-<<<<<<< HEAD
-	ModuleVersion = '0.8.5.56'
-=======
 	ModuleVersion = '0.8.6.00'
->>>>>>> refs/remotes/origin/development
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
