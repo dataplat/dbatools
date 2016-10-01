@@ -191,6 +191,22 @@ Shows what would happen if the command were executed using force.
             $targetEnv.Alter()
             $targetEnv.Refresh()
         }
+
+        Function Create-SSISDBCatalog {
+            Write-Output "SSISDB Catalog requires a password."
+            $pass1 = Read-Host "Enter a password" -AsSecureString
+            $plainTextPass1 = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($pass1))
+            $pass2 = Read-Host "Re-enter password" -AsSecureString
+            $plainTextPass2 = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($pass2))
+            if ($plainTextPass1 -ne $plainTextPass2) {
+                Throw "Validation error, passwords entered do not match."
+            }
+            else {
+                $catalog = New-Object "$ISNamespace.Catalog" ($destinationSSIS, "SSISDB", $plainTextPass1)  
+                $catalog.Create()
+                $catalog.Refresh()
+            }
+        }
     }
     PROCESS
     {
@@ -199,9 +215,16 @@ Shows what would happen if the command were executed using force.
             exit
         }
         if (!$destinationCatalog) {
-            # Todo, prompt to create the catalog?
-            Write-Error "The destination SSISDB catalog does not exist."
-            exit
+            $message = "The destination SSISDB catalog does not exist, would you like to create one?"
+            $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Create an SSISDB catalog on $Destination."
+            $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Exit."
+            $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+            $result = $host.ui.PromptForChoice($null, $message, $options, 0) 
+            switch ($result) {
+                0 { Create-SSISDBCatalog }
+                1 { exit }
+            }
+
         }
         if ($folder) {
             if ($sourceFolders.Name -contains $folder) {
