@@ -1,9 +1,9 @@
 
-Function Copy-SqlIntegrationServices
+Function Copy-SqlSsisCatalog
 {
 <#
 .SYNOPSIS 
-Copy-SqlIntegrationServices migrates Folders, SSIS projects, and environments from one SQL Server to another. 
+Copy-SqlSsisCatalog migrates Folders, SSIS projects, and environments from one SQL Server to another. 
 .DESCRIPTION
 By default, all folders, projects, and environments are copied. 
 The -Project parameter can be specified to copy only one project, if desired.
@@ -27,16 +27,16 @@ This program is free software: you can redistribute it and/or modify it under th
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .LINK
-https://dbatools.io/Copy-SqlIntegrationServices
+https://dbatools.io/Copy-SqlSsisCatalog
 .EXAMPLE   
-Copy-SqlIntegrationServices -Source sqlserver2014a -Destination sqlcluster
+Copy-SqlSsisCatalog -Source sqlserver2014a -Destination sqlcluster
 Copies all folders, environments and all ssis Projects from sqlserver2014a to sqlcluster, using Windows credentials. If folders with the same name exist on the destination they will be skipped, but projects will be redeployed.
 .EXAMPLE   
-Copy-SqlIntegrationServices -Source sqlserver2014a -Destination sqlcluster -Project Archive_Tables -SourceSqlCredential $cred -Force
+Copy-SqlSsisCatalog -Source sqlserver2014a -Destination sqlcluster -Project Archive_Tables -SourceSqlCredential $cred -Force
 Copies a single Project, the Archive_Tables Project from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a
 and Windows credentials for sqlcluster. If a Project with the same name exists on sqlcluster, it will be deleted and recreated because -Force was used.
 .EXAMPLE   
-Copy-SqlIntegrationServices -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+Copy-SqlSsisCatalog -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 Shows what would happen if the command were executed using force.
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
