@@ -3,3 +3,4 @@ dbatools-exceptions.txt
 *TempPoint*
 *.sln
 *.pssproj
+.vscode
