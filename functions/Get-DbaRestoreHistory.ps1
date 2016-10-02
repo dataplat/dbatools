@@ -160,6 +160,12 @@ Returns database restore information for every database on every server listed i
 					$wherearray += "destination_database_name in ('$dblist')"
 				}
 				
+				if ($databases.length -gt 0)
+				{
+					$dblist = $databases -join "','"
+					$wherearray += "destination_database_name in ('$dblist')"
+				}
+				
 				if ($Since -ne $null)
 				{
 					$wherearray += "rsh.restore_date >= '$since'"
