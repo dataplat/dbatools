@@ -10,9 +10,9 @@ The -Project parameter can be specified to copy only one project, if desired.
 The parameters get more granular from the Folder level.  i.e. specifying folder will only deploy projects/environments from within that folder.
 This function must use Integrated security.
 .PARAMETER Source
-Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2012 or greater.
 .PARAMETER Destination
-Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2012 or greater.
 .PARAMETER Project
 Specify a source Project name.
 .PARAMETER Folder
@@ -66,16 +66,23 @@ Shows what would happen if the command were executed using force.
         
         try {
             $sourceConnection.Open()
-            $destinationConnection.Open()
         }
         catch {
             If (!$sourceConnection.State -eq "Closed") {
                 $sourceConnection.Close()
             }
+            Write-Exception $_
+            throw "There was an error connecting to the source SQL Server."
+        }
+        try {
+            $destinationConnection.Open()
+        }
+        catch {
             If (!$destinationConnection.State -eq "Closed") {
                 $destinationConnection.Close()
             }
             Write-Exception $_
+            throw "There was an error connecting to the destination SQL Server."
         }
 
         if ($sourceConnection.ServerVersion -lt 11 -or $destinationConnection.ServerVersion -lt 11) {
@@ -84,16 +91,19 @@ Shows what would happen if the command were executed using force.
 
         try { 
             Write-Verbose "Connecting to $Source integration services."
-            $sourceSSIS = New-Object "$ISNamespace.IntegrationServices" $sourceConnection }
+            $sourceSSIS = New-Object "$ISNamespace.IntegrationServices" $sourceConnection 
+        }
         catch { 
-            Write-Error $_ 
+            Write-Exception $_
+            throw "There was an error connecting to the source integration services."
         }
         try { 
             Write-Verbose "Connecting to $Destination integration services."
             $destinationSSIS = New-Object "$ISNamespace.IntegrationServices" $destinationConnection 
         }
         catch { 
-            Write-Error $_ 
+            Write-Exception $_
+            throw "There was an error connecting to the destination integration services." 
         }
 
         $sourceCatalog = $sourceSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }  
@@ -199,7 +209,7 @@ Shows what would happen if the command were executed using force.
             $pass2 = Read-Host "Re-enter password" -AsSecureString
             $plainTextPass2 = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($pass2))
             if ($plainTextPass1 -ne $plainTextPass2) {
-                Throw "Validation error, passwords entered do not match."
+                throw "Validation error, passwords entered do not match."
             }
             else {
                 $catalog = New-Object "$ISNamespace.Catalog" ($destinationSSIS, "SSISDB", $plainTextPass1)  
@@ -211,8 +221,7 @@ Shows what would happen if the command were executed using force.
     PROCESS
     {
         if (!$sourceCatalog) {
-            Write-Error "The source SSISDB catalog does not exist."
-            exit
+            throw "The source SSISDB catalog does not exist."
         }
         if (!$destinationCatalog) {
             $message = "The destination SSISDB catalog does not exist, would you like to create one?"
@@ -222,7 +231,7 @@ Shows what would happen if the command were executed using force.
             $result = $host.ui.PromptForChoice($null, $message, $options, 0) 
             switch ($result) {
                 0 { Create-SSISDBCatalog }
-                1 { exit }
+                1 { return }
             }
 
         }
@@ -257,7 +266,7 @@ Shows what would happen if the command were executed using force.
                 }
             }
             else {
-                Write-Error "The source folder provided does not exist in the source Integration Services catalog."
+                throw "The source folder provided does not exist in the source Integration Services catalog."
             }
         }
         else {
@@ -300,13 +309,13 @@ Shows what would happen if the command were executed using force.
         if ($folder) {
             $sourceFolders = $sourceFolders | Where-Object { $_.Name -eq $folder }
             if (!$sourceFolders) {
-                Write-Error "The source folder $folder does not exist in the source Integration Services catalog."
+                throw "The source folder $folder does not exist in the source Integration Services catalog."
             }
         }
         if ($project) {
             $folderDeploy = $sourceFolders | Where-Object { $_.Projects.Name -eq $project }
             if(!$folderDeploy) {
-                Write-Error "The project $project cannot be found in the source Integration Services catalog."
+                throw "The project $project cannot be found in the source Integration Services catalog."
             }
             else {
                 foreach ($f in $folderDeploy) {
@@ -339,7 +348,7 @@ Shows what would happen if the command were executed using force.
         if ($environment) {
             $folderDeploy = $sourceFolders | Where-Object { $_.Environments.Name -eq $environment }
             if(!$folderDeploy) {
-                Write-Error "The environment $environment cannot be found in the source Integration Services catalog."
+                throw "The environment $environment cannot be found in the source Integration Services catalog."
             }
             else {
                 foreach ($f in $folderDeploy) {
@@ -374,7 +383,7 @@ Shows what would happen if the command were executed using force.
         else {
             foreach ($curFolder in $sourceFolders) {
                 foreach ($env in $curFolder.Environments) {
-                    if ($destinationFolders[$f.Name].Environments.Name -notcontains $env.Name) {
+                    if ($destinationFolders[$curFolder.Name].Environments.Name -notcontains $env.Name) {
                         If ($Pscmdlet.ShouldProcess($Destination, "Deploying environment $($env.Name) from folder $($curFolder.Name)")) {
                             try {
                                 Create-Environment -Environment $env.Name -Folder $curFolder.Name
