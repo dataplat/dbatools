@@ -7,7 +7,7 @@ Get date/time for last known good DBCC CHECKDB
 .DESCRIPTION
 Retrieves and compares the date/time for the last known good DBCC CHECKDB, as well as the creation date/time for the database.
 
-Please note that this script uses the DBCC DBINFO() WITH TABLERESULTS. DBCC DBINFO has several known weak point, such as:
+Please note that this script uses the DBCC DBINFO() WITH TABLERESULTS. DBCC DBINFO has several known weak points, such as:
  - DBCC DBINFO is an undocumented feature/command.
  - The LastKnowGood timestamp is resat when a DBCC CHECKFILEGROUP is performed.
  - The LastKnowGood timestamp does not get updated when a database in READ_ONLY.
@@ -37,9 +37,12 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
+DBCC CHECKDB:
+	https://msdn.microsoft.com/en-us/library/ms176064.aspx
+	http://www.sqlcopilot.com/dbcc-checkdb.html
 Data Purity:
-		http://www.sqlskills.com/blogs/paul/checkdb-from-every-angle-how-to-tell-if-data-purity-checks-will-be-run/
-		https://www.mssqltips.com/sqlservertip/1988/ensure-sql-server-data-purity-checks-are-performed/
+	http://www.sqlskills.com/blogs/paul/checkdb-from-every-angle-how-to-tell-if-data-purity-checks-will-be-run/
+	https://www.mssqltips.com/sqlservertip/1988/ensure-sql-server-data-purity-checks-are-performed/
 
 .EXAMPLE
 Get-DbaLastGoodCheckDb -SqlServer ServerA\sql987
@@ -122,10 +125,19 @@ ServerA\sql987 databaselist  23-10-2013 17:31:35 11-06-2014 20:17:42            
 				Write-Verbose "Processing $($db.name) on $servername"
 
 				$sql = "DBCC DBINFO ([$($db.name)]) WITH TABLERESULTS"
-				Write-Verbose "T-SQL: $sql"
+				Write-Debug "T-SQL: $sql"
 
 				$resultTable = $db.ExecuteWithResults($sql).Tables[0]
-				[datetime]$lastKnownGood = ($resultTable | Where-Object Field -eq 'dbi_dbccLastKnownGood').Value
+				[datetime[]]$lastKnownGoodArray = $resultTable | Where-Object Field -eq 'dbi_dbccLastKnownGood' | Select-Object -ExpandProperty Value
+
+				## look for databases with two or more occurrences of the field dbi_dbccLastKnownGood
+				if ($lastKnownGoodArray.count -ge 2)
+				{
+					Write-Warning "The database $($db.name) has $($lastKnownGoodArray.count) dbi_dbccLastKnownGood fields. This script will only use the newest!"
+				}
+				[datetime]$lastKnownGood = $lastKnownGoodArray | Sort-Object -Descending | Select-Object -First 1
+
+
 				[int]$createVersion = ($resultTable | Where-Object Field -eq 'dbi_createVersion').Value
 				[int]$dbccFlags = ($resultTable | Where-Object Field -eq 'dbi_dbccFlags').Value
 
