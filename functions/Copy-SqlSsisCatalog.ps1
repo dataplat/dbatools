@@ -28,7 +28,7 @@ This program is free software: you can redistribute it and/or modify it under th
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .LINK
-https://dbatools.io/Copy-SqlSsisCatalog
+https://dbatools.io/functions/Copy-SqlSsisCatalog
 .EXAMPLE   
 Copy-SqlSsisCatalog -Source sqlserver2014a -Destination sqlcluster
 Copies all folders, environments and all ssis Projects from sqlserver2014a to sqlcluster, using Windows credentials. If folders with the same name exist on the destination they will be skipped, but projects will be redeployed.
@@ -258,7 +258,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
             throw "The source SSISDB catalog does not exist."
         }
         if (!$destinationCatalog) {
-            If ($Pscmdlet.ShouldProcess($Destination, "Create destination SSISDB Catalog")) {
+            if ($Pscmdlet.ShouldProcess($Destination, "Create destination SSISDB Catalog")) {
                 if (!$CreateCatalogPassword) {
                     $message = "The destination SSISDB catalog does not exist, would you like to create one?"
                     $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Create an SSISDB catalog on $Destination."
@@ -273,6 +273,13 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
                 else {
                     New-SSISDBCatalog -Password $CreateCatalogPassword
                 }
+
+                $destinationSSIS.Refresh()
+                $destinationCatalog = $destinationSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
+                $destinationFolders = $destinationCatalog.Folders
+            }
+            else {
+                throw "The destination SSISDB catalog does not exist."
             }
         }
         if ($folder) {
@@ -283,7 +290,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
                         Write-Warning "Integration services catalog folder $folder exists at destination. Use -Force to drop and recreate."
                     }
                     else {
-                        If ($Pscmdlet.ShouldProcess($Destination, "Dropping folder $folder and recreating")) {
+                        if ($Pscmdlet.ShouldProcess($Destination, "Dropping folder $folder and recreating")) {
                             try {
                                 New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description -Force
                             }
@@ -295,7 +302,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
                     }
                 }
                 else {
-                    If ($Pscmdlet.ShouldProcess($Destination, "Creating folder $folder")) {
+                    if ($Pscmdlet.ShouldProcess($Destination, "Creating folder $folder")) {
                         try {
                             New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description
                         }
@@ -312,7 +319,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
         else {
             foreach ($srcFolder in $sourceFolders) {
                 if($destinationFolders.Name -notcontains $srcFolder.Name) {  
-                    If ($Pscmdlet.ShouldProcess($Destination, "Creating folder $($srcFolder.Name)")) {
+                    if ($Pscmdlet.ShouldProcess($Destination, "Creating folder $($srcFolder.Name)")) {
                         try {
                             New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description
                         }
@@ -327,7 +334,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
                         continue
                     }
                     else {
-                        If ($Pscmdlet.ShouldProcess($Destination, "Dropping folder $($srcFolder.Name) and recreating")) {
+                        if ($Pscmdlet.ShouldProcess($Destination, "Dropping folder $($srcFolder.Name) and recreating")) {
                             try {
                                 New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description -Force
                             }
@@ -341,7 +348,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
         }
 
         # Refresh folders for project and environment deployment
-        If ($Pscmdlet.ShouldProcess($Destination, "Refresh folders for project deployment")) {
+        if ($Pscmdlet.ShouldProcess($Destination, "Refresh folders for project deployment")) {
             $destinationFolders.Alter()
             $destinationFolders.Refresh()
         }
@@ -359,7 +366,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
             }
             else {
                 foreach ($f in $folderDeploy) {
-                    If ($Pscmdlet.ShouldProcess($Destination, "Deploying project $project from folder $($f.Name)")) {
+                    if ($Pscmdlet.ShouldProcess($Destination, "Deploying project $project from folder $($f.Name)")) {
                         try {
                             Invoke-ProjectDeployment -Folder $f.Name -Project $project
                         }
@@ -373,7 +380,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
         else {
             foreach ($curFolder in $sourceFolders) {
                 foreach ($proj in $curFolder.Projects) {
-                    If ($Pscmdlet.ShouldProcess($Destination, "Deploying project $($proj.Name) from folder $($curFolder.Name)")) {
+                    if ($Pscmdlet.ShouldProcess($Destination, "Deploying project $($proj.Name) from folder $($curFolder.Name)")) {
                         try {
                             Invoke-ProjectDeployment -Project $proj.Name -Folder $curFolder.Name
                         }
@@ -393,7 +400,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
             else {
                 foreach ($f in $folderDeploy) {
                     if ($destinationFolders[$f.Name].Environments.Name -notcontains $environment) {
-                        If ($Pscmdlet.ShouldProcess($Destination, "Deploying environment $environment from folder $($f.Name)")) {
+                        if ($Pscmdlet.ShouldProcess($Destination, "Deploying environment $environment from folder $($f.Name)")) {
                             try {
                                 New-FolderEnvironment -Folder $f.Name -Environment $environment
                             }
@@ -424,7 +431,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
             foreach ($curFolder in $sourceFolders) {
                 foreach ($env in $curFolder.Environments) {
                     if ($destinationFolders[$curFolder.Name].Environments.Name -notcontains $env.Name) {
-                        If ($Pscmdlet.ShouldProcess($Destination, "Deploying environment $($env.Name) from folder $($curFolder.Name)")) {
+                        if ($Pscmdlet.ShouldProcess($Destination, "Deploying environment $($env.Name) from folder $($curFolder.Name)")) {
                             try {
                                 New-FolderEnvironment -Environment $env.Name -Folder $curFolder.Name
                             }
@@ -439,7 +446,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
                             continue   
                         }
                         else {
-                            If ($Pscmdlet.ShouldProcess($Destination, "Deploying environment $($env.Name) from folder $($curFolder.Name)")) {
+                            if ($Pscmdlet.ShouldProcess($Destination, "Deploying environment $($env.Name) from folder $($curFolder.Name)")) {
                                 try {
                                     New-FolderEnvironment -Environment $env.Name -Folder $curFolder.Name -Force
                                 }
@@ -458,7 +465,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
     {
         $sourceConnection.ConnectionContext.Disconnect()
         $destinationConnection.ConnectionContext.Disconnect()
-        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { 
+        if ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { 
             Write-Output "Integration services migration finished." 
         }
     }
