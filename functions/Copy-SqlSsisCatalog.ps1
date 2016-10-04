@@ -18,6 +18,8 @@ Specify a source Project name.
 Specify a source folder name.
 .PARAMETER Environment
 Specify an environment to copy over.
+.PARAMETER CreateCatalogPassword
+If a destination SSISDB catalog needs to be created, specify this secure string parameter to skip password prompts.
 .NOTES 
 Original Author: Phil Schwartz
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -37,19 +39,25 @@ and Windows credentials for sqlcluster. If a Project with the same name exists o
 .EXAMPLE   
 Copy-SqlSsisCatalog -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 Shows what would happen if the command were executed using force.
+.EXAMPLE
+$SecurePW = Read-Host "Enter password" -AsSecureString
+Copy-SqlSsisCatalog -Source sqlserver2014a -Destination sqlcluster -CreateCatalogPassword $SecurePW
+Deploy entire SSIS catalog to an instance without a destination catalog.  Passing -CreateCatalogPassword will bypass any user prompts for creating the destination catalog.
+
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory = $true)]
-        [object]$Source,
+        [Object]$Source,
         [parameter(Mandatory = $true)]
-        [object]$Destination,
+        [Object]$Destination,
         [System.Management.Automation.PSCredential]$SourceSqlCredential,
         [System.Management.Automation.PSCredential]$DestinationSqlCredential,
         [String]$Project,
         [String]$Folder,
         [String]$Environment,
-        [switch]$Force
+        [System.Security.SecureString]$CreateCatalogPassword,
+        [Switch]$Force
     )
     
     BEGIN
@@ -177,19 +185,27 @@ Shows what would happen if the command were executed using force.
         }
 
         Function New-SSISDBCatalog {
-            Write-Output "SSISDB Catalog requires a password."
-            $pass1 = Read-Host "Enter a password" -AsSecureString
-            $plainTextPass1 = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($pass1))
-            $pass2 = Read-Host "Re-enter password" -AsSecureString
-            $plainTextPass2 = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($pass2))
-            if ($plainTextPass1 -ne $plainTextPass2) {
-                throw "Validation error, passwords entered do not match."
+            param(
+                [System.Security.SecureString]$Password
+            )
+            if(!$Password) {
+                Write-Output "SSISDB Catalog requires a password."
+                $pass1 = Read-Host "Enter a password" -AsSecureString
+                $plainTextPass1 = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($pass1))
+                $pass2 = Read-Host "Re-enter password" -AsSecureString
+                $plainTextPass2 = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($pass2))
+                if ($plainTextPass1 -ne $plainTextPass2) {
+                    throw "Validation error, passwords entered do not match."
+                }
+                $plainTextPass = $plainTextPass1
             }
             else {
-                $catalog = New-Object "$ISNamespace.Catalog" ($destinationSSIS, "SSISDB", $plainTextPass1)  
-                $catalog.Create()
-                $catalog.Refresh()
+                $plainTextPass = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password))
             }
+
+            $catalog = New-Object "$ISNamespace.Catalog" ($destinationSSIS, "SSISDB", $plainTextPass)  
+            $catalog.Create()
+            $catalog.Refresh()
         }
         
         $folder = $psboundparameters.Folder
@@ -223,7 +239,7 @@ Shows what would happen if the command were executed using force.
         }
         try { 
             Write-Verbose "Connecting to $Destination integration services."
-            $destinationSSIS = New-Object "$ISNamespace.IntegrationServices" $destinationConnection 
+            $destinationSSIS = New-Object "$ISNamespace.IntegrationServices" $destinationConnection
         }
         catch { 
             Write-Exception $_
@@ -242,16 +258,22 @@ Shows what would happen if the command were executed using force.
             throw "The source SSISDB catalog does not exist."
         }
         if (!$destinationCatalog) {
-            $message = "The destination SSISDB catalog does not exist, would you like to create one?"
-            $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Create an SSISDB catalog on $Destination."
-            $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Exit."
-            $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
-            $result = $host.ui.PromptForChoice($null, $message, $options, 0) 
-            switch ($result) {
-                0 { New-SSISDBCatalog }
-                1 { return }
+            If ($Pscmdlet.ShouldProcess($Destination, "Create destination SSISDB Catalog")) {
+                if (!$CreateCatalogPassword) {
+                    $message = "The destination SSISDB catalog does not exist, would you like to create one?"
+                    $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Create an SSISDB catalog on $Destination."
+                    $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Exit."
+                    $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+                    $result = $host.ui.PromptForChoice($null, $message, $options, 0) 
+                    switch ($result) {
+                        0 { New-SSISDBCatalog }
+                        1 { return }
+                    }
+                }
+                else {
+                    New-SSISDBCatalog -Password $CreateCatalogPassword
+                }
             }
-
         }
         if ($folder) {
             if ($sourceFolders.Name -contains $folder) {
