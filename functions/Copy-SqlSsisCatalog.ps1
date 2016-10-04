@@ -54,41 +54,30 @@ Shows what would happen if the command were executed using force.
     
     BEGIN
     {
-        $folder = $psboundparameters.Folder
-        $project = $psboundparameters.Project
-        $environment = $psboundparameters.Environment
-
-        $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
-
-        $sourceConnection = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-        $destinationConnection = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
-
-        if ($sourceConnection.versionMajor -lt 11 -or $destinationConnection.versionMajor -lt 11) {
-            throw "SSISDB catalog is only available on Sql Server 2012 and above, exiting..."
+        Function Get-RemoteIntegrationService {
+            param (
+                [Object]$Computer
+            )
+            $result = Get-Service -ComputerName $Computer -Name msdts*
+            if ($result.Count -gt 0) {
+                $running = $false
+                foreach ($service in $result) {
+                    if (!$service.Status -eq "Running") {
+                        Write-Warning "Service $($service.DisplayName) was found on the destination, but is currently not running."
+                    }
+                    else {
+                        Write-Verbose "Service $($service.DisplayName) was found running on the destination."
+                        $running = $true
+                    }
+                }
+                if (!$running) {
+                    throw "No Integration Services' service was found running on the destination."
+                }
+            }
+            else {
+                throw "No Integration Services' service was found on the destination, please ensure the feature is installed and running."
+            }
         }
-
-        try { 
-            Write-Verbose "Connecting to $Source integration services."
-            $sourceSSIS = New-Object "$ISNamespace.IntegrationServices" $sourceConnection 
-        }
-        catch { 
-            Write-Exception $_
-            throw "There was an error connecting to the source integration services."
-        }
-        try { 
-            Write-Verbose "Connecting to $Destination integration services."
-            $destinationSSIS = New-Object "$ISNamespace.IntegrationServices" $destinationConnection 
-        }
-        catch { 
-            Write-Exception $_
-            throw "There was an error connecting to the destination integration services." 
-        }
-
-        $sourceCatalog = $sourceSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }  
-        $destinationCatalog = $destinationSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" } 
-        
-        $sourceFolders = $sourceCatalog.Folders
-        $destinationFolders = $destinationCatalog.Folders
 
         Function Invoke-ProjectDeployment {
             param(
@@ -124,6 +113,11 @@ Shows what would happen if the command were executed using force.
             catch {
                 Write-Exception $_
             } 
+            finally {
+                if ($sqlConn.State -eq "Open") {
+                    $sqlConn.Close()
+                }
+            }
         }
 
         Function New-CatalogFolder {
@@ -197,6 +191,50 @@ Shows what would happen if the command were executed using force.
                 $catalog.Refresh()
             }
         }
+        
+        $folder = $psboundparameters.Folder
+        $project = $psboundparameters.Project
+        $environment = $psboundparameters.Environment
+
+        $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
+
+        $sourceConnection = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+        $destinationConnection = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+
+        if ($sourceConnection.versionMajor -lt 11 -or $destinationConnection.versionMajor -lt 11) {
+            throw "SSISDB catalog is only available on Sql Server 2012 and above, exiting..."
+        }
+
+        try {
+            Get-RemoteIntegrationService -Computer $Destination
+        }
+        catch {
+            Write-Exception $_
+            throw "An error occured when checking the destination for Integration Services."
+        }
+
+        try { 
+            Write-Verbose "Connecting to $Source integration services."
+            $sourceSSIS = New-Object "$ISNamespace.IntegrationServices" $sourceConnection 
+        }
+        catch { 
+            Write-Exception $_
+            throw "There was an error connecting to the source integration services."
+        }
+        try { 
+            Write-Verbose "Connecting to $Destination integration services."
+            $destinationSSIS = New-Object "$ISNamespace.IntegrationServices" $destinationConnection 
+        }
+        catch { 
+            Write-Exception $_
+            throw "There was an error connecting to the destination integration services." 
+        }
+
+        $sourceCatalog = $sourceSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }  
+        $destinationCatalog = $destinationSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" } 
+        
+        $sourceFolders = $sourceCatalog.Folders
+        $destinationFolders = $destinationCatalog.Folders
     }
     PROCESS
     {
@@ -396,12 +434,8 @@ Shows what would happen if the command were executed using force.
     
     END
     {
-        If ($sourceConnection.State -eq "Open") {
-            $sourceConnection.Close()
-        }
-        If ($destinationConnection.State -eq "Open") {
-            $destinationConnection.Close()
-        }
+        $sourceConnection.ConnectionContext.Disconnect()
+        $destinationConnection.ConnectionContext.Disconnect()
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { 
             Write-Output "Integration services migration finished." 
         }
