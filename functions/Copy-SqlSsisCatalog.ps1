@@ -8,7 +8,6 @@ Copy-SqlSsisCatalog migrates Folders, SSIS projects, and environments from one S
 By default, all folders, projects, and environments are copied. 
 The -Project parameter can be specified to copy only one project, if desired.
 The parameters get more granular from the Folder level.  i.e. specifying folder will only deploy projects/environments from within that folder.
-This function must use Integrated security.
 .PARAMETER Source
 Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2012 or greater.
 .PARAMETER Destination
@@ -45,6 +44,8 @@ Shows what would happen if the command were executed using force.
         [object]$Source,
         [parameter(Mandatory = $true)]
         [object]$Destination,
+        [System.Management.Automation.PSCredential]$SourceSqlCredential,
+        [System.Management.Automation.PSCredential]$DestinationSqlCredential,
         [String]$Project,
         [String]$Folder,
         [String]$Environment,
@@ -59,33 +60,10 @@ Shows what would happen if the command were executed using force.
 
         $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
 
-        $sourceConnString = "Server=$Source;Initial Catalog=master;Integrated Security=SSPI;"
-        $destinationConnString = "Server=$Destination;Initial Catalog=master;Integrated Security=SSPI;"
-        $sourceConnection = New-Object System.Data.SqlClient.SqlConnection $sourceConnString       
-        $destinationConnection = New-Object System.Data.SqlClient.SqlConnection $destinationConnString
-        
-        try {
-            $sourceConnection.Open()
-        }
-        catch {
-            If (!$sourceConnection.State -eq "Closed") {
-                $sourceConnection.Close()
-            }
-            Write-Exception $_
-            throw "There was an error connecting to the source SQL Server."
-        }
-        try {
-            $destinationConnection.Open()
-        }
-        catch {
-            If (!$destinationConnection.State -eq "Closed") {
-                $destinationConnection.Close()
-            }
-            Write-Exception $_
-            throw "There was an error connecting to the destination SQL Server."
-        }
+        $sourceConnection = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+        $destinationConnection = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 
-        if ($sourceConnection.ServerVersion -lt 11 -or $destinationConnection.ServerVersion -lt 11) {
+        if ($sourceConnection.versionMajor -lt 11 -or $destinationConnection.versionMajor -lt 11) {
             throw "SSISDB catalog is only available on Sql Server 2012 and above, exiting..."
         }
 
@@ -110,21 +88,23 @@ Shows what would happen if the command were executed using force.
         $destinationCatalog = $destinationSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" } 
         
         $sourceFolders = $sourceCatalog.Folders
-        $destinationFolders = $destinationCatalog.Folders	
+        $destinationFolders = $destinationCatalog.Folders
 
-        Function Deploy-Project {
+        Function Invoke-ProjectDeployment {
             param(
                 [String]$Project,
                 [String]$Folder
             )
-            if ($sourceConnection.State -eq "Closed") { 
-                $sourceConnection.Open() 
+            $sqlConn = New-Object System.Data.SqlClient.SqlConnection 
+            $sqlConn.ConnectionString  = $sourceConnection.ConnectionContext.ConnectionString
+            if ($sqlConn.State -eq "Closed") { 
+                $sqlConn.Open() 
             }  
             try {
                 Write-Output "Deploying project $Project from folder $Folder."
                 $cmd = New-Object System.Data.SqlClient.SqlCommand  
                 $cmd.CommandType = "StoredProcedure"  
-                $cmd.connection = $sourceConnection  
+                $cmd.connection = $sqlConn  
                 $cmd.CommandText = "SSISDB.Catalog.get_project"  
                 $cmd.Parameters.Add("@folder_name",$Folder) | out-null;  
                 $cmd.Parameters.Add("@project_name",$Project) | out-null;  
@@ -146,7 +126,7 @@ Shows what would happen if the command were executed using force.
             } 
         }
 
-        Function Create-Folder {
+        Function New-CatalogFolder {
             param(
                 [String]$Folder,
                 [String]$Description,
@@ -173,7 +153,7 @@ Shows what would happen if the command were executed using force.
             $destFolder.Refresh()
         }
         
-        Function Create-Environment {
+        Function New-FolderEnvironment {
             param(
                 [String]$Folder,
                 [String]$Environment,
@@ -202,7 +182,7 @@ Shows what would happen if the command were executed using force.
             $targetEnv.Refresh()
         }
 
-        Function Create-SSISDBCatalog {
+        Function New-SSISDBCatalog {
             Write-Output "SSISDB Catalog requires a password."
             $pass1 = Read-Host "Enter a password" -AsSecureString
             $plainTextPass1 = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($pass1))
@@ -230,7 +210,7 @@ Shows what would happen if the command were executed using force.
             $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
             $result = $host.ui.PromptForChoice($null, $message, $options, 0) 
             switch ($result) {
-                0 { Create-SSISDBCatalog }
+                0 { New-SSISDBCatalog }
                 1 { return }
             }
 
@@ -245,7 +225,7 @@ Shows what would happen if the command were executed using force.
                     else {
                         If ($Pscmdlet.ShouldProcess($Destination, "Dropping folder $folder and recreating")) {
                             try {
-                                Create-Folder -Folder $srcFolder.Name -Description $srcFolder.Description -Force
+                                New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description -Force
                             }
                             catch {
                                 Write-Exception $_
@@ -257,7 +237,7 @@ Shows what would happen if the command were executed using force.
                 else {
                     If ($Pscmdlet.ShouldProcess($Destination, "Creating folder $folder")) {
                         try {
-                            Create-Folder -Folder $srcFolder.Name -Description $srcFolder.Description
+                            New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description
                         }
                         catch {
                             Write-Exception $_
@@ -274,7 +254,7 @@ Shows what would happen if the command were executed using force.
                 if($destinationFolders.Name -notcontains $srcFolder.Name) {  
                     If ($Pscmdlet.ShouldProcess($Destination, "Creating folder $($srcFolder.Name)")) {
                         try {
-                            Create-Folder -Folder $srcFolder.Name -Description $srcFolder.Description
+                            New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description
                         }
                         catch {
                             Write-Exception $_
@@ -289,7 +269,7 @@ Shows what would happen if the command were executed using force.
                     else {
                         If ($Pscmdlet.ShouldProcess($Destination, "Dropping folder $($srcFolder.Name) and recreating")) {
                             try {
-                                Create-Folder -Folder $srcFolder.Name -Description $srcFolder.Description -Force
+                                New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description -Force
                             }
                             catch {
                                 Write-Exception $_
@@ -321,7 +301,7 @@ Shows what would happen if the command were executed using force.
                 foreach ($f in $folderDeploy) {
                     If ($Pscmdlet.ShouldProcess($Destination, "Deploying project $project from folder $($f.Name)")) {
                         try {
-                            Deploy-Project -Folder $f.Name -Project $project
+                            Invoke-ProjectDeployment -Folder $f.Name -Project $project
                         }
                         catch {
                             Write-Exception $_
@@ -335,7 +315,7 @@ Shows what would happen if the command were executed using force.
                 foreach ($proj in $curFolder.Projects) {
                     If ($Pscmdlet.ShouldProcess($Destination, "Deploying project $($proj.Name) from folder $($curFolder.Name)")) {
                         try {
-                            Deploy-Project -Project $proj.Name -Folder $curFolder.Name
+                            Invoke-ProjectDeployment -Project $proj.Name -Folder $curFolder.Name
                         }
                         catch {
                             Write-Exception $_
@@ -355,7 +335,7 @@ Shows what would happen if the command were executed using force.
                     if ($destinationFolders[$f.Name].Environments.Name -notcontains $environment) {
                         If ($Pscmdlet.ShouldProcess($Destination, "Deploying environment $environment from folder $($f.Name)")) {
                             try {
-                                Create-Environment -Folder $f.Name -Environment $environment
+                                New-FolderEnvironment -Folder $f.Name -Environment $environment
                             }
                             catch {
                                 Write-Exception $_
@@ -369,7 +349,7 @@ Shows what would happen if the command were executed using force.
                         else {
                             If ($Pscmdlet.ShouldProcess($Destination, "Dropping existing environment $environment and deploying environment $environment from folder $($f.Name)")) {
                                 try {
-                                    Create-Environment -Folder $f.Name -Environment $environment -Force
+                                    New-FolderEnvironment -Folder $f.Name -Environment $environment -Force
                                 }
                                 catch {
                                     Write-Exception $_
@@ -386,7 +366,7 @@ Shows what would happen if the command were executed using force.
                     if ($destinationFolders[$curFolder.Name].Environments.Name -notcontains $env.Name) {
                         If ($Pscmdlet.ShouldProcess($Destination, "Deploying environment $($env.Name) from folder $($curFolder.Name)")) {
                             try {
-                                Create-Environment -Environment $env.Name -Folder $curFolder.Name
+                                New-FolderEnvironment -Environment $env.Name -Folder $curFolder.Name
                             }
                             catch {
                                 Write-Exception $_
@@ -401,7 +381,7 @@ Shows what would happen if the command were executed using force.
                         else {
                             If ($Pscmdlet.ShouldProcess($Destination, "Deploying environment $($env.Name) from folder $($curFolder.Name)")) {
                                 try {
-                                    Create-Environment -Environment $env.Name -Folder $curFolder.Name -Force
+                                    New-FolderEnvironment -Environment $env.Name -Folder $curFolder.Name -Force
                                 }
                                 catch {
                                     Write-Exception $_
