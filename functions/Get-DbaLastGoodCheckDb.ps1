@@ -7,10 +7,18 @@ Get date/time for last known good DBCC CHECKDB
 .DESCRIPTION
 Retrieves and compares the date/time for the last known good DBCC CHECKDB, as well as the creation date/time for the database.
 
+This function supports SQL Server 2005+
+
 Please note that this script uses the DBCC DBINFO() WITH TABLERESULTS. DBCC DBINFO has several known weak points, such as:
  - DBCC DBINFO is an undocumented feature/command.
- - The LastKnowGood timestamp is resat when a DBCC CHECKFILEGROUP is performed.
+ - The LastKnowGood timestamp is updated when a DBCC CHECKFILEGROUP is performed.
+ - The LastKnowGood timestamp is updated when a DBCC CHECKDB WITH PHYSICAL_ONLY is performed.
  - The LastKnowGood timestamp does not get updated when a database in READ_ONLY.
+
+A LastGoodCheckDb result of '1900-01-01 00:00:00.000' indicated that a good DBCC CHECKDB has never been performed.
+
+SQL Server 2008R2 has a "bug" that causes each databases to possess two dbi_dbccLastKnownGood fields, instead of the normal one.
+This script will only displaythis function to only display the newest timestamp. If -Verbose is specified, the function will announce every time more than one dbi_dbccLastKnownGood fields is encountered.
 
 .PARAMETER SqlServer
 The SQL Server that you're connecting to.
@@ -108,6 +116,12 @@ ServerA\sql987 databaselist  23-10-2013 17:31:35 11-06-2014 20:17:42            
 				}
 			}
 
+			if ($server.versionMajor -lt 9)
+			{
+				Write-Warning "Get-DbaLastGoodCheckDb is only supported on SQL Server 2005 and above. Skipping Instance."
+				Continue
+			}
+
 			$dbs = $server.Databases
 
 			if ($databases.count -gt 0)
@@ -120,9 +134,17 @@ ServerA\sql987 databaselist  23-10-2013 17:31:35 11-06-2014 20:17:42            
 				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
 			}
 
+#			$dbs = $dbs | Where-Object {$_.IsAccessible}
+
 			foreach ($db in $dbs)
 			{
 				Write-Verbose "Processing $($db.name) on $servername"
+
+				if ($db.IsAccessible -eq $false)
+				{
+					Write-Warning "The database $($db.name) is not accessible. Skipping database."
+					Continue
+				}
 
 				$sql = "DBCC DBINFO ([$($db.name)]) WITH TABLERESULTS"
 				Write-Debug "T-SQL: $sql"
@@ -133,10 +155,9 @@ ServerA\sql987 databaselist  23-10-2013 17:31:35 11-06-2014 20:17:42            
 				## look for databases with two or more occurrences of the field dbi_dbccLastKnownGood
 				if ($lastKnownGoodArray.count -ge 2)
 				{
-					Write-Warning "The database $($db.name) has $($lastKnownGoodArray.count) dbi_dbccLastKnownGood fields. This script will only use the newest!"
+					Write-Verbose "The database $($db.name) has $($lastKnownGoodArray.count) dbi_dbccLastKnownGood fields. This script will only use the newest!"
 				}
 				[datetime]$lastKnownGood = $lastKnownGoodArray | Sort-Object -Descending | Select-Object -First 1
-
 
 				[int]$createVersion = ($resultTable | Where-Object Field -eq 'dbi_createVersion').Value
 				[int]$dbccFlags = ($resultTable | Where-Object Field -eq 'dbi_dbccFlags').Value
