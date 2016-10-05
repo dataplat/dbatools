@@ -1,4 +1,4 @@
-﻿Function Move-SqlDatabaseFile
+﻿Function Move-DbaDatabaseFile
 {
 <#
 .SYNOPSIS
@@ -52,21 +52,21 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Move-SqlDatabaseFile
+https://dbatools.io/Move-DbaDatabaseFile
 
 .EXAMPLE 
-Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1 
+Move-DbaDatabaseFile -SqlServer sqlserver2014a -Databases db1 
 
 Will show a grid to select the file(s), then a treeview to select the destination path and perform the move (copy&paste&delete)
 
 .EXAMPLE 
-Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1 -ExportExistingFiles -OutputFilePath "C:\temp\files.csv"
+Move-DbaDatabaseFile -SqlServer sqlserver2014a -Databases db1 -ExportExistingFiles -OutputFilePath "C:\temp\files.csv"
 
 Will generate a files.csv files to C:\temp folder with the list of all files within database 'db1'.
 This file will have an empty column called 'destination' that should be filled by user and run the command again passing this file. 
 
 .EXAMPLE 
-Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1 -FileType DATA
+Move-DbaDatabaseFile -SqlServer sqlserver2014a -Databases db1 -FileType DATA
 
 Will show a treeview to select the destination path and perform the move (copy&paste&delete) of every file of DATA (ROWS) type
 
@@ -347,7 +347,7 @@ Will show a treeview to select the destination path and perform the move (copy&p
             {
                 $files | Export-Csv -LiteralPath $OutputFilePath -NoTypeInformation
                 Write-Output "Edit the file $OutputFilePath. Keep only the rows matching the fies you want to move. Fill 'destination' column for each file.`r`n"
-                Write-Output "Use the following command to move the files:`r`nMove-SqlDatabaseFile -SqlServer $SqlServer -Databases $database -MoveFromCSV -InputFilePath '$OutputFilePath'"
+                Write-Output "Use the following command to move the files:`r`nMove-DbaDatabaseFile -SqlServer $SqlServer -Databases $database -MoveFromCSV -InputFilePath '$OutputFilePath'"
                 return
             }
             else
