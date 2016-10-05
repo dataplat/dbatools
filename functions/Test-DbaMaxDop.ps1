@@ -16,8 +16,7 @@ More info:
     https://support.microsoft.com/en-us/kb/2806535
     https://blogs.msdn.microsoft.com/sqlsakthi/2012/05/23/wow-we-have-maxdop-calculator-for-sql-server-it-makes-my-job-easier/
 
-
-These are just general recommendations for SQL Server and are a good starting point for setting the 'max degree of parallelism' option.
+These are just general recommendations for SQL Server and are a good starting point for setting the “max degree of parallelism” option.
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
@@ -48,14 +47,19 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Test-DbaMaxDop
 
 .EXAMPLE   
-Test-DbaMaxDop -SqlServer sqlcluster,sqlserver2012
+Test-DbaMaxDop -SqlServer sq2008, sqlserver2012
 
-Get Memory Settings for all servers within the SQL Server Central Management Server "sqlcluster"
+Get Max DOP setting for servers sql2008 and sqlserver2012 and also the recommended one.
 
 .EXAMPLE 
-Test-DbaMaxDop -SqlServer sqlcluster | Where-Object { $_.SqlMaxDop -gt $_.RecommendedMaxDop } | Set-SqlMaxMemory 
+Test-DbaMaxDop -SqlServer sql2014 -Detailed
 
-Find all servers in CMS that have Max dop set to higher than the recommended
+Shows Max DOP setting for server sql2014 with the recommended value. As the -Detailed switch was used will also show the ‘NUMANodes’ and ‘NumberOfCores’ of each instance
+
+.EXAMPLE 
+Test-DbaMaxDop -SqlServer sqlserver2016 -Detailed
+
+Get Max DOP setting for servers sql2016 with the recommended value. As the -Detailed switch was used will also show the ‘NUMANodes’ and ‘NumberOfCores’ of each instance. Because it is an 2016 instance will be shown ‘InstanceVersion’, ‘Database’ and ‘DatabaseMaxDop’ columns.
 
 #>
 	[CmdletBinding()]
@@ -66,7 +70,16 @@ Find all servers in CMS that have Max dop set to higher than the recommended
 		[System.Management.Automation.PSCredential]$SqlCredential,
         [Switch]$Detailed
 	)
-	
+	    
+    BEGIN
+    {
+        $notesDopLT = "Before you go and change it, try to understand why it is lower. Someone can already have done some validations and lower the value intetionally."
+        $notesDopGT = "Before you go and change it, try to understand why it is higher. Someone can already have done some validations and raised the value intetionally."        
+        $notesDopZero = "As a good starting point you should use the recommended setting. Then, monitor the instance and decide whether to keep or change the value."
+        $notesDopOne = "Some applications like SharePoint, Dynamics NAV, SAP, BizTalk has the need to use MAXDOP = 1. Please, do not change it before you confirm that your instance is not supporting one of them."
+        $notesAsRecommended = "Configuration is as recommended"
+    }
+
 	PROCESS
 	{
 		$collection = @()
@@ -91,6 +104,7 @@ Find all servers in CMS that have Max dop set to higher than the recommended
                 Continue
 		    }
 			
+            #Get current configured value
 			$maxdop = $server.Configuration.MaxDegreeOfParallelism.ConfigValue
 
 			try 
@@ -148,69 +162,107 @@ Find all servers in CMS that have Max dop set to higher than the recommended
                 }
             }
 
+            #Setting notes for instance max dop value
+            $notes = ""
+            if ($maxdop -eq 1)
+            {
+                $notes = $notesDopOne
+            }
+            else
+            {
+                if ($maxdop -ne 0 -and $maxdop -lt $recommendedMaxDop)
+                {
+                    $notes = $notesDopLT
+                }
+                else
+                {
+                    if ($maxdop -ne 0 -and $maxdop -gt $recommendedMaxDop)
+                    {
+                        $notes = $notesDopGT
+                    }
+                    else
+                    {
+                        if ($maxdop -eq 0)
+                        {
+                            $notes = $notesDopZero
+                        }
+                        else
+                        {
+                            $notes = $notesAsRecommended
+                        }
+                    }
+                }
+            }
+
             #since SQL Server 2016, MaxDop can be set per database
             if ($server.versionMajor -ge 13)
 		    {
                 $hasscopedconfiguration = $true
-			    Write-Verbose "Checking SQL Server 2016 version, will go though all databases"
+			    Write-Verbose "Server '$server' has an 2016 version, checking each database."
 
                 foreach ($database in $server.Databases | Where-Object {$_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true})
                 {
+                    Write-Verbose "Checking database '$($database.Name)'."
+
+                    $dbmaxdop = $database.MaxDop
+
                     $object = New-Object PSObject -Property @{
 				                Instance = $server.Name
                                 InstanceVersion = $server.Version
-                                InstanceMaxDop = $maxdop
                                 Database = $database.Name
-                                DatabaseMaxDop = if ($database.MaxDop -eq 0) {"$($database.MaxDop) (Will use InstanceMaxDop value)"} else {"$($database.MaxDop)"}
+                                DatabaseMaxDop = $dbmaxdop
+				                CurrentInstanceMaxDop = $maxdop
 				                RecommendedMaxDop = $recommendedMaxDop
                                 NUMANodes = $NUMAnodes
                                 NumberOfCores = $numberofcores
-            
+                                Notes = if ($dbmaxdop -eq 0) {"Will use CurrentInstanceMaxDop value"} else {"$notes"}
 			                }
                     $collection += $object
                 }
 		    }
 			else
             {
+
 			    $object = New-Object PSObject -Property @{
 				            Instance = $server.Name
                             InstanceVersion = $server.Version
-                            InstanceMaxDop = $maxdop
                             Database = "N/A"
                             DatabaseMaxDop = "N/A"
+				            CurrentInstanceMaxDop = $maxdop
 				            RecommendedMaxDop = $recommendedMaxDop
                             NUMANodes = $NUMAnodes
                             NumberOfCores = $numberofcores
-            
+                            Notes = $notes
 			            }
                 $collection += $object
             }
 			$server.ConnectionContext.Disconnect()
 			
 		}
+	}
+    END
+    {
         if ($Detailed)
         {
             if ($hasscopedconfiguration)
             {
-		        return ($collection | Sort-Object Instance | Select-Object Instance, InstanceVersion, InstanceMaxDop, Database, DatabaseMaxDop, RecommendedMaxDop, NUMANodes, NumberOfCores)
+		        return ($collection | Sort-Object Instance | Select-Object Instance, InstanceVersion, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, NUMANodes, NumberOfCores, Notes)
             }
             else
             {
-                return ($collection | Sort-Object Instance | Select-Object Instance, InstanceMaxDop, RecommendedMaxDop, NUMANodes, NumberOfCores)
+                return ($collection | Sort-Object Instance | Select-Object Instance, CurrentInstanceMaxDop, RecommendedMaxDop, NUMANodes, NumberOfCores, Notes)
             }
         }
         else
         {
             if ($hasscopedconfiguration)
             {
-                return ($collection | Sort-Object Instance | Select-Object Instance, InstanceVersion, InstanceMaxDop, Database, DatabaseMaxDop, RecommendedMaxDop)
+                return ($collection | Sort-Object Instance | Select-Object Instance, InstanceVersion, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes)
             }
             else
             {
-                return ($collection | Sort-Object Instance | Select-Object Instance, InstanceMaxDop, RecommendedMaxDop)
+                return ($collection | Sort-Object Instance | Select-Object Instance, CurrentInstanceMaxDop, RecommendedMaxDop, Notes)
             }
         }
-	}
+    }
 }
-
-
