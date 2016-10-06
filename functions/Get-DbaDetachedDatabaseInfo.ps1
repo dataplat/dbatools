@@ -1,4 +1,4 @@
-Function Get-DetachedDbInfo
+Function Get-DbaDetachedDatabaseInfo
 {
 <#  
 .SYNOPSIS  
@@ -41,19 +41,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
  
 .LINK 
-https://dbatools.io/Get-DetachedDbInfo
+https://dbatools.io/Get-DbaDetachedDatabaseInfo
  
 .EXAMPLE    
-Get-DetachedDbInfo -SqlServer sqlserver -SqlCredential $SqlCredential -MDF M:\Archive\mydb.mdf
+Get-DbaDetachedDatabaseInfo -SqlServer sqlserver -SqlCredential $SqlCredential -MDF M:\Archive\mydb.mdf
  #>	
 	
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	Param (
 		[parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[string]$SqlServer,
 		[parameter(Mandatory = $true)]
-		[string]$MDF,
+		[Alias("Mdf")]
+		[string]$Path,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
@@ -65,9 +66,9 @@ Get-DetachedDbInfo -SqlServer sqlserver -SqlCredential $SqlCredential -MDF M:\Ar
 			param (
 				[Parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
-				[Alias("ServerInstance","SqlInstance")]
+				[Alias("ServerInstance", "SqlInstance")]
 				[object]$SqlServer,
-				[string]$mdf,
+				[string]$Path,
 				[System.Management.Automation.PSCredential]$SqlCredential
 			)
 			
@@ -78,14 +79,17 @@ Get-DetachedDbInfo -SqlServer sqlserver -SqlCredential $SqlCredential -MDF M:\Ar
 			
 			try
 			{
-				$detachedDatabaseInfo = $SqlServer.DetachedDatabaseInfo($mdf)
-				$dbname = ($detachedDatabaseInfo | Where { $_.Property -eq "Database name" }).Value
-				$dbversion = ($detachedDatabaseInfo | Where { $_.Property -eq "Database version" }).Value
-				$collationid = ($detachedDatabaseInfo | Where { $_.Property -eq "Collation" }).Value
+				$detachedDatabaseInfo = $SqlServer.DetachedDatabaseInfo($path)
+				$dbname = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Database name" }).Value
+				$exactdbversion = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Database version" }).Value
+				$collationid = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Collation" }).Value
 			}
-			catch { throw "$($server.name) cannot read the file $($MDF). Does service account $($SqlServer.ServiceAccount) have accesss to that path and is the database detached?" }
+			catch
+			{
+				throw "$($server.name) cannot read the file $path. Does service account $($SqlServer.ServiceAccount) have accesss to that path and is the database detached?"
+			}
 			
-			switch ($dbversion)
+			switch ($exactdbversion)
 			{
 				829 { $dbversion = "SQL Server 2016" }
 				782 { $dbversion = "SQL Server 2014" }
@@ -99,7 +103,7 @@ Get-DetachedDbInfo -SqlServer sqlserver -SqlCredential $SqlCredential -MDF M:\Ar
 				539 { $dbversion = "SQL Server 2000" }
 				515 { $dbversion = "SQL Server 7.0" }
 				408 { $dbversion = "SQL Server 6.5" }
-				default { $dbversion = "Unknown ($dbversion)" }
+				default { $dbversion = "Unknown" }
 			}
 			
 			$collationsql = "SELECT name FROM fn_helpcollations() where collationproperty(name, N'COLLATIONID')  = $collationid"
@@ -114,27 +118,28 @@ Get-DetachedDbInfo -SqlServer sqlserver -SqlCredential $SqlCredential -MDF M:\Ar
 			
 			try
 			{
-				foreach ($file in $SqlServer.EnumDetachedDatabaseFiles($mdf))
+				foreach ($file in $SqlServer.EnumDetachedDatabaseFiles($path))
 				{
 					$datafiles += $file
 				}
 				
-				foreach ($file in $SqlServer.EnumDetachedLogFiles($mdf))
+				foreach ($file in $SqlServer.EnumDetachedLogFiles($path))
 				{
 					$logfiles += $file
 				}
 			}
-			catch { throw "$($SqlServer.name) enumerate database or log structure information for $($MDF)" }
+			catch { throw "$($SqlServer.name) enumerate database or log structure information for $($path)" }
 			
-			$mdfinfo = New-Object PSObject -Property @{
-				"Database Name" = $dbname
-				"Database Version" = $dbversion
-				"Database Collation" = $collation
-				"Data files" = $datafiles
-				"Log files" = $logfiles
+			$pathinfo = [pscustomobject]@{
+				Name = $dbname
+				Version = $dbversion
+				ExactVersion = $exactdbversion
+				Collation = $collation
+				DataFiles = $datafiles
+				LogFiles = $logfiles
 			}
 			
-			return $mdfinfo
+			return $pathinfo
 		}
 	}
 	
@@ -143,16 +148,14 @@ Get-DetachedDbInfo -SqlServer sqlserver -SqlCredential $SqlCredential -MDF M:\Ar
 		
 		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 		
-		# Get-DetachedDbInfo returns a custom object. Data file and log files are a string collection.
-		$mdfinfo = Get-MdfFileInfo $server $mdf
-		
-		Write-Output "The following information was gathered about the detatched database:"
-		Write-Output $mdfinfo
+		# Get-DbaDetachedDatabaseInfo returns a custom object. Data file and log files are a string collection.
+		$pathinfo = Get-MdfFileInfo $server $path
 		
 	}
 	
 	END
 	{
 		$server.ConnectionContext.Disconnect()
+		returnm $pathinfo
 	}
 }
