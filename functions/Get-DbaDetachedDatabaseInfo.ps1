@@ -5,8 +5,12 @@ Function Get-DbaDetachedDatabaseInfo
 Get detailed information about detached SQL Server database files.
 
 .DESCRIPTION
-This script gathers the following information from detached database files: database name, SQL Server version (compatibility level), collation, and file structure. "Data files" and "Log file" report the structure of the data and log files as they were when the database was detached. "Database version" is the comptability level.
- 
+This script gathers the following information from detached database files: database name, SQL Server version (compatibility level), collation, and file structure. 
+	
+"Data files" and "Log file" report the structure of the data and log files as they were when the database was detached. "Database version" is the comptability level.
+
+MDF files are most easily read by using a SQL Server to interpret them. Because of this, you must specify a SQL Server and the path must be relative to the SQL Server.
+
 .PARAMETER SqlServer
 An online SQL Server is required to parse the information within the detached database file. Note that this script will not attach the file, it will simply use SQL Server to read its contents.
  
@@ -53,7 +57,7 @@ SQL Server is required to process offilne MDF files. The abvoe example reutrns i
 	Param (
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
-		[string]$SqlServer,
+		[object]$SqlServer,
 		[parameter(Mandatory = $true)]
 		[Alias("Mdf")]
 		[string]$Path,
