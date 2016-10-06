@@ -46,7 +46,7 @@ https://dbatools.io/Get-DbaDetachedDatabaseInfo
 .EXAMPLE    
 Get-DbaDetachedDatabaseInfo -SqlServer sql2016 -Path M:\Archive\mydb.mdf
 	
-SQL Server is required to process offilne MDF files. Information about the detached database file, M:\Archive\mydb.mdf. This path is relative to the SQL Server "sql2016".
+SQL Server is required to process offilne MDF files. The abvoe example reutrns information about the detached database file, M:\Archive\mydb.mdf. This path is relative to the SQL Server "sql2016".
  #>	
 	
 	[CmdletBinding(DefaultParameterSetName = "Default")]
@@ -86,7 +86,7 @@ SQL Server is required to process offilne MDF files. Information about the detac
 			}
 			catch
 			{
-				throw "$servername cannot read the file $path. Does service account $serviceaccount have accesss to that path and is the database detached?"
+				throw "$servername cannot read the file $path. Is the database detached?"
 			}
 			
 			switch ($exactdbversion)
