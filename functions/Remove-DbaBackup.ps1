@@ -1,4 +1,4 @@
-﻿Function Remove-SqlBackupFromDisk
+﻿Function Remove-DbaBackup
 {
 <#
 .SYNOPSIS
@@ -61,28 +61,28 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Remove-SqlBackupFromDisk
+https://dbatools.io/Remove-DbaBackup
 
 .EXAMPLE
-Remove-SqlBackupFromDisk -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtenstion 'trn' -RetentionPeriod '48h'
+Remove-DbaBackup -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtenstion 'trn' -RetentionPeriod '48h'
 
 The cmdlet will remove '*.trn' files from 'C:\MSSQL\Backup\' and all subdirectories that are more than 48 hours. 
 
 .EXAMPLE
-Remove-SqlBackupFromDisk -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtenstion 'trn' -RetentionPeriod '48h' -WhatIf
+Remove-DbaBackup -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtenstion 'trn' -RetentionPeriod '48h' -WhatIf
  
 Same as example #1, but using the WhatIf parameter. The WhatIf parameter will allow the cmdlet show you what it will do, without actually doing it.
 In this case, no trn files will be deleted. Instead, the cmdlet will output what it will do when it runs. This is a good preventatitive measure
 especially when you are first configuring the cmdlet calls. 
 
 .EXAMPLE
-Remove-SqlBackupFromDisk -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtenstion 'bak' -RetentionPeriod '7d' -CheckArchiveBit
+Remove-DbaBackup -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtenstion 'bak' -RetentionPeriod '7d' -CheckArchiveBit
 
 The cmdlet will remove '*.bak' files from 'C:\MSSQL\Backup\' and all subdirectories that are more than 7 days old. 
 It will also ensure that the bak files have been archived using the archive bit before removing them.
 
 .EXAMPLE
-Remove-SqlBackupFromDisk -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtenstion 'bak' -RetentionPeriod '1w' -RemoveEmptyBackupFolders
+Remove-DbaBackup -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtenstion 'bak' -RetentionPeriod '1w' -RemoveEmptyBackupFolders
 
 The cmdlet will remove '*.bak' files from 'C:\MSSQL\Backup\' and all subdirectories that are more than 1 week old. 
 It will also remove any backup folders that no longer contain backup files.
