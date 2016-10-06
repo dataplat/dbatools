@@ -146,12 +146,13 @@
 		'Repair-DbaServerName',
 		'Stop-DbaProcess',
 		'Get-DbaProcess',
-		'Get-DbaAvailAbilityGroup',
+		'Get-DbaAvailabilityGroup',
 		'Copy-SqlMaintenancePlan',
 		'Test-DbaMaxDop',
 		'Copy-SqlSsisCatalog',
 		'Get-DbaLastGoodCheckDb',
-		'Test-DbaDatabaseBestPractice'
+		'Test-DbaDatabaseBestPractice',
+		'Remove-DbaBackup'
 	)
 	
 	# Cmdlets to export from this module
