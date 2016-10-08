@@ -62,13 +62,13 @@ Set recommended Max DOP setting database db1 on server sql2016.
  
 
 #>
-	[CmdletBinding()]
+	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
 		[string[]]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-        [int]$MaxDop = $null,
+        [int]$MaxDop = -1,
         [Parameter(ValueFromPipeline = $True)]
 		[object]$collection
 	)
@@ -78,12 +78,11 @@ Set recommended Max DOP setting database db1 on server sql2016.
 	BEGIN
 	{
 		$databases = $psboundparameters.Databases
+        $hasValues = $false
 	}
 	PROCESS
 	{
-        $hasValues = $false
-
-        if ($MaxDop -eq $null)
+        if ($MaxDop -eq -1)
         {
             $UseRecommended = $true
         }
@@ -93,7 +92,8 @@ Set recommended Max DOP setting database db1 on server sql2016.
 			$collection = Test-DbaMaxDop -SqlServer $SqlServer
 		}
 
-        $collection | Add-Member -NotePropertyName OldMaxDopValue -NotePropertyValue 0
+        $collection | Add-Member -NotePropertyName OldInstanceMaxDopValue -NotePropertyValue 0
+        $collection | Add-Member -NotePropertyName OldDatabaseMaxDopValue -NotePropertyValue 0
 
         foreach ($row in $collection)
 		{
@@ -117,7 +117,7 @@ Set recommended Max DOP setting database db1 on server sql2016.
 				continue
 			}
 
-            if ($databases.Count -gt 0)
+            if (($databases.Count -gt 0) -or !([string]::IsNullOrEmpty($row.Database)))
             {
                 if ($server.versionMajor -ge 13)
 		        {
@@ -125,12 +125,13 @@ Set recommended Max DOP setting database db1 on server sql2016.
                 }
                 else
                 {
-                    Write-Warning "Server '$sqlserver' does not supports Max DOP configuration per database.\nRun the command again without -Databases parameter. Skipping."
+                    Write-Warning "Server '$sqlserver' does not supports Max DOP configuration per database. Run the command again without -Databases parameter. Skipping."
                     Continue
                 }
             }
 
-			$row.OldMaxDopValue = $row.CurrentInstanceMaxDop
+			$row.OldInstanceMaxDopValue = $row.CurrentInstanceMaxDop
+            $row.OldDatabaseMaxDopValue = $row.DatabaseMaxDop
 
             if ([string]::IsNullOrEmpty($row.Database))
             {
@@ -155,7 +156,6 @@ Set recommended Max DOP setting database db1 on server sql2016.
 					    Write-Verbose "Changing $sqlserver SQL Server max DOP from $($row.CurrentInstanceMaxDop) to $($row.RecommendedMaxDop)"
 					    $server.Configuration.MaxDegreeOfParallelism.ConfigValue = $row.RecommendedMaxDop
 					    $row.CurrentInstanceMaxDop = $row.RecommendedMaxDop
-                        
                     }
 				}
 				else
@@ -170,17 +170,22 @@ Set recommended Max DOP setting database db1 on server sql2016.
 					    Write-Verbose "Changing $sqlserver SQL Server max DOP from $($row.CurrentInstanceMaxDop) to $MaxDop"
 					    $server.Configuration.MaxDegreeOfParallelism.ConfigValue = $MaxDop
 					    $row.CurrentInstanceMaxDop = $MaxDop
-                        $server.Configuration.Alter()
                     }
 				}
 
                 if ($dbscopedconfiguration)
                 {
-                    $server.Databases["$($row.Database)"].Alter()
+                    if ($Pscmdlet.ShouldProcess($row.Database, "Setting max dop on database"))
+                    {
+                        $server.Databases["$($row.Database)"].Alter()
+                    }
                 }
                 else
                 {
-                    $server.Configuration.Alter()
+                    if ($Pscmdlet.ShouldProcess($server, "Setting max dop on instance"))
+                    {
+                        $server.Configuration.Alter()
+                    }
                 }
 				
                 $hasValues = $true
@@ -190,9 +195,20 @@ Set recommended Max DOP setting database db1 on server sql2016.
 			$server.ConnectionContext.Disconnect()
 		}
 		
-        if ($hasValues)
+        if ($Pscmdlet.ShouldProcess("console", "Showing finished message"))
         {
-		    return $collection | Select Instance, OldMaxDopValue, @{ name = "CurrentMaxDopValue"; expression = { $_.CurrentInstanceMaxDop } }
+            if ($hasValues)
+            {
+            
+                if ($dbscopedconfiguration)
+                {
+                    return $collection | Select Instance, Database, OldDatabaseMaxDopValue, @{ name = "DatabaseMaxDop"; expression = { $_.CurrentInstanceMaxDop } }, OldInstanceMaxDopValue, @{ name = "CurrentMaxDopValue"; expression = { $_.CurrentInstanceMaxDop } }
+                }
+                else
+                {
+		            return $collection | Select Instance, OldInstanceMaxDopValue, @{ name = "CurrentMaxDopValue"; expression = { $_.CurrentInstanceMaxDop } }
+                }
+            }
         }
 	}
 }
