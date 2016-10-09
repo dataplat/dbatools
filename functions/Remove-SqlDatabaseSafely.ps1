@@ -234,29 +234,49 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			{
 					$ipaddr = Resolve-SqlIpAddress $destserver
 					$agentservice = Get-Service -ComputerName $ipaddr -DisplayName $serviceName
-
-					if ($agentservice.Status -ne 'Running')
-					{
-						$agentservice.Start()
-						$timeout = New-Timespan -seconds 60
-						$sw = [diagnostics.stopwatch]::StartNew()
-						$agentstatus = (Get-Service -ComputerName $ipaddr -DisplayName $serviceName).Status
-						while ($dbStatus -ne 'Running' -and $sw.elapsed -lt $timeout)
-						{
-							$dbStatus = (Get-Service -ComputerName $ipaddr -DisplayName $serviceName).Status
-						}
-					}
+                    
+                    if ($agentservice.length -ne 0)
+                    {
+					    if ($agentservice.Status -ne 'Running')
+					    {
+					    	$agentservice.Start()
+					    	$timeout = New-Timespan -seconds 60
+					    	$sw = [diagnostics.stopwatch]::StartNew()
+					    	$agentstatus = (Get-Service -ComputerName $ipaddr -DisplayName $serviceName).Status
+					    	while ($dbStatus -ne 'Running' -and $sw.elapsed -lt $timeout)
+					    	{
+					    		$dbStatus = (Get-Service -ComputerName $ipaddr -DisplayName $serviceName).Status
+					    	}
+					    }
+                        if ($agentservice.Status -ne 'Running')
+			            {
+				            throw "Cannot start Agent Service on $destination - Aborting"
+				        }
+                    }
+                    else
+                    {
+                        # Prompt if cant seem to get Agent Service 
+				        $title = "Cannot get information about $ServiceName on $destserver"
+				        $message = "Would you like us to continue without validating the agent Service? (Y/N)"
+				        $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Will continue"
+				        $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Will exit"
+				        $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+				        $result = $host.ui.PromptForChoice($title, $message, $options, 0)
+				
+				        if ($result -eq 1) 
+                        { 
+                            Throw "Abandoned as cannot chekc Agent Service - Please check permissions and connectivity"
+                        }
+                        else
+                        {
+                            Write-Output "Carrying on without checking SQLServer Agent - Good luck!"
+                        }
+                    }
 				}
 
 			catch
 			{
 				Write-Exception $_
-			}
-			
-			if ($agentservice.Status -ne 'Running')
-			{
-				throw "Cannot start Agent Service on $destination - Aborting"
-				}
 			}
 		}
 		
@@ -413,6 +433,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		}
 		
 	}
+    }
 	PROCESS
 	{
 		Start-SqlAgent
