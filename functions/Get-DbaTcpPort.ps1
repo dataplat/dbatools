@@ -128,12 +128,11 @@ Returns an object with server name, IPAddress (just ipv4), port and static ($tru
 						$instancename = $args[1]
 						$allips = @()
 						Add-Type -Assembly Microsoft.VisualBasic
-						$wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $servername
+						$wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $env:COMPUTERNAME
 						$instance = $wmi.ServerInstances | Where-Object { $_.Name -eq $instancename }
 						$tcp = $instance.ServerProtocols | Where-Object { $_.DisplayName -eq "TCP/IP" }
 						$ips = $tcp.IPAddresses
 						
-						Write-Verbose "Parsing information for $($ips.count) IP addresses"
 						foreach ($ip in $ips)
 						{
 							$props = $ip.IPAddressProperties | Where-Object { $_.Name -eq "TcpPort" -or $_.Name -eq "TcpDynamicPorts" }

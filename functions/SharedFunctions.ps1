@@ -1654,14 +1654,12 @@ Internal command
 		{
 			$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList
 		}
-		
-		Write-Verbose "Local connection for $server succeeded"
 	}
 	catch
 	{
 		try
 		{
-			Write-Verbose "Local connection attempt to $Server failed. Connecting remotely."
+			Write-Verbose "Local connection attempt failed. Connecting remotely."
 			
 			# For surely resolve stuff
 			$hostname = [System.Net.Dns]::gethostentry($ipaddr)
@@ -1674,6 +1672,7 @@ Internal command
 			else
 			{
 				$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ComputerName $hostname
+				
 			}
 		}
 		catch

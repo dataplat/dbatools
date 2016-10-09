@@ -140,10 +140,7 @@ This command doesn't support passing both servers and default database, but you 
 			{
 				try
 				{
-					if ($OutputDatabaseName -eq $false)
-					{
-						Write-Output "Downloading sp_WhoIsActive zip file, unzipping and installing."
-					}
+					Write-Output "Downloading sp_WhoIsActive zip file, unzipping and installing."
 					Get-SpWhoIsActive
 				}
 				catch
