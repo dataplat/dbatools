@@ -2,51 +2,65 @@
 {
 <#
 .SYNOPSIS
-Safely removes a SQL Database and creates an Agent Job to restore it
+Safely removes a SQL database and creates an agent job to restore it
 
 .DESCRIPTION
-Performs a DBCC CHECKDB on the database, backs up the database with Checksum and verify only to a Final Backup location, creates an Agent Job to restore from that backup, Drops the database, runs the agent job to restore the database,
+Performs a DBCC CHECKDB on the database, backs up the database with checksum and verify only to a final backup location, creates an agent job to restore from that backup, drops the database, runs the agent job to restore the database,
 performs a DBCC CHECKDB and drops the database
 
 By default the initial DBCC CHECKDB is performed
 By default the jobs and databases are created on the same server. Use -Destination to use a seperate server
+It will try to start the SQL Agent Service on the Destination Server if it is not running
 
-It will start the SQL Agent Service on the Destination Server if it is not running
+As databases is a dynamic parameter
+
+ PARAMETER Databases
+The database name to remove or an array of database names eg $Databases = 'DB1','DB2','DB3'
+You can also use the -AllDatabases switch for all databases
 
 .PARAMETER SqlServer
-The SQL Server instance holding the databases to be removed.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+The SQL Server instance holding the databases to be removed. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 .PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+Allows you to login to servers using SQL logins as opposed to Windows Auth/Integrated/Trusted.
 
 $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER DestinationServer
-If specified this is the server that the Agent Jobs will be created on. By default this is the same server as the SQLServer.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+.PARAMETER Destination
+If specified this is the server that the agent jobs will be created on. By default this is the same server as the SQLServer.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 .PARAMETER Databases
 The database name to remove or an array of database names eg $Databases = 'DB1','DB2','DB3'
 
-.PARAMETER NoDBCCCheck
-If this switch is used the initial DBCC CHECK DB will be skipped. This will make the process quicker but will also create an agent job to restore a database backup containing a corrupt database. 
+.PARAMETER NoCheck
+If this switch is used the initial DBCC CHECK DB will be skipped. This will make the process quicker but will also create an agent job to restore a database backup containing a corrupt database if the database is corrupt. 
 A second DBCC CHECKDB is performed on the restored database so you will still be notified BUT USE THIS WITH CARE
 
 .PARAMETER BackupFolder
-Final (Golden) Backup Folder for storing the backups. Be Careful if you are using a source and destination server that you use the full UNC path eg \\SERVER1\BACKUPSHARE\
+Final (Golden) backup folder for storing the backups. BE CAREFUL - if you are using a source and destination server make sure that you use the full UNC path eg \\SERVER1\BACKUPSHARE\
+
+.PARAMETER CategoryName 
+The agent job category name that the agent jobs will be created under defaults to 'Rationalisation'. This will be created if it does not exist
 
 .PARAMETER JobOwner
-The account that will own the Agent Jobs - Defaults to sa
+The account that will own the agent jobs - defaults to sa
 
 .PARAMETER UseDefaultFilePaths
 Use the instance default file paths for the mdf and ldf files to restore the database if not set will use the original file paths
 
 .PARAMETER DBCCErrorFolder 
-FolderPath for DBCC Error Output - defaults to C:\temp
+Folder path for DBCC error output - defaults to C:\temp
 
 .PARAMETER AllDatabases
-Runs the script for every user databases on a server - Useful when decomissioning a server - That would need a DestinationServer set
+Runs the script for every user databases on a server - Useful when decomissioning a server (That would also need the Destination set)
+
+.PARAMETER BackupCompression
+The compression value to be used for backing up the database. Accepts "Default", "On" or "Of". Default uses the servers default settings and is also the default for this paramaeter. On backs up with compression and off backs up without
+
+.PARAMETER ReuseSourceFolderStructure
+This switch will create the restore step to use the same folder structure as source database. If not chosen then the default file paths for the destination will be used
 
 .PARAMETER Force
 This switch will continue to perform rest of the actions and will create an Agent Job with DBCCERROR in the name and a Backup file with DBCC in the name
@@ -149,7 +163,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		[parameter(Mandatory = $false)]
 		[switch]$AllDatabases,
 		[ValidateSet("Default", "On", "Of")]
-		[string]$backupCompression = 'Default',
+		[string]$BackupCompression = 'Default',
 		#[Alias("UseDefaultFilePaths")]
 		[switch]$ReuseSourceFolderStructure,
 		[switch]$Force
