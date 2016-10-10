@@ -218,7 +218,7 @@ Finds the orphaned files in the default directories but also the extra ones
                 switch($method)
                 {
                     'local' { $dbfiles = $databasefiles.Tables[0].filename }
-                    'remote' { $dbfiles = $databasefiles.Tables[0].filename | % {$_ -replace ':','$'} | % {"\\$servername\" + $_} }
+                    'remote' { $dbfiles = $databasefiles.Tables[0].filename | ? {$_ -match ":"} | % {$_ -replace ':','$'} | % {"\\$servername\" + $_} }
                 }
 
                 # Compare the two lists and save the items that are not in the database file list 
