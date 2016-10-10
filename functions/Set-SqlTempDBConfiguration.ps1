@@ -196,8 +196,10 @@ Returns PSObject representing tempdb configuration.
 		
 		Write-Verbose "tempdb configuration validated."
 		
-		$datafiles = $server.Databases['tempdb'].ExecuteWithResults("select f.Name, f.physical_name as FileName from sys.filegroups fg join sys.database_files f on fg.data_space_id = fg.data_space_id where fg.name = 'PRIMARY' and f.type_desc = 'ROWS'").Tables[0]
-		
+		$datafiles = $server.Databases['tempdb'].ExecuteWithResults("select f.Name, f.physical_name as FileName from sys.filegroups fg join sys.database_files f on fg.data_space_id = fg.data_space_id where fg.name = 'PRIMARY' and f.type_desc = 'ROWS'").Tables[0]		
+		$existingDatafilesCount = $datafiles.Rows.Count 
+		Write-Verbose "Creating $($DataFileCount - $existingDatafilesCount) new files."
+		$existingDatafilesCount = $existingDatafilesCount -1 # indexing fix
 		#Checks passed, process reconfiguration
 		for ($i = 0; $i -lt $datafilecount; $i++)
 		{
@@ -211,9 +213,9 @@ Returns PSObject representing tempdb configuration.
 			}
 			else
 			{
-				$newname = "tempdev$i.ndf"
+				$newname = "tempdev$($i+$existingDatafilesCount).ndf"
 				$newpath = "$datapath\$newname"
-				$sql += "ALTER DATABASE tempdb ADD FILE(name=tempdev$i,filename='$newpath',size=$dataFilesizeSingleMB MB,filegrowth=512MB);"
+				$sql += "ALTER DATABASE tempdb ADD FILE(name=tempdev$($i+$existingDatafilesCount),filename='$newpath',size=$dataFilesizeSingleMB MB,filegrowth=512MB);"
 			}
 		}
 		
@@ -247,7 +249,7 @@ Returns PSObject representing tempdb configuration.
 				{
 					$server.Databases['master'].ExecuteNonQuery($sql)
 					Write-Verbose "tempdb successfully reconfigured"
-					Write-Warning "tempdb reconfigured. You must restart the SQL Service for settings to take effect."
+					Write-Warning "tempdb reconfigured. You may need to restart the  SQL Service for all settings to take effect."
 				}
 				catch
 				{
