@@ -2,11 +2,11 @@
 {
 <#
 .SYNOPSIS
-Find if database is really in the Full recovery model or not
+Find if database is really in the Full recovery model or not.
 
 .DESCRIPTION
 When you switch a database into FULL recovery model, it will behave like a SIMPLE recovery model until a full backup is taken in order to begin a log backup chain.
-This state is alson known as 'pseudo-Simple'.
+This state is also known as 'pseudo-Simple'.
 
 Inspired by Paul Randal's post (http://www.sqlskills.com/blogs/paul/new-script-is-that-database-really-in-the-full-recovery-mode/)
 	
@@ -60,7 +60,7 @@ Test-DbaFullRecoveryModel -SqlServer sql2008 | Sort-Object Server, ActualRecover
 Shows all databases which actual configured recovery model is FULL and says if they are really in FULL recovery model or not. Will show in first place the ones that are in 'pseudo-simple' mode.
 	
 #>
-	[CmdletBinding(SupportsShouldProcess = $true)]
+	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
@@ -88,7 +88,7 @@ Shows all databases which actual configured recovery model is FULL and says if t
 
                 if ($server.versionMajor -lt 9)
 		        {
-			        Write-Warning "This function does not support versions lower than SQL Server 2005 (v9)"
+			        Write-Warning "This function does not support versions lower than SQL Server 2005 (v9). Skipping server '$servername'."
                     continue
 		        }
 
