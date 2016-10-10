@@ -73,10 +73,10 @@ Get Max DOP setting for servers sql2016 with the recommended value. As the -Deta
 	    
     BEGIN
     {
-        $notesDopLT = "Before you go and change it, try to understand why it is lower. Someone can already have done some validations and lower the value intetionally."
-        $notesDopGT = "Before you go and change it, try to understand why it is higher. Someone can already have done some validations and raised the value intetionally."        
+        $notesDopLT = "Before you go and change MaxDop, try to understand why MaxDop is lower. Someone can already have done some validations and lower the value intetionally."
+        $notesDopGT = "Before you go and change MaxDop, try to understand why MaxDop is higher. Someone can already have done some validations and raised the value intetionally."        
         $notesDopZero = "As a good starting point you should use the recommended setting. Then, monitor the instance and decide whether to keep or change the value."
-        $notesDopOne = "Some applications like SharePoint, Dynamics NAV, SAP, BizTalk has the need to use MAXDOP = 1. Please, do not change it before you confirm that your instance is not supporting one of them."
+        $notesDopOne = "Some applications like SharePoint, Dynamics NAV, SAP, BizTalk has the need to use MAXDOP = 1. Please, do not change MaxDop before you confirm that your instance is not supporting one of them."
         $notesAsRecommended = "Configuration is as recommended"
     }
 
