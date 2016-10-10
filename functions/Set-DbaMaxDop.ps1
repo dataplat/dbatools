@@ -2,12 +2,13 @@
 {
 <# 
 .SYNOPSIS 
-Sets SQL Server max memory then displays information relating to SQL Server Max Memory configuration settings. Works on SQL Server 2005-2016.
+Sets SQL Server max dop then displays information relating to SQL Server Max DOP configuration settings. Works on SQL Server 2005-2016.
 
 .DESCRIPTION 
 Uses the Test-DbaMaxDop command to get the recommended value if -MaxDop parameter is not specified.
 
 These are just general recommendations for SQL Server and are a good starting point for setting the “max degree of parallelism” option.
+If server is an 2016 will also set Database scoped configurations
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
