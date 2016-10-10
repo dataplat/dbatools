@@ -3,7 +3,7 @@ Function Find-DbaOrphanedFile
 {
 <#
 .SYNOPSIS 
-Find-DbaOrphanedFile moves/removes orphaned database files
+Find-DbaOrphanedFile finds orphaned database files
 
 .DESCRIPTION
 Get all the database files for all the database for the instance
