@@ -81,6 +81,7 @@ Set recommended Max DOP setting database db1 on server sql2016.
         $hasValues = $false
 
 		$processed = New-Object System.Collections.ArrayList
+        $results = @()
 	}
 	PROCESS
 	{
@@ -102,9 +103,14 @@ Set recommended Max DOP setting database db1 on server sql2016.
         $collection | Add-Member -NotePropertyName OldInstanceMaxDopValue -NotePropertyValue 0
         $collection | Add-Member -NotePropertyName OldDatabaseMaxDopValue -NotePropertyValue 0
 
-        foreach ($server in $collection)
+        $servers = $collection | Select-Object Instance -Unique
+
+        foreach ($server in $servers)
 		{
             $servername = $server.Instance
+
+            $toprocess = $collection | Where-Object {$_.Instance -eq "$servername"}
+
             if ($servername -notin $processed)
 			{
 				$null = $processed.Add($servername)
@@ -121,7 +127,7 @@ Set recommended Max DOP setting database db1 on server sql2016.
 		    }
 		    catch
 		    {
-			    Write-Warning "Can't connect to $servername or access denied. Skipping."
+			    Write-Warning "Can't connect to $server or access denied. Skipping."
 			    continue
 		    }
 			
@@ -132,7 +138,9 @@ Set recommended Max DOP setting database db1 on server sql2016.
 			    continue
 		    }
 
-            if (($databases.Count -gt 0) -or @($collection | Where-Object {$_.Instance -eq "$servername" -and $_.DatabaseMaxDop -ne "N/A"} | Select-Object DatabaseMaxDop -Unique).Count -gt 0)
+            $servername = $server.Name
+
+            if (($databases.Count -gt 0) -or @($toprocess | Where-Object {$_.DatabaseMaxDop -ne "N/A"} | Select-Object DatabaseMaxDop -Unique).Count -gt 0)
             {
                 if ($server.versionMajor -ge 13)
 		        {
@@ -144,7 +152,7 @@ Set recommended Max DOP setting database db1 on server sql2016.
                     Continue
                 }
 
-                if (@($collection | Where-Object {$_.Instance -eq "$servername" -and $_.DatabaseMaxDop -ne "N/A"} | Select-Object DatabaseMaxDop -Unique).Count -gt 0)
+                if (@($toprocess | Where-Object {$_.DatabaseMaxDop -ne "N/A"} | Select-Object DatabaseMaxDop -Unique).Count -gt 0)
                 {
                     $dbscopedconfiguration = $true
                 }
@@ -154,35 +162,55 @@ Set recommended Max DOP setting database db1 on server sql2016.
                 }
             }
 
+            #If CurrentMaxDop equal Recommended MaxDop and all Databases Maxdop are equal to 0 don't do nothing
+            if ($dbscopedconfiguration -and  @($toprocess | Where-Object {$_.DatabaseMaxDop -ne "N/A"} | Select-Object DatabaseMaxDop -Unique).Count -eq 1)
+            {
+                if (($toprocess | Select-Object RecommendedMaxDop -Unique).RecommendedMaxDop -eq ($toprocess | Select-Object CurrentInstanceMaxDop -Unique).CurrentInstanceMaxDop `
+                    -and ($toprocess | Where-Object {$_.DatabaseMaxDop -ne "N/A"} | Select-Object DatabaseMaxDop -Unique).DatabaseMaxDop -eq 0)
+                {
+                    Write-Host "Server '$servername' skipped. No changes needed."
+                    continue
+                }
+            }
+            else
+            {
+                if (($toprocess | Select-Object RecommendedMaxDop).RecommendedMaxDop -eq ($toprocess | Select-Object CurrentInstanceMaxDop).CurrentInstanceMaxDop)
+                {
+                    Write-Host "Server '$servername' skipped. No changes needed."
+                    continue
+                }
+            }
+
             <#
                 If set configuration on SQL2016 which have database scoped configurations, and if all databases have the same DOP, we will set the recommended at server level
                 and keep all databases with 0 which means will use server configuration
             #>
             if (
-                        @($collection | Where-Object {$_.Instance -eq "$servername" -and $_.DatabaseMaxDop -ne "N/A"} | Select-Object DatabaseMaxDop -Unique).Count -eq 1 `
-                    -and (($collection | Where-Object {$_.Instance -eq "$servername"} | Select-Object DatabaseMaxDop -Unique -First 1).DatabaseMaxDop -eq ($collection | Where-Object {$_.Instance -eq "$servername"} | Select-Object RecommendedMaxDop -Unique -First 1).RecommendedMaxDop) `
+                        @($toprocess | Where-Object {$_.DatabaseMaxDop -ne "N/A"} | Select-Object DatabaseMaxDop -Unique).Count -eq 1 `
+                    -and (($toprocess | Select-Object DatabaseMaxDop -Unique -First 1).DatabaseMaxDop -eq ($toprocess | Select-Object RecommendedMaxDop -Unique -First 1).RecommendedMaxDop) `
                     -and $databases.Count -eq 0
                 )
             {
                 Write-Verbose "Databases have the same MAX DOP as the instance. Will set max DOP for databases to 0 which means that will use server configuration."
-                foreach ($row in ($collection | Where-Object {$_.Instance -eq "$servername"}))
+                foreach ($row in $toprocess)
 		        {
+                    $row.OldDatabaseMaxDopValue = $row.DatabaseMaxDop
                     $row.DatabaseMaxDop = 0
                 }
 
                 $resetDatabases = $true
-                $RecommendedMaxDop = ($collection | Where-Object {$_.Instance -eq "$servername"} | Select-Object RecommendedMaxDop -Unique -First 1).RecommendedMaxDop
+                $RecommendedMaxDop = ($toprocess | Select-Object RecommendedMaxDop -Unique -First 1).RecommendedMaxDop
             }
             else
             {
                 $resetDatabases = $false
             }
 
-            foreach ($row in ($collection | Where-Object {$_.Instance -eq "$servername"}))
+            foreach ($row in $toprocess)
 		    {
+                
 			    $row.OldInstanceMaxDopValue = $row.CurrentInstanceMaxDop
-                $row.OldDatabaseMaxDopValue = $row.DatabaseMaxDop
-			
+
 			    try
 			    {
 				    if ($UseRecommended)
@@ -203,7 +231,7 @@ Set recommended Max DOP setting database db1 on server sql2016.
                         }
                         else
                         {
-					        Write-Verbose "Changing $servername SQL Server max DOP from $($row.CurrentInstanceMaxDop) to $($row.RecommendedMaxDop)"
+					        Write-Verbose "Changing $server SQL Server max DOP from $($row.CurrentInstanceMaxDop) to $($row.RecommendedMaxDop)"
 					        $server.Configuration.MaxDegreeOfParallelism.ConfigValue = $row.RecommendedMaxDop
 					        $row.CurrentInstanceMaxDop = $row.RecommendedMaxDop
                         }
@@ -232,15 +260,27 @@ Set recommended Max DOP setting database db1 on server sql2016.
                     }
                     else
                     {
-                        if ($Pscmdlet.ShouldProcess($server, "Setting max dop on instance"))
+                        if ($Pscmdlet.ShouldProcess($servername, "Setting max dop on instance"))
                         {
                             $server.Configuration.Alter()
                         }
                     }
 				
                     $hasValues = $true
+
+                    $object = New-Object PSObject -Property @{
+				                Instance = $row.Instance
+                                InstanceVersion = $row.InstanceVersion
+                                Database = $row.Database
+                                DatabaseMaxDop = $row.DatabaseMaxDop
+				                CurrentInstanceMaxDop = $row.CurrentInstanceMaxDop
+				                RecommendedMaxDop = $row.RecommendedMaxDop
+                                OldDatabaseMaxDopValue = $row.OldDatabaseMaxDopValue
+                                OldInstanceMaxDopValue = $row.OldInstanceMaxDopValue
+			                }
+                    $results += $object
 			    }
-			    catch { Write-Error "Could not modify Max Degree of Paralellism for $servername." }
+			    catch { Write-Error "Could not modify Max Degree of Paralellism for $server." }
 		    }
 
             if ($resetDatabases)
@@ -249,7 +289,7 @@ Set recommended Max DOP setting database db1 on server sql2016.
 
                 $server.Configuration.MaxDegreeOfParallelism.ConfigValue = $RecommendedMaxDop
 
-                if ($Pscmdlet.ShouldProcess($server, "Setting max dop on instance after changed all databases"))
+                if ($Pscmdlet.ShouldProcess($servername, "Setting max dop on instance after changed all databases"))
                 {
                     $server.Configuration.Alter()
                 }          
@@ -264,12 +304,18 @@ Set recommended Max DOP setting database db1 on server sql2016.
             
                 if ($dbscopedconfiguration)
                 {
-                    return $collection | Select Instance, Database, OldDatabaseMaxDopValue, @{ name = "DatabaseMaxDop"; expression = { $_.CurrentInstanceMaxDop } }, OldInstanceMaxDopValue, @{ name = "CurrentMaxDopValue"; expression = { $_.CurrentInstanceMaxDop } }
+                    return $results | Select Instance, Database, OldDatabaseMaxDopValue, @{ name = "CurrentDatabaseMaxDopValue"; expression = { $_.DatabaseMaxDop } }, OldInstanceMaxDopValue, CurrentInstanceMaxDop
+                    #return $collection | Select Instance, Database, OldDatabaseMaxDopValue, @{ name = "CurrentDatabaseMaxDopValue"; expression = { $_.DatabaseMaxDop } }, OldInstanceMaxDopValue, CurrentInstanceMaxDop
                 }
                 else
                 {
-		            return $collection | Select Instance, OldInstanceMaxDopValue, @{ name = "CurrentMaxDopValue"; expression = { $_.CurrentInstanceMaxDop } }
+                    return $results | Select Instance, OldInstanceMaxDopValue, CurrentMaxDopValue
+		            #return $collection | Select Instance, OldInstanceMaxDopValue, CurrentMaxDopValue
                 }
+            }
+            else
+            {
+                Write-Host "Nothing have changed."
             }
         }
 	}
