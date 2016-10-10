@@ -27,13 +27,17 @@ function Get-CSVMetaData
      $HeadersInRow = 1,
      [string]$Delimiter = ",",
      [bool]$HasFieldsEnclosedInQuotes = $False,
-     [switch]$noreturn
+     [switch]$DataTypes,
+     [switch]$TableOutput,
+     [switch]$Speedtest
     )
 
     # Load the basics
 	[void][Reflection.Assembly]::LoadWithPartialName("System.Data")
 	[void][Reflection.Assembly]::LoadWithPartialName("Microsoft.VisualBasic")
 	[void][Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms")
+    Write-Verbose "[stopwatch] start"
+    $sw = [Diagnostics.Stopwatch]::StartNew()
 
     if (!$csv) 
     {
@@ -72,40 +76,52 @@ function Get-CSVMetaData
     foreach ($file in $csv)
     {
 
-        $FileName = [IO.Path]::GetFileNameWithoutExtension($file)
-        
-        $sr = New-Object System.IO.StreamReader(Get-Item $file)
+        $FileName = [IO.Path]::GetFileNameWithoutExtension($file)        
+        $sr = New-Object System.IO.StreamReader($file)      
         
         if ($HeadersInRow -gt 0) 
         {
-            $i = 0
+            [int32]$i = 0
             while ($i -lt $HeadersInRow) 
             {
                 $Headers = $sr.readline()
-                $i++
+                $i = $i + 1
             }
         }
         $SampleRow = $sr.readline()
+        [int32]$linecounter = 1
+        
+        if($speedtest)
+        {
+            while($sr.readline())
+            {
+                [int32]$linecounter = $linecounter + 1
+            }
+
+            $secs = $sw.elapsed.TotalSeconds
+            # Done! Format output then display
+            $totalrows = $linecounter++
+            $rs = "{0:N0}" -f [int]($totalrows / $secs)
+            $rm = "{0:N0}" -f [int]($totalrows / $secs * 60)
+            $mill = "{0:N0}" -f $totalrows        
+            Write-Verbose "[stopwatch] $mill rows read in $([math]::round($secs,2)) seconds ($rs rows/sec and $rm rows/min)"
+        }
         $sr.Close()
         $sr.Dispose()
 
-        # Thanks for this, Chris! http://www.schiffhauer.com/c-split-csv-values-with-a-regular-expression/
-        $pattern = "((?<=`")[^`"]*(?=`"($delimiter|$)+)|(?<=$delimiter|^)[^$delimiter`"]*(?=$delimiter|$))"
-        
-        if ($SampleRow -match $pattern -or $Headers -match $pattern) 
-        {
-            Write-Verbose "[$FileName] The CSV file appears quote identified."
-            $HasFieldsEnclosedInQuotes = $true
-        }
-
+        # Thanks for this, Bibek Lekhak! http://stackoverflow.com/questions/2402797/regex-find-characters-between
+        $pattern = """\s*([^""]*)\s*"""
 
         if ($Headers)
         {
+            Write-Verbose "checking header"
+            $HasFieldsEnclosedInQuotes = ($Headers -match $pattern)
             $sr = New-Object System.IO.StringReader($Headers)
             $HeaderRowParser = New-Object Microsoft.VisualBasic.FileIO.TextFieldParser($sr)
             $HeaderRowParser.HasFieldsEnclosedInQuotes = $HasFieldsEnclosedInQuotes
             $HeaderRowParser.Delimiters = $delimiter
             $HeaderColumns = $HeaderRowParser.ReadFields()
+            $HeaderColumnsCount = $HeaderColumns.Count            
             $HeaderRowParser.Close()
             $HeaderRowParser.Dispose()
             $sr.Close()
@@ -114,11 +130,13 @@ function Get-CSVMetaData
 
         if ($SampleRow)
         {
+            $HasFieldsEnclosedInQuotes = ($SampleRow -match $pattern)
             $sr = New-Object System.IO.StringReader($SampleRow)
             $SampleRowParser = New-Object Microsoft.VisualBasic.FileIO.TextFieldParser($sr)
             $SampleRowParser.HasFieldsEnclosedInQuotes = $HasFieldsEnclosedInQuotes
             $SampleRowParser.Delimiters = $delimiter
             $RowColumns = $SampleRowParser.ReadFields()
+            $RowColumnsCount = $RowColumns.Count            
             $SampleRowParser.Close()
             $SampleRowParser.Dispose()
             $sr.Close()
@@ -129,20 +147,20 @@ function Get-CSVMetaData
 
         if ($Headers)
         {
-            if($HeaderColumns.Length -eq $RowColumns.Length)
+            if($HeaderColumnsCount -eq $RowColumnsCount)
             {
-                Write-Verbose ("[$FileName] Header and sample row column count matching H:{0} R:{1}" -f $HeaderColumns.Length , $RowColumns.Length)
+                Write-Verbose ("[$FileName] Header and sample row column count matching H:{0} R:{1}" -f $HeaderColumnsCount , $RowColumnsCount)
             }
-            elseif($HeaderColumns.Length -gt $RowColumns.Length)
+            elseif($HeaderColumnsCount -gt $RowColumnsCount)
             {
-                Write-Warning ("[$FileName] More header than row column. H:{0} R:{1}" -f $HeaderColumns.Length , $RowColumns.Length)
+                Write-Warning ("[$FileName] More header than row column. H:{0} R:{1}" -f $HeaderColumnsCount , $RowColumnsCount)
                 Write-Warning "[$FileName] Stripping out headers."
                 $HeaderColumns = $null
                 Get-UserPrompt
             }
             else
             {   
-                Write-Warning ("[$FileName] More header than row column. H:{0} R:{1} unable to match" -f $HeaderColumns.Length , $RowColumns.Length)
+                Write-Warning ("[$FileName] More header than row column. H:{0} R:{1} unable to match" -f $HeaderColumnsCount , $RowColumnsCount)
                 Write-Warning "[$FileName] Stripping out headers."
                 Get-UserPrompt
                 $HeaderColumns = $null                 
@@ -153,19 +171,19 @@ function Get-CSVMetaData
             Write-Verbose "[$FileName] No header specified, skipping header and sample row column comparison." 
         }
         
-        Write-Verbose "[$FileName] Generating metadata (Header name, length, data type matrix)."
         
-        foreach ($column in $RowColumns) 
-        {
-            try 
-            {                
-                $HeaderName = $HeaderColumns[$RowColumns.indexof($column)]
-            } 
-            catch 
-            {
-                $HeaderName = ("Column" + ($RowColumns.indexof($column) + 1))
-            }
+        
+        $RowColumnsCount = $RowColumnsCount -1
 
+        (0..$RowColumnsCount) | foreach `
+        -Begin { Write-Verbose "[$FileName] Generating metadata (Header name, length, data type matrix)." }   `             `
+        -Process ` {
+            $HeaderNumber = "Column"+ ($_ + 1)
+            try
+            {
+                $HeaderName = $HeaderColumns[$_]
+            }
+            catch {}
             #  [char]      A Unicode 16-bit character
             #  [byte]      An 8-bit unsigned character
             #  [int]       32-bit signed integer
@@ -176,38 +194,38 @@ function Get-CSVMetaData
             #  [double]    Double-precision 64-bit floating point number
             #  [DateTime]  Date and Time
             #  [string]    Fixed-length string of Unicode characters
-    
-            $hash = New-Object System.Object    
-            $hash | Add-Member -type NoteProperty -name HeaderName -value $HeaderName
-            $hash | Add-Member -type NoteProperty -name SampleValue -value $Column
-            $hash | Add-Member -type NoteProperty -name SampleLenght -value $Column.Length
-            $hash | Add-Member -type NoteProperty -name [char] -value ([char]::TryParse($Column, [ref]0))
-            $hash | Add-Member -type NoteProperty -name [byte] -value ([byte]::TryParse($Column, [ref]0))
-            $hash | Add-Member -type NoteProperty -name [int16] -value ([int16]::TryParse($Column, [ref]0))
-            $hash | Add-Member -type NoteProperty -name [int32] -value ([int32]::TryParse($Column, [ref]0))
-            $hash | Add-Member -type NoteProperty -name [long] -value ([long]::TryParse($Column, [ref]0))
-            $hash | Add-Member -type NoteProperty -name [bool] -value ([bool]::TryParse($Column, [ref]0))
-            $hash | Add-Member -type NoteProperty -name [decimal] -value ([decimal]::TryParse($Column, [ref]0))
-            $hash | Add-Member -type NoteProperty -name [single] -value ([single]::TryParse($Column, [ref]0))
-            $hash | Add-Member -type NoteProperty -name [double] -value ([double]::TryParse($Column, [ref]0))
-            $hash | Add-Member -type NoteProperty -name [DateTime] -value ([DateTime]::TryParse($Column, [ref]0))
-            $hash | Add-Member -type NoteProperty -name [string] -value $true
-
+            
+            $hash = [pscustomobject]@{
+                NumberedHeader = $HeaderNumber    
+                NamedHeader = $HeaderName
+                SampleValue = $RowColumns[$_]
+                SampleLength = $RowColumns[$_].Length
+                char = ([char]::TryParse($RowColumns[$_], [ref]0))
+                byte = ([byte]::TryParse($RowColumns[$_], [ref]0))
+                int16 = ([int16]::TryParse($RowColumns[$_], [ref]0))
+                int32 = ([int32]::TryParse($RowColumns[$_], [ref]0))
+                long = ([long]::TryParse($RowColumns[$_], [ref]0))
+                bool = ([bool]::TryParse($RowColumns[$_], [ref]0))
+                decimal = ([decimal]::TryParse($RowColumns[$_], [ref]0))
+                single = ([single]::TryParse($RowColumns[$_], [ref]0))
+                double = ([double]::TryParse($RowColumns[$_], [ref]0))
+                DateTime = ([DateTime]::TryParse($RowColumns[$_], [ref]0))
+                string = $true
+            }
             $results += $hash
-            $i = $i + 1
-            #$results
+        } `
+        -end { Write-Verbose "[csv file] Combining metadata." }
+        $hash = [pscustomobject]@{    
+            FileName = $FileName
+            HasFieldsEnclosedInQuotes = $HasFieldsEnclosedInQuotes
+            Properties = $results
         }
-        
-        $hash = New-Object System.Object    
-        $hash | Add-Member -type NoteProperty -name FileName -value $FileName
-        $hash | Add-Member -type NoteProperty -name HasFieldsEnclosedInQuotes -Value $HasFieldsEnclosedInQuotes
-        $hash | Add-Member -type NoteProperty -name Properties -value $results
         $MetaDataCollection += $hash
     }
     
     if($MetaDataCollection.Count -gt 1) 
     {
-        Write-Verbose "[csv file] All Metadata combined into an object."
+        
         Write-Verbose "[csv file] Comparing the column length of the csv files."
         for ($i = 0; $i -lt $MetaDataCollection.Count -1; $i++) 
         {
@@ -226,12 +244,28 @@ function Get-CSVMetaData
             }
         }
     }
+    if ($TableOutput)
+    {
+        return $MetaDataCollection | % { ("FileName: {0}{1}HasFieldsEnclosedInQuotes: {2}" -f $_.FileName , [System.Environment]::NewLine ,  $_.HasFieldsEnclosedInQuotes) , @( $_.Properties ) } | Format-Table -Property *
+    }
+    $sw.Stop()
+    Write-Verbose ("[stopwatch] All process complete. Elapsed: {0}" -f $sw.Elapsed)
     return $MetaDataCollection
 }
 
-# This is a test output
-Get-CSVMetaData -HeadersInRow 1 | % { ("FileName: {0}{1}HasFieldsEnclosedInQuotes: {2}" -f $_.FileName , [System.Environment]::NewLine ,  $_.HasFieldsEnclosedInQuotes) , @( $_.Properties ) } | Format-Table -Property *
+$csv = 'C:\s3-downloads\Out-of-Stock\Complete_Demographic_Data.txt'
 
+# This is a test output
+#$csvlist = get-content "C:\Users\freee\Documents\csvlist.txt"
+Get-CSVMetaData -HeadersInRow 1 -Delimiter "," -Speedtest -DataTypes -Verbose | % { ("FileName: {0}{1}HasFieldsEnclosedInQuotes: {2}" -f $_.FileName , [System.Environment]::NewLine ,  $_.HasFieldsEnclosedInQuotes) , @( $_.Properties ) } | Format-Table -Property *
+#
+#Measure-Command {Get-CSVMetaData -HeadersInRow 10 -HasFieldsEnclosedInQuotes $false -csv "C:\Users\freee\Documents\Fielding.csv" -Verbose}
+#Measure-Command {Get-CSVMetaData -HeadersInRow 10 -HasFieldsEnclosedInQuotes $true -csv "C:\Users\freee\Documents\Fielding.csv" -Verbose}
+#Measure-Command {Get-CSVMetaData -HeadersInRow 10 -HasFieldsEnclosedInQuotes $false -csv "C:\Users\freee\Documents\Sample - Superstore Sales (Excel).csv" -Verbose}
+#Measure-Command {Get-CSVMetaData -HeadersInRow 10 -HasFieldsEnclosedInQuotes $true -csv "C:\Users\freee\Documents\Sample - Superstore Sales (Excel).csv" -Verbose}
+
+
+#Sample - Superstore Sales (Excel).csv
 
 #$form = New-Object System.Windows.Forms.Form
 #$form.AutoSize =$true
