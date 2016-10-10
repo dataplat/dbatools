@@ -100,7 +100,7 @@ Get Max DOP setting for servers sql2016 with the recommended value. As the -Deta
 
             if ($server.versionMajor -lt 9)
 		    {
-			    Write-Warning "This function does not support versions lower than SQL Server 2005 (v9)"
+			    Write-Warning "This function does not support versions lower than SQL Server 2005 (v9). Skipping server '$servername'."
                 Continue
 		    }
 			
