@@ -119,7 +119,7 @@ Shows all databases which actual configured recovery model is FULL and says if t
                 
                 if ($recoverymodel.Tables[0].Rows.Count -eq 0)
                 {
-                    Write-Host "Server '$servername' does not have any databases in FULL recovery model."
+                    Write-Output "Server '$servername' does not have any databases in FULL recovery model."
                 }
                 else
                 {
