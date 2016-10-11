@@ -159,6 +159,7 @@ function Parse-DbaCsvMetaData {
 	    $csv = $resolvedcsv
         if($csv.Length -eq 0) {
             Write-Warning "[csv file] File queue empty. Exiting."
+            BREAK
         }
     }    
 
