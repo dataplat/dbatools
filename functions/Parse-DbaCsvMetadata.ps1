@@ -18,7 +18,7 @@
 }
   
 
-function Get-DbaCsvMetaData {
+function Parse-DbaCsvMetaData {
     <#
 
     .SYNOPSIS 
@@ -76,7 +76,7 @@ function Get-DbaCsvMetaData {
 
     .LINK
 
-    https://dbatools.io/Get-DbaCSVMetadata
+    https://dbatools.io/Parse-DbaCSVMetadata
 
 
 
@@ -90,7 +90,7 @@ function Get-DbaCsvMetaData {
 
     .EXAMPLE   
 
-    Get-DbaCsvMetaData
+    Parse-DbaCsvMetaData
 
     Does this, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
@@ -98,7 +98,7 @@ function Get-DbaCsvMetaData {
 
     .EXAMPLE   
 
-    Get-DbaCsvMetaData -csv C:\mycsvfile.csv -HeadersInRow 6 - Delimiter "`t"
+    Parse-DbaCsvMetaData -csv C:\mycsvfile.csv -HeadersInRow 6 - Delimiter "`t"
 
     Opens mycsvfile.csv which has headers in the 6th row and tab delimited.
 
@@ -106,7 +106,7 @@ function Get-DbaCsvMetaData {
 
     .EXAMPLE   
 
-    Get-DbaCsvMetaData -Speedtest -Verbose | % { ("FileName: {0}{1}HasFieldsEnclosedInQuotes: {2}" -f $_.FileName , [System.Environment]::NewLine ,  $_.HasFieldsEnclosedInQuotes) , @( $_.Properties ) } | Format-Table -Property *
+    Parse-DbaCsvMetaData -Speedtest -Verbose | % { ("FileName: {0}{1}HasFieldsEnclosedInQuotes: {2}" -f $_.FileName , [System.Environment]::NewLine ,  $_.HasFieldsEnclosedInQuotes) , @( $_.Properties ) } | Format-Table -Property *
 
     Test mode, including speed test and verbose output (Select a Csv file on your system, won't bite I promise...) 
 
@@ -139,6 +139,9 @@ function Get-DbaCsvMetaData {
 	    	$csv = $fd.FileNames
 	    }
 
+        # Initialise an empty array to hold the list of resolved csv paths
+        $resolvedcsv = @()
+
         foreach ($file in $csv) 
         {
             $FileName = [IO.Path]::GetFileNameWithoutExtension($file)
@@ -154,23 +157,21 @@ function Get-DbaCsvMetaData {
 	    }
         
 	    $csv = $resolvedcsv
-
         if($csv.Length -eq 0) {
             Write-Warning "[csv file] File queue empty. Exiting."
-            break
         }
-    }
-    
+    }    
 
     PROCESS {
 
         $sw = [Diagnostics.Stopwatch]::StartNew()
 
-        
+        # Initialise an empty array to hold the metadata for single / multiple files.
+        $MetaDataCollection = @()
 
         foreach ($file in $csv)
         {
-
+            
             $FileName = [IO.Path]::GetFileNameWithoutExtension($file)        
             $sr = New-Object System.IO.StreamReader($file)      
             
@@ -266,8 +267,6 @@ function Get-DbaCsvMetaData {
                 Write-Verbose "[$FileName] No header specified, skipping header and sample row column comparison." 
             }
             
-            
-            
             $RowColumnsCount = $RowColumnsCount -1
 
             (0..$RowColumnsCount) | foreach `
@@ -341,6 +340,7 @@ function Get-DbaCsvMetaData {
         }
         $sw.Stop()
         Write-Verbose ("[stopwatch] All process complete. Elapsed: {0}" -f $sw.Elapsed)
+        
     }
 
     END 
@@ -355,4 +355,5 @@ function Get-DbaCsvMetaData {
 }
 
 # This is a test output
-Get-DbaCsvMetaData -HeadersInRow 1 -Delimiter "," -Speedtest -Verbose | % { ("FileName: {0}{1}HasFieldsEnclosedInQuotes: {2}" -f $_.FileName , [System.Environment]::NewLine ,  $_.HasFieldsEnclosedInQuotes) , @( $_.Properties ) } | Format-Table -Property *
+#$csvlist = get-content 'C:\Users\freee\Documents\csvlist.txt'
+#Parse-DbaCsvMetaData -Verbose  | % { ("FileName: {0}{1}HasFieldsEnclosedInQuotes: {2}" -f $_.FileName , [System.Environment]::NewLine ,  $_.HasFieldsEnclosedInQuotes) , @( $_.Properties ) } | Format-Table -Property *
