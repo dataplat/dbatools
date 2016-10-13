@@ -61,8 +61,6 @@ Finds the orphaned files in the default directories but also the extra ones
 	
     DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }
 	
-	# BEGIN is for private functions and starting connections. When using the pipeline, stuff in here will be executed first and only once.
-	
 	BEGIN
 	{
         
@@ -113,7 +111,6 @@ Finds the orphaned files in the default directories but also the extra ones
 
 	}
 	
-	# PROCESS is for processing stuff. If using the pipeline, the things in here will be executed repeatedly.
 	PROCESS
 	{
         # Get the servername from the sqlinstance parameter
@@ -148,7 +145,6 @@ Finds the orphaned files in the default directories but also the extra ones
 		#Write-Output "Attempting to connect to SQL Server.."
 		
 		$sourceserver = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
-		$source = $sourceserver.DomainInstanceName
 
         # Get all the database files
         $databasefiles = Get-SqlFileStructure -server $sourceserver
@@ -227,7 +223,6 @@ Finds the orphaned files in the default directories but also the extra ones
         }
     }
 		
-	# END is to disconnect from servers and finish up the script. When using the pipeline, things in here will be executed last and only once.
 	END
 	{
 		$sourceserver.ConnectionContext.Disconnect()
