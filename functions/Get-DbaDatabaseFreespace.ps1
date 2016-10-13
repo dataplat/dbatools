@@ -92,7 +92,7 @@ Returns database files and free space information for the db1 and db2 on localho
 				    ,CAST((f.size/128.0) AS DECIMAL(15,2)) AS [FileSizeMB]
 				    ,CAST((FILEPROPERTY(f.name, 'SpaceUsed')/(f.size/1.0)) * 100 as DECIMAL(15,2)) as [PercentUsed]
 					,CAST((f.growth/128.0) AS DECIMAL(15,2)) AS [GrowthMB]
-					,CASE is_percent_growth WHEN 1 THEN 'pct' WHEN 0 THEN 'KB' ELSE 'Unknown' END AS [GrowthType]
+					,CASE is_percent_growth WHEN 1 THEN 'pct' WHEN 0 THEN 'MB' ELSE 'Unknown' END AS [GrowthType]
 					,CAST((f.max_size/128.0) AS DECIMAL(15,2)) AS [MaxSizeMB]
 					,CAST((f.size/128.0) AS DECIMAL(15,2)) - CAST(CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int)/128.0 AS DECIMAL(15,2)) AS [SpaceBeforeAutoGrow]
 					,CASE f.max_size	WHEN (-1)
