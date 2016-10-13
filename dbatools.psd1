@@ -152,7 +152,8 @@
 		'Copy-SqlSsisCatalog',
 		'Get-DbaLastGoodCheckDb',
 		'Test-DbaDatabaseBestPractice',
-		'Remove-DbaBackup'
+		'Remove-DbaBackup',
+		'Find-DbaOrphanedFile'
 	)
 	
 	# Cmdlets to export from this module
