@@ -24,12 +24,12 @@ Want to join the team or just come hang out? You can find us here
 
 ## Adding new features
 
-#### This is how we like people to add new commands: 
+#### This is how we like people to add new commands:                            
 New command proposals must be approved by Chrissy LeMaire, the original creator of dbatools. This ensures the proposed command aligns with the intended spirit of the toolset. You can message Chrissy on [Slack](https://dbatools.io/slack) (@ctrlb) or post your proposal on the [Trello](https://dbatools.io/trello) Ideas list.
 
 Check out the Ideas list on our [Trello board](https://dbatools.io/trello) to get a feel for the types of commands we like. Also take a look at [Microsoft's SqlServer Trello board](https://sqlps.io/vote) to see the commands that are more appropriate for the official SQL Server PowerShell module (and vote while you're there!)
 
-#### Here are some specifics on the coding style we prefer:   
+#### Here are some specifics on the coding style we prefer:                            
 
 This will be available on the Wiki shortly. Until then, please look inside the .ps1 files or the [dbatools-templates](https://github.com/sqlcollaborative/dbatools-templates) repository.
 
@@ -37,11 +37,11 @@ This will be available on the Wiki shortly. Until then, please look inside the .
 
 This information will also be available on the Wiki as as step-by-step. The most important thing to note is that all pull requests must be made into the **development** branch. We only push to the master branch once a month.
 
-### You should include the following documentation:
+### You should include the following documentation:                            
 
 Please look at the available [dbatools-templates](https://github.com/sqlcollaborative/dbatools-templates) to see the kind of documentation we're looking for (basically everything that PowerShell allows - SYNOPSIS, DESCRIPTION, PARAMETERS, NOTES, EXAMPLES and so on.
         
-### You should include the following tests:
+### You should include the following tests:                            
 
 Please include at least 3 Examples in your command's documentation section. We use these to perform our tests. You can also look at [this awesome Pull Request comment](https://github.com/sqlcollaborative/dbatools/pull/254#issuecomment-253355070) that has step-by-step tests and expected outcomes for our QA team.
 
