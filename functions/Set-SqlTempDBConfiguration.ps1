@@ -38,10 +38,16 @@ PSCredential object to connect under. If not specified, currend Windows login wi
 Integer of number of datafiles to create. If not specified, function will use logical cores of host.
 
 .PARAMETER DataFileSizeMB
-Total data file size in megabytes
+Total data file size in megabytes.
+
+.PARAMETER DataFileGrowthSizeMB
+Total data file growth size in megabytes.
 
 .PARAMETER LogFileSizeMB
 Log file size in megabyes. If not specified, function will use 25% of total data file size.
+
+.PARAMETER LogFileGrowthSizeMB
+Total log file growth size in megabytes.
 
 .PARAMETER DataPath 
 File path to create tempdb data files in. If not specified, current tempdb location will be used.
@@ -71,6 +77,12 @@ Creates tempdb with a number of datafiles equal to the logical cores where
 each one is equal to 125MB and a log file of 250MB
 
 .EXAMPLE
+Set-SqltempdbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -DataFileCount 8 -DataFileGrowthSizeMB 1024 -LogFileGrowthSizeMB 1024 
+
+Creates tempdb with a number of datafiles equal to the logical cores where
+each one is equal to 125MB and a log file of 250MB with growth increments of 1GB
+
+.EXAMPLE
 Set-SqltempdbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -Script
 
 Provides a SQL script output to configure tempdb according to the passed parameters
@@ -89,7 +101,9 @@ Returns PSObject representing tempdb configuration.
 		[int]$DataFileCount,
 		[Parameter(Mandatory = $true)]
 		[int]$datafilesizemb,
+		[int]$DataFileGrowthSizeMB = 512,
 		[int]$LogFileSizeMB,
+		[int]$LogFileGrowthSizeMB = 512,
 		[string]$DataPath,
 		[string]$LogPath,
 		[string]$OutFile,
@@ -209,13 +223,13 @@ Returns PSObject representing tempdb configuration.
 				$filename = Split-Path $file.FileName -Leaf
 				$logicalname = $file.Name
 				$newpath = "$datapath\$filename"
-				$sql += "ALTER DATABASE tempdb MODIFY FILE(name=$logicalname,filename='$newpath',size=$dataFilesizeSingleMB MB,filegrowth=512MB);"
+				$sql += "ALTER DATABASE tempdb MODIFY FILE(name=$logicalname,filename='$newpath',size=$dataFilesizeSingleMB MB,filegrowth=$($DataFileGrowthSizeMB)MB);"
 			}
 			else
 			{
 				$newname = "tempdev$($i+$existingDatafilesCount).ndf"
 				$newpath = "$datapath\$newname"
-				$sql += "ALTER DATABASE tempdb ADD FILE(name=tempdev$($i+$existingDatafilesCount),filename='$newpath',size=$dataFilesizeSingleMB MB,filegrowth=512MB);"
+				$sql += "ALTER DATABASE tempdb ADD FILE(name=tempdev$($i+$existingDatafilesCount),filename='$newpath',size=$dataFilesizeSingleMB MB,filegrowth=$($DataFileGrowthSizeMB)MB);"
 			}
 		}
 		
@@ -228,7 +242,7 @@ Returns PSObject representing tempdb configuration.
 		$filename = Split-Path $logfile.FileName -Leaf
 		$logicalname = $logfile.Name
 		$newpath = "$logpath\$filename"
-		$sql += "ALTER DATABASE tempdb MODIFY FILE(name=$logicalname,filename='$newpath',size=$LogFileSizeMB MB,filegrowth=512MB);"
+		$sql += "ALTER DATABASE tempdb MODIFY FILE(name=$logicalname,filename='$newpath',size=$LogFileSizeMB MB,filegrowth=$(LogFileGrowthSizeMB)MB);"
 		
 		Write-Verbose "SQL Statement to resize tempdb"
 		Write-Verbose ($sql -join "`n`n")
