@@ -7,6 +7,8 @@ Displays Disk information for all local drives on a server
 .DESCRIPTION
 Returns a custom object with Server name, name of disk, label of disk, total size, free size, percent free, block size and filesystem.
 
+By default, this funtion only shows drives of type 2 and 3 (removable disk and local disk).
+
 Requires: Windows administrator access on SQL Servers
 
 .PARAMETER ComputerName
@@ -21,14 +23,27 @@ Check to see if any SQL Data or Log files exists on the disk. Uses Windows authe
 .PARAMETER SqlCredential
 If you want to use SQL Server Authentication to connect.
 
-.PARAMETER FileSystem
-Displays the filesystem (ie. NTFS, FAT32, etc.)
-
 .PARAMETER CheckFragmentation
-Includes a check for fragmentation in all filesystems. This will increase the runtime of the function.
+Includes a check for fragmentation in all filesystems. This will increase the runtime of the function, as a fragmentation check can take seconds or even minutes for a single volume.
+
+.PARAMETER AllDrives
+Without this switch, the function will only return information about drivetype 2 and 3 (removable disk and local disk).
+When this switch is used, data from all types of disks are returned:
+
+ Value  Type of disk
+   0    Unknown
+   1    No Root Directory
+   2    Removable Disk
+   3    Local Disk
+   4    Network Drive
+   5    Compact Disk
+   6    RAM Disk
+
+https://msdn.microsoft.com/en-us/library/aa394515.aspx
 
 .PARAMETER Detailed
-Includes the same information as -FileSystem -CheckForSql, as well as including Volumes ("\\?\Volume").
+Includes information about filesystem (FAT32, NTFS, ReFS, etc.), as well as the information provided by -CheckForSql and -AllDrives.
+Also includes volumes normally excluded, such as '\\?\Volume*' volumes.
 
 .NOTES
 Author: Chrissy LeMaire (clemaire@gmail.com) & Jakob Bindslet (jakob@bindslet.dk)
@@ -46,58 +61,101 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Get-DbaDiskSpace
 
 .EXAMPLE
-Get-DbaDiskSpace -ComputerName sqlserver2014a
+Get-DbaDiskSpace -ComputerName srv0042 | Format-Table -AutoSize
 
-Shows disk space for sqlserver2014a in GB
+Get diskspace for the server srv0042
 
-.EXAMPLE
-Get-DbaDiskSpace -ComputerName sqlserver2014a -Unit TB
+Server  Name Label  SizeInGB FreeInGB PercentFree BlockSize
+------  ---- -----  -------- -------- ----------- ---------
+srv0042 C:\  System   126,45   114,12       90,25      4096
+srv0042 E:\  Data1     97,62    96,33       98,67      4096
+srv0042 F:\  DATA2      29,2     29,2         100     16384
 
-Shows disk space for sqlserver2014a in TB
-
-.EXAMPLE
-Get-DbaDiskSpace -ComputerName server1, server2, server3 -Unit MB
-
-Returns a custom object filled with information for server1, server2 and server3, in MB
 
 .EXAMPLE
-Get-DbaDiskSpace -ComputerName Odin1 -Detailed | Format-Table -AutoSize
+Get-DbaDiskSpace -ComputerName srv0042 -Unit MB | Format-Table -AutoSize
 
-Server Name                                              Label SizeInGB FreeInGB PercentFree BlockSize IsSqlDisk FileSystem
------- ----                                              ----- -------- -------- ----------- --------- --------- ----------
-Odin1  \\?\Volume{2ec825ee-4f4a-4608-8a79-ee6d09f10340}\ Spare   931,37     48,3        5,19      4096 False     NTFS
-Odin1  C:\                                               System  232,54    14,97        6,44      4096 False     NTFS
-Odin1  D:\                                               Disk1  3724,87   193,82         5,2     65536 True      NTFS
-Odin1  F:\                                               Disk2  2792,87    77,76        2,78      4096 False     NTFS
+Get diskspace for the server srv0042, display in MB
+
+Server  Name Label  SizeInMB  FreeInMB PercentFree BlockSize
+------  ---- -----  --------  -------- ----------- ---------
+srv0042 C:\  System   129481 116856,11       90,25      4096
+srv0042 E:\  Data1     99968  98637,56       98,67      4096
+srv0042 F:\  DATA2     29901  29900,92         100     16384
+
+
+.EXAMPLE
+Get-DbaDiskSpace -ComputerName srv0042, srv0007 -Unit TB | Format-Table -AutoSize
+
+Get diskspace from two servers, display in TB
+
+Server  Name Label  SizeInTB FreeInTB PercentFree BlockSize
+------  ---- -----  -------- -------- ----------- ---------
+srv0042 C:\  System     0,12     0,11       90,25      4096
+srv0042 E:\  Data1       0,1     0,09       98,67      4096
+srv0042 F:\  DATA2      0,03     0,03         100     16384
+srv0007 C:\  System     0,07     0,01       11,92      4096
+
+
+.EXAMPLE
+Get-DbaDiskSpace -ComputerName srv0042 -Detailed | Format-Table -AutoSize
+
+Get detailed diskspace information
+
+Server  Name                                              Label    SizeInGB FreeInGB PercentFree BlockSize IsSqlDisk FileSystem DriveType
+------  ----                                              -----    -------- -------- ----------- --------- --------- ---------- ---------
+srv0042 C:\                                               System     126,45   114,12       90,25      4096     False NTFS       Local Disk
+srv0042 E:\                                               Data1       97,62    96,33       98,67      4096     False ReFS       Local Disk
+srv0042 F:\                                               DATA2        29,2     29,2         100     16384     False FAT32      Local Disk
+srv0042 \\?\Volume{7a31be94-b842-42f5-af71-e0464a1a9803}\ Recovery     0,44     0,13       30,01      4096     False NTFS       Local Disk
+srv0042 D:\                                                               0        0           0               False            Compact Disk
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServer")]
+		[Alias('ServerInstance', 'SqlInstance', 'SqlServer')]
 		[String[]]$ComputerName,
 		[ValidateSet('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB')]
-		[String]$Unit = "GB",
+		[String]$Unit = 'GB',
 		[Switch]$CheckForSql,
 		[Object]$SqlCredential,
         [Switch]$Detailed,
-        [Switch]$Filesystem,
-        [Switch]$CheckFragmentation
+        [Switch]$CheckFragmentation,
+        [Switch]$AllDrives
 	)
 
 	BEGIN
 	{
 		Function Get-AllDiskSpace
 		{
+			$alldisks = @()
+			$driveTypeName = @{
+				'0' = 'Unknown';
+				'1' = 'No Root Directory';
+				'2' = 'Removable Disk';
+				'3' = 'Local Disk';
+				'4' = 'Network Drive';
+				'5' = 'Compact Disk';
+				'6' = 'RAM Disk'
+			}
+
+			if ($Detailed -or $AllDrives)
+			{
+				$driveTypes = 0..6
+			}
+			else {
+				$driveTypes = 2,3
+			}
+
 			if ($Unit -eq 'Bytes')
 			{
-				$measure = "1"
+				$measure = '1'
 			}
 			else
 			{
 				$measure = "1$unit"
 			}
-			$alldisks = @()
 
 			try
 			{
@@ -114,25 +172,43 @@ Odin1  F:\                                               Disk2  2792,87    77,76
 			{
 				if ($CheckFragmentation)
 				{
-					$disks = Get-WmiObject -Class Win32_Volume -Namespace 'root\CIMV2' -ComputerName $ipaddr | Where-Object DriveType -in (2,3)
-					$disks = $disks | Select-Object SystemName, Name, DriveType, FileSystem, FreeSpace, Capacity, Label, BlockSize, @{Name="FilePercentFragmentation"; Expression={"$($_.defraganalysis().defraganalysis.FilePercentFragmentation)"}}
+##					$disks = Get-CimInstance -Class Win32_Volume -Namespace 'root\CIMV2' -ComputerName $ipaddr | Where-Object DriveType -in (2,3)
+					$disks = Get-WmiObject -Class Win32_Volume -Namespace 'root\CIMV2' -ComputerName $ipaddr | Where-Object DriveType -in ($driveTypes)
+					$disks = $disks | Select-Object SystemName, Name, DriveType, FileSystem, FreeSpace, Capacity, Label, BlockSize, @{Name='FilePercentFragmentation'; Expression={"$($_.defraganalysis().defraganalysis.FilePercentFragmentation)"}}
 				}
 				else
 				{
 					$query = "Select SystemName, Name, DriveType, FileSystem, FreeSpace, Capacity, Label, BlockSize from Win32_Volume where DriveType = 2 or DriveType = 3"
-					$disks = Get-WmiObject -ComputerName $ipaddr -Query $query | Sort-Object -Property Name
+##					$disks = Get-CimInstance -ComputerName $ipaddr -Query $query | Sort-Object -Property Name
+					$disks = Get-WmiObject -Class Win32_Volume -Namespace 'root\CIMV2' -ComputerName $ipaddr | Where-Object DriveType -in ($driveTypes)
+					$disks = $disks | Select-Object SystemName, Name, DriveType, FileSystem, FreeSpace, Capacity, Label, BlockSize
+
 				}
 			}
 			catch
 			{
-				Write-Warning "Can't connect to WMI on $server"
+				Write-Warning "Cannot connect to WMI on $server"
 				return
 			}
 
 			if ($CheckForSql -or $Detailed)
 			{
 				$sqlservers = @()
-				$sqlservices = Get-Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like 'SQL Server (*' }
+				$FailedToGetServiceInformation = $false
+				try {
+					$sqlservices = Get-Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like 'SQL Server (*' }
+				}
+				catch {
+					Write-Verbose "Cannot retrieve service information from $server using Get-Service. Trying WMI"
+					try {
+						$sqlservices = Get-WmiObject Win32_Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like 'SQL Server (*' }
+					}
+					catch {
+						Write-Warning "Cannot retrieve service information from $server using Get-Service or WMI."
+						$FailedToGetServiceInformation = $true
+					}
+				}
+
 				foreach ($service in $sqlservices)
 				{
 					$instance = $service.DisplayName.Replace('SQL Server (', '')
@@ -152,35 +228,48 @@ Odin1  F:\                                               Disk2  2792,87    77,76
 			foreach ($disk in $disks)
 			{
 				$diskname = $disk.Name
-				if ($CheckForSql -eq $true)
+				if ($CheckForSql -or $Detailed)
 				{
 					$sqldisk = $false
-					foreach ($sqlserver in $sqlservers)
-					{
-						try
+					if ($FailedToGetServiceInformation) {
+						$sqldisk = 'unknown'
+					}
+					else {
+						foreach ($sqlserver in $sqlservers)
 						{
-							$smoserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-							$sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
-							$sqlcount = $smoserver.Databases['master'].ExecuteWithResults($sql).Tables[0].Count
-							if ($sqlcount -gt 0)
+							try
 							{
-								$sqldisk = $true
-								break
+								$smoserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+								$sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
+								$sqlcount = $smoserver.Databases['master'].ExecuteWithResults($sql).Tables[0].Count
+								if ($sqlcount -gt 0)
+								{
+									$sqldisk = $true
+									break
+								}
 							}
-						}
-						catch
-						{
-							Write-Warning "Can't connect to $server ($sqlserver)"
-							continue
+							catch
+							{
+								Write-Warning "Can't connect to $server ($sqlserver)"
+								continue
+							}
 						}
 					}
 				}
 
-				if (!$diskname.StartsWith("\\") -or $Detailed)
+				if (!$diskname.StartsWith('\\') -or $Detailed)
 				{
-					$total = [math]::round($disk.Capacity / $measure, 2)
-					$free = [math]::round($disk.Freespace/$measure, 2)
-					$percentfree = [math]::round(($disk.Freespace / $disk.Capacity) * 100, 2)
+					if ($disk.capacity -eq 0 -or [string]::IsNullOrEmpty($disk.capacity))
+					{
+						$total = 0
+						$free = 0
+						$percentfree = 0
+					}
+					else {
+						$total = [math]::round($disk.Capacity / $measure, 2)
+						$free = [math]::round($disk.Freespace/$measure, 2)
+						$percentfree = [math]::round(($disk.Freespace / $disk.Capacity) * 100, 2)
+					}
 
 					$diskinfo = [PSCustomObject]@{
 						Server = $server
@@ -190,23 +279,24 @@ Odin1  F:\                                               Disk2  2792,87    77,76
 						"FreeIn$unit" = $free
 						PercentFree = $percentfree
 						BlockSize = $disk.BlockSize
-                    }
+					}
 
-                    if ($CheckForSql -or $Detailed)
-                    {
-                        Add-Member -InputObject $diskinfo -MemberType Noteproperty IsSqlDisk -value $sqldisk
-                    }
+					if ($CheckForSql -or $Detailed)
+					{
+						Add-Member -InputObject $diskinfo -MemberType Noteproperty IsSqlDisk -value $sqldisk
+					}
 
-                    if ($FileSystem -or $Detailed)
-                    {
-                        Add-Member -InputObject $diskinfo -MemberType Noteproperty FileSystem -value $disk.FileSystem
-                    }
+					if ($Detailed)
+					{
+						Add-Member -InputObject $diskinfo -MemberType Noteproperty FileSystem -value $disk.FileSystem
+						Add-Member -InputObject $diskinfo -MemberType Noteproperty DriveType -value $driveTypeName["$($disk.DriveType)"]
+					}
 
-                    if ($CheckFragmentation)
-                    {
-                        Add-Member -InputObject $diskinfo -MemberType Noteproperty FileSystem -value $disk.FileSystem
-                    }
-                    $alldisks += $diskinfo
+					if ($CheckFragmentation)
+					{
+						Add-Member -InputObject $diskinfo -MemberType Noteproperty PercentFragmented -value $disk.FilePercentFragmentation
+					}
+					$alldisks += $diskinfo
 				}
 			}
 			return $alldisks
