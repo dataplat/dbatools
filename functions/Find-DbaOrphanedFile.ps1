@@ -56,10 +56,8 @@ Finds the orphaned files in the default directories but also the extra ones
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object]$SqlCredential,
         [parameter(Mandatory = $false, ValueFromPipeline = $true)]
-        [string[]]$SourceDirectory
+        [string[]]$Path
 	)
-	
-    DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }
 	
 	BEGIN
 	{
@@ -124,7 +122,7 @@ Finds the orphaned files in the default directories but also the extra ones
         }
 
         # Check if the servername is the local server
-        if($env:computername -eq $servername)
+        if(($env:computername -eq $servername) -or ($env:computername -eq '127.0.0.1'))
         {
             # Check if the user is executing the function in elevated mode
             if(-not ((New-Object Security.Principal.WindowsPrincipal ([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator))) 
@@ -156,32 +154,28 @@ Finds the orphaned files in the default directories but also the extra ones
             $orphanedfiles = @() 
 
             # Getthe default data and log directories from the instance
-            $SourceDirectory += $sourceserver.RootDirectory + "\DATA"
+            $Path += $sourceserver.RootDirectory + "\DATA"
+            
 
-            # Check if the default file path is set
-            if (($sourceserver.Settings.DefaultFile).Length -eq 0) 
+            # Get the default data and log paths
+            $Path += Get-SqlDefaultPaths $server data
+            $Path += Get-SqlDefaultPaths $server log
+
+            # Add the system database paths if not already included
+            if($Path -notcontains $sourceserver.MasterDBPath)
             {
-	            $SourceDirectory += $sourceserver.Information.MasterDBPath
-	        }
-            else
-            {
-                $SourceDirectory += $sourceserver.Settings.DefaultFile
+                $Path += $sourceserver.MasterDBPath
             }
-
-            # Check if the default log path is set
-	        if (($sourceserver.Settings.DefaultLog).Length -eq 0) {
-	            $SourceDirectory = $sourceserver.Information.MasterDBLogPath
-	        }
-            else
+            if($Path -notcontains $sourceserver.MasterDBLogPath)
             {
-                $SourceDirectory += $sourceserver.Settings.DefaultLog
+                $Path += $sourceserver.MasterDBLogPath
             }
 
             # Create the array to hold the files on disk
             $diskfiles = @()
 
             # Loop through each of the directories and get all the data and log file related files
-            foreach($directory in $SourceDirectory)
+            foreach($directory in $Path)
             {
                 # Cleanup directory
                 if($directory.EndsWith("\")) 
@@ -212,7 +206,7 @@ Finds the orphaned files in the default directories but also the extra ones
                 switch($method)
                 {
                     'local' { $dbfiles = $databasefiles.Tables[0].filename }
-                    'remote' { $dbfiles = $databasefiles.Tables[0].filename | ? {$_ -match ":"} | % {$_ -replace ':','$'} | % {"\\$servername\" + $_} }
+                    'remote' { $dbfiles = $databasefiles.Tables[0].filename | Where-Object {$_ -match ":"} | ForEach-Object {$_ -replace ':','$'} | ForEach-Object {"\\$servername\" + $_} }
                 }
 
                 # Compare the two lists and save the items that are not in the database file list 
