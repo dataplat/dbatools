@@ -216,7 +216,8 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 
 		function Start-SqlAgent
 		{
-			
+			[CmdletBinding(SupportsShouldProcess = $true)]
+			param()
 			if ($destserver.VersionMajor -eq 8)
 			{
 				$serviceName = 'MSSQLSERVER'
@@ -262,6 +263,8 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		
 		Function Start-DbccCheck
 		{
+			
+			[CmdletBinding(SupportsShouldProcess = $true)]
 			param (
 				[object]$server,
 				[string]$dbname
@@ -297,6 +300,8 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		
 		Function New-SqlAgentJobCategory
 		{
+			
+			[CmdletBinding(SupportsShouldProcess = $true)]
 			param ([string]$categoryname,
 				[object]$jobServer)
 			
@@ -332,7 +337,6 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				ALTERED To Add TSql switch and remove norecovery switch default
 			#>
 			
-			[CmdletBinding()]
 			param (
 				[Parameter(Mandatory = $true)]
 				[Alias('ServerInstance', 'SqlInstance')]
