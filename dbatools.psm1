@@ -1,6 +1,7 @@
-# All supporting functions have been moved to Functions\SharedFunctions.ps1
-# If you're looking through the code, you pretty much have to work with two files
-# at any one time. The function you're working on, and SharedFunctions.ps1
+# All internal functions privately avaialble within the toolset
+foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\*.ps1")) { . $function }
+
+# All exported functions
 foreach ($function in (Get-ChildItem "$PSScriptRoot\functions\*.ps1")) { . $function }
 
 # Not supporting the provider path at this time
