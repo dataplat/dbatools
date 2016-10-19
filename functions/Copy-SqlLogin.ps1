@@ -282,7 +282,7 @@ Limitations: Does not support Application Roles yet
 								$sid = "0x"; $sourcelogin.sid | % { $sid += ("{0:X}" -f $_).PadLeft(2, "0") }
 								$sqlfailsafe = "CREATE LOGIN [$username] WITH PASSWORD = $hashedpass HASHED, SID = $sid, 
 												DEFAULT_DATABASE = [$defaultdb], CHECK_POLICY = $checkpolicy, 
-												CHECK_EXPIRATION = $checkexpiration, DEFAULT_LANGUAGE = [$sourcelogin.Language]"
+												CHECK_EXPIRATION = $checkexpiration, DEFAULT_LANGUAGE = [$($sourcelogin.Language)]"
 								
 								$null = $destserver.ConnectionContext.ExecuteNonQuery($sqlfailsafe)
 								$destlogin = $destserver.logins[$username]
