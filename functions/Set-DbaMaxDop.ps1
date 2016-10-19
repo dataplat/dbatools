@@ -42,9 +42,9 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Set-DbaMaxDop
 
 .EXAMPLE   
-Set-DbaMaxDop -SqlServer sql2008, sqlserver2012
+Set-DbaMaxDop -SqlServer sql2008, sql2012
 
-Set recommended Max DOP setting for servers sql2008 and sqlserver2012.
+Set recommended Max DOP setting for servers sql2008 and sql2012.
 
 .EXAMPLE 
 Set-DbaMaxDop -SqlServer sql2014 -MaxDop 4
@@ -82,10 +82,12 @@ Set recommended Max DOP setting database db1 on server sql2016.
         $hasValues = $false
 
 		$processed = New-Object System.Collections.ArrayList
-        $results = @()
+        
 	}
 	PROCESS
 	{
+        $results = @()
+
         if ($MaxDop -eq -1)
         {
             $UseRecommended = $true
@@ -141,7 +143,16 @@ Set recommended Max DOP setting database db1 on server sql2016.
 
             $servername = $server.Name
 
-            if (($databases.Count -gt 0) -or @($toprocess | Where-Object {$_.DatabaseMaxDop -ne "N/A"} | Select-Object DatabaseMaxDop -Unique).Count -gt 0)
+            if ([bool]($toprocess.PSobject.Properties.Name -contains "DatabaseMaxDop"))
+            {
+                $distinctdbvalue = @($toprocess | Where-Object {$_.DatabaseMaxDop -ne "N/A"} | Select-Object DatabaseMaxDop -Unique).Count  
+            }
+            else
+            {
+                $distinctdbvalue = -1
+            }
+
+            if (($databases.Count -gt 0) -or $distinctdbvalue -gt 0)
             {
                 if ($server.versionMajor -ge 13)
 		        {
@@ -153,7 +164,7 @@ Set recommended Max DOP setting database db1 on server sql2016.
                     Continue
                 }
 
-                if (@($toprocess | Where-Object {$_.DatabaseMaxDop -ne "N/A"} | Select-Object DatabaseMaxDop -Unique).Count -gt 0)
+                if ($distinctdbvalue -gt 0)
                 {
                     $dbscopedconfiguration = $true
                 }
@@ -164,7 +175,7 @@ Set recommended Max DOP setting database db1 on server sql2016.
             }
 
             #If CurrentMaxDop equal Recommended MaxDop and all Databases Maxdop are equal to 0 don't do nothing
-            if ($dbscopedconfiguration -and  @($toprocess | Where-Object {$_.DatabaseMaxDop -ne "N/A"} | Select-Object DatabaseMaxDop -Unique).Count -eq 1)
+            if ($dbscopedconfiguration -and  $distinctdbvalue -eq 1)
             {
                 if (($toprocess | Select-Object RecommendedMaxDop -Unique).RecommendedMaxDop -eq ($toprocess | Select-Object CurrentInstanceMaxDop -Unique).CurrentInstanceMaxDop `
                     -and ($toprocess | Where-Object {$_.DatabaseMaxDop -ne "N/A"} | Select-Object DatabaseMaxDop -Unique).DatabaseMaxDop -eq 0)
@@ -175,7 +186,7 @@ Set recommended Max DOP setting database db1 on server sql2016.
             }
             else
             {
-                if (($toprocess | Select-Object RecommendedMaxDop).RecommendedMaxDop -eq ($toprocess | Select-Object CurrentInstanceMaxDop).CurrentInstanceMaxDop)
+                if ($UseRecommended -and ($toprocess | Select-Object RecommendedMaxDop).RecommendedMaxDop -eq ($toprocess | Select-Object CurrentInstanceMaxDop).CurrentInstanceMaxDop)
                 {
                     Write-Host "Server '$servername' skipped. No changes needed."
                     continue
@@ -187,7 +198,7 @@ Set recommended Max DOP setting database db1 on server sql2016.
                 and keep all databases with 0 which means will use server configuration
             #>
             if (
-                        @($toprocess | Where-Object {$_.DatabaseMaxDop -ne "N/A"} | Select-Object DatabaseMaxDop -Unique).Count -eq 1 `
+                         $distinctdbvalue -eq 1 `
                     -and (($toprocess | Select-Object DatabaseMaxDop -Unique -First 1).DatabaseMaxDop -eq ($toprocess | Select-Object RecommendedMaxDop -Unique -First 1).RecommendedMaxDop) `
                     -and $databases.Count -eq 0
                 )
@@ -218,6 +229,8 @@ Set recommended Max DOP setting database db1 on server sql2016.
 				    {
                         if ($dbscopedconfiguration)
                         {
+                            $row.OldDatabaseMaxDopValue = $row.DatabaseMaxDop
+
                             if ($resetDatabases)
                             {
                                 Write-Verbose "Changing $($row.Database) database max DOP to $($row.DatabaseMaxDop)."
@@ -227,6 +240,7 @@ Set recommended Max DOP setting database db1 on server sql2016.
                             {
                                 Write-Verbose "Changing $($row.Database) database max DOP from $($row.DatabaseMaxDop) to $($row.RecommendedMaxDop)"
                                 $server.Databases["$($row.Database)"].MaxDop = $row.RecommendedMaxDop
+                                $row.DatabaseMaxDop = $row.RecommendedMaxDop
                             }
 					        
                         }
@@ -243,6 +257,7 @@ Set recommended Max DOP setting database db1 on server sql2016.
                         {
                             Write-Verbose "Changing $($row.Database) database max DOP from $($row.DatabaseMaxDop) to $MaxDop"
 					        $server.Databases["$($row.Database)"].MaxDop = $MaxDop
+                            $row.DatabaseMaxDop = $MaxDop
                         }
                         else
                         {
@@ -306,12 +321,10 @@ Set recommended Max DOP setting database db1 on server sql2016.
                 if ($dbscopedconfiguration)
                 {
                     return $results | Select Instance, Database, OldDatabaseMaxDopValue, @{ name = "CurrentDatabaseMaxDopValue"; expression = { $_.DatabaseMaxDop } }, OldInstanceMaxDopValue, CurrentInstanceMaxDop
-                    #return $collection | Select Instance, Database, OldDatabaseMaxDopValue, @{ name = "CurrentDatabaseMaxDopValue"; expression = { $_.DatabaseMaxDop } }, OldInstanceMaxDopValue, CurrentInstanceMaxDop
                 }
                 else
                 {
-                    return $results | Select Instance, OldInstanceMaxDopValue, CurrentMaxDopValue
-		            #return $collection | Select Instance, OldInstanceMaxDopValue, CurrentMaxDopValue
+                    return $results | Select Instance, OldInstanceMaxDopValue, CurrentInstanceMaxDop
                 }
             }
             else
