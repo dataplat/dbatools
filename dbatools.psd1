@@ -96,7 +96,7 @@
 		'Import-SqlSpConfigure',
 		'Export-SqlSpConfigure',
 		'Get-SqlMaxMemory',
-		'Get-DbaDetachedDatabaseInfo',
+		'Get-DetachedDBInfo',
 		'Restore-SqlBackupFromDirectory',
 		'Test-SqlConnection',
 		'Import-CsvToSql',
@@ -146,13 +146,8 @@
 		'Repair-DbaServerName',
 		'Stop-DbaProcess',
 		'Get-DbaProcess',
-		'Get-DbaAvailabilityGroup',
-		'Copy-SqlMaintenancePlan',
-		'Test-DbaMaxDop',
-		'Copy-SqlSsisCatalog',
-		'Get-DbaLastGoodCheckDb',
-		'Test-DbaDatabaseBestPractice',
-		'Remove-DbaBackup'
+		'Get-SqlAvailAbilityGroup',
+		'Copy-SqlMaintenancePlan'
 	)
 	
 	# Cmdlets to export from this module
