@@ -49,27 +49,22 @@ https://dbatools.io/Get-DbaProcess
 .EXAMPLE
 Get-DbaProcess -SqlServer sqlserver2014a -Logins base\ctrlb, sa
 
-Finds all processes for base\ctrlb and sa on sqlserver2014a, then kills them. Uses Windows Authentication to login to sqlserver2014a.
+Shows information about the processes for base\ctrlb and sa on sqlserver2014a. Uses Windows Authentication to login to sqlserver2014a.
 
 .EXAMPLE   
 Get-DbaProcess -SqlServer sqlserver2014a -SqlCredential $credential -Spids 56, 77
 	
-Finds processes for spid 56 and 57, then kills them. Uses alternative (SQL or Windows) credentials to login to sqlserver2014a.
+Shows information about the processes for spid 56 and 57. Uses alternative (SQL or Windows) credentials to login to sqlserver2014a.
 
 .EXAMPLE   
 Get-DbaProcess -SqlServer sqlserver2014a -Programs 'Microsoft SQL Server Management Studio'
 	
-Finds processes that were created in Microsoft SQL Server Management Studio, then kills them.
+Shows information about the processes that were created in Microsoft SQL Server Management Studio.
 
 .EXAMPLE   
 Get-DbaProcess -SqlServer sqlserver2014a -Hosts workstationx, server100
 	
-Finds processes that were initiated by hosts (computers/clients) workstationx and server 1000, then kills them.
-
-.EXAMPLE   
-Get-DbaProcess -SqlServer sqlserver2014  -Databases tempdb -WhatIf
-	
-Shows what would happen if the command were executed.
+Shows information about the processes that were initiated by hosts (computers/clients) workstationx and server 1000.
 	
 #>
 	[CmdletBinding()]
