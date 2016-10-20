@@ -45,8 +45,8 @@ To return true or false for Power Plan being set to High Performance
 .EXAMPLE   
 Test-DbaPowerPlan -ComputerName sqlserver2014a -CustomPowerPlan 'Maximum Performance'
 
-To return true or false for Power Plan being set to the custom power plan Samsung High Performance. 
-	
+To return true or false for Power Plan being set to the custom power plan called Maximum Performance 
+
 .EXAMPLE   
 Test-DbaPowerPlan -ComputerName sqlserver2014a -Detailed
 	
