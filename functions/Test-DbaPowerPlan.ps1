@@ -87,7 +87,7 @@ To return detailed information Power Plans
 				Write-Verbose "Getting Power Plan information from $server"
 				$powerplans = $(Get-CimInstance -ComputerName $ipaddr -classname Win32_PowerPlan -Namespace "root\cimv2\power" | select ElementName, InstanceID, IsActive)                
 				$powerplan = $($powerplans | where {  $_.IsActive -eq 'True' } |  select ElementName, InstanceID)
-				$powerplan.InstanceID = $($powerplan).InstanceID
+				$powerplan.InstanceID = $powerplan.InstanceID.Split('{')[1].Split('}')[0]
 				
 				if ($CustomPowerPlan.Length -gt 0)
 				{					
@@ -96,7 +96,7 @@ To return detailed information Power Plans
 				}
 				else 
 				{
-					$bpPowerPlan.ElementName =  $( $powerplans | where {  $($_).InstanceID -eq $bpPowerPlan.InstanceID }).ElementName  
+					$bpPowerPlan.ElementName =  $( $powerplans | where {  $_.InstanceID.Split('{')[1].Split('}')[0] -eq $bpPowerPlan.InstanceID }).ElementName  
                     if ($bpPowerplan.ElementName -eq $null)
                     {
                         $bpPowerPlan.ElementName = "You do not have the high performance plan installed on this machine."
@@ -110,6 +110,7 @@ To return detailed information Power Plans
 				return
 			}
 			
+            Write-Verbose "Recommended GUID is $($bpPowerPlan.InstanceID) and you have $($powerplan.InstanceID)"
 			if ($powerplan.InstanceID -eq $null)
 			{
 				# the try/catch above isn't working, so make it silent and handle it here.
@@ -117,7 +118,7 @@ To return detailed information Power Plans
 			}
 			
 			if ($powerplan.InstanceID -eq $bpPowerPlan.InstanceID)
-			{
+			{                
 				$IsBestPractice = $true
 			}
 			else
