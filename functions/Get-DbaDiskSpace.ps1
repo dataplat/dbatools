@@ -65,7 +65,7 @@ Returns a custom object filled with information for server1, server2 and server3
 	{
 		Function Get-AllDiskSpace
 		{
-			
+
 			$measure = "1$unit"
 			$alldisks = @()
 			

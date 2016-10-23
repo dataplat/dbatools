@@ -65,7 +65,8 @@ filled with database list from specified SQL Server server.
 		[Parameter(Mandatory = $true)]
 		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[System.Management.Automation.PSCredential]$SqlCredential,		
+		[bool]$NoSystem 
 	)
 
 	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
@@ -75,7 +76,7 @@ filled with database list from specified SQL Server server.
 
 	# Populate arrays
 	$databaselist = @()
-
+	
 	if ($server.Databases.Count -gt 255)
 	{
 		# Don't slow them down by building a list that likely won't be used anyway
@@ -92,10 +93,19 @@ filled with database list from specified SQL Server server.
 
 	foreach ($database in $server.databases)
 	{
-		if ((!$database.IsSystemObject) -and $SupportDbs -notcontains $database.name)
-		{
-			$databaselist += $database.name
+		if ( $NoSystem ) {
+			if ((!$database.IsSystemObject) -and $SupportDbs -notcontains $database.name)
+			{
+				$databaselist += $database.name
+			}
+		} else 
+		{ 
+			if ($SupportDbs -notcontains $database.name)
+			{
+				$databaselist += $database.name
+			}
 		}
+			
 	}
 
 	# Reusable parameter setup
