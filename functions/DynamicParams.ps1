@@ -66,7 +66,7 @@ filled with database list from specified SQL Server server.
 		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential,		
-		[bool]$NoSystem 
+		[bool]$NoSystem=$false
 	)
 
 	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
