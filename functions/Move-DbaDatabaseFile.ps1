@@ -1,38 +1,36 @@
-﻿Function Move-DbaDatabaseFile
+Function Move-DbaDatabaseFile
 {
 <#
 .SYNOPSIS
-Helps moving databases files to another location with safety.
-Is usefull when a new drive/lun is delivered or when we need to move files to another drive/lun to free space.
+Moves databases files to another location safely.
 
 .DESCRIPTION
 This function will perform the following steps:
-    1. Set database offline
-    2. Copy file(s) from source to destination
-    3. Alter database files location on database metadata (using ALTER DATABASE [db] MODIFY FILE command)
-    4. Bring database Online
-    5. Perform DBCC CHECKDB - You can skip this step if you want to execute it manually after check that database is online.
+    1. Set database offline.
+    2. Copy file(s) from source to destination.
+    3. Alter database files location based on database metadata (using ALTER DATABASE [db] MODIFY FILE command.)
+    4. Bring database online.
+    5. Perform DBCC CHECKDB - skippable (in the case of needing to scheduling this later).
 
-By default the source files would not be deleted. But if you want, you can use -DeleteSourceFiles switch.
-
+By default the source files would not be deleted unless you use the -DeleteSourceFiles switch.
 
 Copy method:
-    If running localy
-        - Use Robocopy. If not exits use Start-BitsTransfer
+    If running locally
+        - Use robocopy, if it doesn't exist use Start-BitsTransfer.
 
     If run remotely   
-        - Check if user have access to UNC paths (\\) 
-            - if yes uses robocopy
-            - If not, try Remote Session (PSSession) -> if not enabled on target machine you can enable by using the following command: Enable-PSRemoting -force
-                uses robocopy on the machine if exists
+        - Check if user has access to UNC paths (\\). 
+            - If they do, use robocopy.
+            - If they do not, attempts to establish a Remote Session (PSSession) -> Use Enable-PSRemoting -force locally on machine to enable remote sessions.
+                - Uses robocopy on the machine if exists.
 
 The -Databases parameter is autopopulated for command-line completion and can be used to copy only specific objects.
 
 .PARAMETER SqlServer
-The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+The SQL Server instance. You must have sysadmin access and the server version must be SQL Server version 2000 or higher.
 
 .PARAMETER Databases
-Will appear once you chose a -SqlServer that you have access.
+Will appear once you chose a -SqlServer that you have access to.
 
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -42,36 +40,33 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER ExportDatabaseStructure
-This switch with the -OutFile parameter will generate an CSV file with all database files. 
+This switch with the -OutFile parameter will generate a CSV with all database files. 
 The CSV have a column named 'DestinationFolderPath' which must be filled with the destination path you want.
 You must remove all lines that have files you don't want to move.
 
 .PARAMETER OutFile
-This must be specified when using -ExportDatabaseStructure switch. 
-This specifies the CSV file to write to. 
-Must include the path.
+Used along with the -ExportDatabaseStructure switch, this specifies the full path and filename of the destination CSV.
 
 .PARAMETER MoveFromCSV
-This switch indicate that you will specify an CSV input file using the -InputFile parameter to say which files want to move.
+Used along with the -InputFile parameter, indicating you are importing the database structure using a CSV format. 
 
-.PARAMETER InputFile,
-This must be specified when using -ExportDatabaseStructure switch.
-This specifies the CSV file to read from.
-Must include the path.  
+.PARAMETER InputFile
+Used along with the -MoveFromCSV switch, this specifies the full path and filename of the source CSV.
 
 .PARAMETER CheckFileHash
-This switch allows a validation using file's hashes. Generate hash for source and destination files and check if is the same.
-This may take a long time for bigger files.
+This switch allows checksum verification of the data files.
+This involves reading all of your data and will take a long time for larger files. 
 
 .PARAMETER NoDbccCheckDb
-If this switch is used the DBCC CHECK DB will be skipped. USE THIS WITH CARE!
-You may want to use this switch if your database is big. But you should execute the command after.
+Skip the DBCC CHECKDB. USE THIS WITH CARE!
+You may want to use this switch if your database is big. 
+You should execute CHECKDB after moving any database.
 
 .PARAMETER DeleteSourceFiles
-If this switch is used the source files will be deleted after database comes online with success.
+If this switch is used the source files will be deleted after database comes online successfully.
 
 .PARAMETER Force
-This switch will continue to perform rest of the actions even if DBCC produces an error.
+Continue even if DBCC produces an error.
 
 .NOTES 
 Original Author: Cláudio Silva (@ClaudioESSilva)
@@ -94,8 +89,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 References:
     Copy-WithProgress using robocopy -> http://stackoverflow.com/questions/13883404/custom-robocopy-progress-bar-in-powershell
-    Thanks to Trevor Sullivan's    
-    A excellent example behind most of this robocopy code.
+    Thanks to Trevor Sullivan for his excellent example that is behind most of this robocopy code.
 
 .LINK
 https://dbatools.io/Move-DbaDatabaseFile
@@ -103,39 +97,37 @@ https://dbatools.io/Move-DbaDatabaseFile
 .EXAMPLE 
 Move-DbaDatabaseFile -SqlServer sqlserver2014a -Databases db1 
 
-Will show a grid to select the file(s), then a treeview to select the destination path and perform the file copy
+Will show a grid to select the file(s), then a treeview to select the destination path and perform the file copy.
 
 .EXAMPLE 
 Move-DbaDatabaseFile -SqlServer sqlserver2014a -Databases db1 -ExportDatabaseStructure -OutFile "C:\temp\files.csv"
 
-Will generate a files.csv files to C:\temp folder with the list of all files within database 'db1'.
-This file will have an empty column called 'DestinationFolderPath' that should be filled by user and run the command again passing this file. 
+Will generate a files.csv files in C:\temp with the list of all files within database 'db1'.
+This file will have an empty column called 'DestinationFolderPath' which you can fill out and run the command again passing in this file. 
 
 .EXAMPLE 
 Move-DbaDatabaseFile -SqlServer sqlserver2014a -Databases db1 -FileType DATA
 
-Will show a treeview to select the destination path and perform the file copy of every file of DATA (ROWS) type
+Will show a treeview to select the destination path and perform the file copy of every file of DATA (ROWS) type.
 
 .EXAMPLE
 Move-DbaDatabaseFile -SqlServer sqlserver2014a -Databases db1 -DeleteSourceFiles
 
-Will show a grid to select the file(s), then a treeview to select the destination path and perform the move (copy&paste&delete) every selected file
+Will show a grid to select the file(s), then a treeview to select the destination path and perform the move (copy&paste&delete) every selected file.
 
 .EXAMPLE
 Move-DbaDatabaseFile -SqlServer sqlserver2014a -Databases db1 -NoDbccCheckDb
 
-Will show a grid to select the file(s), then a treeview to select the destination path and perform the copy every selected file. 
+Will show a grid to select the file(s), then a treeview to select the destination path and perform the copy of every selected file. 
 Will NOT perform a DBCC CHECKDB!
-Usefull if you want to run it manually (for example, because database is big and will take too much time)
+Useful if you want to run CHECKDB manually (for example, because database is big and will take too much time)
 
 .EXAMPLE
 Move-DbaDatabaseFile -SqlServer sqlserver2014a -Databases db1 -CheckFileHash
 
-Will show a grid to select the file(s), then a treeview to select the destination path and perform the copy every selected file. 
-Will perform a file hash validation for each file after his copy.
+Will show a grid to select the file(s), then a treeview to select the destination path and perform the copy of every selected file. 
+Will perform a file hash validation for each file after copying.
 Will perform a DBCC CHECKDB!
-Usefull if you want to run it manually (for example, because database is big and will take too much time)
-
 #>	
 	[CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName="Default")]
 	Param (
@@ -765,7 +757,7 @@ Usefull if you want to run it manually (for example, because database is big and
             }
             else
             {
-                throw "The choosed file path does not exists"
+                throw "The chosen file path does not exist"
             }
         }
 
@@ -780,7 +772,7 @@ Usefull if you want to run it manually (for example, because database is big and
             }
             else
             {
-                throw "The choosed file path does not exists"
+                throw "The chosen file path does not exist"
             }
         }
         else
