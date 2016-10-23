@@ -75,8 +75,7 @@ filled with database list from specified SQL Server server.
 	$SupportDbs = "ReportServer", "ReportServerTempDb", "distribution"
 
 	# Populate arrays
-	$databaselist = @()
-	
+	$databaselist = @()	
 	if ($server.Databases.Count -gt 255)
 	{
 		# Don't slow them down by building a list that likely won't be used anyway
