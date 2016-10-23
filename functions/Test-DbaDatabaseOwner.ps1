@@ -1,4 +1,5 @@
-﻿function Test-DbaDatabaseOwner {
+﻿function Test-DbaDatabaseOwner
+{
 <#
 .SYNOPSIS
 Checks database owners against a login to validate which databases do not match that owner.
@@ -10,6 +11,8 @@ ownership, but the user can pass a specific login if they use something else. On
 that do not match this ownership will be displayed, but if the -Detailed switch is set all
 databases will be shown.
 
+Best Practice reference: http://weblogs.sqlteam.com/dang/archive/2008/01/13/Database-Owner-Troubles.aspx
+	
 .NOTES 
 Original Author: Michael Fal (@Mike_Fal), http://mikefal.net
 
@@ -33,11 +36,17 @@ collection and recieve pipeline input
 PSCredential object to connect under. If not specified, currend Windows login will be used.
 
 .PARAMETER TargetLogin
-Specific login that you wish to check for ownership. This defaults to 'sa'.
+Specific login that you wish to check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed.
 
 .PARAMETER Detailed
 Switch parameter. When declared, function will return all databases and whether or not they
 match the declared owner.
+
+.PARAMETER Datbases
+Auto-populated list of databases to check.
+	
+.PARAMETER Exclude
+Auto-populated list of databases to exclude from check.
 
 .LINK
 https://dbatools.io/Test-DbaDatabaseOwner
@@ -57,48 +66,94 @@ that TargetLogin must be a valid security principal that exists on the target se
 	Param (
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[object[]]$SqlServer,
 		[object]$SqlCredential,
-        [string]$TargetLogin = 'sa',
-        [Switch]$Detailed
+		[string]$TargetLogin,
+		[Switch]$Detailed
 	)
+	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
+	
+	BEGIN
+	{
+		$databases = $psboundparameters.Databases
+		$exclude = $psboundparameters.Exclude
+		
+		#connect to the instance and set return array empty
+		$return = @()
+	}
+	
+	PROCESS
+	{
+		foreach ($servername in $sqlserver)
+		{
+			Write-Verbose "Connecting to $servername"
+			$server = Connect-SqlServer $servername -SqlCredential $SqlCredential
+			
+			# dynamic sa name for orgs who have changed their sa name
+			if ($psboundparameters.TargetLogin.length -eq 0)
+			{
+				$TargetLogin = ($server.logins | Where-Object { $_.id -eq 1 }).Name
+			}
+			
+			#Validate login
+			if (($server.Logins.Name) -notcontains $TargetLogin)
+			{
+				if ($sqlserver.count -eq 1)
+				{
+					throw "Invalid login: $TargetLogin"
+					return $null
+				}
+				else
+				{
+					Write-Warning "$TargetLogin is not a valid login on $servername. Moving on."
+					Continue
+				}
+			}
+			#use online/available dbs
+            $dbs = $server.Databases
 
-    BEGIN{
-        #connect to the instance and set return array empty
-        $return = @()
-		Write-Verbose "Connecting to $SqlServer"
-		$server = Connect-SqlServer $SqlServer -SqlCredential $SqlCredential
-        
-        #Validate login
-        if(($server.Logins.Name) -notcontains $TargetLogin){
-            throw "Invalid login: $TargetLogin"
-            return $null
-        }
-    }
-    PROCESS{
-        #for each database, create custom object for return set.
-        foreach($db in ($server.Databases)){
-            Write-Verbose "Checking $db"
-            $row = [ordered]@{ `
-                        'Database'=$db.Name; `
-                        'CurrentOwner'=$db.Owner; `
-                        'TargetOwner'=$TargetLogin; `
-                        'OwnerMatch'=($db.owner -eq $TargetLogin); `
-                        }
-            #add each custom object to the return array
-            $return += New-Object PSObject -Property $row
-        }
-
-    }
-    END{
-        #return results
-        if($Detailed){
-            Write-Verbose "Returning detailed results."
-            return $return
-        } else {
-            Write-Verbose "Returning default results."
-            return ($return | Where-Object {$_.OwnerMatch -eq $false})
-        }
-    }
-
+            #filter database collection based on parameters
+			if ($Databases.Length -gt 0)
+			{
+				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
+			}
+			
+			if ($Exclude.Length -gt 0)
+			{
+				$dbs = $dbs | Where-Object { $Exclude -notcontains $_.Name }
+			}
+			
+			#for each database, create custom object for return set.
+			foreach ($db in $dbs)
+			{
+				Write-Verbose "Checking $db"
+				$row = [ordered]@{
+					Server = $server.Name
+					Database = $db.Name
+					DBState = $db.Status
+					CurrentOwner = $db.Owner
+					TargetOwner = $TargetLogin
+					OwnerMatch = ($db.owner -eq $TargetLogin)
+				}
+				
+				#add each custom object to the return array
+				$return += New-Object PSObject -Property $row
+			}
+		}
+	}
+	
+	END
+	{
+		#return results
+		if ($Detailed)
+		{
+			Write-Verbose "Returning detailed results."
+			return $return
+		}
+		else
+		{
+			Write-Verbose "Returning default results."
+			return ($return | Where-Object { $_.OwnerMatch -eq $false })
+		}
+	}
 }
