@@ -1,4 +1,4 @@
-﻿Function Move-SqlDatabaseFile
+﻿Function Move-DbaDatabaseFile
 {
 <#
 .SYNOPSIS
@@ -98,38 +98,38 @@ References:
     A excellent example behind most of this robocopy code.
 
 .LINK
-https://dbatools.io/Move-SqlDatabaseFile
+https://dbatools.io/Move-DbaDatabaseFile
 
 .EXAMPLE 
-Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1 
+Move-DbaDatabaseFile -SqlServer sqlserver2014a -Databases db1 
 
 Will show a grid to select the file(s), then a treeview to select the destination path and perform the file copy
 
 .EXAMPLE 
-Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1 -ExportDatabaseStructure -OutFile "C:\temp\files.csv"
+Move-DbaDatabaseFile -SqlServer sqlserver2014a -Databases db1 -ExportDatabaseStructure -OutFile "C:\temp\files.csv"
 
 Will generate a files.csv files to C:\temp folder with the list of all files within database 'db1'.
 This file will have an empty column called 'DestinationFolderPath' that should be filled by user and run the command again passing this file. 
 
 .EXAMPLE 
-Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1 -FileType DATA
+Move-DbaDatabaseFile -SqlServer sqlserver2014a -Databases db1 -FileType DATA
 
 Will show a treeview to select the destination path and perform the file copy of every file of DATA (ROWS) type
 
 .EXAMPLE
-Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1 -DeleteSourceFiles
+Move-DbaDatabaseFile -SqlServer sqlserver2014a -Databases db1 -DeleteSourceFiles
 
 Will show a grid to select the file(s), then a treeview to select the destination path and perform the move (copy&paste&delete) every selected file
 
 .EXAMPLE
-Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1 -NoDbccCheckDb
+Move-DbaDatabaseFile -SqlServer sqlserver2014a -Databases db1 -NoDbccCheckDb
 
 Will show a grid to select the file(s), then a treeview to select the destination path and perform the copy every selected file. 
 Will NOT perform a DBCC CHECKDB!
 Usefull if you want to run it manually (for example, because database is big and will take too much time)
 
 .EXAMPLE
-Move-SqlDatabaseFile -SqlServer sqlserver2014a -Databases db1 -CheckFileHash
+Move-DbaDatabaseFile -SqlServer sqlserver2014a -Databases db1 -CheckFileHash
 
 Will show a grid to select the file(s), then a treeview to select the destination path and perform the copy every selected file. 
 Will perform a file hash validation for each file after his copy.
@@ -760,7 +760,7 @@ Usefull if you want to run it manually (for example, because database is big and
             {
                 $files | Export-Csv -LiteralPath $OutFile -NoTypeInformation
                 Write-Output "Edit the file $OutFile. Keep only the rows matching the fies you want to move. Fill 'DestinationFolderPath' column for each file (path only).`r`n"
-                Write-Output "Use the following command to move the files:`r`nMove-SqlDatabaseFile -SqlServer $SqlServer -Databases $database -MoveFromCSV -InputFilePath '$OutFile'"
+                Write-Output "Use the following command to move the files:`r`nMove-DbaDatabaseFile -SqlServer $SqlServer -Databases $database -MoveFromCSV -InputFilePath '$OutFile'"
                 return
             }
             else
