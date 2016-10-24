@@ -1816,3 +1816,49 @@ Function Get-ParamSqlAllProcessInfo
 	
 	return $newparams
 }
+
+
+Function Get-ParamSqlMaintenancePlans
+{
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
+ filled with Maintenance Plans from specified SQL Server Job Server (SQL Agent).
+#>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	$sql = "SELECT sp.[name] AS MaintenancePlans FROM msdb.dbo.sysmaintplan_plans AS sp"
+	
+	$list = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows.MaintenancePlans
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	$attributes.Position = 4
+	
+	# MaintenancePlan list parameter setup
+	if ($list) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $list }
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($list) { $attributeCollection.Add($validationset) }
+	$MaintenancePlans = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("MaintenancePlans", [String[]], $attributeCollection)
+	$Exclude = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Exclude", [String[]], $attributeCollection)
+	
+	$newparams.Add("MaintenancePlans", $MaintenancePlans)
+	$newparams.Add("Exclude", $Exclude)
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
