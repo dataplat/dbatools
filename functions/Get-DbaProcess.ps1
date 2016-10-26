@@ -100,7 +100,7 @@ Shows information about the processes that were initiated by hosts (computers/cl
 		
 		if ($nosystemspids -eq $true)
 		{
-			$allsessions += $processes | Where-Object { $_.spid -gt 50 }
+			$allsessions += $processes | Where-Object { $_.Spid -gt 50 }
 		}
 		
 		if ($logins.count -gt 0)
@@ -110,7 +110,7 @@ Shows information about the processes that were initiated by hosts (computers/cl
 		
 		if ($spids.count -gt 0)
 		{
-			$allsessions += $processes | Where-Object { $_.Spid -in $spids }
+			$allsessions += $processes | Where-Object { $_.Spid -in $spids -or $_.BlockingSpid -in $spids }
 		}
 		
 		if ($hosts.count -gt 0)
@@ -135,22 +135,7 @@ Shows information about the processes that were initiated by hosts (computers/cl
 		
 		if ($exclude.count -gt 0)
 		{
-			$allsessions = $allsessions | Where-Object { $exclude -notcontains $_.Spid }
-		}
-		
-		$duplicates = @()
-		
-		foreach ($session in $allsessions)
-		{
-			if ($session.spid -in $duplicates) { continue }
-			$duplicates += $session.spid
-			
-			$spid = $session.spid
-			$login = $session.login
-			$database = $session.database
-			$program = $session.program
-			$host = $session.host
-			
+			$allsessions = $allsessions | Where-Object { $exclude -notcontains $_.SPID }
 		}
 	}
 	
@@ -160,9 +145,29 @@ Shows information about the processes that were initiated by hosts (computers/cl
 		
 		if ($Detailed)
 		{
-			return $allsessions | Select-Object Spid, Login, Host, Status, Command, Database, Cpu, MemUsage, BlockingSpid, IsSystem, Program
+			return $allsessions | Select-Object Spid, Login, Host, Database, BlockingSpid, Program, @{
+				name = "Status"; expression = {
+					if ($_.Status -eq "") { "sleeping" }
+					else { $_.Status }
+				}
+			}, @{
+				name = "Command"; expression = {
+					if ($_.Command -eq "") { "AWAITING COMMAND" }
+					else { $_.Command }
+				}
+			}, Cpu, MemUsage, IsSystem
 		}
-
-		return ($allsessions | Select-Object Spid, Login, Host, Database, BlockingSpid, Program)
+		
+		return ($allsessions | Select-Object Spid, Login, Host, Database, BlockingSpid, Program, @{
+				name = "Status"; expression = {
+					if ($_.Status -eq "") { "sleeping" }
+					else { $_.Status }
+				}
+			}, @{
+				name = "Command"; expression = {
+					if ($_.Command -eq "") { "AWAITING COMMAND" }
+					else { $_.Command }
+				}
+			})
 	}
 }
