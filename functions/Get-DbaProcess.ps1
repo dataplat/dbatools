@@ -14,6 +14,7 @@ The SQL Server instance.
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. 
 
 .PARAMETER Spids
+This parameter is auto-populated from -SqlServer. You can specify one or more Spids (including blocking spids) to be displayed.
 
 .PARAMETER Logins
 This parameter is auto-populated from-SqlServer and allows only login names that have active processes. You can specify one or more logins whose processes will be displayed.
