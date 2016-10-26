@@ -196,8 +196,10 @@ Limitations: Does not support Application Roles yet
 								$ownedjob.Alter()
 							}
 							
+							$login.Disable()
 							$destserver.EnumProcesses() | Where-Object { $_.Login -eq $username } | ForEach-Object { $destserver.KillProcess($_.spid) }
-							$login.drop()
+							$login.Drop()
+							
 							Write-Output "Successfully dropped $username on $destination"
 						}
 						catch
