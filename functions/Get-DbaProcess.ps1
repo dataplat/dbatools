@@ -105,27 +105,27 @@ Shows information about the processes that were initiated by hosts (computers/cl
 		
 		if ($logins.count -gt 0)
 		{
-			$allsessions += $processes | Where-Object { $_.Login -in $Logins }
+			$allsessions += $processes | Where-Object { $_.Login -in $Logins -and $_.Spid -notin $allsessions.Spid  }
 		}
 		
 		if ($spids.count -gt 0)
 		{
-			$allsessions += $processes | Where-Object { $_.Spid -in $spids -or $_.BlockingSpid -in $spids }
+			$allsessions += $processes | Where-Object { ($_.Spid -in $spids -or $_.BlockingSpid -in $spids) -and $_.Spid -notin $allsessions.Spid  }
 		}
 		
 		if ($hosts.count -gt 0)
 		{
-			$allsessions += $processes | Where-Object { $_.Host -in $hosts }
+			$allsessions += $processes | Where-Object { $_.Host -in $hosts -and $_.Spid -notin $allsessions.Spid }
 		}
 		
 		if ($programs.count -gt 0)
 		{
-			$allsessions += $processes | Where-Object { $_.Program -in $programs }
+			$allsessions += $processes | Where-Object { $_.Program -in $programs -and $_.Spid -notin $allsessions.Spid }
 		}
 		
 		if ($databases.count -gt 0)
 		{
-			$allsessions += $processes | Where-Object { $_.Database -in $databases }
+			$allsessions += $processes | Where-Object { $_.Database -in $databases -and $_.Spid -notin $allsessions.Spid  }
 		}
 		
 		if ($allsessions.urn.count -eq 0)
@@ -135,7 +135,7 @@ Shows information about the processes that were initiated by hosts (computers/cl
 		
 		if ($exclude.count -gt 0)
 		{
-			$allsessions = $allsessions | Where-Object { $exclude -notcontains $_.SPID }
+			$allsessions = $allsessions | Where-Object { $exclude -notcontains $_.SPID -and $_.Spid -notin $allsessions.Spid  }
 		}
 	}
 	
