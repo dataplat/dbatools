@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.5.55'
+	ModuleVersion = '0.8.6.00'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -96,7 +96,7 @@
 		'Import-SqlSpConfigure',
 		'Export-SqlSpConfigure',
 		'Get-SqlMaxMemory',
-		'Get-DetachedDBInfo',
+		'Get-DbaDetachedDatabaseInfo',
 		'Restore-SqlBackupFromDirectory',
 		'Test-SqlConnection',
 		'Import-CsvToSql',
@@ -144,7 +144,16 @@
 		'Test-DbaConnectionAuthScheme',
 		'Test-DbaServerName',
 		'Repair-DbaServerName',
-		'Stop-DbaProcess'
+		'Stop-DbaProcess',
+		'Get-DbaProcess',
+		'Get-DbaAvailabilityGroup',
+		'Copy-SqlMaintenancePlan',
+		'Test-DbaMaxDop',
+		'Copy-SqlSsisCatalog',
+		'Get-DbaLastGoodCheckDb',
+		'Test-DbaDatabaseBestPractice',
+		'Remove-DbaBackup',
+		'Find-DbaOrphanedFile'
 	)
 	
 	# Cmdlets to export from this module
