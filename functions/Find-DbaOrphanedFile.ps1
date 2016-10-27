@@ -21,7 +21,10 @@ Used to specify extra directories to search in addition to the default data and 
 
 .PARAMETER Simple
 Shows only the filenames
-
+	
+.PARAMETER FileType
+Used to specify other filetypes in addition to ".mdf", ".ldf", ".ndf"
+	
 .NOTES 
 Author: Sander Stad (@sqlstad), sqlstad.nl
 Requires: sysadmin access on SQL Servers
