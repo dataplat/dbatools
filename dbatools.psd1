@@ -153,7 +153,8 @@
 		'Get-DbaLastGoodCheckDb',
 		'Test-DbaDatabaseBestPractice',
 		'Remove-DbaBackup',
-		'Find-DbaOrphanedFile'
+		'Find-DbaOrphanedFile',
+		'Test-DbaFullRecoveryModel'
 	)
 	
 	# Cmdlets to export from this module
