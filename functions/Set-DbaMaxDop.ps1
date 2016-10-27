@@ -8,7 +8,7 @@ Sets SQL Server max dop then displays information relating to SQL Server Max DOP
 Uses the Test-DbaMaxDop command to get the recommended value if -MaxDop parameter is not specified.
 
 These are just general recommendations for SQL Server and are a good starting point for setting the "max degree of parallelism" option.
-You can set MaxDop databsae scoped configurations if the server is an 2016.
+You can set MaxDop database scoped configurations if the server is version 2016.
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
