@@ -18,6 +18,8 @@ Specify a source Project name.
 Specify a source folder name.
 .PARAMETER Environment
 Specify an environment to copy over.
+.PARAMETER EnableSqlClr
+If the destination does not have SQL CLR configuration option enabled (which is required for SSISDB), providing this parameter will skip user prompts for enabling CLR on the destination.
 .PARAMETER CreateCatalogPassword
 If a destination SSISDB catalog needs to be created, specify this secure string parameter to skip password prompts.
 .NOTES 
@@ -28,7 +30,7 @@ This program is free software: you can redistribute it and/or modify it under th
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .LINK
-https://dbatools.io/functions/Copy-SqlSsisCatalog
+https://dbatools.io/Copy-SqlSsisCatalog
 .EXAMPLE   
 Copy-SqlSsisCatalog -Source sqlserver2014a -Destination sqlcluster
 Copies all folders, environments and all ssis Projects from sqlserver2014a to sqlcluster, using Windows credentials. If folders with the same name exist on the destination they will be skipped, but projects will be redeployed.
@@ -57,6 +59,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
         [String]$Folder,
         [String]$Environment,
         [System.Security.SecureString]$CreateCatalogPassword,
+        [Switch]$EnableSqlClr,
         [Switch]$Force
     )
     
@@ -188,6 +191,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
             param(
                 [System.Security.SecureString]$Password
             )
+
             if(!$Password) {
                 Write-Output "SSISDB Catalog requires a password."
                 $pass1 = Read-Host "Enter a password" -AsSecureString
@@ -226,7 +230,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
         }
         catch {
             Write-Exception $_
-            throw "An error occured when checking the destination for Integration Services."
+            throw "An error occured when checking the destination for Integration Services. Is Integration Services installed?"
         }
 
         try { 
@@ -258,6 +262,27 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
             throw "The source SSISDB catalog does not exist."
         }
         if (!$destinationCatalog) {
+            if(!$destinationConnection.Configuration.IsSqlClrEnabled.ConfigValue) {
+                if ($Pscmdlet.ShouldProcess($Destination, "Enabling SQL CLR configuration option.")) {
+                    If(!$EnableSqlClr) {
+                        $message = "The destination does not have SQL CLR configuration option enabled (required by SSISDB), would you like to enable it?"
+                        $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Enable SQL CLR on $Destination."
+                        $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Exit."
+                        $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+                        $result = $host.ui.PromptForChoice($null, $message, $options, 0) 
+                        switch ($result) {
+                            0 { continue }
+                            1 { return }
+                        }
+                    }
+                    Write-Verbose "Enabling SQL CLR configuration option at the destination."
+                    $destinationConnection.Configuration.IsSqlClrEnabled.ConfigValue = $true
+                    $destinationConnection.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE;") | Out-Null
+                }
+            }
+            else {
+                Write-Verbose "SQL CLR configuration option is already enabled at the destination."
+            }
             if ($Pscmdlet.ShouldProcess($Destination, "Create destination SSISDB Catalog")) {
                 if (!$CreateCatalogPassword) {
                     $message = "The destination SSISDB catalog does not exist, would you like to create one?"
