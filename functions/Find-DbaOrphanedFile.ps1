@@ -19,6 +19,9 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 .PARAMETER Path
 Used to specify extra directories to search in addition to the default data and log directories
 
+.PARAMETER Simple
+Shows only the filenames
+
 .NOTES 
 Author: Sander Stad (@sqlstad), sqlstad.nl
 Requires: sysadmin access on SQL Servers
@@ -52,9 +55,10 @@ Finds the orphaned files in the default directories but also the extra ones
 		[parameter(Mandatory = $false)]
 		[object]$SqlCredential,
 		[parameter(Mandatory = $false)]
-		[string[]]$Path
+		[string[]]$Path,
+		[string[]]$FileeTypes,
+		[switch]$Simple
 	)
-	
 	BEGIN
 	{
 		function Get-SqlFileStructure
@@ -100,57 +104,77 @@ Finds the orphaned files in the default directories but also the extra ones
 			return $dbfiletable.Tables.Filename
 		}
 		
+		$allfiles = @()
 	}
 	
 	PROCESS
 	{
-		$server = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
-		
-		# Get all the database files
-		$databasefiles = Get-SqlFileStructure -smoserver $server
-		foreach ($file in $databasefiles)
+		foreach ($servername in $sqlserver)
 		{
-			$Path += Split-Path $file
-		}
-		
-		# Get the default data and log directories from the instance
-		$Path += $server.RootDirectory + "\DATA"
-		$Path += Get-SqlDefaultPaths $server data
-		$Path += Get-SqlDefaultPaths $server log
-		$Path += $server.MasterDBPath
-		$Path += $server.MasterDBLogPath
-		
-		# Clean it up
-		$Path = $Path | ForEach-Object { $_.TrimEnd("\") } | Sort-Object -Unique
-		
-		# Create the orphaned files variable
-		$orphanedfiles = @()
-		
-		# Create the array to hold the files on disk
-		$diskfiles = @()
-		
-		# Loop through each of the directories and get all the data and log file related files
-		foreach ($directory in $Path)
-		{
-			$sql = "EXEC master.sys.xp_dirtree '$directory', 0, 1"
-			Write-Debug $sql
-			$server.ConnectionContext.ExecuteWithResults($sql).Tables.Subdirectory | ForEach-Object {
-				if ($_.EndsWith(".mdf") -or $_.EndsWith(".ldf") -or $_.EndsWith(".ndf")) # can prolly do in regex but unsure how
-				{
-					$diskfiles += "$directory\$_"
+			$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
+			
+			# Get all the database files
+			$databasefiles = Get-SqlFileStructure -smoserver $server
+			foreach ($file in $databasefiles)
+			{
+				$Path += Split-Path $file
+			}
+			
+			# Get the default data and log directories from the instance
+			$Path += $server.RootDirectory + "\DATA"
+			$Path += Get-SqlDefaultPaths $server data
+			$Path += Get-SqlDefaultPaths $server log
+			$Path += $server.MasterDBPath
+			$Path += $server.MasterDBLogPath
+			
+			# Clean it up
+			$Path = $Path | ForEach-Object { $_.TrimEnd("\") } | Sort-Object -Unique
+			
+			# Create the file variable
+			$orphanedfiles = @()
+			$filesondisk = @()
+			
+			$filetypes += ".mdf", ".ldf", ".ndf"
+			
+			# Loop through each of the directories and get all the data and log file related files
+			foreach ($directory in $Path)
+			{
+				$sql = "EXEC master.sys.xp_dirtree '$directory', 1, 1"
+				Write-Debug $sql
+				$server.ConnectionContext.ExecuteWithResults($sql).Tables.Subdirectory | ForEach-Object {
+					if ($_ -ne $null)
+					{
+						if ($_.EndsWith($type)) # can prolly do in regex but unsure how
+						{
+							$filesondisk += "$directory\$_"
+						}
+					}
+				}
+			}
+			
+			# Compare the two lists and save the items that are not in the database file list 
+			$orphanedfiles = (Compare-Object -ReferenceObject ($databasefiles) -DifferenceObject $filesondisk).InputObject
+			
+			foreach ($file in $orphanedfiles)
+			{
+				$allfiles += [pscustomobject]@{
+					Server = $server.name
+					Filename = $file
+					RemoteFilename = Join-AdminUnc -Servername $servername -Filepath $file
 				}
 			}
 		}
-		
-		# Compare the two lists and save the items that are not in the database file list 
-		$orphanedfiles = (Compare-Object -ReferenceObject ($databasefiles) -DifferenceObject $diskfiles).InputObject
-		
-		return $orphanedfiles
 	}
 	
 	END
 	{
 		$server.ConnectionContext.Disconnect()
 		
+		if ($Simple -eq $true)
+		{
+			return ($allfiles | Select-Object filename).filename
+		}
+		
+		return $allfiles
 	}
 }
