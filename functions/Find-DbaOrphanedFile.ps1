@@ -143,6 +143,7 @@ Finds the orphaned files in the default directories but also the extra ones
 		}
 		
 		# Compare the two lists and save the items that are not in the database file list 
+		$orphanedfiles = (Compare-Object -ReferenceObject ($databasefiles) -DifferenceObject $diskfiles).InputObject
 		
 		return $orphanedfiles
 	}
