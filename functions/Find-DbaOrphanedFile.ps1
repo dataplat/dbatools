@@ -105,6 +105,7 @@ Finds the orphaned files in the default directories but also the extra ones
 		}
 		
 		$allfiles = @()
+		$filetypes += ".mdf", ".ldf", ".ndf"
 	}
 	
 	PROCESS
@@ -133,8 +134,6 @@ Finds the orphaned files in the default directories but also the extra ones
 			# Create the file variable
 			$orphanedfiles = @()
 			$filesondisk = @()
-			
-			$filetypes += ".mdf", ".ldf", ".ndf"
 			
 			# Loop through each of the directories and get all the data and log file related files
 			foreach ($directory in $Path)
