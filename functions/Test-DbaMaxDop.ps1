@@ -194,6 +194,18 @@ Get Max DOP setting for servers sql2016 with the recommended value. As the -Deta
 				}
 			}
 			
+			$collection += [pscustomobject]@{
+				Instance = $server.Name
+				InstanceVersion = $server.Version
+				Database = "N/A"
+				DatabaseMaxDop = "N/A"
+				CurrentInstanceMaxDop = $maxdop
+				RecommendedMaxDop = $recommendedMaxDop
+				NUMANodes = $NUMAnodes
+				NumberOfCores = $numberofcores
+				Notes = $notes
+			}
+			
 			#since SQL Server 2016, MaxDop can be set per database
 			if ($server.versionMajor -ge 13)
 			{
@@ -219,21 +231,7 @@ Get Max DOP setting for servers sql2016 with the recommended value. As the -Deta
 					}
 				}
 			}
-			else
-			{
 				
-				$collection += [pscustomobject]@{
-					Instance = $server.Name
-					InstanceVersion = $server.Version
-					Database = "N/A"
-					DatabaseMaxDop = "N/A"
-					CurrentInstanceMaxDop = $maxdop
-					RecommendedMaxDop = $recommendedMaxDop
-					NUMANodes = $NUMAnodes
-					NumberOfCores = $numberofcores
-					Notes = $notes
-				}
-			}
 			$server.ConnectionContext.Disconnect()
 			
 		}
@@ -244,22 +242,22 @@ Get Max DOP setting for servers sql2016 with the recommended value. As the -Deta
 		{
 			if ($hasscopedconfiguration)
 			{
-				return ($collection | Sort-Object Instance | Select-Object Instance, InstanceVersion, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, NUMANodes, NumberOfCores, Notes)
+				return ($collection | Select-Object Instance, InstanceVersion, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, NUMANodes, NumberOfCores, Notes)
 			}
 			else
 			{
-				return ($collection | Sort-Object Instance | Select-Object Instance, CurrentInstanceMaxDop, RecommendedMaxDop, NUMANodes, NumberOfCores, Notes)
+				return ($collection | Select-Object Instance, CurrentInstanceMaxDop, RecommendedMaxDop, NUMANodes, NumberOfCores, Notes)
 			}
 		}
 		else
 		{
 			if ($hasscopedconfiguration)
 			{
-				return ($collection | Sort-Object Instance | Select-Object Instance, InstanceVersion, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes)
+				return ($collection | Select-Object Instance, InstanceVersion, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes)
 			}
 			else
 			{
-				return ($collection | Sort-Object Instance | Select-Object Instance, CurrentInstanceMaxDop, RecommendedMaxDop, Notes)
+				return ($collection | Select-Object Instance, CurrentInstanceMaxDop, RecommendedMaxDop, Notes)
 			}
 		}
 	}
