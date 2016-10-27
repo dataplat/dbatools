@@ -65,7 +65,8 @@ filled with database list from specified SQL Server server.
 		[Parameter(Mandatory = $true)]
 		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[System.Management.Automation.PSCredential]$SqlCredential,		
+		[bool]$NoSystem=$false
 	)
 
 	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
@@ -74,8 +75,7 @@ filled with database list from specified SQL Server server.
 	$SupportDbs = "ReportServer", "ReportServerTempDb", "distribution"
 
 	# Populate arrays
-	$databaselist = @()
-
+	$databaselist = @()	
 	if ($server.Databases.Count -gt 255)
 	{
 		# Don't slow them down by building a list that likely won't be used anyway
@@ -92,10 +92,19 @@ filled with database list from specified SQL Server server.
 
 	foreach ($database in $server.databases)
 	{
-		if ((!$database.IsSystemObject) -and $SupportDbs -notcontains $database.name)
-		{
-			$databaselist += $database.name
+		if ( $NoSystem ) {
+			if ((!$database.IsSystemObject) -and $SupportDbs -notcontains $database.name)
+			{
+				$databaselist += $database.name
+			}
+		} else 
+		{ 
+			if ($SupportDbs -notcontains $database.name)
+			{
+				$databaselist += $database.name
+			}
 		}
+			
 	}
 
 	# Reusable parameter setup
@@ -315,6 +324,134 @@ Function Get-ParamSqlServerRoles
 	$newparams.Add("Roles", $roles)
 	$server.ConnectionContext.Disconnect()
 
+	return $newparams
+}
+
+
+Function Get-ParamSqlProcessHosts
+{
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
+#>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	# Populate arrays
+	$items = $server.EnumProcesses().Host | Where-Object { $_.Length -gt 1 } | Sort-Object | Get-Unique
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	$attributes.Position = 3
+	
+	# Database list parameter setup
+	if ($items) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $items }
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($items) { $attributeCollection.Add($validationset) }
+	
+	$Hosts = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Hosts", [String[]], $attributeCollection)
+	
+	$newparams.Add("Hosts", $Hosts)
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
+Function Get-ParamSqlProcessPrograms
+{
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
+#>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	# Populate arrays
+	$items = $server.EnumProcesses().Program | Where-Object { $_.Length -gt 1 } | Sort-Object | Get-Unique
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	$attributes.Position = 3
+	
+	# Database list parameter setup
+	if ($items) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $items }
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($items) { $attributeCollection.Add($validationset) }
+	
+	$Programs = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Programs", [String[]], $attributeCollection)
+	
+	$newparams.Add("Programs", $Programs)
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
+Function Get-ParamSqlSpids
+{
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
+#>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	# Populate arrays
+	$spids = $server.EnumProcesses().Spid | Where-Object { $_ -gt 50 }
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	
+	# Database list parameter setup
+	if ($spids) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $spids }
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($spids) { $attributeCollection.Add($validationset) }
+	
+	$Spids = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Spids", [String[]], $attributeCollection)
+	$Exclude = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Exclude", [String[]], $attributeCollection)
+	
+	$newparams.Add("Spids", $Spids)
+	$newparams.Add("Exclude", $Exclude)
+	$server.ConnectionContext.Disconnect()
+	
 	return $newparams
 }
 
@@ -1630,5 +1767,107 @@ Function Get-ParamSqlDatabaseFileTypes
 	$newparams.Add("FileType", $FileType)
 	$server.ConnectionContext.Disconnect()
 
+	return $newparams
+}
+
+
+Function Get-ParamSqlAllProcessInfo
+{
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
+ filled with job server objects from specified SQL Server server.
+#>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	$processinfo = "Logins", "Spids", "Exclude", "Hosts", "Programs", "Databases"
+	$processes = $server.EnumProcesses()
+	
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	$attributes.Position = 3
+	
+	foreach ($name in $processinfo)
+	{
+		$propertyname = $name.TrimEnd("s")
+		
+		switch ($propertyname)
+		{
+			"Exclude" { $items = $processes.Spid }
+			"Spid" { $items = $processes.Spid }
+			
+			Default
+			{
+				$items = $processes.$propertyname | Where-Object {$_.Length -gt 1 } | Sort-Object | Get-Unique
+			}
+		}
+		
+		if ($items.count -gt 0)
+		{
+			$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+			$attributeCollection.Add($attributes)
+			$attributeCollection.Add((New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $items))
+		}
+		$newparams.Add($name, (New-Object -Type System.Management.Automation.RuntimeDefinedParameter($name, [String[]], $attributeCollection)))
+	}
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
+
+Function Get-ParamSqlMaintenancePlans
+{
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
+ filled with Maintenance Plans from specified SQL Server Job Server (SQL Agent).
+#>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	$sql = "SELECT sp.[name] AS MaintenancePlans FROM msdb.dbo.sysmaintplan_plans AS sp"
+	
+	$list = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows.MaintenancePlans
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	$attributes.Position = 4
+	
+	# MaintenancePlan list parameter setup
+	if ($list) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $list }
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($list) { $attributeCollection.Add($validationset) }
+	$MaintenancePlans = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("MaintenancePlans", [String[]], $attributeCollection)
+	$Exclude = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Exclude", [String[]], $attributeCollection)
+	
+	$newparams.Add("MaintenancePlans", $MaintenancePlans)
+	$newparams.Add("Exclude", $Exclude)
+	$server.ConnectionContext.Disconnect()
+	
 	return $newparams
 }

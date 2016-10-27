@@ -280,6 +280,9 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 			
 			if ($database.Length -gt 0)
 			{
+				# database is being returned as something weird. change it to string without using a method then trim.
+				$database = "$database"
+				$database = $database.Trim()
 				$sqlconnection.ChangeDatabase($database)
 			}
 			
@@ -287,7 +290,7 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 			$sqlcommand.CommandType = "StoredProcedure"
 			$sqlcommand.CommandText = "dbo.sp_WhoIsActive"
 			$sqlcommand.Connection = $sqlconnection
-				
+			
 			foreach ($param in $passedparams)
 			{
 				$sqlparam = $paramdictionary[$param]
@@ -346,7 +349,7 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 	}
 	
 	PROCESS
-	{		
+	{
 		$database = $psboundparameters.Database
 		$passedparams = $psboundparameters.Keys | Where-Object { 'SqlServer', 'SqlCredential', 'OutputAs', 'ServerInstance', 'SqlInstance', 'Database' -notcontains $_ }
 		$localparams = $psboundparameters
@@ -371,6 +374,7 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 					$database = Install-SqlWhoisActive -SqlServer $sourceserver -OutputDatabaseName
 				}
 				
+				
 				try
 				{
 					$datatable = Invoke-SpWhoisActive
@@ -383,7 +387,7 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 			}
 			else
 			{
-				Write-warning "Invalid query."	
+				Write-warning "Invalid query."
 			}
 		}
 	}

@@ -177,7 +177,6 @@ Limitations: Does not support Application Roles yet
 						Write-Output "Force was specified. Attempting to drop $username on $destination"
 						try
 						{
-							$destserver.EnumProcesses() | Where { $_.Login -eq $username } | ForEach-Object { $destserver.KillProcess($_.spid) }
 							
 							$owneddbs = $destserver.Databases | Where { $_.Owner -eq $username }
 							
@@ -197,7 +196,10 @@ Limitations: Does not support Application Roles yet
 								$ownedjob.Alter()
 							}
 							
-							$login.drop()
+							$login.Disable()
+							$destserver.EnumProcesses() | Where-Object { $_.Login -eq $username } | ForEach-Object { $destserver.KillProcess($_.spid) }
+							$login.Drop()
+							
 							Write-Output "Successfully dropped $username on $destination"
 						}
 						catch
@@ -282,7 +284,7 @@ Limitations: Does not support Application Roles yet
 								$sid = "0x"; $sourcelogin.sid | % { $sid += ("{0:X}" -f $_).PadLeft(2, "0") }
 								$sqlfailsafe = "CREATE LOGIN [$username] WITH PASSWORD = $hashedpass HASHED, SID = $sid, 
 												DEFAULT_DATABASE = [$defaultdb], CHECK_POLICY = $checkpolicy, 
-												CHECK_EXPIRATION = $checkexpiration, DEFAULT_LANGUAGE = [$language]"
+												CHECK_EXPIRATION = $checkexpiration, DEFAULT_LANGUAGE = [$($sourcelogin.Language)]"
 								
 								$null = $destserver.ConnectionContext.ExecuteNonQuery($sqlfailsafe)
 								$destlogin = $destserver.logins[$username]
