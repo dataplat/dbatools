@@ -159,7 +159,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		[object]$DbPipeline
 	)
 	
-	DynamicParam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential } }
+	DynamicParam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential -NoSystem $true} }
 	
 	BEGIN
 	{
@@ -832,7 +832,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		
 		if ($sourceserver.versionMajor -eq 8)
 		{
-			$sql = "select DB_NAME (dbid) as dbname, name, filename, CASE WHEN groupid = 1 THEN 'ROWS' WHEN groupid = 0 THEN 'LOG' END as filetype from sysaltfiles"
+			$sql = "select DB_NAME (dbid) as dbname, name, filename, CASE WHEN groupid = 0 THEN 'LOG' ELSE 'ROWS' END as filetype from sysaltfiles"
 		}
 		else
 		{

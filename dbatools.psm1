@@ -1,6 +1,7 @@
-# All supporting functions have been moved to Functions\SharedFunctions.ps1
-# If you're looking through the code, you pretty much have to work with two files
-# at any one time. The function you're working on, and SharedFunctions.ps1
+# All internal functions privately avaialble within the toolset
+foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\*.ps1")) { . $function }
+
+# All exported functions
 foreach ($function in (Get-ChildItem "$PSScriptRoot\functions\*.ps1")) { . $function }
 
 # Not supporting the provider path at this time
@@ -19,11 +20,11 @@ Set-Alias -Name Get-DiskSpace -Value Get-DbaDiskSpace
 # Set-StrictMode -Version Latest
 
 # In order to keep backwards compatability, these are loaded here instead of in the manifest.
-$null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.Sdk.Sfc")
-$null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SqlEnum")
-$null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers")
-$null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent")
 $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Dmf")
-$null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers")
+$null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SqlEnum")
 $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.ConnectionInfo")
 $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SqlWmiManagement")
+$null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent")
+$null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.Sdk.Sfc")
+$null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers")
+$null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.IntegrationServices")
