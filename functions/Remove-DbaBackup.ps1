@@ -20,7 +20,7 @@ Deletion of backup files will be recursive from this location.
 Extension of the backup files you wish to remove (typically bak or log)
 
 .PARAMETER RetentionPeriod
-Retention period for backup files. Correct format is ##U. 
+Retention period for backup files. Correct format is ##U.
 
 ## is the retention value and must be an integer value
 U signifies the units where the valid units are:
