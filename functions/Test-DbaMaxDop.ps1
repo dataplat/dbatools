@@ -75,7 +75,7 @@ Get Max DOP setting for servers sql2016 with the recommended value. As the -Deta
 	{
 		$notesDopLT = "Before changing MaxDop, consider that the lower value may have been intentionally set."
 		$notesDopGT = "Before changing MaxDop, consider that the higher value may have been intentionally set."
-		$notesDopZero = "As a good starting point you should use the recommended setting. Then, monitor the instance and decide whether to keep or change the value."
+		$notesDopZero = "This is the default setting. Consider using the recommended value instead."
 		$notesDopOne = "Some applications like SharePoint, Dynamics NAV, SAP, BizTalk has the need to use MAXDOP = 1. Please confirm that your instance is not supporting one of these applications prior to changing the MaxDop."
 		$notesAsRecommended = "Configuration is as recommended"
 	}
