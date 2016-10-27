@@ -78,11 +78,11 @@ Get Max DOP setting for servers sql2016 with the recommended value. As the -Deta
 		$notesDopZero = "This is the default setting. Consider using the recommended value instead."
 		$notesDopOne = "Some applications like SharePoint, Dynamics NAV, SAP, BizTalk has the need to use MAXDOP = 1. Please confirm that your instance is not supporting one of these applications prior to changing the MaxDop."
 		$notesAsRecommended = "Configuration is as recommended"
+		$collection = @()
 	}
 	
 	PROCESS
 	{
-		$collection = @()
 		$hasscopedconfiguration = $false
 		
 		foreach ($servername in $sqlserver)
