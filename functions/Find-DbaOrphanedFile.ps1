@@ -157,7 +157,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 			# Loop through each of the directories and get all the data and log file related files
 			foreach ($directory in $Path)
 			{
-				$sql = "EXEC master.sys.xp_dirtree '$directory', 1, 1"
+				$sql = "xp_dirtree '$directory', 1, 1"
 				Write-Debug $sql
 				
 				$server.ConnectionContext.ExecuteWithResults($sql).Tables.Subdirectory | ForEach-Object {
