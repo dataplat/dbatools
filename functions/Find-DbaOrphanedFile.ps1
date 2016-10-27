@@ -55,10 +55,6 @@ Find-DbaOrphanedFile -SqlServer sql2014 -Path 'E:\Dir1', 'E:\Dir2'
 Finds the orphaned files in "E:\Dir1" and "E:Dir2" in addition to the default directories.
 	
 .EXAMPLE   
-Find-DbaOrphanedFile -SqlServer sql2014 -Path 'E:\Dir1', 'E:\Dir2'
-Finds the orphaned files in "E:\Dir1" and "E:Dir2" in addition to the default directories.
-	
-.EXAMPLE   
 Find-DbaOrphanedFile -SqlServer sql2014 -LocalOnly
 Returns only the local filepath. Using LocalOnly with multiple servers is not recommended since it does not return the associated server name.
 
@@ -185,7 +181,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 				$allfiles += [pscustomobject]@{
 					Server = $server.name
 					Filename = $file
-					RemoteFilename = Join-AdminUnc -Servername $servername -Filepath $file
+					RemoteFilename = Join-AdminUnc -Servername $server.netname -Filepath $file
 				}
 			}
 		}
