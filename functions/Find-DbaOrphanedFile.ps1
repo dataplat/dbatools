@@ -2,14 +2,15 @@
 {
 <#
 .SYNOPSIS 
-Find-DbaOrphanedFile finds orphaned database files; database files not associated with any attached database.
+Find-DbaOrphanedFile finds orphaned database files. Orphaned database files are files not associated with any attached database.
 
 .DESCRIPTION
 This command searches all directories associated with SQL database files for database files that are not currently in use by the SQL Server instance.
-Get all the database files for all the database for the instance
-Get the various directories of the instance and get all the present database files.
-Compare which the two lists to see if there are any orphaned files and return the list
 
+By default, it looks for orphaned .mdf, .ldf and .ndf files in the root\data directory, the default data path, the default log path, the system paths and any directory in use by any attached directory.
+	
+You can specify additional filetypes using the -FileType parameter, and additional paths to search using the -Path parameter.
+	
 .PARAMETER SqlServer
 The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
@@ -17,13 +18,16 @@ The SQL Server instance. You must have sysadmin access and server version must b
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. 
 
 .PARAMETER Path
-Used to specify extra directories to search in addition to the default data and log directories
+Used to specify extra directories to search in addition to the default data and log directories.
 
-.PARAMETER Simple
-Shows only the filenames
-	
 .PARAMETER FileType
-Used to specify other filetypes in addition to ".mdf", ".ldf", ".ndf"
+Used to specify other filetypes in addition to mdf, ldf, ndf. No dot required, just pass the extension.
+	
+.PARAMETER LocalOnly
+Shows only the local filenames
+	
+.PARAMETER RemoteOnly
+Shows only the remote filenames
 	
 .NOTES 
 Author: Sander Stad (@sqlstad), sqlstad.nl
@@ -40,15 +44,33 @@ https://dbatools.io/Find-DbaOrphanedFile
 
 .EXAMPLE
 Find-DbaOrphanedFile -SqlServer sqlserver2014a
-Copies all policies and conditions from sqlserver2014a to sqlcluster, using Windows credentials. 
+Logs into the SQL Server "sqlserver2014a" using Windows credentials and searches for orphaned files. Returns server name, local filename, and unc path to file.
 
 .EXAMPLE   
 Find-DbaOrphanedFile -SqlServer sqlserver2014a -SqlCredential $cred
-Does this, using SQL credentials for sqlserver2014a and Windows credentials for sql instance.
+Logs into the SQL Server "sqlserver2014a" using alternative credentials and searches for orphaned files. Returns server name, local filename, and unc path to file.
 
 .EXAMPLE   
-Find-DbaOrphanedFile -SqlServer sqlserver2014 -Path 'C:\Dir1', 'C:\Dir2'
-Finds the orphaned files in the default directories but also the extra ones
+Find-DbaOrphanedFile -SqlServer sql2014 -Path 'E:\Dir1', 'E:\Dir2'
+Finds the orphaned files in "E:\Dir1" and "E:Dir2" in addition to the default directories.
+	
+.EXAMPLE   
+Find-DbaOrphanedFile -SqlServer sql2014 -Path 'E:\Dir1', 'E:\Dir2'
+Finds the orphaned files in "E:\Dir1" and "E:Dir2" in addition to the default directories.
+	
+.EXAMPLE   
+Find-DbaOrphanedFile -SqlServer sql2014 -LocalOnly
+Returns only the local filepath. Using LocalOnly with multiple servers is not recommended since it does not return the associated server name.
+
+.EXAMPLE   
+Find-DbaOrphanedFile -SqlServer sql2014 -RemoteOnly
+Returns only the remote filepath. Using LocalOnly with multiple servers is not recommended since it does not return the associated server name.
+	
+.EXAMPLE   
+Find-DbaOrphanedFile -SqlServer sql2014, sql2016 -FileType fsf, mld
+Finds the orphaned ending with ".fsf" and ".mld" in addition to the default filetypes ".mdf", ".ldf", ".ndf" for both the servers sql2014 and sql2016.
+	
+
 #>
 	[CmdletBinding()]
 	Param (
@@ -59,8 +81,9 @@ Finds the orphaned files in the default directories but also the extra ones
 		[object]$SqlCredential,
 		[parameter(Mandatory = $false)]
 		[string[]]$Path,
-		[string[]]$FileeTypes,
-		[switch]$Simple
+		[string[]]$FileType,
+		[switch]$LocalOnly,
+		[switch]$RemoteOnly
 	)
 	BEGIN
 	{
@@ -95,10 +118,7 @@ Finds the orphaned files in the default directories but also the extra ones
 					
 					foreach ($ftc in $fttable.Tables[0].rows)
 					{
-						$name = $ftc.name
-						$physical = $ftc.Path
-						$logical = "sysft_$name"
-						$null = $ftfiletable.Rows.add($database, "FULLTEXT", $logical, $physical)
+						$null = $ftfiletable.Rows.add($ftc.Path)
 					}
 				}
 			}
@@ -108,7 +128,7 @@ Finds the orphaned files in the default directories but also the extra ones
 		}
 		
 		$allfiles = @()
-		$filetypes += ".mdf", ".ldf", ".ndf"
+		$FileType += "mdf", "ldf", "ndf"
 	}
 	
 	PROCESS
@@ -143,14 +163,17 @@ Finds the orphaned files in the default directories but also the extra ones
 			{
 				$sql = "EXEC master.sys.xp_dirtree '$directory', 1, 1"
 				Write-Debug $sql
+				
 				$server.ConnectionContext.ExecuteWithResults($sql).Tables.Subdirectory | ForEach-Object {
-					if ($_ -ne $null)
+					if ($_ -match "\.")
 					{
-						if ($_.EndsWith($type)) # can prolly do in regex but unsure how
+						$ext = ($_ -split "\.")[1]
+						if ($FileType -contains $ext)
 						{
 							$filesondisk += "$directory\$_"
 						}
 					}
+					
 				}
 			}
 			
@@ -172,9 +195,14 @@ Finds the orphaned files in the default directories but also the extra ones
 	{
 		$server.ConnectionContext.Disconnect()
 		
-		if ($Simple -eq $true)
+		if ($LocalOnly -eq $true)
 		{
 			return ($allfiles | Select-Object filename).filename
+		}
+		
+		if ($RemoteOnly -eq $true)
+		{
+			return ($allfiles | Select-Object remotefilename).remotefilename
 		}
 		
 		return $allfiles
