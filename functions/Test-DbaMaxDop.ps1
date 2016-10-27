@@ -47,7 +47,7 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Test-DbaMaxDop
 
 .EXAMPLE   
-Test-DbaMaxDop -SqlServer sq2008, sqlserver2012
+Test-DbaMaxDop -SqlServer sql2008, sqlserver2012
 
 Get Max DOP setting for servers sql2008 and sqlserver2012 and also the recommended one.
 
