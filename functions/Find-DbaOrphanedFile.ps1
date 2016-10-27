@@ -125,6 +125,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 		
 		$allfiles = @()
 		$FileType += "mdf", "ldf", "ndf"
+		$systemfiles = "distmdl.ldf", "distmdl.mdf", "mssqlsystemresource.ldf", "mssqlsystemresource.mdf"
 	}
 	
 	PROCESS
@@ -164,7 +165,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 					if ($_ -match "\.")
 					{
 						$ext = ($_ -split "\.")[1]
-						if ($FileType -contains $ext)
+						if ($FileType -contains $ext -and $_ -notin $systemfiles)
 						{
 							$filesondisk += "$directory\$_"
 						}
@@ -201,6 +202,10 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 			return ($allfiles | Select-Object remotefilename).remotefilename
 		}
 		
+		if ($allfiles.count -eq 0)
+		{
+			Write-Output "No orphaned files found"
+		}
 		return $allfiles
 	}
 }
