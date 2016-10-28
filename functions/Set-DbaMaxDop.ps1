@@ -192,7 +192,7 @@ Set recommended Max DOP setting for all databases on server sql2016.
 			    }
             }
 
-			foreach ($row in $collection)
+			foreach ($row in $collection | Where-Object { $_.Instance -eq $servername })
 			{
 				if ($UseRecommended -and ($row.RecommendedMaxDop -eq $row.CurrentInstanceMaxDop) -and !($dbscopedconfiguration))
                 {
