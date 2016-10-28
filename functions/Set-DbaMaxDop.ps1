@@ -100,7 +100,6 @@ Set recommended Max DOP setting for all databases on server sql2016.
 	}
 	PROCESS
 	{
-        $collection = $null
         $dbscopedconfiguration = $false
 
 		if ($MaxDop -eq -1)
