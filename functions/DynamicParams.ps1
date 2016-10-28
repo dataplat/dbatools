@@ -1871,3 +1871,48 @@ Function Get-ParamSqlMaintenancePlans
 	
 	return $newparams
 }
+
+Function Get-ParamSqlAvailabilityGroups
+{
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
+ filled with ProxyAccounts from specified SQL Server Job Server (SQL Agent).
+#>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	$list = @()
+	
+	# Populate arrays
+	$list = $server.AvailabilityGroups.Name
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	$attributes.Position = 3
+	
+	# Database list parameter setup
+	if ($list) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $list }
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($list) { $attributeCollection.Add($validationset) }
+	
+	$AvailabilityGroups = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("AvailabilityGroups", [String[]], $attributeCollection)
+	
+	$newparams.Add("AvailabilityGroups", $AvailabilityGroups)
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
