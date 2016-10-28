@@ -276,8 +276,19 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
                         }
                     }
                     Write-Verbose "Enabling SQL CLR configuration option at the destination."
+					if ($destinationConnection.Configuration.ShowAdvancedOptions.ConfigValue -eq $false)
+					{
+						$destinationConnection.Configuration.ShowAdvancedOptions.ConfigValue = $true
+						$changeback = $true
+					}
+					
                     $destinationConnection.Configuration.IsSqlClrEnabled.ConfigValue = $true
-                    $destinationConnection.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE;") | Out-Null
+					
+					if ($changeback -eq $true)
+					{
+						$destinationConnection.Configuration.ShowAdvancedOptions.ConfigValue = $false
+					}
+                    $destinationConnection.Configuration.Alter()
                 }
             }
             else {
@@ -374,7 +385,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
 
         # Refresh folders for project and environment deployment
         if ($Pscmdlet.ShouldProcess($Destination, "Refresh folders for project deployment")) {
-            $destinationFolders.Alter()
+            try { $destinationFolders.Alter()} catch { } # Sometimes it says Alter() doesn't exist ¯\_(ツ)_/¯
             $destinationFolders.Refresh()
         }
 
