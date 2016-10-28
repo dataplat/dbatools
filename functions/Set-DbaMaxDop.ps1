@@ -111,6 +111,10 @@ Set recommended Max DOP setting for all databases on server sql2016.
 		{
 			$collection = Test-DbaMaxDop -SqlServer $SqlServer -Verbose:$false
 		}
+		elseif ($collection.Instance -eq $null)
+		{
+			$collection = Test-DbaMaxDop -SqlServer $SqlServer -Verbose:$false
+		}
 		
 		$collection | Add-Member -NotePropertyName OldInstanceMaxDopValue -NotePropertyValue 0
 		$collection | Add-Member -NotePropertyName OldDatabaseMaxDopValue -NotePropertyValue 0
@@ -119,9 +123,16 @@ Set recommended Max DOP setting for all databases on server sql2016.
 		
 		foreach ($server in $servers)
 		{
-            $servername = $server.Instance
-
-            Write-Verbose "Attempting to connect to $servername"
+			if ($server.Instance -ne $null)
+			{
+				$servername = $server.Instance
+			}
+			else
+			{
+				$servername = $server
+			}
+			
+			Write-Verbose "Attempting to connect to $servername"
 			try
 			{
 				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
