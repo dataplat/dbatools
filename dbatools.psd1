@@ -146,8 +146,7 @@
 		'Repair-DbaServerName',
 		'Stop-DbaProcess',
 		'Get-DbaProcess',
-		'Get-DbaAvailabilityGroup',
-		'Copy-SqlMaintenancePlan',
+		'Get-DbaAvailabilityGroup'
 		'Test-DbaMaxDop',
 		'Copy-SqlSsisCatalog',
 		'Get-DbaLastGoodCheckDb',
