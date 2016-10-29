@@ -16,14 +16,20 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 .PARAMETER Detailed
 Output is expanded with more information around each Availability Group replica found on the server.
 
-.PARAMETER AvailabilityGroupName
+.PARAMETER AvailabilityGroups
 Specify the Availability Group name that you want to get information on.
 
+.PARAMETER Simple
+Show only server name, availability groups and role.
+
+.PARAMETER Detailed
+Shows detailed information about the AGs including EndpointUrl and BackupPriority.
+
 .PARAMETER IsPrimary
-Returns true or false for the server passed in. Requires AvailabilityGroupName parameter.
+Returns true or false for the server passed in.
 
 .NOTES 
-Original Author: Shawn Melton (@wsmelton)
+Original Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
@@ -42,6 +48,10 @@ Get-SqlAvailabilityGroup -SqlServer sqlserver2014a
 Returns basic information on all the Availability Group(s) found on sqlserver2014a
 
 .EXAMPLE   
+Get-SqlAvailabilityGroup -SqlServer sqlserver2014a -Simple
+Show only server name, availability groups and role
+
+.EXAMPLE   
 Get-SqlAvailabilityGroup -SqlServer sqlserver2014a -Detailed
 Returns basic information plus additional info on each replica for all Availability Group(s) on sqlserver2014a
 
@@ -57,95 +67,109 @@ Returns true/false if the server, sqlserver2014a, is the primary replica for AG-
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[object[]]$SqlServer,
 		[object]$SqlCredential,
-        [switch]$Detailed,
-        [string]$AvailabilityGroupName,
-		[switch]$IsPrimary        
+		[switch]$Simple,
+		[switch]$Detailed,
+		[switch]$IsPrimary
 	)
 	
-#	DynamicParam { if ($sqlserver) { return Get-ParamSqlDatabases -SqlServer $sqlserver -SqlCredential $SqlCredential } }
+	DynamicParam { if ($sqlserver) { return Get-ParamSqlAvailabilityGroups -SqlServer $sqlserver[0] -SqlCredential $SqlCredential } }
 	
 	BEGIN
 	{
-		
-		$server = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
+		$agCollection = @()
 	}
 	
 	PROCESS
 	{
-		if (!$server.IsHadrEnabled)
+		foreach ($servername in $sqlserver)
 		{
-			Return "Availability Group is not configured."
+			$agReplicas = @()
+			$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
+			
+			if ($server.VersionMajor -lt 11) 
+			{			
+				Write-Output "[$servername] Major Version detected: $(server.VersionMajor)"
+				throw "Availability Groups are only supported in SQL Server 2012+."
+			}
+
+			if (!$server.IsHadrEnabled)
+			{
+				return "[$servername] Availability Group is not configured."
+			}
+
+			if ($AvailabilityGroups)
+			{
+				foreach ($ag in $AvailabilityGroups)
+				{
+					$agReplicas += $server.AvailabilityGroups[$ag].AvailabilityReplicas
+				}
+			}
+			else
+			{
+				$agReplicas += $server.AvailabilityGroups.AvailabilityReplicas
+			}
+			
+			if (!$agReplicas)
+			{
+				return "No data found"
+			}
+			
+			
+			foreach ($r in $agReplicas)
+			{
+				$agCollection += [pscustomobject]@{
+					AvailabilityGroup = $r.Parent.Name
+					ReplicaName = $r.name
+					Role = $r.Role
+					SyncState = $r.RollupSynchronizationState
+					AvailabilityMode = $r.AvailabilityMode
+					FailoverMode = $r.FailoverMode
+					ConnectionModeInPrimaryRole = $r.ConnectionModeInPrimaryRole
+					ReadableSecondary = $r.ConnectionModeInSecondaryRole
+					SessionTimeout = $r.SessionTimeout
+					EndpointUrl = $r.EndpointUrl
+					BackupPriority = $r.BackupPriority
+					ExcludeReplica = if ($r.BackupPriority -eq 0) { $true } else { $false }
+					QuorumVoteCount = $r.QuorumVoteCount
+					ReadonlyRoutingUrl = $r.ReadonlyRoutingConnectionUrl
+					ReadonlyRoutingList = $r.ReadonlyRoutingList -join ","
+				}
+			}
+			
+			$server.ConnectionContext.Disconnect()
 		}
-
-        if ($AvailabilityGroupName)
-        {
-            $agReplicas = $server.AvailabilityGroups[$AvailabilityGroupName].AvailabilityReplicas
-        }
-        else
-        {
-            $agReplicas = $server.AvailabilityGroups.AvailabilityReplicas
-        }
-
-        if (!$agReplicas)
-        {
-            return "No data found"
-        }
-
-        $agCollection = @()
-		foreach ($r in $agReplicas)
-		{
-		    $data = [pscustomobject]@{
-			    AvailabilityGroupName = $r.Parent.Name
-			    ReplicaName = $r.name
-                Role = $r.Role
-                SyncState = $r.RollupSynchronizationState
-			    AvailabilityMode = $r.AvailabilityMode
-			    FailoverMode = $r.FailoverMode
-			    ConnectionModeInPrimaryRole = $r.ConnectionModeInPrimaryRole
-			    ReadableSecondary = $r.ConnectionModeInSecondaryRole
-			    SessionTimeout = $r.SessionTimeout
-			    EndpointUrl = $r.EndpointUrl
-			    BackupPriority = $r.BackupPriority
-			    ExcludeReplica = if ($r.BackupPriority -eq 0) {$true} else {$false}
-			    QuorumVoteCount = $r.QuorumVoteCount
-			    ReadonlyRoutingUrl = $r.ReadonlyRoutingConnectionUrl
-			    ReadonlyRoutingList = $r.ReadonlyRoutingList -join ","
-   			}
-            $agCollection += $data
-		}
-        if ($IsPrimary)
-        {
-            if (!$AvailabilityGroupName)
-            {
-                Write-Error "AvailabilityGroupName is missing. Please provide value and re-run command."
-                Return "Unable to process command due to missing parameter"
-            }
-            if ($agCollection.ReplicaName -contains $server.Name)
-            {
-                $srole = ($agCollection | where ReplicaName -eq $server.Name).Role
-                switch ($srole) {
-                    'Primary' {return $true}
-                    default {$false}
-                }
-            }     
-        }
-        else
-        {
-            if ($Detailed)
-            {
-                $agCollection
-            }
-            else
-            {
-                $agCollection | select AvailabilityGroupName, ReplicaName, Role, SyncState, AvailabilityMode, FailoverMode
-            }
-        }
 	}
 	
 	END
 	{
-		$server.ConnectionContext.Disconnect()
+		if ($IsPrimary)
+		{
+			$primaries = $agCollection | Where-Object { $_.ReplicaName -in $sqlserver -and $_.Role -ne 'Unknown' } | Select-Object ReplicaName, AvailabilityGroup, @{ Name="IsPrimary"; Expression={ $_.Role -eq "Primary" } }
+			
+			if (!$AvailabilityGroups)
+			{
+				return $primaries
+			}
+			else
+			{
+				return ($primaries | Where-Object AvailabilityGroup -in $AvailabilityGroups)
+			}
+		}
+		
+		if ($Simple)
+		{
+			return $agCollection | Select-Object ReplicaName, AvailabilityGroup, Role
+		}
+		
+		if ($Detailed)
+		{
+			return $agCollection
+		}
+		else
+		{
+			return ($agCollection | Select-Object AvailabilityGroup, ReplicaName, Role, SyncState, AvailabilityMode, FailoverMode)
+		}
 	}
 }
