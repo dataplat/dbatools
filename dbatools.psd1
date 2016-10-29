@@ -155,7 +155,9 @@
 		'Remove-DbaBackup',
 		'Find-DbaOrphanedFile',
 		'Test-DbaFullRecoveryModel',
-		'Test-DbaMaxDop'
+		'Test-DbaMaxDop',
+		'Get-DbaRunningJob',
+		'Set-DbaMaxDop'
 	)
 	
 	# Cmdlets to export from this module
