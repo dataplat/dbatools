@@ -213,7 +213,7 @@ It will also remove any backup folders that no longer contain backup files.
             }
         }
  
-        # Cleanup empty backup folders if RemoveEmptyBackupFolders is passed in
+        # Cleanup empty backup folders. Using a DO/WHILE loop to force it to go through the logic at least once so we can display WhatIf if we need to
         do {
             if ($RemoveEmptyBackupFolders.IsPresent) {
                 # Get the empty backup folders
@@ -232,7 +232,8 @@ It will also remove any backup folders that no longer contain backup files.
             }
             # Refresh the empty folders. This will allow us to recursively clean them up
             $EmptyBackupFolders = Get-EmptyBackupFolders -BaseLocation $BackupFolder
-        } while ($EmptyBackupFolders -and !$WhatIfPreference)
+          
+        } while ($RemoveEmptyBackupFolders.IsPresent -and !$WhatIfPreference -and $EmptyBackupFolders)
 	}
 
 	END
