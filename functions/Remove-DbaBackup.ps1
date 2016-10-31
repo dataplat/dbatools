@@ -158,6 +158,16 @@ It will also remove any backup folders that no longer contain backup files.
             $ReturnDatetime
         }
 
+        function Get-EmptyBackupFolders 
+        {
+            [cmdletbinding()]
+            param (
+                [string]$BaseLocation
+            )
+            Get-ChildItem -Path $BaseLocation -Recurse | Where-Object {$_.PSIsContainer -eq $true -and (Get-ChildItem -Path $_.FullName) -eq $null}
+        }
+
+
         # Validations
         # Ensure BackupFileExtension does not begin with a .
         if ($BackupFileExtension -match "^[.]") {
@@ -203,19 +213,26 @@ It will also remove any backup folders that no longer contain backup files.
             }
         }
  
-        # Remove empty backup folders if RemoveEmptyBackupFolders is passed in
-        if ($RemoveEmptyBackupFolders.IsPresent -and $Pscmdlet.ShouldProcess($env:computername, "Removing empty folders under '$BackupFolder\*'")) {
-            try {
-                # Keep looping until we dont find any more
-                while (Get-ChildItem -Path $BackupFolder -Recurse | Where-Object {$_.PSIsContainer -eq $true `
-                    -and (Get-ChildItem -Path $_.FullName) -eq $null}) {
-                    Get-ChildItem -Path $BackupFolder -Recurse | Where-Object {$_.PSIsContainer -eq $true `
-                        -and (Get-ChildItem -Path $_.FullName) -eq $null} | Remove-Item -Force -Verbose 4>&1
+        # Cleanup empty backup folders if RemoveEmptyBackupFolders is passed in
+        do {
+            if ($RemoveEmptyBackupFolders.IsPresent) {
+                # Get the empty backup folders
+                $EmptyBackupFolders = Get-EmptyBackupFolders -BaseLocation $BackupFolder
+
+                foreach ($folder in $EmptyBackupFolders) {
+                    if ($Pscmdlet.ShouldProcess($BackupFolder, "Removing empty folder '.$(($folder.FullName).Replace($BackupFolder,''))")) {
+                        try {
+                            Write-Output "Removing empty folder '$($folder.FullName)'"
+                            $folder.FullName | Remove-Item -Force
+                        } catch {
+                            throw $_
+                        }
+                    }
                 }
-            } catch {
-                throw $_
-            }   
-        }
+            }
+            # Refresh the empty folders. This will allow us to recursively clean them up
+            $EmptyBackupFolders = Get-EmptyBackupFolders -BaseLocation $BackupFolder
+        } while ($EmptyBackupFolders -and !$WhatIfPreference)
 	}
 
 	END
