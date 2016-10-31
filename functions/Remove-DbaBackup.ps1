@@ -16,7 +16,7 @@ Also included is the ability to remove empty folders as part of this cleanup act
 Name of the base level folder to search for backup files. 
 Deletion of backup files will be recursive from this location.
 
-.PARAMETER BackupFileExtenstion
+.PARAMETER BackupFileExtension
 Extension of the backup files you wish to remove (typically bak or log)
 
 .PARAMETER RetentionPeriod
@@ -64,25 +64,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Remove-DbaBackup
 
 .EXAMPLE
-Remove-DbaBackup -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtenstion 'trn' -RetentionPeriod '48h'
+Remove-DbaBackup -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtension 'trn' -RetentionPeriod '48h'
 
 The cmdlet will remove '*.trn' files from 'C:\MSSQL\Backup\' and all subdirectories that are more than 48 hours. 
 
 .EXAMPLE
-Remove-DbaBackup -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtenstion 'trn' -RetentionPeriod '48h' -WhatIf
+Remove-DbaBackup -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtension 'trn' -RetentionPeriod '48h' -WhatIf
  
 Same as example #1, but using the WhatIf parameter. The WhatIf parameter will allow the cmdlet show you what it will do, without actually doing it.
 In this case, no trn files will be deleted. Instead, the cmdlet will output what it will do when it runs. This is a good preventatitive measure
 especially when you are first configuring the cmdlet calls. 
 
 .EXAMPLE
-Remove-DbaBackup -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtenstion 'bak' -RetentionPeriod '7d' -CheckArchiveBit
+Remove-DbaBackup -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtension 'bak' -RetentionPeriod '7d' -CheckArchiveBit
 
 The cmdlet will remove '*.bak' files from 'C:\MSSQL\Backup\' and all subdirectories that are more than 7 days old. 
 It will also ensure that the bak files have been archived using the archive bit before removing them.
 
 .EXAMPLE
-Remove-DbaBackup -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtenstion 'bak' -RetentionPeriod '1w' -RemoveEmptyBackupFolders
+Remove-DbaBackup -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtension 'bak' -RetentionPeriod '1w' -RemoveEmptyBackupFolders
 
 The cmdlet will remove '*.bak' files from 'C:\MSSQL\Backup\' and all subdirectories that are more than 1 week old. 
 It will also remove any backup folders that no longer contain backup files.
@@ -96,8 +96,8 @@ It will also remove any backup folders that no longer contain backup files.
         [ValidateScript({Test-Path $_ -PathType 'Container'})]
 		[string]$BackupFolder ,
 
-		[parameter(Mandatory = $true,HelpMessage="Backup File extension to remove (ex. bak, trn, diff)")]
-		[string]$BackupFileExtenstion ,
+		[parameter(Mandatory = $true,HelpMessage="Backup File extension to remove (ex. bak, trn, dif)")]
+		[string]$BackupFileExtension ,
 
 		[parameter(Mandatory = $true,HelpMessage="Backup retention period. (ex. 24h, 7d, 4w, 6m)")]
 		[string]$RetentionPeriod ,
@@ -158,6 +158,12 @@ It will also remove any backup folders that no longer contain backup files.
             $ReturnDatetime
         }
 
+        # Validations
+        # Ensure BackupFileExtension does not begin with a .
+        if ($BackupFileExtension -match "^[.]") {
+            Write-Warning "Parameter -BackupFileExtension begins with a period '$BackupFileExtension'. A period is automatically prepended to -BackupFileExtension and need not be passed in."
+        } 
+
         # Initialize stuff
         $Start = Get-Date
 	}
@@ -176,7 +182,7 @@ It will also remove any backup folders that no longer contain backup files.
         }
 
         # Generate list of files that are to be removed
-        $FilesToDelete = Get-ChildItem "$BackupFolder" -Filter "*.$BackupFileExtenstion" -Recurse | `
+        $FilesToDelete = Get-ChildItem "$BackupFolder" -Filter "*.$BackupFileExtension" -Recurse | `
             Where-Object {$_.LastWriteTime -lt $RetentionDate}
             
         # Filter out unarchived files if -CheckArchiveBit parameter is used
