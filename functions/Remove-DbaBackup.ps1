@@ -193,9 +193,10 @@ It will also remove any backup folders that no longer contain backup files.
         
         # Perform the deletion or show which file will be deleted if WhatIf is used
         foreach ($file in $filestodelete) { 
-            If ($Pscmdlet.ShouldProcess($env:computername, "Deleting $($file.fullname)'")) {
+            If ($Pscmdlet.ShouldProcess( $(($file.FullName).Replace($file.Name, '')), "Removing backup file '$($file.name)'")) {
                 try {
-                    $file.FullPath | Remove-Item -Force -Verbose 4>&1
+                    Write-Output "Removing backup file '$($file.FullName)'"
+                    $file.FullName | Remove-Item -Force
                 } catch {
                     throw $_
                 }
