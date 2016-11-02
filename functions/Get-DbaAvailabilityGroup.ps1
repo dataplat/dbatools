@@ -1,4 +1,4 @@
-Function Get-SqlAvailabilityGroup
+Function Get-DbaAvailabilityGroup
 {
 <#
 .SYNOPSIS 
@@ -41,26 +41,26 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Get-SqlAvailabilityGroup
+https://dbatools.io/Get-DbaAvailabilityGroup
 
 .EXAMPLE
-Get-SqlAvailabilityGroup -SqlServer sqlserver2014a
+Get-DbaAvailabilityGroup -SqlServer sqlserver2014a
 Returns basic information on all the Availability Group(s) found on sqlserver2014a
 
 .EXAMPLE   
-Get-SqlAvailabilityGroup -SqlServer sqlserver2014a -Simple
+Get-DbaAvailabilityGroup -SqlServer sqlserver2014a -Simple
 Show only server name, availability groups and role
 
 .EXAMPLE   
-Get-SqlAvailabilityGroup -SqlServer sqlserver2014a -Detailed
+Get-DbaAvailabilityGroup -SqlServer sqlserver2014a -Detailed
 Returns basic information plus additional info on each replica for all Availability Group(s) on sqlserver2014a
 
 .EXAMPLE   
-Get-SqlAvailabilityGroup -SqlServer sqlserver2014a -AvailabilityGroup AG-a
+Get-DbaAvailabilityGroup -SqlServer sqlserver2014a -AvailabilityGroup AG-a
 Shows basic information on the Availability Group AG-a on sqlserver2014a
 	
 .EXAMPLE   
-Get-SqlAvailabilityGroup -SqlServer sqlserver2014a -AvailabilityGroup AG-a -IsPrimary
+Get-DbaAvailabilityGroup -SqlServer sqlserver2014a -AvailabilityGroup AG-a -IsPrimary
 Returns true/false if the server, sqlserver2014a, is the primary replica for AG-a Availability Group
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
