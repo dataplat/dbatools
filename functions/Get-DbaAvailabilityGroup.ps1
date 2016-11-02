@@ -79,6 +79,7 @@ Returns true/false if the server, sqlserver2014a, is the primary replica for AG-
 	BEGIN
 	{
 		$agCollection = @()
+		$AvailabilityGroups = $PSBoundParameters.AvailabilityGroups
 	}
 	
 	PROCESS
@@ -144,18 +145,14 @@ Returns true/false if the server, sqlserver2014a, is the primary replica for AG-
 	
 	END
 	{
+		if ($AvailabilityGroups)
+		{
+			$agCollection = ($agCollection | Where-Object AvailabilityGroup -in $AvailabilityGroups)
+		}
+		
 		if ($IsPrimary)
 		{
-			$primaries = $agCollection | Where-Object { $_.ReplicaName -in $sqlserver -and $_.Role -ne 'Unknown' } | Select-Object ReplicaName, AvailabilityGroup, @{ Name="IsPrimary"; Expression={ $_.Role -eq "Primary" } }
-			
-			if (!$AvailabilityGroups)
-			{
-				return $primaries
-			}
-			else
-			{
-				return ($primaries | Where-Object AvailabilityGroup -in $AvailabilityGroups)
-			}
+			return ($agCollection | Where-Object { $_.ReplicaName -in $sqlserver -and $_.Role -ne 'Unknown' } | Select-Object ReplicaName, AvailabilityGroup, @{ Name="IsPrimary"; Expression={ $_.Role -eq "Primary" } } )
 		}
 		
 		if ($Simple)
