@@ -18,7 +18,7 @@ The SQL Server (or server in general) that you're connecting to. The -SqlServer 
 	
 .PARAMETER CustomPowerPlan
 If your organization uses a custom power plan that's considered best practice, specify it here.
-	
+
 .PARAMETER Detailed
 Show a detailed list.
 
@@ -44,9 +44,9 @@ To return true or false for Power Plan being set to High Performance
 
 .EXAMPLE   
 Test-DbaPowerPlan -ComputerName sqlserver2014a -CustomPowerPlan 'Maximum Performance'
-	
-To return true or false for Power Plan being set to the custom power plan called Maximum Performance
-	
+
+To return true or false for Power Plan being set to the custom power plan called Maximum Performance 
+
 .EXAMPLE   
 Test-DbaPowerPlan -ComputerName sqlserver2014a -Detailed
 	
@@ -64,20 +64,17 @@ To return detailed information Power Plans
 	
 	BEGIN
 	{
-		$bpPowerPlan = 'High Performance'
-		
-		if ($CustomPowerPlan.Length -gt 0)
-		{
-			$bpPowerPlan = $CustomPowerPlan
+		$bpPowerPlan = [PSCustomObject]@{
+			InstanceID = '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'
+			ElementName = $null
 		}
-		
+					
 		Function Get-PowerPlan
 		{
 			try
 			{
 				Write-Verbose "Testing connection to $server and resolving IP address"
-				$ipaddr = (Test-Connection $server -Count 1 -ErrorAction SilentlyContinue).Ipv4Address | Select-Object -First 1
-				
+				$ipaddr = (Test-Connection $server -Count 1 -ErrorAction SilentlyContinue).Ipv4Address | Select-Object -First 1				
 			}
 			catch
 			{
@@ -86,11 +83,26 @@ To return detailed information Power Plans
 			}
 			
 			try
-			{
+			{				
 				Write-Verbose "Getting Power Plan information from $server"
-				$query = "Select ElementName from Win32_PowerPlan WHERE IsActive = 'true'"
-				$powerplan = Get-WmiObject -Namespace Root\CIMV2\Power -ComputerName $ipaddr -Query $query -ErrorAction SilentlyContinue
-				$powerplan = $powerplan.ElementName
+				$powerplans = $(Get-CimInstance -ComputerName $ipaddr -classname Win32_PowerPlan -Namespace "root\cimv2\power" | select ElementName, InstanceID, IsActive)                
+				$powerplan = $($powerplans | where {  $_.IsActive -eq 'True' } |  select ElementName, InstanceID)
+				$powerplan.InstanceID = $powerplan.InstanceID.Split('{')[1].Split('}')[0]
+				
+				if ($CustomPowerPlan.Length -gt 0)
+				{					
+					$bpPowerPlan.ElementName = $CustomPowerPlan
+					$bpPowerPlan.InstanceID = $( $powerplans | where {  $_.ElementName -eq $CustomPowerPlan }).InstanceID
+				}
+				else 
+				{
+					$bpPowerPlan.ElementName =  $( $powerplans | where {  $_.InstanceID.Split('{')[1].Split('}')[0] -eq $bpPowerPlan.InstanceID }).ElementName  
+                    if ($bpPowerplan.ElementName -eq $null)
+                    {
+                        $bpPowerPlan.ElementName = "You do not have the high performance plan installed on this machine."
+                    }
+				}
+
 			}
 			catch 
 			{
@@ -98,14 +110,15 @@ To return detailed information Power Plans
 				return
 			}
 			
-			if ($powerplan -eq $null)
+            Write-Verbose "Recommended GUID is $($bpPowerPlan.InstanceID) and you have $($powerplan.InstanceID)"
+			if ($powerplan.InstanceID -eq $null)
 			{
 				# the try/catch above isn't working, so make it silent and handle it here.
-				$powerplan = "Unknown"
+				$powerplan.ElementName = "Unknown"
 			}
 			
-			if ($powerplan -eq $bpPowerPlan)
-			{
+			if ($powerplan.InstanceID -eq $bpPowerPlan.InstanceID)
+			{                
 				$IsBestPractice = $true
 			}
 			else
@@ -115,8 +128,8 @@ To return detailed information Power Plans
 			
 			$planinfo = [PSCustomObject]@{
 				Server = $server
-				ActivePowerPlan = $powerplan
-				RecommendedPowerPlan = $bpPowerPlan
+				ActivePowerPlan = $powerplan.ElementName
+				RecommendedPowerPlan = $bpPowerPlan.ElementName
 				IsBestPractice = $IsBestPractice
 			}
 			return $planinfo
