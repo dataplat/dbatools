@@ -109,14 +109,13 @@ that TargetLogin must be a valid security principal that exists on the target se
 					Continue
 				}
 			}
-			
+			#use online/available dbs
+            $dbs = $server.Databases
+
+            #filter database collection based on parameters
 			if ($Databases.Length -gt 0)
 			{
-				$dbs = $server.Databases | Where-Object { $databases -contains $_.Name }
-			}
-			else
-			{
-				$dbs = $server.Databases
+				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
 			}
 			
 			if ($Exclude.Length -gt 0)
@@ -129,11 +128,12 @@ that TargetLogin must be a valid security principal that exists on the target se
 			{
 				Write-Verbose "Checking $db"
 				$row = [ordered]@{
-					'Server' = $server.Name
-					'Database' = $db.Name
-					'CurrentOwner' = $db.Owner
-					'TargetOwner' = $TargetLogin
-					'OwnerMatch' = ($db.owner -eq $TargetLogin)
+					Server = $server.Name
+					Database = $db.Name
+					DBState = $db.Status
+					CurrentOwner = $db.Owner
+					TargetOwner = $TargetLogin
+					OwnerMatch = ($db.owner -eq $TargetLogin)
 				}
 				
 				#add each custom object to the return array
