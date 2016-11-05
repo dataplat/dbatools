@@ -83,6 +83,8 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 	)
 	BEGIN
 	{
+
+
 		function Get-SqlFileStructure
 		{
 			param
@@ -93,36 +95,39 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 			
 			if ($smoserver.versionMajor -eq 8)
 			{
-				$sql = "select filename from sysaltfiles"
+				$sql = "select filename as type_desc from sysaltfiles"
 			}
 			else
 			{
-				$sql = "SELECT Physical_Name AS filename FROM sys.master_files mf INNER JOIN  sys.databases db ON db.database_id = mf.database_id"
-			}
-			
+				$sql = "SELECT physical_name AS filename FROM sys.master_files where type_desc <> 'FILESTREAM'"
+			}			
 			$dbfiletable = $smoserver.ConnectionContext.ExecuteWithResults($sql)
 			$ftfiletable = $dbfiletable.Tables[0].Clone()
-			$dbfiletable.Tables[0].TableName = "data"
-			
+			$dbfiletable.Tables[0].TableName = "data"			
 			foreach ($db in $databaselist)
 			{
 				# Add support for Full Text Catalogs in Sql Server 2005 and below
 				if ($server.VersionMajor -lt 10)
 				{
 					#$dbname = $db.name
-					$fttable = $null = $smoserver.Databases[$database].ExecuteWithResults('sp_help_fulltext_catalogs')
-					
-					foreach ($ftc in $fttable.Tables[0].rows)
+					# need to run SELECT FULLTEXTSERVICEPROPERTY('IsFullTextInstalled') before we run this, or we will have problem
+					if ($smoserver.Databases[$database].ExecuteWithResults("SELECT FULLTEXTSERVICEPROPERTY('IsFullTextInstalled')").Tables[0][0] -eq 1)
 					{
-						$null = $ftfiletable.Rows.add($ftc.Path)
+						Write-Debug "Gathering Full Text Information"
+						$fttable = $smoserver.Databases[$database].ExecuteWithResults('sp_help_fulltext_catalogs')						
+						foreach ($ftc in $fttable.Tables[0].rows)
+						{
+							$null = $ftfiletable.Rows.add($ftc.Path)
+						}
 					}
 				}
 			}
 			
 			$null = $dbfiletable.Tables.Add($ftfiletable)
-			return $dbfiletable.Tables.Filename
+			return $dbfiletable.Tables
 		}
 		
+		$Paths = @()
 		$allfiles = @()
 		$FileType += "mdf", "ldf", "ndf"
 		$systemfiles = "distmdl.ldf", "distmdl.mdf", "mssqlsystemresource.ldf", "mssqlsystemresource.mdf"
@@ -132,51 +137,76 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 	{
 		foreach ($servername in $sqlserver)
 		{
-			$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
-			
-			# Get all the database files
-			$databasefiles = Get-SqlFileStructure -smoserver $server
-			foreach ($file in $databasefiles)
-			{
-				$Path += Split-Path $file
-			}
-			
-			# Get the default data and log directories from the instance
-			$Path += $server.RootDirectory + "\DATA"
-			$Path += Get-SqlDefaultPaths $server data
-			$Path += Get-SqlDefaultPaths $server log
-			$Path += $server.MasterDBPath
-			$Path += $server.MasterDBLogPath
-			
-			# Clean it up
-			$Path = $Path | ForEach-Object { $_.TrimEnd("\") } | Sort-Object -Unique
-			
-			# Create the file variable
-			$orphanedfiles = @()
-			$filesondisk = @()
-			
-			# Loop through each of the directories and get all the data and log file related files
-			foreach ($directory in $Path)
-			{
-				$sql = "xp_dirtree '$directory', 1, 1"
-				Write-Debug $sql
+			try {
+				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
 				
-				$server.ConnectionContext.ExecuteWithResults($sql).Tables.Subdirectory | ForEach-Object {
-					if ($_ -match "\.")
-					{
-						$ext = ($_ -split "\.")[1]
-						if ($FileType -contains $ext -and $_ -notin $systemfiles)
-						{
-							$filesondisk += "$directory\$_"
-						}
+				# Get all the database files
+				$databasefiles = Get-SqlFileStructure -smoserver $server
+				foreach ($table in $databasefiles)
+				{
+					foreach	($file in $table)
+					{											
+						$Paths += Split-Path $file.filename						
 					}
+				}
+				
+				# Get the default data and log directories from the instance
+				Write-Debug "Adding paths"
+				$Paths += $server.RootDirectory + "\DATA"
+				$Paths += Get-SqlDefaultPaths $server data
+				$Paths += Get-SqlDefaultPaths $server log
+				$Paths += $server.MasterDBPath
+				$Paths += $server.MasterDBLogPath
+				$Paths += $Path
+				Write-Debug "Filtering paths"
+				# Clean it up
+				$Paths = $Paths | % { "$_".TrimEnd("\") } | Sort-Object -Unique
+				
+				# Create the file variable
+				$orphanedfiles = @()
+				$filesondisk = @()
+				
+				write-debug "Loop through each of the directories and get all the data and log file related files"
+				foreach ($directory in $Paths)
+				{
+					$sql = "xp_dirtree '$directory', 1, 1"
+					Write-Debug $sql
 					
+					$server.ConnectionContext.ExecuteWithResults($sql).Tables.Subdirectory | ForEach-Object {
+						if ($_ -match "\.")
+						{
+							$ext = ($_ -split "\.")[1]
+							if ($FileType -contains $ext -and $_ -notin $systemfiles)
+							{
+								$filesondisk += "$directory\$_"
+							}
+						}
+						
+					}
 				}
 			}
-			
+			catch {
+				write-host "error" -foregroundcolor red
+				write-host $_
+				"$($_.InvocationInfo.ScriptName)($($_.InvocationInfo.ScriptLineNumber)): $($_.InvocationInfo.Line)"
+			}
+			write-debug "Comparing files and database files"
 			# Compare the two lists and save the items that are not in the database file list 
-			$orphanedfiles = (Compare-Object -ReferenceObject ($databasefiles) -DifferenceObject $filesondisk).InputObject
-			
+			if ($databasefiles.filename -ne $null -and $filesondisk -ne $null)
+			{ 
+				$orphanedfiles = (Compare-Object -ReferenceObject ($databasefiles.filename) -DifferenceObject $filesondisk).InputObject 
+			}
+			else {
+				if ($databasefiles -eq $null)
+				{
+					write-error "Couldnt get list of databases from the server."
+				}
+				else 
+				{
+					write-error "Couldnt get the list of files from the server."
+				}				
+			}	
+
 			foreach ($file in $orphanedfiles)
 			{
 				$allfiles += [pscustomobject]@{
