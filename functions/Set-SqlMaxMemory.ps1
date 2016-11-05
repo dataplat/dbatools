@@ -86,7 +86,7 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 			
 			if (!(Test-SqlSa -SqlServer $server))
 			{
-				Write-Error "Not a sysadmin on $servername. Skipping."
+				Write-Error "Not a sysadmin on $sqlserver. Skipping."
 				$server.ConnectionContext.Disconnect()
 				continue
 			}
