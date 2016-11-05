@@ -98,6 +98,11 @@ You should have received a copy of the GNU General Public License along with thi
 .LINK
 https://dbatools.io/Copy-SqlDatabase
 
+.EXAMPLE
+Copy-SqlDatabase -Source sqlserver2014a -Destination sqlserver2014b -Database TestDB -BackupRestore -NetworkShare \\fileshare\sql\migration
+
+Migrates a single user database TestDB using Backup and restore from instance sqlserver2014a to sqlserver2014b. Backup files are stored in \\fileshare\sql\migration.
+
 .EXAMPLE   
 Copy-SqlDatabase -Source sqlserver2014a -Destination sqlcluster -DetachAttach -Reattach
 
@@ -105,7 +110,7 @@ Databases will be migrated from sqlserver2014a to sqlcluster using the detach/co
 
 
 .EXAMPLE   
-Copy-SqlDatabase -Source sqlserver2014a -Destination sqlcluster -Exclude Northwind, pubs -IncludeSupportDbs -Force -BackupRestore \\fileshare\sql\migration
+Copy-SqlDatabase -Source sqlserver2014a -Destination sqlcluster -Exclude Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -NetworkShare \\fileshare\sql\migration
 
 Migrates all user databases except for Northwind and pubs by using backup/restore (copy-only). Backup files are stored in \\fileshare\sql\migration. If the database exists on the destination, it will be dropped prior to attach.
 
@@ -159,7 +164,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		[object]$DbPipeline
 	)
 	
-	DynamicParam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential } }
+	DynamicParam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential -NoSystem $true} }
 	
 	BEGIN
 	{
@@ -832,7 +837,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		
 		if ($sourceserver.versionMajor -eq 8)
 		{
-			$sql = "select DB_NAME (dbid) as dbname, name, filename, CASE WHEN groupid = 1 THEN 'ROWS' WHEN groupid = 0 THEN 'LOG' END as filetype from sysaltfiles"
+			$sql = "select DB_NAME (dbid) as dbname, name, filename, CASE WHEN groupid = 0 THEN 'LOG' ELSE 'ROWS' END as filetype from sysaltfiles"
 		}
 		else
 		{

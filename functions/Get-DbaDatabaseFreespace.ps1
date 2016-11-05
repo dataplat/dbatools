@@ -1,4 +1,4 @@
-﻿function Get-DbaDatabaseFreespace
+function Get-DbaDatabaseFreespace
 {
 <#
 .SYNOPSIS
@@ -91,6 +91,52 @@ Returns database files and free space information for the db1 and db2 on localho
 				    ,CAST(f.size/128.0 - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int)/128.0 AS DECIMAL(15,2)) AS [FreeSpaceMB]
 				    ,CAST((f.size/128.0) AS DECIMAL(15,2)) AS [FileSizeMB]
 				    ,CAST((FILEPROPERTY(f.name, 'SpaceUsed')/(f.size/1.0)) * 100 as DECIMAL(15,2)) as [PercentUsed]
+					,CAST((f.growth/128.0) AS DECIMAL(15,2)) AS [GrowthMB]
+					,CASE is_percent_growth WHEN 1 THEN 'pct' WHEN 0 THEN 'MB' ELSE 'Unknown' END AS [GrowthType]
+					,CASE f.max_size WHEN -1 THEN 2147483648. ELSE CAST((f.max_size/128.0) AS DECIMAL(15,2)) END AS [MaxSizeMB]
+					,CAST((f.size/128.0) AS DECIMAL(15,2)) - CAST(CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int)/128.0 AS DECIMAL(15,2)) AS [SpaceBeforeAutoGrow]
+					,CASE f.max_size	WHEN (-1)
+										THEN CAST(((2147483648.) - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int))/128.0 AS DECIMAL(15,2))
+										ELSE CAST((f.max_size - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int))/128.0 AS DECIMAL(15,2))
+										END AS [SpaceBeforeMax]
+					,CASE f.growth	WHEN 0 THEN 0.00
+									ELSE	CASE f.is_percent_growth	WHEN 0
+													THEN	CASE f.max_size
+															WHEN (-1)
+															THEN CAST(((((2147483648.)-f.Size)/f.Growth)*f.Growth)/128.0 AS DECIMAL(15,2))
+															ELSE CAST((((f.max_size-f.Size)/f.Growth)*f.Growth)/128.0 AS DECIMAL(15,2))
+															END
+													WHEN 1
+													THEN	CASE f.max_size
+															WHEN (-1)
+															THEN CAST(CONVERT([int],f.Size*power((1)+CONVERT([float],f.Growth)/(100),CONVERT([int],log10(CONVERT([float],(2147483648.))/CONVERT([float],f.Size))/log10((1)+CONVERT([float],f.Growth)/(100)))))/128.0 AS DECIMAL(15,2))
+															ELSE CAST(CONVERT([int],f.Size*power((1)+CONVERT([float],f.Growth)/(100),CONVERT([int],log10(CONVERT([float],f.Max_Size)/CONVERT([float],f.Size))/log10((1)+CONVERT([float],f.Growth)/(100)))))/128.0 AS DECIMAL(15,2))
+															END
+													ELSE (0)
+													END
+									END AS [PossibleAutoGrowthMB]
+					, CASE f.growth	WHEN 0 THEN	CASE f.max_size
+												WHEN (-1)
+												THEN CAST(((2147483648.) - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int))/128.0 AS DECIMAL(15,2))
+												ELSE CAST((f.max_size - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int))/128.0 AS DECIMAL(15,2))
+												END
+									ELSE CAST((f.max_size - f.size - (	CASE f.is_percent_growth
+												WHEN 0
+												THEN	CASE f.max_size
+														WHEN (-1)
+														THEN ((((2147483648.)-f.Size)/f.Growth)*f.Growth)
+														ELSE (((f.max_size-f.Size)/f.Growth)*f.Growth)
+														END
+												WHEN 1
+												THEN	CASE f.max_size
+														WHEN (-1)
+														THEN CONVERT([int],f.Size*power((1)+CONVERT([float],f.Growth)/(100),CONVERT([int],log10(CONVERT([float],(2147483648.))/CONVERT([float],f.Size))/log10((1)+CONVERT([float],f.Growth)/(100)))))
+														ELSE CONVERT([int],f.Size*power((1)+CONVERT([float],f.Growth)/(100),CONVERT([int],log10(CONVERT([float],f.Max_Size)/CONVERT([float],f.Size))/log10((1)+CONVERT([float],f.Growth)/(100)))))
+														END
+														ELSE (0)
+														END ))/128.0 AS DECIMAL(15,2))
+									END AS [UnusableSpaceMB]
+ 
 				FROM sys.database_files AS f WITH (NOLOCK) 
 				LEFT OUTER JOIN sys.filegroups AS fg WITH (NOLOCK)
 				ON f.data_space_id = fg.data_space_id"
@@ -155,7 +201,7 @@ Returns database files and free space information for the db1 and db2 on localho
 	END
 	{
 		#Sanitize output into array of custom objects, not DataRow objects
-		Write-Verbose 'Sanitizing outupt, converting DataRow to custom PSObject.'
+		Write-Verbose 'Sanitizing output, converting DataRow to custom PSObject.'
 		$output = @()
 		foreach ($row in $outputraw)
 		{
@@ -168,12 +214,16 @@ Returns database files and free space information for the db1 and db2 on localho
 				'UsedSpaceMB' = $row.UsedSpaceMB;`
 				'FreeSpaceMB' = $row.FreeSpaceMB;`
 				'FileSizeMB' = $row.FileSizeMB;`
-				'PercentUsed' = $row.PercentUSed
+				'PercentUsed' = $row.PercentUSed;`
+				'AutoGrowth' = $row.GrowthMB;`
+				'AutoGrowType' = $row.GrowthType;`
+				'SpaceUntilMaxSizeMB' = $row.SpaceBeforeMax;`
+				'AutoGrowthPossibleMB' = $row.PossibleAutoGrowthMB;`
+				'UnusableSpaceMB' = $row.UnusableSpaceMB
 			}
 			$output += New-Object psobject -Property $outrow
 		}
-		
-		
+
 		return $output
 	}
 }
