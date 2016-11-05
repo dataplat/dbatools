@@ -10,22 +10,13 @@ Exports Windows and SQL Logins to a T-SQL file. Export includes login, SID, pass
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
 .PARAMETER SqlServer
-The SQL Server instance name. SQL Server 2000 and above supported.
+The SQL Server instance name. SQL Server 2012 and above supported.
 
-.PARAMETER FilePath
-The file to write to.
+.PARAMETER OutputFileLocation
+The directory name where the output files will be written. SQL Server and Availability Group Names will automatically be added to sub-folder names.
 
 .PARAMETER NoClobber
-Do not overwrite file
-	
-.PARAMETER Append
-Append to file
-	
-.PARAMETER Exclude
-Excludes specified logins. This list is auto-populated for tab completion.
-
-.PARAMETER Login
-Migrates ONLY specified logins. This list is auto-populated for tab completion. Multiple logins allowed.
+Do not overwrite existing export files.
 
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -57,22 +48,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Export-DbaAvailabilityGroup
 
 .EXAMPLE
-Export-DbaAvailabilityGroup -SqlServer sql2005 -FilePath C:\temp\sql2005-logins.sql
+Export-DbaAvailabilityGroup -SqlServer sql2012 -OutputFileLocation 'C:\temp\availability_group_exports'
 
-Exports SQL for the logins in server "sql2005" and writes them to the file "C:\temp\sql2005-logins.sql"
-
-.EXAMPLE
-Export-DbaAvailabilityGroup -SqlServer sqlserver2014a -Exclude realcajun -SqlCredential $scred -FilePath C:\temp\logins.sql -Append
-
-Authenticates to sqlserver2014a using SQL Authentication. Exports all logins except for realcajun to C:\temp\logins.sql, and appends to the file if it exists. If not, the file will be created.
+Exports Availability Group T-SQL scripts for SQL server "sql2012" and writes them to the C:\temp\availability_group_exports directory.
 
 .EXAMPLE
-Export-DbaAvailabilityGroup -SqlServer sqlserver2014a -Login realcajun, netnerds -FilePath C:\temp\logins.sql
+Export-DbaAvailabilityGroup -SqlServer sql2014 -OutputFileLocation 'C:\temp\availability_group_exports'
 
-Exports ONLY logins netnerds and realcajun fron sqlsever2014a to the file  C:\temp\logins.sql
+Exports Availability Group T-SQL scripts for SQL server "sql2014" and writes them to the C:\temp\availability_group_exports directory. Do not overwrite
 
 .NOTES 
-Author: Chrissy LeMaire (@cl), netnerds.net
+Author: Chris Sommer (@cjsommer), cjsommmer.com
 
 .LINK 
 https://dbatools.io/Export-DbaAvailabilityGroup
@@ -81,10 +67,12 @@ https://dbatools.io/Export-DbaAvailabilityGroup
     [CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[string]$SqlServer,
+		    [Alias("ServerInstance", "SqlInstance")]
+		    [string]$SqlServer,
+
 		[Alias("OutFile", "Path","FileName")]
-		[string]$FilePath,
+		    [string]$OutputFileLocation,
+
 		[object]$SqlCredential
 	)
 
@@ -93,21 +81,21 @@ https://dbatools.io/Export-DbaAvailabilityGroup
     $SQLObj = New-Object "Microsoft.SqlServer.Management.Smo.Server" $SQLServer
     $SQLObj.ConnectionContext.Connect()
 
-    foreach ($ag in ($SQLObj.AvailabilityGroups )){
+    foreach ($ag in ($SQLObj.AvailabilityGroups )) {
         $SQLINST = $SQLServer.Replace('\','_')
         $AGName = $ag.Name
         $Dttm = (Get-Date -Format 'yyyyMMdd_hhmm')
 
-        $OutFile = "${FilePath}\${SQLINST}\${AGname}_${Dttm}.sql"
+        $OutFile = "${OutputFileLocation}\${SQLINST}\${AGname}_${Dttm}.sql"
         if (!(Test-Path -Path $OutFile -PathType Leaf)) {
             New-Item -Path $OutFile -ItemType File -Force
         }
         Write-output "Scripting Availability Group [$AGName] to '$OutFile'"
 
-        '/*' | Out-File -FilePath $OutFile -Encoding ASCII -Force
-        $ag | Select-Object -Property * | Out-File -FilePath $OutFile -Encoding ASCII -Append
-        '*/' | Out-File -FilePath $OutFile -Encoding ASCII -Append
+        '/*' | Out-File -OutputFileLocation $OutFile -Encoding ASCII -Force
+        $ag | Select-Object -Property * | Out-File -OutputFileLocation $OutFile -Encoding ASCII -Append
+        '*/' | Out-File -OutputFileLocation $OutFile -Encoding ASCII -Append
 
-        $ag.Script() | Out-File -FilePath $OutFile -Encoding ASCII -Append
+        $ag.Script() | Out-File -OutputFileLocation $OutFile -Encoding ASCII -Append
     }
 }
