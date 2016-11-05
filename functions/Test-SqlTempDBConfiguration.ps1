@@ -67,7 +67,7 @@ Checks tempdb on the localhost machine. All rest results are shown.
 	
 	BEGIN
 	{
-		$return = @()
+		$result = @()
 		Write-Verbose "Connecting to $SqlServer"
 		$server = Connect-SqlServer $SqlServer -SqlCredential $SqlCredential
 	}
@@ -121,7 +121,7 @@ Checks tempdb on the localhost machine. All rest results are shown.
 		
 		$value | Add-Member -MemberType NoteProperty -Name IsBestpractice -Value $isBestPractice
 		$value | Add-Member -MemberType NoteProperty -Name Notes -Value $notes
-		$return += $value
+		$result += $value
 		Write-Verbose "TF 1118 evaluated"
 		
 		#get files and log files
@@ -151,7 +151,7 @@ Checks tempdb on the localhost machine. All rest results are shown.
 		
 		$value | Add-Member -MemberType NoteProperty -Name IsBestpractice -Value $isBestPractice
 		$value | Add-Member -MemberType NoteProperty -Name Notes -Value 'Microsoft recommends that the number of tempdb data files is equal to the number of logical cores up to 8.'
-		$return += $value
+		$result += $value
 		
 		Write-Verbose "File counts evaluated"
 		
@@ -179,7 +179,7 @@ Checks tempdb on the localhost machine. All rest results are shown.
 		
 		$value | Add-Member -MemberType NoteProperty -Name IsBestpractice -Value $isBestPractice
 		$value | Add-Member -MemberType NoteProperty -Name Notes -Value 'Set grow with explicit values, not by percent.'
-		$return += $value
+		$result += $value
 		
 		Write-Verbose "File growth settings evaluated"
 		#test file Location
@@ -204,7 +204,7 @@ Checks tempdb on the localhost machine. All rest results are shown.
 		
 		$value | Add-Member -MemberType NoteProperty -Name IsBestpractice -Value $isBestPractice
 		$value | Add-Member -MemberType NoteProperty -Name Notes -Value "Do not place your tempdb files on C:\."
-		$return += $value
+		$result += $value
 		
 		Write-Verbose "File locations evaluated"
 		
@@ -229,7 +229,7 @@ Checks tempdb on the localhost machine. All rest results are shown.
 		
 		$value | Add-Member -MemberType NoteProperty -Name IsBestpractice -Value $isBestPractice
 		$value | Add-Member -MemberType NoteProperty -Name Notes -Value "Consider setting your tempdb files to unlimited growth."
-		$return += $value
+		$result += $value
 		
 		Write-Verbose "MaxSize values evaluated"
 	}
@@ -237,9 +237,19 @@ Checks tempdb on the localhost machine. All rest results are shown.
 	END
 	{
         if($Detailed){
-		    return $return
-        } else {
-            return ($return | Where-Object {$_.isBestPractice -eq $false})
-        }
+		    return $result
+		}
+		else
+		{
+			$failed = $result | Where-Object { $_.isBestPractice -eq $false }
+			if ($failed -eq $null)
+			{
+				Write-Output "All tests passed! tempdb is properly optimized."
+			}
+			else
+			{
+				return $failed
+			}
+		}
 	}
 }
