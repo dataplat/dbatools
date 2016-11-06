@@ -27,7 +27,10 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
 
 SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
-	
+
+.PARAMETER AvailabilityGroups
+Allows you to specify which Availability Groups to export. (Dynamic Param)
+
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
 
@@ -88,18 +91,37 @@ https://dbatools.io/Export-DbaAvailabilityGroup
 	
     BEGIN
     {
+        Write-Output "Beginning Export-DbaAvailabilityGroup"
         $SQLObj = New-Object "Microsoft.SqlServer.Management.Smo.Server" $SQLServer
         $SQLObj.ConnectionContext.Connect()
     }
 
     PROCESS
     {
-        foreach ($ag in ($SQLObj.AvailabilityGroups )) {
+        $AllAGs =  $SQLObj.AvailabilityGroups
+       
+        if (($AvailabilityGroups.count) -gt 0) { 
+            Write-Output "Applying filter for following Availability Groups:"
+            $AvailabilityGroups | Out-String | Write-Output $_
+            $AllAGs = $AllAGs | Where-Object {$_.name -in $AvailabilityGroups} 
+        }
+
+        if ($AllAGs.count -eq 0) {
+            Write-Output "No Availability Groups detected on '$SqlServer'"
+        }
+
+        foreach ($ag in $AllAGs) {
             $SQLINST = $SQLServer.Replace('\','_')
             $AGName = $ag.Name
-            $Dttm = (Get-Date -Format 'yyyyMMdd_hhmm')
 
-            $OutFile = "${OutputFileLocation}\${SQLINST}\${AGname}_${Dttm}.sql"
+            # Set the outfile name
+            if ($AppendDateToOutputFilename.IsPresent) {
+                $Dttm = (Get-Date -Format 'yyyyMMdd_hhmm')
+                $OutFile = "${OutputFileLocation}\${SQLINST}\${AGname}_${Dttm}.sql"
+            } else {
+                $OutFile = "${OutputFileLocation}\${SQLINST}\${AGname}.sql"
+            }
+
             if (!(Test-Path -Path $OutFile -PathType Leaf)) {
                 New-Item -Path $OutFile -ItemType File -Force
             }
@@ -115,7 +137,7 @@ https://dbatools.io/Export-DbaAvailabilityGroup
 
     END
     {
-        Write-Output 'Done'
+		$SQLObj.ConnectionContext.Disconnect()
+		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Completed Export-DbaAvailabilityGroup" }
     }
 }
-
