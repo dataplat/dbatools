@@ -1,11 +1,11 @@
-﻿﻿function Export-DbaAvailabilityGroup
+﻿function Export-DbaAvailabilityGroup
 {
 <#
 .SYNOPSIS
-Exports Windows and SQL Logins to a T-SQL file. Export includes login, SID, password, default database, default language, server permissions, server roles, db permissions, db roles.
+Export SQL Server Availability Groups to a T-SQL file. 
 
 .DESCRIPTION
-Exports Windows and SQL Logins to a T-SQL file. Export includes login, SID, password, default database, default language, server permissions, server roles, db permissions, db roles.
+Export SQL Server Availability Groups to a T-SQL file. This includes all replicas, all databases in the AG and the listener creation. This is a function that is not available in SSMS.
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
@@ -13,7 +13,10 @@ THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 The SQL Server instance name. SQL Server 2012 and above supported.
 
 .PARAMETER OutputFileLocation
-The directory name where the output files will be written. SQL Server and Availability Group Names will automatically be added to sub-folder names.
+The directory name where the output files will be written. Output file format will be "ServerName_InstanceName_AGName.sql"
+
+.PARAMETER AppendDateToOutputFilename
+This will automatically append the current date/time to the export files. Using this parameter will change the output file name format to "ServerName_InstanceName_AGName_DateTime.sql"
 
 .PARAMETER NoClobber
 Do not overwrite existing export files.
@@ -53,7 +56,7 @@ Export-DbaAvailabilityGroup -SqlServer sql2012 -OutputFileLocation 'C:\temp\avai
 Exports Availability Group T-SQL scripts for SQL server "sql2012" and writes them to the C:\temp\availability_group_exports directory.
 
 .EXAMPLE
-Export-DbaAvailabilityGroup -SqlServer sql2014 -OutputFileLocation 'C:\temp\availability_group_exports'
+Export-DbaAvailabilityGroup -SqlServer sql2014 -OutputFileLocation 'C:\temp\availability_group_exports' -NoClobber
 
 Exports Availability Group T-SQL scripts for SQL server "sql2014" and writes them to the C:\temp\availability_group_exports directory. Do not overwrite
 
@@ -66,36 +69,53 @@ https://dbatools.io/Export-DbaAvailabilityGroup
 #>
     [CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		    [Alias("ServerInstance", "SqlInstance")]
-		    [string]$SqlServer,
+		    [object[]]$SqlServer,
 
-		[Alias("OutFile", "Path","FileName")]
+		[Alias("OutputLocation", "Path")]
 		    [string]$OutputFileLocation,
+
+        [Alias("AppendDttm")]
+            [switch]$AppendDateToOutputFilename ,
+
+        [switch]$NoClobber ,
 
 		[object]$SqlCredential
 	)
 
-    DynamicParam { if ($sqlserver) { return Get-ParamSqlAvailabilityGroups -SqlServer $sqlserver[0] -SqlCredential $SqlCredential } }
+	DynamicParam { if ($sqlserver) { return Get-ParamSqlAvailabilityGroups -SqlServer $sqlserver[0] -SqlCredential $SqlCredential } }
+	
+    BEGIN
+    {
+        $SQLObj = New-Object "Microsoft.SqlServer.Management.Smo.Server" $SQLServer
+        $SQLObj.ConnectionContext.Connect()
+    }
 
-    $SQLObj = New-Object "Microsoft.SqlServer.Management.Smo.Server" $SQLServer
-    $SQLObj.ConnectionContext.Connect()
+    PROCESS
+    {
+        foreach ($ag in ($SQLObj.AvailabilityGroups )) {
+            $SQLINST = $SQLServer.Replace('\','_')
+            $AGName = $ag.Name
+            $Dttm = (Get-Date -Format 'yyyyMMdd_hhmm')
 
-    foreach ($ag in ($SQLObj.AvailabilityGroups )) {
-        $SQLINST = $SQLServer.Replace('\','_')
-        $AGName = $ag.Name
-        $Dttm = (Get-Date -Format 'yyyyMMdd_hhmm')
+            $OutFile = "${OutputFileLocation}\${SQLINST}\${AGname}_${Dttm}.sql"
+            if (!(Test-Path -Path $OutFile -PathType Leaf)) {
+                New-Item -Path $OutFile -ItemType File -Force
+            }
+            Write-output "Scripting Availability Group [$AGName] to '$OutFile'"
 
-        $OutFile = "${OutputFileLocation}\${SQLINST}\${AGname}_${Dttm}.sql"
-        if (!(Test-Path -Path $OutFile -PathType Leaf)) {
-            New-Item -Path $OutFile -ItemType File -Force
+            '/*' | Out-File -OutputFileLocation $OutFile -Encoding ASCII -Force
+            $ag | Select-Object -Property * | Out-File -OutputFileLocation $OutFile -Encoding ASCII -Append
+            '*/' | Out-File -OutputFileLocation $OutFile -Encoding ASCII -Append
+
+            $ag.Script() | Out-File -OutputFileLocation $OutFile -Encoding ASCII -Append
         }
-        Write-output "Scripting Availability Group [$AGName] to '$OutFile'"
+    }
 
-        '/*' | Out-File -OutputFileLocation $OutFile -Encoding ASCII -Force
-        $ag | Select-Object -Property * | Out-File -OutputFileLocation $OutFile -Encoding ASCII -Append
-        '*/' | Out-File -OutputFileLocation $OutFile -Encoding ASCII -Append
-
-        $ag.Script() | Out-File -OutputFileLocation $OutFile -Encoding ASCII -Append
+    END
+    {
+        Write-Output 'Done'
     }
 }
+
