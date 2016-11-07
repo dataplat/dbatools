@@ -122,7 +122,7 @@ Returns any job/s on Dev01 that are BOTH disabled and have not been ran in the l
                                $DynString = '$output = $jobs | Where-Object { $name -eq $_.name '
                             }
                         
-                       IF ($LastUsed)
+                        IF ($LastUsed)
                             {
                                 $Since = $LastUsed * -1
                                 $SinceDate = (Get-date).AddDays($Since)
@@ -130,8 +130,7 @@ Returns any job/s on Dev01 that are BOTH disabled and have not been ran in the l
                                 $DynString += ' | Where-Object { $_.LastRunDate -le $SinceDate '
                                 $filter = 1
                             }
-                        
-                       IF ($Disabled -eq $true)
+                        IF ($Disabled -eq $true)
                             {
                                 Write-Verbose "Finding job/s that are disabled"
                                 IF ($filter -eq 1)
@@ -144,7 +143,7 @@ Returns any job/s on Dev01 that are BOTH disabled and have not been ran in the l
                                         $filter = 1
                                     }
                             }
-                       IF ($NoSchedule -eq $true)
+                        IF ($NoSchedule -eq $true)
                             {
                                 Write-Verbose "Finding job/s that have no schedule defined"
                                 IF ($filter -eq 0)
@@ -157,7 +156,7 @@ Returns any job/s on Dev01 that are BOTH disabled and have not been ran in the l
                                         $DynString += '-and $_.HasSchedule -eq $false '
                                     }
                             }
-                       IF ($EmailNotification -eq $true)
+                        IF ($EmailNotification -eq $true)
                             {
                                 Write-Verbose "Finding job/s that have no email operator defined"
                                 IF ($filter -eq 0)
@@ -170,9 +169,10 @@ Returns any job/s on Dev01 that are BOTH disabled and have not been ran in the l
                                         $DynString += '-and $_.OperatorToEmail -eq "" '
                                     }
                             }
-                       $DynString += ' }'
-                       Write-Verbose "Dynamic String output:  $DynString"
-                       Invoke-Expression $DynString
+
+                        $DynString += ' }'
+                        Write-Verbose "Dynamic String output:  $DynString"
+                        Invoke-Expression $DynString
                     }
                 ELSE # $CombineFilters
                     {
