@@ -10,13 +10,19 @@ Export SQL Server Availability Groups to a T-SQL file. This includes all replica
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
 .PARAMETER SqlServer
-The SQL Server instance name. SQL Server 2012 and above supported.
+The SQL Server instance name. SQL Server 2012 and above supported
 
-.PARAMETER OutputFileLocation
+.PARAMETER FilePath
 The directory name where the output files will be written. Output file format will be "ServerName_InstanceName_AGName.sql"
 
 .PARAMETER AppendDateToOutputFilename
 This will automatically append the current date/time to the export files. Using this parameter will change the output file name format to "ServerName_InstanceName_AGName_DateTime.sql"
+
+.PARAMETER Include
+An array containint Availability Group names to include
+
+.PARAMETER Exclude
+An array containint Availability Group names to exclude
 
 .PARAMETER NoClobber
 Do not overwrite existing export files.
@@ -54,14 +60,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Export-DbaAvailabilityGroup
 
 .EXAMPLE
-Export-DbaAvailabilityGroup -SqlServer sql2012 -OutputFileLocation 'C:\temp\availability_group_exports'
+Export-DbaAvailabilityGroup -SqlServer sql2012 -FilePath 'C:\temp\availability_group_exports'
 
-Exports Availability Group T-SQL scripts for SQL server "sql2012" and writes them to the C:\temp\availability_group_exports directory.
+Exports all Availability Groups from SQL server "sql2012". Output scripts are witten to the C:\temp\availability_group_exports directory.
 
 .EXAMPLE
-Export-DbaAvailabilityGroup -SqlServer sql2014 -OutputFileLocation 'C:\temp\availability_group_exports' -NoClobber
+Export-DbaAvailabilityGroup -SqlServer sql2012 -FilePath 'C:\temp\availability_group_exports' -Include AG1,AG2
 
-Exports Availability Group T-SQL scripts for SQL server "sql2014" and writes them to the C:\temp\availability_group_exports directory. Do not overwrite
+Exports Availability Groups AG1 and AG2 from SQL server "sql2012". Output scripts are witten to the C:\temp\availability_group_exports directory.
+
+.EXAMPLE
+Export-DbaAvailabilityGroup -SqlServer sql2014 -FilePath 'C:\temp\availability_group_exports' -NoClobber
+
+Exports all Availability Groups from SQL server "sql2014". Output scripts are witten to the C:\temp\availability_group_exports directory. If the export file already exists it will not be overwritten.
 
 .NOTES 
 Author: Chris Sommer (@cjsommer), cjsommmer.com
@@ -77,7 +88,11 @@ https://dbatools.io/Export-DbaAvailabilityGroup
 		    [object[]]$SqlServer,
 
 		[Alias("OutputLocation", "Path")]
-		    [string]$OutputFileLocation,
+		    [string]$FilePath,
+
+        [array]$Include ,
+
+        [array]$Exclude ,
 
         [Alias("AppendDttm")]
             [switch]$AppendDateToOutputFilename ,
@@ -98,40 +113,55 @@ https://dbatools.io/Export-DbaAvailabilityGroup
 
     PROCESS
     {
+        # Get all of the Availability Groups and filter if required
         $AllAGs =  $SQLObj.AvailabilityGroups
-       
-        if (($AvailabilityGroups.count) -gt 0) { 
-            Write-Output "Applying filter for following Availability Groups:"
-            $AvailabilityGroups | Out-String | Write-Output $_
-            $AllAGs = $AllAGs | Where-Object {$_.name -in $AvailabilityGroups} 
+
+        if ($Include) { 
+            Write-Verbose "Applying INCLUDE filter"
+            $AllAGs = $AllAGs | Where-Object {$_.name -in $Include} 
+        }
+
+        if ($Exclude) {
+            Write-Verbose "Applying EXCLUDE filter"
+            $AllAGs = $AllAGs | Where-Object {$_.name -notin $Exclude} 
         }
 
         if ($AllAGs.count -eq 0) {
-            Write-Output "No Availability Groups detected on '$SqlServer'"
+            Write-Verbose "No Availability Groups detected on '$SqlServer'"
         }
 
+        # Set and create the OutputLocation if it doesn't exist
+        $SQLINST = $SQLServer.Replace('\','$')
+        $OutputLocation = "${FilePath}\${SQLINST}"
+
+        if (!(Test-Path $OutputLocation -PathType Container)) {
+            New-Item -Path $OutputLocation -ItemType Directory -Force | Out-Null
+        } 
+
+        # Script each Availability Group
         foreach ($ag in $AllAGs) {
-            $SQLINST = $SQLServer.Replace('\','_')
             $AGName = $ag.Name
 
             # Set the outfile name
             if ($AppendDateToOutputFilename.IsPresent) {
                 $Dttm = (Get-Date -Format 'yyyyMMdd_hhmm')
-                $OutFile = "${OutputFileLocation}\${SQLINST}\${AGname}_${Dttm}.sql"
+                $OutFile = "${OutputLocation}\${AGname}_${Dttm}.sql"
             } else {
-                $OutFile = "${OutputFileLocation}\${SQLINST}\${AGname}.sql"
+                $OutFile = "${OutputLocation}\${AGname}.sql"
             }
 
-            if (!(Test-Path -Path $OutFile -PathType Leaf)) {
-                New-Item -Path $OutFile -ItemType File -Force
+            # Check NoClobber and script out the AG
+            if ($NoClobber.IsPresent -and (Test-Path -Path $OutFile -PathType Leaf)) {
+                Write-Warning "OutputFile '$OutFile' already exists. Skipping due to -NoClobber parameter"
+            } else {
+                Write-output "Scripting Availability Group [$AGName] to '$OutFile'"
+
+                '/*' | Out-File -FilePath $OutFile -Encoding ASCII -Force
+                $ag | Select-Object -Property * | Out-File -FilePath $OutFile -Encoding ASCII -Append
+                '*/' | Out-File -FilePath $OutFile -Encoding ASCII -Append
+
+                $ag.Script() | Out-File -FilePath $OutFile -Encoding ASCII -Append
             }
-            Write-output "Scripting Availability Group [$AGName] to '$OutFile'"
-
-            '/*' | Out-File -OutputFileLocation $OutFile -Encoding ASCII -Force
-            $ag | Select-Object -Property * | Out-File -OutputFileLocation $OutFile -Encoding ASCII -Append
-            '*/' | Out-File -OutputFileLocation $OutFile -Encoding ASCII -Append
-
-            $ag.Script() | Out-File -OutputFileLocation $OutFile -Encoding ASCII -Append
         }
     }
 
