@@ -93,59 +93,47 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 			)	
 			# use sysaltfiles in lower versions
 			# this will fail with filestream stuff, but as that is not possible on these versions, no problem.
-			$q1 = "create table #enum (id int identity, fs_filename nvarchar(512), depth int, is_file int, parent nvarchar(512)); declare @dir nvarchar(512)"
+			$q1 = "CREATE TABLE #enum ( id int IDENTITY, fs_filename nvarchar(512), depth int, is_file int, parent nvarchar(512) ); DECLARE @dir nvarchar(512);"
 			$q2 = @"
-				set @dir = 'dirname'
-				insert #enum(fs_filename, depth, is_file) 
-				exec xp_dirtree @dir,1,1
+				SET @dir = 'dirname';
 
-				update #enum
-				set parent = @dir
-				where parent is null 
+				INSERT INTO #enum( fs_filename, depth, is_file )
+				EXEC xp_dirtree @dir, 1, 1;
+
+				UPDATE #enum
+				SET parent = @dir
+				WHERE parent IS NULL;
 "@
 			if ($smoserver.versionMajor -le 8)
 			{
 				$query_files_sql = @"	
-					select e.fs_filename as filename, parent
-					from #enum e 
-					left join 
-					( 
-						select reverse(substring(reverse(filename), 0, CHARINDEX('\',reverse(filename)))) [current_database_files]
-						from sys.sysaltfiles m
-					) mf on mf.[current_database_files] = e.fs_filename
-					where 
-							fs_filename NOT IN ( 
-							'xtp'
-							, '5'
-							, '`$FSLOG'
-							, '`$HKv2' 
-							, 'filestream.hdr' 
-							) 
-					and [current_database_files] is null
-					and is_file = 1
+					SELECT e.fs_filename AS filename, parent
+					FROM #enum AS e
+						LEFT JOIN
+					(
+						SELECT REVERSE(SUBSTRING(REVERSE(filename), 0, CHARINDEX('\', REVERSE(filename)))) AS [current_database_files]
+						FROM sys.sysaltfiles AS m
+					) AS mf
+						ON mf.[current_database_files] = e.fs_filename
+					WHERE fs_filename NOT IN( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr' ) AND 
+						[current_database_files] IS NULL AND 
+						is_file = 1;
 "@				
 			}
 			else
 			{
 				$query_files_sql = @"	
-
-					select e.fs_filename as filename, parent
-					from #enum e 
-					left join 
-					( 
-						select reverse(substring(reverse(physical_name), 0, CHARINDEX('\',reverse(physical_name)))) [current_database_files]
-						from sys.master_files m
-					) mf on mf.[current_database_files] = e.fs_filename
-					where 
-							fs_filename NOT IN ( 
-							'xtp'
-							, '5'
-							, '`$FSLOG'
-							, '`$HKv2' 
-							, 'filestream.hdr' 
-							) 
-					and [current_database_files] is null
-					and is_file = 1
+					SELECT e.fs_filename AS filename, parent
+					FROM #enum AS e
+						LEFT JOIN
+					(
+						SELECT REVERSE(SUBSTRING(REVERSE(physical_name), 0, CHARINDEX('\', REVERSE(physical_name)))) AS [current_database_files]
+						FROM sys.master_files AS m
+					) AS mf
+						ON mf.[current_database_files] = e.fs_filename
+					WHERE fs_filename NOT IN( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr' ) AND 
+						[current_database_files] IS NULL AND 
+						is_file = 1;
 "@
 			}
 			$sql = $q1
@@ -153,8 +141,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 			$sql += $query_files_sql				
 			write-debug $sql		
 			return $sql
-		}
-				
+		}				
 		$Paths = @()
 		$allfiles = @()
 		$FileType += "mdf", "ldf", "ndf"
@@ -163,72 +150,64 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 	
 	PROCESS
 	{
-		try 
-		{ 
-			foreach ($servername in $sqlserver)
-			{			
-					$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
-									
-					# Get the default data and log directories from the instance
-					Write-Debug "Adding paths"
-					$Paths += $server.RootDirectory + "\DATA"
-					$Paths += Get-SqlDefaultPaths $server data
-					$Paths += Get-SqlDefaultPaths $server log
-					$Paths += $server.MasterDBPath
-					$Paths += $server.MasterDBLogPath
-					$Paths += $Path	
-					if ($server.VersionMajor -lt 10)			
-					{
-						# Add support for Full Text Catalogs in Sql Server 2005 and below
-						foreach ($db in $databaselist)
-						{
-							if ($smoserver.Databases[$database].ExecuteWithResults("SELECT FULLTEXTSERVICEPROPERTY('IsFullTextInstalled')").Tables[0][0] -eq 1)
-							{
-								Write-Debug "Gathering Full Text Information"
-								$fttable = $smoserver.Databases[$database].ExecuteWithResults('sp_help_fulltext_catalogs')						
-								foreach ($ftc in $fttable.Tables[0].rows)
-								{
-									$Paths += $ftc.Path
-								}
-							}
-						}
-					}
-					$Paths = $Paths | % { "$_".TrimEnd("\") } | Sort-Object -Unique
-					$orphanedfiles = @()									
-					$orphan_query = $( Format-Comparison $Paths )				 		
-					$orphanedfiles += $server.Databases['master'].ExecuteWithResults($orphan_query).Tables[0] | % { "$($_.parent)\$($_.filename)" }
-					$orphanedfiles = $orphanedfiles | ? { $_ }   # Remove blanks
-					$matching_orphans = @()				
-					Write-Debug "Found $($orphanedfiles.count) loose files."
-					Write-Debug "Comparing to $($FileType.count) file types."
-					foreach ($file in  $orphanedfiles) 
-					{ 
-						foreach ($type in $FileType) 
-						{
-							write-debug "Comparing $file to *$type"
-							if ($file -like "*$type")
-							{								
-								$matching_orphans += $file
-							}
-						} 
-					}					 		
-				foreach ($file in $matching_orphans)
+		foreach ($servername in $sqlserver)
+		{			
+			$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential									
+				
+			# Get the default data and log directories from the instance
+			Write-Debug "Adding paths"
+			$Paths += $server.RootDirectory + "\DATA"
+			$Paths += Get-SqlDefaultPaths $server data
+			$Paths += Get-SqlDefaultPaths $server log
+			$Paths += $server.MasterDBPath
+			$Paths += $server.MasterDBLogPath
+			$Paths += $Path	
+			if ($server.VersionMajor -lt 10)			
+			{
+				# Add support for Full Text Catalogs in Sql Server 2005 and below
+				foreach ($db in $databaselist)
 				{
-					$allfiles += [pscustomobject]@{
-						Server = $server.name
-						Filename = $file
-						RemoteFilename = Join-AdminUnc -Servername $server.netname -Filepath $file
+					if ($smoserver.Databases[$database].ExecuteWithResults("SELECT FULLTEXTSERVICEPROPERTY('IsFullTextInstalled')").Tables[0][0] -eq 1)
+					{
+						Write-Debug "Gathering Full Text Information"
+						$fttable = $smoserver.Databases[$database].ExecuteWithResults('sp_help_fulltext_catalogs')						
+						foreach ($ftc in $fttable.Tables[0].rows)
+						{
+							$Paths += $ftc.Path
+						}
 					}
 				}
 			}
-		}
-			catch {
-				write-host "error" -foregroundcolor red
-				write-host $_
-				"$($_.InvocationInfo.ScriptName)($($_.InvocationInfo.ScriptLineNumber)): $($_.InvocationInfo.Line)"
+			$Paths = $Paths | % { "$_".TrimEnd("\") } | Sort-Object -Unique
+			$orphanedfiles = @()									
+			$orphan_query = $( Format-Comparison $Paths )				 		
+			$orphanedfiles += $server.Databases['master'].ExecuteWithResults($orphan_query).Tables[0] | % { "$($_.parent)\$($_.filename)" }
+			$orphanedfiles = $orphanedfiles | ? { $_ }   # Remove blanks
+			$matching_orphans = @()				
+
+			Write-Debug "Found $($orphanedfiles.count) loose files."
+			Write-Debug "Comparing to $($FileType.count) file types."
+			foreach ($file in  $orphanedfiles) 
+			{ 
+				foreach ($type in $FileType) 
+				{
+					write-debug "Comparing $file to *$type"
+					if ($file -like "*$type")
+					{								
+						$matching_orphans += $file
+					}
+				} 
+			}					 		
+			foreach ($file in $matching_orphans)
+			{
+				$allfiles += [pscustomobject]@{
+					Server = $server.name
+					Filename = $file
+					RemoteFilename = Join-AdminUnc -Servername $server.netname -Filepath $file
+				}
 			}
-	}
-	
+		}
+	}					
 	END
 	{
 		$server.ConnectionContext.Disconnect()
