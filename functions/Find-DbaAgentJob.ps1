@@ -133,7 +133,7 @@ Returns any job/s on Dev01 that are BOTH disabled and have not been ran in the l
                         
                        IF ($Disabled -eq $true)
                             {
-                                Write-Verbose "Finding job/s that are disabled : filter : $filter"
+                                Write-Verbose "Finding job/s that are disabled"
                                 IF ($filter -eq 1)
                                     {
                                         $DynString += '-and $_.IsEnabled -eq $false '
