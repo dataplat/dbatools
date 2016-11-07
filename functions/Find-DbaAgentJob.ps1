@@ -5,7 +5,7 @@
 Find-DbaAgentJob finds agent job/s that fit certain search filters.
 
 .DESCRIPTION
-This command filters SQL Agent jobs giving the DBA a list of jobs that may need attention or could possibly be options for removal. 
+This command filters SQL Agent jobs giving the DBA a list of jobs that may need attention or could possibly be options for removal.
 	
 .PARAMETER SqlServer
 The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
@@ -25,12 +25,18 @@ Find all jobs with schedule set to it
 .PARAMETER EmailNotification
 Find all jobs without email notification configured
 
-.PARAMETER Filter
+.PARAMETER Exclude
 Allows you to enter an array of agent job names to ignore 
+
+.PARAMETER Name
+Filter agent jobs to only the names you list
 
 .PARAMETER Detailed
 Returns a more detailed output showing why each job has been reported
-	
+
+.PARAMETER CombineFilters
+Returns only job/s that meet all critera 	
+
 .NOTES 
 Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
 Requires: sysadmin access on SQL Servers
@@ -53,8 +59,17 @@ Find-DBAAgentJob -SQLServer Dev01 -Disabled -EmailNotification -NoSchedule -Deta
 Returns all agent job(s) that are either disabled, have no email notification or dont have a schedule. returned with detail
 
 .EXAMPLE
-Find-DbaAgentJob -SQLServer Dev01 -LastUsed 10 -Filter "Yearly - RollUp Workload", "SMS - Notification" 
+Find-DbaAgentJob -SQLServer Dev01 -LastUsed 10 -Exclude "Yearly - RollUp Workload", "SMS - Notification" 
 Returns all agent jobs that havent ran in the last 10 ignoring jobs "Yearly - RollUp Workload" and "SMS - Notification" 
+
+.EXAMPLE
+Find-DbaAgentJob -SQLServer Dev01 -LastUsed 10 -Exclude "Yearly - RollUp Workload", "SMS - Notification" 
+Returns all agent jobs that havent ran in the last 10 ignoring jobs "Yearly - RollUp Workload" and "SMS - Notification" 
+
+.EXAMPLE
+Find-DbaAgentJon -SQLServer Dev01 -LastUsed 10 -Disabled -CombineFilters
+Returns any job/s on Dev01 that are BOTH disabled and have not been ran in the last 10 days 
+
 #>
 	[CmdletBinding()]
 	Param (
@@ -66,7 +81,9 @@ Returns all agent jobs that havent ran in the last 10 ignoring jobs "Yearly - Ro
         [switch]$Disabled,
         [switch]$NoSchedule,
         [switch]$EmailNotification,
-        [string[]]$Filter,
+        [string[]]$Exclude,
+        [string[]]$Name,
+        [switch]$CombineFilters,
         [switch]$Detailed
 	)
 	BEGIN
@@ -75,51 +92,123 @@ Returns all agent jobs that havent ran in the last 10 ignoring jobs "Yearly - Ro
 	    }
 	PROCESS
 	    {
-		    FOREACH ($instance in $SqlServer)
+		    FOREACH ($servername in $SqlServer)
 		    {
-                Write-Verbose "Running Scan on: $instance"
+                Write-Verbose "Running Scan on: $servername"
 
                 TRY
-			    {
-				    $server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
-			    }
+			        {
+				        $server = Connect-SqlServer -SqlServer $servername -SqlCredential $sqlcredential
+			        }
 			    CATCH
-			    {
-				    Write-Verbose "Failed to connect to: $instance"
-				    continue
-			    }
-                
-                
-                IF ($Filter)
+			        {
+				        Write-Verbose "Failed to connect to: $servername"
+				        continue
+			        }
+                IF ($CombineFilters)
                     {
-                        Write-Verbose "Applying filter/s"
-                        $jobs | Where-Object {$Filter -notcontains $_.name}
+                        $filter = 0
+                        $DynString = '$output = $server.JobServer.jobs'
+                        
+                        IF ($Exclude)
+                            {
+                                $filter = 1
+                                Write-Verbose "Excluding job/s based on Exclude"
+                                $DynString = '$output = $jobs | Where-Object { $Exclude -notcontains $_.name '
+                            }
+                        ELSEIF ($name)
+                            {
+                               $filter = 1
+                               $DynString = '$output = $jobs | Where-Object { $name -eq $_.name '
+                            }
+                        
+                       IF ($LastUsed)
+                            {
+                                $Since = $LastUsed * -1
+                                $SinceDate = (Get-date).AddDays($Since)
+                                Write-Verbose "Finding job/s not ran in last $Since days"
+                                $DynString += ' | Where-Object { $_.LastRunDate -le $SinceDate '
+                                $filter = 1
+                            }
+                        
+                       IF ($Disabled -eq $true)
+                            {
+                                Write-Verbose "Finding job/s that are disabled : filter : $filter"
+                                IF ($filter -eq 1)
+                                    {
+                                        $DynString += '-and $_.IsEnabled -eq $false '
+                                    }
+                                ELSEIF ($filter -eq 0)
+                                    {
+                                        $DynString += ' | Where-Object { $_.IsEnabled -eq $false '
+                                        $filter = 1
+                                    }
+                            }
+                       IF ($NoSchedule -eq $true)
+                            {
+                                Write-Verbose "Finding job/s that have no schedule defined"
+                                IF ($filter -eq 0)
+                                    {
+                                        $DynString += ' | Where-Object {$_.HasSchedule -eq $false '
+                                        $filter = 1
+                                    }
+                                ELSEIF ($filter -eq 1)
+                                    {
+                                        $DynString += '-and $_.HasSchedule -eq $false '
+                                    }
+                            }
+                       IF ($EmailNotification -eq $true)
+                            {
+                                Write-Verbose "Finding job/s that have no email operator defined"
+                                IF ($filter -eq 0)
+                                    {
+                                        $DynString += ' | Where-Object { $_.OperatorToEmail -eq [dbnull] '
+                                        $filter = 1
+                                    }
+                                ELSEIF ($filter -eq 1)
+                                    {
+                                        $DynString += '-and $_.OperatorToEmail -eq "" '
+                                    }
+                            }
+                       $DynString += ' }'
+                       Write-Verbose "Dynamic String output:  $DynString"
+                       Invoke-Expression $DynString
                     }
-                ELSE
+                ELSE # $CombineFilters
                     {
                         $jobs = $server.JobServer.jobs
-                    }
-                IF ($LastUsed)
-                    {
-                        $Since = $LastUsed * -1
-                        $SinceDate = (Get-date).AddDays($Since)
-                        Write-Verbose "Finding jobs not ran in last $Since days"
-                        $output = $jobs | Where-Object { $_.LastRunDate -le $SinceDate }
-                    }
-                IF ($Disabled -eq $true)
-                    {
-                        Write-Verbose "Finding job/s that are disabled"
-                        $output += $jobs | Where-Object { $_.IsEnabled -eq $false }
-                    }
-                IF ($NoSchedule -eq $true)
-                    {
-                        Write-Verbose "Finding job/s that have no schedule defined"
-                        $output += $jobs | Where-Object { $_.HasSchedule -eq $false }
-                    }
-                IF ($EmailNotification -eq $true)
-                    {
-                        Write-Verbose "Finding job/s that have no email operator defined"
-                        $output += $jobs | Where-Object {$_.OperatorToEmail -eq "" }
+                        
+                        IF ($Exclude)
+                            {
+                                Write-Verbose "Excluding job/s based on Exclude"
+                                $jobs = $jobs | Where-Object {$Exclude -notcontains $_.name}
+                            }
+                        ELSEIF ($name)
+                            {
+                                $jobs = $jobs | Where-Object {$name -eq $_.name} 
+                            }
+                        IF ($LastUsed)
+                            {
+                                $Since = $LastUsed * -1
+                                $SinceDate = (Get-date).AddDays($Since)
+                                Write-Verbose "Finding job/s not ran in last $Since days"
+                                $output = $jobs | Where-Object { $_.LastRunDate -le $SinceDate }
+                            }
+                        IF ($Disabled -eq $true)
+                            {
+                                Write-Verbose "Finding job/s that are disabled"
+                                $output += $jobs | Where-Object { $_.IsEnabled -eq $false }
+                            }
+                        IF ($NoSchedule -eq $true)
+                            {
+                                Write-Verbose "Finding job/s that have no schedule defined"
+                                $output += $jobs | Where-Object { $_.HasSchedule -eq $false }
+                            }
+                        IF ($EmailNotification -eq $true)
+                            {
+                                Write-Verbose "Finding job/s that have no email operator defined"
+                                $output += $jobs | Where-Object {$_.OperatorToEmail -eq "" }
+                            }
                     }
             }
         }
@@ -127,11 +216,11 @@ Returns all agent jobs that havent ran in the last 10 ignoring jobs "Yearly - Ro
         {
             IF ($Detailed -eq $true)
 		        {
-                    return ($output | Select-Object name, LastRunDate, IsEnabled, HasSchedule, OperatorToEmail -Unique)
+                    return ($output | Select-Object @{Name="ServerName";Expression={$_.Parent.name}}, name, LastRunDate, IsEnabled, HasSchedule, OperatorToEmail -Unique)
 		        }
 		    ELSE
 		        {
-			        return ($output | Select-Object name -Unique)    
+			        return ($output | Select-Object @{Name="ServerName";Expression={$_.Parent.name}}, name -Unique)    
 		        }
         }           
 }
