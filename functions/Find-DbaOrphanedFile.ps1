@@ -176,11 +176,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 					$Paths += Get-SqlDefaultPaths $server log
 					$Paths += $server.MasterDBPath
 					$Paths += $server.MasterDBLogPath
-					$Paths += $Path
-					$Paths = $Paths | % { "$_".TrimEnd("\") } | Sort-Object -Unique								
-					
-					Write-Debug "Filtering paths"
-									
+					$Paths += $Path	
 					if ($server.VersionMajor -lt 10)			
 					{
 						# Add support for Full Text Catalogs in Sql Server 2005 and below
@@ -197,22 +193,21 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 							}
 						}
 					}
-					
-					# Create the file variable
-					$orphanedfiles = @()
-					$filesondisk = @()
-					write-debug "Query and paths:"			
-					write-host $Paths
+					$Paths = $Paths | % { "$_".TrimEnd("\") } | Sort-Object -Unique
+					$orphanedfiles = @()									
 					$orphan_query = $( Format-Comparison $Paths )				 		
 					$orphanedfiles += $server.Databases['master'].ExecuteWithResults($orphan_query).Tables[0] | % { "$($_.parent)\$($_.filename)" }
 					$orphanedfiles = $orphanedfiles | ? { $_ }   # Remove blanks
 					$matching_orphans = @()				
+					Write-Debug "Found $($orphanedfiles.count) loose files."
+					Write-Debug "Comparing to $($FileType.count) file types."
 					foreach ($file in  $orphanedfiles) 
 					{ 
 						foreach ($type in $FileType) 
 						{
-							if ($file -like $type)
-							{
+							write-debug "Comparing $file to *$type"
+							if ($file -like "*$type")
+							{								
 								$matching_orphans += $file
 							}
 						} 
