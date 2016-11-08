@@ -31,6 +31,9 @@ Allows you to enter an array of agent job names to ignore
 .PARAMETER Name
 Filter agent jobs to only the names you list
 
+.PARAMETER Category 
+Filter based on Agent Job Categories
+
 .PARAMETER Detailed
 Returns a more detailed output showing why each job has been reported
 
@@ -85,6 +88,7 @@ Queries CMS server to return all SQL instances in the Production folder and then
         [switch]$Disabled,
         [switch]$NoSchedule,
         [switch]$EmailNotification,
+        [string[]]$Category,
         [string[]]$Exclude,
         [string[]]$Name,
         [switch]$CombineFilters,
@@ -152,7 +156,7 @@ Queries CMS server to return all SQL instances in the Production folder and then
                                 Write-Verbose "Finding job/s that have no schedule defined"
                                 IF ($filter -eq 0)
                                     {
-                                        $DynString += ' | Where-Object {$_.HasSchedule -eq $false '
+                                        $DynString += ' | Where-Object { $_.HasSchedule -eq $false '
                                         $filter = 1
                                     }
                                 ELSEIF ($filter -eq 1)
@@ -165,13 +169,27 @@ Queries CMS server to return all SQL instances in the Production folder and then
                                 Write-Verbose "Finding job/s that have no email operator defined"
                                 IF ($filter -eq 0)
                                     {
-                                        $DynString += ' | Where-Object { $_.OperatorToEmail -eq [dbnull] '
+                                        $DynString += ' | Where-Object { $_.OperatorToEmail -eq "" '
                                         $filter = 1
                                     }
                                 ELSEIF ($filter -eq 1)
                                     {
                                         $DynString += '-and $_.OperatorToEmail -eq "" '
                                     }
+                            }
+                        IF ($Category)
+                            {
+                                Write-Verbose "Finding job/s that are in category/s defined"
+                                IF ($filter -eq 0)
+                                    {
+                                        $DynString += ' | Where-Object { $Category -contains $_.Category '
+                                    }
+                                ELSEIF ($filter -eq 1)
+                                    {
+                                        $DynString += '-and $Category -contains $_.Category '
+                                    }
+
+
                             }
 
                         $DynString += ' }'
@@ -185,11 +203,11 @@ Queries CMS server to return all SQL instances in the Production folder and then
                         IF ($Exclude)
                             {
                                 Write-Verbose "Excluding job/s based on Exclude"
-                                $jobs = $jobs | Where-Object {$Exclude -notcontains $_.name}
+                                $jobs = $jobs | Where-Object { $Exclude -notcontains $_.name }
                             }
                         ELSEIF ($name)
                             {
-                                $jobs = $jobs | Where-Object {$name -eq $_.name} 
+                                $jobs = $jobs | Where-Object { $name -eq $_.name } 
                             }
                         IF ($LastUsed)
                             {
@@ -211,7 +229,12 @@ Queries CMS server to return all SQL instances in the Production folder and then
                         IF ($EmailNotification -eq $true)
                             {
                                 Write-Verbose "Finding job/s that have no email operator defined"
-                                $output += $jobs | Where-Object {$_.OperatorToEmail -eq "" }
+                                $output += $jobs | Where-Object { $_.OperatorToEmail -eq "" }
+                            }
+                        IF ($Category)
+                            {
+                                Write-Verbose "Finding job/s that have no email operator defined"
+                                $output += $jobs | Where-Object { $Category -contains $_.Category }
                             }
                     }
             }
@@ -220,11 +243,11 @@ Queries CMS server to return all SQL instances in the Production folder and then
         {
             IF ($Detailed -eq $true)
 		        {
-                    return ($output | Select-Object @{Name="ServerName";Expression={$_.Parent.name}}, name, LastRunDate, IsEnabled, HasSchedule, OperatorToEmail -Unique)
+                    return ($output | Select-Object @{Name="ServerName";Expression={ $_.Parent.name }}, name, LastRunDate, IsEnabled, HasSchedule, OperatorToEmail, Category -Unique)
 		        }
 		    ELSE
 		        {
-			        return ($output | Select-Object @{Name="ServerName";Expression={$_.Parent.name}}, name -Unique)    
+			        return ($output | Select-Object @{Name="ServerName";Expression={ $_.Parent.name }}, name -Unique)    
 		        }
         }           
 }
