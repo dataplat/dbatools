@@ -74,6 +74,10 @@ Find-DbaAgentJon -SQLServer Dev01 -LastUsed 10 -Disabled -CombineFilters
 Returns any job/s on Dev01 that are BOTH disabled and have not been ran in the last 10 days 
 
 .EXAMPLE 
+Find-DbaAgentJob -SqlServer Dev01 -Category "REPL-Distribution", "REPL-Snapshot" -Detailed | ft -AutoSize -Wrap 
+Returns all job/s on Dev01 that are in either category "REPL-Distribution" or "REPL-Snapshot" with detailed output
+
+.EXAMPLE 
 Get-SqlRegisteredServerName -SqlServer CMSServer -Group Production | Find-DbaAgentJob -Disabled -NoSchedule -Detailed | ft -AutoSize -Wrap
 Queries CMS server to return all SQL instances in the Production folder and then list out all agent jobs that have either been disabled or have no schedule. 
 
