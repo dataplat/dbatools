@@ -196,7 +196,12 @@ Queries CMS server to return all SQL instances in the Production folder and then
 
                             }
 
-                        $DynString += ' }'
+                        IF (!($DynString -eq '$output = $server.JobServer.jobs'))
+                            {
+                            $DynString += ' }'
+                            }
+         
+
                         Write-Verbose "Dynamic String output:  $DynString"
                         Invoke-Expression $DynString
                     }
@@ -213,6 +218,7 @@ Queries CMS server to return all SQL instances in the Production folder and then
                             {
                                 $jobs = $jobs | Where-Object { $name -eq $_.name } 
                             }
+
                         IF ($LastUsed)
                             {
                                 $Since = $LastUsed * -1
@@ -239,6 +245,11 @@ Queries CMS server to return all SQL instances in the Production folder and then
                             {
                                 Write-Verbose "Finding job/s that have no email operator defined"
                                 $output += $jobs | Where-Object { $Category -contains $_.Category }
+                            }
+
+                        IF (!($output))
+                            {
+                                $output = $jobs
                             }
                     }
             }
