@@ -116,15 +116,15 @@ Returns a gridview displaying Server, Database, LastFullBU, TimeSinceFullBU, Las
 					Continue
 				}
 
-				$TimeSinceFullBU = if ($db.LastBackupdate -eq "1/01/0001") {""} else {(New-TimeSpan -Start $db.LastBackupdate).Tostring()}
-                $TimeSinceFullBU = if ($db.LastBackupdate -eq "1/01/0001") {""} else {$TimeSinceFullBU.split('.')[0..($TimeSinceFullBU.split('.').count - 2)] -join ' days ' }
-				$TimeSinceDiffBU = if ($db.LastDifferentialBackupDate -eq "1/01/0001") {""} else {(New-TimeSpan -Start $db.LastDifferentialBackupDate).Tostring()}
-                $TimeSinceDiffBU = if ($db.LastDifferentialBackupDate -eq "1/01/0001") {""} else {$TimeSinceDiffBU.split('.')[0..($TimeSinceDiffBU.split('.').count - 2)] -join ' days ' }
-				$TimeSinceLogBU = if ($db.LastLogBackupDate -eq "1/01/0001") {""} else {(New-TimeSpan -Start $db.LastLogBackupDate).Tostring()}
-                $TimeSinceLogBU = if ($db.LastLogBackupDate -eq "1/01/0001") {""} else {$TimeSinceLogBU.split('.')[0..($TimeSinceLogBU.split('.').count - 2)] -join ' days ' }
+				$TimeSinceFullBU = if ($db.LastBackupdate -lt 1) {""} else {(New-TimeSpan -Start $db.LastBackupdate).Tostring()}
+                $TimeSinceFullBU = if ($db.LastBackupdate -eq 0) {""} else {$TimeSinceFullBU.split('.')[0..($TimeSinceFullBU.split('.').count - 2)] -join ' days ' }
+				$TimeSinceDiffBU = if ($db.LastDifferentialBackupDate -eq 0) {""} else {(New-TimeSpan -Start $db.LastDifferentialBackupDate).Tostring()}
+                $TimeSinceDiffBU = if ($db.LastDifferentialBackupDate -eq 0) {""} else {$TimeSinceDiffBU.split('.')[0..($TimeSinceDiffBU.split('.').count - 2)] -join ' days ' }
+				$TimeSinceLogBU = if ($db.LastLogBackupDate -eq 0) {""} else {(New-TimeSpan -Start $db.LastLogBackupDate).Tostring()}
+                $TimeSinceLogBU = if ($db.LastLogBackupDate -eq 0) {""} else {$TimeSinceLogBU.split('.')[0..($TimeSinceLogBU.split('.').count - 2)] -join ' days ' }
 				$daysSinceDbCreated = (New-TimeSpan -Start $db.createDate).Days
 
-                If ($daysSinceDbCreated -lt 1 -and $db.LastBackupDate -eq '1/01/0001 0:00:00') { $Status = 'New database, not backed up yet' }
+                If ($daysSinceDbCreated -lt 1 -and $db.LastBackupDate -eq 0) { $Status = 'New database, not backed up yet' }
 				elseif ((New-TimeSpan -Start $db.LastBackupDate).Days -gt 0){$Status = 'Full Back Up should be taken'}
 				elseif ($db.RecoveryModel -eq "Full" -and (New-TimeSpan -Start $db.LastLogBackupDate).Hours -gt 0){$Status = 'Log Back Up should be taken'}
 				else { $Status = 'Ok' }
@@ -132,11 +132,11 @@ Returns a gridview displaying Server, Database, LastFullBU, TimeSinceFullBU, Las
 				$obj = [PSCustomObject]@{
 					Server = $server.name
 					Database = $db.name
-					LastFullBU = $db.LastBackupdate.tostring().replace("1/01/0001 0:00:00","never")
+					LastFullBU = if ( $db.LastBackupdate -eq 0 ) { "never" } else { $db.LastBackupdate.tostring() }
                     TimeSinceFullBU = $TimeSinceFullBU
-					LastDiffBU = $db.LastDifferentialBackupdate.tostring().replace("1/01/0001 0:00:00","never")
+					LastDiffBU = if ( $db.LastDifferentialBackupDate -eq 0 ) { "never" } else { $db.LastDifferentialBackupDate.tostring() }
                     TimeSinceDiffBU = $TimeSinceDiffBU
-					LastLogBU = $db.LastLogBackupdate.tostring().replace("1/01/0001 0:00:00","never")
+					LastLogBU = if ( $db.LastLogBackupDate -eq 0 ) { "never" } else { $db.LastLogBackupDate.tostring() }
 					TimeSinceLogBU = $TimeSinceLogBU
                     RecoveryModel = $db.recoverymodel
 					Status = $status
