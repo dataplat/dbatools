@@ -5,7 +5,7 @@
 Export SQL Server Availability Groups to a T-SQL file. 
 
 .DESCRIPTION
-Export SQL Server Availability Groups to a T-SQL file. This includes all replicas, all databases in the AG and the listener creation. This is a function that is not available in SSMS.
+Export SQL Server Availability Groups creation scripts to a T-SQL file. This is a function that is not available in SSMS.
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
@@ -13,16 +13,10 @@ THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 The SQL Server instance name. SQL Server 2012 and above supported
 
 .PARAMETER FilePath
-The directory name where the output files will be written. Output file format will be "ServerName_InstanceName_AGName.sql"
+The directory name where the output files will be written. A sub directory with the format 'ServerName$InstanceName' will be created. A T-SQL scripts named 'AGName.sql' will be created under this subdirectory for each scripted Availability Group.
 
-.PARAMETER AppendDateToOutputFilename
-This will automatically append the current date/time to the export files. Using this parameter will change the output file name format to "ServerName_InstanceName_AGName_DateTime.sql"
-
-.PARAMETER Include
-An array containint Availability Group names to include
-
-.PARAMETER Exclude
-An array containint Availability Group names to exclude
+.PARAMETER AvailabilityGroups
+Specify which Availability Groups to export (Dynamic Param)
 
 .PARAMETER NoClobber
 Do not overwrite existing export files.
@@ -33,9 +27,6 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
 
 SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
-
-.PARAMETER AvailabilityGroups
-Allows you to specify which Availability Groups to export. (Dynamic Param)
 
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
@@ -65,7 +56,7 @@ Export-DbaAvailabilityGroup -SqlServer sql2012 -FilePath 'C:\temp\availability_g
 Exports all Availability Groups from SQL server "sql2012". Output scripts are witten to the C:\temp\availability_group_exports directory.
 
 .EXAMPLE
-Export-DbaAvailabilityGroup -SqlServer sql2012 -FilePath 'C:\temp\availability_group_exports' -Include AG1,AG2
+Export-DbaAvailabilityGroup -SqlServer sql2012 -FilePath 'C:\temp\availability_group_exports' -AvailabilityGroups AG1,AG2
 
 Exports Availability Groups AG1 and AG2 from SQL server "sql2012". Output scripts are witten to the C:\temp\availability_group_exports directory.
 
@@ -90,13 +81,6 @@ https://dbatools.io/Export-DbaAvailabilityGroup
 		[Alias("OutputLocation", "Path")]
 		    [string]$FilePath,
 
-        [array]$Include ,
-
-        [array]$Exclude ,
-
-        [Alias("AppendDttm")]
-            [switch]$AppendDateToOutputFilename ,
-
         [switch]$NoClobber ,
 
 		[object]$SqlCredential
@@ -107,27 +91,24 @@ https://dbatools.io/Export-DbaAvailabilityGroup
     BEGIN
     {
         Write-Output "Beginning Export-DbaAvailabilityGroup"
-        $SQLObj = New-Object "Microsoft.SqlServer.Management.Smo.Server" $SQLServer
-        $SQLObj.ConnectionContext.Connect()
+        $AvailabilityGroups = $PSBoundParameters.AvailabilityGroups
     }
 
     PROCESS
     {
+        $SQLObj = New-Object "Microsoft.SqlServer.Management.Smo.Server" $SQLServer
+        $SQLObj.ConnectionContext.Connect()
+
         # Get all of the Availability Groups and filter if required
         $AllAGs =  $SQLObj.AvailabilityGroups
 
-        if ($Include) { 
-            Write-Verbose "Applying INCLUDE filter"
-            $AllAGs = $AllAGs | Where-Object {$_.name -in $Include} 
-        }
-
-        if ($Exclude) {
-            Write-Verbose "Applying EXCLUDE filter"
-            $AllAGs = $AllAGs | Where-Object {$_.name -notin $Exclude} 
+        if ($AvailabilityGroups) {
+            Write-Verbose 'Filtering AvailabilityGroups'
+            $AllAGs = $AllAGs | Where-Object {$_.name -in $AvailabilityGroups}
         }
 
         if ($AllAGs.count -eq 0) {
-            Write-Verbose "No Availability Groups detected on '$SqlServer'"
+            Write-Output "No Availability Groups detected on '$SqlServer'"
         }
 
         # Set and create the OutputLocation if it doesn't exist
@@ -154,12 +135,31 @@ https://dbatools.io/Export-DbaAvailabilityGroup
             if ($NoClobber.IsPresent -and (Test-Path -Path $OutFile -PathType Leaf)) {
                 Write-Warning "OutputFile '$OutFile' already exists. Skipping due to -NoClobber parameter"
             } else {
-                Write-output "Scripting Availability Group [$AGName] to '$OutFile'"
+                Write-output "Scripting Availability Group [$AGName] on [$SQLServer] to '$OutFile'"
 
-                '/*' | Out-File -FilePath $OutFile -Encoding ASCII -Force
-                $ag | Select-Object -Property * | Out-File -FilePath $OutFile -Encoding ASCII -Append
-                '*/' | Out-File -FilePath $OutFile -Encoding ASCII -Append
+                # Create comment block header for AG script
+                "/*" | Out-File -FilePath $OutFile -Encoding ASCII -Force
+                " * Created by dbatools 'Export-DbaAvailabilityGroup' cmdlet on '$(Get-Date)'" | Out-File -FilePath $OutFile -Encoding ASCII -Append
+                " * See https://dbatools.io/Export-DbaAvailabilityGroup for more help" | Out-File -FilePath $OutFile -Encoding ASCII -Append
 
+                # Output AG and listener names
+                " *" | Out-File -FilePath $OutFile -Encoding ASCII -Append
+                " * Availability Group Name: $($ag.name)" | Out-File -FilePath $OutFile -Encoding ASCII -Append
+                $ag.AvailabilityGroupListeners | % {" * Listener Name: $($_.name)"} | Out-File -FilePath $OutFile -Encoding ASCII -Append
+
+                # Output all replicas
+                " *" | Out-File -FilePath $OutFile -Encoding ASCII -Append
+                $ag.AvailabilityReplicas | % {" * Replica: $($_.name)"} | Out-File -FilePath $OutFile -Encoding ASCII -Append
+
+                # Output all databases
+                " *" | Out-File -FilePath $OutFile -Encoding ASCII -Append
+                $ag.AvailabilityDatabases | % {" * Database: $($_.name)"} | Out-File -FilePath $OutFile -Encoding ASCII -Append
+
+                # $ag | Select-Object -Property * | Out-File -FilePath $OutFile -Encoding ASCII -Append
+                
+                "*/" | Out-File -FilePath $OutFile -Encoding ASCII -Append
+
+                # Script the AG
                 $ag.Script() | Out-File -FilePath $OutFile -Encoding ASCII -Append
             }
         }
