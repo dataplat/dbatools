@@ -92,7 +92,7 @@ Returns a gridview displaying Server, Database, LastFullBU, TimeSinceFullBU, Las
 				}
 			}
 
-			$dbs = $server.Databases
+			$dbs = $server.Databases | Where-Object { $_.name -ne 'TempDb' }
 
 			if ($databases.count -gt 0)
 			{
@@ -115,19 +115,23 @@ Returns a gridview displaying Server, Database, LastFullBU, TimeSinceFullBU, Las
 					Write-Warning "The database $($db.name) on server $servername is not accessible. Skipping database."
 					Continue
 				}
-
-				$TimeSinceFullBU = if ($db.LastBackupdate -lt 1) {""} else {(New-TimeSpan -Start $db.LastBackupdate).Tostring()}
+                # To avoid complicated manipulations on datetimes depending on locale settings and culture,
+                # dates are compared to 0, which represents 1/01/0001 0:00:00
+				$TimeSinceFullBU = if ($db.LastBackupdate -eq 0) {""} else {(New-TimeSpan -Start $db.LastBackupdate).Tostring()}
                 $TimeSinceFullBU = if ($db.LastBackupdate -eq 0) {""} else {$TimeSinceFullBU.split('.')[0..($TimeSinceFullBU.split('.').count - 2)] -join ' days ' }
+
 				$TimeSinceDiffBU = if ($db.LastDifferentialBackupDate -eq 0) {""} else {(New-TimeSpan -Start $db.LastDifferentialBackupDate).Tostring()}
                 $TimeSinceDiffBU = if ($db.LastDifferentialBackupDate -eq 0) {""} else {$TimeSinceDiffBU.split('.')[0..($TimeSinceDiffBU.split('.').count - 2)] -join ' days ' }
+
 				$TimeSinceLogBU = if ($db.LastLogBackupDate -eq 0) {""} else {(New-TimeSpan -Start $db.LastLogBackupDate).Tostring()}
                 $TimeSinceLogBU = if ($db.LastLogBackupDate -eq 0) {""} else {$TimeSinceLogBU.split('.')[0..($TimeSinceLogBU.split('.').count - 2)] -join ' days ' }
+
 				$daysSinceDbCreated = (New-TimeSpan -Start $db.createDate).Days
 
                 If ($daysSinceDbCreated -lt 1 -and $db.LastBackupDate -eq 0) { $Status = 'New database, not backed up yet' }
-				elseif ((New-TimeSpan -Start $db.LastBackupDate).Days -gt 0){$Status = 'Full Back Up should be taken'}
-				elseif ($db.RecoveryModel -eq "Full" -and (New-TimeSpan -Start $db.LastLogBackupDate).Hours -gt 0){$Status = 'Log Back Up should be taken'}
-				else { $Status = 'Ok' }
+				elseif ((New-TimeSpan -Start $db.LastBackupDate).Days -gt 0 -and (New-TimeSpan -Start $db.LastDifferentialBackupDate).Days -gt 0){$Status = 'No Full or Diff Back Up in the last day'}
+				elseif ($db.RecoveryModel -eq "Full" -and (New-TimeSpan -Start $db.LastLogBackupDate).Hours -gt 0){$Status = 'No Log Back Up in the last hour'}
+				else { $Status = 'OK' }
 				
 				$obj = [PSCustomObject]@{
 					Server = $server.name
