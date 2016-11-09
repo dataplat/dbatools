@@ -98,6 +98,11 @@ You should have received a copy of the GNU General Public License along with thi
 .LINK
 https://dbatools.io/Copy-SqlDatabase
 
+.EXAMPLE
+Copy-SqlDatabase -Source sqlserver2014a -Destination sqlserver2014b -Database TestDB -BackupRestore -NetworkShare \\fileshare\sql\migration
+
+Migrates a single user database TestDB using Backup and restore from instance sqlserver2014a to sqlserver2014b. Backup files are stored in \\fileshare\sql\migration.
+
 .EXAMPLE   
 Copy-SqlDatabase -Source sqlserver2014a -Destination sqlcluster -DetachAttach -Reattach
 
