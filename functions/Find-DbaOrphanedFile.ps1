@@ -92,7 +92,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 				$PathList
 			)	
 			# use sysaltfiles in lower versions
-			# this will fail with filestream stuff, but as that is not possible on these versions, no problem.
+			
 			$q1 = "CREATE TABLE #enum ( id int IDENTITY, fs_filename nvarchar(512), depth int, is_file int, parent nvarchar(512) ); DECLARE @dir nvarchar(512);"
 			$q2 = @"
 				SET @dir = 'dirname';
@@ -106,6 +106,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 "@
 			if ($smoserver.versionMajor -le 8)
 			{
+				# this will not have the ability to peek into filestream stuff because sysaltfiles doesnt use it
 				$query_files_sql = @"	
 					SELECT e.fs_filename AS filename, parent
 					FROM #enum AS e
@@ -136,6 +137,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 						is_file = 1;
 "@
 			}
+			# build the query string based on how many directories they want to enumerate
 			$sql = $q1
 			$sql += $( $PathList | % { "$([System.Environment]::Newline)$($q2 -Replace 'dirname',$_)" } ) 	
 			$sql += $query_files_sql				
@@ -152,8 +154,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 	{
 		foreach ($servername in $sqlserver)
 		{			
-			$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential									
-				
+			$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential													
 			# Get the default data and log directories from the instance
 			Write-Debug "Adding paths"
 			$Paths += $server.RootDirectory + "\DATA"
@@ -162,6 +163,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 			$Paths += $server.MasterDBPath
 			$Paths += $server.MasterDBLogPath
 			$Paths += $Path	
+			# Need to do further testing around this
 			if ($server.VersionMajor -lt 10)			
 			{
 				# Add support for Full Text Catalogs in Sql Server 2005 and below
@@ -185,8 +187,8 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 			$orphanedfiles = $orphanedfiles | ? { $_ }   # Remove blanks
 			$matching_orphans = @()				
 
-			Write-Debug "Found $($orphanedfiles.count) loose files."
-			Write-Debug "Comparing to $($FileType.count) file types."
+			Write-Verbose "Found $($orphanedfiles.count) loose files."
+			Write-Verbose "Comparing to $($FileType.count) file types."
 			foreach ($file in  $orphanedfiles) 
 			{ 
 				foreach ($type in $FileType) 
