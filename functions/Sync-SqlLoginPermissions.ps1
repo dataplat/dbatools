@@ -396,6 +396,12 @@ https://dbatools.io/Sync-SqlLoginPermissions
 				
 				if ($destdb -ne $null)
 				{
+					if (!$destdb.IsAccessible)
+					{
+					    Write-Output "Database [$($destdb.Name)] is not accessible. Skipping"
+					    Continue
+					}
+					
 					if ($destdb.users[$dbusername] -eq $null)
 					{
 						If ($Pscmdlet.ShouldProcess($destination, "Adding $dbusername to $dbname"))
