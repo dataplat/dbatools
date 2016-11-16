@@ -153,7 +153,7 @@
 		'Get-DbaRunningJob',
 		'Set-DbaMaxDop',
 		'Test-DbaFullRecoveryModel',
-		'Test-DbaMaxDop'
+		'Test-DbaMaxDop',
 	)
 	
 	# Cmdlets to export from this module
