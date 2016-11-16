@@ -32,7 +32,10 @@ Allows you to enter an array of agent job names to ignore
 Filter agent jobs to only the names you list
 
 .PARAMETER Category 
-Filter based on Agent Job Categories
+Filter based on agent job categories
+
+.PARAMETER Owner
+Filter based on owner of the job/s
 
 .PARAMETER Detailed
 Returns a more detailed output showing why each job has been reported
@@ -93,6 +96,7 @@ Queries CMS server to return all SQL instances in the Production folder and then
         [switch]$NoSchedule,
         [switch]$EmailNotification,
         [string[]]$Category,
+        [string]$Owner,
         [string[]]$Exclude,
         [string[]]$Name,
         [switch]$CombineFilters,
@@ -192,8 +196,35 @@ Queries CMS server to return all SQL instances in the Production folder and then
                                     {
                                         $DynString += '-and $Category -contains $_.Category '
                                     }
-
-
+                            }
+                        IF ($Owner)
+                            {
+                                Write-Verbose "Owner tagged in combine filter"
+                                IF ($Owner -match "-")
+                                    {
+                                        $OwnerMatch = $Owner -replace "-", ""
+                                        Write-Verbose "Checking for jobs that NOT owned by: $Owner"
+                                        IF ($filter -eq 0)
+                                            {
+                                                $DynString += ' | Where-Object { $OwnerMatch -notcontains $_.OwnerLoginName '
+                                            }
+                                        ELSEIF ($filter -eq 1)
+                                            {
+                                                $DynString += '-and $OwnerMatch -notcontains $_.OwnerLoginName '
+                                            }
+                                    }
+                                ELSE
+                                    {
+                                        Write-Verbose "Checking for jobs that are owned by: $Owner"
+                                        IF ($filter -eq 0)
+                                            {
+                                                $DynString += ' | Where-Object { $Owner -contains $_.OwnerLoginName '
+                                            }
+                                        ELSEIF ($filter -eq 1)
+                                            {
+                                                $DynString += '-and $Owner -contains $_.OwnerLoginName '
+                                            }
+                                    }
                             }
 
                         IF (!($DynString -eq '$output = $server.JobServer.jobs'))
@@ -246,7 +277,21 @@ Queries CMS server to return all SQL instances in the Production folder and then
                                 Write-Verbose "Finding job/s that have no email operator defined"
                                 $output += $jobs | Where-Object { $Category -contains $_.Category }
                             }
-
+                        IF ($Owner)
+                            {
+                                Write-Verbose "Finding job/s with owner critera"
+                                IF ($Owner -match "-")
+                                    {
+                                        $OwnerMatch = $Owner -replace "-", ""
+                                        Write-Verbose "Checking for jobs that NOT owned by: $OwnerMatch"
+                                        $output += $server.JobServer.jobs | Where-Object { $OwnerMatch -notcontains $_.OwnerLoginName } 
+                                    }
+                                ELSE
+                                    {
+                                       Write-Verbose "Checking for jobs that are owned by: $owner"
+                                       $output += $server.JobServer.jobs | Where-Object { $Owner -contains $_.OwnerLoginName }
+                                    }
+                            }
                         IF (!($output))
                             {
                                 $output = $jobs
@@ -258,7 +303,7 @@ Queries CMS server to return all SQL instances in the Production folder and then
         {
             IF ($Detailed -eq $true)
 		        {
-                    return ($output | Select-Object @{Name="ServerName";Expression={ $_.Parent.name }}, name, LastRunDate, IsEnabled, HasSchedule, OperatorToEmail, Category -Unique)
+                    return ($output | Select-Object @{Name="ServerName";Expression={ $_.Parent.name }}, name, LastRunDate, IsEnabled, HasSchedule, OperatorToEmail, Category, OwnerLoginName -Unique)
 		        }
 		    ELSE
 		        {
