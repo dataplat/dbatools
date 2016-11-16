@@ -1,4 +1,4 @@
-﻿Function Get-DbaPermissions
+﻿Function Get-DbaPermission
 {
 <#
 .SYNOPSIS
@@ -47,17 +47,17 @@ You should have received a copy of the GNU General Public License along with thi
 https://msdn.microsoft.com/en-us/library/ms191291.aspx
 
 .EXAMPLE
-Get-DbaPermissions -SqlServer ServerA\sql987
+Get-DbaPermission -SqlServer ServerA\sql987
 
 Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable
 
 .EXAMPLE
-Get-DbaPermissions -SqlServer ServerA\sql987 -Detailed | Format-Table -AutoSize
+Get-DbaPermission -SqlServer ServerA\sql987 -Detailed | Format-Table -AutoSize
 
 Returns a formatted table displaying Server, Database, permission state, permission type, grantee, granteetype, securable and securabletype
 
 .EXAMPLE
-Get-DbaPermissions -SqlServer ServerA\sql987 -NoSystemObjects -IncludeServerLevel
+Get-DbaPermission -SqlServer ServerA\sql987 -NoSystemObjects -IncludeServerLevel
 
 Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable
 in all databases and on the server level, but not on system securables
