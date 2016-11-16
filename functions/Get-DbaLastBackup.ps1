@@ -24,16 +24,16 @@ Return information for all but these specific databases
 Shows detailed information
 
 .NOTES
-Copyright (C) 2016 Klaas Vandenberghe (@powerdbaklaas)
+Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
+dbatools PowerShell module (https://dbatools.io)
+Copyright (C) 2016 Chrissy LeMaire
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
 
 .LINK
-
+ https://dbatools.io/Get-DbaLastBackup
 
 .EXAMPLE
 Get-DbaLastBackup -SqlServer ServerA\sql987
@@ -43,7 +43,7 @@ Returns a custom object with Server name, Database name, and the date the last t
 .EXAMPLE
 Get-DbaLastBackup -SqlServer ServerA\sql987 -Detailed | Out-Gridview
 
-Returns a gridview displaying Server, Database, LastFullBU, TimeSinceFullBU, LastDiffBU, TimeSinceDiffBU, LastLogBU, TimeSinceLastLogBU, RecoveryModel, Status, DatabaseCreated, DaysSinceDbCreated
+Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated
 
 #>
 	[CmdletBinding()]
@@ -75,9 +75,7 @@ Returns a gridview displaying Server, Database, LastFullBU, TimeSinceFullBU, Las
 			try
 			{
 				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
-                # setting defaultinitfields for performance, tip from WSMelton?, if this is in the connect-sqlserver function, it can be removed here
-                $server.SetDefaultInitFields($true)
-                $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.DataFile], $false)
+
 			}
 			catch
 			{
@@ -136,20 +134,20 @@ Returns a gridview displaying Server, Database, LastFullBU, TimeSinceFullBU, Las
 				$obj = [PSCustomObject]@{
 					Server = $server.name
 					Database = $db.name
-					LastFullBU = if ( $db.LastBackupdate -eq 0 ) { "never" } else { $db.LastBackupdate.tostring() }
-                    TimeSinceFullBU = $TimeSinceFullBU
-					LastDiffBU = if ( $db.LastDifferentialBackupDate -eq 0 ) { "never" } else { $db.LastDifferentialBackupDate.tostring() }
-                    TimeSinceDiffBU = $TimeSinceDiffBU
-					LastLogBU = if ( $db.LastLogBackupDate -eq 0 ) { "never" } else { $db.LastLogBackupDate.tostring() }
-					TimeSinceLogBU = $TimeSinceLogBU
                     RecoveryModel = $db.recoverymodel
+					LastFullBackup = if ( $db.LastBackupdate -eq 0 ) { $null } else { $db.LastBackupdate.tostring() }
+					LastDiffBackup = if ( $db.LastDifferentialBackupDate -eq 0 ) { $null } else { $db.LastDifferentialBackupDate.tostring() }
+					LastLogBackup = if ( $db.LastLogBackupDate -eq 0 ) { $null } else { $db.LastLogBackupDate.tostring() }
+                    SinceFull = $TimeSinceFullBU
+                    SinceDiff = $TimeSinceDiffBU
+					SinceLog = $TimeSinceLogBU
 					Status = $status
 					DatabaseCreated = $db.createDate
 					DaysSinceDbCreated = $daysSinceDbCreated
 
 				}
 		    if ($detailed) { $obj }
-		    else { $obj | Select-Object Server, Database, LastFullBU, LastLogBU }
+		    else { $obj | Select-Object Server, Database, LastFullBackup, LastDiffBackup, LastLogBackup }
 			}
         }
     }
