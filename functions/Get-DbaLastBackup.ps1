@@ -72,6 +72,7 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 	{
 		foreach ($servername in $SqlServer)
 		{
+            Write-Verbose "Connecting to $servername"
 			try
 			{
 				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
