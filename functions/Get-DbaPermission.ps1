@@ -12,6 +12,8 @@ Principals exist on Windows, Instance and Database level.
 Securables exist on Instance and Database level.
 A permission state can be GRANT, DENY or REVOKE.
 The permission type can be SELECT, CONNECT, EXECUTE and more.
+	
+See https://msdn.microsoft.com/en-us/library/ms191291.aspx for more information
 
 .PARAMETER SqlServer
 The SQL Server that you're connecting to.
@@ -45,7 +47,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 	
 .LINK
-https://msdn.microsoft.com/en-us/library/ms191291.aspx
+https://dbatools.io/Get-DbaPermission
 
 .EXAMPLE
 Get-DbaPermission -SqlServer ServerA\sql987
@@ -74,24 +76,26 @@ in all databases and on the server level, but not on system securables
 		[switch]$IncludeServerLevel,
 		[switch]$NoSystemObjects
 	)
-
-	DynamicParam {
-		if ($SqlServer) {
+	
+	DynamicParam
+	{
+		if ($SqlServer)
+		{
 			return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential
 		}
 	}
-
+	
 	BEGIN
 	{
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
-
-        if ( $NoSystemObjects )
-        {
-            $ExcludeSystemObjectssql = "WHERE major_id > 0 "
-        }
-        $ServPermsql = @"
+		
+		if ($NoSystemObjects)
+		{
+			$ExcludeSystemObjectssql = "WHERE major_id > 0 "
+		}
+		$ServPermsql = @"
 SELECT	  
 	  [Server] = @@SERVERNAME
     , [Database] = ''
@@ -113,7 +117,7 @@ $ExcludeSystemObjectssql
 
 ;
 "@
-
+		
 		$DBPermsql = @"
 SELECT
 	  [Server] = @@SERVERNAME
@@ -137,7 +141,7 @@ $ExcludeSystemObjectssql
 ;
 "@
 	}
-
+	
 	PROCESS
 	{
 		foreach ($servername in $SqlServer)
@@ -158,83 +162,83 @@ $ExcludeSystemObjectssql
 					Continue
 				}
 			}
-
+			
 			if ($server.versionMajor -lt 9)
 			{
 				Write-Warning "Get-DbaPermission is only supported on SQL Server 2005 and above. Skipping Instance."
 				Continue
 			}
-
-            if ( $IncludeServerLevel )
-            {
-                Write-Debug "T-SQL: $ServPermsql"
-
-                $resultTable = $null
+			
+			if ($IncludeServerLevel)
+			{
+				Write-Debug "T-SQL: $ServPermsql"
+				
+				$resultTable = $null
 				$resultTable = $server.Databases["master"].ExecuteWithResults($ServPermsql).Tables[0]
-				foreach ( $row in $resultTable )
-                    {
-				    $obj = [PSCustomObject]@{
-					    Server = $row.Server
-					    Database = ""
-					    PermState = $row.PermState
-                        PermName = $row.PermissionName
-                        Securable = $row.Securable
-                        Grantee = $row.Grantee
-                        SecurableType = $row.SecurableType
-                        GranteeType = $row.GranteeType
-				        }
-		        if ($detailed) { $obj }
-		        else { $obj | Select-Object Server, Database, PermState, PermName, Securable, Grantee }
-			    }
-            }
-
+				foreach ($row in $resultTable)
+				{
+					$obj = [PSCustomObject]@{
+						Server = $row.Server
+						Database = ""
+						PermState = $row.PermState
+						PermName = $row.PermissionName
+						Securable = $row.Securable
+						Grantee = $row.Grantee
+						SecurableType = $row.SecurableType
+						GranteeType = $row.GranteeType
+					}
+					if ($detailed) { $obj }
+					else { $obj | Select-Object Server, Database, PermState, PermName, Securable, Grantee }
+				}
+			}
+			
 			$dbs = $server.Databases
-
+			
 			if ($databases.count -gt 0)
 			{
 				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
 			}
-
+			
 			if ($exclude.count -gt 0)
 			{
 				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
 			}
-
-#			$dbs = $dbs | Where-Object {$_.IsAccessible}
-
+			
+			#			$dbs = $dbs | Where-Object {$_.IsAccessible}
+			
 			foreach ($db in $dbs)
 			{
 				Write-Verbose "Processing $($db.name) on $servername"
-
+				
 				if ($db.IsAccessible -eq $false)
 				{
 					Write-Warning "The database $($db.name) is not accessible. Skipping database."
 					Continue
 				}
-
-
+				
+				
 				Write-Debug "T-SQL: $DBPermsql"
-
-                $resultTable = $null
+				
+				$resultTable = $null
 				$resultTable = $db.ExecuteWithResults($DBPermsql).Tables[0]
-				foreach ( $row in $resultTable )
-                    {
-				    $obj = [PSCustomObject]@{
-					    Server = $row.Server
-					    Database = $row.Database
-					    PermState = $row.PermState
-                        PermName = $row.PermissionName
-                        Securable = $row.Securable
-                        Grantee = $row.Grantee
-                        SecurableType = $row.SecurableType
-                        GranteeType = $row.GranteeType
-				        }
-		        if ($detailed) { $obj }
-		        else { $obj | Select-Object Server, Database, PermState, PermName, Securable, Grantee }
-			    }
-            }
-        }
-    }
+				foreach ($row in $resultTable)
+				{
+					$obj = [PSCustomObject]@{
+						Server = $row.Server
+						Database = $row.Database
+						PermState = $row.PermState
+						PermName = $row.PermissionName
+						Securable = $row.Securable
+						Grantee = $row.Grantee
+						SecurableType = $row.SecurableType
+						GranteeType = $row.GranteeType
+					}
+					if ($detailed) { $obj }
+					else { $obj | Select-Object Server, Database, PermState, PermName, Securable, Grantee }
+				}
+			}
+		}
+	}
 	END
-	{}
+	{ }
 }
