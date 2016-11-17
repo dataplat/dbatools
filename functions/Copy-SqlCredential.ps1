@@ -210,13 +210,13 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 						$conn.Dispose()
 						return $dt
 					}
-					catch 
+					catch
 					{
 						Write-Warning "Can't establish local DAC connection to $sourcename from $sourcename or other error. Quitting."
 					}
 				}
 			}
-			catch 
+			catch
 			{
 				Write-Warning "Can't establish local DAC connection to $sourcename from $sourcename or other error. Quitting."
 			}
@@ -273,10 +273,6 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 	
 	#>
 			param (
-				[object]$source,
-				[object]$destination,
-				[System.Management.Automation.PSCredential]$SourceSqlCredential,
-				[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 				[string[]]$credentials,
 				[bool]$force
 			)
@@ -288,9 +284,9 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 			{
 				$credentiallist = $sourceserver.credentials | Where-Object { $credentials -contains $_.Name }
 			}
-			else 
-			{ 
-				$credentiallist = $sourceserver.credentials 
+			else
+			{
+				$credentiallist = $sourceserver.credentials
 			}
 			
 			
@@ -334,25 +330,25 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 						Write-Output "$credentialname successfully copied"
 					}
 				}
-				catch 
-				{ 
-					Write-Exception $_ 
+				catch
+				{
+					Write-Exception $_
 				}
 			}
 		}
 		
 		$credentials = $psboundparameters.credentials
 		
-		if ($SourceSqlCredential.username -ne $null -or $DestinationSqlCredential.username -ne $null)
-		{
-			Write-Warning "You are using SQL credentials and this script requires Windows admin access to the server. Trying anyway."
-		}
-		
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
+		
+		if ($SourceSqlCredential.username -ne $null)
+		{
+			Write-Warning "You are using SQL credentials and this script requires Windows admin access to the $Source server. Trying anyway."
+		}
 		
 		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
 		{
@@ -366,30 +362,24 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 	
 	PROCESS
 	{
-		
-		
-		Write-Output "Getting NetBios name"
+		Write-Output "Getting NetBios name for $source"
 		$sourcenetbios = Resolve-NetBiosName $sourceserver
 		
-		Write-Output "Checking if remote access is enabled"
+		Write-Output "Checking if remote access is enabled on $source"
 		winrm id -r:$sourcenetbios 2>$null | Out-Null
 		
-		if ($LastExitCode -ne 0) 
-		{ 
-			throw "Remote PowerShell access not enabled on on $source or access denied. Windows admin acccess required. Quitting." 
+		if ($LastExitCode -ne 0)
+		{
+			Write-Warning "Having trouble with accessing PowerShell remotely on $source. Do you have Windows admin access and is PowerShell Remoting enabled? Anyway, good luck! This may work."
 		}
 		
-		Write-Output "Checking if Remote Registry is enabled"
-		try 
-		{ 
-			Invoke-Command -ComputerName $sourcenetbios { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } 
-		}
-		catch 
-		{ 
-			throw "Can't connect to remote registry on $source. Quitting." 
-		}
+		# This output is wrong. Will fix later.
+		Write-Output "Checking if Remote Registry is enabled on $source"
+		try { Invoke-Command -ComputerName $sourcenetbios { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } }
+		catch { throw "Can't connect to registry on $source. Quitting." }
 		
-		Copy-Credential $sourceserver $destserver -Credentials $credentials -force:$force
+		# Magic happens here
+		Copy-Credential $credentials -force:$force
 		
 	}
 	
