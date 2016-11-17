@@ -339,7 +339,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating SQL credentials"
 				try
 				{
-					Copy-SqlCredential -Source $sourceserver.name -Destination $destserver.name -Force:$Force
+					Copy-SqlCredential -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch { Write-Error "Credential migration reported the following error $($_.Exception.Message) " }
 			}
@@ -411,7 +411,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			Write-Output "`n`nMigrating linked servers"
 			try
 			{
-				Copy-SqlLinkedServer -Source $sourceserver.name -Destination $destserver.name -Force:$Force
+				Copy-SqlLinkedServer -Source $sourceserver -Destination $destserver -Force:$Force
 			}
 			catch { Write-Error "Linked server migration reported the following error $($_.Exception.Message) " }
 		}

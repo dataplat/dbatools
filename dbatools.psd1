@@ -155,7 +155,8 @@
 		'Test-DbaFullRecoveryModel',
 		'Test-DbaMaxDop',
 		'Remove-DbaBackup',
-		'Get-DbaPermission'
+		'Get-DbaPermission',
+		'Get-DbaLastBackup'
 	)
 	
 	# Cmdlets to export from this module
