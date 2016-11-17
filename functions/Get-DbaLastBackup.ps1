@@ -106,7 +106,7 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 
 			foreach ($db in $dbs)
 			{
-                $obj = $null
+                $result = $null
 				Write-Verbose "Processing $($db.name) on $servername"
 
 				if ($db.IsAccessible -eq $false)
@@ -116,14 +116,14 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 				}
                 # To avoid complicated manipulations on datetimes depending on locale settings and culture,
                 # dates are compared to 0, which represents 1/01/0001 0:00:00
-				$TimeSinceFullBU = if ($db.LastBackupdate -eq 0) {""} else {(New-TimeSpan -Start $db.LastBackupdate).Tostring()}
-                $TimeSinceFullBU = if ($db.LastBackupdate -eq 0) {""} else {$TimeSinceFullBU.split('.')[0..($TimeSinceFullBU.split('.').count - 2)] -join ' days ' }
+				$SinceFull = if ($db.LastBackupdate -eq 0) {""} else {(New-TimeSpan -Start $db.LastBackupdate).Tostring()}
+                $SinceFull = if ($db.LastBackupdate -eq 0) {""} else {$SinceFull.split('.')[0..($SinceFull.split('.').count - 2)] -join ' days ' }
 
-				$TimeSinceDiffBU = if ($db.LastDifferentialBackupDate -eq 0) {""} else {(New-TimeSpan -Start $db.LastDifferentialBackupDate).Tostring()}
-                $TimeSinceDiffBU = if ($db.LastDifferentialBackupDate -eq 0) {""} else {$TimeSinceDiffBU.split('.')[0..($TimeSinceDiffBU.split('.').count - 2)] -join ' days ' }
+				$SinceDiff = if ($db.LastDifferentialBackupDate -eq 0) {""} else {(New-TimeSpan -Start $db.LastDifferentialBackupDate).Tostring()}
+                $SinceDiff = if ($db.LastDifferentialBackupDate -eq 0) {""} else {$SinceDiff.split('.')[0..($SinceDiff.split('.').count - 2)] -join ' days ' }
 
-				$TimeSinceLogBU = if ($db.LastLogBackupDate -eq 0) {""} else {(New-TimeSpan -Start $db.LastLogBackupDate).Tostring()}
-                $TimeSinceLogBU = if ($db.LastLogBackupDate -eq 0) {""} else {$TimeSinceLogBU.split('.')[0..($TimeSinceLogBU.split('.').count - 2)] -join ' days ' }
+				$SinceLog = if ($db.LastLogBackupDate -eq 0) {""} else {(New-TimeSpan -Start $db.LastLogBackupDate).Tostring()}
+                $SinceLog = if ($db.LastLogBackupDate -eq 0) {""} else {$SinceLog.split('.')[0..($SinceLog.split('.').count - 2)] -join ' days ' }
 
 				$daysSinceDbCreated = (New-TimeSpan -Start $db.createDate).Days
 
@@ -132,23 +132,23 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 				elseif ($db.RecoveryModel -eq "Full" -and (New-TimeSpan -Start $db.LastLogBackupDate).Hours -gt 0){$Status = 'No Log Back Up in the last hour'}
 				else { $Status = 'OK' }
 				
-				$obj = [PSCustomObject]@{
+				$result = [PSCustomObject]@{
 					Server = $server.name
 					Database = $db.name
                     RecoveryModel = $db.recoverymodel
 					LastFullBackup = if ( $db.LastBackupdate -eq 0 ) { $null } else { $db.LastBackupdate.tostring() }
 					LastDiffBackup = if ( $db.LastDifferentialBackupDate -eq 0 ) { $null } else { $db.LastDifferentialBackupDate.tostring() }
 					LastLogBackup = if ( $db.LastLogBackupDate -eq 0 ) { $null } else { $db.LastLogBackupDate.tostring() }
-                    SinceFull = $TimeSinceFullBU
-                    SinceDiff = $TimeSinceDiffBU
-					SinceLog = $TimeSinceLogBU
+                    SinceFull = $SinceFull
+                    SinceDiff = $SinceDiff
+					SinceLog = $SinceLog
 					Status = $status
 					DatabaseCreated = $db.createDate
 					DaysSinceDbCreated = $daysSinceDbCreated
 
 				}
-		    if ($detailed) { $obj }
-		    else { $obj | Select-Object Server, Database, LastFullBackup, LastDiffBackup, LastLogBackup }
+		    if ($detailed) { $result }
+		    else { $result | Select-Object Server, Database, LastFullBackup, LastDiffBackup, LastLogBackup }
 			}
         }
     }
