@@ -156,7 +156,8 @@
 		'Test-DbaMaxDop',
 		'Remove-DbaBackup',
 		'Get-DbaPermission',
-		'Get-DbaLastBackup'
+		'Get-DbaLastBackup',
+		'Connect-DbaSqlServer'
 	)
 	
 	# Cmdlets to export from this module
