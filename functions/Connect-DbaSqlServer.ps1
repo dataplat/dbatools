@@ -63,6 +63,7 @@ Creates an SMO Server object that connects using Windows Authentication and uses
 	param (
 		[Parameter(Mandatory = $true)]
 		[object]$SqlServer,
+		[Alias("SqlCredential")]
 		[System.Management.Automation.PSCredential]$Credential,
 		[string]$ClientName = "dbatools PowerShell module - dbatools.io - custom connection"
 	)
