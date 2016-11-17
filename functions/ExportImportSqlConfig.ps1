@@ -42,15 +42,17 @@ Function Export-SqlSpConfigure
 		catch { throw "Can't write to $path" }
 		
 		$server.Configuration.ShowAdvancedOptions.ConfigValue = $true
-		$server.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
+		$server.Configuration.Alter($true)
 		foreach ($sourceprop in $server.Configuration.Properties)
 		{
 			$displayname = $sourceprop.DisplayName
 			$configvalue = $sourceprop.ConfigValue
-			Add-Content -Path $path "EXEC sp_configure '$displayname' , $configvalue; RECONFIGURE WITH OVERRIDE"
+			Add-Content -Path $path "EXEC sp_configure '$displayname' , $configvalue;"
 		}
+		Add-Content -Path $path "EXEC sp_configure 'show advanced options' , 0;"
+		Add-Content -Path $Path "RECONFIGURE WITH OVERRIDE"
 		$server.Configuration.ShowAdvancedOptions.ConfigValue = $false
-		$server.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
+		$server.Configuration.Alter($true)
 		return $path
 	}
 	
