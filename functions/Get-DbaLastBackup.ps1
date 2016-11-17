@@ -7,6 +7,7 @@ Get date/time for last known backups
 .DESCRIPTION
 Retrieves and compares the date/time for the last known backups, as well as the creation date/time for the database.
 
+Default output includes columns Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated.
 
 .PARAMETER SqlServer
 The SQL Server that you're connecting to.
@@ -20,8 +21,8 @@ Return information for only specific databases
 .PARAMETER Exclude
 Return information for all but these specific databases
 
-.PARAMETER Detailed
-Shows detailed information
+.PARAMETER Simple
+Shows concise information including Server name, Database name, and the date the last time backups were performed
 
 .NOTES
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
@@ -38,10 +39,15 @@ You should have received a copy of the GNU General Public License along with thi
 .EXAMPLE
 Get-DbaLastBackup -SqlServer ServerA\sql987
 
+Returns a custom object displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated
+
+.EXAMPLE
+Get-DbaLastBackup -SqlServer ServerA\sql987 -Simple
+
 Returns a custom object with Server name, Database name, and the date the last time backups were performed
 
 .EXAMPLE
-Get-DbaLastBackup -SqlServer ServerA\sql987 -Detailed | Out-Gridview
+Get-DbaLastBackup -SqlServer ServerA\sql987 | Out-Gridview
 
 Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated
 
@@ -52,7 +58,7 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
 		[PsCredential]$Credential,
-		[switch]$Detailed
+		[switch]$Simple
 	)
 
 	DynamicParam {
@@ -142,16 +148,14 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
                     SinceFull = $SinceFull
                     SinceDiff = $SinceDiff
 					SinceLog = $SinceLog
-					Status = $status
 					DatabaseCreated = $db.createDate
 					DaysSinceDbCreated = $daysSinceDbCreated
+					Status = $status
 
 				}
-		    if ($detailed) { $result }
-		    else { $result | Select-Object Server, Database, LastFullBackup, LastDiffBackup, LastLogBackup }
+		    if ($Simple) { $result | Select-Object Server, Database, LastFullBackup, LastDiffBackup, LastLogBackup }
+		    else { $result }
 			}
         }
     }
-	END
-	{}
 }
