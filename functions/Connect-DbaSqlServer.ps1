@@ -59,33 +59,26 @@ Connect-DbaSqlServer -SqlServer sql2014 -ClientName "mah connection"
 Creates an SMO Server object that connects using Windows Authentication and uses the client name "mah connection". So when you open up profiler or use extended events, you can search for "mah connection".
 
 #>	
-	
-	<#
-	Still need to look into adding
-	AccessToken                    Property   string AccessToken {get;set;}
-	ConnectTimeout                 Property   int ConnectTimeout {get;set;}
-	InUse                          Property   bool InUse {get;set;}
-	LockTimeout                    Property   int LockTimeout {get;set;}
-	MaxPoolSize                    Property   int MaxPoolSize {get;set;}
-	MinPoolSize                    Property   int MinPoolSize {get;set;}
-	ServerVersion                  Property   Microsoft.SqlServer.Management.Common.ServerVersion ServerVersion {get;set;}
-	TrueName                       Property   string TrueName {get;set;}
-	TrustServerCertificate         Property   bool TrustServerCertificate {get;set;}
-	#>
-	
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
 		[object]$SqlServer,
 		[Alias("SqlCredential")]
 		[System.Management.Automation.PSCredential]$Credential,
+		
+		[string]$AccessToken,
 		[ValidateSet('ReadOnly', 'ReadWrite')]
 		[string]$ApplicationIntent,
 		[string]$BatchSeparator,
 		[string]$ClientName = "dbatools PowerShell module - dbatools.io - custom connection",
+		[int]$ConnectTimeout,
 		[switch]$EncryptConnection,
 		[string]$FailoverPartner,
+		[switch]$InUse,
 		[switch]$IsActiveDirectoryUniversalAuth,
+		[int]$LockTimeout,
+		[int]$MaxPoolSize,
+		[int]$MinPoolSize,
 		[switch]$MultipleActiveResultSets,
 		[switch]$MultiSubnetFailover,
 		[ValidateSet('TcpIp','NamedPipes','Multiprotocol','AppleTalk','BanyanVines','Via','SharedMemory','NWLinkIpxSpx')]
@@ -93,9 +86,10 @@ Creates an SMO Server object that connects using Windows Authentication and uses
 		[switch]$NonPooledConnection,
 		[int]$PacketSize,
 		[int]$PooledConnectionLifetime,
-		[int]$StatementTimeout,
 		[ValidateSet('CaptureSql', 'ExecuteAndCaptureSql', 'ExecuteSql')]
 		[string]$SqlExecutionModes,
+		[int]$StatementTimeout,
+		[string]$TrueName,
 		[switch]$TrustServerCertificate,
 		[string]$WorkstationId
 	)
@@ -118,11 +112,17 @@ Creates an SMO Server object that connects using Windows Authentication and uses
 		$server.ConnectionContext.ApplicationName = $clientname
 		$database = $psboundparameters.Database
 		
+		if ($AccessToken) { $server.ConnectionContext.AccessToken = $AccessToken }
 		if ($ApplicationIntent) { $server.ConnectionContext.ApplicationIntent = $ApplicationIntent }
 		if ($BatchSeparator) { $server.ConnectionContext.BatchSeparator = $BatchSeparator }
+		if ($ConnectTimeout) { $server.ConnectionContext.ConnectTimeout = $ConnectTimeout }
 		if ($Database) { $server.ConnectionContext.DatabaseName = $Database }
 		if ($EncryptConnection) { $server.ConnectionContext.EncryptConnection = $true }
+		if ($InUse) { $server.ConnectionContext.InUse = $true }
 		if ($IsActiveDirectoryUniversalAuth) { $server.ConnectionContext.IsActiveDirectoryUniversalAuth = $true }
+		if ($LockTimeout) { $server.ConnectionContext.LockTimeout = $LockTimeout }
+		if ($MaxPoolSize) { $server.ConnectionContext.MaxPoolSize = $MaxPoolSize }
+		if ($MinPoolSize) { $server.ConnectionContext.MinPoolSize = $MinPoolSize }
 		if ($MultipleActiveResultSets) { $server.ConnectionContext.MultipleActiveResultSets = $true }
 		if ($NetworkProtocol) { $server.ConnectionContext.NetworkProtocol = $NetworkProtocol }
 		if ($NonPooledConnection) { $server.ConnectionContext.NonPooledConnection = $true }
@@ -130,6 +130,7 @@ Creates an SMO Server object that connects using Windows Authentication and uses
 		if ($PooledConnectionLifetime) { $server.ConnectionContext.PooledConnectionLifetime = $PooledConnectionLifetime }
 		if ($StatementTimeout) { $server.ConnectionContext.StatementTimeout = $StatementTimeout }
 		if ($SqlExecutionModes) { $server.ConnectionContext.SqlExecutionModes = $SqlExecutionModes }
+		if ($TrueName) { $server.ConnectionContext.TrueName = $TrueName }
 		if ($TrustServerCertificate) { $server.ConnectionContext.TrustServerCertificate = $true }
 		if ($WorkstationId) { $server.ConnectionContext.WorkstationId = $WorkstationId }
 		
