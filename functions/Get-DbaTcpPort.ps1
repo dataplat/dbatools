@@ -170,6 +170,7 @@ Returns an object with server name, IPAddress (just ipv4), port and static ($tru
 				catch
 				{
 					Write-Warning "Could not get detailed information for $servername"
+					Write-Warning $_.Exception.Message
 				}
 				
 				$cleanedup = $allips | Sort-Object IPAddress | Select-Object Server, IPAddress, Port, Static
