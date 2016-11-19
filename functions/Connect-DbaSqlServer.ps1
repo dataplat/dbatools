@@ -91,7 +91,8 @@ Creates an SMO Server object that connects using Windows Authentication and uses
 		[int]$StatementTimeout,
 		[string]$TrueName,
 		[switch]$TrustServerCertificate,
-		[string]$WorkstationId
+		[string]$WorkstationId,
+		[string]$ConnectionString
 	)
 	
 	DynamicParam { if ($sqlserver) { return Get-ParamSqlDatabase -SqlServer $SqlServer -SqlCredential $Credential } }
@@ -109,74 +110,85 @@ Creates an SMO Server object that connects using Windows Authentication and uses
 		}
 		
 		$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlServer
-		$server.ConnectionContext.ApplicationName = $clientname
-		$database = $psboundparameters.Database
 		
-		if ($AccessToken) { $server.ConnectionContext.AccessToken = $AccessToken }
-		if ($ApplicationIntent) { $server.ConnectionContext.ApplicationIntent = $ApplicationIntent }
-		if ($BatchSeparator) { $server.ConnectionContext.BatchSeparator = $BatchSeparator }
-		if ($ConnectTimeout) { $server.ConnectionContext.ConnectTimeout = $ConnectTimeout }
-		if ($Database) { $server.ConnectionContext.DatabaseName = $Database }
-		if ($EncryptConnection) { $server.ConnectionContext.EncryptConnection = $true }
-		if ($InUse) { $server.ConnectionContext.InUse = $true }
-		if ($IsActiveDirectoryUniversalAuth) { $server.ConnectionContext.IsActiveDirectoryUniversalAuth = $true }
-		if ($LockTimeout) { $server.ConnectionContext.LockTimeout = $LockTimeout }
-		if ($MaxPoolSize) { $server.ConnectionContext.MaxPoolSize = $MaxPoolSize }
-		if ($MinPoolSize) { $server.ConnectionContext.MinPoolSize = $MinPoolSize }
-		if ($MultipleActiveResultSets) { $server.ConnectionContext.MultipleActiveResultSets = $true }
-		if ($NetworkProtocol) { $server.ConnectionContext.NetworkProtocol = $NetworkProtocol }
-		if ($NonPooledConnection) { $server.ConnectionContext.NonPooledConnection = $true }
-		if ($PacketSize) { $server.ConnectionContext.PacketSize = $PacketSize }
-		if ($PooledConnectionLifetime) { $server.ConnectionContext.PooledConnectionLifetime = $PooledConnectionLifetime }
-		if ($StatementTimeout) { $server.ConnectionContext.StatementTimeout = $StatementTimeout }
-		if ($SqlExecutionModes) { $server.ConnectionContext.SqlExecutionModes = $SqlExecutionModes }
-		if ($TrueName) { $server.ConnectionContext.TrueName = $TrueName }
-		if ($TrustServerCertificate) { $server.ConnectionContext.TrustServerCertificate = $true }
-		if ($WorkstationId) { $server.ConnectionContext.WorkstationId = $WorkstationId }
-		
-		$connstring = $server.ConnectionContext.ConnectionString
-		if ($MultiSubnetFailover) { $connstring = "$connstring;MultiSubnetFailover=True" }
-		if ($FailoverPartner) { $connstring = "$connstring;Failover Partner=$FailoverPartner" }
-		
-		if ($connstring -ne $server.ConnectionContext.ConnectionString)
+		if ($connectionstring)
 		{
-			$server.ConnectionContext.ConnectionString = $connstring
-		}
-		
-		try
-		{
-			if ($Credential.username -ne $null)
-			{
-				$username = ($Credential.username).TrimStart("\")
-				
-				if ($username -like "*\*")
-				{
-					$username = $username.Split("\")[1]
-					$authtype = "Windows Authentication with Credential"
-					$server.ConnectionContext.LoginSecure = $true
-					$server.ConnectionContext.ConnectAsUser = $true
-					$server.ConnectionContext.ConnectAsUserName = $username
-					$server.ConnectionContext.ConnectAsUserPassword = ($Credential).GetNetworkCredential().Password
-				}
-				else
-				{
-					$authtype = "SQL Authentication"
-					$server.ConnectionContext.LoginSecure = $false
-					$server.ConnectionContext.set_Login($username)
-					$server.ConnectionContext.set_SecurePassword($Credential.Password)
-				}
-			}
-			
+			$server.ConnectionContext.ConnectionString = $connectionstring
 			$server.ConnectionContext.Connect()
 		}
-		catch
+		else
 		{
-			$message = $_.Exception.InnerException.InnerException
-			$message = $message.ToString()
-			$message = ($message -Split '-->')[0]
-			$message = ($message -Split 'at System.Data.SqlClient')[0]
-			$message = ($message -Split 'at System.Data.ProviderBase')[0]
-			throw "Can't connect to $sqlserver`: $message "
+			
+			$server.ConnectionContext.ApplicationName = $clientname
+			$database = $psboundparameters.Database
+			
+			if ($AccessToken) { $server.ConnectionContext.AccessToken = $AccessToken }
+			if ($ApplicationIntent) { $server.ConnectionContext.ApplicationIntent = $ApplicationIntent }
+			if ($BatchSeparator) { $server.ConnectionContext.BatchSeparator = $BatchSeparator }
+			if ($ConnectTimeout) { $server.ConnectionContext.ConnectTimeout = $ConnectTimeout }
+			if ($Database) { $server.ConnectionContext.DatabaseName = $Database }
+			if ($EncryptConnection) { $server.ConnectionContext.EncryptConnection = $true }
+			if ($InUse) { $server.ConnectionContext.InUse = $true }
+			if ($IsActiveDirectoryUniversalAuth) { $server.ConnectionContext.IsActiveDirectoryUniversalAuth = $true }
+			if ($LockTimeout) { $server.ConnectionContext.LockTimeout = $LockTimeout }
+			if ($MaxPoolSize) { $server.ConnectionContext.MaxPoolSize = $MaxPoolSize }
+			if ($MinPoolSize) { $server.ConnectionContext.MinPoolSize = $MinPoolSize }
+			if ($MultipleActiveResultSets) { $server.ConnectionContext.MultipleActiveResultSets = $true }
+			if ($NetworkProtocol) { $server.ConnectionContext.NetworkProtocol = $NetworkProtocol }
+			if ($NonPooledConnection) { $server.ConnectionContext.NonPooledConnection = $true }
+			if ($PacketSize) { $server.ConnectionContext.PacketSize = $PacketSize }
+			if ($PooledConnectionLifetime) { $server.ConnectionContext.PooledConnectionLifetime = $PooledConnectionLifetime }
+			if ($StatementTimeout) { $server.ConnectionContext.StatementTimeout = $StatementTimeout }
+			if ($SqlExecutionModes) { $server.ConnectionContext.SqlExecutionModes = $SqlExecutionModes }
+			if ($TrueName) { $server.ConnectionContext.TrueName = $TrueName }
+			if ($TrustServerCertificate) { $server.ConnectionContext.TrustServerCertificate = $true }
+			if ($WorkstationId) { $server.ConnectionContext.WorkstationId = $WorkstationId }
+			
+			$connstring = $server.ConnectionContext.ConnectionString
+			if ($MultiSubnetFailover) { $connstring = "$connstring;MultiSubnetFailover=True" }
+			if ($FailoverPartner) { $connstring = "$connstring;Failover Partner=$FailoverPartner" }
+			
+			if ($connstring -ne $server.ConnectionContext.ConnectionString)
+			{
+				$server.ConnectionContext.ConnectionString = $connstring
+			}
+			
+			try
+			{
+				if ($Credential.username -ne $null)
+				{
+					$username = ($Credential.username).TrimStart("\")
+					
+					if ($username -like "*\*")
+					{
+						$username = $username.Split("\")[1]
+						$authtype = "Windows Authentication with Credential"
+						$server.ConnectionContext.LoginSecure = $true
+						$server.ConnectionContext.ConnectAsUser = $true
+						$server.ConnectionContext.ConnectAsUserName = $username
+						$server.ConnectionContext.ConnectAsUserPassword = ($Credential).GetNetworkCredential().Password
+					}
+					else
+					{
+						$authtype = "SQL Authentication"
+						$server.ConnectionContext.LoginSecure = $false
+						$server.ConnectionContext.set_Login($username)
+						$server.ConnectionContext.set_SecurePassword($Credential.Password)
+					}
+				}
+				
+				$server.ConnectionContext.Connect()
+			}
+			catch
+			{
+				$message = $_.Exception.InnerException.InnerException
+				$message = $message.ToString()
+				$message = ($message -Split '-->')[0]
+				$message = ($message -Split 'at System.Data.SqlClient')[0]
+				$message = ($message -Split 'at System.Data.ProviderBase')[0]
+				throw "Can't connect to $sqlserver`: $message "
+			}
+			
 		}
 		
 		if ($server.VersionMajor -eq 8)
