@@ -43,7 +43,7 @@ xyz
 		[object[]]$SqlServer,
 		[Alias("SqlCredential")]
 		[PSCredential]$Credential,
-		[switch]$Detailed
+		[switch]$Simple
 		)
 	
 	PROCESS
@@ -89,7 +89,7 @@ xyz
 						ParameterString = $wmisvc.StartupParameters
 					}
 					
-					if ($Detailed -eq $true)
+					if ($Simple -ne $true)
 					{
 						# From https://msdn.microsoft.com/en-us/library/ms190737.aspx
 						
@@ -127,7 +127,7 @@ xyz
 						}
 						
 						$object = [PSCustomObject]@{
-							Instance = $Servername
+							Server = $Servername
 							MasterData = $masterdata.TrimStart('-d')
 							MasterLog = $masterlog.TrimStart('-l')
 							ErrorLog = $errorlog.TrimStart('-e')
