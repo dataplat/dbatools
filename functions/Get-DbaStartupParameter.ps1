@@ -44,7 +44,7 @@ xyz
 		[Alias("SqlCredential")]
 		[PSCredential]$Credential,
 		[switch]$Detailed
-	}
+		)
 	
 	PROCESS
 	{
