@@ -1,12 +1,11 @@
-Fixes # .
+Fixes # 
 
 Changes proposed in this pull request:
  - 
  - 
  - 
 
-How to test this code:
-- [ ]  
+How to test this code: 
 - [ ] 
 - [ ] 
 
