@@ -157,7 +157,8 @@
 		'Remove-DbaBackup',
 		'Get-DbaPermission',
 		'Get-DbaLastBackup',
-		'Connect-DbaSqlServer'
+		'Connect-DbaSqlServer',
+		'Get-DbaStartupParameter'
 	)
 	
 	# Cmdlets to export from this module
