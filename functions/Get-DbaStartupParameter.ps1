@@ -2,10 +2,11 @@
 {
 <#
 .SYNOPSIS
-
+Displays SQL Server Startup Parameters
 
 .DESCRIPTION
-
+Displays a detailed list of SQL Server Startup Parameters. 
+	
 .PARAMETER SqlServer
 The SQL Server that you're connecting to.
 
@@ -31,10 +32,10 @@ Get-DbaStartupParameter -SqlServer sql2014
 xyz
 
 .EXAMPLE
-$wincred = Get-Credential ad\sqladmin
-Get-DbaStartupParameter -SqlServer sql2014 -Credential $wincred
+$cred = Get-Credential sqladmin
+Get-DbaStartupParameter -SqlServer sql2014 -Credential $cred -Simple
 
-xyz
+Logs into sql2014 using SQL credentials and displays a simplified output of parameters.
 
 #>	
 	[CmdletBinding()]
@@ -44,7 +45,7 @@ xyz
 		[Alias("SqlCredential")]
 		[PSCredential]$Credential,
 		[switch]$Simple
-		)
+	)
 	
 	PROCESS
 	{
@@ -55,7 +56,7 @@ xyz
 			{
 				$instancename = ($servername.Split('\'))[1]
 				Write-Verbose "Attempting to connect to $servername"
-			
+				
 				if ($instancename.Length -eq 0) { $instancename = "MSSQLSERVER" }
 				
 				$displayname = "SQL Server ($instancename)"
@@ -100,7 +101,7 @@ xyz
 						$instancestartparm = $params | Where-Object { $_ -eq '-s' }
 						$disablemonitoringparm = $params | Where-Object { $_ -eq '-x' }
 						$increasedextentsparm = $params | Where-Object { $_ -ceq '-E' }
-												
+						
 						$minimalstart = $noeventlogs = $instancestart = $disablemonitoring = $false
 						$increasedextents = $commandprompt = $singleuser = $false
 						
