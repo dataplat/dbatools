@@ -92,7 +92,7 @@ Creates an SMO Server object that connects using Windows Authentication and uses
 		[string]$TrueName,
 		[switch]$TrustServerCertificate,
 		[string]$WorkstationId,
-		[string]$ConnectionString
+		[string]$AppendConnectionString
 	)
 	
 	DynamicParam { if ($sqlserver) { return Get-ParamSqlDatabase -SqlServer $SqlServer -SqlCredential $Credential } }
@@ -111,9 +111,10 @@ Creates an SMO Server object that connects using Windows Authentication and uses
 		
 		$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlServer
 		
-		if ($connectionstring)
+		if ($AppendConnectionString)
 		{
-			$server.ConnectionContext.ConnectionString = $connectionstring
+			$connstring = $server.ConnectionContext.ConnectionString
+			$server.ConnectionContext.ConnectionString = "$connstring;$appendconnectionstring"
 			$server.ConnectionContext.Connect()
 		}
 		else
