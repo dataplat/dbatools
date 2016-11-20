@@ -2,18 +2,21 @@
 {
 <#
 .SYNOPSIS
-Displays SQL Server Startup Parameters
+Displays values for a detailed list of SQL Server Startup Parameters.
 
 .DESCRIPTION
-Displays values for a detailed list of SQL Server Startup Parameters including Master Data Path, Master Log path, ErrorLog, Trace Flags, Parameter String and much more.
+Displays values for a detailed list of SQL Server Startup Parameters including Master Data Path, Master Log path, Error Log, Trace Flags, Parameter String and much more.
 
+This command relies on remote Windows Server (SQL WMI/WinRm) access. You can pass alternative Windows credentials by using the -Credential parameter. 
+	
 See https://msdn.microsoft.com/en-us/library/ms190737.aspx for more information.
+	
 .PARAMETER SqlServer
 The SQL Server that you're connecting to.
 
 .PARAMETER Credential
-Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determiend by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
-
+Credential object used to connect to the Windows Server as a different Windows user. 
+	
 .PARAMETER Simple
 Shows a simplified output including only Server, Master Data Path, Master Log path, ErrorLog, TraceFlags and ParameterString
 
@@ -30,14 +33,14 @@ You should have received a copy of the GNU General Public License along with thi
 .EXAMPLE
 Get-DbaStartupParameter -SqlServer sql2014
 
-Logs into sql2014 using trusted authentication then displays the values for numerous startup parameters.
+Logs into SQL WMI as the current user then displays the values for numerous startup parameters.
 
 .EXAMPLE
-$cred = Get-Credential sqladmin
-Get-DbaStartupParameter -SqlServer sql2014 -Credential $cred -Simple
+$wincred = Get-Credential ad\sqladmin
+Get-DbaStartupParameter -SqlServer sql2014 -Credential $wincred -Simple
 
-Logs into sql2014 using SQL credentials and displays a simplified output of parameters.
-
+Logs in to WMI using the ad\sqladmin credential and gathers simplified information about the SQL Server Startup Parameters.
+	
 #>	
 	[CmdletBinding()]
 	param ([parameter(ValueFromPipeline, Mandatory = $true)]
