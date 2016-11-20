@@ -5,16 +5,17 @@
 Displays SQL Server Startup Parameters
 
 .DESCRIPTION
-Displays a detailed list of SQL Server Startup Parameters. 
-	
+Displays values for a detailed list of SQL Server Startup Parameters including Master Data Path, Master Log path, ErrorLog, Trace Flags, Parameter String and much more.
+
+See https://msdn.microsoft.com/en-us/library/ms190737.aspx for more information.
 .PARAMETER SqlServer
 The SQL Server that you're connecting to.
 
 .PARAMETER Credential
 Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determiend by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
-.PARAMETER Detailed
-(should we be detailed by default or use -Simple to simplify?)
+.PARAMETER Simple
+Shows a simplified output including only Server, Master Data Path, Master Log path, ErrorLog, TraceFlags and ParameterString
 
 .NOTES
 dbatools PowerShell module (https://dbatools.io)
@@ -29,7 +30,7 @@ You should have received a copy of the GNU General Public License along with thi
 .EXAMPLE
 Get-DbaStartupParameter -SqlServer sql2014
 
-xyz
+Logs into sql2014 using trusted authentication then displays the values for numerous startup parameters.
 
 .EXAMPLE
 $cred = Get-Credential sqladmin
@@ -82,7 +83,7 @@ Logs into sql2014 using SQL credentials and displays a simplified output of para
 					}
 					
 					$object = [PSCustomObject]@{
-						Instance = $Servername
+						Server = $Servername
 						MasterData = $masterdata.TrimStart('-d')
 						MasterLog = $masterlog.TrimStart('-l')
 						ErrorLog = $errorlog.TrimStart('-e')
@@ -144,6 +145,7 @@ Logs into sql2014 using SQL credentials and displays a simplified output of para
 							ParameterString = $wmisvc.StartupParameters
 						}
 					}
+					
 					return $object
 				}
 				
