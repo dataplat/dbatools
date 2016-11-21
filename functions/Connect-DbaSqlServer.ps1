@@ -14,6 +14,8 @@ Alternatively, you can pass in whichever client name you'd like using the -Clien
 See https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.connectionstring.aspx
 and https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnectionstringbuilder(v=vs.110).aspx
 
+To execute SQL commands, you can use $server.ConnectionContext.ExecuteReader($sql) or $server.Databases['master'].ExecuteNonQuery($sql)
+
 .PARAMETER SqlServer
 The SQL Server that you're connecting to.
 
@@ -128,31 +130,36 @@ Creates an SMO Server object that connects using alternative Windows credentials
 
 .EXAMPLE
 $sqlcred = Get-Credential sa
-Connect-DbaSqlServer -SqlServer sql2014 -Credential $sqlcred
+$server = Connect-DbaSqlServer -SqlServer sql2014 -Credential $sqlcred
 
 Don't use sa, this one is just an obvious SQL login.
 
 .EXAMPLE
 $sqlcred = Get-Credential sqladmin
-Connect-DbaSqlServer -SqlServer sql2014 -Credential $sqlcred
+$server = Connect-DbaSqlServer -SqlServer sql2014 -Credential $sqlcred
 
 Login to sql2014 as SQL login sqladmin.
 
 .EXAMPLE
-Connect-DbaSqlServer -SqlServer sql2014 -ClientName "mah connection"
+$server = Connect-DbaSqlServer -SqlServer sql2014 -ClientName "mah connection"
 
 Creates an SMO Server object that connects using Windows Authentication and uses the client name "mah connection". So when you open up profiler or use extended events, you can search for "mah connection".
 
 .EXAMPLE
-Connect-DbaSqlServer -SqlServer sql2014 -AppendConnectionString "Packet Size=4096;AttachDbFilename=C:\MyFolder\MyDataFile.mdf;User Instance=true;"
+$server = Connect-DbaSqlServer -SqlServer sql2014 -AppendConnectionString "Packet Size=4096;AttachDbFilename=C:\MyFolder\MyDataFile.mdf;User Instance=true;"
 
 Creates an SMO Server object that connects to sql2014 using Windows Authentication, then it sets the packet size (this can also be done via -PacketSize) and other connection attributes.
 
 .EXAMPLE
-Connect-DbaSqlServer -SqlServer sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover
+$server = Connect-DbaSqlServer -SqlServer sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover
 
 Creates an SMO Server object that connects using Windows Authentication that uses TCPIP and has MultiSubnetFailover enabled.
 
+.EXAMPLE
+$server = Connect-DbaSqlServer sql2016 -ApplicationIntent ReadOnly
+
+Connects with ReadOnly ApplicantionIntent.
+	
 #>	
 	[CmdletBinding()]
 	param (
@@ -160,7 +167,6 @@ Creates an SMO Server object that connects using Windows Authentication that use
 		[object]$SqlServer,
 		[Alias("SqlCredential")]
 		[System.Management.Automation.PSCredential]$Credential,
-		
 		[string]$AccessToken,
 		[ValidateSet('ReadOnly', 'ReadWrite')]
 		[string]$ApplicationIntent,
