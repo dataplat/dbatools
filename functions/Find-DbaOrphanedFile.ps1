@@ -162,9 +162,9 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 		function Format-Path {
 			param ($path)
 			$path = $path.Trim()
-			$Path = $path -replace '\x00', ''
-			$path = $path.Replace(' ','/ ')
-			return $path.Replace('\','\\')
+			#Thank you windows 2000
+			$Path = $path -replace '\W', ''			
+			return $path
 		}
 		$Paths = @()
 		$allfiles = @()
