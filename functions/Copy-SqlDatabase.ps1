@@ -766,6 +766,12 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		{
 			throw "Source Sql Server version build must be <= destination Sql Server for database migration."
 		}
+
+		# SMO's filestreamlevel is sometimes null
+		$sql = "select coalesce(SERVERPROPERTY('FilestreamConfiguredLevel'),0) as fs"
+		$sourcefilestream = $sourceserver.ConnectionContext.ExecuteScalar($sql)
+		$destfilestream = $destserver.ConnectionContext.ExecuteScalar($sql)
+		if ($sourcefilestream -gt 0 -and $destfilestream -eq 0) { $fswarning = $true }
 		
 		Write-Output "Writing warning about filestream being enabled"
 		if ($fswarning)
@@ -806,11 +812,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			throw "You did not select any databases to migrate. Please use -AllDatabases or -Databases or -IncludeSupportDbs"
 		}
 		
-		# SMO's filestreamlevel is sometimes null
-		$sql = "select coalesce(SERVERPROPERTY('FilestreamConfiguredLevel'),0) as fs"
-		$sourcefilestream = $sourceserver.ConnectionContext.ExecuteScalar($sql)
-		$destfilestream = $destserver.ConnectionContext.ExecuteScalar($sql)
-		if ($sourcefilestream -gt 0 -and $destfilestream -eq 0) { $fswarning = $true }
+
 
 		Write-Output "Building database list"
 		$databaselist = New-Object System.Collections.ArrayList
