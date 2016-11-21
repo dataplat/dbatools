@@ -93,7 +93,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 			)	
 			# use sysaltfiles in lower versions
 			
-			$q1 = "CREATE TABLE #enum ( id int IDENTITY, fs_filename nvarchar(512), depth int, is_file int, parent nvarchar(512) ); DECLARE @dir nvarchar(512);"
+			$q1 = "CREATE TABLE #enum ( id int IDENTITY, fs_filename varchar(512), depth int, is_file int, parent nvarchar(512) ); DECLARE @dir nvarchar(512);"
 			$q2 = @"
 				SET @dir = 'dirname';
 
@@ -162,7 +162,8 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 		function Format-Path {
 			param ($path)
 			$path = $path.Trim()
-			$path = $path.Replace(' ','` ')
+			$Path = $path -replace '\x00', ''
+			$path = $path.Replace(' ','/ ')
 			return $path.Replace('\','\\')
 		}
 		$Paths = @()
@@ -200,6 +201,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 			
             
 			$valid_sqlfiles = Get-SqlFileStructure $server | % { 
+
                 Write-Debug $( Format-Path $_ ) 
                 [IO.Path]::GetFullPath( $(Format-Path $_) )
             } | Sort-Object -Unique
