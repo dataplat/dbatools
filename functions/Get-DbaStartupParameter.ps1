@@ -73,7 +73,6 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 					
 					$params = $wmisvc.StartupParameters -split ';'
 					
-					$traceflags = $params | Where-Object { @('-d', '-l', '-e') -notcontains $_.SubString(0, 2) }
 					$masterdata = $params | Where-Object { $_.StartsWith('-d') }
 					$masterlog = $params | Where-Object { $_.StartsWith('-l') }
 					$errorlog = $params | Where-Object { $_.StartsWith('-e') }
