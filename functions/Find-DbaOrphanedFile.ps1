@@ -111,8 +111,8 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 					AND is_file = 1;
 "@
 			# build the query string based on how many directories they want to enumerate
-			$sql = $q1
-			$sql += $( $PathList | % { "$([System.Environment]::Newline)$($q2 -Replace 'dirname',$_)" } )
+			$sql = $q1            
+			$sql += $( $PathList | where {$_ -ne ''} | % { "$([System.Environment]::Newline)$($q2 -Replace 'dirname',$_)"} )
 			$sql += $query_files_sql
 			Write-Debug $sql
 			return $sql
@@ -159,6 +159,12 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 			return $dbfiletable.Tables.Filename
 		}
 		
+		function Format-Path {
+			param ($path)
+			$path = $path.Trim()
+			$path = $path.Replace(' ','` ')
+			return $path.Replace('\','\\')
+		}
 		$Paths = @()
 		$allfiles = @()
 		$FileType += "mdf", "ldf", "ndf"
@@ -179,16 +185,24 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 			$Paths += $server.MasterDBPath
 			$Paths += $server.MasterDBLogPath
 			$Paths += $Path
-			
-			$Paths = $Paths | % { "$_".TrimEnd("\") } | Sort-Object -Unique
+            
+            			
+			$Paths = $Paths | % { "$_".TrimEnd("\") } | Sort-Object -Unique            
 			$dirtreefiles = @()
 			$dirtree_query = $( Get-SQLDirTreeQuery $Paths )
+
 			$dirtreefiles += $server.Databases['master'].ExecuteWithResults($dirtree_query).Tables[0] | % { 
-				 [IO.Path]::combine($_.parent,$_.filename)
-				} | % { [IO.Path]::GetFullPath($_) } | Sort-Object -Unique
+				[IO.Path]::combine($_.parent,$_.filename) 
+			} | % { 
+				[IO.Path]::GetFullPath( $(Format-Path $_) ) 
+			} | Sort-Object -Unique
 			$dirtreefiles = $dirtreefiles | ? { $_ }   # Remove blanks
 			
-			$valid_sqlfiles = Get-SqlFileStructure $server | % { [IO.Path]::GetFullPath($_) } | Sort-Object -Unique
+            
+			$valid_sqlfiles = Get-SqlFileStructure $server | % { 
+                Write-Debug $( Format-Path $_ ) 
+                [IO.Path]::GetFullPath( $(Format-Path $_) )
+            } | Sort-Object -Unique
 			
 			$matching_files = @()
 
