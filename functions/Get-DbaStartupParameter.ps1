@@ -78,6 +78,13 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 					$errorlog = $params | Where-Object { $_.StartsWith('-e') }
 					$traceflags = $params | Where-Object { $_.StartsWith('-T') }
 					
+					$debugflag = $params | Where-Object { $_.StartsWith('-t') }
+					
+					if ($debugflag.length -ne 0)
+					{
+						Write-Warning "$servername is using the lowercase -t trace flag. This is for internal debugging only. Please ensure this was intentional."
+					}
+					
 					if ($traceflags.length -eq 0)
 					{
 						$traceflags = "None"
