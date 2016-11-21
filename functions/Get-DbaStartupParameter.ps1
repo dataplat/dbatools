@@ -68,7 +68,6 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 				$Scriptblock = {
 					$servername = $args[0]
 					$displayname = $args[1]
-					$detailed = $args[2]
 					
 					$wmisvc = $wmi.Services | Where-Object { $_.DisplayName -eq $displayname }
 					
@@ -85,16 +84,18 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 						$traceflags = "None"
 					}
 					
-					$object = [PSCustomObject]@{
-						Server = $Servername
-						MasterData = $masterdata.TrimStart('-d')
-						MasterLog = $masterlog.TrimStart('-l')
-						ErrorLog = $errorlog.TrimStart('-e')
-						TraceFlags = $traceflags -join ','
-						ParameterString = $wmisvc.StartupParameters
-					}
-					
-					if ($Simple -ne $true)
+					if ($Simple -eq $true)
+					{
+						[PSCustomObject]@{
+							Server = $Servername
+							MasterData = $masterdata.TrimStart('-d')
+							MasterLog = $masterlog.TrimStart('-l')
+							ErrorLog = $errorlog.TrimStart('-e')
+							TraceFlags = $traceflags -join ','
+							ParameterString = $wmisvc.StartupParameters
+						}
+					}					
+					else
 					{
 						# From https://msdn.microsoft.com/en-us/library/ms190737.aspx
 						
@@ -131,7 +132,7 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 							}
 						}
 						
-						$object = [PSCustomObject]@{
+						[PSCustomObject]@{
 							Server = $Servername
 							MasterData = $masterdata.TrimStart('-d')
 							MasterLog = $masterlog.TrimStart('-l')
@@ -148,29 +149,16 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 							ParameterString = $wmisvc.StartupParameters
 						}
 					}
-					
-					return $object
 				}
 				
 				# This command is in the internal function
 				# It's sorta like Invoke-Command. 
-				$return = Invoke-ManagedComputerCommand -ComputerName $servername -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $servername, $displayname, $detailed
+				Invoke-ManagedComputerCommand -ComputerName $servername -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $servername, $displayname
 			}
 			catch
 			{
-				Write-Exception $_
-				if ($servercount -eq 1)
-				{
-					throw $_
-				}
-				else
-				{
-					Write-Exception $_
-					Write-Warning "$servername encountered an error. Continuing."
-					Continue
-				}
+				Write-Warning "$servername`: $_ "
 			}
 		}
-		$return
 	}
 }
