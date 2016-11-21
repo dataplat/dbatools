@@ -64,6 +64,11 @@ Get-DbaPermission -SqlServer ServerA\sql987 -NoSystemObjects -IncludeServerLevel
 
 Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable
 in all databases and on the server level, but not on system securables
+	
+.EXAMPLE
+Get-DbaPermission -SqlServer sql2016 -Databases master
+
+Returns a custom object with permissions for the master database
 
 #>
 	[CmdletBinding()]
