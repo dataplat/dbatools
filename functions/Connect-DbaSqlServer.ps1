@@ -129,12 +129,6 @@ Connect-DbaSqlServer -SqlServer sql2014 -Credential $wincred
 Creates an SMO Server object that connects using alternative Windows credentials
 
 .EXAMPLE
-$sqlcred = Get-Credential sa
-$server = Connect-DbaSqlServer -SqlServer sql2014 -Credential $sqlcred
-
-Don't use sa, this one is just an obvious SQL login.
-
-.EXAMPLE
 $sqlcred = Get-Credential sqladmin
 $server = Connect-DbaSqlServer -SqlServer sql2014 -Credential $sqlcred
 
