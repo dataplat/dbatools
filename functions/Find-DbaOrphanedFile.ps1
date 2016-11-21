@@ -1,4 +1,4 @@
-﻿Function Find-DbaOrphanedFile
+Function Find-DbaOrphanedFile
 {
 <#
 .SYNOPSIS 
@@ -85,10 +85,10 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 	)
 	BEGIN
 	{		
-		function Format-Comparison 
+		function Get-SQLDirTreeQuery 
 		{
 			param
-			(
+			(	
 				$PathList
 			)	
 			# use sysaltfiles in lower versions
@@ -104,57 +104,73 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 				SET parent = @dir
 				WHERE parent IS NULL;
 "@
-			if ($smoserver.versionMajor -le 8)
-			{
-				# this will not have the ability to peek into filestream stuff because sysaltfiles doesnt use it
-				$query_files_sql = @"	
-					SELECT e.fs_filename AS filename, parent
+			$query_files_sql = @"
+					SELECT e.fs_filename AS filename, e.parent
 					FROM #enum AS e
-						LEFT JOIN
-					(
-						SELECT REVERSE(SUBSTRING(REVERSE(filename), 0, CHARINDEX('\', REVERSE(filename)))) AS [current_database_files]
-						FROM sys.sysaltfiles AS m
-					) AS mf
-						ON mf.[current_database_files] = e.fs_filename
-					WHERE fs_filename NOT IN( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr' ) AND 
-						[current_database_files] IS NULL AND 
-						is_file = 1;
-"@				
+					WHERE e.fs_filename NOT IN( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr' )
+					AND is_file = 1;
+"@
+			# build the query string based on how many directories they want to enumerate
+			$sql = $q1
+			$sql += $( $PathList | % { "$([System.Environment]::Newline)$($q2 -Replace 'dirname',$_)" } )
+			$sql += $query_files_sql
+			Write-Debug $sql
+			return $sql
+		}
+		function Get-SqlFileStructure
+		{
+			param
+			(
+				[Parameter(Mandatory = $true, Position = 1)]
+				[Microsoft.SqlServer.Management.Smo.SqlSmoObject]$smoserver
+			)
+			
+			if ($smoserver.versionMajor -eq 8)
+			{
+				$sql = "select filename from sysaltfiles"
 			}
 			else
 			{
-				$query_files_sql = @"	
-					SELECT e.fs_filename AS filename, parent
-					FROM #enum AS e
-						LEFT JOIN
-					(
-						SELECT REVERSE(SUBSTRING(REVERSE(physical_name), 0, CHARINDEX('\', REVERSE(physical_name)))) AS [current_database_files]
-						FROM sys.master_files AS m
-					) AS mf
-						ON mf.[current_database_files] = e.fs_filename
-					WHERE fs_filename NOT IN( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr' ) AND 
-						[current_database_files] IS NULL AND 
-						is_file = 1;
-"@
+				$sql = "select physical_name as filename from sys.master_files"
 			}
-			# build the query string based on how many directories they want to enumerate
-			$sql = $q1
-			$sql += $( $PathList | % { "$([System.Environment]::Newline)$($q2 -Replace 'dirname',$_)" } ) 	
-			$sql += $query_files_sql				
-			write-debug $sql		
-			return $sql
-		}				
+			
+			$dbfiletable = $smoserver.ConnectionContext.ExecuteWithResults($sql)
+			$ftfiletable = $dbfiletable.Tables[0].Clone()
+			$dbfiletable.Tables[0].TableName = "data"
+			
+			# FIXME: the following block is skipped because $databaselist is null.
+			# on a later release we can extensively test it
+			foreach ($db in $databaselist)
+			{
+				# Add support for Full Text Catalogs in Sql Server 2005 and below
+				if ($server.VersionMajor -lt 10)
+				{
+					#$dbname = $db.name
+					$fttable = $null = $smoserver.Databases[$database].ExecuteWithResults('sp_help_fulltext_catalogs')
+					
+					foreach ($ftc in $fttable.Tables[0].rows)
+					{
+						$null = $ftfiletable.Rows.add($ftc.Path)
+					}
+				}
+			}
+			
+			$null = $dbfiletable.Tables.Add($ftfiletable)
+			return $dbfiletable.Tables.Filename
+		}
+		
 		$Paths = @()
 		$allfiles = @()
 		$FileType += "mdf", "ldf", "ndf"
 		$systemfiles = "distmdl.ldf", "distmdl.mdf", "mssqlsystemresource.ldf", "mssqlsystemresource.mdf"
+		$valid_sqlfiles = @()
 	}
 	
 	PROCESS
 	{
 		foreach ($servername in $sqlserver)
 		{			
-			$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential													
+			$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
 			# Get the default data and log directories from the instance
 			Write-Debug "Adding paths"
 			$Paths += $server.RootDirectory + "\DATA"
@@ -162,54 +178,43 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 			$Paths += Get-SqlDefaultPaths $server log
 			$Paths += $server.MasterDBPath
 			$Paths += $server.MasterDBLogPath
-			$Paths += $Path	
-			# Need to do further testing around this
-			if ($server.VersionMajor -lt 10)			
-			{
-				# Add support for Full Text Catalogs in Sql Server 2005 and below
-				foreach ($db in $databaselist)
-				{
-					if ($smoserver.Databases[$database].ExecuteWithResults("SELECT FULLTEXTSERVICEPROPERTY('IsFullTextInstalled')").Tables[0][0] -eq 1)
-					{
-						Write-Debug "Gathering Full Text Information"
-						$fttable = $smoserver.Databases[$database].ExecuteWithResults('sp_help_fulltext_catalogs')						
-						foreach ($ftc in $fttable.Tables[0].rows)
-						{
-							$Paths += $ftc.Path
-						}
-					}
-				}
-			}
+			$Paths += $Path
+			
 			$Paths = $Paths | % { "$_".TrimEnd("\") } | Sort-Object -Unique
-			$orphanedfiles = @()									
-			$orphan_query = $( Format-Comparison $Paths )				 		
-			$orphanedfiles += $server.Databases['master'].ExecuteWithResults($orphan_query).Tables[0] | % { "$($_.parent)\$($_.filename)" }
-			$orphanedfiles = $orphanedfiles | ? { $_ }   # Remove blanks
-			$matching_orphans = @()				
+			$dirtreefiles = @()
+			$dirtree_query = $( Get-SQLDirTreeQuery $Paths )
+			$dirtreefiles += $server.Databases['master'].ExecuteWithResults($dirtree_query).Tables[0] | % { 
+				 [IO.Path]::combine($_.parent,$_.filename)
+				} | % { [IO.Path]::GetFullPath($_) } | Sort-Object -Unique
+			$dirtreefiles = $dirtreefiles | ? { $_ }   # Remove blanks
+			
+			$valid_sqlfiles = Get-SqlFileStructure $server | % { [IO.Path]::GetFullPath($_) } | Sort-Object -Unique
+			
+			$matching_files = @()
 
-			Write-Verbose "Found $($orphanedfiles.count) loose files."
-			Write-Verbose "Comparing to $($FileType.count) file types."
-			foreach ($file in  $orphanedfiles) 
+			foreach ($file in  $dirtreefiles) 
 			{ 
 				foreach ($type in $FileType) 
 				{
-					write-debug "Comparing $file to *$type"
-					if ($file -like "*$type")
-					{								
-						$matching_orphans += $file
+					if ($file.ToLower().EndsWith($type.ToLower()))
+					{
+						$matching_files += $file
 					}
 				} 
-			}					 		
-			foreach ($file in $matching_orphans)
+			}
+			foreach ($file in $matching_files)
 			{
-				$allfiles += [pscustomobject]@{
-					Server = $server.name
-					Filename = $file
-					RemoteFilename = Join-AdminUnc -Servername $server.netname -Filepath $file
+				Write-Verbose "Analyzing $file"
+				if(!($file -in $valid_sqlfiles)) {
+					$allfiles += [pscustomobject]@{
+						Server = $server.name
+						Filename = $file
+						RemoteFilename = Join-AdminUnc -Servername $server.netname -Filepath $file
+					}
 				}
 			}
 		}
-	}					
+	}
 	END
 	{
 		$server.ConnectionContext.Disconnect()
