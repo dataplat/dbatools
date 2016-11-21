@@ -10,6 +10,8 @@ This command is efficient because it initializes properties that do not cause en
 By default, this command also sets the client to "dbatools PowerShell module - dbatools.io - custom connection" if you're doing anything that requires profiling, you can look for this client name.
 
 Alternatively, you can pass in whichever client name you'd like using the -ClientName parameter.
+	
+See https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.connectionstring.aspx for more information about ConnectionString properties.
 
 .PARAMETER SqlServer
 The SQL Server that you're connecting to.
@@ -17,9 +19,56 @@ The SQL Server that you're connecting to.
 .PARAMETER Credential
 Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determiend by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
+.PARAMETER AccessToken	
+
+.PARAMETER AppendConnectionString	
+	
+.PARAMETER ApplicationIntent	
+
+.PARAMETER BatchSeparator	
+
 .PARAMETER ClientName
 By default, this command sets the client to "dbatools PowerShell module - dbatools.io - custom connection" if you're doing anything that requires profiling, you can look for this client name. Using -ClientName allows you to set your own custom client.
 
+.PARAMETER ConnectTimeout	
+
+.PARAMETER EncryptConnection	
+
+.PARAMETER FailoverPartner	
+
+.PARAMETER InUse	
+
+.PARAMETER IsActiveDirectoryUniversalAuth	
+
+.PARAMETER LockTimeout	
+
+.PARAMETER MaxPoolSize	
+
+.PARAMETER MinPoolSize	
+
+.PARAMETER MultipleActiveResultSets	
+
+.PARAMETER MultiSubnetFailover	
+
+.PARAMETER NetworkProtocol	
+
+.PARAMETER NonPooledConnection	
+
+.PARAMETER PacketSize	
+
+.PARAMETER PooledConnectionLifetime	
+
+.PARAMETER SqlExecutionModes	
+
+.PARAMETER StatementTimeout	
+
+.PARAMETER TrueName	
+
+.PARAMETER TrustServerCertificate	
+
+.PARAMETER WorkstationId	
+
+	
 .NOTES
 dbatools PowerShell module (https://dbatools.io)
 Copyright (C) 2016 Chrissy LeMaire
