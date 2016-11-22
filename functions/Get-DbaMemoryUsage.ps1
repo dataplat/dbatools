@@ -9,7 +9,7 @@ Retrieves the amount of memory per performance counter
 
 Default output includes columns Server, counter instance, counter, number of pages, memory in KB, memory in MB
 
-.PARAMETER SqlServer
+.PARAMETER ComputerName
 The SQL Server that you're connecting to.
 
 .PARAMETER Credential
@@ -31,7 +31,7 @@ You should have received a copy of the GNU General Public License along with thi
  https://dbatools.io/Get-DbaMemoryUsage
 
 .EXAMPLE
-Get-DbaMemoryUsage -ComputerName ServerA\sql987
+Get-DbaMemoryUsage -ComputerName ServerA
 
 Returns a custom object displaying Server, counter instance, counter, number of pages, memory in KB, memory in MB
 
@@ -66,7 +66,7 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
         }
     else
         {
-        $Memcounters = '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace|Memory Grants )'
+        $Memcounters = '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)'
         $Plancounters = '(cache pages|procedure plan|ad hoc sql plan|prepared SQL Plan)'
         $BufManpagecounters = '(Free pages|Reserved pages|Stolen pages|Total pages|Database pages|target pages|extension .* pages)'
         }
