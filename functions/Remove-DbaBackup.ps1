@@ -12,7 +12,7 @@ backups have been archived to your archive location before removal.
 
 Also included is the ability to remove empty folders as part of this cleanup activity.
 
-.PARAMETER BackupFolder
+.PARAMETER Path
 Name of the base level folder to search for backup files. 
 Deletion of backup files will be recursive from this location.
 
@@ -38,7 +38,7 @@ Formatting Examples:
 .PARAMETER CheckArchiveBit
 Check the archive bit on files before deletion
 
-.PARAMETER RemoveEmptyBackupFolders
+.PARAMETER RemoveEmptyBackupFolder
 Remove any empty folders after the cleanup process is complete.
 
 .NOTES
@@ -64,37 +64,37 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Remove-DbaBackup
 
 .EXAMPLE
-Remove-DbaBackup -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtension 'trn' -RetentionPeriod '48h'
+Remove-DbaBackup -Path 'C:\MSSQL\SQL Backup\' -BackupFileExtension trn -RetentionPeriod 48h
 
-The cmdlet will remove '*.trn' files from 'C:\MSSQL\Backup\' and all subdirectories that are more than 48 hours. 
+The cmdlet will remove '*.trn' files from 'C:\MSSQL\SQL Backup\' and all subdirectories that are more than 48 hours. 
 
 .EXAMPLE
-Remove-DbaBackup -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtension 'trn' -RetentionPeriod '48h' -WhatIf
+Remove-DbaBackup -Path 'C:\MSSQL\SQL Backup\' -BackupFileExtension trn -RetentionPeriod 48h -WhatIf
  
 Same as example #1, but using the WhatIf parameter. The WhatIf parameter will allow the cmdlet show you what it will do, without actually doing it.
 In this case, no trn files will be deleted. Instead, the cmdlet will output what it will do when it runs. This is a good preventatitive measure
 especially when you are first configuring the cmdlet calls. 
 
 .EXAMPLE
-Remove-DbaBackup -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtension 'bak' -RetentionPeriod '7d' -CheckArchiveBit
+Remove-DbaBackup -Path 'C:\MSSQL\Backup\' -BackupFileExtension bak -RetentionPeriod 7d -CheckArchiveBit
 
 The cmdlet will remove '*.bak' files from 'C:\MSSQL\Backup\' and all subdirectories that are more than 7 days old. 
 It will also ensure that the bak files have been archived using the archive bit before removing them.
 
 .EXAMPLE
-Remove-DbaBackup -BackupFolder 'C:\MSSQL\Backup\' -BackupFileExtension 'bak' -RetentionPeriod '1w' -RemoveEmptyBackupFolders
+Remove-DbaBackup -Path 'C:\MSSQL\Backup\' -BackupFileExtension bak -RetentionPeriod 1w -RemoveEmptyBackupFolder
 
 The cmdlet will remove '*.bak' files from 'C:\MSSQL\Backup\' and all subdirectories that are more than 1 week old. 
 It will also remove any backup folders that no longer contain backup files.
-
 
 
 #>
 	[CmdletBinding(SupportsShouldProcess=$true)]
 	Param (
 		[parameter(Mandatory = $true,HelpMessage="Full path to the root level backup folder (ex. 'C:\SQL\Backups'")]
-        [ValidateScript({Test-Path $_ -PathType 'Container'})]
-		[string]$BackupFolder ,
+		[Alias("BackupFolder")]
+		[ValidateScript({Test-Path $_ -PathType 'Container'})]
+		[string]$Path,
 
 		[parameter(Mandatory = $true,HelpMessage="Backup File extension to remove (ex. bak, trn, dif)")]
 		[string]$BackupFileExtension ,
@@ -106,7 +106,7 @@ It will also remove any backup folders that no longer contain backup files.
 		[switch]$CheckArchiveBit = $false ,
 
         [parameter(Mandatory = $false)]
-		[switch]$RemoveEmptyBackupFolders = $false
+		[switch]$RemoveEmptyBackupFolder = $false
 	)
 
 	BEGIN
@@ -158,7 +158,7 @@ It will also remove any backup folders that no longer contain backup files.
             $ReturnDatetime
         }
 
-        function Get-EmptyBackupFolders 
+        function Get-EmptyBackupFolder 
         {
             [cmdletbinding()]
             param (
@@ -181,18 +181,18 @@ It will also remove any backup folders that no longer contain backup files.
 	{
 		# Process stuff
         Write-Output ("Started at $Start")
-        Write-Output ("Removing backups from '$BackupFolder'")
+        Write-Output ("Removing backups from $Path")
 
         # Convert Retention Value to an actual DateTime
         try {
             $RetentionDate = Convert-UserFriendlyRetentionToDatetime -UserFriendlyRetention $RetentionPeriod
-            Write-Output "Backup Retention Date set to '$RetentionDate'"
+            Write-Output "Backup Retention Date set to $RetentionDate"
         } catch {
             throw $_
         }
 
         # Generate list of files that are to be removed
-        $FilesToDelete = Get-ChildItem "$BackupFolder" -Filter "*.$BackupFileExtension" -Recurse | `
+        $FilesToDelete = Get-ChildItem "$Path" -Filter "*.$BackupFileExtension" -Recurse | `
             Where-Object {$_.LastWriteTime -lt $RetentionDate}
             
         # Filter out unarchived files if -CheckArchiveBit parameter is used
@@ -215,12 +215,12 @@ It will also remove any backup folders that no longer contain backup files.
  
         # Cleanup empty backup folders. Using a DO/WHILE loop to force it to go through the logic at least once so we can display WhatIf if we need to
         do {
-            if ($RemoveEmptyBackupFolders.IsPresent) {
+            if ($RemoveEmptyBackupFolder.IsPresent) {
                 # Get the empty backup folders
-                $EmptyBackupFolders = Get-EmptyBackupFolders -BaseLocation $BackupFolder
+                $EmptyBackupFolder = Get-EmptyBackupFolder -BaseLocation $Path
 
-                foreach ($folder in $EmptyBackupFolders) {
-                    if ($Pscmdlet.ShouldProcess($BackupFolder, "Removing empty folder '.$(($folder.FullName).Replace($BackupFolder,''))")) {
+                foreach ($folder in $EmptyBackupFolder) {
+                    if ($Pscmdlet.ShouldProcess($Path, "Removing empty folder '.$(($folder.FullName).Replace($Path,''))")) {
                         try {
                             Write-Output "Removing empty folder '$($folder.FullName)'"
                             $folder.FullName | Remove-Item -Force
@@ -231,9 +231,9 @@ It will also remove any backup folders that no longer contain backup files.
                 }
             }
             # Refresh the empty folders. This will allow us to recursively clean them up
-            $EmptyBackupFolders = Get-EmptyBackupFolders -BaseLocation $BackupFolder
+            $EmptyBackupFolder = Get-EmptyBackupFolder -BaseLocation $Path
           
-        } while ($RemoveEmptyBackupFolders.IsPresent -and !$WhatIfPreference -and $EmptyBackupFolders)
+        } while ($RemoveEmptyBackupFolder.IsPresent -and !$WhatIfPreference -and $EmptyBackupFolder)
 	}
 
 	END
