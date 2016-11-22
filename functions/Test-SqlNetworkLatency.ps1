@@ -92,14 +92,15 @@ Times the execution results return of "select top 10 * from otherdb.dbo.table" 1
 				$start = [System.Diagnostics.Stopwatch]::StartNew()
 				$currentcount = 0
 				$sourceserver = Connect-SqlServer -SqlServer $server -SqlCredential $SqlCredential
-				$singleresult = $sourceserver.ConnectionContext.ExecuteWithResults($query)
 				
 				do
 				{
+					
 					if (++$currentcount -eq 1)
 					{
 						$first = [System.Diagnostics.Stopwatch]::StartNew()
 					}
+					$singleresult = $sourceserver.ConnectionContext.ExecuteWithResults($query)
 					if ($currentcount -eq $count)
 					{
 						$last = $first.elapsed
