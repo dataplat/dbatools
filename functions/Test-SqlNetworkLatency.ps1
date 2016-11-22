@@ -27,7 +27,7 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER Query
-Specifies the query to be executed. By default, "SELECT TOP 100 * FROM sys.objects" will be executed on master. To execute in other databases, use fully qualified table names.
+Specifies the query to be executed. By default, "SELECT TOP 100 * FROM information_schema.tables" will be executed on master. To execute in other databases, use fully qualified table names.
 
 .PARAMETER Count
 Specifies how many times the query should be executed. By default, the query is executed three times.
@@ -55,12 +55,12 @@ https://dbatools.io/Test-SqlNetworkLatency
 .EXAMPLE
 Test-SqlNetworkLatency -SqlServer sqlserver2014a, sqlcluster
 
-Times the roundtrip return of "SELECT TOP 100 * FROM sys.objects" on sqlserver2014a and sqlcluster using Windows credentials. 
+Times the roundtrip return of "SELECT TOP 100 * FROM information_schema.tables" on sqlserver2014a and sqlcluster using Windows credentials. 
 
 .EXAMPLE   
 Test-SqlNetworkLatency -SqlServer sqlserver2014a -SqlCredential $cred
 	
-Times the execution results return of "SELECT TOP 100 * FROM sys.objects" on sqlserver2014a using SQL credentials. 
+Times the execution results return of "SELECT TOP 100 * FROM information_schema.tables" on sqlserver2014a using SQL credentials. 
 	
 .EXAMPLE   
 Test-SqlNetworkLatency -SqlServer sqlserver2014a, sqlcluster, sqlserver -Query "select top 10 * from otherdb.dbo.table" -Count 10
@@ -74,7 +74,7 @@ Times the execution results return of "select top 10 * from otherdb.dbo.table" 1
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
 		[object]$SqlCredential,
-		[string]$Query = "SELECT TOP 100 * FROM sys.objects",
+		[string]$Query = "select top 100 * from information_schema.tables",
 		[int]$Count = 3
 	)
 	
@@ -92,14 +92,15 @@ Times the execution results return of "select top 10 * from otherdb.dbo.table" 1
 				$start = [System.Diagnostics.Stopwatch]::StartNew()
 				$currentcount = 0
 				$sourceserver = Connect-SqlServer -SqlServer $server -SqlCredential $SqlCredential
-				$singleresult = $sourceserver.ConnectionContext.ExecuteWithResults($query)
 				
 				do
 				{
+					
 					if (++$currentcount -eq 1)
 					{
 						$first = [System.Diagnostics.Stopwatch]::StartNew()
 					}
+					$singleresult = $sourceserver.ConnectionContext.ExecuteWithResults($query)
 					if ($currentcount -eq $count)
 					{
 						$last = $first.elapsed
