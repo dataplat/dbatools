@@ -1,16 +1,38 @@
 Function Export-SqlSpConfigure
 {
- <#
+<#
             .SYNOPSIS
-              Exports advanced sp_configure global configuration options to sql file.
+             Exports advanced sp_configure global configuration options to sql file.
+
+            .DESCRIPTION
+            Exports advanced sp_configure global configuration options to sql file.
+
+            .PARAMETER SqlCredential
+            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+            
+            $scred = Get-Credential, this pass $scred object to the param. 
+            
+            Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+
+            .PARAMETER SqlServer
+            The SQL Server that you're connecting to.
+
+            .PARAMETER Path
+            The Path to the SQL File
+
+            .PARAMETER WhatIf 
+            Shows what would happen if the command were to run. No actions are actually performed. 
+            
+            .PARAMETER Confirm 
+            Prompts you for confirmation before executing any changing operations within the command. 
 
             .EXAMPLE
-               $outputfile = Export-SqlSpConfigure $sourceserver -Path C:\temp\sp_configure.sql
+            $outputfile = Export-SqlSpConfigure $sourceserver -Path C:\temp\sp_configure.sql
 
             .OUTPUTS
-                File to disk, and string path.
-			
-        #>
+            File to disk, and string path.
+
+#>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[Parameter(Mandatory = $true)]
@@ -72,6 +94,44 @@ Function Import-SqlSpConfigure
  <#
             .SYNOPSIS
               Updates sp_configure settings on destination server.
+
+            .DESCRIPTION
+            Updates sp_configure settings on destination server.
+
+            .PARAMETER Source
+            Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+
+            .PARAMETER Destination
+            Destination SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+            
+            .PARAMETER SourceSqlCredential
+            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+            
+            $scred = Get-Credential, this pass $scred object to the param. 
+            
+            Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+            
+            .PARAMETER DestinationSqlCredential
+            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+            
+            $dcred = Get-Credential, this pass this $dcred to the param. 
+            
+            Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+
+            .PARAMETER SqlServer
+            The SQL Server that you're connecting to.
+
+            .PARAMETER Path
+            The Path to the SQL File
+
+            .PARAMETER Force
+            Overrides Major Version Check
+
+            .PARAMETER WhatIf 
+            Shows what would happen if the command were to run. No actions are actually performed. 
+            
+            .PARAMETER Confirm 
+            Prompts you for confirmation before executing any changing operations within the command. 
 
             .EXAMPLE
                 Import-SqlSpConfigure sqlserver sqlcluster $SourceSqlCredential $DestinationSqlCredential
