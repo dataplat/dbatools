@@ -8,12 +8,13 @@ Find orphan users with existing login and remap.
 An orphan user is defined by a user that does not have their matching login. (Login property = "")
 	
 If the matching login exists it must be:
-    .Enabled
-    .Not a system object
-    .Not locked
-    .Have the same name that user
+    Enabled
+    Not a system object
+    Not locked
+    Have the same name that user
 
 You can drop users that does not have their matching login by especifing the parameter -RemoveNotExisting This will be made by calling Remove-SqlOrphanUser function.
+
 	
 .PARAMETER SqlServer
 The SQL Server instance.
@@ -82,7 +83,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
 https://dbatools.io/Repair-SqlOrphanUser
-
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
