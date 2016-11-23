@@ -22,7 +22,7 @@ Credential object used to connect to the SQL Server as a different user.
 .PARAMETER Detailed
 Specifies if the servername is updatable. If updatable -eq $false, it will return the reasons why.
 
-.PARAMETER NoWarnings
+.PARAMETER NoWarning
 This is an internal parameter used by Repair-DbaServerName which produces warnings of its own.
 
 .NOTES 
