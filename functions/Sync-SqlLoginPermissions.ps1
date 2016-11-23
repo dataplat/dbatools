@@ -38,6 +38,11 @@ Excludes specified logins. This list is auto-populated for tab completion.
 .PARAMETER Login
 Migrates ONLY specified logins. This list is auto-populated for tab completion. Multiple logins allowed.
 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
 
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
@@ -396,6 +401,12 @@ https://dbatools.io/Sync-SqlLoginPermissions
 				
 				if ($destdb -ne $null)
 				{
+					if (!$destdb.IsAccessible)
+					{
+					    Write-Output "Database [$($destdb.Name)] is not accessible. Skipping"
+					    Continue
+					}
+					
 					if ($destdb.users[$dbusername] -eq $null)
 					{
 						If ($Pscmdlet.ShouldProcess($destination, "Adding $dbusername to $dbname"))

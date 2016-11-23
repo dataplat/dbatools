@@ -157,6 +157,15 @@ For other migration objects, it will just drop existing items and readd, if -for
 .PARAMETER WhatIf
 Shows what would happen if the command were to run. No actions are actually performed.
 
+.PARAMETER NoRecovery
+Leaves the databases in No Recovery state to enable further backups to be added
+
+.PARAMETER IncludeSupportDbs
+Appears to not be used
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
 .NOTES 
 Author: Chrissy LeMaire
 Limitations: 	Doesn't cover what it doesn't cover (certificates, etc)
@@ -339,7 +348,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating SQL credentials"
 				try
 				{
-					Copy-SqlCredential -Source $sourceserver.name -Destination $destserver.name -Force:$Force
+					Copy-SqlCredential -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch { Write-Error "Credential migration reported the following error $($_.Exception.Message) " }
 			}
@@ -411,7 +420,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			Write-Output "`n`nMigrating linked servers"
 			try
 			{
-				Copy-SqlLinkedServer -Source $sourceserver.name -Destination $destserver.name -Force:$Force
+				Copy-SqlLinkedServer -Source $sourceserver -Destination $destserver -Force:$Force
 			}
 			catch { Write-Error "Linked server migration reported the following error $($_.Exception.Message) " }
 		}
