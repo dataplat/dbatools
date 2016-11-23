@@ -32,6 +32,12 @@ List of users to repair
 .PARAMETER RemoveNotExisting
 If passed, all users that not have their matching login will be dropped from database
 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
 .EXAMPLE
 Repair-SqlOrphanUser -SqlServer sql2005 
 
