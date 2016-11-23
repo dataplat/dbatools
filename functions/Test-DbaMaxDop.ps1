@@ -30,6 +30,9 @@ $cred = Get-Credential, this pass this $cred to the param.
 
 Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
+.PARAMETER Detailed
+Provides Detailed information
+
 .NOTES 
 Author  : Cláudio Silva (@claudioessilva)
 Requires: sysadmin access on SQL Servers
