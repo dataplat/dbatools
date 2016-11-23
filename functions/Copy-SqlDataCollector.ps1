@@ -2,7 +2,6 @@ Function Copy-SqlDataCollector
 {
 <#
 .SYNOPSIS
-
 Migrates user SQL Data Collector collection sets. SQL Data Collector configuration is on the agenda, but it's hard.
 
 .DESCRIPTION
