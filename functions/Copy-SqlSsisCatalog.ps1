@@ -15,6 +15,9 @@ Source SQL Server.You must have sysadmin access and server version must be SQL S
 .PARAMETER Destination
 Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2012 or greater.
 
+.PARAMETER Force
+Drops and recreates the SSIS Catalog if it exists
+
 .PARAMETER Project
 Specify a source Project name.
 
