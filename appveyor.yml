@@ -18,3 +18,8 @@ test_script:
   - ps: . .\Tests\appveyor.pester.ps1 -Finalize
 # Notify Slack Channel
 
+# Trying to set the build number
+environment: 
+  environment: development
+  version: 0.8.6.$(appveyor_build_number)
+
