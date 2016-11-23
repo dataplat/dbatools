@@ -2,7 +2,10 @@ Function Set-SqlMaxMemory
 {
 <# 
 .SYNOPSIS 
-Sets SQL Server max memory then displays information relating to SQL Server Max Memory configuration settings. Works on SQL Server 2000-2014.
+Sets SQL Server max memory then displays information relating to SQL Server Max Memory configuration settings. 
+
+.DESCRIPTION
+Sets SQL Server max memory then displays information relating to SQL Server Max Memory configuration settings.Works on SQL Server 2000-2014.
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
@@ -15,6 +18,16 @@ Allows you to specify a comma separated list of servers to query.
 
 .PARAMETER MaxMb
 Specifies the max megabytes
+
+.PARAMETER SqlCredential 
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+  
+$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.  
+ 
+Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user. 
+
+.PARAMETER Collection
+Results of Get-SQLMaxMemory to be passed into the command
 
 .NOTES 
 Author  : Chrissy LeMaire (@cl), netnerds.net
@@ -47,7 +60,7 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 		[parameter(Position = 1)]
 		[int]$MaxMb,
 		[Parameter(ValueFromPipeline = $True)]
-		[object]$collection,
+		[object]$Collection,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	PROCESS
