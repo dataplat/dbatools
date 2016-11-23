@@ -27,7 +27,9 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .EXAMPLE
-$outputfile = Export-SqlSpConfigure $sourceserver -Path C:\temp\sp_configure.sql
+Export-SqlSpConfigure $sourceserver -Path C:\temp\sp_configure.sql
+
+Exports the SPConfigure on sourceserver to the file C:\temp\sp_configure.sql
 
 .OUTPUTS
 File to disk, and string path.
@@ -141,10 +143,16 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .EXAMPLE
-    Import-SqlSpConfigure sqlserver sqlcluster $SourceSqlCredential $DestinationSqlCredential
+Import-SqlSpConfigure sqlserver sqlcluster $SourceSqlCredential $DestinationSqlCredential
+
+Imports the spconfigure settings from the source server sqlserver and sets them on the sqlcluster server
+using the SQL credentials stored in the variables
 
 .EXAMPLE
-    Import-SqlSpConfigure -SqlServer sqlserver -Path .\spconfig.sql -SqlCredential $SqlCredential
+Import-SqlSpConfigure -SqlServer sqlserver -Path .\spconfig.sql -SqlCredential $SqlCredential
+
+Imports the spconfigure settings from the file .\spconfig.sql and sets them on the sqlcluster server
+using the SQL credential stored in the variables
 
 .OUTPUTS
     $true if success
