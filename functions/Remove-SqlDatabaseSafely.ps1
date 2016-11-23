@@ -254,9 +254,9 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 						$timeout = New-Timespan -seconds 60
 						$sw = [diagnostics.stopwatch]::StartNew()
 						$agentstatus = (Get-Service -ComputerName $ipaddr -DisplayName $serviceName).Status
-						while ($dbStatus -ne 'Running' -and $sw.elapsed -lt $timeout)
+						while ($AgentStatus -ne 'Running' -and $sw.elapsed -lt $timeout)
 						{
-							$dbStatus = (Get-Service -ComputerName $ipaddr -DisplayName $serviceName).Status
+							$agentStatus = (Get-Service -ComputerName $ipaddr -DisplayName $serviceName).Status
 						}
 					}
 				}
