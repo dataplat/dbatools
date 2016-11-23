@@ -21,6 +21,6 @@ test_script:
 # Trying to set the build number
 environment: 
   environment: development
-  version: 0.8.6.$(appveyor_build_number)
+  version: 0.8.$(appveyor_build_number)
 
 
