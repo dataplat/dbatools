@@ -34,6 +34,12 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 
 SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
+.PARAMETER NoJobs
+Doesnot export the Jobs
+
+.PARAMETER NoDatabases
+oes not export the databases
+
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
 
