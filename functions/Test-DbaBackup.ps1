@@ -121,18 +121,16 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 	[CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance", "Source")]
 		[object]$SqlServer,
-		[parameter(Mandatory = $false)]
 		[object]$SqlCredential,
-		[parameter(Mandatory = $false)]
 		[object]$Destination = $SqlServer,
-		[parameter(Mandatory = $false)]
+		[string]$BackupPath,
+		[string]$BackupsDirectory,
+		[string]$DataDirectory,
+		[string]$LogDirectory,
 		[switch]$NoCheck,
-		[parameter(Mandatory = $false)]
 		[string]$DbccErrorFolder = [Environment]::GetFolderPath("mydocuments"),
-		[parameter(Mandatory = $false)]
-		[switch]$AllDatabases,
 		[switch]$Force
 		
 	)
@@ -143,13 +141,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 	{
 		$databases = $psboundparameters.Databases
 		
-		if ($AllDatabases -eq $false -and $databases.length -eq 0)
-		{
-			throw "You must specify at least one database. Use -Databases or -AllDatabases."
-		}
-		
 		$sourceserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $sqlCredential -ParameterConnection
-		
 		
 		if ($SqlServer -ne $destination)
 		{
@@ -158,9 +150,12 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			$sourcenb = $sourceserver.ComputerNamePhysicalNetBIOS
 			$destnb = $sourceserver.ComputerNamePhysicalNetBIOS
 			
-			if ($BackupFolder.StartsWith("\\") -eq $false -and $sourcenb -ne $destnb)
+			if ($BackupFolder)
 			{
-				throw "Backup folder must be a network share if the source and destination servers are not the same."
+				if ($BackupFolder.StartsWith("\\") -eq $false -and $sourcenb -ne $destnb)
+				{
+					throw "Backup folder must be a network share if the source and destination servers are not the same."
+				}
 			}
 		}
 		else
@@ -171,23 +166,20 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
 		
-		if ($alldatabases -or $databases.count -eq 0)
+		if ($databases.count -eq 0)
 		{
-			$databases = ($sourceserver.databases | Where-Object{ $_.IsSystemObject -eq $false }).Name
+			$databases = $sourceserver.databases.Name
 		}
 		
-		if (!(Test-SqlPath -SqlServer $destserver -Path $backupFolder))
+		
+		if (!$datadirectory)
 		{
-			$serviceaccount = $destserver.ServiceAccount
-			throw "Can't access $backupFolder Please check if $serviceaccount has permissions"
+			$datadirectory = Get-SqlDefaultPaths -SqlServer $server -FileType mdf
 		}
 		
-		$jobname = "Rationalised Final Database Restore for $dbname"
-		$jobStepName = "Restore the $dbname database from Final Backup"
-		
-		if (!($destserver.Logins | Where-Object{ $_.Name -eq $jobowner }))
+		if (!$logdirectory)
 		{
-			throw "$destination does not contain the login $jobowner - Please fix and try again - Aborting"
+			$logdirectory = Get-SqlDefaultPaths -SqlServer $server -FileType ldf
 		}
 		
 		Function Start-DbccCheck
@@ -205,7 +197,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				try
 				{
 					$null = $db.CheckTables('None')
-					Write-Output "Dbcc CHECKDB finished successfully for $dbname on $servername"
+					Write-Verbose "Dbcc CHECKDB finished successfully for $dbname on $servername"
 				}
 				
 				catch
@@ -224,249 +216,116 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				}
 			}
 		}
-		
-		Function Restore-Database1
-		{
-			<# 
-				.SYNOPSIS
-				Internal function. Restores .bak file to Sql database. Creates db if it doesn't exist. $filestructure is
-				a custom object that contains logical and physical file locations.
-
-				ALTERED To Add TSql switch and remove norecovery switch default
-			#>
-			
-			[CmdletBinding()]
-			param (
-				[Parameter(Mandatory = $true)]
-				[Alias('ServerInstance', 'SqlInstance')]
-				[object]$server,
-				[Parameter(Mandatory = $true)]
-				[ValidateNotNullOrEmpty()]
-				[string]$dbname,
-				[Parameter(Mandatory = $true)]
-				[string]$backupfile,
-				[string]$filetype = 'Database',
-				[Parameter(Mandatory = $true)]
-				[object]$filestructure,
-				[switch]$norecovery,
-				[System.Management.Automation.PSCredential]$sqlCredential,
-				[switch]$TSql = $false
-			)
-			
-			$server = Connect-SqlServer -SqlServer $server -SqlCredential $sqlCredential
-			$servername = $server.name
-			$server.ConnectionContext.StatementTimeout = 0
-			$restore = New-Object 'Microsoft.SqlServer.Management.Smo.Restore'
-			$restore.ReplaceDatabase = $true
-			
-			foreach ($file in $filestructure.values)
-			{
-				$movefile = New-Object 'Microsoft.SqlServer.Management.Smo.RelocateFile'
-				$movefile.LogicalFileName = $file.logical
-				$movefile.PhysicalFileName = $file.physical
-				$null = $restore.RelocateFiles.Add($movefile)
-			}
-			
-			try
-			{
-				if ($TSql)
-				{
-					$restore.PercentCompleteNotification = 1
-					$restore.add_Complete($complete)
-					$restore.ReplaceDatabase = $true
-					$restore.Database = $dbname
-					$restore.Action = $filetype
-					$restore.NoRecovery = $norecovery
-					$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-					$device.name = $backupfile
-					$device.devicetype = 'File'
-					$restore.Devices.Add($device)
-					$restorescript = $restore.script($server)
-					return $restorescript
-				}
-				else
-				{
-					$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-						Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
-					}
-					$restore.add_PercentComplete($percent)
-					$restore.PercentCompleteNotification = 1
-					$restore.add_Complete($complete)
-					$restore.ReplaceDatabase = $true
-					$restore.Database = $dbname
-					$restore.Action = $filetype
-					$restore.NoRecovery = $norecovery
-					$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-					$device.name = $backupfile
-					$device.devicetype = 'File'
-					$restore.Devices.Add($device)
-					
-					Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-					$restore.sqlrestore($server)
-					Write-Progress -id 1 -activity "Restoring $dbname to $servername" -status 'Complete' -Completed
-					
-					return $true
-				}
-			}
-			catch
-			{
-				Write-Error "Restore failed: $($_.Exception)"
-				return $false
-			}
-		}
-		
 	}
 	PROCESS
 	{
-		$start = Get-Date
-		Write-Output "Starting Rationalisation Script at $start"
+		<#
+			$restorelist = Get-RestoreFileList -server $server -filepath C:\temp\whatever.bak
+			$filelist = $restorelist.Filelist
+			$dbname = $restorelist.DatabaseName
+		#>
 		
-		foreach ($dbname in $databases)
+		<#
+		if (!(Test-SqlPath -SqlServer $destserver -Path $backupFolder))
 		{
-			
-			$db = $sourceserver.databases[$dbname]
-			
-			# The db check is needed when the number of databases exceeds 255, then it's no longer autopopulated
-			if (!$db)
+			$serviceaccount = $destserver.ServiceAccount
+			throw "Can't access $backupFolder Please check if $serviceaccount has permissions"
+		}
+		#>
+		
+		if ($databases)
+		{
+			foreach ($dbname in $databases)
 			{
-				Write-Warning "$dbname does not exist on $source. Aborting routine for this database"
-				continue
-			}
-			
-			Write-Output "Starting Rationalisation of $dbname"
-			## if we want to Dbcc before to abort if we have a corrupt database to start with
-			if ($NoCheck -eq $false)
-			{
-				if ($Pscmdlet.ShouldProcess($dbname, "Running dbcc check on $dbname on $source"))
+				
+				$db = $sourceserver.databases[$dbname]
+				
+				# The db check is needed when the number of databases exceeds 255, then it's no longer autopopulated
+				if (!$db)
 				{
-					Write-Output "Starting Dbcc CHECKDB for $dbname on $source"
-					$dbccgood = Start-DbccCheck -Server $sourceserver -DBName $dbname
+					Write-Warning "$dbname does not exist on $source."
+					continue
+				}
+				
+				$lastbackup = Get-DbaBackupHistory -SqlServer $sourceserver -Databases $dbname -LastFull
+				
+				if ($source -ne $destination -and $lastbackup[0].Path.StartsWith('\\') -eq $false)
+				{
+					$fileexists = "Skipped"
+					$restoreresult = "Restore not located on shared location"
+					$dbccresult = "Skipped"
+				}
+				elseif ((Test-SqlPath -SqlServer $destserver -Path $lastbackup[0].Path) -eq $false)
+				{
+					$fileexists = $false
+					$restoreresult = "Skipped"
+					$dbccresult = "Skipped"
+				}
+				else
+				{
+					$restorelist = Get-RestoreFileList -server $destserver -filepath $lastbackup[0].Path
 					
-					if ($dbccgood -eq $false)
+					$filelist = $restorelist.Filelist
+					$dbname = $restorelist.DatabaseName
+					$temprestoreinfo = @()
+					
+					foreach ($file in $filelist)
 					{
-						if ($force -eq $false)
+						if ($file.Type -eq 'L')
 						{
-							Write-Output "DBCC failed for $dbname (you should check that).  Aborting routine for this database"
-							continue
+							$dir = $logdirectory
 						}
 						else
 						{
-							Write-Output "DBCC failed, but Force specified. Continuing."
+							$dir = $datadirectory
+						}
+						
+						$fn = Split-Path $file.PhysicalName -Leaf
+						$temprestoreinfo += [pscustomobject]@{
+							FileName = "$dir\dbatools-testrestore-$fn"
+							DatabaseName = "dbatools-testrestore-$dbname"
 						}
 					}
-				}
-			}
-			
-			if ($Pscmdlet.ShouldProcess($source, "Backing up $dbname"))
-			{
-				Write-Output "Starting Backup for $dbname on $source"
-				## Take a Backup
-				try
-				{
-					$timenow = [DateTime]::Now.ToString('yyyyMMdd_HHmmss')
-					$backup = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Backup
-					$backup.Action = [Microsoft.SqlServer.Management.SMO.BackupActionType]::Database
-					$backup.BackupSetDescription = "Final Full Backup of $dbname Prior to Dropping"
-					$backup.Database = $dbname
-					$backup.Checksum = $True
-					if ($sourceserver.versionMajor -gt 9)
+					
+					## Run a Dbcc No choice here
+					if ($Pscmdlet.ShouldProcess($dbname, "Running Dbcc CHECKDB on $dbname on $destination"))
 					{
-						$backup.CompressionOption = $backupCompression
-					}
-					if ($force -and $dbccgood -eq $false)
-					{
-						
-						$filename = "$backupFolder\$($dbname)_DBCCERROR_$timenow.bak"
-					}
-					else
-					{
-						$filename = "$backupFolder\$($dbname)_Final_Before_Drop_$timenow.bak"
+						Write-Verbose "Starting Dbcc CHECKDB for $dbname on $destination"
+						$null = Start-DbccCheck -Server $destserver -DbName $dbname
 					}
 					
-					$devicetype = [Microsoft.SqlServer.Management.Smo.DeviceType]::File
-					$backupDevice = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem($filename, $devicetype)
-					
-					$backup.Devices.Add($backupDevice)
-					#Progress
-					$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-						Write-Progress -id 1 -activity "Backing up database $dbname on $source to $filename" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
-					}
-					$backup.add_PercentComplete($percent)
-					$backup.add_Complete($complete)
-					Write-Progress -id 1 -activity "Backing up database $dbname on $source to $filename" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-					$backup.SqlBackup($sourceserver)
-					$null = $backup.Devices.Remove($backupDevice)
-					Write-Progress -id 1 -activity "Backing up database $dbname  on $source to $filename" -status "Complete" -Completed
-					Write-Output "Backup Completed for $dbname on $source "
-					
-					Write-Output "Running Restore Verify only on Backup of $dbname on $source"
-					try
+					if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination"))
 					{
-						$restoreverify = New-Object 'Microsoft.SqlServer.Management.Smo.Restore'
-						$restoreverify.Database = $dbname
-						$restoreverify.Devices.AddDevice($filename, $devicetype)
-						$result = $restoreverify.SqlVerify($sourceserver)
-						
-						if ($result -eq $false)
+						## Drop the database
+						try
 						{
-							Write-Warning "FAILED : Restore Verify Only failed for $filename on $server - aborting routine for this database"
+							$null = Remove-SqlDatabase -SqlServer $sourceserver -DbName $dbname
+							Write-Verbose "Dropped $dbname Database on $destination"
+						}
+						catch
+						{
+							Write-Warning "FAILED : To Drop database $dbname on $destination - Aborting"
+							Write-Exception $_
 							continue
 						}
-						
-						Write-Output "Restore Verify Only for $filename Succeeded "
-					}
-					catch
-					{
-						Write-Warning "FAILED : Restore Verify Only failed for $filename on $server - aborting routine for this database"
-						Write-Exception $_
-						continue
 					}
 				}
-				catch
-				{
-					Write-Exception $_
-					Write-Warning "FAILED : To backup database $dbname on $server - aborting routine for this database"
-					continue
+				
+				[pscustomobject]@{
+					Server = $source
+					Database = $dbname
+					File = $lastbackup.Path
+					FileExists = $fileexists
+					RestoreResult = $restoreresult
+					DbccResult = $dbccresult
 				}
 			}
-			
-			## Run a Dbcc No choice here
-			if ($Pscmdlet.ShouldProcess($dbname, "Running Dbcc CHECKDB on $dbname on $destination"))
-			{
-				Write-Output "Starting Dbcc CHECKDB for $dbname on $destination"
-				$null = Start-DbccCheck -Server $destserver -DbName $dbname
-			}
-			
-			if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination"))
-			{
-				## Drop the database
-				try
-				{
-					$null = Remove-SqlDatabase -SqlServer $sourceserver -DbName $dbname
-					Write-Output "Dropped $dbname Database on $destination"
-				}
-				catch
-				{
-					Write-Warning "FAILED : To Drop database $dbname on $destination - Aborting"
-					Write-Exception $_
-					continue
-				}
-			}
-			Write-Output "Rationalisation Finished for $dbname"
 		}
 	}
-
-END
+	
+	END
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
-		
-		if ($Pscmdlet.ShouldProcess("console", "Showing final message"))
-		{
-			$End = Get-Date
-			Write-Output "Finished at $End"
-			$Duration = $End - $start
-			Write-Output "Script Duration: $Duration"
-		}
 	}
 }
