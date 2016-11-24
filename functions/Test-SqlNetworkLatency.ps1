@@ -31,6 +31,12 @@ Specifies the query to be executed. By default, "SELECT TOP 100 * FROM informati
 
 .PARAMETER Count
 Specifies how many times the query should be executed. By default, the query is executed three times.
+
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
 	
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)

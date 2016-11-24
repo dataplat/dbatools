@@ -15,6 +15,9 @@ Source SQL Server.You must have sysadmin access and server version must be SQL S
 .PARAMETER Destination
 Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2012 or greater.
 
+.PARAMETER Force
+Drops and recreates the SSIS Catalog if it exists
+
 .PARAMETER Project
 Specify a source Project name.
 
@@ -29,6 +32,26 @@ If the destination does not have SQL CLR configuration option enabled (which is 
 
 .PARAMETER CreateCatalogPassword
 If a destination SSISDB catalog needs to be created, specify this secure string parameter to skip password prompts.
+
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
+.PARAMETER SourceSqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+$scred = Get-Credential, this pass $scred object to the param. 
+
+Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+
+.PARAMETER DestinationSqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+$dcred = Get-Credential, this pass this $dcred to the param. 
+
+Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
 .NOTES 
 Original Author: Phil Schwartz (philschwartz.me, @pschwartzzz)

@@ -28,6 +28,15 @@ Allows you to specify the MaxDop value that you want to use.
 .PARAMETER AllDatabases
 This is a parameter that was included so you can set MaxDop value to all databases. Only valid when using on SQL Server 2016 instances.
 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
+.PARAMETER Collection
+Results of Test-SQLMaxDop to be passed into the command
+
 .NOTES 
 Author  : Cláudio Silva (@claudioessilva)
 Requires: sysadmin access on SQL Servers
@@ -79,7 +88,7 @@ Set recommended Max DOP setting for all databases on server sql2016.
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[int]$MaxDop = -1,
 		[Parameter(ValueFromPipeline = $True)]
-		[object]$collection,
+		[object]$Collection,
         [Alias("All")]
         [switch]$AllDatabases
 	)

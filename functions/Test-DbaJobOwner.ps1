@@ -44,6 +44,9 @@ Auto-populated list of Jobs to apply changes to. Will accept a comma separated l
 
 .PARAMETER Exclude
 Jobs to exclude
+
+.PARAMETER Detailed
+Provides Detailed information
 	
 .LINK
 https://dbatools.io/Test-DbaJobOwner
