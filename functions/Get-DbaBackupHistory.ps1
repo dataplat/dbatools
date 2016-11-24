@@ -151,7 +151,7 @@ Returns database backup information for every database on every server listed in
 						       a.Duration ,
 						       a.Path ,
 						       a.Type ,
-						       a.BackupSizeInMB ,
+						       a.TotalSizeMB ,
 						       a.MediaSetId ,
 						       a.Software
 						  FROM (
@@ -172,7 +172,7 @@ Returns database backup information for every database on every server listed in
 						              WHEN 'P' THEN 'PartialFull'
 						              WHEN 'Q' THEN 'PartialDiff'
 						        ELSE NULL END AS Type,
-						       CAST((backupset.Backup_Size/1048576) AS NUMERIC(10,2)) AS BackupSizeInMB,
+						       CAST((backupset.Backup_Size/1048576) AS NUMERIC(10,2)) AS TotalSizeMB,
 						       backupset.Media_Set_ID as MediaSetId, 
 						    mediaset.Software_Name AS Software
 						  FROM msdb..BackupMediaFamily mediafamily
@@ -214,7 +214,7 @@ Returns database backup information for every database on every server listed in
 				            WHEN 'P' THEN 'PartialFull'
 				            WHEN 'Q' THEN 'PartialDiff'
 				        ELSE NULL END AS Type,
-				    CAST((backupset.Backup_Size/1048576) AS NUMERIC(10,2)) AS BackupSizeInMB,
+				    CAST((backupset.Backup_Size/1048576) AS NUMERIC(10,2)) AS TotalSizeMB,
 					backupset.Media_Set_ID as MediaSetId, mediaset.Software_Name AS Software"
 					}
 					
