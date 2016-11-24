@@ -41,6 +41,12 @@ Check the archive bit on files before deletion
 .PARAMETER RemoveEmptyBackupFolder
 Remove any empty folders after the cleanup process is complete.
 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
 .NOTES
 Original Author: Chris Sommer, @cjsommer, www.cjsommer.com
 

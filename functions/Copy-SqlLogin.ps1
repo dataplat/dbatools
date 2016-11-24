@@ -54,6 +54,15 @@ Want to sync up the name of the sa account on the source and destination? Use th
 .PARAMETER Force
 Force drops and recreates logins. Logins that own jobs cannot be dropped at this time.
 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
+.PARAMETER pipelogin
+Takes the parameters required from a login object that has been piped ot the command
+
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers

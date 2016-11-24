@@ -28,6 +28,12 @@ Shows detailed information about the AGs including EndpointUrl and BackupPriorit
 .PARAMETER IsPrimary
 Returns true or false for the server passed in.
 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
 .NOTES 
 Original Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)
 
