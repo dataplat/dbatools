@@ -7,33 +7,34 @@ Function Restore-Database
 #>
 	[CmdletBinding()]
 	param (
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
 		[string]$dbname,
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[string]$backupfile,
+		[string[]]$backupfile,
 		[string]$filetype = "Database",
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
 		[object]$filestructure,
-		[switch]$norecovery = $true,
+		[switch]$recovery,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
 	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 	$servername = $server.name
 	$server.ConnectionContext.StatementTimeout = 0
-	$restore = New-Object "Microsoft.SqlServer.Management.Smo.Restore"
+	$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
 	$restore.ReplaceDatabase = $true
+	
+	if ($recovery -eq $false)
+	{
+		$norecovery = $true
+	}
+	else
+	{
+		$norecovery = $false
+	}
 	
 	foreach ($file in $filestructure.values)
 	{
-		$movefile = New-Object "Microsoft.SqlServer.Management.Smo.RelocateFile"
+		$movefile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
 		$movefile.LogicalFileName = $file.logical
 		$movefile.PhysicalFileName = $file.physical
 		$null = $restore.RelocateFiles.Add($movefile)
@@ -41,7 +42,6 @@ Function Restore-Database
 	
 	try
 	{
-		
 		$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
 			Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
 		}
@@ -52,9 +52,15 @@ Function Restore-Database
 		$restore.Database = $dbname
 		$restore.Action = $filetype
 		$restore.NoRecovery = $norecovery
+		
 		$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-		$device.name = $backupfile
-		$device.devicetype = "File"
+		
+		foreach ($file in $backupfile)
+		{
+			$device.name = $file
+			$device.devicetype = "File"
+		}
+		
 		$restore.Devices.Add($device)
 		
 		Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
