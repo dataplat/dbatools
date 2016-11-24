@@ -3,6 +3,7 @@
 [![stars badge]][stars]
 [![forks badge]][forks]
 [![issues badge]][issues]
+[![Build status](https://ci.appveyor.com/api/projects/status/cy5sm45x6atculse/branch/development?svg=true)](https://ci.appveyor.com/project/sqlcollaborative/dbatools/branch/master)
 
 [licence badge]:https://img.shields.io/badge/License-GPL%20v3-blue.svg
 [stars badge]:https://img.shields.io/github/stars/sqlcollaborative/dbatools.svg
