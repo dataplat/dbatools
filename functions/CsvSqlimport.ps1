@@ -71,6 +71,12 @@ Optional. Cannot be used in conjunction with -Turbo or -First. When Query is spe
 
 If you want to import just the results of a specific query from your CSV file, use this parameter. To make command line queries easy, this module will convert the word "csv" to the actual CSV formatted table name. If the FirstRowColumns switch is not used, the query should use column1, column2, column3, etc.
 
+.PARAMETER NotifyAfter
+Sets the option to show the notification after so many rows of import
+
+.PARAMETER BatchSize
+The batchsize for the import defaults to 5000
+
 Example: select column1, column2, column3 from csv where column2 > 5
 Example: select distinct artist from csv
 Example: select top 100 artist, album from csv where category = 'Folk'
