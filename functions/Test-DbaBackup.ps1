@@ -249,6 +249,8 @@ Any DBCC errors will be written to your documents folder
 						Server = $source
 						Database = $db.name
 						File = $lastbackup.Path
+						BackupTaken = $lastbackup.Start
+						SizeMB = $lastbackup.TotalSizeMB
 						FileExists = $fileexists
 						RestoreResult = $restoreresult
 						DbccResult = $dbccresult
