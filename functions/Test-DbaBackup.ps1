@@ -50,7 +50,7 @@ Any DBCC errors will be written to your documents folder
 
 
 #>
-	[CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
+	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance", "Source")]
@@ -62,7 +62,7 @@ Any DBCC errors will be written to your documents folder
 		[string]$DataDirectory,
 		[string]$LogDirectory,
 		[switch]$NoCheck,
-		[switch]$Force
+		[switch]$NoDrop
 		
 	)
 	
@@ -77,12 +77,12 @@ Any DBCC errors will be written to your documents folder
 		{
 			$destserver = Connect-SqlServer -SqlServer $destination -SqlCredential $sqlCredential
 			
-			$sourcenb = $sourceserver.ComputerNamePhysicalNetBIOS
-			$destnb = $sourceserver.ComputerNamePhysicalNetBIOS
+			$sourcerealname = $sourceserver.DomainInstanceName
+			$destrealname = $sourceserver.DomainInstanceName
 			
 			if ($BackupFolder)
 			{
-				if ($BackupFolder.StartsWith("\\") -eq $false -and $sourcenb -ne $destnb)
+				if ($BackupFolder.StartsWith("\\") -eq $false -and $sourcerealname -ne $destrealname)
 				{
 					throw "Backup folder must be a network share if the source and destination servers are not the same."
 				}
@@ -97,12 +97,20 @@ Any DBCC errors will be written to your documents folder
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
 		
-		if (!$datadirectory)
+		if ($datadirectory)
+		{
+			# Test location
+		}
+		else
 		{
 			$datadirectory = Get-SqlDefaultPaths -SqlServer $destserver -FileType mdf
 		}
 		
-		if (!$logdirectory)
+		if ($logdirectory)
+		{
+			# test location
+		}
+		else
 		{
 			$logdirectory = Get-SqlDefaultPaths -SqlServer $destserver -FileType ldf
 		}
@@ -197,30 +205,40 @@ Any DBCC errors will be written to your documents folder
 					## Run a Dbcc No choice here
 					if ($Pscmdlet.ShouldProcess($destination, "Restoring $ogdbname as $dbname"))
 					{
-						Write-Verbose "Starting Dbcc CHECKDB for $dbname on $destination"
 						$restoreresult = Restore-Database -SqlServer $destserver -DbName $dbname -backupfile $lastbackup.path -filestructure $temprestoreinfo
 					}
 					
-					## Run a Dbcc No choice here
-					if ($Pscmdlet.ShouldProcess($dbname, "Running Dbcc CHECKDB on $dbname on $destination"))
+					if (!$NoCheck)
 					{
-						Write-Verbose "Starting Dbcc CHECKDB for $dbname on $destination"
-						$dbccresult = Start-DbccCheck -Server $destserver -DbName $dbname 3>$null
+						if ($Pscmdlet.ShouldProcess($dbname, "Running Dbcc CHECKDB on $dbname on $destination"))
+						{
+							if ($ogdbname -eq "master")
+							{
+								$dbccresult = "DBCC CHECKDB skipped for restored master ($dbname) database"
+							}
+							else
+							{
+								$dbccresult = Start-DbccCheck -Server $destserver -DbName $dbname 3>$null
+							}
+						}
 					}
 					
-					if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination"))
+					if (!$NoDrop)
 					{
-						## Drop the database
-						try
+						if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination"))
 						{
-							$null = Remove-SqlDatabase -SqlServer $destserver -DbName $dbname
-							Write-Verbose "Dropped $dbname Database on $destination"
-						}
-						catch
-						{
-							Write-Warning "FAILED : To Drop database $dbname on $destination - Aborting"
-							Write-Exception $_
-							continue
+							## Drop the database
+							try
+							{
+								$null = Remove-SqlDatabase -SqlServer $destserver -DbName $dbname
+								Write-Verbose "Dropped $dbname Database on $destination"
+							}
+							catch
+							{
+								Write-Warning "FAILED : To Drop database $dbname on $destination - Aborting"
+								Write-Exception $_
+								continue
+							}
 						}
 					}
 				}
