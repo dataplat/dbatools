@@ -133,7 +133,7 @@ Also returns detailed information about each of the datafiles contained in the b
 			
 			if ($Simple)
 			{
-				$datatable | Select-Object DatabaseName, BackupStartDate, RecoveryModel, BackupSizeMB, CompressedBackupSizeMB, UserName, ServerName, SQLVersion, DatabaseCreationDate
+				$datatable | Select-Object DatabaseName, BackupFinishDate, RecoveryModel, BackupSizeMB, CompressedBackupSizeMB, UserName, ServerName, SQLVersion, DatabaseCreationDate
 			}
 			elseif ($filelist)
 			{
