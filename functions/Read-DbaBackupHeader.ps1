@@ -96,8 +96,9 @@ Also returns detailed information about each of the datafiles contained in the b
 			}
 			catch
 			{
+				Write-Warning "File list could not be determined. This is likely due to connectivity issues or tiemouts with the SQL Server, the database version is incorrect, or the SQL Server service account does not have access to the file share."
 				Write-Exception $_
-				throw "File list could not be determined. This is likely due to connectivity issues or tiemouts with the SQL Server, the database version is incorrect, or the SQL Server service account does not have access to the file share. Script terminating."
+				return
 			}
 			
 			$datatable = $restore.ReadBackupHeader($server)
