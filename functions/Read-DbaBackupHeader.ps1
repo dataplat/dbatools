@@ -33,33 +33,33 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Read-DbaFileHeader
+https://dbatools.io/Read-DbaBackupHeader
 
 .EXAMPLE
-Read-DbaFileHeader -SqlServer sql2016 -Path S:\backups\mydb\mydb.bak
+Read-DbaBackupHeader -SqlServer sql2016 -Path S:\backups\mydb\mydb.bak
 
 Logs into sql2016 using Windows authentication and reads the local file on sql2016, S:\backups\mydb\mydb.bak.
 	
 If you are running this command on a workstation and connecting remotely, remember that sql2016 cannot access files on your own workstation.
 
 .EXAMPLE
-Read-DbaFileHeader -SqlServer sql2016 -Path \\nas\sql\backups\mydb\mydb.bak, \\nas\sql\backups\otherdb\otherdb.bak
+Read-DbaBackupHeader -SqlServer sql2016 -Path \\nas\sql\backups\mydb\mydb.bak, \\nas\sql\backups\otherdb\otherdb.bak
 
 Logs into sql2016 and reads two backup files - mydb.bak and otherdb.bak. The SQL Server service account must have rights to read this file.
 	
 .EXAMPLE
-Read-DbaFileHeader -SqlServer . -Path C:\temp\myfile.bak -Simple
+Read-DbaBackupHeader -SqlServer . -Path C:\temp\myfile.bak -Simple
 	
 Logs into the local worksation and shows simplified output about C:\temp\myfile.bak. The SQL Server service account must have rights to read this file.
 
 .EXAMPLE
-$backupinfo = Read-DbaFileHeader -SqlServer . -Path C:\temp\myfile.bak
+$backupinfo = Read-DbaBackupHeader -SqlServer . -Path C:\temp\myfile.bak
 $backupinfo.FileList
 	
 Displays detailed information about each of the datafiles contained in the backupset.
 
 .EXAMPLE
-Read-DbaFileHeader -SqlServer . -Path C:\temp\myfile.bak -FileList
+Read-DbaBackupHeader -SqlServer . -Path C:\temp\myfile.bak -FileList
 	
 Also returns detailed information about each of the datafiles contained in the backupset.
 	
