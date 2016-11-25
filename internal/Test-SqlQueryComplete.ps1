@@ -1,16 +1,23 @@
-﻿Function Test-SqlCompletedStatement
+﻿Function Test-SqlQueryComplete
 {
 	param (
+		[Alias("SqlServer")]
 		[object]$server,
-		[string]$dbname,
 		[string]$sql,
-		[int]$sqlpid
+		[switch]$checkpid
 	)
 	
-	if ($sqlpid) { " and session_id = $sqlpid" }
-	$sql = $sql.Replace("'", "''")
+	if ($checkpid)
+	{
+		$sqlpid = " and session_id = $sqlpid"
+	}
 	
+	$sqlpid = $server.ConnectionContext.ProcessID
+	$sqlpid = " and session_id = $sqlpid"
+	$sql = $sql.Replace("'", "''")
 	$testsql = "select sqltext.text FROM sys.dm_exec_requests req CROSS APPLY sys.dm_exec_sql_text(sql_handle) AS sqltext where text = '$sql' $sqlpid"
+	
+	Write-Output $testsql
 	
 	if ($server.ConnectionContext.ExecuteScalar($testsql) -ne $null)
 	{
