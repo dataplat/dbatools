@@ -18,6 +18,9 @@ Path to SQL Serer backup file. This can be a full, differential or log backup fi
 	
 .PARAMETER Simple
 Returns fewer columns for an easy overview
+	
+.PARAMETER FileList
+Returns detailed information about the files within the backup	
 
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
