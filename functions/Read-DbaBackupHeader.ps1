@@ -14,7 +14,7 @@ The SQL Server instance.
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. 
 
 .PARAMETER Path
-Path to SQL Serer backup file. This can be a full, differential or log backup file.
+Path to SQL Server backup file. This can be a full, differential or log backup file.
 	
 .PARAMETER Simple
 Returns fewer columns for an easy overview
@@ -50,7 +50,7 @@ Logs into sql2016 and reads two backup files - mydb.bak and otherdb.bak. The SQL
 .EXAMPLE
 Read-DbaBackupHeader -SqlServer . -Path C:\temp\myfile.bak -Simple
 	
-Logs into the local worksation and shows simplified output about C:\temp\myfile.bak. The SQL Server service account must have rights to read this file.
+Logs into the local workstation (or computer) and shows simplified output about C:\temp\myfile.bak. The SQL Server service account must have rights to read this file.
 
 .EXAMPLE
 $backupinfo = Read-DbaBackupHeader -SqlServer . -Path C:\temp\myfile.bak
@@ -62,7 +62,11 @@ Displays detailed information about each of the datafiles contained in the backu
 Read-DbaBackupHeader -SqlServer . -Path C:\temp\myfile.bak -FileList
 	
 Also returns detailed information about each of the datafiles contained in the backupset.
-	
+
+.EXAMPLE
+"C:\temp\myfile.bak", "\backupserver\backups\myotherfile.bak" | Read-DbaBackupHeader -SqlServer sql2016
+
+Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile.bak", "\backupserver\backups\myotherfile.bak"
 #>
 	[CmdletBinding()]
 	Param (
@@ -78,8 +82,17 @@ Also returns detailed information about each of the datafiles contained in the b
 	
 	BEGIN
 	{
-		
-		$server = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
+		Write-Verbose "Connecting to $SqlServer"
+		try
+		{
+			$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $Credential -ErrorVariable ConnectError
+			
+		}
+		catch
+		{
+			Write-Warning $_
+			continue
+		}
 	}
 	
 	PROCESS
@@ -102,9 +115,7 @@ Also returns detailed information about each of the datafiles contained in the b
 				}
 				else
 				{
-					
 					Write-Warning "File list could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or tiemouts with the SQL Server, or the SQL Server service account does not have access to the file share."
-					
 				}
 				
 				Write-Exception $_
@@ -119,7 +130,6 @@ Also returns detailed information about each of the datafiles contained in the b
 			$mb.Expression = "BackupSize / 1024 / 1024"
 			$gb = $datatable.Columns.Add("BackupSizeGB")
 			$gb.Expression = "BackupSizeMB / 1024"
-			
 			
 			$cmb = $datatable.Columns.Add("CompressedBackupSizeMB", [int])
 			$cmb.Expression = "CompressedBackupSize / 1024 / 1024"
