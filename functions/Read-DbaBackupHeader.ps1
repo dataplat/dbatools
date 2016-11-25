@@ -111,11 +111,11 @@ Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile
 			{
 				if (!(Test-SqlPath -SqlServer $server -Path $file))
 				{
-					Write-Warning "File does not exist or access denied"
+					Write-Warning "File does not exist or access denied. The SQL Server service account may not have access to the source directory."
 				}
 				else
 				{
-					Write-Warning "File list could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or tiemouts with the SQL Server, or the SQL Server service account does not have access to the file share."
+					Write-Warning "File list could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or tiemouts with the SQL Server, or the SQL Server service account does not have access to the source directory."
 				}
 				
 				Write-Exception $_
