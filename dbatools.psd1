@@ -160,7 +160,9 @@
 		'Connect-DbaSqlServer',
 		'Get-DbaStartupParameter',
 		'Get-DbaMemoryUsage',
-		'Get-DbaBackupHistory'
+		'Get-DbaBackupHistory',
+		'Read-DbaBackupHeader',
+		'Test-DbaBackup'
 	)
 	
 	# Cmdlets to export from this module
