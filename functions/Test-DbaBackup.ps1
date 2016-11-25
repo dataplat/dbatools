@@ -62,7 +62,8 @@ Any DBCC errors will be written to your documents folder
 		[string]$DataDirectory,
 		[string]$LogDirectory,
 		[switch]$NoCheck,
-		[switch]$NoDrop
+		[switch]$NoDrop,
+		[int]$MaxMB
 		
 	)
 	
@@ -71,6 +72,10 @@ Any DBCC errors will be written to your documents folder
 	BEGIN
 	{
 		$databases = $psboundparameters.Databases
+		$exclude = $psboundparameters.Exclude
+		
+		# ^^^^^^ EXCLUDE - support it.
+		
 		$sourceserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $sqlCredential
 		
 		if ($SqlServer -ne $destination)
