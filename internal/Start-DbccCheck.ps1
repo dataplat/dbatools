@@ -2,7 +2,8 @@
 {
 	param (
 		[object]$server,
-		[string]$dbname
+		[string]$dbname,
+		[switch]$table
 	)
 	
 	$servername = $server.name
@@ -11,8 +12,16 @@
 	{
 		try
 		{
-			$null = $server.databases[$dbname].CheckTables('None')
-			Write-Verbose "Dbcc CHECKDB finished successfully for $dbname on $servername"
+			if ($table)
+			{
+				$null = $server.databases[$dbname].CheckTables('None')
+				Write-Verbose "Dbcc CheckTables finished successfully for $dbname on $servername"
+			}
+			else
+			{
+				$null = $server.databases[$dbname].ExecuteNonQuery("dbcc checkdb ($dbname)")
+				Write-Verbose "Dbcc CHECKDB finished successfully for $dbname on $servername"
+			}
 			return "Success"
 		}
 		catch
