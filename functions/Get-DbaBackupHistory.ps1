@@ -136,6 +136,12 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				$sourceserver = Connect-SqlServer -SqlServer $server -SqlCredential $Credential
 				$servername = $sourceserver.name
 				
+				if ($sourceserver.VersionMajor -lt 9)
+				{
+					Write-Warning "SQL Server 2000 not supported"
+					continue
+				}
+				
 				if ($last)
 				{
 					if ($databases -eq $null) { $databases = $sourceserver.databases.name }
