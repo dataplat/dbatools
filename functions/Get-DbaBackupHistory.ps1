@@ -5,9 +5,11 @@
 Returns backup history details for databases on a SQL Server
 	
 .DESCRIPTION
-By default, this command will XYZ
+Returns backup history details for some or all databases on a SQL Server. 
 
-Thanks to http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html
+You can even get detailed information (including file path) for latest full, differential and log files.
+	
+Reference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html
 	
 .PARAMETER SqlServer
 The SQL Server that you're connecting to.
@@ -52,27 +54,43 @@ https://dbatools.io/Get-DbaBackupHistory
 .EXAMPLE
 Get-DbaBackupHistory -SqlServer sqlserver2014a
 
-Returns server name, database, username, backup type, date for all backupd databases on sqlserver2014a.
+Returns server name, database, username, backup type, date for all backups databases on sqlserver2014a. This may return a ton of rows; consider using filters that are included in other examples.
+
+.EXAMPLE
+$cred = Get-Credential sqladmin
+Get-DbaBackupHistory -SqlServer sqlserver2014a -SqlCredential $cred
+
+Does the same as above but logs in as SQL user "sqladmin"
 
 .EXAMPLE   
 Get-DbaBackupHistory -SqlServer sqlserver2014a -Databases db1, db2 -Since '7/1/2016 10:47:00'
 
 Returns backup information only for databases db1 and db2 on sqlserve2014a since July 1, 2016 at 10:47 AM.
-	
-.EXAMPLE   
-Get-DbaBackupHistory -SqlServer sqlserver2014a, sql2016 -Detailed
-
-Lots of detailed information for all databases on sqlserver2014a and sql2016
 
 .EXAMPLE   
 Get-DbaBackupHistory -SqlServer sql2014 -Databases AdventureWorks2014, pubs -Detailed | Format-Table
 
-Adds From and To file information to output, returns information only for AdventureWorks2014 and pubs, and makes the output pretty
+Returns information only for AdventureWorks2014 and pubs, and makes the output pretty
 
+.EXAMPLE   
+Get-DbaBackupHistory -SqlServer sql2014 -Databases AdventureWorks2014 -Last
+
+Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014
+	
+.EXAMPLE   
+Get-DbaBackupHistory -SqlServer sql2014 -Databases AdventureWorks2014 -LastFull
+
+Returns information about the most recent full backup for AdventureWorks2014 on sql2014	
+	
 .EXAMPLE   
 Get-SqlRegisteredServerName -SqlServer sql2016 | Get-DbaBackupHistory
 
 Returns database backup information for every database on every server listed in the Central Management Server on sql2016
+	
+.EXAMPLE   
+Get-DbaBackupHistory -SqlServer sqlserver2014a, sql2016 -Detailed
+
+Lots of detailed information for all databases on sqlserver2014a and sql2016.
 	
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
@@ -114,13 +132,13 @@ Returns database backup information for every database on every server listed in
 		{
 			try
 			{
+				Write-Verbose "Connecting to $server"
 				$sourceserver = Connect-SqlServer -SqlServer $server -SqlCredential $Credential
 				$servername = $sourceserver.name
 				
 				if ($last)
 				{
 					if ($databases -eq $null) { $databases = $sourceserver.databases.name }
-					
 					Get-DbaBackupHistory -SqlServer $sourceserver -LastFull -Databases $databases
 					Get-DbaBackupHistory -SqlServer $sourceserver -LastDiff -Databases $databases
 					Get-DbaBackupHistory -SqlServer $sourceserver -LastLog -Databases $databases
