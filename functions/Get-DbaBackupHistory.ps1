@@ -22,7 +22,7 @@ Return backup information for only specific databases. These are only the databa
 Datetime object used to narrow the results to a date
 	
 .PARAMETER Detailed
-Returns default information plus From (\\server\backups\test.bak) and To (the mdf and ldf locations) information
+Returns a boatload of information 
 
 .PARAMETER Last
 Returns last full, diff and log backup sets
@@ -100,11 +100,8 @@ Returns database backup information for every database on every server listed in
 	
 	BEGIN
 	{
-		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
-		
-		$collection = New-Object System.Collections.ArrayList
-		
+				
 		if ($Since -ne $null)
 		{
 			$Since = $Since.ToString("yyyy-MM-dd HH:mm:ss")
@@ -243,7 +240,7 @@ Returns database backup information for every database on every server listed in
 					
 					if ($Since -ne $null)
 					{
-						$wherearray += "BackupStartDate >= '$since'"
+						$wherearray += "backupset.Backup_Finish_Date >= '$since'"
 					}
 					
 					if ($where.length -gt 0)
@@ -263,8 +260,8 @@ Returns database backup information for every database on every server listed in
 			}
 			catch
 			{
-				Write-Exception $_
 				Write-Warning $_
+				Write-Exception $_
 				continue
 			}
 			
