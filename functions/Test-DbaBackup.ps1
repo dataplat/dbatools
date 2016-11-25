@@ -130,7 +130,6 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		[string]$DataDirectory,
 		[string]$LogDirectory,
 		[switch]$NoCheck,
-		[string]$DbccErrorFolder = [Environment]::GetFolderPath("mydocuments"),
 		[switch]$Force
 		
 	)
@@ -140,8 +139,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 	BEGIN
 	{
 		$databases = $psboundparameters.Databases
-		
-		$sourceserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $sqlCredential -ParameterConnection
+		$sourceserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $sqlCredential
 		
 		if ($SqlServer -ne $destination)
 		{
@@ -157,6 +155,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 					throw "Backup folder must be a network share if the source and destination servers are not the same."
 				}
 			}
+			
 		}
 		else
 		{
@@ -166,20 +165,19 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
 		
-		if ($databases.count -eq 0)
-		{
-			$databases = $sourceserver.databases.Name
-		}
-		
-		
 		if (!$datadirectory)
 		{
-			$datadirectory = Get-SqlDefaultPaths -SqlServer $server -FileType mdf
+			$datadirectory = Get-SqlDefaultPaths -SqlServer $destserver -FileType mdf
 		}
 		
 		if (!$logdirectory)
 		{
-			$logdirectory = Get-SqlDefaultPaths -SqlServer $server -FileType ldf
+			$logdirectory = Get-SqlDefaultPaths -SqlServer $destserver -FileType ldf
+		}
+		
+		if ($databases.count -eq 0)
+		{
+			$databases = $sourceserver.databases.Name
 		}
 		
 		Function Start-DbccCheck
@@ -198,21 +196,13 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				{
 					$null = $db.CheckTables('None')
 					Write-Verbose "Dbcc CHECKDB finished successfully for $dbname on $servername"
+					return "Success"
 				}
-				
 				catch
 				{
-					Write-Warning "DBCC CHECKDB failed"
-					Write-Exception $_
-					
-					if ($force)
-					{
-						return $true
-					}
-					else
-					{
-						return $false
-					}
+					Write-Exception $_ -WarningAction SilentlyCOntinue
+					$inner = $_.Exception.Message
+					return "Failure: $inner"
 				}
 			}
 		}
@@ -249,7 +239,14 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				
 				$lastbackup = Get-DbaBackupHistory -SqlServer $sourceserver -Databases $dbname -LastFull
 				
-				if ($source -ne $destination -and $lastbackup[0].Path.StartsWith('\\') -eq $false)
+				if ($lastbackup -eq $null)
+				{
+					$lastbackup = @{ Path = "Not found" }
+					$fileexists = $false
+					$restoreresult = "Skipped"
+					$dbccresult = "Skipped"
+				}
+				elseif ($source -ne $destination -and $lastbackup[0].Path.StartsWith('\\') -eq $false)
 				{
 					$fileexists = "Skipped"
 					$restoreresult = "Restore not located on shared location"
@@ -264,6 +261,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				else
 				{
 					$restorelist = Get-RestoreFileList -server $destserver -filepath $lastbackup[0].Path
+					$fileexists = $true
 					
 					$filelist = $restorelist.Filelist
 					$dbname = $restorelist.DatabaseName
@@ -282,16 +280,26 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 						
 						$fn = Split-Path $file.PhysicalName -Leaf
 						$temprestoreinfo += [pscustomobject]@{
-							FileName = "$dir\dbatools-testrestore-$fn"
-							DatabaseName = "dbatools-testrestore-$dbname"
+							Logical = $file.LogicalName
+							Physical = "$dir\dbatools-testrestore-$fn"
 						}
+					}
+					
+					$ogdbname = $dbname
+					$dbname = "dbatools-testrestore-$dbname"
+					
+					## Run a Dbcc No choice here
+					if ($Pscmdlet.ShouldProcess($destination, "Restoring $ogdbname as $dbname"))
+					{
+						Write-Verbose "Starting Dbcc CHECKDB for $dbname on $destination"
+						$restoreresult = Restore-Database -SqlServer $destserver -DbName $dbname -backupfile $lastbackup.path -filestructure $temprestoreinfo
 					}
 					
 					## Run a Dbcc No choice here
 					if ($Pscmdlet.ShouldProcess($dbname, "Running Dbcc CHECKDB on $dbname on $destination"))
 					{
 						Write-Verbose "Starting Dbcc CHECKDB for $dbname on $destination"
-						$null = Start-DbccCheck -Server $destserver -DbName $dbname
+						$dbccresult = Start-DbccCheck -Server $destserver -DbName $dbname
 					}
 					
 					if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination"))
@@ -299,7 +307,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 						## Drop the database
 						try
 						{
-							$null = Remove-SqlDatabase -SqlServer $sourceserver -DbName $dbname
+							$null = Remove-SqlDatabase -SqlServer $destserver -DbName $dbname
 							Write-Verbose "Dropped $dbname Database on $destination"
 						}
 						catch
@@ -311,13 +319,16 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 					}
 				}
 				
-				[pscustomobject]@{
-					Server = $source
-					Database = $dbname
-					File = $lastbackup.Path
-					FileExists = $fileexists
-					RestoreResult = $restoreresult
-					DbccResult = $dbccresult
+				if ($Pscmdlet.ShouldProcess("console", "Showing results"))
+				{
+					[pscustomobject]@{
+						Server = $source
+						Database = $db.name
+						File = $lastbackup.Path
+						FileExists = $fileexists
+						RestoreResult = $restoreresult
+						DbccResult = $dbccresult
+					}
 				}
 			}
 		}
