@@ -13,7 +13,7 @@ Function Restore-Database
 		[string[]]$backupfile,
 		[string]$filetype = "Database",
 		[object]$filestructure,
-		[switch]$recovery,
+		[switch]$norecovery,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
@@ -23,16 +23,12 @@ Function Restore-Database
 	$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
 	$restore.ReplaceDatabase = $true
 	
-	if ($recovery -eq $false)
+	if ($filestructure.values -ne $null)
 	{
-		$norecovery = $true
-	}
-	else
-	{
-		$norecovery = $false
+		$filestructure = $filestructure.values
 	}
 	
-	foreach ($file in $filestructure.values)
+	foreach ($file in $filestructure)
 	{
 		$movefile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
 		$movefile.LogicalFileName = $file.logical
@@ -45,6 +41,7 @@ Function Restore-Database
 		$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
 			Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
 		}
+		
 		$restore.add_PercentComplete($percent)
 		$restore.PercentCompleteNotification = 1
 		$restore.add_Complete($complete)
@@ -53,25 +50,24 @@ Function Restore-Database
 		$restore.Action = $filetype
 		$restore.NoRecovery = $norecovery
 		
-		$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-		
 		foreach ($file in $backupfile)
 		{
+			$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
 			$device.name = $file
 			$device.devicetype = "File"
+			$restore.Devices.Add($device)
 		}
-		
-		$restore.Devices.Add($device)
 		
 		Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
 		$restore.sqlrestore($server)
 		Write-Progress -id 1 -activity "Restoring $dbname to $servername" -status "Complete" -Completed
 		
-		return $true
+		return "Success"
 	}
 	catch
 	{
-		Write-Error "Restore failed: $($_.Exception)"
-		return $false
+		Write-Warning $_.Exception
+		Write-Exception $_
+		return "Failed: $_"
 	}
 }
