@@ -14,6 +14,9 @@ Function Restore-Database
 		[string]$filetype = "Database",
 		[object]$filestructure,
 		[switch]$norecovery,
+		[switch]$ReplaceDatabase,
+		[Alias("Tsql")]
+		[switch]$ScriptOnly,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
@@ -21,7 +24,7 @@ Function Restore-Database
 	$servername = $server.name
 	$server.ConnectionContext.StatementTimeout = 0
 	$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
-	$restore.ReplaceDatabase = $true
+	$restore.ReplaceDatabase = $ReplaceDatabase
 	
 	if ($filestructure.values -ne $null)
 	{
@@ -45,7 +48,7 @@ Function Restore-Database
 		$restore.add_PercentComplete($percent)
 		$restore.PercentCompleteNotification = 1
 		$restore.add_Complete($complete)
-		$restore.ReplaceDatabase = $true
+		$restore.ReplaceDatabase = $ReplaceDatabase
 		$restore.Database = $dbname
 		$restore.Action = $filetype
 		$restore.NoRecovery = $norecovery
@@ -58,11 +61,18 @@ Function Restore-Database
 			$restore.Devices.Add($device)
 		}
 		
-		Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-		$restore.sqlrestore($server)
-		Write-Progress -id 1 -activity "Restoring $dbname to $servername" -status "Complete" -Completed
-		
-		return "Success"
+		if ($ScriptOnly)
+		{
+			$restore.Script($server)
+		}
+		else
+		{
+			Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+			$restore.sqlrestore($server)
+			Write-Progress -id 1 -activity "Restoring $dbname to $servername" -status "Complete" -Completed
+			
+			return "Success"
+		}
 	}
 	catch
 	{
