@@ -208,7 +208,9 @@ Function Get-ParamSqlLogins
 		[Parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[switch]$WindowsOnly,
+		[switch]$SqlOnly
 	)
 	
 	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
@@ -235,7 +237,24 @@ Function Get-ParamSqlLogins
 	{
 		if (!$login.name.StartsWith("##") -and $login.name -ne 'sa')
 		{
-			$loginlist += $login.name
+			if ($WindowsOnly)
+			{
+				if ($login.LoginType -eq 'WindowsUser' -or $login.LoginType -eq 'WindowsGroup')
+				{
+					$loginlist += $login.name
+				}
+			}
+			elseif ($SqlOnly)
+			{
+				if ($login.LoginType -eq 'SqlLogin')
+				{
+					$loginlist += $login.name
+				}
+			}
+			else
+			{
+				$loginlist += $login.name
+			}
 		}
 	}
 	
