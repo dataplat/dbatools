@@ -61,6 +61,7 @@ Any DBCC errors will be written to your documents folder
 		[string]$BackupsDirectory,
 		[string]$DataDirectory,
 		[string]$LogDirectory,
+		[switch]$VerifyOnly,
 		[switch]$NoCheck,
 		[switch]$NoDrop,
 		[int]$MaxMB
@@ -142,9 +143,17 @@ Any DBCC errors will be written to your documents folder
 		}
 		#>
 		
-		if ($databases)
+		if ($databases -or $exclude)
 		{
-			foreach ($dbname in $databases)
+			$dblist = $databases
+			
+			if ($exclude)
+			{
+				
+				$dblist = $dblist | Where-Object $_ -NotIn $exclude
+			}
+			
+			foreach ($dbname in $dblist)
 			{
 				
 				$db = $sourceserver.databases[$dbname]
