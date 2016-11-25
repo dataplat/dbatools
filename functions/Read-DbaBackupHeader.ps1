@@ -95,6 +95,5 @@ Does this
 	END
 	{
 		$server.ConnectionContext.Disconnect()
-		
 	}
 }
