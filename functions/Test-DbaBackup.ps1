@@ -149,7 +149,6 @@ Any DBCC errors will be written to your documents folder
 			
 			if ($exclude)
 			{
-				
 				$dblist = $dblist | Where-Object $_ -NotIn $exclude
 			}
 			
@@ -232,7 +231,7 @@ Any DBCC errors will be written to your documents folder
 							}
 							else
 							{
-								$dbccresult = Start-DbccCheck -Server $destserver -DbName $dbname 3>$null
+								$dbccresult = Start-DbccCheck -Server $destserver -DbName $dbname -Table 3>$null
 							}
 						}
 					}
@@ -244,12 +243,12 @@ Any DBCC errors will be written to your documents folder
 							## Drop the database
 							try
 							{
-								$null = Remove-SqlDatabase -SqlServer $destserver -DbName $dbname
+								$removeresult = Remove-SqlDatabase -SqlServer $destserver -DbName $dbname
 								Write-Verbose "Dropped $dbname Database on $destination"
 							}
 							catch
 							{
-								Write-Warning "FAILED : To Drop database $dbname on $destination - Aborting"
+								Write-Warning "Failed to Drop database $dbname on $destination"
 								Write-Exception $_
 								continue
 							}
@@ -267,7 +266,7 @@ Any DBCC errors will be written to your documents folder
 						DbccResult = $dbccresult
 						SizeMB = $lastbackup.TotalSizeMB
 						BackupTaken = $lastbackup.Start
-						File = $lastbackup.Path
+						BackupFiles = $lastbackup.Path
 					}
 				}
 			}
