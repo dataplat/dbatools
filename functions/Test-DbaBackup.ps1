@@ -66,7 +66,7 @@ Any DBCC errors will be written to your documents folder
 		[Alias("ServerInstance", "SqlInstance", "Source")]
 		[object]$SqlServer,
 		[object]$SqlCredential,
-		[object]$Destination = $SqlServer,
+		[object]$Destination,
 		[string]$Path,
 		[string]$BackupsDirectory,
 		[string]$DataDirectory,
@@ -84,8 +84,6 @@ Any DBCC errors will be written to your documents folder
 	{
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
-		
-		# ^^^^^^ EXCLUDE - support it.
 		
 		$sourceserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $sqlCredential
 		
@@ -115,7 +113,12 @@ Any DBCC errors will be written to your documents folder
 		
 		if ($datadirectory)
 		{
-			# Test location
+			if (!(Test-SqlPath -SqlServer $destserver -Path $datadirectory))
+			{
+				$serviceaccount = $destserver.ServiceAccount
+				Write-Warning "Can't access $datadirectory Please check if $serviceaccount has permissions"
+				continue
+			}
 		}
 		else
 		{
@@ -124,7 +127,12 @@ Any DBCC errors will be written to your documents folder
 		
 		if ($logdirectory)
 		{
-			# test location
+			if (!(Test-SqlPath -SqlServer $destserver -Path $logdirectory))
+			{
+				$serviceaccount = $destserver.ServiceAccount
+				Write-Warning "Can't access $logdirectory Please check if $serviceaccount has permissions"
+				continue
+			}
 		}
 		else
 		{
@@ -151,15 +159,16 @@ Any DBCC errors will be written to your documents folder
 			$serviceaccount = $destserver.ServiceAccount
 			throw "Can't access $backupFolder Please check if $serviceaccount has permissions"
 		}
+		$Path
 		#>
-		
+	
 		if ($databases -or $exclude)
 		{
 			$dblist = $databases
 			
 			if ($exclude)
 			{
-				$dblist = $dblist | Where-Object $_ -NotIn $exclude
+				$dblist = $dblist | Where-Object $_ -notin $exclude
 			}
 			
 			foreach ($dbname in $dblist)
@@ -197,70 +206,81 @@ Any DBCC errors will be written to your documents folder
 				}
 				else
 				{
-					$restorelist = Read-DbaBackupHeader -SqlServer $destserver -Path $lastbackup[0].Path
 					$fileexists = $true
+					$restorelist = Read-DbaBackupHeader -SqlServer $destserver -Path $lastbackup[0].Path
+					$mb = $restorelist.BackupSizeMB
 					
-					$filelist = $restorelist.Filelist
-					$dbname = $restorelist.DatabaseName
-					$temprestoreinfo = @()
-					
-					foreach ($file in $filelist)
+					if ($MaxMB -gt 0 -and $MaxMB -lt $mb)
 					{
-						if ($file.Type -eq 'L')
-						{
-							$dir = $logdirectory
-						}
-						else
-						{
-							$dir = $datadirectory
-						}
+						$restoreresult = "The backup size for $dbname ($mb MB) exceeds the specified maximum size ($MaxMB MB)"
+						$dbccresult = "Skipped"
+					}
+					else
+					{
+						$filelist = $restorelist.Filelist
+						$dbname = $restorelist.DatabaseName
+						$temprestoreinfo = @()
 						
-						$fn = Split-Path $file.PhysicalName -Leaf
-						$temprestoreinfo += [pscustomobject]@{
-							Logical = $file.LogicalName
-							Physical = "$dir\dbatools-testrestore-$fn"
-						}
-					}
-					
-					$ogdbname = $dbname
-					$dbname = "dbatools-testrestore-$dbname"
-					
-					## Run a Dbcc No choice here
-					if ($Pscmdlet.ShouldProcess($destination, "Restoring $ogdbname as $dbname"))
-					{
-						$restoreresult = Restore-Database -SqlServer $destserver -DbName $dbname -backupfile $lastbackup.path -filestructure $temprestoreinfo -ReplaceDatabase
-					}
-					
-					if (!$NoCheck)
-					{
-						if ($Pscmdlet.ShouldProcess($dbname, "Running Dbcc CHECKDB on $dbname on $destination"))
+						foreach ($file in $filelist)
 						{
-							if ($ogdbname -eq "master")
+							if ($file.Type -eq 'L')
 							{
-								$dbccresult = "DBCC CHECKTABLE skipped for restored master ($dbname) database"
+								$dir = $logdirectory
 							}
 							else
 							{
-								$dbccresult = Start-DbccCheck -Server $destserver -DbName $dbname -Table 3>$null
+								$dir = $datadirectory
+							}
+							
+							$fn = Split-Path $file.PhysicalName -Leaf
+							$temprestoreinfo += [pscustomobject]@{
+								Logical = $file.LogicalName
+								Physical = "$dir\dbatools-testrestore-$fn"
 							}
 						}
-					}
-					
-					if (!$NoDrop)
-					{
-						if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination"))
+						
+						$ogdbname = $dbname
+						$dbname = "dbatools-testrestore-$dbname"
+						
+						## Run a Dbcc No choice here
+						if ($Pscmdlet.ShouldProcess($destination, "Restoring $ogdbname as $dbname"))
 						{
-							## Drop the database
-							try
+							$restoreresult = Restore-Database -SqlServer $destserver -DbName $dbname -backupfile $lastbackup.path -filestructure $temprestoreinfo -ReplaceDatabase -VerifyOnly
+						}
+						
+						if (!$NoCheck -and !$VerifyOnly)
+						{
+							if ($Pscmdlet.ShouldProcess($dbname, "Running Dbcc CHECKDB on $dbname on $destination"))
 							{
-								$removeresult = Remove-SqlDatabase -SqlServer $destserver -DbName $dbname
-								Write-Verbose "Dropped $dbname Database on $destination"
+								if ($ogdbname -eq "master")
+								{
+									$dbccresult = "DBCC CHECKTABLE skipped for restored master ($dbname) database"
+								}
+								else
+								{
+									$dbccresult = Start-DbccCheck -Server $destserver -DbName $dbname -Table 3>$null
+								}
 							}
-							catch
+						}
+						
+						if ($VerifyOnly) { $dbccresult = "Skipped" }
+						
+						if (!$NoDrop)
+						{
+							if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination"))
 							{
-								Write-Warning "Failed to Drop database $dbname on $destination"
-								Write-Exception $_
-								continue
+								## Drop the database
+								try
+								{
+									$removeresult = Remove-SqlDatabase -SqlServer $destserver -DbName $dbname
+									Write-Verbose "Dropped $dbname Database on $destination"
+								}
+								catch
+								{
+									Write-Warning "Failed to Drop database $dbname on $destination"
+									Write-Exception $_
+									continue
+								}
 							}
 						}
 					}
