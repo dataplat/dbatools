@@ -23,6 +23,16 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
+.PARAMETER Destination
+.PARAMETER Path
+.PARAMETER BackupsDirectory
+.PARAMETER DataDirectory
+.PARAMETER LogDirectory
+.PARAMETER VerifyOnly
+.PARAMETER NoCheck
+.PARAMETER NoDrop
+.PARAMETER MaxMB
+	
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
