@@ -1,4 +1,4 @@
-Function Get-Sqlmaxmemory
+Function Get-DbaMaxMemory
 {
 <# 
 .SYNOPSIS 
@@ -35,15 +35,15 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK 
-https://dbatools.io/Get-Sqlmaxmemory
+https://dbatools.io/Get-DbaMaxMemory
 
 .EXAMPLE   
-Get-SqlMaxMemory -SqlServer sqlcluster,sqlserver2012
+Get-DbaMaxMemory -SqlServer sqlcluster,sqlserver2012
 
 Get memory settings for all servers within the SQL Server Central Management Server "sqlcluster".
 
 .EXAMPLE 
-Get-SqlMaxMemory -SqlServer sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB }
+Get-DbaMaxMemory -SqlServer sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB }
 
 Find all servers in Server Central Management Server that have 'Max Server Memory' set to higher than the total memory of the server (think 2147483647)
 

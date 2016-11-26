@@ -1,4 +1,4 @@
-Function Test-SqlMaxMemory
+Function Test-DbaMaxMemory
 {
 <# 
 .SYNOPSIS 
@@ -36,15 +36,15 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK 
-https://dbatools.io/Get-SqlmaxMemoryory
+https://dbatools.io/Get-DbaMaxMemoryory
 
 .EXAMPLE   
-Test-SqlMaxMemory -SqlServer sqlcluster,sqlserver2012
+Test-DbaMaxMemory -SqlServer sqlcluster,sqlserver2012
 
 Calculate the 'Max Server Memory' settings for all servers within the SQL Server Central Management Server "sqlcluster"
 
 .EXAMPLE 
-Test-SqlmaxMemory -SqlServer sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-SqlmaxMemoryory 
+Test-DbaMaxMemory -SqlServer sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-DbaMaxMemory 
 
 Find all servers in CMS that have Max SQL memory set to higher than the total memory of the server (think 2147483647) and set it to recommended value. 
 
@@ -78,7 +78,7 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 			}
 			
 
-            $sqlmachine = Get-SqlMaxMemory -SqlServer $servername -SqlCredential $SqlCredential 
+            $sqlmachine = Get-DbaMaxMemory -SqlServer $servername -SqlCredential $SqlCredential 
             if($sqlmachine -eq $null)
             {
                 continue;
