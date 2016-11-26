@@ -19,7 +19,7 @@
 			}
 			else
 			{
-				$null = $server.databases[$dbname].ExecuteNonQuery("dbcc checkdb ($dbname)")
+				$null = $server.databases[$dbname].ExecuteNonQuery("dbcc checkdb ([$dbname])")
 				Write-Verbose "Dbcc CHECKDB finished successfully for $dbname on $servername"
 			}
 			return "Success"
