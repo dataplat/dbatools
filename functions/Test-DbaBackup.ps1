@@ -219,7 +219,7 @@ Any DBCC errors will be written to your documents folder
 					## Run a Dbcc No choice here
 					if ($Pscmdlet.ShouldProcess($destination, "Restoring $ogdbname as $dbname"))
 					{
-						$restoreresult = Restore-Database -SqlServer $destserver -DbName $dbname -backupfile $lastbackup.path -filestructure $temprestoreinfo
+						$restoreresult = Restore-Database -SqlServer $destserver -DbName $dbname -backupfile $lastbackup.path -filestructure $temprestoreinfo -ReplaceDatabase
 					}
 					
 					if (!$NoCheck)
@@ -228,7 +228,7 @@ Any DBCC errors will be written to your documents folder
 						{
 							if ($ogdbname -eq "master")
 							{
-								$dbccresult = "DBCC CHECKDB skipped for restored master ($dbname) database"
+								$dbccresult = "DBCC CHECKTABLE skipped for restored master ($dbname) database"
 							}
 							else
 							{
