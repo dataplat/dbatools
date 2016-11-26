@@ -188,7 +188,7 @@ Any DBCC errors will be written to your documents folder
 				}
 				else
 				{
-					$restorelist = Get-RestoreFileList -server $destserver -filepath $lastbackup[0].Path
+					$restorelist = Read-DbaBackupHeader -SqlServer $destserver -Path $lastbackup[0].Path
 					$fileexists = $true
 					
 					$filelist = $restorelist.Filelist
@@ -262,12 +262,12 @@ Any DBCC errors will be written to your documents folder
 					[pscustomobject]@{
 						Server = $source
 						Database = $db.name
-						File = $lastbackup.Path
-						BackupTaken = $lastbackup.Start
-						SizeMB = $lastbackup.TotalSizeMB
 						FileExists = $fileexists
 						RestoreResult = $restoreresult
 						DbccResult = $dbccresult
+						SizeMB = $lastbackup.TotalSizeMB
+						BackupTaken = $lastbackup.Start
+						File = $lastbackup.Path
 					}
 				}
 			}
