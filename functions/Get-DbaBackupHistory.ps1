@@ -119,7 +119,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 	BEGIN
 	{
 		$databases = $psboundparameters.Databases
-				
+		
 		if ($Since -ne $null)
 		{
 			$Since = $Since.ToString("yyyy-MM-dd HH:mm:ss")
@@ -159,6 +159,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 					if ($LastDiff) { $first = 'I'; $second = 'Q' }
 					if ($LastLog) { $first = 'L'; $second = 'L' }
 					
+					$databases = $databases | Select-Object -Unique
 					foreach ($database in $databases)
 					{
 						Write-Verbose "Processing $database"
@@ -183,29 +184,28 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 						       backupset.Backup_Start_Date as [Start],
 						       backupset.Backup_Finish_Date as [End],
 						       CAST(DATEDIFF(second, backupset.backup_start_date, backupset.backup_finish_date) AS VARCHAR(4)) + ' ' + 'Seconds' as Duration,
-						       mediafamily.Physical_Device_Name AS Path,
-                               CASE mediafamily.device_type
-				                                WHEN 2 THEN 'Disk Temporary Device'
-				                                WHEN 102 THEN 'Disk Permanent Device'
-				                                WHEN 5 THEN 'Tape Temporary Device'
-				                                WHEN 105 THEN 'Tape Permanent Device'
-				                                WHEN 6 THEN 'Pipe Temporary Device'
-				                                WHEN 106 THEN 'Pipe Permanent Device'
-				                                WHEN 7 THEN 'Virtual Device'
-				                                ELSE 'Unknown'
-				                                END AS DeviceType,
-						       CASE backupset.Type
-						              WHEN 'L' THEN 'Log'
-						              WHEN 'D' THEN 'Full'
-						              WHEN 'F' THEN 'File'
-						              WHEN 'I' THEN 'Differential'
-						              WHEN 'G' THEN 'DifferentialFile'
-						              WHEN 'P' THEN 'PartialFull'
-						              WHEN 'Q' THEN 'PartialDiff'
-						        ELSE NULL END AS Type,
-						       CAST((backupset.Backup_Size/1048576) AS NUMERIC(10,2)) AS TotalSizeMB,
-						       backupset.Media_Set_ID as MediaSetId, 
-						    mediaset.Software_Name AS Software
+							    mediafamily.Physical_Device_Name AS Path,
+							    CAST((backupset.Backup_Size/1048576) AS NUMERIC(10,2)) AS TotalSizeMB,
+								CASE backupset.Type      
+						            WHEN 'L' THEN 'Log'
+						            WHEN 'D' THEN 'Full'
+						            WHEN 'F' THEN 'File'
+						            WHEN 'I' THEN 'Differential'
+						            WHEN 'G' THEN 'Differential File'
+						            WHEN 'P' THEN 'Partial Full'
+						            WHEN 'Q' THEN 'Partial Differential'
+						        ELSE NULL END AS Type, backupset.Media_Set_ID as MediaSetId, 
+							CASE mediafamily.device_type
+						                        WHEN 2 THEN 'Disk'
+						                        WHEN 102 THEN 'Permanent Disk  Device'
+						                        WHEN 5 THEN 'Tape'
+						                        WHEN 105 THEN 'Permanent Tape Device'
+						                        WHEN 6 THEN 'Pipe'
+						                        WHEN 106 THEN 'Permanent Pipe Device'
+						                        WHEN 7 THEN 'Virtual Device'
+						                        ELSE 'Unknown'
+						                        END AS DeviceType,
+							mediaset.Software_Name AS Software
 						  FROM msdb..BackupMediaFamily mediafamily
 						 INNER JOIN msdb..BackupMediaSet mediaset
 						    ON mediafamily.Media_Set_ID = mediaset.Media_Set_ID
@@ -236,27 +236,27 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 					    backupset.Backup_Finish_Date as [End],
 						CAST(DATEDIFF(second, backupset.backup_start_date, backupset.backup_finish_date) AS VARCHAR(4)) + ' ' + 'Seconds' as Duration,
 					    mediafamily.Physical_Device_Name AS Path,
-                        CASE mediafamily.device_type
-				                        WHEN 2 THEN 'Disk Temporary Device'
-				                        WHEN 102 THEN 'Disk Permanent Device'
-				                        WHEN 5 THEN 'Tape Temporary Device'
-				                        WHEN 105 THEN 'Tape Permanent Device'
-				                        WHEN 6 THEN 'Pipe Temporary Device'
-				                        WHEN 106 THEN 'Pipe Permanent Device'
-				                        WHEN 7 THEN 'Virtual Device'
-				                        ELSE 'Unknown'
-				                        END AS DeviceType,
-					    CASE backupset.Type      
+					    CAST((backupset.Backup_Size/1048576) AS NUMERIC(10,2)) AS TotalSizeMB,
+						CASE backupset.Type      
 				            WHEN 'L' THEN 'Log'
 				            WHEN 'D' THEN 'Full'
 				            WHEN 'F' THEN 'File'
 				            WHEN 'I' THEN 'Differential'
-				            WHEN 'G' THEN 'DifferentialFile'
-				            WHEN 'P' THEN 'PartialFull'
-				            WHEN 'Q' THEN 'PartialDiff'
-				        ELSE NULL END AS Type,
-				    CAST((backupset.Backup_Size/1048576) AS NUMERIC(10,2)) AS TotalSizeMB,
-					backupset.Media_Set_ID as MediaSetId, mediaset.Software_Name AS Software"
+				            WHEN 'G' THEN 'Differential File'
+				            WHEN 'P' THEN 'Partial Full'
+				            WHEN 'Q' THEN 'Partial Differential'
+				        ELSE NULL END AS Type, backupset.Media_Set_ID as MediaSetId, 
+					CASE mediafamily.device_type
+				                        WHEN 2 THEN 'Disk'
+				                        WHEN 102 THEN 'Permanent Disk  Device'
+				                        WHEN 5 THEN 'Tape'
+				                        WHEN 105 THEN 'Permanent Tape Device'
+				                        WHEN 6 THEN 'Pipe'
+				                        WHEN 106 THEN 'Permanent Pipe Device'
+				                        WHEN 7 THEN 'Virtual Device'
+				                        ELSE 'Unknown'
+				                        END AS DeviceType,
+					mediaset.Software_Name AS Software"
 					}
 					
 					$from = " FROM msdb..BackupMediaFamily mediafamily INNER JOIN msdb..BackupMediaSet mediaset
@@ -299,7 +299,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				if (!$last)
 				{
 					Write-Debug $sql
-					$results = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables
+					$sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
 				}
 			}
 			catch
@@ -308,8 +308,6 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				Write-Exception $_
 				continue
 			}
-			
-			($results.rows | Select-Object * -ExcludeProperty BackupSetRank, From, To, RowError, Rowstate, table, itemarray, haserrors)
 		}
 	}
 }
