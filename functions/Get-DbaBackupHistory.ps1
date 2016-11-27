@@ -23,8 +23,8 @@ Return backup information for only specific databases. These are only the databa
 .PARAMETER Since
 Datetime object used to narrow the results to a date
 	
-.PARAMETER Detailed
-Returns a boatload of information 
+.PARAMETER Force
+Returns a boatload of information, the way SQL Server returns it
 
 .PARAMETER Last
 Returns last full, diff and log backup sets
@@ -68,7 +68,7 @@ Get-DbaBackupHistory -SqlServer sqlserver2014a -Databases db1, db2 -Since '7/1/2
 Returns backup information only for databases db1 and db2 on sqlserve2014a since July 1, 2016 at 10:47 AM.
 
 .EXAMPLE   
-Get-DbaBackupHistory -SqlServer sql2014 -Databases AdventureWorks2014, pubs -Detailed | Format-Table
+Get-DbaBackupHistory -SqlServer sql2014 -Databases AdventureWorks2014, pubs -Force | Format-Table
 
 Returns information only for AdventureWorks2014 and pubs, and makes the output pretty
 
@@ -88,7 +88,7 @@ Get-SqlRegisteredServerName -SqlServer sql2016 | Get-DbaBackupHistory
 Returns database backup information for every database on every server listed in the Central Management Server on sql2016
 	
 .EXAMPLE   
-Get-DbaBackupHistory -SqlServer sqlserver2014a, sql2016 -Detailed
+Get-DbaBackupHistory -SqlServer sqlserver2014a, sql2016 -Force
 
 Lots of detailed information for all databases on sqlserver2014a and sql2016.
 	
@@ -101,7 +101,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 		[Alias("SqlCredential")]
 		[PsCredential]$Credential,
 		[Parameter(ParameterSetName = "NoLast")]
-		[switch]$Detailed,
+		[switch]$Force,
 		[Parameter(ParameterSetName = "NoLast")]
 		[datetime]$Since,
 		[Parameter(ParameterSetName = "Last")]
@@ -184,6 +184,16 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 						       backupset.Backup_Finish_Date as [End],
 						       CAST(DATEDIFF(second, backupset.backup_start_date, backupset.backup_finish_date) AS VARCHAR(4)) + ' ' + 'Seconds' as Duration,
 						       mediafamily.Physical_Device_Name AS Path,
+                               CASE mediafamily.device_type
+				                                WHEN 2 THEN 'Disk Temporary Device'
+				                                WHEN 102 THEN 'Disk Permanent Device'
+				                                WHEN 5 THEN 'Tape Temporary Device'
+				                                WHEN 105 THEN 'Tape Permanent Device'
+				                                WHEN 6 THEN 'Pipe Temporary Device'
+				                                WHEN 106 THEN 'Pipe Permanent Device'
+				                                WHEN 7 THEN 'Virtual Device'
+				                                ELSE 'Unknown'
+				                                END AS DeviceType,
 						       CASE backupset.Type
 						              WHEN 'L' THEN 'Log'
 						              WHEN 'D' THEN 'Full'
@@ -211,7 +221,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				}
 				else
 				{
-					if ($detailed -eq $true)
+					if ($Force -eq $true)
 					{
 						$select = "SELECT '$servername' AS [Server], * "
 					}
@@ -226,6 +236,16 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 					    backupset.Backup_Finish_Date as [End],
 						CAST(DATEDIFF(second, backupset.backup_start_date, backupset.backup_finish_date) AS VARCHAR(4)) + ' ' + 'Seconds' as Duration,
 					    mediafamily.Physical_Device_Name AS Path,
+                        CASE mediafamily.device_type
+				                        WHEN 2 THEN 'Disk Temporary Device'
+				                        WHEN 102 THEN 'Disk Permanent Device'
+				                        WHEN 5 THEN 'Tape Temporary Device'
+				                        WHEN 105 THEN 'Tape Permanent Device'
+				                        WHEN 6 THEN 'Pipe Temporary Device'
+				                        WHEN 106 THEN 'Pipe Permanent Device'
+				                        WHEN 7 THEN 'Virtual Device'
+				                        ELSE 'Unknown'
+				                        END AS DeviceType,
 					    CASE backupset.Type      
 				            WHEN 'L' THEN 'Log'
 				            WHEN 'D' THEN 'Full'
