@@ -129,7 +129,8 @@ of the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use th
 				if ($UseRecommended)
 				{
 					Write-Verbose "Changing $($row.server) SQL Server max from $($row.SqlMaxMB) to $($row.RecommendedMB) MB"
-					if ($row.RecommendedMB -eq 0)
+					
+					if ($row.RecommendedMB -eq 0 -or $row.RecommendedMB -eq $null)
 					{
 						$maxmem = (Test-DbaMaxMemory -SqlServer $server).RecommendedMB
 						Write-wearning $maxmem

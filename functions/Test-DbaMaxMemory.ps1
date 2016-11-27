@@ -54,7 +54,7 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[string[]]$SqlServer,
+		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
@@ -62,7 +62,8 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 	{
 		foreach ($servername in $sqlserver)
 		{
-            Write-Verbose "Counting the running SQL Server instances on $servername"
+			Write-Verbose "Counting the running SQL Server instances on $servername"
+
 			try
 			{
 				# Get number of instances running

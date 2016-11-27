@@ -52,7 +52,7 @@ Find all servers in Server Central Management Server that have 'Max Server Memor
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[string[]]$SqlServer,
+		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
@@ -71,7 +71,6 @@ Find all servers in Server Central Management Server that have 'Max Server Memor
 				Write-Warning "Can't connect to $servername or access denied. Skipping."
 				continue
 			}
-			
 
 			$totalmemory = $server.PhysicalMemory
 			
