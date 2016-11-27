@@ -94,8 +94,7 @@
 		'Copy-SqlProxyAccount',
 		'Copy-SqlAlert',
 		'Import-SqlSpConfigure',
-		'Export-SqlSpConfigure',
-		'Get-SqlMaxMemory',
+		'Export-SqlSpConfigure'
 		'Get-DbaDetachedDatabaseInfo',
 		'Restore-SqlBackupFromDirectory',
 		'Test-SqlConnection',
@@ -106,7 +105,6 @@
 		'Sync-SqlLoginPermissions',
 		'Export-SqlLogin',
 		'Get-SqlServerKey',
-		'Set-SqlMaxMemory',
 		'Reset-SqlAdmin',
 		'Watch-SqlDbLogin',
 		'Expand-SqlTLogResponsibly',
@@ -162,7 +160,10 @@
 		'Get-DbaMemoryUsage',
 		'Get-DbaBackupHistory',
 		'Read-DbaBackupHeader',
-		'Test-DbaBackup'
+		'Test-DbaBackup',
+		'Get-DbaMaxMemory',
+		'Set-DbaMaxMemory',
+		'Test-DbaMaxMemory'
 	)
 	
 	# Cmdlets to export from this module
@@ -180,7 +181,9 @@
 	'Update-SqlWhoIsActive',
 	'Show-SqlMigrationConstraint',
 	'Test-SqlDiskAllocation',
-	'Get-DiskSpace'
+	'Get-DiskSpace',
+	'Get-SqlMaxMemory',
+	'Set-SqlMaxMemory'
 	
 	# List of all modules packaged with this module
 	ModuleList = @()
