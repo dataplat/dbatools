@@ -173,25 +173,19 @@ Returns database restore information for every database on every server listed i
 				
 				$sql = "$select $from $where"
 				Write-Debug $sql
-				$results = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables
+				
+				if ($Detailed -eq $true -or $Force -eq $true)
+				{
+					return $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
+				}
+				
+				$sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty From, To, RowError, Rowstate, table, itemarray, haserrors
 			}
 			catch
 			{
 				Write-Warning "$_ `nMoving on"
 				continue
 			}
-			
-			$null = $collection.Add($results)
 		}
-	}
-	
-	END
-	{
-		if ($Detailed -eq $true -or $Force -eq $true)
-		{
-			return $collection.rows
-		}
-		
-		return ($collection.rows | Select-Object * -ExcludeProperty From, To, RowError, Rowstate, table, itemarray, haserrors)
 	}
 }
