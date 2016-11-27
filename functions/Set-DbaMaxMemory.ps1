@@ -60,7 +60,7 @@ Set-DbaMaxMemory -SqlServer sqlserver1 -MaxMb 2048
 Explicitly max memory to 2048 MB on just one server, "sqlserver1"
 
 .EXAMPLE 
-Get-SqlRegisteredServerName sqlserver| Test-DbaMaxMemory | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-DbaMaxMemory
+Get-SqlRegisteredServerName -SqlServer sqlserver| Test-DbaMaxMemory | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-DbaMaxMemory
 
 Find all servers in SQL Server Central Management server that have Max SQL memory set to higher than the total memory 
 of the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use the default recommendation.
@@ -70,7 +70,7 @@ of the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use th
 	Param (
 		[parameter(Position = 0)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[string[]]$SqlServer,
+		[object]$SqlServer,
 		[parameter(Position = 1)]
 		[int]$MaxMb,
 		[Parameter(ValueFromPipeline = $True)]
