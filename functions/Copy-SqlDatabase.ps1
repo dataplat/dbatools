@@ -173,7 +173,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		[object]$DbPipeline
 	)
 	
-	DynamicParam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential -NoSystem $true} }
+	DynamicParam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential -NoSystem } }
 	
 	BEGIN
 	{

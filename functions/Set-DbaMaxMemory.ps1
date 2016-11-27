@@ -60,7 +60,7 @@ Set-DbaMaxMemory -SqlServer sqlserver1 -MaxMb 2048
 Explicitly max memory to 2048 MB on just one server, "sqlserver1"
 
 .EXAMPLE 
-Get-SqlRegisteredServerName sqlserver| Test-DbaMaxMemory | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-DbaMaxMemory
+Get-SqlRegisteredServerName -SqlServer sqlserver| Test-DbaMaxMemory | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-DbaMaxMemory
 
 Find all servers in SQL Server Central Management server that have Max SQL memory set to higher than the total memory 
 of the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use the default recommendation.
@@ -70,7 +70,7 @@ of the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use th
 	Param (
 		[parameter(Position = 0)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[string[]]$SqlServer,
+		[object]$SqlServer,
 		[parameter(Position = 1)]
 		[int]$MaxMb,
 		[Parameter(ValueFromPipeline = $True)]
@@ -79,7 +79,6 @@ of the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use th
 	)
 	PROCESS
 	{
-		
 		if ($SqlServer.length -eq 0 -and $collection -eq $null)
 		{
 			throw "You must specify a server list source using -SqlServer or you can pipe results from Test-DbaMaxMemory"
@@ -94,17 +93,19 @@ of the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use th
 		{
 			$Collection = Test-DbaMaxMemory -SqlServer $SqlServer
 		}
-
-		if ((!$Collection.PSObject.Properties['RecommendedMB']) -and $UseRecommended) 
-		{
-			throw "No 'RecommendedMB' property found in Collection parameter. Test-DbaMaxMemory can be used to populate it."
-		}
-
+		
 		$Collection | Add-Member -NotePropertyName OldMaxValue -NotePropertyValue 0
 		
 		foreach ($row in $Collection)
-		{			
-			Write-Verbose "Attempting to connect to $sqlserver"
+		{
+			if ($row.server -eq $null)
+			{
+				$row = Test-DbaMaxMemory -sqlserver $row
+				$row | Add-Member -NotePropertyName OldMaxValue -NotePropertyValue 0
+			}
+			
+			Write-Verbose "Attempting to connect to $($row.server)"
+			
 			try
 			{
 				$server = Connect-SqlServer -SqlServer $row.server -SqlCredential $SqlCredential
@@ -118,7 +119,6 @@ of the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use th
 			if (!(Test-SqlSa -SqlServer $server))
 			{
 				Write-Error "Not a sysadmin on $sqlserver. Skipping."
-				$server.ConnectionContext.Disconnect()
 				continue
 			}
 			
@@ -129,7 +129,19 @@ of the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use th
 				if ($UseRecommended)
 				{
 					Write-Verbose "Changing $($row.server) SQL Server max from $($row.SqlMaxMB) to $($row.RecommendedMB) MB"
-					$server.Configuration.MaxServerMemory.ConfigValue = $row.RecommendedMB
+					
+					if ($row.RecommendedMB -eq 0 -or $row.RecommendedMB -eq $null)
+					{
+						$maxmem = (Test-DbaMaxMemory -SqlServer $server).RecommendedMB
+						Write-wearning $maxmem
+						$server.Configuration.MaxServerMemory.ConfigValue = $maxmem
+					}
+					else
+					{
+						
+						$server.Configuration.MaxServerMemory.ConfigValue = $row.RecommendedMB
+					}
+					
 					$row.SqlMaxMB = $row.RecommendedMB
 				}
 				else
@@ -139,13 +151,13 @@ of the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use th
 					$row.SqlMaxMB = $MaxMB
 				}
 				$server.Configuration.Alter()
-				
 			}
-			catch { Write-Error "Could not modify Max Server Memory for $($row.server)" }
+			catch
+			{
+				Write-Warning "Could not modify Max Server Memory for $($row.server)"
+			}
 			
-			$server.ConnectionContext.Disconnect()
+			$row | Select-Object Server, TotalMB, OldMaxValue, @{ name = "CurrentMaxValue"; expression = { $_.SqlMaxMB } }
 		}
-		
-		return $Collection | Select Server, TotalMB, OldMaxValue, @{ name = "CurrentMaxValue"; expression = { $_.SqlMaxMB } }
 	}
 }
