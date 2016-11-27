@@ -18,7 +18,7 @@ Allows you to specify a comma separated list of servers to query.
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$cred = Get-Credential, than pass $cred variable to this parameter. 
+$cred = Get-Credential, then pass $cred variable to this parameter. 
 
 Windows Authentication will be used when SqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
@@ -60,7 +60,6 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 	
 	PROCESS
 	{
-		$collection = @()
 		foreach ($servername in $sqlserver)
 		{
             Write-Verbose "Counting the running SQL Server instances on $servername"
@@ -78,8 +77,9 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 			}
 			
 
-            $sqlmachine = Get-DbaMaxMemory -SqlServer $servername -SqlCredential $SqlCredential 
-            if($sqlmachine -eq $null)
+            $server = Get-DbaMaxMemory -SqlServer $servername -SqlCredential $SqlCredential
+			
+			if($server -eq $null)
             {
                 continue;
             }
@@ -87,8 +87,8 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 		
 			$reserve = 1
 
-            $maxmemory = $sqlmachine.SqlMaxMB
-            $totalmemory = $sqlmachine.TotalMB
+            $maxmemory = $server.SqlMaxMB
+            $totalmemory = $server.TotalMB
 
 			if ($totalmemory -ge 4096)
 			{
@@ -115,16 +115,14 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 			
 			$recommendedMax = $recommendedMax/$sqlcount
 			
-			$object = New-Object -TypeName PSObject -Property @{
-				Server = $sqlmachine.Server
+			[pscustomobject]@{
+				Server = $server.Server
 				InstanceCount = $sqlcount
 				TotalMB = $totalmemory
 				SqlMaxMB = $maxmemory
 				RecommendedMB = $recommendedMax
 			}
-			$collection += $object
 		}
-		return ($collection | Sort-Object Server | Select-Object Server, InstanceCount, TotalMB, SqlMaxMB, RecommendedMB)
 	}
 }
 

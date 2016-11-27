@@ -17,7 +17,7 @@ Allows you to specify a comma separated list of servers to query.
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$cred = Get-Credential, than pass $cred variable to this parameter. 
+$cred = Get-Credential, then pass $cred variable to this parameter. 
 
 Windows Authentication will be used when SqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
@@ -78,17 +78,11 @@ Find all servers in Server Central Management Server that have 'Max Server Memor
 			# Some servers under-report by 1MB.
 			if (($totalmemory % 1024) -ne 0) { $totalmemory = $totalmemory + 1 }
 
-			$object = New-Object -TypeName PSObject -Property @{
+			[pscustomobject]@{
 				Server = $server.name
 				TotalMB = $totalmemory
 				SqlMaxMB = $server.Configuration.MaxServerMemory.ConfigValue
 			}
-			$server.ConnectionContext.Disconnect()
-			$collection += $object
 		}
-
-		return ($collection | Sort-Object Server | Select-Object Server, TotalMB, SqlMaxMB)
 	}
 }
-
-
