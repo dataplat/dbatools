@@ -313,7 +313,50 @@ Get-ChildItem "$Modulebase\internal\" |% {. $_.fullname}
                   } #mock params
                 {Test-DbaDatabaseOwner -SqlServer 'SQLServerName' -TargetLogin WrongLogin} | Should Throw 'Invalid login:'
               }# it
+             It "Returns all information with detailed for correct and incorrect owner" {
+                          Mock Connect-SQLServer -MockWith {
+                      [object]@{
+                          Name = 'SQLServerName';
+                          Databases = [object]@(
+                              @{
+                                  Name= 'db1';
+                                  Status = 'Normal';
+                                  Owner = 'WrongOWner'
+                                }
+                            @{
+                                  Name= 'db2';
+                                  Status = 'Normal';
+                                  Owner = 'sa'
+                                }
+                              ); #databases
+                        Logins = [object]@(
+                            @{
+                                ID = 1;
+                                Name = 'sa';
+                            } 
+                        ) #logins
+                    } #object
+                  } #mock connect-sqlserver
+                  
+                  mock Get-ParamSqlDatabases -MockWith {
+                            [object]@(
+                              @{
+                                  Name= 'db1'
+                                }
+                              );
 
+                  } #mock params
+                 $Result = Test-DbaDatabaseOwner -SqlServer 'SQLServerName' -Detailed
+                $Result.Server| Should Be 'SQLServerName';
+              $Result[0].Database | Should Be 'db1';
+              $Result[1].Database | Should Be 'db2';              
+              $Result.DBState| Should Be 'Normal'; 
+              $Result[0].CurrentOwner| Should Be 'WrongOWner'; 
+              $Result[1].CurrentOwner| Should Be 'sa'; 
+              $Result.TargetOwner| Should Be 'sa'; 
+              $Result[0].OwnerMatch| Should Be $False
+              $Result[1].OwnerMatch| Should Be $true
+              }# it
 		}# Context
         }#modulescope
     }#describe
