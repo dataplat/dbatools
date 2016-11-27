@@ -311,7 +311,7 @@ Get-ChildItem "$Modulebase\internal\" |% {. $_.fullname}
                               );
 
                   } #mock params
-                {Test-DbaDatabaseOwner -SqlServer 'SQLServerName' -TargetLogin WrongLogin} | Should ThrowException 'Invalid login:'
+                {Test-DbaDatabaseOwner -SqlServer 'SQLServerName' -TargetLogin WrongLogin} | Should Throw 'Invalid login:'
               }# it
 
 		}# Context
