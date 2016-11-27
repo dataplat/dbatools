@@ -89,8 +89,6 @@ Returns database restore information for every database on every server listed i
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
 		
-		$collection = New-Object System.Collections.ArrayList
-		
 		if ($Since -ne $null)
 		{
 			$Since = $Since.ToString("yyyy-MM-dd HH:mm:ss")
@@ -104,6 +102,12 @@ Returns database restore information for every database on every server listed i
 			try
 			{
 				$sourceserver = Connect-SqlServer -SqlServer $server -SqlCredential $Credential
+				
+				if ($sourceserver.VersionMajor -lt 9)
+				{
+					Write-Warning "SQL Server 2000 not supported"
+					continue
+				}
 				
 				if ($force -eq $true)
 				{
