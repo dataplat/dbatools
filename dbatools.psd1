@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.65'
+	ModuleVersion = '0.8.67'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -94,8 +94,7 @@
 		'Copy-SqlProxyAccount',
 		'Copy-SqlAlert',
 		'Import-SqlSpConfigure',
-		'Export-SqlSpConfigure',
-		'Get-SqlMaxMemory',
+		'Export-SqlSpConfigure'
 		'Get-DbaDetachedDatabaseInfo',
 		'Restore-SqlBackupFromDirectory',
 		'Test-SqlConnection',
@@ -106,7 +105,6 @@
 		'Sync-SqlLoginPermissions',
 		'Export-SqlLogin',
 		'Get-SqlServerKey',
-		'Set-SqlMaxMemory',
 		'Reset-SqlAdmin',
 		'Watch-SqlDbLogin',
 		'Expand-SqlTLogResponsibly',
@@ -158,7 +156,14 @@
 		'Get-DbaPermission',
 		'Get-DbaLastBackup',
 		'Connect-DbaSqlServer',
-		'Get-DbaStartupParameter'
+		'Get-DbaStartupParameter',
+		'Get-DbaMemoryUsage',
+		'Get-DbaBackupHistory',
+		'Read-DbaBackupHeader',
+		'Test-DbaBackup',
+		'Get-DbaMaxMemory',
+		'Set-DbaMaxMemory',
+		'Test-DbaMaxMemory'
 	)
 	
 	# Cmdlets to export from this module
@@ -176,7 +181,9 @@
 	'Update-SqlWhoIsActive',
 	'Show-SqlMigrationConstraint',
 	'Test-SqlDiskAllocation',
-	'Get-DiskSpace'
+	'Get-DiskSpace',
+	'Get-SqlMaxMemory',
+	'Set-SqlMaxMemory'
 	
 	# List of all modules packaged with this module
 	ModuleList = @()

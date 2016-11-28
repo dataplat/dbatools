@@ -8,7 +8,7 @@ Restores SQL Server databases from the backup directory structure created by Ola
 Many SQL Server database administrators use Ola Hallengren's SQL Server Maintenance Solution which can be found at http://ola.hallengren.com
 Hallengren uses a predictable backup structure which made it relatively easy to create a script that can restore an entire SQL Server database instance, down to the master database (next version), to a new server. This script is intended to be used in the event that the originating SQL Server becomes unavailable, thus rendering my other SQL restore script (http://goo.gl/QmfQ6s) ineffective.
 
-.PARAMETER ServerName
+.PARAMETER SqlServer
 Required. The SQL Server to which you will be restoring the databases.
 
 .PARAMETER Path
@@ -32,6 +32,15 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 $cred = Get-Credential, this pass this $cred to the param. 
 
 Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
+.PARAMETER NoRecovery
+Leaves the databases in No Recovery state to enable further backups to be added
 
 .NOTES 
 Author  : Chrissy LeMaire, netnerds.net

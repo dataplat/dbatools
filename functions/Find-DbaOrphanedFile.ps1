@@ -100,7 +100,8 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 				EXEC xp_dirtree @dir, 1, 1;
 
 				UPDATE #enum
-				SET parent = @dir
+				SET parent = @dir,
+				fs_filename = ltrim(rtrim(fs_filename))
 				WHERE parent IS NULL;"
 			
 			$query_files_sql = "SELECT e.fs_filename AS filename, e.parent
@@ -178,13 +179,6 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 			$dirtreefiles = $valid = $paths = $matching = @()
 			
 			$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
-			
-			if ($server.VersionMajor -lt 9)
-			{
-				# SQL Server 2000 has crazy output and sometimes doesn't work
-				Write-Warning "SQL Server 2000 not supported"
-				continue
-			}
 			
 			# Get the default data and log directories from the instance
 			Write-Debug "Adding paths"

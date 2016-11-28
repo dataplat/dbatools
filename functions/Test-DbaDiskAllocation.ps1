@@ -25,6 +25,12 @@ If you want to use SQL Server Authentication to connect.
 .PARAMETER Detailed
 Show a detailed list.
 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
 .NOTES 
 Requires: Windows sysadmin access on SQL Servers
 	

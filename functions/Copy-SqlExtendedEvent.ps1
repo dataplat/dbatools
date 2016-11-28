@@ -36,6 +36,12 @@ To connect as a different Windows user, run PowerShell as that user.
 .PARAMETER Force
 If sessions exists on destination server, it will be dropped and recreated.
 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
