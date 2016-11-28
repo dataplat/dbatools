@@ -10,7 +10,7 @@ Export SQL Server Availability Groups creation scripts to a T-SQL file. This is 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
 .PARAMETER SqlServer
-The SQL Server instance name. SQL Server 2012 and above supported
+The SQL Server instance name. SQL Server 2012 and above supported.
 
 .PARAMETER FilePath
 The directory name where the output files will be written. A sub directory with the format 'ServerName$InstanceName' will be created. A T-SQL scripts named 'AGName.sql' will be created under this subdirectory for each scripted Availability Group.
@@ -29,7 +29,7 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
 .NOTES 
-Author: Chrissy LeMaire (@cl), netnerds.net
+Author: Chris Sommer (@cjsommer), cjsommmer.com
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
@@ -65,9 +65,6 @@ Export-DbaAvailabilityGroup -SqlServer sql2014 -FilePath 'C:\temp\availability_g
 
 Exports all Availability Groups from SQL server "sql2014". Output scripts are witten to the C:\temp\availability_group_exports directory. If the export file already exists it will not be overwritten.
 
-.NOTES 
-Author: Chris Sommer (@cjsommer), cjsommmer.com
-
 .LINK 
 https://dbatools.io/Export-DbaAvailabilityGroup
 
@@ -78,49 +75,57 @@ https://dbatools.io/Export-DbaAvailabilityGroup
 		    [Alias("ServerInstance", "SqlInstance")]
 		    [object[]]$SqlServer,
 
+		[System.Management.Automation.PSCredential]$SqlCredential,
+
 		[Alias("OutputLocation", "Path")]
 		    [string]$FilePath,
 
-        [switch]$NoClobber ,
-
-		[object]$SqlCredential
+        [switch]$NoClobber
 	)
 
-	DynamicParam { if ($sqlserver) { return Get-ParamSqlAvailabilityGroups -SqlServer $sqlserver[0] -SqlCredential $SqlCredential } }
+	DynamicParam { if ($SqlServer) { return Get-ParamSqlAvailabilityGroups -SqlServer $SqlServer -SqlCredential $SqlCredential } }
 	
     BEGIN
-    {
-        Write-Output "Beginning Export-DbaAvailabilityGroup"
+    {       
+        Write-Output "Beginning Export-DbaAvailabilityGroup on '$SqlServer'" 
         $AvailabilityGroups = $PSBoundParameters.AvailabilityGroups
+        
+        Write-Verbose "Connecting to SqlServer '$SqlServer'"
+
+        try {
+            $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+        } catch {
+            if ($server.count -eq 1) {
+                throw $_
+            } else {
+                Write-Warning "Can't connect to $SqlServer. Moving on."
+                Continue
+            }
+        }   
     }
 
     PROCESS
     {
-        $SQLObj = New-Object "Microsoft.SqlServer.Management.Smo.Server" $SQLServer
-        $SQLObj.ConnectionContext.Connect()
-
         # Get all of the Availability Groups and filter if required
-        $AllAGs =  $SQLObj.AvailabilityGroups
+        $AllAGs =  $server.AvailabilityGroups
 
         if ($AvailabilityGroups) {
             Write-Verbose 'Filtering AvailabilityGroups'
             $AllAGs = $AllAGs | Where-Object {$_.name -in $AvailabilityGroups}
         }
 
-        if ($AllAGs.count -eq 0) {
-            Write-Output "No Availability Groups detected on '$SqlServer'"
-        }
+        if ($AllAGs.count -gt 0) {
 
-        # Set and create the OutputLocation if it doesn't exist
-        $SQLINST = $SQLServer.Replace('\','$')
-        $OutputLocation = "${FilePath}\${SQLINST}"
+            # Set and create the OutputLocation if it doesn't exist
+            $SQLINST = $SQLServer.Replace('\','$')
+            $OutputLocation = "${FilePath}\${SQLINST}"
 
-        if (!(Test-Path $OutputLocation -PathType Container)) {
-            New-Item -Path $OutputLocation -ItemType Directory -Force | Out-Null
-        } 
+            if (!(Test-Path $OutputLocation -PathType Container)) {
+                New-Item -Path $OutputLocation -ItemType Directory -Force | Out-Null
+            } 
 
-        # Script each Availability Group
-        foreach ($ag in $AllAGs) {
+            # Script each Availability Group
+            foreach ($ag in $AllAGs) {
             $AGName = $ag.Name
 
             # Set the outfile name
@@ -163,11 +168,14 @@ https://dbatools.io/Export-DbaAvailabilityGroup
                 $ag.Script() | Out-File -FilePath $OutFile -Encoding ASCII -Append
             }
         }
+        } else {
+            Write-Output "No Availability Groups detected on '$SqlServer'"
+        }
     }
 
     END
     {
-		$SQLObj.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Completed Export-DbaAvailabilityGroup" }
+		$server.ConnectionContext.Disconnect()
+		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Completed Export-DbaAvailabilityGroup on '$SqlServer'" }
     }
 }
