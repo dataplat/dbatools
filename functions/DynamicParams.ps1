@@ -99,6 +99,10 @@ filled with database list from specified SQL Server server.
 				$databaselist += $database.name
 			}
 		}
+		else
+		{
+			$databaselist += $database.name
+		}
 	}
 	
 	# Reusable parameter setup
