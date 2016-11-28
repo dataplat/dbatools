@@ -25,6 +25,15 @@ Specifies if the servername is updatable. If updatable -eq $false, it will retur
 .PARAMETER Force
 By default, this command produces a ton of confirm prompts. Force bypasses many of these confirms, but not all.
 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
+.PARAMETER AutoFix
+Automatically performs the fix
+
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire

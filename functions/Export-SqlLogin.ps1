@@ -33,6 +33,21 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
 
 SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+
+.PARAMETER NoJobs
+Doesnot export the Jobs
+
+.PARAMETER NoDatabases
+oes not export the databases
+
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
+.PARAMETER Force
+Drops and recreates the login if it exists
 	
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
@@ -322,7 +337,7 @@ CREATE LOGIN [$username] FROM WINDOWS WITH DEFAULT_DATABASE = [$defaultdb], DEFA
 			
 			if ($NoDatabases -eq $false)
 			{
-				if ($databases.length -eq 0) { $databases = $sourcelogin.EnumDatabaseMappings() }
+				$databases = $sourcelogin.EnumDatabaseMappings() 
 				# Adding database mappings and securables
 				foreach ($db in $databases)
 				{

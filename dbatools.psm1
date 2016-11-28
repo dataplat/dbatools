@@ -15,6 +15,8 @@ Set-Alias -Name Restore-HallengrenBackup -Value Restore-SqlBackupFromDirectory
 Set-Alias -Name Show-SqlMigrationConstraint -Value Test-SqlMigrationConstraint
 Set-Alias -Name Test-SqlDiskAllocation -Value Test-DbaDiskAllocation
 Set-Alias -Name Get-DiskSpace -Value Get-DbaDiskSpace
+Set-Alias -Name Get-SqlMaxMemory -Value Get-DbaMaxMemory
+Set-Alias -Name Set-SqlMaxMemory -Value Set-DbaMaxMemory
 
 # Strictmode coming when I've got time.
 # Set-StrictMode -Version Latest

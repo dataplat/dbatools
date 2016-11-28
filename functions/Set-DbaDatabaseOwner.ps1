@@ -39,6 +39,12 @@ List of databases to exclude
 .PARAMETER TargetLogin
 Specific login that you wish to check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed.
 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
 .LINK
 https://dbatools.io/Set-DbaDatabaseOwner
 

@@ -45,6 +45,12 @@ https://msdn.microsoft.com/en-us/library/aa394515.aspx
 Includes information about filesystem (FAT32, NTFS, ReFS, etc.), as well as the information provided by -CheckForSql and -AllDrives.
 Also includes volumes normally excluded, such as '\\?\Volume*' volumes.
 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
 .NOTES
 Author: Chrissy LeMaire (clemaire@gmail.com) & Jakob Bindslet (jakob@bindslet.dk)
 
