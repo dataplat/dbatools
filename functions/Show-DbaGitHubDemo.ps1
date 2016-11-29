@@ -67,7 +67,7 @@ Does this
 	
 	PROCESS
 	{
-		write-output $sourceserver.netname
+		write-output $sourceserver.ServiceAccount
 		
 	}
 	
