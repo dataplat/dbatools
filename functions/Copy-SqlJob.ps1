@@ -38,6 +38,15 @@ Disable the job on the source server
 .PARAMETER DisableOnDestination
 Disable the newly migrated job on the destination server
 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
+.PARAMETER Force
+Drops and recreates the Job if it exists
+
 .NOTES
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers

@@ -54,6 +54,15 @@ Want to sync up the name of the sa account on the source and destination? Use th
 .PARAMETER Force
 Force drops and recreates logins. Logins that own jobs cannot be dropped at this time.
 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
+.PARAMETER pipelogin
+Takes the parameters required from a login object that has been piped ot the command
+
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
@@ -177,7 +186,6 @@ Limitations: Does not support Application Roles yet
 						Write-Output "Force was specified. Attempting to drop $username on $destination"
 						try
 						{
-							$destserver.EnumProcesses() | Where { $_.Login -eq $username } | ForEach-Object { $destserver.KillProcess($_.spid) }
 							
 							$owneddbs = $destserver.Databases | Where { $_.Owner -eq $username }
 							
@@ -197,7 +205,10 @@ Limitations: Does not support Application Roles yet
 								$ownedjob.Alter()
 							}
 							
-							$login.drop()
+							$login.Disable()
+							$destserver.EnumProcesses() | Where-Object { $_.Login -eq $username } | ForEach-Object { $destserver.KillProcess($_.spid) }
+							$login.Drop()
+							
 							Write-Output "Successfully dropped $username on $destination"
 						}
 						catch
@@ -282,7 +293,7 @@ Limitations: Does not support Application Roles yet
 								$sid = "0x"; $sourcelogin.sid | % { $sid += ("{0:X}" -f $_).PadLeft(2, "0") }
 								$sqlfailsafe = "CREATE LOGIN [$username] WITH PASSWORD = $hashedpass HASHED, SID = $sid, 
 												DEFAULT_DATABASE = [$defaultdb], CHECK_POLICY = $checkpolicy, 
-												CHECK_EXPIRATION = $checkexpiration, DEFAULT_LANGUAGE = [$language]"
+												CHECK_EXPIRATION = $checkexpiration, DEFAULT_LANGUAGE = [$($sourcelogin.Language)]"
 								
 								$null = $destserver.ConnectionContext.ExecuteNonQuery($sqlfailsafe)
 								$destlogin = $destserver.logins[$username]
