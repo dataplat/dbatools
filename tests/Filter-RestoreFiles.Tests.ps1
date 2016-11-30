@@ -53,9 +53,27 @@ Get-ChildItem "$Modulebase\internal\" |% {. $_.fullname}
 
     Describe "$Name Tests" {
         New-Item "TestDrive:\TestFolder" -ItemType Directory
+        new-Item "TestDrive:\TestFolder\full1.bak" -ItemType File
+        new-Item "TestDrive:\TestFolder\log1a.trn" -ItemType File
+        new-Item "TestDrive:\TestFolder\log2a.trn" -ItemType File
+        new-Item "TestDrive:\TestFolder\full2.bak" -ItemType File
+        new-Item "TestDrive:\TestFolder\log1b.trn" -ItemType File
+        
+        $Folder = Get-ChildItem TestDrive:\TestFolder\*
+        
         Context "Function should exist with correct name" {
             It "Should exist" {
                 $FunctionFile | Should Contain "function $name"
+            }
+        }
+        Context "$(($Folder.gettype())[0].gettype()) - Testing Inputs and Outputs" {
+            It "Should take an array of System.IO.FileSystemInfo" {
+                {Filter-RestoreFiles -Files $Folder} | Should Not Throw
+            }
+             
+            It "Should Return an array of System.IO.FileSystemInfo" {
+                $result = Filter-RestoreFiles -Files $Folder
+                $result | Should BeOfType System.IO.FileSystemInfo    
             }
         }
 }#describe

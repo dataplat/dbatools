@@ -139,6 +139,9 @@ Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile
 			$version = $datatable.Columns.Add("SQLVersion")
 			$dbversion = $datatable.rows[0].DatabaseVersion
 			
+			$tmp = $datatable.Columns.add("BackupFileName")
+			$datatable.Rows[0].BackupFileName = $file
+			
 			$datatable.rows[0].SQLVersion = (Convert-DbVersionToSqlVersion $dbversion)
 			
 			if ($Simple)
