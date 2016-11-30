@@ -37,6 +37,6 @@ Takes path, checks for validity. Scans for usual backup file
             $path = "$path\*"
         }
         Write-Verbose "$FunctionName - Scanning $path"
-        Get-ChildItem -path $Path -include *.bak, *.trn
-
+        $results = Get-ChildItem -path $Path -include *.bak, *.trn
+        return $results
 }

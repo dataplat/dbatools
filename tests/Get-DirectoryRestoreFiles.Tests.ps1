@@ -89,6 +89,9 @@ Get-ChildItem "$Modulebase\internal\" |% {. $_.fullname}
         }
         Context "$Name scan tests" {
             $results = Get-DirectoryRestoreFiles -Path TestDrive:\TestFolder\
+            It "Should return an array of System.IO.FileSystemInfo" {
+                $results | Should BeOfType System.IO.FileSystemInfo
+            }
             It "Check TestDrive" {
                 (Get-ChildItem TestDrive:\TestFolder\).count | should be 3
             }
@@ -96,7 +99,7 @@ Get-ChildItem "$Modulebase\internal\" |% {. $_.fullname}
                 $results.count | Should Be 2
             }
             It "Should not return the txt file"{
-                ($results | Where-Object {$_.Extension -eq "txt"}| Measure-Object).count  | Should Be 0
+                ($results | Where-Object {$_.Extension -eq ".txt"}| Measure-Object).count  | Should Be 0
             }
         }
 }#describe
