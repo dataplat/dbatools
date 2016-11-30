@@ -49,7 +49,7 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
 	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("Host")]
+		[Alias("Host", "ServerInstance", "SqlInstance")]
 		[string[]]$ComputerName,
 		[PsCredential]$Credential,
 		[switch]$Simple
@@ -82,10 +82,10 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
 				$servername = $servername.Split('\\')[0]
 			}
             Write-Verbose "Connecting to $servername"
-			if ( test-connection -ComputerName $servername -Quiet -count 1)
+			if ( Test-Connection -ComputerName $servername -Quiet -count 1)
             {
-                $availablecounters = (get-counter -ComputerName $servername -ListSet '*sql*:Memory Manager*').paths
-                (get-counter -ComputerName $servername -Counter $availablecounters).countersamples | 
+                $availablecounters = (Get-Counter -ComputerName $servername -ListSet '*sql*:Memory Manager*').paths
+                (Get-Counter -ComputerName $servername -Counter $availablecounters).countersamples | 
                     Where-Object {$_.Path -match $Memcounters} | 
                     foreach { [PSCustomObject]@{
 				                ComputerName = $servername
@@ -98,8 +98,8 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
                             }
 
 
-                $availablecounters = (get-counter -ComputerName $servername -ListSet '*sql*:Plan Cache*' ).paths
-                (get-counter -ComputerName $servername -Counter $availablecounters).countersamples |
+                $availablecounters = (Get-Counter -ComputerName $servername -ListSet '*sql*:Plan Cache*' ).paths
+                (Get-Counter -ComputerName $servername -Counter $availablecounters).countersamples |
                     Where-Object {$_.Path -match $Plancounters} |
                     foreach { [PSCustomObject]@{
 					            ComputerName = $servername
@@ -113,7 +113,7 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
 
 
                 $availablecounters = (Get-Counter -ComputerName $Servername -ListSet "*Buffer Manager*").paths
-                (get-counter -ComputerName $Servername -Counter $availablecounters).countersamples |
+                (Get-Counter -ComputerName $Servername -Counter $availablecounters).countersamples |
                     Where-Object {$_.Path -match $BufManpagecounters} |
                     foreach { [PSCustomObject]@{
 					            ComputerName = $servername
