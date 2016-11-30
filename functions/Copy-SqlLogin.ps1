@@ -154,7 +154,7 @@ Limitations: Does not support Application Roles yet
 				
 				if($destserver.LoginMode -ne "Mixed")
 				{ 
-					Write-Output "$Destination does not have Mixed Mode enabled. Enable this after the migration."
+					Write-Warning "$Destination does not have Mixed Mode enabled. Enable this after the migration."
 					continue 
 				}
 
