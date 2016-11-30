@@ -35,6 +35,9 @@ Windows Authentication will be used if SqlCredential is not specified. SQL Serve
 .PARAMETER OutputDatabaseName
 Outputs just the database name instead of the success message
 
+.PARAMETER Header
+To update, select a database or hit cancel to quit.
+
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire

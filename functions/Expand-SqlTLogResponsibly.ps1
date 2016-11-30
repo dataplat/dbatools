@@ -63,6 +63,19 @@ The target size of the log file after the shrink is performed.
 .PARAMETER BackupDirectory
 Backups must be performed in order to shrink the T-log. Designate a location for your backups. If you do not specify the backup directory, the SQL Server's default backup directory will be used. 
 
+.PARAMETER SqlCredential 
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+  
+$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.  
+ 
+Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user. 
+
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
 .NOTES
 This script will not analyze the actual number of VLFs. Use Test-DbaVirtualLogFile or run t-sql "DBCC LOGINFO" statements
 This script uses Get-DbaDiskSpace dbatools command to get the TLog's drive free space

@@ -23,13 +23,13 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER DestinationServer
+.PARAMETER Destination
 If specified this is the server that the Agent Jobs will be created on. By default this is the same server as the SQLServer.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 .PARAMETER Databases
 The database name to remove or an array of database names eg $Databases = 'DB1','DB2','DB3'
 
-.PARAMETER NoDBCCCheck
+.PARAMETER NoCheck
 If this switch is used the initial DBCC CHECK DB will be skipped. This will make the process quicker but will also create an agent job to restore a database backup containing a corrupt database. 
 A second DBCC CHECKDB is performed on the restored database so you will still be notified BUT USE THIS WITH CARE
 
@@ -42,14 +42,26 @@ The account that will own the Agent Jobs - Defaults to sa
 .PARAMETER UseDefaultFilePaths
 Use the instance default file paths for the mdf and ldf files to restore the database if not set will use the original file paths
 
+.PARAMETER CategoryName
+The Category Name for the Agent Job that gets created defaults to Rationalisation
+
 .PARAMETER DBCCErrorFolder 
 FolderPath for DBCC Error Output - defaults to C:\temp
+
+.PARAMETER BackupCompression
+The setting for the backup compression for the backup defaults to the default setting for the server but accepts On or Off to override that setting
 
 .PARAMETER AllDatabases
 Runs the script for every user databases on a server - Useful when decomissioning a server - That would need a DestinationServer set
 
 .PARAMETER Force
 This switch will continue to perform rest of the actions and will create an Agent Job with DBCCERROR in the name and a Backup file with DBCC in the name
+
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
 
 .NOTES 
 Original Author: Rob Sewell @SQLDBAWithBeard, sqldbawithabeard.com
@@ -149,7 +161,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		[parameter(Mandatory = $false)]
 		[switch]$AllDatabases,
 		[ValidateSet("Default", "On", "Of")]
-		[string]$backupCompression = 'Default',
+		[string]$BackupCompression = 'Default',
 		#[Alias("UseDefaultFilePaths")]
 		[switch]$ReuseSourceFolderStructure,
 		[switch]$Force
@@ -493,7 +505,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 					$backup.Checksum = $True
 					if ($sourceserver.versionMajor -gt 9)
 					{
-						$backup.CompressionOption = $backupCompression
+						$backup.CompressionOption = $BackupCompression
 					}
 					if ($force -and $dbccgood -eq $false)
 					{

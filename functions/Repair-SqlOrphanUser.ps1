@@ -8,12 +8,13 @@ Find orphan users with existing login and remap.
 An orphan user is defined by a user that does not have their matching login. (Login property = "")
 	
 If the matching login exists it must be:
-    .Enabled
-    .Not a system object
-    .Not locked
-    .Have the same name that user
+    Enabled
+    Not a system object
+    Not locked
+    Have the same name that user
 
 You can drop users that does not have their matching login by especifing the parameter -RemoveNotExisting This will be made by calling Remove-SqlOrphanUser function.
+
 	
 .PARAMETER SqlServer
 The SQL Server instance.
@@ -31,26 +32,11 @@ List of users to repair
 .PARAMETER RemoveNotExisting
 If passed, all users that not have their matching login will be dropped from database
 
-.NOTES 
-Original Author: Cláudio Silva (@ClaudioESSilva)
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-.LINK
-https://dbatools.io/Repair-SqlOrphanUser
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
 
 .EXAMPLE
 Repair-SqlOrphanUser -SqlServer sql2005 
@@ -83,6 +69,26 @@ Repair-SqlOrphanUser -SqlServer sqlserver2014a -RemoveNotExisting
 Will find all orphan users of all databases present on server 'sqlserver2014a'
 Will also remove all users that does not have their matching login by calling Remove-SqlOrphanUser function
 	
+.NOTES 
+Original Author: Cláudio Silva (@ClaudioESSilva)
+dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+Copyright (C) 2016 Chrissy LeMaire
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+.LINK
+https://dbatools.io/Repair-SqlOrphanUser
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (

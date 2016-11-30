@@ -49,6 +49,15 @@ This parameter is autopopulated for command-line completion and can be used to c
 .PARAMETER MailServers
 The parameter is autopopulated for command-line completion and can be used to copy only specific mail servers.
 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
+.PARAMETER Force
+Drops and recreates the XXXXX if it exists
+
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
