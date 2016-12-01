@@ -14,14 +14,23 @@ Takes an array of FileSystem Objects and then filters them down by date to get a
         [parameter(Mandatory = $true)]
         [object]$SqlServer
 	)
-    $FunctionName = "Filter-RestoreFiles"`
-
+    $FunctionName = "Filter-RestoreFiles"
+    $results = New-Object System.Data.DataSet
     Write-Verbose "$FunctionName - Starting"
-    [System.Array]$result
     Write-Verbose "$FunctionName - Find Newest Full backup"
-    $tmp  = $files | where-object {$_.Extension -eq ".bak"} | Read-DBAbackupheader -sqlserver $SQLSERVER 
-    Write-Verbose "$($tmp.count) objects"
-    $results = $tmp | where-object {$_.BackupType -eq 1} | Sort-Object -Property backupStartDate | Select-Object -First 1
-    Write-Verbose "$($results.count) objects"
+    $SQLBackupdetails  = $files | Read-DBAbackupheader -sqlserver $SQLSERVER 
+    $Fullbackup = $SQLBackupdetails | where-object {$_.BackupType -eq 1} | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1
+    $results.tables.add($Fullbackup,"FullBackup")
+    Write-Verbose "$FunctionName - Got a Full backup, now find all diffs"
+    $Diffbackups = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Database Differential' -and $_.BackupStartDate -gt $Fullbackup.backupStartDate}
+    $results.tables.Add($Diffbackups,"DiffBackups")
+    if ($Diffbackups.count -gt 0){
+        $TlogStartDate = ($DiffBackups | sort-object -property BackupStartDate -Descending | select-object -first 1).BackupStartDate
+    }else{
+       $TlogStartDate = $Fullbackup.BackupStartDate 
+    }
+    Write-Verbose "$FunctionName - Got a Full/Diff backups, now find all Tlogs needed"
+    $Tlogs = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.backupStartDate -gt $TlogStartDate}
+    $results.Tables.Add($Tlogs,"TranscationBackups")
     $results
 }

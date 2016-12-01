@@ -66,9 +66,9 @@ Get-ChildItem "$Modulebase\internal\" |% {. $_.fullname}
                 $FunctionFile | Should Contain "function $name"
             }
         }
-        Context "$(($Folder.gettype())[0].gettype()) - Testing Inputs and Outputs" {
+        Context "$Name - Testing Inputs and Outputs" {
             It "Should take an array of System.IO.FileSystemInfo" {
-                {Filter-RestoreFiles -Files $Folder} | Should Not Throw
+                {Filter-RestoreFiles -Files $Folder } | Should Not Throw
             }
              
             It "Should Return an array of System.IO.FileSystemInfo" {
