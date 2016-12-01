@@ -2,7 +2,7 @@
 {
 <#
 .SYNOPSIS
-Get a connection object from a given computer
+Returns information about the network connection of the target computer including NetBIOS name, IP Address and domain name.
 
 .DESCRIPTION
 Retrieves the IPAddress, ComputerName from one computer.
