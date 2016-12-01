@@ -92,7 +92,7 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
                 }
             }
         }
-        else
+        if (!$CONN)
         {
             Write-Verbose "Getting computer information from server $ComputerName via WMI (DCOM)"
             $CONN = Get-WmiObject -ComputerName $ComputerName -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -ErrorAction SilentlyContinue -Credential $Credential
