@@ -67,6 +67,9 @@ Also returns detailed information about each of the datafiles contained in the b
 "C:\temp\myfile.bak", "\backupserver\backups\myotherfile.bak" | Read-DbaBackupHeader -SqlServer sql2016
 
 Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile.bak", "\backupserver\backups\myotherfile.bak"
+
+.EXAMPLE
+	
 #>
 	[CmdletBinding()]
 	Param (
@@ -75,7 +78,7 @@ Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile
 		[object]$SqlServer,
 		[object]$SqlCredential,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[string[]]$Path,
+		[object]$Path,
 		[switch]$Simple,
 		[switch]$FileList
 	)
@@ -93,19 +96,32 @@ Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile
 			Write-Warning $_
 			continue
 		}
-	}
-	
-	PROCESS
-	{
-		foreach ($file in $path)
-		{
+		
+		[int]$numprocessors = $env:NUMBER_OF_PROCESSORS
+		$maxrunspaces = $numprocessors + 1
+		
+		# STEP 1: Create and open runspace pool, setup runspaces array
+		$pool = [RunspaceFactory]::CreateRunspacePool(1, $maxrunspaces)
+		$pool.ApartmentState = "MTA"
+		$pool.Open()
+		$runspaces = @()
+		
+		# STEP 2: Create reusable scriptblock. This is the workhorse of the runspace. Think of it as a function.
+		$scriptblock = {
+			Param (
+				[object]$server,
+				[object]$file,
+				[switch]$filelist
+			)
+			
+			if ($file.FullName -ne $null) { $file = $file.FullName }
 			$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
-			$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem $file, "FILE"
+			$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem $file, FILE
 			$restore.Devices.Add($device)
 			
 			try
 			{
-				$allfiles = $restore.ReadFileList($server)
+				$datatable = $restore.ReadBackupHeader($server)
 			}
 			catch
 			{
@@ -122,7 +138,16 @@ Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile
 				return
 			}
 			
-			$datatable = $restore.ReadBackupHeader($server)
+			# Sometimes ReadBackupHeader returns nothing
+			# because we're overwhelming it with runspaces :|
+			while ($datatable -eq $null -and $attempts++ -lt 10)
+			{
+				Start-Sleep -Milliseconds 100
+				$datatable = $restore.ReadBackupHeader($server)
+			}
+			
+			$allfiles = $restore.ReadFileList($server)
+			
 			$fl = $datatable.Columns.Add("FileList", [object])
 			$datatable.rows[0].FileList = $allfiles.rows
 			
@@ -156,8 +181,43 @@ Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile
 		}
 	}
 	
+	PROCESS
+	{
+		foreach ($file in $path)
+		{
+			$runspace = [PowerShell]::Create()
+			$null = $runspace.AddScript($scriptblock)
+			$null = $runspace.AddArgument($server)
+			$null = $runspace.AddArgument($file)
+			$null = $runspace.AddArgument($filelist)
+			$runspace.RunspacePool = $pool
+			$runspaces += [PSCustomObject]@{ Pipe = $runspace; Status = $runspace.BeginInvoke() }
+		}
+	}
+	
 	END
 	{
+		while ($runspaces.Status -ne $null)
+		{
+			$completed = $runspaces | Where-Object { $_.Status.IsCompleted -eq $true }
+			
+			foreach ($runspace in $completed)
+			{
+				if ($result = $runspace.Pipe.EndInvoke($runspace.Status) -ne $null)
+				{
+					$result
+					$runspace.Pipe.Dispose()
+					$runspace.Status = $null
+				}
+				else
+				{
+					$runspace.Status = $runspace.Pipe.BeginInvoke()
+				}
+			}
+		}
+		
+		$pool.Close()
+		$pool.Dispose()
 		$server.ConnectionContext.Disconnect()
 	}
 }
