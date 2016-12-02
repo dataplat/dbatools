@@ -116,26 +116,29 @@ Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile
 			
 			if ($file.FullName -ne $null) { $file = $file.FullName }
 			$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
-			$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem $file, FILE
-			$restore.Devices.Add($device)
 			
 			try
 			{
+				$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem $file, FILE
+				$restore.Devices.Add($device)
 				$datatable = $restore.ReadBackupHeader($server)
 			}
 			catch
 			{
+				if ($_.Exception -match "Cannot find server certificate with thumbprint")
+				{
+					$shortname = Split-Path $file -Leaf
+					return "The backup $shortname is encrypted and the server cannot find a matching certificate."
+				}
+				
 				if (!(Test-SqlPath -SqlServer $server -Path $file))
 				{
-					Write-Warning "File does not exist or access denied. The SQL Server service account may not have access to the source directory."
+					return "File does not exist or access denied. The SQL Server service account may not have access to the source directory or the backup may be encrypted."
 				}
 				else
 				{
-					Write-Warning "File list could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or tiemouts with the SQL Server, or the SQL Server service account does not have access to the source directory."
+					return "File list could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or tiemouts with the SQL Server, or the SQL Server service account does not have access to the source directory."
 				}
-				
-				Write-Exception $_
-				return
 			}
 			
 			# Sometimes ReadBackupHeader returns nothing
@@ -164,11 +167,25 @@ Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile
 			$version = $datatable.Columns.Add("SQLVersion")
 			$dbversion = $datatable.rows[0].DatabaseVersion
 			
-			# NEED TO GET THIS TO WORK
-			$parent = (Split-Path -Parent $MyInvocation.MyCommand.Definition).Parent
-			. "$parent\internal\Convert-DbVersionToSqlVersion.ps1"
-			
-			$datatable.rows[0].SQLVersion = (Convert-DbVersionToSqlVersion $dbversion)
+			# Couldn't get the Convert-DbVersionToSqlVersion.ps1 to import in the runspace
+			$datatable.rows[0].SQLVersion = switch ($dbversion)
+			{
+				856 { "SQL Server vNext CTP1" }
+				852 { "SQL Server 2016" }
+				829 { "SQL Server 2016 Prerelease" }
+				782 { "SQL Server 2014" }
+				706 { "SQL Server 2012" }
+				684 { "SQL Server 2012 CTP1" }
+				661 { "SQL Server 2008 R2" }
+				660 { "SQL Server 2008 R2" }
+				655 { "SQL Server 2008 SP2+" }
+				612 { "SQL Server 2005" }
+				611 { "SQL Server 2005" }
+				539 { "SQL Server 2000" }
+				515 { "SQL Server 7.0" }
+				408 { "SQL Server 6.5" }
+				default { $dbversion }
+			}
 			
 			if ($Simple)
 			{
@@ -207,9 +224,19 @@ Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile
 			
 			foreach ($runspace in $completed)
 			{
-				if ($result = $runspace.Pipe.EndInvoke($runspace.Status) -ne $null)
+				$result = $runspace.Pipe.EndInvoke($runspace.Status)
+				
+				if ($result -ne $null)
 				{
-					$result
+					if ($result.DatabaseName -eq $null)
+					{
+						Write-Warning ($result | Out-String)
+					}
+					else
+					{
+						$result
+					}
+					
 					$runspace.Pipe.Dispose()
 					$runspace.Status = $null
 				}
