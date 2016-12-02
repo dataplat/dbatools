@@ -157,7 +157,7 @@ Limitations: Does not support Application Roles yet
 				{
 					If ($Pscmdlet.ShouldProcess("console", "Stating $username is skipped because it is a local machine name."))
 					{
-						Write-Output "$username is skipped because it is a local machine name."
+						Write-Warning "$username is skipped because it is a local machine name."
 					}
 					continue
 				}
