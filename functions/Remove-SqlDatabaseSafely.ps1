@@ -228,7 +228,8 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 
 		function Start-SqlAgent
 		{
-			
+			[CmdletBinding(SupportsShouldProcess = $true)]
+			param()
 			if ($destserver.VersionMajor -eq 8)
 			{
 				$serviceName = 'MSSQLSERVER'
@@ -253,9 +254,9 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 						$timeout = New-Timespan -seconds 60
 						$sw = [diagnostics.stopwatch]::StartNew()
 						$agentstatus = (Get-Service -ComputerName $ipaddr -DisplayName $serviceName).Status
-						while ($dbStatus -ne 'Running' -and $sw.elapsed -lt $timeout)
+						while ($AgentStatus -ne 'Running' -and $sw.elapsed -lt $timeout)
 						{
-							$dbStatus = (Get-Service -ComputerName $ipaddr -DisplayName $serviceName).Status
+							$agentStatus = (Get-Service -ComputerName $ipaddr -DisplayName $serviceName).Status
 						}
 					}
 				}
@@ -274,6 +275,8 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		
 		Function Start-DbccCheck
 		{
+			
+			[CmdletBinding(SupportsShouldProcess = $true)]
 			param (
 				[object]$server,
 				[string]$dbname
@@ -309,6 +312,8 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		
 		Function New-SqlAgentJobCategory
 		{
+			
+			[CmdletBinding(SupportsShouldProcess = $true)]
 			param ([string]$categoryname,
 				[object]$jobServer)
 			
@@ -344,7 +349,6 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				ALTERED To Add TSql switch and remove norecovery switch default
 			#>
 			
-			[CmdletBinding()]
 			param (
 				[Parameter(Mandatory = $true)]
 				[Alias('ServerInstance', 'SqlInstance')]
@@ -689,19 +693,20 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				{
 					$job = $destserver.JobServer.Jobs[$jobname]
 					$job.Start()
+                    $job.Refresh()
 					$status = $job.CurrentRunStatus
 					
 					while ($status -ne 'Idle')
 					{
 						Write-Output "Restore Job for $dbname on $destination is $status..."
-						$job.Refresh()
+						Start-Sleep -Seconds 15
+                        $job.Refresh()
 						$status = $job.CurrentRunStatus
-						Start-Sleep -Seconds 5
 					}
 					
 					Write-Output "Restore Job $jobname has completed on $destination "
 					Write-Output "Sleeping for a few seconds to ensure the next step (DBCC) succeeds"
-					Start-Sleep -Seconds 5 ## This is required to ensure the next DBCC Check succeeds
+					Start-Sleep -Seconds 10 ## This is required to ensure the next DBCC Check succeeds
 				}
 				catch
 				{

@@ -152,6 +152,12 @@ Limitations: Does not support Application Roles yet
 					continue
 				}
 				
+				if($destserver.LoginMode -ne "Mixed")
+				{ 
+					Write-Warning "$Destination does not have Mixed Mode enabled. Enable this after the migration."
+					continue 
+				}
+
 				$userbase = ($username.Split("\")[0]).ToLower()
 				if ($servername -eq $userbase -or $username.StartsWith("NT "))
 				{
