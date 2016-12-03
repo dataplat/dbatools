@@ -97,11 +97,8 @@ Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile
 			continue
 		}
 		
-		[int]$numprocessors = $env:NUMBER_OF_PROCESSORS
-		$maxrunspaces = $numprocessors + 1
-		
 		# STEP 1: Create and open runspace pool, setup runspaces array
-		$pool = [RunspaceFactory]::CreateRunspacePool(1, $maxrunspaces)
+		$pool = [RunspaceFactory]::CreateRunspacePool(1, [int]$env:NUMBER_OF_PROCESSORS+1)
 		$pool.ApartmentState = "MTA"
 		$pool.Open()
 		$runspaces = @()
