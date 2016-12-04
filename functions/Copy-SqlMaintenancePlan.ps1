@@ -93,11 +93,11 @@ Shows what would happen if the command were executed using -Force.
 	
 	PROCESS
 	{
-		$qryPlanNames = "SELECT plans.[name] AS plan_name, plans.id AS plan_id
+		$sql = "SELECT plans.[name] AS plan_name, plans.id AS plan_id
 			FROM msdb.dbo.sysmaintplan_plans AS plans"
 
-		$sourceMaintPlanList = $sourceserver.ConnectionContext.ExecuteWithResults($qryPlanNames).Tables.Rows
-		$destMaintPlanList = $destserver.ConnectionContext.ExecuteWithResults($qryPlanNames).Tables.Rows
+		$sourceMaintPlanList = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
+		$destMaintPlanList = $destserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
 
 		foreach ($plan in $sourceMaintPlanList)
 		{
@@ -120,7 +120,7 @@ Shows what would happen if the command were executed using -Force.
 					{
 					#folderid (08AA12D5-8F98-4DAB-A4FC-980B150A5DC8) = Maintenance Plans folder under MSDB
 						#
-						$qryDropMaintenancePlan = "
+						$sql = "
 						EXECUTE msdb.dbo.sp_maintplan_delete_plan 
 							@plan_id=N'{$planid}' 
 						EXECUTE [msdb].[dbo].[sp_ssis_deletepackage] 
@@ -130,7 +130,7 @@ Shows what would happen if the command were executed using -Force.
 						try
 						{
 							Write-Output "Dropping Maintenance Plan $planname on $destination"
-							$destserver.ConnectionContext.ExecuteNonQuery($qryDropMaintenancePlan) > $null
+							$destserver.ConnectionContext.ExecuteNonQuery($sql) > $null
 						}
 						catch
 						{
@@ -145,7 +145,7 @@ Shows what would happen if the command were executed using -Force.
 				try
 				{
 					Write-Output "Copying Maintenance Plan $planname"
-					$qryMaintMetaData = "
+					$sql = "
 					SELECT [name], [id], [description], [createdate], [folderid], [ownersid],
 					CAST(
 					   CAST(
@@ -162,10 +162,10 @@ Shows what would happen if the command were executed using -Force.
 					WHERE name = '$planname'"
 
 					Write-Verbose "[SELECT] query - Maintenance metadata"
-					Write-Verbose $qryMaintMetaData
-					$MaintMetaData = $sourceserver.ConnectionContext.ExecuteWithResults($qryMaintMetaData).Tables.Rows
+					Write-Verbose $sql
+					$MaintMetaData = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
 
-					$qryMaintInsert = "INSERT INTO [msdb].[dbo].[sysssispackages] (
+					$sql = "INSERT INTO [msdb].[dbo].[sysssispackages] (
 						[name],[id],[description],[createdate],[folderid],[ownersid],[packagedata],[packageformat],[packagetype],[vermajor]
 						,[verminor],[verbuild],[vercomments],[verid],[isencrypted],[readrolesid],[writerolesid])
 						VALUES (@name,@id,@description,@createdate,
@@ -175,7 +175,7 @@ Shows what would happen if the command were executed using -Force.
 								@isencrypted,@readrolesid,@writerolesid)"
 					$cn = New-Object System.Data.SqlClient.SqlConnection
 					$cn.ConnectionString = $destserver.ConnectionContext.ConnectionString
-					$cmd = New-Object System.Data.SqlClient.SqlCommand($qryMaintInsert,$cn)
+					$cmd = New-Object System.Data.SqlClient.SqlCommand($sql,$cn)
 					$cn.Open()
 
 					#region Adding parameters
