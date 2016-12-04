@@ -38,8 +38,14 @@ Disable the job on the source server
 .PARAMETER DisableOnDestination
 Disable the newly migrated job on the destination server
 
-.PARAMETER IncludeMaintenancePlan
-Copies over any maintenance plan found on the source to the destination server
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
+.PARAMETER Force
+Drops and recreates the Job if it exists
 
 .NOTES
 Author: Chrissy LeMaire (@cl), netnerds.net
@@ -71,11 +77,6 @@ Copies a single job, the PSJob job from sqlserver2014a to sqlcluster, using SQL 
 Copy-SqlJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
-
-.EXAMPLE
-Copy-SqlJob -Source sqlserver2014a -Destination sqlcluster -IncludeMaintenancePlan -Force
-
-Copies all jobs, and maintenance plans, from sqlserver2014a to sqlcluster. If job is associated with a maintenance plan the plan is copied over first.
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
@@ -87,7 +88,6 @@ Copies all jobs, and maintenance plans, from sqlserver2014a to sqlcluster. If jo
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$DisableOnSource,
 		[switch]$DisableOnDestination,
-		[switch]$IncludeMaintenancePlan,
 		[switch]$Force
 	)
 	DynamicParam { if ($source) { return (Get-ParamSqlJobs -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
@@ -112,36 +112,8 @@ Copies all jobs, and maintenance plans, from sqlserver2014a to sqlcluster. If jo
 		foreach ($job in $serverjobs)
 		{
 			$jobname = $job.name
-			$jobId = $job.JobId
 
 			if ($jobs.count -gt 0 -and $jobs -notcontains $jobname -or $exclude -contains $jobname) { continue }
-
-			$qryValidateMaintPlan = "
-				SELECT sp.[name] AS MaintenancePlan_Name
-				FROM msdb.dbo.sysmaintplan_plans AS sp
-				INNER JOIN msdb.dbo.sysmaintplan_subplans AS sps
-					ON sps.plan_id = sp.id
-				WHERE job_id = '$($jobId)'"
-			$MaintenancePlan = $sourceserver.ConnectionContext.ExecuteWithResults($qryValidateMaintPlan).Tables.Rows
-			$MaintPlanName = $MaintenancePlan.MaintenancePlan_Name
-
-			if ((!$IncludeMaintenancePlan) -and $MaintenancePlan) {
-				Write-Warning "[Job: $jobname] Associated with Maintenance Plan: $($MaintPlanName). Skipping."
-				continue
-			}
-			if($IncludeMaintenancePlan -and $MaintPlanName)
-			{
-				if ($force)
-				{
-					Write-Output "[Job: $jobname] associated with Maintenance Plan: $($MaintPlanName). Copying Maintenance Plan."
-					Copy-SqlMaintenancePlan -Source $Source -Destination $Destination -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential -MaintenancePlans $MaintenancePlan -Force
-				}
-				else
-				{
-					Write-Output "[Job: $jobname] associated with Maintenance Plan: $($MaintPlanName). Copying Maintenance Plan."
-					Copy-SqlMaintenancePlan -Source $Source -Destination $Destination -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential -MaintenancePlans $MaintenancePlan
-				}
-			}
 
 			$dbnames = $job.JobSteps.Databasename | Where-Object { $_.length -gt 0 }
 			$missingdb = $dbnames | Where-Object { $destserver.Databases.Name -notcontains $_ }
@@ -181,7 +153,7 @@ Copies all jobs, and maintenance plans, from sqlserver2014a to sqlcluster. If jo
 				}
 				else
 				{
-					if ($Pscmdlet.ShouldProcess($destination, "Dropping job $jobname and recreating"))
+					If ($Pscmdlet.ShouldProcess($destination, "Dropping job $jobname and recreating"))
 					{
 						try
 						{
@@ -197,7 +169,7 @@ Copies all jobs, and maintenance plans, from sqlserver2014a to sqlcluster. If jo
 				}
 			}
 
-			if ($Pscmdlet.ShouldProcess($destination, "Creating Job $jobname"))
+			If ($Pscmdlet.ShouldProcess($destination, "Creating Job $jobname"))
 			{
 				try
 				{
