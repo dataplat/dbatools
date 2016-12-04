@@ -114,29 +114,23 @@ Shows what would happen if the command were executed using -Force.
 					Write-Warning "[Plan: $planname] exist at destination. Use -Force to drop and migrate."
 					continue
 				}
-				else
+				if ($Pscmdlet.ShouldProcess($destination, "Dropping Maintenance Plan: $planname on target $destination"))
 				{
-					if ($Pscmdlet.ShouldProcess($destination, "Dropping Maintenance Plan: $planname on target $destination"))
-					{
 					#folderid (08AA12D5-8F98-4DAB-A4FC-980B150A5DC8) = Maintenance Plans folder under MSDB
-						#
-						$sql = "
-						EXECUTE msdb.dbo.sp_maintplan_delete_plan 
-							@plan_id=N'{$planid}' 
-						EXECUTE [msdb].[dbo].[sp_ssis_deletepackage] 
-							@name = N'$planname', 
-							@folderid = '08AA12D5-8F98-4DAB-A4FC-980B150A5DC8'
-						"
-						try
-						{
-							Write-Output "Dropping Maintenance Plan $planname on $destination"
-							$destserver.ConnectionContext.ExecuteNonQuery($sql) > $null
-						}
-						catch
-						{
-							Write-Exception $_
-							continue
-						}
+					$sql = "
+						EXECUTE msdb.dbo.sp_maintplan_delete_plan @plan_id=N'{$planid}';
+						EXECUTE [msdb].[dbo].[sp_ssis_deletepackage]
+							@name = N'$planname',
+							@folderid = '08AA12D5-8F98-4DAB-A4FC-980B150A5DC8';"
+					try
+					{
+						Write-Output "Dropping Maintenance Plan $planname on $destination"
+						$destserver.ConnectionContext.ExecuteNonQuery($sql) > $null
+					}
+					catch
+					{
+						Write-Exception $_
+						continue
 					}
 				}
 			}
