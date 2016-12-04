@@ -15,7 +15,7 @@ Please note that this script uses the DBCC DBINFO() WITH TABLERESULTS. DBCC DBIN
  - The LastKnowGood timestamp is updated when a DBCC CHECKDB WITH PHYSICAL_ONLY is performed.
  - The LastKnowGood timestamp does not get updated when a database in READ_ONLY.
 
-A LastGoodCheckDb result of '1900-01-01 00:00:00.000' indicated that a good DBCC CHECKDB has never been performed.
+An empty ($null) LastGoodCheckDb result indicates that a good DBCC CHECKDB has never been performed.
 
 SQL Server 2008R2 has a "bug" that causes each databases to possess two dbi_dbccLastKnownGood fields, instead of the normal one.
 This script will only displaythis function to only display the newest timestamp. If -Verbose is specified, the function will announce every time more than one dbi_dbccLastKnownGood fields is encountered.
@@ -55,20 +55,12 @@ Data Purity:
 .EXAMPLE
 Get-DbaLastGoodCheckDb -SqlServer ServerA\sql987
 
-Server         Database      LastGoodCheckDb
-------         --------      ---------------
-ServerA\sql987 badDB         11-06-2014 20:17:29
-ServerA\sql987 databaselist  11-06-2014 20:17:42
-...
+Returns a custom object with Server name, Database name, and the date the last time a good checkdb was performed
 
 .EXAMPLE
 Get-DbaLastGoodCheckDb -SqlServer ServerA\sql987 -Detailed | Format-Table -AutoSize
 
-Server         Database      DatabaseCreated     LastGoodCheckDb     DaysSinceDbCreated DaysSinceLastGoodCheckDb Status                      DataPurityEnabled
-------         --------      ---------------     ---------------     ------------------ ------------------------ ------                      -----------------
-ServerA\sql987 badDB         14-10-2013 09:21:49 11-06-2014 20:17:29               1078                      838 CheckDB should be performed False
-ServerA\sql987 databaselist  23-10-2013 17:31:35 11-06-2014 20:17:42               1069                      838 CheckDB should be performed True
-...
+Returns a formatted table displaying Server, Database, DatabaseCreated, LastGoodCheckDb, DaysSinceDbCreated, DaysSinceLastGoodCheckDb, Status and DataPurityEnabled
 
 #>
 	[CmdletBinding()]
@@ -184,7 +176,9 @@ ServerA\sql987 databaselist  23-10-2013 17:31:35 11-06-2014 20:17:42            
  				{
 					$Status = 'CheckDB should be performed'
  				}
-
+				
+				if ($lastKnownGood -eq '1/1/1900 12:00:00 AM') { Remove-Variable -Name lastKnownGood, daysSinceCheckDb }
+				
 				$null = $collection.Add([PSCustomObject]@{
 					Server = $server.name
 					Database = $db.name

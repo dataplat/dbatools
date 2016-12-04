@@ -33,6 +33,11 @@ This parameter is auto-populated from -SqlServer. You can specify one or more Sp
 
 Exclude is the last filter to run, so even if a Spid matches, for example, Hosts, if it's listed in Exclude it wil be excluded.
 	
+.PARAMETER Detailed
+Provides Detailed information
+
+.PARAMETER NoSystemSpids
+Ignores the System Spids
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire

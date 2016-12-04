@@ -89,8 +89,6 @@ Returns database restore information for every database on every server listed i
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
 		
-		$collection = New-Object System.Collections.ArrayList
-		
 		if ($Since -ne $null)
 		{
 			$Since = $Since.ToString("yyyy-MM-dd HH:mm:ss")
@@ -104,6 +102,12 @@ Returns database restore information for every database on every server listed i
 			try
 			{
 				$sourceserver = Connect-SqlServer -SqlServer $server -SqlCredential $Credential
+				
+				if ($sourceserver.VersionMajor -lt 9)
+				{
+					Write-Warning "SQL Server 2000 not supported"
+					continue
+				}
 				
 				if ($force -eq $true)
 				{
@@ -173,25 +177,19 @@ Returns database restore information for every database on every server listed i
 				
 				$sql = "$select $from $where"
 				Write-Debug $sql
-				$results = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables
+				
+				if ($Detailed -eq $true -or $Force -eq $true)
+				{
+					return $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
+				}
+				
+				$sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty From, To, RowError, Rowstate, table, itemarray, haserrors
 			}
 			catch
 			{
 				Write-Warning "$_ `nMoving on"
 				continue
 			}
-			
-			$null = $collection.Add($results)
 		}
-	}
-	
-	END
-	{
-		if ($Detailed -eq $true -or $Force -eq $true)
-		{
-			return $collection.rows
-		}
-		
-		return ($collection.rows | Select-Object * -ExcludeProperty From, To, RowError, Rowstate, table, itemarray, haserrors)
 	}
 }
