@@ -34,6 +34,9 @@ Windows Authentication will be used if DestinationSqlCredential is not specified
 
 To connect as a different Windows user, run PowerShell as that user.
 
+.PARAMETER Force
+Drops and recreates the maintenance plan if it exist.
+
 .NOTES 
 Author: Shawn Melton (@wsmelton)
 Requires: sysadmin access on SQL Servers
