@@ -95,6 +95,7 @@ Shows what would happen if the command were executed using -Force.
 	{
 		$sql = "SELECT plans.[name] AS plan_name, plans.id AS plan_id
 			FROM msdb.dbo.sysmaintplan_plans AS plans"
+		Write-Debug $sql
 
 		$sourceMaintPlanList = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
 		$destMaintPlanList = $destserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
@@ -122,6 +123,8 @@ Shows what would happen if the command were executed using -Force.
 						EXECUTE [msdb].[dbo].[sp_ssis_deletepackage]
 							@name = N'$planname',
 							@folderid = '08AA12D5-8F98-4DAB-A4FC-980B150A5DC8';"
+					Write-Debug $sql
+
 					try
 					{
 						Write-Output "Dropping Maintenance Plan $planname on $destination"
@@ -154,9 +157,8 @@ Shows what would happen if the command were executed using -Force.
 					packageformat, packagetype, vermajor, verminor, verbuild, vercomments, verid, isencrypted, readrolesid, writerolesid
 					FROM [msdb].[dbo].[sysssispackages]
 					WHERE name = '$planname'"
+					Write-Debug $sql
 
-					Write-Verbose "[SELECT] query - Maintenance metadata"
-					Write-Verbose $sql
 					$MaintMetaData = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
 
 					$sql = "INSERT INTO [msdb].[dbo].[sysssispackages] (
@@ -167,6 +169,8 @@ Shows what would happen if the command were executed using -Force.
 								@packagedata,@packageformat,@packagetype,
 								@vermajor,@verminor,@verbuild,@vercomments,@verid,
 								@isencrypted,@readrolesid,@writerolesid)"
+					Write-Debug $sql
+					
 					$cn = New-Object System.Data.SqlClient.SqlConnection
 					$cn.ConnectionString = $destserver.ConnectionContext.ConnectionString
 					$cmd = New-Object System.Data.SqlClient.SqlCommand($sql,$cn)
