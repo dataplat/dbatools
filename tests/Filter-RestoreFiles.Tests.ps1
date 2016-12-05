@@ -67,13 +67,14 @@ Get-ChildItem "$Modulebase\internal\" |% {. $_.fullname}
             }
         }
         Context "$Name - Testing Inputs and Outputs" {
+            Mock Read-DBABackupHeader { return 1}
             It "Should take an array of System.IO.FileSystemInfo" {
-                {Filter-RestoreFiles -Files $Folder } | Should Not Throw
+                {Filter-RestoreFiles -Files $Folder -sqlserver tmp } | Should Not Throw
             }
              
-            It "Should Return an array of System.IO.FileSystemInfo" {
-                $result = Filter-RestoreFiles -Files $Folder
-                $result | Should BeOfType System.IO.FileSystemInfo    
+            It "Should Return an array of System.Data.DataSet" {
+                $result = Filter-RestoreFiles -Files $Folder -sqlserver tmp
+                $result | Should BeOfType System.Data.DataSet   
             }
         }
 }#describe
