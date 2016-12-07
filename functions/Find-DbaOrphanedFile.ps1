@@ -140,19 +140,18 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 			# Add support for Full Text Catalogs in Sql Server 2005 and below
 			if ($server.VersionMajor -lt 10)
 			{
-				$databaselist = $smoserver.Databases | select name
+				$databaselist = $smoserver.Databases | select Name, IsFullTextEnabled
 				foreach ($db in $databaselist)
 				{
-					# Add support for Full Text Catalogs in Sql Server 2005 and below
-					if ($server.VersionMajor -lt 10)
-					{
-						$database = $db.name
-						$fttable = $null = $smoserver.Databases[$database].ExecuteWithResults('sp_help_fulltext_catalogs')
+					if($db.IsFullTextEnabled -eq $false) {
+						continue
+					}
+					$database = $db.name
+					$fttable = $null = $smoserver.Databases[$database].ExecuteWithResults('sp_help_fulltext_catalogs')
 
-						foreach ($ftc in $fttable.Tables[0].rows)
-						{
-							$null = $ftfiletable.Rows.add($ftc.Path)
-						}
+					foreach ($ftc in $fttable.Tables[0].rows)
+					{
+						$null = $ftfiletable.Rows.add($ftc.Path)
 					}
 				}
 			}
