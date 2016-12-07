@@ -38,6 +38,9 @@ Disable the job on the source server
 .PARAMETER DisableOnDestination
 Disable the newly migrated job on the destination server
 
+.PARAMETER IncludeMaintenancePlan
+Copies over any maintenance plan found on the source to the destination server
+
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
 
@@ -77,6 +80,10 @@ Copies a single job, the PSJob job from sqlserver2014a to sqlcluster, using SQL 
 Copy-SqlJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
+.EXAMPLE
+Copy-SqlJob -Source sqlserver2014a -Destination sqlcluster -IncludeMaintenancePlan -Force
+
+Copies all jobs, and maintenance plans, from sqlserver2014a to sqlcluster. If job is associated with a maintenance plan the plan is copied over first.
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
