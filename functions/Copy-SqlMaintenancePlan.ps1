@@ -108,7 +108,7 @@ Shows what would happen if the command were executed using -Force.
 			if ($plans.count -gt 0 -and $plans -notcontains $planname -or $exclude -contains $planname)
 			{ continue }
 
-			if ($destMaintPlanList.plan_name -contains $plans)
+			if ($destMaintPlanList.plan_name -contains $planname)
 			{
 				if ($force -eq $false)
 				{
