@@ -1,4 +1,4 @@
-function Restore-DBASQLBackup
+function Restore-DBABackup
 {
 <#
 .SYNOPSIS 
