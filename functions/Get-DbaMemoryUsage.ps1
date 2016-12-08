@@ -84,7 +84,10 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
             Write-Verbose "Connecting to $servername"
 			if ( Test-Connection -ComputerName $servername -Quiet -count 1)
             {
-                $availablecounters = (Get-Counter -ComputerName $servername -ListSet '*sql*:Memory Manager*').paths
+                Write-Verbose "$servername is up and running"
+                try
+                {
+                $availablecounters = (Get-Counter -ComputerName $servername -ListSet '*sql*:Memory Manager*' -ErrorAction SilentlyContinue ).paths
                 (Get-Counter -ComputerName $servername -Counter $availablecounters).countersamples | 
                     Where-Object {$_.Path -match $Memcounters} | 
                     foreach { [PSCustomObject]@{
@@ -96,9 +99,15 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
 				                MemMB = $_.cookedvalue / 1024
                                 }
                             }
+                }
+                catch
+                {
+                Write-Verbose "No Memory Manager Counters on $servername"
+                }
 
-
-                $availablecounters = (Get-Counter -ComputerName $servername -ListSet '*sql*:Plan Cache*' ).paths
+                try
+                {
+                $availablecounters = (Get-Counter -ComputerName $servername -ListSet '*sql*:Plan Cache*'  -ErrorAction SilentlyContinue ).paths
                 (Get-Counter -ComputerName $servername -Counter $availablecounters).countersamples |
                     Where-Object {$_.Path -match $Plancounters} |
                     foreach { [PSCustomObject]@{
@@ -110,9 +119,16 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
 					            MemMB = $_.cookedvalue * 8192 / 1048576
                                 }
                             }
+                }
+                catch
+                {
+                Write-Verbose "No Plan Cache Counters on $servername"
+                }
 
 
-                $availablecounters = (Get-Counter -ComputerName $Servername -ListSet "*Buffer Manager*").paths
+                try
+                {
+                $availablecounters = (Get-Counter -ComputerName $Servername -ListSet "*Buffer Manager*"  -ErrorAction SilentlyContinue ).paths
                 (Get-Counter -ComputerName $Servername -Counter $availablecounters).countersamples |
                     Where-Object {$_.Path -match $BufManpagecounters} |
                     foreach { [PSCustomObject]@{
@@ -124,6 +140,11 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
 					            MemMB = $_.cookedvalue * 8192 /1048576.0
                                 }
                             }
+                }
+                catch
+                {
+                Write-Verbose "No Buffer Manager Counters on $servername"
+                }
             }
 			else
 			{
