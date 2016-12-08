@@ -75,7 +75,7 @@ Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile
 		[object]$SqlServer,
 		[object]$SqlCredential,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[string[]]$Path,
+		[object[]]$Path,
 		[switch]$Simple,
 		[switch]$FileList
 	)
@@ -93,10 +93,12 @@ Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile
 			Write-Warning $_
 			continue
 		}
+
 	}
 	
 	PROCESS
 	{
+
 		foreach ($file in $path)
 		{
 			$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
@@ -106,10 +108,12 @@ Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile
 			try
 			{
 				$allfiles = $restore.ReadFileList($server)
+
 			}
 			catch
 			{
-				if (!(Test-SqlPath -SqlServer $server -Path $file))
+				Write-verbose "File - $File"
+				if (!(Test-SqlPath -SqlServer $SqlServer -Path $file))
 				{
 					Write-Warning "File does not exist or access denied. The SQL Server service account may not have access to the source directory."
 				}
@@ -138,6 +142,9 @@ Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile
 			
 			$version = $datatable.Columns.Add("SQLVersion")
 			$dbversion = $datatable.rows[0].DatabaseVersion
+			
+			$tmp = $datatable.Columns.add("BackupFileName")
+			$datatable.Rows[0].BackupFileName = $file
 			
 			$datatable.rows[0].SQLVersion = (Convert-DbVersionToSqlVersion $dbversion)
 			
