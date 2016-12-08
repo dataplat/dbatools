@@ -1,4 +1,4 @@
-function Get-FilteredRestoreFiles
+function Get-FilteredRestoreFile
 {
 <#
 .SYNOPSIS
@@ -18,7 +18,7 @@ Takes an array of FileSystem Objects and then filters them down by date to get a
 	)
     Begin
     {
-        $FunctionName = "Filter-RestoreFiles"
+        $FunctionName = "Filter-RestoreFile"
         Write-Verbose "$FunctionName - Starting"
 
 
@@ -37,7 +37,7 @@ Takes an array of FileSystem Objects and then filters them down by date to get a
     End
     {
         Write-Verbose "$FunctionName - Read File headers (Read-DBABackupHeader)"
-        $SQLBackupdetails  = $InternalFiles | Select -ExpandProperty FullName | Read-DBAbackupheader -sqlserver $SQLSERVER 
+        $SQLBackupdetails  = $InternalFiles | Select-Object -ExpandProperty FullName | Read-DBAbackupheader -sqlserver $SQLSERVER 
         Write-Verbose "$FunctionName - Find Newest Full backup"
         $Fullbackup = $SQLBackupdetails | where-object {$_.BackupType -eq "1" -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1
         if ($Fullbackup -eq $null)

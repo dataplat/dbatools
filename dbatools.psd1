@@ -163,8 +163,7 @@
 		'Test-DbaBackup',
 		'Get-DbaMaxMemory',
 		'Set-DbaMaxMemory',
-		'Test-DbaMaxMemory',
-		'Restore-SQLBackup'
+		'Test-DbaMaxMemory'
 	)
 	
 	# Cmdlets to export from this module

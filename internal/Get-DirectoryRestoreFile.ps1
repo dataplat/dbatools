@@ -1,4 +1,4 @@
-function Get-DirectoryRestoreFiles
+function Get-DirectoryRestoreFile
 {
 <#
 .SYNOPSIS
@@ -18,7 +18,7 @@ Takes path, checks for validity. Scans for usual backup file
         Write-Verbose "$FunctionName - Starting"
         Write-Verbose "$FunctionName - Checking Path"
         if ((Test-Path $Path) -ne $true){
-            Write-Error "Error: $path is not valid"
+           # Write-Error "Error: $path is not valid"
             break
         }
         #Path needs to end \* to use includes, which is faster than Where-Object

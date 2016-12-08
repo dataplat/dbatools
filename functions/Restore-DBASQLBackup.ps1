@@ -1,4 +1,4 @@
-function Restore-SQLBackup
+function Restore-DBASQLBackup
 {
 <#
 .SYNOPSIS 
@@ -85,11 +85,11 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
 	)
 
     if ($OlaStyle){
-        $files = Get-OlaHRestoreFiles -path $Path
+        $files = Get-OlaHRestoreFile -path $Path
     } else {
-        $files = Get-DirectoryRestoreFiles -path $path
+        $files = Get-DirectoryRestoreFile -path $path
     }
-    $FilteredFiles = $files | Get-FilteredRestoreFiles -sqlserver $sqlserver
+    $FilteredFiles = $files | Get-FilteredRestoreFile -sqlserver $sqlserver
     $FilteredFiles | Restore-DBFromFilteredArray -SQLServer $sqlserver -DBName $dbname -RestoreLocation $RestoreLocation -NoRecovery:$NoRecovery -ReplaceDatabase:$ReplaceDatabase -Scripts:$Scripts -ScriptOnly:$ScriptOnly -VerifyOnly:$VerifyOnly
 
 }

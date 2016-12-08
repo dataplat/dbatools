@@ -56,22 +56,22 @@ Get-ChildItem "$Modulebase\internal\" |% {. $_.fullname}
         New-Item "TestDrive:\TestFolder\full" -ItemType Directory
         Context "Function should exist with correct name" {
             It "Should exist" {
-                $FunctionFile | Should Contain "function Get-OlaHRestoreFiles"
+                $FunctionFile | Should Contain "function Get-OlaHRestoreFile"
             }
         }
         Context "$Name Parameter tests" {
             It "Should accept a correct path" {
-                {Get-OlaHRestoreFiles -path TestDrive:\TestFolder} | Should Not Throw           
+                {Get-OlaHRestoreFile -path TestDrive:\TestFolder} | Should Not Throw           
             }
             It "Should error with an incorrect path" {
-                {Get-OlaHRestoreFiles -path TestDrive:\TestFolder2} | Should Throw        
+                {Get-OlaHRestoreFile -path TestDrive:\TestFolder2} | Should Throw        
             }
         }
         Context "$Name checking for file finding" {
             New-Item "TestDrive:\TestFolder\full\full1.bak" -ItemType File
             New-Item "TestDrive:\TestFolder\full\full2.bak" -ItemType File
             New-Item "TestDrive:\TestFolder\full\full1.txt" -ItemType File
-            $results = Get-OlaHRestoreFiles -Path TestDrive:\TestFolder
+            $results = Get-OlaHRestoreFile -Path TestDrive:\TestFolder
             It "Should return an array of System.IO.FileSystemInfo" {
                 $results | Should BeOfType System.IO.FileSystemInfo
             }
@@ -85,7 +85,7 @@ Get-ChildItem "$Modulebase\internal\" |% {. $_.fullname}
             New-Item "TestDrive:\TestFolder\log\log1.trn" -ItemType File
             New-Item "TestDrive:\TestFolder\log\log2.trn" -ItemType File
             New-Item "TestDrive:\TestFolder\log\log1.txt" -ItemType File
-            $results = Get-OlaHRestoreFiles -Path TestDrive:\TestFolder
+            $results = Get-OlaHRestoreFile -Path TestDrive:\TestFolder
             It "Should find 4 files in total"{
                 $results.count | should be 4
             }
@@ -102,7 +102,7 @@ Get-ChildItem "$Modulebase\internal\" |% {. $_.fullname}
             New-Item "TestDrive:\TestFolder\diff\diff1.bak" -ItemType File
             New-Item "TestDrive:\TestFolder\diff\diff2.bak" -ItemType File
             New-Item "TestDrive:\TestFolder\diff\diff1.txt" -ItemType File
-            $results = Get-OlaHRestoreFiles -Path TestDrive:\TestFolder
+            $results = Get-OlaHRestoreFile -Path TestDrive:\TestFolder
             It "Should find 4 files in total"{
                 $results.count | should be 6
             }

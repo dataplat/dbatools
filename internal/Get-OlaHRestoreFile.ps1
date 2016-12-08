@@ -1,4 +1,4 @@
-function Get-OlaHRestoreFiles
+function Get-OlaHRestoreFile
 {
 <#
 .SYNOPSIS
@@ -12,7 +12,7 @@ Takes path, checks for validity. Scans for usual backup file
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[string]$Path
 	)
-        $FunctionName = "Get-OlaHRestoreFiles"
+        $FunctionName = "Get-OlaHRestoreFile"
         Write-Verbose "$FunctionName - Starting"
         
         Write-Verbose "$FunctionName - Starting"
@@ -29,7 +29,6 @@ Takes path, checks for validity. Scans for usual backup file
             $results = Get-ChildItem $path\FULL -Filter *.bak
         } else {
             Write-Verbose "$FunctionName - Don't have a FULL folder, throw and exit"
-            Write-Error "$FunctionName - Error: $PATH\full doesnt' exist `n Not a Hallengren backup folder"
             break
         }
         if (Test-Path $Path\Log)

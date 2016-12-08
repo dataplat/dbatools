@@ -55,15 +55,15 @@ Get-ChildItem "$Modulebase\internal\" |% {. $_.fullname}
         New-Item "TestDrive:\TestFolder" -ItemType Directory
         Context "Function should exist with correct name" {
             It "Should exist" {
-                $FunctionFile | Should Contain "function Get-DirectoryRestoreFiles"
+                $FunctionFile | Should Contain "function Get-DirectoryRestoreFile"
             }
         }
         Context "$Name Parameter tests" {
             It "Should accept a correct path" {
-                {Get-DirectoryRestoreFiles -path TestDrive:\TestFolder} | Should Not Throw           
+                {Get-DirectoryRestoreFile -path TestDrive:\TestFolder} | Should Not Throw           
             }
             It "Should error with an incorrect path" {
-                {Get-DirectoryRestoreFiles -path TestDrive:\TestFolder2} | Should Throw        
+                {Get-DirectoryRestoreFile -path TestDrive:\TestFolder2} | Should Throw        
             }
         }
         New-Item "TestDrive:\TestFolder\FullBackup.Bak" -ItemType File
@@ -71,24 +71,24 @@ Get-ChildItem "$Modulebase\internal\" |% {. $_.fullname}
         New-Item "TestDrive:\TestFolder\NotABackup.txt" -ItemType File
         Context "$Name is picky about path endings" {
             It "Should take a bare path" {
-                $bareresults = Get-DirectoryRestoreFiles -Path TestDrive:\TestFolder
+                $bareresults = Get-DirectoryRestoreFile -Path TestDrive:\TestFolder
                 $bareresults.count | Should be 2
             }
             It "Should take a \ ended path" {
-                $bareresults = Get-DirectoryRestoreFiles -Path TestDrive:\TestFolder\
+                $bareresults = Get-DirectoryRestoreFile -Path TestDrive:\TestFolder\
                 $bareresults.count | Should be 2
             }
             It "Should take a * ended path" {
-                $bareresults = Get-DirectoryRestoreFiles -Path TestDrive:\TestFolder*
+                $bareresults = Get-DirectoryRestoreFile -Path TestDrive:\TestFolder*
                 $bareresults.count | Should be 2
             }
             It "Should take a \* ended path" {
-                $bareresults = Get-DirectoryRestoreFiles -Path TestDrive:\TestFolder\*
+                $bareresults = Get-DirectoryRestoreFile -Path TestDrive:\TestFolder\*
                 $bareresults.count | Should be 2
             }
         }
         Context "$Name scan tests" {
-            $results = Get-DirectoryRestoreFiles -Path TestDrive:\TestFolder\
+            $results = Get-DirectoryRestoreFile -Path TestDrive:\TestFolder\
             It "Should return an array of System.IO.FileSystemInfo" {
                 $results | Should BeOfType System.IO.FileSystemInfo
             }
