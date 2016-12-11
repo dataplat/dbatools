@@ -184,7 +184,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
                         Write-Output "Orphan users found"
                         foreach ($User in $Users)
                         {
-                            $SkippUser = $false
+                            $SkipUser = $false
 
                             $ExistLogin = $null
 
@@ -220,7 +220,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
                                         {
                                             if ($Force)
                                             {
-                                                Write-Output "Parameter -Force was used! The schema '$($sch.Name)' have $NumberObjects underlying objects. We will change schema owner to 'dbo' and drop the user."
+                                                Write-Verbose "Parameter -Force was used! The schema '$($sch.Name)' have $NumberObjects underlying objects. We will change schema owner to 'dbo' and drop the user."
 
                                                 if ($Pscmdlet.ShouldProcess($db.Name, "Changing schema '$($sch.Name)' owner to 'dbo'. -Force used."))
 				                                {
@@ -247,7 +247,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
                                             }
                                             else
                                             {
-                                                Write-Warning "Schema '$sch' ownership will be changed to 'dbo' so the user can be dropped."
+                                                Write-Warning "Schema '$($sch.Name)' ownership will be changed to 'dbo' so the user can be dropped."
 
                                                 if ($Pscmdlet.ShouldProcess($db.Name, "Changing schema '$($sch.Name)' owner to 'dbo'."))
                                                 {
@@ -260,7 +260,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
                                 }
                                 else
                                 {
-                                    Write-Verbose "User '$User' does not own any schema. Will be dropped."
+                                    Write-Verbose "User '$($User.Name)' does not own any schema. Will be dropped."
                                 }
 
                                 $query = "$AlterSchemaOwner `r`n$DropSchema `r`nDROP USER " + $User
