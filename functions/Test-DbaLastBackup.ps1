@@ -50,10 +50,9 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Test-DbaLastBackup
 
 .EXAMPLE 
-Test-DbaLastBackup -SqlServer Fade2Black -Databases RideTheLightning
+Test-DbaLastBackup -SqlServer sql2016 -Databases master
 
-blah
-
+Determines the last full backup for master, attempts to restore it, then performs a DBCC CHECKTABLE
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
@@ -223,15 +222,14 @@ blah
 						$ogdbname = $dbname
 						$dbname = "dbatools-testrestore-$dbname"
 						
-						## Run a Dbcc No choice here
 						if ($Pscmdlet.ShouldProcess($destination, "Restoring $ogdbname as $dbname"))
 						{
-							$restoreresult = Restore-Database -SqlServer $destserver -DbName $dbname -backupfile $lastbackup.path -filestructure $temprestoreinfo -ReplaceDatabase -VerifyOnly
+							$restoreresult = Restore-Database -SqlServer $destserver -DbName $dbname -backupfile $lastbackup.path -filestructure $temprestoreinfo -VerifyOnly:$VerifyOnly
 						}
 						
 						if (!$NoCheck -and !$VerifyOnly)
 						{
-							if ($Pscmdlet.ShouldProcess($dbname, "Running Dbcc CHECKDB on $dbname on $destination"))
+							if ($Pscmdlet.ShouldProcess($destination, "Running DBCC on $dbname on $destination"))
 							{
 								if ($ogdbname -eq "master")
 								{
@@ -270,7 +268,8 @@ blah
 				if ($Pscmdlet.ShouldProcess("console", "Showing results"))
 				{
 					[pscustomobject]@{
-						Server = $source
+						SourceServer = $source
+						TestServer = $destination
 						Database = $db.name
 						FileExists = $fileexists
 						RestoreResult = $restoreresult
