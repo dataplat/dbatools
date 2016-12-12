@@ -99,7 +99,14 @@ Function Restore-DBFromFilteredArray
 				$restore.PercentCompleteNotification = 1
 				$restore.add_Complete($complete)
 				$restore.ReplaceDatabase = $ReplaceDatabase
-				$restore.Database = $dbname
+				if ($DbName -ne '')
+				{
+					$restore.Database = $dbname
+				}
+				else
+				{
+					$restore.Database = $restorefile.DatabaseName
+				}
 				$action = switch ($restorefile.BackupType)
 					{
 						'1' {'Database'}
@@ -120,7 +127,7 @@ Function Restore-DBFromFilteredArray
 				}
 
 					$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-					$device.name = $restorefile.BackupFileName
+					$device.name = $restorefile.BackupPath
 					$device.devicetype = "File"
 					$restore.Devices.Add($device)
 
