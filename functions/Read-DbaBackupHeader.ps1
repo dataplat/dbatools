@@ -69,7 +69,9 @@ Also returns detailed information about each of the datafiles contained in the b
 Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile.bak", "\backupserver\backups\myotherfile.bak"
 
 .EXAMPLE
-	
+Get-ChildItem \\nas\sql\*.bak | Read-DbaBackupHeader -SqlServer sql2016
+
+Gets a list of all .bak files on the \\nas\sql share and reads the headers using the server named "sql2016". This means that the server, sql2016, must have read access to the \\nas\sql share.
 #>
 	[CmdletBinding()]
 	Param (
@@ -78,7 +80,7 @@ Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile
 		[object]$SqlServer,
 		[object]$SqlCredential,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[object]$Path,
+		[object[]]$Path,
 		[switch]$Simple,
 		[switch]$FileList
 	)
@@ -112,38 +114,52 @@ Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile
 			)
 			
 			if ($file.FullName -ne $null) { $file = $file.FullName }
+			
 			$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
+			$device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem $file, FILE
+			$restore.Devices.Add($device)
+			
+			# Sometimes ReadBackupHeader returns nothing because we're overwhelming it with runspaces :|
+			# This seems like an issue with SqlConnection.
+			
+			while ($datatable -eq $null -and $attempts++ -lt 10)
+			{
+				try
+				{
+					$datatable = $restore.ReadBackupHeader($server)
+				}
+				catch
+				{
+					# Wait a lil bit then try again
+					Start-Sleep -Milliseconds 200
+				}
+			}
+			
+			# Ensure that the file has been read, if not, let user know why
 			
 			try
 			{
-				$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem $file, FILE
-				$restore.Devices.Add($device)
-				$datatable = $restore.ReadBackupHeader($server)
+				if ($datatable -eq $null)
+				{
+					$datatable = $restore.ReadBackupHeader($server)
+				}
 			}
 			catch
 			{
+				$shortname = Split-Path $file -Leaf
 				if ($_.Exception -match "Cannot find server certificate with thumbprint")
 				{
-					$shortname = Split-Path $file -Leaf
 					return "The backup $shortname is encrypted and the server cannot find a matching certificate."
 				}
 				
 				if (!(Test-SqlPath -SqlServer $server -Path $file))
 				{
-					return "File does not exist or access denied. The SQL Server service account may not have access to the source directory or the backup may be encrypted."
+					return "File does $shortname not exist or access denied. The SQL Server service account may not have access to the source directory or the backup may be encrypted."
 				}
 				else
 				{
-					return "File list could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or tiemouts with the SQL Server, or the SQL Server service account does not have access to the source directory."
+					return "File list for $shortname could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or tiemouts with the SQL Server, or the SQL Server service account does not have access to the source directory."
 				}
-			}
-			
-			# Sometimes ReadBackupHeader returns nothing
-			# because we're overwhelming it with runspaces :|
-			while ($datatable -eq $null -and $attempts++ -lt 10)
-			{
-				Start-Sleep -Milliseconds 100
-				$datatable = $restore.ReadBackupHeader($server)
 			}
 			
 			$allfiles = $restore.ReadFileList($server)
