@@ -38,7 +38,7 @@ To connect as a different Windows user, run PowerShell as that user.
 .PARAMETER Exclude
 Excludes specified logins. This list is auto-populated for tab completion.
 
-.PARAMETER Login
+.PARAMETER Logins
 Migrates ONLY specified logins. This list is auto-populated for tab completion. Multiple logins allowed.
 
 .PARAMETER SyncOnly
@@ -92,7 +92,7 @@ Authenticates to SQL Servers using SQL Authentication.
 Copies all logins except for realcajun. If a login already exists on the destination, the login will not be migrated.
 
 .EXAMPLE
-Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds -force
+Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -Logins realcajun, netnerds -force
 
 Copies ONLY logins netnerds and realcajun. If login realcajun or netnerds exists on the destination, they will be dropped and recreated.
 
@@ -152,12 +152,17 @@ Limitations: Does not support Application Roles yet
 					continue
 				}
 				
+				if($destserver.LoginMode -ne "Mixed")
+				{ 
+					Write-Warning "$Destination does not have Mixed Mode enabled for user: $username. Enable this after the migration completes."				 
+				}
+
 				$userbase = ($username.Split("\")[0]).ToLower()
 				if ($servername -eq $userbase -or $username.StartsWith("NT "))
 				{
 					If ($Pscmdlet.ShouldProcess("console", "Stating $username is skipped because it is a local machine name."))
 					{
-						Write-Output "$username is skipped because it is a local machine name."
+						Write-Warning "$username is skipped because it is a local machine name."
 					}
 					continue
 				}
@@ -166,7 +171,7 @@ Limitations: Does not support Application Roles yet
 				{
 					If ($Pscmdlet.ShouldProcess("console", "Stating $username is skipped because it exists at destination."))
 					{
-						Write-Output "$username already exists in destination. Use -force to drop and recreate."
+						Write-Warning "$username already exists in destination. Use -force to drop and recreate."
 					}
 					continue
 				}

@@ -337,7 +337,7 @@ CREATE LOGIN [$username] FROM WINDOWS WITH DEFAULT_DATABASE = [$defaultdb], DEFA
 			
 			if ($NoDatabases -eq $false)
 			{
-				if ($databases.length -eq 0) { $databases = $sourcelogin.EnumDatabaseMappings() }
+				$databases = $sourcelogin.EnumDatabaseMappings() 
 				# Adding database mappings and securables
 				foreach ($db in $databases)
 				{

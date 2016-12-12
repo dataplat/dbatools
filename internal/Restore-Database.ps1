@@ -9,14 +9,15 @@ Function Restore-Database
 	param (
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
-		[string]$dbname,
-		[string[]]$backupfile,
-		[string]$filetype = "Database",
-		[object]$filestructure,
-		[switch]$norecovery,
+		[string]$DbName,
+		[string[]]$BackupFile,
+		[string]$FileType = "Database",
+		[object]$FileStructure,
+		[switch]$NoRecovery,
 		[switch]$ReplaceDatabase,
 		[Alias("Tsql")]
 		[switch]$ScriptOnly,
+		[switch]$VerifyOnly,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
@@ -64,6 +65,21 @@ Function Restore-Database
 		if ($ScriptOnly)
 		{
 			$restore.Script($server)
+		}
+		elseif ($VerifyOnly)
+		{
+			Write-Progress -id 1 -activity "Verifying $dbname backup file on $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+			$verify = $restore.sqlverify($server)
+			Write-Progress -id 1 -activity "Verifying $dbname backup file on $servername" -status "Complete" -Completed
+			
+			if ($verify -eq $true)
+			{
+				return "Verify successful"
+			}
+			else
+			{
+				return "Verify failed"
+			}
 		}
 		else
 		{

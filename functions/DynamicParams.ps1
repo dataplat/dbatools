@@ -94,10 +94,14 @@ filled with database list from specified SQL Server server.
 	{
 		if ($NoSystem)
 		{
-			if (!($database.IsSystemObject -and $SupportDbs) -notcontains $database.name)
+			if (!($database.IsSystemObject) -and $SupportDbs -notcontains $database.name)
 			{
 				$databaselist += $database.name
 			}
+		}
+		else
+		{
+			$databaselist += $database.name
 		}
 	}
 	
