@@ -154,8 +154,7 @@ Limitations: Does not support Application Roles yet
 				
 				if($destserver.LoginMode -ne "Mixed")
 				{ 
-					Write-Warning "$Destination does not have Mixed Mode enabled. Enable this after the migration."
-					continue 
+					Write-Warning "$Destination does not have Mixed Mode enabled for user: $username. Enable this after the migration completes."				 
 				}
 
 				$userbase = ($username.Split("\")[0]).ToLower()
@@ -163,7 +162,7 @@ Limitations: Does not support Application Roles yet
 				{
 					If ($Pscmdlet.ShouldProcess("console", "Stating $username is skipped because it is a local machine name."))
 					{
-						Write-Output "$username is skipped because it is a local machine name."
+						Write-Warning "$username is skipped because it is a local machine name."
 					}
 					continue
 				}
@@ -172,7 +171,7 @@ Limitations: Does not support Application Roles yet
 				{
 					If ($Pscmdlet.ShouldProcess("console", "Stating $username is skipped because it exists at destination."))
 					{
-						Write-Output "$username already exists in destination. Use -force to drop and recreate."
+						Write-Warning "$username already exists in destination. Use -force to drop and recreate."
 					}
 					continue
 				}
