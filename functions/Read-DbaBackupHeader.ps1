@@ -67,6 +67,11 @@ Also returns detailed information about each of the datafiles contained in the b
 "C:\temp\myfile.bak", "\backupserver\backups\myotherfile.bak" | Read-DbaBackupHeader -SqlServer sql2016
 
 Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile.bak", "\backupserver\backups\myotherfile.bak"
+	
+.EXAMPLE
+Get-ChildItem \\nas\sql\*.bak | Read-DbaBackupHeader -SqlServer sql2016
+
+Gets a list of all .bak files on the \\nas\sql share and reads the headers using the server named "sql2016". This means that the server, sql2016, must have read access to the \\nas\sql share.
 #>
 	[CmdletBinding()]
 	Param (
@@ -93,33 +98,32 @@ Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile
 			Write-Warning $_
 			continue
 		}
-
 	}
 	
 	PROCESS
 	{
-
 		foreach ($file in $path)
 		{
+			if ($file.FullName -ne $null) { $file = $file.FullName }
+			
 			$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
-			$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem $file, "FILE"
+			$device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem $file, FILE
 			$restore.Devices.Add($device)
 			
 			try
 			{
 				$allfiles = $restore.ReadFileList($server)
-
 			}
 			catch
 			{
-				Write-verbose "File - $File"
-				if (!(Test-SqlPath -SqlServer $SqlServer -Path $file))
+				$shortname = Split-Path $file -Leaf
+				if (!(Test-SqlPath -SqlServer $server -Path $file))
 				{
-					Write-Warning "File does not exist or access denied. The SQL Server service account may not have access to the source directory."
+					Write-Warning "File $shortname does not exist or access denied. The SQL Server service account may not have access to the source directory."
 				}
 				else
 				{
-					Write-Warning "File list could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or tiemouts with the SQL Server, or the SQL Server service account does not have access to the source directory."
+					Write-Warning "File list for $shortname could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or tiemouts with the SQL Server, or the SQL Server service account does not have access to the source directory."
 				}
 				
 				Write-Exception $_
@@ -142,9 +146,6 @@ Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile
 			
 			$version = $datatable.Columns.Add("SQLVersion")
 			$dbversion = $datatable.rows[0].DatabaseVersion
-			
-			$tmp = $datatable.Columns.add("BackupFileName")
-			$datatable.Rows[0].BackupFileName = $file
 			
 			$datatable.rows[0].SQLVersion = (Convert-DbVersionToSqlVersion $dbversion)
 			
