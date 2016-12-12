@@ -1,4 +1,4 @@
-function Restore-DBABackup
+function Restore-DbaBackup
 {
 <#
 .SYNOPSIS 
@@ -30,7 +30,7 @@ Switch to indicate the backup files just exist in a folder (this is the standard
 .PARAMETER FileList
 Returns detailed information about the files within the backup
 
-.PARAMETER dbname
+.PARAMETER DatabaseName
 Name to restore the database under
 
 .PARAMETER NoRecovery
@@ -48,17 +48,25 @@ Switch indicates that ONLY T-SQL scripts should be generated, no restore takes p
 .PARAMETER VerifyOnly
 Switch indicate that restore should be verified
 
-.NOTES 
+.NOTES
+Original Author: Stuart Moore (@napalmgram), stuart-moore.com
+
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 .EXAMPLE
-Restore-SQLBackup -SQLServer 'server1\instance1' -path \\server2\backups\$ 
+Restore-DbaBackup -SqlServer server1\instance1 -path \\server2\backups\$ 
 
 Scans all the backup files in \\server2\backups$, filters them and restores the database to server1\instance1
 
 .EXAMPLE
-Restore-SQLBackup -SQLServer 'server1\instance1' -path \\server2\backups\$ -OlaStyle -RestoreLocation c:\restores
+Restore-DbaBackup -SqlServer server1\instance1' -path \\server2\backups\$ -OlaStyle -RestoreLocation c:\restores
 
 Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen style folder structure,
  filters them and restores the database to the c:\restores folder on server1\instance1 
@@ -69,7 +77,8 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
         [parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
-		[string]$DbName,
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[string]$DatabaseName,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
         $Path,
         [String]$RestoreLocation,
@@ -80,8 +89,8 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
         [switch]$ScriptOnly,
 		[switch]$VerifyOnly,
         [switch]$OlaStyle,
-		[object]$filestructure,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[object]$filestructure
+		
 	)
 
     if ($OlaStyle){
@@ -89,8 +98,8 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
     } else {
         $files = Get-DirectoryRestoreFile -path $path
     }
-    $FilteredFiles = $files | Get-FilteredRestoreFile -sqlserver $sqlserver
-    $FilteredFiles | Restore-DBFromFilteredArray -SQLServer $sqlserver -DBName $dbname -RestoreLocation $RestoreLocation -NoRecovery:$NoRecovery -ReplaceDatabase:$ReplaceDatabase -Scripts:$Scripts -ScriptOnly:$ScriptOnly -VerifyOnly:$VerifyOnly
+    $FilteredFiles = $files | Get-FilteredRestoreFile -SqlServer $SqlServer
+    $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -RestoreLocation $RestoreLocation -NoRecovery:$NoRecovery -ReplaceDatabase:$ReplaceDatabase -Scripts:$Scripts -ScriptOnly:$ScriptOnly -VerifyOnly:$VerifyOnly
 
 }
 
