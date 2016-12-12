@@ -1,9 +1,12 @@
-**Do you want to request a *feature* or report a *bug*?**
+Is this a *feature* OR *bug*:
 
-**What is the current behavior?**
+- Powershell Version: 
+- OS Version: 
 
-**If the current behavior is a bug, please provide the steps to reproduce and if possible a minimal demo of the problem.**
+**Steps to Reproduce**
 
-**What is the expected behavior?**
+**Action Results**
 
-**Which versions of Powershell and which OS are affected by this issue? Did this work in previous versions of our scripts?**
+**Expected Results**
+
+**Additional comments**
