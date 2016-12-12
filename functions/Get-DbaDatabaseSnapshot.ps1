@@ -107,13 +107,12 @@ Returns informations for database snapshots excluding ones that have HR as base 
 
 			foreach ($db in $dbs)
 			{
-				$result = [PSCustomObject]@{
+				[PSCustomObject]@{
 					Server = $server.name
 					Database = $db.name
 					DatabaseCreated = $db.createDate
 					SnapshotOf = $db.DatabaseSnapshotBaseName
 				}
-				$result
 			}
 		}
 	}
