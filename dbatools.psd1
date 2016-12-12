@@ -160,7 +160,7 @@
 		'Get-DbaMemoryUsage',
 		'Get-DbaBackupHistory',
 		'Read-DbaBackupHeader',
-		'Test-DbaBackup',
+		'Test-DbaLastBackup',
 		'Get-DbaMaxMemory',
 		'Set-DbaMaxMemory',
 		'Test-DbaMaxMemory',
