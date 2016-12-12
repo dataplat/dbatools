@@ -67,6 +67,11 @@ Also returns detailed information about each of the datafiles contained in the b
 "C:\temp\myfile.bak", "\backupserver\backups\myotherfile.bak" | Read-DbaBackupHeader -SqlServer sql2016
 
 Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile.bak", "\backupserver\backups\myotherfile.bak"
+
+.EXAMPLE
+Get-ChildItem \\nas\sql\*.bak | Read-DbaBackupHeader -SqlServer sql2016
+
+Gets a list of all .bak files on the \\nas\sql share and reads the headers using the server named "sql2016". This means that the server, sql2016, must have read access to the \\nas\sql share.
 #>
 	[CmdletBinding()]
 	Param (
@@ -75,7 +80,7 @@ Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile
 		[object]$SqlServer,
 		[object]$SqlCredential,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[string[]]$Path,
+		[object[]]$Path,
 		[switch]$Simple,
 		[switch]$FileList
 	)
@@ -93,36 +98,72 @@ Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile
 			Write-Warning $_
 			continue
 		}
-	}
-	
-	PROCESS
-	{
-		foreach ($file in $path)
-		{
+		
+		# STEP 1: Create and open runspace pool, setup runspaces array
+		$pool = [RunspaceFactory]::CreateRunspacePool(1, [int]$env:NUMBER_OF_PROCESSORS+1)
+		$pool.ApartmentState = "MTA"
+		$pool.Open()
+		$runspaces = @()
+		
+		# STEP 2: Create reusable scriptblock. This is the workhorse of the runspace. Think of it as a function.
+		$scriptblock = {
+			Param (
+				[object]$server,
+				[object]$file,
+				[switch]$filelist
+			)
+			
+			if ($file.FullName -ne $null) { $file = $file.FullName }
+			
 			$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
-			$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem $file, "FILE"
+			$device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem $file, FILE
 			$restore.Devices.Add($device)
+			
+			# Sometimes ReadBackupHeader returns nothing because we're overwhelming it with runspaces :|
+			# This seems like an issue with SqlConnection.
+			
+			while ($datatable -eq $null -and $attempts++ -lt 10)
+			{
+				try
+				{
+					$datatable = $restore.ReadBackupHeader($server)
+				}
+				catch
+				{
+					# Wait a lil bit then try again
+					Start-Sleep -Milliseconds 200
+				}
+			}
+			
+			# Ensure that the file has been read, if not, let user know why
 			
 			try
 			{
-				$allfiles = $restore.ReadFileList($server)
+				if ($datatable -eq $null)
+				{
+					$datatable = $restore.ReadBackupHeader($server)
+				}
 			}
 			catch
 			{
+				$shortname = Split-Path $file -Leaf
+				if ($_.Exception -match "Cannot find server certificate with thumbprint")
+				{
+					return "The backup $shortname is encrypted and the server cannot find a matching certificate."
+				}
+				
 				if (!(Test-SqlPath -SqlServer $server -Path $file))
 				{
-					Write-Warning "File does not exist or access denied. The SQL Server service account may not have access to the source directory."
+					return "File does $shortname not exist or access denied. The SQL Server service account may not have access to the source directory or the backup may be encrypted."
 				}
 				else
 				{
-					Write-Warning "File list could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or tiemouts with the SQL Server, or the SQL Server service account does not have access to the source directory."
+					return "File list for $shortname could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or tiemouts with the SQL Server, or the SQL Server service account does not have access to the source directory."
 				}
-				
-				Write-Exception $_
-				return
 			}
 			
-			$datatable = $restore.ReadBackupHeader($server)
+			$allfiles = $restore.ReadFileList($server)
+			
 			$fl = $datatable.Columns.Add("FileList", [object])
 			$datatable.rows[0].FileList = $allfiles.rows
 			
@@ -139,7 +180,25 @@ Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile
 			$version = $datatable.Columns.Add("SQLVersion")
 			$dbversion = $datatable.rows[0].DatabaseVersion
 			
-			$datatable.rows[0].SQLVersion = (Convert-DbVersionToSqlVersion $dbversion)
+			# Couldn't get the Convert-DbVersionToSqlVersion.ps1 to import in the runspace
+			$datatable.rows[0].SQLVersion = switch ($dbversion)
+			{
+				856 { "SQL Server vNext CTP1" }
+				852 { "SQL Server 2016" }
+				829 { "SQL Server 2016 Prerelease" }
+				782 { "SQL Server 2014" }
+				706 { "SQL Server 2012" }
+				684 { "SQL Server 2012 CTP1" }
+				661 { "SQL Server 2008 R2" }
+				660 { "SQL Server 2008 R2" }
+				655 { "SQL Server 2008 SP2+" }
+				612 { "SQL Server 2005" }
+				611 { "SQL Server 2005" }
+				539 { "SQL Server 2000" }
+				515 { "SQL Server 7.0" }
+				408 { "SQL Server 6.5" }
+				default { $dbversion }
+			}
 			
 			if ($Simple)
 			{
@@ -156,8 +215,53 @@ Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile
 		}
 	}
 	
+	PROCESS
+	{
+		foreach ($file in $path)
+		{
+			$runspace = [PowerShell]::Create()
+			$null = $runspace.AddScript($scriptblock)
+			$null = $runspace.AddArgument($server)
+			$null = $runspace.AddArgument($file)
+			$null = $runspace.AddArgument($filelist)
+			$runspace.RunspacePool = $pool
+			$runspaces += [PSCustomObject]@{ Pipe = $runspace; Status = $runspace.BeginInvoke() }
+		}
+	}
+	
 	END
 	{
+		while ($runspaces.Status -ne $null)
+		{
+			$completed = $runspaces | Where-Object { $_.Status.IsCompleted -eq $true }
+			
+			foreach ($runspace in $completed)
+			{
+				$result = $runspace.Pipe.EndInvoke($runspace.Status)
+				
+				if ($result -ne $null)
+				{
+					if ($result.DatabaseName -eq $null)
+					{
+						Write-Warning ($result | Out-String)
+					}
+					else
+					{
+						$result
+					}
+					
+					$runspace.Pipe.Dispose()
+					$runspace.Status = $null
+				}
+				else
+				{
+					$runspace.Status = $runspace.Pipe.BeginInvoke()
+				}
+			}
+		}
+		
+		$pool.Close()
+		$pool.Dispose()
 		$server.ConnectionContext.Disconnect()
 	}
 }
