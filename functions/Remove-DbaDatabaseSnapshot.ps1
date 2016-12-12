@@ -13,6 +13,9 @@ The SQL Server that you're connecting to.
 .PARAMETER Credential
 Credential object used to connect to the SQL Server as a different user
 
+.PARAMETER Snapshots
+Removes snapshot databases with this names only
+
 .PARAMETER Databases
 Removes snapshots for only specific base dbs
 
@@ -43,6 +46,11 @@ Remove-DbaDatabaseSnapshot -SqlServer sqlserver2014a
 Removes all database snapshots from sqlserver2014a
 
 .EXAMPLE
+Remove-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Snapshots HR_snap_20161201, HR_snap_20161101
+
+Removes database snapshots named HR_snap_20161201 and HR_snap_20161101
+
+.EXAMPLE
 Remove-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Databases HR, Accounting
 
 Removes all database snapshots having HR and Accounting as base dbs
@@ -59,7 +67,8 @@ Removes all database snapshots excluding ones that have HR as base dbs
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
-		[PsCredential]$Credential
+		[PsCredential]$Credential,
+		[string[]]$Snapshots
 	)
 
 	DynamicParam {
@@ -99,6 +108,18 @@ Removes all database snapshots excluding ones that have HR as base dbs
 			}
 
 			$dbs = $server.Databases | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
+			
+			if ($Snapshots.Count -gt 0)
+			{
+				foreach($snap in $Snapshots) 
+				{
+					if($snap -notin $dbs.Name) 
+					{
+						Write-Warning "No snapshot '$snap' found, skipping"
+					}    
+				}
+				$dbs = $dbs | Where-Object { $Snapshots -contains $_.Name }
+			}
 
 			if ($databases.count -gt 0)
 			{
