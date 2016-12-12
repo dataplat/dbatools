@@ -6,6 +6,7 @@
 		[switch]$table
 	)
 	
+	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 	$servername = $server.name
 	
 	if ($Pscmdlet.ShouldProcess($sourceserver, "Running dbcc check on $dbname on $servername"))
