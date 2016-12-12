@@ -93,7 +93,10 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
 		
 	)
 
-    if ($OlaStyle){
+    if ((Get-Item $path).IsPSContainer -ne $true)
+    {
+        $files = Get-item $Path
+    }elseif ($OlaStyle){
         $files = Get-OlaHRestoreFile -path $Path
     } else {
         $files = Get-DirectoryRestoreFile -path $path
