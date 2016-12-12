@@ -144,14 +144,16 @@ Gets a list of all .bak files on the \\nas\sql share and reads the headers using
 			$cgb = $datatable.Columns.Add("CompressedBackupSizeGB")
 			$cgb.Expression = "CompressedBackupSizeMB / 1024"
 			
-			$version = $datatable.Columns.Add("SQLVersion")
-			$dbversion = $datatable.rows[0].DatabaseVersion
+			$null = $datatable.Columns.Add("SqlVersion")
+			$null = $datatable.Columns.Add("BackupPath")
+			$dbversion = $datatable.Rows[0].DatabaseVersion
 			
-			$datatable.rows[0].SQLVersion = (Convert-DbVersionToSqlVersion $dbversion)
+			$datatable.Rows[0].SqlVersion = (Convert-DbVersionToSqlVersion $dbversion)
+			$datatable.Rows[0].BackupPath = $file
 			
 			if ($Simple)
 			{
-				$datatable | Select-Object DatabaseName, BackupFinishDate, RecoveryModel, BackupSizeMB, CompressedBackupSizeMB, UserName, ServerName, SQLVersion, DatabaseCreationDate
+				$datatable | Select-Object DatabaseName, BackupFinishDate, RecoveryModel, BackupSizeMB, CompressedBackupSizeMB, DatabaseCreationDate, UserName, ServerName, SqlVersion, BackupPath
 			}
 			elseif ($filelist)
 			{
