@@ -2,20 +2,14 @@
 {
 <#
 .SYNOPSIS
-Safely removes a SQL Database and creates an Agent Job to restore it
+Tests a SQL Server backup to see if it is valid
 
 .DESCRIPTION
-Performs a DBCC CHECKDB on the database, backs up the database with Checksum and verify only to a Final Backup location, creates an Agent Job to restore from that backup, Drops the database, runs the agent job to restore the database,
-performs a DBCC CHECKDB and drops the database
-
-By default the initial DBCC CHECKDB is performed
-By default the jobs and databases are created on the same server. Use -Destination to use a seperate server
-
-It will start the SQL Agent Service on the Destination Server if it is not running
+Need to finish docs
 
 .PARAMETER SqlServer
-The SQL Server instance holding the databases to be removed.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
-
+What
+	
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
 
@@ -23,9 +17,9 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
+.PARAMETER Databases
+.PARAMETER Exclude
 .PARAMETER Destination
-.PARAMETER Path
-.PARAMETER BackupsDirectory
 .PARAMETER DataDirectory
 .PARAMETER LogDirectory
 .PARAMETER VerifyOnly
@@ -34,9 +28,6 @@ Windows Authentication will be used if SqlCredential is not specified. SQL Serve
 .PARAMETER MaxMB
 	
 .NOTES 
-Author: Chrissy LeMaire (@cl), netnerds.net
-Requires: sysadmin access on SQL Servers
-
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -50,10 +41,30 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Test-DbaLastBackup
 
 .EXAMPLE 
+Test-DbaLastBackup -SqlServer sql2016
+
+Determines the last full backup for ALL databases, attempts to restore all databases (with a different name and file structure), then performs a DBCC CHECKTABLE
+
+Once the test is complete, the test restore will be dropped
+
+.EXAMPLE 
 Test-DbaLastBackup -SqlServer sql2016 -Databases master
 
 Determines the last full backup for master, attempts to restore it, then performs a DBCC CHECKTABLE
 
+.EXAMPLE 
+Test-DbaLastBackup -SqlServer sql2016 -Databases model, master -VerifyOnly
+
+.EXAMPLE 
+Test-DbaLastBackup -SqlServer sql2016 -NoCheck -NoDrop
+
+Skips the DBCC CHECKTABLE check. This can help speed up the tests but makes it less tested. NoDrop means that the test restores will remain on the server.
+
+.EXAMPLE 
+Test-DbaLastBackup -SqlServer sql2016 -DataDirectory E:\bigdrive -LogDirectory L:\bigdrive -MaxMB 10240
+
+Restores data and log files to alternative locations and only restores databases that are smaller than 10 GB
+	
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
@@ -62,8 +73,6 @@ Determines the last full backup for master, attempts to restore it, then perform
 		[object]$SqlServer,
 		[object]$SqlCredential,
 		[object]$Destination = $SqlServer,
-		[string]$Path,
-		[string]$BackupsDirectory,
 		[string]$DataDirectory,
 		[string]$LogDirectory,
 		[switch]$VerifyOnly,
@@ -81,11 +90,22 @@ Determines the last full backup for master, attempts to restore it, then perform
 		$exclude = $psboundparameters.Exclude
 		
 		$sourceserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $sqlCredential
+		$destserver = Connect-SqlServer -SqlServer $destination -SqlCredential $sqlCredential
+		
+		if ($destserver.VersionMajor -lt $sourceserver.VersionMajor)
+		{
+			Write-Warning "$Destination is a lower version than $Sqlserver. Backups would be incompatible."
+			continue
+		}
+		
+		if ($destserver.VersionMajor -eq $sourceserver.VersionMajor -and $destserver.VersionMinor -lt $sourceserver.VersionMinor)
+		{
+			Write-Warning "$Destination is a lower version than $Sqlserver. Backups would be incompatible."
+			continue
+		}
 		
 		if ($SqlServer -ne $destination)
 		{
-			$destserver = Connect-SqlServer -SqlServer $destination -SqlCredential $sqlCredential
-			
 			$sourcerealname = $sourceserver.DomainInstanceName
 			$destrealname = $sourceserver.DomainInstanceName
 			
@@ -97,10 +117,6 @@ Determines the last full backup for master, attempts to restore it, then perform
 				}
 			}
 			
-		}
-		else
-		{
-			$destserver = $sourceserver
 		}
 		
 		$source = $sourceserver.DomainInstanceName
@@ -125,7 +141,7 @@ Determines the last full backup for master, attempts to restore it, then perform
 			if (!(Test-SqlPath -SqlServer $destserver -Path $logdirectory))
 			{
 				$serviceaccount = $destserver.ServiceAccount
-				Write-Warning "Can't access $logdirectory Please check if $serviceaccount has permissions"
+				Write-Warning "$Destination can't access its local directory $logdirectory. Please check if $serviceaccount has permissions"
 				continue
 			}
 		}
@@ -141,7 +157,7 @@ Determines the last full backup for master, attempts to restore it, then perform
 	}
 	
 	PROCESS
-	{	
+	{
 		if ($databases -or $exclude)
 		{
 			$dblist = $databases
@@ -222,6 +238,14 @@ Determines the last full backup for master, attempts to restore it, then perform
 						$ogdbname = $dbname
 						$dbname = "dbatools-testrestore-$dbname"
 						
+						$destdb = $destserver.databases[$dbname]
+						
+						if ($destdb)
+						{
+							Write-Warning "$dbname already exists on $destination - skipping"
+							continue
+						}
+						
 						if ($Pscmdlet.ShouldProcess($destination, "Restoring $ogdbname as $dbname"))
 						{
 							$restoreresult = Restore-Database -SqlServer $destserver -DbName $dbname -backupfile $lastbackup.path -filestructure $temprestoreinfo -VerifyOnly:$VerifyOnly
@@ -229,22 +253,20 @@ Determines the last full backup for master, attempts to restore it, then perform
 						
 						if (!$NoCheck -and !$VerifyOnly)
 						{
-							if ($Pscmdlet.ShouldProcess($destination, "Running DBCC on $dbname on $destination"))
+							# shouldprocess is taken care of in Start-DbccCheck
+							if ($ogdbname -eq "master")
 							{
-								if ($ogdbname -eq "master")
-								{
-									$dbccresult = "DBCC CHECKTABLE skipped for restored master ($dbname) database"
-								}
-								else
-								{
-									$dbccresult = Start-DbccCheck -Server $destserver -DbName $dbname -Table 3>$null
-								}
+								$dbccresult = "DBCC CHECKTABLE skipped for restored master ($dbname) database"
+							}
+							else
+							{
+								$dbccresult = Start-DbccCheck -Server $destserver -DbName $dbname -Table 3>$null
 							}
 						}
 						
 						if ($VerifyOnly) { $dbccresult = "Skipped" }
 						
-						if (!$NoDrop)
+						if (!$NoDrop -and $restoreresult -eq "Success")
 						{
 							if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination"))
 							{
@@ -261,6 +283,11 @@ Determines the last full backup for master, attempts to restore it, then perform
 									continue
 								}
 							}
+						}
+						
+						if ($destserver.Databases[$dbname] -ne $null -and !$NoDrop)
+						{
+							Write-Warning "$dbname was not dropped"
 						}
 					}
 				}
