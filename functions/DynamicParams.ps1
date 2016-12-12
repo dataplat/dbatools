@@ -66,7 +66,8 @@ filled with database list from specified SQL Server server.
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[switch]$NoSystem
+		[switch]$NoSystem,
+		[switch]$SnapshotOnly
 	)
 	
 	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
@@ -95,6 +96,13 @@ filled with database list from specified SQL Server server.
 		if ($NoSystem)
 		{
 			if (!($database.IsSystemObject) -and $SupportDbs -notcontains $database.name)
+			{
+				$databaselist += $database.name
+			}
+		}
+		elseif ($SnapshotOnly)
+		{
+			if ($database.IsDatabaseSnapshot)
 			{
 				$databaselist += $database.name
 			}
@@ -156,7 +164,8 @@ filled with database list from specified SQL Server server.
 		[Parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[switch]$SnapshotOnly
 	)
 	
 	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
@@ -177,7 +186,14 @@ filled with database list from specified SQL Server server.
 		return $newparams
 	}
 	
-	$databaselist = $server.databases.name
+	if ($SnapshotOnly)
+	{
+		$databaselist = ($server.databases | Where-Object IsDatabaseSnapshot -eq $true).Name
+	}
+	else
+	{
+		$databaselist = $server.databases.name
+	}
 	
 	# Reusable parameter setup
 	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
