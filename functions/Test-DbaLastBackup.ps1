@@ -62,7 +62,7 @@ blah
 		[Alias("ServerInstance", "SqlInstance", "Source")]
 		[object]$SqlServer,
 		[object]$SqlCredential,
-		[object]$Destination,
+		[object]$Destination = $SqlServer,
 		[string]$Path,
 		[string]$BackupsDirectory,
 		[string]$DataDirectory,
@@ -142,22 +142,7 @@ blah
 	}
 	
 	PROCESS
-	{
-		<#
-			$restorelist = Get-RestoreFileList -server $server -filepath C:\temp\whatever.bak
-			$filelist = $restorelist.Filelist
-			$dbname = $restorelist.DatabaseName
-		#>
-		
-		<#
-		if (!(Test-SqlPath -SqlServer $destserver -Path $backupFolder))
-		{
-			$serviceaccount = $destserver.ServiceAccount
-			throw "Can't access $backupFolder Please check if $serviceaccount has permissions"
-		}
-		$Path
-		#>
-		
+	{	
 		if ($databases -or $exclude)
 		{
 			$dblist = $databases
