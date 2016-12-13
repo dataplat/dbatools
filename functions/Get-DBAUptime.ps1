@@ -1,5 +1,57 @@
 function Get-DbaUptime {
+<#
+.SYNOPSIS
+Returns the uptime of the SQL Server instance, and if required the hosting windows server
+	
+.DESCRIPTION
+By default, this command returns for each SQL Server instance passed in:
+SQL Instance last startup time, Uptime as a PS TimeSpan, Uptime as a formatted string
+Hosting Windows server last startup time, Uptime as a PS TimeSpan, Uptime as a formatted string
+	
+.PARAMETER SqlServer
+The SQL Server that you're connecting to.
 
+.PARAMETER SQLCredential
+Credential object used to connect to the SQL Server as a different user
+
+.PARAMETER WindowsCredential
+Credential object used to connect to the SQL Server as a different user
+
+.PARAMETER SQLOnly
+Excludes the windows server information
+
+.NOTES 
+Original Author: Stuart Moore (@napalmgram), stuart-moore.com
+dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+Copyright (C) 2016 Chrissy LeMaire
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+.LINK
+https://dbatools.io/Get-DBAUptime
+
+.EXAMPLE
+Get-DbaUptime -SqlServer SqlBox1\Instance2
+
+Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for the sqlexpress instance on winserver
+
+.EXAMPLE
+Get-DbaUptime -SqlServer winserver\sqlexpress, sql2016
+
+Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for the sqlexpress instance on host winserver  and the default instance on host sql2016
+	
+.EXAMPLE   
+Get-DbaUptime -SqlServer sqlserver2014a, sql2016 -SqlOnly
+
+Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string for the sqlexpress instance on host winserver  and the default instance on host sql2016
+
+.EXAMPLE   
+Get-SqlRegisteredServerName -SqlServer sql2014 | Get-DbaUptime 
+
+Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for every server listed in the Central Management Server on sql2014
+	
+#>
 	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
