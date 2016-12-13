@@ -74,7 +74,7 @@ $Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction Silently
 
 	It 'exports all public functions' {
 
-		$FunctionFiles = Get-ChildItem "$ModulePath\functions" -Filter *.ps1 -Exclude 'dynamicparams.ps1','sharedfunctions.ps1','Template.ps1'| Select -ExpandProperty BaseName
+		$FunctionFiles = Get-ChildItem "$ModulePath\functions" -Filter *.ps1 | Select -ExpandProperty BaseName
 
 		$FunctionNames = $FunctionFiles
 
