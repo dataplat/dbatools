@@ -65,27 +65,28 @@ Returns all logins excluding any that are from the mydomain Domain
 		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
 		[string[]]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-        [ValidateSet("LoginsOnly", "GroupsOnly")]
-        [string]$FilterBy = "None",
-        [string[]]$ExcludeDomains,
-        [switch]$Detailed
+		[ValidateSet("LoginsOnly", "GroupsOnly")]
+		[string]$FilterBy = "None",
+		[string[]]$ExcludeDomains,
+		[switch]$Detailed
 	)
 	
 	DynamicParam { if ($SqlServer) { return Get-ParamSqlLogins -SqlServer $SqlServer[0] -SqlCredential $SqlCredential -WindowsOnly } }
 	
 	BEGIN
 	{
-			function ConvertTo-Dn ([string]$dns)
+		function ConvertTo-Dn ([string]$dns)
 		{
 			$array = $dns.Split(".")
 			for ($x = 0; $x -lt $array.Length; $x++)
 			{
-				if ($x -eq ($array.Length - 1)){ $separator = ""} else { $separator = "," }
+				if ($x -eq ($array.Length - 1)) { $separator = "" }
+				else { $separator = "," }
 				[string]$dn += "DC=" + $array[$x] + $separator
 			}
 			return $dn
 		}
-				
+		
 		$alldomains = $domains = @()
 		$currentforest = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
 		$alldomains += $currentforest.Domains.name | Where-Object { $_ -notin $excludedomains }
@@ -138,227 +139,267 @@ Returns all logins excluding any that are from the mydomain Domain
 	PROCESS
 	{
 		try
-		    {
-			    $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $sqlcredential
-			    Write-Verbose "Connected to: $SqlServer"
-		    }
+		{
+			$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $sqlcredential
+			Write-Verbose "Connected to: $SqlServer"
+		}
 		catch
-		    {
-			    Write-Warning "Failed to connect to: $SqlServer"
-			    continue
-		    }
+		{
+			Write-Warning "Failed to connect to: $SqlServer"
+			continue
+		}
 		
-	    if ($Logins)
-		    {
-			    $windowslogins = $server.Logins | Where-Object { $Logins -contains $_.Name }
-		    }
+		if ($Logins)
+		{
+			$windowslogins = $server.Logins | Where-Object { $Logins -contains $_.Name }
+		}
 		else
-		    {
-			    switch ($FilterBy)
-		            {
-		      
-
-		                "LoginsOnly" 
-                                { 
-                                    Write-Verbose "connecting to logins"
-                                    $windowslogins = $server.Logins | Where-Object { $_.LoginType -eq 'WindowsUser' }
-                                    $windowslogins = $windowslogins | Where-Object { $_.Name.StartsWith("NT ") -eq $false -and $_.Name.StartsWith($SqlServer) -eq $false -and $_.Name.StartsWith("BUILTIN") -eq $false}                       
-                                }
-		                "GroupsOnly" 
-                                {  
-                                    Write-Verbose "connecting to groups"
-                                    $windowsGroups = $server.Logins |  Where-Object { $_.LoginType -eq 'WindowsGroup'}      
-                                    $windowsGroups = $windowsGroups | Where-Object { $_.Name.StartsWith("NT ") -eq $false -and $_.Name -notmatch $SqlServer -and $_.Name.StartsWith("BUILTIN") -eq $false}                  
-                                }
-                        "None" 
-                                { 
-                                    Write-Verbose  "connecting to both logins and groups"
-                                    $allwindowsloginsgroups = $server.Logins | Where-Object { $_.LoginType -eq 'WindowsUser' -or $_.LoginType -eq 'WindowsGroup' }
-                                    $windowslogins = $allwindowsloginsgroups | Where-Object { $_.LoginType -eq 'WindowsUser' }
-                                    $windowslogins = $windowslogins | Where-Object { $_.Name.StartsWith("NT ") -eq $false -and $_.Name.StartsWith($SqlServer) -eq $false -and $_.Name.StartsWith("BUILTIN") -eq $false}
-                                    $windowsGroups = $allwindowsloginsgroups | Where-Object { $_.LoginType -eq 'WindowsGroup'}
-                                    $windowsGroups = $windowsGroups | Where-Object { $_.Name.StartsWith("NT ") -eq $false -and $_.Name -notmatch $SqlServer -and $_.Name.StartsWith("BUILTIN") -eq $false}
-                                }
-
-		            }
-		    }
+		{
+			switch ($FilterBy)
+			{
+				
+				
+				"LoginsOnly"
+				{
+					Write-Verbose "connecting to logins"
+					$windowslogins = $server.Logins | Where-Object { $_.LoginType -eq 'WindowsUser' }
+					$windowslogins = $windowslogins | Where-Object { $_.Name.StartsWith("NT ") -eq $false -and $_.Name.StartsWith($SqlServer) -eq $false -and $_.Name.StartsWith("BUILTIN") -eq $false }
+				}
+				"GroupsOnly"
+				{
+					Write-Verbose "connecting to groups"
+					$windowsGroups = $server.Logins | Where-Object { $_.LoginType -eq 'WindowsGroup' }
+					$windowsGroups = $windowsGroups | Where-Object { $_.Name.StartsWith("NT ") -eq $false -and $_.Name -notmatch $SqlServer -and $_.Name.StartsWith("BUILTIN") -eq $false }
+				}
+				"None"
+				{
+					Write-Verbose  "connecting to both logins and groups"
+					$allwindowsloginsgroups = $server.Logins | Where-Object { $_.LoginType -eq 'WindowsUser' -or $_.LoginType -eq 'WindowsGroup' }
+					$windowslogins = $allwindowsloginsgroups | Where-Object { $_.LoginType -eq 'WindowsUser' }
+					$windowslogins = $windowslogins | Where-Object { $_.Name.StartsWith("NT ") -eq $false -and $_.Name.StartsWith($SqlServer) -eq $false -and $_.Name.StartsWith("BUILTIN") -eq $false }
+					$windowsGroups = $allwindowsloginsgroups | Where-Object { $_.LoginType -eq 'WindowsGroup' }
+					$windowsGroups = $windowsGroups | Where-Object { $_.Name.StartsWith("NT ") -eq $false -and $_.Name -notmatch $SqlServer -and $_.Name.StartsWith("BUILTIN") -eq $false }
+				}
+				
+			}
+		}
 		
 		if ($exclude)
-		    {
-			    $windowslogins = $windowslogins | Where-Object { $Logins -notcontains $_.Name }
-                $windowsGroups = $windowsGroups | Where-Object { $Logins -notcontains $_.Name }
-            
-		    }
-
-
-
+		{
+			$windowslogins = $windowslogins | Where-Object { $Logins -notcontains $_.Name }
+			$windowsGroups = $windowsGroups | Where-Object { $Logins -notcontains $_.Name }
+			
+		}
 		
 		foreach ($login in $windowslogins)
-		    {
-			    
-                $adlogin = $login.Name
-                Write-Verbose "Parsing Login $adlogin"
-			    $domain, $username = $adlogin.Split("\")
-                $filter = "(&(objectCategory=User)(sAMAccountName=$username))" # won't work with groups			
-                Write-Verbose $filter
-
-			    if ($env:USERDOMAIN -eq $domain)
-			        {
-			            $searcher = New-Object System.DirectoryServices.DirectorySearcher
-			            $searcher.Filter = $filter
-			        }
-			    else
-			        {
-				        $LDAP = ($domains | Where-Object NetBios -eq $domain).LDAP
-				        $ad = New-Object System.DirectoryServices.DirectoryEntry $LDAP
-			            $searcher = New-Object System.DirectoryServices.DirectorySearcher
-			            $searcher.SearchRoot = $ad
-			            $searcher.Filter = $filter
-			        }
-			    try
-			        {
-				        $founduser = $searcher.findOne()
-			        }
-			    catch
-			        {
-				        Write-Warning "AD Searcher Error for $username"
-			        }
-			    $value = $founduser.Properties.useraccountcontrol
-                
-                $enabled = $exists = $false
-                $adlogindetails = 'unknown'
-			    
-                ## values from  http://www.netvision.com/ad_useraccountcontrol.php
-			    switch ($value)
-			    {
-				    512      { $enabled = $true
-                            $adlogindetails = 'Enabled Account' }
-    				514      { $enabled = $false
-                            $adlogindetails = 'Disabled Account' }
-    				544      { $enabled = $true
-                            $adlogindetails = 'Enabled, Password Not Required' }
-    				546      { $enabled = $false
-                            $adlogindetails = 'Disabled, Password Not Required' }
-                    66048    { $enabled = $true
-                            $adlogindetails = 'Enabled, Password Doesnt Expire' }
-    				66050    { $enabled = $false
-                            $adlogindetails = 'Disabled, Password Doesnt Expire' }
-    				66080    { $enabled = $true
-                            $adlogindetails = 'Enabled, Password Doesnt Expire & Not Required' }
-    				66082    { $enabled = $false
-                            $adlogindetails = 'Disabled, Password Doesnt Expire & Not Required' }
-    				262656   { $enabled = $true
-                            $adlogindetails = 'Enabled, Smartcard Required' }
-    				262658   { $enabled = $false
-                            $adlogindetails = 'Disabled, Smartcard Required' }
-    				262688   { $enabled = $true
-                            $adlogindetails = 'Enabled, Smartcard Required, Password Not Required' }
-    				262690   { $enabled = $false
-                            $adlogindetails = 'Disabled, Smartcard Required, Password Not Required' }
-    				328192   { $enabled = $true
-                            $adlogindetails = 'Enabled, Smartcard Required, Password Doesnt Expire' }
-    				328194   { $enabled = $false
-                            $adlogindetails = 'Disabled, Smartcard Required, Password Doesnt Expire' }
-   				    328224   { $enabled = $true
-                            $adlogindetails = 'Enabled, Smartcard Required, Password Doesnt Expire & Not Required' }
-    				328226   { $enabled = $false
-                            $adlogindetails = 'Disabled, Smartcard Required, Password Doesnt Expire & Not Required' }
-				    $null    { $exists = $true }
-                    default  { Write-Warning "unknown value passed from useraccountcontrol Server: $sqlServer Login: $username Domain: $domain Value: $value"
-                                $exists = 'Unknown'  
-                                $enabled = 'Unknown'} 
-			    }
+		{
 			
-			    if ($Detailed)
-                    {
-                        [PSCustomObject]@{
-				        Server = $server.Name
-				        Domain = $domain
-				        Login = $username
-				        Type = "User"
-				        Enabled = $enabled
-				        NotFound = $exists
-                        DisabledInSQLServer = $login.IsDisabled
-                        ADLoginDetails = $adlogindetails
-			            }
-                    }
-                else
-                    {
-                        [PSCustomObject]@{
-				        Server = $server.Name
-				        Domain = $domain
-				        Login = $username
-				        Type = "User"
-				        Enabled = $enabled
-				        NotFound = $exists
-			            }
-                    }
-		    } # foreach login
-
+			$adlogin = $login.Name
+			Write-Verbose "Parsing Login $adlogin"
+			$domain, $username = $adlogin.Split("\")
+			$filter = "(&(objectCategory=User)(sAMAccountName=$username))" # won't work with groups			
+			Write-Verbose $filter
+			
+			if ($env:USERDOMAIN -eq $domain)
+			{
+				$searcher = New-Object System.DirectoryServices.DirectorySearcher
+				$searcher.Filter = $filter
+			}
+			else
+			{
+				$LDAP = ($domains | Where-Object NetBios -eq $domain).LDAP
+				$ad = New-Object System.DirectoryServices.DirectoryEntry $LDAP
+				$searcher = New-Object System.DirectoryServices.DirectorySearcher
+				$searcher.SearchRoot = $ad
+				$searcher.Filter = $filter
+			}
+			try
+			{
+				$founduser = $searcher.findOne()
+			}
+			catch
+			{
+				Write-Warning "AD Searcher Error for $username"
+			}
+			$value = $founduser.Properties.useraccountcontrol
+			
+			$enabled = $exists = $false
+			$adlogindetails = 'unknown'
+			
+			## values from  http://www.netvision.com/ad_useraccountcontrol.php
+			switch ($value)
+			{
+				512      {
+					$enabled = $true
+					$adlogindetails = 'Enabled Account'
+				}
+				514      {
+					$enabled = $false
+					$adlogindetails = 'Disabled Account'
+				}
+				544      {
+					$enabled = $true
+					$adlogindetails = 'Enabled, Password Not Required'
+				}
+				546      {
+					$enabled = $false
+					$adlogindetails = 'Disabled, Password Not Required'
+				}
+				66048    {
+					$enabled = $true
+					$adlogindetails = 'Enabled, Password Doesnt Expire'
+				}
+				66050    {
+					$enabled = $false
+					$adlogindetails = 'Disabled, Password Doesnt Expire'
+				}
+				66080    {
+					$enabled = $true
+					$adlogindetails = 'Enabled, Password Doesnt Expire & Not Required'
+				}
+				66082    {
+					$enabled = $false
+					$adlogindetails = 'Disabled, Password Doesnt Expire & Not Required'
+				}
+				262656   {
+					$enabled = $true
+					$adlogindetails = 'Enabled, Smartcard Required'
+				}
+				262658   {
+					$enabled = $false
+					$adlogindetails = 'Disabled, Smartcard Required'
+				}
+				262688   {
+					$enabled = $true
+					$adlogindetails = 'Enabled, Smartcard Required, Password Not Required'
+				}
+				262690   {
+					$enabled = $false
+					$adlogindetails = 'Disabled, Smartcard Required, Password Not Required'
+				}
+				328192   {
+					$enabled = $true
+					$adlogindetails = 'Enabled, Smartcard Required, Password Doesnt Expire'
+				}
+				328194   {
+					$enabled = $false
+					$adlogindetails = 'Disabled, Smartcard Required, Password Doesnt Expire'
+				}
+				328224   {
+					$enabled = $true
+					$adlogindetails = 'Enabled, Smartcard Required, Password Doesnt Expire & Not Required'
+				}
+				328226   {
+					$enabled = $false
+					$adlogindetails = 'Disabled, Smartcard Required, Password Doesnt Expire & Not Required'
+				}
+				590336
+				{
+					$enabled = $true
+					$adlogindetails = 'Enabled, User Cannot Change Password & Password Never Expires'
+				}
+				$null
+				{
+					$exists = $true
+				}
+				default
+				{
+					Write-Verbose "unknown value passed from useraccountcontrol Server: $sqlServer Login: $username Domain: $domain Value: $value"
+					$exists = 'Unknown'
+					$enabled = 'Unknown'
+				}
+			}
+			
+			if ($Detailed)
+			{
+				[PSCustomObject]@{
+					Server = $server.Name
+					Domain = $domain
+					Login = $username
+					Type = "User"
+					Found = $exists -ne $true
+					Enabled = $enabled
+					DisabledInSQLServer = $login.IsDisabled
+					ADLoginDetails = $adlogindetails
+				}
+			}
+			else
+			{
+				[PSCustomObject]@{
+					Server = $server.Name
+					Domain = $domain
+					Login = $username
+					Type = "User"
+					Found = $exists -ne $true
+					Enabled = $enabled
+				}
+			}
+		} # foreach login
+		
 		foreach ($login in $windowsGroups)
-		    {
-			    $adlogin = $login.Name
-                Write-Verbose "Parsing Group $adlogin"
-			    $domain, $username = $adlogin.Split("\")
-                $filter = "(&(objectCategory=group)(sAMAccountName=$username))" # won't work with groups			
-                Write-Verbose $filter
-
-			    if ($env:USERDOMAIN -eq $domain)
-			        {
-			            $searcher = New-Object System.DirectoryServices.DirectorySearcher
-			            $searcher.Filter = $filter
-			        }
-			    else
-			        {
-				        $LDAP = ($domains | Where-Object NetBios -eq $domain).LDAP
-				        $ad = New-Object System.DirectoryServices.DirectoryEntry $LDAP
-			            $searcher = New-Object System.DirectoryServices.DirectorySearcher($ad)
-			            $searcher.SearchRoot = $ad
-			            $searcher.Filter = $filter
-			        }
-			    try
-			        {
-				        $founduser = $searcher.findOne()
-			        }
-			    catch
-			        {
-				        Write-Warning "AD Searcher Error for $username on $SqlServer"
-			        }
-            
-                $enabled = $exists = $false
-
-                if ($founduser)
-                    {
-                        $enabled = $true 
-                    }
-                else
-                    {
-                        $exists = $true
-                    }
-			    if ($Detailed)
-                    {
-                        [PSCustomObject]@{
-				        Server = $server.Name
-				        Domain = $domain
-				        Login = $username
-				        Type = "Group"
-				        Enabled = $enabled
-				        NotFound = $exists
-                        DisabledInSQLServer = $login.IsDisabled
-                        ADLoginDetails = 'AD group'
-			            }
-                    }
-                else
-                    {
-                        [PSCustomObject]@{
-				        Server = $server.Name
-				        Domain = $domain
-				        Login = $username
-				        Type = "Group"
-				        Enabled = $enabled
-				        NotFound = $exists
-			            }
-                    }
-	        } # foreach group
+		{
+			$adlogin = $login.Name
+			Write-Verbose "Parsing Group $adlogin"
+			$domain, $username = $adlogin.Split("\")
+			$filter = "(&(objectCategory=group)(sAMAccountName=$username))" # won't work with groups			
+			Write-Verbose $filter
+			
+			if ($env:USERDOMAIN -eq $domain)
+			{
+				$searcher = New-Object System.DirectoryServices.DirectorySearcher
+				$searcher.Filter = $filter
+			}
+			else
+			{
+				$LDAP = ($domains | Where-Object NetBios -eq $domain).LDAP
+				$ad = New-Object System.DirectoryServices.DirectoryEntry $LDAP
+				$searcher = New-Object System.DirectoryServices.DirectorySearcher($ad)
+				$searcher.SearchRoot = $ad
+				$searcher.Filter = $filter
+			}
+			try
+			{
+				$founduser = $searcher.findOne()
+			}
+			catch
+			{
+				Write-Warning "AD Searcher Error for $username on $SqlServer"
+			}
+			
+			$enabled = $exists = $false
+			
+			if ($founduser)
+			{
+				$enabled = $true
+			}
+			else
+			{
+				$exists = $true
+			}
+			if ($Detailed)
+			{
+				[PSCustomObject]@{
+					Server = $server.Name
+					Domain = $domain
+					Login = $username
+					Type = "Group"
+					Found = $exists -ne $true
+					Enabled = $enabled
+					DisabledInSQLServer = $login.IsDisabled
+					ADLoginDetails = 'AD group'
+				}
+			}
+			else
+			{
+				[PSCustomObject]@{
+					Server = $server.Name
+					Domain = $domain
+					Login = $username
+					Type = "Group"
+					Found = $exists -ne $true
+					Enabled = $enabled
+				}
+			}
+		} # foreach group
 	}
 }
