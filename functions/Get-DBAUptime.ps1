@@ -7,7 +7,9 @@ function Get-DbaUptime {
 		[string[]]$SqlServer,
 		[Alias("SqlCredential")]
 		[PsCredential]$Credential,
-		[PsCredential]$WindowsCredential
+		[PsCredential]$WindowsCredential,
+		[Switch]$SQLOnly
+
 	)
 
     	BEGIN
@@ -52,22 +54,53 @@ function Get-DbaUptime {
 			}
                 #Get TempDB creation date
                 $SQLStartTime = $server.Databases["TempDB"].CreateDate
-                $SQLUptime = (get-date) - $SQLStartTime
-                $WindowsUptime = $WindowsUptime
+                $SQLUptime = New-TimeSpan  -start $SQLStartTime -end  (get-date)
+				$SQLUptimeString =  "{0} days {1} hours {2} minutes {3} seconds" -f $($SQLUptime.Days), $($SQLUptime.Hours), $($SQLUptime.Minutes), $($SQLUptime.Seconds)
 
-                #Get Windows Boot date
-                
-                $winsrv = ($SqlServer.split("\"))[0]
-                $OSWmi = Get-WmiObject win32_operatingsystem -ComputerName $winsrv -Credential:$WindowsCredential
-                $WinBootTime = $OSWmi.ConvertToDateTime($OSWmi.LastBootupTime)
-                $WindowsUptime = (get-date)-$WinBotTime
-                $null = $collection.Add([PSCustomObject]@{
-				        SQLServer = $servername
-						SQLStartTime = $SQLStartTime
-                        SQLUptime = $SQLUptime
-                        WindowsBootTime = $WinBootTime
-                        WindowsUptime = $WindowsUptime
-                })
+
+				if ($SQLOnly -ne $true)
+				{
+					$ClusterCheck = Get-DbaClusterActiveNode -SqlServer $servername
+					if ($ClusterCheck -eq 'Not a clustered instance' )
+					{
+						$WindowsServerName = ($servername.split("\"))[0]
+					}
+					else
+					{
+						$WindowsServerName = $ClusterCheck
+					}
+					try {
+						$WinBootTime = (Get-CimInstance -ClassName win32_operatingsystem -ComputerName $windowsServerName).lastbootuptime
+						$WindowsUptime = New-TimeSpan -start $WinBootTime -end (get-date)
+						$WindowsUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($WindowsUptime.Days), $($WindowsUptime.Hours), $($WindowsUptime.Minutes), $($WindowsUptime.Seconds)
+						
+					}
+					catch [System.Exception] {
+						Write-Exception $_
+						#Skip the windows results as they'll either be garbage or not there.
+						$SQLOnly = $true
+					}
+
+				}
+				if ($SQLOnly -eq $true)
+				{
+					$null = $collection.Add([PSCustomObject]@{
+							SQLServer = $servername
+							SQLStartTime = $SQLStartTime
+							SQLUptimeString = $SQLUptimeString
+							SQLUptime = $SQLUptime
+					})
+				}else{
+					$null = $collection.Add([PSCustomObject]@{
+							SQLServer = $servername
+							SQLStartTime = $SQLStartTime
+							SQLUptimeString = $SQLUptimeString
+							SQLUptime = $SQLUptime
+							WindowsBootTime = $WinBootTime
+							WindowsUptime = $WindowsUptime
+							WindowsUptimeString = $WindowsUptimeString
+					})
+				}
 
         }
     }
