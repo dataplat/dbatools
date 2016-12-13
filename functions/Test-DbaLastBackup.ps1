@@ -7,8 +7,8 @@ Tests a SQL Server backup to ensure it is valid
 .DESCRIPTION
 Restores all or some of the latest backups and performs a DBCC CHECKTABLE
 
-1. Gathers last full backups and their locations
-2. Restores the files to the Destination. If no Destination is specified, the originating SqlServer wil be used.
+1. Gathers information about the last full backups
+2. Restores the backps to the Destination with a new name. If no Destination is specified, the originating SqlServer wil be used.
 3. The database is restored as "dbatools-testrestore-$databaseName" by default, but you can change dbatools-testrestore to whatever you would like using -Prefix
 4. The internal file names are also renamed to prevent conflicts with original database
 5. A DBCC CHECKTABLE is then performed
@@ -38,31 +38,31 @@ The database backups to test. If -Databases is not provided, all database backup
 Exclude specific Database backups to test
 
 .PARAMETER Destination
-The destination server to use to test the restore. By default, the Destination will be set to the source server.
+The destination server to use to test the restore. By default, the Destination will be set to the source server
 	
-If a different Destination server is specified, you must ensure that the database backups are on a shared location.
+If a different Destination server is specified, you must ensure that the database backups are on a shared location
 
 .PARAMETER DataDirectory
-Need to finish docs
+The command uses the SQL Server's default data directory for all restores. Use this parameter to specify a different directory for mdfs, ndfs and so on. 
 
 .PARAMETER LogDirectory
-Need to finish docs
+The command uses the SQL Server's default log directory for all restores. Use this parameter to specify a different directory for ldfs. 
 
 .PARAMETER VerifyOnly
-Need to finish docs
+Do not perform the actual restore. Just perform a VERIFYONLY
 
 .PARAMETER NoCheck
-Need to finish docs
+Skip DBCC CHECKTABLE
 
 .PARAMETER NoDrop
-Need to finish docs
+Do not drop newly created test database
 
 .PARAMETER MaxMB
-Need to finish docs
+Do not restore databases larger than MaxMB
 
 .PARAMETER Prefix
-Need to finish docs
-
+The database is restored as "dbatools-testrestore-$databaseName" by default. You can change dbatools-testrestore to whatever you would like using this parameter.
+	
 .PARAMETER WhatIf
 Shows what would happen if the command were to run
 	
