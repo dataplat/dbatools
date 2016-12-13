@@ -5,10 +5,10 @@
 Removes database snapshots
 
 .DESCRIPTION
-Removes database snapshot (dropping them). This means that nobody will be able to restore to the snapshotted state the base db
+Removes (drops) database snapshots from the server
 
 .PARAMETER SqlServer
-The SQL Server that you're connecting to.
+The SQL Server that you're connecting to
 
 .PARAMETER Credential
 Credential object used to connect to the SQL Server as a different user
@@ -19,8 +19,11 @@ Removes snapshot databases with this names only
 .PARAMETER Databases
 Removes snapshots for only specific base dbs
 
-.PARAMETER Exclude
-Removes snapshots for all but these specific base dbs
+.PARAMETER Snapshots
+Removes specific snapshots
+
+.PARAMETER AllSnapshots
+Specifies that you want to remove all snapshots from the server
 
 .PARAMETER WhatIf
 Shows what would happen if the command were to run. No actions are actually performed.
@@ -56,91 +59,130 @@ Remove-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Databases HR, Accounting
 Removes all database snapshots having HR and Accounting as base dbs
 
 .EXAMPLE
-Remove-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Exclude HR
+Remove-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Snapshots HR_snapshot, Accounting_snapshot
 
-Removes all database snapshots excluding ones that have HR as base dbs
+Removes HR_snapshot and Accounting_snapshot
 
+
+.EXAMPLE
+Get-DbaDatabaseSnapshot -SqlServer sql2016 | Where SnapshotOf -like '*dumpsterfire*' | Remove-DbaDatabaseSnapshot
+
+Removes all snapshots associated with databases that have dumpsterfire in the name
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[string[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[string[]]$SqlInstance,
 		[PsCredential]$Credential,
-		[string[]]$Snapshots
+		[parameter(ValueFromPipeline = $true)]
+		[object]$PipelineSnapshot,
+		[switch]$AllSnapshots
 	)
-
-	DynamicParam {
-		if ($SqlServer) {
-			return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential
+	
+	DynamicParam
+	{
+		if ($SqlInstance)
+		{
+			Get-ParamSqlSnapshotsAndDatabases -SqlServer $SqlInstance[0] -SqlCredential $Credential
 		}
 	}
-
+	
 	BEGIN
 	{
-		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
+		$snapshots = $psboundparameters.Snapshots
 	}
-
+	
 	PROCESS
 	{
-		foreach ($servername in $SqlServer)
+		if ($snapshots.count -eq 0 -and $databases.count -eq 0 -and $AllSnapshots -eq $false -and $PipelineSnapshot -eq $null)
 		{
-			Write-Verbose "Connecting to $servername"
-			try
+			Write-Warning "You must specify -Snapshots, -Databases or -AllSnapshots"
+			return
+		}
+		
+		# handle the database object passed by the pipeline
+		if ($PipelineSnapshot.PSTypeNames -eq 'dbatools.customobject')
+		{
+			If ($Pscmdlet.ShouldProcess($PipelineSnapshot.SnapshotDb.Parent.name, "Remove db snapshot '$($PipelineSnapshot.SnapshotDb.Name)'"))
 			{
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
-
-			}
-			catch
-			{
-				if ($SqlServer.count -eq 1)
+				$dropped = Remove-SqlDatabase -SqlServer $PipelineSnapshot.SnapshotDb.Parent -DBName $PipelineSnapshot.SnapshotDb.Name
+				
+				if ($dropped -match "Success")
 				{
-					throw $_
+					$status = "Dropped"
 				}
 				else
 				{
-					Write-Warning "Can't connect to $servername. Moving on."
-					Continue
+					Write-Warning $dropped
+					$status = "Drop failed"
+				}
+				
+				[PSCustomObject]@{
+					Server = $PipelineSnapshot.Server
+					Database = $PipelineSnapshot.Database
+					SnapshotOf = $PipelineSnapshot.SnapshotOf
+					Status = $status
 				}
 			}
-
-			$dbs = $server.Databases | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
-			
-			if ($Snapshots.Count -gt 0)
+			return
+		}
+		
+		# if piped value either doesn't exist or is not the proper type
+		foreach ($instance in $SqlInstance)
+		{
+			Write-Verbose "Connecting to $instance"
+			try
 			{
-				foreach($snap in $Snapshots) 
-				{
-					if($snap -notin $dbs.Name) 
-					{
-						Write-Warning "No snapshot '$snap' found, skipping"
-					}    
-				}
-				$dbs = $dbs | Where-Object { $Snapshots -contains $_.Name }
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
+				
 			}
-
+			catch
+			{
+				Write-Warning "Can't connect to $instance"
+				Continue
+			}
+			
+			$dbs = $server.Databases
+			
 			if ($databases.count -gt 0)
 			{
 				$dbs = $dbs | Where-Object { $databases -contains $_.DatabaseSnapshotBaseName }
 			}
-
-			if ($exclude.count -gt 0)
+			
+			if ($snapshots.count -gt 0)
 			{
-				$dbs = $dbs | Where-Object { $exclude -notcontains $_.DatabaseSnapshotBaseName }
+				$dbs = $dbs | Where-Object { $snapshots -contains $_.Name }
 			}
-
+			
+			if ($snapshots.count -eq 0 -and $databases.count -eq 0)
+			{
+				$dbs = $dbs | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
+			}
+			
 			foreach ($db in $dbs)
 			{
-				If ($Pscmdlet.ShouldProcess( $server.name, "Remove db snapshot '$($db.Name)'")) {
-					try
+				If ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot $($db.Name)"))
+				{
+					$dropped = Remove-SqlDatabase -SqlServer $server -DBName $db.Name -SqlCredential $Credential
+					
+					if ($dropped -match "Success")
 					{
-						Remove-SqlDatabase -SqlServer $SqlServer -DBName $db.Name -SqlCredential $Credential
+						$status = "Dropped"
 					}
-					catch
+					else
 					{
-						return $_
+						Write-Warning $dropped
+						$status = "Drop failed"
+					}
+					
+					[PSCustomObject]@{
+						Server = $server.name
+						Database = $db.Name
+						SnapshotOf = $db.DatabaseSnapshotBaseName
+						Status = $status
 					}
 				}
 			}
