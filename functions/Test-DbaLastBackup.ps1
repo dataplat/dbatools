@@ -2,7 +2,7 @@
 {
 <#
 .SYNOPSIS
-Tests a SQL Server backup to ensure it is valid
+Quickly and easily tests the last set of full backups for a server
 
 .DESCRIPTION
 Restores all or some of the latest backups and performs a DBCC CHECKTABLE
@@ -15,7 +15,12 @@ Restores all or some of the latest backups and performs a DBCC CHECKTABLE
 6. And the test database is finally dropped
 
 .PARAMETER SqlServer
-The SQL Server to connect to
+The SQL Server to connect to. Unlike many of the other commands, you cannot specify more than one server.
+
+.PARAMETER Destination
+The destination server to use to test the restore. By default, the Destination will be set to the source server
+	
+If a different Destination server is specified, you must ensure that the database backups are on a shared location
 	
 .PARAMETER SqlCredential
 Allows you to login to servers using alternative credentials
@@ -36,11 +41,6 @@ The database backups to test. If -Databases is not provided, all database backup
 
 .PARAMETER Exclude
 Exclude specific Database backups to test
-
-.PARAMETER Destination
-The destination server to use to test the restore. By default, the Destination will be set to the source server
-	
-If a different Destination server is specified, you must ensure that the database backups are on a shared location
 
 .PARAMETER DataDirectory
 The command uses the SQL Server's default data directory for all restores. Use this parameter to specify a different directory for mdfs, ndfs and so on. 
