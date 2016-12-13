@@ -89,11 +89,11 @@ Restores data and log files to alternative locations and only restores databases
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance", "Source")]
-		[object]$SqlServer,
+		[string]$SqlServer,
 		[object]$SqlCredential,
-		[object]$Destination = $SqlServer,
+		[string]$Destination = $SqlServer,
 		[object]$DestinationCredential = $SqlCredential,
 		[string]$DataDirectory,
 		[string]$LogDirectory,
