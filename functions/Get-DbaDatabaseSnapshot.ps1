@@ -16,8 +16,8 @@ Credential object used to connect to the SQL Server as a different user
 .PARAMETER Databases
 Return information for only specific base dbs
 
-.PARAMETER Exclude
-Return information for all but these specific base dbs
+.PARAMETER Snapshots
+Return information for only specific snapshots
 
 .NOTES
 Author: niphlod
@@ -42,77 +42,82 @@ Get-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Databases HR, Accounting
 Returns informations for database snapshots having HR and Accounting as base dbs
 
 .EXAMPLE
-Get-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Exclude HR
+Get-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Snapshots HR_snapshot, Accounting_snapshot
 
-Returns informations for database snapshots excluding ones that have HR as base dbs
-
+Returns informations for database snapshots HR_snapshot and Accounting_snapshot
 
 #>
 	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[string[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[string[]]$SqlInstance,
 		[PsCredential]$Credential
 	)
-
-	DynamicParam {
-		if ($SqlServer) {
-			return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential
+	
+	DynamicParam
+	{
+		if ($SqlInstance)
+		{
+			Get-ParamSqlSnapshotsAndDatabases -SqlServer $SqlInstance[0] -SqlCredential $Credential
 		}
 	}
-
+	
 	BEGIN
 	{
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
+		$snapshots = $psboundparameters.Snapshots
 	}
 
 	PROCESS
 	{
-		foreach ($servername in $SqlServer)
+		foreach ($instance in $SqlInstance)
 		{
-			Write-Verbose "Connecting to $servername"
+			Write-Verbose "Connecting to $instance"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
-
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
+				
 			}
 			catch
 			{
-				if ($SqlServer.count -eq 1)
-				{
-					throw $_
-				}
-				else
-				{
-					Write-Warning "Can't connect to $servername. Moving on."
-					Continue
-				}
+				Write-Warning "Can't connect to $instance"
+				Continue
 			}
-
-			$dbs = $server.Databases | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
+			
+			$dbs = $server.Databases 
 
 			if ($databases.count -gt 0)
 			{
 				$dbs = $dbs | Where-Object { $databases -contains $_.DatabaseSnapshotBaseName }
 			}
 
-			if ($exclude.count -gt 0)
+			if ($snapshots.count -gt 0)
 			{
-				$dbs = $dbs | Where-Object { $exclude -notcontains $_.DatabaseSnapshotBaseName }
+				$dbs = $dbs | Where-Object { $snapshots -contains $_.Name }
 			}
-
-
+			
+			if ($snapshots.count -eq 0 -and $databases.count -eq 0)
+			{
+				$dbs = $dbs | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
+			}
+			
+			
 			foreach ($db in $dbs)
 			{
-				[PSCustomObject]@{
+				$object = [PSCustomObject]@{
 					Server = $server.name
 					Database = $db.name
-					DatabaseCreated = $db.createDate
 					SnapshotOf = $db.DatabaseSnapshotBaseName
+					SizeMB = [Math]::Round($db.Size,2)
+					DatabaseCreated = $db.createDate
+					IsReadCommittedSnapshotOn = $db.IsReadCommittedSnapshotOn
+					SnapshotIsolationState = $db.SnapshotIsolationState
+					SnapshotDb = $db
 				}
+				
+				Select-DefaultField -InputObject $object -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated, IsReadCommittedSnapshotOn, SnapshotIsolationState
 			}
 		}
 	}
