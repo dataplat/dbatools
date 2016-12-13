@@ -92,7 +92,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 				$PathList
 			)
 			# use sysaltfiles in lower versions
-			
+
 			$q1 = "CREATE TABLE #enum ( id int IDENTITY, fs_filename nvarchar(512), depth int, is_file int, parent nvarchar(512) ); DECLARE @dir nvarchar(512);"
 			$q2 = "SET @dir = 'dirname';
 
@@ -103,12 +103,12 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 				SET parent = @dir,
 				fs_filename = ltrim(rtrim(fs_filename))
 				WHERE parent IS NULL;"
-			
+
 			$query_files_sql = "SELECT e.fs_filename AS filename, e.parent
 					FROM #enum AS e
 					WHERE e.fs_filename NOT IN( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr' )
 					AND is_file = 1;"
-			
+
 			# build the query string based on how many directories they want to enumerate
 			$sql = $q1
 			$sql += $($PathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2 -Replace 'dirname', $_)" })
@@ -123,7 +123,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 				[Parameter(Mandatory = $true, Position = 1)]
 				[Microsoft.SqlServer.Management.Smo.SqlSmoObject]$smoserver
 			)
-			
+
 			if ($smoserver.versionMajor -eq 8)
 			{
 				$sql = "select filename from sysaltfiles"
@@ -132,54 +132,58 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 			{
 				$sql = "select physical_name as filename from sys.master_files"
 			}
-			
+
 			$dbfiletable = $smoserver.ConnectionContext.ExecuteWithResults($sql)
 			$ftfiletable = $dbfiletable.Tables[0].Clone()
 			$dbfiletable.Tables[0].TableName = "data"
-			
-			# FIXME: the following block is skipped because $databaselist is null.
-			# on a later release we can extensively test it
-			foreach ($db in $databaselist)
+
+			# Add support for Full Text Catalogs in Sql Server 2005 and below
+			if ($server.VersionMajor -lt 10)
 			{
-				# Add support for Full Text Catalogs in Sql Server 2005 and below
-				if ($server.VersionMajor -lt 10)
+				$databaselist = $smoserver.Databases | select Name, IsFullTextEnabled
+				foreach ($db in $databaselist)
 				{
-					#$dbname = $db.name
+					if($db.IsFullTextEnabled -eq $false) {
+						continue
+					}
+					$database = $db.name
 					$fttable = $null = $smoserver.Databases[$database].ExecuteWithResults('sp_help_fulltext_catalogs')
-					
+
 					foreach ($ftc in $fttable.Tables[0].rows)
 					{
 						$null = $ftfiletable.Rows.add($ftc.Path)
 					}
 				}
 			}
-			
+
 			$null = $dbfiletable.Tables.Add($ftfiletable)
 			return $dbfiletable.Tables.Filename
 		}
-		
+
 		function Format-Path
 		{
 			param ($path)
 			$path = $path.Trim()
 			#Thank you windows 2000
-			$Path = $path -replace '\W', ''
+			$path = $path -replace '[^A-Za-z0-9 _\.\-\\:]', '__'
 			return $path
 		}
-		
+
 		$FileType += "mdf", "ldf", "ndf"
 		$systemfiles = "distmdl.ldf", "distmdl.mdf", "mssqlsystemresource.ldf", "mssqlsystemresource.mdf"
+
+        $FileTypeComparison = $FileType | ForEach-Object {$_.ToLower()} | Where-Object { $_ } | Sort-Object -Unique
 	}
-	
+
 	PROCESS
 	{
 		foreach ($servername in $sqlserver)
 		{
 			# Reset all the arrays
 			$dirtreefiles = $valid = $paths = $matching = @()
-			
+
 			$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
-			
+
 			# Get the default data and log directories from the instance
 			Write-Debug "Adding paths"
 			$paths += $server.RootDirectory + "\DATA"
@@ -189,10 +193,9 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 			$paths += $server.MasterDBLogPath
 			$paths += $Path
 			$paths = $paths | ForEach-Object { "$_".TrimEnd("\") } | Sort-Object -Unique
-			
 			$sql = Get-SQLDirTreeQuery $paths
 			$datatable = $server.Databases['master'].ExecuteWithResults($sql).Tables[0]
-			
+
 			foreach ($row in $datatable)
 			{
 				$fullpath = [IO.Path]::combine($row.parent, $row.filename)
@@ -201,61 +204,67 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 					Comparison = [IO.Path]::GetFullPath($(Format-Path $fullpath))
 				}
 			}
-			
 			$dirtreefiles = $dirtreefiles | Where-Object { $_ } | Sort-Object Comparison -Unique
+
 			$filestructure = Get-SqlFileStructure $server
-			
+
 			foreach ($file in $filestructure)
 			{
 				$valid += [IO.Path]::GetFullPath($(Format-Path $file))
 			}
-			
+
 			$valid = $valid | Sort-Object -Unique
-			
+
 			foreach ($file in $dirtreefiles.Comparison)
 			{
-				foreach ($type in $FileType)
+                foreach ($type in $FileTypeComparison)
 				{
-					if ($file.ToLower().EndsWith($type.ToLower()))
+					if ($file.ToLower().EndsWith($type))
 					{
 						$matching += $file
+                        break
 					}
 				}
 			}
-			
+
+            $dirtreematcher = @{}
+            foreach($el in $dirtreefiles) {
+                $dirtreematcher[$el.Comparison] = $el.Fullpath
+            }
+
 			foreach ($file in $matching)
 			{
-				Write-Verbose "Analyzing $file"
 				if ($file -notin $valid)
 				{
-					$fullpath = ($dirtreefiles | Where-Object Comparison -eq $file).FullPath
-					
+                    $fullpath = $dirtreematcher[$file]
+
 					$filename = Split-Path $fullpath -Leaf
-					
-					# weird that tempdev*.ndf is showing up even if it's in use?
-					if ($filename -in $systemfiles -or $filename -like "tempdev*.ndf") { continue }
-					
+
+					if ($filename -in $systemfiles) { continue }
+
 					$result = [pscustomobject]@{
 						Server = $server.name
 						Filename = $fullpath
 						RemoteFilename = Join-AdminUnc -Servername $server.netname -Filepath $fullpath
 					}
-					
+
 					if ($LocalOnly -eq $true)
 					{
 						($result | Select-Object filename).filename
 						continue
 					}
-					
+
 					if ($RemoteOnly -eq $true)
 					{
 						($result | Select-Object remotefilename).remotefilename
 						continue
 					}
-					
+
 					$result
+
 				}
 			}
+
 		}
 	}
 	END
