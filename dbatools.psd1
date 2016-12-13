@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.61'
+	ModuleVersion = '0.8.681'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -94,8 +94,7 @@
 		'Copy-SqlProxyAccount',
 		'Copy-SqlAlert',
 		'Import-SqlSpConfigure',
-		'Export-SqlSpConfigure',
-		'Get-SqlMaxMemory',
+		'Export-SqlSpConfigure'
 		'Get-DbaDetachedDatabaseInfo',
 		'Restore-SqlBackupFromDirectory',
 		'Test-SqlConnection',
@@ -106,7 +105,6 @@
 		'Sync-SqlLoginPermissions',
 		'Export-SqlLogin',
 		'Get-SqlServerKey',
-		'Set-SqlMaxMemory',
 		'Reset-SqlAdmin',
 		'Watch-SqlDbLogin',
 		'Expand-SqlTLogResponsibly',
@@ -156,7 +154,24 @@
 		'Test-DbaMaxDop',
 		'Remove-DbaBackup',
 		'Get-DbaPermission',
-		'Get-DbaLastBackup'
+		'Get-DbaLastBackup',
+		'Connect-DbaSqlServer',
+		'Get-DbaStartupParameter',
+		'Get-DbaMemoryUsage',
+		'Get-DbaBackupHistory',
+		'Read-DbaBackupHeader',
+		'Test-DbaLastBackup',
+		'Get-DbaMaxMemory',
+		'Set-DbaMaxMemory',
+		'Test-DbaMaxMemory',
+		'Restore-DbaBackup',
+		'Get-DbaDatabaseSnapshot',
+		'Remove-DbaDatabaseSnapshot',
+		'Get-DbaRoleMember',
+		'Resolve-DbaNetworkName',
+		'Test-DbaValidLogin',
+		'Get-DbaMemoryUsage',
+		'Export-DbaAvailabilityGroup'
 	)
 	
 	# Cmdlets to export from this module
@@ -174,7 +189,9 @@
 	'Update-SqlWhoIsActive',
 	'Show-SqlMigrationConstraint',
 	'Test-SqlDiskAllocation',
-	'Get-DiskSpace'
+	'Get-DiskSpace',
+	'Get-SqlMaxMemory',
+	'Set-SqlMaxMemory'
 	
 	# List of all modules packaged with this module
 	ModuleList = @()

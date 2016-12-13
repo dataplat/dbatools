@@ -42,6 +42,12 @@ Groups are valid input.
 .PARAMETER Force
 By default, a confirmation is presented to ensure the person executing the script knows that a service restart will occur. Force basically performs a -Confirm:$false. This will restart the SQL Service without prompting.
 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: Admin access to server (not SQL Services), 
