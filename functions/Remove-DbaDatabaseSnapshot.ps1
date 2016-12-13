@@ -64,6 +64,11 @@ Remove-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Snapshots HR_snapshot, Acc
 Removes HR_snapshot and Accouting_snapshot
 
 
+.EXAMPLE
+Get-DbaDatabaseSnapshot -SqlServer sql2016 | Where SnapshotOf -like '*dumpsterfire*' | Remove-DbaDatabaseSnapshot
+
+Removes all snapshots associated with databases that have dumpsterfire in the name
+
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
@@ -86,10 +91,8 @@ Removes HR_snapshot and Accouting_snapshot
 	
 	BEGIN
 	{
-		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
 		$snapshots = $psboundparameters.Snapshots
-		
 	}
 	
 	PROCESS
@@ -120,11 +123,11 @@ Removes HR_snapshot and Accouting_snapshot
 				[PSCustomObject]@{
 					Server = $PipelineSnapshot.Server
 					Database = $PipelineSnapshot.Database
+					SnapshotOf = $PipelineSnapshot.SnapshotOf
 					Status = $status
 				}
 			}
-			
-			continue
+			return
 		}
 		
 		# if piped value either doesn't exist or is not the proper type
@@ -178,6 +181,7 @@ Removes HR_snapshot and Accouting_snapshot
 					[PSCustomObject]@{
 						Server = $server.name
 						Database = $db.Name
+						SnapshotOf = $db.DatabaseSnapshotBaseName
 						Status = $status
 					}
 				}
