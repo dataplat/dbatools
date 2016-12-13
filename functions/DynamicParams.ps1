@@ -102,9 +102,9 @@ filled with database list from specified SQL Server server.
 		}
 		elseif ($SnapshotOnly)
 		{
-			if ($database.IsDatabaseSnapshot)
+			if ($database.DatabaseSnapshotBaseName.Length -gt 0)
 			{
-				$databaselist += $database.name
+				$databaselist += $database.DatabaseSnapshotBaseName
 			}
 		}
 		else
@@ -188,7 +188,7 @@ filled with database list from specified SQL Server server.
 	
 	if ($SnapshotOnly)
 	{
-		$databaselist = ($server.databases | Where-Object IsDatabaseSnapshot -eq $true).Name
+		$databaselist = ($server.databases | Where-Object { $_.DatabaseSnapshotBaseName.Length -gt 0 }).DatabaseSnapshotBaseName
 	}
 	else
 	{
