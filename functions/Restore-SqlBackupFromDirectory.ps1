@@ -75,7 +75,7 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 
 #>	
 	#Requires -Version 3.0
-	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance","SqlInstance")]
