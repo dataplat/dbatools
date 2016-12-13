@@ -94,7 +94,7 @@ Restores data and log files to alternative locations and only restores databases
 		[string]$SqlServer,
 		[object]$SqlCredential,
 		[string]$Destination = $SqlServer,
-		[object]$DestinationCredential = $SqlCredential,
+		[object]$DestinationCredential,
 		[string]$DataDirectory,
 		[string]$LogDirectory,
 		[switch]$VerifyOnly,
@@ -110,6 +110,11 @@ Restores data and log files to alternative locations and only restores databases
 	{
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
+		
+		if ($SqlServer -eq $destination)
+		{
+			$DestinationCredential = $SqlCredential
+		}
 		
 		$sourceserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $sqlCredential
 		$destserver = Connect-SqlServer -SqlServer $destination -SqlCredential $DestinationCredential
