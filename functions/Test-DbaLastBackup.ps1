@@ -17,15 +17,36 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
+.PARAMETER DestinationCredential
+Hello
+
 .PARAMETER Databases
+Hello
+
 .PARAMETER Exclude
+Hello
+
 .PARAMETER Destination
+Hello
+
 .PARAMETER DataDirectory
+Hello
+
 .PARAMETER LogDirectory
+Hello
+
 .PARAMETER VerifyOnly
+Hello
+
 .PARAMETER NoCheck
+Hello
+
 .PARAMETER NoDrop
+Hello
+
 .PARAMETER MaxMB
+Hello
+
 	
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -73,6 +94,7 @@ Restores data and log files to alternative locations and only restores databases
 		[object]$SqlServer,
 		[object]$SqlCredential,
 		[object]$Destination = $SqlServer,
+		[object]$DestinationCredential = $SqlCredential,
 		[string]$DataDirectory,
 		[string]$LogDirectory,
 		[switch]$VerifyOnly,
@@ -90,7 +112,7 @@ Restores data and log files to alternative locations and only restores databases
 		$exclude = $psboundparameters.Exclude
 		
 		$sourceserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $sqlCredential
-		$destserver = Connect-SqlServer -SqlServer $destination -SqlCredential $sqlCredential
+		$destserver = Connect-SqlServer -SqlServer $destination -SqlCredential $DestinationCredential
 		
 		if ($destserver.VersionMajor -lt $sourceserver.VersionMajor)
 		{
