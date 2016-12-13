@@ -39,7 +39,7 @@ Get-DbaRoleMember -SqlServer ServerA
 Returns a custom object displaying SQLServer, Database, Role, Member for all DatabaseRoles.
 
 .EXAMPLE
-Get-DbaRoleMember -SqlServer ServerA\sql987 | Out-Gridview
+Get-DbaRoleMember -SqlServer sql2016 | Out-Gridview
 
 Returns a gridview displaying SQLServer, Database, Role, Member for all DatabaseRoles.
 
@@ -52,9 +52,9 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
 	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("sqlserver", "server", "instance")]
-		[string[]]$sqlinstance,
-		[PsCredential]$sqlCredential,
+		[Alias("SqlServer", "Server", "Instance")]
+		[string[]]$SqlInstance,
+		[PsCredential]$SqlCredential,
 		[switch]$IncludeServerLevel,
 		[switch]$NoFixedRole
 	)
@@ -106,7 +106,7 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
 						}
 					}
 				}
-				$dbs = $null
+				
 				$dbs = $server.Databases
 				
 				if ($databases.count -gt 0)
@@ -116,25 +116,25 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
 				
 				foreach ($db in $dbs)
 				{
-					$dbroles = $null
-					Write-Verbose "Getting Database Roles for $($db.name) on $instance"
 					$dbroles = $db.roles
+					Write-Verbose "Getting Database Roles for $($db.name) on $instance"
+					
 					if ($NoFixedRole)
 					{
 						$dbroles = $dbroles | Where-Object { $_.isfixedrole -eq $false }
 					}
+					
 					foreach ($dbrole in $dbroles)
 					{
-						$dbmembers = $null
 						Write-Verbose "Getting Database Role Members for $dbrole in $($db.name) on $instance"
 						$dbmembers = $dbrole.enummembers()
 						ForEach ($dbmem in $dbmembers)
 						{
 							[PSCustomObject]@{
-								'SQLInstance' = $instance
-								'Database' = $db.name
-								'Role' = $dbrole.name
-								'member' = $dbmem.tostring()
+								SqlInstance = $instance
+								Database = $db.name
+								Role = $dbrole.name
+								Member = $dbmem.tostring()
 							}
 						}
 					}
