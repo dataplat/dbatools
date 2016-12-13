@@ -58,7 +58,7 @@ Returns informations for database snapshots excluding ones that have HR as base 
 
 	DynamicParam {
 		if ($SqlServer) {
-			return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential
+			return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential -DbsWithSnapshotsOnly
 		}
 	}
 
@@ -77,21 +77,14 @@ Returns informations for database snapshots excluding ones that have HR as base 
 			try
 			{
 				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
-
+				
 			}
 			catch
 			{
-				if ($SqlServer.count -eq 1)
-				{
-					throw $_
-				}
-				else
-				{
-					Write-Warning "Can't connect to $servername. Moving on."
-					Continue
-				}
+				Write-Warning "Can't connect to $servername"
+				Continue
 			}
-
+			
 			$dbs = $server.Databases | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
 
 			if ($databases.count -gt 0)
@@ -107,12 +100,15 @@ Returns informations for database snapshots excluding ones that have HR as base 
 
 			foreach ($db in $dbs)
 			{
-				[PSCustomObject]@{
+				$object = [PSCustomObject]@{
 					Server = $server.name
 					Database = $db.name
-					DatabaseCreated = $db.createDate
 					SnapshotOf = $db.DatabaseSnapshotBaseName
+					DatabaseCreated = $db.createDate
+					SnapshotDb = $db
 				}
+				
+				Select-DefaultField -InputObject $object -Property 'Server', 'Database', 'SnapshotOf', 'DatabaseCreated'
 			}
 		}
 	}
