@@ -216,7 +216,7 @@ filled with database list from specified SQL Server server.
 	return $newparams
 }
 
-Function Get-ParamSqlSnapshots
+Function Get-ParamSqlSnapshotsAndDatabases
 {
 <#
 .SYNOPSIS
@@ -235,7 +235,7 @@ filled with snapshot list from specified SQL Server server.
 	catch { return }
 	
 	# Populate arrays
-	$databaselist = @()
+	$databaselist = $snapshotlist = @()
 	if ($server.Databases.Count -gt 255)
 	{
 		# Don't slow them down by building a list that likely won't be used anyway
@@ -245,6 +245,8 @@ filled with snapshot list from specified SQL Server server.
 		$attributes.Mandatory = $false
 		$Snapshots = New-Object -TypeName System.Management.Automation.RuntimeDefinedParameter("Snapshots", [String[]], $attributes)
 		$newparams.Add("Snapshots", $Snapshots)
+		$Databases = New-Object -TypeName System.Management.Automation.RuntimeDefinedParameter("Databases", [String[]], $attributes)
+		$newparams.Add("Databases", $Databases)
 		return $newparams
 	}
 	
@@ -253,29 +255,38 @@ filled with snapshot list from specified SQL Server server.
 		
 		if ($database.IsDatabaseSnapshot)
 		{
-			$databaselist += $database.name
+			$snapshotlist += $database.name
 		}
 		
+		if ($database.DatabaseSnapshotBaseName.Length -gt 0)
+		{
+			$databaselist += $database.DatabaseSnapshotBaseName
+		}
 	}
 	
 	# Reusable parameter setup
 	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-	
-	# Provide backwards compatability for improperly named parameter
-	# Scratch that. I'm going with plural. Sorry, Snoves!
-	
 	$attributes = New-Object System.Management.Automation.ParameterAttribute
 	$attributes.ParameterSetName = "__AllParameterSets"
 	$attributes.Mandatory = $false
-	$attributes.Position = 3
 	
 	# Database list parameter setup
 	if ($databaselist) { $dbvalidationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $databaselist }
 	$attributeCollection = New-Object -TypeName System.Collections.ObjectModel.Collection[System.Attribute]
 	$attributeCollection.Add($attributes)
 	if ($databaselist) { $attributeCollection.Add($dbvalidationset) }
-	$Snapshots = New-Object -TypeName System.Management.Automation.RuntimeDefinedParameter("Snapshots", [String[]], $attributeCollection)
+	$attributeCollection.Add($alias)
+	$Databases = New-Object -TypeName System.Management.Automation.RuntimeDefinedParameter("Databases", [String[]], $attributeCollection)
 	
+	$newparams.Add("Databases", $Databases)
+	
+	# Database list parameter setup
+	if ($snapshotlist) { $dbvalidationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $snapshotlist }
+	$attributeCollection = New-Object -TypeName System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($snapshotlist) { $attributeCollection.Add($dbvalidationset) }
+	
+	$Snapshots = New-Object -TypeName System.Management.Automation.RuntimeDefinedParameter("Snapshots", [String[]], $attributeCollection)
 	$newparams.Add("Snapshots", $Snapshots)
 	
 	$server.ConnectionContext.Disconnect()
