@@ -8,7 +8,7 @@ Tests a SQL Server backup to see if it is valid
 Need to finish docs
 
 .PARAMETER SqlServer
-What
+Need to finish docs
 	
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
@@ -18,35 +18,44 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER DestinationCredential
-Hello
+Need to finish docs
 
 .PARAMETER Databases
-Hello
+Need to finish docs
 
 .PARAMETER Exclude
-Hello
+Need to finish docs
 
 .PARAMETER Destination
-Hello
+Need to finish docs
 
 .PARAMETER DataDirectory
-Hello
+Need to finish docs
 
 .PARAMETER LogDirectory
-Hello
+Need to finish docs
 
 .PARAMETER VerifyOnly
-Hello
+Need to finish docs
 
 .PARAMETER NoCheck
-Hello
+Need to finish docs
 
 .PARAMETER NoDrop
-Hello
+Need to finish docs
 
 .PARAMETER MaxMB
-Hello
+Need to finish docs
 
+.PARAMETER WhatIf
+Shows what would happen if the command were to run
+	
+.PARAMETER Confirm
+Prompts for confirmation of every step. For example:
+
+Are you sure you want to perform this action?
+Performing the operation "Restoring model as dbatools-testrestore-model" on target "SQL2016\VNEXT".
+[Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is "Y"):
 	
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
