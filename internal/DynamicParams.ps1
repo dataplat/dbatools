@@ -1113,6 +1113,37 @@ filled with server groups from specified SQL Server Central Management server na
 	catch { return }
 	
 	if ($cmstore -eq $null) { return }
+
+	# unfortunately the logic is quite cumbersome because group names accept also the '\'
+	# character, that is also the de-facto standard to give a hierarchy.
+	# e.g.
+	#
+	# cms
+	# +--foo
+	#    +--bar\baz
+	#    +--foo
+	#       +--registered server
+	# The only short-circuit would be something like:
+	# cms
+	# +--foo
+	# |  +--bar
+	# +--foo\bar
+	Function Parse-CmsGroup($CmsGrp, $base = '')
+	{
+		$results = @()
+		foreach($el in $CmsGrp) {
+			if($base -eq ''){
+				$partial = $el.name
+			} else {
+				$partial = "$base\$($el.name)"
+			}
+			$results += $partial
+			foreach($group in $el.ServerGroups) {
+				$results += Parse-CmsGroup $group $partial
+			}
+		}
+		return $results
+	}
 	
 	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
 	$paramattributes = New-Object System.Management.Automation.ParameterAttribute
@@ -1120,7 +1151,7 @@ filled with server groups from specified SQL Server Central Management server na
 	$paramattributes.Mandatory = $false
 	$paramattributes.Position = 3
 	
-	$argumentlist = $cmstore.DatabaseEngineServerGroup.ServerGroups.name
+	$argumentlist = Parse-CmsGroup $cmstore.DatabaseEngineServerGroup.ServerGroups
 	
 	if ($argumentlist -ne $null)
 	{
