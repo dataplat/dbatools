@@ -5,10 +5,10 @@
 Removes database snapshots
 
 .DESCRIPTION
-Removes database snapshot (dropping them). This means that nobody will be able to restore to the snapshotted state the base db
+Removes (drops) database snapshots from the server
 
 .PARAMETER SqlServer
-The SQL Server that you're connecting to.
+The SQL Server that you're connecting to
 
 .PARAMETER Credential
 Credential object used to connect to the SQL Server as a different user
@@ -19,8 +19,11 @@ Removes snapshot databases with this names only
 .PARAMETER Databases
 Removes snapshots for only specific base dbs
 
-.PARAMETER Exclude
-Removes snapshots for all but these specific base dbs
+.PARAMETER Snapshots
+Removes specific snapshots
+
+.PARAMETER AllSnapshots
+Specifies that you want to remove all snapshots from the server
 
 .PARAMETER WhatIf
 Shows what would happen if the command were to run. No actions are actually performed.
@@ -56,9 +59,9 @@ Remove-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Databases HR, Accounting
 Removes all database snapshots having HR and Accounting as base dbs
 
 .EXAMPLE
-Remove-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Exclude HR
+Remove-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Snapshots HR_snapshot, Accouting_snapshot
 
-Removes all database snapshots excluding ones that have HR as base dbs
+Removes HR_snapshot and Accouting_snapshot
 
 
 #>
@@ -68,7 +71,6 @@ Removes all database snapshots excluding ones that have HR as base dbs
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
 		[PsCredential]$Credential,
-		[string[]]$Snapshots,
 		[parameter(ValueFromPipeline = $true)]
 		[object]$PipelineSnapshot,
 		[switch]$AllSnapshots
@@ -78,7 +80,7 @@ Removes all database snapshots excluding ones that have HR as base dbs
 	{
 		if ($SqlServer)
 		{
-			Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential -DbsWithSnapshotsOnly
+			Get-ParamSqlSnapshotsAndDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential
 		}
 	}
 	
@@ -86,11 +88,18 @@ Removes all database snapshots excluding ones that have HR as base dbs
 	{
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
+		$snapshots = $psboundparameters.Snapshots
+		
 	}
 	
 	PROCESS
 	{
+		if ($snapshots.count -eq 0 -and $databases.count -eq 0 -and $AllSnapshots -eq $false -and $PipelineSnapshot -eq $null)
+		{
+			Write-Warning "You must specify -Snapshots, -Databases or -AllSnapshots"
+			return
+		}
+		
 		# handle the database object passed by the pipeline
 		if ($PipelineSnapshot.PSTypeNames -eq 'dbatools.customobject')
 		{
@@ -133,33 +142,26 @@ Removes all database snapshots excluding ones that have HR as base dbs
 				Continue
 			}
 			
-			$dbs = $server.Databases | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
-			
-			if ($Snapshots.Count -gt 0)
-			{
-				foreach ($snap in $Snapshots)
-				{
-					if ($snap -notin $dbs.Name)
-					{
-						Write-Warning "No snapshot '$snap' found, skipping"
-					}
-				}
-				$dbs = $dbs | Where-Object { $Snapshots -contains $_.Name }
-			}
+			$dbs = $server.Databases
 			
 			if ($databases.count -gt 0)
 			{
 				$dbs = $dbs | Where-Object { $databases -contains $_.DatabaseSnapshotBaseName }
 			}
 			
-			if ($exclude.count -gt 0)
+			if ($snapshots.count -gt 0)
 			{
-				$dbs = $dbs | Where-Object { $exclude -notcontains $_.DatabaseSnapshotBaseName }
+				$dbs = $dbs | Where-Object { $snapshots -contains $_.Name }
+			}
+			
+			if ($snapshots.count -eq 0 -and $databases.count -eq 0)
+			{
+				$dbs = $dbs | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
 			}
 			
 			foreach ($db in $dbs)
 			{
-				If ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot '$($db.Name)'"))
+				If ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot $($db.Name)"))
 				{
 					$dropped = Remove-SqlDatabase -SqlServer $server -DBName $db.Name -SqlCredential $Credential
 					

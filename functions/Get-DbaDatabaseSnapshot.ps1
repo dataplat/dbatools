@@ -16,8 +16,8 @@ Credential object used to connect to the SQL Server as a different user
 .PARAMETER Databases
 Return information for only specific base dbs
 
-.PARAMETER Exclude
-Return information for all but these specific base dbs
+.PARAMETER Snapshots
+Return information for only specific snapshots
 
 .NOTES
 Author: niphlod
@@ -42,10 +42,9 @@ Get-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Databases HR, Accounting
 Returns informations for database snapshots having HR and Accounting as base dbs
 
 .EXAMPLE
-Get-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Exclude HR
+Get-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Snapshots HR_snapshot, Accouting_snapshot
 
-Returns informations for database snapshots excluding ones that have HR as base dbs
-
+Returns informations for database snapshots HR_snapshot and Accouting_snapshot
 
 #>
 	[CmdletBinding()]
@@ -55,18 +54,20 @@ Returns informations for database snapshots excluding ones that have HR as base 
 		[string[]]$SqlServer,
 		[PsCredential]$Credential
 	)
-
-	DynamicParam {
-		if ($SqlServer) {
-			return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential -DbsWithSnapshotsOnly
+	
+	DynamicParam
+	{
+		if ($SqlServer)
+		{
+			Get-ParamSqlSnapshotsAndDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential
 		}
 	}
-
+	
 	BEGIN
 	{
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
+		$snapshots = $psboundparameters.Snapshots
 	}
 
 	PROCESS
@@ -85,19 +86,24 @@ Returns informations for database snapshots excluding ones that have HR as base 
 				Continue
 			}
 			
-			$dbs = $server.Databases | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
+			$dbs = $server.Databases 
 
 			if ($databases.count -gt 0)
 			{
 				$dbs = $dbs | Where-Object { $databases -contains $_.DatabaseSnapshotBaseName }
 			}
 
-			if ($exclude.count -gt 0)
+			if ($snapshots.count -gt 0)
 			{
-				$dbs = $dbs | Where-Object { $exclude -notcontains $_.DatabaseSnapshotBaseName }
+				$dbs = $dbs | Where-Object { $snapshots -contains $_.Name }
 			}
-
-
+			
+			if ($snapshots.count -eq 0 -and $databases.count -eq 0)
+			{
+				$dbs = $dbs | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
+			}
+			
+			
 			foreach ($db in $dbs)
 			{
 				$object = [PSCustomObject]@{
