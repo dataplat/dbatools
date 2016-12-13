@@ -71,7 +71,9 @@ $Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction Silently
 	}
 
 
-
+<#
+ # Don't want this just yet
+ 
 	It 'exports all public functions' {
 
 		$FunctionFiles = Get-ChildItem "$ModulePath\functions" -Filter *.ps1 | Select -ExpandProperty BaseName
@@ -89,6 +91,7 @@ $Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction Silently
 		}
 
 	}
+#>
 
 }
 
