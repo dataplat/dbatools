@@ -8,29 +8,39 @@ Tests a SQL Server backup to ensure it is valid
 Restores all or some of the latest backups and performs a DBCC CHECKTABLE
 
 1. Gathers last full backups and their locations
-2. Restores the files to 	
+2. Restores the files to the Destination. If no Destination is specified, the originating SqlServer wil be used.
+3. The database is restored as "dbatools-testrestore-$databaseName" by default, but you can change dbatools-testrestore to whatever you would like using -Prefix
+4. The internal file names are also renamed to prevent conflicts with original database
+5. A DBCC CHECKTABLE is then performed
+6. And the test database is finally dropped
 
 .PARAMETER SqlServer
-Need to finish docs
+The SQL Server to connect to
 	
 .PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+Allows you to login to servers using alternative credentials
 
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 
-Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+Windows Authentication will be used if SqlCredential is not specified
 
 .PARAMETER DestinationCredential
-Need to finish docs
+Allows you to login to servers using alternative credentials
+
+$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
+
+Windows Authentication will be used if SqlCredential is not specified
 
 .PARAMETER Databases
-Need to finish docs
+The database backups to test. If -Databases is not provided, all database backups will be tested
 
 .PARAMETER Exclude
-Need to finish docs
+Exclude specific Database backups to test
 
 .PARAMETER Destination
-Need to finish docs
+The destination server to use to test the restore. By default, the Destination will be set to the source server.
+	
+If a different Destination server is specified, you must ensure that the database backups are on a shared location.
 
 .PARAMETER DataDirectory
 Need to finish docs
