@@ -169,8 +169,7 @@ Function Restore-DBFromFilteredArray
 			}
 			catch
 			{
-				$_.Exception.Message
-				$_.Exception.ItemName
+				Write-Warning $_.Exception.InnerException
 			}
 			
 		}
