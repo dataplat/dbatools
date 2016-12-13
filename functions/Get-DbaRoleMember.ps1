@@ -34,17 +34,17 @@ You should have received a copy of the GNU General Public License along with thi
  https://dbatools.io/Get-DbaRoleMember
 
 .EXAMPLE
-Get-DbaRoleMember -SQLInstance ServerA
+Get-DbaRoleMember -SqlServer ServerA
 
 Returns a custom object displaying SQLServer, Database, Role, Member for all DatabaseRoles.
 
 .EXAMPLE
-Get-DbaRoleMember -SQLInstance ServerA\sql987 | Out-Gridview
+Get-DbaRoleMember -SqlServer ServerA\sql987 | Out-Gridview
 
 Returns a gridview displaying SQLServer, Database, Role, Member for all DatabaseRoles.
 
 .EXAMPLE
-Get-DbaRoleMember -SQLInstance ServerA\sql987 -IncludeServerLevel
+Get-DbaRoleMember -SqlServer ServerA\sql987 -IncludeServerLevel
 
 Returns a gridview displaying SQLServer, Database, Role, Member for both ServerRoles and DatabaseRoles.
 
@@ -52,79 +52,99 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
 	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("sqlserver","server","instance")]
+		[Alias("sqlserver", "server", "instance")]
 		[string[]]$sqlinstance,
 		[PsCredential]$sqlCredential,
 		[switch]$IncludeServerLevel,
 		[switch]$NoFixedRole
 	)
-
-    BEGIN {}
-    PROCESS {
-        foreach ($servername in $sqlinstance)
-            {
-            $server = $null
-            $server = Connect-SqlServer -SqlServer $servername -SqlCredential $sqlCredential
-            if ($Server.count -eq 1)
+	
+	DynamicParam
+	{
+		if ($SqlInstance)
+		{
+			Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $Credential
+		}
+	}
+	
+	BEGIN
+	{
+		$databases = $psboundparameters.Databases
+	}
+	
+	PROCESS
+	{
+		foreach ($instance in $sqlinstance)
+		{
+			$server = $null
+			$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlCredential
+			if ($Server.count -eq 1)
+			{
+				if ($IncludeServerLevel)
 				{
-                if ($IncludeServerLevel)
-                    {
-                    Write-Verbose "Server Role Members included"
-                    $instroles = $null
-                    Write-Verbose "Getting Server Roles on $($servername)"
-                    $instroles = $server.roles
-                    if ($NoFixedRole)
-                        {
-                        $instroles =  $instroles | where { $_.isfixedrole -eq $false }
-                        }
-                    ForEach ($instrole in $instroles)
-                        {
-                        Write-Verbose "Getting Server Role Members for $instrole on $($servername)"
-                        $irmembers = $null
-                        $irmembers = $instrole.enumserverrolemembers()
-                        ForEach ($irmem in $irmembers)
-                            {
-                            [PSCustomObject]@{  'SQLInstance' = $servername;
-                                                'Database' = $null;
-                                                'Role' = $instrole.name;
-                                                'member' = $irmem.tostring();
-                                                }
-                            }
-                        }
-                    }
-                $dbs = $null
-                $dbs = $server.Databases
-                foreach ($db in $dbs)
-                    {
-                    $dbroles = $null
-                    Write-Verbose "Getting Database Roles for $($db.name) on $($servername)"
-                    $dbroles = $db.roles
-                    if ($NoFixedRole)
-                        {
-                        $dbroles =  $dbroles | where { $_.isfixedrole -eq $false }
-                        }
-                    foreach ($dbrole in $dbroles)
-                        {
-                        $dbmembers = $null
-                        Write-Verbose "Getting Database Role Members for $dbrole in $($db.name) on $($servername)"
-                        $dbmembers = $dbrole.enummembers()
-                        ForEach ($dbmem in $dbmembers)
-                            {
-                            [PSCustomObject]@{  'SQLInstance' = $servername;
-                                                'Database' = $db.name;
-                                                'Role' = $dbrole.name;
-                                                'member' = $dbmem.tostring();
-                                                }
-                            }
-                        }
-                    }
-                }
-            else
-                {
-				Write-Warning "Can't connect to $servername. Moving on."
+					Write-Verbose "Server Role Members included"
+					$instroles = $null
+					Write-Verbose "Getting Server Roles on $instance"
+					$instroles = $server.roles
+					if ($NoFixedRole)
+					{
+						$instroles = $instroles | Where-Object { $_.isfixedrole -eq $false }
+					}
+					ForEach ($instrole in $instroles)
+					{
+						Write-Verbose "Getting Server Role Members for $instrole on $instance"
+						$irmembers = $null
+						$irmembers = $instrole.enumserverrolemembers()
+						ForEach ($irmem in $irmembers)
+						{
+							[PSCustomObject]@{
+								SQLInstance = $instance
+								Database = $null
+								Role = $instrole.name
+								Member = $irmem.tostring()
+							}
+						}
+					}
+				}
+				$dbs = $null
+				$dbs = $server.Databases
+				
+				if ($databases.count -gt 0)
+				{
+					$dbs = $dbs | Where-Object { $databases -contains $_.Name  }
+				}
+				
+				foreach ($db in $dbs)
+				{
+					$dbroles = $null
+					Write-Verbose "Getting Database Roles for $($db.name) on $instance"
+					$dbroles = $db.roles
+					if ($NoFixedRole)
+					{
+						$dbroles = $dbroles | Where-Object { $_.isfixedrole -eq $false }
+					}
+					foreach ($dbrole in $dbroles)
+					{
+						$dbmembers = $null
+						Write-Verbose "Getting Database Role Members for $dbrole in $($db.name) on $instance"
+						$dbmembers = $dbrole.enummembers()
+						ForEach ($dbmem in $dbmembers)
+						{
+							[PSCustomObject]@{
+								'SQLInstance' = $instance
+								'Database' = $db.name
+								'Role' = $dbrole.name
+								'member' = $dbmem.tostring()
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				Write-Warning "Can't connect to $instance. Moving on."
 				Continue
-			    }
-            }
-    }
-    END {}
+			}
+		}
+	}
 }
