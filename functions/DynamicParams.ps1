@@ -67,7 +67,7 @@ filled with database list from specified SQL Server server.
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$NoSystem,
-		[switch]$SnapshotOnly
+		[switch]$DbsWithSnapshotsOnly
 	)
 	
 	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
@@ -100,7 +100,7 @@ filled with database list from specified SQL Server server.
 				$databaselist += $database.name
 			}
 		}
-		elseif ($SnapshotOnly)
+		elseif ($DbsWithSnapshotsOnly)
 		{
 			if ($database.DatabaseSnapshotBaseName.Length -gt 0)
 			{
@@ -165,7 +165,7 @@ filled with database list from specified SQL Server server.
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[switch]$SnapshotOnly
+		[switch]$DbsWithSnapshotsOnly
 	)
 	
 	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
@@ -186,7 +186,7 @@ filled with database list from specified SQL Server server.
 		return $newparams
 	}
 	
-	if ($SnapshotOnly)
+	if ($DbsWithSnapshotsOnly)
 	{
 		$databaselist = ($server.databases | Where-Object { $_.DatabaseSnapshotBaseName.Length -gt 0 }).DatabaseSnapshotBaseName
 	}
