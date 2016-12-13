@@ -166,7 +166,8 @@
 		'Test-DbaMaxMemory',
 		'Restore-DbaBackup',
 		'Get-DbaDatabaseSnapshot',
-		'Remove-DbaDatabaseSnapshot'
+		'Remove-DbaDatabaseSnapshot',
+		'Get-DbaRoleMember'
 	)
 	
 	# Cmdlets to export from this module
