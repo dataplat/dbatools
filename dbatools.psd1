@@ -167,7 +167,8 @@
 		'Restore-DbaBackup',
 		'Get-DbaDatabaseSnapshot',
 		'Remove-DbaDatabaseSnapshot',
-		'Get-DbaRoleMember'
+		'Get-DbaRoleMember',
+		'Resolve-DbaNetworkName'
 	)
 	
 	# Cmdlets to export from this module
