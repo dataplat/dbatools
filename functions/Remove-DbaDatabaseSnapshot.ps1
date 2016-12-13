@@ -7,7 +7,7 @@ Removes database snapshots
 .DESCRIPTION
 Removes (drops) database snapshots from the server
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance 
 The SQL Server that you're connecting to
 
 .PARAMETER Credential

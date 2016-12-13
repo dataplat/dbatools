@@ -7,7 +7,7 @@ Get database snapshots with details
 .DESCRIPTION
 Retrieves the list of database snapshot available, along with their base (the db they are the snapshot of) and creation time
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance 
 The SQL Server that you're connecting to.
 
 .PARAMETER Credential
