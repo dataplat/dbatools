@@ -2,24 +2,24 @@
 {
 <#
 .SYNOPSIS
-Get members of all roles on a Sql instance
+Get members of all roles on a Sql instance.
 
 .DESCRIPTION
-Get members of all roles on a Sql instance
+Get members of all roles on a Sql instance.
 
-Default output includes columns SQLServer, Database, Role, Member
+Default output includes columns SQLServer, Database, Role, Member.
 
 .PARAMETER SQLInstance
 The SQL Server that you're connecting to.
 
 .PARAMETER IncludeServerLevel
-Shows also information on Server Level Permissions
+Shows also information on Server Level Permissions.
 
 .PARAMETER NoFixedRole
-Excludes all members of fixed roles
+Excludes all members of fixed roles.
 
 .PARAMETER Credential
-Credential object used to connect to the SQL Server as a different user
+Credential object used to connect to the SQL Server as a different user.
 
 .NOTES
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
@@ -36,36 +36,35 @@ You should have received a copy of the GNU General Public License along with thi
 .EXAMPLE
 Get-DbaRoleMember -SQLInstance ServerA
 
-Returns a custom object displaying SQLServer, Database, Role, Member for all DatabaseRoles
+Returns a custom object displaying SQLServer, Database, Role, Member for all DatabaseRoles.
 
 .EXAMPLE
 Get-DbaRoleMember -SQLInstance ServerA\sql987 | Out-Gridview
 
-Returns a gridview displaying SQLServer, Database, Role, Member for all DatabaseRoles
+Returns a gridview displaying SQLServer, Database, Role, Member for all DatabaseRoles.
 
 .EXAMPLE
 Get-DbaRoleMember -SQLInstance ServerA\sql987 -IncludeServerLevel
 
-Returns a gridview displaying SQLServer, Database, Role, Member for both ServerRoles and DatabaseRoles
+Returns a gridview displaying SQLServer, Database, Role, Member for both ServerRoles and DatabaseRoles.
 
 #>
 	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("sqlserver")]
+		[Alias("sqlserver","server","instance")]
 		[string[]]$sqlinstance,
-		[PsCredential]$Credential,
+		[PsCredential]$sqlCredential,
 		[switch]$IncludeServerLevel,
 		[switch]$NoFixedRole
 	)
-
 
     BEGIN {}
     PROCESS {
         foreach ($servername in $sqlinstance)
             {
             $server = $null
-            $server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
+            $server = Connect-SqlServer -SqlServer $servername -SqlCredential $sqlCredential
             if ($Server.count -eq 1)
 				{
                 if ($IncludeServerLevel)
@@ -85,11 +84,11 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
                         $irmembers = $instrole.enumserverrolemembers()
                         ForEach ($irmem in $irmembers)
                             {
-                            [PSCustomObject]@{ 'SQLInstance' = $servername;
-                                        'Database' = $null;
-                                        'Role' = $instrole.name;
-                                        'member' = $irmem.tostring();
-                                        }
+                            [PSCustomObject]@{  'SQLInstance' = $servername;
+                                                'Database' = $null;
+                                                'Role' = $instrole.name;
+                                                'member' = $irmem.tostring();
+                                                }
                             }
                         }
                     }
@@ -109,13 +108,13 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
                         $dbmembers = $null
                         Write-Verbose "Getting Database Role Members for $dbrole in $($db.name) on $($servername)"
                         $dbmembers = $dbrole.enummembers()
-                            ForEach ($dbmem in $dbmembers)
-                                {
-                                [PSCustomObject]@{ 'SQLInstance' = $servername;
-                                            'Database' = $db.name;
-                                            'Role' = $dbrole.name;
-                                            'member' = $dbmem.tostring();
-                                }
+                        ForEach ($dbmem in $dbmembers)
+                            {
+                            [PSCustomObject]@{  'SQLInstance' = $servername;
+                                                'Database' = $db.name;
+                                                'Role' = $dbrole.name;
+                                                'member' = $dbmem.tostring();
+                                                }
                             }
                         }
                     }
@@ -125,7 +124,7 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
 				Write-Warning "Can't connect to $servername. Moving on."
 				Continue
 			    }
-        }
+            }
     }
     END {}
 }
