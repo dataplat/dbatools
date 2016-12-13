@@ -73,8 +73,8 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[string[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[string[]]$SqlInstance,
 		[PsCredential]$Credential,
 		[parameter(ValueFromPipeline = $true)]
 		[object]$PipelineSnapshot,
@@ -83,9 +83,9 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 	
 	DynamicParam
 	{
-		if ($SqlServer)
+		if ($SqlInstance)
 		{
-			Get-ParamSqlSnapshotsAndDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential
+			Get-ParamSqlSnapshotsAndDatabases -SqlServer $SqlInstance[0] -SqlCredential $Credential
 		}
 	}
 	
@@ -131,17 +131,17 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 		}
 		
 		# if piped value either doesn't exist or is not the proper type
-		foreach ($servername in $SqlServer)
+		foreach ($instance in $SqlInstance)
 		{
-			Write-Verbose "Connecting to $servername"
+			Write-Verbose "Connecting to $instance"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
 				
 			}
 			catch
 			{
-				Write-Warning "Can't connect to $servername"
+				Write-Warning "Can't connect to $instance"
 				Continue
 			}
 			

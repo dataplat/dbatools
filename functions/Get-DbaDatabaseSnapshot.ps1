@@ -50,16 +50,16 @@ Returns informations for database snapshots HR_snapshot and Accouting_snapshot
 	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[string[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[string[]]$SqlInstance,
 		[PsCredential]$Credential
 	)
 	
 	DynamicParam
 	{
-		if ($SqlServer)
+		if ($SqlInstance)
 		{
-			Get-ParamSqlSnapshotsAndDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential
+			Get-ParamSqlSnapshotsAndDatabases -SqlServer $SqlInstance[0] -SqlCredential $Credential
 		}
 	}
 	
@@ -72,17 +72,17 @@ Returns informations for database snapshots HR_snapshot and Accouting_snapshot
 
 	PROCESS
 	{
-		foreach ($servername in $SqlServer)
+		foreach ($instance in $SqlInstance)
 		{
-			Write-Verbose "Connecting to $servername"
+			Write-Verbose "Connecting to $instance"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
 				
 			}
 			catch
 			{
-				Write-Warning "Can't connect to $servername"
+				Write-Warning "Can't connect to $instance"
 				Continue
 			}
 			
