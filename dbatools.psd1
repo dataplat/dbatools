@@ -169,7 +169,8 @@
 		'Remove-DbaDatabaseSnapshot',
 		'Get-DbaRoleMember',
 		'Resolve-DbaNetworkName',
-		'Test-DbaValidLogin'
+		'Test-DbaValidLogin',
+		'Get-DbaMemoryUsage'
 	)
 	
 	# Cmdlets to export from this module
