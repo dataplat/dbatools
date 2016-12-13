@@ -2,10 +2,13 @@
 {
 <#
 .SYNOPSIS
-Tests a SQL Server backup to see if it is valid
+Tests a SQL Server backup to ensure it is valid
 
 .DESCRIPTION
-Need to finish docs
+Restores all or some of the latest backups and performs a DBCC CHECKTABLE
+
+1. Gathers last full backups and their locations
+2. Restores the files to 	
 
 .PARAMETER SqlServer
 Need to finish docs
@@ -45,6 +48,9 @@ Need to finish docs
 Need to finish docs
 
 .PARAMETER MaxMB
+Need to finish docs
+
+.PARAMETER Prefix
 Need to finish docs
 
 .PARAMETER WhatIf
@@ -106,6 +112,7 @@ Restores data and log files to alternative locations and only restores databases
 		[object]$DestinationCredential,
 		[string]$DataDirectory,
 		[string]$LogDirectory,
+		[string]$Prefix = "dbatools-testrestore",
 		[switch]$VerifyOnly,
 		[switch]$NoCheck,
 		[switch]$NoDrop,
@@ -267,12 +274,12 @@ Restores data and log files to alternative locations and only restores databases
 							$fn = Split-Path $file.PhysicalName -Leaf
 							$temprestoreinfo += [pscustomobject]@{
 								Logical = $file.LogicalName
-								Physical = "$dir\dbatools-testrestore-$fn"
+								Physical = "$dir\$prefix-$fn"
 							}
 						}
 						
 						$ogdbname = $dbname
-						$dbname = "dbatools-testrestore-$dbname"
+						$dbname = "$prefix-$dbname"
 						
 						$destdb = $destserver.databases[$dbname]
 						
