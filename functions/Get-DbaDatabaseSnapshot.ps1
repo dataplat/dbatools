@@ -59,7 +59,7 @@ Returns informations for database snapshots HR_snapshot and Accouting_snapshot
 	{
 		if ($SqlServer)
 		{
-			Get-ParamSqlSnapshotsAndDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential -ParameterConnection
+			Get-ParamSqlSnapshotsAndDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential
 		}
 	}
 	
@@ -110,7 +110,7 @@ Returns informations for database snapshots HR_snapshot and Accouting_snapshot
 					Server = $server.name
 					Database = $db.name
 					SnapshotOf = $db.DatabaseSnapshotBaseName
-					SizeMB = $db.Size
+					SizeMB = [Math]::Round($db.Size,2)
 					DatabaseCreated = $db.createDate
 					IsReadCommittedSnapshotOn = $db.IsReadCommittedSnapshotOn
 					SnapshotIsolationState = $db.SnapshotIsolationState
