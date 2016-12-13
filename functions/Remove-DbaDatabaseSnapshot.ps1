@@ -59,9 +59,9 @@ Remove-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Databases HR, Accounting
 Removes all database snapshots having HR and Accounting as base dbs
 
 .EXAMPLE
-Remove-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Snapshots HR_snapshot, Accouting_snapshot
+Remove-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Snapshots HR_snapshot, Accounting_snapshot
 
-Removes HR_snapshot and Accouting_snapshot
+Removes HR_snapshot and Accounting_snapshot
 
 
 .EXAMPLE
