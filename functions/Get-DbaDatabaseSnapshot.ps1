@@ -42,9 +42,9 @@ Get-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Databases HR, Accounting
 Returns informations for database snapshots having HR and Accounting as base dbs
 
 .EXAMPLE
-Get-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Snapshots HR_snapshot, Accouting_snapshot
+Get-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Snapshots HR_snapshot, Accounting_snapshot
 
-Returns informations for database snapshots HR_snapshot and Accouting_snapshot
+Returns informations for database snapshots HR_snapshot and Accounting_snapshot
 
 #>
 	[CmdletBinding()]
