@@ -30,6 +30,9 @@ Shows what would happen if the command were to run. No actions are actually perf
 
 .PARAMETER Confirm
 Prompts you for confirmation before executing any changing operations within the command.
+	
+.PARAMETER PipelineSnapshot
+Internal parameter
 
 .NOTES
 Author: niphlod
