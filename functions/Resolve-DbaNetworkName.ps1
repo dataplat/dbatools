@@ -2,7 +2,7 @@
 {
 <#
 .SYNOPSIS
-Returns information about the network connection of the target computer including NetBIOS name, IP Address and domain name.
+Returns information about the network connection of the target computer including NetBIOS name, IP Address, domain name and fully qualified domain name (FQDN).
 
 .DESCRIPTION
 Retrieves the IPAddress, ComputerName from one computer.
@@ -35,21 +35,21 @@ You should have received a copy of the GNU General Public License along with thi
 .EXAMPLE
 Resolve-DbaNetworkName -ComputerName ServerA
 
-Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain
+Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN
 	
 .EXAMPLE
 Resolve-DbaNetworkName -SqlServer sql2016\sqlexpress
 
-Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain
+Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN
 	
 .EXAMPLE
 Resolve-DbaNetworkName -SqlServer sql2016\sqlexpress, sql2014
 
-Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain
+Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN
 
 Get-SqlRegisteredServerName -SqlServer sql2014 | Resolve-DbaNetworkName
 	
-Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain
+Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN
 #>
 	[CmdletBinding()]
 	param (
@@ -118,6 +118,7 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 					IPAddress = $ipaddress
 					DNSHostName = $conn.DNSHostname
 					Domain = $conn.Domain
+					FQDN = "$($conn.DNSHostname).$($conn.Domain)"
 				}
 			}
 			
