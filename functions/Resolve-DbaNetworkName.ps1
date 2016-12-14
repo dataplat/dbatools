@@ -35,21 +35,21 @@ You should have received a copy of the GNU General Public License along with thi
 .EXAMPLE
 Resolve-DbaNetworkName -ComputerName ServerA
 
-Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN
+Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for ServerA
 	
 .EXAMPLE
 Resolve-DbaNetworkName -SqlServer sql2016\sqlexpress
 
-Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN
+Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for the SQL instance sql2016\sqlexpress
 	
 .EXAMPLE
 Resolve-DbaNetworkName -SqlServer sql2016\sqlexpress, sql2014
 
-Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN
+Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for the SQL instance sql2016\sqlexpress and sql2014
 
 Get-SqlRegisteredServerName -SqlServer sql2014 | Resolve-DbaNetworkName
 	
-Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN
+Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-SqlRegisteredServerName
 #>
 	[CmdletBinding()]
 	param (
