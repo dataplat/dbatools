@@ -66,7 +66,8 @@ filled with database list from specified SQL Server server.
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[switch]$NoSystem
+		[switch]$NoSystem,
+		[switch]$DbsWithSnapshotsOnly
 	)
 	
 	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
@@ -94,9 +95,16 @@ filled with database list from specified SQL Server server.
 	{
 		if ($NoSystem)
 		{
-			if (!($database.IsSystemObject -and $SupportDbs) -notcontains $database.name)
+			if (!($database.IsSystemObject) -and $SupportDbs -notcontains $database.name)
 			{
 				$databaselist += $database.name
+			}
+		}
+		elseif ($DbsWithSnapshotsOnly)
+		{
+			if ($database.DatabaseSnapshotBaseName.Length -gt 0)
+			{
+				$databaselist += $database.DatabaseSnapshotBaseName
 			}
 		}
 		else
@@ -156,7 +164,8 @@ filled with database list from specified SQL Server server.
 		[Parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[switch]$DbsWithSnapshotsOnly
 	)
 	
 	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
@@ -177,7 +186,14 @@ filled with database list from specified SQL Server server.
 		return $newparams
 	}
 	
-	$databaselist = $server.databases.name
+	if ($DbsWithSnapshotsOnly)
+	{
+		$databaselist = ($server.databases | Where-Object { $_.DatabaseSnapshotBaseName.Length -gt 0 }).DatabaseSnapshotBaseName
+	}
+	else
+	{
+		$databaselist = $server.databases.name
+	}
 	
 	# Reusable parameter setup
 	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
@@ -195,6 +211,84 @@ filled with database list from specified SQL Server server.
 	$Database = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Database", [String], $attributeCollection)
 	
 	$newparams.Add("Database", $Database)
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
+Function Get-ParamSqlSnapshotsAndDatabases
+{
+<#
+.SYNOPSIS
+Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
+filled with snapshot list from specified SQL Server server.
+#>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	# Populate arrays
+	$databaselist = $snapshotlist = @()
+	if ($server.Databases.Count -gt 255)
+	{
+		# Don't slow them down by building a list that likely won't be used anyway
+		$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+		$attributes = New-Object System.Management.Automation.ParameterAttribute
+		$attributes.ParameterSetName = "__AllParameterSets"
+		$attributes.Mandatory = $false
+		$Snapshots = New-Object -TypeName System.Management.Automation.RuntimeDefinedParameter("Snapshots", [String[]], $attributes)
+		$newparams.Add("Snapshots", $Snapshots)
+		$Databases = New-Object -TypeName System.Management.Automation.RuntimeDefinedParameter("Databases", [String[]], $attributes)
+		$newparams.Add("Databases", $Databases)
+		return $newparams
+	}
+	
+	foreach ($database in $server.databases)
+	{
+		
+		if ($database.IsDatabaseSnapshot)
+		{
+			$snapshotlist += $database.name
+		}
+		
+		if ($database.DatabaseSnapshotBaseName.Length -gt 0)
+		{
+			$databaselist += $database.DatabaseSnapshotBaseName
+		}
+	}
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	
+	# Database list parameter setup
+	if ($databaselist) { $dbvalidationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $databaselist }
+	$attributeCollection = New-Object -TypeName System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($databaselist) { $attributeCollection.Add($dbvalidationset) }
+	$attributeCollection.Add($alias)
+	$Databases = New-Object -TypeName System.Management.Automation.RuntimeDefinedParameter("Databases", [String[]], $attributeCollection)
+	
+	$newparams.Add("Databases", $Databases)
+	
+	# Database list parameter setup
+	if ($snapshotlist) { $dbvalidationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $snapshotlist }
+	$attributeCollection = New-Object -TypeName System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($snapshotlist) { $attributeCollection.Add($dbvalidationset) }
+	
+	$Snapshots = New-Object -TypeName System.Management.Automation.RuntimeDefinedParameter("Snapshots", [String[]], $attributeCollection)
+	$newparams.Add("Snapshots", $Snapshots)
+	
 	$server.ConnectionContext.Disconnect()
 	
 	return $newparams
@@ -1019,6 +1113,37 @@ filled with server groups from specified SQL Server Central Management server na
 	catch { return }
 	
 	if ($cmstore -eq $null) { return }
+
+	# unfortunately the logic is quite cumbersome because group names accept also the '\'
+	# character, that is also the de-facto standard to give a hierarchy.
+	# e.g.
+	#
+	# cms
+	# +--foo
+	#    +--bar\baz
+	#    +--foo
+	#       +--registered server
+	# The only short-circuit would be something like:
+	# cms
+	# +--foo
+	# |  +--bar
+	# +--foo\bar
+	Function Parse-CmsGroup($CmsGrp, $base = '')
+	{
+		$results = @()
+		foreach($el in $CmsGrp) {
+			if($base -eq ''){
+				$partial = $el.name
+			} else {
+				$partial = "$base\$($el.name)"
+			}
+			$results += $partial
+			foreach($group in $el.ServerGroups) {
+				$results += Parse-CmsGroup $group $partial
+			}
+		}
+		return $results
+	}
 	
 	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
 	$paramattributes = New-Object System.Management.Automation.ParameterAttribute
@@ -1026,7 +1151,7 @@ filled with server groups from specified SQL Server Central Management server na
 	$paramattributes.Mandatory = $false
 	$paramattributes.Position = 3
 	
-	$argumentlist = $cmstore.DatabaseEngineServerGroup.ServerGroups.name
+	$argumentlist = Parse-CmsGroup $cmstore.DatabaseEngineServerGroup.ServerGroups
 	
 	if ($argumentlist -ne $null)
 	{

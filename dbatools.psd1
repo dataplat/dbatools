@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.67'
+	ModuleVersion = '0.8.69'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -160,10 +160,18 @@
 		'Get-DbaMemoryUsage',
 		'Get-DbaBackupHistory',
 		'Read-DbaBackupHeader',
-		'Test-DbaBackup',
+		'Test-DbaLastBackup',
 		'Get-DbaMaxMemory',
 		'Set-DbaMaxMemory',
-		'Test-DbaMaxMemory'
+		'Test-DbaMaxMemory',
+		'Restore-DbaBackup',
+		'Get-DbaDatabaseSnapshot',
+		'Remove-DbaDatabaseSnapshot',
+		'Get-DbaRoleMember',
+		'Resolve-DbaNetworkName',
+		'Test-DbaValidLogin',
+		'Get-DbaMemoryUsage',
+		'Export-DbaAvailabilityGroup'
 	)
 	
 	# Cmdlets to export from this module
