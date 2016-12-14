@@ -159,8 +159,6 @@ Tests all logins excluding any that are from the mydomain Domain
 			{
 				switch ($FilterBy)
 				{
-					
-					
 					"LoginsOnly"
 					{
 						Write-Verbose "connecting to logins"
