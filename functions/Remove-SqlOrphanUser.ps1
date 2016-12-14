@@ -138,6 +138,8 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
         {
             $start = [System.Diagnostics.Stopwatch]::StartNew()
 
+            $results = @()
+
             foreach ($db in $databases)
             {
                 try
@@ -159,7 +161,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
                     }
                     else
                     {
-                        Write-Output "Validating users on database '$db'"
+                        Write-Output "Validating users on database '$($db.Name)'"
 
                         if ($Users.Count -eq 0)
                         {
@@ -200,6 +202,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
                             #Schemas only appears on SQL Server 2005 (v9.0)
                             if ($server.versionMajor -gt 8)
                             {
+                                
                                 #Validate if user owns any schema
                                 $Schemas = @()
 
@@ -207,7 +210,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 
                                 if(@($Schemas).Count -gt 0)
                                 {
-                                    Write-Output "User '$User' owns one or more schemas."
+                                    Write-Output "User '$($User.Name)' owns one or more schemas."
 
                                     $AlterSchemaOwner = ""
                                     $DropSchema = ""
@@ -225,6 +228,15 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
                                                 if ($Pscmdlet.ShouldProcess($db.Name, "Changing schema '$($sch.Name)' owner to 'dbo'. -Force used."))
 				                                {
                                                     $AlterSchemaOwner += "ALTER AUTHORIZATION ON SCHEMA::[$($sch.Name)] TO [dbo]`r`n"
+
+                                                    $results += [pscustomobject]@{
+                                                                                    Instance = $server.Name
+                                                                                    Database = $db.Name
+                                                                                    SchemaName = $sch.Name
+                                                                                    Action = "ALTER OWNER"
+                                                                                    SchemaOwnerBefore = $sch.Owner
+                                                                                    SchemaOwnerAfter = "dbo"
+                                                                                }
                                                 }
                                             }
                                             else
@@ -239,10 +251,19 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
                                             if ($sch.Name -eq $User.Name)
                                             {
                                                 Write-Verbose "The schema '$($sch.Name)' have the same name as user '$($User.Name)'. Schema will be dropped."
-                                                
+
                                                 if ($Pscmdlet.ShouldProcess($db.Name, "Dropping schema '$($sch.Name)'."))
                                                 {
                                                     $DropSchema += "DROP SCHEMA [$($sch.Name)]"
+
+                                                    $results += [pscustomobject]@{
+                                                                                    Instance = $server.Name
+                                                                                    Database = $db.Name
+                                                                                    SchemaName = $sch.Name
+                                                                                    Action = "DROP"
+                                                                                    SchemaOwnerBefore = $sch.Owner
+                                                                                    SchemaOwnerAfter = "N/A"
+                                                                                }
                                                 }
                                             }
                                             else
@@ -252,6 +273,15 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
                                                 if ($Pscmdlet.ShouldProcess($db.Name, "Changing schema '$($sch.Name)' owner to 'dbo'."))
                                                 {
                                                     $AlterSchemaOwner += "ALTER AUTHORIZATION ON SCHEMA::[$($sch.Name)] TO [dbo]`r`n"
+
+                                                     $results += [pscustomobject]@{
+                                                                                    Instance = $server.Name
+                                                                                    Database = $db.Name
+                                                                                    SchemaName = $sch.Name
+                                                                                    Action = "ALTER OWNER"
+                                                                                    SchemaOwnerBefore = $sch.Owner
+                                                                                    SchemaOwnerAfter = "dbo"
+                                                                                }
                                                 }
                                             }
                                         }
@@ -333,6 +363,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 		if ($StackSource -ne "Repair-SqlOrphanUser")
         {
            Write-Output "Total Elapsed time: $totaltime"
+           return $results
         }
 	}
 }
