@@ -75,24 +75,22 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
 
 	PROCESS
 	{
-        foreach ($servername in $ComputerName)
+        foreach ($Computer in $ComputerName)
         {
-            if ($servername -match '\\')
-			{
-				$servername = $servername.Split('\\')[0]
-			}
-            Write-Verbose "Connecting to $servername"
-			if ( Test-Connection -ComputerName $servername -Quiet -count 1)
+            Write-Verbose "Connecting to $Computer"
+			if ( $reply = Resolve-DbaNetworkName -ComputerName $Computer -erroraction silentlycontinue)
             {
-                Write-Verbose "$servername is up and running"
+                $Computer = $reply.ComputerName
+                Write-Verbose "$Computer is up and running"
+                Write-Verbose "Searching for Memory Manager Counters on $Computer"
                 try
                 {
-                $availablecounters = (Get-Counter -ComputerName $servername -ListSet '*sql*:Memory Manager*' -ErrorAction SilentlyContinue ).paths
-                (Get-Counter -ComputerName $servername -Counter $availablecounters).countersamples | 
+                $availablecounters = (Get-Counter -ComputerName $Computer -ListSet '*sql*:Memory Manager*' -ErrorAction SilentlyContinue ).paths
+                (Get-Counter -ComputerName $Computer -Counter $availablecounters -ErrorAction SilentlyContinue ).countersamples | 
                     Where-Object {$_.Path -match $Memcounters} | 
                     foreach { [PSCustomObject]@{
-				                ComputerName = $servername
-				                Instance = $_.Path.split("\")[-2]
+				                ComputerName = $Computer
+				                Instance = ($_.Path.split("\")[-2]).replace("mssql`$","")
                                 Counter = $_.Path.split("\")[-1]
 				                Pages = $null
 				                MemKB = $_.cookedvalue
@@ -102,17 +100,18 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
                 }
                 catch
                 {
-                Write-Verbose "No Memory Manager Counters on $servername"
+                Write-Verbose "No Memory Manager Counters on $Computer"
                 }
-
+                
+                Write-Verbose "Searching for Plan Cache Counters on $Computer"
                 try
                 {
-                $availablecounters = (Get-Counter -ComputerName $servername -ListSet '*sql*:Plan Cache*'  -ErrorAction SilentlyContinue ).paths
-                (Get-Counter -ComputerName $servername -Counter $availablecounters).countersamples |
+                $availablecounters = (Get-Counter -ComputerName $Computer -ListSet '*sql*:Plan Cache*' -ErrorAction SilentlyContinue ).paths
+                (Get-Counter -ComputerName $Computer -Counter $availablecounters -ErrorAction SilentlyContinue ).countersamples |
                     Where-Object {$_.Path -match $Plancounters} |
                     foreach { [PSCustomObject]@{
-					            ComputerName = $servername
-					            Instance = $_.Path.split("\")[-2]
+					            ComputerName = $Computer
+					            Instance = ($_.Path.split("\")[-2]).replace("mssql`$","")
                                 Counter = $_.Path.split("\")[-1]
 					            Pages = $_.cookedvalue
 					            MemKB = $_.cookedvalue * 8192 / 1024
@@ -122,18 +121,18 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
                 }
                 catch
                 {
-                Write-Verbose "No Plan Cache Counters on $servername"
+                Write-Verbose "No Plan Cache Counters on $Computer"
                 }
-
-
+                                
+                Write-Verbose "Searching for Buffer Manager Counters on $Computer"
                 try
                 {
-                $availablecounters = (Get-Counter -ComputerName $Servername -ListSet "*Buffer Manager*"  -ErrorAction SilentlyContinue ).paths
-                (Get-Counter -ComputerName $Servername -Counter $availablecounters).countersamples |
+                $availablecounters = (Get-Counter -ComputerName $Computer -ListSet "*Buffer Manager*"  -ErrorAction SilentlyContinue ).paths
+                (Get-Counter -ComputerName $Computer -Counter $availablecounters -ErrorAction SilentlyContinue ).countersamples |
                     Where-Object {$_.Path -match $BufManpagecounters} |
                     foreach { [PSCustomObject]@{
-					            ComputerName = $servername
-					            Instance = $_.Path.split("\")[-2]
+					            ComputerName = $Computer
+					            Instance = ($_.Path.split("\")[-2]).replace("mssql`$","")
                                 Counter = $_.Path.split("\")[-1]
 					            Pages = $_.cookedvalue
 					            MemKB = $_.cookedvalue * 8192 / 1024.0
@@ -143,12 +142,12 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
                 }
                 catch
                 {
-                Write-Verbose "No Buffer Manager Counters on $servername"
+                Write-Verbose "No Buffer Manager Counters on $Computer"
                 }
             }
 			else
 			{
-				Write-Warning "Can't connect to $servername. Moving on."
+				Write-Warning "Can't connect to $Computer."
 				Continue
 			}
         }
