@@ -10,8 +10,6 @@ total memory, currently configured SQL max memory, and the calculated recommenda
 
 Jonathan notes that the formula used provides a *general recommendation* that doesn't account for everything that may be going on in your specific environment. 
 
-THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
-
 .PARAMETER SqlServer
 Allows you to specify a comma separated list of servers to query.
 
@@ -23,9 +21,6 @@ $cred = Get-Credential, then pass $cred variable to this parameter.
 Windows Authentication will be used when SqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
 .NOTES 
-Author  : Chrissy LeMaire (@cl), netnerds.net
-Requires: sysadmin access on SQL Servers
-
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
