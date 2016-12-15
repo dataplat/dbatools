@@ -15,7 +15,7 @@ Source SQL Server.You must have sysadmin access and server version must be SQL S
 .PARAMETER Destination
 Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-.PARAMETER SourceSqlCredential
+.PARAMETER SqlInstance 
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
 $scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
@@ -23,16 +23,8 @@ $scred = Get-Credential, then pass $scred object to the -SourceSqlCredential par
 Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
 To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER DestinationSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
-
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-To connect as a different Windows user, run PowerShell as that user.
-
 .NOTES 
-Original Author: You (@YourTwitter, Yourblog.net)
+Original Author: Mitchell Hamann (@SirCaptainMitch)
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
@@ -44,7 +36,7 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Verb-DbaNoun
+https://dbatools.io/Update-SqlLoginName
 
 .EXAMPLE   
 Verb-DbaNoun -Source sqlserver2014a -Destination sqlcluster
