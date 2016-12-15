@@ -263,6 +263,8 @@ filled with snapshot list from specified SQL Server server.
 			$databaselist += $database.DatabaseSnapshotBaseName
 		}
 	}
+
+    $databaselist = $databaselist | Get-Unique
 	
 	# Reusable parameter setup
 	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
