@@ -7,6 +7,9 @@ Get amount of memory in use by SQL Server components
 .DESCRIPTION
 Retrieves the amount of memory per performance counter
 Default output includes columns Server, counter instance, counter, number of pages, memory in KB, memory in MB
+SSAS and SSIS are included.
+SSRS does not have memory counters, only memory shrinks and memory pressure state.
+
 This function requires local admin role on the targeted computers.
 
 .PARAMETER ComputerName
@@ -26,6 +29,8 @@ Copyright (C) 2016 Chrissy LeMaire
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+
+SSIS Counters: https://msdn.microsoft.com/en-us/library/ms137622.aspx
 
 .LINK
  https://dbatools.io/Get-DbaMemoryUsage
@@ -63,12 +68,16 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
         $Memcounters = '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)'
         $Plancounters = 'total\)\\cache pages'
         $BufManpagecounters = 'Total pages'
+        $SSAScounters = '(\\memory usage)'
+        $SSIScounters = '(memory)'
         }
     else
         {
         $Memcounters = '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)'
         $Plancounters = '(cache pages|procedure plan|ad hoc sql plan|prepared SQL Plan)'
         $BufManpagecounters = '(Free pages|Reserved pages|Stolen pages|Total pages|Database pages|target pages|extension .* pages)'
+        $SSAScounters = '(\\memory )'
+        $SSIScounters = '(memory)'
         }
 
     }
@@ -146,6 +155,50 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
                 catch
                 {
                 Write-Verbose "No Buffer Manager Counters on $Computer"
+                }
+                                
+                Write-Verbose "Searching for SSAS Counters on $Computer"
+                try
+                {
+                $availablecounters = (Get-Counter -ComputerName $Computer -ListSet "MSAS*:Memory"  -ErrorAction SilentlyContinue ).paths
+                (Get-Counter -ComputerName $Computer -Counter $availablecounters -ErrorAction SilentlyContinue ).countersamples |
+                    Where-Object {$_.Path -match $SSAScounters} |
+                    foreach { [PSCustomObject]@{
+					            ComputerName = $Computer
+                                SqlInstance = (($_.Path.split("\")[-2]).replace("mssql`$","")).split(':')[0]
+				                CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$","")).split(':')[1]
+                                Counter = $_.Path.split("\")[-1]
+					            Pages = $null
+					            MemKB = $_.cookedvalue
+					            MemMB = $_.cookedvalue / 1024
+                                }
+                            }
+                }
+                catch
+                {
+                Write-Verbose "No SSAS Counters on $Computer"
+                }
+                                
+                Write-Verbose "Searching for SSIS Counters on $Computer"
+                try
+                {
+                $availablecounters = (Get-Counter -ComputerName $Computer -ListSet "*SSIS*"  -ErrorAction SilentlyContinue ).paths
+                (Get-Counter -ComputerName $Computer -Counter $availablecounters -ErrorAction SilentlyContinue ).countersamples |
+                    Where-Object {$_.Path -match $SSIScounters} |
+                    foreach { [PSCustomObject]@{
+					            ComputerName = $Computer
+                                SqlInstance = (($_.Path.split("\")[-2]).replace("mssql`$","")).split(':')[0]
+				                CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$","")).split(':')[1]
+                                Counter = $_.Path.split("\")[-1]
+					            Pages = $null
+					            MemKB = $_.cookedvalue / 1024
+					            MemMB = $_.cookedvalue / 1024 / 1024
+                                }
+                            }
+                }
+                catch
+                {
+                Write-Verbose "No SSIS Counters on $Computer"
                 }
             }
 			else
