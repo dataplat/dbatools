@@ -6,8 +6,8 @@ Get amount of memory in use by SQL Server components
 
 .DESCRIPTION
 Retrieves the amount of memory per performance counter
-
 Default output includes columns Server, counter instance, counter, number of pages, memory in KB, memory in MB
+This function requires local admin role on the targeted computers.
 
 .PARAMETER ComputerName
 The SQL Server that you're connecting to.
@@ -49,7 +49,7 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
 	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("Host", "ServerInstance", "SqlInstance")]
+		[Alias("Host", "cn", "Server")]
 		[string[]]$ComputerName,
 		[PsCredential]$Credential,
 		[switch]$Simple
@@ -90,7 +90,8 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
                     Where-Object {$_.Path -match $Memcounters} | 
                     foreach { [PSCustomObject]@{
 				                ComputerName = $Computer
-				                Instance = ($_.Path.split("\")[-2]).replace("mssql`$","")
+                                SqlInstance = (($_.Path.split("\")[-2]).replace("mssql`$","")).split(':')[0]
+				                CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$","")).split(':')[1]
                                 Counter = $_.Path.split("\")[-1]
 				                Pages = $null
 				                MemKB = $_.cookedvalue
@@ -111,7 +112,8 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
                     Where-Object {$_.Path -match $Plancounters} |
                     foreach { [PSCustomObject]@{
 					            ComputerName = $Computer
-					            Instance = ($_.Path.split("\")[-2]).replace("mssql`$","")
+                                SqlInstance = (($_.Path.split("\")[-2]).replace("mssql`$","")).split(':')[0]
+				                CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$","")).split(':')[1]
                                 Counter = $_.Path.split("\")[-1]
 					            Pages = $_.cookedvalue
 					            MemKB = $_.cookedvalue * 8192 / 1024
@@ -132,7 +134,8 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
                     Where-Object {$_.Path -match $BufManpagecounters} |
                     foreach { [PSCustomObject]@{
 					            ComputerName = $Computer
-					            Instance = ($_.Path.split("\")[-2]).replace("mssql`$","")
+                                SqlInstance = (($_.Path.split("\")[-2]).replace("mssql`$","")).split(':')[0]
+				                CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$","")).split(':')[1]
                                 Counter = $_.Path.split("\")[-1]
 					            Pages = $_.cookedvalue
 					            MemKB = $_.cookedvalue * 8192 / 1024.0
