@@ -178,7 +178,7 @@ Tests all logins excluding any that are from the mydomain Domain
 						$windowslogins = $allwindowsloginsgroups | Where-Object { $_.LoginType -eq 'WindowsUser' }
 						$windowslogins = $windowslogins | Where-Object { $_.Name.StartsWith("NT ") -eq $false -and $_.Name.StartsWith($SqlServer) -eq $false -and $_.Name.StartsWith("BUILTIN") -eq $false }
 						$windowsGroups = $allwindowsloginsgroups | Where-Object { $_.LoginType -eq 'WindowsGroup' }
-						$windowsGroups = $windowsGroups | Where-Object { $_.Name.StartsWith("NT ") -eq $false -and $_.Name -notmatch $SqlServer -and $_.Name.StartsWith("BUILTIN") -eq $false }
+						$windowsGroups = $windowsGroups | Where-Object { $_.Name.StartsWith("NT ") -eq $false -and $_.Name -notmatch $SqlServer.Split("\\")[0] -and $_.Name.StartsWith("BUILTIN") -eq $false }
 					}
 					
 				}
