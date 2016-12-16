@@ -7,7 +7,7 @@ Creates database snapshots
 .DESCRIPTION
 Creates database snapshots without hassles
 
-.PARAMETER SqlInstance 
+.PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 
 .PARAMETER Credential
@@ -60,7 +60,7 @@ Creates snapshot named "fool_{0}_snap" for HR
 .EXAMPLE
 New-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Databases HR, Accounting -Filepath "F:\snapshotpath\"
 
-Creates snapshots for HR and Accounting databases, storing files under the F:\snapshotpath\ dir 
+Creates snapshots for HR and Accounting databases, storing files under the F:\snapshotpath\ dir
 
 #>
 
@@ -70,17 +70,15 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		[Alias("ServerInstance", "SqlServer")]
 		[string[]]$SqlInstance,
 		[PsCredential]$Credential,
-        [string]$Name,
-        [string]$FilePath
+		[string]$Name,
+		[string]$FilePath
 	)
-	
+
 	DynamicParam {
 		if ($SqlInstance) {
 			return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $Credential
 		}
 	}
-    
-    
 
 	BEGIN
 	{
@@ -88,49 +86,49 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
 
-        $NoSupportForSnap = @('model', 'master', 'tempdb')
-        # Evaluate the default suffix here for naming consistency
-        $DefaultSuffix = (Get-Date -f "yyyyMMdd_HHmmss")
-        if($Name.Length -gt 0) 
-        {
-            #Validate if Name can be interpolated
-            try
-            {
-                $Name -f 'some_string'
-            }
-            catch
-            {
-                throw "Name parameter must be a template only containing one parameter {0}"
-            }
+		$NoSupportForSnap = @('model', 'master', 'tempdb')
+		# Evaluate the default suffix here for naming consistency
+		$DefaultSuffix = (Get-Date -f "yyyyMMdd_HHmmss")
+		if($Name.Length -gt 0)
+		{
+			#Validate if Name can be interpolated
+			try
+			{
+				$Name -f 'some_string'
+			}
+			catch
+			{
+				throw "Name parameter must be a template only containing one parameter {0}"
+			}
 
-        }
+		}
 
-        function Resolve-SnapshotError($server)
-        {
-            $errhelp = ''
-            $SupportedEditions = @('enterprise', 'developer', 'datacenter')
-            $CurrentEdition = $server.Edition.toLower()
-            $CurrentVersion = $server.Version.Major * 1000000 + $server.Version.Minor * 10000 + $server.Version.Build
-            if($server.Version.Major -lt 9) {
-                $errhelp = 'Not supported before 2005'
-            }
-            if($CurrentVersion -lt 12002000 -and $errhelp.Length -eq 0)
-            {
-                if($CurrentEdition -notmatch '.*enterprise.*|.*developer.*|.*datacenter.*')
-                {
-                    $errhelp = 'Supported only for Enterprise, Developer or Datacenter editions'
-                }    
-            }
-            $message = "Please check your version supports snapshots"
-            if ($errhelp.Length -gt 0 ) 
-            {
-                $message +=  "(hint : $errhelp)"
-            }
-            Write-Warning $message
-        }
+		function Resolve-SnapshotError($server)
+		{
+			$errhelp = ''
+			$SupportedEditions = @('enterprise', 'developer', 'datacenter')
+			$CurrentEdition = $server.Edition.toLower()
+			$CurrentVersion = $server.Version.Major * 1000000 + $server.Version.Minor * 10000 + $server.Version.Build
+			if($server.Version.Major -lt 9) {
+				$errhelp = 'Not supported before 2005'
+			}
+			if($CurrentVersion -lt 12002000 -and $errhelp.Length -eq 0)
+			{
+				if($CurrentEdition -notmatch '.*enterprise.*|.*developer.*|.*datacenter.*')
+				{
+					$errhelp = 'Supported only for Enterprise, Developer or Datacenter editions'
+				}
+			}
+			$message = "Please check your version supports snapshots"
+			if ($errhelp.Length -gt 0)
+			{
+				$message +=  "(hint : $errhelp)"
+			}
+			Write-Warning $message
+		}
 
 	}
-	
+
 
 	PROCESS
 	{
@@ -140,126 +138,122 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 			try
 			{
 				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
-				
 			}
 			catch
 			{
 				Write-Warning "Can't connect to $instance"
 				Continue
 			}
-            
-            #Checks for path existance
-            if($FilePath.Length -gt 0) 
-            {
-                if(!(Test-SqlPath -SqlServer $instance -Path $FilePath)) {
-                    Write-Warning "'$instance' cannot access the directory '$FilePath'"
-                    Continue
-                }
-            }
-            
-			
-			$dbs = $server.Databases 
+			#Checks for path existance
+			if($FilePath.Length -gt 0)
+			{
+				if(!(Test-SqlPath -SqlServer $instance -Path $FilePath)) {
+					Write-Warning "'$instance' cannot access the directory '$FilePath'"
+					Continue
+				}
+			}
+
+			$dbs = $server.Databases
 
 			if ($databases.count -gt 0)
 			{
 				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
 			}
 
-            $sourcedbs = @()
+			$sourcedbs = @()
 
 			## double check for gotchas
-            foreach($db in $dbs) 
-            {
-                if($db.IsDatabaseSnapshot)
-                {
-                    Write-Warning "'$($db.name)' is a snapshot, skipping"
-                }
-                elseif($db.name -in $NoSupportForSnap)
-                {
-                    Write-Warning "'$($db.name)' snapshots are prohibited"
-                }
-                else { $sourcedbs += $db }
-            }		
-			
+			foreach($db in $dbs)
+			{
+				if($db.IsDatabaseSnapshot)
+				{
+					Write-Warning "'$($db.name)' is a snapshot, skipping"
+				}
+				elseif($db.name -in $NoSupportForSnap)
+				{
+					Write-Warning "'$($db.name)' snapshots are prohibited"
+				}
+				else { $sourcedbs += $db }
+			}
+
 			foreach ($db in $sourcedbs)
 			{
-                if($Name.Length -gt 0)
-                {
-                    $SnapName = $Name -f $db.Name
-                    if($SnapName -eq $Name) 
-                    {
-                        #no interpolation, just append
-                        $SnapName = '{0}{1}' -f $db.Name, $Name
-                    }
-                }
-                else
-                {
-                    $SnapName = "{0}_{1}" -f $db.Name, $DefaultSuffix
-                }
-                
-                if($SnapName -in $server.Databases.Name) 
-                {
-                    Write-Warning "A database named '$Snapname' already exists, skipping"
-                    Continue
-                }
-                If ($Pscmdlet.ShouldProcess($instance, "Create db snapshot '$SnapName' of '$($db.Name)'"))
-                {
-                    $CustomFileStructure = @{}
-                    $counter = 0
-                    foreach($fg in $db.FileGroups)
-                    {
-                        $CustomFileStructure[$fg.Name] = @()
-                        foreach($file in $fg.Files) {
-                            $counter += 1
-                            # fixed extension is hardcoded as "ss", which seems a "de-facto" standard
-                            $fname = [io.path]::ChangeExtension($file.Filename, "ss")
-                            $fname = Join-Path (Split-Path $fname -Parent) ("{0}_{1}" -f $DefaultSuffix, (Split-Path $fname -Leaf))
+				if($Name.Length -gt 0)
+				{
+					$SnapName = $Name -f $db.Name
+					if($SnapName -eq $Name)
+					{
+						#no interpolation, just append
+						$SnapName = '{0}{1}' -f $db.Name, $Name
+					}
+				}
+				else
+				{
+					$SnapName = "{0}_{1}" -f $db.Name, $DefaultSuffix
+				}
+				if($SnapName -in $server.Databases.Name)
+				{
+					Write-Warning "A database named '$Snapname' already exists, skipping"
+					Continue
+				}
+				If ($Pscmdlet.ShouldProcess($instance, "Create db snapshot '$SnapName' of '$($db.Name)'"))
+				{
+					$CustomFileStructure = @{}
+					$counter = 0
+					foreach($fg in $db.FileGroups)
+					{
+						$CustomFileStructure[$fg.Name] = @()
+						foreach($file in $fg.Files) {
+							$counter += 1
+							# fixed extension is hardcoded as "ss", which seems a "de-facto" standard
+							$fname = [io.path]::ChangeExtension($file.Filename, "ss")
+							$fname = Join-Path (Split-Path $fname -Parent) ("{0}_{1}" -f $DefaultSuffix, (Split-Path $fname -Leaf))
 
-                            # change path if specified
-                            if($FilePath.Length -gt 0) {
-                                $basename = Split-Path $fname -Leaf
-                                # we need to avoid cases where basename is the same for multiple FG
-                                $basename = '{0:0000}_{1}' -f $counter, $basename
-                                $fname = Join-Path $FilePath $basename           
-                            }
-                            $CustomFileStructure[$fg.Name] += @{'name' = $file.name; 'filename' = $fname}
-                        }
-                    }
-                    $SnapDB = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Database -ArgumentList $instance, $Snapname
-                    $SnapDB.DatabaseSnapshotBaseName = $db.Name
-                    foreach($fg in $CustomFileStructure.Keys) 
-                    {
-                        $SnapFG = New-Object -TypeName Microsoft.SqlServer.Management.Smo.FileGroup $SnapDB, $fg
-                        $SnapDB.FileGroups.Add($SnapFG)
-                        foreach($file in $CustomFileStructure[$fg])
-                                    {
-                        $SnapFile = New-Object -TypeName Microsoft.SqlServer.Management.Smo.DataFile $SnapFG, $file['name'], $file['filename']
-                        $SnapDB.FileGroups[$fg].Files.Add($SnapFile)
-                    }
-                    }
-                    try 
-                    {
-                        $SnapDB.Create()
-                        $object = [PSCustomObject]@{
-					        Server = $server.name
-					        Database = $SnapDB.Name
-					        SnapshotOf = $SnapDB.DatabaseSnapshotBaseName
-					        SizeMB = [Math]::Round($SnapDB.Size,2)
-					        DatabaseCreated = $SnapDB.createDate
-					        IsReadCommittedSnapshotOn = $SnapDB.IsReadCommittedSnapshotOn
-					        SnapshotIsolationState = $SnapDB.SnapshotIsolationState
-					        SnapshotDb = $server.Databases[$SnapDB.Name]
-				        }
-                        Select-DefaultField -InputObject $object -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated, IsReadCommittedSnapshotOn, SnapshotIsolationState
-                    }
-                    catch 
-                    {
-                        Write-Exception $_
-                        $inner = $_.Exception.Message
-                        Write-Warning "Original exception: $inner"
-                        Resolve-SnapshotError $server
-                    }
-                }
+							# change path if specified
+							if($FilePath.Length -gt 0) {
+								$basename = Split-Path $fname -Leaf
+								# we need to avoid cases where basename is the same for multiple FG
+								$basename = '{0:0000}_{1}' -f $counter, $basename
+								$fname = Join-Path $FilePath $basename
+							}
+							$CustomFileStructure[$fg.Name] += @{'name' = $file.name; 'filename' = $fname}
+						}
+					}
+					$SnapDB = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Database -ArgumentList $instance, $Snapname
+					$SnapDB.DatabaseSnapshotBaseName = $db.Name
+					foreach($fg in $CustomFileStructure.Keys)
+					{
+						$SnapFG = New-Object -TypeName Microsoft.SqlServer.Management.Smo.FileGroup $SnapDB, $fg
+						$SnapDB.FileGroups.Add($SnapFG)
+						foreach($file in $CustomFileStructure[$fg])
+									{
+						$SnapFile = New-Object -TypeName Microsoft.SqlServer.Management.Smo.DataFile $SnapFG, $file['name'], $file['filename']
+						$SnapDB.FileGroups[$fg].Files.Add($SnapFile)
+					}
+					}
+					try
+					{
+						$SnapDB.Create()
+						$object = [PSCustomObject]@{
+							Server = $server.name
+							Database = $SnapDB.Name
+							SnapshotOf = $SnapDB.DatabaseSnapshotBaseName
+							SizeMB = [Math]::Round($SnapDB.Size,2)
+							DatabaseCreated = $SnapDB.createDate
+							IsReadCommittedSnapshotOn = $SnapDB.IsReadCommittedSnapshotOn
+							SnapshotIsolationState = $SnapDB.SnapshotIsolationState
+							SnapshotDb = $server.Databases[$SnapDB.Name]
+						}
+						Select-DefaultField -InputObject $object -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated, IsReadCommittedSnapshotOn, SnapshotIsolationState
+					}
+					catch
+					{
+						Write-Exception $_
+						$inner = $_.Exception.Message
+						Write-Warning "Original exception: $inner"
+						Resolve-SnapshotError $server
+					}
+				}
 			}
 		}
 	}
