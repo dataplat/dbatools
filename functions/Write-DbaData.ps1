@@ -44,7 +44,7 @@ Info
 Info
 	
 		
-.PARAMETER Trucnate
+.PARAMETER Truncate
 Info
 	
 	
@@ -82,7 +82,7 @@ Info
 		[switch]$FireTriggers,
 		[switch]$KeepIdentity,
 		[switch]$KeepNulls,
-		[switch]$Trucnate
+		[switch]$Truncate
 		#,[switch]$CreateTable
 	)
 	
