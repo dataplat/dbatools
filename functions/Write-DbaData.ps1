@@ -30,7 +30,7 @@ Write-DbaData -SqlServer sql2014
 Creates an SMO Server object that connects using Windows Authentication
 	
 #>	
-	[CmdletBinding()]
+	[CmdletBinding(SupportsShouldProcess = $true)]
 	param (
 		[Parameter(Mandatory = $true)]
 		[object]$SqlServer,
@@ -45,7 +45,6 @@ Creates an SMO Server object that connects using Windows Authentication
 		[int]$NotifyAfter,
 		[switch]$TableLock,
 		# change to $NoTableLock?
-
 		[switch]$CheckConstraints,
 		[switch]$FireTriggers,
 		[switch]$KeepIdentity,
@@ -142,23 +141,29 @@ Creates an SMO Server object that connects using Windows Authentication
 		
 		$bulkCopyOptions = $bulkCopyOptions -join " & "
 		
-		if ($truncate -eq $true)
+		if ($Pscmdlet.ShouldProcess($SqlServer, "Truncating $fqtn"))
 		{
-			try
+			if ($truncate -eq $true)
 			{
-				$null = $server.Databases[$database].ExecuteNonQuery("TRUNCATE TABLE [$table]")
-			}
-			catch
-			{
-				Write-Warning "Could not truncate $table"
+				try
+				{
+					$null = $server.Databases[$database].ExecuteNonQuery("TRUNCATE TABLE [$fqtn]")
+				}
+				catch
+				{
+					Write-Warning "Could not truncate $fqtn"
+				}
 			}
 		}
 		
-		$bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($server, $bulkCopyOptions)
-		$bulkcopy.DestinationTableName = $fqtn
-		$bulkcopy.BatchSize = $batchsize
-		$bulkcopy.WriteToServer($data)
-		$bulkcopy.Close()
-		$bulkcopy.Dispose()
+		if ($Pscmdlet.ShouldProcess($SqlServer, "Writing data to server"))
+		{
+			$bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($server, $bulkCopyOptions)
+			$bulkcopy.DestinationTableName = $fqtn
+			$bulkcopy.BatchSize = $batchsize
+			$bulkcopy.WriteToServer($data)
+			$bulkcopy.Close()
+			$bulkcopy.Dispose()
+		}
 	}
 }
