@@ -71,6 +71,7 @@ Info
 		[Alias("Credential")]
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Parameter(ValueFromPipeline = $true)]
+		[Alias("DataTable")]
 		[object]$InputObject,
 		[string]$Schema = 'dbo',
 		[Parameter(Mandatory = $true)]
@@ -275,20 +276,18 @@ Info
 			$bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($server.ConnectionContext.ConnectionString) #, $bulkCopyOptions)
 			$bulkcopy.DestinationTableName = $fqtn
 			$bulkcopy.BatchSize = $batchsize
+			#$bulkcopy.NotifyAfter = $NotifyAfter
+			$bulkcopy.NotifyAfter = 100
 			
-			$resultcount = $InputObjecttable.rows.count
+			$resultcount = $InputObject.Rows.count 
+			$elapsed = [System.Diagnostics.Stopwatch]::StartNew()
 			# Add rowcount output
 			$bulkCopy.Add_SqlRowscopied({
 					$script:totalrows = $args[1].RowsCopied
-					#$resultcount = $InputObject.table.rows.count
-					$resultcount = 1000000
 					$percent = [int](($script:totalrows/$resultcount) * 100)
-					$timetaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 2)
-					Write-Progress -id 1 -activity "Inserting $resultcount rows" -percentcomplete $percent `
-								   -status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalrows, $percent, $timetaken))
-					
-				})
-			
+					$timetaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
+					Write-Progress -id 1 -activity "Inserting $resultcount rows" -percentcomplete $percent -status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalrows, $percent, $timetaken))
+					})
 			$bulkCopy.WriteToServer($InputObject)
 			if ($resultcount -is [int]) { Write-Progress -id 1 -activity "Inserting $resultcount rows" -status "Complete" -Completed }
 			$bulkcopy.Close()
