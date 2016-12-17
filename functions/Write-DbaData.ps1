@@ -107,9 +107,24 @@ Creates an SMO Server object that connects using Windows Authentication
 		}
 	#>
 		
-		$fqtn = "$Schema.$table"
-		
 		$database = $psboundparameters.Database
+		$dotcount = ([regex]::Matches($table, ".")).count
+		
+		if ($dotcount -eq 1)
+		{
+			$schema = $Table.Split(".")[0]
+			$table = $Table.Split(".")[1]
+		}
+		
+		if ($dotcount -eq 2)
+		{
+			$database = $Table.Split(".")[0]
+			$schema = $Table.Split(".")[1]
+			$table = $Table.Split(".")[2]
+		}
+		
+		$fqtn = "$database.$Schema.$table"
+		
 		$validtypes = @([System.Data.Common.DbDataReader], [System.Data.DataTable], [System.Data.DataRow[]], [System.Data.IDataReader])
 		
 		if ($data.GetType() -notin $validtypes)
@@ -126,7 +141,7 @@ Creates an SMO Server object that connects using Windows Authentication
 		
 		if ($tableExists -eq $null)
 		{
-			Write-Warning "$database.$fqtn does not exist"
+			Write-Warning "$fqtn does not exist"
 			continue
 		}
 		
