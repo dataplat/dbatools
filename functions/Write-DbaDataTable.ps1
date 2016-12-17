@@ -59,9 +59,36 @@ You should have received a copy of the GNU General Public License along with thi
  https://dbatools.io/Write-DbaDataTable
 
 .EXAMPLE
-Write-DbaDataTable -SqlServer sql2014
+$datatable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
+Write-DbaDataTable -SqlServer sql2014 -InputObject $datatable -Table mydb.dbo.customers
 
-Info
+Quickly and efficiently performs a bulk insert of all the data in customers.csv into database: mydb, schema: dbo, table: customers
+Shows progress as rows are inserted. If table does not exist, import is halted.
+	
+.EXAMPLE
+$datatable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
+$datatable | Write-DbaDataTable -SqlServer sql2014 -Table mydb.dbo.customers
+
+Performs row by row insert. Super slow. No progress bar. Don't do this. Use -InputObject instead.
+	
+.EXAMPLE
+$datatable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
+Write-DbaDataTable -SqlServer sql2014 -InputObject $datatable -Table mydb.dbo.customers -AutoCreateTable
+
+Quickly and efficiently performs a bulk insert of all the data. If mydb.dbo.customers does not exist, it will be created with inefficient but forgiving datatypes.
+	
+.EXAMPLE
+$datatable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
+Write-DbaDataTable -SqlServer sql2014 -InputObject $datatable -Table mydb.dbo.customers -Truncate
+
+Quickly and efficiently performs a bulk insert of all the data. Prompts to confirm that truncating mydb.dbo.customers prior to import is desired.
+Prompts again to perform the import. Answer A for Yes to All.
+		
+.EXAMPLE
+$datatable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
+Write-DbaDataTable -SqlServer sql2014 -InputObject $datatable -Database mydb -Table customers
+
+Quickly and efficiently performs a bulk insert of all the data into mydb.dbo.customers -- since Schema was not specified, dbo was used.
 	
 #>	
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
@@ -91,7 +118,7 @@ Info
 	
 	BEGIN
 	{
-		if (!$Truncate -and !$AutoCreateTable) { $ConfirmPreference = "None" }
+		if (!$Truncate) { $ConfirmPreference = "None" }
 		
 		# Getting the total rows copied is a challenge. Use SqlBulkCopyExtension.
 		# http://stackoverflow.com/questions/1188384/sqlbulkcopy-row-count-when-complete
@@ -115,10 +142,14 @@ Info
 		
 		Add-Type -ReferencedAssemblies 'System.Data.dll' -TypeDefinition $source -ErrorAction SilentlyContinue
 		
-		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-		
 		$database = $psboundparameters.Database
 		$dotcount = ([regex]::Matches($table, "\.")).count
+		
+		if ($dotcount -eq 0 -and $database -eq $null)
+		{
+			Write-Warning "You must specify a database or fully qualififed table name"
+			Continue
+		}
 		
 		if ($dotcount -eq 1)
 		{
@@ -134,6 +165,8 @@ Info
 		}
 		
 		$fqtn = "[$database].[$Schema].[$table]"
+		
+		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 		
 		$db = $server.Databases | Where-Object { $_.Name -eq $database }
 		
@@ -165,12 +198,17 @@ Info
 				}
 				catch
 				{
-					Write-Warning "Could not truncate $fqtn"
+					Write-Warning "Could not truncate $fqtn. Table may not exist or may have key constraints."
 				}
 			}
 		}
 		
 		$tablelock = $NoTableLock -eq $false
+		
+		if ($InputObject -eq $null)
+		{
+			Write-Warning "Using the pipeline is much slower and doesn't show a progress bar. Consider using -InputObject instead."
+		}
 	}
 	
 	PROCESS
@@ -277,6 +315,7 @@ Info
 		}
 		
 		$rowcount = $InputObject.Rows.count
+		$ConfirmPreference = "None"
 		
 		if ($Pscmdlet.ShouldProcess($SqlServer, "Writing $rowcount rows to $fqtn"))
 		{
