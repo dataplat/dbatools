@@ -43,7 +43,9 @@ Creates an SMO Server object that connects using Windows Authentication
 		[string]$Table,
 		[int]$BatchSize = 50000,
 		[int]$NotifyAfter,
-		[switch]$TableLock, # change to $NoTableLock?
+		[switch]$TableLock,
+		# change to $NoTableLock?
+
 		[switch]$CheckConstraints,
 		[switch]$FireTriggers,
 		[switch]$KeepIdentity,
@@ -54,7 +56,8 @@ Creates an SMO Server object that connects using Windows Authentication
 	
 	DynamicParam { if ($sqlserver) { return Get-ParamSqlDatabase -SqlServer $SqlServer -SqlCredential $SqlCredential } }
 	
-PROCESS {
+	PROCESS
+	{
 	<#
 		function New-SqlTable # Can be improved but i'm bizzy, mmm actually, will implement later
 		{
@@ -104,57 +107,58 @@ PROCESS {
 			}
 		}
 	#>
-	
-	$fqtn = "$Schema.$table"
-	
-	$database = $psboundparameters.Database
-	$validtypes = @([System.Data.Common.DbDataReader], [System.Data.DataTable], [System.Data.DataRow[]], [System.Data.IDataReader])
-	
-	if ($data.GetType() -notin $validtypes)
-	{
-		Write-Warning "Data is not of the right type (DbDataReader, DataTable, DataRow, or IDataReader)."
-		continue
-	}
-	
-	$server = Connect-SqlServer-SqlServer $SqlServer -SqlCredential $SqlCredential
-	
-	if ($database.length -gt 0) { $server.ConnectionContext.DatabaseName = $Database }
-	
-	$tableExists = $server.Databases[$Database] | Where-Object { $_.Tables.Name -eq 'allcountries' -and $_.Tables.Schema -eq 'dbo' }
-	
-	if ($tableExists -eq $null)
-	{
-		Write-Warning "$database.$fqtn does not exist"
-		continue
-	}
-	
-	$bulkCopyOptions = @()
-	$options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default", "Truncate"
-	
-	foreach ($option in $options)
-	{
-		$optionValue = Get-Variable $option -ValueOnly -ErrorAction SilentlyContinue
-		if ($optionValue -eq $true) { $bulkCopyOptions += "$option" }
-	}
-	
-	$bulkCopyOptions = $bulkCopyOptions -join " & "
-	
-	if ($truncate -eq $true)
-	{
-		try
+		
+		$fqtn = "$Schema.$table"
+		
+		$database = $psboundparameters.Database
+		$validtypes = @([System.Data.Common.DbDataReader], [System.Data.DataTable], [System.Data.DataRow[]], [System.Data.IDataReader])
+		
+		if ($data.GetType() -notin $validtypes)
 		{
-			$null = $server.Databases[$database].ExecuteNonQuery("TRUNCATE TABLE [$table]")
+			Write-Warning "Data is not of the right type (DbDataReader, DataTable, DataRow, or IDataReader)."
+			continue
 		}
-		catch
+		
+		$server = Connect-SqlServer-SqlServer $SqlServer -SqlCredential $SqlCredential
+		
+		if ($database.length -gt 0) { $server.ConnectionContext.DatabaseName = $Database }
+		
+		$tableExists = $server.Databases[$Database] | Where-Object { $_.Tables.Name -eq 'allcountries' -and $_.Tables.Schema -eq 'dbo' }
+		
+		if ($tableExists -eq $null)
 		{
-			Write-Warning "Could not truncate $table"
+			Write-Warning "$database.$fqtn does not exist"
+			continue
 		}
+		
+		$bulkCopyOptions = @()
+		$options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default", "Truncate"
+		
+		foreach ($option in $options)
+		{
+			$optionValue = Get-Variable $option -ValueOnly -ErrorAction SilentlyContinue
+			if ($optionValue -eq $true) { $bulkCopyOptions += "$option" }
+		}
+		
+		$bulkCopyOptions = $bulkCopyOptions -join " & "
+		
+		if ($truncate -eq $true)
+		{
+			try
+			{
+				$null = $server.Databases[$database].ExecuteNonQuery("TRUNCATE TABLE [$table]")
+			}
+			catch
+			{
+				Write-Warning "Could not truncate $table"
+			}
+		}
+		
+		$bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($server, $bulkCopyOptions)
+		$bulkcopy.DestinationTableName = $fqtn
+		$bulkcopy.BatchSize = $batchsize
+		$bulkcopy.WriteToServer($data)
+		$bulkcopy.Close()
+		$bulkcopy.Dispose()
 	}
-	
-	$bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($server, $bulkCopyOptions)
-	$bulkcopy.DestinationTableName = $fqtn
-	$bulkcopy.BatchSize = $batchsize
-	$bulkcopy.WriteToServer($data)
-	$bulkcopy.Close()
-	$bulkcopy.Dispose()
-} 
+}
