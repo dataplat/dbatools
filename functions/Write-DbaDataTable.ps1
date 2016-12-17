@@ -244,6 +244,11 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 			break
 		}
 		
+		If ($InputObject.GetType() -eq [System.Data.DataSet])
+		{
+			if ($InputObject.Tables -ne $null) { $InputObject = $InputObject.Tables }
+		}
+		
 		$db.tables.refresh()
 		$tableExists = $db | Where-Object { $_.Tables.Name -eq $table -and $_.Tables.Schema -eq $schema }
 		
@@ -332,7 +337,7 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 		}
 		
 		$rowcount = $InputObject.Rows.count
-		$ConfirmPreference = "None"
+		if ($rowcount -eq 0) { $rowcount = 1 }
 		
 		if ($Pscmdlet.ShouldProcess($SqlServer, "Writing $rowcount rows to $fqtn"))
 		{
