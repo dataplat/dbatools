@@ -1,4 +1,4 @@
-﻿Function Write-DbaData
+﻿Function Write-DbaDataTable
 {
 <#
 .SYNOPSIS
@@ -56,10 +56,10 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
 
 .LINK
- https://dbatools.io/Write-DbaData
+ https://dbatools.io/Write-DbaDataTable
 
 .EXAMPLE
-Write-DbaData -SqlServer sql2014
+Write-DbaDataTable -SqlServer sql2014
 
 Info
 	
@@ -82,14 +82,15 @@ Info
 		[switch]$FireTriggers,
 		[switch]$KeepIdentity,
 		[switch]$KeepNulls,
-		[switch]$Truncate
-		#,[switch]$CreateTable
+		[switch]$Truncate,
+		[switch]$AutoCreateTable
 	)
 	
 	DynamicParam { if ($sqlserver) { return Get-ParamSqlDatabase -SqlServer $SqlServer -SqlCredential $SqlCredential } }
 	
 	BEGIN
 	{
+		
 		# Getting the total rows copied is a challenge. Use SqlBulkCopyExtension.
 		# http://stackoverflow.com/questions/1188384/sqlbulkcopy-row-count-when-complete
 		
@@ -111,14 +112,11 @@ Info
 		}'
 		
 		Add-Type -ReferencedAssemblies 'System.Data.dll' -TypeDefinition $source -ErrorAction SilentlyContinue
-
-		$tablelock = $NoTableLock -eq $false
-	}
-	
-	PROCESS
-	{
+		
+		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+		
 		$database = $psboundparameters.Database
-		$dotcount = ([regex]::Matches($table, ".")).count
+		$dotcount = ([regex]::Matches($table, "\.")).count
 		
 		if ($dotcount -eq 1)
 		{
@@ -133,28 +131,17 @@ Info
 			$table = $Table.Split(".")[2]
 		}
 		
-		$fqtn = "$database.$Schema.$table"
+		$fqtn = "[$database].[$Schema].[$table]"
 		
-		$validtypes = @([System.Data.Common.DbDataReader], [System.Data.DataTable], [System.Data.DataRow[]], [System.Data.IDataReader])
+		$dbexists = $server.Databases | Where-Object { $_.Name -eq $database }
 		
-		if ($data.GetType() -notin $validtypes)
+		if ($dbexists -eq $null)
 		{
-			Write-Warning "Data is not of the right type (DbDataReader, DataTable, DataRow, or IDataReader)."
+			Write-Warning "$Database does not exist"
 			continue
 		}
 		
-		$server = Connect-SqlServer-SqlServer $SqlServer -SqlCredential $SqlCredential
-		
-		if ($database.length -gt 0) { $server.ConnectionContext.DatabaseName = $Database }
-		
-		$tableExists = $server.Databases[$Database] | Where-Object { $_.Tables.Name -eq 'allcountries' -and $_.Tables.Schema -eq 'dbo' }
-		
-		
-		if ($tableExists -eq $null)
-		{
-			Write-Warning "$fqtn does not exist"
-			continue
-		}
+		$tableExists = $dbexists | Where-Object { $_.Tables.Name -eq $table -and $_.Tables.Schema -eq $schema }
 		
 		$bulkCopyOptions = @()
 		$options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default", "Truncate"
@@ -182,10 +169,99 @@ Info
 			}
 		}
 		
-		# nooooo idea if this'll work with pipelines. May have to move to end.
+		$tablelock = $NoTableLock -eq $false
+	}
+	
+	PROCESS
+	{
+		$validtypes = @([System.Data.DataSet], [System.Data.DataTable], [System.Data.DataRow], [System.Data.DataRow[]]) #[System.Data.Common.DbDataReader], [System.Data.IDataReader]
+		
+		if ($data.GetType() -notin $validtypes)
+		{
+			Write-Warning "Data is not of the right type (DbDataReader, DataTable, DataRow, or IDataReader)."
+			continue
+		}
+		
+		if ($tableExists -eq $null)
+		{
+			if ($AutoCreateTable -eq $false)
+			{
+				Write-Warning "$fqtn does not exist. Use -AutoCreateTable to AutoCreate."
+				return
+			}
+			else
+			{
+				if ($schema -notin $server.Databases[0].Schemas.Name)
+				{
+					Write-Warning "Schema does not exist"
+					return
+				}
+				
+				# Get SQL datatypes by best guess on first data row
+				$sqldatatypes = @(); $index = -1
+				$columns = $data.Columns
+				
+				if ($columnvalue -eq $null)
+				{
+					$columnvalue = $data
+				}
+				
+				foreach ($column in $columns)
+				{
+					
+					$sqlcolumnname = $column.ColumnName
+					
+					$columnvalue = $data.Rows[0].$sqlcolumnname
+					
+					if ($columnvalue -eq $null)
+					{
+						$columnvalue = $data.$sqlcolumnname
+					}
+					
+					# bigint, float, and datetime are more accurate, but it didn't work
+					# as often as it should have, so we'll just go for a smaller datatype
+					
+					if ([int64]::TryParse($columnvalue, [ref]0) -eq $true)
+					{
+						$sqldatatype = "varchar(255)"
+					}
+					elseif ([double]::TryParse($columnvalue, [ref]0) -eq $true)
+					{
+						$sqldatatype = "varchar(255)"
+					}
+					elseif ([datetime]::TryParse($columnvalue, [ref]0) -eq $true)
+					{
+						$sqldatatype = "varchar(255)"
+					}
+					else
+					{
+						$sqldatatype = "varchar(MAX)"
+					}
+					
+					$sqldatatypes += "$sqlcolumnname $sqldatatype"
+				}
+				
+				$sql = "BEGIN CREATE TABLE $fqtn ($($sqldatatypes -join ' NULL,')) END"
+				Write-Debug $sql
+				
+				if ($Pscmdlet.ShouldProcess($SqlServer, "Creating table $fqtn"))
+				{
+					try
+					{
+						$null = $server.Databases[$database].ExecuteNonQuery($sql)
+					}
+					catch
+					{
+						Write-Warning $_.Exception.Message
+						return
+					}
+				}
+			}
+		}
+		
 		if ($Pscmdlet.ShouldProcess($SqlServer, "Writing data to server"))
 		{
-			$bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($server, $bulkCopyOptions)
+			$bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($server.ConnectionContext.ConnectionString) #, $bulkCopyOptions)
 			$bulkcopy.DestinationTableName = $fqtn
 			$bulkcopy.BatchSize = $batchsize
 			
@@ -203,60 +279,9 @@ Info
 			
 			$bulkCopy.WriteToServer($data)
 			if ($resultcount -is [int]) { Write-Progress -id 1 -activity "Inserting $resultcount rows" -status "Complete" -Completed }
-			
+			$bulkcopy.Close()
+			$bulkcopy.Dispose()
 		}
-		$bulkcopy.Close()
-		$bulkcopy.Dispose()
 	}
 }
-
-##### DONE
-		<#
-		function New-SqlTable # Can be improved but i'm bizzy, mmm actually, will implement later
-		{
-			$Data.Tables.Rows[0]
-			
-			# Get SQL datatypes by best guess on first data row
-			$sqldatatypes = @(); $index = -1
-			
-			foreach ($column in $columntext)
-			{
-				$sqlcolumnname = $columns[$index++]
-				
-				# bigint, float, and datetime are more accurate, but it didn't work
-				# as often as it should have, so we'll just go for a smaller datatype
-				
-				if ([int64]::TryParse($column, [ref]0) -eq $true)
-				{
-					$sqldatatype = "varchar(255)"
-				}
-				elseif ([double]::TryParse($column, [ref]0) -eq $true)
-				{
-					$sqldatatype = "varchar(255)"
-				}
-				elseif ([datetime]::TryParse($column, [ref]0) -eq $true)
-				{
-					$sqldatatype = "varchar(255)"
-				}
-				else
-				{
-					$sqldatatype = "varchar(MAX)"
-				}
-				
-				$sqldatatypes += "$sqlcolumnname $sqldatatype"
-			}
-			
-			$sql = "BEGIN CREATE TABLE [$table] ($($sqldatatypes -join ' NULL,')) END"
-			
-			Write-Verbose $sql
-			
-			try
-			{
-				$null = $server.Databases[$database].ExecuteNonQuery($sql)
-			}
-			catch
-			{
-				$errormessage = $_.Exception.Message.ToString()
-			}
-		}
-	#>
+		
