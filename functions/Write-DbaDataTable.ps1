@@ -71,7 +71,7 @@ Info
 		[Alias("Credential")]
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Parameter(ValueFromPipeline = $true)]
-		[object]$Data,
+		[object]$InputObject,
 		[string]$Schema = 'dbo',
 		[Parameter(Mandatory = $true)]
 		[string]$Table,
@@ -115,7 +115,7 @@ Info
 		
 		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 		
-		$database = $psboundparameters.Database
+		$InputObjectbase = $psboundparameters.Database
 		$dotcount = ([regex]::Matches($table, "\.")).count
 		
 		if ($dotcount -eq 1)
@@ -126,22 +126,20 @@ Info
 		
 		if ($dotcount -eq 2)
 		{
-			$database = $Table.Split(".")[0]
+			$InputObjectbase = $Table.Split(".")[0]
 			$schema = $Table.Split(".")[1]
 			$table = $Table.Split(".")[2]
 		}
 		
-		$fqtn = "[$database].[$Schema].[$table]"
+		$fqtn = "[$InputObjectbase].[$Schema].[$table]"
 		
-		$dbexists = $server.Databases | Where-Object { $_.Name -eq $database }
+		$db = $server.Databases | Where-Object { $_.Name -eq $InputObjectbase }
 		
-		if ($dbexists -eq $null)
+		if ($db -eq $null)
 		{
-			Write-Warning "$Database does not exist"
+			Write-Warning "$InputObjectbase does not exist"
 			continue
 		}
-		
-		$tableExists = $dbexists | Where-Object { $_.Tables.Name -eq $table -and $_.Tables.Schema -eq $schema }
 		
 		$bulkCopyOptions = @()
 		$options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default", "Truncate"
@@ -160,7 +158,7 @@ Info
 			{
 				try
 				{
-					$null = $server.Databases[$database].ExecuteNonQuery("TRUNCATE TABLE [$fqtn]")
+					$null = $server.Databases[$InputObjectbase].ExecuteNonQuery("TRUNCATE TABLE [$fqtn]")
 				}
 				catch
 				{
@@ -174,13 +172,22 @@ Info
 	
 	PROCESS
 	{
+		if ($InputObject -eq $null)
+		{
+			Write-Warning "Input object is null"
+			return
+		}
+		
 		$validtypes = @([System.Data.DataSet], [System.Data.DataTable], [System.Data.DataRow], [System.Data.DataRow[]]) #[System.Data.Common.DbDataReader], [System.Data.IDataReader]
 		
-		if ($data.GetType() -notin $validtypes)
+		if ($InputObject.GetType() -notin $validtypes)
 		{
 			Write-Warning "Data is not of the right type (DbDataReader, DataTable, DataRow, or IDataReader)."
 			continue
 		}
+		
+		$db.tables.refresh()
+		$tableExists = $db | Where-Object { $_.Tables.Name -eq $table -and $_.Tables.Schema -eq $schema }
 		
 		if ($tableExists -eq $null)
 		{
@@ -199,23 +206,26 @@ Info
 				
 				# Get SQL datatypes by best guess on first data row
 				$sqldatatypes = @(); $index = -1
-				$columns = $data.Columns
+				$columns = $InputObject.Columns
 				
-				if ($columnvalue -eq $null)
-				{
-					$columnvalue = $data
-				}
+				if ($columns -eq $null) { $columns = $InputObject.Table.Columns }
 				
 				foreach ($column in $columns)
 				{
-					
 					$sqlcolumnname = $column.ColumnName
 					
-					$columnvalue = $data.Rows[0].$sqlcolumnname
+					try
+					{
+						$columnvalue = $InputObject.Rows[0].$sqlcolumnname
+					}
+					catch
+					{
+						$columnvalue = $InputObject.$sqlcolumnname
+					}
 					
 					if ($columnvalue -eq $null)
 					{
-						$columnvalue = $data.$sqlcolumnname
+						$columnvalue = $InputObject.$sqlcolumnname
 					}
 					
 					# bigint, float, and datetime are more accurate, but it didn't work
@@ -223,36 +233,37 @@ Info
 					
 					if ([int64]::TryParse($columnvalue, [ref]0) -eq $true)
 					{
-						$sqldatatype = "varchar(255)"
+						$sqldatatype = "varchar(50)"
 					}
 					elseif ([double]::TryParse($columnvalue, [ref]0) -eq $true)
 					{
-						$sqldatatype = "varchar(255)"
+						$sqldatatype = "varchar(50)"
 					}
 					elseif ([datetime]::TryParse($columnvalue, [ref]0) -eq $true)
 					{
-						$sqldatatype = "varchar(255)"
+						$sqldatatype = "varchar(50)"
 					}
 					else
 					{
 						$sqldatatype = "varchar(MAX)"
 					}
 					
-					$sqldatatypes += "$sqlcolumnname $sqldatatype"
+					$sqldatatypes += "[$sqlcolumnname] $sqldatatype"
 				}
 				
 				$sql = "BEGIN CREATE TABLE $fqtn ($($sqldatatypes -join ' NULL,')) END"
+				
 				Write-Debug $sql
 				
 				if ($Pscmdlet.ShouldProcess($SqlServer, "Creating table $fqtn"))
 				{
 					try
 					{
-						$null = $server.Databases[$database].ExecuteNonQuery($sql)
+						$null = $server.Databases[$InputObjectbase].ExecuteNonQuery($sql)
 					}
 					catch
 					{
-						Write-Warning $_.Exception.Message
+						Write-Warning "The following query failed: $sql"
 						return
 					}
 				}
@@ -265,11 +276,12 @@ Info
 			$bulkcopy.DestinationTableName = $fqtn
 			$bulkcopy.BatchSize = $batchsize
 			
-			$resultcount = $datatable.rows.count
+			$resultcount = $InputObjecttable.rows.count
 			# Add rowcount output
 			$bulkCopy.Add_SqlRowscopied({
 					$script:totalrows = $args[1].RowsCopied
-					$resultcount = $datatable.rows.count
+					#$resultcount = $InputObject.table.rows.count
+					$resultcount = 1000000
 					$percent = [int](($script:totalrows/$resultcount) * 100)
 					$timetaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 2)
 					Write-Progress -id 1 -activity "Inserting $resultcount rows" -percentcomplete $percent `
@@ -277,7 +289,7 @@ Info
 					
 				})
 			
-			$bulkCopy.WriteToServer($data)
+			$bulkCopy.WriteToServer($InputObject)
 			if ($resultcount -is [int]) { Write-Progress -id 1 -activity "Inserting $resultcount rows" -status "Complete" -Completed }
 			$bulkcopy.Close()
 			$bulkcopy.Dispose()
