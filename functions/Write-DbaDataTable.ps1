@@ -64,7 +64,7 @@ Write-DbaDataTable -SqlServer sql2014
 Info
 	
 #>	
-	[CmdletBinding(SupportsShouldProcess = $true)]
+	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
 	param (
 		[Parameter(Mandatory = $true)]
 		[object]$SqlServer,
@@ -77,7 +77,7 @@ Info
 		[Parameter(Mandatory = $true)]
 		[string]$Table,
 		[int]$BatchSize = 50000,
-		[int]$NotifyAfter,
+		[int]$NotifyAfter = 1000,
 		[switch]$NoTableLock,
 		[switch]$CheckConstraints,
 		[switch]$FireTriggers,
@@ -91,6 +91,7 @@ Info
 	
 	BEGIN
 	{
+		if (!$Truncate -and !$AutoCreateTable) { $ConfirmPreference = "None" }
 		
 		# Getting the total rows copied is a challenge. Use SqlBulkCopyExtension.
 		# http://stackoverflow.com/questions/1188384/sqlbulkcopy-row-count-when-complete
@@ -116,7 +117,7 @@ Info
 		
 		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 		
-		$InputObjectbase = $psboundparameters.Database
+		$database = $psboundparameters.Database
 		$dotcount = ([regex]::Matches($table, "\.")).count
 		
 		if ($dotcount -eq 1)
@@ -127,18 +128,18 @@ Info
 		
 		if ($dotcount -eq 2)
 		{
-			$InputObjectbase = $Table.Split(".")[0]
+			$database = $Table.Split(".")[0]
 			$schema = $Table.Split(".")[1]
 			$table = $Table.Split(".")[2]
 		}
 		
-		$fqtn = "[$InputObjectbase].[$Schema].[$table]"
+		$fqtn = "[$database].[$Schema].[$table]"
 		
-		$db = $server.Databases | Where-Object { $_.Name -eq $InputObjectbase }
+		$db = $server.Databases | Where-Object { $_.Name -eq $database }
 		
 		if ($db -eq $null)
 		{
-			Write-Warning "$InputObjectbase does not exist"
+			Write-Warning "$database does not exist"
 			continue
 		}
 		
@@ -153,13 +154,14 @@ Info
 		
 		$bulkCopyOptions = $bulkCopyOptions -join " & "
 		
-		if ($Pscmdlet.ShouldProcess($SqlServer, "Truncating $fqtn"))
+		if ($truncate -eq $true)
 		{
-			if ($truncate -eq $true)
+			if ($Pscmdlet.ShouldProcess($SqlServer, "Truncating $fqtn"))
 			{
 				try
 				{
-					$null = $server.Databases[$InputObjectbase].ExecuteNonQuery("TRUNCATE TABLE [$fqtn]")
+					Write-Output "Truncating $fqtn"
+					$null = $server.Databases[$database].ExecuteNonQuery("TRUNCATE TABLE $fqtn")
 				}
 				catch
 				{
@@ -232,6 +234,9 @@ Info
 					# bigint, float, and datetime are more accurate, but it didn't work
 					# as often as it should have, so we'll just go for a smaller datatype
 					
+					# also, if anyone wants to add support for using the datatable datatypes
+					# to make the table creation more accurate, please do
+					
 					if ([int64]::TryParse($columnvalue, [ref]0) -eq $true)
 					{
 						$sqldatatype = "varchar(50)"
@@ -260,7 +265,7 @@ Info
 				{
 					try
 					{
-						$null = $server.Databases[$InputObjectbase].ExecuteNonQuery($sql)
+						$null = $server.Databases[$database].ExecuteNonQuery($sql)
 					}
 					catch
 					{
@@ -271,25 +276,25 @@ Info
 			}
 		}
 		
-		if ($Pscmdlet.ShouldProcess($SqlServer, "Writing data to server"))
+		$rowcount = $InputObject.Rows.count
+		
+		if ($Pscmdlet.ShouldProcess($SqlServer, "Writing $rowcount rows to $fqtn"))
 		{
 			$bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($server.ConnectionContext.ConnectionString) #, $bulkCopyOptions)
 			$bulkcopy.DestinationTableName = $fqtn
 			$bulkcopy.BatchSize = $batchsize
-			#$bulkcopy.NotifyAfter = $NotifyAfter
-			$bulkcopy.NotifyAfter = 100
+			$bulkcopy.NotifyAfter = $NotifyAfter
 			
-			$resultcount = $InputObject.Rows.count 
 			$elapsed = [System.Diagnostics.Stopwatch]::StartNew()
 			# Add rowcount output
 			$bulkCopy.Add_SqlRowscopied({
 					$script:totalrows = $args[1].RowsCopied
-					$percent = [int](($script:totalrows/$resultcount) * 100)
+					$percent = [int](($script:totalrows/$rowcount) * 100)
 					$timetaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
-					Write-Progress -id 1 -activity "Inserting $resultcount rows" -percentcomplete $percent -status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalrows, $percent, $timetaken))
-					})
+					Write-Progress -id 1 -activity "Inserting $rowcount rows" -percentcomplete $percent -status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalrows, $percent, $timetaken))
+				})
 			$bulkCopy.WriteToServer($InputObject)
-			if ($resultcount -is [int]) { Write-Progress -id 1 -activity "Inserting $resultcount rows" -status "Complete" -Completed }
+			if ($rowcount -is [int]) { Write-Progress -id 1 -activity "Inserting $rowcount rows" -status "Complete" -Completed }
 			$bulkcopy.Close()
 			$bulkcopy.Dispose()
 		}
