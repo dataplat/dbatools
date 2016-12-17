@@ -23,14 +23,19 @@ You should have received a copy of the GNU General Public License along with thi
  https://dbatools.io/Out-DbaDataTable
 
 .EXAMPLE
-Out-DbaDataTable -InputObject $dblist
+Get-Service | Out-DbaDataTable
 
-Does whatever
+Creates a $datatable based off of the output of Get-Service 
+	
+.EXAMPLE
+Out-DbaDataTable -InputObject $csv.cheesetypes
 
+Creates a DataTable from the CSV object, $csv.cheesetypes
+	
 .EXAMPLE
 $dblist | Out-DbaDataTable
 
-Does whatever
+Similar to above but $dbalist gets piped in
 	
 #>	
 	[CmdletBinding()]
@@ -74,16 +79,18 @@ Does whatever
 		
 		$datatable = New-Object System.Data.DataTable
 	}
+	
 	PROCESS
+	
 	{
 		foreach ($object in $InputObject)
 		{
 			$datarow = $datatable.NewRow()
 			foreach ($property in $object.PsObject.get_properties())
 			{
-				if (++$i -eq 1)
+				if ($datatable.Rows.Count -eq 0)
 				{
-					$column = New-Object Data.DataColumn
+					$column = New-Object System.Data.DataColumn
 					$column.ColumnName = $property.Name.ToString()
 					
 					if ($property.value)
@@ -94,10 +101,8 @@ Does whatever
 							$column.DataType = [System.Type]::GetType($type)
 						}
 					}
-					
-					$null = $datatable.Columns.Add($column)
+					$datatable.Columns.Add($column)
 				}
-				
 				if ($property.Gettype().IsArray)
 				{
 					$datarow.Item($property.Name) = $property.value | ConvertTo-XML -AS String -NoTypeInformation -Depth 1
@@ -107,8 +112,13 @@ Does whatever
 					$datarow.Item($property.Name) = $property.value
 				}
 			}
-			
 			$datatable.Rows.Add($datarow)
 		}
 	}
+	
+	End
+	{
+		return @( ,($datatable))
+	}
+	
 }
