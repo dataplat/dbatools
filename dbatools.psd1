@@ -73,6 +73,7 @@
 		'Copy-SqlSpConfigure',
 		'Copy-SqlLinkedServer',
 		'Copy-SqlDatabaseMail',
+		'Out-DbaDataTable',
 		'Copy-SqlDatabaseAssembly',
 		'Copy-SqlPolicyManagement',
 		'Copy-SqlSharedSchedule',
