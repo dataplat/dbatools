@@ -1,20 +1,16 @@
 ﻿Function Out-DbaDataTable
 {
 <#
-.SYNOPSIS
-Writes data to a table 
+.SYNOPSIS 
+Creates a DataTable for an object 
+	
+.DESCRIPTION 
+Creates a DataTable based on an objects properties. This allows you to easily write to SQL Server tables
 	
 Thanks to Chad Miller, this script is all him. https://gallery.technet.microsoft.com/scriptcenter/4208a159-a52e-4b99-83d4-8048468d29dd
 
-.DESCRIPTION
-Description
-
-.PARAMETER SqlServer
-The SQL Server that you're connecting to.
-
-.PARAMETER SqlCredential
-Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determiend by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
-
+.PARAMETER InputObject
+The object to transform into a DataTable
 	
 .NOTES
 dbatools PowerShell module (https://dbatools.io)
