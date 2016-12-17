@@ -233,7 +233,7 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 		if ($InputObject -eq $null)
 		{
 			Write-Warning "Input object is null"
-			return
+			break
 		}
 		
 		$validtypes = @([System.Data.DataSet], [System.Data.DataTable], [System.Data.DataRow], [System.Data.DataRow[]]) #[System.Data.Common.DbDataReader], [System.Data.IDataReader]
@@ -241,7 +241,7 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 		if ($InputObject.GetType() -notin $validtypes)
 		{
 			Write-Warning "Data is not of the right type (DbDataReader, DataTable, DataRow, or IDataReader)."
-			continue
+			break
 		}
 		
 		$db.tables.refresh()
@@ -252,14 +252,14 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 			if ($AutoCreateTable -eq $false)
 			{
 				Write-Warning "$fqtn does not exist. Use -AutoCreateTable to AutoCreate."
-				return
+				break
 			}
 			else
 			{
 				if ($schema -notin $server.Databases[0].Schemas.Name)
 				{
 					Write-Warning "Schema does not exist"
-					return
+					break
 				}
 				
 				# Get SQL datatypes by best guess on first data row
