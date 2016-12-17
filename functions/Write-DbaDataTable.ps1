@@ -207,7 +207,7 @@ Quickly and efficiently performs a bulk insert of all the data into mydb.dbo.cus
 		
 		if ($InputObject -eq $null)
 		{
-			Write-Warning "Using the pipeline is much slower and doesn't show a progress bar. Consider using -InputObject instead."
+			Write-Warning "Using the pipeline is insanely (5 minutes vs 0.5 seconds) slower and doesn't show a progress bar. Consider using -InputObject instead."
 		}
 	}
 	
