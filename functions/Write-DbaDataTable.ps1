@@ -2,10 +2,10 @@
 {
 <#
 .SYNOPSIS
-Writes data to a table
+Writes data to a SQL Server Table
 
 .DESCRIPTION
-Description
+Writes a .NET DataTable to a SQL Server table using SQL Bulk Copy
 
 .PARAMETER SqlServer
 The SQL Server that you're connecting to.
@@ -13,40 +13,41 @@ The SQL Server that you're connecting to.
 .PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determiend by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
-.PARAMETER Data
-Info
-	
-.PARAMETER Schema
-Info
+.PARAMETER InputObject
+This is the DataTable (or datarow) to import to SQL Server.
 	
 .PARAMETER Table
-Info
+The table name. You can specify a one, two, or three part table name. If you specify a one or two part name, you must also use -Database.
 	
-.PARAMETER BatchSize
-Info
+If the table does not exist, you can use AutoCreateTable to automatically create the table with inefficient data types.
 	
+.PARAMETER Schema
+Defaults to dbo if no schema is specified.
+
+.PARAMETER AutoCreateTable
+Automatically create the table if it doesn't exist. Note that the table will be created with inefficient data types such as nvarchar(max).
+
 .PARAMETER NotifyAfter
-Info
-	
-.PARAMETER NoTableLock
-Info
+Sets the option to show the notification after so many rows of import
+
+.PARAMETER BatchSize
+The batchsize for the import defaults to 5000.
+
+.PARAMETER TableLock
+SqlBulkCopy option. Per Microsoft "Obtain a bulk update lock for the duration of the bulk copy operation. When not 
+specified, row locks are used." TableLock is automatically used when Turbo is specified.
 		
 .PARAMETER CheckConstraints
-Info
-		
+SqlBulkCopy option. Per Microsoft "Check constraints while data is being inserted. By default, constraints are not checked."
+
 .PARAMETER FireTriggers
-Info
-		
+SqlBulkCopy option. Per Microsoft "When specified, cause the server to fire the insert triggers for the rows being inserted into the database."
+
 .PARAMETER KeepIdentity
-Info
-		
+SqlBulkCopy option. Per Microsoft "Preserve source identity values. When not specified, identity values are assigned by the destination."
+
 .PARAMETER KeepNulls
-Info
-	
-		
-.PARAMETER Truncate
-Info
-	
+SqlBulkCopy option. Per Microsoft "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
 	
 .NOTES
 dbatools PowerShell module (https://dbatools.io)
@@ -86,9 +87,11 @@ Prompts again to perform the import. Answer A for Yes to All.
 		
 .EXAMPLE
 $datatable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
-Write-DbaDataTable -SqlServer sql2014 -InputObject $datatable -Database mydb -Table customers
+Write-DbaDataTable -SqlServer sql2014 -InputObject $datatable -Database mydb -Table customers -KeepNulls
 
 Quickly and efficiently performs a bulk insert of all the data into mydb.dbo.customers -- since Schema was not specified, dbo was used.
+	
+Per Microsoft, KeepNulls will "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
 	
 #>	
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
@@ -104,7 +107,7 @@ Quickly and efficiently performs a bulk insert of all the data into mydb.dbo.cus
 		[Parameter(Mandatory = $true)]
 		[string]$Table,
 		[int]$BatchSize = 50000,
-		[int]$NotifyAfter = 1000,
+		[int]$NotifyAfter = 5000,
 		[switch]$NoTableLock,
 		[switch]$CheckConstraints,
 		[switch]$FireTriggers,
@@ -145,7 +148,7 @@ Quickly and efficiently performs a bulk insert of all the data into mydb.dbo.cus
 		$database = $psboundparameters.Database
 		$dotcount = ([regex]::Matches($table, "\.")).count
 		
-		if ($dotcount -eq 0 -and $database -eq $null)
+		if ($dotcount -lt 2 -and $database -eq $null)
 		{
 			Write-Warning "You must specify a database or fully qualififed table name"
 			Continue
@@ -209,6 +212,20 @@ Quickly and efficiently performs a bulk insert of all the data into mydb.dbo.cus
 		{
 			Write-Warning "Using the pipeline is insanely (5 minutes vs 0.5 seconds) slower and doesn't show a progress bar. Consider using -InputObject instead."
 		}
+		
+		$bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($server.ConnectionContext.ConnectionString) #, $bulkCopyOptions)
+		$bulkcopy.DestinationTableName = $fqtn
+		$bulkcopy.BatchSize = $batchsize
+		$bulkcopy.NotifyAfter = $NotifyAfter
+		
+		$elapsed = [System.Diagnostics.Stopwatch]::StartNew()
+		# Add rowcount output
+		$bulkCopy.Add_SqlRowscopied({
+				$script:totalrows = $args[1].RowsCopied
+				$percent = [int](($script:totalrows/$rowcount) * 100)
+				$timetaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
+				Write-Progress -id 1 -activity "Inserting $rowcount rows" -percentcomplete $percent -status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalrows, $percent, $timetaken))
+			})
 	}
 	
 	PROCESS
@@ -319,21 +336,14 @@ Quickly and efficiently performs a bulk insert of all the data into mydb.dbo.cus
 		
 		if ($Pscmdlet.ShouldProcess($SqlServer, "Writing $rowcount rows to $fqtn"))
 		{
-			$bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($server.ConnectionContext.ConnectionString) #, $bulkCopyOptions)
-			$bulkcopy.DestinationTableName = $fqtn
-			$bulkcopy.BatchSize = $batchsize
-			$bulkcopy.NotifyAfter = $NotifyAfter
-			
-			$elapsed = [System.Diagnostics.Stopwatch]::StartNew()
-			# Add rowcount output
-			$bulkCopy.Add_SqlRowscopied({
-					$script:totalrows = $args[1].RowsCopied
-					$percent = [int](($script:totalrows/$rowcount) * 100)
-					$timetaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
-					Write-Progress -id 1 -activity "Inserting $rowcount rows" -percentcomplete $percent -status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalrows, $percent, $timetaken))
-				})
 			$bulkCopy.WriteToServer($InputObject)
 			if ($rowcount -is [int]) { Write-Progress -id 1 -activity "Inserting $rowcount rows" -status "Complete" -Completed }
+		}
+	}
+	END
+	{
+		if ($bulkcopy)
+		{
 			$bulkcopy.Close()
 			$bulkcopy.Dispose()
 		}
