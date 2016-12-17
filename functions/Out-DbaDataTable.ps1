@@ -23,19 +23,14 @@ You should have received a copy of the GNU General Public License along with thi
  https://dbatools.io/Out-DbaDataTable
 
 .EXAMPLE
-Get-Service | Out-DbaDataTable
+Out-DbaDataTable -InputObject $dblist
 
-Creates a $datatable based off of the output of Get-Service 
-	
-.EXAMPLE
-Out-DbaDataTable -InputObject $csv.cheesetypes
+Does whatever
 
-Creates a DataTable from the CSV object, $csv.cheesetypes
-	
 .EXAMPLE
 $dblist | Out-DbaDataTable
 
-Similar to above but $dbalist gets piped in
+Does whatever
 	
 #>	
 	[CmdletBinding()]
@@ -79,18 +74,16 @@ Similar to above but $dbalist gets piped in
 		
 		$datatable = New-Object System.Data.DataTable
 	}
-	
 	PROCESS
-	
 	{
 		foreach ($object in $InputObject)
 		{
 			$datarow = $datatable.NewRow()
 			foreach ($property in $object.PsObject.get_properties())
 			{
-				if ($datatable.Rows.Count -eq 0)
+				if (++$i -eq 1)
 				{
-					$column = New-Object System.Data.DataColumn
+					$column = New-Object Data.DataColumn
 					$column.ColumnName = $property.Name.ToString()
 					
 					if ($property.value)
@@ -101,8 +94,10 @@ Similar to above but $dbalist gets piped in
 							$column.DataType = [System.Type]::GetType($type)
 						}
 					}
-					$datatable.Columns.Add($column)
+					
+					$null = $datatable.Columns.Add($column)
 				}
+				
 				if ($property.Gettype().IsArray)
 				{
 					$datarow.Item($property.Name) = $property.value | ConvertTo-XML -AS String -NoTypeInformation -Depth 1
@@ -112,13 +107,8 @@ Similar to above but $dbalist gets piped in
 					$datarow.Item($property.Name) = $property.value
 				}
 			}
+			
 			$datatable.Rows.Add($datarow)
 		}
 	}
-	
-	End
-	{
-		return @( ,($datatable))
-	}
-	
 }
