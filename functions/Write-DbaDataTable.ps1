@@ -27,6 +27,9 @@ Defaults to dbo if no schema is specified.
 .PARAMETER AutoCreateTable
 Automatically create the table if it doesn't exist. Note that the table will be created with inefficient data types such as nvarchar(max).
 
+.PARAMETER NoTableLock
+By default, a TableLock is placed on the destination table. Use this parameter to remove the lock.
+	
 .PARAMETER NotifyAfter
 Sets the option to show the notification after so many rows of import
 
@@ -49,6 +52,15 @@ SqlBulkCopy option. Per Microsoft "Preserve source identity values. When not spe
 .PARAMETER KeepNulls
 SqlBulkCopy option. Per Microsoft "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
 	
+.PARAMETER Truncate
+Prompts for confirmation then truncates destination 
+
+.PARAMETER Confirm
+Can disable prompt for confirmation by using -Confirm:$false
+
+.PARAMETER WhatIf
+Shows what would happen if the command were executed 
+
 .NOTES
 dbatools PowerShell module (https://dbatools.io)
 Copyright (C) 2016 Chrissy LeMaire
