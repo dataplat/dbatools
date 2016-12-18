@@ -260,6 +260,8 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 							# SMO is bugged and tries to add the missing FS filegroup back
 							# so we just issue the part of snapshot creation here
 							$creation = $server.ConnectionContext.ExecuteNonQuery($SnapDB.Script()[0])
+							$server.Databases.Refresh()
+							$SnapDB = $server.Databases[$Snapname]
 						}
 						else
 						{
