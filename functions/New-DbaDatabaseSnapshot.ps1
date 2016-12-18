@@ -29,6 +29,12 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm
 Prompts you for confirmation before executing any changing operations within the command.
 
+.PARAMETER Force
+Databases with Filestream FG can be snapshotted, but the Filestream FG is marked offline
+in the snapshot. To create a "partial" snapshot, you need to pass -Force explicitely
+
+NB: You can't then restore the Database from the newly-created snapshot.
+For details, check https://msdn.microsoft.com/en-us/library/bb895334.aspx
 
 .NOTES
 Author: niphlod
@@ -71,7 +77,8 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		[string[]]$SqlInstance,
 		[PsCredential]$Credential,
 		[string]$Name,
-		[string]$FilePath
+		[string]$FilePath,
+		[switch]$Force
 	)
 
 	DynamicParam {
@@ -196,13 +203,28 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 					Write-Warning "A database named '$Snapname' already exists, skipping"
 					Continue
 				}
-				If ($Pscmdlet.ShouldProcess($instance, "Create db snapshot '$SnapName' of '$($db.Name)'"))
+				$all_FS = $db.FileGroups | Where-Object FileGroupType -eq 'FileStreamDataFileGroup'
+				$has_FS = $all_FS.Count -gt 0
+				if($has_FS -and $Force -eq $false) {
+					Write-Warning "Filestream detected, skipping. You need to specify -Force. See Get-Help for details"
+					Continue
+				}
+				$snaptype = "db snapshot"
+				if($has_FS)
+				{
+					$snaptype = "partial db snapshot"
+				}
+				If ($Pscmdlet.ShouldProcess($instance, "Create $snaptype '$SnapName' of '$($db.Name)'"))
 				{
 					$CustomFileStructure = @{}
 					$counter = 0
 					foreach($fg in $db.FileGroups)
 					{
 						$CustomFileStructure[$fg.Name] = @()
+						if($fg.FileGroupType -eq 'FileStreamDataFileGroup')
+						{
+							Continue
+						}
 						foreach($file in $fg.Files) {
 							$counter += 1
 							# fixed extension is hardcoded as "ss", which seems a "de-facto" standard
@@ -226,25 +248,32 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 						$SnapFG = New-Object -TypeName Microsoft.SqlServer.Management.Smo.FileGroup $SnapDB, $fg
 						$SnapDB.FileGroups.Add($SnapFG)
 						foreach($file in $CustomFileStructure[$fg])
-									{
-						$SnapFile = New-Object -TypeName Microsoft.SqlServer.Management.Smo.DataFile $SnapFG, $file['name'], $file['filename']
-						$SnapDB.FileGroups[$fg].Files.Add($SnapFile)
-					}
+						{
+							$SnapFile = New-Object -TypeName Microsoft.SqlServer.Management.Smo.DataFile $SnapFG, $file['name'], $file['filename']
+							$SnapDB.FileGroups[$fg].Files.Add($SnapFile)
+						}
 					}
 					try
 					{
-						$SnapDB.Create()
+						if($has_FS)
+						{
+							# SMO is bugged and tries to add the missing FS filegroup back
+							# so we just issue the part of snapshot creation here
+							$creation = $server.ConnectionContext.ExecuteNonQuery($SnapDB.Script()[0])
+						}
+						else
+						{
+						    $SnapDB.Create()
+						}
 						$object = [PSCustomObject]@{
 							Server = $server.name
 							Database = $SnapDB.Name
 							SnapshotOf = $SnapDB.DatabaseSnapshotBaseName
 							SizeMB = [Math]::Round($SnapDB.Size,2)
 							DatabaseCreated = $SnapDB.createDate
-							IsReadCommittedSnapshotOn = $SnapDB.IsReadCommittedSnapshotOn
-							SnapshotIsolationState = $SnapDB.SnapshotIsolationState
 							SnapshotDb = $server.Databases[$SnapDB.Name]
 						}
-						Select-DefaultField -InputObject $object -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated, IsReadCommittedSnapshotOn, SnapshotIsolationState
+						Select-DefaultField -InputObject $object -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated
 					}
 					catch
 					{
