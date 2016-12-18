@@ -78,16 +78,40 @@ Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerN
 			    Write-Warning "Can't connect to $Instance"
 			    continue
 		        }
+
             Write-Verbose "Getting Server Level Triggers on $Instance"
-            $server.Triggers | Select-Object @{l='ComputerName';e={$server.NetName}},@{l='SqlInstance';e={$server.ServiceName}}, @{l='Database';e={""}}, @{l='TriggerName';e={$_.Name}}, IsEnabled, DateLastModified
+            $server.Triggers | 
+            ForEach-Object {
+                    [PSCustomObject]@{
+                            ComputerName     = $server.NetName
+                            SqlInstance      = $server.ServiceName
+                            TriggerLevel     = "ServerLevel"
+                            Database         = ""
+                            TriggerName      = $_.Name
+                            Status           = switch ( $_.IsEnabled ) { $true {"Enabled"} $false {"Disabled"} }
+                            DateLastModified = $_.DateLastModified
+                            }
+            }
+
             Write-Verbose "Getting Database Level Triggers on $Instance"
             $server.Databases | Where-Object { $_.status -eq 'Normal'} |
-            ForEach-Object {
-                $db = $_.Name
-                Write-Verbose "Getting Database Level Triggers on Database $db on $Instance"
-                $_.Triggers | Select-Object @{l='ComputerName';e={$server.NetName}},@{l='SqlInstance';e={$server.ServiceName}}, @{l='Database';e={"$db"}}, @{l='TriggerName';e={$_.Name}}, IsEnabled, DateLastModified
+                ForEach-Object {
+                    $DatabaseName = $_.Name
+                    Write-Verbose "Getting Database Level Triggers on Database $DatabaseName on $Instance"
+                    $_.Triggers | 
+                        ForEach-Object {
+                                [PSCustomObject]@{
+                                    ComputerName     = $server.NetName
+                                    SqlInstance      = $server.ServiceName
+                                    TriggerLevel     = "DatabaseLevel"
+                                    Database         = $DatabaseName
+                                    TriggerName      = $_.Name
+                                    Status           = switch ( $_.IsEnabled ) { $true {"Enabled"} $false {"Disabled"} }
+                                    DateLastModified = $_.DateLastModified
+                                    }
+                        }
                 }
-            }
+        }
     }
     END {}
 }
