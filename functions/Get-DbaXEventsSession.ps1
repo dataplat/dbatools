@@ -51,7 +51,12 @@ Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Stat
 		[string[]]$SqlInstance,
 		[PsCredential]$SqlCredential
     )
-    BEGIN {}
+    BEGIN {
+        if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null)
+		{
+			throw "SMO version is too old. To collect Extended Events, you must have Shared Management Objects 2008 R2 or higher installed."
+		}
+    }
     PROCESS {
         foreach ( $instance in $SqlInstance )
         {
@@ -68,11 +73,14 @@ Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Stat
             }
             if($server.versionmajor -ge '11')
             {
+		        $SqlConn = $server.ConnectionContext.SqlConnectionObject
+		        $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
+		        $XEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
                 Write-Verbose "Getting XEvents Sessions on $instance ."
-                if ($instance -notlike '*\*') { $instance = "$instance\DEFAULT" }
+
                 try
                 {
-                    Get-ChildItem SQLSERVER:\XEvent\$instance\sessions -ErrorAction SilentlyContinue -WarningAction SilentlyContinue | 
+                $XEStore.sessions | 
                     ForEach-Object {
                         [PSCustomObject]@{
                             ComputerName = $server.NetName
@@ -87,11 +95,11 @@ Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Stat
                             MaxMemory = $_.MaxMemory
                             MaxEventSize = $_.MaxEventSize
                             }
-	                }
-                }
+                    }
+	            }
                 catch
                 {
-                    Write-Warning "Failed to get XEvents Sessions on $instance ."
+                Write-Warning "Failed to get XEvents Sessions on $instance ."
                 }
             }
             else
