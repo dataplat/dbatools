@@ -39,108 +39,63 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Update-SqlLoginName
 
 .EXAMPLE   
-Verb-DbaNoun -Source sqlserver2014a -Destination sqlcluster
-
-Copies all server triggers from sqlserver2014a to sqlcluster, using Windows credentials. If triggers with the same name exist on sqlcluster, they will be skipped.
+Update-SqlLoginName 
 
 .EXAMPLE   
-Verb-DbaNoun -Source sqlserver2014a -Destination sqlcluster -Trigger tg_noDbDrop -SourceSqlCredential $cred -Force
-
-Copies a single trigger, the tg_noDbDrop trigger from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a
-and Windows credentials for sqlcluster. If a trigger with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+Update-SqlLoginName 
 
 .EXAMPLE   
-Verb-DbaNoun -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+Update-SqlLoginName 
 
-Shows what would happen if the command were executed using force.
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
-		[object]$Source,
+		[object]$SqlInstance,
+		[System.Management.Automation.PSCredential]$SqlInstanceCredential,
 		[parameter(Mandatory = $true)]
-		[object]$Destination,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
-		[switch]$Force
+		[String]$UserName, 
+		[parameter(Mandatory = $true)]
+		[String]$NewUserName
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlServerTriggers -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+	DynamicParam { if ($SqlInstance) { return (Get-ParamSqlLogins -SqlServer $SqlInstance -SqlCredential $SqlInstanceCredential) } }
 	
 	BEGIN
 	{
-		$triggers = $psboundparameters.Triggers
+		#$triggers = $psboundparameters.Triggers
 		
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		$sourceserver = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlInstanceCredential		
 		
-		$source = $sourceserver.DomainInstanceName
-		$destination = $destserver.DomainInstanceName
-		
-		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
-		{
-			throw "Server Triggers are only supported in SQL Server 2005 and above. Quitting."
-		}
-		
-		$servertriggers = $sourceserver.Triggers
-		$desttriggers = $destserver.Triggers
+		$SqlInstance = $sourceserver.DomainInstanceName
+		$Databases = $sourceserver.Databases
+		$currentUser = $sourceserver.Logins[$UserName]
 		
 	}
 	PROCESS
 	{
-		foreach ($trigger in $servertriggers)
-		{
-			$triggername = $trigger.name
-			if ($triggers.length -gt 0 -and $triggers -notcontains $triggername) { continue }
-			
-			if ($desttriggers.name -contains $triggername)
-			{
-				if ($force -eq $false)
-				{
-					Write-Warning "Server trigger $triggername exists at destination. Use -Force to drop and migrate."
-					continue
-				}
-				else
-				{
-					If ($Pscmdlet.ShouldProcess($destination, "Dropping server trigger $triggername and recreating"))
-					{
-						try
-						{
-							Write-Verbose "Dropping server trigger $triggername"
-							$destserver.triggers[$triggername].Drop()
-						}
-						catch { 
-							Write-Exception $_ 
-							continue
-						}
-					}
-				}
-			}
 
-			If ($Pscmdlet.ShouldProcess($destination, "Creating server trigger $triggername"))
-			{
-				try
-				{
-					Write-Output "Copying server trigger $triggername"
-					$sql = $trigger.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
-					$sql = $sql -replace "CREATE TRIGGER", "`nGO`nCREATE TRIGGER"
-					$sql = $sql -replace "ENABLE TRIGGER", "`nGO`nENABLE TRIGGER"
-					
-					Write-Verbose $sql
-					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-				}
-				catch
-				{
-					Write-Exception $_
-				}
-			}
+		foreach ($db in $currentUser.EnumDatabaseMappings())
+		{
+			
+			$d = $Databases[$db.DBName]
+
+			$m = $d.Users[$UserName]
+
+			$m.name = $NewUserName 
+			$m.Login = $NewUserName 
+
+			$m.Alter() 
+
+			break
+
 		}
+
+		#$currentUser.rename($NewUserName) 
 	}
 	
 	END
 	{
 		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
 		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Server trigger migration finished" }
 	}
 }
