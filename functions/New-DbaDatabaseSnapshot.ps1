@@ -281,7 +281,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 					{
 						# here we manage issues we DO know about, hoping that the first command
 						# is always the one creating the snapshot, and give an helpful hint
-						if($true)
+						try
 						{
 							$server.Databases.Refresh()
 							if($SnapName -notin $server.Databases.Name)
@@ -296,14 +296,16 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 							    $SnapDB = $server.Databases[$Snapname]
 							}
 							$Status = "Partial"
-							if($has_FS)
-							{
-								$Notes = 'Filestream groups are not viable for snapshot'
-							}
+							$Notes = @()
 							if($db.ReadOnly -eq $true)
 							{
-								$Notes += ',SMO is trying to set additional properties on a read-only db, run with -Debug to find out and report back'
+								$Notes += 'SMO is probably trying to set a property on a read-only snapshot, run with -Debug to find out and report back'
 							}
+							if($has_FS)
+							{
+								$Notes += 'Filestream groups are not viable for snapshot'
+							}
+							$Notes = $Notes -Join ';'
 							$object = [PSCustomObject]@{
 								Server          = $server.name
 								Database        = $SnapDB.Name
@@ -322,7 +324,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 							Write-Debug ($hints -Join "`n")
 							Select-DefaultField -InputObject $object -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated, Status, Notes
 						}
-						else
+						catch
 						{
 							# we end up here when even the first issued command didn't create
 							# a valid snapshot
