@@ -2,18 +2,18 @@
 {
 <#
 .SYNOPSIS
-Get amount of memory in use by SQL Server components
+Get amount of memory in use by *all* SQL Server components and instances
 
 .DESCRIPTION
-Retrieves the amount of memory per performance counter
-Default output includes columns Server, counter instance, counter, number of pages, memory in KB, memory in MB
+Retrieves the amount of memory per performance counter. Default output includes columns Server, counter instance, counter, number of pages, memory in KB, memory in MB
 SSAS and SSIS are included.
+	
 SSRS does not have memory counters, only memory shrinks and memory pressure state.
 
 This function requires local admin role on the targeted computers.
 
 .PARAMETER ComputerName
-The SQL Server that you're connecting to.
+The Windows Server that you are connecting to. Note that this will return all instances, but Out-GridView makes it easy to filter to specific instances.
 
 .PARAMETER Credential
 Credential object used to connect to the SQL Server as a different user
