@@ -17,9 +17,11 @@ Credential object used to connect to the SQL Server as a different user
 
 .PARAMETER Databases
 Restores from the last snapshot databases with this names only
+NB: you can pass either Databases or Snapshots
 
 .PARAMETER Snapshots
-Restores databases from snapshots with this names only. NB: it overrides the -Databases parameter
+Restores databases from snapshots with this names only
+NB: you can pass either Databases or Snapshots
 
 .PARAMETER WhatIf
 Shows what would happen if the command were to run. No actions are actually performed.
@@ -41,7 +43,7 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
 
 .LINK
- https://dbatools.io/Restore-DbaDatabaseSnapshot
+ https://dbatools.io/Restore-DbaFromDatabaseSnapshot
 
 .EXAMPLE
 Restore-DbaFromDatabaseSnapshot -SqlServer sqlserver2014a
@@ -118,16 +120,19 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 			if ($snapshots.count -eq 0 -and $databases.count -eq 0)
 			{
 				# Restore all databases from the latest snapshot
+				Write-Verbose "Selected all databases"
 				$dbs = $all_dbs | Where-Object IsDatabaseSnapshot -eq $true
 			}
 			elseif ($databases.count -gt 0)
 			{
 				# Restore only these databases from their latest snapshot
+				Write-Verbose "Selected only databases"
 				$dbs = $all_dbs | Where-Object { $databases -contains $_.DatabaseSnapshotBaseName }
 			}
 			elseif ($snapshots.count -gt 0)
 			{
 				# Restore databases from these snapshots
+				Write-Verbose "Selected only snapshots"
 				$dbs = $all_dbs | Where-Object { $snapshots -contains $_.Name }
 				$base_databases = $dbs | Select-Object -ExpandProperty DatabaseSnapshotBaseName | Get-Unique
 				if($base_databases.count -ne $snapshots.count)
@@ -188,7 +193,7 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 			{
                 # Check if there are FS, because then a restore is not possible
                 $all_FS = $server.Databases[$op['to']].FileGroups | Where-Object FileGroupType -eq 'FileStreamDataFileGroup'
-                if($all_FS.Count -gt 0) 
+                if($all_FS.Count -gt 0)
                 {
                     Write-Warning "Database '$($op['to'])' has FileStream group(s). You cannot restore from snapshots"
                     [PSCustomObject]@{
