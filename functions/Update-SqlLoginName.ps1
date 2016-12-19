@@ -56,59 +56,46 @@ Update-SqlLoginName
 		[parameter(Mandatory = $true)]
 		[String]$UserName, 
 		[parameter(Mandatory = $true)]
-		[String]$NewUserName,
-		[Switch]$VerboseOut
+		[String]$NewUserName
 	)
 	DynamicParam { if ($SqlInstance) { return (Get-ParamSqlLogins -SqlServer $SqlInstance -SqlCredential $SqlInstanceCredential) } }
 	
 	BEGIN
-	{
-		#$triggers = $psboundparameters.Triggers
-		
-		$sourceserver = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlInstanceCredential		
-		
-		$SqlInstance = $sourceserver.DomainInstanceName
+	{	
+		$sourceserver = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlInstanceCredential					
 		$Databases = $sourceserver.Databases
 		$currentUser = $sourceserver.Logins[$UserName]
 		
 	}
 	PROCESS
 	{
-		if ($VerboseOut) { Write-Output "Changing Login name from $userName to $NewUserName" }
-			$currentUser.rename($NewUserName)
+		Write-Output "Changing Login name from $userName to $NewUserName"
+		$currentUser.rename($NewUserName)
 		
-		if ($VerboseOut) { Write-Output "Starting loop for database mappings." }
 		foreach ($db in $currentUser.EnumDatabaseMappings())
 		{
+			$db = $databases[$db.DBName]
 
-			if ($VerboseOut) { Write-Output "Starting update for $($db.DBName)" }
+			Write-Output "Starting update for $($db.Name)" 
 
 			try { 
 								
-				if ($VerboseOut) { Write-Output "Changing database user: $username to $NewUserName" }
-				$db = $Databases[$db.DBName]
-			
-				$db.Users[$UserName].Login = $NewUserName 
-
-				Write-Warning $db.Users[$UserName].Login  
+				Write-Output "Changing database user: $username to $NewUserName"
+				$db.Users[$userName].Rename($newUserName)
 				
 			} catch {
 
-				if ($VerboseOut) { Write-Output "Rolling back update to login: $userName" }
+				Write-Warning "Rolling back update to login: $userName"
 				$currentUser.rename($userName) 
 
-				Write-Warning "The update to User: $userName failed on $db. Please check the log."
-				Write-Warning $_ 
-				# Write-Exception $_ 
+				Write-Warning "The update to User: $userName failed on $($db.Name) Please check the log."				
+				Write-Exception $_ 
 			}
-
-			break 
 		}
 	}
 	
 	END
-	{
-		$sourceserver.ConnectionContext.Disconnect()
+	{		
 		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Login update completed." }
 	}
 }
