@@ -51,7 +51,7 @@ You should have received a copy of the GNU General Public License along with thi
 .EXAMPLE
 New-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Database HR, Accounting
 
-Creates snapshot all supported databases, returning a custom object displaying Server, Database, DatabaseCreated, SnapshotOf, SizeMB, DatabaseCreated, IsReadCommittedSnapshotOn, SnapshotIsolationState
+Creates snapshot for HR and Accounting, returning a custom object displaying Server, Database, DatabaseCreated, SnapshotOf, SizeMB, DatabaseCreated, Status, Notes
 
 .EXAMPLE
 New-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Databases HR -Name '_snap'
@@ -225,14 +225,16 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 						{
 							Continue
 						}
-						foreach($file in $fg.Files) {
+						foreach($file in $fg.Files)
+						{
 							$counter += 1
 							# fixed extension is hardcoded as "ss", which seems a "de-facto" standard
 							$fname = [io.path]::ChangeExtension($file.Filename, "ss")
 							$fname = Join-Path (Split-Path $fname -Parent) ("{0}_{1}" -f $DefaultSuffix, (Split-Path $fname -Leaf))
 
 							# change path if specified
-							if($FilePath.Length -gt 0) {
+							if($FilePath.Length -gt 0)
+							{
 								$basename = Split-Path $fname -Leaf
 								# we need to avoid cases where basename is the same for multiple FG
 								$basename = '{0:0000}_{1}' -f $counter, $basename
@@ -253,36 +255,89 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 							$SnapDB.FileGroups[$fg].Files.Add($SnapFile)
 						}
 					}
+
+					# we're ready to issue a Create, but SMO is a little uncooperative here
+					# there are cases we can manage and others we can't, and we need all the
+					# info we can get both from testers and from users
+
+					$ScriptedSMO = $SnapDB.Script()
 					try
 					{
-						if($has_FS)
-						{
-							# SMO is bugged and tries to add the missing FS filegroup back
-							# so we just issue the part of snapshot creation here
-							$creation = $server.ConnectionContext.ExecuteNonQuery($SnapDB.Script()[0])
-							$server.Databases.Refresh()
-							$SnapDB = $server.Databases[$Snapname]
-						}
-						else
-						{
-						    $SnapDB.Create()
-						}
+						$SnapDB.Create()
+						$Status = "Created"
 						$object = [PSCustomObject]@{
-							Server = $server.name
-							Database = $SnapDB.Name
-							SnapshotOf = $SnapDB.DatabaseSnapshotBaseName
-							SizeMB = [Math]::Round($SnapDB.Size,2)
+							Server          = $server.name
+							Database        = $SnapDB.Name
+							SnapshotOf      = $SnapDB.DatabaseSnapshotBaseName
+							SizeMB          = [Math]::Round($SnapDB.Size,2)
 							DatabaseCreated = $SnapDB.createDate
-							SnapshotDb = $server.Databases[$SnapDB.Name]
+							Status          = 'Created'
+							Notes           = ''
+							SnapshotDb      = $SnapDB
 						}
-						Select-DefaultField -InputObject $object -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated
+						Select-DefaultField -InputObject $object -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated, Status, Notes
 					}
 					catch
 					{
-						Write-Exception $_
-						$inner = $_.Exception.Message
-						Write-Warning "Original exception: $inner"
-						Resolve-SnapshotError $server
+						# here we manage issues we DO know about, hoping that the first command
+						# is always the one creating the snapshot, and give an helpful hint
+						if($true)
+						{
+							$server.Databases.Refresh()
+							if($SnapName -notin $server.Databases.Name)
+							{
+								# previous creation failed completely, snapshot is not there already
+								$creation = $server.ConnectionContext.ExecuteNonQuery($ScriptedSMO[0])
+								$server.Databases.Refresh()
+								$SnapDB = $server.Databases[$Snapname]
+							}
+							else
+							{
+							    $SnapDB = $server.Databases[$Snapname]
+							}
+							$Status = "Partial"
+							if($has_FS)
+							{
+								$Notes = 'Filestream groups are not viable for snapshot'
+							}
+							if($db.ReadOnly -eq $true)
+							{
+								$Notes += ',SMO is trying to set additional properties on a read-only db, run with -Debug to find out and report back'
+							}
+							$object = [PSCustomObject]@{
+								Server          = $server.name
+								Database        = $SnapDB.Name
+								SnapshotOf      = $SnapDB.DatabaseSnapshotBaseName
+								SizeMB          = [Math]::Round($SnapDB.Size,2)
+								DatabaseCreated = $SnapDB.createDate
+								Status          = $Status
+								Notes           = $Notes
+								SnapshotDb      = $SnapDB
+							}
+							$hints = @("Executing these commands led to a partial failure")
+							foreach($stmt in $ScriptedSMO)
+							{
+								$hints += $stmt
+							}
+							Write-Debug ($hints -Join "`n")
+							Select-DefaultField -InputObject $object -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated, Status, Notes
+						}
+						else
+						{
+							# we end up here when even the first issued command didn't create
+							# a valid snapshot
+							Write-Warning 'SMO failed to create the snapshot, run with -Debug to find out and report back'
+							$hints = @("Executing these commands led to a failure")
+							foreach($stmt in $ScriptedSMO)
+							{
+								$hints += $stmt
+							}
+							Write-Exception $_
+							$inner = $_.Exception.Message
+							Write-Warning "Original exception: $inner"
+							Write-Debug ($hints -Join "`n")
+							Resolve-SnapshotError $server
+						}
 					}
 				}
 			}
