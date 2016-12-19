@@ -229,8 +229,8 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 						{
 							$counter += 1
 							# fixed extension is hardcoded as "ss", which seems a "de-facto" standard
-							$fname = [io.path]::ChangeExtension($file.Filename, "ss")
-							$fname = Join-Path (Split-Path $fname -Parent) ("{0}_{1}" -f $DefaultSuffix, (Split-Path $fname -Leaf))
+							$fname = [IO.Path]::ChangeExtension($file.Filename, "ss")
+							$fname = [IO.Path]::Combine((Split-Path $fname -Parent), ("{0}_{1}" -f $DefaultSuffix, (Split-Path $fname -Leaf)))
 
 							# change path if specified
 							if($FilePath.Length -gt 0)
@@ -238,7 +238,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 								$basename = Split-Path $fname -Leaf
 								# we need to avoid cases where basename is the same for multiple FG
 								$basename = '{0:0000}_{1}' -f $counter, $basename
-								$fname = Join-Path $FilePath $basename
+								$fname = [IO.Path]::Combine($FilePath, $basename)
 							}
 							$CustomFileStructure[$fg.Name] += @{'name' = $file.name; 'filename' = $fname}
 						}
