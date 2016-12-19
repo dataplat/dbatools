@@ -56,7 +56,8 @@ Update-SqlLoginName
 		[parameter(Mandatory = $true)]
 		[String]$UserName, 
 		[parameter(Mandatory = $true)]
-		[String]$NewUserName
+		[String]$NewUserName,
+		[Switch]$VerboseOut
 	)
 	DynamicParam { if ($SqlInstance) { return (Get-ParamSqlLogins -SqlServer $SqlInstance -SqlCredential $SqlInstanceCredential) } }
 	
@@ -73,29 +74,41 @@ Update-SqlLoginName
 	}
 	PROCESS
 	{
-
+		if ($VerboseOut) { Write-Output "Changing Login name from $userName to $NewUserName" }
+			$currentUser.rename($NewUserName)
+		
+		if ($VerboseOut) { Write-Output "Starting loop for database mappings." }
 		foreach ($db in $currentUser.EnumDatabaseMappings())
 		{
+
+			if ($VerboseOut) { Write-Output "Starting update for $($db.DBName)" }
+
+			try { 
+								
+				if ($VerboseOut) { Write-Output "Changing database user: $username to $NewUserName" }
+				$db = $Databases[$db.DBName]
 			
-			$d = $Databases[$db.DBName]
+				$db.Users[$UserName].Login = $NewUserName 
 
-			$m = $d.Users[$UserName]
+				Write-Warning $db.Users[$UserName].Login  
+				
+			} catch {
 
-			$m.name = $NewUserName 
-			$m.Login = $NewUserName 
+				if ($VerboseOut) { Write-Output "Rolling back update to login: $userName" }
+				$currentUser.rename($userName) 
 
-			$m.Alter() 
+				Write-Warning "The update to User: $userName failed on $db. Please check the log."
+				Write-Warning $_ 
+				# Write-Exception $_ 
+			}
 
-			break
-
+			break 
 		}
-
-		#$currentUser.rename($NewUserName) 
 	}
 	
 	END
 	{
 		$sourceserver.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Server trigger migration finished" }
+		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Login update completed." }
 	}
 }
