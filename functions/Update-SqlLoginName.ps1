@@ -2,14 +2,14 @@ Function Update-SqlLoginName
 {
 <#
 .SYNOPSIS 
-Verb-DbaNoun migrates server triggers from one SQL Server to another. 
+Update-SqlLoginName will rename login and database mapping for a specified login. 
 
 .DESCRIPTION
-By default, all triggers are copied. The -Triggers parameter is autopopulated for command-line completion and can be used to copy only specific triggers.
+There are times where you might want to rename a login that was copied down, or if the name is not descriptive for what it does. 
 
-If the trigger already exists on the destination, it will be skipped unless -Force is used. 
+It can be a pain to update all of the mappings for a spefic user, this does it for you. 
 
-.PARAMETER Source
+.PARAMETER SqlInstance
 Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER Destination
