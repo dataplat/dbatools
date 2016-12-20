@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/sqlcollaborative/dbatools.png?label=ready&title=Ready)](https://waffle.io/sqlcollaborative/dbatools)
 # dbatools
 [![licence badge]][licence]
 [![stars badge]][stars]
