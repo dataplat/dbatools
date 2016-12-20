@@ -1,4 +1,3 @@
-[![Stories in Ready](https://badge.waffle.io/sqlcollaborative/dbatools.png?label=ready&title=Ready)](https://waffle.io/sqlcollaborative/dbatools)
 # dbatools
 [![licence badge]][licence]
 [![stars badge]][stars]
@@ -15,6 +14,8 @@
 [stars]:https://github.com/sqlcollaborative/dbatools/stargazers
 [forks]:https://github.com/sqlcollaborative/dbatools/network
 [issues]:https://github.com/sqlcollaborative/dbatools/issues
+
+[![Stories in Ready](https://badge.waffle.io/sqlcollaborative/dbatools.png?label=ready&title=Ready)](https://waffle.io/sqlcollaborative/dbatools)
 
 This module is a SQL Server DBA's best friend. 
 
