@@ -175,6 +175,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		[parameter(ValueFromPipeline = $True)]
 		[object]$DbPipeline,
 		[parameter(Position = 21, ParameterSetName = "DbBackup")]
+        	[int]$NumberFiles = 1
 	)
 	
 	DynamicParam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential -NoSystem } }
@@ -338,6 +339,14 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			$backup.CopyOnly = $true
 			$val = 0
 
+			while ($val -lt $numberfiles)
+			{
+				$device = New-Object "Microsoft.SqlServer.Management.Smo.BackupDeviceItem"
+				$device.DeviceType = "File"
+				$device.Name = $backupfile.Replace(".bak","-$val.bak")
+				$backup.Devices.Add($device)
+				$val++
+			}
 
 			$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
 				Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
@@ -406,6 +415,13 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				$restore.NoRecovery = $NoRecovery
 				$val = 0
 
+				while ($val -lt $numberfiles) {
+					$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
+					$device.devicetype = "File"
+					$device.name =  $backupfile.Replace(".bak","-$val.bak")
+					$restore.Devices.Add($device)
+					$val++
+				}
 				
 				Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
 				$restore.sqlrestore($server)
