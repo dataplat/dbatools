@@ -122,7 +122,8 @@ Limitations: Does not support Application Roles yet
 		[parameter(ParameterSetName = "Live")]
 		[switch]$Force,
 		[switch]$SyncSaName,
-		[object]$pipelogin
+		[object]$pipelogin,
+		[hashtable]$rename 
 	)
 	
 	DynamicParam { if ($source) { return Get-ParamSqlLogins -SqlServer $source -SqlCredential $SourceSqlCredential } }
@@ -355,6 +356,11 @@ Limitations: Does not support Application Roles yet
 				If ($Pscmdlet.ShouldProcess($destination, "Updating SQL login $username permissions"))
 				{
 					Update-SqlPermissions -sourceserver $sourceserver -sourcelogin $sourcelogin -destserver $destserver -destlogin $destlogin
+				}
+				if ($rename.Keys -contains $username) { 
+					Update-SqlLoginName -SqlInstance $destserver -UserName $username -NewUserName $rename[$username]
+
+					# Write-Warning $rename[$username]
 				}
 			}
 		}
