@@ -1,14 +1,14 @@
 Function Test-DbaMaxMemory
 {
-<# 
-.SYNOPSIS 
+<#
+.SYNOPSIS
 Calculates the recommended value for SQL Server 'Max Server Memory' configuration setting. Works on SQL Server 2000-2014.
 
-.DESCRIPTION 
-Inspired by Jonathan Kehayias's post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this script displays a SQL Server's: 
+.DESCRIPTION
+Inspired by Jonathan Kehayias's post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this script displays a SQL Server's:
 total memory, currently configured SQL max memory, and the calculated recommendation.
 
-Jonathan notes that the formula used provides a *general recommendation* that doesn't account for everything that may be going on in your specific environment. 
+Jonathan notes that the formula used provides a *general recommendation* that doesn't account for everything that may be going on in your specific environment.
 
 .PARAMETER SqlServer
 Allows you to specify a comma separated list of servers to query.
@@ -16,11 +16,11 @@ Allows you to specify a comma separated list of servers to query.
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$cred = Get-Credential, then pass $cred variable to this parameter. 
+$cred = Get-Credential, then pass $cred variable to this parameter.
 
-Windows Authentication will be used when SqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+Windows Authentication will be used when SqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
 
-.NOTES 
+.NOTES
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -30,18 +30,18 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-.LINK 
+.LINK
 https://dbatools.io/Get-DbaMaxMemoryory
 
-.EXAMPLE   
+.EXAMPLE
 Test-DbaMaxMemory -SqlServer sqlcluster,sqlserver2012
 
 Calculate the 'Max Server Memory' settings for all servers within the SQL Server Central Management Server "sqlcluster"
 
-.EXAMPLE 
-Test-DbaMaxMemory -SqlServer sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-DbaMaxMemory 
+.EXAMPLE
+Test-DbaMaxMemory -SqlServer sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-DbaMaxMemory
 
-Find all servers in CMS that have Max SQL memory set to higher than the total memory of the server (think 2147483647) and set it to recommended value. 
+Find all servers in CMS that have Max SQL memory set to higher than the total memory of the server (think 2147483647) and set it to recommended value.
 
 #>
 
@@ -52,7 +52,7 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
-	
+
 	PROCESS
 	{
 		foreach ($servername in $sqlserver)
@@ -71,20 +71,20 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 				Write-Warning "Couldn't get accurate SQL Server instance count on $servername. Defaulting to 1."
 				$sqlcount = 1
 			}
-			
 
-            $server = Get-DbaMaxMemory -SqlServer $servername -SqlCredential $SqlCredential
-			
-			if($server -eq $null)
-            {
-                continue;
-            }
 
-		
+			$server = Get-DbaMaxMemory -SqlServer $servername -SqlCredential $SqlCredential
+
+			if($null -eq $server)
+			{
+				continue;
+			}
+
+
 			$reserve = 1
 
-            $maxmemory = $server.SqlMaxMB
-            $totalmemory = $server.TotalMB
+			$maxmemory = $server.SqlMaxMB
+			$totalmemory = $server.TotalMB
 
 			if ($totalmemory -ge 4096)
 			{
@@ -108,9 +108,9 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 			{
 				$recommendedMax = $totalmemory * .5
 			}
-			
+
 			$recommendedMax = $recommendedMax/$sqlcount
-			
+
 			[pscustomobject]@{
 				Server = $server.Server
 				InstanceCount = $sqlcount
