@@ -39,13 +39,10 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Update-SqlLoginName
 
 .EXAMPLE   
-Update-SqlLoginName 
+Update-SqlLoginName -SqlInstance localhost -UserName 'DbaToolsUser' -NewUserName 'captain' 
 
 .EXAMPLE   
-Update-SqlLoginName 
-
-.EXAMPLE   
-Update-SqlLoginName 
+Update-SqlLoginName -SqlInstance localhost -UserName 'SHIPLPS\ecox' -NewUserName 'SHIPLPS\dlinstrom' 
 
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]

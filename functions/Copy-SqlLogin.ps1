@@ -63,6 +63,10 @@ Prompts you for confirmation before executing any changing operations within the
 .PARAMETER pipelogin
 Takes the parameters required from a login object that has been piped ot the command
 
+.PARAMETER hashtable
+Takes a hash table that will pass to Update-SqlLoginName and update the login and mappings once the copy is completed.
+
+
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
@@ -100,6 +104,11 @@ Copies ONLY logins netnerds and realcajun. If login realcajun or netnerds exists
 Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -SyncOnly
 
 Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. If a matching login does not exist on the destination, the login will be skipped.
+
+.EXAMPLE 
+Copy-SqlLogin -rename @{ "OldUser" ="newlogin" } -Source $LpsSql01 -Destination Localhost -SourceSqlCredential $sqlcred 
+
+Copys down OldUser and then renames it to newlogin.
 
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
