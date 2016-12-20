@@ -176,7 +176,8 @@
 		'Write-DbaDataTable',
 		'New-DbaDatabaseSnapshot',
 		'Restore-DbaDatabaseSnapshot',
-		'Get-DbaTrigger'
+		'Get-DbaTrigger',
+		'Invoke-Sqlcmd2'
 	)
 	
 	# Cmdlets to export from this module
