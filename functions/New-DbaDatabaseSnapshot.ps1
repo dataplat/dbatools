@@ -91,7 +91,6 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 	{
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
 
 		$NoSupportForSnap = @('model', 'master', 'tempdb')
 		# Evaluate the default suffix here for naming consistency
@@ -113,7 +112,6 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		function Resolve-SnapshotError($server)
 		{
 			$errhelp = ''
-			$SupportedEditions = @('enterprise', 'developer', 'datacenter')
 			$CurrentEdition = $server.Edition.toLower()
 			$CurrentVersion = $server.Version.Major * 1000000 + $server.Version.Minor * 10000 + $server.Version.Build
 			if($server.Version.Major -lt 9) {
@@ -126,10 +124,14 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 					$errhelp = 'Supported only for Enterprise, Developer or Datacenter editions'
 				}
 			}
-			$message = "Please check your version supports snapshots"
+			$message = ""
 			if ($errhelp.Length -gt 0)
 			{
-				$message +=  "(hint : $errhelp)"
+				$message +=  "Please make sure your version supports snapshots : ($errhelp)"
+			}
+			else
+			{
+				$message += "This module can't tell you why the snapshot creation failed. Feel free to report back to dbatools what happened"
 			}
 			Write-Warning $message
 		}
@@ -180,7 +182,10 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 				{
 					Write-Warning "'$($db.name)' snapshots are prohibited"
 				}
-				else { $sourcedbs += $db }
+				else
+				{
+					$sourcedbs += $db
+				}
 			}
 
 			foreach ($db in $sourcedbs)
@@ -203,14 +208,20 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 					Write-Warning "A database named '$Snapname' already exists, skipping"
 					Continue
 				}
-				$all_FS = $db.FileGroups | Where-Object FileGroupType -eq 'FileStreamDataFileGroup'
-				$has_FS = $all_FS.Count -gt 0
-				if($has_FS -and $Force -eq $false) {
+				$all_FSD = $db.FileGroups | Where-Object FileGroupType -eq 'FileStreamDataFileGroup'
+				$all_MMO = $db.FileGroups | Where-Object FileGroupType -eq 'MemoryOptimizedDataFileGroup'
+				$has_FSD = $all_FSD.Count -gt 0
+				$has_MMO = $all_MMO.Count -gt 0
+				if($has_MMO) {
+					Write-Warning "MEMORY_OPTIMIZED_DATA detected, snapshots are not possible"
+					Continue
+				}
+				if($has_FSD -and $Force -eq $false) {
 					Write-Warning "Filestream detected, skipping. You need to specify -Force. See Get-Help for details"
 					Continue
 				}
 				$snaptype = "db snapshot"
-				if($has_FS)
+				if($has_FSD)
 				{
 					$snaptype = "partial db snapshot"
 				}
@@ -287,7 +298,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 							if($SnapName -notin $server.Databases.Name)
 							{
 								# previous creation failed completely, snapshot is not there already
-								$creation = $server.ConnectionContext.ExecuteNonQuery($ScriptedSMO[0])
+								$server.ConnectionContext.ExecuteNonQuery($ScriptedSMO[0]) | Out-Null
 								$server.Databases.Refresh()
 								$SnapDB = $server.Databases[$Snapname]
 							}
@@ -301,7 +312,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 							{
 								$Notes += 'SMO is probably trying to set a property on a read-only snapshot, run with -Debug to find out and report back'
 							}
-							if($has_FS)
+							if($has_FSD)
 							{
 								$Notes += 'Filestream groups are not viable for snapshot'
 							}
@@ -328,14 +339,21 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 						{
 							# we end up here when even the first issued command didn't create
 							# a valid snapshot
+							$ex = $_
 							Write-Warning 'SMO failed to create the snapshot, run with -Debug to find out and report back'
 							$hints = @("Executing these commands led to a failure")
 							foreach($stmt in $ScriptedSMO)
 							{
 								$hints += $stmt
 							}
-							Write-Exception $_
+							Write-Exception $ex
 							$inner = $_.Exception.Message
+							if ($null -ne $ex.Exception.InnerException) {
+								$inner = $ex.Exception.InnerException
+							}
+							if ($null -ne $inner.InnerException) {
+								$inner = $inner.InnerException
+							}
 							Write-Warning "Original exception: $inner"
 							Write-Debug ($hints -Join "`n")
 							Resolve-SnapshotError $server
