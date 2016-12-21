@@ -1,7 +1,7 @@
-﻿$Path = Split-Path -Parent $MyInvocation.MyCommand.Path 
-$ModulePath = (get-item $Path ).parent.FullName 
-$ModuleName = (Split-Path -Leaf $MyInvocation.MyCommand.Path) -Replace ".Tests.ps1" 
-$ManifestPath   = "$ModulePath\$ModuleName.psd1" 
+﻿$Path = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ModulePath = (get-item $Path ).parent.FullName
+$ModuleName = (Split-Path -Leaf $MyInvocation.MyCommand.Path) -Replace ".Tests.ps1"
+$ManifestPath   = "$ModulePath\$ModuleName.psd1"
 
 
 # test the module manifest - exports the right functions, processes the right formats, and is generally correct
@@ -44,11 +44,11 @@ $Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction Silently
 
     }
 
-	It "has a valid AUthor" {
-		$Script:Manifest.Author | SHould Be 'Chrissy LeMaire'
+	It "has a valid Author" {
+		$Script:Manifest.Author | Should Be 'Chrissy LeMaire'
 	}
 
-	It "has a valid Company Namne" {
+	It "has a valid Company Name" {
 		$Script:Manifest.CompanyName | Should Be 'dbatools.io'
 	}
     It "has a valid guid" {
@@ -73,7 +73,7 @@ $Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction Silently
 
 <#
  # Don't want this just yet
- 
+
 	It 'exports all public functions' {
 
 		$FunctionFiles = Get-ChildItem "$ModulePath\functions" -Filter *.ps1 | Select -ExpandProperty BaseName
