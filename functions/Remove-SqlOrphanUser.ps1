@@ -174,7 +174,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 
                             if ($Users.Count -eq 0)
                             {
-                                $Users = $db.Users | Where {$_.Login -eq "" -and ("dbo","guest","sys","INFORMATION_SCHEMA" -notcontains $_.Name)}
+                                $Users = $db.Users | Where {$_.Login -eq "" -and ("dbo","guest","sys","INFORMATION_SCHEMA" -notcontains $_.Name) -and ($_.UserType -in ([Microsoft.SqlServer.Management.Smo.UserType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.UserType]::SqlUser))}
                             }
                             else
                             {
@@ -185,7 +185,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 		                        }
                                 else
                                 {
-                                    $Users = $db.Users | Where {$_.Login -eq "" -and ($Users -contains $_.Name)}
+                                    $Users = $db.Users | Where {$_.Login -eq "" -and ($Users -contains $_.Name) -and ($_.UserType -in ([Microsoft.SqlServer.Management.Smo.UserType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.UserType]::SqlUser))}
                                 }
                             }
                         }
