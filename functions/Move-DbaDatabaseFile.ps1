@@ -1,4 +1,4 @@
-Function Move-DbaDatabaseFile
+﻿Function Move-DbaDatabaseFile
 {
 <#
 .SYNOPSIS
@@ -255,8 +255,7 @@ Will perform a DBCC CHECKDB!
                     $server.Databases[$database].Refresh()
                     Start-Sleep -Seconds 1
                     $WaitingTime += 1
-                    Write-Output "Database status: $($server.Databases[$database].Status.ToString())"
-                    Write-Output "WaitingTime: $WaitingTime"
+                    Write-Verbose "Total waiting time: $WaitingTime. Database status: $($server.Databases[$database].Status.ToString())"
                 }
                 while (($server.Databases[$database].Status.ToString().Contains("Normal") -eq $false) -and $WaitingTime -le 10)
             }
@@ -268,11 +267,11 @@ Will perform a DBCC CHECKDB!
             {
                 $server.Databases[$database].Status.ToString()
             }
-            Write-Output "Database '$database' in Online!"
+            Write-Verbose "Database '$database' in Online!"
 
             if ($NoDbccCheckDb -eq $false)
             {
-                Write-Output "Starting Dbcc CHECKDB for $dbname on $source"
+                Write-Verbose "Starting Dbcc CHECKDB for $dbname on $source"
 			    $dbccgood = Start-DbccCheck -Server $server -DBName $dbname
 					
 			    if ($dbccgood -eq $false)
@@ -310,7 +309,6 @@ Will perform a DBCC CHECKDB!
             )
             if ($PSCmdlet.ShouldProcess($database, "Modifying file '$LogicalFileName' location to '$PhysicalFileLocation'"))
             {
-                Write-Output "Modifying file path to new location"
                 try
                 {
                     $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] MODIFY FILE (NAME = $LogicalFileName, FILENAME = '$PhysicalFileLocation');") | Out-Null
@@ -336,8 +334,6 @@ Will perform a DBCC CHECKDB!
                 [parameter(Mandatory = $true)]
 		        [string]$DestinationFilePath
             )
-            
-            Write-Output "Comparing file hash".
             
             $SourceHash = Get-FileHash -FilePath $SourceFilePath
             $DestinationHash = Get-FileHash -FilePath $DestinationFilePath
@@ -622,20 +618,22 @@ Will perform a DBCC CHECKDB!
             {
                 if ($PSCmdlet.ShouldProcess($sourcenetbios, "Getting drives free space using Get-DbaDiskSpace command"))
                 {
-                    Write-Output "Getting drives free space using Get-DbaDiskSpace command."
+                    Write-Verbose "Getting drives free space using Get-DbaDiskSpace command."
                     [object]$AllDrivesFreeDiskSpace = Get-DbaDiskSpace -ComputerName $sourcenetbios -Unit KB | Select-Object Name, FreeInKB
 
                     #1st Get all drives/luns from files to move
                     foreach ($DBFile in $FilesToMove)
                     {
-                        #Verfiy path using Split-Path on $logfile.FileName in backwards. This way we will catch the LUNs. Example: "K:\Log01" as LUN name
-                        $DrivePath = Split-Path $DBFile.FileName -parent
+                        Write-Verbose "Filename: $($DBFile.LocalDestinationFolderPath)"
+
+                        #Verfiy path using Split-Path on $DBFile.LocalDestinationFolderPath in backwards. This way we will catch the LUNs. Example: "K:\Log01" as LUN name
+                        $DrivePath = Split-Path $DBFile.LocalDestinationFolderPath -parent
+
                         Do  
                         {
-                            if ($AllDrivesFreeDiskSpace | Where-Object {$DrivePath -eq "$($_.Name)"})
+                            if ($AllDrivesFreeDiskSpace | Where-Object {$DrivePath -eq "$($_.Name.TrimEnd("\"))"})
                             {
-                                #$TotalTLogFreeDiskSpaceKB = ($AllDrivesFreeDiskSpace | Where-Object {$DrivePath -eq $_.Name}).SizeInKB
-                                $DBFile.Drive = $DrivePath
+                                $DBFile.Drive = if ($DrivePath.EndsWith("\")) {$DrivePath} else {"$DrivePath\"}
                                 $match = $true
                                 break
                             }
@@ -653,26 +651,24 @@ Will perform a DBCC CHECKDB!
                     $TotalSpaceNeeded = $FilesToMove `
                                         | Group-Object Drive `
                                         | Select-Object Name, `
-                                                        @{Name=‘TotalSpaceNeeded’;Expression={($_.Group | Measure-Object sizeKB -Sum).Sum}}
+                                                        @{Name='TotalSpaceNeeded';Expression={($_.Group | Measure-Object sizeKB -Sum).Sum}}
 
                     #3rd compare with $InstanceSpace luns free space
                     foreach ($Drive in $TotalSpaceNeeded)
                     {
-                        [long]$FreeDiskSpace = ($AllDrivesFreeDiskSpace | Where-Object {$Drive.Name -eq $_.Name}).FreeInKB.ToString().Replace(".", "")
+                        [long]$FreeDiskSpace = ($AllDrivesFreeDiskSpace | Where-Object {$Drive.Name -eq $_.Name}).FreeInKB
                         $FreeDiskSpaceMB = [math]::Round($($FreeDiskSpace / 1024), 2)
                         $TotalSpaceNeededMB = [math]::Round($($Drive.TotalSpaceNeeded / 1024), 2)
 
                         if ($Drive.TotalSpaceNeeded -le $FreeDiskSpace)
                         {
-                            Write-Output "Drive '$($Drive.Name)' has sufficient free space ($FreeDiskSpaceMB MB) for all files to be copied (Space needed: $($Drive.TotalSpaceNeeded / 1024) MB)'"
+                            Write-Output "Drive '$($Drive.Name)' has sufficient free space ($FreeDiskSpaceMB MB) for all files to be copied (Space needed: $TotalSpaceNeededMB MB)'"
                         }
                         else
                         {
                             throw "Drive '$($Drive.Name)' does not have sufficient space available. Needed: '$TotalSpaceNeededMB MB'. Existing: $FreeDiskSpaceMB MB. Quitting"
                         }
                     }
-
-                    Write-Output "Space requirements checked!"
                 }
             }
             catch
@@ -768,7 +764,20 @@ Will perform a DBCC CHECKDB!
         {
             if (($InputFile.Length -gt 0) -and (Test-Path -Path $InputFile))
             {
-                $FilesToMove = Import-Csv -LiteralPath $InputFile
+                Write-Verbose "Trying to Import-CSV using ',' delimiter"
+                $FilesToMove = Import-Csv -LiteralPath $InputFile -Delimiter ","
+                
+                if ($(($FilesToMove | Get-Member -Type NoteProperty).count) -lt 7)
+                {
+                    Write-Verbose "Trying to Import-CSV using ';' delimiter"
+                    $FilesToMove = Import-Csv -LiteralPath $InputFile -Delimiter ";"
+
+                    if ($(($FilesToMove | Get-Member -Type NoteProperty).count) -lt 7)
+                    {
+                        Throw "File has been changed. You must have 7 columns on your file"
+                    }
+                }
+    
             }
             else
             {
@@ -948,8 +957,8 @@ Will perform a DBCC CHECKDB!
 
             $file.FileToCopy = $fileToCopy
            
-            Write-Host "DestinationFolderPath: $($file.DestinationFolderPath)"
-            Write-Host "DestinationFolderPath: $fileToCopy"
+            #Write-Host "DestinationFolderPath: $($file.DestinationFolderPath)"
+            #Write-Host "DestinationFolderPath: $fileToCopy"
 
             $file.LocalDestinationFilePath = [System.IO.Path]::Combine($file.DestinationFolderPath,$fileToCopy)
 
@@ -994,9 +1003,14 @@ Will perform a DBCC CHECKDB!
             }
         }
 
+        Write-Output "We will check access to the specified paths."
         Test-PathsAccess -PathsToUse $FilesToMove
+        Write-Output "Access to file paths finished."
 
+        Write-Output "We will check space requirements"
         Check-SpaceRequirements
+        Write-Output "Space requirements checked!"
+
 
         #Get number of files to move
         $FilesCount = @($FilesToMove).Count
@@ -1035,8 +1049,9 @@ Will perform a DBCC CHECKDB!
 
             $filesProgressbar = 0
 
-            #Call function to set database offline
+            Write-Output "We will set database '$database' Offline!"
             Set-SqlDatabaseOffline
+            Write-Verbose "Database '$database' was set OFFLINE with success!"
         
             foreach ($file in $FilesToMove)
             {
@@ -1114,7 +1129,7 @@ Will perform a DBCC CHECKDB!
 
                             Start-Sleep -Milliseconds 100;
 
-                            Write-Output 'Waiting for file copies to complete...'	
+                            Write-Output "Waiting for file '$FileToCopy' copy to complete..."
                             do
 		                    {
                                 $LogContent = Get-Content -Path $RobocopyLogPath;
@@ -1183,6 +1198,7 @@ Will perform a DBCC CHECKDB!
                     
                     if ($CheckFileHash)
                     {
+                        Write-Output "Comparing file hash. This could take a while please wait.".
                         if (Compare-FileHashes -SourceFilePath $SourceFilePath -DestinationFilePath $DestinationFilePath)
                         {
                             Write-Output "File copy OK! Hash is the same for both files."
@@ -1197,12 +1213,16 @@ Will perform a DBCC CHECKDB!
                     }
                     else
                     {
-                        Write-Warning "The switch -CheckFileHash was not specified."
+                        if ($filesProgressbar -le 1)
+                        {
+                            #Only show this message once
+                            Write-Warning "The switch -CheckFileHash was not specified."
+                        }
                     }
 
-                    Write-Verbose "Change file path for logical file '$LogicalName' to '$DestinationFilePath'"
+                    Write-Output "Change file path for logical file '$LogicalName' to '$DestinationFilePath'"
                     Set-SqlDatabaseFileLocation -Database $dbName -LogicalFileName $LogicalName -PhysicalFileLocation $LocalDestinationFilePath
-                    Write-Verbose "File path changed"
+                    Write-Output "File path changed with success."
                 }
                 catch
                 {
@@ -1349,12 +1369,12 @@ Will perform a DBCC CHECKDB!
             }
         }
 
-        Write-Verbose "Copy done! Lets bring database Online!"
+        Write-Output "Copy done! Lets bring database '$database' Online!"
         $resultDBOnline = Set-SqlDatabaseOnline
         
         if ($resultDBOnline)
         {
-            Write-Verbose "Database online!"
+            Write-Output "Database '$database' online!"
         }
         else
         {
