@@ -169,7 +169,7 @@ Will perform a DBCC CHECKDB!
 		{
 			if ($server.versionMajor -eq 8)
 			{
-				$sql = "SELECT DB_NAME (dbid) as dbname, name, filename, CAST(Size * 8 AS DECIMAL(20,2)) AS sizeKB, '' AS Drive, '' AS DestinationFolderPath, groupid FROM sysaltfiles"
+				$sql = "SELECT DB_NAME (dbid) as dbname, LTRIM(RTRIM(name)) as name, LTRIM(RTRIM(filename)) as filename, CAST(Size * 8 AS DECIMAL(20,2)) AS sizeKB, '' AS Drive, '' AS DestinationFolderPath, groupid FROM sysaltfiles"
 			}
 			else
 			{
