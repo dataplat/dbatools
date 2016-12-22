@@ -50,7 +50,7 @@
 	RequiredModules = @()
 	
 	# Assemblies that must be loaded prior to importing this module
-	RequiredAssemblies = @('Microsoft.SqlServer.Smo', 'Microsoft.SqlServer.SmoExtended')
+	RequiredAssemblies = @()
 	
 	# Script files () that are run in the caller's environment prior to importing this module
 	ScriptsToProcess = @()
