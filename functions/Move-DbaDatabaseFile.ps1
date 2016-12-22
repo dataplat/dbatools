@@ -27,7 +27,7 @@ Copy method:
 The -Databases parameter is autopopulated for command-line completion and can be used to copy only specific objects.
 
 .PARAMETER SqlServer
-The SQL Server instance. You must have sysadmin access and the server version must be SQL Server version 2000 or higher.
+The SQL Server instance. You must have sysadmin access and the server version must be SQL Server version 2005 or higher.
 
 .PARAMETER Databases
 Will appear once you chose a -SqlServer that you have access to.
@@ -127,7 +127,7 @@ Move-DbaDatabaseFile -SqlServer sqlserver2014a -Databases db1 -CheckFileHash
 
 Will show a grid to select the file(s), then a treeview to select the destination path and perform the copy of every selected file. 
 Will perform a file hash validation for each file after copying.
-Will perform a DBCC CHECKDB!
+Will NOT perform a DBCC CHECKDB!
 #>	
 	[CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName="Default")]
 	Param (
@@ -167,14 +167,7 @@ Will perform a DBCC CHECKDB!
 		
 		function Get-SqlFileStructure
 		{
-			if ($server.versionMajor -eq 8)
-			{
-				$sql = "SELECT DB_NAME (dbid) as dbname, LTRIM(RTRIM(name)) as name, LTRIM(RTRIM(filename)) as filename, CAST(Size * 8 AS DECIMAL(20,2)) AS sizeKB, '' AS Drive, '' AS DestinationFolderPath, groupid FROM sysaltfiles"
-			}
-			else
-			{
-				$sql = "SELECT db.name AS dbname, type_desc AS FileType, mf.name, Physical_Name AS filename, CAST(mf.Size * 8 AS DECIMAL(20,2)) AS sizeKB, '' AS Drive, '' AS DestinationFolderPath FROM sys.master_files mf INNER JOIN  sys.databases db ON db.database_id = mf.database_id"
-			}
+			$sql = "SELECT db.name AS dbname, mf.name, type_desc AS FileType, Physical_Name AS Filename, CAST(mf.Size * 8 AS DECIMAL(20,2)) AS sizeKB FROM sys.master_files mf INNER JOIN  sys.databases db ON db.database_id = mf.database_id"
 			
 			$dbfiletable = $server.ConnectionContext.ExecuteWithResults($sql)
 			$ftfiletable = $dbfiletable.Tables[0].Clone()
@@ -200,15 +193,6 @@ Will perform a DBCC CHECKDB!
 			
 			$null = $dbfiletable.Tables.Add($ftfiletable)
 
-            if ($server.versionMajor -eq 8)
-			{
-                #there is a bug where filename returned from SQL 2000 comes with NULL plus SPACES characters. Here we get rid of them. Otherwise won't be valide filenames.
-                foreach ($FileNameToReplace in $dbfiletable.Tables[0])
-                {
-                    $FileNameToReplace.FileName = ($FileNameToReplace.FileName -replace "`0", "").Trim()
-                }
-            }
-
 			return $dbfiletable
 		}
 
@@ -218,6 +202,7 @@ Will perform a DBCC CHECKDB!
             {
                 Write-Output "Set database '$database' Offline!"
 
+                
                 $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] SET OFFLINE WITH ROLLBACK IMMEDIATE") | Out-Null
 
                 do
@@ -246,11 +231,13 @@ Will perform a DBCC CHECKDB!
         {
             if ($PSCmdlet.ShouldProcess($database, "Set database online"))
             {
+
+               
                 Write-Output "Set database '$database' Online!"
                 try
                 {
                 
-                        $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] SET ONLINE") | Out-Null
+                    $server.ConnectionContext.ExecuteNonQuery("ALTER DATABASE [$database] SET ONLINE") | Out-Null
 
                 }
                 catch
@@ -725,6 +712,12 @@ Will perform a DBCC CHECKDB!
 	
 	PROCESS
 	{
+
+        if ($server.versionMajor -lt 9)
+		{
+			throw "This function does not support versions lower than SQL Server 2005 (v9)"
+		}
+
 		Write-Output "Get database file inventory"
 		$filestructure = Get-SqlFileStructure
 
@@ -756,6 +749,8 @@ Will perform a DBCC CHECKDB!
         {
             if (($OutFile.Length -gt 0)) #-and (!(Test-Path -Path $OutFile)))
             {
+                $files | Add-Member -NotePropertyName DestinationFolderPath -NotePropertyValue ""                
+
                 $files | Export-Csv -LiteralPath $OutFile -NoTypeInformation
                 Write-Output "Edit the file $OutFile. Keep only the rows matching the fies you want to move. Fill 'DestinationFolderPath' column for each file (path only).`r`n"
                 Write-Output "Use the following command to move the files:`r`nMove-DbaDatabaseFile -SqlServer $SqlServer -Databases $database -MoveFromCSV -InputFilePath '$OutFile'"
@@ -777,14 +772,14 @@ Will perform a DBCC CHECKDB!
                 Write-Verbose "Trying to Import-CSV using ',' delimiter"
                 $FilesToMove = Import-Csv -LiteralPath $InputFile -Delimiter ","
                 
-                if ($(($FilesToMove | Get-Member -Type NoteProperty).count) -lt 7)
+                if ($(($FilesToMove | Get-Member -Type NoteProperty).count) -lt 6)
                 {
                     Write-Verbose "Trying to Import-CSV using ';' delimiter"
                     $FilesToMove = Import-Csv -LiteralPath $InputFile -Delimiter ";"
 
-                    if ($(($FilesToMove | Get-Member -Type NoteProperty).count) -lt 7)
+                    if ($(($FilesToMove | Get-Member -Type NoteProperty).count) -lt 6)
                     {
-                        Throw "File has been changed. You must have 7 columns on your file"
+                        Throw "File has been changed. You must have 6 columns on your file"
                     }
                 }
     
@@ -805,6 +800,8 @@ Will perform a DBCC CHECKDB!
                 Write-Output "Will move all files of type '$FileType'"
                 $FilesToMove = $files
             }
+
+            $FilesToMove | Add-Member -NotePropertyName DestinationFolderPath -NotePropertyValue ""
 
             if (@($FilesToMove).Count -gt 0)		
             {
@@ -947,6 +944,7 @@ Will perform a DBCC CHECKDB!
         }
 
         #Add support columns to collection
+        $FilesToMove | Add-Member -NotePropertyName Drive -NotePropertyValue ""
         $FilesToMove | Add-Member -NotePropertyName FileToCopy -NotePropertyValue ""
         $FilesToMove | Add-Member -NotePropertyName SourceFilePath -NotePropertyValue ""
         $FilesToMove | Add-Member -NotePropertyName SourceFolderPath -NotePropertyValue ""
