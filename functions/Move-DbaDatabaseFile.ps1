@@ -57,9 +57,9 @@ Used along with the -MoveFromCSV switch, this specifies the full path and filena
 This switch allows checksum verification of the data files.
 This involves reading all of your data and will take a long time for larger files. 
 
-.PARAMETER NoDbccCheckDb
-Skip the DBCC CHECKDB. USE THIS WITH CARE!
-You may want to use this switch if your database is big. 
+.PARAMETER DbccCheckDb
+Do the DBCC CHECKDB. USE THIS WITH CARE!
+You may not want to use this switch if your database is big. 
 You should execute CHECKDB after moving any database.
 
 .PARAMETER DeleteSourceFiles
@@ -116,10 +116,10 @@ Move-DbaDatabaseFile -SqlServer sqlserver2014a -Databases db1 -DeleteSourceFiles
 Will show a grid to select the file(s), then a treeview to select the destination path and perform the move (copy&paste&delete) every selected file.
 
 .EXAMPLE
-Move-DbaDatabaseFile -SqlServer sqlserver2014a -Databases db1 -NoDbccCheckDb
+Move-DbaDatabaseFile -SqlServer sqlserver2014a -Databases db1 -DbccCheckDb
 
 Will show a grid to select the file(s), then a treeview to select the destination path and perform the copy of every selected file. 
-Will NOT perform a DBCC CHECKDB!
+Will perform a DBCC CHECKDB!
 Useful if you want to run CHECKDB manually (for example, because database is big and will take too much time)
 
 .EXAMPLE
@@ -146,7 +146,7 @@ Will perform a DBCC CHECKDB!
         [Alias("InputFilePath", "InputPath")]
 		[string]$InputFile,
         [switch]$CheckFileHash,
-        [switch]$NoDbccCheckDb,
+        [switch]$DbccCheckDb,
         [switch]$DeleteSourceFiles,
         [switch]$Force
 	)
@@ -169,7 +169,7 @@ Will perform a DBCC CHECKDB!
 		{
 			if ($server.versionMajor -eq 8)
 			{
-				$sql = "select DB_NAME (dbid) as dbname, name, filename, CAST(mf.Size * 8 AS DECIMAL(20,2)) AS sizeKB, '' AS Drive, '' AS DestinationFolderPath, groupid from sysaltfiles"
+				$sql = "SELECT DB_NAME (dbid) as dbname, name, filename, CAST(Size * 8 AS DECIMAL(20,2)) AS sizeKB, '' AS Drive, '' AS DestinationFolderPath, groupid FROM sysaltfiles"
 			}
 			else
 			{
@@ -199,6 +199,16 @@ Will perform a DBCC CHECKDB!
 			}
 			
 			$null = $dbfiletable.Tables.Add($ftfiletable)
+
+            if ($server.versionMajor -eq 8)
+			{
+                #there is a bug where filename returned from SQL 2000 comes with NULL plus SPACES characters. Here we get rid of them. Otherwise won't be valide filenames.
+                foreach ($FileNameToReplace in $dbfiletable.Tables[0])
+                {
+                    $FileNameToReplace.FileName = ($FileNameToReplace.FileName -replace "`0", "").Trim()
+                }
+            }
+
 			return $dbfiletable
 		}
 
@@ -269,7 +279,7 @@ Will perform a DBCC CHECKDB!
             }
             Write-Verbose "Database '$database' in Online!"
 
-            if ($NoDbccCheckDb -eq $false)
+            if ($DbccCheckDb)
             {
                 Write-Verbose "Starting Dbcc CHECKDB for $dbname on $source"
 			    $dbccgood = Start-DbccCheck -Server $server -DBName $dbname
@@ -631,7 +641,7 @@ Will perform a DBCC CHECKDB!
 
                         Do  
                         {
-                            if ($AllDrivesFreeDiskSpace | Where-Object {$DrivePath -eq "$($_.Name.TrimEnd("\"))"})
+                            if ($AllDrivesFreeDiskSpace | Where-Object {$DrivePath.TrimEnd("\") -eq "$($_.Name.TrimEnd("\"))"})
                             {
                                 $DBFile.Drive = if ($DrivePath.EndsWith("\")) {$DrivePath} else {"$DrivePath\"}
                                 $match = $true
@@ -802,7 +812,7 @@ Will perform a DBCC CHECKDB!
 		        if ($filepath.length -eq 0)
 		        {
 			        #Open dialog box with GUI
-                    $filepathToMove = Show-SqlServerFileSystem -SqlServer $server -SqlCredential $SqlCredential -Whatif:$false
+                    $filepathToMove = Show-SqlServerFileSystem -SqlServer $server -SqlCredential $SqlCredential #-Whatif:$false
 
                     if ($filepathToMove.length -le 0)
                     {
@@ -1220,7 +1230,7 @@ Will perform a DBCC CHECKDB!
                         }
                     }
 
-                    Write-Output "Change file path for logical file '$LogicalName' to '$DestinationFilePath'"
+                    Write-Output "Change file path for logical file '$LogicalName' to '$LocalDestinationFilePath'"
                     Set-SqlDatabaseFileLocation -Database $dbName -LogicalFileName $LogicalName -PhysicalFileLocation $LocalDestinationFilePath
                     Write-Output "File path changed with success."
                 }
