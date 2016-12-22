@@ -99,6 +99,7 @@ Function Restore-DBFromFilteredArray
 				$restore.PercentCompleteNotification = 1
 				$restore.add_Complete($complete)
 				$restore.ReplaceDatabase = $ReplaceDatabase
+				$restore.ToPointInTime = $RestoreTime
 				if ($DbName -ne '')
 				{
 					$restore.Database = $dbname
@@ -116,7 +117,7 @@ Function Restore-DBFromFilteredArray
 					}
 				Write-Verbose "action = $action"
 				$restore.Action = $action 
-				if ($restorefile -eq $OrderedRestores[-1])
+				if ($restorefile -eq $OrderedRestores[-1] -and $NoRecovery -ne $true)
 				{
 					#Do recovery on last file
 					$restore.NoRecovery = $false

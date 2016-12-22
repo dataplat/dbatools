@@ -80,7 +80,7 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string]$DatabaseName,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        $Path,
+        [string]$Path,
         [String]$RestoreLocation,
         [DateTime]$RestoreTime = (Get-Date).addyears(1),  
 		[switch]$NoRecovery,
@@ -92,17 +92,20 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
 		[object]$filestructure
 		
 	)
-
-    if ((Get-Item $path).IsPSContainer -ne $true)
+    $FunctionName = "Restore-DbaBackup"
+    if ((Get-Item $path).PSIsContainer -ne $true)
     {
+        Write-Verbose "$FunctionName : Single file"
         $files = Get-item $Path
     }elseif ($OlaStyle){
+        Write-Verbose "$FunctionName : Ola Style"
         $files = Get-OlaHRestoreFile -path $Path
     } else {
+        Write-Verbose "$FunctionName : Standard Directory"
         $files = Get-DirectoryRestoreFile -path $path
     }
-    $FilteredFiles = $files | Get-FilteredRestoreFile -SqlServer $SqlServer
-    $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -RestoreLocation $RestoreLocation -NoRecovery:$NoRecovery -ReplaceDatabase:$ReplaceDatabase -Scripts:$Scripts -ScriptOnly:$ScriptOnly -VerifyOnly:$VerifyOnly
+    $FilteredFiles = $files | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime
+    $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -RestoreTime $RestoreTime -RestoreLocation $RestoreLocation -NoRecovery:$NoRecovery -ReplaceDatabase:$ReplaceDatabase -Scripts:$Scripts -ScriptOnly:$ScriptOnly -VerifyOnly:$VerifyOnly
 
 }
 

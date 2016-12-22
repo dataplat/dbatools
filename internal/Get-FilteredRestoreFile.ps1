@@ -62,7 +62,7 @@ Takes an array of FileSystem Objects and then filters them down by date to get a
         $Tlogs = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.backupStartDate -gt $TlogStartDate-and $_.BackupStartDate -lt $RestoreTime}
         $results += $Tlogs
         #Catch the last Tlog that covers the restore time!
-        $Tlogfinal = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.BackupStartDate -gt $RestoreTime} | Sort-Object -Property BackFinishdate -Descending | select -First 1
+        $Tlogfinal = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.BackupStartDate -gt $RestoreTime} | Sort-Object -Property LastLSN  | select -First 1
         $results +=$Tlogfinal
         Write-Verbose "$FunctionName - Returning results to caller"
         $results
