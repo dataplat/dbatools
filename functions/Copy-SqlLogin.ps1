@@ -367,9 +367,13 @@ Limitations: Does not support Application Roles yet
 					Update-SqlPermissions -sourceserver $sourceserver -sourcelogin $sourcelogin -destserver $destserver -destlogin $destlogin
 				}
 				if ($rename.Keys -contains $username) { 
-					Update-SqlLoginName -SqlInstance $destserver -UserName $username -NewUserName $rename[$username]
+					try { 
+						Update-SqlLoginName -SqlInstance $destserver -UserName $username -NewUserName $rename[$username]
+					} catch { 
+						Write-Exception $_ 
+					}					
+					
 
-					# Write-Warning $rename[$username]
 				}
 			}
 		}

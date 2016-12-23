@@ -23,6 +23,14 @@ $scred = Get-Credential, then pass $scred object to the -SourceSqlCredential par
 Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
 To connect as a different Windows user, run PowerShell as that user.
 
+.PARAMETER Username 
+The current username on the server
+
+.PARAMETER NewUserName 
+The new username that you wish to use. If it is a windows user login, then the SID must match.  
+ 
+ 
+
 .NOTES 
 Original Author: Mitchell Hamann (@SirCaptainMitch)
 
@@ -42,7 +50,9 @@ https://dbatools.io/Update-SqlLoginName
 Update-SqlLoginName -SqlInstance localhost -UserName 'DbaToolsUser' -NewUserName 'captain' 
 
 .EXAMPLE   
-Update-SqlLoginName -SqlInstance localhost -UserName 'SHIPLPS\ecox' -NewUserName 'SHIPLPS\dlinstrom' 
+Update-SqlLoginName -SqlInstance localhost -UserName 'domain\oldname' -NewUserName 'domain\newname' 
+
+Change the windowsuser login name.
 
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
@@ -66,27 +76,13 @@ Update-SqlLoginName -SqlInstance localhost -UserName 'SHIPLPS\ecox' -NewUserName
 	}
 	PROCESS
 	{
-		Write-Output "Changing Login name from $userName to $NewUserName"
-		if ($currentUser.LoginType -eq 'SqlLogin')
-		{
-			try { 
-					$currentUser.rename($NewUserName)
-			} catch { 
-				Write-Warning "Failed to rename the user $userName, please chack the log."
-				Write-Exception $_ 
-			}
-		} 
-		
-		if ($currentUser.LoginType -eq 'WindowsUser') { 
-		 
-		 	## Create a new windows user with the new name. 
-			## then we will need to programatically add the permissions. 
-			## sync-sqlloginpermission from local to locl 
-			## drop the old users 
-
-			$currentUser.Name = $NewUserName
-			
-		}		
+		Write-Output "Changing Login name from $userName to $NewUserName"		
+		try { 
+				$currentUser.rename($NewUserName)
+		} catch { 
+			Write-Warning "Failed to rename the user $userName, please chack the log."
+			Write-Exception $_ 
+		}
 		
 		foreach ($db in $currentUser.EnumDatabaseMappings())
 		{
