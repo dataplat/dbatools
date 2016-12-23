@@ -67,7 +67,26 @@ Update-SqlLoginName -SqlInstance localhost -UserName 'SHIPLPS\ecox' -NewUserName
 	PROCESS
 	{
 		Write-Output "Changing Login name from $userName to $NewUserName"
-		$currentUser.rename($NewUserName)
+		if ($currentUser.LoginType -eq 'SqlLogin')
+		{
+			try { 
+					$currentUser.rename($NewUserName)
+			} catch { 
+				Write-Warning "Failed to rename the user $userName, please chack the log."
+				Write-Exception $_ 
+			}
+		} 
+		
+		if ($currentUser.LoginType -eq 'WindowsUser') { 
+		 
+		 	## Create a new windows user with the new name. 
+			## then we will need to programatically add the permissions. 
+			## sync-sqlloginpermission from local to locl 
+			## drop the old users 
+
+			$currentUser.Name = $NewUserName
+			
+		}		
 		
 		foreach ($db in $currentUser.EnumDatabaseMappings())
 		{
