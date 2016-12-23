@@ -167,7 +167,7 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
     {
         $FilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime
 
-        if (($FilteredFiles.DatabaseName | group-object | Where-Object {$_.count -gt 1}).count -gt 0)
+        if (($FilteredFiles.DatabaseName | group-object | Where-Object {$_.count -gt 1}).count -gt 1)
         {
             Write-Error "$FunctionName - We can only handle 1 Database at a time"
         }

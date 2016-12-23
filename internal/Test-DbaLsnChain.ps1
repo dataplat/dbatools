@@ -6,7 +6,6 @@ Checks that a filtered array from Get-FilteredRestore contains a restorabel chai
 
 .DESCRIPTION
 	
-
 .PARAMETER FilterdRestoreFiles
 	
 .PARAMETER RestoreTime
@@ -109,7 +108,7 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
             }
         }
         $i++
-        
+
     }    
     return $true
 }
