@@ -2,10 +2,16 @@ function Restore-DbaBackup
 {
 <#
 .SYNOPSIS 
-Restores a SQL Server Database from a set of backupfile
+Restores a SQL Server Database from a set of backupfiles
 
 .DESCRIPTION
-Scans a given folder for Full, Differential and Log backups. These are then filtered and restored to a specified SQL Server intance and file location
+Scans a given folder for Full, Differential and Log backups. 
+OR
+Takes a set of folder arrays and processes them for Full, Differential and Log backups.
+
+These are then filtered and restored to a specified SQL Server intance and file location
+
+The backup LSN chain and RecoveryForkID will also be checked to ensure the restore is valid
 
 It can also generate restore scripts, both as part of a restore or as it's only action
 
@@ -18,9 +24,15 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 .PARAMETER Path
 Path to SQL Server backup file. This can be a full, differential or log backup file.
 
+.PARAMETER Files
+A Files object(s) containing SQL Server backup files. 
+
 .PARAMETER RestoreLocation
 Path to restore the SQL Server backups to on the target inance
-		
+
+.PARAMETER RestoreTime
+Specify a DateTime object to which you want the database restored to. Default is to the latest point available 
+
 .PARAMETER OlaStyle
 Switch to indicate the backup files are in a folder structure as created by Ola Hallengreen's maintenance scripts
 
@@ -71,42 +83,99 @@ Restore-DbaBackup -SqlServer server1\instance1' -path \\server2\backups\$ -OlaSt
 Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen style folder structure,
  filters them and restores the database to the c:\restores folder on server1\instance1 
 
+.EXAMPLE
+Get-ChildItem c:\SQLbackups1\, \\server\sqlbackups2 | Restore-DbaBackup -SqlServer server1\instance1 
+
+Takes the provided files from multiple directories and restores them on  server1\instance1 
+
+.EXAMPLE
+$RestoreTime = Get-Date('11:19 23/12/2016')
+Restore-DbaBackup -SqlServer server1\instance1' -path \\server2\backups\$ -OlaStyle -RestoreLocation c:\restores -RestoreTime $RestoreTime
+
+Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen style folder structure,
+ filters them and restores the database to the c:\restores folder on server1\instance1 up to 11:19 23/12/2016
 #>
 	[CmdletBinding()]
 	param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory = $true,ParameterSetName="Paths")]
+        [parameter(Mandatory = $true,ParameterSetName="Files")]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
+        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[System.Management.Automation.PSCredential]$SqlCredential,
+        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[string]$DatabaseName,
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [string]$Path,
+		[parameter(Mandatory = $true, ParameterSetName="Paths")]
+        [string[]]$Path,
+        [parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName="Files")]
+        [object[]]$Files,
+        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
         [String]$RestoreLocation,
-        [DateTime]$RestoreTime = (Get-Date).addyears(1),  
+        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
+        [DateTime]$RestoreTime = (Get-Date).addyears(1),
+        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]  
 		[switch]$NoRecovery,
+        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[switch]$ReplaceDatabase,
+        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[switch]$Scripts,
+        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
         [switch]$ScriptOnly,
+        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[switch]$VerifyOnly,
+        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
         [switch]$OlaStyle,
+        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[object]$filestructure
-		
+			
 	)
-    $FunctionName = "Restore-DbaBackup"
-    if ((Get-Item $path).PSIsContainer -ne $true)
+    BEGIN
     {
-        Write-Verbose "$FunctionName : Single file"
-        $files = Get-item $Path
-    }elseif ($OlaStyle){
-        Write-Verbose "$FunctionName : Ola Style"
-        $files = Get-OlaHRestoreFile -path $Path
-    } else {
-        Write-Verbose "$FunctionName : Standard Directory"
-        $files = Get-DirectoryRestoreFile -path $path
+        $FunctionName = "Restore-DbaBackup"
+        $BackupFiles = @()
     }
-    $FilteredFiles = $files | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime
-    $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -RestoreTime $RestoreTime -RestoreLocation $RestoreLocation -NoRecovery:$NoRecovery -ReplaceDatabase:$ReplaceDatabase -Scripts:$Scripts -ScriptOnly:$ScriptOnly -VerifyOnly:$VerifyOnly
+    PROCESS
+    {
+        if ($PSCmdlet.ParameterSetName -eq "Paths")
+        {
+            Write-Verbose "$FunctionName : Paths passed in" 
+            foreach ($p in $path)
+            {  
+                if ((Get-Item $p).PSIsContainer -ne $true)
+                {
+                    Write-Verbose "$FunctionName : Single file"
+                    $BackupFiles += Get-item $p
+                }elseif ($OlaStyle){
+                    Write-Verbose "$FunctionName : Ola Style"
+                    $BackupFiles += Get-OlaHRestoreFile -path $p
+                } else {
+                    Write-Verbose "$FunctionName : Standard Directory"
+                    $BackupFiles += Get-DirectoryRestoreFile -path $p
+                }
+            }
+        }elseif($PSCmdlet.ParameterSetName -eq "Files")
+        {
+            Write-Verbose "$FunctionName : Files passed in $($files.count)" 
+            Foreach ($file in $files)
+            {
+                Write-Verbose "$file"
+                $BackupFiles += $file
+                }
+        }
+    }
+    END
+    {
+        $FilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime
 
+        if (($FilteredFiles.DatabaseName | group-object | Where-Object {$_.count -gt 1}).count -gt 0)
+        {
+            Write-Error "$FunctionName - We can only handle 1 Database at a time"
+        }
+        if(Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles)
+        {
+                   $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -RestoreTime $RestoreTime -RestoreLocation $RestoreLocation -NoRecovery:$NoRecovery -ReplaceDatabase:$ReplaceDatabase -Scripts:$Scripts -ScriptOnly:$ScriptOnly -VerifyOnly:$VerifyOnly
+        }
+    }
 }
 
 
