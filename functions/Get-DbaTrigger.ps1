@@ -85,8 +85,8 @@ Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerN
                     [PSCustomObject]@{
                             ComputerName     = $server.NetName
                             SqlInstance      = $server.ServiceName
-                            TriggerLevel     = "ServerLevel"
-                            Database         = ""
+                            TriggerLevel     = "Server"
+                            Database         = $null
                             TriggerName      = $_.Name
                             Status           = switch ( $_.IsEnabled ) { $true {"Enabled"} $false {"Disabled"} }
                             DateLastModified = $_.DateLastModified
@@ -103,7 +103,7 @@ Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerN
                                 [PSCustomObject]@{
                                     ComputerName     = $server.NetName
                                     SqlInstance      = $server.ServiceName
-                                    TriggerLevel     = "DatabaseLevel"
+                                    TriggerLevel     = "Database"
                                     Database         = $DatabaseName
                                     TriggerName      = $_.Name
                                     Status           = switch ( $_.IsEnabled ) { $true {"Enabled"} $false {"Disabled"} }
