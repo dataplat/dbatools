@@ -175,7 +175,7 @@
 		'Out-DbaDataTable',
 		'Write-DbaDataTable',
 		'New-DbaDatabaseSnapshot',
-		'Restore-DbaDatabaseSnapshot',
+		'Restore-DbaFromDatabaseSnapshot',
 		'Get-DbaTrigger',
 		'Invoke-Sqlcmd2'
 	)
