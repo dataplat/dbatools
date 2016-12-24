@@ -5,11 +5,26 @@ Function Set-SQLAgentJobOutPutFile
 .Synopsis
    Sets the OutPut File for a step of an agent job with the Job Names and steps provided dynamically 
 .DESCRIPTION
-   Sets the OutPut File for a step of an agent job with the Job Names and steps provided dynamically  
-.EXAMPLE
-   Set-SQLAgentJobOutPutFile -instance SERVERNAME -JobName 'The Agent Job' -JobStep
+   Sets the OutPut File for a step of an agent job with the Job Names and steps provided dynamically if required
 
-   This will return the paths to the output files foreach job step of the The Agent Job Job on the SERVERNAME instance    
+.PARAMETER SqlServer
+    The SQL Server that you're connecting to.
+
+.PARAMETER SQLCredential
+    Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determiend by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
+
+.PARAMETER JobName
+    The Agent Job Name to provide Output File Path for. Also available dynamically
+
+.PARAMETER JobStep
+    The Agent Job Step to provide Output File Path for. Also available dynamically
+
+.PARAMETER OutputFile
+    The Full Path to the New Output file
+.EXAMPLE
+   Set-SQLAgentJobOutPutFile -sqlserver SERVERNAME -JobName 'The Agent Job' -OutPutFile E:\Logs\AgentJobStepOutput.txt
+
+   Sets the Job step for The Agent job on SERVERNAME to E:\Logs\AgentJobStepOutput.txt
 .NOTES
    AUTHOR - Rob Sewell https://sqldbawithabeard.com
    DATE - 30/10/2016
