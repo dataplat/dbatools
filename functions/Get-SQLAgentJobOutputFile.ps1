@@ -36,7 +36,6 @@
    AUTHOR - Rob Sewell https://sqldbawithabeard.com
    DATE - 30/10/2016
 #>
-[CmdletBinding(SupportsShouldProcess = $true)]
 param
 (# The Server/instance 
         [Parameter(Mandatory=$true,HelpMessage='The SQL Server Instance', 
@@ -90,6 +89,7 @@ param
     begin {
         # Bind the parameter to a friendly variable
         $JobName = $PsBoundParameters[$ParameterName]
+        $Server = Connect-DbaSqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
     }
     process
     {
