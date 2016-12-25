@@ -60,6 +60,10 @@ Switch indicates that ONLY T-SQL scripts should be generated, no restore takes p
 .PARAMETER VerifyOnly
 Switch indicate that restore should be verified
 
+.PARAMETER XpDirTree
+Switch that indicated file scanning should be performed by the SQL Server instance using xp_dirtree
+You must have sysadmin role membership on the instance for this to work.
+
 .NOTES
 Original Author: Stuart Moore (@napalmgram), stuart-moore.com
 
@@ -97,6 +101,10 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
 #>
 	[CmdletBinding()]
 	param (
+        [parameter(Mandatory = $true, ParameterSetName="Paths")]
+        [string[]]$Path,
+        [parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName="Files")]
+        [object[]]$Files,
         [parameter(Mandatory = $true,ParameterSetName="Paths")]
         [parameter(Mandatory = $true,ParameterSetName="Files")]
 		[Alias("ServerInstance", "SqlInstance")]
@@ -105,10 +113,6 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
 		[System.Management.Automation.PSCredential]$SqlCredential,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[string]$DatabaseName,
-		[parameter(Mandatory = $true, ParameterSetName="Paths")]
-        [string[]]$Path,
-        [parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName="Files")]
-        [object[]]$Files,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
         [String]$RestoreLocation,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
@@ -119,6 +123,8 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
 		[switch]$ReplaceDatabase,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[switch]$Scripts,
+        [Parameter(ParameterSetName="Paths")]
+        [Switch]$XpDirTree,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
         [switch]$ScriptOnly,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
@@ -141,14 +147,22 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
             Write-Verbose "$FunctionName : Paths passed in" 
             foreach ($p in $path)
             {  
-                if ((Get-Item $p).PSIsContainer -ne $true)
+                if ($XpDirTree)
+                {
+                    $BackupFiles += Get-XPDirTreeRestoreFile -path $p -SqlServer $SqlServer -SqlCredential $SqlCredential
+                }
+                elseif ((Get-Item $p).PSIsContainer -ne $true)
                 {
                     Write-Verbose "$FunctionName : Single file"
                     $BackupFiles += Get-item $p
-                }elseif ($OlaStyle){
+                } 
+                elseif ($OlaStyle)
+                {
                     Write-Verbose "$FunctionName : Ola Style"
                     $BackupFiles += Get-OlaHRestoreFile -path $p
-                } else {
+                } 
+                else 
+                {
                     Write-Verbose "$FunctionName : Standard Directory"
                     $BackupFiles += Get-DirectoryRestoreFile -path $p
                 }
@@ -160,16 +174,17 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
             {
                 Write-Verbose "$file"
                 $BackupFiles += $file
-                }
+            }
         }
     }
     END
     {
         $FilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime
 
-        if (($FilteredFiles.DatabaseName | group-object | Where-Object {$_.count -gt 1}).count -gt 1)
+        if (($FilteredFiles.DatabaseName | Group-Object | Measure-Object).count -gt 1)
         {
-            Write-Error "$FunctionName - We can only handle 1 Database at a time"
+            $dbs = ($FilteredFiles | select DatabaseName) -join (',')
+            Write-Error "$FunctionName - We can only handle 1 Database at a time - $dbs"
         }
         if(Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles)
         {
