@@ -53,7 +53,7 @@ Function Restore-DBFromFilteredArray
 
 		If ($null -ne $server.Databases[$DbName])
 		{
-			Stop-DbaProcess -Databases $DbName
+		#	Stop-DbaProcess -Databases $DbName -SqlServer $SqlServer
 		}
 
 		$OrderedRestores = $InternalFiles | Sort-object -Property BackupStartDate, BackupType

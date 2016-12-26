@@ -64,6 +64,15 @@ Switch indicate that restore should be verified
 Switch that indicated file scanning should be performed by the SQL Server instance using xp_dirtree
 You must have sysadmin role membership on the instance for this to work.
 
+.PARAMETER LogicalFileMapping
+Accepts a hashtable of mappings to be used to rename Logical Files post restore, of the form:
+$mapping = @{'LogicalFile1'='newname1';'LogicalFile2'='othername'}
+You don't have to specify all files, and just those mapped will  be renamed
+Exclusive with LogicalFilePrefix
+
+.PARAMETER LogicalFilePrefix
+Specify a string which will be prefixed to ALL logical files post restore.
+Exlusive with LogicalFileMapping
 .NOTES
 Original Author: Stuart Moore (@napalmgram), stuart-moore.com
 
@@ -132,8 +141,11 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
         [switch]$OlaStyle,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
-		[object]$filestructure
-			
+		[object]$filestructure,
+        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
+		[string]$LogicalFilePrefix,
+        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
+		[hashtable]$LogicalFileMapping			
 	)
     BEGIN
     {
@@ -188,7 +200,17 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
         }
         if(Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles)
         {
-                   $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -RestoreTime $RestoreTime -RestoreLocation $RestoreLocation -NoRecovery:$NoRecovery -ReplaceDatabase:$ReplaceDatabase -Scripts:$Scripts -ScriptOnly:$ScriptOnly -VerifyOnly:$VerifyOnly
+            try{
+                $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -RestoreTime $RestoreTime -RestoreLocation $RestoreLocation -NoRecovery:$NoRecovery -ReplaceDatabase:$ReplaceDatabase -Scripts:$Scripts -ScriptOnly:$ScriptOnly -VerifyOnly:$VerifyOnly
+                if ($LogicalFileMapping.count -ne 0 -or $LogicalFilePrefix -ne '')
+                {
+                    Rename-LogicalFile -SqlServer $sqlserver -DbName $DatabaseName -Mapping:$LogicalFileMapping -Prefix:$LogicalFilePrefix
+                }
+            }
+            catch{
+                Write-Exception $_
+				return
+            }
         }
     }
 }
