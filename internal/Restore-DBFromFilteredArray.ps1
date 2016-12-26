@@ -51,6 +51,11 @@ Function Restore-DBFromFilteredArray
 		$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
 		$restore.ReplaceDatabase = $ReplaceDatabase
 
+		If ($null -ne $server.Databases[$DbName])
+		{
+			Stop-DbaProcess -Databases $DbName
+		}
+
 		$OrderedRestores = $InternalFiles | Sort-object -Property BackupStartDate, BackupType
 		Write-Verbose "of = $($OrderedRestores.Backupfilename)"
 		foreach ($restorefile in $OrderedRestores)
