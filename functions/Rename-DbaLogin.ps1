@@ -1,8 +1,8 @@
-Function Update-SqlLoginName
+Function Rename-DbaLogin
 {
 <#
 .SYNOPSIS 
-Update-SqlLoginName will rename login and database mapping for a specified login. 
+Rename-DbaLogin will rename login and database mapping for a specified login. 
 
 .DESCRIPTION
 There are times where you might want to rename a login that was copied down, or if the name is not descriptive for what it does. 
@@ -23,12 +23,14 @@ $scred = Get-Credential, then pass $scred object to the -SourceSqlCredential par
 Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
 To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER Username 
-The current username on the server
+.PARAMETER Login 
+The current Login on the server
 
-.PARAMETER NewUserName 
-The new username that you wish to use. If it is a windows user login, then the SID must match.  
- 
+.PARAMETER NewLogin 
+The new Login that you wish to use. If it is a windows user login, then the SID must match.  
+
+.PARAMETER WhatIf
+Shows what would happen if the command were to run. No actions are actually performed. 
  
 
 .NOTES 
@@ -44,15 +46,23 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Update-SqlLoginName
+https://dbatools.io/Rename-DbaLogin
 
 .EXAMPLE   
-Update-SqlLoginName -SqlInstance localhost -UserName 'DbaToolsUser' -NewUserName 'captain' 
+Rename-DbaLogin -SqlInstance localhost -Login 'DbaToolsUser' -NewLogin 'captain' 
+
+SQL Login Example 
 
 .EXAMPLE   
-Update-SqlLoginName -SqlInstance localhost -UserName 'domain\oldname' -NewUserName 'domain\newname' 
+Rename-DbaLogin -SqlInstance localhost -Login 'domain\oldname' -NewLogin 'domain\newname' 
 
 Change the windowsuser login name.
+
+.EXAMPLE 
+Rename-DbaLogin -SqlInstance localhost -Login 'dbatoolsuser' -NewLogin 'captain' -WhatIf
+
+WhatIf Example 
+
 
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
@@ -61,49 +71,49 @@ Change the windowsuser login name.
 		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlInstanceCredential,
 		[parameter(Mandatory = $true)]
-		[String]$UserName, 
+		[String]$Login, 
 		[parameter(Mandatory = $true)]
-		[String]$NewUserName
-	)
-	DynamicParam { if ($SqlInstance) { return (Get-ParamSqlLogins -SqlServer $SqlInstance -SqlCredential $SqlInstanceCredential) } }
+		[String]$NewLogin
+	)	
 	
 	BEGIN
 	{	
 		$sourceserver = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlInstanceCredential					
 		$Databases = $sourceserver.Databases
-		$currentUser = $sourceserver.Logins[$UserName]
+		$currentUser = $sourceserver.Logins[$Login]
 		
 	}
 	PROCESS
-	{
-		Write-Output "Changing Login name from $userName to $NewUserName"		
-		try { 
-				$currentUser.rename($NewUserName)
-		} catch { 
-			Write-Warning "Failed to rename the user $userName, please chack the log."
-			Write-Exception $_ 
-		}
-		
-		foreach ($db in $currentUser.EnumDatabaseMappings())
-		{
-			$db = $databases[$db.DBName]
-
-			Write-Output "Starting update for $($db.Name)" 
-
+	{		
+		if($Pscmdlet.ShouldProcess($SqlInstance, "Changing Login name and database mappings from $Login to $NewLogin")){ 
 			try { 
-								
-				Write-Output "Changing database user: $username to $NewUserName"
-				$db.Users[$userName].Rename($newUserName)
-				
-			} catch {
-
-				Write-Warning "Rolling back update to login: $userName"
-				$currentUser.rename($userName) 
-
-				Write-Warning "The update to User: $userName failed on $($db.Name) Please check the log."				
+				$currentUser.rename($NewLogin)
+			} catch { 
+				Write-Warning "Failed to rename the user $Login, please chack the log."
 				Write-Exception $_ 
-			}
+			}			
+			foreach ($db in $currentUser.EnumDatabaseMappings())
+			{
+				$db = $databases[$db.DBName]
+
+				Write-Output "Starting update for $($db.Name)" 
+
+				try { 
+									
+					Write-Output "Changing database user: $Login to $NewLogin"
+					$db.Users[$Login].Rename($NewLogin)
+					
+				} catch {
+
+					Write-Warning "Rolling back update to login: $Login"
+					$currentUser.rename($Login) 
+
+					Write-Warning "The update to User: $Login failed on $($db.Name) Please check the log."				
+					Write-Exception $_ 
+				}
+			}			
 		}
+				
 	}
 	
 	END
