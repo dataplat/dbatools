@@ -61,7 +61,7 @@ Gets the SQL Server related services on computers sql1 and sql2, and shows them 
 	        {
                 $Computer = $server.ComputerName
                 Write-Verbose "Connecting to $Computer"
-                $namespace = Get-CimInstance -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -ClassName "__NAMESPACE" -Filter "Name Like 'ComputerManagement%'" |
+                $namespace = Get-CimInstance -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -ClassName "__NAMESPACE" -Filter "Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
                                 Sort-Object Name -Descending | Select-Object -First 1
                     Write-Verbose "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer"
                     try
