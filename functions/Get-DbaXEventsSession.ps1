@@ -4,11 +4,7 @@
 Get a list of Extended Events Sessions
 
 .DESCRIPTION
-Retrieves a list of Extended Events Sessions.
-
-For now, the SQLSERVER: provider is the way to collect XEvents Sessions.
-	
-See  http://www.mikefal.net/2015/06/09/tsql2sday-powershell-and-extended-events/ for more information
+Retrieves a list of Extended Events Sessions
 
 .PARAMETER SqlInstance
 The SQL Instances that you're connecting to.
@@ -30,12 +26,12 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Get-DbaXEventsSession
 
 .EXAMPLE
-Get-DbaXEventsSession -SqlInstance ServerA\sql987
+Get-DbaXEventsSession -SqlServer ServerA\sql987
 
 Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Status and other properties.
 
 .EXAMPLE
-Get-DbaXEventsSession -SqlInstance ServerA\sql987 | Format-Table ComputerName, SQLInstance, Session, Status -AutoSize
+Get-DbaXEventsSession -SqlServer ServerA\sql987 | Format-Table ComputerName, SQLInstance, Session, Status -AutoSize
 
 Returns a formatted table displaying ComputerName, SQLInstance, Session, and Status.
 
@@ -71,7 +67,7 @@ Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Stat
                 Write-Warning " Failed to connect to $instance ."
                 continue
             }
-            if($server.versionmajor -ge '11')
+            if($server.versionmajor -ge 11)
             {
 		        $SqlConn = $server.ConnectionContext.SqlConnectionObject
 		        $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
