@@ -38,9 +38,6 @@ Disable the job on the source server
 .PARAMETER DisableOnDestination
 Disable the newly migrated job on the destination server
 
-.PARAMETER IncludeMaintenancePlan
-Copies over any maintenance plan found on the source to the destination server
-
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
 
@@ -80,10 +77,6 @@ Copies a single job, the PSJob job from sqlserver2014a to sqlcluster, using SQL 
 Copy-SqlJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
-.EXAMPLE
-Copy-SqlJob -Source sqlserver2014a -Destination sqlcluster -IncludeMaintenancePlan -Force
-
-Copies all jobs, and maintenance plans, from sqlserver2014a to sqlcluster. If job is associated with a maintenance plan the plan is copied over first.
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
@@ -95,7 +88,6 @@ Copies all jobs, and maintenance plans, from sqlserver2014a to sqlcluster. If jo
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$DisableOnSource,
 		[switch]$DisableOnDestination,
-		[switch]$IncludeMaintenancePlan,
 		[switch]$Force
 	)
 	DynamicParam { if ($source) { return (Get-ParamSqlJobs -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
@@ -135,25 +127,9 @@ Copies all jobs, and maintenance plans, from sqlserver2014a to sqlcluster. If jo
 			$MaintenancePlan = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
 			$MaintPlanName = $MaintenancePlan.MaintenancePlanName
 
-			if ((!$IncludeMaintenancePlan) -and $MaintenancePlan) {
+			if ($MaintenancePlan) {
 				Write-Warning "[Job: $jobname] Associated with Maintenance Plan: $($MaintPlanName). Skipping."
 				continue
-			}
-			if($IncludeMaintenancePlan -and $MaintPlanName)
-			{
-				foreach ($plan in $MaintPlanName)
-				{
-					if ($force)
-					{
-						Write-Output "[Job: $jobname] associated with Maintenance Plan: $($plan). Copying Maintenance Plan."
-						Copy-SqlMaintenancePlan -Source $Source -Destination $Destination -MaintenancePlans $plan -Force -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential
-					}
-					else
-					{
-						Write-Output "[Job: $jobname] associated with Maintenance Plan: $($MaintPlanName). Copying Maintenance Plan."
-						Copy-SqlMaintenancePlan -Source $Source -Destination $Destination -MaintenancePlans $plan -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential
-					}
-				}
 			}
 
 			$dbnames = $job.JobSteps.Databasename | Where-Object { $_.length -gt 0 }
@@ -185,8 +161,6 @@ Copies all jobs, and maintenance plans, from sqlserver2014a to sqlcluster. If jo
 				continue
 			}
 
-			# Adding this because a maintenance plan may have dropped the associated job
-			$destjobs.Refresh()
 			if ($destjobs.name -contains $job.name)
 			{
 				if ($force -eq $false)
