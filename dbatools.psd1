@@ -171,8 +171,7 @@
 		'Resolve-DbaNetworkName',
 		'Test-DbaValidLogin',
 		'Get-DbaMemoryUsage',
-		'Export-DbaAvailabilityGroup',
-		'Update-SqlLoginName'	
+		'Export-DbaAvailabilityGroup'
 	)
 	
 	# Cmdlets to export from this module
