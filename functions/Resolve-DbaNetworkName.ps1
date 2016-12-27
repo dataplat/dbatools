@@ -119,16 +119,26 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 				if (!$conn)
 				{
 					Write-Verbose "Cim and Wmi both failed. Defaulting to .NET"
-					$fqdn = ([System.Net.Dns]::GetHostEntry($Computer)).HostName
-					$hostname = $fqdn.Split(".")[0]
-					
-					$conn = [PSCustomObject]@{
-						Name = $Computer
-						DNSHostname = $hostname
-						Domain = $fqdn.Replace("$hostname.","")
+					try
+					{
+						$fqdn = ([System.Net.Dns]::GetHostEntry($Computer)).HostName
+						$hostname = $fqdn.Split(".")[0]
+						
+						$conn = [PSCustomObject]@{
+							Name = $Computer
+							DNSHostname = $hostname
+							Domain = $fqdn.Replace("$hostname.", "")
+						}
+					}
+					catch
+					{
+						# ouch, no dice
 					}
 				}
 			}
+			
+			$fqdn = "$($conn.DNSHostname).$($conn.Domain)"
+			if ($fqdn = ".") { $fqdn = $null }
 			
 			[PSCustomObject]@{
 				InputName = $OGComputer
@@ -136,7 +146,7 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 				IPAddress = $ipaddress
 				DNSHostName = $conn.DNSHostname
 				Domain = $conn.Domain
-				FQDN = "$($conn.DNSHostname).$($conn.Domain)"
+				FQDN = $fqdn
 			}
 		}
 	}
