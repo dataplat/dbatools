@@ -20,7 +20,7 @@ Creates snapshot for only specific databases
 When you pass a simple string, it'll be appended to use it to build the name of the snapshot. By default snapshots are created with yyyyMMdd_HHmmss suffix
 You can also pass a standard placeholder, in which case it'll be interpolated (e.g. '{0}' gets replaced with the database name)
 
-.PARAMETER FilePath
+.PARAMETER Path
 Snapshot files will be created here (by default the filestructure will be created in the same folder as the base db)
 
 .PARAMETER WhatIf
@@ -51,25 +51,25 @@ You should have received a copy of the GNU General Public License along with thi
 .EXAMPLE
 New-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Database HR, Accounting
 
-Creates snapshot for HR and Accounting, returning a custom object displaying Server, Database, DatabaseCreated, SnapshotOf, SizeMB, DatabaseCreated, Status, Notes
+Creates snapshot for HR and Accounting, returning a custom object displaying Server, Database, DatabaseCreated, SnapshotOf, SizeMB, DatabaseCreated, PrimaryFilePath, Status, Notes
 
 .EXAMPLE
-New-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Databases HR -Name '_snap'
+New-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Databases HR -Name _snap
 
 Creates snapshot named "HR_snap" for HR
 
 .EXAMPLE
 New-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Databases HR -Name 'fool_{0}_snap'
 
-Creates snapshot named "fool_{0}_snap" for HR
+Creates snapshot named "fool_HR_snap" for HR
 
 .EXAMPLE
-New-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Databases HR, Accounting -Filepath "F:\snapshotpath\"
+New-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Databases HR, Accounting -Path F:\snapshotpath
 
 Creates snapshots for HR and Accounting databases, storing files under the F:\snapshotpath\ dir
 
 #>
-
+	
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -77,49 +77,52 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		[string[]]$SqlInstance,
 		[PsCredential]$Credential,
 		[string]$Name,
-		[string]$FilePath,
+		[string]$Path,
 		[switch]$Force
 	)
-
-	DynamicParam {
-		if ($SqlInstance) {
+	
+	DynamicParam
+	{
+		if ($SqlInstance)
+		{
 			return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $Credential
 		}
 	}
-
+	
 	BEGIN
 	{
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
-
+		
 		$NoSupportForSnap = @('model', 'master', 'tempdb')
 		# Evaluate the default suffix here for naming consistency
-		$DefaultSuffix = (Get-Date -f "yyyyMMdd_HHmmss")
-		if($Name.Length -gt 0)
+		$DefaultSuffix = (Get-Date -Format "yyyyMMdd_HHmmss")
+		if ($Name.Length -gt 0)
 		{
 			#Validate if Name can be interpolated
 			try
 			{
-				$Name -f 'some_string'
+				$null = $Name -f 'some_string'
 			}
 			catch
 			{
 				throw "Name parameter must be a template only containing one parameter {0}"
 			}
-
+			
 		}
-
+		
 		function Resolve-SnapshotError($server)
 		{
 			$errhelp = ''
 			$CurrentEdition = $server.Edition.toLower()
 			$CurrentVersion = $server.Version.Major * 1000000 + $server.Version.Minor * 10000 + $server.Version.Build
-			if($server.Version.Major -lt 9) {
+			if ($server.Version.Major -lt 9)
+			{
 				$errhelp = 'Not supported before 2005'
 			}
-			if($CurrentVersion -lt 12002000 -and $errhelp.Length -eq 0)
+			if ($CurrentVersion -lt 12002000 -and $errhelp.Length -eq 0)
 			{
-				if($CurrentEdition -notmatch '.*enterprise.*|.*developer.*|.*datacenter.*')
+				if ($CurrentEdition -notmatch '.*enterprise.*|.*developer.*|.*datacenter.*')
 				{
 					$errhelp = 'Supported only for Enterprise, Developer or Datacenter editions'
 				}
@@ -127,7 +130,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 			$message = ""
 			if ($errhelp.Length -gt 0)
 			{
-				$message +=  "Please make sure your version supports snapshots : ($errhelp)"
+				$message += "Please make sure your version supports snapshots : ($errhelp)"
 			}
 			else
 			{
@@ -135,10 +138,10 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 			}
 			Write-Warning $message
 		}
-
+		
 	}
-
-
+	
+	
 	PROCESS
 	{
 		foreach ($instance in $SqlInstance)
@@ -153,32 +156,33 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 				Write-Warning "Can't connect to $instance"
 				Continue
 			}
-			#Checks for path existance
-			if($FilePath.Length -gt 0)
+			#Checks for path existence
+			if ($Path.Length -gt 0)
 			{
-				if(!(Test-SqlPath -SqlServer $instance -Path $FilePath)) {
-					Write-Warning "'$instance' cannot access the directory '$FilePath'"
+				if (!(Test-SqlPath -SqlServer $instance -Path $Path))
+				{
+					Write-Warning "'$instance' cannot access the directory '$Path'"
 					Continue
 				}
 			}
-
+			
 			$dbs = $server.Databases
-
+			
 			if ($databases.count -gt 0)
 			{
 				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
 			}
-
+			
 			$sourcedbs = @()
-
+			
 			## double check for gotchas
-			foreach($db in $dbs)
+			foreach ($db in $dbs)
 			{
-				if($db.IsDatabaseSnapshot)
+				if ($db.IsDatabaseSnapshot)
 				{
 					Write-Warning "'$($db.name)' is a snapshot, skipping"
 				}
-				elseif($db.name -in $NoSupportForSnap)
+				elseif ($db.name -in $NoSupportForSnap)
 				{
 					Write-Warning "'$($db.name)' snapshots are prohibited"
 				}
@@ -187,13 +191,13 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 					$sourcedbs += $db
 				}
 			}
-
+			
 			foreach ($db in $sourcedbs)
 			{
-				if($Name.Length -gt 0)
+				if ($Name.Length -gt 0)
 				{
 					$SnapName = $Name -f $db.Name
-					if($SnapName -eq $Name)
+					if ($SnapName -eq $Name)
 					{
 						#no interpolation, just append
 						$SnapName = '{0}{1}' -f $db.Name, $Name
@@ -203,7 +207,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 				{
 					$SnapName = "{0}_{1}" -f $db.Name, $DefaultSuffix
 				}
-				if($SnapName -in $server.Databases.Name)
+				if ($SnapName -in $server.Databases.Name)
 				{
 					Write-Warning "A database named '$Snapname' already exists, skipping"
 					Continue
@@ -212,81 +216,94 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 				$all_MMO = $db.FileGroups | Where-Object FileGroupType -eq 'MemoryOptimizedDataFileGroup'
 				$has_FSD = $all_FSD.Count -gt 0
 				$has_MMO = $all_MMO.Count -gt 0
-				if($has_MMO) {
+				if ($has_MMO)
+				{
 					Write-Warning "MEMORY_OPTIMIZED_DATA detected, snapshots are not possible"
 					Continue
 				}
-				if($has_FSD -and $Force -eq $false) {
+				if ($has_FSD -and $Force -eq $false)
+				{
 					Write-Warning "Filestream detected, skipping. You need to specify -Force. See Get-Help for details"
 					Continue
 				}
 				$snaptype = "db snapshot"
-				if($has_FSD)
+				if ($has_FSD)
 				{
 					$snaptype = "partial db snapshot"
 				}
 				If ($Pscmdlet.ShouldProcess($instance, "Create $snaptype '$SnapName' of '$($db.Name)'"))
 				{
-					$CustomFileStructure = @{}
+					$CustomFileStructure = @{ }
 					$counter = 0
-					foreach($fg in $db.FileGroups)
+					foreach ($fg in $db.FileGroups)
 					{
 						$CustomFileStructure[$fg.Name] = @()
-						if($fg.FileGroupType -eq 'FileStreamDataFileGroup')
+						if ($fg.FileGroupType -eq 'FileStreamDataFileGroup')
 						{
 							Continue
 						}
-						foreach($file in $fg.Files)
+						foreach ($file in $fg.Files)
 						{
 							$counter += 1
 							# fixed extension is hardcoded as "ss", which seems a "de-facto" standard
 							$fname = [IO.Path]::ChangeExtension($file.Filename, "ss")
 							$fname = [IO.Path]::Combine((Split-Path $fname -Parent), ("{0}_{1}" -f $DefaultSuffix, (Split-Path $fname -Leaf)))
-
+							
 							# change path if specified
-							if($FilePath.Length -gt 0)
+							if ($Path.Length -gt 0)
 							{
 								$basename = Split-Path $fname -Leaf
 								# we need to avoid cases where basename is the same for multiple FG
 								$basename = '{0:0000}_{1}' -f $counter, $basename
-								$fname = [IO.Path]::Combine($FilePath, $basename)
+								$fname = [IO.Path]::Combine($Path, $basename)
 							}
-							$CustomFileStructure[$fg.Name] += @{'name' = $file.name; 'filename' = $fname}
+							$CustomFileStructure[$fg.Name] += @{ 'name' = $file.name; 'filename' = $fname }
 						}
 					}
 					$SnapDB = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Database -ArgumentList $instance, $Snapname
 					$SnapDB.DatabaseSnapshotBaseName = $db.Name
-					foreach($fg in $CustomFileStructure.Keys)
+					foreach ($fg in $CustomFileStructure.Keys)
 					{
 						$SnapFG = New-Object -TypeName Microsoft.SqlServer.Management.Smo.FileGroup $SnapDB, $fg
 						$SnapDB.FileGroups.Add($SnapFG)
-						foreach($file in $CustomFileStructure[$fg])
+						foreach ($file in $CustomFileStructure[$fg])
 						{
 							$SnapFile = New-Object -TypeName Microsoft.SqlServer.Management.Smo.DataFile $SnapFG, $file['name'], $file['filename']
 							$SnapDB.FileGroups[$fg].Files.Add($SnapFile)
 						}
 					}
-
+					
 					# we're ready to issue a Create, but SMO is a little uncooperative here
 					# there are cases we can manage and others we can't, and we need all the
 					# info we can get both from testers and from users
-
-					$ScriptedSMO = $SnapDB.Script()
+					
+					$sql = $SnapDB.Script()
 					try
 					{
-						$SnapDB.Create()
-						$Status = "Created"
-						$object = [PSCustomObject]@{
-							Server          = $server.name
-							Database        = $SnapDB.Name
-							SnapshotOf      = $SnapDB.DatabaseSnapshotBaseName
-							SizeMB          = [Math]::Round($SnapDB.Size,2)
-							DatabaseCreated = $SnapDB.createDate
-							Status          = 'Created'
-							Notes           = ''
-							SnapshotDb      = $SnapDB
+						if ($server.VersionMajor -gt 12)
+						{
+							$server.ConnectionContext.ExecuteNonQuery($sql[0]) | Out-Null
+							$server.Databases.Refresh()
+							$SnapDB = $server.Databases[$Snapname]
 						}
-						Select-DefaultField -InputObject $object -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated, Status, Notes
+						else
+						{
+							$SnapDB.Create()
+						}
+						$Status = "Created"
+						
+						[PSCustomObject]@{
+							Server = $server.name
+							Database = $SnapDB.Name
+							SnapshotOf = $SnapDB.DatabaseSnapshotBaseName
+							SizeMB = [Math]::Round($SnapDB.Size, 2)
+							DatabaseCreated = $SnapDB.createDate
+							PrimaryFilePath = $SnapDB.PrimaryFilePath
+							Status = 'Created'
+							Notes = $null
+							SnapshotDb = $SnapDB
+							
+						} | Select-DefaultField -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated, PrimaryFilePath, Status
 					}
 					catch
 					{
@@ -295,45 +312,47 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 						try
 						{
 							$server.Databases.Refresh()
-							if($SnapName -notin $server.Databases.Name)
+							if ($SnapName -notin $server.Databases.Name)
 							{
 								# previous creation failed completely, snapshot is not there already
-								$server.ConnectionContext.ExecuteNonQuery($ScriptedSMO[0]) | Out-Null
+								$server.ConnectionContext.ExecuteNonQuery($sql[0]) | Out-Null
 								$server.Databases.Refresh()
 								$SnapDB = $server.Databases[$Snapname]
 							}
 							else
 							{
-							    $SnapDB = $server.Databases[$Snapname]
+								$SnapDB = $server.Databases[$Snapname]
 							}
 							$Status = "Partial"
 							$Notes = @()
-							if($db.ReadOnly -eq $true)
+							if ($db.ReadOnly -eq $true)
 							{
 								$Notes += 'SMO is probably trying to set a property on a read-only snapshot, run with -Debug to find out and report back'
 							}
-							if($has_FSD)
+							if ($has_FSD)
 							{
 								$Notes += 'Filestream groups are not viable for snapshot'
 							}
 							$Notes = $Notes -Join ';'
-							$object = [PSCustomObject]@{
-								Server          = $server.name
-								Database        = $SnapDB.Name
-								SnapshotOf      = $SnapDB.DatabaseSnapshotBaseName
-								SizeMB          = [Math]::Round($SnapDB.Size,2)
-								DatabaseCreated = $SnapDB.createDate
-								Status          = $Status
-								Notes           = $Notes
-								SnapshotDb      = $SnapDB
-							}
+							
 							$hints = @("Executing these commands led to a partial failure")
-							foreach($stmt in $ScriptedSMO)
+							foreach ($stmt in $sql)
 							{
 								$hints += $stmt
 							}
 							Write-Debug ($hints -Join "`n")
-							Select-DefaultField -InputObject $object -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated, Status, Notes
+							
+							[PSCustomObject]@{
+								Server = $server.name
+								Database = $SnapDB.Name
+								SnapshotOf = $SnapDB.DatabaseSnapshotBaseName
+								SizeMB = [Math]::Round($SnapDB.Size, 2)
+								DatabaseCreated = $SnapDB.createDate
+								PrimaryFilePath = $SnapDB.PrimaryFilePath
+								Status = $Status
+								Notes = $Notes
+								SnapshotDb = $SnapDB
+							} | Select-DefaultField -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated, PrimaryFilePath, Status, Notes
 						}
 						catch
 						{
@@ -342,16 +361,18 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 							$ex = $_
 							Write-Warning 'SMO failed to create the snapshot, run with -Debug to find out and report back'
 							$hints = @("Executing these commands led to a failure")
-							foreach($stmt in $ScriptedSMO)
+							foreach ($stmt in $sql)
 							{
 								$hints += $stmt
 							}
 							Write-Exception $ex
 							$inner = $_.Exception.Message
-							if ($null -ne $ex.Exception.InnerException) {
+							if ($null -ne $ex.Exception.InnerException)
+							{
 								$inner = $ex.Exception.InnerException
 							}
-							if ($null -ne $inner.InnerException) {
+							if ($null -ne $inner.InnerException)
+							{
 								$inner = $inner.InnerException
 							}
 							Write-Warning "Original exception: $inner"
