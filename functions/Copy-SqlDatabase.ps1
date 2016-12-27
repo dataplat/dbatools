@@ -1,6 +1,6 @@
-Function Copy-SqlDatabase
+﻿Function Copy-SqlDatabase
 {
-<# 
+<#
 .SYNOPSIS 
 Migrates Sql Server databases from one Sql Server to another.
 
@@ -87,6 +87,9 @@ Prompts you for confirmation before executing any changing operations within the
 .PARAMETER DbPipeline
 Takes dbobject from pipeline
 
+.PARAMETER NumberFiles
+Number of files to split the backup. Default is 1.
+
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
@@ -170,7 +173,9 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		[parameter(Position = 20)]
 		[switch]$Force,
 		[parameter(ValueFromPipeline = $True)]
-		[object]$DbPipeline
+		[object]$DbPipeline,
+		[parameter(Position = 21, ParameterSetName = "DbBackup")]
+        	[int]$NumberFiles = 1
 	)
 	
 	DynamicParam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential -NoSystem } }
@@ -323,19 +328,26 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			param (
 				[object]$server,
 				[string]$dbname,
-				[string]$backupfile
+				[string]$backupfile,
+				[int]$numberfiles
 			)
 			
 			$server.ConnectionContext.StatementTimeout = 0
 			$backup = New-Object "Microsoft.SqlServer.Management.Smo.Backup"
+			$backup.Database = $dbname
 			$backup.Action = "Database"
 			$backup.CopyOnly = $true
-			$device = New-Object "Microsoft.SqlServer.Management.Smo.BackupDeviceItem"
-			$device.DeviceType = "File"
-			$device.Name = $backupfile
-			$backup.Devices.Add($device)
-			$backup.Database = $dbname
-			
+			$val = 0
+
+			while ($val -lt $numberfiles)
+			{
+				$device = New-Object "Microsoft.SqlServer.Management.Smo.BackupDeviceItem"
+				$device.DeviceType = "File"
+				$device.Name = $backupfile.Replace(".bak","-$val.bak")
+				$backup.Devices.Add($device)
+				$val++
+			}
+
 			$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
 				Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
 			}
@@ -367,7 +379,8 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				[object]$server,
 				[string]$dbname,
 				[string]$backupfile,
-				[object]$filestructure
+				[object]$filestructure,
+				[int]$numberfiles
 			)
 			
 			$servername = $server.name
@@ -400,10 +413,15 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				$restore.Database = $dbname
 				$restore.Action = "Database"
 				$restore.NoRecovery = $NoRecovery
-				$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-				$device.name = $backupfile
-				$device.devicetype = "File"
-				$restore.Devices.Add($device)
+				$val = 0
+
+				while ($val -lt $numberfiles) {
+					$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
+					$device.devicetype = "File"
+					$device.name =  $backupfile.Replace(".bak","-$val.bak")
+					$restore.Devices.Add($device)
+					$val++
+				}
 				
 				Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
 				$restore.sqlrestore($server)
@@ -994,7 +1012,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						$filename = "$dbname-$timenow.bak"
 						$backupfile = Join-Path $networkshare $filename
 						
-						$backupresult = Backup-SqlDatabase $sourceserver $dbname $backupfile
+						$backupresult = Backup-SqlDatabase $sourceserver $dbname $backupfile $numberfiles
 						
 						if ($backupresult -eq $false)
 						{
@@ -1003,7 +1021,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 							continue
 						}
 						
-						$restoreresult = Restore-SqlDatabase $destserver $dbname $backupfile $filestructure
+						$restoreresult = Restore-SqlDatabase $destserver $dbname $backupfile $filestructure $numberfiles
 							
 							if ($restoreresult -eq $true)
 							{
