@@ -88,7 +88,7 @@ Prompts you for confirmation before executing any changing operations within the
 Takes dbobject from pipeline
 
 .PARAMETER NumberFiles
-Number of files to split the backup. Default is 1.
+Number of files to split the backup. Default is 3.
 
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
@@ -175,7 +175,8 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		[parameter(ValueFromPipeline = $True)]
 		[object]$DbPipeline,
 		[parameter(Position = 21, ParameterSetName = "DbBackup")]
-        	[int]$NumberFiles = 1
+		[ValidateRange(1, 64)]
+		[int]$NumberFiles = 3
 	)
 	
 	DynamicParam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential -NoSystem } }
@@ -338,16 +339,16 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			$backup.Action = "Database"
 			$backup.CopyOnly = $true
 			$val = 0
-
+			
 			while ($val -lt $numberfiles)
 			{
 				$device = New-Object "Microsoft.SqlServer.Management.Smo.BackupDeviceItem"
 				$device.DeviceType = "File"
-				$device.Name = $backupfile.Replace(".bak","-$val.bak")
+				$device.Name = $backupfile.Replace(".bak", "-$val.bak")
 				$backup.Devices.Add($device)
 				$val++
 			}
-
+			
 			$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
 				Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
 			}
@@ -414,12 +415,15 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				$restore.Action = "Database"
 				$restore.NoRecovery = $NoRecovery
 				$val = 0
-
-				while ($val -lt $numberfiles) {
+				$filestodelete = @()
+				
+				while ($val -lt $numberfiles)
+				{
 					$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
 					$device.devicetype = "File"
-					$device.name =  $backupfile.Replace(".bak","-$val.bak")
+					$device.name = $backupfile.Replace(".bak", "-$val.bak")
 					$restore.Devices.Add($device)
+					$filestodelete += $device.name
 					$val++
 				}
 				
@@ -429,9 +433,12 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				
 				If ($NoBackupCleanup -eq $false)
 				{
-					If (Test-Path $backupfile)
+					foreach ($backupfile in $filestodelete)
 					{
-						Remove-Item $backupfile
+						If (Test-Path $backupfile)
+						{
+							Remove-Item $backupfile
+						}
 					}
 				}
 				
@@ -576,7 +583,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						$null = New-Item -ItemType Directory -Path $remotefilename -Force
 						Start-BitsTransfer -Source "$from\*.*" -Destination $remotefilename
 						
-						$directories = (Get-ChildItem -recurse $from | where { $_.PsIsContainer }).FullName
+						$directories = (Get-ChildItem -recurse $from | Where-Object { $_.PsIsContainer }).FullName
 						foreach ($directory in $directories)
 						{
 							$newdirectory = $directory.replace($from, $remotefilename)
@@ -732,7 +739,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		Write-Output "Checking to ensure the source isn't the same as the destination"
 		if ($source -eq $destination)
 		{
-				throw "Source and Destination Sql Servers instances are the same. Quitting."
+			throw "Source and Destination Sql Servers instances are the same. Quitting."
 		}
 		
 		if ($NetworkShare.Length -gt 0)
@@ -793,7 +800,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		{
 			throw "Source Sql Server version build must be <= destination Sql Server for database migration."
 		}
-
+		
 		# SMO's filestreamlevel is sometimes null
 		$sql = "select coalesce(SERVERPROPERTY('FilestreamConfiguredLevel'),0) as fs"
 		$sourcefilestream = $sourceserver.ConnectionContext.ExecuteScalar($sql)
@@ -839,8 +846,8 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			throw "You did not select any databases to migrate. Please use -AllDatabases or -Databases or -IncludeSupportDbs"
 		}
 		
-
-
+		
+		
 		Write-Output "Building database list"
 		$databaselist = New-Object System.Collections.ArrayList
 		$SupportDBs = "ReportServer", "ReportServerTempDB", "distribution"
@@ -874,7 +881,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		}
 		
 		$dbfiletable = $sourceserver.Databases['master'].ExecuteWithResults($sql)
-
+		
 		$filestructure = Get-SqlFileStructure -sourceserver $sourceserver -destserver $destserver -databaselist $databaselist -ReuseSourceFolderStructure $ReuseSourceFolderStructure
 		
 		$elapsed = [System.Diagnostics.Stopwatch]::StartNew()
@@ -1022,28 +1029,28 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						}
 						
 						$restoreresult = Restore-SqlDatabase $destserver $dbname $backupfile $filestructure $numberfiles
-							
-							if ($restoreresult -eq $true)
+						
+						if ($restoreresult -eq $true)
+						{
+							Write-Output "Successfully restored $dbname to $destination"
+						}
+						else
+						{
+							if ($ReuseSourceFolderStructure)
 							{
-								Write-Output "Successfully restored $dbname to $destination"
+								Write-Warning "Failed to restore $dbname to $destination. You specified -ReuseSourceFolderStructure. Does the exact same destination directory structure exist?"
+								Write-Warning "Aborting routine for this database"
+								continue
 							}
 							else
 							{
-								if ($ReuseSourceFolderStructure)
-								{
-									Write-Warning "Failed to restore $dbname to $destination. You specified -ReuseSourceFolderStructure. Does the exact same destination directory structure exist?"
-									Write-Warning "Aborting routine for this database"
-									continue
-								}
-								else
-								{
-									Write-Warning "Failed to restore $dbname to $destination. Aborting routine for this database."
-									continue
-								}
+								Write-Warning "Failed to restore $dbname to $destination. Aborting routine for this database."
+								continue
 							}
 						}
-						
-						$dbfinish = Get-Date
+					}
+					
+					$dbfinish = Get-Date
 					
 					if ($norecovery -eq $false)
 					{
@@ -1051,7 +1058,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						$result = Update-Sqldbowner $sourceserver $destserver -dbname $dbname
 					}
 					
-				} 
+				}
 				
 				if ($DetachAttach)
 				{
