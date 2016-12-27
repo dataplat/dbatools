@@ -58,7 +58,7 @@ Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Stat
 	{
 		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null)
 		{
-			throw "SMO version is too old. To collect Extended Events, you must have Shared Management Objects 2008 R2 or higher installed."
+			throw "SMO version is too old. To collect Extended Events, you must have SQL Server Management Studio 2012 or higher installed."
 		}
 		$sessions = $psboundparameters.Sessions
 	}
