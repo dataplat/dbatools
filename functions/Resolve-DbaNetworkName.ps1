@@ -124,10 +124,8 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 					
 					$conn = [PSCustomObject]@{
 						Name = $Computer
-						IPAddress = ((Test-Connection $Computer -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
 						DNSHostname = $hostname
 						Domain = $fqdn.Replace("$hostname.","")
-						FQDN = $fqdn
 					}
 				}
 			}
