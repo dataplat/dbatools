@@ -1,4 +1,4 @@
-﻿Function Get-SQLAgentJobOutPutFile
+﻿Function Get-DbaAgentJobOutPutFile
 {
 <#
 .Synopsis
@@ -21,13 +21,13 @@
     Uses Invoke-Item to open the file if it is available
 
 .EXAMPLE
-   Get-SQLAgentJobOutPutFile -instance SERVERNAME -JobName 'The Agent Job' 
+   Get-DbaAgentJobOutPutFile -instance SERVERNAME -JobName 'The Agent Job' 
 
    This will return the paths to the output files for each of the job step of the The Agent Job Job 
    on the SERVERNAME instance    
 
 .EXAMPLE
-   Get-SQLAgentJobOutPutFile -instance SERVERNAME -JobName 'The Agent Job' -OpenFile 
+   Get-DbaAgentJobOutPutFile -instance SERVERNAME -JobName 'The Agent Job' -OpenFile 
 
    This will return the paths to the output files for each of the job step of the The Agent Job Job 
    on the SERVERNAME instance and open the files if they are available
