@@ -9,7 +9,7 @@ $ManifestPath   = "$ModulePath\$ModuleName.psd1"
 Describe "Manifest" {
 
     $Manifest = $null
-<#
+
     It "has a valid manifest" {
 
         {
@@ -19,7 +19,7 @@ Describe "Manifest" {
         } | Should Not Throw
 
     }
-#> ## Until the issue with requiring full paths for required assemblies is resolved need to keep this commented out RMS 01112016
+## Should be fixed now - Until the issue with requiring full paths for required assemblies is resolved need to keep this commented out RMS 01112016
 
 $Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction SilentlyContinue
     It "has a valid name" {
@@ -60,8 +60,8 @@ $Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction Silently
 		$Script:Manifest.PowerShellVersion | Should Be '3.0'
 	}
 
-	It "has valid (invalid!!) required assemblies" {
-		$Script:Manifest.RequiredAssemblies | Should Be 'Microsoft.SqlServer.Smo','Microsoft.SqlServer.SmoExtended'
+	It "has valid  required assemblies" {
+		{$Script:Manifest.RequiredAssemblies -eq @()} | Should Be $true
 	}
 
 	It "has a valid copyright" {
