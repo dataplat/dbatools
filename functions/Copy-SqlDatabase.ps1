@@ -88,7 +88,7 @@ Prompts you for confirmation before executing any changing operations within the
 Takes dbobject from pipeline
 
 .PARAMETER NumberFiles
-Number of files to split the backup. Default is 1.
+Number of files to split the backup. Default is 3.
 
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
