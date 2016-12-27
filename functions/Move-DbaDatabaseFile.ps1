@@ -275,7 +275,7 @@ Will NOT perform a DBCC CHECKDB!
 			    {
 				    if ($force -eq $false)
 				    {
-					    Write-Output "DBCC failed for $dbname (you should check that).  Aborting routine for this database"
+					    Write-Output "DBCC failed for $dbname (you should check that). Aborting routine for this database"
 					    continue
 				    }
 				    else
@@ -286,7 +286,7 @@ Will NOT perform a DBCC CHECKDB!
             }
             else
             {
-                Write-Warning "DBCC skipped. -NoDbccChecDB switch was used."
+                Write-Warning "-DbccCheckDb not used."
             }
 
             return $true
