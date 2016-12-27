@@ -1,4 +1,4 @@
-﻿function Get-DbaXEventsSession
+﻿﻿function Get-DbaXEventsSession
 {
  <#
 .SYNOPSIS
@@ -66,23 +66,28 @@ Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Stat
 	{
 		foreach ($instance in $SqlInstance)
 		{
-			Write-Verbose "Connecting to $instance ."
+			Write-Verbose "Connecting to $instance."
 			try
 			{
 				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential -ErrorAction SilentlyContinue
-				Write-Verbose "SQL Instance $instance is version $($server.versionmajor) ."
+				Write-Verbose "SQL Instance $instance is version $($server.versionmajor)."
 			}
 			catch
 			{
-				Write-Warning " Failed to connect to $instance ."
+				Write-Warning " Failed to connect to $instance."
 				continue
 			}
-			if ($server.versionmajor -ge 11)
+			if ($server.versionmajor -lt 11)
+			{
+				Write-Warning "$instance is lower than SQL Server 2012 and does not support extended events."
+				continue
+			}
+			else
 			{
 				$SqlConn = $server.ConnectionContext.SqlConnectionObject
 				$SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
 				$XEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
-				Write-Verbose "Getting XEvents Sessions on $instance ."
+				Write-Verbose "Getting XEvents Sessions on $instance."
 				
 				$xesessions = $XEStore.sessions
 				
@@ -112,12 +117,8 @@ Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Stat
 				}
 				catch
 				{
-					Write-Warning "Failed to get XEvents Sessions on $instance ."
+					Write-Warning "Failed to get XEvents Sessions on $instance."
 				}
-			}
-			else
-			{
-				Write-Warning "SQL Instance $instance is SQL Version $($server.versionmajor) . This is not supported."
 			}
 		}
 	}
