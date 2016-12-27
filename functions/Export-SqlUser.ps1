@@ -59,6 +59,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Export-SqlUser
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [OutputType([String])]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
@@ -66,7 +67,7 @@ https://dbatools.io/Export-SqlUser
         [object[]]$User,
 		[Alias("OutFile", "Path","FileName")]
 		[string]$FilePath,
-		[object]$SqlCredential,
+		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Alias("NoOverwrite")]
 		[switch]$NoClobber,
 		[switch]$Append
@@ -108,7 +109,7 @@ https://dbatools.io/Export-SqlUser
 
         if ($databases.Count -eq 0)
         {
-            $databases = $sourceserver.Databases | Where-Object {$_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true}
+            $databases = $sourceserver.Databases | Where-Object {$exclude -notcontains $_.Name -and $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true}
         }
         else
         {
@@ -119,7 +120,7 @@ https://dbatools.io/Export-SqlUser
 		    }
             else
             {
-                $databases = $sourceserver.Databases | Where-Object {$_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true -and ($databases -contains $_.Name)}
+                $databases = $sourceserver.Databases | Where-Object {$exclude -notcontains $_.Name -and $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true -and ($databases -contains $_.Name)}
             }
         }
 
