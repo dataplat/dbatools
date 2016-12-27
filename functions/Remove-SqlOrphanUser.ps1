@@ -10,7 +10,7 @@ If user is the owner of the schema with the same name and if if the schema does 
 If user owns more than one schema, the owner of the schemas that does not have the same name as the user, will be changed to 'dbo'. If schemas have underlying objects, you must specify the -Force parameter so the user can be dropped.
 If exists a login to map the drop will not be performed unless you specify the -Force parameter (only when calling from Repair-SqlOrphanUser.
 
-.PARAMETER SqlInstance
+.PARAMETER SqlServer
 The SQL Server instance.
 
 .PARAMETER SqlCredential
@@ -55,27 +55,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Remove-SqlOrphanUser
 
 .EXAMPLE
-Remove-SqlOrphanUser -SqlInstance sql2005
+Remove-SqlOrphanUser -SqlServer sql2005
 
 Will find and drop all orphan users without matching login of all databases present on server 'sql2005'
 
 .EXAMPLE
-Remove-SqlOrphanUser -SqlInstance sqlserver2014a -SqlCredential $cred
+Remove-SqlOrphanUser -SqlServer sqlserver2014a -SqlCredential $cred
 
 Will find and drop all orphan users without matching login of all databases present on server 'sqlserver2014a'. Will be verified using SQL credentials.
 
 .EXAMPLE
-Remove-SqlOrphanUser -SqlInstance sqlserver2014a -Databases db1, db2 -Force
+Remove-SqlOrphanUser -SqlServer sqlserver2014a -Databases db1, db2 -Force
 
 Will find all and drop orphan users even if exists their matching login on both db1 and db2 databases
 
 .EXAMPLE
-Remove-SqlOrphanUser -SqlInstance sqlserver2014a -Users OrphanUser
+Remove-SqlOrphanUser -SqlServer sqlserver2014a -Users OrphanUser
 
 Will remove from all databases the user OrphanUser only if not have their matching login
 
 .EXAMPLE
-Remove-SqlOrphanUser -SqlInstance sqlserver2014a -Users OrphanUser -Force
+Remove-SqlOrphanUser -SqlServer sqlserver2014a -Users OrphanUser -Force
 
 Will remove from all databases the user OrphanUser EVEN if exists their matching login. First will change any schema that it owns to 'dbo'.
 
@@ -83,15 +83,15 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[Alias("ServerInstance", "SqlInstance")]
+		[object[]]$SqlServer,
         [object]$SqlCredential,
         [parameter(Mandatory = $false, ValueFromPipeline = $true)]
         [object[]]$Users,
         [switch]$Force
 	)
 
-    DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance -SqlCredential $SqlCredential } }
+    DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }
 
 	BEGIN
 	{
@@ -100,7 +100,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 	PROCESS
 	{
 
-        foreach ($Instance in $SqlInstance)
+        foreach ($Instance in $SqlServer)
 		{
             Write-Verbose "Attempting to connect to $Instance"
 			try
