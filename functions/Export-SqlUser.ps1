@@ -178,7 +178,7 @@ https://dbatools.io/Export-SqlUser
                         }
 	                 
                         #Database Create User(s) and add to Role(s)
-                        foreach ($UserPermissionScript in $dbuser.Script($ScriptingOptions))
+                        foreach ($dbUserPermissionScript in $dbuser.Script($ScriptingOptions))
                         {
                             if ($dbuserPermissionScript.Contains("sp_addrolemember"))
                             {
@@ -188,7 +188,7 @@ https://dbatools.io/Export-SqlUser
                             {
                                 $Execute = ""
                             }
-                            $outsql += "$Execute$($UserPermissionScript.ToString())"
+                            $outsql += "$Execute$($dbUserPermissionScript.ToString())"
                         }
 
 	                    #Database Permissions
