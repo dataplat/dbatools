@@ -178,7 +178,8 @@
 		'Restore-DbaFromDatabaseSnapshot',
 		'Get-DbaTrigger',
 		'Invoke-Sqlcmd2',
-		'Get-DbaMsdtc'
+		'Get-DbaMsdtc',
+		'Get-DbaXEventsSession'
 	)
 	
 	# Cmdlets to export from this module
