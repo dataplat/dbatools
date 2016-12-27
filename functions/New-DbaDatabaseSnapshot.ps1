@@ -69,7 +69,7 @@ New-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Databases HR, Accounting -Pat
 Creates snapshots for HR and Accounting databases, storing files under the F:\snapshotpath\ dir
 
 #>
-	
+
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -80,7 +80,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		[string]$Path,
 		[switch]$Force
 	)
-	
+
 	DynamicParam
 	{
 		if ($SqlInstance)
@@ -88,12 +88,12 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 			return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $Credential
 		}
 	}
-	
+
 	BEGIN
 	{
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
-		
+
 		$NoSupportForSnap = @('model', 'master', 'tempdb')
 		# Evaluate the default suffix here for naming consistency
 		$DefaultSuffix = (Get-Date -Format "yyyyMMdd_HHmmss")
@@ -108,9 +108,9 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 			{
 				throw "Name parameter must be a template only containing one parameter {0}"
 			}
-			
+
 		}
-		
+
 		function Resolve-SnapshotError($server)
 		{
 			$errhelp = ''
@@ -138,10 +138,10 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 			}
 			Write-Warning $message
 		}
-		
+
 	}
-	
-	
+
+
 	PROCESS
 	{
 		foreach ($instance in $SqlInstance)
@@ -165,16 +165,16 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 					Continue
 				}
 			}
-			
+
 			$dbs = $server.Databases
-			
+
 			if ($databases.count -gt 0)
 			{
 				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
 			}
-			
+
 			$sourcedbs = @()
-			
+
 			## double check for gotchas
 			foreach ($db in $dbs)
 			{
@@ -191,7 +191,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 					$sourcedbs += $db
 				}
 			}
-			
+
 			foreach ($db in $sourcedbs)
 			{
 				if ($Name.Length -gt 0)
@@ -248,7 +248,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 							# fixed extension is hardcoded as "ss", which seems a "de-facto" standard
 							$fname = [IO.Path]::ChangeExtension($file.Filename, "ss")
 							$fname = [IO.Path]::Combine((Split-Path $fname -Parent), ("{0}_{1}" -f $DefaultSuffix, (Split-Path $fname -Leaf)))
-							
+
 							# change path if specified
 							if ($Path.Length -gt 0)
 							{
@@ -272,26 +272,16 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 							$SnapDB.FileGroups[$fg].Files.Add($SnapFile)
 						}
 					}
-					
+
 					# we're ready to issue a Create, but SMO is a little uncooperative here
 					# there are cases we can manage and others we can't, and we need all the
 					# info we can get both from testers and from users
-					
+
 					$sql = $SnapDB.Script()
 					try
 					{
-						if ($server.VersionMajor -gt 12)
-						{
-							$server.ConnectionContext.ExecuteNonQuery($sql[0]) | Out-Null
-							$server.Databases.Refresh()
-							$SnapDB = $server.Databases[$Snapname]
-						}
-						else
-						{
-							$SnapDB.Create()
-						}
-						$Status = "Created"
-						
+						$SnapDB.Create()
+
 						[PSCustomObject]@{
 							Server = $server.name
 							Database = $SnapDB.Name
@@ -302,7 +292,6 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 							Status = 'Created'
 							Notes = $null
 							SnapshotDb = $SnapDB
-							
 						} | Select-DefaultField -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated, PrimaryFilePath, Status
 					}
 					catch
@@ -315,7 +304,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 							if ($SnapName -notin $server.Databases.Name)
 							{
 								# previous creation failed completely, snapshot is not there already
-								$server.ConnectionContext.ExecuteNonQuery($sql[0]) | Out-Null
+								$null = $server.ConnectionContext.ExecuteNonQuery($sql[0])
 								$server.Databases.Refresh()
 								$SnapDB = $server.Databases[$Snapname]
 							}
@@ -323,7 +312,6 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 							{
 								$SnapDB = $server.Databases[$Snapname]
 							}
-							$Status = "Partial"
 							$Notes = @()
 							if ($db.ReadOnly -eq $true)
 							{
@@ -331,17 +319,18 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 							}
 							if ($has_FSD)
 							{
+								$Status = 'Partial'
 								$Notes += 'Filestream groups are not viable for snapshot'
 							}
 							$Notes = $Notes -Join ';'
-							
+
 							$hints = @("Executing these commands led to a partial failure")
 							foreach ($stmt in $sql)
 							{
 								$hints += $stmt
 							}
 							Write-Debug ($hints -Join "`n")
-							
+
 							[PSCustomObject]@{
 								Server = $server.name
 								Database = $SnapDB.Name
