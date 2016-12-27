@@ -179,7 +179,8 @@
 		'Get-DbaTrigger',
 		'Invoke-Sqlcmd2',
 		'Get-DbaMsdtc',
-		'Get-DbaXEventsSession'
+		'Get-DbaXEventsSession',
+		'Get-DbaSqlService'
 	)
 	
 	# Cmdlets to export from this module
