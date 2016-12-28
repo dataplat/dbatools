@@ -14,11 +14,8 @@ Takes path, checks for validity. Scans for usual backup file
 	)
        
         Write-Verbose "$FunctionName - Starting"
-        
-        Write-Verbose "$FunctionName - Starting"
         Write-Verbose "$FunctionName - Checking Path"
         if ((Test-Path $Path) -ne $true){
-           # Write-Error "Error: $path is not valid"
             break
         }
         #Path needs to end \* to use includes, which is faster than Where-Object
@@ -28,15 +25,15 @@ Takes path, checks for validity. Scans for usual backup file
         } elseif ($PathCheckArray[-2] -ne '\' -and $PathCheckArray[-1] -eq '*') {
             #We have \\some\path*, insert a \
             write-verbose "here"
-            $path = ($PathCheckArray[0..(($PathCheckArray.length)-2)] -join (''))+"\*"
+            $Path = ($PathCheckArray[0..(($PathCheckArray.length)-2)] -join (''))+"\*"
         } elseif ($PathCheckArray[-2] -eq '\' -and $PathCheckArray[-1] -ne '*') {
             #Append a * to the end
-            $path = "$path*"
+            $Path = "$Path*"
         } elseif ($PathCheckArray[-2] -ne '\' -and $PathCheckArray[-1] -ne '*') {
             #Append a \* to the end
-            $path = "$path\*"
+            $Path = "$Path\*"
         }
         Write-Verbose "$FunctionName - Scanning $path"
-        $results = Get-ChildItem -path $Path -include *.bak, *.trn
-        return $results
+        $Results = Get-ChildItem -path $Path -include *.bak, *.trn
+        return $Results
 }

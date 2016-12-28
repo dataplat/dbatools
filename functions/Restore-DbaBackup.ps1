@@ -181,11 +181,10 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
             }
         }elseif($PSCmdlet.ParameterSetName -eq "Files")
         {
-            Write-Verbose "$FunctionName : Files passed in $($files.count)" 
-            Foreach ($file in $files)
+            Write-Verbose "$FunctionName : Files passed in $($Files.count)" 
+            Foreach ($File in $Files)
             {
-                Write-Verbose "$file"
-                $BackupFiles += $file
+                $BackupFiles += $File
             }
         }
     }
@@ -195,7 +194,7 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
 
         if (($FilteredFiles.DatabaseName | Group-Object | Measure-Object).count -gt 1)
         {
-            $dbs = ($FilteredFiles | select DatabaseName) -join (',')
+            $dbs = ($FilteredFiles | Select DatabaseName) -join (',')
             Write-Error "$FunctionName - We can only handle 1 Database at a time - $dbs"
         }
         if(Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles)
@@ -204,7 +203,7 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
                 $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -RestoreTime $RestoreTime -RestoreLocation $RestoreLocation -NoRecovery:$NoRecovery -ReplaceDatabase:$ReplaceDatabase -Scripts:$Scripts -ScriptOnly:$ScriptOnly -VerifyOnly:$VerifyOnly
                 if ($LogicalFileMapping.count -ne 0 -or $LogicalFilePrefix -ne '')
                 {
-                    Rename-LogicalFile -SqlServer $sqlserver -DbName $DatabaseName -Mapping:$LogicalFileMapping -Prefix:$LogicalFilePrefix
+                    Rename-LogicalFile -SqlServer $SqlServer -DbName $DatabaseName -Mapping:$LogicalFileMapping -Prefix:$LogicalFilePrefix
                 }
             }
             catch{

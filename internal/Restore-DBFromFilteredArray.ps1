@@ -26,7 +26,7 @@ Function Restore-DBFromFilteredArray
     
 	    Begin
     {
-        $FunctionName = "Filter-DBFromFilteredArray"
+        $FunctionName = "Restore-DBFromFilteredArray"
         Write-Verbose "$FunctionName - Starting"
 
 
@@ -55,8 +55,9 @@ Function Restore-DBFromFilteredArray
 		{
 			try
 			{
-				Write-Verbose "$FunctionName - Stopping processes in existing database"
-				Stop-DbaProcess -SqlServer $SqlServer -Databases $DbName 
+				Write-Verbose "$FunctionName - Set $DbName offline to kill processes"
+				Invoke-SQLcmd2 -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; use $DbName"
+
 			}
 			catch
 			{

@@ -22,49 +22,49 @@ Function Rename-LogicalFile
         [string]$Prefix,
         [hashtable]$Mapping
 	)
-    $Functionname = "Rename-LogicalFile"
-    if ('' -ne $prefix -and $mapping.count -ne 0)
+    $FunctionName = "Rename-LogicalFile"
+    if ('' -ne $Prefix -and $Mapping.count -ne 0)
     {
-        Write-Error "$functionname only accepts a new prefix OR a mapping hash"
+        Write-Error "$FunctionName only accepts a new prefix OR a mapping hash"
         return $false
     }
 
     $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
     if ($null -eq $server.Databases[$DbName])
     {
-        Write-Error "$functionname - Database $dbname does not exist"
+        Write-Error "$FunctionName - Database $DbName does not exist"
         return $false
         break
     }
     $database = $server.Databases[$DbName]
-    Write-Verbose "$functionname - Getting data files"
+    Write-Verbose "$FunctionName - Getting data files"
     $LogicalFiles = @()
-    foreach ($filegroup in $database.filegroups)
+    foreach ($FileGroup in $Database.filegroups)
     {
-        foreach($file in $filegroup.files)
+        foreach($File in $FileGroup.files)
         {
-            $LogicalFiles += $file
+            $LogicalFiles += $File
         }
     }
-    Write-Verbose "$functionname - getting log files"
-    foreach ($file in $database.LogFiles)
+    Write-Verbose "$FunctionName - getting log files"
+    foreach ($File in $Database.LogFiles)
     {
-        $LogicalFiles += $file
+        $LogicalFiles += $File
     }
     if ($null -ne $Mapping -and $LogicalFiles.count -lt $Mapping.count)
     {
-        Write-Error "FunctionName - More mappings than files"
+        Write-Error "$FunctionName - More mappings than files"
         return $false
     }
-    Write-Verbose "Filecont = $($LogicalFiles.count)"
-    if ('' -ne $prefix)
+    Write-Verbose "File Count = $($LogicalFiles.count)"
+    if ('' -ne $Prefix)
     {
-        foreach ($file in $LogicalFiles)
+        foreach ($File in $LogicalFiles)
         {
-            $nname = $prefix+$file.name
-            Write-Verbose "$Functionname prefixing $($file.name) to $nname"
+            $NewName = $Prefix+$File.Name
+            Write-Verbose "$FunctionName prefixing $($File.Name) to $NewName"
             try {
-                $file.reName($nname)    
+                $File.Rename($NewName)    
             }
             catch  {
                 Write-Exception $_
@@ -75,18 +75,18 @@ Function Rename-LogicalFile
     }
     if ($null -ne $Mapping)
     {
-        foreach ($file in $LogicalFiles)
+        foreach ($File in $LogicalFiles)
         {
-            if ($null -eq $Mapping[($file.name)])
+            if ($null -eq $Mapping[($File.Name)])
             {
-                Write-Verbose "$functionname - No mapping for $($file.name) "
+                Write-Verbose "$FunctionName - No mapping for $($File.Name) "
             }
             else
             {
-                $nname = $Mapping[($file.name)]
-                Write-Verbose "$Functionname - mapping $($file.name) to $nname"
+                $NewName = $Mapping[($File.Name)]
+                Write-Verbose "$FunctionName - mapping $($File.Name) to $NewName"
                 try {
-                    $file.reName($nname)    
+                    $File.Rename($NewName)    
                 }
                 catch  {
                     Write-Exception $_

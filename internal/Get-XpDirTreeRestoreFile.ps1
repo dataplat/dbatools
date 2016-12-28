@@ -38,17 +38,15 @@ Takes path, checks for validity. Scans for usual backup file
             Write-Error "$FunctionName - Not sysadmin, this will not work"
         }
 
-        if ($path[-1] -ne "\")
+        if ($Path[-1] -ne "\")
         {
-            $path = $path + "\"
+            $Path = $Path + "\"
         }
 
         $query = "EXEC master.sys.xp_dirtree '$path',1,1;"
 
         $queryResult = Invoke-Sqlcmd2 -ServerInstance $sqlServer -Database tempdb -Query $query
-        $results = $queryResult | Select @{Name="FullName";Expression={$_."Subdirectory"}}
-        $results = $results | %{"$path$($_.fullname)"} | select @{Name="Fullname";Expression={$_}}
-        #$results = $queryResult | Select @{Name="FullName";Expression={$_."Subdirectory"}}
-        #$results  = $results | ForEach-Object {$_ = "$path$($_.FullName)"}
-        return $results
+        $Results = $queryResult | Select @{Name="FullName";Expression={$_."Subdirectory"}}
+        $Results = $Results | %{"$path$($_.FullName)"} | select @{Name="Fullname";Expression={$_}}
+        return $Results
 }

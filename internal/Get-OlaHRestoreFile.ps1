@@ -14,11 +14,9 @@ Takes path, checks for validity. Scans for usual backup file
 	)
         $FunctionName = "Get-OlaHRestoreFile"
         Write-Verbose "$FunctionName - Starting"
-        
-        Write-Verbose "$FunctionName - Starting"
         Write-Verbose "$FunctionName - Checking Path"
         if ((Test-Path $Path) -ne $true){
-           [System.IO.FileNotFoundException] "Error: $path is not valid"
+           [System.IO.FileNotFoundException] "Error: $Path is not valid"
        
         }
         #There should be at least FULL folder, DIFF and LOG are nice as well
@@ -26,7 +24,7 @@ Takes path, checks for validity. Scans for usual backup file
         if (Test-Path $Path\FULL)
         {
             Write-Verbose "$FunctionName - We have a FULL folder, scanning"
-            $results = Get-ChildItem $path\FULL -Filter *.bak
+            $Results = Get-ChildItem $Path\FULL -Filter *.bak
         } else {
             Write-Verbose "$FunctionName - Don't have a FULL folder, throw and exit"
             break
@@ -34,13 +32,13 @@ Takes path, checks for validity. Scans for usual backup file
         if (Test-Path $Path\Log)
         {
             Write-Verbose "$FunctionName - We have a LOG folder, scanning"
-            $results += Get-ChildItem $path\LOG -filter *.trn
+            $Results += Get-ChildItem $Path\LOG -filter *.trn
         }
         if(Test-Path $Path\Diff)
         {
             Write-Verbose "$FunctionName - We have a DIFF folder, scanning"
-            $results += Get-ChildItem $path\DIFF -filter *.bak
+            $Results += Get-ChildItem $Path\DIFF -filter *.bak
         }
 
-        return $results
+        return $Results
 }
