@@ -296,6 +296,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 					}
 					catch
 					{
+						$Status = 'Created'
 						# here we manage issues we DO know about, hoping that the first command
 						# is always the one creating the snapshot, and give an helpful hint
 						try
