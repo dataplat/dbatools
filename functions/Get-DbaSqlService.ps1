@@ -68,9 +68,9 @@ Gets the SQL Server related services on computers sql1 and sql2, and shows them 
                     {
                         Get-CimInstance -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService" -ErrorAction SilentlyContinue |
                         Select-Object @{l='ComputerName';e={$_.HostName}}, ServiceName, DisplayName, StartName,
-                         @{l='TypeDescr';e={switch($_.SQLServiceType){1 {'Database Engine'} 2 {'SQL Agent'} 3 {'Full Text Search'} 4 {'SSIS'} 5 {'SSAS'} 6 {'SSRS'} 7 {'SQL Browser'} 8 {'Unknown'} 9 {'FullTextFilter Daemon Launcher'}}}},
-                         @{l='status';e={switch($_.state){ 1 {'Stopped'} 2 {'Start Pending'}  3 {'Stop Pending' } 4 {'Running'}}}},
-                         @{l='startmodus';e={switch($_.startmode){ 1 {'unknown'} 2 {'Automatic'}  3 {'Manual' } 4 {'Disabled'}}}}
+                         @{l='SQLServiceType';e={switch($_.SQLServiceType){1 {'Database Engine'} 2 {'SQL Agent'} 3 {'Full Text Search'} 4 {'SSIS'} 5 {'SSAS'} 6 {'SSRS'} 7 {'SQL Browser'} 8 {'Unknown'} 9 {'FullTextFilter Daemon Launcher'}}}},
+                         @{l='State';e={switch($_.State){ 1 {'Stopped'} 2 {'Start Pending'}  3 {'Stop Pending' } 4 {'Running'}}}},
+                         @{l='StartMode';e={switch($_.StartMode){ 1 {'Unknown'} 2 {'Automatic'}  3 {'Manual' } 4 {'Disabled'}}}}
                      }
                      catch
                      {
