@@ -141,8 +141,6 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
         [switch]$OlaStyle,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
-		[object]$filestructure,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[string]$LogicalFilePrefix,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[hashtable]$LogicalFileMapping			
