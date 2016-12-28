@@ -174,7 +174,11 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 
                             if ($Users.Count -eq 0)
                             {
-                                $Users = $db.Users | Where-Object {$_.Login -eq "" -and ("dbo","guest","sys","INFORMATION_SCHEMA" -notcontains $_.Name) -and ($_.UserType -in ([Microsoft.SqlServer.Management.Smo.UserType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.UserType]::SqlUser))}
+                                #the fourth validation will remove from list sql users without login. The rule here is Sid with length higher than 16 bytes, with NoLogin
+                                $Users = $db.Users | Where-Object {$_.Login -eq "" -and ($_.ID -gt 4) -and ($_.AuthenticationType -eq [Microsoft.SqlServer.Management.Smo.AuthenticationType]::None) -and ($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin -and $_.id -gt 4) -eq $false}
+                                
+                                
+                                #$Users  = $Users | Where-Object {($_.Sid.Length -gt 16 -and $_.UserType -eq [Microsoft.SqlServer.Management.Smo.UserType]::NoLogin -and $_.id -gt 4) -eq $false}
                             }
                             else
                             {
@@ -185,7 +189,8 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 		                        }
                                 else
                                 {
-                                    $Users = $db.Users | Where-Object {$_.Login -eq "" -and ($Users -contains $_.Name) -and ($_.UserType -in ([Microsoft.SqlServer.Management.Smo.UserType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.UserType]::SqlUser))}
+                                    #the fourth validation will remove from list sql users without login. The rule here is Sid with length higher than 16 bytes, with NoLogin
+                                    $Users = $db.Users | Where-Object {$_.Login -eq "" -and ($_.ID -gt 4) -and ($Users -contains $_.Name) -and ($_.AuthenticationType -eq [Microsoft.SqlServer.Management.Smo.AuthenticationType]::None) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin -and $_.id -gt 4) -eq $false)}
                                 }
                             }
                         }
