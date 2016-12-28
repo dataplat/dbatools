@@ -12,7 +12,7 @@ Hosting Windows server last startup time, Uptime as a PS TimeSpan, Uptime as a f
 .PARAMETER SqlServer
 The SQL Server that you're connecting to.
 
-.PARAMETER SQLCredential
+.PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user
 
 .PARAMETER WindowsCredential
@@ -62,8 +62,8 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance", "ComputerName")]
 		[string[]]$SqlServer,
-		[Alias("SqlCredential")]
-		[PsCredential]$Credential,
+		[Alias("Credential")]
+		[PsCredential]$SqlCredential,
 		[PsCredential]$WindowsCredential,
 		[Switch]$SqlOnly,
 		[Switch]$WindowsOnly
@@ -80,7 +80,7 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 				Write-Verbose "Connecting to $servername"
 				try
 				{
-					$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $Credential -ErrorVariable ConnectError
+					$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential -ErrorVariable ConnectError
 					
 				}
 				catch
@@ -95,6 +95,7 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 					Continue
 				}
 				
+				Write-Verbose "Getting Start times for $servername"
 				#Get TempDB creation date
 				$SQLStartTime = $server.Databases["TempDB"].CreateDate
 				$SQLUptime = New-TimeSpan -Start $SQLStartTime -End (Get-Date)
