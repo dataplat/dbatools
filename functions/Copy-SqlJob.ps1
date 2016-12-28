@@ -112,8 +112,25 @@ Shows what would happen if the command were executed using force.
 		foreach ($job in $serverjobs)
 		{
 			$jobname = $job.name
+			$jobId = $job.JobId
 
 			if ($jobs.count -gt 0 -and $jobs -notcontains $jobname -or $exclude -contains $jobname) { continue }
+
+			$sql = "
+				SELECT sp.[name] AS MaintenancePlanName
+				FROM msdb.dbo.sysmaintplan_plans AS sp
+				INNER JOIN msdb.dbo.sysmaintplan_subplans AS sps
+					ON sps.plan_id = sp.id
+				WHERE job_id = '$($jobId)'"
+			Write-Debug $sql
+
+			$MaintenancePlan = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
+			$MaintPlanName = $MaintenancePlan.MaintenancePlanName
+
+			if ($MaintenancePlan) {
+				Write-Warning "[Job: $jobname] Associated with Maintenance Plan: $($MaintPlanName). Skipping."
+				continue
+			}
 
 			$dbnames = $job.JobSteps.Databasename | Where-Object { $_.length -gt 0 }
 			$missingdb = $dbnames | Where-Object { $destserver.Databases.Name -notcontains $_ }
