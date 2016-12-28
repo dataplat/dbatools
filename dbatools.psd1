@@ -182,7 +182,8 @@
 		'Get-DbaXEventsSession',
 		'Get-DbaSqlService',
 		'Get-DbaUptime',
-		'Rename-DbaLogin'
+		'Rename-DbaLogin',
+		'Find-DbaDatabase'
 	)
 	
 	# Cmdlets to export from this module
