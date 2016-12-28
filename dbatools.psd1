@@ -180,7 +180,8 @@
 		'Invoke-Sqlcmd2',
 		'Get-DbaMsdtc',
 		'Get-DbaXEventsSession',
-		'Get-DbaSqlService'
+		'Get-DbaSqlService',
+		'Get-DbaUptime'
 	)
 	
 	# Cmdlets to export from this module
