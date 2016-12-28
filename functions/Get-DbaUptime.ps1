@@ -145,8 +145,8 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 					ComputerName = $server.NetName
 					SqlInstance = $server.Name
 					SqlStartTime = $SQLStartTime
-					SqlUptimeString = $SQLUptimeString
 					SqlUptime = $SQLUptime
+					SqlUptimeSince = $SQLUptimeString
 				}
 			}
 			elseif ($WindowsOnly -eq $true)
@@ -155,7 +155,7 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 					ComputerName = $WindowsServerName
 					WindowsBootTime = $WinBootTime
 					WindowsUptime = $WindowsUptime
-					WindowsUptimeString = $WindowsUptimeString
+					WindowsUptimeSince = $WindowsUptimeString
 				}
 			}
 			else
@@ -165,11 +165,11 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 					ComputerName = $WindowsServerName
 					SqlInstance = $server.Name
 					SqlStartTime = $SQLStartTime
-					SqlUptimeString = $SQLUptimeString
 					SqlUptime = $SQLUptime
+					SqlUptimeSince = $SQLUptimeString
 					WindowsBootTime = $WinBootTime
 					WindowsUptime = $WindowsUptime
-					WindowsUptimeString = $WindowsUptimeString
+					WindowsUptimeSince = $WindowsUptimeString
 				}
 			}
 		}
