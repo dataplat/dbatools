@@ -20,7 +20,7 @@ $Rules = (Get-ScriptAnalyzerRule).Where{$_.RuleName -notin ('PSAvoidUsingPlainTe
 $Name = $sut.Split('.')[0]
 
     Describe 'Script Analyzer Tests' {
-            Context 'Testing $sut for Standard Processing' {
+            Context "Testing $Name for Standard Processing" {
                 foreach ($rule in $rules) { 
                     $i = $rules.IndexOf($rule)
                     It "passes the PSScriptAnalyzer Rule number $i - $rule  " {
