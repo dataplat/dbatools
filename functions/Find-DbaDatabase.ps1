@@ -12,7 +12,7 @@ There a several reasons for the service broker guid not matching on a restored d
 .PARAMETER SqlServer
 The SQL Server that you're connecting to.
 
-.PARAMETER Credential
+.PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user
 
 .PARAMETER Property
@@ -54,6 +54,7 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
+		[Alias("Credential")]
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[ValidateSet('Name', 'ServiceBrokerGuid', 'Owner')]
 		[string]$Property = 'Name',
