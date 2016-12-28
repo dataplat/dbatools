@@ -183,7 +183,8 @@
 		'Get-DbaSqlService',
 		'Get-DbaUptime',
 		'Rename-DbaLogin',
-		'Find-DbaDatabase'
+		'Find-DbaDatabase',
+		'Find-DbaAgentJob'
 	)
 	
 	# Cmdlets to export from this module
