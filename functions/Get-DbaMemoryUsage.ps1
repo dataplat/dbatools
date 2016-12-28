@@ -87,6 +87,7 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
         foreach ($Computer in $ComputerName)
         {
             Write-Verbose "Connecting to $Computer"
+			$reply = Resolve-DbaNetworkName -ComputerName $Computer -ErrorAction SilentlyContinue
             if ( $reply.ComputerName )
             {
                 $Computer = $reply.ComputerName
