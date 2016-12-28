@@ -31,64 +31,72 @@ Function Restore-DBFromFilteredArray
 
 
 
-        $results = @()
+        $Results = @()
         $InternalFiles = @()
     }
     # -and $_.BackupStartDate -lt $RestoreTime
     process
         {
 
-        foreach ($file in $files){
-            $InternalFiles += $file
+        foreach ($File in $Files){
+            $InternalFiles += $File
         }
     }
     End
     {
 
-		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-		$servername = $server.name
-		$server.ConnectionContext.StatementTimeout = 0
-		$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
-		$restore.ReplaceDatabase = $ReplaceDatabase
+		$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+		$ServerName = $Server.name
+		$Server.ConnectionContext.StatementTimeout = 0
+		$Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
+		$Restore.ReplaceDatabase = $ReplaceDatabase
 
-		If ($null -ne $server.Databases[$DbName])
+		If ($null -ne $Server.Databases[$DbName])
 		{
-		#	Stop-DbaProcess -Databases $DbName -SqlServer $SqlServer
+			try
+			{
+				Write-Verbose "$FunctionName - Stopping processes in existing database"
+				Stop-DbaProcess -SqlServer $SqlServer -Databases $DbName 
+			}
+			catch
+			{
+				Write-Verbose "$FunctionName - No processes to kill"
+			}
 		}
 
 		$OrderedRestores = $InternalFiles | Sort-object -Property BackupStartDate, BackupType
 		Write-Verbose "of = $($OrderedRestores.Backupfilename)"
-		foreach ($restorefile in $OrderedRestores)
+		foreach ($RestoreFile in $OrderedRestores)
 		{
-			if ($restore.RelocateFiles.count -gt 0)
+			if ($Restore.RelocateFiles.count -gt 0)
 			{
-				$restore.RelocateFiles.Clear()
+				$Restore.RelocateFiles.Clear()
 			}
-			foreach ($file in $restorefile.Filelist)
+			foreach ($File in $RestoreFile.Filelist)
 			{
 
-				if ($RestoreLocation -ne '' -and $filestructure -eq $NUll)
+				if ($RestoreLocation -ne '' -and $FileStructure -eq $NUll)
 				{
 					
-					$movefile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
-					$movefile.LogicalFileName = $file.logicalname
-					$movefile.PhysicalFileName = $RestoreLocation + (split-path $file.PhysicalName -leaf)
-					$null = $restore.RelocateFiles.Add($movefile)
+					$MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
+					$MoveFile.LogicalFileName = $File.LogicalName
+					$MoveFile.PhysicalFileName = $RestoreLocation + (split-path $file.PhysicalName -leaf)
+					$null = $Restore.RelocateFiles.Add($MoveFile)
 					
-				} elseif ($RestoreLocation -eq '' -and $filestructure -ne $NUll)
+				} elseif ($RestoreLocation -eq '' -and $FileStructure -ne $NUll)
 				{
 
-					$filestructure = $filestructure.values
+					$FileStructure = $FileStructure.values
 
-					foreach ($file in $filestructure)
+					foreach ($File in $FileStructure)
 					{
-						$movefile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
-						$movefile.LogicalFileName = $file.logical
-						$movefile.PhysicalFileName = $file.physical
+						$MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
+						$MoveFile.LogicalFileName = $File.logical
+						$MoveFile.PhysicalFileName = $File.physical
 
-						$null = $restore.RelocateFiles.Add($movefile)
+						$null = $Restore.RelocateFiles.Add($MoveFile)
 					}	
-				} elseif ($RestoreLocation -ne '' -and $filestructure -ne $NUll)
+				} elseif ($RestoreLocation -ne '' -and $FileStructure -ne $NUll)
 				{
 					Write-Error "Conflicting options only one of FileStructure or RestoreLocation allowed"
 				} 		
@@ -96,48 +104,49 @@ Function Restore-DBFromFilteredArray
 
 			try
 			{
-				Write-Verbose "in try"
+				Write-Verbose "$FunctionName - Beginning Restore"
 				$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
 					Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
 				}
-				$restore.add_PercentComplete($percent)
-				$restore.PercentCompleteNotification = 1
-				$restore.add_Complete($complete)
-				$restore.ReplaceDatabase = $ReplaceDatabase
-				$restore.ToPointInTime = $RestoreTime
+				$Restore.add_PercentComplete($percent)
+				$Restore.PercentCompleteNotification = 1
+				$Restore.add_Complete($complete)
+				$Restore.ReplaceDatabase = $ReplaceDatabase
+				$Restore.ToPointInTime = $RestoreTime
 				if ($DbName -ne '')
 				{
-					$restore.Database = $dbname
+					$Restore.Database = $DbName
 				}
 				else
 				{
-					$restore.Database = $restorefile.DatabaseName
+					$Restore.Database = $RestoreRile.DatabaseName
 				}
-				$action = switch ($restorefile.BackupType)
+				$Action = switch ($RestoreFile.BackupType)
 					{
 						'1' {'Database'}
 						'2' {'Log'}
 						'5' {'Database'}
 						Default {}
 					}
-				Write-Verbose "action = $action"
-				$restore.Action = $action 
-				if ($restorefile -eq $OrderedRestores[-1] -and $NoRecovery -ne $true)
+				Write-Verbose "$FunctionName restore action = $Action"
+				$restore.Action = $Action 
+				if ($RestoreFile -eq $OrderedRestores[-1] -and $NoRecovery -ne $true)
 				{
 					#Do recovery on last file
-					$restore.NoRecovery = $false
+					Write-Verbose "$FunctionName - Doing Recovery on last file"
+					$Restore.NoRecovery = $false
 				}
 				else 
 				{
-					$restore.NoRecovery = $true
+					$Restore.NoRecovery = $true
 				}
 
-					$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-					$device.name = $restorefile.BackupPath
-					$device.devicetype = "File"
-					$restore.Devices.Add($device)
+					$Device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
+					$Device.Name = $RestoreFile.BackupPath
+					$Device.devicetype = "File"
+					$Restore.Devices.Add($device)
 
-				Write-Verbose "PAst setup"
+				Write-Verbose "$FunctionName - Performaing restore action"
 				if ($ScriptOnly)
 				{
 					$restore.Script($server)
@@ -145,7 +154,7 @@ Function Restore-DBFromFilteredArray
 				elseif ($VerifyOnly)
 				{
 					Write-Progress -id 1 -activity "Verifying $dbname backup file on $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-					$verify = $restore.sqlverify($server)
+					$Verify = $restore.sqlverify($server)
 					Write-Progress -id 1 -activity "Verifying $dbname backup file on $servername" -status "Complete" -Completed
 					
 					if ($verify -eq $true)
@@ -159,19 +168,18 @@ Function Restore-DBFromFilteredArray
 				}
 				else
 				{
-					Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-					$restore.sqlrestore($server)
+					Write-Progress -id 1 -activity "Restoring $DbName to ServerName" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+					$Restore.sqlrestore($Server)
 					if ($scripts)
 					{
-						$restore.Script($server)
+						$restore.Script($Server)
 					}
-					Write-Progress -id 1 -activity "Restoring $dbname to $servername" -status "Complete" -Completed
+					Write-Progress -id 1 -activity "Restoring $DbName to $ServerName" -status "Complete" -Completed
 					
 					#return "Success"
 				}
-				$null = $restore.Devices.Remove($device)
+				$null = $Restore.Devices.Remove($Device)
 				Remove-Variable device
-
 			}
 			catch
 			{
@@ -179,5 +187,10 @@ Function Restore-DBFromFilteredArray
 			}
 			
 		}
+		if ($NoRecovery -eq $false -and $ScriptOnly -eq $false)
+		{
+			Invoke-SQLcmd2 -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Restore database $DbName with recovery"
+		}
+		#$server.ConnectionContext.Disconnect()
 	}
 }
