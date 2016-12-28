@@ -63,20 +63,61 @@ Gets the SQL Server related services on computers sql1 and sql2, and shows them 
                 Write-Verbose "Connecting to $Computer"
                 $namespace = Get-CimInstance -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -ClassName "__NAMESPACE" -Filter "Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
                                 Sort-Object Name -Descending | Select-Object -First 1
+                if ( $namespace.Name )
+                {
                     Write-Verbose "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer"
                     try
                     {
                         Get-CimInstance -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService" -ErrorAction SilentlyContinue |
-                        Select-Object @{l='ComputerName';e={$_.HostName}}, ServiceName, DisplayName, StartName,
-                         @{l='SQLServiceType';e={switch($_.SQLServiceType){1 {'Database Engine'} 2 {'SQL Agent'} 3 {'Full Text Search'} 4 {'SSIS'} 5 {'SSAS'} 6 {'SSRS'} 7 {'SQL Browser'} 8 {'Unknown'} 9 {'FullTextFilter Daemon Launcher'}}}},
-                         @{l='State';e={switch($_.State){ 1 {'Stopped'} 2 {'Start Pending'}  3 {'Stop Pending' } 4 {'Running'}}}},
-                         @{l='StartMode';e={switch($_.StartMode){ 1 {'Unknown'} 2 {'Automatic'}  3 {'Manual' } 4 {'Disabled'}}}}
+                        foreach {
+                            [PSCustomObject]@{
+                                ComputerName = $_.HostName
+                                ServiceName = $_.ServiceName
+                                DisplayName = $_.DisplayName
+                                StartName = $_.StartName
+                                SQLServiceType = switch($_.SQLServiceType){1 {'Database Engine'} 2 {'SQL Agent'} 3 {'Full Text Search'} 4 {'SSIS'} 5 {'SSAS'} 6 {'SSRS'} 7 {'SQL Browser'} 8 {'Unknown'} 9 {'FullTextFilter Daemon Launcher'}}
+                                State = switch($_.State){ 1 {'Stopped'} 2 {'Start Pending'}  3 {'Stop Pending' } 4 {'Running'}}
+                                StartMode = switch($_.StartMode){ 1 {'Unknown'} 2 {'Automatic'}  3 {'Manual' } 4 {'Disabled'}}
+                                }
+                            }
                      }
                      catch
                      {
-                        Write-Warning "No Sql Services found on $Computer"
+                        Write-Warning "No Sql Services found on $Computer via WSMan"
                      }
                 }
+                else
+                {
+                    Write-Verbose "Getting computer information from server $Computer via CIM (DCOM)"
+				    $sessionoption = New-CimSessionOption -Protocol DCOM
+				    $CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
+                    $namespace = Get-CimInstance -CimSession $CIMsession -NameSpace root\Microsoft\SQLServer -ClassName "__NAMESPACE" -Filter "Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
+                                Sort-Object Name -Descending | Select-Object -First 1
+                    if ( $namespace.Name )
+                    {
+                        Write-Verbose "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer"
+                        try
+                        {
+                            Get-CimInstance -CimSession $CIMsession -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService" -ErrorAction SilentlyContinue |
+                            foreach {
+                                [PSCustomObject]@{
+                                    ComputerName = $_.HostName
+                                    ServiceName = $_.ServiceName
+                                    DisplayName = $_.DisplayName
+                                    StartName = $_.StartName
+                                    SQLServiceType = {switch($_.SQLServiceType){1 {'Database Engine'} 2 {'SQL Agent'} 3 {'Full Text Search'} 4 {'SSIS'} 5 {'SSAS'} 6 {'SSRS'} 7 {'SQL Browser'} 8 {'Unknown'} 9 {'FullTextFilter Daemon Launcher'}}}
+                                    State = {switch($_.State){ 1 {'Stopped'} 2 {'Start Pending'}  3 {'Stop Pending' } 4 {'Running'}}}
+                                    StartMode = {switch($_.StartMode){ 1 {'Unknown'} 2 {'Automatic'}  3 {'Manual' } 4 {'Disabled'}}}
+                                    }
+                                }
+                         }
+                         catch
+                         {
+                            Write-Warning "No Sql Services found on $Computer via DCOM"
+                         }
+                    }
+                }
+            }
             else
             {
             Write-Warning "Failed to connect to $Computer"
