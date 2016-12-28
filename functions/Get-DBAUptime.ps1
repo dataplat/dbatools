@@ -71,26 +71,20 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 	}
     	PROCESS
 	{
-		$servercount = ++$i
 		foreach ($servername in $SqlServer)
 		{
             write-verbose "$functionname - server = $servername"
-			try
-			{
-				$server = Connect-SqlServer -SqlServer "$servername" -SqlCredential $Credential
-			}
-			catch
-			{
-				if ($servercount -eq 1)
-				{
-					throw $_
-				}
-				else
-				{
-					Write-Warning "Can't connect to $servername. Moving on."
-					Continue
-				}
-			}
+		Write-Verbose "Connecting to $SqlServer"
+		try
+		{
+			$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $Credential -ErrorVariable ConnectError
+			
+		}
+		catch
+		{
+			Write-Warning $_
+			continue
+		}
 			
 			if ($server.VersionMajor -lt 9)
 			{
@@ -121,7 +115,9 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 					{
 						$WindowsServerName = $ClusterCheck
 					}
+					$CimError = 0
 					try {
+						Write-Verbose "$functionname - Getting WinBootTime via CimInstance"
 						$WinBootTime = (Get-CimInstance -ClassName win32_operatingsystem -ComputerName $windowsServerName).lastbootuptime
 						$WindowsUptime = New-TimeSpan -start $WinBootTime -end (get-date)
 						$WindowsUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($WindowsUptime.Days), $($WindowsUptime.Hours), $($WindowsUptime.Minutes), $($WindowsUptime.Seconds)
@@ -129,10 +125,30 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 					}
 					catch [System.Exception] {
 						Write-Exception $_
-						#Skip the windows results as they'll either be garbage or not there.
-						$SQLOnly = $true
-					}
+						$CimError += 1
 
+					}
+					if ($CimError -gt 0)
+					{
+						try {
+							Write-Verbose "$functionname - Getting WinBootTime via CimInstance DCOM"
+							$CimOption = New-CimSessionOption -Protocol DCOM
+							$CimSession = New-CimSession -Credential:$WindowsCredential -ComputerName $WindowsServerName -SessionOption $CimOption
+							$WinBootTime = ($CimSession | Get-CimInstance -ClassName Win32_OperatingSystem).LastBootUpTime
+							$WindowsUptime = New-TimeSpan -start $WinBootTime -end (get-date)
+							$WindowsUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($WindowsUptime.Days), $($WindowsUptime.Hours), $($WindowsUptime.Minutes), $($WindowsUptime.Seconds)
+
+						}
+						catch [System.Exception] {
+							Write-Exception $_
+							$CimError += 1
+						}
+					}
+					if ($WindowsUptimeString -eq '')
+					{
+						#Skip the windows results as they'll either be garbage or not there.
+						$SqlOnly = $true
+					}
 				}
 				if ($SQLOnly -eq $true)
 				{
@@ -143,21 +159,23 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 							SQLUptime = $SQLUptime
 					})
 				}else{
-					$null = $collection.Add([PSCustomObject]@{
-							SQLServer = $servername
+					[PSCustomObject]@{
+							SQLServer = $server.Name
+							InstanceName = $server.ServiceName
+							ComputerName = $server.NetName
 							SQLStartTime = $SQLStartTime
 							SQLUptimeString = $SQLUptimeString
 							SQLUptime = $SQLUptime
 							WindowsBootTime = $WinBootTime
 							WindowsUptime = $WindowsUptime
 							WindowsUptimeString = $WindowsUptimeString
-					})
+					}
 				}
 
         }
     }
     END 
     {
-            return $collection
+            return 
     }
 }
