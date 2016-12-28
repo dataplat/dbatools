@@ -62,12 +62,11 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance", "ComputerName")]
 		[string[]]$SqlServer,
+		[Switch]$SqlOnly,
+		[Switch]$WindowsOnly,
 		[Alias("Credential")]
 		[PsCredential]$SqlCredential,
-		[PsCredential]$WindowsCredential,
-		[Switch]$SqlOnly,
-		[Switch]$WindowsOnly
-		
+		[PsCredential]$WindowsCredential
 	)
 	
 	PROCESS
