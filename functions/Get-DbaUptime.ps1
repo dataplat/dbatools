@@ -88,13 +88,7 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 					Write-Warning $_
 					continue
 				}
-				
-				if ($server.VersionMajor -lt 9)
-				{
-					Write-Warning "SQL Server 2000 not supported. Skipping $servername."
-					Continue
-				}
-				
+								
 				Write-Verbose "Getting Start times for $servername"
 				#Get TempDB creation date
 				$SQLStartTime = $server.Databases["TempDB"].CreateDate
@@ -109,7 +103,7 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 				try
 				{
 					Write-Verbose "Getting WinBootTime via CimInstance for $servername"
-					$WinBootTime = (Get-CimInstance -ClassName win32_operatingsystem -ComputerName $windowsServerName).lastbootuptime
+					$WinBootTime = (Get-CimInstance -ClassName win32_operatingsystem -ComputerName $windowsServerName -ErrorAction SilentlyContinue).lastbootuptime
 					$WindowsUptime = New-TimeSpan -start $WinBootTime -end (get-date)
 					$WindowsUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($WindowsUptime.Days), $($WindowsUptime.Hours), $($WindowsUptime.Minutes), $($WindowsUptime.Seconds)
 					
