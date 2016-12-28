@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.681'
+	ModuleVersion = '0.8.693'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -50,7 +50,7 @@
 	RequiredModules = @()
 	
 	# Assemblies that must be loaded prior to importing this module
-	RequiredAssemblies = @('Microsoft.SqlServer.Smo', 'Microsoft.SqlServer.SmoExtended')
+	RequiredAssemblies = @()
 	
 	# Script files () that are run in the caller's environment prior to importing this module
 	ScriptsToProcess = @()
@@ -169,7 +169,19 @@
 		'Remove-DbaDatabaseSnapshot',
 		'Get-DbaRoleMember',
 		'Resolve-DbaNetworkName',
-		'Test-DbaValidLogin'
+		'Test-DbaValidLogin',
+		'Get-DbaMemoryUsage',
+		'Export-DbaAvailabilityGroup',
+		'Out-DbaDataTable',
+		'Write-DbaDataTable',
+		'New-DbaDatabaseSnapshot',
+		'Restore-DbaFromDatabaseSnapshot',
+		'Get-DbaTrigger',
+		'Invoke-Sqlcmd2',
+		'Get-DbaMsdtc',
+		'Get-DbaXEventsSession',
+		'Get-DbaSqlService',
+		'Get-DbaUptime'
 	)
 	
 	# Cmdlets to export from this module
@@ -219,7 +231,7 @@
 			LicenseUri = "http://www.gnu.org/licenses/gpl-3.0.en.html"
 			
 			# Release notes for this particular version of the module
-			# ReleaseNotes = False
+			ReleaseNotes = "https://dbatools.io/releases"
 			
 			# If true, the LicenseUrl points to an end-user license (not just a source license) which requires the user agreement before use.
 			# RequireLicenseAcceptance = ""

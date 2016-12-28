@@ -172,7 +172,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 		$FileType += "mdf", "ldf", "ndf"
 		$systemfiles = "distmdl.ldf", "distmdl.mdf", "mssqlsystemresource.ldf", "mssqlsystemresource.mdf"
 
-        $FileTypeComparison = $FileType | ForEach-Object {$_.ToLower()} | Where-Object { $_ } | Sort-Object -Unique
+        $FileTypeComparison = $FileType | ForEach-Object {$_.ToLower()} | Where-Object { $_ } | Sort-Object | Get-Unique
 	}
 
 	PROCESS
@@ -192,7 +192,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 			$paths += $server.MasterDBPath
 			$paths += $server.MasterDBLogPath
 			$paths += $Path
-			$paths = $paths | ForEach-Object { "$_".TrimEnd("\") } | Sort-Object -Unique
+			$paths = $paths | ForEach-Object { "$_".TrimEnd("\") } | Sort-Object | Get-Unique
 			$sql = Get-SQLDirTreeQuery $paths
 			$datatable = $server.Databases['master'].ExecuteWithResults($sql).Tables[0]
 
@@ -213,7 +213,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 				$valid += [IO.Path]::GetFullPath($(Format-Path $file))
 			}
 
-			$valid = $valid | Sort-Object -Unique
+			$valid = $valid | Sort-Object | Get-Unique
 
 			foreach ($file in $dirtreefiles.Comparison)
 			{

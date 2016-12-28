@@ -12,6 +12,13 @@ Default output includes columns SQLServer, Database, Role, Member.
 .PARAMETER SQLInstance
 The SQL Server that you're connecting to.
 
+.PARAMETER SqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+
+SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+
 .PARAMETER IncludeServerLevel
 Shows also information on Server Level Permissions.
 
