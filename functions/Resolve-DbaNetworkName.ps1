@@ -114,20 +114,39 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 			    {
 				    Write-Verbose "Getting computer information from server $Computer via WMI (DCOM)"
 				    $conn = Get-WmiObject -ComputerName $Computer -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -ErrorAction SilentlyContinue -Credential $Credential
-					if ( !$conn )
-					{
-						Write-Warning "No DCOM connection for WMI to $Computer"
-					}
-			    }
-			}
+				}
 				
+				if (!$conn)
+				{
+					Write-Verbose "Cim and Wmi both failed. Defaulting to .NET"
+					try
+					{
+						$fqdn = ([System.Net.Dns]::GetHostEntry($Computer)).HostName
+						$hostname = $fqdn.Split(".")[0]
+						
+						$conn = [PSCustomObject]@{
+							Name = $Computer
+							DNSHostname = $hostname
+							Domain = $fqdn.Replace("$hostname.", "")
+						}
+					}
+					catch
+					{
+						# ouch, no dice
+					}
+				}
+			}
+			
+			$fqdn = "$($conn.DNSHostname).$($conn.Domain)"
+			if ($fqdn = ".") { $fqdn = $null }
+			
 			[PSCustomObject]@{
 				InputName = $OGComputer
 				ComputerName = $conn.Name
 				IPAddress = $ipaddress
 				DNSHostName = $conn.DNSHostname
 				Domain = $conn.Domain
-				FQDN = "$($conn.DNSHostname).$($conn.Domain)"
+				FQDN = $fqdn
 			}
 		}
 	}
