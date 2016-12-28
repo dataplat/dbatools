@@ -53,8 +53,8 @@ Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerN
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer","instance")]
 		[string[]]$SqlInstance,
-		[PsCredential]$Credential,
-		[switch]$Simple
+		[Alias("SqlCredential")]
+		[PsCredential]$Credential
 	)
 
 	DynamicParam {

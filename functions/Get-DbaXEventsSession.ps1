@@ -10,7 +10,7 @@ Retrieves a list of Extended Events Sessions
 .PARAMETER SqlInstance
 The SQL Instances that you're connecting to.
 
-.PARAMETER Credential
+.PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user
 
 .PARAMETER Sessions
