@@ -141,35 +141,35 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 			if ($SqlOnly -eq $true)
 			{
 				[PSCustomObject]@{
-					InstanceName = $server.ServiceName
 					ComputerName = $server.NetName
+					InstanceName = $server.ServiceName
 					SqlInstance = $server.Name
-					SqlStartTime = $SQLStartTime
 					SqlUptime = $SQLUptime
-					SqlUptimeSince = $SQLUptimeString
+					SqlStartTime = $SQLStartTime
+					SinceSqlStart = $SQLUptimeString
 				}
 			}
 			elseif ($WindowsOnly -eq $true)
 			{
 				[PSCustomObject]@{
 					ComputerName = $WindowsServerName
-					WindowsBootTime = $WinBootTime
 					WindowsUptime = $WindowsUptime
-					WindowsUptimeSince = $WindowsUptimeString
+					WindowsBootTime = $WinBootTime
+					SinceWindowsBoot = $WindowsUptimeString
 				}
 			}
 			else
 			{
 				[PSCustomObject]@{
-					InstanceName = $server.ServiceName
 					ComputerName = $WindowsServerName
+					InstanceName = $server.ServiceName
 					SqlInstance = $server.Name
-					SqlStartTime = $SQLStartTime
 					SqlUptime = $SQLUptime
-					SqlUptimeSince = $SQLUptimeString
-					WindowsBootTime = $WinBootTime
 					WindowsUptime = $WindowsUptime
-					WindowsUptimeSince = $WindowsUptimeString
+					SqlStartTime = $SQLStartTime
+					WindowsBootTime = $WinBootTime
+					SinceSqlStart  = $SQLUptimeString
+					SinceWindowsBoot = $WindowsUptimeString
 				}
 			}
 		}
