@@ -5,7 +5,7 @@
 Find database/s on multiple servers that match critea you input
 
 .DESCRIPTION
-Allows you to search Sql Instances for database that have either the same name, owner or service broker guid.
+Allows you to search SQL Server instances for database that have either the same name, owner or service broker guid.
 
 There a several reasons for the service broker guid not matching on a restored database primarily using alter database new broker. or turn off broker to return a guid of 0000-0000-0000-0000. 
 
@@ -37,16 +37,16 @@ You should have received a copy of the GNU General Public License along with thi
  https://dbatools.io/Find-DbaDatabase
 
 .EXAMPLE
-Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern TestDB -Detailed 
+Find-DbaDatabase -SqlServer "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern TestDB -Detailed 
 Returns all database from the SqlInstances that have a database named TestDB with a detailed output.
 
 .EXAMPLE
-Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern Report* -Detailed 
+Find-DbaDatabase -SqlServer "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern Report* -Detailed 
 Returns all database from the SqlInstances that have a database name starting with Report with a detailed output.
 
 .EXAMPLE
-Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Property ServiceBrokerGuid -Pattern *-faeb-495a-9898-f25a782835f5 -Detailed 
-Returns all database from the SqlInstances that have the same Service Broker GUID with a deeatiled output
+Find-DbaDatabase -SqlServer "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Property ServiceBrokerGuid -Pattern *-faeb-495a-9898-f25a782835f5 -Detailed 
+Returns all database from the SqlInstances that have the same Service Broker GUID with a deatiled output
 
 #>
 	[CmdletBinding()]
