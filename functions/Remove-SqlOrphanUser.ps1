@@ -322,12 +322,12 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
                                             if ($Pscmdlet.ShouldProcess($db.Name, "Dropping user '$($User.Name)' using -Force"))
 				                            {
                                                 $server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
-                                                Write-Verbose "User '$($User.Name)' was dropped. -Force parameter was used!"
+												Write-Output "User '$($User.Name)' was dropped from $($db.Name). -Force parameter was used!"
                                             }
                                         }
                                         else
                                         {
-                                            Write-Warning "Orphan user $($User.Name) have a matching login. The user will not be dropped. If you want to drop anyway, use -Force parameter."
+                                            Write-Warning "Orphan user $($User.Name) has a matching login. The user will not be dropped. If you want to drop anyway, use -Force parameter."
                                             Continue
                                         }
                                     }
@@ -339,7 +339,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
                                         if ($Pscmdlet.ShouldProcess($db.Name, "Dropping user '$($User.Name)'"))
 				                        {
                                             $server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
-                                            Write-Verbose "User '$($User.Name)' was dropped."
+											Write-Output "User '$($User.Name)' was dropped from $($db.Name)."
                                         }
                                     }
                                 }
