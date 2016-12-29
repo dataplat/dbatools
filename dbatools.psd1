@@ -184,7 +184,8 @@
 		'Get-DbaUptime',
 		'Rename-DbaLogin',
 		'Find-DbaDatabase',
-		'Find-DbaAgentJob'
+		'Find-DbaAgentJob',
+		'Restore-DbaFromDatabaseSnapshot'
 	)
 	
 	# Cmdlets to export from this module
