@@ -30,7 +30,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command.
 
 .PARAMETER Force
-If restoring from a snapshot involves dropping any other shapshot, you need to explicitely
+If restoring from a snapshot involves dropping any other shapshot, you need to explicitly
 use -Force to let this command delete the ones not involved in the restore process.
 
 .NOTES
@@ -46,17 +46,6 @@ You should have received a copy of the GNU General Public License along with thi
  https://dbatools.io/Restore-DbaFromDatabaseSnapshot
 
 .EXAMPLE
-Restore-DbaFromDatabaseSnapshot -SqlServer sqlserver2014a
-
-Restores all databases that have snapshots using the latest snapshot available from sqlserver2014a
-
-.EXAMPLE
-Restore-DbaFromDatabaseSnapshot -SqlServer sqlserver2014a -Force
-
-Restores all databases that have snapshots using the latest snapshot available from sqlserver2014a,
-dropping any other snapshot that prevent the restore process
-
-.EXAMPLE
 Restore-DbaFromDatabaseSnapshot -SqlServer sqlserver2014a -Databases HR, Accounting
 
 Restores HR and Accounting databases using the latest snapshot available
@@ -65,7 +54,6 @@ Restores HR and Accounting databases using the latest snapshot available
 Restore-DbaFromDatabaseSnapshot -SqlServer sqlserver2014a -Snapshots HR_snap_20161201, Accounting_snap_20161101
 
 Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_20161101
-
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
@@ -93,7 +81,7 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 
 	PROCESS
 	{
-		if ($snapshots.count -gt 0 -and $databases.count -gt 0)
+		if ($snapshots.count -eq 0 -and $databases.count -eq 0)
 		{
 			Write-Warning "You must specify either -Snapshots (to restore from) or -Databases (to restore to)"
 			return
@@ -208,25 +196,30 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 				$orig_logproperties = $server.Databases[$op['to']].LogFiles | Select-Object id, size
 				# Drop what needs to be dropped
 				$operror = $false
-				if($op['drop'].count -gt 0 -and $Force -eq $false)
+				
+				if($op['drop'].count -gt 1 -and $Force -eq $false)
 				{
-					Write-Warning "The restore process for '$($op['to'])' from '$($op['from'])' needs to drop:"
+					Write-Warning "The restore process for '$($op['to'])' from '$($op['from'])' needs to drop the following:"
 					foreach($db in $op['drop']) {
-						Write-Warning " - '$db'"
+						Write-Warning $db
 					}
-					Write-Warning "Use -Force if you really want it"
+					Write-Warning "Use -Force if you really want to drop these snapshots."
 					break
 				}
 				foreach($drop in $op['drop'])
 				{
 					If ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot $drop"))
 					{
-						$dropped = Remove-SqlDatabase -SqlServer $server -DBName $drop -SqlCredential $Credential
-						if ($dropped -notmatch "Success")
+						# SKIP IT IF IT'S THE SAME NAME
+						if ($drop -ne $($op['from']))
 						{
-							Write-Warning $dropped
-							$operror = $true
-							break
+							$dropped = Remove-SqlDatabase -SqlServer $server -DBName $drop -SqlCredential $Credential
+							if ($dropped -notmatch "Success")
+							{
+								Write-Warning $dropped
+								$operror = $true
+								break
+							}
 						}
 					}
 				}
@@ -284,7 +277,7 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 					}
 				}
 				[PSCustomObject]@{
-					Server   = $Server
+					Server   = $Server.Name
 					Database = $op['to']
 					Status   = 'Restored'
 					Notes    = 'Remember to take a backup now, and also to remove the snapshot if not needed'
