@@ -38,7 +38,7 @@ Takes path, checks for validity. Scans for usual backup file
             {
                 $Path = $Path + "\"
             }
-            $query = "EXEC master.sys.xp_dirtree '$Path',0,1;"
+            $query = "EXEC master.sys.xp_dirtree '$Path',1,1;"
             $queryResult = Invoke-Sqlcmd2 -ServerInstance $sqlServer -Database tempdb -Query $query
             $dirs = $queryResult | where-object { $_.file -eq 0 }
             foreach($d in $dirs) 
