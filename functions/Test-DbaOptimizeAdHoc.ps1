@@ -91,6 +91,8 @@ Get Optimize for AdHoc Workloads setting for servers sql2008 and sqlserver2012 a
 			
 			[pscustomobject]@{
 				Instance = $server.Name
+				CurrentOptimizeAdHoc = $optimizeAdHoc
+        			RecommendedOptimizeAdHoc = 1
 				Notes = $notes
 			}
 		}
