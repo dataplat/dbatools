@@ -185,7 +185,8 @@
 		'Rename-DbaLogin',
 		'Find-DbaDatabase',
 		'Find-DbaAgentJob',
-		'Restore-DbaFromDatabaseSnapshot'
+		'Restore-DbaFromDatabaseSnapshot',
+		'Test-DbaOptimizeForAdHoc'
 	)
 	
 	# Cmdlets to export from this module
