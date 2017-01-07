@@ -80,21 +80,23 @@ Returns databases on multiple instances piped into the function
 				continue
 			}
 			
+			$defaults = 'Name', 'Status', 'ContainmentType', 'RecoveryModel', 'CompatibilityLevel', 'Collation', 'Owner'
+			
 			if ($systemOnly)
 			{
-				$server.Databases | Where-Object { $_.IsSystemObject -eq $true }
+				$server.Databases | Where-Object { $_.IsSystemObject -eq $true } | Select-DefaultField -Property $defaults
 			}
 			elseif ($useronly)
 			{
-				$server.Databases | Where-Object { $_.IsSystemObject -eq $false }
+				$server.Databases | Where-Object { $_.IsSystemObject -eq $false } | Select-DefaultField -Property $defaults
 			}
 			elseif ($databases)
 			{
-				$server.Databases | Where-Object { $_.Name -in $databases }
+				$server.Databases | Where-Object { $_.Name -in $databases } | Select-DefaultField -Property $defaults
 			}
 			else
 			{
-				$server.Databases
+				$server.Databases | Select-DefaultField -Property $defaults
 			}
 		}
 	}
