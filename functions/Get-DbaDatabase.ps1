@@ -74,7 +74,7 @@ Returns databases on multiple instances piped into the function
 			}
 			catch
 			{
-				Write-Write "Failed to connect to: $instance"
+				Write-Warning "Failed to connect to: $instance"
 				continue
 			}
 			
