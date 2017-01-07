@@ -8,14 +8,17 @@ Gets a SQL database object for each database that is present in the target insta
  The Get-SqlDatabase command gets a SQL database object for each database that is present in the target instance of
  SQL Server. If the name of the database is provided, the command will return only this specific database object.
 	
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input.
 
 .PARAMETER SqlCredential
 PSCredential object to connect as. If not specified, current Windows login will be used.
 
-.PARAMETER Detailed
-Returns more information about the configuration settings than standard
+.PARAMETER SystemOnly
+Returns only system databases
+
+.PARAMETER UserOnly
+Returns only user databases
 
 .NOTES
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -40,7 +43,6 @@ Returns only the system databases on the local default SQL Server instance
 .EXAMPLE
 Get-DbaDatabase -SqlServer localhost -UserOnly
 Returns only the user databases on the local default SQL Server instance
-	
 	
 .EXAMPLE
 'localhost','sql2016' | Get-DbaDatabase
