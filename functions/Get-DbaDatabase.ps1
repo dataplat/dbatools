@@ -43,21 +43,21 @@ Returns only the user databases on the local default SQL Server instance
 	
 	
 .EXAMPLE
-'localhost','localhost\namedinstance' | Get-DbaDatabase
+'localhost','sql2016' | Get-DbaDatabase
 Returns databases on multiple instances piped into the function
 
 #>
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[string[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$SystemOnly,
 		[switch]$UserOnly
 	)
 	
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SqlCredential } }
+	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
 	BEGIN
 	{
@@ -66,7 +66,7 @@ Returns databases on multiple instances piped into the function
 	
 	PROCESS
 	{
-		foreach ($instance in $SqlServer)
+		foreach ($instance in $SqlInstance)
 		{
 			try
 			{
