@@ -13,7 +13,8 @@ Takes an array of FileSystem Objects and then filters them down by date to get a
         [object[]]$Files,
         [parameter(Mandatory = $true)]
         [object]$SqlServer,
-        [DateTime]$RestoreTime = (Get-Date).addyears(1)  
+        [DateTime]$RestoreTime = (Get-Date).addyears(1),
+        [System.Management.Automation.PSCredential]$SqlCredential 
 
 	)
     Begin
@@ -37,7 +38,7 @@ Takes an array of FileSystem Objects and then filters them down by date to get a
     End
     {
         Write-Verbose "$FunctionName - Read File headers (Read-DBABackupHeader)"
-        $SQLBackupdetails  = $InternalFiles | Select-Object -ExpandProperty FullName | Read-DBAbackupheader -sqlserver $SQLSERVER 
+        $SQLBackupdetails  = $InternalFiles | Select-Object -ExpandProperty FullName | Read-DBAbackupheader -sqlserver $SQLSERVER -SqlCredential:$SqlCredential
         Write-Verbose "$FunctionName - Find Newest Full backup"
         $Fullbackup = $SQLBackupdetails | where-object {$_.BackupType -eq "1" -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1
         if ($Fullbackup -eq $null)
