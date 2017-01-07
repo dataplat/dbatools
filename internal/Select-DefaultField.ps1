@@ -19,25 +19,6 @@
 		[string[]]$Property
 	)
 	
-	if ("$property" -like "* as *")
-	{
-		$newproperty = @()
-		foreach ($p in $property)
-		{
-			if ($p -like "* as *")
-			{
-				$old, $new = $p -isplit " as "
-				$inputobject | Add-Member -MemberType AliasProperty -Name $new -Value $old -Force
-				$newproperty += $new
-			}
-			else
-			{
-				$newproperty += $p
-			}
-		}
-		$property = $newproperty
-	}
-	
 	$inputobject.PSObject.TypeNames.Insert(0, 'dbatools.customobject')
 	$defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', [string[]]$Property)
 	$standardmembers = [System.Management.Automation.PSMemberInfo[]]@($defaultset)
