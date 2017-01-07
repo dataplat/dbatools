@@ -188,7 +188,7 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
     }
     END
     {
-        $FilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime
+        $FilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime -SqlCredental $SqlCredential
 
         if (($FilteredFiles.DatabaseName | Group-Object | Measure-Object).count -gt 1)
         {
@@ -198,10 +198,10 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
         if(Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles)
         {
             try{
-                $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -RestoreTime $RestoreTime -RestoreLocation $RestoreLocation -NoRecovery:$NoRecovery -ReplaceDatabase:$ReplaceDatabase -Scripts:$Scripts -ScriptOnly:$ScriptOnly -VerifyOnly:$VerifyOnly
+                $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -RestoreLocation $RestoreLocation -NoRecovery:$NoRecovery -ReplaceDatabase:$ReplaceDatabase -Scripts:$Scripts -ScriptOnly:$ScriptOnly -VerifyOnly:$VerifyOnly
                 if ($LogicalFileMapping.count -ne 0 -or $LogicalFilePrefix -ne '')
                 {
-                    Rename-LogicalFile -SqlServer $SqlServer -DbName $DatabaseName -Mapping:$LogicalFileMapping -Prefix:$LogicalFilePrefix
+                    Rename-LogicalFile -SqlServer $SqlServer -DbName $DatabaseName -SqlCredential $SqlCredential -Mapping:$LogicalFileMapping -Prefix:$LogicalFilePrefix
                 }
             }
             catch{
