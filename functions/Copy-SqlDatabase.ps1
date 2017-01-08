@@ -607,7 +607,17 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					}
 					catch
 					{
-						throw "$_ `n This sometimes happens with cloned VMs. You can try again or use Backup and Restore"
+						Write-Warning "Start-BitsTransfer did not succeed. Now attempting with Copy-Item - no progress bar will be shown."
+						try
+						{
+							Copy-Item -Path $from -Destination $remotefilename -ErrorAction Stop
+						}
+						catch
+						{
+							Write-Warning "Access denied. This can happen for a number of reasons including issues with cloned disks."
+							Write-Warning "Alternatively, you may need to run PowerShell as Administrator, especially when running on localhost."
+							break
+						}
 					}
 				}
 			}
@@ -711,6 +721,17 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		Write-Output "Attempting to connect to Sql Servers.."
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		
+		if ($DetachAttach)
+		{
+			if ($sourceserver.netname -eq $env:COMPUTERNAME -or $destserver.netname -eq $env:COMPUTERNAME)
+			{
+				If (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
+				{
+					Write-Warning "When running DetachAttach locally on the console, it's likely you'll need to Run As Administrator. Trying anyway."
+				}
+			}
+		}
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
@@ -1077,19 +1098,9 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					
 					If ($Pscmdlet.ShouldProcess($destination, "Detach $dbname from $source and attach, then update dbowner"))
 					{
-						$result = Start-SqlDetachAttach $sourceserver $destserver $filestructure $dbname
+						$migrationresult = Start-SqlDetachAttach $sourceserver $destserver $filestructure $dbname
 						
 						$dbfinish = Get-Date
-						
-						if ($result -eq $true)
-						{
-							Write-Output "Successfully attached $dbname to $destination"
-						}
-						else
-						{
-							Write-Warning "Failed to attach $dbname to $destination. Aborting routine for this database."
-							continue
-						}
 						
 						if ($reattach -eq $true)
 						{
@@ -1118,6 +1129,17 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 							{
 								Write-Warning "Could not reattach $dbname to $source."
 							}
+						}
+						
+						
+						if ($migrationresult -eq $true)
+						{
+							Write-Output "Successfully attached $dbname to $destination"
+						}
+						else
+						{
+							Write-Warning "Failed to attach $dbname to $destination. Aborting routine for this database."
+							continue
 						}
 					}
 				}
