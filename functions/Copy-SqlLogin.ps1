@@ -171,7 +171,7 @@ Limitations: Does not support Application Roles yet
 					}
 					else
 					{
-						Write-Warning "Copying local login $username since the source and destination server reside on the same machine."
+						Write-Output "Copying local login $username since the source and destination server reside on the same machine."
 					}
 				}
 				
