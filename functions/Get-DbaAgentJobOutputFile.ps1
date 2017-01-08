@@ -123,7 +123,10 @@ param
             {
                 if(Test-Path $fileName)
                 {
-                    Invoke-Item $fileName
+                    If ($Pscmdlet.ShouldProcess("$FileName", "Opening File $FileName"))
+				    {
+                        Invoke-Item $fileName
+                    }
                 }
                 else
                 {
