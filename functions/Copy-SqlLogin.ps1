@@ -51,6 +51,9 @@ Calls Export-SqlLogin and exports all logins to a T-SQL formatted file. This doe
 .PARAMETER SyncSaName
 Want to sync up the name of the sa account on the source and destination? Use this switch.
 	
+.PARAMETER IncludeLocal 
+Local accounts are skipped by default because it's likely they will not exist on the destination server. However, sometimes they do -- like when there are multiple instances on one server. Use this parameter to incldue local login migrations.
+	
 .PARAMETER Force
 Force drops and recreates logins. Logins that own jobs cannot be dropped at this time.
 
@@ -59,7 +62,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 
 .PARAMETER Confirm 
 Prompts you for confirmation before executing any changing operations within the command. 
-
+	
 .PARAMETER pipelogin
 Takes the parameters required from a login object that has been piped ot the command
 
@@ -122,6 +125,7 @@ Limitations: Does not support Application Roles yet
 		[parameter(ParameterSetName = "Live")]
 		[switch]$Force,
 		[switch]$SyncSaName,
+		[switch]$IncludeLocal,
 		[object]$pipelogin
 	)
 	
@@ -156,15 +160,19 @@ Limitations: Does not support Application Roles yet
 				{ 
 					Write-Warning "$Destination does not have Mixed Mode enabled for user: $username. Enable this after the migration completes."				 
 				}
-
+				
 				$userbase = ($username.Split("\")[0]).ToLower()
+				
 				if ($servername -eq $userbase -or $username.StartsWith("NT "))
 				{
-					If ($Pscmdlet.ShouldProcess("console", "Stating $username is skipped because it is a local machine name."))
+					if ($IncludeLocal -ne $true)
 					{
-						Write-Warning "$username is skipped because it is a local machine name."
+						If ($Pscmdlet.ShouldProcess("console", "Stating $username is skipped because it is a local machine name."))
+						{
+							Write-Warning "$username is skipped because it is a local machine name. Use -IncludeLocal to migrate local accounts."
+						}
+						continue
 					}
-					continue
 				}
 				
 				if (($login = $destserver.Logins.Item($username)) -ne $null -and !$force)
