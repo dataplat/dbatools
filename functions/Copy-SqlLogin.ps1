@@ -50,10 +50,7 @@ Calls Export-SqlLogin and exports all logins to a T-SQL formatted file. This doe
 
 .PARAMETER SyncSaName
 Want to sync up the name of the sa account on the source and destination? Use this switch.
-	
-.PARAMETER IncludeLocal 
-Local accounts are skipped by default because it's likely they will not exist on the destination server. However, sometimes they do -- like when there are multiple instances on one server. Use this parameter to incldue local login migrations.
-	
+
 .PARAMETER Force
 Force drops and recreates logins. Logins that own jobs cannot be dropped at this time.
 
@@ -125,7 +122,6 @@ Limitations: Does not support Application Roles yet
 		[parameter(ParameterSetName = "Live")]
 		[switch]$Force,
 		[switch]$SyncSaName,
-		[switch]$IncludeLocal,
 		[object]$pipelogin
 	)
 	
@@ -165,13 +161,17 @@ Limitations: Does not support Application Roles yet
 				
 				if ($servername -eq $userbase -or $username.StartsWith("NT "))
 				{
-					if ($IncludeLocal -ne $true)
+					if ($sourceserver.netname -ne $destserver.netname)
 					{
 						If ($Pscmdlet.ShouldProcess("console", "Stating $username is skipped because it is a local machine name."))
 						{
-							Write-Warning "$username is skipped because it is a local machine name. Use -IncludeLocal to migrate local accounts."
+							Write-Warning "$username is skipped because it is a local machine name."
 						}
 						continue
+					}
+					else
+					{
+						Write-Warning "Copying local login $username since the source and destination server reside on the same machine."
 					}
 				}
 				
