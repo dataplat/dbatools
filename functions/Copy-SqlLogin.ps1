@@ -171,7 +171,10 @@ Limitations: Does not support Application Roles yet
 					}
 					else
 					{
-						Write-Output "Copying local login $username since the source and destination server reside on the same machine."
+						If ($Pscmdlet.ShouldProcess("console", "Stating local login $username since the source and destination server reside on the same machine."))
+						{
+							Write-Output "Copying local login $username since the source and destination server reside on the same machine."
+						}
 					}
 				}
 				
