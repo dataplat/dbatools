@@ -1,4 +1,4 @@
-﻿FUNCTION Get-DbaConfiguration
+﻿FUNCTION Get-DbaSpConfigure
 {
 <#
 .SYNOPSIS
@@ -28,18 +28,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.	
 
 .LINK
-https://dbatools.io/Get-DbaConfiguration
+https://dbatools.io/Get-DbaSpConfigure
 
 .EXAMPLE
-Get-DbaConfiguration -SqlServer localhost
+Get-DbaSpConfigure -SqlServer localhost
 Returns server level configuration data on the localhost (ServerName, ConfigName, DisplayName, ConfiguredValue, CurrentlyRunningValue)
 
 .EXAMPLE
-Get-DbaConfiguration -SqlServer localhost -Detailed
+Get-DbaSpConfigure -SqlServer localhost -Detailed
 Returns detailed information on server level configuration data on the localhost (ServerName, ConfigName, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, CurrentlyRunningValue)
 
 .EXAMPLE
-'localhost','localhost\namedinstance' | Get-DbaConfiguration
+'localhost','localhost\namedinstance' | Get-DbaSpConfigure
 Returns system configuration information on multiple instances piped into the function
 
 #>
@@ -48,24 +48,19 @@ Returns system configuration information on multiple instances piped into the fu
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
 		[string[]]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential,
-		[switch]$Detailed
+		[System.Management.Automation.PSCredential]$SqlCredential
 	)
-	BEGIN
-	{
-		$output = @()
-	}
 	PROCESS
 	{
-		FOREACH ($Server in $SqlServer)
+		FOREACH ($instance in $SqlServer)
 		{
 			TRY
 			{
-				$server = Connect-SqlServer -SqlServer $server -SqlCredential $sqlcredential
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
 			}
 			CATCH
 			{
-				Write-Verbose "Failed to connect to: $Server"
+				Write-Warning "Failed to connect to: $instance"
 				continue
 			}
 			
@@ -80,7 +75,7 @@ Returns system configuration information on multiple instances piped into the fu
 				#Ignores properties that are not valid on this version of SQL
 				if (!([string]::IsNullOrEmpty($PropInfo.RunValue)))
 				{
-					$output += [pscustomobject]@{
+                        [pscustomobject]@{
 						ServerName = $server.Name
 						ConfigName = $($prop.Name)
 						DisplayName = $PropInfo.DisplayName
@@ -95,14 +90,6 @@ Returns system configuration information on multiple instances piped into the fu
 				}
 			}
 			
-			if ($Detailed -eq $true)
-			{
-				$output | Sort-Object ServerName, DisplayName
-			}
-			else
-			{
-				$output | Sort-Object ServerName, DisplayName | Select-Object ServerName, ConfigName, DisplayName, ConfiguredValue, CurrentlyRunningValue
-			}
 		}
 	}
 }
