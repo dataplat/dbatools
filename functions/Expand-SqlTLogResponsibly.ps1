@@ -38,6 +38,10 @@ Known bug before SQL Server 2012
         http://connect.microsoft.com/SQLServer/feedback/details/481594/log-growth-not-working-properly-with-specific-growth-sizes-vlfs-also-not-created-appropriately
         https://connect.microsoft.com/SQLServer/feedback/details/357502/transaction-log-file-size-will-not-grow-exactly-4gb-when-filegrowth-4gb
 
+How it works?
+    The transaction log will growth in chunks until it reachs the desired size. 
+    Example: If you have a log file with 8192MB and you say that the target size is 81920MB (80GB) it will growth in chunks of 8192MB until reach the 81920MB. 8192 -> 16384 -> 24576 ... 73728 -> 81920
+
 .PARAMETER SqlServer 
     Represents the name/ip of the instance where the database(s) that you want to grow exist
      
