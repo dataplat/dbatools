@@ -116,6 +116,8 @@ Only db1 database will be verified for features in use that can't be supported o
 		#>
 
         $editions = @{"Enterprise" = 10; "Developer" = 10; "Evaluation" = 10; "Standard" = 5; "Express" = 1}
+        $notesCanMigrate = "Database can be migrated."
+        $notesCannotMigrate = "Database cannot be migrated."
     }
     PROCESS
     {
@@ -214,14 +216,12 @@ Only db1 database will be verified for features in use that can't be supported o
                             Continue
                         }
 
-                        #If SQL Server 2016 SP1 or higher
+                        #If SQL Server 2016 SP1 (13.0.4001.0) or higher
                         if ($destVersionNumber -ge 13040010)
                         {
-                            Write-Verbose "You can migrate your database. Since SQL Server 2016 SP1 almost features are available in every edition."
-
                             <#
-                                Need to verify if 
-                                    Edition = EXPRESS and database uses 'Change Data Capture' (CDC) which is not available on Express edition (don't have SQL Server Agent)
+                                Need to verify if Edition = EXPRESS and database uses 'Change Data Capture' (CDC) 
+                                This means that database cannot be migrated because Express edition don't have SQL Server Agent
                             #>
                             if ($editions.Item($destserver.Edition.ToString().Split(" ")[0]) -eq 1 -and $dbFeatures.Contains("ChangeCapture"))
                             {
@@ -232,7 +232,7 @@ Only db1 database will be verified for features in use that can't be supported o
                                                     DestinationVersion = $DestinationVersion
                                                     Database = $dbName
                                                     FeaturesInUse = $dbFeatures
-                                                    Notes = "Database cannot be migrated. Destination server edition is EXPRESS which does not support 'ChangeCapture' feature."
+                                                    Notes = "$notesCannotMigrate. Destination server edition is EXPRESS which does not support 'ChangeCapture' feature that is in use."
                                                 }
                             }
                             else
@@ -244,19 +244,19 @@ Only db1 database will be verified for features in use that can't be supported o
                                                     DestinationVersion = $DestinationVersion
                                                     Database = $dbName
                                                     FeaturesInUse = $dbFeatures
-                                                    Notes = "Database can be migrated."
+                                                    Notes = $notesCanMigrate
                                                 }
                             }
                         }
                         #Version is lower than SQL Server 2016 SP1
                         else
                         {
+                            Write-Verbose "Source Server Edition: $($sourceserver.Edition) (Weight: $($editions.Item($sourceserver.Edition.ToString().Split(" ")[0])))"
+                            Write-Verbose "Destination Server Edition: $($destserver.Edition) (Weight: $($editions.Item($destserver.Edition.ToString().Split(" ")[0])))"
+
                             #Check for editions. If destination edition is lower than source edition and exists features in use
                             if (($editions.Item($destserver.Edition.ToString().Split(" ")[0]) -lt $editions.Item($sourceserver.Edition.ToString().Split(" ")[0])) -and (!([string]::IsNullOrEmpty($dbFeatures))))
                             {
-                                Write-Verbose "Source Server Edition: $($sourceserver.Edition) (Weight: $($editions.Item($sourceserver.Edition.ToString().Split(" ")[0])))"
-                                Write-Verbose "Destination Server Edition: $($destserver.Edition) (Weight: $($editions.Item($destserver.Edition.ToString().Split(" ")[0])))"
-
                                 [pscustomobject]@{
 						                            SourceInstance = $sourceserver.Name
                                                     DestinationInstance = $destserver.Name
@@ -264,7 +264,7 @@ Only db1 database will be verified for features in use that can't be supported o
                                                     DestinationVersion = $DestinationVersion
 						                            Database = $dbName
                                                     FeaturesInUse = $dbFeatures
-						                            Notes = "Database cannot be migrated. There are features in use not available on destination instance."
+						                            Notes = "$notesCannotMigrate There are features in use not available on destination instance."
 					                            }
                             }
                             #
@@ -277,7 +277,7 @@ Only db1 database will be verified for features in use that can't be supported o
                                                     DestinationVersion = $DestinationVersion
 						                            Database = $dbName
                                                     FeaturesInUse = $dbFeatures
-						                            Notes = "You can migrate database! Does not exist any feature in use that you can't use on the destination version."
+						                            Notes = $notesCanMigrate
 					                            }
                             }
                         }
