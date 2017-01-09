@@ -90,12 +90,14 @@ Shows what would happen if the command were executed.
     }
     PROCESS
     {
-	    If ($Pscmdlet.ShouldProcess("both servers", "Updating sp_configure to show advanced options"))
+	    If ($Pscmdlet.ShouldProcess("$Destination", "Updating sp_configure to show advanced options"))
 	    {
-		    $sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
-		    $sourceserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
-		    $destserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
-		    $destserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
+			#Interesting note, using SMO there's no need to adjust the Advanced Options setting. Seems to be TSQL only.
+			
+			#$sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
+		    #$sourceserver.Configuration.Alter()
+		    #$destserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
+		    #$destserver.Configuration.Alter()
 	    }
 		
 	    $destprops = $destserver.Configuration.Properties
@@ -108,7 +110,8 @@ Shows what would happen if the command were executed.
 	    {
 		    $proplookup += [PSCustomObject]@{
 			    ShortName = $lookup
-			    DisplayName = $sourceserver.Configuration.$lookup.Displayname
+				DisplayName = $sourceserver.Configuration.$lookup.Displayname
+				IsDynamic = $sourceserver.Configuration.$lookup.IsDynamic
 		    }
 	    }
 		
@@ -132,16 +135,20 @@ Shows what would happen if the command were executed.
 			    {
 				    $destOldPropValue = $destprop.configvalue
 				    $destprop.configvalue = $sourceprop.configvalue
-				    $destserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
-				    Write-Output "Updated $($destprop.displayname) from $destOldPropValue to $($sourceprop.configvalue)"
-			    }
-			    catch
-			    {
-				    Write-Error "Could not $($destprop.displayname) to $($sourceprop.configvalue). Feature may not be supported."
-			    }
-		    }
+				    $destserver.Configuration.Alter()
+					Write-Output "Updated $($destprop.displayname) from $destOldPropValue to $($sourceprop.configvalue)"
+					if ($lookup.IsDynamic -eq $false)
+					{
+						Write-Warning "Configuration option '$displayname' requires restart."	
+					}
+				}
+				catch
+				{
+					Write-Error "Could not $($destprop.displayname) to $($sourceprop.configvalue). Feature may not be supported."
+				}
+			}
 			
-		    If ($Pscmdlet.ShouldProcess($destination, "Altering configuration"))
+			If ($Pscmdlet.ShouldProcess($destination, "Altering configuration"))
 		    {
 			    try
 			    {
@@ -156,10 +163,10 @@ Shows what would happen if the command were executed.
 		
 	    If ($Pscmdlet.ShouldProcess("both servers", "Updating sp_configure so that it does not show advanced options"))
 	    {
-		    $sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
-		    $sourceserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
-		    $destserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
-		    $destserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
+		    #$sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
+		   # $sourceserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
+		    #$destserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
+		    #$destserver.Configuration.Alter()
 	    }
     }
     END
@@ -170,6 +177,7 @@ Shows what would happen if the command were executed.
 	    If ($Pscmdlet.ShouldProcess("console", "Showing finished message"))
 	    {
 		    Write-Output "Server configuration update finished"
-	    }
-    }
+		}
+	}
+	
 }
