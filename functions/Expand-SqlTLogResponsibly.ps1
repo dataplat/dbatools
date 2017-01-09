@@ -255,7 +255,7 @@ https://dbatools.io/Expand-SqlTLogResponsibly
                     
                     #Verfiy path using Split-Path on $logfile.FileName in backwards. This way we will catch the LUNs. Example: "K:\Log01" as LUN name. Need to add final backslash if not there
                     $DrivePath = Split-Path $logfile.FileName -parent
-                    $DrivePath = if(!($DrivePath.EndsWith("\"))) {"$DrivePath\"}
+                    $DrivePath = if(!($DrivePath.EndsWith("\"))) {"$DrivePath\"} else {$DrivePath}
                     Do  
                     {
                         if ($AllDrivesFreeDiskSpace | Where-Object {$DrivePath -eq "$($_.Name)"})
@@ -268,7 +268,7 @@ https://dbatools.io/Expand-SqlTLogResponsibly
                         {
                             $match = $false
                             $DrivePath = Split-Path $DrivePath -parent
-                            $DrivePath = if(!($DrivePath.EndsWith("\"))) {"$DrivePath\"}
+                            $DrivePath = if(!($DrivePath.EndsWith("\"))) {"$DrivePath\"} else {$DrivePath}
                         }
 
                     }
