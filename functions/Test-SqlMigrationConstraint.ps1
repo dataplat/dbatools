@@ -16,6 +16,8 @@ The editions supported by this function are:
     - Evaluation
     - Standard
     - Express
+
+Take into account the new features introduced on SQL Server 2016 SP1 for all versions. More information at https://blogs.msdn.microsoft.com/sqlreleaseservices/sql-server-2016-service-pack-1-sp1-released/
 	
 The -Databases parameter is autopopulated for command-line completion.
 
@@ -117,7 +119,6 @@ Only db1 database will be verified for features in use that can't be supported o
     }
     PROCESS
     {
-
         # Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
 		
@@ -164,8 +165,7 @@ Only db1 database will be verified for features in use that can't be supported o
 			    throw "This function does not support versions lower than SQL Server 2008 (v10)"
 		    }
 
-            #if editions differs, from higher to lower one, verify the sys.dm_db_persisted_sku_features
-            #only available from SQL 2008 +
+            #if editions differs, from higher to lower one, verify the sys.dm_db_persisted_sku_features - only available from SQL 2008 +
             if (($sourceserver.versionMajor -ge 10 -and $destserver.versionMajor -ge 10))
             {
                 foreach ($db in $databases)
@@ -180,50 +180,106 @@ Only db1 database will be verified for features in use that can't be supported o
                         $dbstatus = $db.Status.ToString()
                         $dbName = $db.Name
                     }
-                    Write-Host "`r`nChecking database: '$dbName'"
+                    
+                    Write-Verbose "Checking database: '$dbName'"
 
                     if ($dbstatus.Contains("Offline") -eq $false)
                     {
-                        if ($editions.Item($destserver.Edition.ToString().Split(" ")[0]) -lt $editions.Item($sourceserver.Edition.ToString().Split(" ")[0]))
+                        [long]$destVersionNumber = $($destserver.VersionString).Replace(".", "")
+                        [string]$SourceVersion = "$($sourceServer.Edition) $($sourceServer.ProductLevel) ($($sourceserver.Version))"
+                        [string]$DestinationVersion = "$($destserver.Edition) $($destserver.ProductLevel) ($($destserver.Version))"
+                        [string]$dbFeatures = ""
+
+                        try 
                         {
-                            #validate if any features are being used
-                            Write-Verbose "Source Server Edition: $($sourceserver.Edition) (Weight: $($editions.Item($sourceserver.Edition.ToString().Split(" ")[0])))"
-                            Write-Verbose "Destination Server Edition: $($destserver.Edition) (Weight: $($editions.Item($destserver.Edition.ToString().Split(" ")[0])))"
+                            $sql = "SELECT feature_name FROM sys.dm_db_persisted_sku_features"
 
-			                try 
+                            $skufeatures = $sourceServer.Databases[$dbName].ExecuteWithResults($sql)
+
+                            Write-Verbose "Checking features in use..."
+
+                            if ($skufeatures.Tables[0].Rows.Count -gt 0)
                             {
-                                $sql = "SELECT feature_name FROM sys.dm_db_persisted_sku_features"
-
-                                $skufeatures = $sourceserver.Databases[$dbName].ExecuteWithResults($sql)
-
-                                Write-Verbose "Checking features in use..."
-                                if ($skufeatures.Tables[0].Rows.Count -gt 0)
+                                foreach ($row in $skufeatures.Tables[0].Rows)
                                 {
-                                    $feature = ""
-
-                                    foreach ($row in $skufeatures.Tables[0].Rows)
-                                    {
-                                        $feature += "$($row["feature_name"])`r`n"
-                                    }
-                            
-                                    $message = "'$dbName' cannot be migrated to '$($destserver.Name)' ($($destserver.Edition). The following features are unsupported:`r`n$($feature)"
-                                    Write-Warning $message
-
-                                    $dbFail = $true
+                                    $dbFeatures += ",$($row["feature_name"])"
                                 }
-                                else
-                                {
-                                    Write-Output "You can migrate database '$dbName'! Does not exist any feature in use that you can't use on the destination version."
-                                }
-                            }
-			                catch
-                            { 
-                                throw "Can't execute SQL on $sourceserver. `r`n $($_)"
+
+                                $dbFeatures = $dbFeatures.TrimStart(",")
                             }
                         }
+			            catch
+                        { 
+                            Write-Warning "Can't execute SQL on $sourceserver. `r`n $($_)"
+                            Continue
+                        }
+
+                        #If SQL Server 2016 SP1 or higher
+                        if ($destVersionNumber -ge 13040010)
+                        {
+                            Write-Verbose "You can migrate your database. Since SQL Server 2016 SP1 almost features are available in every edition."
+
+                            <#
+                                Need to verify if 
+                                    Edition = EXPRESS and database uses 'Change Data Capture' (CDC) which is not available on Express edition (don't have SQL Server Agent)
+                            #>
+                            if ($editions.Item($destserver.Edition.ToString().Split(" ")[0]) -eq 1 -and $dbFeatures.Contains("ChangeCapture"))
+                            {
+                                [pscustomobject]@{
+                                                    SourceInstance = $sourceserver.Name
+                                                    DestinationInstance = $destserver.Name
+                                                    SourceVersion = $SourceVersion
+                                                    DestinationVersion = $DestinationVersion
+                                                    Database = $dbName
+                                                    FeaturesInUse = $dbFeatures
+                                                    Notes = "Database cannot be migrated. Destination server edition is EXPRESS which does not support 'ChangeCapture' feature."
+                                                }
+                            }
+                            else
+                            {
+                                [pscustomobject]@{
+                                                    SourceInstance = $sourceserver.Name
+                                                    DestinationInstance = $destserver.Name
+                                                    SourceVersion = $SourceVersion
+                                                    DestinationVersion = $DestinationVersion
+                                                    Database = $dbName
+                                                    FeaturesInUse = $dbFeatures
+                                                    Notes = "Database can be migrated."
+                                                }
+                            }
+                        }
+                        #Version is lower than SQL Server 2016 SP1
                         else
                         {
-                            Write-Output "You can migrate database '$dbName'! The destination version and edition are equal or higher."
+                            #Check for editions. If destination edition is lower than source edition and exists features in use
+                            if (($editions.Item($destserver.Edition.ToString().Split(" ")[0]) -lt $editions.Item($sourceserver.Edition.ToString().Split(" ")[0])) -and (!([string]::IsNullOrEmpty($dbFeatures))))
+                            {
+                                Write-Verbose "Source Server Edition: $($sourceserver.Edition) (Weight: $($editions.Item($sourceserver.Edition.ToString().Split(" ")[0])))"
+                                Write-Verbose "Destination Server Edition: $($destserver.Edition) (Weight: $($editions.Item($destserver.Edition.ToString().Split(" ")[0])))"
+
+                                [pscustomobject]@{
+						                            SourceInstance = $sourceserver.Name
+                                                    DestinationInstance = $destserver.Name
+						                            SourceVersion = $SourceVersion
+                                                    DestinationVersion = $DestinationVersion
+						                            Database = $dbName
+                                                    FeaturesInUse = $dbFeatures
+						                            Notes = "Database cannot be migrated. There are features in use not available on destination instance."
+					                            }
+                            }
+                            #
+                            else
+                            {
+                                [pscustomobject]@{
+						                            SourceInstance = $sourceserver.Name
+                                                    DestinationInstance = $destserver.Name
+						                            SourceVersion = $SourceVersion
+                                                    DestinationVersion = $DestinationVersion
+						                            Database = $dbName
+                                                    FeaturesInUse = $dbFeatures
+						                            Notes = "You can migrate database! Does not exist any feature in use that you can't use on the destination version."
+					                            }
+                            }
                         }
                     }
                     else
@@ -231,11 +287,6 @@ Only db1 database will be verified for features in use that can't be supported o
                         Write-Warning "Database '$dbName' is offline. Bring database online and re-run the command"
                     }
                 
-                }
-                if ($dbFail)
-                {
-                    Write-Host "`r`n"
-                    Write-Warning "One or more databases will fail. For more information please see: https://msdn.microsoft.com/en-us/library/cc280724(v=sql.130).aspx"
                 }
             }
             else
@@ -248,7 +299,7 @@ Only db1 database will be verified for features in use that can't be supported o
         }
         else
         {
-            Write-Output "There are no databases to migrate."
+            Write-Output "There are no databases to validate."
         }
     }
     END
