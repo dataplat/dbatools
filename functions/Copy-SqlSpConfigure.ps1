@@ -90,15 +90,6 @@ Shows what would happen if the command were executed.
     }
     PROCESS
     {
-	    If ($Pscmdlet.ShouldProcess("$Destination", "Updating sp_configure to show advanced options"))
-	    {
-			#Interesting note, using SMO there's no need to adjust the Advanced Options setting. Seems to be TSQL only.
-			
-			#$sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
-		    #$sourceserver.Configuration.Alter()
-		    #$destserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
-		    #$destserver.Configuration.Alter()
-	    }
 		
 	    $destprops = $destserver.Configuration.Properties
 		
@@ -125,7 +116,7 @@ Shows what would happen if the command were executed.
 		    $destprop = $destprops | Where-Object{ $_.Displayname -eq $displayname }
 		    if ($destprop -eq $null)
 		    {
-			    Write-Warning "Configuration option '$displayname' does not exists on the destination instance."
+			    Write-Warning "Configuration option '$displayname' does not exist on the destination instance."
 			    continue
 		    }
 			
@@ -147,27 +138,9 @@ Shows what would happen if the command were executed.
 					Write-Error "Could not $($destprop.displayname) to $($sourceprop.configvalue). Feature may not be supported."
 				}
 			}
-			
-			If ($Pscmdlet.ShouldProcess($destination, "Altering configuration"))
-		    {
-			    try
-			    {
-				    $destserver.Configuration.Alter()
-			    }
-			    catch
-			    {
-				    Write-Warning "Configuration option '$displayname' requires restart."
-			    }
-		    }
+		  
 	    }
-		
-	    If ($Pscmdlet.ShouldProcess("both servers", "Updating sp_configure so that it does not show advanced options"))
-	    {
-		    #$sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
-		   # $sourceserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
-		    #$destserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
-		    #$destserver.Configuration.Alter()
-	    }
+
     }
     END
     {
