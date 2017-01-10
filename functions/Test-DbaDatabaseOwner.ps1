@@ -62,13 +62,13 @@ Test-DbaDatabaseOwner -SqlServer localhost -TargetLogin 'DOMAIN\account'
 Returns all databases where the owner does not match 'DOMAIN\account'. Note
 that TargetLogin must be a valid security principal that exists on the target server.
 #>
-[OutputType([Object[]])]	
+[OutputType("System.Object[]")]	
 [CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
-		[object]$SqlCredential,
+		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string]$TargetLogin,
 		[Switch]$Detailed
 	)
