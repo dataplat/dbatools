@@ -193,6 +193,7 @@ Only db1 database will be verified for features in use that can't be supported o
                     if ($dbstatus.Contains("Offline") -eq $false)
                     {
                         [long]$destVersionNumber = $($destserver.VersionString).Replace(".", "")
+                        [long]$sourceVersionNumber = $($sourceServer.VersionString).Replace(".", "")
                         [string]$SourceVersion = "$($sourceServer.Edition) $($sourceServer.ProductLevel) ($($sourceserver.Version))"
                         [string]$DestinationVersion = "$($destserver.Edition) $($destserver.ProductLevel) ($($destserver.Version))"
                         [string]$dbFeatures = ""
@@ -259,8 +260,19 @@ Only db1 database will be verified for features in use that can't be supported o
                             Write-Verbose "Source Server Edition: $($sourceserver.Edition) (Weight: $($editions.Item($sourceserver.Edition.ToString().Split(" ")[0])))"
                             Write-Verbose "Destination Server Edition: $($destserver.Edition) (Weight: $($editions.Item($destserver.Edition.ToString().Split(" ")[0])))"
 
-                            #Check for editions. If destination edition is lower than source edition and exists features in use
-                            if (($editions.Item($destserver.Edition.ToString().Split(" ")[0]) -lt $editions.Item($sourceserver.Edition.ToString().Split(" ")[0])) -and (!([string]::IsNullOrEmpty($dbFeatures))))
+                            <#
+                                There is at least one feature in use
+                                Version is the same but edition is lower on destination
+                                Version is lower on destination and edition is lower than DEV/EVA/ENT
+                            #>
+
+                            if (
+                                (!([string]::IsNullOrEmpty($dbFeatures))) `
+                                -and (
+                                            (($destVersionNumber -eq $sourceVersionNumber) -and $editions.Item($destserver.Edition.ToString().Split(" ")[0]) -lt $editions.Item($sourceserver.Edition.ToString().Split(" ")[0])) `
+                                        -or (($destVersionNumber -lt $sourceVersionNumber) -and ($editions.Item($destserver.Edition.ToString().Split(" ")[0]) -lt 10))
+                                      )
+                                )
                             {
                                 [pscustomobject]@{
 						                            SourceInstance = $sourceserver.Name
