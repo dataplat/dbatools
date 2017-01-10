@@ -63,11 +63,12 @@ Returns all databases where the owner does not match DOMAIN\account. Note
 that TargetLogin must be a valid security principal that exists on the target server.
 #>
 	[CmdletBinding()]
+	[OutputType('System.Object[]')]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
-		[object]$SqlCredential,
+		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string]$TargetLogin,
 		[Switch]$Detailed
 	)
