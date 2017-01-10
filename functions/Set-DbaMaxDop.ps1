@@ -118,11 +118,11 @@ Set recommended Max DOP setting for all databases on server sql2016.
 		
 		if ($collection -eq $null)
 		{
-			$collection = Test-DbaMaxDop -SqlServer $SqlServer -Verbose:$false
+			$collection = Test-DbaMaxDop -SqlServer $SqlServer -SqlCredential $SqlCredential -Verbose:$false
 		}
 		elseif ($collection.Instance -eq $null)
 		{
-			$collection = Test-DbaMaxDop -SqlServer $SqlServer -Verbose:$false
+			$collection = Test-DbaMaxDop -SqlServer $SqlServer -SqlCredential $SqlCredential -Verbose:$false
 		}
 		
 		$collection | Add-Member -NotePropertyName OldInstanceMaxDopValue -NotePropertyValue 0
@@ -141,7 +141,7 @@ Set recommended Max DOP setting for all databases on server sql2016.
 				$servername = $server
 			}
 			
-			Write-Verbose "Attempting to connect to $servername"
+			Write-Output "Attempting to connect to $servername"
 			try
 			{
 				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
