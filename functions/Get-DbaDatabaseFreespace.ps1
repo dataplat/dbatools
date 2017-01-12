@@ -228,8 +228,8 @@ Returns database files and free space information for the db1 and db2 on localho
             If ($row.UnusableSpaceMB -is [System.DBNull]) { $UnusableSpace = 0 } Else { $UnusableSpace = [Math]::Round($row.UnusableSpaceMB) }
 
 			$outrow = [ordered]@{
-				'SqlServer' = $row.SqlServer;`
-				'DatabaseName' = $row.DBName;`
+				'Server' = $row.SqlServer;`
+				'Database' = $row.DBName;`
 				'FileName' = $row.FileName;`
 				'FileGroup' = $row.FileGroup;`
 				'PhysicalName' = $row.PhysicalName;`
