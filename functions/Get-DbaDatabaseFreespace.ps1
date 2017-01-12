@@ -168,7 +168,7 @@ Returns database files and free space information for the db1 and db2 on localho
 				}
 			}
 			#If IncludeSystemDBs is true, include systemdbs
-			#only look at online databases (Status equal normal)
+			#look at all databases, online/offline/accessible/inaccessible and tell user if a db can't be queried.
 			try
 			{
 				if ($databases.length -gt 0)
@@ -177,11 +177,13 @@ Returns database files and free space information for the db1 and db2 on localho
 				}
 				elseif ($IncludeSystemDBs)
 				{
-					$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' }
+					#$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' -and $_.IsAccessible -eq $true }
+                    $dbs = $server.Databases
 				}
 				else
 				{
-					$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' -and $_.IsSystemObject -eq 0 }
+					#$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' -and $_.IsAccessible -eq $true -and $_.IsSystemObject -eq 0 }
+                    $dbs = $server.Databases | Where-Object { $_.IsSystemObject -eq 0 }
 				}
 				
 				if ($exclude.length -gt 0)
@@ -201,9 +203,15 @@ Returns database files and free space information for the db1 and db2 on localho
 				try
 				{
 					Write-Verbose "Querying $($s) - $($db.name)."
-                    #write-debug $sql
-					#Execute query against individual database and add to output
-					$outputraw += ($db.ExecuteWithResults($sql)).Tables[0]
+                    If($db.status -ne 'Normal' -or $db.IsAccessible -eq $false)
+                    {
+                        Write-Warning "$db is not accessible."
+                    }
+                    Else
+                    {
+					    #Execute query against individual database and add to output
+					    $outputraw += ($db.ExecuteWithResults($sql)).Tables[0]
+                    }
 				}
 				catch
 				{
