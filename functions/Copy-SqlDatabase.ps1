@@ -435,10 +435,17 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				{
 					foreach ($backupfile in $filestodelete)
 					{
-						If (Test-Path $backupfile)
-						{
-							Remove-Item $backupfile
-						}
+                        try
+                        {
+						    If (Test-Path $backupfile -ErrorAction Stop)
+						    {
+							    Remove-Item $backupfile
+						    }
+                        }
+                        catch
+                        {
+                            Write-Warning "You can't access backup file $backupfile"
+                        }
 					}
 				}
 				
@@ -782,10 +789,18 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				throw "Network share must be a valid UNC path (\\server\share)."
 			}
 			
-			if (!(Test-Path $NetworkShare))
-			{
-				Write-Warning "$networkshare share cannot be accessed. Still trying anyway, in case the SQL Server service accounts have access."
-			}
+            try
+            {
+				if (Test-Path $NetworkShare -ErrorAction Stop)
+			    {
+				    Write-Verbose "$networkshare share can be accessed."
+			    }
+            }
+            catch
+            {
+                Write-Warning "$networkshare share cannot be accessed. Still trying anyway, in case the SQL Server service accounts have access."
+            }
+			
 		}
 		
 		Write-Output "Checking to ensure server is not SQL Server 7 or below"
