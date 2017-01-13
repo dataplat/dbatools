@@ -5,7 +5,8 @@
 Returns all server level system configuration (sys.configuration/sp_configure) information
 
 .DESCRIPTION
-This function returns server level system configuration (sys.configuration/sp_configure) information. The information is gathered through SMO Configuration.Properties and be returned either in detailed or standard format
+This function returns server level system configuration (sys.configuration/sp_configure) information. The information is gathered through SMO Configuration.Properties.
+The data includes the default value for each configuration, for quick identification of values that may have been changed.
 
 .PARAMETER SqlServer
 SQLServer name or SMO object representing the SQL Server to connect to. This can be a
@@ -32,11 +33,7 @@ https://dbatools.io/Get-DbaSpConfigure
 
 .EXAMPLE
 Get-DbaSpConfigure -SqlServer localhost
-Returns server level configuration data on the localhost (ServerName, ConfigName, DisplayName, ConfiguredValue, CurrentlyRunningValue)
-
-.EXAMPLE
-Get-DbaSpConfigure -SqlServer localhost -Detailed
-Returns detailed information on server level configuration data on the localhost (ServerName, ConfigName, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, CurrentlyRunningValue)
+Returns server level configuration data on the localhost (ServerName, ConfigName, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, CurrentlyRunningValue, DefaultValue, IsRunningDefaultValue)
 
 .EXAMPLE
 'localhost','localhost\namedinstance' | Get-DbaSpConfigure
@@ -67,15 +64,23 @@ Returns system configuration information on multiple instances piped into the fu
 			#Get a list of the configuration property parents, and exlude the Parent, Properties values
 			$objList = get-member -InputObject $server.Configuration -MemberType Property -Force | select Name | where { $_.Name -ne "Parent" -and $_.Name -ne "Properties" }
 			
+			#Grab the default sp_configure property values from the external function
+			$defaultConfigs = (Get-SqlDefaultSpConfigure -SqlVersion $server.VersionMajor).psobject.properties;
+			
 			#Iterate through the properties to get the configuration settings
 			foreach ($prop in $objList)
 			{
 				$PropInfo = $server.Configuration.$($prop.Name)
+				$valDefault = $defaultConfigs | where { $_.Name -eq $PropInfo.DisplayName };
+				if ($valDefault.Value -eq $PropInfo.RunValue) { $isDefault = $true }
+				else { $isDefault = $false }
 				
 				#Ignores properties that are not valid on this version of SQL
 				if (!([string]::IsNullOrEmpty($PropInfo.RunValue)))
 				{
-                        [pscustomobject]@{
+				#	if ($PropInfo.
+					
+					[pscustomobject]@{
 						ServerName = $server.Name
 						ConfigName = $($prop.Name)
 						DisplayName = $PropInfo.DisplayName
@@ -86,10 +91,11 @@ Returns system configuration information on multiple instances piped into the fu
 						MaxValue = $PropInfo.Maximum
 						ConfiguredValue = $PropInfo.ConfigValue
 						CurrentlyRunningValue = $PropInfo.RunValue
+						DefaultValue = $valDefault.Value
+						IsRunningDefaultValue = $isDefault
 					}
 				}
 			}
-			
 		}
 	}
 }
