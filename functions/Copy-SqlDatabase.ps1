@@ -435,10 +435,17 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				{
 					foreach ($backupfile in $filestodelete)
 					{
-						If (Test-Path $backupfile)
-						{
-							Remove-Item $backupfile
-						}
+                        try
+                        {
+						    If (Test-Path $backupfile -ErrorAction Stop)
+						    {
+							    Remove-Item $backupfile
+						    }
+                        }
+                        catch
+                        {
+                            Write-Warning "You can't access backup file $backupfile"
+                        }
 					}
 				}
 				
@@ -740,12 +747,23 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		{
 			if ($(Test-SqlPath -SqlServer $sourceserver -Path $NetworkShare) -eq $false)
 			{
-				throw "$Source cannot access $NetworkShare"
+				Write-Warning "$Source may not be able to access $NetworkShare. Trying anyway."
 			}
 			
 			if ($(Test-SqlPath -SqlServer $destserver -Path $NetworkShare) -eq $false)
 			{
-				throw "$Destination cannot access $NetworkShare"
+				Write-Warning "$Destination may not be able to access $NetworkShare. Trying anyway."
+			}
+			
+			if ($networkshare.StartsWith('\\'))
+			{
+				$shareserver = ($networkshare -split "\\")[2]
+				$hostentry = ([Net.Dns]::GetHostEntry($shareserver)).HostName -split "\."
+				
+				if ($shareserver -ne $hostentry[0])
+				{
+					Write-Warning "Using CNAME records for the network share may present an issue if an SPN has not been created. Trying anyway. If it doesn't work, use a different (A record) hostname."
+				}
 			}
 		}
 		
@@ -771,10 +789,18 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				throw "Network share must be a valid UNC path (\\server\share)."
 			}
 			
-			if (!(Test-Path $NetworkShare))
-			{
-				Write-Warning "$networkshare share cannot be accessed. Still trying anyway, in case the SQL Server service accounts have access."
-			}
+            try
+            {
+				if (Test-Path $NetworkShare -ErrorAction Stop)
+			    {
+				    Write-Verbose "$networkshare share can be accessed."
+			    }
+            }
+            catch
+            {
+                Write-Warning "$networkshare share cannot be accessed. Still trying anyway, in case the SQL Server service accounts have access."
+            }
+			
 		}
 		
 		Write-Output "Checking to ensure server is not SQL Server 7 or below"
