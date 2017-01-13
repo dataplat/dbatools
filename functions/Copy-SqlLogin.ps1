@@ -50,7 +50,7 @@ Calls Export-SqlLogin and exports all logins to a T-SQL formatted file. This doe
 
 .PARAMETER SyncSaName
 Want to sync up the name of the sa account on the source and destination? Use this switch.
-	
+
 .PARAMETER Force
 Force drops and recreates logins. Logins that own jobs cannot be dropped at this time.
 
@@ -59,7 +59,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 
 .PARAMETER Confirm 
 Prompts you for confirmation before executing any changing operations within the command. 
-
+	
 .PARAMETER pipelogin
 Takes the parameters required from a login object that has been piped ot the command
 
@@ -151,27 +151,38 @@ Limitations: Does not support Application Roles yet
 					}
 					continue
 				}
-				
-				if($destserver.LoginMode -ne "Mixed")
-				{ 
-					Write-Warning "$Destination does not have Mixed Mode enabled for user: $username. Enable this after the migration completes."				 
-				}
 
+				if(($destserver.LoginMode -ne [Microsoft.SqlServer.Management.Smo.ServerLoginMode]::Mixed) -and ($sourcelogin.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin))
+				{ 
+					Write-Warning "$Destination does not have Mixed Mode enabled. $username is an SqlLogin so it needs mixed mode enabled. Enable this after the migration completes."				 
+				}
+				
 				$userbase = ($username.Split("\")[0]).ToLower()
+				
 				if ($servername -eq $userbase -or $username.StartsWith("NT "))
 				{
-					If ($Pscmdlet.ShouldProcess("console", "Stating $username is skipped because it is a local machine name."))
+					if ($sourceserver.netname -ne $destserver.netname)
 					{
-						Write-Warning "$username is skipped because it is a local machine name."
+						If ($Pscmdlet.ShouldProcess("console", "Stating $username was skipped because it is a local machine name."))
+						{
+							Write-Warning "$username was skipped because it is a local machine name."
+						}
+						continue
 					}
-					continue
+					else
+					{
+						If ($Pscmdlet.ShouldProcess("console", "Stating local login $username since the source and destination server reside on the same machine."))
+						{
+							Write-Output "Copying local login $username since the source and destination server reside on the same machine."
+						}
+					}
 				}
 				
 				if (($login = $destserver.Logins.Item($username)) -ne $null -and !$force)
 				{
 					If ($Pscmdlet.ShouldProcess("console", "Stating $username is skipped because it exists at destination."))
 					{
-						Write-Warning "$username already exists in destination. Use -force to drop and recreate."
+						Write-Warning "$username already exists in destination. Use -Force to drop and recreate."
 					}
 					continue
 				}
