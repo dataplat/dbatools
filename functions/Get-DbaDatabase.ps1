@@ -14,12 +14,24 @@ SQL Server name or SMO object representing the SQL Server to connect to. This ca
 .PARAMETER SqlCredential
 PSCredential object to connect as. If not specified, current Windows login will be used.
 
-.PARAMETER SystemOnly
+.PARAMETER System
 Returns only system databases
 
-.PARAMETER UserOnly
+.PARAMETER User
 Returns only user databases
+	
+.PARAMETER Online
+Returns only online databases
 
+.PARAMETER Offline
+Returns only offline databases
+
+.PARAMETER ReadOnly
+Returns only readonly databases
+	
+.PARAMETER ReadWrite
+Returns only non-read-only databases
+	
 .NOTES
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
@@ -37,11 +49,11 @@ Get-DbaDatabase -SqlServer localhost
 Returns all databases on the local default SQL Server instance
 
 .EXAMPLE
-Get-DbaDatabase -SqlServer localhost -SystemOnly
+Get-DbaDatabase -SqlServer localhost -System
 Returns only the system databases on the local default SQL Server instance
 
 .EXAMPLE
-Get-DbaDatabase -SqlServer localhost -UserOnly
+Get-DbaDatabase -SqlServer localhost -User
 Returns only the user databases on the local default SQL Server instance
 	
 .EXAMPLE
@@ -55,8 +67,12 @@ Returns databases on multiple instances piped into the function
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[switch]$SystemOnly,
-		[switch]$UserOnly
+		[switch]$System,
+		[switch]$User,
+		[switch]$Online,
+		[switch]$Offline,
+		[switch]$ReadOnly,
+		[switch]$ReadWrite
 	)
 	
 	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
@@ -82,22 +98,27 @@ Returns databases on multiple instances piped into the function
 			
 			$defaults = 'Name', 'Status', 'ContainmentType', 'RecoveryModel', 'CompatibilityLevel', 'Collation', 'Owner'
 			
-			if ($systemOnly)
+			if ($System)
 			{
-				$server.Databases | Where-Object { $_.IsSystemObject -eq $true } | Select-DefaultField -Property $defaults
+				# $server.Databases | Where-Object { $_.IsSystemObject -eq $true }
 			}
-			elseif ($useronly)
+			
+			if ($User)
 			{
-				$server.Databases | Where-Object { $_.IsSystemObject -eq $false } | Select-DefaultField -Property $defaults
+				# $server.Databases | Where-Object { $_.IsSystemObject -eq $false }
 			}
-			elseif ($databases)
+			
+			if ($databases)
 			{
-				$server.Databases | Where-Object { $_.Name -in $databases } | Select-DefaultField -Property $defaults
+				# $server.Databases | Where-Object { $_.Name -in $databases }
 			}
-			else
+			
+			if (@($alldbs).count -eq 0)
 			{
-				$server.Databases | Select-DefaultField -Property $defaults
+				# $alldbs = $server.Databases
 			}
+			
+			$alldbs
 		}
 	}
 }
