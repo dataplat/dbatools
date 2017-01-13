@@ -151,10 +151,10 @@ Limitations: Does not support Application Roles yet
 					}
 					continue
 				}
-				
-				if($destserver.LoginMode -ne "Mixed")
+
+				if(($destserver.LoginMode -ne [Microsoft.SqlServer.Management.Smo.ServerLoginMode]::Mixed) -and ($sourcelogin.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin))
 				{ 
-					Write-Warning "$Destination does not have Mixed Mode enabled for user: $username. Enable this after the migration completes."				 
+					Write-Warning "$Destination does not have Mixed Mode enabled. $username is an SqlLogin so it needs mixed mode enabled. Enable this after the migration completes."				 
 				}
 				
 				$userbase = ($username.Split("\")[0]).ToLower()
@@ -163,9 +163,9 @@ Limitations: Does not support Application Roles yet
 				{
 					if ($sourceserver.netname -ne $destserver.netname)
 					{
-						If ($Pscmdlet.ShouldProcess("console", "Stating $username is skipped because it is a local machine name."))
+						If ($Pscmdlet.ShouldProcess("console", "Stating $username was skipped because it is a local machine name."))
 						{
-							Write-Warning "$username is skipped because it is a local machine name."
+							Write-Warning "$username was skipped because it is a local machine name."
 						}
 						continue
 					}
