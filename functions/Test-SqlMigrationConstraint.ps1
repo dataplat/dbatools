@@ -188,7 +188,7 @@ Only db1 database will be verified for features in use that can't be supported o
                         $dbName = $db.Name
                     }
                     
-                    Write-Verbose "Checking database: $dbName"
+                    Write-Verbose "Checking database: '$dbName'"
 
                     if ($dbstatus.Contains("Offline") -eq $false)
                     {
@@ -301,7 +301,7 @@ Only db1 database will be verified for features in use that can't be supported o
                     }
                     else
                     {
-                        Write-Warning "Database $dbName is offline. Bring database online and re-run the command"
+                        Write-Warning "Database '$dbName' is offline. Bring database online and re-run the command"
                     }
                 
                 }
