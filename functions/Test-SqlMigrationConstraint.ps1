@@ -85,7 +85,7 @@ Test-SqlMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -Data
 Only db1 database will be verified for features in use that can't be supported on the destination server
 	
 #>
-    [CmdletBinding(DefaultParameterSetName = "DbMigration", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "DbMigration")]
 	Param (
             [parameter(Position = 1, Mandatory = $true, ValueFromPipeline = $True)]
 		    [object]$Source,
@@ -180,7 +180,7 @@ Only db1 database will be verified for features in use that can't be supported o
                         $dbstatus = $db.Status.ToString()
                         $dbName = $db.Name
                     }
-                    Write-Host "`r`nChecking database: '$dbName'"
+                    Write-Output "`r`nChecking database: '$dbName'"
 
                     if ($dbstatus.Contains("Offline") -eq $false)
                     {
@@ -234,7 +234,6 @@ Only db1 database will be verified for features in use that can't be supported o
                 }
                 if ($dbFail)
                 {
-                    Write-Host "`r`n"
                     Write-Warning "One or more databases will fail. For more information please see: https://msdn.microsoft.com/en-us/library/cc280724(v=sql.130).aspx"
                 }
             }
