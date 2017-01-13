@@ -189,7 +189,8 @@
 		'Test-DbaOptimizeForAdHoc',
 		'Get-DbaDatabase',
 		'Get-DbaAgentJobOutputFile',
-		'Set-DbaAgentJobOutputFile'
+		'Set-DbaAgentJobOutputFile',
+		'Get-DbaSpConfigure'
 	)
 	
 	# Cmdlets to export from this module
