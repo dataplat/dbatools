@@ -187,7 +187,9 @@
 		'Find-DbaAgentJob',
 		'Restore-DbaFromDatabaseSnapshot',
 		'Test-DbaOptimizeForAdHoc',
-		'Get-DbaDatabase'
+		'Get-DbaDatabase',
+		'Get-DbaAgentJobOutputFile',
+		'Set-DbaAgentJobOutputFile'
 	)
 	
 	# Cmdlets to export from this module
