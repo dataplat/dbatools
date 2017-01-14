@@ -75,7 +75,7 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 
 #>	
 	#Requires -Version 3.0
-	[CmdletBinding()]
+	[CmdletBinding(SupportsShouldProcess=$true)]
 	Param (
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance","SqlInstance")]
@@ -154,13 +154,11 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 		$Exclude = $psboundparameters.Exclude
 	
 	}
-	PROCESS
-	
+	PROCESS	
 	{
 		
 		$dblist = @(); $skippedb = @{ }; $migrateddb = @{ };
-		$systemdbs = @("master", "msdb", "model")
-		
+		$systemdbs = @("master", "msdb", "model")		
 		
 		$subdirectories = (Get-ChildItem -Directory $Path).FullName
 		foreach ($subdirectory in $subdirectories)
@@ -235,16 +233,16 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 			}
 			$backupinfo = $restore.ReadBackupHeader($server)
 			$backupversion = [version]("$($backupinfo.SoftwareVersionMajor).$($backupinfo.SoftwareVersionMinor).$($backupinfo.SoftwareVersionBuild)")
-			
+						
 			Write-Output "Restoring FULL backup to $dbname to $SqlServer"
-			$result = Restore-Database $server $dbname $full "Database" $filestructure
+			$result = Restore-Database -SqlServer $server -DbName $dbname -BackupFile $full -FileType "Database" -FileStructure $filestructure -NoRecovery
 			
 			if ($result -eq $true)
 			{
 				if ($diff)
 				{
 					Write-Output "Restoring DIFFERENTIAL backup"
-					$result = Restore-Database $server $dbname $diff "Database" $filestructure
+					$result = Restore-Database -SqlServer $server -DbName $dbname -BackupFile $diff -FileType "Database" -FileStructure $filestructure -NoRecovery
 					if ($result -ne $true) { $result | fl -force; return }
 				}
 				if ($logs)
@@ -252,7 +250,7 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 					Write-Output "Restoring $($logs.count) LOGS"
 					foreach ($log in $logs)
 					{
-						$result = Restore-Database $server $dbname $log "Log" $filestructure
+						$result = Restore-Database -SqlServer $server -DbName $dbname -BackupFile -BackupFile $log -FileType "Log" -FileStructure $filestructure -NoRecovery
 					}
 				}
 			}
