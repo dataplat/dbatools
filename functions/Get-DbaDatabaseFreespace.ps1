@@ -149,11 +149,26 @@ Returns database files and free space information for the db1 and db2 on localho
 	{
 		foreach ($s in $SqlServer)
 		{
-			#For each SQL Server in collection, connect and get SMO object
-			Write-Verbose "Connecting to $s"
-			$server = Connect-SqlServer $s -SqlCredential $SqlCredential
+            try
+            {
+			    #For each SQL Server in collection, connect and get SMO object
+			    Write-Verbose "Connecting to $s"
+			    $server = Connect-SqlServer $s -SqlCredential $SqlCredential
+            }
+            catch
+            {
+				if ($SqlServer.count -eq 1)
+				{
+					Write-Warning "Can't connect to $s."
+				}
+				else
+				{
+					Write-Warning "Can't connect to $s. Moving on."
+					Continue
+				}
+			}
 			#If IncludeSystemDBs is true, include systemdbs
-			#only look at online databases (Status equal normal)
+			#look at all databases, online/offline/accessible/inaccessible and tell user if a db can't be queried.
 			try
 			{
 				if ($databases.length -gt 0)
@@ -162,11 +177,13 @@ Returns database files and free space information for the db1 and db2 on localho
 				}
 				elseif ($IncludeSystemDBs)
 				{
-					$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' }
+					#$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' -and $_.IsAccessible -eq $true }
+                    $dbs = $server.Databases
 				}
 				else
 				{
-					$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' -and $_.IsSystemObject -eq 0 }
+					#$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' -and $_.IsAccessible -eq $true -and $_.IsSystemObject -eq 0 }
+                    $dbs = $server.Databases | Where-Object { $_.IsSystemObject -eq 0 }
 				}
 				
 				if ($exclude.length -gt 0)
@@ -186,9 +203,15 @@ Returns database files and free space information for the db1 and db2 on localho
 				try
 				{
 					Write-Verbose "Querying $($s) - $($db.name)."
-                    #write-debug $sql
-					#Execute query against individual database and add to output
-					$outputraw += ($db.ExecuteWithResults($sql)).Tables[0]
+                    If($db.status -ne 'Normal' -or $db.IsAccessible -eq $false)
+                    {
+                        Write-Warning "$db is not accessible."
+                    }
+                    Else
+                    {
+					    #Execute query against individual database and add to output
+					    $outputraw += ($db.ExecuteWithResults($sql)).Tables[0]
+                    }
 				}
 				catch
 				{
@@ -206,21 +229,27 @@ Returns database files and free space information for the db1 and db2 on localho
 		$output = @()
 		foreach ($row in $outputraw)
 		{
+            If ($row.UsedSpaceMB -is [System.DBNull]) { $UsedMB = 0 } Else { $UsedMB = [Math]::Round($row.UsedSpaceMB) }
+            If ($row.FreeSpaceMB -is [System.DBNull]) { $FreeMB = 0 } Else { $FreeMB = [Math]::Round($row.FreeSpaceMB) }
+            If ($row.PercentUsed -is [System.DBNull]) { $PercentUsed = 0 } Else { $PercentUsed = [Math]::Round($row.PercentUsed) }
+            If ($row.SpaceBeforeMax -is [System.DBNull]) { $SpaceUntilMax = 0 } Else { $SpaceUntilMax = [Math]::Round($row.SpaceBeforeMax) }
+            If ($row.UnusableSpaceMB -is [System.DBNull]) { $UnusableSpace = 0 } Else { $UnusableSpace = [Math]::Round($row.UnusableSpaceMB) }
+
 			$outrow = [ordered]@{
-				'SqlServer' = $row.SqlServer;`
-				'DatabaseName' = $row.DBName;`
+				'Server' = $row.SqlServer;`
+				'Database' = $row.DBName;`
 				'FileName' = $row.FileName;`
 				'FileGroup' = $row.FileGroup;`
 				'PhysicalName' = $row.PhysicalName;`
-				'UsedSpaceMB' = [Math]::Round($row.UsedSpaceMB,2);`
-				'FreeSpaceMB' = [Math]::Round($row.FreeSpaceMB,2);`
+				'UsedSpaceMB' = $UsedMB;`
+				'FreeSpaceMB' = $FreeMB;`
 				'FileSizeMB' = $row.FileSizeMB;`
-				'PercentUsed' = [Math]::Round($row.PercentUsed,2);`
+				'PercentUsed' = $PercentUsed;`
 				'AutoGrowth' = $row.GrowthMB;`
 				'AutoGrowType' = $row.GrowthType;`
-				'SpaceUntilMaxSizeMB' = [Math]::Round($row.SpaceBeforeMax,2);`
+				'SpaceUntilMaxSizeMB' = $SpaceUntilMax;`
 				'AutoGrowthPossibleMB' = $row.PossibleAutoGrowthMB;`
-				'UnusableSpaceMB' = [Math]::Round($row.UnusableSpaceMB,2)
+				'UnusableSpaceMB' = $UnusableSpace
 			}
 			$output += New-Object psobject -Property $outrow
 		}
