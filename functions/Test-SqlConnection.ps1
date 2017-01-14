@@ -106,6 +106,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		$hostname = $env:COMPUTERNAME
 		$baseaddress = $env:COMPUTERNAME
 	}
+
+    [regex]$portdetection = ":\d{1,5}$"
+    if ($sqlserver.LastIndexOf(":") -ne -1)
+    {
+        $portnumber = $sqlserver.substring($sqlserver.LastIndexOf(":"))
+        if ($portnumber -match $portdetection)
+        {
+            $replacedportseparator = $portnumber -replace ":",","
+            $sqlserver = $sqlserver -replace $portnumber,$replacedportseparator
+        }
+    }
 	
 	$serverinfo.BaseName = $baseaddress
 	$remote = $baseaddress -ne $env:COMPUTERNAME
