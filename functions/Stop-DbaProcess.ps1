@@ -160,7 +160,7 @@ Shows what would happen if the command were executed.
 			$login = $session.login
 			$database = $session.database
 			$program = $session.program
-			$host = $session.host
+			$hostname = $session.host
 			
 			$info = @()
 			
@@ -179,9 +179,9 @@ Shows what would happen if the command were executed.
 				$info += "Program: $program"
 			}
 			
-			if ($host.length -gt 1)
+			if ($hostname.length -gt 1)
 			{
-				$info += "Host: $host"
+				$info += "Host: $hostname"
 			}
 			
 			$info = $info -join ", "

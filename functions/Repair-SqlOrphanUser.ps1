@@ -153,7 +153,8 @@ https://dbatools.io/Repair-SqlOrphanUser
 
                     if ($Users.Count -eq 0)
                     {
-                        $Users = $db.Users | Where {$_.Login -eq "" -and ("dbo","guest","sys","INFORMATION_SCHEMA" -notcontains $_.Name)}
+                        #the third validation will remove from list sql users without login. The rule here is Sid with length higher than 16
+                        $Users = $db.Users | Where-Object {$_.Login -eq "" -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false}
                     }
                     else
                     {
@@ -164,7 +165,8 @@ https://dbatools.io/Repair-SqlOrphanUser
 		                }
                         else
                         {
-                            $Users = $db.Users | Where {$_.Login -eq "" -and ($Users -contains $_.Name)}
+                            #the fourth validation will remove from list sql users without login. The rule here is Sid with length higher than 16
+                            $Users = $db.Users | Where-Object {$_.Login -eq "" -and ($_.ID -gt 4) -and ($Users -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false)}
                         }
                     }
                     

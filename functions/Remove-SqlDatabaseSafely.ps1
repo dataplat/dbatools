@@ -209,7 +209,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		
 		if ($alldatabases -or $databases.count -eq 0)
 		{
-			$databases = ($sourceserver.databases | Where-Object{ $_.IsSystemObject -eq $false }).Name
+			$databases = ($sourceserver.databases | Where-Object{ $_.IsSystemObject -eq $false -and ($_.Status -match 'Offline') -eq  $false}).Name
 		}
 		
 		if (!(Test-SqlPath -SqlServer $destserver -Path $backupFolder))
