@@ -19,7 +19,7 @@ Import-Module PSScriptAnalyzer
 $Rules = (Get-ScriptAnalyzerRule).Where{$_.RuleName -notin ('PSAvoidUsingPlainTextForPassword') }
 $Name = $sut.Split('.')[0]
 
-    Describe 'Script Analyzer Tests' -Tag @('ScriptAnalyzer'){ 
+  <#  Describe 'Script Analyzer Tests' -Tag @('ScriptAnalyzer'){ 
             Context 'Testing $sut for Standard Processing' {
                 foreach ($rule in $rules) { 
                     $i = $rules.IndexOf($rule)
@@ -28,14 +28,18 @@ $Name = $sut.Split('.')[0]
                     }
                 }
             }
-        }
+        } #>
    ## needs some proper tests for the function here
     Describe "$Name Tests" -Tag @('Command'){
-        Context "Some Tests" { 
-              It "Should have some Pester Tests added" {
-                  $true | Should Be $true
-              }
-		}
+        Context "Input Validation" { 
+          It 'SqlServer parameter is empty' { 
+            { Get-DbaAgentJobOutputFile -SqlServer ''  -WarningAction Stop 3> $null } | Should Throw 
+         } 
+          It 'SqlServer parameter host cannot be found' { 
+            Mock Connect-SqlServer { throw System.Data.SqlClient.SqlException } 
+            { Get-DbaMaxMemory -SqlServer 'ABC' -WarningAction Stop 3> $null } | Should Throw 
+         } 
+		} ## End Context Input
     }
     
     
