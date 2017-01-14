@@ -75,7 +75,6 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 
 #>	
 	#Requires -Version 3.0
-	[CmdletBinding(SupportsShouldProcess=$true)]
 	Param (
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance","SqlInstance")]
@@ -86,13 +85,12 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 		[Alias("ReuseFolderStructure")]
 		[switch]$ReuseSourceFolderStructure,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[switch]$Force
-		
+		[switch]$Force		
 	)
 	
 	DynamicParam
 	{
-		
+
 		if ($Path)
 		{
 			$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
