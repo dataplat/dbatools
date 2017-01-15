@@ -22,35 +22,36 @@ Takes path, checks for validity. Scans for usual backup file
         
         Write-Verbose "$FunctionName - Starting"
         Write-Verbose "$FunctionName - Checking Path"
-        If (((Test-SQLConnection -SqlServer $SqlServer -SqlCredential $SqlCredential)[11].ConnectSuccess -eq $false))
+        Try 
         {
-            Write-Error "$FunctionName - SQL Connection details not valid"
-            return $null
-            break
+            $srv = Connect-SQLServer -SqlServer $SqlServer -SqlCredential $SqlCredential
         }
-        if ((Test-SqlSa -SqlServer $SqlServer -SqlCredential $SqlCredential) -eq $false)
+        Catch
         {
-            Write-Error "$FunctionName - Not sysadmin, this will not work"
+            throw $_
         }
-        function Get-XpDirTreeRestoreFileRecurse([string]$Path)
+
+        if ($Path[-1] -ne "\")
         {
-            if ($Path[-1] -ne "\")
-            {
-                $Path = $Path + "\"
-            }
-            $query = "EXEC master.sys.xp_dirtree '$Path',1,1;"
-            $queryResult = Invoke-Sqlcmd2 -ServerInstance $sqlServer -Database tempdb -Query $query
-            $dirs = $queryResult | where-object { $_.file -eq 0 }
-            foreach($d in $dirs) 
-            {
-                $fullpath = "$path$($d.Subdirectory)"
-                Write-Verbose "Enumerating subdirectory '$fullpath'"
-                Get-XpDirTreeRestoreFileRecurse $fullpath
-            }
-            $Results = $queryResult | where-object { $_.file -eq 1 } | Select @{Name="FullName";Expression={$_."Subdirectory"}}
-            $Results = $Results | %{"$path$($_.FullName)"} | select @{Name="Fullname";Expression={$_}}
-            return $Results
+            $Path = $Path + "\"
         }
-        Write-Verbose "Enumerating main directory '$Path'"
-        Get-XpDirTreeRestoreFileRecurse $Path
+        If (!(Test-SqlPath -SQLServer $sqlserver -SqlCredential $SqlCredential -path $path))
+        {
+            Throw "$FunctionName - SQLServer $sqlserver cannot access $path"
+        }
+        $query = "EXEC master.sys.xp_dirtree '$Path',1,1;"
+        $queryResult = Invoke-Sqlcmd2 -ServerInstance $sqlServer -Credential $SqlCredential -Database tempdb -Query $query
+        #$queryresult
+        $dirs = $queryResult | where-object { $_.file -eq 0 }
+        $Results = @()
+              $Results += $queryResult | where-object { $_.file -eq 1 } | Select @{Name="FullName";Expression={$PATH+$_."Subdirectory"}}
+  
+        ForEach ($d in $dirs) 
+        {
+            $fullpath = "$path$($d.Subdirectory)"
+            Write-Verbose "Enumerating subdirectory '$fullpath'"
+            $Results += Get-XpDirTreeRestoreFile -path $fullpath -SqlServer $SqlServer -SqlCredential $SqlCredential
+        }
+        return $Results
+    
 }
