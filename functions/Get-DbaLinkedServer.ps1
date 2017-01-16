@@ -10,11 +10,8 @@ Retrieves information about each linked server on the instance
 .PARAMETER SqlServer
 The SQL Server that you're connecting to.
 
-.PARAMETER Credential
+.PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user
-
-.PARAMETER Databases
-Return information for only specific databases
 
 .NOTES
 Author: Stephen Bennett ( https://sqlnotesfromtheunderground.wordpress.com/ )
@@ -32,7 +29,7 @@ https://dbatools.io/Get-DbaLinkedServer
 .EXAMPLE
 Get-DbaLinkedServer -SqlServer DEV01
 
-Returns all Linked Servers for the SQL instance DEV01
+Returns all Linked Servers for the SQL Server instance DEV01
 
 #>
 	[CmdletBinding()]
@@ -54,25 +51,15 @@ Returns all Linked Servers for the SQL instance DEV01
 	        catch
 	        {
 	            Write-Warning "Failed to connect to: $srv"
-                break
+                continue
 	        }
-            if($server -contains "\")
-            {
-                $computername = ($server.Name).Split("\")[0]
-                $inst =  ($server.Name).Split("\")[1]
-            }
-            else
-            {
-                $computername = $server.Name
-                $inst =  ""
-            }
 
             foreach ($ls in $server.LinkedServers)
             {               
 
                     $output = [PSCustomObject]@{
-		                ComputerName = $computername
-                        SqlInstance = $inst
+                        ComputerName = $server.NetName
+                        SqlInstance = $server.InstanceName
 		                LinkedServerName = $ls.Name
                         RemoteServer = $ls.DataSource
                         ProductName = $ls.ProductName 
