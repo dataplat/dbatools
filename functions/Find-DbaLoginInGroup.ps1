@@ -2,13 +2,14 @@
 {
 <#
 .SYNOPSIS
-Finds Logins in Active Directory groups. 
+Finds Logins in Active Directory groups that have logins on the SQL Instance. 
 
 .DESCRIPTION
-Outputs all the active directory groups 
+Outputs all the active directory groups members for a server, or limits it to find a specific AD user in the groups
 	
 .NOTES 
 Original Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+Original Author: Simone Bizzotto, @niphlod
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
@@ -30,7 +31,7 @@ collection and recieve pipeline input.
 PSCredential object to connect under. If not specified, currend Windows login will be used.
 
 .PARAMETER Login
-Find all AD Groups used on the instance that an individual login is a memeber of.
+Find all AD Groups used on the instance that an individual login is a member of.
 	
 .LINK
 https://dbatools.io/Find-DbaLoginInGroup
@@ -40,6 +41,10 @@ Find-DbaLoginInGroup -SqlInstance DEV01 -Login "MyDomain\Stephen.Bennett"
 
 Returns all active directory groups with logins on Sql Instance DEV01 that contain the AD user Stephen.Bennett.
 
+.EXAMPLE
+Find-DbaLoginInGroup -SqlInstance DEV01
+
+Returns all active directory users within all windows AD groups that have logins on the instance.
 #>
 	[CmdletBinding()]
 	Param (
@@ -60,6 +65,78 @@ Returns all active directory groups with logins on Sql Instance DEV01 that conta
             Write-warning "Failed to load Assembly needed" 
             break
         }
+
+        function Get-AllLogins 
+        {
+            param 
+            (
+                [string]$ADGroup, 
+                [string[]]$discard
+            )
+            begin
+            {
+                $output= @()
+            }
+            process 
+            {
+                try
+                {
+                    $domain = $AdGroup.Split("\")[0]
+                    $ads = New-Object System.DirectoryServices.AccountManagement.PrincipalContext('Domain', $domain) 
+                    [string] $groupName = $AdGroup
+                    $group = [System.DirectoryServices.AccountManagement.GroupPrincipal]::FindByIdentity($ads, $groupName);
+                    $subgroups = @()
+                    foreach ($member in $group.Members) 
+                    {
+
+                            if ($member.StructuralObjectClass -eq "group")
+                            {
+                                $fullName = $domain + "\" + $member.SamAccountName
+                                if($fullName -in $discard) 
+                                {
+                                    Write-Verbose "skipping $fullName, already enumerated"
+                                    Continue
+                                } 
+                                else 
+                                {
+                                    $subgroups += $fullName
+                                }
+                            }
+                            else
+                            {
+
+
+                        $adout = [PSCustomObject]@{
+                            ComputerName = $server.NetName
+                            SqlInstance = $server.InstanceName
+                            Login = $member.SamAccountName
+                            Member = $AdGroup
+                        }
+
+                               $output +=$adout
+                            }
+                    }
+                }
+                catch
+                {
+                    Write-Warning "Failed to connect to Group: $member."
+                }
+                $discard += $ADGroup
+                foreach($gr in $subgroups) {
+                    if ($gr -notin $discard) {
+                        $discard += $gr
+                        Write-Verbose "Recursing Looking at $gr"
+                        Get-AllLogins -ADGroup $gr -discard $discard
+                    }
+                }
+            }
+            end
+            {
+                $output
+            }
+        }
+
+        $out = @()
     }
     
     PROCESS
@@ -78,59 +155,53 @@ Returns all active directory groups with logins on Sql Instance DEV01 that conta
 	        }
 
             $AdGroups = $server.Logins | Where {$_.LoginType -eq "WindowsGroup" -and $_.Name -ne "BUILTIN\Administrators" -and $_.Name -notlike "*NT SERVICE*"}
-            $ADGroupOut = @()
+
             foreach ($AdGroup in $AdGroups)
             {
-                try 
-                {
-                    $domain = $AdGroup.Name.Split("\")[0]
-                    $ads = New-Object System.DirectoryServices.AccountManagement.PrincipalContext('Domain', $domain) 
-                    [string] $groupName = $AdGroup.Name
-                    $group = [System.DirectoryServices.AccountManagement.GroupPrincipal]::FindByIdentity($ads, $groupName); 
-                    foreach ($member in $group.Members)
-                    {
-                        $adout = [PSCustomObject]@{
-		                    GroupName = $AdGroup.Name
-                            Login = $member.SamAccountName
-                            }
-		                $ADGroupOut += $adout
-                    } 
-                }
-                catch
-                {
-                    write-warning "error connecting to $AdGroup, run Test-DbaValidLogin to ensure the group exist in AD"
-                }
+                Write-Verbose "Looking at Group: $AdGroup"
+                $ADGroupOut += Get-AllLogins $AdGroup.Name
             }
 
-            Foreach ($l in $Login)
+            if (-not $Login)
             {
-                $username = $l.Split("\")[1]
-                write-verbose "Looking for $username"
-                $FoundYou = @()
-                try 
-                {    
-                    $FoundYou = $ADGroupOut | Where {$_.Login -eq $username} 
-         
-                }
-                catch
+                $out = $ADGroupOut
+            }
+            else
+            {
+                Foreach ($l in $Login)
                 {
-                    write-warning "Failed to find Login: $Login as a Login or in a group connecting to server: $server"
-                    break
-                }
-
-                foreach($gf in $FoundYou)
-                {
-                
-                    $gfRole = $gf.GroupName
-                    $output = [PSCustomObject]@{
-                        ComputerName = $server.NetName
-                        SqlInstance = $server.InstanceName
-                        Login = $l
-                        Member = $gfRole
+                    $username = $l.Split("\")[1]
+                    write-verbose "Looking for $username"
+                    $FoundYou = @()
+                    try 
+                    {   
+                        $FoundYou = $ADGroupOut | Where {$_.Login -eq $username} 
+                        ##$FoundYou
                     }
-                    Select-DefaultField -InputObject $output -Property ComputerName, SqlInstance, Login, Member  
-                }
-            } 
+                    catch
+                    {
+                        write-warning "Failed to find Login: $Login as a Login or in a group connecting to server: $server"
+                        continue
+                    }
+
+                    foreach($gf in $FoundYou)
+                    {
+                    
+                        $gfRole = $gf.GroupName
+                        $output = [PSCustomObject]@{
+                            ComputerName = $server.NetName
+                            SqlInstance = $server.InstanceName
+                            Login = $l
+                            Member = $gfRole
+                        }
+                        $out += $output
+                    }
+                } 
+            }
         } 
+    }
+    end
+    {
+        $out #| sort -Unique -Descending  
     }
 }
