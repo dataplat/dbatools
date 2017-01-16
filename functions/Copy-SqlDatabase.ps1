@@ -353,6 +353,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
 			}
 			$backup.add_PercentComplete($percent)
+			$backup.PercentCompleteNotification = 1
 			$backup.add_Complete($complete)
 			
 			Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
