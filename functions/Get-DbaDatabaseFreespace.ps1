@@ -104,9 +104,6 @@ Returns database files and free space information for the db1 and db2 on localho
 		foreach ($s in $SqlServer)
 		{
 			#For each SQL Server in collection, connect and get SMO object
-
-			
-
 			Write-Verbose "Connecting to $s"
 			$server = Connect-SqlServer $s -SqlCredential $SqlCredential
 			#If IncludeSystemDBs is true, include systemdbs
