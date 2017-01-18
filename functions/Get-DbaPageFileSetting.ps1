@@ -43,7 +43,7 @@ Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status,
 		[Parameter(Mandatory = $false, Position = 0, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
 		[Alias("cn", "host", "ServerInstance", "Server", "SqlServer")]
 		[object]$ComputerName,
-		[PsCredential]$Credential
+		[PSCredential] [System.Management.Automation.CredentialAttribute()]$Credential
 	)
 	BEGIN {}
 	PROCESS {
