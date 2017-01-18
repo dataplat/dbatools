@@ -62,36 +62,35 @@ Returns system configuration information on multiple instances piped into the fu
 			}
 			
 			#Get a list of the configuration property parents, and exlude the Parent, Properties values
-			$objList = get-member -InputObject $server.Configuration -MemberType Property -Force | select Name | where { $_.Name -ne "Parent" -and $_.Name -ne "Properties" }
+			$proplist = Get-Member -InputObject $server.Configuration -MemberType Property -Force | Select-Object Name | Where-Object { $_.Name -ne "Parent" -and $_.Name -ne "Properties" }
 			
 			#Grab the default sp_configure property values from the external function
 			$defaultConfigs = (Get-SqlDefaultSpConfigure -SqlVersion $server.VersionMajor).psobject.properties;
 			
 			#Iterate through the properties to get the configuration settings
-			foreach ($prop in $objList)
+			foreach ($prop in $proplist)
 			{
-				$PropInfo = $server.Configuration.$($prop.Name)
-				$valDefault = $defaultConfigs | where { $_.Name -eq $PropInfo.DisplayName };
-				if ($valDefault.Value -eq $PropInfo.RunValue) { $isDefault = $true }
+				$propInfo = $server.Configuration.$($prop.Name)
+				$defaultConfig = $defaultConfigs | Where-Object { $_.Name -eq $propInfo.DisplayName };
+				
+				if ($defaultConfig.Value -eq $propInfo.RunValue) { $isDefault = $true }
 				else { $isDefault = $false }
 				
 				#Ignores properties that are not valid on this version of SQL
-				if (!([string]::IsNullOrEmpty($PropInfo.RunValue)))
+				if (!([string]::IsNullOrEmpty($propInfo.RunValue)))
 				{
-				#	if ($PropInfo.
-					
 					[pscustomobject]@{
 						ServerName = $server.Name
-						ConfigName = $($prop.Name)
-						DisplayName = $PropInfo.DisplayName
-						Description = $PropInfo.Description
-						IsAdvanced = $PropInfo.IsAdvanced
-						IsDynamic = $PropInfo.IsDynamic
-						MinValue = $PropInfo.Minimum
-						MaxValue = $PropInfo.Maximum
-						ConfiguredValue = $PropInfo.ConfigValue
-						RunningValue = $PropInfo.RunValue
-						DefaultValue = $valDefault.Value
+						ConfigName = $prop.Name
+						DisplayName = $propInfo.DisplayName
+						Description = $propInfo.Description
+						IsAdvanced = $propInfo.IsAdvanced
+						IsDynamic = $propInfo.IsDynamic
+						MinValue = $propInfo.Minimum
+						MaxValue = $propInfo.Maximum
+						ConfiguredValue = $propInfo.ConfigValue
+						RunningValue = $propInfo.RunValue
+						DefaultValue = $defaultConfig.Value
 						IsRunningDefaultValue = $isDefault
 					}
 				}
