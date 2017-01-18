@@ -33,7 +33,7 @@ https://dbatools.io/Get-DbaSpConfigure
 
 .EXAMPLE
 Get-DbaSpConfigure -SqlServer localhost
-Returns server level configuration data on the localhost (ServerName, ConfigName, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, CurrentlyRunningValue, DefaultValue, IsRunningDefaultValue)
+Returns server level configuration data on the localhost (ServerName, ConfigName, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue)
 
 .EXAMPLE
 'localhost','localhost\namedinstance' | Get-DbaSpConfigure
@@ -90,7 +90,7 @@ Returns system configuration information on multiple instances piped into the fu
 						MinValue = $PropInfo.Minimum
 						MaxValue = $PropInfo.Maximum
 						ConfiguredValue = $PropInfo.ConfigValue
-						CurrentlyRunningValue = $PropInfo.RunValue
+						RunningValue = $PropInfo.RunValue
 						DefaultValue = $valDefault.Value
 						IsRunningDefaultValue = $isDefault
 					}
