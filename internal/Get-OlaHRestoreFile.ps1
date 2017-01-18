@@ -16,28 +16,28 @@ Takes path, checks for validity. Scans for usual backup file
         Write-Verbose "$FunctionName - Starting"
         Write-Verbose "$FunctionName - Checking Path"
         if ((Test-Path $Path) -ne $true){
-           [System.IO.FileNotFoundException] "Error: $Path is not valid"
+           throw [System.IO.FileNotFoundException] "Error: $Path is not valid"
        
         }
         #There should be at least FULL folder, DIFF and LOG are nice as well
         Write-Verbose "$FunctionName - Checking we have a FULL folder"
-        if (Test-Path $Path\FULL)
+        if (Test-Path -Path $Path\FULL)
         {
             Write-Verbose "$FunctionName - We have a FULL folder, scanning"
-            $Results = Get-ChildItem $Path\FULL -Filter *.bak
+            $Results = Get-ChildItem -Path $Path\FULL -Filter *.bak
+            $results = @($results)
         } else {
-            Write-Verbose "$FunctionName - Don't have a FULL folder, throw and exit"
-            break
+            Throw "$FunctionName - Don't have a FULL folder"
         }
-        if (Test-Path $Path\Log)
+        if (Test-Path -Path $Path\Log)
         {
             Write-Verbose "$FunctionName - We have a LOG folder, scanning"
-            $Results += Get-ChildItem $Path\LOG -filter *.trn
+            $Results += Get-ChildItem -Path $Path\LOG -filter *.trn
         }
-        if(Test-Path $Path\Diff)
+        if(Test-Path -Path $Path\Diff)
         {
             Write-Verbose "$FunctionName - We have a DIFF folder, scanning"
-            $Results += Get-ChildItem $Path\DIFF -filter *.bak
+            $Results += Get-ChildItem -Path $Path\DIFF -filter *.bak
         }
 
         return $Results
