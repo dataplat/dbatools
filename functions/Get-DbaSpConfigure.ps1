@@ -79,10 +79,14 @@ Returns system configuration information on multiple instances piped into the fu
 				#Ignores properties that are not valid on this version of SQL
 				if (!([string]::IsNullOrEmpty($propInfo.RunValue)))
 				{
+					# some displaynames were empty
+					$displayname = $propInfo.DisplayName
+					if ($displayname.Length -eq 0) { $displayname = $prop.Name }
+					
 					[pscustomobject]@{
 						ServerName = $server.Name
 						ConfigName = $prop.Name
-						DisplayName = $propInfo.DisplayName
+						DisplayName = $displayname
 						Description = $propInfo.Description
 						IsAdvanced = $propInfo.IsAdvanced
 						IsDynamic = $propInfo.IsDynamic
