@@ -2,12 +2,13 @@ function Get-DbaClusterSqlInstance
 {
 <#
 .SYNOPSIS
-Returns the uptime of the SQL Server instance, and if required the hosting windows server
+Returns the registered SQL Server Instances on a windows Server cluster
 	
 .DESCRIPTION
-By default, this command returns for each SQL Server instance passed in:
-SQL Instance last startup time, Uptime as a PS TimeSpan, Uptime as a formatted string
-Hosting Windows server last startup time, Uptime as a PS TimeSpan, Uptime as a formatted string
+By default, this command returns for each Cluster passed in:
+Pulls Cluster details via WMI/CIM so doesn't require Failover Cluster PowerShell module to be installed.
+Multiple clusters can be piped in.
+Returns ALL instance registered on cluster. Does not check that they are viable, correctly installed or currenly running. 
 	
 .PARAMETER Cluster
 The SQL Server that you're connecting to.
