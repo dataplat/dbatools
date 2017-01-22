@@ -14,7 +14,11 @@ if($env:APPVEYOR_REPO_BRANCH -and $env:APPVEYOR_REPO_BRANCH -notlike "master")
 
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace('.Tests.', '.')
 Import-Module $PSScriptRoot\..\internal\$sut -Force
+#Need to load various functions so we can mock It, breaks Appveyor otherwise
 
+. $PSScriptRoot\..\internal\Connect-SQLServer.ps1 
+. $PSScriptRoot\..\functions\Test-SQLPath.ps1 
+. $PSScriptRoot\..\functions\Invoke-SqlCmd2.ps1
 Describe "Get-XpDirTree Unit Tests" -Tag 'Unittests'{
     mock Connect-SqlServer {$true}
     mock Test-SqlPath {$true}
