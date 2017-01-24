@@ -60,8 +60,8 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance", "ComputerName")]
-		[string[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer", "ComputerName")]
+		[object[]]$SqlInstance,
 		[parameter(ParameterSetName = "Sql")]
 		[Switch]$SqlOnly,
 		[parameter(ParameterSetName = "Windows")]
@@ -73,8 +73,17 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 	
 	PROCESS
 	{
-		foreach ($servername in $SqlServer)
+		foreach ($item in $SqlInstance)
 		{
+			if ($item.Gettype().FullName -eq [System.Management.Automation.PSCustomObject] )
+			{
+				write-verbose "object - $item"
+				$servername = $item.SqlInstance
+			} else {
+				write-verbose "string - $item"
+				$servername = $item
+
+			}
 			if ($WindowsOnly -ne $true)
 			{
 				
