@@ -53,6 +53,14 @@ and then pushes the instance names through to Get-DbaUptime
 	BEGIN
 	{
 		$FunctionName = "Get-DbaWsfcSqlResource"
+		$StatusMessage = @{0= 'Inherited';
+							1 = 'Initialising';
+							2 = 'Online';
+							3 = 'Offline';
+							4 = 'Failed';
+							128 = 'Pending';
+							129 = 'Online Pending';
+							130 = 'Offline Pending';}
 	}
     PROCESS
     {
@@ -79,8 +87,11 @@ and then pushes the instance names through to Get-DbaUptime
 				}
 				Foreach ($Result in $results) 
 				{
+					write-verbose "m - $message - $state"
 					[PSCustomObject]@{SqlInstance= $Result.PrivateProperties.VirtualServerName+"\"+$Result.PrivateProperties.InstanceName
-											ClusterName = $cluster}
+											ClusterName = $cluster
+											State = $Result.State
+											Status = $StatusMessage[[int]$($Result.State)]}
 				}
 
         }
