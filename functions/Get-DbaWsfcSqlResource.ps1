@@ -87,7 +87,6 @@ and then pushes the instance names through to Get-DbaUptime
 				}
 				Foreach ($Result in $results) 
 				{
-					write-verbose "m - $message - $state"
 					[PSCustomObject]@{SqlInstance= $Result.PrivateProperties.VirtualServerName+"\"+$Result.PrivateProperties.InstanceName
 											ClusterName = $cluster
 											State = $Result.State
