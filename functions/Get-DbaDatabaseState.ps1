@@ -24,11 +24,6 @@ Gets options only on these databases
 .PARAMETER Exclude
 Gets options for all but these specific databases
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
-
-.PARAMETER Confirm
-Prompts you for confirmation before executing any operation within the command.
 
 .NOTES
 Author: niphlod
@@ -58,12 +53,12 @@ Get-DbaDatabaseState -SqlServer sqlserver2014a -Exclude HR
 Gets options for all databases of the sqlserver2014a instance except HR
 
 .EXAMPLE
-Get-DbaDatabaseState -SqlServer sqlserver2014a, sqlserver2014b
+sqlserver2014a, sqlserver2014b | Get-DbaDatabaseState
 
 Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 
 #>
-	[CmdletBinding(SupportsShouldProcess = $true)]
+	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
@@ -121,9 +116,6 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 			return $base
 		}
 
-		$RWExclusive = @('ReadOnly', 'ReadWrite')
-		$StatusExclusive = @('Online', 'Offline', 'Emergency', 'Detached')
-		$AccessExclusive = @('SingleUser', 'RestrictedUser', 'MultiUser')
 	}
 	PROCESS
 	{
@@ -152,20 +144,17 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 			}
 			foreach($db in $dbs)
 			{
-				If ($Pscmdlet.ShouldProcess($instance, "Getting states for '$($db.Name)'"))
-				{
-					$db_status = Get-DbState $db
+				$db_status = Get-DbState $db
 
-					[PSCustomObject]@{
-						SqlInstance   = $server.Name
-						InstanceName  = $server.ServiceName
-						ComputerName  = $server.NetName
-						DatabaseName  = $db.Name
-						RW            = $db_status.RW
-						Status        = $db_status.Status
-						Access        = $db_status.Access
-					} | Select-DefaultField -Property SqlInstance, DatabaseName, RW, Status, Access
-				}
+				[PSCustomObject]@{
+					SqlInstance   = $server.Name
+					InstanceName  = $server.ServiceName
+					ComputerName  = $server.NetName
+					DatabaseName  = $db.Name
+					RW            = $db_status.RW
+					Status        = $db_status.Status
+					Access        = $db_status.Access
+				} | Select-DefaultField -Property SqlInstance, DatabaseName, RW, Status, Access
 			}
 		}
 	}
