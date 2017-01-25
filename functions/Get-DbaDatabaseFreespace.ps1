@@ -87,45 +87,45 @@ Returns database files and free space information for the db1 and db2 on localho
 				    ,f.name AS [FileName]
 				    ,fg.name AS [Filegroup] 
 				    ,f.physical_name AS [PhysicalName]
-				    ,CAST(CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int)/128.0 AS DECIMAL(15,2)) as [UsedSpaceMB]
-				    ,CAST(f.size/128.0 - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int)/128.0 AS DECIMAL(15,2)) AS [FreeSpaceMB]
-				    ,CAST((f.size/128.0) AS DECIMAL(15,2)) AS [FileSizeMB]
-				    ,CAST((FILEPROPERTY(f.name, 'SpaceUsed')/(f.size/1.0)) * 100 as DECIMAL(15,2)) as [PercentUsed]
-					,CAST((f.growth/128.0) AS DECIMAL(15,2)) AS [GrowthMB]
+				    ,CAST(CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int)/128.0 AS FLOAT) as [UsedSpaceMB]
+				    ,CAST(f.size/128.0 - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int)/128.0 AS FLOAT) AS [FreeSpaceMB]
+				    ,CAST((f.size/128.0) AS FLOAT) AS [FileSizeMB]
+				    ,CAST((FILEPROPERTY(f.name, 'SpaceUsed')/(f.size/1.0)) * 100 as FLOAT) as [PercentUsed]
+					,CAST((f.growth/128.0) AS FLOAT) AS [GrowthMB]
 					,CASE is_percent_growth WHEN 1 THEN 'pct' WHEN 0 THEN 'MB' ELSE 'Unknown' END AS [GrowthType]
-					,CASE f.max_size WHEN -1 THEN 2147483648. ELSE CAST((f.max_size/128.0) AS DECIMAL(15,2)) END AS [MaxSizeMB]
-					,CAST((f.size/128.0) AS DECIMAL(15,2)) - CAST(CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int)/128.0 AS DECIMAL(15,2)) AS [SpaceBeforeAutoGrow]
+					,CASE f.max_size WHEN -1 THEN 2147483648. ELSE CAST((f.max_size/128.0) AS FLOAT) END AS [MaxSizeMB]
+					,CAST((f.size/128.0) AS FLOAT) - CAST(CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int)/128.0 AS FLOAT) AS [SpaceBeforeAutoGrow]
 					,CASE f.max_size	WHEN (-1)
-										THEN CAST(((2147483648.) - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int))/128.0 AS DECIMAL(15,2))
-										ELSE CAST((f.max_size - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int))/128.0 AS DECIMAL(15,2))
+										THEN CAST(((2147483648.) - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int))/128.0 AS FLOAT)
+										ELSE CAST((f.max_size - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int))/128.0 AS FLOAT)
 										END AS [SpaceBeforeMax]
 					,CASE f.growth	WHEN 0 THEN 0.00
 									ELSE	CASE f.is_percent_growth	WHEN 0
 													THEN	CASE f.max_size
 															WHEN (-1)
-															THEN CAST(((((2147483648.)-f.Size)/f.Growth)*f.Growth)/128.0 AS DECIMAL(15,2))
-															ELSE CAST((((f.max_size-f.Size)/f.Growth)*f.Growth)/128.0 AS DECIMAL(15,2))
+															THEN CAST(((((2147483648.)-f.Size)/f.Growth)*f.Growth)/128.0 AS FLOAT)
+															ELSE CAST((((f.max_size-f.Size)/f.Growth)*f.Growth)/128.0 AS FLOAT)
 															END
 													WHEN 1
 													THEN	CASE f.max_size
 															WHEN (-1)
-															THEN CAST(CONVERT([int],f.Size*power((1)+CONVERT([float],f.Growth)/(100),CONVERT([int],log10(CONVERT([float],(2147483648.))/CONVERT([float],f.Size))/log10((1)+CONVERT([float],f.Growth)/(100)))))/128.0 AS DECIMAL(15,2))
-															ELSE CAST(CONVERT([int],f.Size*power((1)+CONVERT([float],f.Growth)/(100),CONVERT([int],log10(CONVERT([float],f.Max_Size)/CONVERT([float],f.Size))/log10((1)+CONVERT([float],f.Growth)/(100)))))/128.0 AS DECIMAL(15,2))
+															THEN CAST(CONVERT([int],f.Size*power((1)+CONVERT([float],f.Growth)/(100),CONVERT([int],log10(CONVERT([float],(2147483648.))/CONVERT([float],f.Size))/log10((1)+CONVERT([float],f.Growth)/(100)))))/128.0 AS FLOAT)
+															ELSE CAST(CONVERT([int],f.Size*power((1)+CONVERT([float],f.Growth)/(100),CONVERT([int],log10(CONVERT([float],f.Max_Size)/CONVERT([float],f.Size))/log10((1)+CONVERT([float],f.Growth)/(100)))))/128.0 AS FLOAT)
 															END
 													ELSE (0)
 													END
 									END AS [PossibleAutoGrowthMB]
 					, CASE f.growth	WHEN 0 THEN	CASE f.max_size
 												WHEN (-1)
-												THEN CAST(((2147483648.) - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int))/128.0 AS DECIMAL(15,2))
-												ELSE CAST((f.max_size - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int))/128.0 AS DECIMAL(15,2))
+												THEN CAST(((2147483648.) - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int))/128.0 AS FLOAT)
+												ELSE CAST((f.max_size - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int))/128.0 AS FLOAT)
 												END
 									ELSE CAST((f.max_size - f.size - (	CASE f.is_percent_growth
 												WHEN 0
 												THEN	CASE f.max_size
 														WHEN (-1)
-														THEN ((((2147483648.)-f.Size)/f.Growth)*f.Growth)
-														ELSE (((f.max_size-f.Size)/f.Growth)*f.Growth)
+														THEN CONVERT(FLOAT,((((2147483648.)-f.Size)/f.Growth)*f.Growth))
+														ELSE CONVERT(FLOAT,(((f.max_size-f.Size)/f.Growth)*f.Growth))
 														END
 												WHEN 1
 												THEN	CASE f.max_size
@@ -134,7 +134,7 @@ Returns database files and free space information for the db1 and db2 on localho
 														ELSE CONVERT([int],f.Size*power((1)+CONVERT([float],f.Growth)/(100),CONVERT([int],log10(CONVERT([float],f.Max_Size)/CONVERT([float],f.Size))/log10((1)+CONVERT([float],f.Growth)/(100)))))
 														END
 														ELSE (0)
-														END ))/128.0 AS DECIMAL(15,2))
+														END ))/128.0 AS FLOAT)
 									END AS [UnusableSpaceMB]
  
 				FROM sys.database_files AS f WITH (NOLOCK) 
@@ -149,11 +149,26 @@ Returns database files and free space information for the db1 and db2 on localho
 	{
 		foreach ($s in $SqlServer)
 		{
-			#For each SQL Server in collection, connect and get SMO object
-			Write-Verbose "Connecting to $s"
-			$server = Connect-SqlServer $s -SqlCredential $SqlCredential
+            try
+            {
+			    #For each SQL Server in collection, connect and get SMO object
+			    Write-Verbose "Connecting to $s"
+			    $server = Connect-SqlServer $s -SqlCredential $SqlCredential
+            }
+            catch
+            {
+				if ($SqlServer.count -eq 1)
+				{
+					Write-Warning "Can't connect to $s."
+				}
+				else
+				{
+					Write-Warning "Can't connect to $s. Moving on."
+					Continue
+				}
+			}
 			#If IncludeSystemDBs is true, include systemdbs
-			#only look at online databases (Status equal normal)
+			#look at all databases, online/offline/accessible/inaccessible and tell user if a db can't be queried.
 			try
 			{
 				if ($databases.length -gt 0)
@@ -162,11 +177,13 @@ Returns database files and free space information for the db1 and db2 on localho
 				}
 				elseif ($IncludeSystemDBs)
 				{
-					$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' }
+					#$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' -and $_.IsAccessible -eq $true }
+                    $dbs = $server.Databases
 				}
 				else
 				{
-					$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' -and $_.IsSystemObject -eq 0 }
+					#$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' -and $_.IsAccessible -eq $true -and $_.IsSystemObject -eq 0 }
+                    $dbs = $server.Databases | Where-Object { $_.IsSystemObject -eq 0 }
 				}
 				
 				if ($exclude.length -gt 0)
@@ -186,8 +203,15 @@ Returns database files and free space information for the db1 and db2 on localho
 				try
 				{
 					Write-Verbose "Querying $($s) - $($db.name)."
-					#Execute query against individual database and add to output
-					$outputraw += ($db.ExecuteWithResults($sql)).Tables[0]
+                    If($db.status -ne 'Normal' -or $db.IsAccessible -eq $false)
+                    {
+                        Write-Warning "$db is not accessible."
+                    }
+                    Else
+                    {
+					    #Execute query against individual database and add to output
+					    $outputraw += ($db.ExecuteWithResults($sql)).Tables[0]
+                    }
 				}
 				catch
 				{
@@ -205,21 +229,27 @@ Returns database files and free space information for the db1 and db2 on localho
 		$output = @()
 		foreach ($row in $outputraw)
 		{
+            If ($row.UsedSpaceMB -is [System.DBNull]) { $UsedMB = 0 } Else { $UsedMB = [Math]::Round($row.UsedSpaceMB) }
+            If ($row.FreeSpaceMB -is [System.DBNull]) { $FreeMB = 0 } Else { $FreeMB = [Math]::Round($row.FreeSpaceMB) }
+            If ($row.PercentUsed -is [System.DBNull]) { $PercentUsed = 0 } Else { $PercentUsed = [Math]::Round($row.PercentUsed) }
+            If ($row.SpaceBeforeMax -is [System.DBNull]) { $SpaceUntilMax = 0 } Else { $SpaceUntilMax = [Math]::Round($row.SpaceBeforeMax) }
+            If ($row.UnusableSpaceMB -is [System.DBNull]) { $UnusableSpace = 0 } Else { $UnusableSpace = [Math]::Round($row.UnusableSpaceMB) }
+
 			$outrow = [ordered]@{
-				'SqlServer' = $row.SqlServer;`
-				'DatabaseName' = $row.DBName;`
+				'Server' = $row.SqlServer;`
+				'Database' = $row.DBName;`
 				'FileName' = $row.FileName;`
 				'FileGroup' = $row.FileGroup;`
 				'PhysicalName' = $row.PhysicalName;`
-				'UsedSpaceMB' = $row.UsedSpaceMB;`
-				'FreeSpaceMB' = $row.FreeSpaceMB;`
+				'UsedSpaceMB' = $UsedMB;`
+				'FreeSpaceMB' = $FreeMB;`
 				'FileSizeMB' = $row.FileSizeMB;`
-				'PercentUsed' = $row.PercentUSed;`
+				'PercentUsed' = $PercentUsed;`
 				'AutoGrowth' = $row.GrowthMB;`
 				'AutoGrowType' = $row.GrowthType;`
-				'SpaceUntilMaxSizeMB' = $row.SpaceBeforeMax;`
+				'SpaceUntilMaxSizeMB' = $SpaceUntilMax;`
 				'AutoGrowthPossibleMB' = $row.PossibleAutoGrowthMB;`
-				'UnusableSpaceMB' = $row.UnusableSpaceMB
+				'UnusableSpaceMB' = $UnusableSpace
 			}
 			$output += New-Object psobject -Property $outrow
 		}

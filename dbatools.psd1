@@ -180,7 +180,17 @@
 		'Invoke-Sqlcmd2',
 		'Get-DbaMsdtc',
 		'Get-DbaXEventsSession',
-		'Get-DbaSqlService'
+		'Get-DbaSqlService',
+		'Get-DbaUptime',
+		'Rename-DbaLogin',
+		'Find-DbaDatabase',
+		'Find-DbaAgentJob',
+		'Restore-DbaFromDatabaseSnapshot',
+		'Test-DbaOptimizeForAdHoc',
+		'Get-DbaDatabase',
+		'Get-DbaAgentJobOutputFile',
+		'Set-DbaAgentJobOutputFile',
+		'Get-DbaSpConfigure'
 	)
 	
 	# Cmdlets to export from this module

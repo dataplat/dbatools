@@ -51,7 +51,6 @@ Find all servers in Server Central Management Server that have 'Max Server Memor
 	
 	PROCESS
 	{
-		$collection = @()
 		foreach ($servername in $sqlserver)
         {	
 			Write-Verbose "Attempting to connect to $servername"

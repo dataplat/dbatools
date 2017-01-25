@@ -435,10 +435,17 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				{
 					foreach ($backupfile in $filestodelete)
 					{
-						If (Test-Path $backupfile)
-						{
-							Remove-Item $backupfile
-						}
+                        try
+                        {
+						    If (Test-Path $backupfile -ErrorAction Stop)
+						    {
+							    Remove-Item $backupfile
+						    }
+                        }
+                        catch
+                        {
+                            Write-Warning "You can't access backup file $backupfile"
+                        }
 					}
 				}
 				
@@ -607,7 +614,17 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					}
 					catch
 					{
-						throw "$_ `n This sometimes happens with cloned VMs. You can try again or use Backup and Restore"
+						Write-Warning "Start-BitsTransfer did not succeed. Now attempting with Copy-Item - no progress bar will be shown."
+						try
+						{
+							Copy-Item -Path $from -Destination $remotefilename -ErrorAction Stop
+						}
+						catch
+						{
+							Write-Warning "Access denied. This can happen for a number of reasons including issues with cloned disks."
+							Write-Warning "Alternatively, you may need to run PowerShell as Administrator, especially when running on localhost."
+							break
+						}
 					}
 				}
 			}
@@ -712,6 +729,17 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 		
+		if ($DetachAttach)
+		{
+			if ($sourceserver.netname -eq $env:COMPUTERNAME -or $destserver.netname -eq $env:COMPUTERNAME)
+			{
+				If (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
+				{
+					Write-Warning "When running DetachAttach locally on the console, it's likely you'll need to Run As Administrator. Trying anyway."
+				}
+			}
+		}
+		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
 		
@@ -719,12 +747,23 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		{
 			if ($(Test-SqlPath -SqlServer $sourceserver -Path $NetworkShare) -eq $false)
 			{
-				throw "$Source cannot access $NetworkShare"
+				Write-Warning "$Source may not be able to access $NetworkShare. Trying anyway."
 			}
 			
 			if ($(Test-SqlPath -SqlServer $destserver -Path $NetworkShare) -eq $false)
 			{
-				throw "$Destination cannot access $NetworkShare"
+				Write-Warning "$Destination may not be able to access $NetworkShare. Trying anyway."
+			}
+			
+			if ($networkshare.StartsWith('\\'))
+			{
+				$shareserver = ($networkshare -split "\\")[2]
+				$hostentry = ([Net.Dns]::GetHostEntry($shareserver)).HostName -split "\."
+				
+				if ($shareserver -ne $hostentry[0])
+				{
+					Write-Warning "Using CNAME records for the network share may present an issue if an SPN has not been created. Trying anyway. If it doesn't work, use a different (A record) hostname."
+				}
 			}
 		}
 		
@@ -750,10 +789,18 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				throw "Network share must be a valid UNC path (\\server\share)."
 			}
 			
-			if (!(Test-Path $NetworkShare))
-			{
-				Write-Warning "$networkshare share cannot be accessed. Still trying anyway, in case the SQL Server service accounts have access."
-			}
+            try
+            {
+				if (Test-Path $NetworkShare -ErrorAction Stop)
+			    {
+				    Write-Verbose "$networkshare share can be accessed."
+			    }
+            }
+            catch
+            {
+                Write-Warning "$networkshare share cannot be accessed. Still trying anyway, in case the SQL Server service accounts have access."
+            }
+			
 		}
 		
 		Write-Output "Checking to ensure server is not SQL Server 7 or below"
@@ -1077,19 +1124,9 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					
 					If ($Pscmdlet.ShouldProcess($destination, "Detach $dbname from $source and attach, then update dbowner"))
 					{
-						$result = Start-SqlDetachAttach $sourceserver $destserver $filestructure $dbname
+						$migrationresult = Start-SqlDetachAttach $sourceserver $destserver $filestructure $dbname
 						
 						$dbfinish = Get-Date
-						
-						if ($result -eq $true)
-						{
-							Write-Output "Successfully attached $dbname to $destination"
-						}
-						else
-						{
-							Write-Warning "Failed to attach $dbname to $destination. Aborting routine for this database."
-							continue
-						}
 						
 						if ($reattach -eq $true)
 						{
@@ -1118,6 +1155,17 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 							{
 								Write-Warning "Could not reattach $dbname to $source."
 							}
+						}
+						
+						
+						if ($migrationresult -eq $true)
+						{
+							Write-Output "Successfully attached $dbname to $destination"
+						}
+						else
+						{
+							Write-Warning "Failed to attach $dbname to $destination. Aborting routine for this database."
+							continue
 						}
 					}
 				}
