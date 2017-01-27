@@ -45,11 +45,12 @@ Returns all SQL Agent operators  on serverA and serverB\instanceB
 		[string[]]$SqlInstance,
 		[PSCredential] [System.Management.Automation.CredentialAttribute()]$SqlCredential
 	)
-	BEGIN {}
-	PROCESS
+BEGIN {}
+PROCESS
 	{
-		foreach ($Instance in $SqlInstance)
+		foreach ( $Instance in $SqlInstance )
 		{
+            Write-Verbose "Connecting to $Instance"
 			try
 			{
 				$Instance = Connect-SqlServer -SqlServer $Instance -SqlCredential $sqlcredential
@@ -59,16 +60,26 @@ Returns all SQL Agent operators  on serverA and serverB\instanceB
 				Write-Warning "Failed to connect to $Instance"
 				continue
 			}
+            Write-Verbose "Connecting to SQL Agent on $Instance"
+			try
+			{
+				$Jobserver = $Instance.jobserver
+			}
+			catch
+			{
+				Write-Warning "Failed to connect to SQL Agent on $Instance"
+				continue
+			}
+		    Write-Verbose "Getting SQL Agent operators on $Instance"
+			$operators = $Jobserver.operators
 			
-			$operators = $Instance.jobserver.operators
-			
-			if (!$operators)
+			if ( $operators.count -lt 1 )
 			{
 				Write-Verbose "No operators on $Instance"
 			}
 			else
 			{
-				foreach ($operator in $operators)
+				foreach ( $operator in $operators )
 				{
 					[pscustomobject]@{
                         ComputerName = $Instance.NetName
@@ -83,5 +94,5 @@ Returns all SQL Agent operators  on serverA and serverB\instanceB
 			}
 		}
 	}
-	END	{}
+END	{}
 }
