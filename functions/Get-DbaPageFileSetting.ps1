@@ -45,8 +45,8 @@ Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status,
 		[object]$ComputerName,
 		[PSCredential] [System.Management.Automation.CredentialAttribute()]$Credential
 	)
-	BEGIN {}
-	PROCESS {
+BEGIN {}
+PROCESS {
         foreach ($Computer in $ComputerName)
         {
             Write-Verbose "Connecting to $Computer"
@@ -56,7 +56,7 @@ Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status,
                 $computer = $reply.ComputerName
             }
             Write-Verbose "Connecting to $Computer via CIM (WSMan)"
-            $CompSys = Get-CimInstance -ComputerName $Computer -Query "SELECT * FROM win32_computersystem" -ErrorVariable $MyErr -Credential $Credential
+            $CompSys = Get-CimInstance -ComputerName $Computer -Query "SELECT * FROM win32_computersystem" -ErrorVariable $MyErr
             if ( $CompSys )
             {
                 Write-Verbose "Successfully retrieved PageFile information on $Computer via WSMan"
@@ -88,8 +88,8 @@ Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status,
                     }
                     else
                     {
-                    Write-Warning "$computer Operating System too old. No Pagefile information available."
-                    continue
+                        Write-Warning "$computer Operating System too old. No Pagefile information available."
+                        continue
                     }
                 }
 			    else
@@ -132,5 +132,8 @@ Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status,
             }
         }
 	}
-	END {}
+
+END {
+        Get-CimSession | Remove-CimSession
+    }
 }
