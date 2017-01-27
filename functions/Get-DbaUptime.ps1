@@ -9,7 +9,7 @@ By default, this command returns for each SQL Server instance passed in:
 SQL Instance last startup time, Uptime as a PS TimeSpan, Uptime as a formatted string
 Hosting Windows server last startup time, Uptime as a PS TimeSpan, Uptime as a formatted string
 	
-.PARAMETER SqlServer
+.PARAMETER $SqlServer
 The SQL Server that you're connecting to.
 
 .PARAMETER SqlCredential
@@ -37,17 +37,17 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Get-DbaUptime
 
 .EXAMPLE
-Get-DbaUptime -SqlServer SqlBox1\Instance2
+Get-DbaUptime -$SqlServer SqlBox1\Instance2
 
 Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for the sqlexpress instance on winserver
 
 .EXAMPLE
-Get-DbaUptime -SqlServer winserver\sqlexpress, sql2016
+Get-DbaUptime -$SqlServer winserver\sqlexpress, sql2016
 
 Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for the sqlexpress instance on host winserver  and the default instance on host sql2016
 	
 .EXAMPLE   
-Get-DbaUptime -SqlServer sqlserver2014a, sql2016 -SqlOnly
+Get-DbaUptime -$SqlServer sqlserver2014a, sql2016 -SqlOnly
 
 Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string for the sqlexpress instance on host winserver  and the default instance on host sql2016
 
@@ -61,7 +61,7 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance", "ComputerName")]
-		[string[]]$SqlServer,
+		[object[]]$SqlServer,
 		[parameter(ParameterSetName = "Sql")]
 		[Switch]$SqlOnly,
 		[parameter(ParameterSetName = "Windows")]
@@ -73,8 +73,15 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 	
 	PROCESS
 	{
-		foreach ($servername in $SqlServer)
+		foreach ($item in $SqlServer)
 		{
+			if ($item.Gettype().FullName -eq [System.Management.Automation.PSCustomObject] )
+			{
+				$servername = $item.SqlInstance
+			} else {
+				$servername = $item
+			}
+			
 			if ($WindowsOnly -ne $true)
 			{
 				
@@ -139,7 +146,7 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 				[PSCustomObject]@{
 					ComputerName = $server.NetName
 					InstanceName = $server.ServiceName
-					SqlInstance = $server.Name
+					$SqlServer = $server.Name
 					SqlUptime = $SQLUptime
 					SqlStartTime = $SQLStartTime
 					SinceSqlStart = $SQLUptimeString
@@ -159,7 +166,7 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 				[PSCustomObject]@{
 					ComputerName = $WindowsServerName
 					InstanceName = $server.ServiceName
-					SqlInstance = $server.Name
+					$SqlServer = $server.Name
 					SqlUptime = $SQLUptime
 					WindowsUptime = $WindowsUptime
 					SqlStartTime = $SQLStartTime
