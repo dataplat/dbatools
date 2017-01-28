@@ -130,10 +130,9 @@ PROCESS {
                             'CurrentUsage' = "";
                             }
             }
+        Remove-CimSession $CIMsession
         }
 	}
 
-END {
-        Get-CimSession | Remove-CimSession
-    }
+END {}
 }
