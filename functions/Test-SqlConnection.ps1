@@ -94,8 +94,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	
 	$serverinfo.ServerName = $sqlserver
 	
+	[regex]$portdetection = ":\d{1,5}$"
+	if ($sqlserver.LastIndexOf(":") -ne -1)
+	{
+		$portnumber = $sqlserver.substring($sqlserver.LastIndexOf(":"))
+		if ($portnumber -match $portdetection)
+		{
+			$replacedportseparator = $portnumber -replace ":", ","
+			$sqlserver = $sqlserver -replace $portnumber, $replacedportseparator
+		}
+	}
+	
 	Write-Output "Determining SQL Server base address"
-	$baseaddress = $sqlserver.Split("\")[0]
+	$baseaddress = $sqlserver.Split(",")[0]
+	$baseaddress = $baseaddress.Split("\")[0]
 	try { $instance = $sqlserver.Split("\")[1] }
 	catch { $instance = "(Default)" }
 	if ([string]::IsNullOrEmpty($instance)) { $instance = "(Default)" }
@@ -106,17 +118,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		$hostname = $env:COMPUTERNAME
 		$baseaddress = $env:COMPUTERNAME
 	}
-
-    [regex]$portdetection = ":\d{1,5}$"
-    if ($sqlserver.LastIndexOf(":") -ne -1)
-    {
-        $portnumber = $sqlserver.substring($sqlserver.LastIndexOf(":"))
-        if ($portnumber -match $portdetection)
-        {
-            $replacedportseparator = $portnumber -replace ":",","
-            $sqlserver = $sqlserver -replace $portnumber,$replacedportseparator
-        }
-    }
 	
 	$serverinfo.BaseName = $baseaddress
 	$remote = $baseaddress -ne $env:COMPUTERNAME
