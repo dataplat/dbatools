@@ -2,10 +2,10 @@
 {
 <#
 .SYNOPSIS
-Exports Windows and SQL Users to a T-SQL file.
+Exports users creation and its permissions to a T-SQL file or host.
 
 .DESCRIPTION
-Exports Windows and SQL Users to a T-SQL file. Export includes user, create and add to role(s), database level permissions, object level permissions.
+Exports users creation and its permissions to a T-SQL file or host. Export includes user, create and add to role(s), database level permissions, object level permissions.
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
@@ -110,7 +110,7 @@ https://dbatools.io/Export-SqlUser
 
 		$outsql = @()
 
-        $Verions = @{
+        $versions = @{
                 'SQLServer2000' = 'Version80'
                 'SQLServer2005' = 'Version90'
                 'SQLServer2008/2008R2' = 'Version100'
@@ -118,6 +118,16 @@ https://dbatools.io/Export-SqlUser
                 'SQLServer2014' = 'Version120'
                 'SQLServer2016' = 'Version130'
             }
+
+        $versionName = @{
+                 'Version80' = 'SQLServer2000'
+                 'Version90' = 'SQLServer2005'
+                 'Version100' = 'SQLServer2008/2008R2'
+                 'Version110' = 'SQLServer2012'
+                 'Version120' = 'SQLServer2014'
+                 'Version130' = 'SQLServer2016'
+            }
+
 	}
 	PROCESS
 	{
@@ -155,7 +165,7 @@ https://dbatools.io/Export-SqlUser
                 }
                 else
                 {
-                    $scriptVersion = $Verions[$DestinationVersion]
+                    $scriptVersion = $versions[$DestinationVersion]
                 }
 
                 #Options
@@ -192,80 +202,89 @@ https://dbatools.io/Export-SqlUser
                         #setting database
                         $outsql += "USE [" + $db.Name + "]"
 
-	                    #Fixed Roles #Dependency Issue. Create Role, before add to role.
-                        foreach ($RolePermission in ($db.Roles | Where-Object {$_.IsFixedRole -eq $false}))
-                        { 
-                            foreach ($RolePermissionScript in $RolePermission.Script($ScriptingOptions))
-                            {
-                                #$RoleScript = $RolePermission.Script($ScriptingOptions)
-                                $outsql += "$($RolePermissionScript.ToString())"
-                            }
-                        }
-	                 
-                        #Database Create User(s) and add to Role(s)
-                        foreach ($dbUserPermissionScript in $dbuser.Script($ScriptingOptions))
+                        try
                         {
-                            if ($dbuserPermissionScript.Contains("sp_addrolemember"))
-                            {
-                                $Execute = "EXEC "
-                            } 
-                            else 
-                            {
-                                $Execute = ""
-                            }
-                            $outsql += "$Execute$($dbUserPermissionScript.ToString())"
-                        }
-
-	                    #Database Permissions
-                        foreach ($DatabasePermission in $db.EnumDatabasePermissions() | Where-Object {@("sa","dbo","information_schema","sys") -notcontains $_.Grantee -and $_.Grantee -notlike "##*" -and ($dbuser.Name -contains $_.Grantee)})
-                        {
-                            if ($DatabasePermission.PermissionState -eq "GrantWithGrant")
-                            {
-                                $WithGrant = "WITH GRANT OPTION"
-                            } 
-                            else 
-                            {
-                                $WithGrant = ""
-                            }
-                            $GrantDatabasePermission = $DatabasePermission.PermissionState.ToString().Replace("WithGrant", "").ToUpper()
-
-                            $outsql += "$($GrantDatabasePermission) $($DatabasePermission.PermissionType) TO [$($DatabasePermission.Grantee)] $WithGrant"
-                        }
-
-
-	                    #Database Object Permissions
-                        foreach ($ObjectPermission in $db.EnumObjectPermissions() | Where-Object {@("sa","dbo","information_schema","sys") -notcontains $_.Grantee -and $_.Grantee -notlike "##*" -and $dbuser.Name -contains $_.Grantee})
-                        {
-                            switch ($ObjectPermission.ObjectClass)
-				            {
-					            "Schema" 
-                                { 
-                                    $Object = "SCHEMA::[" + $ObjectPermission.ObjectName + "]" 
+	                        #Fixed Roles #Dependency Issue. Create Role, before add to role.
+                            foreach ($RolePermission in ($db.Roles | Where-Object {$_.IsFixedRole -eq $false}))
+                            { 
+                                foreach ($RolePermissionScript in $RolePermission.Script($ScriptingOptions))
+                                {
+                                    #$RoleScript = $RolePermission.Script($ScriptingOptions)
+                                    $outsql += "$($RolePermissionScript.ToString())"
                                 }
+                            }
+
+                            #Database Create User(s) and add to Role(s)
+                            foreach ($dbUserPermissionScript in $dbuser.Script($ScriptingOptions))
+                            {
+                                if ($dbuserPermissionScript.Contains("sp_addrolemember"))
+                                {
+                                    $Execute = "EXEC "
+                                } 
+                                else 
+                                {
+                                    $Execute = ""
+                                }
+                                $outsql += "$Execute$($dbUserPermissionScript.ToString())"
+                            }
+                        
+                            #Database Permissions
+                            foreach ($DatabasePermission in $db.EnumDatabasePermissions() | Where-Object {@("sa","dbo","information_schema","sys") -notcontains $_.Grantee -and $_.Grantee -notlike "##*" -and ($dbuser.Name -contains $_.Grantee)})
+                            {
+                                if ($DatabasePermission.PermissionState -eq "GrantWithGrant")
+                                {
+                                    $WithGrant = "WITH GRANT OPTION"
+                                } 
+                                else 
+                                {
+                                    $WithGrant = ""
+                                }
+                                $GrantDatabasePermission = $DatabasePermission.PermissionState.ToString().Replace("WithGrant", "").ToUpper()
+
+                                $outsql += "$($GrantDatabasePermission) $($DatabasePermission.PermissionType) TO [$($DatabasePermission.Grantee)] $WithGrant"
+                            }
+
+
+	                        #Database Object Permissions
+                            foreach ($ObjectPermission in $db.EnumObjectPermissions() | Where-Object {@("sa","dbo","information_schema","sys") -notcontains $_.Grantee -and $_.Grantee -notlike "##*" -and $dbuser.Name -contains $_.Grantee})
+                            {
+                                switch ($ObjectPermission.ObjectClass)
+				                {
+					                "Schema" 
+                                    { 
+                                        $Object = "SCHEMA::[" + $ObjectPermission.ObjectName + "]" 
+                                    }
 					    
-                                "User" 
-                                { 
-                                    $Object = "USER::[" + $ObjectPermission.ObjectName + "]" 
-                                }
+                                    "User" 
+                                    { 
+                                        $Object = "USER::[" + $ObjectPermission.ObjectName + "]" 
+                                    }
                         
-                                default 
-                                { 
-                                    $Object = "[" + $ObjectPermission.ObjectSchema + "].[" + $ObjectPermission.ObjectName + "]" 
-                                }
-				            }
+                                    default 
+                                    { 
+                                        $Object = "[" + $ObjectPermission.ObjectSchema + "].[" + $ObjectPermission.ObjectName + "]" 
+                                    }
+				                }
 
-                            if ($ObjectPermission.PermissionState -eq "GrantWithGrant")
-                            {
-                                $WithGrant = "WITH GRANT OPTION"
+                                if ($ObjectPermission.PermissionState -eq "GrantWithGrant")
+                                {
+                                    $WithGrant = "WITH GRANT OPTION"
                         
-                            } 
-                            else 
-                            {
-                                $WithGrant = ""
+                                } 
+                                else 
+                                {
+                                    $WithGrant = ""
+                                }
+                                $GrantObjectPermission = $ObjectPermission.PermissionState.ToString().Replace("WithGrant","").ToUpper()
+
+                                $outsql += "$GrantObjectPermission $($ObjectPermission.PermissionType) ON $Object TO [$($ObjectPermission.Grantee)] $WithGrant"
                             }
-                            $GrantObjectPermission = $ObjectPermission.PermissionState.ToString().Replace("WithGrant","").ToUpper()
 
-                            $outsql += "$GrantObjectPermission $($ObjectPermission.PermissionType) ON $Object TO [$($ObjectPermission.Grantee)] $WithGrant"
+                        }
+                        catch
+                        {
+                            Write-Warning "This user may be using functionality from $($versionName[$($db.CompatibilityLevel.ToString())]) that does not exist on the destination version ($DestinationVersion)."
+                            Write-Exception $_
                         }
                     }
                 }
