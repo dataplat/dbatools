@@ -102,6 +102,13 @@ Shows information about the processes that were initiated by hosts (computers/cl
 		$allsessions = @()
 		
 		$processes = $sourceserver.EnumProcesses()
+		$servercolumn = $processes.Columns.Add("SqlServer", [object])
+		$servercolumn.SetOrdinal(0)
+		
+		foreach ($row in $processes)
+		{
+			$row["SqlServer"] = $sourceserver
+		}
 		
 		if ($nosystemspids -eq $true)
 		{
@@ -142,15 +149,10 @@ Shows information about the processes that were initiated by hosts (computers/cl
 		{
 			$allsessions = $allsessions | Where-Object { $exclude -notcontains $_.SPID -and $_.Spid -notin $allsessions.Spid  }
 		}
-	}
-	
-	END
-	{
-		$sourceserver.ConnectionContext.Disconnect()
 		
 		if ($Detailed)
 		{
-			return $allsessions | Select-Object Spid, Login, Host, Database, BlockingSpid, Program, @{
+			Select-DefaultField -ExcludeProperty SqlServer -InputObject ($allsessions | Select-Object SqlServer, Spid, Login, Host, Database, BlockingSpid, Program, @{
 				name = "Status"; expression = {
 					if ($_.Status -eq "") { "sleeping" }
 					else { $_.Status }
@@ -160,19 +162,21 @@ Shows information about the processes that were initiated by hosts (computers/cl
 					if ($_.Command -eq "") { "AWAITING COMMAND" }
 					else { $_.Command }
 				}
-			}, Cpu, MemUsage, IsSystem
+			}, Cpu, MemUsage, IsSystem)
 		}
-		
-		return ($allsessions | Select-Object Spid, Login, Host, Database, BlockingSpid, Program, @{
-				name = "Status"; expression = {
-					if ($_.Status -eq "") { "sleeping" }
-					else { $_.Status }
-				}
-			}, @{
-				name = "Command"; expression = {
-					if ($_.Command -eq "") { "AWAITING COMMAND" }
-					else { $_.Command }
-				}
-			})
+		else
+		{
+			Select-DefaultField -ExcludeProperty SqlServer -InputObject ($allsessions | Select-Object SqlServer, Spid, Login, Host, Database, BlockingSpid, Program, @{
+					name = "Status"; expression = {
+						if ($_.Status -eq "") { "sleeping" }
+						else { $_.Status }
+					}
+				}, @{
+					name = "Command"; expression = {
+						if ($_.Command -eq "") { "AWAITING COMMAND" }
+						else { $_.Command }
+					}
+				})
+		}
 	}
 }
