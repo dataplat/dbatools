@@ -12,6 +12,9 @@ THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 .PARAMETER SqlInstance
 The SQL Server instance name. SQL Server 2000 and above supported.
 
+.PARAMETER DestinationVersion
+To say to which version the script should be generated. If not specified will use database compatibility level
+
 .PARAMETER FilePath
 The file to write to.
 
@@ -35,6 +38,11 @@ Authenticates to sqlserver2014a using SQL Authentication. Exports all users to C
 Export-SqlUser -SqlServer sqlserver2014a -User User1, User2 -FilePath C:\temp\users.sql
 
 Exports ONLY users User1 and User2 fron sqlsever2014a to the file  C:\temp\users.sql
+
+.EXAMPLE
+Export-SqlUser -SqlServer sqlserver2008 -User User1 -FilePath C:\temp\users.sql -DestinationVersion SQLServer2016
+
+Exports user User1 fron sqlsever2008 to the file  C:\temp\users.sql with sintax to run on SQL Server 2016
 
 .NOTES
 Original Author: Cláudio Silva (@ClaudioESSilva)
@@ -65,6 +73,8 @@ https://dbatools.io/Export-SqlUser
 		[Alias("ServerInstance", "SqlServer")]
 		[string]$SqlInstance,
         [object[]]$User,
+        [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016')]
+        [string]$DestinationVersion,
 		[Alias("OutFile", "Path","FileName")]
 		[string]$FilePath,
 		[System.Management.Automation.PSCredential]$SqlCredential,
@@ -99,8 +109,16 @@ https://dbatools.io/Export-SqlUser
         $sourceserver = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
 
 		$outsql = @()
-    }
-	
+
+        $Verions = @{
+                'SQLServer2000' = 'Version80'
+                'SQLServer2005' = 'Version90'
+                'SQLServer2008/2008R2' = 'Version100'
+                'SQLServer2012' = 'Version110'
+                'SQLServer2014' = 'Version120'
+                'SQLServer2016' = 'Version130'
+            }
+	}
 	PROCESS
 	{
         # Convert from RuntimeDefinedParameter object to regular array
@@ -130,8 +148,15 @@ https://dbatools.io/Export-SqlUser
             #Database Permissions
             foreach ($db in $databases)
             {
-                #Get compatibility level for scripting the objects
-                $scriptVersion = $db.CompatibilityLevel
+                if ([string]::IsNullOrEmpty($DestinationVersion))
+                {
+                    #Get compatibility level for scripting the objects
+                    $scriptVersion = $db.CompatibilityLevel
+                }
+                else
+                {
+                    $scriptVersion = $Verions[$DestinationVersion]
+                }
 
                 #Options
                 [Microsoft.SqlServer.Management.Smo.ScriptingOptions] $ScriptingOptions = New-Object "Microsoft.SqlServer.Management.Smo.ScriptingOptions";
