@@ -86,14 +86,21 @@ Tests all logins excluding any that are from the mydomain Domain
 			}
 			return $dn
 		}
-		
-		$alldomains = $domains = @()
-		$currentforest = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
-		$alldomains += $currentforest.Domains.name | Where-Object { $_ -notin $excludedomains }
-		
-		$cd = $currentforest.Domains | Where-Object { $_.name -notin $excludedomains }
-		
-		foreach ($domain in $cd)
+		try
+		{
+			$alldomains = $domains = @()
+			$currentforest = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
+			$alldomains += $currentforest.Domains.name | Where-Object { $_ -notin $excludedomains }
+			
+			$cd = $currentforest.Domains | Where-Object { $_.name -notin $excludedomains }
+		}
+		catch
+		{
+			Write-warning "No Active Directory domains Found."
+			break
+		}
+	
+	foreach ($domain in $cd)
 		{
 			try
 			{
