@@ -154,6 +154,12 @@ Returns database files and free space information for the db1 and db2 on localho
 			$server = Connect-SqlServer $s -SqlCredential $SqlCredential
 			#If IncludeSystemDBs is true, include systemdbs
 			#only look at online databases (Status equal normal)
+
+			if ($server.VersionMajor -eq '8'){
+				Write-Warning "SQL Server 2000 is not supported. Skipping: $($server.Name)"
+				continue
+			}
+
 			try
 			{
 				if ($databases.length -gt 0)
