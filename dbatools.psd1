@@ -181,7 +181,8 @@
 		'Export-SqlUser',
 		'Get-DbaDatabaseState',
 		'Set-DbaDatabaseState',
-		'Move-DbaDatabaseFile'
+		'Move-DbaDatabaseFile',
+		'Get-DbaHelpIndex'
 	)
 	
 	# Cmdlets to export from this module
