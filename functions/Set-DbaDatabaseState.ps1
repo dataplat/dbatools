@@ -150,7 +150,7 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 
 		function Edit-DatabaseState($sqlinstance, $dbname, $opt, $immediate=$false)
 		{
-			$warn = ''
+			$warn = $null
 			$sql = "ALTER DATABASE [$dbname] SET $opt"
 			if($immediate)
 			{
@@ -199,9 +199,9 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 		function Get-DbState($db)
 		{
 			$base = [PSCustomObject]@{
-				'Access' = ''
-				'Status' = ''
-				'RW' = ''
+				'Access' = $null
+				'Status' = $null
+				'RW' = $null
 			}
 			$base.RW = $ReadOnlyHash[$db.ReadOnly]
 			$base.Access = $UserAccessHash[$db.UserAccess.toString()]
@@ -223,6 +223,7 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 		Get-WrongCombo -optset $RWExclusive -allparams $allparams
 		Get-WrongCombo -optset $StatusExclusive -allparams $allparams
 		Get-WrongCombo -optset $AccessExclusive -allparams $allparams
+		
 		if($databases.Length -eq 0 -and $AllDatabases -eq $false)
 		{
 			throw "You must specify a -AllDatabases or -Database to continue"
@@ -266,7 +267,7 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 				$warn = @()
 				if($db.DatabaseSnapshotBaseName.Length -gt 0)
 				{
-					Write-Warning "Database '$($db.Name)' is a snapshot, skipping"
+					Write-Warning "Database $db is a snapshot, skipping"
 					Continue
 				}
 
@@ -274,13 +275,13 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 				{
 					if($db_status.RW -eq 'READ_ONLY')
 					{
-						Write-Verbose "Database '$($db.Name)' is already READ_ONLY"
+						Write-Verbose "Database $db is already READ_ONLY"
 					}
 					else
 					{
-						If ($Pscmdlet.ShouldProcess($instance, "Set '$($db.Name)' to READ_ONLY"))
+						If ($Pscmdlet.ShouldProcess($instance, "Set $db to READ_ONLY"))
 						{
-							Write-Verbose "Setting database '$($db.Name)' to READ_ONLY"
+							Write-Verbose "Setting database $db to READ_ONLY"
 							$warn += Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "READ_ONLY" -immediate $Force
 						}
 					}
@@ -290,13 +291,13 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 				{
 					if($db_status.RW -eq 'READ_WRITE')
 					{
-						Write-Verbose "Database '$($db.Name)' is already READ_WRITE"
+						Write-Verbose "Database $db is already READ_WRITE"
 					}
 					else
 					{
-						If ($Pscmdlet.ShouldProcess($instance, "Set '$($db.Name)' to READ_WRITE"))
+						If ($Pscmdlet.ShouldProcess($instance, "Set $db to READ_WRITE"))
 						{
-							Write-Verbose "Setting database '$($db.Name)' to READ_WRITE"
+							Write-Verbose "Setting database $db to READ_WRITE"
 							$warn += Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "READ_WRITE" -immediate $Force
 						}
 					}
@@ -306,13 +307,13 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 				{
 					if($db_status.Status -eq 'ONLINE')
 					{
-						Write-Verbose "Database '$($db.Name)' is already ONLINE"
+						Write-Verbose "Database $db is already ONLINE"
 					}
 					else
 					{
-						If ($Pscmdlet.ShouldProcess($instance, "Set '$($db.Name)' to ONLINE"))
+						If ($Pscmdlet.ShouldProcess($instance, "Set $db to ONLINE"))
 						{
-							Write-Verbose "Setting database '$($db.Name)' to ONLINE"
+							Write-Verbose "Setting database $db to ONLINE"
 							$warn += Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "ONLINE" -immediate $Force
 						}
 					}
@@ -322,13 +323,13 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 				{
 					if($db_status.Status -eq 'OFFLINE')
 					{
-						Write-Verbose "Database '$($db.Name)' is already OFFLINE"
+						Write-Verbose "Database $db is already OFFLINE"
 					}
 					else
 					{
-						If ($Pscmdlet.ShouldProcess($instance, "Set '$($db.Name)' to OFFLINE"))
+						If ($Pscmdlet.ShouldProcess($instance, "Set $db to OFFLINE"))
 						{
-							Write-Verbose "Setting database '$($db.Name)' to OFFLINE"
+							Write-Verbose "Setting database $db to OFFLINE"
 							$warn = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "OFFLINE" -immediate $Force
 						}
 					}
@@ -338,13 +339,13 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 				{
 					if($db_status.Status -eq 'EMERGENCY')
 					{
-						Write-Verbose "Database '$($db.Name)' is already EMERGENCY"
+						Write-Verbose "Database $db is already EMERGENCY"
 					}
 					else
 					{
-						If ($Pscmdlet.ShouldProcess($instance, "Set '$($db.Name)' to EMERGENCY"))
+						If ($Pscmdlet.ShouldProcess($instance, "Set $db to EMERGENCY"))
 						{
-							Write-Verbose "Setting database '$($db.Name)' to EMERGENCY"
+							Write-Verbose "Setting database $db to EMERGENCY"
 							$warn += Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "EMERGENCY" -immediate $Force
 						}
 					}
@@ -354,13 +355,13 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 				{
 					if($db_status.Access -eq 'SINGLE_USER')
 					{
-						Write-Verbose "Database '$($db.Name)' is already SINGLE_USER"
+						Write-Verbose "Database $db is already SINGLE_USER"
 					}
 					else
 					{
-						If ($Pscmdlet.ShouldProcess($instance, "Set '$($db.Name)' to SINGLE_USER"))
+						If ($Pscmdlet.ShouldProcess($instance, "Set $db to SINGLE_USER"))
 						{
-							Write-Verbose "Setting '$($db.Name)' to SINGLE_USER"
+							Write-Verbose "Setting $db to SINGLE_USER"
 							$warn += Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "SINGLE_USER" -immediate $Force
 						}
 					}
@@ -370,13 +371,13 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 				{
 					if($db_status.Access -eq 'RESTRICTED_USER')
 					{
-						Write-Verbose "Database '$($db.Name)' is already RESTRICTED_USER"
+						Write-Verbose "Database $db is already RESTRICTED_USER"
 					}
 					else
 					{
-						If ($Pscmdlet.ShouldProcess($instance, "Set '$($db.Name)' to RESTRICTED_USER"))
+						If ($Pscmdlet.ShouldProcess($instance, "Set $db to RESTRICTED_USER"))
 						{
-							Write-Verbose "Setting '$($db.Name)' to RESTRICTED_USER"
+							Write-Verbose "Setting $db to RESTRICTED_USER"
 							$warn += Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "RESTRICTED_USER" -immediate $Force
 						}
 					}
@@ -386,13 +387,13 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 				{
 					if($db_status.Access -eq 'MULTI_USER')
 					{
-						Write-Verbose "Database '$($db.Name)' is already MULTI_USER"
+						Write-Verbose "Database $db is already MULTI_USER"
 					}
 					else
 					{
-						If ($Pscmdlet.ShouldProcess($instance, "Set '$($db.Name)' to MULTI_USER"))
+						If ($Pscmdlet.ShouldProcess($instance, "Set $db to MULTI_USER"))
 						{
-							Write-Verbose "Setting '$($db.Name)' to MULTI_USER"
+							Write-Verbose "Setting $db to MULTI_USER"
 							$warn += Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "MULTI_USER" -immediate $Force
 						}
 					}
@@ -407,32 +408,32 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 				{
 					if ($db.Name -in $snaps)
 					{
-						Write-Warning "Database '$($db.Name)' has snapshots, you need to drop them before detaching, skipping..."
+						Write-Warning "Database $db has snapshots, you need to drop them before detaching, skipping..."
 						Continue
 					}
 					if ($db.IsMirroringEnabled -eq $true -or $db.AvailabilityGroupName.Length -gt 0)
 					{
 						if ($Force -eq $false)
 						{
-							Write-Warning "Needs -Force to detach '$($db.Name)', skipping"
+							Write-Warning "Needs -Force to detach $db, skipping"
 							Continue
 						}
 					}
 
 					if ($db.IsMirroringEnabled)
 					{
-						If ($Pscmdlet.ShouldProcess($instance, "Break mirroring for '$($db.Name)'"))
+						If ($Pscmdlet.ShouldProcess($instance, "Break mirroring for $db"))
 						{
 							try
 							{
 								$db.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
 								$db.Alter()
 								$db.Refresh()
-								Write-Verbose "Broke mirroring for '$($db.Name)'"
+								Write-Verbose "Broke mirroring for $db"
 							}
 							catch
 							{
-								Write-Warning "Could not break mirror for '$($db.Name)'. Skipping."
+								Write-Warning "Could not break mirror for $db. Skipping."
 								Write-Exception $_
 								Continue
 							}
@@ -442,16 +443,16 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 					if ($database.AvailabilityGroupName.Length -gt 0)
 					{
 						$agname = $db.AvailabilityGroupName
-						If ($Pscmdlet.ShouldProcess($instance, "Removing '$($db.Name)' from AG '$agname'"))
+						If ($Pscmdlet.ShouldProcess($instance, "Removing $db from AG '$agname'"))
 						{
 							try
 							{
 								$server.AvailabilityGroups[$db.AvailabilityGroupName].AvailabilityDatabases[$db.Name].Drop()
-								Write-Verbose "Successfully removed '$($db.Name)' from '$agname' on $($server.name)"
+								Write-Verbose "Successfully removed $db from '$agname' on $server"
 							}
 							catch
 							{
-								Write-Warning "Could not remove '$($db.Name)' from '$agname' on $($server.name)"
+								Write-Warning "Could not remove $db from '$agname' on $server"
 								Write-Exception $_
 								Continue
 							}
@@ -460,7 +461,7 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 
 					# DBA 101 should encourage detaching just OFFLINE databases
 					# we can do that here
-					If ($Pscmdlet.ShouldProcess($instance, "Detaching '$($db.Name)'"))
+					If ($Pscmdlet.ShouldProcess($instance, "Detaching $db"))
 					{
 						if($db_status.Status -ne 'OFFLINE')
 						{
@@ -468,7 +469,7 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 						}
 						try
 						{
-							$sql = "EXEC master.dbo.sp_detach_db N'$($db.Name)'"
+							$sql = "EXEC master.dbo.sp_detach_db N$db"
 							Write-Verbose $sql
 							$null = $server.ConnectionContext.ExecuteNonQuery($sql)
 							$newstate.Status = 'DETACHED'
@@ -476,7 +477,7 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 						catch
 						{
 							Write-Exception $_
-							Write-Warning "Failed to detach '$($db.Name)'"
+							Write-Warning "Failed to detach $db"
 							$warn += "Failed to detach"
 						}
 					}
@@ -500,7 +501,8 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 					RW            = $newstate.RW
 					Status        = $newstate.Status
 					Access        = $newstate.Access
-					Warning       = $warn
+					Warning 	  = $warn
+					Database      = $db
 				} | Select-DefaultField -Property SqlInstance, DatabaseName, RW, Status, Access, Warning
 			}
 		}
