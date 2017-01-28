@@ -35,14 +35,20 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER FileName
-The file to write to.
+.PARAMETER FilePath
+The filepath of the file to write to.
 
 .PARAMETER NoClobber
 Do not overwrite file
 	
 .PARAMETER Append
 Append to file
+
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
 
 .NOTES 
 Original Author: Aaron Nelson (@SQLvariant), SQLvariant.com
@@ -158,18 +164,46 @@ Will find exact Unused indexes on all user databases
 		}
 
         Write-Output "Attempting to connect to Sql Server.."
-		$sourceserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 	}
 	
 	PROCESS
 	{
 
-        if ($sourceserver.versionMajor -lt 9)
+        if ($server.versionMajor -lt 9)
 		{
 			throw "This function does not support versions lower than SQL Server 2005 (v9)"
 		}
-
-        # Convert from RuntimeDefinedParameter object to regular array
+		
+		$lastrestart = $server.Databases['tempdb'].CreateDate
+		$enddate = Get-Date -Date $lastrestart
+		$diffdays = (New-TimeSpan -Start $enddate -End (Get-Date)).Days
+		
+		if ($diffdays -le 6)
+		{
+			throw "The SQL Service was restarted on $lastrestart, which is not long enough for a solid evaluation."
+		}
+        
+        <#
+            Validate if server version is:
+                - sql 2012 and if have SP3 CU3 (Build 6537) or higher
+                - sql 2014 and if have SP2 (Build 5000) or higher
+            If the major version is the same but the build is lower, throws the message
+        #>
+        if (
+                ($server.VersionMajor -eq 11 -and $server.BuildNumber -lt 6537) `
+            -or ($server.VersionMajor -eq 12 -and $server.BuildNumber -lt 5000)
+           )
+        {
+            throw "This SQL version has a known issue. Rebuilding an index clears any existing row entry from sys.dm_db_index_usage_stats for that index.`r`nPlease refer to connect item: https://connect.microsoft.com/SQLServer/feedback/details/739566/rebuilding-an-index-clears-stats-from-sys-dm-db-index-usage-stats"
+        }
+		
+		if ($diffdays -le 33)
+		{
+			Write-Warning "The SQL Service was restarted on $lastrestart, which may not be long enough for a solid evaluation."
+		}
+		
+		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
 		
 		if ($pipedatabase.Length -gt 0)
@@ -180,7 +214,7 @@ Will find exact Unused indexes on all user databases
 
         if ($databases.Count -eq 0)
         {
-            $databases = ($sourceserver.Databases | Where-Object {$_.isSystemObject -eq 0 -and $_.Status -ne "Offline"}).Name
+            $databases = ($server.Databases | Where-Object {$_.isSystemObject -eq 0 -and $_.Status -ne "Offline"}).Name
         }
 
         if ($databases.Count -gt 0)
@@ -193,7 +227,7 @@ Will find exact Unused indexes on all user databases
 
                     $query = $CompletelyUnusedQuery
 
-                    $UnusedIndex = $sourceserver.Databases[$db].ExecuteWithResults($query)
+                    $UnusedIndex = $server.Databases[$db].ExecuteWithResults($query)
 
                     $scriptGenerated = $false
 
@@ -284,6 +318,6 @@ Will find exact Unused indexes on all user databases
 	
 	END
 	{
-		$sourceserver.ConnectionContext.Disconnect()
+		$server.ConnectionContext.Disconnect()
 	}
 }

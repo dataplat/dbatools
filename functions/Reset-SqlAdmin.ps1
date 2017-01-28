@@ -42,6 +42,12 @@ Groups are valid input.
 .PARAMETER Force
 By default, a confirmation is presented to ensure the person executing the script knows that a service restart will occur. Force basically performs a -Confirm:$false. This will restart the SQL Service without prompting.
 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: Admin access to server (not SQL Services), 
@@ -144,7 +150,10 @@ Internal function.
 				$conn.Dispose()
 				return $true
 			}
-			catch { return $false }
+			catch
+			{
+				return $false
+			}
 		}
 	}
 	
@@ -153,13 +162,13 @@ Internal function.
 			if ($Force) { $ConfirmPreference="none" }
 			
 			$baseaddress = $sqlserver.Split("\")[0]
-			
+
 	        # Before we continue, we need confirmation.
 	        if ($pscmdlet.ShouldProcess($baseaddress, "Reset-SqlAdmin (SQL Server instance $sqlserver will restart)"))
 	        {
 			# Get hostname
 			
-			if ($baseaddress -eq "." -or $baseaddress -eq $env:COMPUTERNAME)
+			if ($baseaddress -eq "." -or $baseaddress -eq $env:COMPUTERNAME -or $baseaddress -eq "localhost")
 			{
 				$ipaddr = "."
 				$hostname = $env:COMPUTERNAME
@@ -171,7 +180,10 @@ Internal function.
 			{
 				# Test for WinRM #Test-WinRM neh
 				winrm id -r:$baseaddress 2>$null | Out-Null
-				if ($LastExitCode -ne 0) { throw "Remote PowerShell access not enabled on on $source or access denied. Quitting." }
+				if ($LastExitCode -ne 0)
+				{
+					throw "Remote PowerShell access not enabled on on $source or access denied. Quitting."
+				}
 				
 				# Test Connection first using Test-Connection which requires ICMP access then failback to tcp if pings are blocked
 				Write-Output "Testing connection to $baseaddress"
@@ -187,7 +199,10 @@ Internal function.
 						$tcp.Close()
 						$tcp.Dispose()
 					}
-					catch { throw "Can't connect to $baseaddress either via ping or tcp (WMI port 135)" }
+					catch
+					{
+						throw "Can't connect to $baseaddress either via ping or tcp (WMI port 135)"
+					}
 				}
 				Write-Output "Resolving IP address"
 				try
@@ -195,7 +210,10 @@ Internal function.
 					$hostentry = [System.Net.Dns]::GetHostEntry($baseaddress)
 					$ipaddr = ($hostentry.AddressList | Where-Object { $_ -notlike '169.*' } | Select -First 1).IPAddressToString
 				}
-				catch { throw "Could not resolve SqlServer IP or NetBIOS name" }
+				catch
+				{
+					throw "Could not resolve SqlServer IP or NetBIOS name"
+				}
 				
 				Write-Output "Resolving NetBIOS name"
 				try
@@ -203,13 +221,19 @@ Internal function.
 					$hostname = (Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter IPEnabled=TRUE -ComputerName $ipaddr).PSComputerName
 					if ($hostname -eq $null) { $hostname = (nbtstat -A $ipaddr | Where-Object { $_ -match '\<00\>  UNIQUE' } | ForEach-Object { $_.SubString(4, 14) }).Trim() }
 				}
-				catch { throw "Could not access remote WMI object. Check permissions and firewall." }
+				catch
+				{
+					throw "Could not access remote WMI object. Check permissions and firewall."
+				}
 			}
 			
 			# Setup remote session if server is not local
 			if ($hostname -ne $env:COMPUTERNAME)
 			{
-				try { $session = New-PSSession -ComputerName $hostname }
+				try
+				{
+					$session = New-PSSession -ComputerName $hostname
+				}
 				catch
 				{
 					throw "Can't access $hostname using PSSession. Check your firewall settings and ensure Remoting is enabled or run the script locally."
@@ -255,19 +279,39 @@ Internal function.
 			
 			try
 			{
-				$instanceservices = Get-Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like "*($instance)*" -and $_.Status -eq "Running" }
-				$sqlservice = Get-Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -eq "SQL Server ($instance)" }
+				if ($hostname -eq $env:COMPUTERNAME)
+				{
+					$instanceservices = Get-Service | Where-Object { $_.DisplayName -like "*($instance)*" -and $_.Status -eq "Running" }
+					$sqlservice = Get-Service | Where-Object { $_.DisplayName -eq "SQL Server ($instance)" }
+				}
+				else
+				{
+					$instanceservices = Get-Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like "*($instance)*" -and $_.Status -eq "Running" }
+					$sqlservice = Get-Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -eq "SQL Server ($instance)" }
+				}
 			}
-			catch { throw "Cannot connect to WMI on $hostname or SQL Service does not exist. Check permissions, firewall and SQL Server running status." }
+			catch
+			{
+				throw "Cannot connect to WMI on $hostname or SQL Service does not exist. Check permissions, firewall and SQL Server running status."
+			}
 			
-			if ($instanceservices -eq $null) { throw "Couldn't find SQL Server instance. Check the spelling, ensure the service is running and try again." }
+			if ($instanceservices -eq $null)
+			{
+				throw "Couldn't find SQL Server instance. Check the spelling, ensure the service is running and try again."
+			}
 			
 			Write-Output "Attempting to stop SQL Services"
 			
 			# Check to see if service is clustered. Clusters don't support -m (since the cluster service
 			# itself connects immediately) or -f, so they are handled differently.
-			try { $checkcluster = Get-Service -ComputerName $ipaddr | Where-Object { $_.Name -eq "ClusSvc" -and $_.Status -eq "Running" } }
-			catch { throw "Can't check services. Check permissions and firewall." }
+			try
+			{
+				$checkcluster = Get-Service -ComputerName $ipaddr | Where-Object { $_.Name -eq "ClusSvc" -and $_.Status -eq "Running" }
+			}
+			catch
+			{
+				throw "Can't check services. Check permissions and firewall."
+			}
 			
 			if ($checkcluster -ne $null)
 			{
@@ -279,7 +323,10 @@ Internal function.
 			if ($clusterResource.count -gt 0)
 			{
 				$isclustered = $true
-				try { $clusterResource | Where-Object { $_.Name -eq "SQL Server" } | ForEach-Object { $_.TakeOffline(60) } }
+				try
+				{
+					$clusterResource | Where-Object { $_.Name -eq "SQL Server" } | ForEach-Object { $_.TakeOffline(60) }
+				}
 				catch
 				{
 					$clusterResource | Where-Object { $_.Name -eq "SQL Server" } | ForEach-Object { $_.BringOnline(60) }
@@ -336,7 +383,10 @@ Internal function.
 			}
 			
 			Write-Output "Reconnecting to SQL instance"
-			try { Invoke-ResetSqlCmd -SqlServer $sqlserver -Sql "SELECT 1" | Out-Null }
+			try
+			{
+				Invoke-ResetSqlCmd -SqlServer $sqlserver -Sql "SELECT 1" | Out-Null
+			}
 			catch
 			{
 				try

@@ -54,33 +54,32 @@ Install-SqlWhoIsActive -SqlServer sqlserver2014a -SqlCredential $cred
 
 Pops up a dialog box asking which database on sqlserver2014a you want to install the proc to. Logs into SQL Server using SQL Authentication.
 	
+
+.EXAMPLE 
+$servers = Get-SqlRegisteredServerName sqlserver
+Install-SqlWhoIsActive -SqlServer $servers -Database master
+
+This command doesn't support passing both servers and default database, but you can accomplish the same thing by passing an array and specifying a database.
+
 #>
 	
 	[CmdletBinding()]
 	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
 		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[object[]]$SqlServer,
 		[object]$SqlCredential,
-		[string]$Path,
-		[switch]$OutputDatabaseName,
-		[string]$Header = "sp_WhoIsActive not found. To deploy, select a database or hit cancel to quit.",
-		[switch]$Force
+		[switch]$OutputDatabaseName
 	)
 	
-	DynamicParam { if ($sqlserver) { return Get-ParamSqlDatabase -SqlServer $sqlserver -SqlCredential $SqlCredential } }
+	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabase -SqlServer $sqlserver[0] -SqlCredential $SqlCredential } }
 	
 	BEGIN
 	{
-		
-		# please continue to use these variable names for consistency
-		$sourceserver = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential -RegularUser
-		$source = $sourceserver.DomainInstanceName
-		
 		Function Get-SpWhoIsActive
 		{
 			
-			$url = 'http://sqlblog.com/files/folders/42453/download.aspx'
+			$url = 'http://whoisactive.com/who_is_active_v11_17.zip'
 			$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 			$zipfile = "$temp\spwhoisactive.zip"
 			
@@ -106,112 +105,89 @@ Pops up a dialog box asking which database on sqlserver2014a you want to install
 			
 			Remove-Item -Path $zipfile
 		}
-		
-		# Used a dynamic parameter? Convert from RuntimeDefinedParameter object to regular array
-		$Database = $psboundparameters.Database
-		
-		if ($Header -like '*update*')
-		{
-			$action = "update"
-		}
-		else
-		{
-			$action = "install"
-		}
-		
-		$textinfo = (Get-Culture).TextInfo
-		$actiontitle = $textinfo.ToTitleCase($action)
-		
-		if ($action -eq "install")
-		{
-			$actioning = "installing"
-		}
-		else
-		{
-			$actioning = "updating"
-		}
 	}
 	
 	PROCESS
 	{
+		# Used a dynamic parameter? Convert from RuntimeDefinedParameter object to regular array
+		$Database = $psboundparameters.Database
 		
-		if ($database.length -eq 0)
+		foreach ($server in $sqlserver)
 		{
-			$database = Show-SqlDatabaseList -SqlServer $sourceserver -Title "$actiontitle sp_WhoisActive" -Header $header -DefaultDb "master"
+			# please continue to use these variable names for consistency
+			$sourceserver = Connect-SqlServer -SqlServer $server -SqlCredential $SqlCredential
+			$source = $sourceserver.DomainInstanceName
 			
 			if ($database.length -eq 0)
 			{
-				throw "You must select a database to $action the procedure"
+				$database = Show-SqlDatabaseList -SqlServer $sourceserver -Title "Install sp_WhoisActive" -Header "sp_WhoIsActive not found. To deploy, select a database or hit cancel to quit." -DefaultDb "master"
+				
+				if ($database.length -eq 0)
+				{
+					throw "You must select a database to install the procedure"
+				}
+				
+				if ($database -ne 'master')
+				{
+					Write-Warning "You have selected a database other than master. When you run Show-SqlWhoIsActive in the future, you must specify -Database $database"
+				}
 			}
 			
-			if ($database -ne 'master')
-			{
-				Write-Warning "You have selected a database other than master. When you run Show-SqlWhoIsActive in the future, you must specify -Database $database"
-			}
-		}
-		
-		if ($Path.Length -eq 0)
-		{
 			$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-			$file = Get-ChildItem "$temp\who*active*.sql" | Select -First 1
-			$path = $file.FullName
+			$sqlfile = (Get-ChildItem "$temp\who*active*.sql" | Select-Object -First 1).FullName
 			
-			if ($path.Length -eq 0 -or $force -eq $true)
+			if ($sqlfile.Length -eq 0)
 			{
 				try
 				{
 					if ($OutputDatabaseName -eq $false)
 					{
-						Write-Output "Downloading sp_WhoIsActive zip file, unzipping and $actioning."
+						Write-Output "Downloading sp_WhoIsActive zip file, unzipping and installing."
 					}
-					
 					Get-SpWhoIsActive
 				}
 				catch
 				{
-					throw "Couldn't download sp_WhoIsActive. Please download and $action manually from http://sqlblog.com/files/folders/42453/download.aspx."
+					throw "Couldn't download sp_WhoIsActive. Please download and install manually from http://whoisactive.com/who_is_active_v11_17.zip."
 				}
 			}
 			
-			$path = (Get-ChildItem "$temp\who*active*.sql" | Select -First 1).Name
-			$path = "$temp\$path"
-		}
-		
-		if ((Test-Path $Path) -eq $false)
-		{
-			throw "Invalid path at $path"	
-		}
-		
-		$sql = [IO.File]::ReadAllText($path)
-		$sql = $sql -replace 'USE master', ''
-		$batches = $sql -split "GO\r\n"
-		
-		foreach ($batch in $batches)
-		{
-			try
+			$sqlfile = (Get-ChildItem "$temp\who*active*.sql" | Select-Object -First 1).Name
+			$sqlfile = "$temp\$sqlfile"
+			
+			$sql = [IO.File]::ReadAllText($sqlfile)
+			$sql = $sql -replace 'USE master', ''
+			$batches = $sql -split "GO\r\n"
+			
+			foreach ($batch in $batches)
 			{
-				$null = $sourceserver.databases[$database].ExecuteNonQuery($batch)
-				
+				try
+				{
+					$null = $sourceserver.databases[$database].ExecuteNonQuery($batch)
+					
+				}
+				catch
+				{
+					Write-Exception $_
+					throw "Can't install stored procedure. See exception text for details."
+				}
 			}
-			catch
+			
+			if ($OutputDatabaseName -eq $true)
 			{
-				Write-Exception $_
-				throw "Can't $action stored procedure. See exception text for details."
+				return $database
 			}
+			else
+			{
+				Write-Output "Finished installing/updating sp_WhoIsActive in $database on $server"
+			}
+			
+			$sourceserver.ConnectionContext.Disconnect()
 		}
 	}
 	
 	END
 	{
-		$sourceserver.ConnectionContext.Disconnect()
-		
-		if ($OutputDatabaseName -eq $true)
-		{
-			return $database
-		}
-		else
-		{
-			Write-Output "Finished $actioning sp_WhoIsActive in $database on $SqlServer "
-		}
+		# nothin
 	}
 }

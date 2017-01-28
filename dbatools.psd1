@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.4.8'
+	ModuleVersion = '0.8.694'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -20,10 +20,10 @@
 	Author = 'Chrissy LeMaire'
 	
 	# Company or vendor of this module
-	CompanyName = 'netnerds.net'
+	CompanyName = 'dbatools.io'
 	
 	# Copyright statement for this module
-	Copyright = '2016 Chrissy LeMaire'
+	Copyright = '2017 Chrissy LeMaire'
 	
 	# Description of the functionality provided by this module
 	Description = 'Provides extra functionality for SQL Server Database admins and enables SQL Server instance migrations.'
@@ -50,7 +50,7 @@
 	RequiredModules = @()
 	
 	# Assemblies that must be loaded prior to importing this module
-	RequiredAssemblies = @('Microsoft.SqlServer.Smo', 'Microsoft.SqlServer.SmoExtended')
+	RequiredAssemblies = @()
 	
 	# Script files () that are run in the caller's environment prior to importing this module
 	ScriptsToProcess = @()
@@ -94,9 +94,8 @@
 		'Copy-SqlProxyAccount',
 		'Copy-SqlAlert',
 		'Import-SqlSpConfigure',
-		'Export-SqlSpConfigure',
-		'Get-SqlMaxMemory',
-		'Get-DetachedDBInfo',
+		'Export-SqlSpConfigure'
+		'Get-DbaDetachedDatabaseInfo',
 		'Restore-SqlBackupFromDirectory',
 		'Test-SqlConnection',
 		'Import-CsvToSql',
@@ -106,7 +105,6 @@
 		'Sync-SqlLoginPermissions',
 		'Export-SqlLogin',
 		'Get-SqlServerKey',
-		'Set-SqlMaxMemory',
 		'Reset-SqlAdmin',
 		'Watch-SqlDbLogin',
 		'Expand-SqlTLogResponsibly',
@@ -115,19 +113,75 @@
 		'Test-SqlNetworkLatency',
 		'Find-SqlDuplicateIndex',
 		'Show-SqlServerFileSystem',
-		'Get-DiskSpace',
+		'Get-DbaDiskSpace',
 		'Remove-SqlDatabaseSafely',
 		'Show-SqlDatabaseList',
 		'Show-SqlWhoIsActive',
-        'Set-SqlTempDbConfiguration',
-        'Test-SqlTempDbConfiguration',
+		'Set-SqlTempDbConfiguration',
+		'Test-SqlTempDbConfiguration',
 		'Repair-SqlOrphanUser',
 		'Remove-SqlOrphanUser',
 		'Find-SqlUnusedIndex',
 		'Install-SqlWhoIsActive',
 		'Update-SqlWhoIsActive',
-		'Test-SqlDiskAllocation',
-        'Move-SqlDatabaseFile'
+		'Test-DbaDiskAllocation',
+		'Test-DbaPowerPlan',
+		'Set-DbaPowerPlan',
+		'Test-DbaDiskAlignment',
+		'Get-DbaDatabaseFreespace',
+		'Get-DbaClusterActiveNode',
+		'Test-DbaDatabaseOwner',
+		'Set-DbaDatabaseOwner',
+		'Test-DbaJobOwner',
+		'Set-DbaJobOwner',
+		'Test-DbaVirtualLogFile',
+		'Get-DbaRestoreHistory',
+		'Get-DbaTcpPort',
+		'Test-DbaDatabaseCompatibility',
+		'Test-DbaDatabaseCollation',
+		'Test-DbaConnectionAuthScheme',
+		'Test-DbaServerName',
+		'Repair-DbaServerName',
+		'Stop-DbaProcess',
+		'Copy-SqlSsisCatalog',
+		'Find-DbaOrphanedFile',
+		'Get-DbaAvailabilityGroup',
+		'Get-DbaLastGoodCheckDb',
+		'Get-DbaProcess',
+		'Get-DbaRunningJob',
+		'Set-DbaMaxDop',
+		'Test-DbaFullRecoveryModel',
+		'Test-DbaMaxDop',
+		'Remove-DbaBackup',
+		'Get-DbaPermission',
+		'Get-DbaLastBackup',
+		'Connect-DbaSqlServer',
+		'Get-DbaStartupParameter',
+		'Get-DbaMemoryUsage',
+		'Get-DbaBackupHistory',
+		'Read-DbaBackupHeader',
+		'Test-DbaLastBackup',
+		'Get-DbaMaxMemory',
+		'Set-DbaMaxMemory',
+		'Test-DbaMaxMemory',
+		'Restore-DbaBackup',
+		'Get-DbaDatabaseSnapshot',
+		'Remove-DbaDatabaseSnapshot',
+		'Get-DbaRoleMember',
+		'Resolve-DbaNetworkName',
+		'Test-DbaValidLogin',
+		'Get-DbaMemoryUsage',
+		'Export-DbaAvailabilityGroup',
+		'Out-DbaDataTable',
+		'Write-DbaDataTable',
+		'New-DbaDatabaseSnapshot',
+		'Restore-DbaFromDatabaseSnapshot',
+		'Get-DbaTrigger',
+		'Invoke-Sqlcmd2',
+		'Export-SqlUser',
+		'Get-DbaDatabaseState',
+		'Set-DbaDatabaseState',
+		'Move-DbaDatabaseFile'
 	)
 	
 	# Cmdlets to export from this module
@@ -137,7 +191,17 @@
 	VariablesToExport = '*'
 	
 	# Aliases to export from this module
-	AliasesToExport = 'Reset-SqlSaPassword','Copy-SqlUserDefinedMessage','Copy-SqlJobServer','Restore-HallengrenBackup', 'Update-SqlWhoIsActive', 'Show-SqlMigrationConstraint'
+	# Aliases are stored in dbatools.psm1
+	AliasesToExport = 'Reset-SqlSaPassword',
+	'Copy-SqlUserDefinedMessage',
+	'Copy-SqlJobServer',
+	'Restore-HallengrenBackup',
+	'Update-SqlWhoIsActive',
+	'Show-SqlMigrationConstraint',
+	'Test-SqlDiskAllocation',
+	'Get-DiskSpace',
+	'Get-SqlMaxMemory',
+	'Set-SqlMaxMemory'
 	
 	# List of all modules packaged with this module
 	ModuleList = @()
@@ -146,34 +210,34 @@
 	FileList = ''
 	
 	PrivateData = @{
-    # PSData is module packaging and gallery metadata embedded in PrivateData
-    # It's for rebuilding PowerShellGet (and PoshCode) NuGet-style packages
-    # We had to do this because it's the only place we're allowed to extend the manifest
-    # https://connect.microsoft.com/PowerShell/feedback/details/421837
-    PSData = @{
-        # The primary categorization of this module (from the TechNet Gallery tech tree).
-        Category = "Databases"
-
-        # Keyword tags to help users find this module via navigations and search.
-        Tags = @('sqlserver','migrations','sql','dba','databases')
-
-        # The web address of an icon which can be used in galleries to represent this module
-        IconUri = "https://dbatools.io/logo.png"
-
-        # The web address of this module's project or support homepage.
-        ProjectUri = "https://dbatools.io"
-
-        # The web address of this module's license. Points to a page that's embeddable and linkable.
-        LicenseUri = "http://www.gnu.org/licenses/gpl-3.0.en.html"
-
-        # Release notes for this particular version of the module
-        # ReleaseNotes = False
-
-        # If true, the LicenseUrl points to an end-user license (not just a source license) which requires the user agreement before use.
-        # RequireLicenseAcceptance = ""
-
-        # Indicates this is a pre-release/testing version of the module.
-        IsPrerelease = 'True'
+		# PSData is module packaging and gallery metadata embedded in PrivateData
+		# It's for rebuilding PowerShellGet (and PoshCode) NuGet-style packages
+		# We had to do this because it's the only place we're allowed to extend the manifest
+		# https://connect.microsoft.com/PowerShell/feedback/details/421837
+		PSData = @{
+			# The primary categorization of this module (from the TechNet Gallery tech tree).
+			Category = "Databases"
+			
+			# Keyword tags to help users find this module via navigations and search.
+			Tags = @('sqlserver', 'migrations', 'sql', 'dba', 'databases')
+			
+			# The web address of an icon which can be used in galleries to represent this module
+			IconUri = "https://dbatools.io/logo.png"
+			
+			# The web address of this module's project or support homepage.
+			ProjectUri = "https://dbatools.io"
+			
+			# The web address of this module's license. Points to a page that's embeddable and linkable.
+			LicenseUri = "http://www.gnu.org/licenses/gpl-3.0.en.html"
+			
+			# Release notes for this particular version of the module
+			ReleaseNotes = "https://dbatools.io/releases"
+			
+			# If true, the LicenseUrl points to an end-user license (not just a source license) which requires the user agreement before use.
+			# RequireLicenseAcceptance = ""
+			
+			# Indicates this is a pre-release/testing version of the module.
+			IsPrerelease = 'True'
 		}
 	}
 }

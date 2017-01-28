@@ -21,6 +21,12 @@ Auto-populated list of groups in SQL Server Central Management Server. You can s
 .PARAMETER NoCmsServer
 By default, the Central Management Server name is included in the list. use -NoCmsServer to exclude the CMS itself.
 	
+.PARAMETER NetBiosName
+Returns just the NetBios names of each server
+	
+.PARAMETER IpAddr
+Returns just the ip addresses of each server
+	
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
@@ -56,13 +62,23 @@ Get-SqlRegisteredServerName -SqlServer sqlserver2014a -Groups HR, Accounting
 	
 Gets a list of server names in the HR and Accouting groups from the Central Management Server on sqlserver2014a.
 	
+.EXAMPLE 
+Get-SqlRegisteredServerName -SqlServer sqlserver2014a -Groups HR, Accounting -IpAddr
+	
+Gets a list of server IP addresses in the HR and Accouting groups from the Central Management Server on sqlserver2014a.
+	
 #>
+	[CmdletBinding(DefaultParameterSetName = "Default")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[object]$SqlCredential,
-		[switch]$NoCmsServer
+		[switch]$NoCmsServer,
+		[parameter(ParameterSetName = "NetBios")]
+		[switch]$NetBiosName,
+		[parameter(ParameterSetName = "IP")]
+		[switch]$IpAddr
 	)
 	
 	DynamicParam { if ($sqlserver) { return Get-ParamSqlCmsGroups -SqlServer $sqlserver -SqlCredential $SqlCredential } }
@@ -87,13 +103,33 @@ Gets a list of server names in the HR and Accouting groups from the Central Mana
 	PROCESS
 	{
 		
+		# see notes at Get-ParamSqlCmsGroups
+		Function Find-CmsGroup($CmsGrp, $base = '', $stopat)
+		{
+			$results = @()
+			foreach($el in $CmsGrp) {
+				if($base -eq ''){
+					$partial = $el.name
+				} else {
+					$partial = "$base\$($el.name)"
+				}
+				if ($partial -eq $stopat) {
+					return $el
+				} else {
+					foreach($group in $el.ServerGroups) {
+						$results += Find-CmsGroup $group $partial $stopat
+					}
+				}
+			}
+			return $results
+		}
 		
 		$servers = @()
 		if ($groups -ne $null)
 		{
 			foreach ($group in $groups)
 			{
-				$cms = $cmstore.ServerGroups["DatabaseEngineServerGroup"].ServerGroups[$group]
+				$cms = Find-CmsGroup $cmstore.DatabaseEngineServerGroup.ServerGroups '' $group
 				$servers += ($cms.GetDescendantRegisteredServers()).servername
 			}
 		}
@@ -107,11 +143,72 @@ Gets a list of server names in the HR and Accouting groups from the Central Mana
 		{
 			$servers += $sqlserver
 		}
-		return $servers
 	}
 	
 	END
 	{
 		$server.ConnectionContext.Disconnect()
+		
+		if ($NetBiosName -or $IpAddr)
+		{
+			$ipcollection = @()
+			$netbioscollection = @()
+			$processed = @()
+			
+			foreach ($server in $servers)
+			{
+				if ($server -match '\\')
+				{
+					$server = $server.Split('\')[0]
+				}
+				
+				if ($processed -contains $server) { continue }
+				$processed += $server 
+				
+				try
+				{
+					Write-Verbose "Testing connection to $server and resolving IP address"
+					$ipaddress = ((Test-Connection $server -Count 1 -ErrorAction SilentlyContinue).Ipv4Address | Select-Object -First 1).IPAddressToString
+				}
+				catch
+				{
+					Write-Warning "Could not resolve IP address for $server"
+					continue
+				}
+				
+				if ($ipcollection -notcontains $ipaddress) { $ipcollection += $ipaddress }
+				
+				if ($NetBiosName)
+				{
+					try
+					{
+						$hostname = (Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter IPEnabled=TRUE -ComputerName $ipaddress -ErrorAction SilentlyContinue).PSComputerName
+						if ($hostname -is [array]) { $hostname = $hostname[0] }
+						Write-Verbose "Hostname resolved to $hostname"
+						if ($hostname -eq $null) { $hostname = (nbtstat -A $ipaddress | Where-Object { $_ -match '\<00\>  UNIQUE' } | ForEach-Object { $_.SubString(4, 14) }).Trim() }
+					}
+					catch
+					{
+						Write-Warning "Could not resolve NetBios name for $server"
+						continue
+					}
+					
+					if ($netbioscollection -notcontains $hostname) { $netbioscollection += $hostname }
+				}
+			}
+			
+			if ($NetBiosName)
+			{
+				return $netbioscollection
+			}
+			else
+			{
+				return $ipcollection
+			}
+		}
+		else
+		{
+			return $servers
+		}
 	}
 }

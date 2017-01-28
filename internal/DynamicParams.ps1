@@ -2,21 +2,21 @@
 
 	These are all the functions for tab completion (auto-population of params)
 	To use, place this after params in a function
-	
+
 	DynamicParam { if ($source) { return (Get-ParamSqlXyz -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 
 #>
 Function Get-ParamSqlServerConfigs
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with Server Configs from specified SQL Server.
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -55,17 +55,19 @@ Function Get-ParamSqlServerConfigs
 
 Function Get-ParamSqlDatabases
 {
-<# 
-.SYNOPSIS 
-Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+.SYNOPSIS
+Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
 filled with database list from specified SQL Server server.
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[switch]$NoSystem,
+		[switch]$DbsWithSnapshotsOnly
 	)
 	
 	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
@@ -75,7 +77,6 @@ filled with database list from specified SQL Server server.
 	
 	# Populate arrays
 	$databaselist = @()
-	
 	if ($server.Databases.Count -gt 255)
 	{
 		# Don't slow them down by building a list that likely won't be used anyway
@@ -92,7 +93,21 @@ filled with database list from specified SQL Server server.
 	
 	foreach ($database in $server.databases)
 	{
-		if ((!$database.IsSystemObject) -and $SupportDbs -notcontains $database.name)
+		if ($NoSystem)
+		{
+			if (!($database.IsSystemObject) -and $SupportDbs -notcontains $database.name)
+			{
+				$databaselist += $database.name
+			}
+		}
+		elseif ($DbsWithSnapshotsOnly)
+		{
+			if ($database.DatabaseSnapshotBaseName.Length -gt 0)
+			{
+				$databaselist += $database.DatabaseSnapshotBaseName
+			}
+		}
+		else
 		{
 			$databaselist += $database.name
 		}
@@ -138,18 +153,19 @@ filled with database list from specified SQL Server server.
 
 Function Get-ParamSqlDatabase
 {
-<# 
-.SYNOPSIS 
-Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+.SYNOPSIS
+Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
 filled with database list from specified SQL Server server.
 
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[switch]$DbsWithSnapshotsOnly
 	)
 	
 	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
@@ -170,7 +186,14 @@ filled with database list from specified SQL Server server.
 		return $newparams
 	}
 	
-	$databaselist = $server.databases.name
+	if ($DbsWithSnapshotsOnly)
+	{
+		$databaselist = ($server.databases | Where-Object { $_.DatabaseSnapshotBaseName.Length -gt 0 }).DatabaseSnapshotBaseName
+	}
+	else
+	{
+		$databaselist = $server.databases.name
+	}
 	
 	# Reusable parameter setup
 	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
@@ -193,19 +216,101 @@ filled with database list from specified SQL Server server.
 	return $newparams
 }
 
-Function Get-ParamSqlLogins
+Function Get-ParamSqlSnapshotsAndDatabases
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
- filled with login list from specified SQL Server server.
-#>	
+<#
+.SYNOPSIS
+Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
+filled with snapshot list from specified SQL Server server.
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	# Populate arrays
+	$databaselist = $snapshotlist = @()
+	if ($server.Databases.Count -gt 255)
+	{
+		# Don't slow them down by building a list that likely won't be used anyway
+		$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+		$attributes = New-Object System.Management.Automation.ParameterAttribute
+		$attributes.ParameterSetName = "__AllParameterSets"
+		$attributes.Mandatory = $false
+		$Snapshots = New-Object -TypeName System.Management.Automation.RuntimeDefinedParameter("Snapshots", [String[]], $attributes)
+		$newparams.Add("Snapshots", $Snapshots)
+		$Databases = New-Object -TypeName System.Management.Automation.RuntimeDefinedParameter("Databases", [String[]], $attributes)
+		$newparams.Add("Databases", $Databases)
+		return $newparams
+	}
+	
+	foreach ($database in $server.databases)
+	{
+		
+		if ($database.IsDatabaseSnapshot)
+		{
+			$snapshotlist += $database.name
+		}
+		
+		if ($database.DatabaseSnapshotBaseName.Length -gt 0)
+		{
+			$databaselist += $database.DatabaseSnapshotBaseName
+		}
+	}
+
+    $databaselist = $databaselist | Get-Unique
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	
+	# Database list parameter setup
+	if ($databaselist) { $dbvalidationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $databaselist }
+	$attributeCollection = New-Object -TypeName System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($databaselist) { $attributeCollection.Add($dbvalidationset) }
+	$attributeCollection.Add($alias)
+	$Databases = New-Object -TypeName System.Management.Automation.RuntimeDefinedParameter("Databases", [String[]], $attributeCollection)
+	
+	$newparams.Add("Databases", $Databases)
+	
+	# Database list parameter setup
+	if ($snapshotlist) { $dbvalidationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $snapshotlist }
+	$attributeCollection = New-Object -TypeName System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($snapshotlist) { $attributeCollection.Add($dbvalidationset) }
+	
+	$Snapshots = New-Object -TypeName System.Management.Automation.RuntimeDefinedParameter("Snapshots", [String[]], $attributeCollection)
+	$newparams.Add("Snapshots", $Snapshots)
+	
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
+Function Get-ParamSqlLogins
+{
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
+ filled with login list from specified SQL Server server.
+#>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[switch]$WindowsOnly,
+		[switch]$SqlOnly
 	)
 	
 	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
@@ -232,7 +337,24 @@ Function Get-ParamSqlLogins
 	{
 		if (!$login.name.StartsWith("##") -and $login.name -ne 'sa')
 		{
-			$loginlist += $login.name
+			if ($WindowsOnly)
+			{
+				if ($login.LoginType -eq 'WindowsUser' -or $login.LoginType -eq 'WindowsGroup')
+				{
+					$loginlist += $login.name
+				}
+			}
+			elseif ($SqlOnly)
+			{
+				if ($login.LoginType -eq 'SqlLogin')
+				{
+					$loginlist += $login.name
+				}
+			}
+			else
+			{
+				$loginlist += $login.name
+			}
 		}
 	}
 	
@@ -271,17 +393,92 @@ Function Get-ParamSqlLogins
 	return $newparams
 }
 
-Function Get-ParamSqlServerRoles
+
+Function Get-ParamSqlLogin
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
- filled with Server Roles from specified SQL Server.
-#>	
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
+ filled with login list from specified SQL Server server.
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[switch]$WindowsOnly,
+		[switch]$SqlOnly
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	$loginlist = @()
+	
+	foreach ($login in $server.logins)
+	{
+		if (!$login.name.StartsWith("##"))
+		{
+			if ($WindowsOnly)
+			{
+				if ($login.LoginType -eq 'WindowsUser' -or $login.LoginType -eq 'WindowsGroup')
+				{
+					$loginlist += $login.name
+				}
+			}
+			elseif ($SqlOnly)
+			{
+				if ($login.LoginType -eq 'SqlLogin')
+				{
+					$loginlist += $login.name
+				}
+			}
+			else
+			{
+				$loginlist += $login.name
+			}
+		}
+	}
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	# Provide backwards compatability for improperly named parameter
+	# Scratch that. I'm going with plural. Sorry, Snoves!
+	
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $true
+	
+	# Login list parameter setup
+	if ($loginlist) { $loginvalidationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $loginlist }
+	
+	$attributeCollection = New-Object -TypeName System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($loginlist) { $attributeCollection.Add($loginvalidationset) }
+	
+	$Login = New-Object -TypeName System.Management.Automation.RuntimeDefinedParameter("Login", [String], $attributeCollection)
+		
+	$newparams.Add("Login", $Login)
+	
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
+
+Function Get-ParamSqlServerRoles
+{
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
+ filled with Server Roles from specified SQL Server.
+#>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -318,17 +515,145 @@ Function Get-ParamSqlServerRoles
 	return $newparams
 }
 
-Function Get-ParamSqlCredentials
+
+Function Get-ParamSqlProcessHosts
 {
-<# 
-.SYNOPSIS 
-Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
-filled with SQL Credentials from specified SQL Server server name.
-#>	
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	# Populate arrays
+	$items = $server.EnumProcesses().Host | Where-Object { $_.Length -gt 1 } | Sort-Object | Get-Unique
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	$attributes.Position = 3
+	
+	# Database list parameter setup
+	if ($items) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $items }
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($items) { $attributeCollection.Add($validationset) }
+	
+	$Hosts = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Hosts", [String[]], $attributeCollection)
+	
+	$newparams.Add("Hosts", $Hosts)
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
+Function Get-ParamSqlProcessPrograms
+{
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
+#>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	# Populate arrays
+	$items = $server.EnumProcesses().Program | Where-Object { $_.Length -gt 1 } | Sort-Object | Get-Unique
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	$attributes.Position = 3
+	
+	# Database list parameter setup
+	if ($items) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $items }
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($items) { $attributeCollection.Add($validationset) }
+	
+	$Programs = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Programs", [String[]], $attributeCollection)
+	
+	$newparams.Add("Programs", $Programs)
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
+Function Get-ParamSqlSpids
+{
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
+#>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	# Populate arrays
+	$spids = $server.EnumProcesses().Spid | Where-Object { $_ -gt 50 }
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	
+	# Database list parameter setup
+	if ($spids) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $spids }
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($spids) { $attributeCollection.Add($validationset) }
+	
+	$Spids = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Spids", [String[]], $attributeCollection)
+	$Exclude = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Exclude", [String[]], $attributeCollection)
+	
+	$newparams.Add("Spids", $Spids)
+	$newparams.Add("Exclude", $Exclude)
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
+Function Get-ParamSqlCredentials
+{
+<#
+.SYNOPSIS
+Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
+filled with SQL Credentials from specified SQL Server server name.
+#>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -366,15 +691,15 @@ filled with SQL Credentials from specified SQL Server server name.
 
 Function Get-ParamSqlServerAudits
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with Server Audits from specified SQL Server.
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -412,15 +737,15 @@ Function Get-ParamSqlServerAudits
 
 Function Get-ParamSqlServerServerAuditSpecifications
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with Server ServerAuditSpecifications from specified SQL Server.
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -458,15 +783,15 @@ Function Get-ParamSqlServerServerAuditSpecifications
 
 Function Get-ParamSqlBackupDevices
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with Backup Devices from specified SQL Server.
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -503,15 +828,15 @@ Function Get-ParamSqlBackupDevices
 
 Function Get-ParamSqlServerEndpoints
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with Server Endpoints from specified SQL Server.
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -550,15 +875,15 @@ Function Get-ParamSqlServerEndpoints
 
 Function Get-ParamSqlLinkedServers
 {
-<# 
-.SYNOPSIS 
-Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+.SYNOPSIS
+Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
 filled with Linked Servers from specified server name.
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -600,15 +925,15 @@ filled with Linked Servers from specified server name.
 
 Function Get-ParamSqlPolicyManagement
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with Sql Policy Management objects from specified SQL Server server.
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -617,9 +942,9 @@ Function Get-ParamSqlPolicyManagement
 	catch { return }
 	
 	if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Dmf") -eq $null)
-		{
-			return
-		}
+	{
+		return
+	}
 	
 	$sqlconn = $server.ConnectionContext.SqlConnectionObject
 	$sqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sqlconn
@@ -655,15 +980,15 @@ Function Get-ParamSqlPolicyManagement
 
 Function Get-ParamSqlResourceGovernor
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with Resource Governor objects from specified SQL Server server.
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -693,15 +1018,15 @@ Function Get-ParamSqlResourceGovernor
 
 Function Get-ParamSqlExtendedEvents
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with Extended Event objects from specified SQL Server server.
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -747,15 +1072,15 @@ Function Get-ParamSqlExtendedEvents
 
 Function Get-ParamSqlDatabaseMail
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with Database Mail server objects from specified SQL Server server.
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -792,15 +1117,15 @@ Function Get-ParamSqlDatabaseMail
 
 Function Get-ParamSqlJobServer
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with job server objects from specified SQL Server server.
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -836,29 +1161,29 @@ Function Get-ParamSqlJobServer
 
 Function Get-ParamSqlCmsGroups
 {
-<# 
-.SYNOPSIS 
-Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+.SYNOPSIS
+Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
 filled with server groups from specified SQL Server Central Management server name.
 
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 		
 	)
 	
 	if ([Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers") -eq $null)
-		{
-			return
-		}
-		
+	{
+		return
+	}
+	
 	try { $SqlCms = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
-
+	
 	$sqlconnection = $SqlCms.ConnectionContext.SqlConnectionObject
 	
 	try { $cmstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sqlconnection) }
@@ -866,18 +1191,49 @@ filled with server groups from specified SQL Server Central Management server na
 	
 	if ($cmstore -eq $null) { return }
 
+	# unfortunately the logic is quite cumbersome because group names accept also the '\'
+	# character, that is also the de-facto standard to give a hierarchy.
+	# e.g.
+	#
+	# cms
+	# +--foo
+	#    +--bar\baz
+	#    +--foo
+	#       +--registered server
+	# The only short-circuit would be something like:
+	# cms
+	# +--foo
+	# |  +--bar
+	# +--foo\bar
+	Function Parse-CmsGroup($CmsGrp, $base = '')
+	{
+		$results = @()
+		foreach($el in $CmsGrp) {
+			if($base -eq ''){
+				$partial = $el.name
+			} else {
+				$partial = "$base\$($el.name)"
+			}
+			$results += $partial
+			foreach($group in $el.ServerGroups) {
+				$results += Parse-CmsGroup $group $partial
+			}
+		}
+		return $results
+	}
+	
 	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
 	$paramattributes = New-Object System.Management.Automation.ParameterAttribute
 	$paramattributes.ParameterSetName = "__AllParameterSets"
 	$paramattributes.Mandatory = $false
 	$paramattributes.Position = 3
 	
-	$argumentlist = $cmstore.DatabaseEngineServerGroup.ServerGroups.name
+	$argumentlist = Parse-CmsGroup $cmstore.DatabaseEngineServerGroup.ServerGroups
 	
 	if ($argumentlist -ne $null)
 	{
 		$validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $argumentlist
-
+		
 		$combinedattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
 		$combinedattributes.Add($paramattributes)
 		$combinedattributes.Add($validationset)
@@ -893,15 +1249,15 @@ filled with server groups from specified SQL Server Central Management server na
 
 Function Get-ParamSqlServerTriggers
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with Server Triggers from specified SQL Server.
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -940,15 +1296,15 @@ Function Get-ParamSqlServerTriggers
 
 Function Get-ParamSqlCustomErrors
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with ID of Server Custom Errors/User Defined Messages from specified SQL Server.
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -958,7 +1314,7 @@ Function Get-ParamSqlCustomErrors
 	
 	# Populate arrays
 	$messagelist = @()
-	$uniquemessageid = $server.UserDefinedMessages | Select ID | Sort-Object | Get-Unique
+	$uniquemessageid = $server.UserDefinedMessages | Select-Object ID | Sort-Object | Get-Unique
 	foreach ($message in $uniquemessageid)
 	{
 		$messagelist += $message.ID
@@ -987,17 +1343,17 @@ Function Get-ParamSqlCustomErrors
 
 Function Get-ParamSqlDatabaseAssemblies
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with assemblies from specified SQL Server.
-	
+
  Assembly name is in database.assemblyname format.
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1051,15 +1407,15 @@ Function Get-ParamSqlDatabaseAssemblies
 
 Function Get-ParamSqlDataCollectionSets
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with Collection Sets from specified SQL Server's Data Collection object.
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1068,10 +1424,10 @@ Function Get-ParamSqlDataCollectionSets
 	catch { return }
 	
 	if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.Collector") -eq $null)
-		{
-			return
-		}
-		
+	{
+		return
+	}
+	
 	$sqlconn = $server.ConnectionContext.SqlConnectionObject
 	$storeconn = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sqlconn
 	$store = New-Object Microsoft.SqlServer.Management.Collector.CollectorConfigStore $storeconn
@@ -1109,15 +1465,15 @@ Function Get-ParamSqlDataCollectionSets
 
 Function Get-ParamSqlAlerts
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with Alerts from specified SQL Server Job Server (SQL Agent).
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1152,15 +1508,15 @@ Function Get-ParamSqlAlerts
 
 Function Get-ParamSqlOperators
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with Operators from specified SQL Server Job Server (SQL Agent).
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1194,15 +1550,15 @@ Function Get-ParamSqlOperators
 
 Function Get-ParamSqlOperatorCategories
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with OperatorCategories from specified SQL Server Job Server (SQL Agent).
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1237,15 +1593,15 @@ Function Get-ParamSqlOperatorCategories
 
 Function Get-ParamSqlProxyAccounts
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with ProxyAccounts from specified SQL Server Job Server (SQL Agent).
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1281,15 +1637,15 @@ Function Get-ParamSqlProxyAccounts
 
 Function Get-ParamSqlSharedSchedules
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with SharedSchedules from specified SQL Server Job Server (SQL Agent).
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1323,15 +1679,15 @@ Function Get-ParamSqlSharedSchedules
 
 Function Get-ParamSqlJobCategories
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with JobCategories from specified SQL Server Job Server (SQL Agent).
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1365,15 +1721,15 @@ Function Get-ParamSqlJobCategories
 
 Function Get-ParamSqlAlertCategories
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with AlertCategories from specified SQL Server Job Server (SQL Agent).
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1407,15 +1763,15 @@ Function Get-ParamSqlAlertCategories
 
 Function Get-ParamSqlTargetServers
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with TargetServers from specified SQL Server Job Server (SQL Agent).
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1449,15 +1805,15 @@ Function Get-ParamSqlTargetServers
 
 Function Get-ParamSqlTargetServerGroups
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with TargetServerGroups from specified SQL Server Job Server (SQL Agent).
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1491,15 +1847,15 @@ Function Get-ParamSqlTargetServerGroups
 
 Function Get-ParamSqlJobs
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with Jobs from specified SQL Server Job Server (SQL Agent).
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1524,8 +1880,10 @@ Function Get-ParamSqlJobs
 	$attributeCollection.Add($attributes)
 	if ($list) { $attributeCollection.Add($validationset) }
 	$Jobs = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Jobs", [String[]], $attributeCollection)
+	$Exclude = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Exclude", [String[]], $attributeCollection)
 	
 	$newparams.Add("Jobs", $Jobs)
+	$newparams.Add("Exclude", $Exclude)
 	$server.ConnectionContext.Disconnect()
 	
 	return $newparams
@@ -1533,15 +1891,15 @@ Function Get-ParamSqlJobs
 
 Function Get-ParamSqlAgentCategories
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with job server objects from specified SQL Server server.
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
@@ -1575,11 +1933,11 @@ Function Get-ParamSqlAgentCategories
 
 Function Get-ParamSqlDatabaseFileTypes
 {
-<# 
- .SYNOPSIS 
- Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary 
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
  filled with Server Configs from specified SQL Server.
-#>	
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
@@ -1602,7 +1960,7 @@ Function Get-ParamSqlDatabaseFileTypes
 		$sql = "SELECT distinct CASE type_desc WHEN 'ROWS' then 'DATA' ELSE type_desc END AS FileType FROM sys.master_files mf INNER JOIN sys.databases db ON db.database_id = mf.database_id"
 	}
 	
-	$dbfiletable = $server.ConnectionContext.ExecuteWithResults($sql)	
+	$dbfiletable = $server.ConnectionContext.ExecuteWithResults($sql)
 	$filetypes = ($dbfiletable.Tables[0].Rows).FileType
 	
 	if ($server.versionMajor -eq 8)
@@ -1618,7 +1976,7 @@ Function Get-ParamSqlDatabaseFileTypes
 	$attributes.Mandatory = $true
 	$attributes.Position = 4
 	
-	# Filetype list parameter setup
+	# Datatypes list parameter setup
 	if ($filetypes) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $filetypes }
 	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
 	$attributeCollection.Add($attributes)
@@ -1626,6 +1984,153 @@ Function Get-ParamSqlDatabaseFileTypes
 	$FileType = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("FileType", [String[]], $attributeCollection)
 	
 	$newparams.Add("FileType", $FileType)
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
+
+Function Get-ParamSqlAllProcessInfo
+{
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
+ filled with job server objects from specified SQL Server server.
+#>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	$processinfo = "Logins", "Spids", "Exclude", "Hosts", "Programs", "Databases"
+	$processes = $server.EnumProcesses()
+	
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	$attributes.Position = 3
+	
+	foreach ($name in $processinfo)
+	{
+		$propertyname = $name.TrimEnd("s")
+		
+		switch ($propertyname)
+		{
+			"Exclude" { $items = $processes.Spid }
+			"Spid" { $items = $processes.Spid }
+			
+			Default
+			{
+				$items = $processes.$propertyname | Where-Object { $_.Length -gt 1 } | Sort-Object | Get-Unique
+			}
+		}
+		
+		if ($items.count -gt 0)
+		{
+			$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+			$attributeCollection.Add($attributes)
+			$attributeCollection.Add((New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $items))
+		}
+		$newparams.Add($name, (New-Object -Type System.Management.Automation.RuntimeDefinedParameter($name, [String[]], $attributeCollection)))
+	}
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
+
+Function Get-ParamSqlMaintenancePlans
+{
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
+ filled with Maintenance Plans from specified SQL Server Job Server (SQL Agent).
+#>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	$sql = "SELECT sp.[name] AS MaintenancePlans FROM msdb.dbo.sysmaintplan_plans AS sp"
+	
+	$list = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows.MaintenancePlans
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	$attributes.Position = 4
+	
+	# MaintenancePlan list parameter setup
+	if ($list) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $list }
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($list) { $attributeCollection.Add($validationset) }
+	$MaintenancePlans = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("MaintenancePlans", [String[]], $attributeCollection)
+	$Exclude = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Exclude", [String[]], $attributeCollection)
+	
+	$newparams.Add("MaintenancePlans", $MaintenancePlans)
+	$newparams.Add("Exclude", $Exclude)
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
+Function Get-ParamSqlAvailabilityGroups
+{
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
+ filled with ProxyAccounts from specified SQL Server Job Server (SQL Agent).
+#>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	$list = @()
+	
+	# Populate arrays
+	$list = $server.AvailabilityGroups.Name
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $false
+	$attributes.Position = 3
+	
+	# Database list parameter setup
+	if ($list) { $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $list }
+	$attributeCollection = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($list) { $attributeCollection.Add($validationset) }
+	
+	$AvailabilityGroups = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("AvailabilityGroups", [String[]], $attributeCollection)
+	
+	$newparams.Add("AvailabilityGroups", $AvailabilityGroups)
 	$server.ConnectionContext.Disconnect()
 	
 	return $newparams

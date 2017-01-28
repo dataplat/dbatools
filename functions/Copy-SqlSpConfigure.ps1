@@ -29,6 +29,12 @@ $dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential 
 Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
 To connect as a different Windows user, run PowerShell as that user.
 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
@@ -36,18 +42,11 @@ Requires: sysadmin access on SQL Servers
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
 https://dbatools.io/Copy-SqlSpConfigure 
@@ -60,8 +59,7 @@ Copies all sp_configure settings from sqlserver2014a to sqlcluster
 .EXAMPLE   
 Copy-SqlSpConfigure -Source sqlserver2014a -Destination sqlcluster -Configs DefaultBackupCompression, IsSqlClrEnabled -SourceSqlCredential $cred -Force
 
-Updates the values for two configs, the  IsSqlClrEnabled and DefaultBackupCompression, from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a
-and Windows credentials for sqlcluster.
+Updates the values for two configs, the  IsSqlClrEnabled and DefaultBackupCompression, from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
 .EXAMPLE   
 Copy-SqlSpConfigure -Source sqlserver2014a -Destination sqlcluster -WhatIf
@@ -92,13 +90,6 @@ Shows what would happen if the command were executed.
     }
     PROCESS
     {
-	    If ($Pscmdlet.ShouldProcess("both servers", "Updating sp_configure to show advanced options"))
-	    {
-		    $sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
-		    $sourceserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
-		    $destserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
-		    $destserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
-	    }
 		
 	    $destprops = $destserver.Configuration.Properties
 		
@@ -110,7 +101,8 @@ Shows what would happen if the command were executed.
 	    {
 		    $proplookup += [PSCustomObject]@{
 			    ShortName = $lookup
-			    DisplayName = $sourceserver.Configuration.$lookup.Displayname
+				DisplayName = $sourceserver.Configuration.$lookup.Displayname
+				IsDynamic = $sourceserver.Configuration.$lookup.IsDynamic
 		    }
 	    }
 		
@@ -124,7 +116,7 @@ Shows what would happen if the command were executed.
 		    $destprop = $destprops | Where-Object{ $_.Displayname -eq $displayname }
 		    if ($destprop -eq $null)
 		    {
-			    Write-Warning "Configuration option '$displayname' does not exists on the destination instance."
+			    Write-Warning "Configuration option '$displayname' does not exist on the destination instance."
 			    continue
 		    }
 			
@@ -134,35 +126,21 @@ Shows what would happen if the command were executed.
 			    {
 				    $destOldPropValue = $destprop.configvalue
 				    $destprop.configvalue = $sourceprop.configvalue
-				    $destserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
-				    Write-Output "Updated $($destprop.displayname) from $destOldPropValue to $($sourceprop.configvalue)"
-			    }
-			    catch
-			    {
-				    Write-Error "Could not $($destprop.displayname) to $($sourceprop.configvalue). Feature may not be supported."
-			    }
-		    }
-			
-		    If ($Pscmdlet.ShouldProcess($destination, "Altering configuration"))
-		    {
-			    try
-			    {
 				    $destserver.Configuration.Alter()
-			    }
-			    catch
-			    {
-				    Write-Warning "Configuration option '$displayname' requires restart."
-			    }
-		    }
+					Write-Output "Updated $($destprop.displayname) from $destOldPropValue to $($sourceprop.configvalue)"
+					if ($lookup.IsDynamic -eq $false)
+					{
+						Write-Warning "Configuration option '$displayname' requires restart."	
+					}
+				}
+				catch
+				{
+					Write-Error "Could not $($destprop.displayname) to $($sourceprop.configvalue). Feature may not be supported."
+				}
+			}
+		  
 	    }
-		
-	    If ($Pscmdlet.ShouldProcess("both servers", "Updating sp_configure so that it does not show advanced options"))
-	    {
-		    $sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
-		    $sourceserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
-		    $destserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
-		    $destserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
-	    }
+
     }
     END
     {
@@ -172,6 +150,7 @@ Shows what would happen if the command were executed.
 	    If ($Pscmdlet.ShouldProcess("console", "Showing finished message"))
 	    {
 		    Write-Output "Server configuration update finished"
-	    }
-    }
+		}
+	}
+	
 }

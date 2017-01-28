@@ -5,30 +5,24 @@ Function Import-CsvToSql
 Efficiently imports very large (and small) CSV files into SQL Server using only the .NET Framework and PowerShell.
 
 .DESCRIPTION
-Import-CsvToSql takes advantage of .NET's super fast SqlBulkCopy class to import CSV files into SQL Server at up to 90,000
-rows a second.
+Import-CsvToSql takes advantage of .NET's super fast SqlBulkCopy class to import CSV files into SQL Server at up to 90,000 rows a second.
 	
 The entire import is contained within a transaction, so if a failure occurs or the script is aborted, no changes will persist.
 
-If the table specified does not exist, it will be automatically created using best guessed data types. In addition, 
-the destination table can be truncated prior to import. 
+If the table specified does not exist, it will be automatically created using best guessed data types. In addition, the destination table can be truncated prior to import. 
 
-The Query parameter be used to import only data returned from a SQL Query executed against the CSV file(s). This function 
-supports a number of bulk copy options. Please see parameter list for details.
+The Query parameter will be used to import only the data returned from a SQL Query executed against the CSV file(s). This function supports a number of bulk copy options. Please see parameter list for details.
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
 .PARAMETER CSV
-Required. The location of the CSV file(s) to be imported. Multiple files are allowed, so long as they are formatted 
-similarly. If no CSV file is specified, a Dialog box will appear.
+Required. The location of the CSV file(s) to be imported. Multiple files are allowed, so long as they are formatted similarly. If no CSV file is specified, a Dialog box will appear.
 
 .PARAMETER FirstRowColumns
-Optional. This parameter specifies whether the first row contains column names. If the first row does not contain column 
-names and -Query is specified, use field names "column1, column2, column3" and so on.
+Optional. This parameter specifies whether the first row contains column names. If the first row does not contain column names and -Query is specified, use field names "column1, column2, column3" and so on.
 
 .PARAMETER Delimiter
-Optional. If you do not pass a Delimiter, then a comma will be used. Valid Delimiters include: tab "`t", pipe "|", 
-semicolon ";", and space " ".
+Optional. If you do not pass a Delimiter, then a comma will be used. Valid Delimiters include: tab "`t", pipe "|", semicolon ";", and space " ".
 
 .PARAMETER SqlServer
 Required. The destination SQL Server.
@@ -37,17 +31,22 @@ Required. The destination SQL Server.
 Connect to SQL Server using specified SQL Login credentials.
 
 .PARAMETER Database
-Required. The name of the database where the CSV will be imported into. This parameter is autopopulated using the 
--SqlServer and -SqlCredential (optional) parameters. 
+Required. The name of the database where the CSV will be imported into. This parameter is autopopulated using the -SqlServer and -SqlCredential (optional) parameters. 
+
+.PARAMETER Schema
+The schema in which the SQL table or view where CSV will be imported into resides.
+Default is dbo
+
+If a schema name is not specificed, and a CSV with multiple . (ie; something.data.csv) then this will be interpreted as a request to import into a table [data] in the schema [something]
+
+If a schema does not currently exist, it will be created, after a prompt to confirm this. Authorization will be set to dbo by default
 
 .PARAMETER Table
 SQL table or view where CSV will be imported into. 
 
-If a table name is not specified, the table name will be automatically determined from filename, and a prompt will appear
-to confirm table name.
+If a table name is not specified, the table name will be automatically determined from the filename, and a prompt will appear to confirm the table name.
 
-If table does not currently exist, it will created.  SQL datatypes are determined from the first row of the CSV that 
-contains data (skips first row if -FirstRowColumns). Datatypes used are: bigint, numeric, datetime and varchar(MAX). 
+If a table does not currently exist, it will created.  SQL datatypes are determined from the first row of the CSV that contains data (skips first row if -FirstRowColumns is specified). Datatypes used are: bigint, numeric, datetime and varchar(MAX). 
 
 If the automatically generated table datatypes do not work for you, please create the table prior to import.
 
@@ -56,20 +55,19 @@ Truncate table prior to import.
 
 .PARAMETER Safe
 Optional. By default, Import-CsvToSql uses StreamReader for imports. StreamReader is super fast, but may not properly parse some files. 
-Safe uses OleDb to import the records, it's slower, but more predictable when it comes to parsing CSV files. A schema.ini is automatically
-generated for best results. If schema.ini currently exists in the directory, it will be moved to a temporary location, then moved back.
 
-OleDB also enables the script to use the -Query parameter, which enables you to import specific subsets of data within a CSV file. OleDB 
-imports at up to 21,000 rows/sec.
+Safe uses OleDb to import the records, it's slower, but more predictable when it comes to parsing CSV files. A schema.ini is automatically generated for best results. If schema.ini currently exists in the directory, it will be moved to a temporary location, then moved back.
+
+OleDB also enables the script to use the -Query parameter, which enables you to import specific subsets of data within a CSV file. OleDB imports at up to 21,000 rows/sec.
 
 .PARAMETER Turbo
 Optional. Cannot be used in conjunction with -Query.
 
 Remember the Turbo button? This one actually works. Turbo is mega fast, but may not handle some datatypes as well as other methods. 
+
 If your CSV file is rather vanilla and doesn't have a ton of NULLs, Turbo may work well for you.  Note: Turbo mode uses a Table Lock.
 
-StreamReader/Turbo imports at up to 90,000 rows/sec (well, 93,000 locally for a 19 column file so, really, the number may be over 
-100,000 rows/sec for tables with only a couple columns using optimized datatypes).
+StreamReader/Turbo imports at up to 90,000 rows/sec (well, 93,000 locally for a 19 column file so, really, the number may be over 100,000 rows/sec for tables with only a couple columns using optimized datatypes).
 	
 .PARAMETER First
 Only import first X rows. Count starts at the top of the file, but skips the first row if FirstRowColumns was specifeid.
@@ -77,12 +75,15 @@ Only import first X rows. Count starts at the top of the file, but skips the fir
 Use -Query if you need advanced First (TOP) functionality.
 
 .PARAMETER Query
-Optional. Cannot be used in conjunction with -Turbo or -First. When Query is specified, the slower import method, OleDb,
-will be used.
+Optional. Cannot be used in conjunction with -Turbo or -First. When Query is specified, the slower import method, OleDb, will be used.
 
-If you want to import just the results of a specific query from your CSV file, use this parameter.
-To make command line queries easy, this module will convert the word "csv" to the actual CSV formatted table name. 
-If the FirstRowColumns switch is not used, the query should use column1, column2, column3, etc
+If you want to import just the results of a specific query from your CSV file, use this parameter. To make command line queries easy, this module will convert the word "csv" to the actual CSV formatted table name. If the FirstRowColumns switch is not used, the query should use column1, column2, column3, etc.
+
+.PARAMETER NotifyAfter
+Sets the option to show the notification after so many rows of import
+
+.PARAMETER BatchSize
+The batchsize for the import defaults to 5000
 
 Example: select column1, column2, column3 from csv where column2 > 5
 Example: select distinct artist from csv
@@ -98,16 +99,13 @@ specified, row locks are used." TableLock is automatically used when Turbo is sp
 SqlBulkCopy option. Per Microsoft "Check constraints while data is being inserted. By default, constraints are not checked."
 
 .PARAMETER FireTriggers
-SqlBulkCopy option. Per Microsoft "When specified, cause the server to fire the insert triggers for the rows being inserted 
-into the database."
+SqlBulkCopy option. Per Microsoft "When specified, cause the server to fire the insert triggers for the rows being inserted into the database."
 
 .PARAMETER KeepIdentity
-SqlBulkCopy option. Per Microsoft "Preserve source identity values. When not specified, identity values are assigned by 
-the destination."
+SqlBulkCopy option. Per Microsoft "Preserve source identity values. When not specified, identity values are assigned by the destination."
 
 .PARAMETER KeepNulls
-SqlBulkCopy option. Per Microsoft "Preserve null values in the destination table regardless of the settings for default 
-values. When not specified, null values are replaced by default values where applicable."
+SqlBulkCopy option. Per Microsoft "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
 
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
@@ -119,39 +117,31 @@ https://blog.netnerds.net/2015/09/import-csvtosql-super-fast-csv-to-sql-server-i
 Import-CsvToSql -Csv C:\temp\housing.csv -SqlServer sql001 -Database markets
 
 Imports the entire *comma delimited* housing.csv to the SQL "markets" database on a SQL Server named sql001.
-Since a table name was not specified, the table name is automatically determined from filename as "housing"
-and a prompt will appear to confirm table name.
+
+Since a table name was not specified, the table name is automatically determined from filename as "housing" and a prompt will appear to confirm table name.
 
 The first row is not skipped, as it does not contain column names.
 
 .EXAMPLE   
 Import-CsvToSql -Csv .\housing.csv -SqlServer sql001 -Database markets -Table housing -First 100000 -Safe -Delimiter "`t" -FirstRowColumns
 
-Imports the first 100,000 rows of the tab delimited housing.csv file to the "housing" table in the "markets" database on a SQL Server 
-named sql001. Since Safe was specified, the OleDB method will be used for the bulk import. It's assumed Safe was used because 
-the first attempt without -Safe resulted in an import error. The first row is skipped, as it contains column names.
+Imports the first 100,000 rows of the tab delimited housing.csv file to the "housing" table in the "markets" database on a SQL Server named sql001. Since Safe was specified, the OleDB method will be used for the bulk import. It's assumed Safe was used because the first attempt without -Safe resulted in an import error. The first row is skipped, as it contains column names.
 
 .EXAMPLE
 Import-CsvToSql -csv C:\temp\huge.txt -sqlserver sqlcluster -Database locations -Table latitudes -Delimiter "|" -Turbo
 
-Imports all records from the pipe delimited huge.txt file using the fastest method possible into the latitudes table within the 
-locations database. Obtains a table lock for the duration of the bulk copy operation. This specific command has been used 
+Imports all records from the pipe delimited huge.txt file using the fastest method possible into the latitudes table within the locations database. Obtains a table lock for the duration of the bulk copy operation. This specific command has been used 
 to import over 10.5 million rows in 2 minutes.
 
 .EXAMPLE   
-Import-CsvToSql -Csv C:\temp\housing.csv, .\housing2.csv -SqlServer sql001 -Database markets -Table `
-housing -Delimiter "`t" -query "select top 100000 column1, column3 from csv" -Truncate
+Import-CsvToSql -Csv C:\temp\housing.csv, .\housing2.csv -SqlServer sql001 -Database markets -Table housing -Delimiter "`t" -query "select top 100000 column1, column3 from csv" -Truncate
 
-Truncates the "housing" table, then imports columns 1 and 3 of the first 100000 rows of the tab-delimited 
-housing.csv in the C:\temp directory, and housing2.csv in the current directory. Since the query is executed against
-both files, a total of 200,000 rows will be imported.
+Truncates the "housing" table, then imports columns 1 and 3 of the first 100000 rows of the tab-delimited housing.csv in the C:\temp directory, and housing2.csv in the current directory. Since the query is executed against both files, a total of 200,000 rows will be imported.
 
 .EXAMPLE   
-Import-CsvToSql -Csv C:\temp\housing.csv -SqlServer sql001 -Database markets -Table housing -query `
-"select address, zip from csv where state = 'Louisiana'" -FirstRowColumns -Truncate -FireTriggers
+Import-CsvToSql -Csv C:\temp\housing.csv -SqlServer sql001 -Database markets -Table housing -query "select address, zip from csv where state = 'Louisiana'" -FirstRowColumns -Truncate -FireTriggers
 
-Uses the first line to determine CSV column names. Truncates the "housing" table on the SQL Server, 
-then imports the address and zip columns from all records in the housing.csv where the state equals Louisiana.
+Uses the first line to determine CSV column names. Truncates the "housing" table on the SQL Server, then imports the address and zip columns from all records in the housing.csv where the state equals Louisiana.
 
 Triggers are fired for all rows. Note that this does slightly slow down the import.
 
@@ -164,6 +154,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		[string]$SqlServer,
 		[object]$SqlCredential,
 		[string]$Table,
+        [string]$Schema = "dbo",
 		[switch]$Truncate,
 		[string]$Delimiter = ",",
 		[switch]$FirstRowColumns,
@@ -530,8 +521,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		{
 		<#
 			.SYNOPSIS
-			Unfortunately, passing delimiter within the OleDBConnection connection string is unreliable, so we'll use schema.ini instead
-			The default delimiter in Windows changes depending on country, so we'll do this for every delimiter, even commas.
+			Unfortunately, passing delimiter within the OleDBConnection connection string is unreliable, so we'll use schema.ini instead. The default delimiter in Windows changes depending on country, so we'll do this for every delimiter, even commas.
 			
 			Get OLE datatypes based on best guess of column data within the -Columns parameter.
 			
@@ -612,7 +602,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			Creates new Table using existing SqlCommand.
 			
 			SQL datatypes based on best guess of column data within the -ColumnText parameter.
-			Columns paramter determine column names.
+			Columns parameter determine column names.
 
 			.EXAMPLE
 			New-SqlTable -Csv $Csv -Delimiter $Delimiter -Columns $columns -ColumnText $columntext -SqlConn $sqlconn -Transaction $transaction
@@ -649,7 +639,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 				$sqldatatypes += "$sqlcolumnname $sqldatatype"
 			}
 			
-			$sql = "BEGIN CREATE TABLE [$table] ($($sqldatatypes -join ' NULL,')) END"
+			$sql = "BEGIN CREATE TABLE [$schema].[$table] ($($sqldatatypes -join ' NULL,')) END"
 			$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 			try { $null = $sqlcmd.ExecuteNonQuery() }
 			catch
@@ -658,7 +648,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 				throw "Failed to execute $sql. `nDid you specify the proper delimiter? `n$errormessage"
 			}
 			
-			Write-Output "[*] Successfully created table $table with the following column definitions:`n $($sqldatatypes -join "`n ")"
+			Write-Output "[*] Successfully created table $schema.$table with the following column definitions:`n $($sqldatatypes -join "`n ")"
 			# Write-Warning "All columns are created using a best guess, and use their maximum datatype."
 			Write-Warning "This is inefficient but allows the script to import without issues."
 			Write-Warning "Consider creating the table first using best practices if the data will be used in production."
@@ -780,7 +770,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			
 			$sql = "SELECT t.name as datatype FROM sys.columns c
 				JOIN sys.types t ON t.system_type_id = c.system_type_id 
-				WHERE c.object_id = object_id('$table') and t.name != 'sysname'"
+				WHERE c.object_id = object_id('$schema.$table') and t.name != 'sysname'"
 			$sqlcheckcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlcheckconn)
 			$sqlcolumns = New-Object System.Data.DataTable
 			$sqlcolumns.load($sqlcheckcmd.ExecuteReader("CloseConnection"))
@@ -883,18 +873,47 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		if ($table.length -eq 0)
 		{
 			$table = [IO.Path]::GetFileNameWithoutExtension($csv[0])
-			$title = "Table name not specified."
-			$message = "Would you like to use the automatically generated name: $table"
-			$yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Uses table name $table for import."
-			$no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Allows you to specify an alternative table name."
-			$options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
-			$result = $host.ui.PromptForChoice($title, $message, $options, 0)
-			if ($result -eq 1)
-			{
-				do { $table = Read-Host "Please enter a table name" }
-				while ($table.Length -eq 0)
-			}
-		}
+            
+            #Count the dots in the file name.
+            #1 dot, treat it as schema.table naming
+            #2 or more dots, really should catch it as bad practice, but the rest of the script appears to let it pass
+            if (($table.ToCharArray() | ?{$_ -eq '.'} | Measure-Object).count -gt 0)
+            {
+                if (($schema -ne $table.Split('.')[0]) -and ($schema -ne 'dbo'))
+                {
+                    $title = "Conflicting schema names specified"
+                    $message = "Please confirm which schema you want to use."
+                    $schemaA = New-Object System.Management.Automation.Host.ChoiceDescription "&A - $schema", "Use schema name $schema for import."
+		            $schemaB = New-Object System.Management.Automation.Host.ChoiceDescription "&B - $($table.Split('.')[0])", "Use schema name $($table.Split('.')[0]) for import."
+		            $options = [System.Management.Automation.Host.ChoiceDescription[]]($schemaA, $schemaB)
+			        $result = $host.ui.PromptForChoice($title, $message, $options, 0)
+                    if ($result -eq 1)
+                    {
+                        $schema = $table.Split('.')[0]
+                        $tmparray = $table.split('.')
+                        $table = $tmparray[1..$tmparray.Length] -join '.'
+                    }
+                }
+
+            } 
+            else 
+            {
+                $title = "Table name not specified."
+		        $message = "Would you like to use the automatically generated name: $table"
+		        $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Uses table name $table for import."
+		        $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Allows you to specify an alternative table name."
+		        $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+			    $result = $host.ui.PromptForChoice($title, $message, $options, 0)
+			    if ($result -eq 1)
+		        {
+			        do { $table = Read-Host "Please enter a table name" }
+			            while ($table.Length -eq 0)
+			        }
+                
+            }
+            }
+
+
 		
 		# If the shell has switched, decode the $query string.
 		if ($shellswitch -eq $true)
@@ -962,9 +981,27 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		Write-Output "[*] Database exists"
 		
 		$sqlconn.ChangeDatabase($database)
+
+        # Enure Schema exists
+        $sql = "select count(*) from $database.sys.schemas where name='$schema'"
+        $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
+		$schemaexists = $sqlcmd.ExecuteScalar()
+        
+        # If Schema doesn't exist create it
+        # Defaulting to dbo.
+        if ($schemaexists -eq $false)
+        {
+            Write-Output "[*] Creating schema $schema"
+			$sql = "CREATE SCHEMA [$schema] AUTHORIZATION dbo"
+			$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
+			try { $null = $sqlcmd.ExecuteNonQuery() }
+			catch { Write-Warning "Could not create $schema" }
+
+        }
+
 		
 		# Ensure table exists
-		$sql = "select count(*) from $database.sys.tables where name = '$table'"
+		$sql = "select count(*) from $database.sys.tables where name = '$table' and schema_id=schema_id('$schema')"
 		$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 		$tablexists = $sqlcmd.ExecuteScalar()
 		
@@ -983,18 +1020,18 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		if ($truncate -eq $true)
 		{
 			Write-Output "[*] Truncating table"
-			$sql = "TRUNCATE TABLE [$table]"
+			$sql = "TRUNCATE TABLE [$schema].[$table]"
 			$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 			try { $null = $sqlcmd.ExecuteNonQuery() }
-			catch { Write-Warning "Could not truncate $table" }
+			catch { Write-Warning "Could not truncate $schema.$table" }
 		}
 		
 		# Get columns for column mapping
 		if ($columnMappings -eq $null)
 		{
 			$olecolumns = ($columns | ForEach-Object { $_ -Replace "\[|\]" })
-			$sql = "select name from sys.columns where object_id = object_id('$table') order by column_id"
-			$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
+			$sql = "select name from sys.columns where object_id = object_id('$schema.$table') order by column_id"
+            $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 			$sqlcolumns = New-Object System.Data.DataTable
 			$sqlcolumns.Load($sqlcmd.ExecuteReader())
 		}
@@ -1017,6 +1054,8 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			Write-Output "[*] Starting bulk copy for $(Split-Path $file -Leaf)"
 			
 			# Setup bulk copy options
+
+
 			$bulkCopyOptions = @()
 			$options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default", "Truncate"
 			foreach ($option in $options)
@@ -1030,7 +1069,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			if ($bulkCopyOptions.count -gt 1) { $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($oleconnstring, $bulkCopyOptions, $transaction) }
 			else { $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($sqlconn, "Default", $transaction) }
 			
-			$bulkcopy.DestinationTableName = "[$table]"
+			$bulkcopy.DestinationTableName = "[$schema].[$table]"
 			$bulkcopy.bulkcopyTimeout = 0
 			$bulkCopy.BatchSize = $BatchSize
 			$bulkCopy.NotifyAfter = $NotifyAfter
@@ -1127,7 +1166,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 					# Get table column info from SQL Server
 					$sql = "SELECT c.name as colname, t.name as datatype, c.max_length, c.is_nullable FROM sys.columns c
 						JOIN sys.types t ON t.system_type_id = c.system_type_id 
-						WHERE c.object_id = object_id('$table') and t.name != 'sysname'	
+						WHERE c.object_id = object_id('$schema.$table') and t.name != 'sysname'	
 						order by c.column_id"
 					$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 					$sqlcolumns = New-Object System.Data.DataTable

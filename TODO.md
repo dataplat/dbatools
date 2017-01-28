@@ -1,1 +1,1 @@
-Moved to Trello: https://trello.com/b/LcvGHeTF/dbatools
+Moved to Trello: https://dbatools.io/trello
