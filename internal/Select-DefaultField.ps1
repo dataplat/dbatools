@@ -13,12 +13,13 @@
 	
 	[CmdletBinding()]
 	param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[parameter(ValueFromPipeline = $true)]
 		[pscustomobject]$InputObject,
 		[string[]]$Property,
 		[string[]]$ExcludeProperty
 	)
 	
+	if ($InputObject -eq $null) { return }
 	
 	if ($ExcludeProperty)
 	{
