@@ -20,7 +20,7 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 Windows Authentication will be used if SqlCredential is not specified
 
 .PARAMETER User 
-Export only the specified database user
+Export only the specified database user(s). If not specified will export all users from the database(s)
 
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
