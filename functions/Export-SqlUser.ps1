@@ -11,7 +11,15 @@ THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
 .PARAMETER SqlInstance
 The SQL Server instance name. SQL Server 2000 and above supported.
+	
+.PARAMETER SqlCredential
+	
+.PARAMETER User 
+	
+.PARAMETER Confirm
 
+.PARAMETER WhatIf
+	
 .PARAMETER DestinationVersion
 To say to which version the script should be generated. If not specified will use database compatibility level
 
