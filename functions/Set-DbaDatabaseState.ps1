@@ -272,6 +272,7 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 			$dbs += $richobject.Database
 		}
 		
+		# need to pick up here
 		foreach ($db in $dbs)
 		{
 			$db_status = Get-DbState $db
@@ -529,7 +530,7 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 				Access = $newstate.Access
 				Warning = $warn
 				Database = $db
-			} | Select-DefaultField -Property SqlInstance, DatabaseName, RW, Status, Access, Warning
+			} | Select-DefaultField -ExcludeProperty Database
 		}
 	}
 }
