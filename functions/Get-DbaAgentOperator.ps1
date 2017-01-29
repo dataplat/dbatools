@@ -48,11 +48,11 @@ Returns all SQL Agent operators  on serverA and serverB\instanceB
 BEGIN {}
 PROCESS
 	{
-		foreach ( $Instance in $SqlInstance )
+		foreach ($Instance in $SqlInstance)
 		{
-            Write-Verbose "Connecting to $Instance"
 			try
 			{
+                Write-Verbose "Connecting to $Instance"
 				$Instance = Connect-SqlServer -SqlServer $Instance -SqlCredential $sqlcredential
 			}
 			catch
@@ -60,18 +60,14 @@ PROCESS
 				Write-Warning "Failed to connect to $Instance"
 				continue
 			}
-            Write-Verbose "Connecting to SQL Agent on $Instance"
-			try
-			{
-				$Jobserver = $Instance.jobserver
-			}
-			catch
-			{
-				Write-Warning "Failed to connect to SQL Agent on $Instance"
-				continue
-			}
-		    Write-Verbose "Getting SQL Agent operators on $Instance"
-			$operators = $Jobserver.operators
+            Write-Verbose "Getting Edition from $($Instance.Name)"
+            Write-Verbose "$($Instance.Name) is a $($Instance.Edition)"
+			if ( $Instance.Edition -like 'Express*' )
+            {
+            Write-Warning "There is no SQL Agent on $($Instance.Name) , it's a $($Instance.Edition)"
+            continue
+            }
+			$operators = $instance.Jobserver.operators
 			
 			if ( $operators.count -lt 1 )
 			{
