@@ -110,11 +110,6 @@ Shows information about the processes that were initiated by hosts (computers/cl
 			$row["SqlServer"] = $sourceserver
 		}
 		
-		if ($nosystemspids -eq $true)
-		{
-			$allsessions += $processes | Where-Object { $_.Spid -gt 50 }
-		}
-		
 		if ($logins.count -gt 0)
 		{
 			$allsessions += $processes | Where-Object { $_.Login -in $Logins -and $_.Spid -notin $allsessions.Spid  }
@@ -137,12 +132,18 @@ Shows information about the processes that were initiated by hosts (computers/cl
 		
 		if ($databases.count -gt 0)
 		{
-			$allsessions += $processes | Where-Object { $_.Database -in $databases -and $_.Spid -notin $allsessions.Spid  }
+			$allsessions += $processes | Where-Object { $databases -contains $_.Database -and $_.Spid -notin $allsessions.Spid }
 		}
 		
-		if ($allsessions.urn.count -eq 0)
+		# feel like I'm doing this wrong but it's 2am ;)
+		if ($logins -eq $null -and $spids -eq $null -and $spids -eq $exclude -and $hosts -eq $null -and $programs -eq $null -and $programs -eq $databases)
 		{
 			$allsessions = $processes
+		}
+		
+		if ($nosystemspids -eq $true)
+		{
+			$allsessions = $allsessions | Where-Object { $_.Spid -gt 50 }
 		}
 		
 		if ($exclude.count -gt 0)
