@@ -45,13 +45,14 @@ Returns all SQL Agent alerts  on serverA and serverB\instanceB
 		[string[]]$SqlInstance,
 		[PSCredential] [System.Management.Automation.CredentialAttribute()]$SqlCredential
 	)
-	BEGIN {}
-	PROCESS
+BEGIN {}
+PROCESS
 	{
 		foreach ($Instance in $SqlInstance)
 		{
 			try
 			{
+                Write-Verbose "Connecting to $Instance"
 				$Instance = Connect-SqlServer -SqlServer $Instance -SqlCredential $sqlcredential
 			}
 			catch
@@ -59,15 +60,22 @@ Returns all SQL Agent alerts  on serverA and serverB\instanceB
 				Write-Warning "Failed to connect to $Instance"
 				continue
 			}
-			
+            Write-Verbose "Getting Edition from $($Instance.Name)"
+            Write-Verbose "$($Instance.Name) is a $($Instance.Edition)"
+			if ( $Instance.Edition -like 'Express*' )
+            {
+            Write-Warning "There is no SQL Agent on $($Instance.Name) , it's a $($Instance.Edition)"
+            continue
+            }
 			$alerts = $Instance.Jobserver.Alerts
 			
-			if (!$alerts)
+			if ( $alerts.count -lt 1)
 			{
-				Write-Verbose "No alerts on $Instance"
+				Write-Verbose "No alerts on $($Instance.Name)"
 			}
 			else
 			{
+                Write-Verbose "Getting SQL Agent Alerts on $($Instance.Name)"
 				foreach ($alert in $alerts)
 				{
 					[pscustomobject]@{
@@ -90,5 +98,5 @@ Returns all SQL Agent alerts  on serverA and serverB\instanceB
 			}
 		}
 	}
-	END	{}
+END	{}
 }
