@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.693'
+	ModuleVersion = '0.8.694'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -23,7 +23,7 @@
 	CompanyName = 'dbatools.io'
 	
 	# Copyright statement for this module
-	Copyright = '2016 Chrissy LeMaire'
+	Copyright = '2017 Chrissy LeMaire'
 	
 	# Description of the functionality provided by this module
 	Description = 'Provides extra functionality for SQL Server Database admins and enables SQL Server instance migrations.'
@@ -177,7 +177,12 @@
 		'New-DbaDatabaseSnapshot',
 		'Restore-DbaFromDatabaseSnapshot',
 		'Get-DbaTrigger',
-		'Invoke-Sqlcmd2'
+		'Invoke-Sqlcmd2',
+		'Export-SqlUser',
+		'Get-DbaDatabaseState',
+		'Set-DbaDatabaseState',
+		'Move-DbaDatabaseFile',
+		'Get-DbaHelpIndex'
 	)
 	
 	# Cmdlets to export from this module

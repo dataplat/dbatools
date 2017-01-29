@@ -72,7 +72,7 @@ Sets database owner to 'sa' on the db1 and db2 databases if their current owner 
 		[string]$TargetLogin
 	)
 	
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
+	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SqlCredential } }
 	
 	BEGIN
 	{

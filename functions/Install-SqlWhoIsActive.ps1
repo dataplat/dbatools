@@ -79,7 +79,7 @@ This command doesn't support passing both servers and default database, but you 
 		Function Get-SpWhoIsActive
 		{
 			
-			$url = 'http://sqlblog.com/files/folders/42453/download.aspx'
+			$url = 'http://whoisactive.com/who_is_active_v11_17.zip'
 			$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 			$zipfile = "$temp\spwhoisactive.zip"
 			
@@ -148,7 +148,7 @@ This command doesn't support passing both servers and default database, but you 
 				}
 				catch
 				{
-					throw "Couldn't download sp_WhoIsActive. Please download and install manually from http://sqlblog.com/files/folders/42453/download.aspx."
+					throw "Couldn't download sp_WhoIsActive. Please download and install manually from http://whoisactive.com/who_is_active_v11_17.zip."
 				}
 			}
 			

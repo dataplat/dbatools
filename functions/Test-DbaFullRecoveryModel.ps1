@@ -61,11 +61,12 @@ Shows all databases which actual configured recovery model is FULL and says if t
 	
 #>
 	[CmdletBinding()]
+    [OutputType("System.Collections.ArrayList")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
-        [object]$SqlCredential,
+        [System.Management.Automation.PSCredential]$SqlCredential,
         [switch]$Detailed
 	)
     DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }

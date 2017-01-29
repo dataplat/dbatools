@@ -66,7 +66,7 @@ $Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction Silently
 
 	It "has a valid copyright" {
 
-		$Script:Manifest.CopyRight | Should Be '2016 Chrissy LeMaire'
+		$Script:Manifest.CopyRight | Should BeLike '* Chrissy LeMaire'
 
 	}
 

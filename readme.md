@@ -1,9 +1,7 @@
 # dbatools
+<img src="https://camo.githubusercontent.com/8a859030e83bd44826807447bca2767c20f19121/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f506f7765725368656c6c2d332e302d626c75652e737667" alt="Minimum Supported PowerShell Version" data-canonical-src="https://img.shields.io/badge/PowerShell-3.0-blue.svg" style="max-width:100%;">
 [![licence badge]][licence]
-[![stars badge]][stars]
-[![forks badge]][forks]
-[![issues badge]][issues]
-[![Build status](https://ci.appveyor.com/api/projects/status/cy5sm45x6atculse/branch/development?svg=true)](https://ci.appveyor.com/project/sqlcollaborative/dbatools/branch/master)
+[![Build status](https://ci.appveyor.com/api/projects/status/cy5sm45x6atculse/branch/master?svg=true)](https://ci.appveyor.com/project/sqlcollaborative/dbatools/branch/master)
 
 [licence badge]:https://img.shields.io/badge/License-GPL%20v3-blue.svg
 [stars badge]:https://img.shields.io/github/stars/sqlcollaborative/dbatools.svg
@@ -13,8 +11,7 @@
 [licence]:https://github.com/sqlcollaborative/dbatools/blob/master/LICENSE.txt
 [stars]:https://github.com/sqlcollaborative/dbatools/stargazers
 [forks]:https://github.com/sqlcollaborative/dbatools/network
-[issues]:https://github.com/sqlcollaborative/dbatools/issues
-[![Stories in Ready](https://badge.waffle.io/sqlcollaborative/dbatools.png?label=ready&title=Ready)](https://waffle.io/sqlcollaborative/dbatools)
+[issues]:https://github.com/sqlcollaborative/dbatools/issues 
 
 This module is a SQL Server DBA's best friend.
 
