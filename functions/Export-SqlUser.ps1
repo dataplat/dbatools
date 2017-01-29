@@ -13,13 +13,21 @@ THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 The SQL Server instance name. SQL Server 2000 and above supported.
 	
 .PARAMETER SqlCredential
-	
-.PARAMETER User 
-	
-.PARAMETER Confirm
+Allows you to login to servers using alternative credentials
 
-.PARAMETER WhatIf
-	
+$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
+
+Windows Authentication will be used if SqlCredential is not specified
+
+.PARAMETER User 
+Export only the specified database user
+
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
 .PARAMETER DestinationVersion
 To say to which version the script should be generated. If not specified will use database compatibility level
 
