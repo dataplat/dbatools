@@ -263,14 +263,28 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 			foreach($db in $dbs)
 			{
 				$db_status = Get-DbState $db
+				
 				# normalizing properties returned by SMO to something more "fixed"
 				$warn = @()
+				
 				if($db.DatabaseSnapshotBaseName.Length -gt 0)
 				{
 					Write-Warning "Database $db is a snapshot, skipping"
 					Continue
 				}
-
+				
+				if (!$Force)
+				{
+					if ($ReadOnly, $Offline, $Emergency, $SingleUser, $RestrictedUser, $Detached -contains $true)
+					{
+						if ((Get-DbaProcess -SqlServer $server -Databases $db.name).Count -gt 0)
+						{
+							Write-Warning "Users are currently connected to the database $db and Force was not specified. Skipping."
+							continue
+						}
+					}
+				}
+				
 				if($ReadOnly -eq $true)
 				{
 					if($db_status.RW -eq 'READ_ONLY')
@@ -443,16 +457,16 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 					if ($database.AvailabilityGroupName.Length -gt 0)
 					{
 						$agname = $db.AvailabilityGroupName
-						If ($Pscmdlet.ShouldProcess($instance, "Removing $db from AG '$agname'"))
+						If ($Pscmdlet.ShouldProcess($instance, "Removing $db from AG [$agname]"))
 						{
 							try
 							{
 								$server.AvailabilityGroups[$db.AvailabilityGroupName].AvailabilityDatabases[$db.Name].Drop()
-								Write-Verbose "Successfully removed $db from '$agname' on $server"
+								Write-Verbose "Successfully removed $db from AG [$agname] on $server"
 							}
 							catch
 							{
-								Write-Warning "Could not remove $db from '$agname' on $server"
+								Write-Warning "Could not remove $db from AG [$agname] on $server"
 								Write-Exception $_
 								Continue
 							}
