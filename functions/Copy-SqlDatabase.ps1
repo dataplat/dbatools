@@ -215,12 +215,26 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					{
 						$d.physical = $file.filename
 					}
+					elseif ($WithReplace)
+					{
+						$fullname = $file.filename
+						$file = $remotedbfiletable.Tables[0].Select("dbname = '$dbname' and filename = '$fullname'")
+						$d.physical = $file.filename
+						
+						if ($file -eq $null)
+						{
+							$directory = Get-SqlDefaultPaths $destserver data
+							$filename = Split-Path $($file.filename) -leaf
+							$d.physical = "$directory\$filename"
+						}
+					}
 					else
 					{
 						$directory = Get-SqlDefaultPaths $destserver data
 						$filename = Split-Path $($file.filename) -leaf
 						$d.physical = "$directory\$filename"
 					}
+					
 					$d.logical = $file.name
 					$d.remotefilename = Join-AdminUNC $destnetbios $d.physical
 					$destinationfiles.add($file.name, $d)
@@ -240,6 +254,9 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					{
 						$fttable = $null = $sourceserver.Databases[$dbname].ExecuteWithResults('sp_help_fulltext_catalogs')
 						$allrows = $fttable.Tables[0].rows
+						
+						$remotefttable = $null = $destserver.Databases[$dbname].ExecuteWithResults('sp_help_fulltext_catalogs')
+						$remoteallrows = $fttable.Tables[0].rows
 					}
 					catch
 					{
@@ -258,11 +275,24 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						{
 							$d.physical = $physical
 						}
+						elseif ($WithReplace)
+						{
+							$file = $remotedbfiletable.Tables[0].Select("name = '$name'")
+							$d.physical = $file.path
+							
+							if ($file -eq $null)
+							{
+								$directory = Get-SqlDefaultPaths $destserver data
+								if ($destserver.VersionMajor -lt 10) { $directory = "$directory\FTDATA" }
+								$filename = Split-Path $physical -Leaf
+								$d.physical = "$directory\$filename"
+							}
+						}
 						else
 						{
 							$directory = Get-SqlDefaultPaths $destserver data
 							if ($destserver.VersionMajor -lt 10) { $directory = "$directory\FTDATA" }
-							$filename = Split-Path($physical) -leaf
+							$filename = Split-Path $physical -Leaf
 							$d.physical = "$directory\$filename"
 						}
 						$d.logical = $logical
@@ -294,6 +324,19 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					if ($ReuseSourceFolderStructure)
 					{
 						$d.physical = $file.filename
+					}
+					elseif ($WithReplace)
+					{
+						$fullname = $file.filename
+						$file = $remotedbfiletable.Tables[0].Select("dbname = '$dbname' and filename = '$fullname'")
+						$d.physical = $file.filename
+						
+						if ($file -eq $null)
+						{
+							$directory = Get-SqlDefaultPaths $destserver data
+							$filename = Split-Path $($file.filename) -leaf
+							$d.physical = "$directory\$filename"
+						}
 					}
 					else
 					{
@@ -428,6 +471,8 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					$filestodelete += $device.name
 					$val++
 				}
+				
+				$restore.script($server)
 				
 				Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
 				$restore.sqlrestore($server)
