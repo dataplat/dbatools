@@ -48,7 +48,7 @@ Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status,
 BEGIN {}
 PROCESS
     {
-        foreach ($Computer in $ComputerName)
+        foreach ( $Computer in $ComputerName )
         {
 			$reply = Resolve-DbaNetworkName -ComputerName $Computer -erroraction silentlycontinue
             if ( $reply.ComputerName ) # we can reach $computer
@@ -59,9 +59,10 @@ PROCESS
                 if ( $CompSys ) # we have computersystem class via WSMan
                 {
                     Write-Verbose "Successfully retrieved ComputerSystem information on $Computer via WSMan"
-                    if ( $CompSys.automaticmanagedpagefile ) # pagefile exists on $computer
+                    if ( $CompSys.PSobject.Properties.Name -contains "automaticmanagedpagefile" ) # pagefile exists on $computer
+                    $CompSys.PSobject.Properties.Name -contains "automaticmanagedpagefile"
                     {
-                        if ($CompSys.automaticmanagedpagefile -eq $False) # pagefile is not automatically managed, so get settings via WSMan
+                        if ( $CompSys.automaticmanagedpagefile -eq $False ) # pagefile is not automatically managed, so get settings via WSMan
                         {
                             $PF = Get-CimInstance -ComputerName $Computer -Query "SELECT * FROM win32_pagefile" # deprecated !
                             $PFU = Get-CimInstance -ComputerName $Computer -Query "SELECT * FROM win32_pagefileUsage"
@@ -84,10 +85,10 @@ PROCESS
                     if ( $CompSys ) # we have computersystem class via DCom
                     {
                         Write-Verbose "Successfully retrieved ComputerSystem information on $Computer via WSMan"
-                        if ( $CompSys.automaticmanagedpagefile ) # pagefile exists on $computer
+                        if ( $CompSys.PSobject.Properties.Name -contains "automaticmanagedpagefile" ) # pagefile exists on $computer
                         {
                             Write-Verbose "Successfully retrieved PageFile information on $Computer via DCom"
-                            if ($CompSys.automaticmanagedpagefile -eq $False) # pagefile is not automatically managed, so get settings via DCom CimSession
+                            if ( $CompSys.automaticmanagedpagefile -eq $False ) # pagefile is not automatically managed, so get settings via DCom CimSession
                             {
                                 $PF = Get-CimInstance -CimSession $CIMsession -Query "SELECT * FROM win32_pagefile" # deprecated !
                                 $PFU = Get-CimInstance -CimSession $CIMsession -Query "SELECT * FROM win32_pagefileUsage"
@@ -106,7 +107,7 @@ PROCESS
                         continue
 			        }
                 }
-                if ($CompSys.automaticmanagedpagefile -eq $False) # pagefile is not automatic managed, so return settings
+                if ( $CompSys.automaticmanagedpagefile -eq $False ) # pagefile is not automatic managed, so return settings
                 {
                     [PSCustomObject]@{
                                 'ComputerName' = $Computer;
