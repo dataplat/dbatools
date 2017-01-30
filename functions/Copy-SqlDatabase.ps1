@@ -472,7 +472,8 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					$val++
 				}
 				
-				$restore.script($server)
+				
+				write-warning $restore.script($server)
 				
 				Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
 				$restore.sqlrestore($server)
@@ -973,6 +974,16 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		}
 		
 		$dbfiletable = $sourceserver.Databases['master'].ExecuteWithResults($sql)
+		
+		if ($destserver.versionMajor -eq 8)
+		{
+			$sql = "select DB_NAME (dbid) as dbname, name, filename, CASE WHEN groupid = 0 THEN 'LOG' ELSE 'ROWS' END as filetype from sysaltfiles"
+		}
+		else
+		{
+			$sql = "SELECT db.name AS dbname, type_desc AS FileType, mf.name, Physical_Name AS filename FROM sys.master_files mf INNER JOIN  sys.databases db ON db.database_id = mf.database_id"
+		}
+		
 		$remotedbfiletable = $destserver.Databases['master'].ExecuteWithResults($sql)
 		
 		$filestructure = Get-SqlFileStructure -sourceserver $sourceserver -destserver $destserver -databaselist $databaselist -ReuseSourceFolderStructure $ReuseSourceFolderStructure
