@@ -187,7 +187,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		# Global Database Function
 		Function Get-SqlFileStructure
 		{
-			$dbcollection = @{ };
+			$dbcollection = @{}
 			$databaseProgressbar = 0
 			
 			foreach ($db in $databaselist)
@@ -195,11 +195,12 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				Write-Progress -Id 1 -Activity "Processing database file structure" -PercentComplete ($databaseProgressbar / $dbcount * 100) -Status "Processing $databaseProgressbar of $dbcount"
 				$dbname = $db.name
 				Write-Verbose $dbname
-				
+								
 				$databaseProgressbar++
 				$dbstatus = $db.status.toString()
 				if ($dbstatus.StartsWith("Normal") -eq $false) { continue }
-				$destinationfiles = @{ }; $sourcefiles = @{ }
+				
+				$destinationfiles = $sourcefiles = @{}
 				
 				$where = "Filetype <> 'LOG' and Filetype <> 'FULLTEXT'"
 				
@@ -209,7 +210,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				foreach ($file in $datarows)
 				{
 					# Destination File Structure
-					$d = @{ }
+					$d = @{}
 					if ($ReuseSourceFolderStructure)
 					{
 						$d.physical = $file.filename
@@ -225,7 +226,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					$destinationfiles.add($file.name, $d)
 					
 					# Source File Structure
-					$s = @{ }
+					$s = @{}
 					$s.logical = $file.name
 					$s.physical = $file.filename
 					$s.remotefilename = Join-AdminUNC $sourcenetbios $s.physical
@@ -248,7 +249,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					foreach ($ftc in $allrows)
 					{
 						# Destination File Structure
-						$d = @{ }
+						$d = @{}
 						$pre = "sysft_"
 						$name = $ftc.name
 						$physical = $ftc.Path # RootPath
@@ -269,7 +270,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						$destinationfiles.add($logical, $d)
 						
 						# Source File Structure
-						$s = @{ }
+						$s = @{}
 						$pre = "sysft_"
 						$name = $ftc.name
 						$physical = $ftc.Path # RootPath
@@ -289,7 +290,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				# Log Files
 				foreach ($file in $datarows)
 				{
-					$d = @{ }
+					$d = @{}
 					if ($ReuseSourceFolderStructure)
 					{
 						$d.physical = $file.filename
@@ -304,14 +305,14 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					$d.remotefilename = Join-AdminUNC $destnetbios $d.physical
 					$destinationfiles.add($file.name, $d)
 					
-					$s = @{ }
+					$s = @{}
 					$s.logical = $file.name
 					$s.physical = $file.filename
 					$s.remotefilename = Join-AdminUNC $sourcenetbios $s.physical
 					$sourcefiles.add($file.name, $s)
 				}
 				
-				$location = @{ }
+				$location = @{}
 				$location.add("Destination", $destinationfiles)
 				$location.add("Source", $sourcefiles)
 				$dbcollection.Add($($db.name), $location)
@@ -389,7 +390,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			$server.ConnectionContext.StatementTimeout = 0
 			$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
 			
-			if ($WithReplace -eq $false -or $server.databases[$dbname] -eq $null)
+			if ($server.databases[$dbname] -eq $null)
 			{
 				foreach ($file in $filestructure.databases[$dbname].destination.values)
 				{
@@ -894,8 +895,6 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			throw "You did not select any databases to migrate. Please use -AllDatabases or -Databases or -IncludeSupportDbs"
 		}
 		
-		
-		
 		Write-Output "Building database list"
 		$databaselist = New-Object System.Collections.ArrayList
 		$SupportDBs = "ReportServer", "ReportServerTempDB", "distribution"
@@ -929,6 +928,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		}
 		
 		$dbfiletable = $sourceserver.Databases['master'].ExecuteWithResults($sql)
+		$remotedbfiletable = $destserver.Databases['master'].ExecuteWithResults($sql)
 		
 		$filestructure = Get-SqlFileStructure -sourceserver $sourceserver -destserver $destserver -databaselist $databaselist -ReuseSourceFolderStructure $ReuseSourceFolderStructure
 		
@@ -979,7 +979,16 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					$remotepath = Split-Path $fgrows
 					$remotepath = Join-AdminUNC $destnetbios $remotepath
 					
-					if (!(Test-Path $remotepath)) { throw "Cannot resolve $remotepath. `n`nYou have specified ReuseSourceFolderStructure and exact folder structure does not exist. Halting script." }
+					if (!(Test-Path $remotepath))
+					{
+						Write-Warning "Cannot resolve $remotepath. `n`nYou have specified ReuseSourceFolderStructure and exact folder structure cannot be verified. Proceeding anyway."
+					}
+				}
+				else
+				{
+					$fgrows = $remotedbfiletable.Tables[0].Select("dbname = '$dbname' and FileType = 'ROWS'")[0]
+					$remotepath = Split-Path $fgrows
+					$remotepath = Join-AdminUNC $destnetbios $remotepath
 				}
 				
 				Write-Verbose "Checking Availability Group status"
