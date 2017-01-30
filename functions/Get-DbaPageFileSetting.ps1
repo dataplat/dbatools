@@ -60,7 +60,6 @@ PROCESS
                 {
                     Write-Verbose "Successfully retrieved ComputerSystem information on $Computer via WSMan"
                     if ( $CompSys.PSobject.Properties.Name -contains "automaticmanagedpagefile" ) # pagefile exists on $computer
-                    $CompSys.PSobject.Properties.Name -contains "automaticmanagedpagefile"
                     {
                         if ( $CompSys.automaticmanagedpagefile -eq $False ) # pagefile is not automatically managed, so get settings via WSMan
                         {
