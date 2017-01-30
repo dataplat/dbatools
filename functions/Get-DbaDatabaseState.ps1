@@ -24,7 +24,6 @@ Gets options only on these databases
 .PARAMETER Exclude
 Gets options for all but these specific databases
 
-
 .NOTES
 Author: niphlod
 
@@ -38,17 +37,17 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Get-DbaDatabaseState
 
 .EXAMPLE
-Get-DbaDatabaseState -SqlServer sqlserver2014a
+Get-DbaDatabaseState -SqlInstance sqlserver2014a
 
 Gets options for all databases of the sqlserver2014a instance
 
 .EXAMPLE
-Get-DbaDatabaseState -SqlServer sqlserver2014a -Database HR, Accounting
+Get-DbaDatabaseState -SqlInstance sqlserver2014a -Database HR, Accounting
 
 Gets options for both HR and Accounting database of the sqlserver2014a instance
 
 .EXAMPLE
-Get-DbaDatabaseState -SqlServer sqlserver2014a -Exclude HR
+Get-DbaDatabaseState -SqlInstance sqlserver2014a -Exclude HR
 
 Gets options for all databases of the sqlserver2014a instance except HR
 
@@ -71,7 +70,7 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 	{
 		if ($SqlInstance)
 		{
-			Get-ParamSqlDatabases -SqlInstance $SqlInstance[0] -SqlCredential $Credential -NoSystem
+			Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $Credential -NoSystem
 		}
 	}
 

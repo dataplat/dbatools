@@ -88,6 +88,16 @@ Set-DbaDatabaseState -SqlServer sqlserver2014a -Database HR -Offline
 Sets the HR database as OFFLINE
 
 .EXAMPLE
+Set-DbaDatabaseState -SqlServer sqlserver2014a -AllDatabases -Exclude HR -Readonly -Force
+
+Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
+
+.EXAMPLE	
+Get-DbaDatabaseState -SqlInstance sql2016 | Where-Object Status -eq 'Offline' | Set-DbaDatabaseState -Online
+	
+Finds all offline databases and sets them to online
+
+.EXAMPLE
 Set-DbaDatabaseState -SqlServer sqlserver2014a -Database HR -SingleUser
 
 Sets the HR database as SINGLE_USER
@@ -96,11 +106,6 @@ Sets the HR database as SINGLE_USER
 Set-DbaDatabaseState -SqlServer sqlserver2014a -Database HR -SingleUser -Force
 
 Sets the HR database as SINGLE_USER, dropping all other connections (and rolling back open transactions)
-
-.EXAMPLE
-Set-DbaDatabaseState -SqlServer sqlserver2014a -AllDatabases -Exclude HR -Readonly -Force
-
-Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
