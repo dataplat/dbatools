@@ -51,8 +51,13 @@ Gets the SQL Server related services on computers sql1 and sql2, and shows them 
 		[PsCredential]$Credential
 	)
 	
-	BEGIN {}
-    PROCESS {
+BEGIN
+    {
+    $functionName = "Get-DbaSqlService"
+    $ComputerName = $ComputerName | foreach {$_.split("\")[0]} | select -Unique
+    }
+PROCESS
+    {
         foreach ( $Computer in $ComputerName )
         {
             $Computer = $Computer.split("\")[0]
@@ -60,12 +65,12 @@ Gets the SQL Server related services on computers sql1 and sql2, and shows them 
             if ( $Server.ComputerName )
 	        {
                 $Computer = $server.ComputerName
-                Write-Verbose "Connecting to $Computer"
+                Write-Verbose "$functionname - Getting SQL Server namespace on $Computer via CIM (WSMan)"
                 $namespace = Get-CimInstance -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -ClassName "__NAMESPACE" -Filter "Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
                                 Sort-Object Name -Descending | Select-Object -First 1
                 if ( $namespace.Name )
                 {
-                    Write-Verbose "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer"
+                    Write-Verbose "$functionname - Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer via CIM (WSMan)"
                     try
                     {
                         Get-CimInstance -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService" -ErrorAction SilentlyContinue |
@@ -83,19 +88,19 @@ Gets the SQL Server related services on computers sql1 and sql2, and shows them 
                      }
                      catch
                      {
-                        Write-Warning "No Sql Services found on $Computer via WSMan"
+                        Write-Warning "$functionname - No Sql Services found on $Computer via CIM (WSMan)"
                      }
                 }
                 else
                 {
-                    Write-Verbose "Getting computer information from server $Computer via CIM (DCOM)"
+                    Write-Verbose "$functionname - Getting computer information from $Computer via CIM (DCOM)"
 				    $sessionoption = New-CimSessionOption -Protocol DCOM
 				    $CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
                     $namespace = Get-CimInstance -CimSession $CIMsession -NameSpace root\Microsoft\SQLServer -ClassName "__NAMESPACE" -Filter "Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
                                 Sort-Object Name -Descending | Select-Object -First 1
                     if ( $namespace.Name )
                     {
-                        Write-Verbose "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer"
+                        Write-Verbose "$functionname - Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer via CIM (DCOM)"
                         try
                         {
                             Get-CimInstance -CimSession $CIMsession -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService" -ErrorAction SilentlyContinue |
@@ -113,16 +118,16 @@ Gets the SQL Server related services on computers sql1 and sql2, and shows them 
                          }
                          catch
                          {
-                            Write-Warning "No Sql Services found on $Computer via DCOM"
+                            Write-Warning "$functionname - No Sql Services found on $Computer via CIM (DCOM)"
                          }
                     }
                 }
             }
             else
             {
-            Write-Warning "Failed to connect to $Computer"
+                Write-Warning "$functionname - Failed to connect to $Computer"
             }
         }
     }
-    END {}
+END {}
 }
