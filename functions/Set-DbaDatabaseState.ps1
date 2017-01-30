@@ -67,7 +67,7 @@ For most options, this translates to istantly rolling back any open transactions
 that may be stopping the process.
 For -Detached it is required to break mirroring and Availability Groups
 
-.PARAMETER RichObject
+.PARAMETER SmoDatabase
 Internal parameter for piped objects - this will likely go away once we move to better dynamic parameters
 	
 .NOTES
@@ -122,7 +122,7 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 		[switch]$MultiUser,
 		[switch]$Force,
 		[parameter(Mandatory = $true, ValueFromPipeline, ParameterSetName = "Database")]
-		[PsCustomObject[]]$RichObject
+		[PsCustomObject[]]$SmoDatabase
 	)
 	
 	DynamicParam
@@ -231,45 +231,50 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 	}
 	PROCESS
 	{
-		if ($databases.Length -eq 0 -and $AllDatabases -eq $false -and !$richobject)
+		$dbs = @()
+		
+		if ($databases.Length -eq 0 -and $AllDatabases -eq $false -and !$smodatabase)
 		{
 			throw "You must specify a -AllDatabases or -Database to continue"
 		}
 		
-		foreach ($instance in $SqlInstance)
+		if ($smodatabase)
 		{
-			Write-Verbose "Connecting to $instance"
-			try
+			$dbs += $smodatabase.Database
+		}
+		else
+		{
+			foreach ($instance in $SqlInstance)
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
-			}
-			catch
-			{
-				Write-Warning "Can't connect to $instance"
-				Continue
-			}
-			$all_dbs = $server.Databases
-			$dbs = $all_dbs | Where-Object { @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name }
-			
-			if ($databases.count -gt 0)
-			{
-				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
-			}
-			if ($exclude.count -gt 0)
-			{
-				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
-			}
-			if ($Detached -eq $true)
-			{
-				# we need to see what snaps are on the server, as base databases cannot be dropped
-				$snaps = $all_dbs | Where-Object { $_.DatabaseSnapshotBaseName.Length -gt 0 }
-				$snaps = $snaps | Select-Object -ExpandProperty DatabaseSnapshotBaseName | Get-Unique
+				Write-Verbose "Connecting to $instance"
+				try
+				{
+					$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
+				}
+				catch
+				{
+					Write-Warning "Can't connect to $instance"
+					Continue
+				}
+				$all_dbs = $server.Databases
+				$dbs = $all_dbs | Where-Object { @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name }
+				
+				if ($databases.count -gt 0)
+				{
+					$dbs = $dbs | Where-Object { $databases -contains $_.Name }
+				}
+				if ($exclude.count -gt 0)
+				{
+					$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
+				}
 			}
 		}
 		
-		if ($richobject)
+		if ($Detached -eq $true)
 		{
-			$dbs += $richobject.Database
+			# we need to see what snaps are on the server, as base databases cannot be dropped
+			$snaps = $dbs | Where-Object { $_.DatabaseSnapshotBaseName.Length -gt 0 }
+			$snaps = $snaps | Select-Object -ExpandProperty DatabaseSnapshotBaseName | Get-Unique
 		}
 		
 		# need to pick up here
@@ -427,10 +432,8 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 			}
 			
 			# Refresh info about database state here (before detaching)
-			$server.Databases[$db.Name].Refresh()
-			$newstate = Get-DbState $db
-			
-			
+			$db.Refresh()
+						
 			if ($Detached -eq $true)
 			{
 				if ($db.Name -in $snaps)
@@ -519,6 +522,9 @@ Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 			{
 				$warn = $null
 			}
+			
+			$db.Refresh()
+			$newstate = Get-DbState $db
 			
 			[PSCustomObject]@{
 				SqlInstance = $server.Name
