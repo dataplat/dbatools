@@ -58,9 +58,10 @@ PROCESS
                 $CompSys = Get-CimInstance -ComputerName $Computer -Query "SELECT * FROM win32_computersystem" -ErrorVariable $MyErr
                 if ( $CompSys ) # we have computersystem class via WSMan
                 {
-                    Write-Verbose "Successfully retrieved ComputerSystem information on $Computer via WSMan"
+                    Write-Verbose "Successfully retrieved ComputerSystem information on $Computer via CIM (WSMan)"
                     if ( $CompSys.PSobject.Properties.Name -contains "automaticmanagedpagefile" ) # pagefile exists on $computer
                     {
+                        Write-Verbose "Successfully retrieved PageFile information on $Computer via CIM (WSMan)"
                         if ( $CompSys.automaticmanagedpagefile -eq $False ) # pagefile is not automatically managed, so get settings via WSMan
                         {
                             $PF = Get-CimInstance -ComputerName $Computer -Query "SELECT * FROM win32_pagefile" # deprecated !
@@ -83,10 +84,10 @@ PROCESS
                     $CompSys = Get-CimInstance -CimSession $CIMsession -Query "SELECT * FROM win32_computersystem" -ErrorVariable $MyErr
                     if ( $CompSys ) # we have computersystem class via DCom
                     {
-                        Write-Verbose "Successfully retrieved ComputerSystem information on $Computer via WSMan"
+                        Write-Verbose "Successfully retrieved ComputerSystem information on $Computer via CIM (DCOM)"
                         if ( $CompSys.PSobject.Properties.Name -contains "automaticmanagedpagefile" ) # pagefile exists on $computer
                         {
-                            Write-Verbose "Successfully retrieved PageFile information on $Computer via DCom"
+                            Write-Verbose "Successfully retrieved PageFile information on $Computer via CIM (DCOM)"
                             if ( $CompSys.automaticmanagedpagefile -eq $False ) # pagefile is not automatically managed, so get settings via DCom CimSession
                             {
                                 $PF = Get-CimInstance -CimSession $CIMsession -Query "SELECT * FROM win32_pagefile" # deprecated !
