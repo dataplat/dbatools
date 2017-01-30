@@ -62,7 +62,7 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[string[]]$SqlInstance,
+		[object[]]$SqlInstance,
 		[PSCredential]
 		[System.Management.Automation.CredentialAttribute()]$Credential
 	)
@@ -154,7 +154,8 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 					RW            = $db_status.RW
 					Status        = $db_status.Status
 					Access        = $db_status.Access
-				} | Select-DefaultField -Property SqlInstance, DatabaseName, RW, Status, Access
+					Database      = $db
+				} | Select-DefaultField -ExcludeProperty Database
 			}
 		}
 	}
