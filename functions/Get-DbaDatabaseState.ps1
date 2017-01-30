@@ -154,7 +154,7 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 					RW            = $db_status.RW
 					Status        = $db_status.Status
 					Access        = $db_status.Access
-					Database   = $db
+					Database      = $db
 				} | Select-DefaultField -ExcludeProperty Database
 			}
 		}
