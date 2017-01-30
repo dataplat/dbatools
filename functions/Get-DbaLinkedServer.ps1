@@ -50,7 +50,7 @@ Returns all Linked Servers for the SQL Server instance DEV01
 	        }
 	        catch
 	        {
-	            Write-Warning "Failed to connect to: $srv"
+	            Write-Warning "Failed to connect to: $Instance"
                 continue
 	        }
 
