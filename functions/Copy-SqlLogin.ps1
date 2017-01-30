@@ -63,6 +63,10 @@ Prompts you for confirmation before executing any changing operations within the
 .PARAMETER pipelogin
 Takes the parameters required from a login object that has been piped ot the command
 
+.PARAMETER LoginRenameHashtable
+Takes a hash table that will pass to Rename-DbaLogin and update the login and mappings once the copy is completed.
+
+
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
@@ -101,6 +105,11 @@ Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -SyncOnly
 
 Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. If a matching login does not exist on the destination, the login will be skipped.
 
+.EXAMPLE 
+Copy-SqlLogin -LoginRenameHashtable @{ "OldUser" ="newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred 
+
+Copys down OldUser and then renames it to newlogin.
+
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
@@ -122,7 +131,8 @@ Limitations: Does not support Application Roles yet
 		[parameter(ParameterSetName = "Live")]
 		[switch]$Force,
 		[switch]$SyncSaName,
-		[object]$pipelogin
+		[object]$pipelogin,
+		[hashtable]$LoginRenameHashtable 
 	)
 	
 	DynamicParam { if ($source) { return Get-ParamSqlLogins -SqlServer $source -SqlCredential $SourceSqlCredential } }
@@ -366,6 +376,21 @@ Limitations: Does not support Application Roles yet
 				If ($Pscmdlet.ShouldProcess($destination, "Updating SQL login $username permissions"))
 				{
 					Update-SqlPermissions -sourceserver $sourceserver -sourcelogin $sourcelogin -destserver $destserver -destlogin $destlogin
+				}
+				
+				
+				if ($LoginRenameHashtable.Keys -contains $username) { 
+					$NewLogin = $LoginRenameHashtable[$username]
+
+					if ($Pscmdlet.ShouldProcess($destination, "Renaming SQL Login $username to $NewLogin")) {
+						try { 
+							Rename-DbaLogin -SqlInstance $destserver -Login $username -NewLogin $NewLogin
+						} catch { 
+							Write-Exception $_ 
+						}
+					}
+					
+
 				}
 			}
 		}
