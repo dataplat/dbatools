@@ -13,15 +13,45 @@
 	
 	[CmdletBinding()]
 	param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[parameter(ValueFromPipeline = $true)]
 		[pscustomobject]$InputObject,
-		[parameter(Mandatory = $true)]
-		[string[]]$Property
+		[string[]]$Property,
+		[string[]]$ExcludeProperty
 	)
 	
-	$inputobject.PSObject.TypeNames.Insert(0, 'dbatools.customobject')
-	$defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', [string[]]$Property)
+	if ($InputObject -eq $null) { return }
+	
+	if ($ExcludeProperty)
+	{
+		$properties = $InputObject | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name | Where-Object { $_ -notin $ExcludeProperty } 
+		$defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', [string[]]$properties)
+	}
+	else
+	{
+		# property needs to be string
+		if ("$property" -like "* as *")
+		{
+			$newproperty = @()
+			foreach ($p in $property)
+			{
+				if ($p -like "* as *")
+				{
+					$old, $new = $p -isplit " as "
+					$inputobject | Add-Member -MemberType AliasProperty -Name $new -Value $old -Force
+					$newproperty += $new
+				}
+				else
+				{
+					$newproperty += $p
+				}
+			}
+			$property = $newproperty
+		}
+		
+		$defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', [string[]]$Property)
+	}
+	
 	$standardmembers = [System.Management.Automation.PSMemberInfo[]]@($defaultset)
-	$inputobject | Add-Member MemberSet PSStandardMembers $standardmembers
+	$inputobject | Add-Member MemberSet PSStandardMembers $standardmembers -Force
 	$inputobject
 }

@@ -57,11 +57,12 @@ Returns db/server collation information for every database on every server liste
 	
 #>
 	[CmdletBinding()]
+	[OutputType("System.Collections.ArrayList")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
-		[PsCredential]$Credential,
+		[System.Management.Automation.PSCredential]$Credential,
 		[switch]$Detailed
 	)
 	

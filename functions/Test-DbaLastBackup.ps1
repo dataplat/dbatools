@@ -354,7 +354,7 @@ Restores data and log files to alternative locations and only restores databases
 						FileExists = $fileexists
 						RestoreResult = $restoreresult
 						DbccResult = $dbccresult
-						SizeMB = $lastbackup.TotalSizeMB
+						SizeMB = ($lastbackup.TotalSizeMB | Measure-Object -Sum).Sum
 						BackupTaken = $lastbackup.Start
 						BackupFiles = $lastbackup.Path
 					}
