@@ -196,7 +196,7 @@ Set recommended Max DOP setting for all databases on server sql2016.
             {
                 if ($databases -gt 0 -or $AllDatabases)
                 {
-				    Write-Warning "Server '$servername' does not supports Max DOP configuration per database. Run the command again without -Databases parameter. Skipping."
+                    Write-Warning "Server '$servername' (v$($server.versionMajor)) does not support Max DOP configuration at the database level. Remember that this option is only available from SQL Server 2016 (v13). Run the command again without using database related parameters. Skipping."
 				    Continue
 			    }
             }
