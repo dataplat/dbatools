@@ -183,7 +183,6 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 	
 	BEGIN
 	{
-		
 		# Global Database Function
 		Function Get-SqlFileStructure
 		{
@@ -203,7 +202,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				
 				$where = "Filetype <> 'LOG' and Filetype <> 'FULLTEXT'"
 				
-				$datarows = $dbfiletable.Tables[0].Select("dbname = '$dbname' and $where")
+				$datarows = $dbfiletable.Tables.Select("dbname = '$dbname' and $where")
 				
 				# Data Files
 				foreach ($file in $datarows)
@@ -214,13 +213,27 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					{
 						$d.physical = $file.filename
 					}
+					elseif ($WithReplace)
+					{
+						$name = $file.name
+						$destfile = $remotedbfiletable.Tables[0].Select("dbname = '$dbname' and name = '$name'")
+						$d.physical = $destfile.filename
+						
+						if ($null -eq $d.physical)
+						{
+							$directory = Get-SqlDefaultPaths $destserver data
+							$filename = Split-Path $file.filename -Leaf
+							$d.physical = "$directory\$filename"
+						}
+					}
 					else
 					{
 						$directory = Get-SqlDefaultPaths $destserver data
-						$filename = Split-Path $($file.filename) -leaf
+						$filename = Split-Path $file.filename -Leaf
 						$d.physical = "$directory\$filename"
 					}
 					$d.logical = $file.name
+					
 					$d.remotefilename = Join-AdminUNC $destnetbios $d.physical
 					$destinationfiles.add($file.name, $d)
 					
@@ -294,10 +307,23 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					{
 						$d.physical = $file.filename
 					}
+					elseif ($WithReplace)
+					{
+						$name = $file.name
+						$destfile = $remotedbfiletable.Tables[0].Select("dbname = '$dbname' and name = '$name'")
+						$d.physical = $destfile.filename
+						
+						if ($null -eq $d.physical)
+						{
+							$directory = Get-SqlDefaultPaths $destserver data
+							$filename = Split-Path $file.filename -Leaf
+							$d.physical = "$directory\$filename"
+						}
+					}
 					else
 					{
 						$directory = Get-SqlDefaultPaths $destserver log
-						$filename = Split-Path $($file.filename) -leaf
+						$filename = Split-Path $file.filename -Leaf
 						$d.physical = "$directory\$filename"
 					}
 					$d.logical = $file.name
@@ -321,7 +347,6 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			Write-Progress -id 1 -Activity "Processing database file structure" -Status "Completed" -Completed
 			return $filestructure
 		}
-		
 		# Backup Restore
 		Function Backup-SqlDatabase
 		{
@@ -389,7 +414,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			$server.ConnectionContext.StatementTimeout = 0
 			$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
 			
-			if ($WithReplace -eq $false -or $server.databases[$dbname] -eq $null)
+			if ($WithReplace -or $server.databases[$dbname] -eq $null)
 			{
 				foreach ($file in $filestructure.databases[$dbname].destination.values)
 				{
@@ -436,20 +461,33 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				{
 					foreach ($backupfile in $filestodelete)
 					{
-                        try
-                        {
-						    If (Test-Path $backupfile -ErrorAction Stop)
-						    {
-							    Remove-Item $backupfile
-						    }
-                        }
-                        catch
-                        {
-                            Write-Warning "You can't access backup file $backupfile"
-                        }
+						try
+						{
+							If (Test-Path $backupfile -ErrorAction Stop)
+							{
+								Write-Verbose "Deleting $backupfile"
+								Remove-Item $backupfile -ErrorAction Stop
+							}
+						}
+						catch
+						{
+							try
+							{
+								Write-Verbose "Trying alternate SQL method to delete $backupfile"
+								$sql = "EXEC master.sys.xp_delete_file 0, '$backupfile'"
+								Write-Debug $sql
+								$null = $server.ConnectionContext.ExecuteNonQuery($sql)
+							}
+							catch
+							{
+								Write-Warning "Cannot delete backup file $backupfile"
+								
+								# Set NoBackupCleanup so that there's a warning at the end
+								$NoBackupCleanup = $true
+							}
+						}
 					}
 				}
-				
 				return $true
 			}
 			catch
@@ -790,17 +828,17 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				throw "Network share must be a valid UNC path (\\server\share)."
 			}
 			
-            try
-            {
+			try
+			{
 				if (Test-Path $NetworkShare -ErrorAction Stop)
-			    {
-				    Write-Verbose "$networkshare share can be accessed."
-			    }
-            }
-            catch
-            {
-                Write-Warning "$networkshare share cannot be accessed. Still trying anyway, in case the SQL Server service accounts have access."
-            }
+				{
+					Write-Verbose "$networkshare share can be accessed."
+				}
+			}
+			catch
+			{
+				Write-Warning "$networkshare share cannot be accessed. Still trying anyway, in case the SQL Server service accounts have access."
+			}
 			
 		}
 		
@@ -929,6 +967,17 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		}
 		
 		$dbfiletable = $sourceserver.Databases['master'].ExecuteWithResults($sql)
+		
+		if ($destserver.versionMajor -eq 8)
+		{
+			$sql = "select DB_NAME (dbid) as dbname, name, filename, CASE WHEN groupid = 0 THEN 'LOG' ELSE 'ROWS' END as filetype from sysaltfiles"
+		}
+		else
+		{
+			$sql = "SELECT db.name AS dbname, type_desc AS FileType, mf.name, Physical_Name AS filename FROM sys.master_files mf INNER JOIN  sys.databases db ON db.database_id = mf.database_id"
+		}
+		
+		$remotedbfiletable = $destserver.Databases['master'].ExecuteWithResults($sql)
 		
 		$filestructure = Get-SqlFileStructure -sourceserver $sourceserver -destserver $destserver -databaselist $databaselist -ReuseSourceFolderStructure $ReuseSourceFolderStructure
 		
