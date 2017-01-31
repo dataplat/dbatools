@@ -192,7 +192,8 @@
 		'Find-DbaAgentJob',
 		'Find-DbaDatabase',
 		'Get-DbaMsdtc',
-		'Get-DbaUptime'
+		'Get-DbaUptime',
+		'Get-DbaXEventsSession'
 	)
 	
 	# Cmdlets to export from this module
