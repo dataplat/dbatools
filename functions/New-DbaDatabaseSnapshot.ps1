@@ -13,6 +13,9 @@ The SQL Server that you're connecting to.
 .PARAMETER Credential
 Credential object used to connect to the SQL Server as a different user
 
+.PARAMETER AllDatabases
+Creates snapshot for all eligible databases
+	
 .PARAMETER Databases
 Creates snapshot for only specific databases
 
@@ -76,6 +79,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		[Alias("ServerInstance", "SqlServer")]
 		[string[]]$SqlInstance,
 		[PsCredential]$Credential,
+		[switch]$AllDatabases,
 		[string]$Name,
 		[string]$Path,
 		[switch]$Force
@@ -144,6 +148,11 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 
 	PROCESS
 	{
+		if ($databases.Length -eq 0 -and $AllDatabases -eq $false -and !$smodatabase)
+		{
+			throw "You must specify a -AllDatabases or -Database to continue"
+		}
+		
 		foreach ($instance in $SqlInstance)
 		{
 			Write-Verbose "Connecting to $instance"
@@ -165,12 +174,15 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 					Continue
 				}
 			}
-
-			$dbs = $server.Databases
-
+			
+			if ($AllDatabases)
+			{
+				$dbs = $server.Databases
+			}
+			
 			if ($databases.count -gt 0)
 			{
-				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
+				$dbs = $server.Databases | Where-Object { $databases -contains $_.Name }
 			}
 
 			$sourcedbs = @()
