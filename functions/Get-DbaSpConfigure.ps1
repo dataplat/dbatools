@@ -15,6 +15,9 @@ collection and recieve pipeline input
 .PARAMETER SqlCredential
 PSCredential object to connect as. If not specified, current Windows login will be used.
 
+.PARAMETER Configs
+Return only specific configurations -- auto-populated from source server
+	
 .PARAMETER Detailed
 Returns more information about the configuration settings than standard
 
@@ -39,6 +42,15 @@ Returns server level configuration data on the localhost (ServerName, ConfigName
 'localhost','localhost\namedinstance' | Get-DbaSpConfigure
 Returns system configuration information on multiple instances piped into the function
 
+.EXAMPLE
+Get-DbaSpConfigure -SqlServer localhost
+Returns server level configuration data on the localhost (ServerName, ConfigName, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue)
+
+.EXAMPLE
+Get-DbaSpConfigure -SqlServer sql2012 -Configs MaxServerMemory
+
+Returns only the system configuration for MaxServerMemory. Configs is autopopulated for tabbing convenience. 
+
 #>
 	[CmdletBinding()]
 	Param (
@@ -47,6 +59,14 @@ Returns system configuration information on multiple instances piped into the fu
 		[string[]]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
+	
+	DynamicParam { if ($SqlServer) { return (Get-ParamSqlServerConfigs -SqlServer $SqlServer -SqlCredential $SqlCredential) } }
+	
+	BEGIN
+	{
+		$configs = $psboundparameters.Configs
+	}
+	
 	PROCESS
 	{
 		FOREACH ($instance in $SqlServer)
@@ -63,6 +83,11 @@ Returns system configuration information on multiple instances piped into the fu
 			
 			#Get a list of the configuration property parents, and exlude the Parent, Properties values
 			$proplist = Get-Member -InputObject $server.Configuration -MemberType Property -Force | Select-Object Name | Where-Object { $_.Name -ne "Parent" -and $_.Name -ne "Properties" }
+			
+			if ($configs)
+			{
+				$proplist = $proplist | Where-Object { $_.Name -in $configs }
+			}
 			
 			#Grab the default sp_configure property values from the external function
 			$defaultConfigs = (Get-SqlDefaultSpConfigure -SqlVersion $server.VersionMajor).psobject.properties;
