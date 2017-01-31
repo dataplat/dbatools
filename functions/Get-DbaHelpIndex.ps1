@@ -959,9 +959,9 @@ FROM @AllResults;
 
         else 
         {
-            throw "This function does not support versions lower than SQL Server 2005 (v9)"
+			Write-Warning "This function does not support versions lower than SQL Server 2005 (v9)"
+			continue
         }
-
 
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
@@ -983,10 +983,8 @@ FROM @AllResults;
 			{
 				try
 				{
-
                     $IndexDetails = ($server.Databases[$db].ExecuteWithResults($indexesQuery)).Tables[0];
 			
-		
 					if ($FormatResults)
 					{
 						foreach ($detail in $IndexDetails)
@@ -1043,7 +1041,7 @@ FROM @AllResults;
 				}
 				catch
 				{
-					throw $_
+					Write-Warning "Cannot process $db on $server"
 				}
 			}
 			
