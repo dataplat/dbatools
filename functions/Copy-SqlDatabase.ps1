@@ -473,7 +473,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						{
 							try
 							{
-								Write-Verbose "Deleting $backupfile"
+								Write-Verbose "Trying alternate SQL method to delete $backupfile"
 								$sql = "EXEC master.sys.xp_delete_file 0, '$backupfile'"
 								Write-Debug $sql
 								$null = $server.ConnectionContext.ExecuteNonQuery($sql)
