@@ -465,16 +465,27 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						{
 							If (Test-Path $backupfile -ErrorAction Stop)
 							{
-								Remove-Item $backupfile
+								Remove-Item $backupfile -ErrorAction Stop
 							}
 						}
 						catch
 						{
-							Write-Warning "You can't access backup file $backupfile"
+							try
+							{
+								$sql = "EXEC master.sys.xp_delete_file 0, '$backupfile'"
+								Write-Debug $sql
+								$null = $server.ConnectionContext.ExecuteNonQuery($sql)
+							}
+							catch
+							{
+								Write-Warning "Cannot delete backup file $backupfile"
+								
+								# Set NoBackupCleanup so that there's a warning at the end
+								$NoBackupCleanup = $true
+							}
 						}
 					}
 				}
-				
 				return $true
 			}
 			catch
