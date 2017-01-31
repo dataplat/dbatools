@@ -465,6 +465,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						{
 							If (Test-Path $backupfile -ErrorAction Stop)
 							{
+								Write-Verbose "Deleting $backupfile"
 								Remove-Item $backupfile -ErrorAction Stop
 							}
 						}
@@ -472,6 +473,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						{
 							try
 							{
+								Write-Verbose "Deleting $backupfile"
 								$sql = "EXEC master.sys.xp_delete_file 0, '$backupfile'"
 								Write-Debug $sql
 								$null = $server.ConnectionContext.ExecuteNonQuery($sql)
