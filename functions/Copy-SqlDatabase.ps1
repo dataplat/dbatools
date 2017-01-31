@@ -183,11 +183,10 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 	
 	BEGIN
 	{
-		
 		# Global Database Function
 		Function Get-SqlFileStructure
 		{
-			$dbcollection = @{}
+			$dbcollection = @{ };
 			$databaseProgressbar = 0
 			
 			foreach ($db in $databaselist)
@@ -195,52 +194,51 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				Write-Progress -Id 1 -Activity "Processing database file structure" -PercentComplete ($databaseProgressbar / $dbcount * 100) -Status "Processing $databaseProgressbar of $dbcount"
 				$dbname = $db.name
 				Write-Verbose $dbname
-								
+				
 				$databaseProgressbar++
 				$dbstatus = $db.status.toString()
 				if ($dbstatus.StartsWith("Normal") -eq $false) { continue }
-				
-				$destinationfiles = $sourcefiles = @{}
+				$destinationfiles = @{ }; $sourcefiles = @{ }
 				
 				$where = "Filetype <> 'LOG' and Filetype <> 'FULLTEXT'"
 				
-				$datarows = $dbfiletable.Tables[0].Select("dbname = '$dbname' and $where")
+				$datarows = $dbfiletable.Tables.Select("dbname = '$dbname' and $where")
 				
 				# Data Files
 				foreach ($file in $datarows)
 				{
 					# Destination File Structure
-					$d = @{}
+					$d = @{ }
 					if ($ReuseSourceFolderStructure)
 					{
 						$d.physical = $file.filename
 					}
 					elseif ($WithReplace)
 					{
-						$fullname = $file.filename
-						$file = $remotedbfiletable.Tables[0].Select("dbname = '$dbname' and filename = '$fullname'")
-						$d.physical = $file.filename
+						$name = $file.name
+						$destfile = $remotedbfiletable.Tables[0].Select("dbname = '$dbname' and name = '$name'")
+						$d.physical = $destfile.filename
 						
-						if ($file -eq $null)
+						if ($null -eq $d.physical)
 						{
 							$directory = Get-SqlDefaultPaths $destserver data
-							$filename = Split-Path $($file.filename) -leaf
+							$filename = Split-Path $file.filename -Leaf
 							$d.physical = "$directory\$filename"
 						}
 					}
 					else
 					{
 						$directory = Get-SqlDefaultPaths $destserver data
-						$filename = Split-Path $($file.filename) -leaf
+						$filename = Split-Path $file.filename -Leaf
 						$d.physical = "$directory\$filename"
 					}
-					
 					$d.logical = $file.name
+					
 					$d.remotefilename = Join-AdminUNC $destnetbios $d.physical
 					$destinationfiles.add($file.name, $d)
 					
 					# Source File Structure
-					$s = @{}
+					$s = @{ }
 					$s.logical = $file.name
 					$s.physical = $file.filename
 					$s.remotefilename = Join-AdminUNC $sourcenetbios $s.physical
@@ -254,9 +252,6 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					{
 						$fttable = $null = $sourceserver.Databases[$dbname].ExecuteWithResults('sp_help_fulltext_catalogs')
 						$allrows = $fttable.Tables[0].rows
-						
-						$remotefttable = $null = $destserver.Databases[$dbname].ExecuteWithResults('sp_help_fulltext_catalogs')
-						$remoteallrows = $fttable.Tables[0].rows
 					}
 					catch
 					{
@@ -266,7 +261,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					foreach ($ftc in $allrows)
 					{
 						# Destination File Structure
-						$d = @{}
+						$d = @{ }
 						$pre = "sysft_"
 						$name = $ftc.name
 						$physical = $ftc.Path # RootPath
@@ -275,24 +270,11 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						{
 							$d.physical = $physical
 						}
-						elseif ($WithReplace)
-						{
-							$file = $remotedbfiletable.Tables[0].Select("name = '$name'")
-							$d.physical = $file.path
-							
-							if ($file -eq $null)
-							{
-								$directory = Get-SqlDefaultPaths $destserver data
-								if ($destserver.VersionMajor -lt 10) { $directory = "$directory\FTDATA" }
-								$filename = Split-Path $physical -Leaf
-								$d.physical = "$directory\$filename"
-							}
-						}
 						else
 						{
 							$directory = Get-SqlDefaultPaths $destserver data
 							if ($destserver.VersionMajor -lt 10) { $directory = "$directory\FTDATA" }
-							$filename = Split-Path $physical -Leaf
+							$filename = Split-Path($physical) -leaf
 							$d.physical = "$directory\$filename"
 						}
 						$d.logical = $logical
@@ -300,7 +282,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						$destinationfiles.add($logical, $d)
 						
 						# Source File Structure
-						$s = @{}
+						$s = @{ }
 						$pre = "sysft_"
 						$name = $ftc.name
 						$physical = $ftc.Path # RootPath
@@ -320,42 +302,42 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				# Log Files
 				foreach ($file in $datarows)
 				{
-					$d = @{}
+					$d = @{ }
 					if ($ReuseSourceFolderStructure)
 					{
 						$d.physical = $file.filename
 					}
 					elseif ($WithReplace)
 					{
-						$fullname = $file.filename
-						$file = $remotedbfiletable.Tables[0].Select("dbname = '$dbname' and filename = '$fullname'")
-						$d.physical = $file.filename
+						$name = $file.name
+						$destfile = $remotedbfiletable.Tables[0].Select("dbname = '$dbname' and name = '$name'")
+						$d.physical = $destfile.filename
 						
-						if ($file -eq $null)
+						if ($null -eq $d.physical)
 						{
 							$directory = Get-SqlDefaultPaths $destserver data
-							$filename = Split-Path $($file.filename) -leaf
+							$filename = Split-Path $file.filename -Leaf
 							$d.physical = "$directory\$filename"
 						}
 					}
 					else
 					{
 						$directory = Get-SqlDefaultPaths $destserver log
-						$filename = Split-Path $($file.filename) -leaf
+						$filename = Split-Path $file.filename -Leaf
 						$d.physical = "$directory\$filename"
 					}
 					$d.logical = $file.name
 					$d.remotefilename = Join-AdminUNC $destnetbios $d.physical
 					$destinationfiles.add($file.name, $d)
 					
-					$s = @{}
+					$s = @{ }
 					$s.logical = $file.name
 					$s.physical = $file.filename
 					$s.remotefilename = Join-AdminUNC $sourcenetbios $s.physical
 					$sourcefiles.add($file.name, $s)
 				}
 				
-				$location = @{}
+				$location = @{ }
 				$location.add("Destination", $destinationfiles)
 				$location.add("Source", $sourcefiles)
 				$dbcollection.Add($($db.name), $location)
@@ -365,7 +347,6 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			Write-Progress -id 1 -Activity "Processing database file structure" -Status "Completed" -Completed
 			return $filestructure
 		}
-		
 		# Backup Restore
 		Function Backup-SqlDatabase
 		{
@@ -433,7 +414,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			$server.ConnectionContext.StatementTimeout = 0
 			$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
 			
-			if ($server.databases[$dbname] -eq $null)
+			if ($WithReplace -or $server.databases[$dbname] -eq $null)
 			{
 				foreach ($file in $filestructure.databases[$dbname].destination.values)
 				{
@@ -472,9 +453,6 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					$val++
 				}
 				
-				
-				write-warning $restore.script($server)
-				
 				Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
 				$restore.sqlrestore($server)
 				Write-Progress -id 1 -activity "Restoring $dbname to $servername" -status "Complete" -Completed
@@ -483,17 +461,17 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				{
 					foreach ($backupfile in $filestodelete)
 					{
-                        try
-                        {
-						    If (Test-Path $backupfile -ErrorAction Stop)
-						    {
-							    Remove-Item $backupfile
-						    }
-                        }
-                        catch
-                        {
-                            Write-Warning "You can't access backup file $backupfile"
-                        }
+						try
+						{
+							If (Test-Path $backupfile -ErrorAction Stop)
+							{
+								Remove-Item $backupfile
+							}
+						}
+						catch
+						{
+							Write-Warning "You can't access backup file $backupfile"
+						}
 					}
 				}
 				
@@ -837,17 +815,17 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				throw "Network share must be a valid UNC path (\\server\share)."
 			}
 			
-            try
-            {
+			try
+			{
 				if (Test-Path $NetworkShare -ErrorAction Stop)
-			    {
-				    Write-Verbose "$networkshare share can be accessed."
-			    }
-            }
-            catch
-            {
-                Write-Warning "$networkshare share cannot be accessed. Still trying anyway, in case the SQL Server service accounts have access."
-            }
+				{
+					Write-Verbose "$networkshare share can be accessed."
+				}
+			}
+			catch
+			{
+				Write-Warning "$networkshare share cannot be accessed. Still trying anyway, in case the SQL Server service accounts have access."
+			}
 			
 		}
 		
@@ -940,6 +918,8 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		{
 			throw "You did not select any databases to migrate. Please use -AllDatabases or -Databases or -IncludeSupportDbs"
 		}
+		
+		
 		
 		Write-Output "Building database list"
 		$databaselist = New-Object System.Collections.ArrayList
@@ -1035,16 +1015,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					$remotepath = Split-Path $fgrows
 					$remotepath = Join-AdminUNC $destnetbios $remotepath
 					
-					if (!(Test-Path $remotepath))
-					{
-						Write-Warning "Cannot resolve $remotepath. `n`nYou have specified ReuseSourceFolderStructure and exact folder structure cannot be verified. Proceeding anyway."
-					}
-				}
-				else
-				{
-					$fgrows = $remotedbfiletable.Tables[0].Select("dbname = '$dbname' and FileType = 'ROWS'")[0]
-					$remotepath = Split-Path $fgrows
-					$remotepath = Join-AdminUNC $destnetbios $remotepath
+					if (!(Test-Path $remotepath)) { throw "Cannot resolve $remotepath. `n`nYou have specified ReuseSourceFolderStructure and exact folder structure does not exist. Halting script." }
 				}
 				
 				Write-Verbose "Checking Availability Group status"
