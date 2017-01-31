@@ -190,7 +190,8 @@
 		'Rename-DbaLogin',
 		'Test-DbaOptimizeAdHoc',
 		'Find-DbaAgentJob',
-		'Find-DbaDatabase'
+		'Find-DbaDatabase',
+		'Get-DbaMsdtc'
 	)
 	
 	# Cmdlets to export from this module
