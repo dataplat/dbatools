@@ -191,7 +191,8 @@
 		'Test-DbaOptimizeAdHoc',
 		'Find-DbaAgentJob',
 		'Find-DbaDatabase',
-		'Get-DbaMsdtc'
+		'Get-DbaMsdtc',
+		'Get-DbaUptime'
 	)
 	
 	# Cmdlets to export from this module
