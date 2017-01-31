@@ -182,7 +182,13 @@
 		'Get-DbaDatabaseState',
 		'Set-DbaDatabaseState',
 		'Move-DbaDatabaseFile',
-		'Get-DbaHelpIndex'
+		'Get-DbaHelpIndex',
+		'Get-DbaAgentAlert',
+		'Get-DbaAgentOperator',
+		'Get-DbaPageFileSetting',
+		'Get-DbaSpConfigure',
+		'Rename-DbaLogin',
+		'Test-DbaOptimizeAdHoc'
 	)
 	
 	# Cmdlets to export from this module
