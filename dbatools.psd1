@@ -189,7 +189,8 @@
 		'Get-DbaSpConfigure',
 		'Rename-DbaLogin',
 		'Test-DbaOptimizeAdHoc',
-		'Find-DbaAgentJob'
+		'Find-DbaAgentJob',
+		'Find-DbaDatabase'
 	)
 	
 	# Cmdlets to export from this module
