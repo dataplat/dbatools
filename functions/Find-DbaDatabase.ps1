@@ -19,7 +19,10 @@ Credential object used to connect to the SQL Server as a different user
 What you would like to search on. Either Database Name, Owner, or Service Broker GUID. Database name is the default.
 
 .PARAMETER Pattern
-Value that is searched for. You can use wildcards.
+Value that is searched for. This is a regular expression match but you can just use a plain ol string like 'dbareports'
+
+.PARAMETER Exact
+Search for an exact match instead of a pattern
 
 .PARAMETER Detailed
 Output a more detailed view showing regular output plus Tables, StoredProcedures, Views and ExtendedProperties to see they closely match to help find related databases.
@@ -37,15 +40,15 @@ You should have received a copy of the GNU General Public License along with thi
  https://dbatools.io/Find-DbaDatabase
 
 .EXAMPLE
-Find-DbaDatabase -SqlServer "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern TestDB -Detailed 
+Find-DbaDatabase -SqlServer "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern Report
+Returns all database from the SqlInstances that have a database with Report in the name
+	
+.EXAMPLE
+Find-DbaDatabase -SqlServer "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern TestDB -Exact -Detailed 
 Returns all database from the SqlInstances that have a database named TestDB with a detailed output.
 
 .EXAMPLE
-Find-DbaDatabase -SqlServer "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern Report* -Detailed 
-Returns all database from the SqlInstances that have a database name starting with Report with a detailed output.
-
-.EXAMPLE
-Find-DbaDatabase -SqlServer "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Property ServiceBrokerGuid -Pattern *-faeb-495a-9898-f25a782835f5 -Detailed 
+Find-DbaDatabase -SqlServer "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Property ServiceBrokerGuid -Pattern '-faeb-495a-9898-f25a782835f5' -Detailed 
 Returns all database from the SqlInstances that have the same Service Broker GUID with a deatiled output
 
 #>
@@ -60,6 +63,7 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 		[string]$Property = 'Name',
 		[parameter(Mandatory = $true)]
 		[string]$Pattern,
+		[switch]$Exact,
 		[switch]$Detailed
 	)
 	process
@@ -77,15 +81,14 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 				continue
 			}
 			
-			if ($pattern -match "\*")
-			{
-				$dbs = $server.Databases | Where-Object { $_.$property.ToString() -like $pattern }
-			}
-			else
+			if ($exact -eq $true)
 			{
 				$dbs = $server.Databases | Where-Object { $_.$property -eq $pattern }
 			}
-			
+			else
+			{
+				$dbs = $server.Databases | Where-Object { $_.$property.ToString() -match $pattern }
+			}
 			
 			foreach ($db in $dbs)
 			{
@@ -106,7 +109,7 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
 						SqlInstance = $server.Name
-						Database = $db.Name
+						Name = $db.Name
 						SizeMB = $db.Size
 						Owner = $db.Owner
 						CreateDate = $db.CreateDate
@@ -115,7 +118,8 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 						StoredProcedures = ($db.StoredProcedures | Where-Object { $_.IsSystemObject -eq $false }).Count
 						Views = ($db.Views | Where-Object { $_.IsSystemObject -eq $false }).Count
 						ExtendedPropteries = $extendedproperties
-					}
+						Database = $db
+					} | Select-DefaultField -ExcludeProperty Database
 				}
 				else
 				{
@@ -123,11 +127,12 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
 						SqlInstance = $server.Name
-						Database = $db.Name
+						Name = $db.Name
 						SizeMB = $db.Size
 						Owner = $db.Owner
 						CreateDate = $db.CreateDate
-					}
+						Database = $db
+					} | Select-DefaultField -ExcludeProperty Database
 				}
 			}
 		}
