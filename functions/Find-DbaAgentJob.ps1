@@ -29,7 +29,7 @@ Find all jobs without email notification configured
 Allows you to enter an array of agent job names to ignore 
 
 .PARAMETER Name
-Filter agent jobs to only the names you list. Accepts wildcards (*).
+Filter agent jobs to only the names you list. This is a regex pattern by default so no asterisks are necessary. If you need an exact match, use -Exact.
 
 .PARAMETER Category 
 Filter based on agent job categories
@@ -38,8 +38,11 @@ Filter based on agent job categories
 Filter based on owner of the job/s
 
 .PARAMETER StepName
-Filter based on StepName. Accepts wildcards (*).
-	
+Filter based on StepName. This is a regex pattern by default so no asterisks are necessary. If you need an exact match, use -Exact.
+
+.PARAMETER Exact
+Job Names and Step Names are searched for by regex by default. Use Exact to return only exact matches.
+
 .NOTES 
 Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
 
@@ -53,6 +56,10 @@ You should have received a copy of the GNU General Public License along with thi
 .LINK
 https://dbatools.io/Find-DbaAgentJob
 
+.EXAMPLE
+Find-DbaAgentJob -SQLServer Dev01 -Name backup 
+Returns all agent job(s) that have backup in the name
+	
 .EXAMPLE
 Find-DbaAgentJob -SQLServer Dev01 -LastUsed 10 
 Returns all agent job(s) that have not ran in 10 days
@@ -73,6 +80,10 @@ Returns all job/s on Dev01 that are in either category "REPL-Distribution" or "R
 Get-SqlRegisteredServerName -SqlServer CMSServer -Group Production | Find-DbaAgentJob -Disabled -NoSchedule -Detailed | Format-Table -AutoSize -Wrap
 Queries CMS server to return all SQL instances in the Production folder and then list out all agent jobs that have either been disabled or have no schedule. 
 
+.EXAMPLE
+Find-DbaAgentJob -SQLServer Dev01, Dev02 -Name Mybackup -Exact 
+Returns all agent job(s) that are named exactly Mybackup
+	
 #>
 	[CmdletBinding()]
 	Param (
@@ -80,15 +91,16 @@ Queries CMS server to return all SQL instances in the Production folder and then
 		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
 		[string[]]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential,
+		[string[]]$Name,
+		[string[]]$StepName,
+		[switch]$Exact,
 		[int]$LastUsed,
 		[switch]$Disabled,
 		[switch]$NoSchedule,
 		[switch]$NoEmailNotification,
 		[string[]]$Category,
 		[string]$Owner,
-		[string[]]$Exclude,
-		[string[]]$Name,
-		[string[]]$StepName
+		[string[]]$Exclude
 	)
 	PROCESS
 	{
@@ -114,7 +126,24 @@ Queries CMS server to return all SQL instances in the Production folder and then
 				foreach ($jobname in $Name)
 				{
 					Write-Verbose "Gettin some jobs by their names"
-					$output += $jobs | Where-Object { $_.Name -like $jobname }
+					if ($Exact -eq $true)
+					{
+						$output += $jobs | Where-Object { $_.Name -eq $name }
+					}
+					else
+					{
+						try
+						{
+							$output += $jobs | Where-Object { $_.Name -match $name }
+						}
+						catch
+						{
+							# they prolly put aterisks thinking it's a like
+							$Name = $Name -replace '\*', ''
+							$Name = $Name -replace '\%', ''
+							$output += $jobs | Where-Object { $_.Name -match $name }
+						}
+					}
 				}
 			}
 			
@@ -123,7 +152,24 @@ Queries CMS server to return all SQL instances in the Production folder and then
 				foreach ($name in $StepName)
 				{
 					Write-Verbose "Gettin some jobs by their names"
-					$output += $jobs | Where-Object { $_.JobSteps.Name -like $name }
+					if ($Exact -eq $true)
+					{
+						$output += $jobs | Where-Object { $_.JobSteps.Name -eq $name }
+					}
+					else
+					{
+						try
+						{
+							$output += $jobs | Where-Object { $_.JobSteps.Name -match $name }
+						}
+						catch
+						{
+							# they prolly put aterisks thinking it's a like
+							$StepName = $StepName -replace '\*', ''
+							$StepName = $StepName -replace '\%', ''
+							$output += $jobs | Where-Object { $_.JobSteps.Name -match $name }
+						}
+					}
 				}
 			}
 			
@@ -180,7 +226,25 @@ Queries CMS server to return all SQL instances in the Production folder and then
 				$output = $output | Where-Object { $Exclude -notcontains $_.Name }
 			}
 			
-			$output | Select-Object @{ Name = "ServerName"; Expression = { $_.Parent.name } }, Name, LastRunDate, IsEnabled, HasSchedule, OperatorToEmail, Category, OwnerLoginName -Unique
+			$jobs = $output | Select-Object -Unique
+			
+			foreach ($job in $jobs)
+			{
+				[PSCustomObject]@{
+					ComputerName = $server.NetName
+					InstanceName = $server.ServiceName
+					SqlInstance = $server.Name
+					Name = $job.Name
+					LastRunDate = $job.LastRunDate
+					IsEnabled = $job.IsEnabled
+					CreateDate = $job.CreateDate
+					HasSchedule = $job.HasSchedule
+					OperatorToEmail = $job.OperatorToEmail
+					Category = $job.Category
+					OwnerLoginName = $job.OwnerLoginName
+					Job = $job
+				} | Select-DefaultField -ExcludeProperty Job
+			}
 		}
 	}
 }

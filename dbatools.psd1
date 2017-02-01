@@ -193,7 +193,8 @@
 		'Get-DbaMsdtc',
 		'Get-DbaUptime',
 		'Get-DbaXEventsSession',
-		'Test-DbaOptimizeForAdHoc'
+		'Test-DbaOptimizeForAdHoc',
+		'Find-DbaStoredProcedure'
 	)
 	
 	# Cmdlets to export from this module
