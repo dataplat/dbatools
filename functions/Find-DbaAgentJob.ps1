@@ -124,7 +124,17 @@ Queries CMS server to return all SQL instances in the Production folder and then
 					}
 					else
 					{
-						$output += $jobs | Where-Object { $_.Name -match $name }
+						try
+						{
+							$output += $jobs | Where-Object { $_.Name -match $name }
+						}
+						catch
+						{
+							# they prolly put aterisks thinking it's a like
+							$Name = $Name -replace '\*', ''
+							$Name = $Name -replace '\%', ''
+							$output += $jobs | Where-Object { $_.Name -match $name }
+						}
 					}
 				}
 			}
@@ -140,7 +150,17 @@ Queries CMS server to return all SQL instances in the Production folder and then
 					}
 					else
 					{
-						$output += $jobs | Where-Object { $_.JobSteps.Name -match $name }
+						try
+						{
+							$output += $jobs | Where-Object { $_.JobSteps.Name -match $name }
+						}
+						catch
+						{
+							# they prolly put aterisks thinking it's a like
+							$StepName = $StepName -replace '\*', ''
+							$StepName = $StepName -replace '\%', ''
+							$output += $jobs | Where-Object { $_.JobSteps.Name -match $name }
+						}
 					}
 				}
 			}

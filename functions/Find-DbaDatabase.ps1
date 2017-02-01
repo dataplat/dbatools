@@ -87,7 +87,17 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 			}
 			else
 			{
-				$dbs = $server.Databases | Where-Object { $_.$property.ToString() -match $pattern }
+				try
+				{
+					$dbs = $server.Databases | Where-Object { $_.$property.ToString() -match $pattern }
+				}
+				catch
+				{
+					# they prolly put aterisks thinking it's a like
+					$Pattern = $Pattern -replace '\*', ''
+					$Pattern = $Pattern -replace '\%', ''
+					$dbs = $server.Databases | Where-Object { $_.$property.ToString() -match $pattern }
+				}
 			}
 			
 			foreach ($db in $dbs)
