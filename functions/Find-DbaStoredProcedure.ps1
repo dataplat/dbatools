@@ -1,4 +1,4 @@
-Function Find-DbaStoredProcedure
+﻿Function Find-DbaStoredProcedure
 {
 <#
 .SYNOPSIS
@@ -136,9 +136,10 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 							IsSystemObject = $sp.IsSystemObject
 							CreateDate = $sp.CreateDate
 							LastModified = $sp.DateLastModified
-							StoredProcedureText = $sp.TextBody
+							StoredProcedureTextFound = $sp.TextBody.split("`r`n") | Select-String -pattern $Pattern | ForEach-Object {$_.ToString().TrimEnd(',')}
 							StoredProcedure = $sp
-						} | Select-DefaultField -ExcludeProperty StoredProcedure
+                            StoredProcedureFullText = $sp.TextBody
+						} | Select-DefaultField -ExcludeProperty StoredProcedure, StoredProcedureFullText
 					}
 				}
 				Write-Verbose "Evaluated $sproccount stored procedures in $dbname"
