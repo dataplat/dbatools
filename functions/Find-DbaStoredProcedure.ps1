@@ -2,7 +2,7 @@ Function Find-DbaStoredProcedure
 {
 <#
 .SYNOPSIS
-Returns all stored procedures that contain a specific string or case-insensitive regex pattern.
+Returns all stored procedures that contain a specific case-insensitive string or regex pattern.
 
 .DESCRIPTION
 This function can either run against specific databases or all databases searching all user or user and system stored procedures.
