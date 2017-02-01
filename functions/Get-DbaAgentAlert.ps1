@@ -48,38 +48,46 @@ Returns all SQL Agent alerts  on serverA and serverB\instanceB
 BEGIN {}
 PROCESS
 	{
-		foreach ($Instance in $SqlInstance)
+		foreach ($instance in $SqlInstance)
 		{
 			try
 			{
-                Write-Verbose "Connecting to $Instance"
-				$Instance = Connect-SqlServer -SqlServer $Instance -SqlCredential $sqlcredential
+				Write-Verbose "Connecting to $instance"
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
 			}
 			catch
 			{
-				Write-Warning "Failed to connect to $Instance"
+				Write-Warning "Failed to connect to $instance"
 				continue
 			}
-            Write-Verbose "Getting Edition from $($Instance.Name)"
-            Write-Verbose "$($Instance.Name) is a $($Instance.Edition)"
-			if ( $Instance.Edition -like 'Express*' )
+			
+			Write-Verbose "Getting Edition from $server"
+            Write-Verbose "$server is a $($server.Edition)"
+			if ( $server.Edition -like 'Express*' )
             {
-            Write-Warning "There is no SQL Agent on $($Instance.Name) , it's a $($Instance.Edition)"
+            Write-Warning "There is no SQL Agent on $server, it's a $($server.Edition)"
             continue
             }
-			$alerts = $Instance.Jobserver.Alerts
+			$alerts = $server.Jobserver.Alerts
 			
 			if ( $alerts.count -lt 1)
 			{
-				Write-Verbose "No alerts on $($Instance.Name)"
+				Write-Verbose "No alerts on $server"
 			}
 			else
 			{
-                Write-Verbose "Getting SQL Agent Alerts on $($Instance.Name)"
+                Write-Verbose "Getting SQL Agent Alerts on $server"
 				foreach ($alert in $alerts)
 				{
+					$LastOccurenceDate = $alert.LastOccurrenceDate
+					
+					if (((Get-Date) - $LastOccurenceDate).TotalDays -gt 36500)
+					{
+						$LastOccurenceDate = $null
+					}
+					
 					[pscustomobject]@{
-                        ComputerName = $Instance.NetName
+                        ComputerName = $server.NetName
 						SqlInstance = $server.Name
 						InstanceName = $server.ServiceName
                         AlertName = $alert.Name
@@ -88,11 +96,11 @@ PROCESS
                         AlertType = $alert.AlertType
                         CategoryName = $alert.CategoryName
                         Severity = $alert.Severity
-                        IsEnabled = $alert.Enabled
+                        IsEnabled = $alert.IsEnabled
                         Notifications = $alert.EnumNotifications()
                         DelayBetweenResponses = $alert.delaybetweenresponses
-                        LastOccurenceDate = $alert.LastOccurenceDate
-                        OccurrenceCount = $alert.OccurrenceCount
+                        LastOccurenceDate = $alert.LastOccurrenceDate
+						OccurrenceCount = $alert.OccurrenceCount
 					}
 				}
 			}
