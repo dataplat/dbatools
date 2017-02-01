@@ -127,14 +127,16 @@ WhatIf Example
 			{
 				try
 				{
+					$oldname = $user.name
 					$user.Rename($NewLogin)
 					[pscustomobject]@{
 						SqlInstance = $server.name
 						Database = $db.name
-						OldLogin = $Login
-						NewLogin = $NewLogin
+						OldUser = $oldname
+						NewUser = $NewLogin
 						Notes = "Successfully renamed database user"
 					}
+					
 				}
 				catch
 				{
@@ -144,8 +146,8 @@ WhatIf Example
 					[pscustomobject]@{
 						SqlInstance = $server.name
 						Database = $db.name
-						OldLogin = $Login
-						NewLogin = $NewLogin
+						OldUser = $NewLogin
+						NewUser = $oldname
 						Notes = "Failure to rename. Rolled back change."
 					}
 					Write-Exception $_
