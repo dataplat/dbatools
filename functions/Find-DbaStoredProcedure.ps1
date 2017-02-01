@@ -7,7 +7,7 @@ Returns all stored procedures that contain a specific case-insensitive string or
 .DESCRIPTION
 This function can either run against specific databases or all databases searching all user or user and system stored procedures.
 	
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 SQLServer name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input
 
 .PARAMETER SqlCredential
@@ -39,22 +39,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Find-DbaStoredProcedure
 
 .EXAMPLE
-Find-DbaStoredProcedure -SqlServer DEV01 -Pattern whatever
+Find-DbaStoredProcedure -SqlInstance DEV01 -Pattern whatever
 
 Searches all user databases stored procedures for "whatever" in the textbody
 	
 .EXAMPLE
-Find-DbaStoredProcedure -SqlServer sql2016 -Pattern '\w+@\w+\.\w+'
+Find-DbaStoredProcedure -SqlInstance sql2016 -Pattern '\w+@\w+\.\w+'
 
 Searches all databases for all stored procedures that contain a valid email pattern in the textbody
 
 .EXAMPLE
-Find-DbaStoredProcedure -SqlServer DEV01 -Databases MyDB -Pattern 'some string' -Verbose
+Find-DbaStoredProcedure -SqlInstance DEV01 -Databases MyDB -Pattern 'some string' -Verbose
 
 Searches in "mydb" database stored procedures for "some string" in the textbody
 
 .EXAMPLE
-Find-DbaStoredProcedure -SqlServer sql2016 -Databases MyDB -Pattern RUNTIME -IncludeSystemObjects
+Find-DbaStoredProcedure -SqlInstance sql2016 -Databases MyDB -Pattern RUNTIME -IncludeSystemObjects
 
 Searches in "mydb" database stored procedures for "runtime" in the textbody
 
