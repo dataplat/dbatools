@@ -57,6 +57,10 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Find-DbaAgentJob
 
 .EXAMPLE
+Find-DbaAgentJob -SQLServer Dev01 -Name backup 
+Returns all agent job(s) that have backup in the name
+	
+.EXAMPLE
 Find-DbaAgentJob -SQLServer Dev01 -LastUsed 10 
 Returns all agent job(s) that have not ran in 10 days
 
