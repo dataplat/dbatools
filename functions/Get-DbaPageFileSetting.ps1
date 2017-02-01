@@ -1,4 +1,5 @@
-﻿Function Get-DbaPageFileSetting {
+﻿Function Get-DbaPageFileSetting
+{
 <#
 .SYNOPSIS
 Returns information about the network connection of the target computer including NetBIOS name, IP Address, domain name and fully qualified domain name (FQDN).
@@ -34,119 +35,121 @@ Get-DbaPageFileSetting -ComputerName ServerA,ServerB
 Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status, LastModified, LastAccessed, AllocatedBaseSize, InitialSize, MaximumSize, PeakUsage, CurrentUsage  for ServerA and ServerB
 
 .EXAMPLE
- ServerA | Get-DbaPageFileSetting
+'ServerA' | Get-DbaPageFileSetting
 
 Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status, LastModified, LastAccessed, AllocatedBaseSize, InitialSize, MaximumSize, PeakUsage, CurrentUsage  for ServerA
 
-#>[CmdletBinding()]
+#>	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $false, Position = 0, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
 		[Alias("cn", "host", "ServerInstance", "Server", "SqlServer")]
 		[object]$ComputerName,
-		[PSCredential] [System.Management.Automation.CredentialAttribute()]$Credential
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$Credential
 	)
-BEGIN {}
-PROCESS
-    {
-        foreach ( $Computer in $ComputerName )
-        {
+	PROCESS
+	{
+		foreach ($Computer in $ComputerName)
+		{
 			$reply = Resolve-DbaNetworkName -ComputerName $Computer -erroraction silentlycontinue
-            if ( $reply.ComputerName ) # we can reach $computer
-            {
-                $computer = $reply.ComputerName
-                Write-Verbose "Connecting to $Computer via CIM (WSMan)"
-                $CompSys = Get-CimInstance -ComputerName $Computer -Query "SELECT * FROM win32_computersystem" -ErrorVariable $MyErr
-                if ( $CompSys ) # we have computersystem class via WSMan
-                {
-                    Write-Verbose "Successfully retrieved ComputerSystem information on $Computer via CIM (WSMan)"
-                    if ( $CompSys.PSobject.Properties.Name -contains "automaticmanagedpagefile" ) # pagefile exists on $computer
-                    {
-                        Write-Verbose "Successfully retrieved PageFile information on $Computer via CIM (WSMan)"
-                        if ( $CompSys.automaticmanagedpagefile -eq $False ) # pagefile is not automatically managed, so get settings via WSMan
-                        {
-                            $PF = Get-CimInstance -ComputerName $Computer -Query "SELECT * FROM win32_pagefile" # deprecated !
-                            $PFU = Get-CimInstance -ComputerName $Computer -Query "SELECT * FROM win32_pagefileUsage"
-                            $PFS = Get-CimInstance -ComputerName $Computer -Query "SELECT * FROM win32_pagefileSetting"
-                        }
-                    }
-                    else # pagefile does not exist on $computer, warn and try next computer
-                    {
-                        Write-Warning "$computer Operating System too old. No Pagefile information available."
-                        continue
-                    }
-                }
-			    else # we do not get computersystem class via WSMan, try via DCom
-                {
-				    Write-Verbose "No WSMan connection to $Computer"
-                    Write-Verbose "Getting computer information from server $Computer via CIM (DCOM)"
-			        $sessionoption = New-CimSessionOption -Protocol DCOM
-			        $CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -Credential $Credential
-                    $CompSys = Get-CimInstance -CimSession $CIMsession -Query "SELECT * FROM win32_computersystem" -ErrorVariable $MyErr
-                    if ( $CompSys ) # we have computersystem class via DCom
-                    {
-                        Write-Verbose "Successfully retrieved ComputerSystem information on $Computer via CIM (DCOM)"
-                        if ( $CompSys.PSobject.Properties.Name -contains "automaticmanagedpagefile" ) # pagefile exists on $computer
-                        {
-                            Write-Verbose "Successfully retrieved PageFile information on $Computer via CIM (DCOM)"
-                            if ( $CompSys.automaticmanagedpagefile -eq $False ) # pagefile is not automatically managed, so get settings via DCom CimSession
-                            {
-                                $PF = Get-CimInstance -CimSession $CIMsession -Query "SELECT * FROM win32_pagefile" # deprecated !
-                                $PFU = Get-CimInstance -CimSession $CIMsession -Query "SELECT * FROM win32_pagefileUsage"
-                                $PFS = Get-CimInstance -CimSession $CIMsession -Query "SELECT * FROM win32_pagefileSetting"
-                            }
-                        }
-                        else # pagefile does not exist on $computer, warn and try next computer
-                        {
-                            Write-Warning "$computer Operating System too old. No Pagefile information available."
-                            continue
-                        }
-                    }
-			        else # we don't get computersystem, not wia WSMan nor via DCom, warn and try next computer
-			        {
-				        Write-Warning "No WSMan nor DCom connection to $Computer"
-                        continue
-			        }
-                }
-                if ( $CompSys.automaticmanagedpagefile -eq $False ) # pagefile is not automatic managed, so return settings
-                {
-                    [PSCustomObject]@{
-                                'ComputerName' = $Computer;
-                                'AutoPageFile' = $CompSys.automaticmanagedpagefile;
-                                'FileName' = $PF.name; # deprecated !
-                                'Status' = $PF.status; # deprecated !
-                                'LastModified' = $PF.LastModified;
-                                'LastAccessed' = $PF.LastAccessed;
-                                'AllocatedBaseSize' = $PFU.AllocatedBaseSize; # in MB, between Initial and Maximum Size
-                                'InitialSize' = $PFS.InitialSize; # in MB
-                                'MaximumSize' = $PFS.MaximumSize; # in MB
-                                'PeakUsage' = $PFU.peakusage; # in MB
-                                'CurrentUsage' = $PFU.currentusage; # in MB
-                                }
-                }
-                else # pagefile is automatic managed, so there are no settings
-                {
-                    [PSCustomObject]@{
-                                'ComputerName' = $Computer
-                                'AutoPageFile' = $CompSys.automaticmanagedpagefile
-                                'FileName' = $null
-                                'Status' = $null
-                                'LastModified' = $null
-                                'LastAccessed' = $null
-                                'AllocatedBaseSize' = $null
-                                'InitialSize' = $null
-                                'MaximumSize' = $null
-                                'PeakUsage' = $null
-                                'CurrentUsage' = $null
-                                }
-                }
-                if ( $CIMsession ) { Remove-CimSession $CIMsession }
-            }
-            else # we can not reach $computer
-            {
-                Write-Warning "$Computer is not available."
-            }
-        }
+			
+			if (!$reply.ComputerName) # we can reach $computer
+			{
+				Write-Warning "$Computer cannot be reached."
+				continue
+			}
+			
+			$computer = $reply.ComputerName
+			Write-Verbose "Connecting to $Computer via CIM (WSMan)"
+			$CompSys = Get-CimInstance -ComputerName $Computer -Query "SELECT * FROM win32_computersystem" -ErrorVariable $MyErr
+			
+			if ($CompSys) # we have computersystem class via WSMan
+			{
+				Write-Verbose "Successfully retrieved ComputerSystem information on $Computer via CIM (WSMan)"
+				if ($CompSys.PSobject.Properties.Name -contains "automaticmanagedpagefile") # pagefile exists on $computer
+				{
+					Write-Verbose "Successfully retrieved PageFile information on $Computer via CIM (WSMan)"
+					if ($CompSys.automaticmanagedpagefile -eq $False) # pagefile is not automatically managed, so get settings via WSMan
+					{
+						$PF = Get-CimInstance -ComputerName $Computer -Query "SELECT * FROM win32_pagefile" # deprecated !
+						$PFU = Get-CimInstance -ComputerName $Computer -Query "SELECT * FROM win32_pagefileUsage"
+						$PFS = Get-CimInstance -ComputerName $Computer -Query "SELECT * FROM win32_pagefileSetting"
+					}
+				}
+				else # pagefile does not exist on $computer, warn and try next computer
+				{
+					Write-Warning "$computer Operating System too old. No Pagefile information available."
+					continue
+				}
+			}
+			else # we do not get computersystem class via WSMan, try via DCom
+			{
+				Write-Verbose "No WSMan connection to $Computer"
+				Write-Verbose "Getting computer information from server $Computer via CIM (DCOM)"
+				
+				$sessionoption = New-CimSessionOption -Protocol DCOM
+				$CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -Credential $Credential
+				$CompSys = Get-CimInstance -CimSession $CIMsession -Query "SELECT * FROM win32_computersystem" -ErrorVariable $MyErr
+				
+				if ($CompSys) # we have computersystem class via DCom
+				{
+					Write-Verbose "Successfully retrieved ComputerSystem information on $Computer via CIM (DCOM)"
+					if ($CompSys.PSobject.Properties.Name -contains "automaticmanagedpagefile") # pagefile exists on $computer
+					{
+						Write-Verbose "Successfully retrieved PageFile information on $Computer via CIM (DCOM)"
+						if ($CompSys.automaticmanagedpagefile -eq $False) # pagefile is not automatically managed, so get settings via DCom CimSession
+						{
+							$PF = Get-CimInstance -CimSession $CIMsession -Query "SELECT * FROM win32_pagefile" # deprecated !
+							$PFU = Get-CimInstance -CimSession $CIMsession -Query "SELECT * FROM win32_pagefileUsage"
+							$PFS = Get-CimInstance -CimSession $CIMsession -Query "SELECT * FROM win32_pagefileSetting"
+						}
+					}
+					else # pagefile does not exist on $computer, warn and try next computer
+					{
+						Write-Warning "$computer Operating System too old. No Pagefile information available."
+						continue
+					}
+				}
+				else # we don't get computersystem, not wia WSMan nor via DCom, warn and try next computer
+				{
+					Write-Warning "No WSMan nor DCom connection to $Computer"
+					continue
+				}
+			}
+			if ($CompSys.automaticmanagedpagefile -eq $False) # pagefile is not automatic managed, so return settings
+			{
+				[PSCustomObject]@{
+					ComputerName = $Computer
+					AutoPageFile = $CompSys.automaticmanagedpagefile
+					FileName = $PF.name # deprecated !
+					Status = $PF.status # deprecated !
+					LastModified = $PF.LastModified
+					LastAccessed = $PF.LastAccessed
+					AllocatedBaseSize = $PFU.AllocatedBaseSize # in MB, between Initial and Maximum Size
+					InitialSize = $PFS.InitialSize # in MB
+					MaximumSize = $PFS.MaximumSize # in MB
+					PeakUsage = $PFU.peakusage # in MB
+					CurrentUsage = $PFU.currentusage # in MB
+				}
+			}
+			else # pagefile is automatic managed, so there are no settings
+			{
+				[PSCustomObject]@{
+					ComputerName = $Computer
+					AutoPageFile = $CompSys.automaticmanagedpagefile
+					FileName = $null
+					Status = $null
+					LastModified = $null
+					LastAccessed = $null
+					AllocatedBaseSize = $null
+					InitialSize = $null
+					MaximumSize = $null
+					PeakUsage = $null
+					CurrentUsage = $null
+					Notes = "Page file is automatically managed, no settings to report"
+				} | Select-DefaultField -Property ComputerName, AutoPageFile
+			}
+			if ($CIMsession) { Remove-CimSession $CIMsession }
+		}
 	}
-
-END {}
 }
