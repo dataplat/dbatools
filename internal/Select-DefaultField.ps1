@@ -23,7 +23,7 @@
 	
 	if ($ExcludeProperty)
 	{
-		$properties = $InputObject | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name | Where-Object { $_ -notin $ExcludeProperty } 
+		$properties = ($InputObject.PsObject.Members | Where-Object MemberType -ne 'Method' | Where-Object { $_.Name -notin $ExcludeProperty }).Name
 		$defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', [string[]]$properties)
 	}
 	else
