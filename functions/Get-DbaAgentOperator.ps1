@@ -82,7 +82,11 @@ PROCESS
 				{
 					$jobs = $server.JobServer.jobs | Where-Object { $_.OperatorToEmail, $_.OperatorToNetSend, $_.OperatorToPage -contains $operator.Name }
 					$lastemail = $operator.LastEmailDate
-					if ($lastemail -eq '1/1/0001 12:00:00 AM') { $lastemail = $null }
+					
+					if (((Get-Date) - $lastemail).TotalDays -gt 36500)
+					{
+						$lastemail = $null
+					}
 					
 					[pscustomobject]@{
 						ComputerName = $server.NetName
