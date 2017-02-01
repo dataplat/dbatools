@@ -80,8 +80,8 @@ PROCESS
 				{
 					[pscustomobject]@{
                         ComputerName = $Instance.NetName
-						InstanceName = $Instance.ServiceName
-                        SqlInstance = $Instance.Name
+						SqlInstance = $server.Name
+						InstanceName = $server.ServiceName
                         AlertName = $alert.Name
                         AlertID = $alert.ID
                         JobName = $alert.JobName
