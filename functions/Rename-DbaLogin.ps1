@@ -15,7 +15,7 @@ Source SQL Server.You must have sysadmin access and server version must be SQL S
 .PARAMETER Destination
 Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-.PARAMETER SqlInstance 
+.PARAMETER SqlCredential 
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
 $scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
@@ -29,6 +29,9 @@ The current Login on the server
 .PARAMETER NewLogin 
 The new Login that you wish to use. If it is a windows user login, then the SID must match.  
 
+.PARAMETER Confirm
+Prompts to confirm actions
+		
 .PARAMETER WhatIf
 Shows what would happen if the command were to run. No actions are actually performed. 
 

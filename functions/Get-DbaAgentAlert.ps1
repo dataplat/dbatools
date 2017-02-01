@@ -7,8 +7,8 @@ Returns all SQL Agent alerts on a SQL Server Agent.
 .DESCRIPTION
 This function returns SQL Agent alerts.
 
-.PARAMETER SqlServer
-SQLServer name or SMO object representing the SQL Server to connect to.
+.PARAMETER SqlInstance
+SqlInstance name or SMO object representing the SQL Server to connect to.
 This can be a collection and receive pipeline input.
 
 .PARAMETER SqlCredential
@@ -30,7 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Get-DbaAgentAlert
 
 .EXAMPLE
-Get-DbaAgentAlert -SqlServer ServerA,ServerB\instanceB
+Get-DbaAgentAlert -SqlInstance ServerA,ServerB\instanceB
 Returns all SQL Agent alerts on serverA and serverB\instanceB
 
 .EXAMPLE
@@ -53,7 +53,7 @@ PROCESS
 			try
 			{
 				Write-Verbose "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch
 			{

@@ -7,7 +7,7 @@ Returns all SQL Agent operators on a SQL Server Agent.
 .DESCRIPTION
 This function returns SQL Agent operators.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 SQLServer name or SMO object representing the SQL Server to connect to.
 This can be a collection and receive pipeline input.
 
@@ -30,7 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Get-DbaAgentOperator
 
 .EXAMPLE
-Get-DbaAgentOperator -SqlServer ServerA,ServerB\instanceB
+Get-DbaAgentOperator -SqlInstance ServerA,ServerB\instanceB
 Returns any SQL Agent operators on serverA and serverB\instanceB
 
 .EXAMPLE
@@ -53,7 +53,7 @@ PROCESS
 			try
 			{
 				Write-Verbose "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch
 			{
