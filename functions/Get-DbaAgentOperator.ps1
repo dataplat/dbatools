@@ -48,47 +48,56 @@ Returns all SQL Agent operators  on serverA and serverB\instanceB
 BEGIN {}
 PROCESS
 	{
-		foreach ($Instance in $SqlInstance)
+		foreach ($instance in $SqlInstance)
 		{
 			try
 			{
-                Write-Verbose "Connecting to $Instance"
-				$Instance = Connect-SqlServer -SqlServer $Instance -SqlCredential $sqlcredential
+				Write-Verbose "Connecting to $instance"
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
 			}
 			catch
 			{
-				Write-Warning "Failed to connect to $Instance"
+				Write-Warning "Failed to connect to $instance"
 				continue
 			}
-            Write-Verbose "Getting Edition from $($Instance.Name)"
-            Write-Verbose "$($Instance.Name) is a $($Instance.Edition)"
-			if ( $Instance.Edition -like 'Express*' )
+			
+			Write-Verbose "Getting Edition from $server"
+			Write-Verbose "$server is a $($server.Edition)"
+			
+			if ( $server.Edition -like 'Express*' )
             {
-            Write-Warning "There is no SQL Agent on $($Instance.Name) , it's a $($Instance.Edition)"
+            Write-Warning "There is no SQL Agent on $server , it's a $($server.Edition)"
             continue
-            }
-			$operators = $instance.Jobserver.operators
+			}
+			
+			$operators = $server.Jobserver.operators
 			
 			if ( $operators.count -lt 1 )
 			{
-				Write-Verbose "No operators on $Instance"
+				Write-Verbose "No operators on $server"
 			}
 			else
 			{
 				foreach ( $operator in $operators )
 				{
+					$jobs = $server.JobServer.jobs | Where-Object { $_.OperatorToEmail, $_.OperatorToNetSend, $_.OperatorToPage -contains $operator.Name }
+					$lastemail = $operator.LastEmailDate
+					if ($lastemail -eq '1/1/0001 12:00:00 AM') { $lastemail = $null }
+					
 					[pscustomobject]@{
-                        ComputerName = $Instance.NetName
-						InstanceName = $Instance.ServiceName
-                        SqlInstance = $Instance.Name
+                        ComputerName = $server.NetName
+						InstanceName = $server.ServiceName
+						SqlInstance = $server.Name
+						OperatorName = $operator.Name
                         OperatorID = $operator.ID
                         IsEnabled = $operator.Enabled
                         EmailAddress = $operator.EmailAddress
-                        LastEmailDate = $operator.LastEmailDate
-					}
+						LastEmailDate = $lastemail
+						RelatedJobs = $jobs
+						Operator = $operator
+					} | Select-DefaultField -ExcludeProperty Operator
 				}
 			}
 		}
 	}
-END	{}
 }
