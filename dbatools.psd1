@@ -188,8 +188,12 @@
 		'Get-DbaPageFileSetting',
 		'Get-DbaSpConfigure',
 		'Rename-DbaLogin',
-		'Test-DbaOptimizeAdHoc',
-		'Find-DbaAgentJob'
+		'Find-DbaAgentJob',
+		'Find-DbaDatabase',
+		'Get-DbaMsdtc',
+		'Get-DbaUptime',
+		'Get-DbaXEventsSession',
+		'Test-DbaOptimizeForAdHoc'
 	)
 	
 	# Cmdlets to export from this module

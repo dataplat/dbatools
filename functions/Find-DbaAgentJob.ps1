@@ -40,9 +40,6 @@ Filter based on owner of the job/s
 .PARAMETER StepName
 Filter based on StepName. Accepts wildcards (*).
 	
-.PARAMETER Detailed
-Returns a more detailed output showing why each job has been reported
-
 .NOTES 
 Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
 
@@ -61,7 +58,7 @@ Find-DbaAgentJob -SQLServer Dev01 -LastUsed 10
 Returns all agent job(s) that have not ran in 10 days
 
 .EXAMPLE 
-Find-DbaAgentJob -SQLServer Dev01 -Disabled -NoEmailNotification -NoSchedule -Detailed
+Find-DbaAgentJob -SQLServer Dev01 -Disabled -NoEmailNotification -NoSchedule
 Returns all agent job(s) that are either disabled, have no email notification or dont have a schedule. returned with detail
 
 .EXAMPLE
@@ -69,11 +66,11 @@ Find-DbaAgentJob -SQLServer Dev01 -LastUsed 10 -Exclude "Yearly - RollUp Workloa
 Returns all agent jobs that havent ran in the last 10 ignoring jobs "Yearly - RollUp Workload" and "SMS - Notification" 
 
 .EXAMPLE 
-Find-DbaAgentJob -SqlServer Dev01 -Category "REPL-Distribution", "REPL-Snapshot" -Detailed | ft -AutoSize -Wrap 
+Find-DbaAgentJob -SqlServer Dev01 -Category "REPL-Distribution", "REPL-Snapshot" -Detailed | Format-Table -AutoSize -Wrap 
 Returns all job/s on Dev01 that are in either category "REPL-Distribution" or "REPL-Snapshot" with detailed output
 
 .EXAMPLE 
-Get-SqlRegisteredServerName -SqlServer CMSServer -Group Production | Find-DbaAgentJob -Disabled -NoSchedule -Detailed | ft -AutoSize -Wrap
+Get-SqlRegisteredServerName -SqlServer CMSServer -Group Production | Find-DbaAgentJob -Disabled -NoSchedule -Detailed | Format-Table -AutoSize -Wrap
 Queries CMS server to return all SQL instances in the Production folder and then list out all agent jobs that have either been disabled or have no schedule. 
 
 #>
@@ -91,13 +88,8 @@ Queries CMS server to return all SQL instances in the Production folder and then
 		[string]$Owner,
 		[string[]]$Exclude,
 		[string[]]$Name,
-		[string[]]$StepName,
-		[switch]$Detailed
+		[string[]]$StepName
 	)
-	BEGIN
-	{
-		$output = @()
-	}
 	PROCESS
 	{
 		foreach ($servername in $SqlServer)
@@ -187,15 +179,8 @@ Queries CMS server to return all SQL instances in the Production folder and then
 				Write-Verbose "Excluding job/s based on Exclude"
 				$output = $output | Where-Object { $Exclude -notcontains $_.Name }
 			}
-		}
-		
-		if ($Detailed -eq $true)
-		{
-			return ($output | Select-Object @{ Name = "ServerName"; Expression = { $_.Parent.name } }, name, LastRunDate, IsEnabled, HasSchedule, OperatorToEmail, Category, OwnerLoginName -Unique)
-		}
-		else
-		{
-			return ($output | Select-Object @{ Name = "ServerName"; Expression = { $_.Parent.name } }, name -Unique)
+			
+			$output | Select-Object @{ Name = "ServerName"; Expression = { $_.Parent.name } }, Name, LastRunDate, IsEnabled, HasSchedule, OperatorToEmail, Category, OwnerLoginName -Unique
 		}
 	}
 }

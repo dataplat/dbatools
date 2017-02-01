@@ -71,8 +71,6 @@ Get-DbaMsdtc -ComputerName srv0042 | Out-Gridview
 
 Get DTC status for the computer srv0042 and show in a grid view
 
-
-
 #>
 	
 	[CmdletBinding()]

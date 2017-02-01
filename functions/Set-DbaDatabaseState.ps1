@@ -10,9 +10,9 @@ Sets some common "states" on databases:
  - "Status" options (Online, Offline, Emergency, plus a special "Detached")
  - "Access" options (SingleUser, RestrictedUser, MultiUser)
 
-Returns an object with SqlInstance, Database, RW, Status, Access, Warning
+Returns an object with SqlInstance, Database, RW, Status, Access, Notes
 
-Warning gets filled when something went wrong setting the state
+Notes gets filled when something went wrong setting the state
 
 .PARAMETER SqlInstance
 The SQL Server that you're connecting to
@@ -233,11 +233,12 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 		Get-WrongCombo -optset $RWExclusive -allparams $allparams
 		Get-WrongCombo -optset $StatusExclusive -allparams $allparams
 		Get-WrongCombo -optset $AccessExclusive -allparams $allparams
+		
+		$dbs = @()
 	}
 	PROCESS
 	{
-		$dbs = @()
-		
+		# use PROCESS to gather info, and END to execute on it
 		if ($databases.Length -eq 0 -and $AllDatabases -eq $false -and !$smodatabase)
 		{
 			throw "You must specify a -AllDatabases or -Database to continue"
@@ -262,7 +263,7 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 					Continue
 				}
 				$all_dbs = $server.Databases
-				$dbs = $all_dbs | Where-Object { @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name }
+				$dbs += $all_dbs | Where-Object { @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name }
 				
 				if ($databases.count -gt 0)
 				{
@@ -274,7 +275,10 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 				}
 			}
 		}
-		
+	}
+	
+	END
+	{
 		if ($Detached -eq $true)
 		{
 			# we need to see what snaps are on the server, as base databases cannot be dropped
@@ -438,7 +442,7 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 			
 			# Refresh info about database state here (before detaching)
 			$db.Refresh()
-						
+			
 			if ($Detached -eq $true)
 			{
 				if ($db.Name -in $snaps)
@@ -539,9 +543,10 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 				RW = $newstate.RW
 				Status = $newstate.Status
 				Access = $newstate.Access
-				Warning = $warn
+				Notes = $warn
 				Database = $db
 			} | Select-DefaultField -ExcludeProperty Database
 		}
 	}
+	
 }

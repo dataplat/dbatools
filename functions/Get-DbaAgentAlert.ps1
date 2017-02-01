@@ -7,8 +7,8 @@ Returns all SQL Agent alerts on a SQL Server Agent.
 .DESCRIPTION
 This function returns SQL Agent alerts.
 
-.PARAMETER SqlServer
-SQLServer name or SMO object representing the SQL Server to connect to.
+.PARAMETER SqlInstance
+SqlInstance name or SMO object representing the SQL Server to connect to.
 This can be a collection and receive pipeline input.
 
 .PARAMETER SqlCredential
@@ -30,7 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Get-DbaAgentAlert
 
 .EXAMPLE
-Get-DbaAgentAlert -SqlServer ServerA,ServerB\instanceB
+Get-DbaAgentAlert -SqlInstance ServerA,ServerB\instanceB
 Returns all SQL Agent alerts on serverA and serverB\instanceB
 
 .EXAMPLE
@@ -48,51 +48,59 @@ Returns all SQL Agent alerts  on serverA and serverB\instanceB
 BEGIN {}
 PROCESS
 	{
-		foreach ($Instance in $SqlInstance)
+		foreach ($instance in $SqlInstance)
 		{
 			try
 			{
-                Write-Verbose "Connecting to $Instance"
-				$Instance = Connect-SqlServer -SqlServer $Instance -SqlCredential $sqlcredential
+				Write-Verbose "Connecting to $instance"
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch
 			{
-				Write-Warning "Failed to connect to $Instance"
+				Write-Warning "Failed to connect to $instance"
 				continue
 			}
-            Write-Verbose "Getting Edition from $($Instance.Name)"
-            Write-Verbose "$($Instance.Name) is a $($Instance.Edition)"
-			if ( $Instance.Edition -like 'Express*' )
+			
+			Write-Verbose "Getting Edition from $server"
+            Write-Verbose "$server is a $($server.Edition)"
+			if ( $server.Edition -like 'Express*' )
             {
-            Write-Warning "There is no SQL Agent on $($Instance.Name) , it's a $($Instance.Edition)"
+            Write-Warning "There is no SQL Agent on $server, it's a $($server.Edition)"
             continue
             }
-			$alerts = $Instance.Jobserver.Alerts
+			$alerts = $server.Jobserver.Alerts
 			
 			if ( $alerts.count -lt 1)
 			{
-				Write-Verbose "No alerts on $($Instance.Name)"
+				Write-Verbose "No alerts on $server"
 			}
 			else
 			{
-                Write-Verbose "Getting SQL Agent Alerts on $($Instance.Name)"
+                Write-Verbose "Getting SQL Agent Alerts on $server"
 				foreach ($alert in $alerts)
 				{
+					$LastOccurenceDate = $alert.LastOccurrenceDate
+					
+					if (((Get-Date) - $LastOccurenceDate).TotalDays -gt 36500)
+					{
+						$LastOccurenceDate = $null
+					}
+					
 					[pscustomobject]@{
-                        ComputerName = $Instance.NetName
-						InstanceName = $Instance.ServiceName
-                        SqlInstance = $Instance.Name
+                        ComputerName = $server.NetName
+						SqlInstance = $server.Name
+						InstanceName = $server.ServiceName
                         AlertName = $alert.Name
                         AlertID = $alert.ID
                         JobName = $alert.JobName
                         AlertType = $alert.AlertType
                         CategoryName = $alert.CategoryName
                         Severity = $alert.Severity
-                        IsEnabled = $alert.Enabled
+                        IsEnabled = $alert.IsEnabled
                         Notifications = $alert.EnumNotifications()
                         DelayBetweenResponses = $alert.delaybetweenresponses
-                        LastOccurenceDate = $alert.LastOccurenceDate
-                        OccurrenceCount = $alert.OccurrenceCount
+                        LastOccurenceDate = $alert.LastOccurrenceDate
+						OccurrenceCount = $alert.OccurrenceCount
 					}
 				}
 			}

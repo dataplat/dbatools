@@ -15,7 +15,7 @@ Source SQL Server.You must have sysadmin access and server version must be SQL S
 .PARAMETER Destination
 Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-.PARAMETER SqlInstance 
+.PARAMETER SqlCredential 
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
 $scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
@@ -29,9 +29,11 @@ The current Login on the server
 .PARAMETER NewLogin 
 The new Login that you wish to use. If it is a windows user login, then the SID must match.  
 
+.PARAMETER Confirm
+Prompts to confirm actions
+		
 .PARAMETER WhatIf
 Shows what would happen if the command were to run. No actions are actually performed. 
- 
 
 .NOTES 
 Original Author: Mitchell Hamann (@SirCaptainMitch)
@@ -49,75 +51,112 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Rename-DbaLogin
 
 .EXAMPLE   
-Rename-DbaLogin -SqlInstance localhost -Login 'DbaToolsUser' -NewLogin 'captain' 
+Rename-DbaLogin -SqlInstance localhost -Login DbaToolsUser -NewLogin captain
 
 SQL Login Example 
 
 .EXAMPLE   
-Rename-DbaLogin -SqlInstance localhost -Login 'domain\oldname' -NewLogin 'domain\newname' 
+Rename-DbaLogin -SqlInstance localhost -Login domain\oldname -NewLogin domain\newname
 
 Change the windowsuser login name.
 
 .EXAMPLE 
-Rename-DbaLogin -SqlInstance localhost -Login 'dbatoolsuser' -NewLogin 'captain' -WhatIf
+Rename-DbaLogin -SqlInstance localhost -Login dbatoolsuser -NewLogin captain -WhatIf
 
-WhatIf Example 
-
+WhatIf Example
 
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
 		[object]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlInstanceCredential,
-		[parameter(Mandatory = $true)]
-		[String]$Login, 
+		[System.Management.Automation.PSCredential]$SqlCredential,
 		[parameter(Mandatory = $true)]
 		[String]$NewLogin
-	)	
+	)
+	
+	DynamicParam { if ($SqlInstance) { return Get-ParamSqlLogin -SqlServer $SqlInstance -SqlCredential $SqlCredential } }
 	
 	BEGIN
-	{	
-		$sourceserver = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlInstanceCredential					
-		$Databases = $sourceserver.Databases
-		$currentUser = $sourceserver.Logins[$Login]
+	{
+		$Login = $psboundparameters.Login
+		
+		if (!$Login) { throw "You must specify a login" }
+		
+		$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+		$Databases = $server.Databases
+		
+		$currentLogin = $server.Logins[$Login]
 		
 	}
 	PROCESS
-	{		
-		if($Pscmdlet.ShouldProcess($SqlInstance, "Changing Login name and database mappings from $Login to $NewLogin")){ 
-			try { 
-				$currentUser.rename($NewLogin)
-			} catch { 
-				Write-Warning "Failed to rename the user $Login, please chack the log."
-				Write-Exception $_ 
-			}			
-			foreach ($db in $currentUser.EnumDatabaseMappings())
+	{
+		if ($Pscmdlet.ShouldProcess($SqlInstance, "Changing Login name from  [$Login] to [$NewLogin]"))
+		{
+			try
 			{
-				$db = $databases[$db.DBName]
-
-				Write-Output "Starting update for $($db.Name)" 
-
-				try { 
-									
-					Write-Output "Changing database user: $Login to $NewLogin"
-					$db.Users[$Login].Rename($NewLogin)
-					
-				} catch {
-
-					Write-Warning "Rolling back update to login: $Login"
-					$currentUser.rename($Login) 
-
-					Write-Warning "The update to User: $Login failed on $($db.Name) Please check the log."				
-					Write-Exception $_ 
+				$dbenums = $currentLogin.EnumDatabaseMappings()
+				$currentLogin.rename($NewLogin)
+				[pscustomobject]@{
+					SqlInstance = $server.name
+					Database = "N/A"
+					OldLogin = $Login
+					NewLogin = $NewLogin
+					Notes = "Successfully renamed login"
 				}
-			}			
+			}
+			catch
+			{
+				$dbenums = $null
+				[pscustomobject]@{
+					SqlInstance = $server.name
+					Database = $null
+					OldLogin = $Login
+					NewLogin = $NewLogin
+					Notes = "Failure to rename login"
+				}
+				Write-Exception $_
+				continue
+			}
 		}
-				
-	}
-	
-	END
-	{		
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Login update completed." }
+		
+		foreach ($db in $dbenums)
+		{
+			$db = $databases[$db.DBName]
+			$user = $db.Users[$Login]
+			Write-Verbose "Starting update for $db"
+			
+			if ($Pscmdlet.ShouldProcess($SqlInstance, "Changing database $db user $user from [$Login] to [$NewLogin]"))
+			{
+				try
+				{
+					$oldname = $user.name
+					$user.Rename($NewLogin)
+					[pscustomobject]@{
+						SqlInstance = $server.name
+						Database = $db.name
+						OldUser = $oldname
+						NewUser = $NewLogin
+						Notes = "Successfully renamed database user"
+					}
+					
+				}
+				catch
+				{
+					Write-Warning "Rolling back update to login: $Login"
+					$currentLogin.rename($Login)
+					
+					[pscustomobject]@{
+						SqlInstance = $server.name
+						Database = $db.name
+						OldUser = $NewLogin
+						NewUser = $oldname
+						Notes = "Failure to rename. Rolled back change."
+					}
+					Write-Exception $_
+					break
+				}
+			}
+		}
 	}
 }

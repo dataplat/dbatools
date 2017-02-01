@@ -52,7 +52,7 @@ Get-DbaDatabaseState -SqlInstance sqlserver2014a -Exclude HR
 Gets options for all databases of the sqlserver2014a instance except HR
 
 .EXAMPLE
-sqlserver2014a, sqlserver2014b | Get-DbaDatabaseState
+'sqlserver2014a', 'sqlserver2014b' | Get-DbaDatabaseState
 
 Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 

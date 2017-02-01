@@ -48,7 +48,7 @@ Get Optimize for AdHoc Workloads setting for servers sql2008 and sqlserver2012 a
 	
 	BEGIN
 	{
-        $notesAdHocZero = "Recommended configuration is '1'"
+        $notesAdHocZero = "Recommended configuration is 1"
 		$notesAsRecommended = "Configuration is as recommended"
 	}
 	
@@ -92,7 +92,7 @@ Get Optimize for AdHoc Workloads setting for servers sql2008 and sqlserver2012 a
 			[pscustomobject]@{
 				Instance = $server.Name
 				CurrentOptimizeAdHoc = $optimizeAdHoc
-        			RecommendedOptimizeAdHoc = 1
+        		RecommendedOptimizeAdHoc = 1
 				Notes = $notes
 			}
 		}
