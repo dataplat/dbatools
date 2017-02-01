@@ -85,9 +85,9 @@ PROCESS
 					if ($lastemail -eq '1/1/0001 12:00:00 AM') { $lastemail = $null }
 					
 					[pscustomobject]@{
-                        ComputerName = $server.NetName
-						InstanceName = $server.ServiceName
+						ComputerName = $server.NetName
 						SqlInstance = $server.Name
+						InstanceName = $server.ServiceName
 						OperatorName = $operator.Name
                         OperatorID = $operator.ID
                         IsEnabled = $operator.Enabled
