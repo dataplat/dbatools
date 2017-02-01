@@ -57,6 +57,18 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 		return $SqlServer
 	}
 	
+	# This seems a little complex but is required because some connections do TCP,sqlserver
+	[regex]$portdetection = ":\d{1,5}$"
+	if ($sqlserver.LastIndexOf(":") -ne -1)
+	{
+		$portnumber = $sqlserver.substring($sqlserver.LastIndexOf(":"))
+		if ($portnumber -match $portdetection)
+		{
+			$replacedportseparator = $portnumber -replace ":", ","
+			$sqlserver = $sqlserver -replace $portnumber, $replacedportseparator
+		}
+	}
+	
 	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlServer
 	$server.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
 	

@@ -75,7 +75,7 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 
             $server = Get-DbaMaxMemory -SqlServer $servername -SqlCredential $SqlCredential
 			
-			if($server -eq $null)
+			if($null -eq $server)
             {
                 continue;
             }

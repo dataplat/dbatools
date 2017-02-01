@@ -87,7 +87,8 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
         foreach ($Computer in $ComputerName)
         {
             Write-Verbose "Connecting to $Computer"
-			if ( $reply = Resolve-DbaNetworkName -ComputerName $Computer -erroraction silentlycontinue)
+			$reply = Resolve-DbaNetworkName -ComputerName $Computer -ErrorAction SilentlyContinue
+            if ( $reply.ComputerName )
             {
                 $Computer = $reply.ComputerName
                 Write-Verbose "$Computer is up and running"
@@ -96,10 +97,13 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
                 {
                 $availablecounters = (Get-Counter -ComputerName $Computer -ListSet '*sql*:Memory Manager*' -ErrorAction SilentlyContinue ).paths
                 (Get-Counter -ComputerName $Computer -Counter $availablecounters -ErrorAction SilentlyContinue ).countersamples | 
-                    Where-Object {$_.Path -match $Memcounters} | 
-                    foreach { [PSCustomObject]@{
+                    Where-Object {$_.Path -match $Memcounters} |
+					ForEach-Object {
+						$instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
+						if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
+						[PSCustomObject]@{
 				                ComputerName = $Computer
-                                SqlInstance = (($_.Path.split("\")[-2]).replace("mssql`$","")).split(':')[0]
+                                SqlInstance = $instance
 				                CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$","")).split(':')[1]
                                 Counter = $_.Path.split("\")[-1]
 				                Pages = $null
@@ -119,9 +123,12 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
                 $availablecounters = (Get-Counter -ComputerName $Computer -ListSet '*sql*:Plan Cache*' -ErrorAction SilentlyContinue ).paths
                 (Get-Counter -ComputerName $Computer -Counter $availablecounters -ErrorAction SilentlyContinue ).countersamples |
                     Where-Object {$_.Path -match $Plancounters} |
-                    foreach { [PSCustomObject]@{
-					            ComputerName = $Computer
-                                SqlInstance = (($_.Path.split("\")[-2]).replace("mssql`$","")).split(':')[0]
+					ForEach-Object {
+						$instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
+						if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
+							[PSCustomObject]@{
+								ComputerName = $Computer
+								SqlInstance = $instance
 				                CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$","")).split(':')[1]
                                 Counter = $_.Path.split("\")[-1]
 					            Pages = $_.cookedvalue
@@ -141,9 +148,12 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
                 $availablecounters = (Get-Counter -ComputerName $Computer -ListSet "*Buffer Manager*"  -ErrorAction SilentlyContinue ).paths
                 (Get-Counter -ComputerName $Computer -Counter $availablecounters -ErrorAction SilentlyContinue ).countersamples |
                     Where-Object {$_.Path -match $BufManpagecounters} |
-                    foreach { [PSCustomObject]@{
-					            ComputerName = $Computer
-                                SqlInstance = (($_.Path.split("\")[-2]).replace("mssql`$","")).split(':')[0]
+					ForEach-Object {
+						$instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
+						if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
+							[PSCustomObject]@{
+								ComputerName = $Computer
+								SqlInstance = $instance
 				                CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$","")).split(':')[1]
                                 Counter = $_.Path.split("\")[-1]
 					            Pages = $_.cookedvalue
@@ -163,9 +173,12 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
                 $availablecounters = (Get-Counter -ComputerName $Computer -ListSet "MSAS*:Memory"  -ErrorAction SilentlyContinue ).paths
                 (Get-Counter -ComputerName $Computer -Counter $availablecounters -ErrorAction SilentlyContinue ).countersamples |
                     Where-Object {$_.Path -match $SSAScounters} |
-                    foreach { [PSCustomObject]@{
-					            ComputerName = $Computer
-                                SqlInstance = (($_.Path.split("\")[-2]).replace("mssql`$","")).split(':')[0]
+					ForEach-Object {
+							$instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
+							if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
+							[PSCustomObject]@{
+								ComputerName = $Computer
+								SqlInstance = $instance
 				                CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$","")).split(':')[1]
                                 Counter = $_.Path.split("\")[-1]
 					            Pages = $null
@@ -185,9 +198,12 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
                 $availablecounters = (Get-Counter -ComputerName $Computer -ListSet "*SSIS*"  -ErrorAction SilentlyContinue ).paths
                 (Get-Counter -ComputerName $Computer -Counter $availablecounters -ErrorAction SilentlyContinue ).countersamples |
                     Where-Object {$_.Path -match $SSIScounters} |
-                    foreach { [PSCustomObject]@{
-					            ComputerName = $Computer
-                                SqlInstance = (($_.Path.split("\")[-2]).replace("mssql`$","")).split(':')[0]
+					ForEach-Object {
+							$instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
+							if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
+							[PSCustomObject]@{
+								ComputerName = $Computer
+								SqlInstance = $instance
 				                CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$","")).split(':')[1]
                                 Counter = $_.Path.split("\")[-1]
 					            Pages = $null
