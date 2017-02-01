@@ -29,7 +29,7 @@ Find all jobs without email notification configured
 Allows you to enter an array of agent job names to ignore 
 
 .PARAMETER Name
-Filter agent jobs to only the names you list. Accepts wildcards (*).
+Filter agent jobs to only the names you list. This is a regex pattern by default so no asterisks are necessary. If you need an exact match, use -Exact.
 
 .PARAMETER Category 
 Filter based on agent job categories
@@ -38,8 +38,11 @@ Filter based on agent job categories
 Filter based on owner of the job/s
 
 .PARAMETER StepName
-Filter based on StepName. Accepts wildcards (*).
-	
+Filter based on StepName. This is a regex pattern by default so no asterisks are necessary. If you need an exact match, use -Exact.
+
+.PARAMETER Exact
+Job Names and Step Names are searched for by regex by default. Use Exact to return only exact matches.
+
 .NOTES 
 Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
 
@@ -80,15 +83,16 @@ Queries CMS server to return all SQL instances in the Production folder and then
 		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
 		[string[]]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential,
+		[string[]]$Name,
+		[string[]]$StepName,
+		[switch]$Exact,
 		[int]$LastUsed,
 		[switch]$Disabled,
 		[switch]$NoSchedule,
 		[switch]$NoEmailNotification,
 		[string[]]$Category,
 		[string]$Owner,
-		[string[]]$Exclude,
-		[string[]]$Name,
-		[string[]]$StepName
+		[string[]]$Exclude
 	)
 	PROCESS
 	{
@@ -114,7 +118,14 @@ Queries CMS server to return all SQL instances in the Production folder and then
 				foreach ($jobname in $Name)
 				{
 					Write-Verbose "Gettin some jobs by their names"
-					$output += $jobs | Where-Object { $_.Name -like $jobname }
+					if ($Exact -eq $true)
+					{
+						$output += $jobs | Where-Object { $_.Name -eq $name }
+					}
+					else
+					{
+						$output += $jobs | Where-Object { $_.Name -match $name }
+					}
 				}
 			}
 			
@@ -123,7 +134,14 @@ Queries CMS server to return all SQL instances in the Production folder and then
 				foreach ($name in $StepName)
 				{
 					Write-Verbose "Gettin some jobs by their names"
-					$output += $jobs | Where-Object { $_.JobSteps.Name -like $name }
+					if ($Exact -eq $true)
+					{
+						$output += $jobs | Where-Object { $_.JobSteps.Name -eq $name }
+					}
+					else
+					{
+						$output += $jobs | Where-Object { $_.JobSteps.Name -match $name }
+					}
 				}
 			}
 			
@@ -180,7 +198,25 @@ Queries CMS server to return all SQL instances in the Production folder and then
 				$output = $output | Where-Object { $Exclude -notcontains $_.Name }
 			}
 			
-			$output | Select-Object @{ Name = "ServerName"; Expression = { $_.Parent.name } }, Name, LastRunDate, IsEnabled, HasSchedule, OperatorToEmail, Category, OwnerLoginName -Unique
+			$jobs = $output | Select-Object -Unique
+			
+			foreach ($job in $jobs)
+			{
+				[PSCustomObject]@{
+					ComputerName = $server.NetName
+					InstanceName = $server.ServiceName
+					SqlInstance = $server.Name
+					Name = $job.Name
+					LastRunDate = $job.LastRunDate
+					IsEnabled = $job.IsEnabled
+					CreateDate = $job.CreateDate
+					HasSchedule = $job.HasSchedule
+					OperatorToEmail = $job.OperatorToEmail
+					Category = $job.Category
+					OwnerLoginName = $job.OwnerLoginName
+					Job = $job
+				} | Select-DefaultField -ExcludeProperty Job
+			}
 		}
 	}
 }
