@@ -9,7 +9,7 @@ Scans a given folder for Full, Differential and Log backups.
 OR
 Takes a set of folder arrays and processes them for Full, Differential and Log backups.
 
-These are then filtered and restored to a specified SQL Server intance and file location
+These are then filtered and restored to a specified SQL Server instance and file location
 
 The backup LSN chain and RecoveryForkID will also be checked to ensure the restore is valid
 
@@ -24,7 +24,7 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 .PARAMETER Path
 Path to SQL Server backup file. This can be a full, differential or log backup file.
 
-.PARAMETER Files
+.PARAMETER FileList
 A Files object(s) containing SQL Server backup files. 
 
 .PARAMETER RestoreLocation
@@ -38,9 +38,6 @@ Switch to indicate the backup files are in a folder structure as created by Ola 
 
 .PARAMETER FileDirectory
 Switch to indicate the backup files just exist in a folder (this is the standard)
-	
-.PARAMETER FileList
-Returns detailed information about the files within the backup
 
 .PARAMETER DatabaseName
 Name to restore the database under
@@ -48,13 +45,13 @@ Name to restore the database under
 .PARAMETER NoRecovery
 Indicates if the database should be recovered after last restore. Default is to recover
 
-.PARAMETER ReplaceDatabase
+.PARAMETER WithReplace
 Switch indicated is the restore is allowed to replace an existing database.
 
-.PARAMETER Scripts
+.PARAMETER OutputScript
 Switch to indicate if T-SQL restore scripts should be written out
 
-.PARAMETER ScriptOnly
+.PARAMETER OutputScriptOnly
 Switch indicates that ONLY T-SQL scripts should be generated, no restore takes place
 
 .PARAMETER VerifyOnly
@@ -86,12 +83,12 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .EXAMPLE
-Restore-DbaBackup -SqlServer server1\instance1 -path \\server2\backups\$ 
+Restore-DbaBackup -SqlServer server1\instance1 -path \\server2\backups 
 
-Scans all the backup files in \\server2\backups$, filters them and restores the database to server1\instance1
+Scans all the backup files in \\server2\backups, filters them and restores the database to server1\instance1
 
 .EXAMPLE
-Restore-DbaBackup -SqlServer server1\instance1' -path \\server2\backups\$ -OlaStyle -RestoreLocation c:\restores
+Restore-DbaBackup -SqlServer server1\instance1 -path \\server2\backups -OlaStyle -RestoreLocation c:\restores
 
 Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen style folder structure,
  filters them and restores the database to the c:\restores folder on server1\instance1 
@@ -103,9 +100,9 @@ Takes the provided files from multiple directories and restores them on  server1
 
 .EXAMPLE
 $RestoreTime = Get-Date('11:19 23/12/2016')
-Restore-DbaBackup -SqlServer server1\instance1' -path \\server2\backups\$ -OlaStyle -RestoreLocation c:\restores -RestoreTime $RestoreTime
+Restore-DbaBackup -SqlServer server1\instance1' -path \\server2\backups -OlaStyle -RestoreLocation c:\restores -RestoreTime $RestoreTime
 
-Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen style folder structure,
+Scans all the backup files in \\server2\backups stored in an Ola Hallengreen style folder structure,
  filters them and restores the database to the c:\restores folder on server1\instance1 up to 11:19 23/12/2016
 #>
 	[CmdletBinding()]
@@ -113,7 +110,7 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
         [parameter(Mandatory = $true, ParameterSetName="Paths")]
         [string[]]$Path,
         [parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName="Files")]
-        [object[]]$Files,
+        [object[]]$FileList,
         [parameter(Mandatory = $true,ParameterSetName="Paths")]
         [parameter(Mandatory = $true,ParameterSetName="Files")]
 		[Alias("ServerInstance", "SqlInstance")]
@@ -129,17 +126,17 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]  
 		[switch]$NoRecovery,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
-		[switch]$ReplaceDatabase,
+		[switch]$WithReplace,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
-		[switch]$Scripts,
+		[switch]$OutputScript,
         [Parameter(ParameterSetName="Paths")]
         [Switch]$XpDirTree,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
-        [switch]$ScriptOnly,
+        [switch]$OutputScriptOnly,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[switch]$VerifyOnly,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
-        [switch]$OlaStyle,
+        [switch]$MaintenanceSolutionBackup ,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[string]$LogicalFilePrefix,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
@@ -166,7 +163,7 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
                     Write-Verbose "$FunctionName : Single file"
                     $BackupFiles += Get-item $p
                 } 
-                elseif ($OlaStyle)
+                elseif ($MaintenanceSolutionBackup )
                 {
                     Write-Verbose "$FunctionName : Ola Style"
                     $BackupFiles += Get-OlaHRestoreFile -path $p
@@ -179,8 +176,8 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
             }
         }elseif($PSCmdlet.ParameterSetName -eq "Files")
         {
-            Write-Verbose "$FunctionName : Files passed in $($Files.count)" 
-            Foreach ($File in $Files)
+            Write-Verbose "$FunctionName : Files passed in $($FileList.count)" 
+            Foreach ($File in $FileList)
             {
                 $BackupFiles += $File
             }
@@ -198,7 +195,7 @@ Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen st
         if(Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles)
         {
             try{
-                $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -RestoreLocation $RestoreLocation -NoRecovery:$NoRecovery -ReplaceDatabase:$ReplaceDatabase -Scripts:$Scripts -ScriptOnly:$ScriptOnly -VerifyOnly:$VerifyOnly
+                $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -RestoreLocation $RestoreLocation -NoRecovery:$NoRecovery -WithReplace:$WithReplace -Scripts:$OutputScript -ScriptOnly:$OutputScriptOnly -VerifyOnly:$VerifyOnly
                 if ($LogicalFileMapping.count -ne 0 -or $LogicalFilePrefix -ne '')
                 {
                     Rename-LogicalFile -SqlServer $SqlServer -DbName $DatabaseName -SqlCredential $SqlCredential -Mapping:$LogicalFileMapping -Prefix:$LogicalFilePrefix
