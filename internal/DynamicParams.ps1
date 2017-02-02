@@ -2025,6 +2025,8 @@ Function Get-ParamSqlAllProcessInfo
 		{
 			"Exclude" { $items = $processes.Spid }
 			"Spid" { $items = $processes.Spid }
+			"Database" { $items = $server.Databases.Name }
+			"Login" { $items = $server.Logins.Name }
 			
 			Default
 			{

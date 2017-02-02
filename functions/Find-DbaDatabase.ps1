@@ -1,30 +1,31 @@
-﻿function Find-DbaDatabase
+﻿Function Find-DbaDatabase
 {
 <#
 .SYNOPSIS
 Find database/s on multiple servers that match critea you input
 
 .DESCRIPTION
-Allows you to search Sql Instances for database that have either the same name or service broker guid. You can use the like operator for database name, but this cannot be used in the service broker search.
+Allows you to search SQL Server instances for database that have either the same name, owner or service broker guid.
+
 There a several reasons for the service broker guid not matching on a restored database primarily using alter database new broker. or turn off broker to return a guid of 0000-0000-0000-0000. 
 
 .PARAMETER SqlServer
 The SQL Server that you're connecting to.
 
-.PARAMETER Credential
+.PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user
 
-.PARAMETER Type
-What sort of search would like to complete. Either Service Broker GUID or Database name. 
+.PARAMETER Property
+What you would like to search on. Either Database Name, Owner, or Service Broker GUID. Database name is the default.
 
-.PARAMETER Name
-Value that is searched for
+.PARAMETER Pattern
+Value that is searched for. This is a regular expression match but you can just use a plain ol string like 'dbareports'
 
-.PARAMETER Like
-Allows you to search database name using *<NAME>*
+.PARAMETER Exact
+Search for an exact match instead of a pattern
 
 .PARAMETER Detailed
-Output a more detailed view showing ComputerName, SqlInstance, Database, ServiceBrokerGUID, Tables, StoredProcedures,Views and ExtendedProperties to see they closely match to help find related databases.
+Output a more detailed view showing regular output plus Tables, StoredProcedures, Views and ExtendedProperties to see they closely match to help find related databases.
 
 .NOTES
 Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
@@ -39,162 +40,111 @@ You should have received a copy of the GNU General Public License along with thi
  https://dbatools.io/Find-DbaDatabase
 
 .EXAMPLE
-Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Type Database -Name TestDB -Detailed 
+Find-DbaDatabase -SqlServer "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern Report
+Returns all database from the SqlInstances that have a database with Report in the name
+	
+.EXAMPLE
+Find-DbaDatabase -SqlServer "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern TestDB -Exact -Detailed 
 Returns all database from the SqlInstances that have a database named TestDB with a detailed output.
 
 .EXAMPLE
-Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Type Service_Broker_GUID -Name 25b64fef-faeb-495a-9898-f25a782835f5 -Detailed 
-Returns all database from the SqlInstances that have the same Service Broker GUID with a deeatiled output
+Find-DbaDatabase -SqlServer "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Property ServiceBrokerGuid -Pattern '-faeb-495a-9898-f25a782835f5' -Detailed 
+Returns all database from the SqlInstances that have the same Service Broker GUID with a deatiled output
 
 #>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias('cn','host','computer','server')]
-		[string[]]$SqlInstance,
+		[Alias("ServerInstance", "SqlInstance")]
+		[string[]]$SqlServer,
+		[Alias("Credential")]
 		[System.Management.Automation.PSCredential]$SqlCredential,
-        [parameter(Mandatory = $true)]
-        [ValidateSet('Database','Service_Broker_GUID')]
-        [string]$Type,
-        [parameter(Mandatory = $true)]
-        [string]$Name,
-        [switch]$Like,
-        [switch]$Detailed
+		[ValidateSet('Name', 'ServiceBrokerGuid', 'Owner')]
+		[string]$Property = 'Name',
+		[parameter(Mandatory = $true)]
+		[string]$Pattern,
+		[switch]$Exact,
+		[switch]$Detailed
 	)
-    process
-    {
-        foreach ($Instance in $SqlInstance)
-        {
-            try
-	        {
-	            Write-Verbose "Connecting to $Instance"
-                $srv = Connect-SqlServer -SqlServer $Instance -SqlCredential $sqlcredential
-	        }
-	        catch
-	        {
-	            Write-Warning "Failed to connect to: $srv"
-                break
-	        }
-
-            if($srv -contains "\")
-            {
-                $computername = ($srv.Name).Split("\")[0]
-                $inst =  ($srv.Name).Split("\")[1]
-            }
-            else
-            {
-                $computername = $srv.Name
-                $inst =  ""
-            }
-
-        if ($Type -eq 'Database')
-        {
-            if ($Like)
-            {
-                $match = $srv.Databases | Where-Object {$_.Name -like "*$name*"}
-            }
-            else
-            {
-                $match = $srv.Databases | Where-Object {$_.Name -eq $name}
-            }
-            foreach ($db in $match)
-            {
-                if ($Detailed)
-                {
-                    if ($db.ExtendedProperties.Count -ne 0)
-                    {
-                        $outep = @()
-                        foreach ($xp in $db.ExtendedProperties) 
-                        {
-                            $extdetails = [PSCustomObject]@{
-		                       Name = $db.ExtendedProperties[$xp.Name].Name
-		                       Value = $db.ExtendedProperties[$xp.Name].Value
-                                }
-                            $outep += $extdetails
-                        }
-                    }
-                    else
-                    {
-                        $outep = ""
-                    }
-                    $out = [PSCustomObject]@{
-		                ComputerName = $computername
-                        SqlInstance = $inst
-		                Database = $db.Name
-                        ServiceBrokerGuid = $db.ServiceBrokerGuid
-                        Tables = ($db.Tables | where {$_.IsSystemObject -eq 0}).Count
-                        StoredProcedures = ($db.StoredProcedures | where {$_.IsSystemObject -eq 0}).Count
-                        Views = ($db.Views | where {$_.IsSystemObject -eq 0}).Count
-                        ExtendedPropteries = $outep
-                        }
-                    $out
-                }
-                else 
-                {
-                    $out = [PSCustomObject]@{
-		                ComputerName = $computername
-                        SqlInstance = $inst
-		                Database = $db.Name
-                        }
-                    $out
-                }
-            }     
-        }
-        else
-        {
-            if ($Like)
-            {
-                write-warning "You cannot use the LIKE functionality with ServiceBrokerGUID as the Type"
-                break
-            }
-            else
-            {
-                $match = $srv.Databases | Where-Object {$_.ServiceBrokerGuid -eq $name}
-            }
-            foreach ($db in $match)
-            {
-
-                if ($Detailed)
-                {
-                    if ($db.ExtendedProperties.Count -ne 0)
-                    {
-                        $outep = @()
-                        foreach ($xp in $db.ExtendedProperties) 
-                        {
-                            $extdetails = [PSCustomObject]@{
-		                       Name = $db.ExtendedProperties[$xp.Name].Name
-		                       Value = $db.ExtendedProperties[$xp.Name].Value
-                                }
-                            $outep += $extdetails
-                        }
-                    }
-                    else
-                    {
-                        $outep = ""
-                    }
-                        $out = [PSCustomObject]@{
-		                    ComputerName = $computername
-                            SqlInstance = $inst 
-		                    Database = $db.Name
-                            ServiceBrokerGuid = $db.ServiceBrokerGuid
-                            Tables = ($db.Tables | where {$_.IsSystemObject -eq 0}).Count
-                            StoredProcedures = ($db.StoredProcedures | where {$_.IsSystemObject -eq 0}).Count
-                            Views = ($db.Views | where {$_.IsSystemObject -eq 0}).Count
-                            ExtendedPropteries = $outep
-                            }
-                        $out
-                }
-                else 
-                {
-                    $out = [PSCustomObject]@{
-		                ComputerName = $computername
-                        SqlInstance = $inst
-		                Database = $db.Name
-                        }
-                    $out
-                    }
-                }
-            }
-        }
-    }
+	process
+	{
+		foreach ($instance in $SqlServer)
+		{
+			try
+			{
+				Write-Verbose "Connecting to $instance"
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+			}
+			catch
+			{
+				Write-Warning "Failed to connect to: $server"
+				continue
+			}
+			
+			if ($exact -eq $true)
+			{
+				$dbs = $server.Databases | Where-Object { $_.$property -eq $pattern }
+			}
+			else
+			{
+				try
+				{
+					$dbs = $server.Databases | Where-Object { $_.$property.ToString() -match $pattern }
+				}
+				catch
+				{
+					# they prolly put aterisks thinking it's a like
+					$Pattern = $Pattern -replace '\*', ''
+					$Pattern = $Pattern -replace '\%', ''
+					$dbs = $server.Databases | Where-Object { $_.$property.ToString() -match $pattern }
+				}
+			}
+			
+			foreach ($db in $dbs)
+			{
+				if ($Detailed)
+				{
+					$extendedproperties = @()
+					foreach ($xp in $db.ExtendedProperties)
+					{
+						$extendedproperties += [PSCustomObject]@{
+							Name = $db.ExtendedProperties[$xp.Name].Name
+							Value = $db.ExtendedProperties[$xp.Name].Value
+						}
+					}
+					
+					if ($extendedproperties.count -eq 0) { $extendedproperties = 0 }
+					
+					[PSCustomObject]@{
+						ComputerName = $server.NetName
+						InstanceName = $server.ServiceName
+						SqlInstance = $server.Name
+						Name = $db.Name
+						SizeMB = $db.Size
+						Owner = $db.Owner
+						CreateDate = $db.CreateDate
+						ServiceBrokerGuid = $db.ServiceBrokerGuid
+						Tables = ($db.Tables | Where-Object { $_.IsSystemObject -eq $false }).Count
+						StoredProcedures = ($db.StoredProcedures | Where-Object { $_.IsSystemObject -eq $false }).Count
+						Views = ($db.Views | Where-Object { $_.IsSystemObject -eq $false }).Count
+						ExtendedPropteries = $extendedproperties
+						Database = $db
+					} | Select-DefaultField -ExcludeProperty Database
+				}
+				else
+				{
+					[PSCustomObject]@{
+						ComputerName = $server.NetName
+						InstanceName = $server.ServiceName
+						SqlInstance = $server.Name
+						Name = $db.Name
+						SizeMB = $db.Size
+						Owner = $db.Owner
+						CreateDate = $db.CreateDate
+						Database = $db
+					} | Select-DefaultField -ExcludeProperty Database
+				}
+			}
+		}
+	}
 }

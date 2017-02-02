@@ -79,6 +79,6 @@ Code needs explanation, and sometimes those who know the code well have trouble 
 This section includes ideas on how non-developers can help with the project.
 
 * You can help us answer questions our users have on [Slack](https://dbatools.io/slack)
-* You can help design the commands so that they solve your problems on [Trello](https://dbatools.io/trello)
+* You can help design the commands so that they solve your problems in a [Github Issue](https://github.com/sqlcollaborative/dbatools/issues)
 * You can help write blog posts about dbatools
 * You can help create videos and we'll put them on our [YouTube channel](https://dbatools.io/youtube)
