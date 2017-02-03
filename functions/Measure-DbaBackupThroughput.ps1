@@ -142,6 +142,7 @@ Will fill this in
 				$measurestart = $db.Group.Start | Measure-Object -Minimum
 				$measureend = $db.Group.End | Measure-Object -Maximum
 				$measuresize = $db.Group.TotalSizeMB | Measure-Object -Average
+				$avgduration = $db.Group | ForEach-Object { New-TimeSpan -Start $_.Start -End $_.End } | Measure-Object -Average TotalSeconds
 				
 				[pscustomobject]@{
 					Server = $db.Group.Server | Select-Object -First 1
@@ -153,6 +154,7 @@ Will fill this in
 					MinBackupDate = $measurestart.Minimum
 					MaxBackupDate = $measureend.Maximum
 					BackupCount = $db.Count
+					AvgDuration = New-TimeSpan -Start (Get-Date) -End (Get-Date).AddSeconds($avgduration.Average)
 				}
 			}
 		}
