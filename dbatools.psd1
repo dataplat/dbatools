@@ -194,10 +194,7 @@
 		'Get-DbaUptime',
 		'Get-DbaXEventsSession',
 		'Test-DbaOptimizeForAdHoc',
-		'Find-DbaStoredProcedure',
-		'Get-DBAServicePrincipalName',
-		'Test-DBAServicePrincipalName',
-		'Set-DBAServicePrincipalName'
+		'Find-DbaStoredProcedure'
 	)
 	
 	# Cmdlets to export from this module
