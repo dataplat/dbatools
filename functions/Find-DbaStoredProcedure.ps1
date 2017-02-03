@@ -84,7 +84,7 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 	{
 		$databases = $psboundparameters.Databases
 		$sql = "SELECT p.name, m.definition as TextBody FROM sys.sql_modules m, sys.procedures p WHERE m.object_id = p.object_id"
-		if (!$IncludeSystemObjects) { $sql = "$sql and OBJECTPROPERTY(p.object_id, 'IsMSShipped') = 0" }
+		if (!$IncludeSystemObjects) { $sql = "$sql AND p.is_ms_shipped = 0" }
 	}
 	process
 	{
@@ -120,7 +120,7 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 			foreach ($db in $dbs)
 			{
 				Write-Verbose "Searching database $db"
-				
+
 				# If system objects aren't needed, find stored procedure text using SQL
 				# This prevents SMO from having to enumerate
 				
@@ -138,7 +138,10 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 						if ($row.TextBody -match $Pattern)
 						{
 							$sp = $db.StoredProcedures | Where-Object name -eq $row.name
-							
+
+                            $StoredProcedureText = $sp.TextBody.split("`n")
+                            $spTextFound = $StoredProcedureText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
+
 							[PSCustomObject]@{
 								ComputerName = $server.NetName
 								SqlInstance = $server.ServiceName
@@ -148,7 +151,7 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 								IsSystemObject = $sp.IsSystemObject
 								CreateDate = $sp.CreateDate
 								LastModified = $sp.DateLastModified
-								StoredProcedureTextFound = $sp.TextBody.split("`r`n") | Select-String -pattern $Pattern | ForEach-Object { $_.ToString().TrimEnd(',').Trim() }
+								StoredProcedureTextFound = $spTextFound -join "`n"
 								StoredProcedure = $sp
 								StoredProcedureFullText = $sp.TextBody
 							} | Select-DefaultField -ExcludeProperty StoredProcedure, StoredProcedureFullText
@@ -167,6 +170,10 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 						Write-Verbose "Looking in StoredProcedure: $proc TextBody for $pattern"
 						if ($sp.TextBody -match $Pattern)
 						{
+
+                            $StoredProcedureText = $sp.TextBody.split("`n")
+                            $spTextFound = $StoredProcedureText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
+    
 							[PSCustomObject]@{
 								ComputerName = $server.NetName
 								SqlInstance = $server.ServiceName
@@ -176,7 +183,7 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 								IsSystemObject = $sp.IsSystemObject
 								CreateDate = $sp.CreateDate
 								LastModified = $sp.DateLastModified
-								StoredProcedureTextFound = $sp.TextBody.split("`r`n") | Select-String -pattern $Pattern | ForEach-Object { $_.ToString().TrimEnd(',').Trim() }
+								StoredProcedureTextFound = $spTextFound -join "`n"
 								StoredProcedure = $sp
 								StoredProcedureFullText = $sp.TextBody
 							} | Select-DefaultField -ExcludeProperty StoredProcedure, StoredProcedureFullText
