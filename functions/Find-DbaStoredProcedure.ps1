@@ -24,6 +24,9 @@ By default, system stored proceures are ignored but you can include them within 
 	
 Warning - this will likely make it super slow if you run it on all databases.
 
+.PARAMETER IncludeSystemDatabases
+By default system databases are ignored but you can include them within the search using this parameter
+
 .NOTES 
 Original Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
 
