@@ -9,6 +9,8 @@ This function will connect to Active Directory and search for an account. If the
 is added, the function will also set delegation to that service. In order to run this function, the credential you provide must have write
 access to Active Directory.
 
+Note: This function supports -WhatIf
+
 .PARAMETER spn
 The SPN you want to add
 
@@ -37,7 +39,7 @@ Connects to active directory and adds a provided SPN to the given account.
 
 
 #>
-    [cmdletbinding()]
+    [cmdletbinding(SupportsShouldProcess=$true)]
     param(
         [Parameter(Mandatory = $true)]
         [string]$spn,
@@ -76,16 +78,19 @@ Connects to active directory and adds a provided SPN to the given account.
             #cool! add an spn
 
             $ADEntry = $Result.GetDirectoryEntry()
-            $ADEntry.Properties['serviceprincipalname'].Add($spn) | Out-Null
-            Write-Verbose "Added SPN $spn to samaccount $serviceaccount"
-            $ADEntry.CommitChanges()
-
+            if ($PSCmdlet.ShouldProcess("$spn","Adding SPN to service account")) {
+                $ADEntry.Properties['serviceprincipalname'].Add($spn) | Out-Null
+                Write-Verbose "Added SPN $spn to samaccount $serviceaccount"
+                $ADEntry.CommitChanges()
+            }
 
             #Don't forget delegation!
             $ADEntry = $Result.GetDirectoryEntry()
-            $ADEntry.Properties['msDS-AllowedToDelegateTo'].Add($spn) | Out-Null
-            Write-Verbose "Added kerberos delegation to $spn for samaccount $serviceaccount"
-            $ADEntry.CommitChanges()
+            if ($PSCmdlet.ShouldProcess("$spn","Adding delegation to service account for SPN")) {
+                $ADEntry.Properties['msDS-AllowedToDelegateTo'].Add($spn) | Out-Null
+                Write-Verbose "Added kerberos delegation to $spn for samaccount $serviceaccount"
+                $ADEntry.CommitChanges()
+            }
         }
     }
 
