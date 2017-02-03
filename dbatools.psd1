@@ -196,7 +196,10 @@
 		'Test-DbaOptimizeForAdHoc',
 		'Find-DbaStoredProcedure',
 		'Measure-DbaBackupThroughput',
-		'Find-DbaLoginInGroup'
+		'Find-DbaLoginInGroup',
+		'Get-DBAServicePrincipalName',
+		'Test-DBAServicePrincipalName',
+		'Set-DBAServicePrincipalName '
 	)
 	
 	# Cmdlets to export from this module
