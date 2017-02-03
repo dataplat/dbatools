@@ -59,20 +59,21 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
     begin {
 
 
-        if ($AccountName -like "*\*") {
-            Write-Verbose "Account name provided in in domain\user format, stripping out domain info..."
-            $serviceaccount = ($AccountName.split("\"))[1]
-        }
-        if ($AccountName -like "*@") {
-            Write-Verbose "Account name provided in in user@domain format, stripping out domain info..."
-            $AccountName = ($AccountName.split("@"))[0]
-        }
     }
 
     process {
         $spns = @()
         ForEach ($ac in $AccountName)
         {
+            if ($ac -like "*\*") {
+                Write-Verbose "Account name ($ac) provided in in domain\user format, stripping out domain info..."
+                $ac = ($ac.split("\"))[1]
+            }
+            if ($ac -like "*@") {
+                Write-Verbose "Account name ($ac) provided in in user@domain format, stripping out domain info..."
+                $ac = ($ac.split("@"))[0]
+            }
+
             $root = ([ADSI]"LDAP://RootDSE").defaultNamingContext
             $adsearch = New-Object System.DirectoryServices.DirectorySearcher
             $domain = New-Object -TypeName System.DirectoryServices.DirectoryEntry -ArgumentList ("LDAP://" + $root) ,$($Credential.UserName),$($Credential.GetNetworkCredential().password)        
@@ -81,12 +82,9 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
             Write-Verbose "Looking for account $ac..."
             $Result = $adsearch.FindOne()
 
-
-            $results = $ADObject.FindAll()
-
-            ForEach ($s in $results.Properties.serviceprincipalname) {
+            ForEach ($s in $result.Properties.serviceprincipalname) {
                 $spn = [pscustomobject] @{
-                    SearchTerm = $accountName
+                    SearchTerm = $ac
                     SPN = $s
                 }
                 $spns += $spn
@@ -96,7 +94,7 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 
         ForEach ($sv in $Servername)
         {
-            $spnsForServer = Test-DbaServicePrincipalName.ps1 -Servername $sv -Credential $Credential
+            $spnsForServer = Test-DbaServicePrincipalName -Servername $sv -Credential $Credential
             ForEach ($s in $spnsForServer | Where-Object {$_.IsSet -eq $true}) {
                 $spn = [pscustomobject] @{
                     SearchTerm = $sv
