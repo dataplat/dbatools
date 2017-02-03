@@ -23,7 +23,7 @@ You should have received a copy of the GNU General Public License along with thi
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance 
 SQLServer name or SMO object representing the SQL Server to connect to. This can be a
 collection and recieve pipeline input.
 
@@ -58,7 +58,7 @@ Returns all active directory users within all windows AD groups that have logins
     {
         try
         {
-            Add-Type -AssemblyName  System.DirectoryServices.AccountManagement;
+            Add-Type -AssemblyName  System.DirectoryServices.AccountManagement
         }
         catch
         {
@@ -102,19 +102,16 @@ Returns all active directory users within all windows AD groups that have logins
                                     $subgroups += $fullName
                                 }
                             }
-                            else
-                            {
-
-
-                        $adout = [PSCustomObject]@{
-                            ComputerName = $server.NetName
-                            SqlInstance = $server.InstanceName
-                            Login = $member.SamAccountName
-                            Member = $AdGroup
-                        }
-
-                               $output +=$adout
-                            }
+						else
+						{
+							$output += [PSCustomObject]@{
+								SqlInstance = $server.Name
+								InstanceName = $server.ServiceName
+								ComputerName = $server.NetName
+								Login = $member.SamAccountName
+								Member = $AdGroup
+							}
+						}
                     }
                 }
                 catch
@@ -135,8 +132,6 @@ Returns all active directory users within all windows AD groups that have logins
                 $output
             }
         }
-
-        $out = @()
     }
     
     PROCESS
@@ -164,7 +159,7 @@ Returns all active directory users within all windows AD groups that have logins
 
             if (-not $Login)
             {
-                $out = $ADGroupOut
+                $ADGroupOut
             }
             else
             {
@@ -176,7 +171,7 @@ Returns all active directory users within all windows AD groups that have logins
                     try 
                     {   
                         $FoundYou = $ADGroupOut | Where {$_.Login -eq $username} 
-                        ##$FoundYou
+                        ##$FoundYou - LOL, no, you!
                     }
                     catch
                     {
@@ -186,22 +181,16 @@ Returns all active directory users within all windows AD groups that have logins
 
                     foreach($gf in $FoundYou)
                     {
-                    
-                        $gfRole = $gf.GroupName
-                        $output = [PSCustomObject]@{
-                            ComputerName = $server.NetName
-                            SqlInstance = $server.InstanceName
+                    [PSCustomObject]@{
+							SqlInstance = $server.Name
+							InstanceName = $server.ServiceName
+							ComputerName = $server.NetName
                             Login = $l
-                            Member = $gfRole
+                            Member = $gf.GroupName
                         }
-                        $out += $output
                     }
                 } 
             }
-        } 
-    }
-    end
-    {
-        $out #| sort -Unique -Descending  
+        }
     }
 }
