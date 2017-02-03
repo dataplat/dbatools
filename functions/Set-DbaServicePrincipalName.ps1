@@ -11,10 +11,10 @@ access to Active Directory.
 
 Note: This function supports -WhatIf
 
-.PARAMETER spn
+.PARAMETER SPN
 The SPN you want to add
 
-.PARAMETER serviceaccount
+.PARAMETER ServiceAccount
 The account you want the SPN added to
 
 .PARAMETER Credential
@@ -30,67 +30,102 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
 
 .LINK
-https://dbatools.io/Set-Set-DbaServicePrincipalName
+https://dbatools.io/Set-DbaServicePrincipalName
 
 .EXAMPLE
-Set-DbaServicePrincipalName -spn MSSQLSvc\SQLSERVERA.domain.something -serviceaccount domain\account -Credential (Get-Credential)
+Set-DbaServicePrincipalName -SPN MSSQLSvc\SQLSERVERA.domain.something -ServiceAccount domain\account
 
-Connects to active directory and adds a provided SPN to the given account.
+Connects to Active Directory and adds a provided SPN to the given account.
 
+.EXAMPLE
+Set-DbaServicePrincipalName -SPN MSSQLSvc\SQLSERVERA.domain.something -ServiceAccount domain\account -Credential (Get-Credential)
+
+Connects to Active Directory and adds a provided SPN to the given account. Uses alternative account to connect to AD.
 
 #>
-    [cmdletbinding(SupportsShouldProcess=$true)]
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$spn,
-        [Parameter(Mandatory = $true)]
-        [string]$serviceaccount,
-        [Parameter(Mandatory = $true)]
-        [pscredential]$Credential
-    )
-
-    begin {
-    }
-
-    process {
-        if ($serviceaccount -like "*\*") {
-            Write-Verbose "Account provided in in domain\user format, stripping out domain info..."
-            $serviceaccount = ($serviceaccount.split("\"))[1]
-        }
-        if ($serviceaccount -like "*@") {
-            Write-Verbose "Account provided in in user@domain format, stripping out domain info..."
-            $serviceaccount = ($serviceaccount.split("@"))[0]
-        }
-
-        $root = ([ADSI]"LDAP://RootDSE").defaultNamingContext
-        $adsearch = New-Object System.DirectoryServices.DirectorySearcher
-        $domain = New-Object -TypeName System.DirectoryServices.DirectoryEntry -ArgumentList ("LDAP://" + $root) ,$($Credential.UserName),$($Credential.GetNetworkCredential().password)        
-        $adsearch.SearchRoot = $domain
-        $adsearch.Filter = $("(&(samAccountName={0}))" -f $serviceaccount)
-        Write-Verbose "Looking for account $serviceAccount..."
-        $Result = $adsearch.FindOne()
-
-        #did we find the server account?
-
-        If($Result -eq $null) {
-            Write-Error "The account you specified for the SPN ($serviceAccount) doesn't exist"
-        } else {
-            #cool! add an spn
-
-            $ADEntry = $Result.GetDirectoryEntry()
-            if ($PSCmdlet.ShouldProcess("$spn","Adding SPN to service account")) {
-                $ADEntry.Properties['serviceprincipalname'].Add($spn) | Out-Null
-                Write-Verbose "Added SPN $spn to samaccount $serviceaccount"
-                $ADEntry.CommitChanges()
-            }
-
-            #Don't forget delegation!
-            $ADEntry = $Result.GetDirectoryEntry()
-            if ($PSCmdlet.ShouldProcess("$spn","Adding delegation to service account for SPN")) {
-                $ADEntry.Properties['msDS-AllowedToDelegateTo'].Add($spn) | Out-Null
-                Write-Verbose "Added kerberos delegation to $spn for samaccount $serviceaccount"
-                $ADEntry.CommitChanges()
-            }
-        }
-    }
+	[cmdletbinding(SupportsShouldProcess = $true)]
+	param (
+		[Parameter(Mandatory = $true)]
+		[string]$SPN,
+		[Parameter(Mandatory = $true)]
+		[string]$ServiceAccount,
+		[Parameter(Mandatory = $false)]
+		[pscredential]$Credential
+	)
+	
+	process
+	{
+		if ($serviceaccount -like "*\*")
+		{
+			Write-Verbose "Account provided in in domain\user format, stripping out domain info..."
+			$serviceaccount = ($serviceaccount.split("\"))[1]
+		}
+		if ($serviceaccount -like "*@")
+		{
+			Write-Verbose "Account provided in in user@domain format, stripping out domain info..."
+			$serviceaccount = ($serviceaccount.split("@"))[0]
+		}
+		
+		$root = ([ADSI]"LDAP://RootDSE").defaultNamingContext
+		$adsearch = New-Object System.DirectoryServices.DirectorySearcher
+		
+		if ($Credential)
+		{
+			$domain = New-Object System.DirectoryServices.DirectoryEntry -ArgumentList ("LDAP://" + $root), $($Credential.UserName), $($Credential.GetNetworkCredential().password)
+		}
+		else
+		{
+			$domain = New-Object System.DirectoryServices.DirectoryEntry -ArgumentList ("LDAP://" + $root)
+		}
+		
+		$adsearch.SearchRoot = $domain
+		$adsearch.Filter = $("(&(samAccountName={0}))" -f $serviceaccount)
+		Write-Verbose "Looking for account $serviceAccount..."
+		$result = $adsearch.FindOne()
+		
+		#did we find the server account?
+		
+		if ($result -eq $null)
+		{
+			Write-Warning "The account you specified for the SPN ($serviceAccount) doesn't exist"
+			continue
+		}
+		else
+		{
+			#cool! add an spn
+			
+			$adentry = $result.GetDirectoryEntry()
+			if ($PSCmdlet.ShouldProcess("$spn", "Adding SPN to service account"))
+			{
+				try
+				{
+					$null = $adentry.Properties['serviceprincipalname'].Add($spn)
+					Write-Verbose "Added SPN $spn to samaccount $serviceaccount"
+					$adentry.CommitChanges()
+				}
+				catch
+				{
+					Write-Warning "Could not add SPN. Error returned was: $_"
+					return
+				}
+			}
+			
+			#Don't forget delegation!
+			$adentry = $result.GetDirectoryEntry()
+			if ($PSCmdlet.ShouldProcess("$spn", "Adding delegation to service account for SPN"))
+			{
+				try
+				{
+					$null = $adentry.Properties['msDS-AllowedToDelegateTo'].Add($spn)
+					Write-Verbose "Added kerberos delegation to $spn for samaccount $serviceaccount"
+					$adentry.CommitChanges()
+				}
+				catch
+				{
+					Write-Warning "Could not add delegation. Error returned was: $_"
+					return
+				}
+			}
+		}
+	}
 }
