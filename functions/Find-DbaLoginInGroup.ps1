@@ -181,8 +181,9 @@ Returns all active directory users within all windows AD groups that have logins
                     foreach($gf in $FoundYou)
                     {
                     [PSCustomObject]@{
-                            ComputerName = $server.NetName
-                            SqlInstance = $server.InstanceName
+							SqlInstance = $server.Name
+							InstanceName = $server.ServiceName
+							ComputerName = $server.NetName
                             Login = $l
                             Member = $gf.GroupName
                         }
