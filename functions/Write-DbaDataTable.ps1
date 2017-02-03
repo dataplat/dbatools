@@ -222,7 +222,7 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 		
 		if ($InputObject -eq $null)
 		{
-			Write-Warning "Using the pipeline is insanely (5 minutes vs 0.5 seconds) slower and doesn't show a progress bar. Consider using -InputObject instead."
+			Write-Warning "Using the pipeline can be insanely (5 minutes vs 0.5 seconds) slower for larger batches and doesn't show a progress bar. Consider using -InputObject for large batches."
 		}
 		
 		$bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($server.ConnectionContext.ConnectionString) #, $bulkCopyOptions)

@@ -109,7 +109,10 @@ Similar to above but $dbalist gets piped in
 				}
 				else
 				{
-					$datarow.Item($property.Name) = $property.value
+                    if($property.value.length -gt 0)
+					    {
+                            $datarow.Item($property.Name) = $property.value
+                        }
 				}
 			}
 			$datatable.Rows.Add($datarow)
