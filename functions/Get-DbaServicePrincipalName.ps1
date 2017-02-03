@@ -56,7 +56,11 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
     )
 	begin
 	{
-		if (!$ComputerName -and !$AccountName) { $ComputerName = "localhost"; $AccountName = "$env:USERDOMAIN\$env:USERNAME" }
+		if (!$ComputerName -and !$AccountName)
+		{
+			$ComputerName = "localhost"
+			$AccountName = "$env:USERDOMAIN\$env:USERNAME"
+		}
 	}
 	process
 	{
@@ -71,28 +75,38 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
                 Write-Verbose "Account name ($account) provided in in user@domain format, stripping out domain info..."
                 $account = ($account.split("@"))[0]
             }
-
+			
             $root = ([ADSI]"LDAP://RootDSE").defaultNamingContext
-            $adsearch = New-Object System.DirectoryServices.DirectorySearcher
-            $domain = New-Object System.DirectoryServices.DirectoryEntry -ArgumentList ("LDAP://" + $root) #,$($Credential.UserName),$($Credential.GetNetworkCredential().password)        
-            $adsearch.SearchRoot = $domain
+			$adsearch = New-Object System.DirectoryServices.DirectorySearcher
+			
+			if ($Credential)
+			{
+				$domain = New-Object System.DirectoryServices.DirectoryEntry -ArgumentList ("LDAP://" + $root), $($Credential.UserName), $($Credential.GetNetworkCredential().password)
+			}
+			else
+			{
+				$domain = New-Object System.DirectoryServices.DirectoryEntry -ArgumentList ("LDAP://" + $root)
+			}
+			
+			$adsearch.SearchRoot = $domain
             $adsearch.Filter = $("(&(samAccountName={0}))" -f $account)
 			
 			Write-Verbose "Looking for account $account..."
             $Result = $adsearch.FindOne()
-
+			
             foreach ($spn in $result.Properties.serviceprincipalname) {
                 [pscustomobject] @{
                     Name = $ogaccount
                     SPN = $spn
                 }
-            }
-        }
+			}
+		}
 		
 		foreach ($server in $ComputerName)
 		{
-			Write-Verbose "Getting SPN for $server"
+			Write-Verbose "Getting SQL Server SPN for $server"
 			$spns = Test-DbaServicePrincipalName -ComputerName $server -Credential $Credential
+			
 			Write-Verbose "Found $spns"
 			foreach ($spn in $spns | Where-Object {$_.IsSet -eq $true}) {
                 [pscustomobject] @{
