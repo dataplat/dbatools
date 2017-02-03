@@ -5,15 +5,12 @@ function Restore-DbaBackup
 Restores a SQL Server Database from a set of backupfiles
 
 .DESCRIPTION
-Scans a given folder for Full, Differential and Log backups. 
-OR
-Takes a set of folder arrays and processes them for Full, Differential and Log backups.
+Upon bein passed a list of potential backups files this command will scan the files, select those that contain SQL Server
+backup sets. It will then filter those files down to a set that can perform the requested restore, checking that we have a 
+full restore chain to the point in time requested by the caller.
 
-These are then filtered and restored to a specified SQL Server instance and file location
-
-The backup LSN chain and RecoveryForkID will also be checked to ensure the restore is valid
-
-It can also generate restore scripts, both as part of a restore or as it's only action
+Various means can be used to pass in a list of files to be considered. The default is to non recursively scan the folder
+passed in. 
 
 .PARAMETER SqlServer
 The SQL Server instance. 
@@ -22,10 +19,11 @@ The SQL Server instance.
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. 
 
 .PARAMETER Path
-Path to SQL Server backup file. This can be a full, differential or log backup file.
+Path to SQL Server backup files. These files will be scanned using the desired method, default is a non recursive folder scan
+Accepts multiple paths seperated by ','
 
 .PARAMETER FileList
-A Files object(s) containing SQL Server backup files. 
+A Files object(s) containing SQL Server backup files. Each file passed in will be parsed.
 
 .PARAMETER RestoreLocation
 Path to restore the SQL Server backups to on the target inance
@@ -33,11 +31,11 @@ Path to restore the SQL Server backups to on the target inance
 .PARAMETER RestoreTime
 Specify a DateTime object to which you want the database restored to. Default is to the latest point available 
 
-.PARAMETER OlaStyle
-Switch to indicate the backup files are in a folder structure as created by Ola Hallengreen's maintenance scripts
-
-.PARAMETER FileDirectory
-Switch to indicate the backup files just exist in a folder (this is the standard)
+.PARAMETER MaintenanceSolutionBackup
+Switch to indicate the backup files are in a folder structure as created by Ola Hallengreen's maintenance scripts.
+This swith enables a faster check for suitable backups. Other options require all files to be read first to ensure
+we have an anchoring full backup. Because we can rely on specific locations for backups performed with OlaHallengren's 
+backup solution, we can rely on file locations.
 
 .PARAMETER DatabaseName
 Name to restore the database under
@@ -59,17 +57,15 @@ Switch indicate that restore should be verified
 
 .PARAMETER XpDirTree
 Switch that indicated file scanning should be performed by the SQL Server instance using xp_dirtree
+This will scan recursively from the passed in path
 You must have sysadmin role membership on the instance for this to work.
 
-.PARAMETER LogicalFileMapping
-Accepts a hashtable of mappings to be used to rename Logical Files post restore, of the form:
-$mapping = @{'LogicalFile1'='newname1';'LogicalFile2'='othername'}
-You don't have to specify all files, and just those mapped will  be renamed
-Exclusive with LogicalFilePrefix
+.PARAMETER FileMapping
+A hashtable that can be used to move specific files to a location.
+$FileMapping = @{'DataFile1'='c:\restoredfiles\Datafile1.mdf';'DataFile3'='d:\DataFile3.mdf'}
+And files not specified in the mapping will be restore to their original location
+This Parameter is exclusive with RestoreLocation
 
-.PARAMETER LogicalFilePrefix
-Specify a string which will be prefixed to ALL logical files post restore.
-Exlusive with LogicalFileMapping
 .NOTES
 Original Author: Stuart Moore (@napalmgram), stuart-moore.com
 
@@ -138,9 +134,7 @@ Scans all the backup files in \\server2\backups stored in an Ola Hallengreen sty
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
         [switch]$MaintenanceSolutionBackup ,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
-		[string]$LogicalFilePrefix,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
-		[hashtable]$LogicalFileMapping			
+		[hashtable]$FileMapping			
 	)
     BEGIN
     {
@@ -195,11 +189,7 @@ Scans all the backup files in \\server2\backups stored in an Ola Hallengreen sty
         if(Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles)
         {
             try{
-                $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -RestoreLocation $RestoreLocation -NoRecovery:$NoRecovery -WithReplace:$WithReplace -Scripts:$OutputScript -ScriptOnly:$OutputScriptOnly -VerifyOnly:$VerifyOnly
-                if ($LogicalFileMapping.count -ne 0 -or $LogicalFilePrefix -ne '')
-                {
-                    Rename-LogicalFile -SqlServer $SqlServer -DbName $DatabaseName -SqlCredential $SqlCredential -Mapping:$LogicalFileMapping -Prefix:$LogicalFilePrefix
-                }
+                $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -RestoreLocation $RestoreLocation -NoRecovery:$NoRecovery -WithReplace:$WithReplace -Scripts:$OutputScript -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly
             }
             catch{
                 Write-Exception $_
