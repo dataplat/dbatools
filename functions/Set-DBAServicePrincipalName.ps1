@@ -93,7 +93,4 @@ Connects to active directory and adds a provided SPN to the given account.
             }
         }
     }
-
-    end {
-    }
 }
