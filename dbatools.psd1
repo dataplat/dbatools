@@ -197,9 +197,9 @@
 		'Find-DbaStoredProcedure',
 		'Measure-DbaBackupThroughput',
 		'Find-DbaLoginInGroup',
-		'Get-DBAServicePrincipalName',
-		'Test-DBAServicePrincipalName',
-		'Set-DBAServicePrincipalName '
+		'Get-DbaServicePrincipalName',
+		'Test-DbaServicePrincipalName',
+		'Set-DbaServicePrincipalName '
 	)
 	
 	# Cmdlets to export from this module
