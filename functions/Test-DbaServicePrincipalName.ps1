@@ -19,7 +19,7 @@ The function will return a custom object(s) that contains the server name checke
 running under, and what the "required" SPN should be. It will also return a boolean property indicating if the SPN is set in Active Directory
 or not.
 
-.PARAMETER Servername
+.PARAMETER ComputerName
 The server name you want to discover any SQL Server instances on. This parameter is required.
 
 .PARAMETER Credential
@@ -43,152 +43,184 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Test-DbaServicePrincipalName
 
 .EXAMPLE   
-Test-DbaServicePrincipalName -ServerName SQLSERVERA -Credential (Get-Credential)
+Test-DbaServicePrincipalName -ComputerName SQLSERVERA -Credential (Get-Credential)
 
 Connects to a computer (SQLSERVERA) and queries WMI for all SQL instances and return "required" SPNs. It will then take each SPN it generates
 and query Active Directory to make sure the SPNs are set.
 
 .EXAMPLE   
-Test-DbaServicePrincipalName -ServerName SQLSERVERA,SQLSERVERB -Credential (Get-Credential)
+Test-DbaServicePrincipalName -ComputerName SQLSERVERA,SQLSERVERB -Credential (Get-Credential)
 
 Connects to multiple computers (SQLSERVERA, SQLSERVERB) and queries WMI for all SQL instances and return "required" SPNs. 
 It will then take each SPN it generates and query Active Directory to make sure the SPNs are set.
 
 .EXAMPLE
-Test-DbaServicePrincipalName -ServerName SQLSERVERC -Domain domain.something -Credential (Get-Credential)
+Test-DbaServicePrincipalName -ComputerName SQLSERVERC -Domain domain.something -Credential (Get-Credential)
 
 Connects to a computer (SQLSERVERC) on a specified and queries WMI for all SQL instances and return "required" SPNs. 
 It will then take each SPN it generates and query Active Directory to make sure the SPNs are set. Note that the credential you pass must
 have be a valid login with appropriate rights on the domain you specify
 
 #>
-    [cmdletbinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [string[]]$Servername,
-        [Parameter(Mandatory = $true)]
-        [PSCredential]$Credential,
-        [Parameter(Mandatory = $false)]
-        [string]$domain=$null
-    )
-
-    begin {
-        if (!$domain) {
-            $domain = ([System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain()).Name
-        }
-
-        if ($Servername -notcontains $domain) {
-            $servername = $servername + "." + $domain
-        }
-    }
-
-
-    process {
-        $Scriptblock = {
-            $spns = @()
-            $servername = $args[0]
-            $mc = new-object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $servername
-            $Instances = $mc.ServerInstances
-
-            ForEach ($i in $Instances) {
-                $spn = [pscustomobject] @{
-                    ServerName = $servername
-                    InstanceName = $null
-                    InstanceServiceAccount = $null
-                    RequiredSPN = $null
-                    IsSet = $false
-                }
-
-                #is tcp enabled on this instance? If not, we don't need an spn, son
-                if ((($i.serverprotocols | Where-Object {$_.Displayname -eq "TCP/IP"}).ProtocolProperties | Where-Object {$_.Name -eq "Enabled"}).Value -eq $true)
-                {
-
-                    #Each instance has a default SPN of MSSQLSvc\<fqdn> or MSSSQLSvc\<fqdn>:Instance    
-                    if ($i.Name -eq "MSSQLSERVER") {
-                        $spn.InstanceName = $i.name
-                        $spn.RequiredSPN =  "MSSQLSvc/$servername"
-                    } else {
-                        $spn.InstanceName = $i.name
-                        $spn.RequiredSPN = "MSSQLSvc/" + $servername + ":" + $i.name
-                    }
-                    $InstanceName = $spn.InstanceName
-                    $spn.InstanceServiceAccount = (Get-WmiObject win32_service | Where-Object {$_.DisplayName -eq "SQL Server ($InstanceName)"}).startName
-                    $spns += $spn
-                }        
-            }
-        
-            #Now, for each spn, do we need a port set? Only if TCP is enabled and NOT DYNAMIC!
-
-            ForEach ($s in $spns)
-            {
-                $ips = (($instances | Where-Object {$_.name -eq $s.InstanceName}).ServerProtocols | Where-Object {$_.DisplayName -eq "TCP/IP" -and $_.IsEnabled -eq "True"}).IpAddresses
-                $ports = @()
-                $ipAllPort = $null
-                ForEach ($ip in $ips) {
-                    if ($ip.Name -eq "IPAll") {
-                        $ipAllPort += ($ip.IPAddressProperties | Where-Object {$_.Name -eq "TCPPort"}).Value
-                    } else {
-                        $enabled = ($ip.IPAddressProperties | Where-Object {$_.Name -eq "Enabled"}).Value
-                        $active = ($ip.IPAddressProperties | Where-Object {$_.Name -eq "Active"}).Value
-                        $TcpDynamicPorts = ($ip.IPAddressProperties | Where-Object {$_.Name -eq "TcpDynamicPorts"}).Value # | Select-Object Value
-                        if ($enabled -and $active -and $TcpDynamicPorts -eq "") {
-                            $ports += ($ip.IPAddressProperties | Where-Object {$_.Name -eq "TCPPort"}).Value
-                        }
-                    }
-                }
-                if ($ipAllPort -ne "") {
-                    $ports = $ipAllPort
-                }
-                $ports = $ports | Select-Object -Unique
-                ForEach ($p in $ports) {
-                    $spn = [pscustomobject] @{
-                        ServerName = $servername
-                        InstanceName = $s.InstanceName
-                        InstanceServiceAccount = $s.InstanceServiceAccount
-                        RequiredSPN = "MSSQLSvc/" + $servername + ":" + $p
-                        IsSet = $false
-                    }
-                    $spns += $spn
-                }
-
-            }
-            return $spns
-        }
-
-        $spns = Invoke-ManagedComputerCommand -ComputerName $servername -ScriptBlock $Scriptblock -ArgumentList $servername -Credential $Credential
-
-        #Now query AD for each required SPN
-        ForEach ($s in $spns) {
-            $DN = "DC=" + $domain -Replace("\.",',DC=')
-            $LDAP = "LDAP://$DN"
-            $root = [ADSI]$LDAP
-            $ADObject = New-Object System.DirectoryServices.DirectorySearcher
-            $ADObject.SearchRoot = $root
-
-            $serviceAccount = $s.InstanceServiceAccount
-
-            if ($serviceaccount -like "*\*") {
-                Write-Verbose "Account provided in in domain\user format, stripping out domain info..."
-                $serviceaccount = ($serviceaccount.split("\"))[1]
-            }
-            if ($serviceaccount -like "*@") {
-                Write-Verbose "Account provided in in user@domain format, stripping out domain info..."
-                $serviceaccount = ($serviceaccount.split("@"))[0]
-            }
-
-            $ADObject.Filter = $("(&(samAccountName={0}))" -f $serviceaccount)
-
-            $results = $ADObject.FindAll()
-
-            if ($results.Count -gt 0) {
-                if ($results.Properties.serviceprincipalname -contains $s.RequiredSPN) {
-                    $s.IsSet = $true
-                }
-            }
-        }
-    }
-
-    end {
-        return $spns
-    }
+	[cmdletbinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[string[]]$ComputerName,
+		[Parameter(Mandatory = $false)]
+		[PSCredential]$Credential,
+		[Parameter(Mandatory = $false)]
+		[string]$Domain
+	)
+	
+	begin
+	{
+		$resolved = Resolve-DbaNetworkName -ComputerName $ComputerName
+		$ipaddr = $resolved.IPAddress
+		
+		if (!$domain)
+		{
+			$domain = $resolved.domain
+			if ($computername -notmatch "\.")
+			{
+				$ComputerName = $resolved.FQDN
+			}
+		}
+		else
+		{
+			if ($computername -notmatch "\.")
+			{
+				$ComputerName = "$computerName.$domain"
+			}
+		}
+		
+		Write-Verbose "Resolved ComputerName to FQDN: $ComputerName"
+	}
+	
+	process
+	{
+		$Scriptblock = {
+			$spns = @()
+			$servername = $args[0]
+			
+			ForEach ($instance in $wmi.ServerInstances)
+			{
+				$spn = [pscustomobject] @{
+					ComputerName = $servername
+					InstanceName = $null
+					InstanceServiceAccount = $null
+					RequiredSPN = $null
+					IsSet = $false
+				}
+				
+				#is tcp enabled on this instance? If not, we don't need an spn, son
+				if ((($instance.serverprotocols | Where-Object { $_.Displayname -eq "TCP/IP" }).ProtocolProperties | Where-Object { $_.Name -eq "Enabled" }).Value -eq $true)
+				{
+					
+					#Each instance has a default SPN of MSSQLSvc\<fqdn> or MSSSQLSvc\<fqdn>:Instance    
+					if ($instance.Name -eq "MSSQLSERVER")
+					{
+						$spn.InstanceName = $instance.name
+						$spn.RequiredSPN = "MSSQLSvc/$servername"
+					}
+					else
+					{
+						$spn.InstanceName = $instance.name
+						$spn.RequiredSPN = "MSSQLSvc/" + $servername + ":" + $instance.name
+					}
+					
+					$InstanceName = $spn.InstanceName
+					$spn.InstanceServiceAccount = ($wmi.services | Where-Object DisplayName -eq "SQL Server ($InstanceName)").ServiceAccount
+					
+					$spns += $spn
+				}
+			}
+			
+			# Now, for each spn, do we need a port set? Only if TCP is enabled and NOT DYNAMIC!
+			
+			ForEach ($spn in $spns)
+			{
+				$ips = (($wmi.ServerInstances | Where-Object { $_.name -eq $spn.InstanceName }).ServerProtocols | Where-Object { $_.DisplayName -eq "TCP/IP" -and $_.IsEnabled -eq "True" }).IpAddresses
+				$ipAllPort = $ports = @()
+				ForEach ($ip in $ips)
+				{
+					if ($ip.Name -eq "IPAll")
+					{
+						$ipAllPort += ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TCPPort" }).Value
+					}
+					else
+					{
+						$enabled = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "Enabled" }).Value
+						$active = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "Active" }).Value
+						$TcpDynamicPorts = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TcpDynamicPorts" }).Value # | Select-Object Value
+						if ($enabled -and $active -and $TcpDynamicPorts -eq "")
+						{
+							$ports += ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TCPPort" }).Value
+						}
+					}
+				}
+				if ($ipAllPort -ne "")
+				{
+					$ports = $ipAllPort
+				}
+				
+				$ports = $ports | Select-Object -Unique
+				ForEach ($port in $ports)
+				{
+					$spns += [pscustomobject] @{
+						ComputerName = $servername
+						InstanceName = $spn.InstanceName
+						InstanceServiceAccount = $spn.InstanceServiceAccount
+						RequiredSPN = "MSSQLSvc/" + $servername + ":" + $port
+						IsSet = $false
+					}
+				}
+			}
+			return $spns
+		}
+		
+		if ($Credential)
+		{
+			$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computername -Credential $Credential
+		}
+		else
+		{
+			$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computername
+		}
+		
+		#Now query AD for each required SPN
+		ForEach ($spn in $spns)
+		{
+			$DN = "DC=" + $domain -Replace ("\.", ',DC=')
+			$LDAP = "LDAP://$DN"
+			$root = [ADSI]$LDAP
+			$ADObject = New-Object System.DirectoryServices.DirectorySearcher
+			$ADObject.SearchRoot = $root
+			
+			$serviceAccount = $spn.InstanceServiceAccount
+			
+			if ($serviceaccount -like "*\*")
+			{
+				Write-Verbose "Account provided in in domain\user format, stripping out domain info..."
+				$serviceaccount = ($serviceaccount.split("\"))[1]
+			}
+			if ($serviceaccount -like "*@*")
+			{
+				Write-Verbose "Account provided in in user@domain format, stripping out domain info..."
+				$serviceaccount = ($serviceaccount.split("@"))[0]
+			}
+			
+			$ADObject.Filter = $("(&(samAccountName={0}))" -f $serviceaccount)
+			
+			$results = $ADObject.FindAll()
+			
+			if ($results.Count -gt 0)
+			{
+				if ($results.Properties.serviceprincipalname -contains $spn.RequiredSPN)
+				{
+					$spn.IsSet = $true
+				}
+			}
+			$spn
+		}
+	}
 }
