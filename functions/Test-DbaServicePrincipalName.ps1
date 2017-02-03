@@ -101,8 +101,10 @@ have be a valid login with appropriate rights on the domain you specify
 		$Scriptblock = {
 			$spns = @()
 			$servername = $args[0]
+			$instancecount = $wmi.ServerInstances.Count
+			Write-Verbose "Found $instancecount instances"
 			
-			ForEach ($instance in $wmi.ServerInstances)
+			foreach ($instance in $wmi.ServerInstances)
 			{
 				$spn = [pscustomobject] @{
 					ComputerName = $servername
@@ -110,35 +112,46 @@ have be a valid login with appropriate rights on the domain you specify
 					InstanceServiceAccount = $null
 					RequiredSPN = $null
 					IsSet = $false
+					Cluster = $false
+					TcpEnabled = $false
+					Port = $null
+					DynamicPort = $true
+					Warning = "None"
+					Error = "None"
 				}
+				
+				$spn.InstanceName = $instance.name
+				$InstanceName = $spn.InstanceName
+				
+				Write-Verbose "Parsing $InstanceName"
+				
+				$services = $wmi.services | Where-Object DisplayName -eq "SQL Server ($InstanceName)"
+				$spn.InstanceServiceAccount = $services.ServiceAccount
+				$spn.Cluster = ($services.advancedproperties | Where-Object Name -eq 'Clustered').Value
 				
 				#is tcp enabled on this instance? If not, we don't need an spn, son
 				if ((($instance.serverprotocols | Where-Object { $_.Displayname -eq "TCP/IP" }).ProtocolProperties | Where-Object { $_.Name -eq "Enabled" }).Value -eq $true)
 				{
-					
+					Write-Verbose "TCP is enabled, gathering SPN requirements"
+					$spn.TcpEnabled = $true
 					#Each instance has a default SPN of MSSQLSvc\<fqdn> or MSSSQLSvc\<fqdn>:Instance    
 					if ($instance.Name -eq "MSSQLSERVER")
 					{
-						$spn.InstanceName = $instance.name
 						$spn.RequiredSPN = "MSSQLSvc/$servername"
 					}
 					else
 					{
-						$spn.InstanceName = $instance.name
 						$spn.RequiredSPN = "MSSQLSvc/" + $servername + ":" + $instance.name
 					}
-					
-					$InstanceName = $spn.InstanceName
-					$spn.InstanceServiceAccount = ($wmi.services | Where-Object DisplayName -eq "SQL Server ($InstanceName)").ServiceAccount
-					
-					$spns += $spn
 				}
+				$spns += $spn
 			}
 			
 			# Now, for each spn, do we need a port set? Only if TCP is enabled and NOT DYNAMIC!
 			
 			ForEach ($spn in $spns)
 			{
+				$newspn = $spn
 				$ips = (($wmi.ServerInstances | Where-Object { $_.name -eq $spn.InstanceName }).ServerProtocols | Where-Object { $_.DisplayName -eq "TCP/IP" -and $_.IsEnabled -eq "True" }).IpAddresses
 				$ipAllPort = $ports = @()
 				ForEach ($ip in $ips)
@@ -151,7 +164,7 @@ have be a valid login with appropriate rights on the domain you specify
 					{
 						$enabled = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "Enabled" }).Value
 						$active = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "Active" }).Value
-						$TcpDynamicPorts = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TcpDynamicPorts" }).Value # | Select-Object Value
+						$TcpDynamicPorts = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TcpDynamicPorts" }).Value
 						if ($enabled -and $active -and $TcpDynamicPorts -eq "")
 						{
 							$ports += ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TCPPort" }).Value
@@ -166,16 +179,20 @@ have be a valid login with appropriate rights on the domain you specify
 				$ports = $ports | Select-Object -Unique
 				ForEach ($port in $ports)
 				{
-					$spns += [pscustomobject] @{
-						ComputerName = $servername
-						InstanceName = $spn.InstanceName
-						InstanceServiceAccount = $spn.InstanceServiceAccount
-						RequiredSPN = "MSSQLSvc/" + $servername + ":" + $port
-						IsSet = $false
-					}
+					$newspn = $spn
+					$newspn.RequiredSPN = "MSSQLSvc/" + $servername + ":" + $port
+					$newspn.Port = $port
+					$newspn.DynamicPort = $false
 				}
+				
+				if ($newspn.DynamicPort -eq $true)
+				{
+					$newspn.Port = 0
+					$newspn.Warning = "Dynamic port is enabled"
+				}
+				$spns += $newspn
 			}
-			return $spns
+			$spns
 		}
 		
 		if ($Credential)
@@ -200,12 +217,12 @@ have be a valid login with appropriate rights on the domain you specify
 			
 			if ($serviceaccount -like "*\*")
 			{
-				Write-Verbose "Account provided in in domain\user format, stripping out domain info..."
+				Write-Debug "Account provided in in domain\user format. Stripping domain values."
 				$serviceaccount = ($serviceaccount.split("\"))[1]
 			}
 			if ($serviceaccount -like "*@*")
 			{
-				Write-Verbose "Account provided in in user@domain format, stripping out domain info..."
+				Write-Debug "Account provided in in user@domain format. Stripping domain values."
 				$serviceaccount = ($serviceaccount.split("@"))[0]
 			}
 			
@@ -219,6 +236,11 @@ have be a valid login with appropriate rights on the domain you specify
 				{
 					$spn.IsSet = $true
 				}
+			}
+			
+			if (!$spn.IsSet -and $spn.TcpEnabled)
+			{
+				$spn.Error = "SPN missing. Run Set-DbaServicePrincipalName -Autofix to fix."
 			}
 			$spn
 		}
