@@ -65,15 +65,23 @@ Function Restore-DBFromFilteredArray
 			}
 		}
 
-		$OrderedRestores = $InternalFiles | Sort-object -Property BackupStartDate, BackupType
-		Write-Verbose "of = $($OrderedRestores.Backupfilename)"
-		foreach ($RestoreFile in $OrderedRestores)
+		#$OrderedRestores = $InternalFiles | Sort-object -Property BackupStartDate, BackupType
+		$RestorePoints = $InternalFiles | Group-Object -Property FirstLSN | Select-Object -property Name
+		#$OrderedRestorePoints = $RestorePoints | Sort-Object -Property BackupTypeDescription, FirstLsn
+		#$RestorePoints
+		#$OrderedRestorePoints
+		foreach ($RestorePoint in $RestorePoints)
 		{
+		#	$RestorePoint.name
+		
+
+			$RestoreFiles = @($InternalFiles | Where-Object {$_.FirstLSN -eq $RestorePoint.Name})
+			Write-verbose "name - $($RestorePoint.Name)"
 			if ($Restore.RelocateFiles.count -gt 0)
 			{
 				$Restore.RelocateFiles.Clear()
 			}
-			foreach ($File in $RestoreFile.Filelist)
+			foreach ($File in $RestoreFiles[0].Filelist)
 			{
 
 				if ($RestoreLocation -ne '' -and $FileStructure -eq $NUll)
@@ -120,18 +128,18 @@ Function Restore-DBFromFilteredArray
 				}
 				else
 				{
-					$Restore.Database = $RestoreRile.DatabaseName
+					$Restore.Database = $RestoreFiles[0].DatabaseName
 				}
-				$Action = switch ($RestoreFile.BackupType)
+				$Action = switch ($RestoreFiles[0].BackupType)
 					{
 						'1' {'Database'}
 						'2' {'Log'}
 						'5' {'Database'}
-						Default {}
+						Default {'Unknown'}
 					}
 				Write-Verbose "$FunctionName restore action = $Action"
 				$restore.Action = $Action 
-				if ($RestoreFile -eq $OrderedRestores[-1] -and $NoRecovery -ne $true)
+				if ($RestorePoint -eq $RestorePoints[-1] -and $NoRecovery -ne $true)
 				{
 					#Do recovery on last file
 					Write-Verbose "$FunctionName - Doing Recovery on last file"
@@ -141,12 +149,13 @@ Function Restore-DBFromFilteredArray
 				{
 					$Restore.NoRecovery = $true
 				}
-
+				Foreach ($RestoreFile in $RestoreFiles)
+				{
 					$Device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
 					$Device.Name = $RestoreFile.BackupPath
 					$Device.devicetype = "File"
 					$Restore.Devices.Add($device)
-
+				}
 				Write-Verbose "$FunctionName - Performaing restore action"
 				if ($ScriptOnly)
 				{
@@ -179,8 +188,11 @@ Function Restore-DBFromFilteredArray
 					
 					#return "Success"
 				}
-				$null = $Restore.Devices.Remove($Device)
-				Remove-Variable device
+				while ($Restore.Devices.count -gt 0)
+				{
+					$device = $restore.devices[0]
+					$null = $restore.devices.remove($Device)
+				}
 			}
 			catch
 			{

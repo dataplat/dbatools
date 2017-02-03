@@ -179,17 +179,18 @@ Scans all the backup files in \\server2\backups stored in an Ola Hallengreen sty
     }
     END
     {
-        $FilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime -SqlCredental $SqlCredential
+        $FilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer:$SqlServer -RestoreTime:$RestoreTime -SqlCredential:$SqlCredential
 
         if (($FilteredFiles.DatabaseName | Group-Object | Measure-Object).count -gt 1)
         {
             $dbs = ($FilteredFiles | Select DatabaseName) -join (',')
             Write-Error "$FunctionName - We can only handle 1 Database at a time - $dbs"
         }
+        
         if(Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles)
         {
             try{
-                $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -RestoreLocation $RestoreLocation -NoRecovery:$NoRecovery -WithReplace:$WithReplace -Scripts:$OutputScript -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly
+                $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -RestoreLocation $RestoreLocation -NoRecovery:$NoRecovery -Replace:$WithReplace -Scripts:$OutputScript -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly
             }
             catch{
                 Write-Exception $_

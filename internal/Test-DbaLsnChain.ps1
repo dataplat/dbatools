@@ -43,26 +43,31 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
     #Need to anchor  with full backup:
     $FunctionName = "Test-DbaLsnChain"
     $FullDBAnchor = $FilteredRestoreFiles | Where-Object {$_.BackupTypeDescription -eq 'Database'}
-    if (($FullDBAnchor | Measure-Object).count -ne 1)
+    if (($FullDBAnchor | Group-Object -Property FirstLSN | Measure-Object).count -ne 1)
     {
-        Write-Error "$FunctionName - More than 1 full backup, or less than 1, neither supported"
+        Write-Error "$FunctionName - More than 1 full backup from a different LSN, or less than 1, neither supported"
         return $false
         break;
     }
     #Check all the backups relate to the full backup
+    
     #Via RecoveryForkID:
-    if (($FilteredRestoreFiles | Where-Object {$_.RecoveryForkID -ne $FullDBAnchor.RecoveryForkID}).count -gt 0)
+    #Allow for striped fill backups:
+    $RecoveryForkID = ($FullDBAnchor | Select-Object -First 1).RecoveryForkID
+    if (($FilteredRestoreFiles | Where-Object {$_.RecoveryForkID -ne $RecoveryForkID}).count -gt 0)
     {
         Write-Error "$FunctionName - Multiple RecoveryForkIDs found, not supported"
         return $false
         break
     }
     #Via LSN chain:
-    $BackupWrongLSN = $FilteredRestoreFiles | Where-Object {$_.DatabaseBackupLSN -ne $FullDBAnchor.CheckPointLSN}
+    $CheckPointLSN = ($FullDBAnchor | Select-Object -First 1).CheckPointLSN
+    $FullDBLastLSN = ($FullDBAnchor | Select-Object -First 1).LastLSN 
+    $BackupWrongLSN = $FilteredRestoreFiles | Where-Object {$_.DatabaseBackupLSN -ne $CheckPointLSN}
     #Should be 0 in there, if not, lets check that they're from during the full backup
     if ($BackupWrongLSN.count -gt 0 ) 
     {
-        if (($BackupWrongLSN | Where-Object {$_.LastLSN -lt $FullDBAnchor.LastSN}).count -gt 0)
+        if (($BackupWrongLSN | Where-Object {$_.LastLSN -lt $FullDBLastLSN}).count -gt 0)
         {
             Write-Error "$FunctionName - We have non matching LSNs - not supported"
             return $false

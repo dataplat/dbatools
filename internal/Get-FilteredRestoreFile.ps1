@@ -46,25 +46,26 @@ Takes an array of FileSystem Objects and then filters them down by date to get a
             Write-Error "$FunctionName - No Full backup found to anchor the restore"
         }
 
-       $Results += $Fullbackup
+       $Results += $SQLBackupdetails | where-object {$_.BackupType -eq "1" -and $_.FirstLSN -eq $FullBackup.FirstLSN}
         
-        Write-Verbose "$FunctionName - Got a Full backup, now find all diffs"
-        $Diffbackups = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Database Differential' -and $_.BackupStartDate -gt $Fullbackup.backupStartDate -and $_.BackupStartDate -lt $RestoreTime}
-        $Results += $Diffbackups
+       Write-Verbose "$FunctionName - Got a Full backup, now find diffs if they exist"
+       $Diffbackups = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Database Differential' -and $_.DatabaseBackupLSN -eq $Fullbackup.FirstLsn -and $_.BackupStartDate -lt $RestoreTime}
+
+        $TlogStartlsn = 0
         if ($Diffbackups.count -gt 0){
             Write-Verbose "$FunctionName - we have at least one diff so look for tlogs after the last one"
-            $TlogStartDate = ($DiffBackups | sort-object -property BackupStartDate -Descending | select-object -first 1).BackupStartDate
-        }else{
-            Write-Verbose "$FunctionName - we have no diffs, so T-logs post full backup start "
-            $TlogStartDate = $Fullbackup.BackupStartDate 
+            #If we have a Diff backup, we only need T-log backups post that point
+            $TlogStartLSN = ($DiffBackups | sort-object -propert FirstLSN -Descending | select-object -Propert StartLsn -first 1).FirstLSN
+            $Results += $Diffbackups
         }
         
+
         Write-Verbose "$FunctionName - Got a Full/Diff backups, now find all Tlogs needed"
-        $Tlogs = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.backupStartDate -gt $TlogStartDate-and $_.BackupStartDate -lt $RestoreTime}
+        $Tlogs = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.DatabaseBackupLSN -eq $Fullbackup.FirstLsn -and $_.FirstLSN -gt $TlogStartLSN -and $_.StartTime -lt $RestoreTime}
         $Results += $Tlogs
         #Catch the last Tlog that covers the restore time!
         $Tlogfinal = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.BackupStartDate -gt $RestoreTime} | Sort-Object -Property LastLSN  | select -First 1
-        $Results +=$Tlogfinal
+        $Results += $Tlogfinal
         Write-Verbose "$FunctionName - Returning Results to caller"
         $Results
     }
