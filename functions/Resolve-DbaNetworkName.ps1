@@ -138,7 +138,7 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 			}
 			
 			$fqdn = "$($conn.DNSHostname).$($conn.Domain)"
-			if ($fqdn = ".") { $fqdn = $null }
+			if ($fqdn -eq ".") { $fqdn = $null }
 			
 			[PSCustomObject]@{
 				InputName = $OGComputer
