@@ -58,7 +58,7 @@ Returns all active directory users within all windows AD groups that have logins
     {
         try
         {
-            Add-Type -AssemblyName  System.DirectoryServices.AccountManagement;
+            Add-Type -AssemblyName  System.DirectoryServices.AccountManagement
         }
         catch
         {
@@ -102,19 +102,15 @@ Returns all active directory users within all windows AD groups that have logins
                                     $subgroups += $fullName
                                 }
                             }
-                            else
-                            {
-
-
-                        $adout = [PSCustomObject]@{
-                            ComputerName = $server.NetName
-                            SqlInstance = $server.InstanceName
-                            Login = $member.SamAccountName
-                            Member = $AdGroup
-                        }
-
-                               $output +=$adout
-                            }
+						else
+						{
+							$output += = [PSCustomObject]@{
+								ComputerName = $server.NetName
+								SqlInstance = $server.InstanceName
+								Login = $member.SamAccountName
+								Member = $AdGroup
+							}
+						}
                     }
                 }
                 catch
@@ -135,8 +131,6 @@ Returns all active directory users within all windows AD groups that have logins
                 $output
             }
         }
-
-        $out = @()
     }
     
     PROCESS
@@ -164,7 +158,7 @@ Returns all active directory users within all windows AD groups that have logins
 
             if (-not $Login)
             {
-                $out = $ADGroupOut
+                $ADGroupOut
             }
             else
             {
@@ -176,7 +170,7 @@ Returns all active directory users within all windows AD groups that have logins
                     try 
                     {   
                         $FoundYou = $ADGroupOut | Where {$_.Login -eq $username} 
-                        ##$FoundYou
+                        ##$FoundYou - LOL, no, you!
                     }
                     catch
                     {
@@ -186,22 +180,15 @@ Returns all active directory users within all windows AD groups that have logins
 
                     foreach($gf in $FoundYou)
                     {
-                    
-                        $gfRole = $gf.GroupName
-                        $output = [PSCustomObject]@{
+                    [PSCustomObject]@{
                             ComputerName = $server.NetName
                             SqlInstance = $server.InstanceName
                             Login = $l
-                            Member = $gfRole
+                            Member = $gf.GroupName
                         }
-                        $out += $output
                     }
                 } 
             }
         } 
-    }
-    end
-    {
-        $out #| sort -Unique -Descending  
     }
 }
