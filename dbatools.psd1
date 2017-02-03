@@ -195,7 +195,8 @@
 		'Get-DbaXEventsSession',
 		'Test-DbaOptimizeForAdHoc',
 		'Find-DbaStoredProcedure',
-		'Measure-DbaBackupThroughput'
+		'Measure-DbaBackupThroughput',
+		'Find-DbaLoginInGroup'
 	)
 	
 	# Cmdlets to export from this module
