@@ -105,8 +105,9 @@ Returns all active directory users within all windows AD groups that have logins
 						else
 						{
 							$output += [PSCustomObject]@{
+								SqlInstance = $server.Name
+								InstanceName = $server.ServiceName
 								ComputerName = $server.NetName
-								SqlInstance = $server.InstanceName
 								Login = $member.SamAccountName
 								Member = $AdGroup
 							}
@@ -190,6 +191,6 @@ Returns all active directory users within all windows AD groups that have logins
                     }
                 } 
             }
-        } 
+        }
     }
 }
