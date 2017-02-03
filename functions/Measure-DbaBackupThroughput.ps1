@@ -134,7 +134,7 @@ Will fill this in
 				$agghistories += $history | Select-Object Server, Database, MBps, TotalSizeMB, Start, End
 			}
 			
-			$groups = $agghistories | Group-Object Database
+			$groups = $agghistories | Sort-Object Database | Group-Object Database
 			
 			foreach ($db in $groups)
 			{
