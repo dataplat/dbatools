@@ -23,7 +23,7 @@ You should have received a copy of the GNU General Public License along with thi
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance 
 SQLServer name or SMO object representing the SQL Server to connect to. This can be a
 collection and recieve pipeline input.
 
