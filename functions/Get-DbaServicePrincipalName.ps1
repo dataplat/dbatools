@@ -48,64 +48,58 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
     [cmdletbinding()]
     param(
         [Parameter(Mandatory = $false)]
-        [string[]]$Servername,
+        [string[]]$ComputerName,
         [Parameter(Mandatory = $false)]
-        [string[]]$AccountName,
-
-        [Parameter(Mandatory = $true)]
+		[string[]]$AccountName,
+		[Parameter(Mandatory = $false)]
         [PSCredential]$Credential
     )
-
-    begin {
-
-
-    }
-
-    process {
-        $spns = @()
-        ForEach ($ac in $AccountName)
-        {
-            if ($ac -like "*\*") {
-                Write-Verbose "Account name ($ac) provided in in domain\user format, stripping out domain info..."
-                $ac = ($ac.split("\"))[1]
+	begin
+	{
+		if (!$ComputerName -and !$AccountName) { $ComputerName = "localhost"; $AccountName = "$env:USERDOMAIN\$env:USERNAME" }
+	}
+	process
+	{
+		ForEach ($account in $AccountName)
+		{
+			$ogaccount = $account
+            if ($account -like "*\*") {
+                Write-Verbose "Account name ($account) provided in in domain\user format, stripping out domain info..."
+                $account = ($account.split("\"))[1]
             }
-            if ($ac -like "*@") {
-                Write-Verbose "Account name ($ac) provided in in user@domain format, stripping out domain info..."
-                $ac = ($ac.split("@"))[0]
+            if ($account -like "*@*") {
+                Write-Verbose "Account name ($account) provided in in user@domain format, stripping out domain info..."
+                $account = ($account.split("@"))[0]
             }
 
             $root = ([ADSI]"LDAP://RootDSE").defaultNamingContext
             $adsearch = New-Object System.DirectoryServices.DirectorySearcher
-            $domain = New-Object -TypeName System.DirectoryServices.DirectoryEntry -ArgumentList ("LDAP://" + $root) ,$($Credential.UserName),$($Credential.GetNetworkCredential().password)        
+            $domain = New-Object System.DirectoryServices.DirectoryEntry -ArgumentList ("LDAP://" + $root) #,$($Credential.UserName),$($Credential.GetNetworkCredential().password)        
             $adsearch.SearchRoot = $domain
-            $adsearch.Filter = $("(&(samAccountName={0}))" -f $ac)
-            Write-Verbose "Looking for account $ac..."
+            $adsearch.Filter = $("(&(samAccountName={0}))" -f $account)
+			
+			Write-Verbose "Looking for account $account..."
             $Result = $adsearch.FindOne()
 
-            ForEach ($s in $result.Properties.serviceprincipalname) {
-                $spn = [pscustomobject] @{
-                    SearchTerm = $ac
-                    SPN = $s
+            foreach ($spn in $result.Properties.serviceprincipalname) {
+                [pscustomobject] @{
+                    Name = $ogaccount
+                    SPN = $spn
                 }
-                $spns += $spn
-            }
-
-        }
-
-        ForEach ($sv in $Servername)
-        {
-            $spnsForServer = Test-DbaServicePrincipalName -Servername $sv -Credential $Credential
-            ForEach ($s in $spnsForServer | Where-Object {$_.IsSet -eq $true}) {
-                $spn = [pscustomobject] @{
-                    SearchTerm = $sv
-                    SPN = $s.RequiredSPN
-                }
-                $spns += $spn
             }
         }
-    }
-
-    end {
-        return $spns
+		
+		foreach ($server in $ComputerName)
+		{
+			Write-Verbose "Getting SPN for $server"
+			$spns = Test-DbaServicePrincipalName -ComputerName $server -Credential $Credential
+			Write-Verbose "Found $spns"
+			foreach ($spn in $spns | Where-Object {$_.IsSet -eq $true}) {
+                [pscustomobject] @{
+                    Name = $server
+                    SPN = $spn.RequiredSPN
+                }
+            }
+        }
     }
 }
