@@ -84,9 +84,9 @@ Restore-DbaBackup -SqlServer server1\instance1 -path \\server2\backups
 Scans all the backup files in \\server2\backups, filters them and restores the database to server1\instance1
 
 .EXAMPLE
-Restore-DbaBackup -SqlServer server1\instance1 -path \\server2\backups -OlaStyle -RestoreLocation c:\restores
+Restore-DbaBackup -SqlServer server1\instance1 -path \\server2\backups -MaintenanceSolutionBackup -RestoreLocation c:\restores
 
-Scans all the backup files in \\server2\backups$ stored in an Ola Hallengreen style folder structure,
+Scans all the backup files in \\server2\backups$ stored in an Ola Hallengren style folder structure,
  filters them and restores the database to the c:\restores folder on server1\instance1 
 
 .EXAMPLE
@@ -96,10 +96,16 @@ Takes the provided files from multiple directories and restores them on  server1
 
 .EXAMPLE
 $RestoreTime = Get-Date('11:19 23/12/2016')
-Restore-DbaBackup -SqlServer server1\instance1' -path \\server2\backups -OlaStyle -RestoreLocation c:\restores -RestoreTime $RestoreTime
+Restore-DbaBackup -SqlServer server1\instance1 -path \\server2\backups -MaintenanceSolutionBackup -RestoreLocation c:\restores -RestoreTime $RestoreTime
 
-Scans all the backup files in \\server2\backups stored in an Ola Hallengreen style folder structure,
+Scans all the backup files in \\server2\backups stored in an Ola Hallengren style folder structure,
  filters them and restores the database to the c:\restores folder on server1\instance1 up to 11:19 23/12/2016
+
+.EXAMPLE
+Restore-DbaBackup -SqlServer server1\instance1 -path \\server2\backups -RestoreLocation c:\restores -OutputScriptOnly | Out-File -Filepath c:\scripts\restore.sql
+Scans all the backup files in \\server2\backups stored in an Ola Hallengren style folder structure,
+ filters them and generate the T-SQL Scripts to restore the database to the latest point in time, 
+ and then stores the output in a file for later retrieval
 #>
 	[CmdletBinding()]
 	param (

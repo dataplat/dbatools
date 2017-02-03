@@ -65,16 +65,10 @@ Function Restore-DBFromFilteredArray
 			}
 		}
 
-		#$OrderedRestores = $InternalFiles | Sort-object -Property BackupStartDate, BackupType
 		$RestorePoints = $InternalFiles | Group-Object -Property FirstLSN | Select-Object -property Name
-		#$OrderedRestorePoints = $RestorePoints | Sort-Object -Property BackupTypeDescription, FirstLsn
-		#$RestorePoints
-		#$OrderedRestorePoints
 		foreach ($RestorePoint in $RestorePoints)
 		{
-		#	$RestorePoint.name
-		
-
+	
 			$RestoreFiles = @($InternalFiles | Where-Object {$_.FirstLSN -eq $RestorePoint.Name})
 			Write-verbose "name - $($RestorePoint.Name)"
 			if ($Restore.RelocateFiles.count -gt 0)
@@ -186,7 +180,6 @@ Function Restore-DBFromFilteredArray
 					}
 					Write-Progress -id 1 -activity "Restoring $DbName to $ServerName" -status "Complete" -Completed
 					
-					#return "Success"
 				}
 				while ($Restore.Devices.count -gt 0)
 				{

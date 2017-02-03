@@ -5,13 +5,15 @@ function Test-DbaLsnChain
 Checks that a filtered array from Get-FilteredRestore contains a restorabel chain of LSNs
 
 .DESCRIPTION
+Finds the anchoring Full backup (or multiple if it's a striped set).
+Then filters to ensure that all the backups are from that anchor point (LastLSN) and that they're all on the same RecoveryForkID
+Then checks that we have either enough Diffs and T-log backups to get to where we want to go. And checks that there is no break between
+LastLSN and FirstLSN in sequential files
 	
 .PARAMETER FilterdRestoreFiles
+This is just an object consisting of the output from Read-DbaBackupHeader. Normally this will have been filtered down to a restorable chain 
+before arriving here. (ie; only 1 anchoring Full backup)
 	
-.PARAMETER RestoreTime
-Returns fewer columns for an easy overview
-	
-
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
@@ -27,17 +29,11 @@ Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles
 
 Checks that the Restore chain in $FilteredFiles is complete and can be fully restored
 
-.EXAMPLE
-Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles -RestoreTime '23/12/2016 06:55'
-
-Checks that the Restore chain in $FilteredFiles is complete and can be fully restored to the Point In Time '23/12/2016 06:55'
-	
 #>
 	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true)]
-        [object[]]$FilteredRestoreFiles,
-        [DateTime]$RestoreTime = (Get-Date).addyears(1)
+        [object[]]$FilteredRestoreFiles
 	)
 
     #Need to anchor  with full backup:
@@ -114,7 +110,7 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
         }
         $i++
 
-    }    
+    }   
     return $true
 }
 

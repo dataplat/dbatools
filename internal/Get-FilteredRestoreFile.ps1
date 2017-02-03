@@ -6,6 +6,10 @@ Internal Function to Filter a set of SQL Server backup files
 
 .DESCRIPTION
 Takes an array of FileSystem Objects and then filters them down by date to get a potential Restore set
+First step is to pass them to a SQLInstance to be parsed with Read-DBABackupHeader
+The we find the last full backup before the RestorePoint.
+Then filter for and Diff backups between the full backup and the RestorePoint
+Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
 #>
 	[CmdletBinding()]
 	Param (
