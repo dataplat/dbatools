@@ -153,7 +153,7 @@ Shows information about the processes that were initiated by hosts (computers/cl
 		
 		if ($Detailed)
 		{
-			Select-DefaultField -ExcludeProperty SqlServer -InputObject ($allsessions | Select-Object SqlServer, Spid, Login, Host, Database, BlockingSpid, Program, @{
+			Select-DefaultView -ExcludeProperty SqlServer -InputObject ($allsessions | Select-Object SqlServer, Spid, Login, Host, Database, BlockingSpid, Program, @{
 				name = "Status"; expression = {
 					if ($_.Status -eq "") { "sleeping" }
 					else { $_.Status }
@@ -167,7 +167,7 @@ Shows information about the processes that were initiated by hosts (computers/cl
 		}
 		else
 		{
-			Select-DefaultField -ExcludeProperty SqlServer -InputObject ($allsessions | Select-Object SqlServer, Spid, Login, Host, Database, BlockingSpid, Program, @{
+			Select-DefaultView -ExcludeProperty SqlServer -InputObject ($allsessions | Select-Object SqlServer, Spid, Login, Host, Database, BlockingSpid, Program, @{
 					name = "Status"; expression = {
 						if ($_.Status -eq "") { "sleeping" }
 						else { $_.Status }

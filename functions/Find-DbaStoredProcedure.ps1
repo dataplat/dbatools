@@ -154,7 +154,7 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 								StoredProcedureTextFound = $spTextFound -join "`n"
 								StoredProcedure = $sp
 								StoredProcedureFullText = $sp.TextBody
-							} | Select-DefaultField -ExcludeProperty StoredProcedure, StoredProcedureFullText
+							} | Select-DefaultView -ExcludeProperty StoredProcedure, StoredProcedureFullText
 						}
 					}
 				}
@@ -186,7 +186,7 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 								StoredProcedureTextFound = $spTextFound -join "`n"
 								StoredProcedure = $sp
 								StoredProcedureFullText = $sp.TextBody
-							} | Select-DefaultField -ExcludeProperty StoredProcedure, StoredProcedureFullText
+							} | Select-DefaultView -ExcludeProperty StoredProcedure, StoredProcedureFullText
 						}
 					}
 				}

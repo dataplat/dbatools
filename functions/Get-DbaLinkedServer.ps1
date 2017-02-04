@@ -70,7 +70,7 @@ Returns all Linked Servers for the SQL Server instance DEV01
                         LinkedServer = $ls
                         }
      
-                    Select-DefaultField -InputObject $output -Property ComputerName, SqlInstance, LinkedServerName, RemoteServer, ProductName, Impersonate, RemoteUser, Rpc, RpcOut
+                    Select-DefaultView -InputObject $output -Property ComputerName, SqlInstance, LinkedServerName, RemoteServer, ProductName, Impersonate, RemoteUser, Rpc, RpcOut
             } 
         } 
     } 

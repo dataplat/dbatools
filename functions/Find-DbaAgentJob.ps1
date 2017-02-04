@@ -243,7 +243,7 @@ Returns all agent job(s) that are named exactly Mybackup
 					Category = $job.Category
 					OwnerLoginName = $job.OwnerLoginName
 					Job = $job
-				} | Select-DefaultField -ExcludeProperty Job
+				} | Select-DefaultView -ExcludeProperty Job
 			}
 		}
 	}

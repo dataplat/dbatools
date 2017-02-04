@@ -146,7 +146,7 @@ Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status,
 					MaximumSize = $null
 					PeakUsage = $null
 					CurrentUsage = $null
-				} | Select-DefaultField -Property ComputerName, AutoPageFile
+				} | Select-DefaultView -Property ComputerName, AutoPageFile
 			}
 			if ( $CIMsession ) { Remove-CimSession $CIMsession }
 		}
