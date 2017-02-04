@@ -8,7 +8,7 @@ Returns a list of set service principal names for a given computer/AD account
 Get a list of set SPNs. SPNs are set at the AD account level. You can either retrieve set SPNs for a computer, or any SPNs set for
 a given active directry account. You can query one, or both. You'll get a list of every SPN found for either search term.
 
-.PARAMETER ServerName
+.PARAMETER ComputerName
 The servers you want to return set SPNs for.
 
 .PARAMETER AccountName

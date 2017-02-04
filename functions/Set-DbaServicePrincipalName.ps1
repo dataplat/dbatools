@@ -20,6 +20,12 @@ The account you want the SPN added to
 .PARAMETER Credential
 The credential you want to use to connect to Active Directory to make the changes
 
+.PARAMETER Confirm
+Turns confirmations before changes on or off
+	
+.PARAMETER WhatIf
+Shows what would happen if the command was executed	
+	
 .NOTES 
 Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
 
