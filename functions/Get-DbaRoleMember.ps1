@@ -130,27 +130,33 @@ PROCESS
 				
 			foreach ($db in $dbs)
 			{
-				$dbroles = $db.roles
-				Write-Verbose "Getting Database Roles for $($db.name) on $instance"
-					
-				if ($NoFixedRole)
-				{
-					$dbroles = $dbroles | Where-Object { $_.isfixedrole -eq $false }
-				}
-					
-				foreach ($dbrole in $dbroles)
-				{
-					Write-Verbose "Getting Database Role Members for $dbrole in $($db.name) on $instance"
-					$dbmembers = $dbrole.enummembers()
-					ForEach ($dbmem in $dbmembers)
+				Write-Verbose "Checking accessibility of $($db.name) on $instance"
+				if ($db.IsAccessible -eq $true) {
+					$dbroles = $db.roles
+					Write-Verbose "Getting Database Roles for $($db.name) on $instance"
+						
+					if ($NoFixedRole)
 					{
-						[PSCustomObject]@{
-							SqlInstance = $instance
-							Database = $db.name
-							Role = $dbrole.name
-							Member = $dbmem.tostring()
+						$dbroles = $dbroles | Where-Object { $_.isfixedrole -eq $false }
+					}
+						
+					foreach ($dbrole in $dbroles)
+					{
+						Write-Verbose "Getting Database Role Members for $dbrole in $($db.name) on $instance"
+						$dbmembers = $dbrole.enummembers()
+						ForEach ($dbmem in $dbmembers)
+						{
+							[PSCustomObject]@{
+								SqlInstance = $instance
+								Database = $db.name
+								Role = $dbrole.name
+								Member = $dbmem.tostring()
+							}
 						}
 					}
+				}
+				else {
+					Write-Verbose "Database $($db.name) on $instance is not accessible"
 				}
 			}
 		}
