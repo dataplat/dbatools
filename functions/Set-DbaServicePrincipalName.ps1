@@ -43,7 +43,7 @@ Set-DbaServicePrincipalName -SPN MSSQLSvc\SQLSERVERA.domain.something -ServiceAc
 Connects to Active Directory and adds a provided SPN to the given account. Uses alternative account to connect to AD.
 
 #>
-	[cmdletbinding(SupportsShouldProcess = $true)]
+	[cmdletbinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
 	param (
 		[Parameter(Mandatory = $true, ValueFromPipelineByPropertyName)]
 		[Alias("RequiredSPN")]
@@ -52,7 +52,6 @@ Connects to Active Directory and adds a provided SPN to the given account. Uses 
 		[Alias("InstanceServiceAccount")]
 		[string]$ServiceAccount,
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
-		[Parameter(Mandatory = $false)]
 		[pscredential]$Credential
 	)
 	
@@ -90,7 +89,7 @@ Connects to Active Directory and adds a provided SPN to the given account. Uses 
 		
 		if ($result -eq $null)
 		{
-			Write-Warning "The account you specified for the SPN ($serviceAccount) doesn't exist"
+			Write-Warning "The account you specified for the SPN ($serviceAccount) does not exist on the domain"
 			continue
 		}
 		else
