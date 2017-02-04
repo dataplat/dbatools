@@ -59,12 +59,12 @@ Connects to Active Directory and adds a provided SPN to the given account. Uses 
 	{
 		if ($serviceaccount -like "*\*")
 		{
-			Write-Verbose "Account provided in in domain\user format, stripping out domain info..."
+			Write-Debug "Account provided in in domain\user format, stripping out domain info..."
 			$serviceaccount = ($serviceaccount.split("\"))[1]
 		}
-		if ($serviceaccount -like "*@")
+		if ($serviceaccount -like "*@*")
 		{
-			Write-Verbose "Account provided in in user@domain format, stripping out domain info..."
+			Write-Debug "Account provided in in user@domain format, stripping out domain info..."
 			$serviceaccount = ($serviceaccount.split("@"))[0]
 		}
 		
