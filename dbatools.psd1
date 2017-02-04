@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.694'
+	ModuleVersion = '0.8.695'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -196,12 +196,16 @@
 		'Test-DbaOptimizeForAdHoc',
 		'Find-DbaStoredProcedure',
 		'Measure-DbaBackupThroughput',
-		'Find-DbaLoginInGroup',
+		'Find-DbaLoginInGroup'
+	)
+	
+	<# coming soon
+	,
 		'Get-DbaServicePrincipalName',
 		'Test-DbaServicePrincipalName',
 		'Set-DbaServicePrincipalName',
 		'Get-DbaLinkedServer'
-	)
+	#>
 	
 	# Cmdlets to export from this module
 	CmdletsToExport = '*'
