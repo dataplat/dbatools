@@ -99,6 +99,34 @@ have be a valid login with appropriate rights on the domain you specify
 	process
 	{
 		$Scriptblock = {
+			
+			Function Convert-SqlVersion
+			{
+				param (
+					[version]$version
+				)
+				
+				switch ($version.Major)
+				{
+					9 { "SQL Server 2005" }
+					10 {
+						if ($version.Minor -eq 0)
+						{
+							"SQL Server 2008"
+						}
+						else
+						{
+							"SQL Server 2008 R2"
+						}
+					}
+					11 { "SQL Server 2012" }
+					12 { "SQL Server 2014" }
+					13 { "SQL Server 2016" }
+					14 { "SQL Server vNext" }
+					default { $version }
+				}
+			}
+			
 			$spns = @()
 			$servername = $args[0]
 			$instancecount = $wmi.ServerInstances.Count
@@ -109,6 +137,7 @@ have be a valid login with appropriate rights on the domain you specify
 				$spn = [pscustomobject] @{
 					ComputerName = $servername
 					InstanceName = $null
+					SqlProduct = $null #SKUNAME
 					InstanceServiceAccount = $null
 					RequiredSPN = $null
 					IsSet = $false
@@ -128,6 +157,13 @@ have be a valid login with appropriate rights on the domain you specify
 				$services = $wmi.services | Where-Object DisplayName -eq "SQL Server ($InstanceName)"
 				$spn.InstanceServiceAccount = $services.ServiceAccount
 				$spn.Cluster = ($services.advancedproperties | Where-Object Name -eq 'Clustered').Value
+				
+				$rawversion = [version]($services.advancedproperties | Where-Object Name -eq 'VERSION').Value #13.1.4001.0
+				
+				$version = Convert-SqlVersion $rawversion
+				$skuname = ($services.advancedproperties | Where-Object Name -eq 'SKUNAME').Value
+				
+				$spn.SqlProduct = "$version $skuname"
 				
 				#is tcp enabled on this instance? If not, we don't need an spn, son
 				if ((($instance.serverprotocols | Where-Object { $_.Displayname -eq "TCP/IP" }).ProtocolProperties | Where-Object { $_.Name -eq "Enabled" }).Value -eq $true)
@@ -187,7 +223,6 @@ have be a valid login with appropriate rights on the domain you specify
 				
 				if ($newspn.DynamicPort -eq $true)
 				{
-					$newspn.Port = 0
 					$newspn.Warning = "Dynamic port is enabled"
 				}
 				$spns += $newspn
