@@ -147,6 +147,7 @@ have be a valid login with appropriate rights on the domain you specify
 					DynamicPort = $true
 					Warning = "None"
 					Error = "None"
+					Credential = $Credential
 				}
 				
 				$spn.InstanceName = $instance.name
@@ -284,7 +285,7 @@ have be a valid login with appropriate rights on the domain you specify
 				$spn.Error = "SPN missing. Run Set-DbaServicePrincipalName -Autofix to fix."
 			}
 			
-			$spn
+			$spn | Select-DefaultField -ExcludeProperty Credential
 		}
 	}
 }
