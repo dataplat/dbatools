@@ -228,6 +228,10 @@ Returns all agent job(s) that are named exactly Mybackup
 			
 			$jobs = $output | Select-Object -Unique
 			
+			if ($jobs.count -eq 0 -and (!$Name, !$StepName, !$LastUsed, !$Disabled, !$Disabled, !$NoSchedule, !$NoEmailNotification, !$Category, !$Owner, !$Exclude))
+			{
+				Write-Warning "You must specify something to find"	
+			}
 			foreach ($job in $jobs)
 			{
 				[PSCustomObject]@{
