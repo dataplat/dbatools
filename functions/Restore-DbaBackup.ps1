@@ -214,7 +214,7 @@ c:\DataFiles and all the log files into c:\LogFiles
             Write-Error "$FunctionName - We can only handle 1 Database at a time - $dbs"
         }
         
-        if(Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles)
+        if((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlServer $SqlServer -SqlCredential $SqlCredential))
         {
             try{
                 $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -RestoreLocation $RestoreLocation -RestoreLogLocation $RestoreLogLocation -NoRecovery:$NoRecovery -Replace:$WithReplace -Scripts:$OutputScript -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly
