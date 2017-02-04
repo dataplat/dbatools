@@ -14,6 +14,7 @@ Function Restore-DBFromFilteredArray
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object[]]$Files,
         [String]$RestoreLocation,
+		[String]$RestoreLogLocation,
         [DateTime]$RestoreTime = (Get-Date).addyears(1),  
 		[switch]$NoRecovery,
 		[switch]$ReplaceDatabase,
@@ -83,7 +84,13 @@ Function Restore-DBFromFilteredArray
 					
 					$MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
 					$MoveFile.LogicalFileName = $File.LogicalName
-					$MoveFile.PhysicalFileName = $RestoreLocation + (split-path $file.PhysicalName -leaf)
+					if ($File.Type -eq 'L' -and $RestoreLogLocation -ne '')
+					{
+						$MoveFile.PhysicalFileName = $RestoreLogLocation + '\' + (split-path $file.PhysicalName -leaf)					
+					}
+					else {
+						$MoveFile.PhysicalFileName = $RestoreLocation + '\' + (split-path $file.PhysicalName -leaf)	
+					}
 					$null = $Restore.RelocateFiles.Add($MoveFile)
 					
 				} elseif ($RestoreLocation -eq '' -and $FileStructure -ne $NUll)

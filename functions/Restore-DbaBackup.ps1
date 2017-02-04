@@ -26,7 +26,12 @@ Accepts multiple paths seperated by ','
 A Files object(s) containing SQL Server backup files. Each file passed in will be parsed.
 
 .PARAMETER RestoreLocation
-Path to restore the SQL Server backups to on the target inance
+Path to restore the SQL Server backups to on the target instance.
+If only this parameter is specified, then all database files (data and log) will be restored to this location
+
+.PARAMETER RestoreLogLocation
+Path to restore the database log files to.
+This parameter can only be specified alongside RestoreLocation.
 
 .PARAMETER RestoreTime
 Specify a DateTime object to which you want the database restored to. Default is to the latest point available 
@@ -103,9 +108,18 @@ Scans all the backup files in \\server2\backups stored in an Ola Hallengren styl
 
 .EXAMPLE
 Restore-DbaBackup -SqlServer server1\instance1 -path \\server2\backups -RestoreLocation c:\restores -OutputScriptOnly | Out-File -Filepath c:\scripts\restore.sql
+
 Scans all the backup files in \\server2\backups stored in an Ola Hallengren style folder structure,
  filters them and generate the T-SQL Scripts to restore the database to the latest point in time, 
  and then stores the output in a file for later retrieval
+
+.EXAMPLE
+Restore-DbaBackup -SqlServer server1\instance1 -path c:\backups -RestoreLocation c:\DataFiles -RestoreLogLocation c:\LogFile
+
+Scans all the files in c:\backups and then restores them onto the SQL Server Instance server1\instance1, placing data files
+c:\DataFiles and all the log files into c:\LogFiles
+ 
+
 #>
 	[CmdletBinding()]
 	param (
@@ -123,6 +137,8 @@ Scans all the backup files in \\server2\backups stored in an Ola Hallengren styl
 		[string]$DatabaseName,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
         [String]$RestoreLocation,
+        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
+        [String]$RestoreLogLocation,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
         [DateTime]$RestoreTime = (Get-Date).addyears(1),
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]  
@@ -146,6 +162,11 @@ Scans all the backup files in \\server2\backups stored in an Ola Hallengren styl
     {
         $FunctionName = "Restore-DbaBackup"
         $BackupFiles = @()
+
+        if ($RestoreLogLocation -ne '' -and $RestoreLocation -eq '')
+        {
+            Throw "$FunctionName - RestoreLogLocation can only be specified with RestoreLocation"
+        }
     }
     PROCESS
     {
@@ -196,7 +217,7 @@ Scans all the backup files in \\server2\backups stored in an Ola Hallengren styl
         if(Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles)
         {
             try{
-                $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -RestoreLocation $RestoreLocation -NoRecovery:$NoRecovery -Replace:$WithReplace -Scripts:$OutputScript -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly
+                $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -RestoreLocation $RestoreLocation -RestoreLogLocation $RestoreLogLocation -NoRecovery:$NoRecovery -Replace:$WithReplace -Scripts:$OutputScript -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly
             }
             catch{
                 Write-Exception $_
