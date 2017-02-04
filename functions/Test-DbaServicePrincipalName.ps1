@@ -158,6 +158,11 @@ have be a valid login with appropriate rights on the domain you specify
 				$spn.InstanceServiceAccount = $services.ServiceAccount
 				$spn.Cluster = ($services.advancedproperties | Where-Object Name -eq 'Clustered').Value
 				
+				if ($spn.Cluster)
+				{
+					$servername = ($services.advancedproperties | Where-Object Name -eq 'VSNAME').Value
+				}
+				
 				$rawversion = [version]($services.advancedproperties | Where-Object Name -eq 'VERSION').Value #13.1.4001.0
 				
 				$version = Convert-SqlVersion $rawversion
@@ -239,6 +244,7 @@ have be a valid login with appropriate rights on the domain you specify
 			$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computername
 		}
 		
+		
 		#Now query AD for each required SPN
 		ForEach ($spn in $spns)
 		{
@@ -277,6 +283,7 @@ have be a valid login with appropriate rights on the domain you specify
 			{
 				$spn.Error = "SPN missing. Run Set-DbaServicePrincipalName -Autofix to fix."
 			}
+			
 			$spn
 		}
 	}
