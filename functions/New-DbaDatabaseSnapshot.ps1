@@ -304,7 +304,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 							Status = 'Created'
 							Notes = $null
 							SnapshotDb = $SnapDB
-						} | Select-DefaultField -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated, PrimaryFilePath, Status
+						} | Select-DefaultView -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated, PrimaryFilePath, Status
 					}
 					catch
 					{
@@ -354,7 +354,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 								Status = $Status
 								Notes = $Notes
 								SnapshotDb = $SnapDB
-							} | Select-DefaultField -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated, PrimaryFilePath, Status, Notes
+							} | Select-DefaultView -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated, PrimaryFilePath, Status, Notes
 						}
 						catch
 						{

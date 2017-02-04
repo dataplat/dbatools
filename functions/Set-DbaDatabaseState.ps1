@@ -545,7 +545,7 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 				Access = $newstate.Access
 				Notes = $warn
 				Database = $db
-			} | Select-DefaultField -ExcludeProperty Database
+			} | Select-DefaultView -ExcludeProperty Database
 		}
 	}
 	

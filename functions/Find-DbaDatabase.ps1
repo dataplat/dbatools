@@ -129,7 +129,7 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 						Views = ($db.Views | Where-Object { $_.IsSystemObject -eq $false }).Count
 						ExtendedPropteries = $extendedproperties
 						Database = $db
-					} | Select-DefaultField -ExcludeProperty Database
+					} | Select-DefaultView -ExcludeProperty Database
 				}
 				else
 				{
@@ -142,7 +142,7 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 						Owner = $db.Owner
 						CreateDate = $db.CreateDate
 						Database = $db
-					} | Select-DefaultField -ExcludeProperty Database
+					} | Select-DefaultView -ExcludeProperty Database
 				}
 			}
 		}
