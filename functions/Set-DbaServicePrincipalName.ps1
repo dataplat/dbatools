@@ -45,10 +45,13 @@ Connects to Active Directory and adds a provided SPN to the given account. Uses 
 #>
 	[cmdletbinding(SupportsShouldProcess = $true)]
 	param (
-		[Parameter(Mandatory = $true)]
+		[Parameter(Mandatory = $true, ValueFromPipelineByPropertyName)]
+		[Alias("RequiredSPN")]
 		[string]$SPN,
-		[Parameter(Mandatory = $true)]
+		[Parameter(Mandatory = $true, ValueFromPipelineByPropertyName)]
+		[Alias("InstanceServiceAccount")]
 		[string]$ServiceAccount,
+		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
 		[Parameter(Mandatory = $false)]
 		[pscredential]$Credential
 	)
