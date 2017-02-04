@@ -199,7 +199,8 @@
 		'Find-DbaLoginInGroup',
 		'Get-DbaServicePrincipalName',
 		'Test-DbaServicePrincipalName',
-		'Set-DbaServicePrincipalName'
+		'Set-DbaServicePrincipalName',
+		'Get-DbaLinkedServer'
 	)
 	
 	# Cmdlets to export from this module
