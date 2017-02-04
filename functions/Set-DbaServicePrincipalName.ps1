@@ -89,12 +89,12 @@ Connects to Active Directory and adds a provided SPN to the given account. Uses 
 		
 		if ($result -eq $null)
 		{
-			Write-Warning "The account you specified for the SPN ($serviceAccount) does not exist on the domain"
+			Write-Warning "The account specified for the SPN ($serviceAccount) does not exist on the domain"
 			continue
 		}
 		else
 		{
-			#cool! add an spn
+			# Cool! Add an SPN
 			
 			$adentry = $result.GetDirectoryEntry()
 			if ($PSCmdlet.ShouldProcess("$spn", "Adding SPN to service account"))
@@ -112,7 +112,7 @@ Connects to Active Directory and adds a provided SPN to the given account. Uses 
 				}
 			}
 			
-			#Don't forget delegation!
+			# Don't forget delegation!
 			$adentry = $result.GetDirectoryEntry()
 			if ($PSCmdlet.ShouldProcess("$spn", "Adding delegation to service account for SPN"))
 			{

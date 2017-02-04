@@ -147,7 +147,7 @@ have be a valid login with appropriate rights on the domain you specify
 					DynamicPort = $true
 					Warning = "None"
 					Error = "None"
-					Credential = $Credential
+					Credential = $Credential # for piping
 				}
 				
 				$spn.InstanceName = $instance.name
@@ -282,7 +282,7 @@ have be a valid login with appropriate rights on the domain you specify
 			
 			if (!$spn.IsSet -and $spn.TcpEnabled)
 			{
-				$spn.Error = "SPN missing. Run Set-DbaServicePrincipalName -Autofix to fix."
+				$spn.Error = "SPN missing"
 			}
 			
 			$spn | Select-DefaultField -ExcludeProperty Credential
