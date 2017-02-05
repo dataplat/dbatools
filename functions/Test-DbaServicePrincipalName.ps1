@@ -74,7 +74,7 @@ have be a valid login with appropriate rights on the domain you specify
 	
 	begin
 	{
-		$resolved = Resolve-DbaNetworkName -ComputerName $ComputerName
+		$resolved = Resolve-DbaNetworkName -ComputerName $ComputerName -Credential $Credential
 		$ipaddr = $resolved.IPAddress
 		
 		if (!$domain)
@@ -188,19 +188,22 @@ have be a valid login with appropriate rights on the domain you specify
 				}
 				$spns += $spn
 			}
-			
 			# Now, for each spn, do we need a port set? Only if TCP is enabled and NOT DYNAMIC!
-			
 			ForEach ($spn in $spns)
 			{
-				$newspn = $spn
+				$ports = @()
+
 				$ips = (($wmi.ServerInstances | Where-Object { $_.name -eq $spn.InstanceName }).ServerProtocols | Where-Object { $_.DisplayName -eq "TCP/IP" -and $_.IsEnabled -eq "True" }).IpAddresses
-				$ipAllPort = $ports = @()
+				$ipAllPort = $null
 				ForEach ($ip in $ips)
 				{
 					if ($ip.Name -eq "IPAll")
 					{
-						$ipAllPort += ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TCPPort" }).Value
+						$ipAllPort = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TCPPort" }).Value
+						if (($ip.IpAddressProperties | Where-Object {$_.Name -eq "TcpDynamicPorts"}).Value -ne "")  {
+							$ipAllPort = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TcpDynamicPorts" }).Value + "d"
+						}
+
 					}
 					else
 					{
@@ -210,28 +213,40 @@ have be a valid login with appropriate rights on the domain you specify
 						if ($enabled -and $active -and $TcpDynamicPorts -eq "")
 						{
 							$ports += ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TCPPort" }).Value
+						} elseif ($enabled -and $active -and $TcpDynamicPorts -ne "") {
+							$ports += $ipAllPort
 						}
 					}
 				}
 				if ($ipAllPort -ne "")
 				{
+					#IPAll overrides any set ports. Not sure why that's the way it is?
 					$ports = $ipAllPort
 				}
 				
 				$ports = $ports | Select-Object -Unique
 				ForEach ($port in $ports)
 				{
-					$newspn = $spn
-					$newspn.RequiredSPN = "MSSQLSvc/" + $servername + ":" + $port
-					$newspn.Port = $port
-					$newspn.DynamicPort = $false
+					$newspn = $spn.PSObject.Copy()
+					if ($port -like "*d") {
+						$newspn.Port = ($port.replace("d",""))
+						$newspn.RequiredSPN = $newspn.RequiredSPN.Replace($newSPN.InstanceName,$newspn.Port)
+						$newspn.DynamicPort = $true
+						$newspn.Warning = "Dynamic port is enabled"	
+					} else {
+						$newspn.Port = $port
+						$newspn.RequiredSPN = $newspn.RequiredSPN + ":" + $port
+						$newspn.DynamicPort = $false
+					}
+					$spns += $newspn
 				}
-				
-				if ($newspn.DynamicPort -eq $true)
-				{
-					$newspn.Warning = "Dynamic port is enabled"
-				}
-				$spns += $newspn
+
+				#if ($spn.DynamicPort -eq $true)
+				#{
+				#	$spn.Warning = "Dynamic port is enabled"
+				#}				
+
+
 			}
 			$spns
 		}
