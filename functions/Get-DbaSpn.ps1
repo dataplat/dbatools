@@ -1,4 +1,4 @@
-﻿function Get-DbaServicePrincipalName
+﻿function Get-DbaSpn
 {
 <#
 .SYNOPSIS
@@ -28,20 +28,20 @@ You should have received a copy of the GNU General Public License along with thi
 
 	
 .LINK
-https://dbatools.io/Get-DbaServicePrincipalName
+https://dbatools.io/Get-DbaSpn
 
 .EXAMPLE
-Get-DbaServicePrincipalName -ServerName SQLSERVERA -Credential (Get-Credential)
+Get-DbaSpn -ServerName SQLSERVERA -Credential (Get-Credential)
 
 Returns a custom object with SearchTerm (ServerName) and the SPNs that were found
 
 .EXAMPLE
-Get-DbaServicePrincipalName -AccountName doamain\account -Credential (Get-Credential)
+Get-DbaSpn -AccountName doamain\account -Credential (Get-Credential)
 
 Returns a custom object with SearchTerm (domain account) and the SPNs that were found
 
 .EXAMPLE
-Get-DbaServicePrincipalName -ServerName SQLSERVERA,SQLSERVERB -Credential (Get-Credential)
+Get-DbaSpn -ServerName SQLSERVERA,SQLSERVERB -Credential (Get-Credential)
 
 Returns a custom object with SearchTerm (ServerName) and the SPNs that were found for multiple computers
 #>
@@ -105,7 +105,7 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 		foreach ($server in $ComputerName)
 		{
 			Write-Verbose "Getting SQL Server SPN for $server"
-			$spns = Test-DbaServicePrincipalName -ComputerName $server -Credential $Credential
+			$spns = Test-DbaSpn -ComputerName $server -Credential $Credential
 			
 			Write-Verbose "Found $spns"
 			foreach ($spn in $spns | Where-Object {$_.IsSet -eq $true}) {

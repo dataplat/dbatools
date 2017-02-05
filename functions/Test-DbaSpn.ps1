@@ -1,8 +1,8 @@
-﻿Function Test-DbaServicePrincipalName
+﻿Function Test-DbaSpn
 {
 <#
 .SYNOPSIS 
-Test-DbaServicePrincipalName will determine what SPNs *should* be set for a given server (and any instances of SQL running on it) and return
+Test-DbaSpn will determine what SPNs *should* be set for a given server (and any instances of SQL running on it) and return
 whether the SPNs are set or not.
 
 .DESCRIPTION
@@ -40,22 +40,22 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Test-DbaServicePrincipalName
+https://dbatools.io/Test-DbaSpn
 
 .EXAMPLE   
-Test-DbaServicePrincipalName -ComputerName SQLSERVERA -Credential (Get-Credential)
+Test-DbaSpn -ComputerName SQLSERVERA -Credential (Get-Credential)
 
 Connects to a computer (SQLSERVERA) and queries WMI for all SQL instances and return "required" SPNs. It will then take each SPN it generates
 and query Active Directory to make sure the SPNs are set.
 
 .EXAMPLE   
-Test-DbaServicePrincipalName -ComputerName SQLSERVERA,SQLSERVERB -Credential (Get-Credential)
+Test-DbaSpn -ComputerName SQLSERVERA,SQLSERVERB -Credential (Get-Credential)
 
 Connects to multiple computers (SQLSERVERA, SQLSERVERB) and queries WMI for all SQL instances and return "required" SPNs. 
 It will then take each SPN it generates and query Active Directory to make sure the SPNs are set.
 
 .EXAMPLE
-Test-DbaServicePrincipalName -ComputerName SQLSERVERC -Domain domain.something -Credential (Get-Credential)
+Test-DbaSpn -ComputerName SQLSERVERC -Domain domain.something -Credential (Get-Credential)
 
 Connects to a computer (SQLSERVERC) on a specified and queries WMI for all SQL instances and return "required" SPNs. 
 It will then take each SPN it generates and query Active Directory to make sure the SPNs are set. Note that the credential you pass must

@@ -1,4 +1,4 @@
-﻿Function Set-DbaServicePrincipalName
+﻿Function Set-DbaSpn
 {
 <#
 .SYNOPSIS
@@ -36,15 +36,15 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
 
 .LINK
-https://dbatools.io/Set-DbaServicePrincipalName
+https://dbatools.io/Set-DbaSpn
 
 .EXAMPLE
-Set-DbaServicePrincipalName -SPN MSSQLSvc\SQLSERVERA.domain.something -ServiceAccount domain\account
+Set-DbaSpn -SPN MSSQLSvc\SQLSERVERA.domain.something -ServiceAccount domain\account
 
 Connects to Active Directory and adds a provided SPN to the given account.
 
 .EXAMPLE
-Set-DbaServicePrincipalName -SPN MSSQLSvc\SQLSERVERA.domain.something -ServiceAccount domain\account -Credential (Get-Credential)
+Set-DbaSpn -SPN MSSQLSvc\SQLSERVERA.domain.something -ServiceAccount domain\account -Credential (Get-Credential)
 
 Connects to Active Directory and adds a provided SPN to the given account. Uses alternative account to connect to AD.
 
