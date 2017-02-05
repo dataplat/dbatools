@@ -54,15 +54,23 @@ Function Restore-DBFromFilteredArray
 
 		If ($null -ne $Server.Databases[$DbName] -and $ScriptOnly -eq $false)
 		{
-			try
-			{
-				Write-Verbose "$FunctionName - Set $DbName offline to kill processes"
-				Invoke-SQLcmd2 -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; use $DbName"
+			If ($ReplaceDatabase -eq $true)
+			{				
+				try
+				{
+					Write-Verbose "$FunctionName - Set $DbName offline to kill processes"
+					Invoke-SQLcmd2 -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; use $DbName"
 
+				}
+				catch
+				{
+					Write-Verbose "$FunctionName - No processes to kill"
+				}
 			}
-			catch
+			else 
 			{
-				Write-Verbose "$FunctionName - No processes to kill"
+				Write-Error "$FunctionName - $DBname exists, and no WithReplace switch specified"
+				break
 			}
 		}
 
