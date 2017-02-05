@@ -49,6 +49,7 @@ Checks that the Restore chain in $FilteredFiles is compatiable with the SQL Serv
         
 	)
     $RestoreVersion = ($FilteredRestoreFiles.SoftwareVersionMajor | Measure-Object -average).average
+    Write-Verbose "$FunctionName - RestoreVersion is $RestoreVersion"
     #Test to make sure we don't have an upgrade mid backup chain, there's a reason I'm paranoid..
     if ([int]$RestoreVersion -ne $RestoreVersion)
     {
@@ -65,9 +66,9 @@ Checks that the Restore chain in $FilteredFiles is compatiable with the SQL Serv
         break   
     }
     #Microsoft Rule's are that you can restore from 2 Major versions previous (2008 -> 2012 good, 2008->2014 no)
-    if (($Server.VersionMajor - $RestoreVersion) -in (0,1,2)  )
+    if (($Server.VersionMajor -gt 10 -and $RestoreVersion -lt 9)  )
     {
-        Write-Error "$FunctionName - This version too old to restore to $($Server.Name)"
+        Write-Error "$FunctionName - This version - $RestoreVersion - too old to restore on to $($Server.Name)"
         return $false
         break 
     }

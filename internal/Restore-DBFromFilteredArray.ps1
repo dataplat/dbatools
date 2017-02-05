@@ -52,7 +52,7 @@ Function Restore-DBFromFilteredArray
 		$Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
 		$Restore.ReplaceDatabase = $ReplaceDatabase
 
-		If ($null -ne $Server.Databases[$DbName])
+		If ($null -ne $Server.Databases[$DbName] -and $ScriptOnly -eq $false)
 		{
 			try
 			{
@@ -66,7 +66,7 @@ Function Restore-DBFromFilteredArray
 			}
 		}
 
-		$RestorePoints = $InternalFiles | Group-Object -Property FirstLSN | Select-Object -property Name
+		$RestorePoints = $InternalFiles | Sort-Object BackupTypeDescription, FirstLSN | Group-Object -Property FirstLSN | Select-Object -property Name 
 		foreach ($RestorePoint in $RestorePoints)
 		{
 	
