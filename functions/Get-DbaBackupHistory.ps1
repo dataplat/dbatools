@@ -118,6 +118,8 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 	
 	BEGIN
 	{
+		$databases = $psboundparameters.Databases
+		
 		if ($Since -ne $null)
 		{
 			$Since = $Since.ToString("yyyy-MM-dd HH:mm:ss")
@@ -126,7 +128,6 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 	
 	PROCESS
 	{
-		$databases = $psboundparameters.Databases
 		foreach ($server in $SqlServer)
 		{
 			try
@@ -139,12 +140,6 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				{
 					Write-Warning "SQL Server 2000 not supported"
 					continue
-				}
-				$BackupSizeColumn = 'backup_size'
-				if ($sourceserver.VersionMajor -ge 10)
-				{
-					# 2008 introduced compressed_backup_size
-					$BackupSizeColumn = 'compressed_backup_size'
 				}
 				
 				if ($last)
@@ -169,61 +164,57 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 					{
 						Write-Verbose "Processing $database"
 						
-						$sql += "SELECT
-								  a.BackupSetRank,
-								  a.Server,
-								  a.[Database],
-								  a.Username,
-								  a.Start,
-								  a.[End],
-								  a.Duration,
-								  a.[Path],
-								  a.Type,
-								  a.TotalSizeMB,
-								  a.MediaSetId,
-								  a.Software
-								FROM (SELECT
-								  RANK() OVER (ORDER BY backupset.media_set_id DESC) AS 'BackupSetRank',
-								  '$servername' AS Server,
-								  backupset.database_name AS [Database],
-								  backupset.user_name AS Username,
-								  backupset.backup_start_date AS Start,
-								  backupset.backup_finish_date AS [End],
-								  CAST(DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS varchar(4)) + ' ' + 'Seconds' AS Duration,
-								  mediafamily.physical_device_name AS Path,
-								  CAST(backupset.$BackupSizeColumn / 1048576 AS numeric(10, 2)) AS TotalSizeMB,
-								  CASE backupset.type
-									WHEN 'L' THEN 'Log'
-									WHEN 'D' THEN 'Full'
-									WHEN 'F' THEN 'File'
-									WHEN 'I' THEN 'Differential'
-									WHEN 'G' THEN 'Differential File'
-									WHEN 'P' THEN 'Partial Full'
-									WHEN 'Q' THEN 'Partial Differential'
-									ELSE NULL
-								  END AS Type,
-								  backupset.media_set_id AS MediaSetId,
-								  CASE mediafamily.device_type
-									WHEN 2 THEN 'Disk'
-									WHEN 102 THEN 'Permanent Disk  Device'
-									WHEN 5 THEN 'Tape'
-									WHEN 105 THEN 'Permanent Tape Device'
-									WHEN 6 THEN 'Pipe'
-									WHEN 106 THEN 'Permanent Pipe Device'
-									WHEN 7 THEN 'Virtual Device'
-									ELSE 'Unknown'
-								  END AS DeviceType,
-								  mediaset.software_name AS Software
-								FROM msdb..backupmediafamily AS mediafamily
-								INNER JOIN msdb..backupmediaset AS mediaset
-								  ON mediafamily.media_set_id = mediaset.media_set_id
-								INNER JOIN msdb..backupset AS backupset
-								  ON backupset.media_set_id = mediaset.media_set_id
-								WHERE backupset.database_name = '$database'
-								AND (type = '$first'
-								OR type = '$second')) AS a
-								WHERE a.BackupSetRank = 1
-								ORDER BY a.Type;"
+						$sql += "SELECT a.BackupSetRank ,
+						       a.Server ,
+						       a.[Database] ,
+						       a.Username ,
+						       a.Start ,
+						       a.[End] ,
+						       a.Duration ,
+						       a.Path ,
+						       a.Type ,
+						       a.TotalSizeMB ,
+						       a.MediaSetId ,
+						       a.Software
+						  FROM (
+						SELECT RANK() OVER (ORDER BY backupset.Media_Set_ID DESC) AS 'BackupSetRank',
+						    '$servername' AS [Server],
+						       backupset.Database_Name As [Database],
+						       backupset.User_Name AS Username,
+						       backupset.Backup_Start_Date as [Start],
+						       backupset.Backup_Finish_Date as [End],
+						       CAST(DATEDIFF(second, backupset.backup_start_date, backupset.backup_finish_date) AS VARCHAR(4)) + ' ' + 'Seconds' as Duration,
+							    mediafamily.Physical_Device_Name AS Path,
+							    CAST((backupset.Backup_Size/1048576) AS NUMERIC(10,2)) AS TotalSizeMB,
+								CASE backupset.Type      
+						            WHEN 'L' THEN 'Log'
+						            WHEN 'D' THEN 'Full'
+						            WHEN 'F' THEN 'File'
+						            WHEN 'I' THEN 'Differential'
+						            WHEN 'G' THEN 'Differential File'
+						            WHEN 'P' THEN 'Partial Full'
+						            WHEN 'Q' THEN 'Partial Differential'
+						        ELSE NULL END AS Type, backupset.Media_Set_ID as MediaSetId, 
+							CASE mediafamily.device_type
+						                        WHEN 2 THEN 'Disk'
+						                        WHEN 102 THEN 'Permanent Disk  Device'
+						                        WHEN 5 THEN 'Tape'
+						                        WHEN 105 THEN 'Permanent Tape Device'
+						                        WHEN 6 THEN 'Pipe'
+						                        WHEN 106 THEN 'Permanent Pipe Device'
+						                        WHEN 7 THEN 'Virtual Device'
+						                        ELSE 'Unknown'
+						                        END AS DeviceType,
+							mediaset.Software_Name AS Software
+						  FROM msdb..BackupMediaFamily mediafamily
+						 INNER JOIN msdb..BackupMediaSet mediaset
+						    ON mediafamily.Media_Set_ID = mediaset.Media_Set_ID
+						 INNER JOIN msdb..BackupSet backupset
+						    ON backupset.Media_Set_ID = mediaset.Media_Set_ID
+						 WHERE backupset.database_name = '$database' AND (Type = '$first' or Type = '$second')
+						)a
+						 WHERE a.BackupSetRank = 1
+						 ORDER BY a.Type"
 					}
 					
 					$sql = $sql -join "; "
@@ -236,42 +227,41 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 					}
 					else
 					{
-						$select = "SELECT
-									  '$servername' AS [Server],
-									  backupset.database_name AS [Database],
-									  backupset.user_name AS Username,
-									  backupset.backup_start_date AS [Start],
-									  backupset.backup_finish_date AS [End],
-									  CAST(DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS varchar(4)) + ' ' + 'Seconds' AS Duration,
-									  mediafamily.physical_device_name AS Path,
-									  CAST((backupset.$BackupSizeColumn / 1048576) AS numeric(10, 2)) AS TotalSizeMB,
-									  CASE backupset.type
-										WHEN 'L' THEN 'Log'
-										WHEN 'D' THEN 'Full'
-										WHEN 'F' THEN 'File'
-										WHEN 'I' THEN 'Differential'
-										WHEN 'G' THEN 'Differential File'
-										WHEN 'P' THEN 'Partial Full'
-										WHEN 'Q' THEN 'Partial Differential'
-										ELSE NULL
-									  END AS Type,
-									  backupset.media_set_id AS MediaSetId,
-									  CASE mediafamily.device_type
-										WHEN 2 THEN 'Disk'
-										WHEN 102 THEN 'Permanent Disk  Device'
-										WHEN 5 THEN 'Tape'
-										WHEN 105 THEN 'Permanent Tape Device'
-										WHEN 6 THEN 'Pipe'
-										WHEN 106 THEN 'Permanent Pipe Device'
-										WHEN 7 THEN 'Virtual Device'
-										ELSE 'Unknown'
-									  END AS DeviceType,
-									  mediaset.software_name AS Software"
+						# needs compressedbackup_size for systems that support it
+						$select = "SELECT 
+					   '$servername' AS [Server],
+					    backupset.Database_Name As [Database],
+						backupset.User_Name AS Username,
+					    backupset.Backup_Start_Date as [Start],
+					    backupset.Backup_Finish_Date as [End],
+						CAST(DATEDIFF(second, backupset.backup_start_date, backupset.backup_finish_date) AS VARCHAR(4)) + ' ' + 'Seconds' as Duration,
+					    mediafamily.Physical_Device_Name AS Path,
+					    CAST((backupset.Backup_Size/1048576) AS NUMERIC(10,2)) AS TotalSizeMB,
+						CASE backupset.Type      
+				            WHEN 'L' THEN 'Log'
+				            WHEN 'D' THEN 'Full'
+				            WHEN 'F' THEN 'File'
+				            WHEN 'I' THEN 'Differential'
+				            WHEN 'G' THEN 'Differential File'
+				            WHEN 'P' THEN 'Partial Full'
+				            WHEN 'Q' THEN 'Partial Differential'
+				        ELSE NULL END AS Type, backupset.Media_Set_ID as MediaSetId, 
+					CASE mediafamily.device_type
+				                        WHEN 2 THEN 'Disk'
+				                        WHEN 102 THEN 'Permanent Disk  Device'
+				                        WHEN 5 THEN 'Tape'
+				                        WHEN 105 THEN 'Permanent Tape Device'
+				                        WHEN 6 THEN 'Pipe'
+				                        WHEN 106 THEN 'Permanent Pipe Device'
+				                        WHEN 7 THEN 'Virtual Device'
+				                        ELSE 'Unknown'
+				                        END AS DeviceType,
+					mediaset.Software_Name AS Software"
 					}
 					
-					$from = " FROM msdb..backupmediafamily mediafamily
-								 INNER JOIN msdb..backupmediaset mediaset ON mediafamily.media_set_id = mediaset.media_set_id
-								 INNER JOIN msdb..backupset backupset ON backupset.media_set_id = mediaset.media_set_id"
+					$from = " FROM msdb..BackupMediaFamily mediafamily INNER JOIN msdb..BackupMediaSet mediaset
+						ON mediafamily.Media_Set_ID = mediaset.Media_Set_ID INNER JOIN msdb..BackupSet backupset
+						ON backupset.Media_Set_ID = mediaset.Media_Set_ID"
 					
 					if ($databases -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff)
 					{
@@ -289,12 +279,12 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 					if ($Last -or $LastFull -or $LastLog -or $LastDiff)
 					{
 						$tempwhere = $wherearray -join " and "
-						$wherearray += "type = 'Full' and mediaset.media_set_id = (select top 1 mediaset.media_set_id $from $tempwhere order by backupset.backup_finish_date DESC)"
+						$wherearray += "type = 'Full' and mediaset.Media_Set_ID = (select top 1 mediaset.Media_Set_ID $from $tempwhere order by backupset.Backup_Finish_Date DESC)"
 					}
 					
 					if ($Since -ne $null)
 					{
-						$wherearray += "backupset.backup_finish_date >= '$since'"
+						$wherearray += "backupset.Backup_Finish_Date >= '$since'"
 					}
 					
 					if ($where.length -gt 0)
@@ -303,13 +293,19 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 						$where = "$where $wherearray"
 					}
 					
-					$sql = "$select $from $where ORDER BY backupset.backup_finish_date DESC"
+					$sql = "$select $from $where ORDER BY backupset.Backup_Finish_Date DESC"
 				}
 				
 				if (!$last)
 				{
 					Write-Debug $sql
-					$sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
+					$results = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
+					#Adding a hidden Fullname Property so we can pipe this into the new restore functions
+					$results = $results | select-object *, @{Name="Fullname";expression={$_.Path}}
+					foreach ($result in $results)
+					{ 
+						$result | Select-DefaultField -property * -excludeproperty Fullname
+					}
 				}
 			}
 			catch
