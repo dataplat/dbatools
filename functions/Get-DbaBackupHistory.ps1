@@ -118,8 +118,6 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 	
 	BEGIN
 	{
-		$databases = $psboundparameters.Databases
-		
 		if ($Since -ne $null)
 		{
 			$Since = $Since.ToString("yyyy-MM-dd HH:mm:ss")
@@ -128,6 +126,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 	
 	PROCESS
 	{
+		$databases = $psboundparameters.Databases
 		foreach ($server in $SqlServer)
 		{
 			try
