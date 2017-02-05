@@ -1,4 +1,4 @@
-﻿
+﻿<#
 		Function Backup-DbaDatabase
 		{
 			[CmdletBinding()]
@@ -50,4 +50,4 @@
 			}
 		}
 	}
-	
+#>
