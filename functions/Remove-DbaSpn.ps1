@@ -115,7 +115,7 @@ Connects to Active Directory and removes a provided SPN to the given account. Us
 			{
 				try
 				{
-					$null = $adentry.Properties['serviceprincipalname'].Drop($spn)
+					$null = $adentry.Properties['serviceprincipalname'].Remove($spn)
 					Write-Verbose "Remove SPN $spn for samaccount $serviceaccount"
 					$adentry.CommitChanges()
 					$set = $false
@@ -143,7 +143,7 @@ Connects to Active Directory and removes a provided SPN to the given account. Us
 			{
 				try
 				{
-					$null = $adentry.Properties['msDS-AllowedToDelegateTo'].Drop($spn)
+					$null = $adentry.Properties['msDS-AllowedToDelegateTo'].Remove($spn)
 					Write-Verbose "Removed kerberos delegation for $spn for samaccount $serviceaccount"
 					$adentry.CommitChanges()
 					$set = $false
