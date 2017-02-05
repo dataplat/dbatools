@@ -300,7 +300,7 @@ have be a valid login with appropriate rights on the domain you specify
 				$spn.Error = "SPN missing"
 			}
 			
-			$spn | Select-DefaultField -ExcludeProperty Credential
+			$spn | Select-DefaultView -ExcludeProperty Credential
 		}
 	}
 }
