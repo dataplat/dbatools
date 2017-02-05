@@ -302,7 +302,10 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 					$results = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
 					#$results = $results | %{Add-Member -InputObject $_ -Name "FullName" -Value $_.Path  -membertype noteproperty}
 					$results = $results | select-object *, @{Name="Fullname";expression={$_.Path}}
-					$results | Select-DefaultField -excludeproperty Fullname
+					foreach ($result in $results)
+					{ 
+						$result | Select-DefaultField -property * -excludeproperty Fullname
+					}
 				}
 			}
 			catch
