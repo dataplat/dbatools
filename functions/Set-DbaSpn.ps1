@@ -48,6 +48,12 @@ Set-DbaSpn -SPN MSSQLSvc\SQLSERVERA.domain.something -ServiceAccount domain\acco
 
 Connects to Active Directory and adds a provided SPN to the given account. Uses alternative account to connect to AD.
 
+.EXAMPLE
+Test-DbaSpn -ComputerName sql2016 | Where { $_.isSet -eq $false } | Set-DbaSpn -WhatIf
+	
+Connects to Active Directory and adds a provided SPN to the given account. Uses alternative account to connect to AD.
+
+
 #>
 	[cmdletbinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
 	param (
@@ -103,6 +109,8 @@ Connects to Active Directory and adds a provided SPN to the given account. Uses 
 			# Cool! Add an SPN
 			
 			$adentry = $result.GetDirectoryEntry()
+			$delegate = $true
+			
 			if ($PSCmdlet.ShouldProcess("$spn", "Adding SPN to service account"))
 			{
 				try
@@ -111,7 +119,6 @@ Connects to Active Directory and adds a provided SPN to the given account. Uses 
 					Write-Verbose "Added SPN $spn to samaccount $serviceaccount"
 					$adentry.CommitChanges()
 					$set = $true
-					$delegate = $true
 				}
 				catch
 				{
