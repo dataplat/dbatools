@@ -14,6 +14,7 @@ Function Restore-DBFromFilteredArray
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object[]]$Files,
         [String]$RestoreLocation,
+		[String]$RestoreLogLocation,
         [DateTime]$RestoreTime = (Get-Date).addyears(1),  
 		[switch]$NoRecovery,
 		[switch]$ReplaceDatabase,
@@ -51,29 +52,39 @@ Function Restore-DBFromFilteredArray
 		$Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
 		$Restore.ReplaceDatabase = $ReplaceDatabase
 
-		If ($null -ne $Server.Databases[$DbName])
+		If ($null -ne $Server.Databases[$DbName] -and $ScriptOnly -eq $false)
 		{
-			try
-			{
-				Write-Verbose "$FunctionName - Set $DbName offline to kill processes"
-				Invoke-SQLcmd2 -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; use $DbName"
+			If ($ReplaceDatabase -eq $true)
+			{				
+				try
+				{
+					Write-Verbose "$FunctionName - Set $DbName offline to kill processes"
+					Invoke-SQLcmd2 -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; use $DbName"
 
+				}
+				catch
+				{
+					Write-Verbose "$FunctionName - No processes to kill"
+				}
 			}
-			catch
+			else 
 			{
-				Write-Verbose "$FunctionName - No processes to kill"
+				Write-Error "$FunctionName - $DBname exists, and no WithReplace switch specified"
+				break
 			}
 		}
 
-		$OrderedRestores = $InternalFiles | Sort-object -Property BackupStartDate, BackupType
-		Write-Verbose "of = $($OrderedRestores.Backupfilename)"
-		foreach ($RestoreFile in $OrderedRestores)
+		$RestorePoints = $InternalFiles | Sort-Object BackupTypeDescription, FirstLSN | Group-Object -Property FirstLSN | Select-Object -property Name 
+		foreach ($RestorePoint in $RestorePoints)
 		{
+	
+			$RestoreFiles = @($InternalFiles | Where-Object {$_.FirstLSN -eq $RestorePoint.Name})
+			Write-verbose "name - $($RestorePoint.Name)"
 			if ($Restore.RelocateFiles.count -gt 0)
 			{
 				$Restore.RelocateFiles.Clear()
 			}
-			foreach ($File in $RestoreFile.Filelist)
+			foreach ($File in $RestoreFiles[0].Filelist)
 			{
 
 				if ($RestoreLocation -ne '' -and $FileStructure -eq $NUll)
@@ -81,7 +92,13 @@ Function Restore-DBFromFilteredArray
 					
 					$MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
 					$MoveFile.LogicalFileName = $File.LogicalName
-					$MoveFile.PhysicalFileName = $RestoreLocation + (split-path $file.PhysicalName -leaf)
+					if ($File.Type -eq 'L' -and $RestoreLogLocation -ne '')
+					{
+						$MoveFile.PhysicalFileName = $RestoreLogLocation + '\' + (split-path $file.PhysicalName -leaf)					
+					}
+					else {
+						$MoveFile.PhysicalFileName = $RestoreLocation + '\' + (split-path $file.PhysicalName -leaf)	
+					}
 					$null = $Restore.RelocateFiles.Add($MoveFile)
 					
 				} elseif ($RestoreLocation -eq '' -and $FileStructure -ne $NUll)
@@ -120,18 +137,18 @@ Function Restore-DBFromFilteredArray
 				}
 				else
 				{
-					$Restore.Database = $RestoreRile.DatabaseName
+					$Restore.Database = $RestoreFiles[0].DatabaseName
 				}
-				$Action = switch ($RestoreFile.BackupType)
+				$Action = switch ($RestoreFiles[0].BackupType)
 					{
 						'1' {'Database'}
 						'2' {'Log'}
 						'5' {'Database'}
-						Default {}
+						Default {'Unknown'}
 					}
 				Write-Verbose "$FunctionName restore action = $Action"
 				$restore.Action = $Action 
-				if ($RestoreFile -eq $OrderedRestores[-1] -and $NoRecovery -ne $true)
+				if ($RestorePoint -eq $RestorePoints[-1] -and $NoRecovery -ne $true)
 				{
 					#Do recovery on last file
 					Write-Verbose "$FunctionName - Doing Recovery on last file"
@@ -141,12 +158,13 @@ Function Restore-DBFromFilteredArray
 				{
 					$Restore.NoRecovery = $true
 				}
-
+				Foreach ($RestoreFile in $RestoreFiles)
+				{
 					$Device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
 					$Device.Name = $RestoreFile.BackupPath
 					$Device.devicetype = "File"
 					$Restore.Devices.Add($device)
-
+				}
 				Write-Verbose "$FunctionName - Performaing restore action"
 				if ($ScriptOnly)
 				{
@@ -177,10 +195,12 @@ Function Restore-DBFromFilteredArray
 					}
 					Write-Progress -id 1 -activity "Restoring $DbName to $ServerName" -status "Complete" -Completed
 					
-					#return "Success"
 				}
-				$null = $Restore.Devices.Remove($Device)
-				Remove-Variable device
+				while ($Restore.Devices.count -gt 0)
+				{
+					$device = $restore.devices[0]
+					$null = $restore.devices.remove($Device)
+				}
 			}
 			catch
 			{

@@ -309,7 +309,13 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				if (!$last)
 				{
 					Write-Debug $sql
-					$sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
+					$results = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
+					#Adding a hidden Fullname Property so we can pipe this into the new restore functions
+					$results = $results | select-object *, @{Name="Fullname";expression={$_.Path}}
+					foreach ($result in $results)
+					{ 
+						$result | Select-DefaultField -property * -excludeproperty Fullname
+					}
 				}
 			}
 			catch
