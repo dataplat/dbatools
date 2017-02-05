@@ -196,14 +196,14 @@
 		'Test-DbaOptimizeForAdHoc',
 		'Find-DbaStoredProcedure',
 		'Measure-DbaBackupThroughput',
-		'Find-DbaLoginInGroup'
+		'Find-DbaLoginInGroup',
+		'Get-DbaSpn',
+		'Test-DbaSpn',
+		'Set-DbaSpn'
 	)
 	
 	<# coming soon
-	,
-		'Get-DbaServicePrincipalName',
-		'Test-DbaServicePrincipalName',
-		'Set-DbaServicePrincipalName',
+	
 		'Get-DbaLinkedServer'
 	#>
 	
