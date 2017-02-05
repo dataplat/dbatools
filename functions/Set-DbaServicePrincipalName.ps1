@@ -110,13 +110,24 @@ Connects to Active Directory and adds a provided SPN to the given account. Uses 
 					$null = $adentry.Properties['serviceprincipalname'].Add($spn)
 					Write-Verbose "Added SPN $spn to samaccount $serviceaccount"
 					$adentry.CommitChanges()
+					$set = $true
+					$delegate = $true
 				}
 				catch
 				{
 					Write-Warning "Could not add SPN. Error returned was: $_"
-					return
+					$set = $false
+					$delegate = $false
+				}
+				
+				[pscustomobject]@{
+					Name = $spn
+					Property = "servicePrincipalName"
+					IsSet = $set
 				}
 			}
+			
+			if (!$delegate) { continue }
 			
 			# Don't forget delegation!
 			$adentry = $result.GetDirectoryEntry()
@@ -127,11 +138,18 @@ Connects to Active Directory and adds a provided SPN to the given account. Uses 
 					$null = $adentry.Properties['msDS-AllowedToDelegateTo'].Add($spn)
 					Write-Verbose "Added kerberos delegation to $spn for samaccount $serviceaccount"
 					$adentry.CommitChanges()
+					$set = $true
 				}
 				catch
 				{
 					Write-Warning "Could not add delegation. Error returned was: $_"
-					return
+					$set = $false
+				}
+				
+				[pscustomobject]@{
+					Name = $spn
+					Property = "msDS-AllowedToDelegateTo"
+					IsSet = $set
 				}
 			}
 		}
