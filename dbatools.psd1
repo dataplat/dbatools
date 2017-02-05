@@ -199,7 +199,8 @@
 		'Find-DbaLoginInGroup',
 		'Get-DbaSpn',
 		'Test-DbaSpn',
-		'Set-DbaSpn'
+		'Set-DbaSpn',
+		'Remove-DbaSpn'
 	)
 	
 	<# coming soon
