@@ -300,7 +300,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				{
 					Write-Debug $sql
 					$results = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
-					#$results = $results | %{Add-Member -InputObject $_ -Name "FullName" -Value $_.Path  -membertype noteproperty}
+					#Adding a hidden Fullname Property so we can pipe this into the new restore functions
 					$results = $results | select-object *, @{Name="Fullname";expression={$_.Path}}
 					foreach ($result in $results)
 					{ 
