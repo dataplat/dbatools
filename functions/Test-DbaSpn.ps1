@@ -305,7 +305,15 @@ have be a valid login with appropriate rights on the domain you specify
 				
 				$ADObject.Filter = $("(&(samAccountName={0}))" -f $serviceaccount)
 				
-				$results = $ADObject.FindAll()
+				try
+				{
+					$results = $ADObject.FindAll()
+				}
+				catch
+				{
+					Write-Warning "AD lookup failure. This may be because the hostname ($computer) was not resolvable within the domain ($domain)."
+					continue
+				}
 				
 				if ($results.Count -gt 0)
 				{
