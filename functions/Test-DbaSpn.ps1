@@ -76,18 +76,11 @@ have be a valid login with appropriate rights on the domain you specify
 	{
 		foreach ($computer in $computername)
 		{
-			if ($Credential)
+			try
 			{
-				try
-				{
-					$resolved = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential -ErrorAction Stop
-				}
-				catch
-				{
-					$resolved = Resolve-DbaNetworkName -ComputerName $computer -Turbo
-				}
+				$resolved = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential -ErrorAction Stop
 			}
-			else
+			catch
 			{
 				$resolved = Resolve-DbaNetworkName -ComputerName $computer -Turbo
 			}
