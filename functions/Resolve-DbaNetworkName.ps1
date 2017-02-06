@@ -185,7 +185,22 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 				}
 			}
 			
-			$fqdn = "$($conn.DNSHostname).$($conn.Domain)"
+			$testfqdn = "$($conn.DNSHostname).$($conn.Domain)"
+			
+			try
+			{
+				$fqdn = ([System.Net.Dns]::GetHostEntry($testfqdn)).HostName
+				
+				if ($null -eq $fqdn)
+				{
+					$fqdn = $testfqdn
+				}
+			}
+			catch
+			{
+				$fqdn = $testfqdn
+			}
+			
 			if ($fqdn -eq ".") { $fqdn = $null }
 			
 			[PSCustomObject]@{
