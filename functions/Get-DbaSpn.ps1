@@ -107,13 +107,18 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 			Write-Verbose "Getting SQL Server SPN for $server"
 			$spns = Test-DbaSpn -ComputerName $server -Credential $Credential
 			
-			Write-Verbose "Found $spns"
-			foreach ($spn in $spns | Where-Object {$_.IsSet -eq $true}) {
+			$sqlspns = 0
+			$spncount = $spns.count
+			Write-Verbose "Calculated $spncount SQL SPN entries that should exist"
+			foreach ($spn in $spns | Where-Object { $_.IsSet -eq $true })
+			{
+				$sqlspns++
                 [pscustomobject] @{
                     Name = $server
                     SPN = $spn.RequiredSPN
                 }
-            }
-        }
-    }
+			}
+			Write-Verbose "Found $sqlspns set SQL SPN entries"
+		}
+	}
 }
