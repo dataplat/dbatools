@@ -84,7 +84,23 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 			
 			$Computer = $Computer.Split('\')[0]
 			Write-Verbose "Connecting to server $Computer"
-			$ipaddress = ((Test-Connection -ComputerName $Computer -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
+			
+			try
+			{
+				$ipaddress = ((Test-Connection -ComputerName $Computer -Count 1 -ErrorAction Stop).Ipv4Address).IPAddressToString
+			}
+			catch
+			{
+				try
+				{
+					$ipaddress = ((Test-Connection -ComputerName "$Computer.$env:USERDNSDOMAIN" -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
+					$Computer = "$Computer.$env:USERDNSDOMAIN"
+				}
+				catch
+				{
+					$Computer = $OGComputer
+				}
+			}
 			
 			if ($Turbo)
 			{
@@ -185,8 +201,23 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 				}
 			}
 			
+			
+			try
+			{
+				Write-Verbose "Resolving $($conn.DNSHostname) using GetHostEntry"
+				$hostentry = ([System.Net.Dns]::GetHostEntry($conn.DNSHostname)).HostName
+			}
+			catch
+			{
+				Write-Verbose "GetHostEntry failed"
+			}
+			
 			$fqdn = "$($conn.DNSHostname).$($conn.Domain)"
-			if ($fqdn -eq ".") { $fqdn = $null }
+			if ($fqdn -eq ".")
+			{
+				Write-Verbose "No full FQDN found. Setting to null"
+				$fqdn = $null
+			}
 			
 			[PSCustomObject]@{
 				InputName = $OGComputer
@@ -194,6 +225,7 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 				IPAddress = $ipaddress
 				DNSHostName = $conn.DNSHostname
 				Domain = $conn.Domain
+				DNSHostEntry = $hostentry
 				FQDN = $fqdn
 			}
 		}
