@@ -43,7 +43,11 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
     $FullDBAnchor = $FilteredRestoreFiles | Where-Object {$_.BackupTypeDescription -eq 'Database'}
     if (($FullDBAnchor | Group-Object -Property FirstLSN | Measure-Object).count -ne 1)
     {
+        $cnt = ($FullDBAnchor | Group-Object -Property FirstLSN | Measure-Object).count
+            Foreach ($tFile in $FullDBAnchor){write-verbose "$($tfile.FirstLsn) - $($tfile.BackupTypeDescription)"}
+        Write-Verbose "$FunctionName - db count = $cnt"
         Write-Error "$FunctionName - More than 1 full backup from a different LSN, or less than 1, neither supported"
+
         return $false
         break;
     }
@@ -91,7 +95,7 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
 
 
     #Check T-log LSNs form a chain.
-    $TranLogBackups = $FilteredRestoreFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.DatabaseBackupLSN -eq $FullDBAnchor.CheckPointLSN} | Sort-Object -Propert LastLSN
+    $TranLogBackups = $FilteredRestoreFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.DatabaseBackupLSN -eq $FullDBAnchor.CheckPointLSN} | Sort-Object -Property LastLSN
     for ($i=0; $i -lt ($TranLogBackups.count)-1)
     {
         if ($i -eq 0)
@@ -103,7 +107,7 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
                 break
             }
         }else {
-            if ($TranLogBackups[($i-1)].LastLsn -ne $TranLogBackups[($i)].FirstLSN)
+            if ($TranLogBackups[($i-1)].LastLsn -ne $TranLogBackups[($i)].FirstLSN -and ($TranLogBackups[($i)] -ne $TranLogBackups[($i-1)]))
             {
                 Write-Error "$FunctionName - Break in transaction log between $($TranLogBackups[($i-1)].BackupPath) and $($TranLogBackups[($i)].BackupPath) "
                 return $false
