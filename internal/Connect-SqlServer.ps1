@@ -20,7 +20,7 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 		if ($ParameterConnection)
 		{
 			$paramserver = New-Object Microsoft.SqlServer.Management.Smo.Server
-			$paramserver.ConnectionContext.ConnectTimeout = 2
+			# $paramserver.ConnectionContext.ConnectTimeout = 2
 			$paramserver.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
 			$paramserver.ConnectionContext.ConnectionString = $SqlServer.ConnectionContext.ConnectionString
 			
@@ -100,6 +100,7 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 	
 	try
 	{
+		<#
 		if ($ParameterConnection)
 		{
 			$server.ConnectionContext.ConnectTimeout = 2
@@ -108,6 +109,7 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 		{
 			$server.ConnectionContext.ConnectTimeout = 3
 		}
+		#>
 		
 		$server.ConnectionContext.Connect()
 	}
