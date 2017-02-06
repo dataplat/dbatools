@@ -112,7 +112,7 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 			
 			if ($SqlOnly -ne $true)
 			{
-				$WindowsServerName = (Resolve-DbaNetworkName $servername -Turbo).ComputerName
+				$WindowsServerName = (Resolve-DbaNetworkName $servername -Credential $WindowsCredential).ComputerName
 
 				try
 				{
