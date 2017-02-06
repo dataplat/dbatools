@@ -206,23 +206,38 @@ c:\DataFiles and all the log files into c:\LogFiles
     }
     END
     {
-        $FilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer:$SqlServer -RestoreTime:$RestoreTime -SqlCredential:$SqlCredential
+        $AllFilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer:$SqlServer -RestoreTime:$RestoreTime -SqlCredential:$SqlCredential
+        Write-Verbose "$FunctionName - $($AllFilteredFiles.count) dbs to restore"
+        #$AllFilteredFiles
+        ForEach ($FilteredFileSet in $AllFilteredFiles)
+      
+        {
+            $FilteredFiles = $FilteredFileSet.values
+           
+            Write-Verbose "$FunctionName - Starting FileSet"
+            if (($FilteredFiles.DatabaseName | Group-Object | Measure-Object).count -gt 1)
+            {
+                $dbs = ($FilteredFiles | Select DatabaseName) -join (',')
+                Write-Error "$FunctionName - We can only handle 1 Database at a time - $dbs"
+            }
 
-        if (($FilteredFiles.DatabaseName | Group-Object | Measure-Object).count -gt 1)
-        {
-            $dbs = ($FilteredFiles | Select DatabaseName) -join (',')
-            Write-Error "$FunctionName - We can only handle 1 Database at a time - $dbs"
-        }
-        
-        if((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlServer $SqlServer -SqlCredential $SqlCredential))
-        {
-            try{
-                $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -RestoreLocation $RestoreLocation -RestoreLogLocation $RestoreLogLocation -NoRecovery:$NoRecovery -Replace:$WithReplace -Scripts:$OutputScript -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly
+            IF($DatabaseName -eq '')
+            {
+                $DatabaseName = ($FilteredFiles | Select DatabaseName -unique).DatabaseName
+                Write-Verbose "$FunctionName - Dbname = $DatabaseName"
             }
-            catch{
-                Write-Exception $_
-				return
+
+            if((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlServer $SqlServer -SqlCredential $SqlCredential))
+            {
+                try{
+                    $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -RestoreLocation $RestoreLocation -RestoreLogLocation $RestoreLogLocation -NoRecovery:$NoRecovery -Replace:$WithReplace -Scripts:$OutputScript -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly
+                }
+                catch{
+                    Write-Exception $_
+                    return
+                }
             }
+            $DatabaseName = ''
         }
     }
 }
