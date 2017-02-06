@@ -203,7 +203,7 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 			
 			try
 			{
-				$fqdn = ([System.Net.Dns]::GetHostEntry($Computer)).HostName
+				$fqdn = ([System.Net.Dns]::GetHostEntry($conn.DNSHostname)).HostName
 				
 				if ($null -eq $fqdn)
 				{
