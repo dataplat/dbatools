@@ -93,7 +93,7 @@ have be a valid login with appropriate rights on the domain you specify
 				$domain = $resolved.domain
 				if ($computer -notmatch "\.")
 				{
-					$computer = $resolved.FQDN
+					$computer = $resolved.DNSHostEntry
 				}
 			}
 			else
@@ -153,9 +153,7 @@ have be a valid login with appropriate rights on the domain you specify
 						InstanceName = $null
 						SqlProduct = $null #SKUNAME
 						InstanceServiceAccount = $null
-						SPN = $null
-						AliasSPN = $null
-						ActualSPN = $null
+						RequiredSPN = $null
 						IsSet = $false
 						Cluster = $false
 						TcpEnabled = $false
@@ -195,16 +193,13 @@ have be a valid login with appropriate rights on the domain you specify
 						#Each instance has a default SPN of MSSQLSvc\<fqdn> or MSSSQLSvc\<fqdn>:Instance    
 						if ($instance.Name -eq "MSSQLSERVER")
 						{
-							$spn.AliasSPN = "MSSQLSvc/$servername"
-							$spn.SPN = "MSSQLSvc/$hostentry"
+							$spn.RequiredSPN = "MSSQLSvc/$servername"
 						}
 						else
 						{
-							$spn.AliasSPN = "MSSQLSvc/" + $servername + ":" + $instance.name
-							$spn.SPN = "MSSQLSvc/" + $hostentry + ":" + $instance.name
+							$spn.RequiredSPN = "MSSQLSvc/" + $servername + ":" + $instance.name
 						}
 					}
-					if ($spn.AliasSPN -eq $spn.SPN) { $spn.SPN = $null }
 					
 					$spns += $spn
 				}
@@ -254,21 +249,16 @@ have be a valid login with appropriate rights on the domain you specify
 						if ($port -like "*d")
 						{
 							$newspn.Port = ($port.replace("d", ""))
-							$newspn.AliasSPN = $newspn.AliasSPN.Replace($newSPN.InstanceName, $newspn.Port)
-							$newspn.SPN = $newspn.SPN.Replace($newSPN.InstanceName, $newspn.Port)
+							$newspn.RequiredSPN = $newspn.RequiredSPN.Replace($newSPN.InstanceName, $newspn.Port)
 							$newspn.DynamicPort = $true
 							$newspn.Warning = "Dynamic port is enabled"
 						}
 						else
 						{
 							$newspn.Port = $port
-							$newspn.AliasSPN = $newspn.AliasSPN + ":" + $port
-							$newspn.SPN = $newspn.SPN + ":" + $port
+							$newspn.RequiredSPN = $newspn.RequiredSPN + ":" + $port
 							$newspn.DynamicPort = $false
 						}
-						
-						# Testing original intentionally
-						if ($spn.SPN -eq $null) { $newspn.SPN = $null }
 						
 						$spns += $newspn
 					}
@@ -331,9 +321,7 @@ have be a valid login with appropriate rights on the domain you specify
 				
 				if ($results.Count -gt 0)
 				{
-					$spn.ActualSPN = $results.Properties.serviceprincipalname | Where-Object { $_ -eq $spn.AliasSPN -or $_ -eq $spn.SPN }
-					
-					if ($results.Properties.serviceprincipalname -contains $spn.AliasSPN -or $results.Properties.serviceprincipalname -contains $spn.SPN)
+					if ($results.Properties.serviceprincipalname -contains $spn.RequiredSPN)
 					{
 						$spn.IsSet = $true
 					}
