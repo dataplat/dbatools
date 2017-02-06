@@ -84,7 +84,23 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 			
 			$Computer = $Computer.Split('\')[0]
 			Write-Verbose "Connecting to server $Computer"
-			$ipaddress = ((Test-Connection -ComputerName $Computer -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
+			
+			try
+			{
+				$ipaddress = ((Test-Connection -ComputerName $Computer -Count 1 -ErrorAction Stop).Ipv4Address).IPAddressToString
+			}
+			catch
+			{
+				try
+				{
+					$ipaddress = ((Test-Connection -ComputerName "$Computer.$env:USERDNSDOMAIN" -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
+					$Computer = "$Computer.$env:USERDNSDOMAIN"
+				}
+				catch
+				{
+					$Computer = $OGComputer
+				}
+			}
 			
 			if ($Turbo)
 			{
