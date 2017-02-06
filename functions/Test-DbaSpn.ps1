@@ -143,6 +143,7 @@ have be a valid login with appropriate rights on the domain you specify
 			
 			$spns = @()
 			$servername = $args[0]
+			$DomainName = $args[1]
 			$instancecount = $wmi.ServerInstances.Count
 			Write-Verbose "Found $instancecount instances"
 			
@@ -263,17 +264,17 @@ have be a valid login with appropriate rights on the domain you specify
 		{
 			try
 			{
-				$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computername -Credential $Credential -ErrorAction Stop
+				$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computername, $domain -Credential $Credential -ErrorAction Stop
 			}
 			catch
 			{
 				Write-Verbose "Couldn't connect to $ipaddr with credential. Using without credentials."
-				$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computername
+				$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computername, $domain
 			}
 		}
 		else
 		{
-			$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computername
+			$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computername, $domain
 		}
 		
 		
@@ -316,7 +317,7 @@ have be a valid login with appropriate rights on the domain you specify
 				$spn.Error = "SPN missing"
 			}
 			
-			$spn | Select-DefaultView -ExcludeProperty Credential
+			$spn | Select-DefaultView -ExcludeProperty Credential, DomainName
 		}
 	}
 }
