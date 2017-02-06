@@ -96,7 +96,17 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
             $adsearch.Filter = $("(&(samAccountName={0}))" -f $account)
 			
 			Write-Verbose "Looking for account $account..."
-            $Result = $adsearch.FindOne()
+			
+			try
+			{
+				$Result = $adsearch.FindOne()
+			}
+			catch
+			{
+				Write-Warning "AD lookup failure. This may be because the hostname ($computer) was not resolvable within the domain ($domain) or the SQL Server service account ($serviceaccount) couldn't be found in domain."
+				continue
+			}
+			
 			$properties = $result.Properties
 			
 			foreach ($spn in $result.Properties.serviceprincipalname)
