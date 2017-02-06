@@ -201,20 +201,18 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 				}
 			}
 			
-			$testfqdn = "$($conn.DNSHostname).$($conn.Domain)"
-			
 			try
 			{
-				$fqdn = ([System.Net.Dns]::GetHostEntry($testfqdn)).HostName
+				$fqdn = ([System.Net.Dns]::GetHostEntry($Computer)).HostName
 				
 				if ($null -eq $fqdn)
 				{
-					$fqdn = $testfqdn
+					$fqdn = "$($conn.DNSHostname).$($conn.Domain)"
 				}
 			}
 			catch
 			{
-				$fqdn = $testfqdn
+				$fqdn = "$($conn.DNSHostname).$($conn.Domain)"
 			}
 			
 			if ($fqdn -eq ".") { $fqdn = $null }
