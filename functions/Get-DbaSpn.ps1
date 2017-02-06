@@ -103,7 +103,7 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 			}
 			catch
 			{
-				Write-Warning "AD lookup failure. This may be because the hostname ($computer) was not resolvable within the domain ($domain)."
+				Write-Warning "AD lookup failure. This may be because the hostname ($computer) was not resolvable within the domain ($domain) or the SQL Server service account ($serviceaccount) couldn't be found in domain."
 				continue
 			}
 			
