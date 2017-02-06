@@ -86,12 +86,14 @@ have be a valid login with appropriate rights on the domain you specify
 			}
 			
 			$ipaddr = $resolved.IPAddress
+			$hostentry = $resolved.DNSHostEntry
+			
 			if (!$domain)
 			{
 				$domain = $resolved.domain
 				if ($computer -notmatch "\.")
 				{
-					$computer = $resolved.FQDN
+					$computer = $resolved.DNSHostEntry
 				}
 			}
 			else
@@ -140,7 +142,7 @@ have be a valid login with appropriate rights on the domain you specify
 				
 				$spns = @()
 				$servername = $args[0]
-				$DomainName = $args[1]
+				$hostentry = $args[1]
 				$instancecount = $wmi.ServerInstances.Count
 				Write-Verbose "Found $instancecount instances"
 				
@@ -191,13 +193,14 @@ have be a valid login with appropriate rights on the domain you specify
 						#Each instance has a default SPN of MSSQLSvc\<fqdn> or MSSSQLSvc\<fqdn>:Instance    
 						if ($instance.Name -eq "MSSQLSERVER")
 						{
-							$spn.RequiredSPN = "MSSQLSvc/$servername"
+							$spn.RequiredSPN = "MSSQLSvc/$hostentry"
 						}
 						else
 						{
-							$spn.RequiredSPN = "MSSQLSvc/" + $servername + ":" + $instance.name
+							$spn.RequiredSPN = "MSSQLSvc/" + $hostentry + ":" + $instance.name
 						}
 					}
+					
 					$spns += $spn
 				}
 				# Now, for each spn, do we need a port set? Only if TCP is enabled and NOT DYNAMIC!
@@ -256,6 +259,7 @@ have be a valid login with appropriate rights on the domain you specify
 							$newspn.RequiredSPN = $newspn.RequiredSPN + ":" + $port
 							$newspn.DynamicPort = $false
 						}
+						
 						$spns += $newspn
 					}
 				}
@@ -267,17 +271,17 @@ have be a valid login with appropriate rights on the domain you specify
 			{
 				try
 				{
-					$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $domain -Credential $Credential -ErrorAction Stop
+					$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $hostentry -Credential $Credential -ErrorAction Stop
 				}
 				catch
 				{
 					Write-Verbose "Couldn't connect to $ipaddr with credential. Using without credentials."
-					$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $domain
+					$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $hostentry
 				}
 			}
 			else
 			{
-				$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $domain
+				$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $hostentry
 			}
 			
 			
