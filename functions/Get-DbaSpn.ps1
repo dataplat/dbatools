@@ -62,7 +62,7 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 			$AccountName = "$env:USERDOMAIN\$env:USERNAME"
 		}
 		
-		if ($ComputerName.EndsWith("$"))
+		if ($ComputerName[0].EndsWith('$'))
 		{
 			$AccountName = $ComputerName
 			$ComputerName = $null
@@ -134,7 +134,7 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 			
 			$sqlspns = 0
 			$spncount = $spns.count
-			Write-Verbose "Calculated $spncount SQL SPN entries that should exist"
+			Write-Verbose "Calculated $spncount SQL SPN entries that should exist for $server"
 			foreach ($spn in $spns | Where-Object { $_.IsSet -eq $true })
 			{
 				$sqlspns++
@@ -145,7 +145,7 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 					SPN = $spn.RequiredSPN
                 }
 			}
-			Write-Verbose "Found $sqlspns set SQL SPN entries"
+			Write-Verbose "Found $sqlspns set SQL SPN entries for $server"
 		}
 	}
 }
