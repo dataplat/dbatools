@@ -224,8 +224,8 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 				ComputerName = $conn.Name
 				IPAddress = $ipaddress
 				DNSHostName = $conn.DNSHostname
-				DNSHostEntry = $hostentry
 				Domain = $conn.Domain
+				DNSHostEntry = $hostentry
 				FQDN = $fqdn
 			}
 		}
