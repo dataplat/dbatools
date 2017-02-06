@@ -86,6 +86,7 @@ have be a valid login with appropriate rights on the domain you specify
 			}
 			
 			$ipaddr = $resolved.IPAddress
+			
 			if (!$domain)
 			{
 				$domain = $resolved.domain
@@ -140,7 +141,6 @@ have be a valid login with appropriate rights on the domain you specify
 				
 				$spns = @()
 				$servername = $args[0]
-				$DomainName = $args[1]
 				$instancecount = $wmi.ServerInstances.Count
 				Write-Verbose "Found $instancecount instances"
 				
@@ -267,17 +267,17 @@ have be a valid login with appropriate rights on the domain you specify
 			{
 				try
 				{
-					$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $domain -Credential $Credential -ErrorAction Stop
+					$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer -Credential $Credential -ErrorAction Stop
 				}
 				catch
 				{
 					Write-Verbose "Couldn't connect to $ipaddr with credential. Using without credentials."
-					$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $domain
+					$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer
 				}
 			}
 			else
 			{
-				$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $domain
+				$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer
 			}
 			
 			
