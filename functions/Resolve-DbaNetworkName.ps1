@@ -201,23 +201,18 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 				}
 			}
 			
+			
 			try
 			{
 				Write-Verbose "Resolving $($conn.DNSHostname) using GetHostEntry"
-				$fqdn = ([System.Net.Dns]::GetHostEntry($conn.DNSHostname)).HostName
-				
-				if ($null -eq $fqdn)
-				{
-					Write-Verbose "Not found, defaulting to $($conn.DNSHostname).$($conn.Domain)"
-					$fqdn = "$($conn.DNSHostname).$($conn.Domain)"
-				}
+				$hostentry = ([System.Net.Dns]::GetHostEntry($conn.DNSHostname)).HostName
 			}
 			catch
 			{
-				Write-Verbose "Not found, defaulting to $($conn.DNSHostname).$($conn.Domain)"
-				$fqdn = "$($conn.DNSHostname).$($conn.Domain)"
+				Write-Verbose "GetHostEntry failed"
 			}
 			
+			$fqdn = "$($conn.DNSHostname).$($conn.Domain)"
 			if ($fqdn -eq ".")
 			{
 				Write-Verbose "No full FQDN found. Setting to null"
@@ -229,6 +224,7 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 				ComputerName = $conn.Name
 				IPAddress = $ipaddress
 				DNSHostName = $conn.DNSHostname
+				DNSHostEntry = $hostentry
 				Domain = $conn.Domain
 				FQDN = $fqdn
 			}
