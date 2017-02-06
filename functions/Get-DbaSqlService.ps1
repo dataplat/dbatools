@@ -54,7 +54,7 @@ Gets the SQL Server related services on computers sql1 and sql2, and shows them 
 BEGIN
     {
     $functionName = "Get-DbaSqlService"
-    $ComputerName = $ComputerName | foreach {$_.split("\")[0]} | select -Unique
+    $ComputerName = $ComputerName | ForEach-Object {$_.split("\")[0]} | Select-Object -Unique
     }
 PROCESS
     {
@@ -66,15 +66,16 @@ PROCESS
 	        {
                 $Computer = $server.ComputerName
                 Write-Verbose "$functionname - Getting SQL Server namespace on $Computer via CIM (WSMan)"
-                $namespace = Get-CimInstance -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -ClassName "__NAMESPACE" -Filter "Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
-                                Sort-Object Name -Descending | Select-Object -First 1
+                $namespace = Get-CimInstance -ComputerName lt-it28 -NameSpace root\Microsoft\SQLServer -ClassName "__NAMESPACE" -Filter "Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
+                            Where-Object {(Get-CimInstance -ComputerName lt-it28 -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -Query "SELECT * FROM SqlService" -ErrorAction SilentlyContinue).count -gt 0} |
+                            Sort-Object Name -Descending | Select-Object -First 1
                 if ( $namespace.Name )
                 {
                     Write-Verbose "$functionname - Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer via CIM (WSMan)"
                     try
                     {
                         Get-CimInstance -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService" -ErrorAction SilentlyContinue |
-                        foreach {
+                        ForEach-Object {
                             [PSCustomObject]@{
                                 ComputerName = $_.HostName
                                 ServiceName = $_.ServiceName
@@ -94,17 +95,25 @@ PROCESS
                 else
                 {
                     Write-Verbose "$functionname - Getting computer information from $Computer via CIM (DCOM)"
-				    $sessionoption = New-CimSessionOption -Protocol DCOM
-				    $CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
+                  $sessionoption = New-CimSessionOption -Protocol DCOM
+                  $CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
+                  if ( $CIMSession )
+                  {
                     $namespace = Get-CimInstance -CimSession $CIMsession -NameSpace root\Microsoft\SQLServer -ClassName "__NAMESPACE" -Filter "Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
-                                Sort-Object Name -Descending | Select-Object -First 1
+                    Where-Object {(Get-CimInstance -CimSession $CIMsession -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -Query "SELECT * FROM SqlService" -ErrorAction SilentlyContinue).count -gt 0} |
+                    Sort-Object Name -Descending | Select-Object -First 1
+                  }
+                  else
+                  {
+                  Write-Warning "$functionName - can't create CIMsession via DCom on $Computer"
+                  }
                     if ( $namespace.Name )
                     {
                         Write-Verbose "$functionname - Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer via CIM (DCOM)"
                         try
                         {
                             Get-CimInstance -CimSession $CIMsession -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService" -ErrorAction SilentlyContinue |
-                            foreach {
+                            ForEach-Object {
                                 [PSCustomObject]@{
                                     ComputerName = $_.HostName
                                     ServiceName = $_.ServiceName
