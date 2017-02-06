@@ -266,7 +266,8 @@ have be a valid login with appropriate rights on the domain you specify
 							$newspn.DynamicPort = $false
 						}
 						
-						if ($newspn.RequiredSPN -eq $newspn.AliasSPN) { $newspn.AliasSPN = $null }
+						# Testing original intentionally
+						if ($spn.AliasSPN -eq $null) { $newspn.AliasSPN = $null }
 						
 						$spns += $newspn
 					}
