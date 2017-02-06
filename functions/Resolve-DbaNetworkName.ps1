@@ -75,6 +75,12 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 			}
 			
 			$OGComputer = $Computer
+			
+			if ($Computer -eq "localhost" -or $Computer -eq ".")
+			{
+				$Computer = $env:COMPUTERNAME
+			}
+			
 			$Computer = $Computer.Split('\')[0]
 			Write-Verbose "Connecting to server $Computer"
 			$ipaddress = ((Test-Connection -ComputerName $Computer -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
@@ -97,11 +103,17 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 					}
 				}
 				
+				if ($fqdn -notmatch "\.")
+				{
+					$dnsdomain = $env:USERDNSDOMAIN.ToLower()
+					$fqdn = "$fqdn.$dnsdomain"
+				}
+				
 				$hostname = $fqdn.Split(".")[0]
 				
 				[PSCustomObject]@{
-					InputName = $Computer
-					ComputerName = $hostname
+					InputName = $OGComputer
+					ComputerName = $hostname.ToUpper()
 					DNSHostname = $hostname
 					IPAddress = $ipaddress
 					Domain = $fqdn.Replace("$hostname.", "")
