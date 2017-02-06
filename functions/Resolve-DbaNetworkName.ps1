@@ -20,6 +20,9 @@ This can be the name of a computer, a SMO object, an IP address or a SQL Instanc
 .PARAMETER Credential
 Credential object used to connect to the SQL Server as a different user
 
+.PARAMETER Turbo
+Resolves without accessing the serer itself. Faster but may be less accurate.
+
 .NOTES
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
@@ -56,7 +59,8 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("cn", "host", "ServerInstance", "Server", "SqlServer")]
 		[object]$ComputerName,
-		[PsCredential]$Credential
+		[PsCredential]$Credential,
+		[switch]$Turbo
 	)
 	
 	PROCESS
@@ -74,6 +78,37 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 			$Computer = $Computer.Split('\')[0]
 			Write-Verbose "Connecting to server $Computer"
 			$ipaddress = ((Test-Connection -ComputerName $Computer -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
+			
+			if ($Turbo)
+			{
+				try
+				{
+					$fqdn = [System.Net.Dns]::GetHostByAddress($ipaddress).HostName
+				}
+				catch
+				{
+					try
+					{
+						$fqdn = ([System.Net.Dns]::GetHostEntry($Computer)).HostName
+					}
+					catch
+					{
+						throw "DNS name does not exist"
+					}
+				}
+				
+				$hostname = $fqdn.Split(".")[0]
+				
+				[PSCustomObject]@{
+					InputName = $Computer
+					ComputerName = $hostname
+					DNSHostname = $hostname
+					IPAddress = $ipaddress
+					Domain = $fqdn.Replace("$hostname.", "")
+					FQDN = $fqdn
+				}
+				return
+			}
 			
 			if ( $ipaddress )
 			{

@@ -74,7 +74,7 @@ have be a valid login with appropriate rights on the domain you specify
 	
 	begin
 	{
-		$resolved = Resolve-DbaNetworkName -ComputerName $ComputerName -Credential $Credential
+		$resolved = Resolve-DbaNetworkName -ComputerName $ComputerName -Turbo
 		$ipaddr = $resolved.IPAddress
 		
 		if (!$domain)

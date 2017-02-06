@@ -51,7 +51,7 @@ Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status,
 	{
 		foreach ( $Computer in $ComputerName )
 		{
-			$reply = Resolve-DbaNetworkName -ComputerName $Computer -erroraction silentlycontinue
+			$reply = Resolve-DbaNetworkName -ComputerName $Computer -Credential $Credential -ErrorAction silentlycontinue
 			
 			if ( !$reply.ComputerName ) # we can reach $computer
 			{
