@@ -86,6 +86,7 @@ have be a valid login with appropriate rights on the domain you specify
 			}
 			
 			$ipaddr = $resolved.IPAddress
+			$hostentry = $resolved.DNSHostEntry
 			
 			if (!$domain)
 			{
@@ -141,6 +142,7 @@ have be a valid login with appropriate rights on the domain you specify
 				
 				$spns = @()
 				$servername = $args[0]
+				$hostentry = $args[1]
 				$instancecount = $wmi.ServerInstances.Count
 				Write-Verbose "Found $instancecount instances"
 				
@@ -152,6 +154,7 @@ have be a valid login with appropriate rights on the domain you specify
 						SqlProduct = $null #SKUNAME
 						InstanceServiceAccount = $null
 						RequiredSPN = $null
+						AliasSPN = $null
 						IsSet = $false
 						Cluster = $false
 						TcpEnabled = $false
@@ -192,12 +195,16 @@ have be a valid login with appropriate rights on the domain you specify
 						if ($instance.Name -eq "MSSQLSERVER")
 						{
 							$spn.RequiredSPN = "MSSQLSvc/$servername"
+							$spn.AliasSPN = "MSSQLSvc/$hostentry"
 						}
 						else
 						{
 							$spn.RequiredSPN = "MSSQLSvc/" + $servername + ":" + $instance.name
+							$spn.AliasSPN = "MSSQLSvc/" + $hostentry + ":" + $instance.name
 						}
 					}
+					if ($spn.RequiredSPN -eq $spn.AliasSPN) { $spn.AliasSPN = $null }
+					
 					$spns += $spn
 				}
 				# Now, for each spn, do we need a port set? Only if TCP is enabled and NOT DYNAMIC!
@@ -247,6 +254,7 @@ have be a valid login with appropriate rights on the domain you specify
 						{
 							$newspn.Port = ($port.replace("d", ""))
 							$newspn.RequiredSPN = $newspn.RequiredSPN.Replace($newSPN.InstanceName, $newspn.Port)
+							$newspn.AliasSPN = $newspn.AliasSPN.Replace($newSPN.InstanceName, $newspn.Port)
 							$newspn.DynamicPort = $true
 							$newspn.Warning = "Dynamic port is enabled"
 						}
@@ -254,8 +262,12 @@ have be a valid login with appropriate rights on the domain you specify
 						{
 							$newspn.Port = $port
 							$newspn.RequiredSPN = $newspn.RequiredSPN + ":" + $port
+							$newspn.AliasSPN = $newspn.AliasSPN + ":" + $port
 							$newspn.DynamicPort = $false
 						}
+						
+						if ($newspn.RequiredSPN -eq $newspn.AliasSPN) { $newspn.AliasSPN = $null }
+						
 						$spns += $newspn
 					}
 				}
@@ -267,17 +279,17 @@ have be a valid login with appropriate rights on the domain you specify
 			{
 				try
 				{
-					$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer -Credential $Credential -ErrorAction Stop
+					$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $hostentry -Credential $Credential -ErrorAction Stop
 				}
 				catch
 				{
 					Write-Verbose "Couldn't connect to $ipaddr with credential. Using without credentials."
-					$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer
+					$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $hostentry
 				}
 			}
 			else
 			{
-				$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer
+				$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $hostentry
 			}
 			
 			
@@ -317,7 +329,7 @@ have be a valid login with appropriate rights on the domain you specify
 				
 				if ($results.Count -gt 0)
 				{
-					if ($results.Properties.serviceprincipalname -contains $spn.RequiredSPN)
+					if ($results.Properties.serviceprincipalname -contains $spn.RequiredSPN -or $results.Properties.serviceprincipalname -contains $spn.AliasSPN)
 					{
 						$spn.IsSet = $true
 					}
