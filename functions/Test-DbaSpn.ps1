@@ -74,9 +74,16 @@ have be a valid login with appropriate rights on the domain you specify
 	
 	begin
 	{
-		$resolved = Resolve-DbaNetworkName -ComputerName $ComputerName -Turbo
-		$ipaddr = $resolved.IPAddress
+		if ($Credential)
+		{
+			$resolved = Resolve-DbaNetworkName -ComputerName $ComputerName -Credential $Credential
+		}
+		else
+		{
+			$resolved = Resolve-DbaNetworkName -ComputerName $ComputerName -Turbo
+		}
 		
+		$ipaddr = $resolved.IPAddress
 		if (!$domain)
 		{
 			$domain = $resolved.domain
@@ -240,13 +247,6 @@ have be a valid login with appropriate rights on the domain you specify
 					}
 					$spns += $newspn
 				}
-
-				#if ($spn.DynamicPort -eq $true)
-				#{
-				#	$spn.Warning = "Dynamic port is enabled"
-				#}				
-
-
 			}
 			$spns
 		}
