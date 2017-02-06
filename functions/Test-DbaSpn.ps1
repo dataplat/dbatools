@@ -193,11 +193,11 @@ have be a valid login with appropriate rights on the domain you specify
 						#Each instance has a default SPN of MSSQLSvc\<fqdn> or MSSSQLSvc\<fqdn>:Instance    
 						if ($instance.Name -eq "MSSQLSERVER")
 						{
-							$spn.RequiredSPN = "MSSQLSvc/$servername"
+							$spn.RequiredSPN = "MSSQLSvc/$hostentry"
 						}
 						else
 						{
-							$spn.RequiredSPN = "MSSQLSvc/" + $servername + ":" + $instance.name
+							$spn.RequiredSPN = "MSSQLSvc/" + $hostentry + ":" + $instance.name
 						}
 					}
 					
