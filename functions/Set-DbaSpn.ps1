@@ -17,6 +17,9 @@ The SPN you want to add
 .PARAMETER ServiceAccount
 The account you want the SPN added to
 
+.PARAMETER DomainName
+To set the SPN for another domain
+	
 .PARAMETER Credential
 The credential you want to use to connect to Active Directory to make the changes
 
