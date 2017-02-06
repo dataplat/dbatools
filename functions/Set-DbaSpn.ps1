@@ -84,7 +84,6 @@ Connects to Active Directory and adds a provided SPN to the given account. Uses 
 		
 		if ($domainName) {
 			$root = ""
-			$domainName = "boatmurder.drew.local"
 			$splitDomainName = $domainName.split(".")
 			ForEach ($s in $splitDomainName) {
 				if ($root -ne "") {
