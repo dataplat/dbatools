@@ -64,15 +64,15 @@ have be a valid login with appropriate rights on the domain you specify
 #>
 	[cmdletbinding()]
 	param (
-		[Parameter(Mandatory = $true)]
+		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[string[]]$ComputerName,
 		[Parameter(Mandatory = $false)]
 		[PSCredential]$Credential,
 		[Parameter(Mandatory = $false)]
 		[string]$Domain
 	)
-	
-	begin
+		
+	process
 	{
 		if ($Credential)
 		{
@@ -103,15 +103,17 @@ have be a valid login with appropriate rights on the domain you specify
 		{
 			if ($computername -notmatch "\.")
 			{
-				$ComputerName = "$computerName.$domain"
+				if ($computername -match "\\")
+				{
+					$computername = $computername.Split("\")[0]
+					
+				}
+				$computername = "$computerName.$domain"			
 			}
 		}
 		
 		Write-Verbose "Resolved ComputerName to FQDN: $ComputerName"
-	}
-	
-	process
-	{
+		
 		$Scriptblock = {
 			
 			Function Convert-SqlVersion
