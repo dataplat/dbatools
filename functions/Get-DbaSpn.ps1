@@ -46,33 +46,37 @@ Get-DbaSpn -ServerName SQLSERVERA,SQLSERVERB -Credential (Get-Credential)
 Returns a custom object with SearchTerm (ServerName) and the SPNs that were found for multiple computers
 #>
     [cmdletbinding()]
-    param(
-        [Parameter(Mandatory = $false)]
+	param (
+        [Parameter(Mandatory = $false,ValueFromPipeline = $true)]
         [string[]]$ComputerName,
         [Parameter(Mandatory = $false)]
 		[string[]]$AccountName,
 		[Parameter(Mandatory = $false)]
         [PSCredential]$Credential
     )
-	begin
+	process
 	{
 		if (!$ComputerName -and !$AccountName)
 		{
-			$ComputerName = "localhost"
+			$ComputerName = $env:computername
 			$AccountName = "$env:USERDOMAIN\$env:USERNAME"
 		}
-	}
-	process
-	{
+		
+		if ($ComputerName[0].EndsWith('$'))
+		{
+			$AccountName = $ComputerName
+			$ComputerName = $null
+		}
+		
 		ForEach ($account in $AccountName)
 		{
 			$ogaccount = $account
             if ($account -like "*\*") {
-                Write-Verbose "Account name ($account) provided in in domain\user format, stripping out domain info..."
+                Write-Verbose "Account name ($account) provided in in domain\user format, stripping out domain info."
                 $account = ($account.split("\"))[1]
             }
             if ($account -like "*@*") {
-                Write-Verbose "Account name ($account) provided in in user@domain format, stripping out domain info..."
+                Write-Verbose "Account name ($account) provided in in user@domain format, stripping out domain info."
                 $account = ($account.split("@"))[0]
             }
 			
@@ -93,14 +97,35 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 			
 			Write-Verbose "Looking for account $account..."
             $Result = $adsearch.FindOne()
+			$properties = $result.Properties
 			
-            foreach ($spn in $result.Properties.serviceprincipalname) {
+			foreach ($spn in $result.Properties.serviceprincipalname)
+			{
+				if ($spn -match "\:")
+				{
+					try
+					{
+						$port = [int]($spn -Split "\:")[1]
+					}
+					catch
+					{
+						$port = $null
+					}
+					if ($spn -match "\/")
+					{
+						$serviceclass = ($spn -Split "\/")[0]
+					}
+				}
+				
                 [pscustomobject] @{
-                    Name = $ogaccount
-                    SPN = $spn
+					Name = $properties.samaccountname[0]
+					ServiceClass = $serviceclass
+					Port = $port
+					SPN = $spn
                 }
 			}
 		}
+		
 		
 		foreach ($server in $ComputerName)
 		{
@@ -109,16 +134,18 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 			
 			$sqlspns = 0
 			$spncount = $spns.count
-			Write-Verbose "Calculated $spncount SQL SPN entries that should exist"
+			Write-Verbose "Calculated $spncount SQL SPN entries that should exist for $server"
 			foreach ($spn in $spns | Where-Object { $_.IsSet -eq $true })
 			{
 				$sqlspns++
                 [pscustomobject] @{
-                    Name = $server
-                    SPN = $spn.RequiredSPN
+					Name = $spn.ComputerName
+					ServiceClass = "MSSQLSvc"
+					Port = $spn.Port
+					SPN = $spn.RequiredSPN
                 }
 			}
-			Write-Verbose "Found $sqlspns set SQL SPN entries"
+			Write-Verbose "Found $sqlspns set SQL SPN entries for $server"
 		}
 	}
 }
