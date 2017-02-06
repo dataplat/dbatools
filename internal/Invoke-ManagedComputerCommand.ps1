@@ -85,7 +85,6 @@ Internal command
 		}
 		catch
 		{
-			Write-Exception $_
 			throw $_
 		}
 	}

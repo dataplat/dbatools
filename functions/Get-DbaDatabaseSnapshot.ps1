@@ -115,7 +115,7 @@ Returns information for database snapshots HR_snapshot and Accounting_snapshot
 					SnapshotDb = $db
 				}
 				
-				Select-DefaultField -InputObject $object -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated
+				Select-DefaultView -InputObject $object -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated
 			}
 		}
 	}

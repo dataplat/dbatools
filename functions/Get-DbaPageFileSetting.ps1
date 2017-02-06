@@ -51,7 +51,7 @@ Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status,
 	{
 		foreach ( $Computer in $ComputerName )
 		{
-			$reply = Resolve-DbaNetworkName -ComputerName $Computer -erroraction silentlycontinue
+			$reply = Resolve-DbaNetworkName -ComputerName $Computer -Credential $Credential -ErrorAction silentlycontinue
 			
 			if ( !$reply.ComputerName ) # we can reach $computer
 			{
@@ -146,7 +146,7 @@ Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status,
 					MaximumSize = $null
 					PeakUsage = $null
 					CurrentUsage = $null
-				} | Select-DefaultField -Property ComputerName, AutoPageFile
+				} | Select-DefaultView -Property ComputerName, AutoPageFile
 			}
 			if ( $CIMsession ) { Remove-CimSession $CIMsession }
 		}
