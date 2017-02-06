@@ -60,6 +60,7 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 		[Alias("cn", "host", "ServerInstance", "Server", "SqlServer")]
 		[object]$ComputerName,
 		[PsCredential]$Credential,
+		[Alias("FastParrot")]
 		[switch]$Turbo
 	)
 	
