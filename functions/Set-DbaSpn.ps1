@@ -64,7 +64,9 @@ Connects to Active Directory and adds a provided SPN to the given account. Uses 
 		[Alias("InstanceServiceAccount")]
 		[string]$ServiceAccount,
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
-		[pscredential]$Credential
+		[pscredential]$Credential,
+		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
+		[string]$DomainName		
 	)
 	
 	process
@@ -80,7 +82,19 @@ Connects to Active Directory and adds a provided SPN to the given account. Uses 
 			$serviceaccount = ($serviceaccount.split("@"))[0]
 		}
 		
-		$root = ([ADSI]"LDAP://RootDSE").defaultNamingContext
+		if ($domainName) {
+			$root = ""
+			$domainName = "boatmurder.drew.local"
+			$splitDomainName = $domainName.split(".")
+			ForEach ($s in $splitDomainName) {
+				if ($root -ne "") {
+					$root += ","
+				}
+				$root += "DC=" + $s
+			}
+		} else {
+			$root = ([ADSI]"LDAP://RootDSE").defaultNamingContext
+		}
 		$adsearch = New-Object System.DirectoryServices.DirectorySearcher
 		
 		if ($Credential)
