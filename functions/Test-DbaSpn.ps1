@@ -76,7 +76,14 @@ have be a valid login with appropriate rights on the domain you specify
 	{
 		if ($Credential)
 		{
-			$resolved = Resolve-DbaNetworkName -ComputerName $ComputerName -Credential $Credential
+			try
+			{
+				$resolved = Resolve-DbaNetworkName -ComputerName $ComputerName -Credential $Credential -ErrorAction Stop
+			}
+			catch
+			{
+				$resolved = Resolve-DbaNetworkName -ComputerName $ComputerName -Turbo
+			}
 		}
 		else
 		{
@@ -251,9 +258,18 @@ have be a valid login with appropriate rights on the domain you specify
 			$spns
 		}
 		
+		Write-Verbose "Attempting to connect to SQL WMI on remote computer"
 		if ($Credential)
 		{
-			$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computername -Credential $Credential
+			try
+			{
+				$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computername -Credential $Credential -ErrorAction Stop
+			}
+			catch
+			{
+				Write-Verbose "Couldn't connect to $ipaddr with credential. Using without credentials."
+				$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computername
+			}
 		}
 		else
 		{
