@@ -203,19 +203,26 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 			
 			try
 			{
+				Write-Verbose "Resolving $($conn.DNSHostname) using GetHostEntry"
 				$fqdn = ([System.Net.Dns]::GetHostEntry($conn.DNSHostname)).HostName
 				
 				if ($null -eq $fqdn)
 				{
+					Write-Verbose "Not found, defaulting to $($conn.DNSHostname).$($conn.Domain)"
 					$fqdn = "$($conn.DNSHostname).$($conn.Domain)"
 				}
 			}
 			catch
 			{
+				Write-Verbose "Not found, defaulting to $($conn.DNSHostname).$($conn.Domain)"
 				$fqdn = "$($conn.DNSHostname).$($conn.Domain)"
 			}
 			
-			if ($fqdn -eq ".") { $fqdn = $null }
+			if ($fqdn -eq ".")
+			{
+				Write-Verbose "No full FQDN found. Setting to null"
+				$fqdn = $null
+			}
 			
 			[PSCustomObject]@{
 				InputName = $OGComputer
