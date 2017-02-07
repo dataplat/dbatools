@@ -58,9 +58,9 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
             
             Write-Verbose "$FunctionName - Got a Full backup, now find diffs if they exist"
             $Diffbackups = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Database Differential' -and $_.DatabaseBackupLSN -eq $Fullbackup.FirstLsn -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1
-
+            Write-verbose "$FunctionName - dbk - $($diffbackups.count)"
             $TlogStartlsn = 0
-            if ($Diffbackups.count -gt 0){
+            if ($null -ne $Diffbackups){
                 Write-Verbose "$FunctionName - we have at least one diff so look for tlogs after the last one"
                 #If we have a Diff backup, we only need T-log backups post that point
                 $TlogStartLSN = ($DiffBackups | sort-object -propert FirstLSN -Descending | select-object -Propert StartLsn -first 1).FirstLSN

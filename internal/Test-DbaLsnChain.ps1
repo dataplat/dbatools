@@ -44,7 +44,7 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
     if (($FullDBAnchor | Group-Object -Property FirstLSN | Measure-Object).count -ne 1)
     {
         $cnt = ($FullDBAnchor | Group-Object -Property FirstLSN | Measure-Object).count
-            Foreach ($tFile in $FullDBAnchor){write-verbose "$($tfile.FirstLsn) - $($tfile.BackupTypeDescription)"}
+        Foreach ($tFile in $FullDBAnchor){write-verbose "$($tfile.FirstLsn) - $($tfile.BackupTypeDescription)"}
         Write-Verbose "$FunctionName - db count = $cnt"
         Write-Error "$FunctionName - More than 1 full backup from a different LSN, or less than 1, neither supported"
 
