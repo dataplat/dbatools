@@ -186,7 +186,7 @@ c:\DataFiles and all the log files into c:\LogFiles
                 } 
                 elseif ($MaintenanceSolutionBackup )
                 {
-                    Write-Verbose "$FunctionName : Ola Style"
+                    Write-Verbose "$FunctionName : Ola Style Folder"
                     $BackupFiles += Get-OlaHRestoreFile -path $p
                 } 
                 else 
@@ -208,7 +208,7 @@ c:\DataFiles and all the log files into c:\LogFiles
     {
         $AllFilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer:$SqlServer -RestoreTime:$RestoreTime -SqlCredential:$SqlCredential
         Write-Verbose "$FunctionName - $($AllFilteredFiles.count) dbs to restore"
-        #$AllFilteredFiles
+        
         ForEach ($FilteredFileSet in $AllFilteredFiles)
       
         {
@@ -224,7 +224,7 @@ c:\DataFiles and all the log files into c:\LogFiles
             IF($DatabaseName -eq '')
             {
                 $DatabaseName = ($FilteredFiles | Select DatabaseName -unique).DatabaseName
-                Write-Verbose "$FunctionName - Dbname = $DatabaseName"
+                Write-Verbose "$FunctionName - Dbname set from backup = $DatabaseName"
             }
 
             if((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlServer $SqlServer -SqlCredential $SqlCredential))

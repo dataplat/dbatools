@@ -79,7 +79,7 @@ Function Restore-DBFromFilteredArray
 		{
 	
 			$RestoreFiles = @($InternalFiles | Where-Object {$_.FirstLSN -eq $RestorePoint.Name})
-			Write-verbose "name - $($RestorePoint.Name)"
+			Write-verbose "$FunctionName - Restoring $($RestorePoint.Name)"
 			if ($Restore.RelocateFiles.count -gt 0)
 			{
 				$Restore.RelocateFiles.Clear()
@@ -133,6 +133,10 @@ Function Restore-DBFromFilteredArray
 				if ($RestoreFiles[0].RecoveryModel -ne 'Simple')
 				{
 					$Restore.ToPointInTime = $RestoreTime
+				} 
+				else 
+				{
+					Write-Verbose "$FunctionName - Restoring a Simmple mode db, no restoretime"	
 				}
 				if ($DbName -ne '')
 				{
@@ -149,7 +153,7 @@ Function Restore-DBFromFilteredArray
 						'5' {'Database'}
 						Default {'Unknown'}
 					}
-				Write-Verbose "$FunctionName restore action = $Action"
+				Write-Verbose "$FunctionName - restore action = $Action"
 				$restore.Action = $Action 
 				if ($RestorePoint -eq $RestorePoints[-1] -and $NoRecovery -ne $true)
 				{
@@ -159,6 +163,7 @@ Function Restore-DBFromFilteredArray
 				}
 				else 
 				{
+					Write-Verbose "$FunctionName - More files to restore, NoRecovery set"
 					$Restore.NoRecovery = $true
 				}
 				Foreach ($RestoreFile in $RestoreFiles)
@@ -213,6 +218,7 @@ Function Restore-DBFromFilteredArray
 		}
 		if ($NoRecovery -eq $false -and $ScriptOnly -eq $false)
 		{
+			Write-Verbose "$FunctionName - Performing Recovery"
 			Invoke-SQLcmd2 -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Restore database $DbName with recovery"
 		}
 		#$server.ConnectionContext.Disconnect()
