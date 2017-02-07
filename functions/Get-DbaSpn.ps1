@@ -62,10 +62,13 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 			$AccountName = "$env:USERDOMAIN\$env:USERNAME"
 		}
 		
-		if ($ComputerName[0].EndsWith('$'))
+		if ($ComputerName)
 		{
-			$AccountName = $ComputerName
-			$ComputerName = $null
+			if ($ComputerName[0].EndsWith('$'))
+			{
+				$AccountName = $ComputerName
+				$ComputerName = $null
+			}
 		}
 		
 		ForEach ($account in $AccountName)
@@ -128,8 +131,9 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 				}
 				
                 [pscustomobject] @{
-					Name = $properties.samaccountname[0]
-					ServiceClass = $serviceclass
+					Input = $ogaccount
+					AccountName = $ogaccount
+					ServiceClass = "MSSQLSvc" # $serviceclass
 					Port = $port
 					SPN = $spn
                 }
@@ -149,7 +153,8 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 			{
 				$sqlspns++
                 [pscustomobject] @{
-					Name = $spn.ComputerName
+					Input = $server
+					AccountName = $spn.InstanceServiceAccount
 					ServiceClass = "MSSQLSvc"
 					Port = $spn.Port
 					SPN = $spn.RequiredSPN

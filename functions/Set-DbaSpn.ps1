@@ -64,7 +64,7 @@ Connects to Active Directory and adds a provided SPN to the given account. Uses 
 		[Alias("RequiredSPN")]
 		[string]$SPN,
 		[Parameter(Mandatory = $true, ValueFromPipelineByPropertyName)]
-		[Alias("InstanceServiceAccount")]
+		[Alias("InstanceServiceAccount", "AccountName")]
 		[string]$ServiceAccount,
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
 		[pscredential]$Credential,
@@ -134,6 +134,7 @@ Connects to Active Directory and adds a provided SPN to the given account. Uses 
 				{
 					$null = $adentry.Properties['serviceprincipalname'].Add($spn)
 					Write-Verbose "Added SPN $spn to samaccount $serviceaccount"
+					$status = "Successfully added SPN"
 					$adentry.CommitChanges()
 					$set = $true
 				}
@@ -141,6 +142,7 @@ Connects to Active Directory and adds a provided SPN to the given account. Uses 
 				{
 					Write-Warning "Could not add SPN. Error returned was: $_"
 					$set = $false
+					$status = "Failed to add SPN"
 					$delegate = $false
 				}
 				
@@ -149,6 +151,7 @@ Connects to Active Directory and adds a provided SPN to the given account. Uses 
 					ServiceAccount = $OGServiceAccount
 					Property = "servicePrincipalName"
 					IsSet = $set
+					Notes = $status
 				}
 			}
 			
@@ -156,7 +159,7 @@ Connects to Active Directory and adds a provided SPN to the given account. Uses 
 			
 			# Don't forget delegation!
 			$adentry = $result.GetDirectoryEntry()
-			if ($PSCmdlet.ShouldProcess("$spn", "Adding delegation to service account for SPN"))
+			if ($PSCmdlet.ShouldProcess("$spn", "Adding constrained delegation to service account for SPN"))
 			{
 				try
 				{
@@ -164,11 +167,13 @@ Connects to Active Directory and adds a provided SPN to the given account. Uses 
 					Write-Verbose "Added kerberos delegation to $spn for samaccount $serviceaccount"
 					$adentry.CommitChanges()
 					$set = $true
+					$status = "Successfully added constrained delegation"
 				}
 				catch
 				{
 					Write-Warning "Could not add delegation. Error returned was: $_"
 					$set = $false
+					$status = "Failed to add constrained delegation"
 				}
 				
 				[pscustomobject]@{
@@ -176,6 +181,7 @@ Connects to Active Directory and adds a provided SPN to the given account. Uses 
 					ServiceAccount = $OGServiceAccount
 					Property = "msDS-AllowedToDelegateTo"
 					IsSet = $set
+					Notes = $status
 				}
 			}
 		}
