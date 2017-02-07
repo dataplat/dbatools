@@ -23,8 +23,20 @@ Returns only user databases
 .PARAMETER State
 Returns only online databases
 
-.PARAMTER Owner
+.PARAMETER Access
+Returns databases that are Read Only or all others
+
+.PARAMETER Owner
 Returns all databases not owned by SA
+
+.PARAMETER Encrypted
+Returns all databases that have TDE enabled
+
+.PARAMETER RecoveryModel
+Returns databases for Full, Simple or Bulk Logged recovery models
+
+
+
 	
 .NOTES
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
