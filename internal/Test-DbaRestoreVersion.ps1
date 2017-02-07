@@ -65,7 +65,7 @@ Checks that the Restore chain in $FilteredFiles is compatiable with the SQL Serv
         return $false
         break   
     }
-    #Microsoft Rule's are that you can restore from 2 Major versions previous (2008 -> 2012 good, 2008->2014 no)
+
     if (($Server.VersionMajor -gt 10 -and $RestoreVersion -lt 9)  )
     {
         Write-Error "$FunctionName - This version - $RestoreVersion - too old to restore on to $($Server.Name)"

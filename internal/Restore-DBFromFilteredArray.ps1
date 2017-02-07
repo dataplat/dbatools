@@ -130,7 +130,10 @@ Function Restore-DBFromFilteredArray
 				$Restore.PercentCompleteNotification = 1
 				$Restore.add_Complete($complete)
 				$Restore.ReplaceDatabase = $ReplaceDatabase
-				$Restore.ToPointInTime = $RestoreTime
+				if ($RestoreFiles[0].RecoveryModel -ne 'Simple')
+				{
+					$Restore.ToPointInTime = $RestoreTime
+				}
 				if ($DbName -ne '')
 				{
 					$Restore.Database = $DbName
