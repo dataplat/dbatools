@@ -71,17 +71,21 @@ Get-DbaMsdtc -ComputerName srv0042 | Out-Gridview
 
 Get DTC status for the computer srv0042 and show in a grid view
 
+
+
 #>
 	
 	[CmdletBinding()]
 	Param (
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[Parameter(ValueFromPipeline = $true)]
 		[Alias("cn", "host", "Server")]
-		[string[]]$Computername
+		[string[]]$Computername = 'localhost'
 	)
 	
-	BEGIN
+BEGIN
 	{
+    $functionName = "Get-DbaMsDtc"
+    $ComputerName = $ComputerName | ForEach-Object {$_.split("\")[0]} | Select-Object -Unique
 		$query = "Select * FROM Win32_Service WHERE Name = 'MSDTC'"
 		$DTCSecurity = {
 			Get-ItemProperty -Path HKLM:\Software\Microsoft\MSDTC\Security |
@@ -90,52 +94,58 @@ Get DTC status for the computer srv0042 and show in a grid view
 						  networkDTCAccessOutBound, networkDTCAccessTip, networkDTCAccessTransactions, XATransactions
 		}
 		$DTCCIDs = {
-			New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT | Out-Null;
+			New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT | Out-Null
 			Get-ItemProperty -Path HKCR:\CID\*\Description |
 			Select-Object @{ l = 'Data'; e = { $_.'(default)' } }, @{ l = 'CID'; e = { $_.PSParentPath.split('\')[-1] } }
-			Remove-PSDrive -Name HKCR | Out-Null;
+			Remove-PSDrive -Name HKCR | Out-Null
 		}
 	}
-	PROCESS
+PROCESS
 	{
 		ForEach ($Computer in $Computername)
 		{
 			$dtcservice = $null
 			try
 			{
-				Write-Verbose "Getting DTC on $computer via WinRM"
-				$dtcservice = Get-Ciminstance -ComputerName $Computer -Query $query -ErrorAction Stop |
-				Select-Object PSComputerName, DisplayName, State, status, StartMode, StartName
+				Write-Verbose "$functionName - Getting DTC on $computer via WinRM"
+				$dtcservice = Get-Ciminstance -ComputerName $Computer -Query $query
 			}
 			catch
 			{
 				try
 				{
-					Write-Verbose "Failed To get DTC via WinRM. Getting DTC on $computer via DCom"
+					Write-Verbose "$functionName - Failed To get DTC via WinRM. Getting DTC on $computer via DCom"
 					$SessionParams = @{ }
 					$SessionParams.ComputerName = $Computer
 					$SessionParams.SessionOption = (New-CimSessionOption -Protocol Dcom)
 					$Session = New-CimSession @SessionParams
-					$dtcservice = Get-Ciminstance -CimSession $Session -Query $query -ErrorAction Stop |
-					Select-Object PSComputerName, DisplayName, State, status, StartMode, StartName
+					$dtcservice = Get-Ciminstance -CimSession $Session -Query $query
 				}
 				catch
 				{
-					Write-Warning "Can't connect to CIM on $Computer"
+					Write-Warning "$functionName - Can't connect to CIM on $Computer"
 				}
 			}
 			$reg = $CIDs = $null
 			$CIDHash = @{ }
 			try
 			{
-				Write-Verbose "Getting Registry Values on $Computer"
-				$reg = Invoke-Command -ComputerName $Computer -ScriptBlock $DTCSecurity -ErrorAction Stop
-				$CIDs = Invoke-Command -ComputerName $Computer -ScriptBlock $DTCCIDs -ErrorAction Stop
+				Write-Verbose "$functionName - Getting MSDTC Security Registry Values on $Computer"
+				$reg = Invoke-Command -ComputerName $Computer -ScriptBlock $DTCSecurity
+			}
+			catch
+			{
+				Write-Warning "$functionName - Can't connect to MSDTC Security registry on $Computer"
+			}
+			try
+			{
+				Write-Verbose "$functionName - Getting MSDTC CID Registry Values on $Computer"
+				$CIDs = Invoke-Command -ComputerName $Computer -ScriptBlock $DTCCIDs
 				foreach ($key in $CIDs) { $CIDHash.Add($key.Data, $key.CID) }
 			}
 			catch
 			{
-				Write-Warning "Can't connect to registry on $Computer"
+				Write-Warning "$functionName - Can't connect to MSDTC CID registry on $Computer"
 			}
 			if ($dtcservice)
 			{
@@ -162,5 +172,4 @@ Get DTC status for the computer srv0042 and show in a grid view
 			}
 		}
 	}
-	END { }
 }
