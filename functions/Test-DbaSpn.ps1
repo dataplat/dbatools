@@ -159,7 +159,7 @@ have be a valid login with appropriate rights on the domain you specify
 						Cluster = $false
 						TcpEnabled = $false
 						Port = $null
-						DynamicPort = $true
+						DynamicPort = $false
 						Warning = "None"
 						Error = "None"
 						Credential = $Credential # for piping
@@ -241,7 +241,7 @@ have be a valid login with appropriate rights on the domain you specify
 							}
 							elseif ($enabled -and $active -and $TcpDynamicPorts -ne "")
 							{
-								$ports += $ipAllPort
+								$ports += $ipAllPort + "d"
 							}
 						}
 					}
