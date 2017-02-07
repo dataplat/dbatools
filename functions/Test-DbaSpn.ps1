@@ -143,6 +143,7 @@ have be a valid login with appropriate rights on the domain you specify
 				$spns = @()
 				$servername = $args[0]
 				$hostentry = $args[1]
+				$domain = $args[2]
 				$instancecount = $wmi.ServerInstances.Count
 				Write-Verbose "Found $instancecount instances"
 				
@@ -175,7 +176,15 @@ have be a valid login with appropriate rights on the domain you specify
 					
 					if ($spn.Cluster)
 					{
-						$servername = ($services.advancedproperties | Where-Object Name -eq 'VSNAME').Value
+						$hostentry = ($services.advancedproperties | Where-Object Name -eq 'VSNAME').Value.ToLower()
+						
+						
+						if ($hostentry -notmatch "\.")
+						{
+							$hostentry = "$hostentry.$domain"
+						}
+						
+						$spn.ComputerName = $hostentry
 					}
 					
 					$rawversion = [version]($services.advancedproperties | Where-Object Name -eq 'VERSION').Value #13.1.4001.0
@@ -271,17 +280,17 @@ have be a valid login with appropriate rights on the domain you specify
 			{
 				try
 				{
-					$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $hostentry -Credential $Credential -ErrorAction Stop
+					$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $hostentry, $domain -Credential $Credential -ErrorAction Stop
 				}
 				catch
 				{
 					Write-Verbose "Couldn't connect to $ipaddr with credential. Using without credentials."
-					$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $hostentry
+					$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $hostentry, $domain
 				}
 			}
 			else
 			{
-				$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $hostentry
+				$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $hostentry, $domain
 			}
 			
 			
