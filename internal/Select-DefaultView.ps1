@@ -14,7 +14,7 @@
 	[CmdletBinding()]
 	param (
 		[parameter(ValueFromPipeline = $true)]
-		[pscustomobject]$InputObject,
+		[object]$InputObject,
 		[string[]]$Property,
 		[string[]]$ExcludeProperty
 	)
