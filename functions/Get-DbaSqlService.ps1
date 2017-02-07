@@ -45,16 +45,16 @@ Gets the SQL Server related services on computers sql1 and sql2, and shows them 
 #>
 	[CmdletBinding()]
 	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[parameter(ValueFromPipeline = $true)]
 		[Alias("cn","host","Server")]
-		[string[]]$ComputerName,
+		[string[]]$ComputerName = 'localhost',
 		[PsCredential]$Credential
 	)
 	
 BEGIN
     {
     $functionName = "Get-DbaSqlService"
-    $ComputerName = $ComputerName | ForEach-Object {$_.split("\")[0]} | Select-Object -Unique
+    { $ComputerName = $ComputerName | ForEach-Object {$_.split("\")[0]} | Select-Object -Unique }
     }
 PROCESS
     {
