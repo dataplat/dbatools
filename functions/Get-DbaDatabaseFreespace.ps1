@@ -87,7 +87,7 @@ Returns database files and free space information for the db1 and db2 on localho
 				    ,f.name AS [FileName]
 				    ,fg.name AS [Filegroup] 
 				    ,f.physical_name AS [PhysicalName]
-					,f.type_desc AS [FileType]
+				    ,f.type_desc AS [FileType]
 				    ,CAST(CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int)/128.0 AS FLOAT) as [UsedSpaceMB]
 				    ,CAST(f.size/128.0 - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int)/128.0 AS FLOAT) AS [FreeSpaceMB]
 				    ,CAST((f.size/128.0) AS FLOAT) AS [FileSizeMB]
@@ -218,7 +218,7 @@ Returns database files and free space information for the db1 and db2 on localho
 								FileName = $row.FileName
 								FileGroup = $row.FileGroup
 								PhysicalName = $row.PhysicalName
-                                FileType = $row.FileType
+								FileType = $row.FileType
 								UsedSpaceMB = $UsedMB
 								FreeSpaceMB = $FreeMB
 								FileSizeMB = $row.FileSizeMB
