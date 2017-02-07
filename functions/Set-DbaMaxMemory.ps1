@@ -86,7 +86,7 @@ of the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use th
 		
 		if ($Collection -eq $null)
 		{
-			$Collection = Test-DbaMaxMemory -SqlServer $SqlServer
+			$Collection = Test-DbaMaxMemory -SqlServer $SqlServer -SqlCredential $SqlCredential
 		}
 		
 		$Collection | Add-Member -NotePropertyName OldMaxValue -NotePropertyValue 0

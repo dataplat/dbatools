@@ -80,7 +80,6 @@ Returns database files and free space information for the db1 and db2 on localho
 	
 	BEGIN
 	{
-		$outputraw = @()
 		$sql = "SELECT 
 				    @@SERVERNAME as SqlServer
 				    ,DB_NAME() as DBName
@@ -172,13 +171,11 @@ Returns database files and free space information for the db1 and db2 on localho
 				}
 				elseif ($IncludeSystemDBs)
 				{
-					#$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' -and $_.IsAccessible -eq $true }
-                    $dbs = $server.Databases
+					$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' }
 				}
 				else
 				{
-					#$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' -and $_.IsAccessible -eq $true -and $_.IsSystemObject -eq 0 }
-                    $dbs = $server.Databases | Where-Object { $_.IsSystemObject -eq 0 }
+					$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' -and $_.IsSystemObject -eq 0 }
 				}
 				
 				if ($exclude.length -gt 0)
@@ -234,7 +231,23 @@ Returns database files and free space information for the db1 and db2 on localho
 				catch
 				{
 					Write-Exception $_
+					Write-Warning "Unable to query $instance - $db"
 					continue
+				}
+				
+				foreach ($row in $result)
+				{
+					[pscustomobject]@{
+						SqlServer = $row.SqlServer
+						DatabaseName = $row.DBName
+						FileName = $row.FileName
+						FileGroup = $row.FileGroup
+						PhysicalName = $row.PhysicalName
+						UsedSpaceMB = $row.UsedSpaceMB
+						FreeSpaceMB = $row.FreeSpaceMB
+						FileSizeMB = $row.FileSizeMB
+						PercentUsed = $row.PercentUSed
+					}
 				}
 			}
 		}

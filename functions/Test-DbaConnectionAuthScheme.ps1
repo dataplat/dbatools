@@ -60,12 +60,13 @@ Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id =
 	
 #>
 	[CmdletBinding()]
+	[OutputType("System.Collections.ArrayList")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
         [Alias("Credential", "Cred")]
-		[PsCredential]$SqlCredential,
+		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$Kerberos,
 		[switch]$Ntlm,
 		[switch]$Detailed

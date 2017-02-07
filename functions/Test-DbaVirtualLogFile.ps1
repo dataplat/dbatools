@@ -67,7 +67,7 @@ Test-DbaVirtualLogFile -SqlServer sqlcluster -Databases db1, db2
 Returns VLF counts for the db1 and db2 databases on sqlcluster.
 #>
 	[CmdletBinding()]
-    [OutputType([System.Collections.ArrayList])]
+	[OutputType([System.Collections.ArrayList])]
 	param ([parameter(ValueFromPipeline, Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
@@ -76,7 +76,7 @@ Returns VLF counts for the db1 and db2 databases on sqlcluster.
 		[switch]$Detailed
 	)
 
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
+	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SqlCredential } }
 
 	BEGIN
 	{
@@ -91,35 +91,35 @@ Returns VLF counts for the db1 and db2 databases on sqlcluster.
 		{
 			#For each SQL Server in collection, connect and get SMO object
 			Write-Verbose "Connecting to $servername"
-			$server = Connect-SqlServer $servername -SqlCredential $SqlCredential
-
-			#If IncludeSystemDBs is true, include systemdbs
-			#only look at online databases (Status equal normal)
-			try
-			{
-				if ($databases.length -gt 0)
-				{
-					$dbs = $server.Databases | Where-Object { $databases -contains $_.Name }
-				}
-				elseif ($IncludeSystemDBs)
-				{
-					$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' }
-				}
-				else
-				{
-					$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' -and $_.IsSystemObject -eq 0 }
-				}
-
-				if ($exclude.length -gt 0)
-				{
-					$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
-				}
+			try {
+				$server = Connect-SqlServer $servername -SqlCredential $SqlCredential
 			}
 			catch
 			{
-				Write-Exception $_
-				Write-Warning "Unable to gather dbs for $servername"
-				continue
+				Write-Warning "Can't connect to $instance, skipping..."
+				Continue
+			}
+
+			$dbs = $server.Databases
+			#If IncludeSystemDBs is true, include systemdbs
+			#only look at online databases (Status equal normal)
+
+			if ($databases.count -gt 0)
+			{
+				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
+			}
+			if ($exclude.count -gt 0)
+			{
+				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
+			}
+
+			if ($IncludeSystemDBs)
+			{
+				$dbs = $dbs | Where-Object { $_.status -eq 'Normal' }
+			}
+			else
+			{
+				$dbs = $dbs | Where-Object { $_.status -eq 'Normal' -and $_.IsSystemObject -eq 0 }
 			}
 
 			foreach ($db in $dbs)
