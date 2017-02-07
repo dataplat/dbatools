@@ -200,7 +200,8 @@
 		'Get-DbaSpn',
 		'Test-DbaSpn',
 		'Set-DbaSpn',
-		'Remove-DbaSpn'
+		'Remove-DbaSpn',
+		'Get-DbaDatabase'
 	)
 	
 	<# coming soon
