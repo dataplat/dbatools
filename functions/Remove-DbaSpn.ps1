@@ -69,6 +69,7 @@ Connects to Active Directory and removes a provided SPN to the given account. Us
 	
 	process
 	{
+		$OGServiceAccount = $ServiceAccount
 		if ($serviceaccount -like "*\*")
 		{
 			Write-Debug "Account provided in in domain\user format, stripping out domain info..."
@@ -130,6 +131,7 @@ Connects to Active Directory and removes a provided SPN to the given account. Us
 				
 				[pscustomobject]@{
 					Name = $spn
+					ServiceAccount = $OGServiceAccount
 					Property = "servicePrincipalName"
 					IsSet = $set
 				}
@@ -156,6 +158,7 @@ Connects to Active Directory and removes a provided SPN to the given account. Us
 				
 				[pscustomobject]@{
 					Name = $spn
+					ServiceAccount = $OGServiceAccount
 					Property = "msDS-AllowedToDelegateTo"
 					IsSet = $set
 				}
