@@ -366,7 +366,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			$backup = New-Object "Microsoft.SqlServer.Management.Smo.Backup"
 			$backup.Database = $dbname
 			$backup.Action = "Database"
-			$backup.CopyOnly = $true
+			$backup.CopyOnly = $CopyOnly
 			$val = 0
 			
 			while ($val -lt $numberfiles)
