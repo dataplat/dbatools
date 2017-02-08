@@ -91,7 +91,7 @@ Takes dbobject from pipeline
 Number of files to split the backup. Default is 3.
 
 .PARAMETER NoCopyOnly
-By default, Copy-SqlDatabase backups are backed up with COPY_ONLY, which avoids breaking the LSN backup chain. This parameter will set CopyOnly to $false, which is required when there is no valid TLog chain.
+By default, Copy-SqlDatabase backups are backed up with COPY_ONLY, which avoids breaking the LSN backup chain. This parameter will set CopyOnly to $false.
 
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
