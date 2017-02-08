@@ -90,6 +90,9 @@ Takes dbobject from pipeline
 .PARAMETER NumberFiles
 Number of files to split the backup. Default is 3.
 
+.PARAMETER CopyFiles
+Performs the backup with COPY_ONLY to not break the LSN backup chain.
+
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
@@ -176,7 +179,8 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		[object]$DbPipeline,
 		[parameter(Position = 21, ParameterSetName = "DbBackup")]
 		[ValidateRange(1, 64)]
-		[int]$NumberFiles = 3
+		[int]$NumberFiles = 3,
+        [switch]$CopyOnly
 	)
 	
 	DynamicParam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential -NoSystem } }
