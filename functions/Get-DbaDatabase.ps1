@@ -5,7 +5,7 @@
 Gets a SQL database object for each database that is present in the target instance of SQL Server.
 
 .DESCRIPTION
- The Get-SqlDatabase command gets a SQL database object for each database that is present in the target instance of
+ The Get-DbaDatabase command gets a SQL database object for each database that is present in the target instance of
  SQL Server. If the name of the database is provided, the command will return only this specific database object.
 	
 .PARAMETER SqlInstance
@@ -24,9 +24,9 @@ Returns only user databases
 Returns only online databases
 
 .PARAMETER Access
-Returns databases that are Read Only or all others
+Returns databases that are Read Only or all other databases
 
-.PARAMETER Owner
+.PARAMETER DatabaseOwner
 Returns all databases not owned by SA
 
 .PARAMETER Encrypted
@@ -75,7 +75,7 @@ Returns databases on multiple instances piped into the function
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$System,
 		[switch]$User,
-        [switch]$Owner,
+        [switch]$DatabaseOwner,
         [switch]$Encrypted,
 		[ValidateSet('Online', 'Offline')]
 		[string]$State,
@@ -130,9 +130,9 @@ Returns databases on multiple instances piped into the function
                 "Offline" {$inputobject = $server.Databases | Where-Object { $_.status -eq 'Offline'}}
             }
 
-            if ($owner)
+            if ($DatabaseOwner)
             {    
-                $inputobject = $server.Databases | Where-Object { $_.Owner -ne 'sa'}
+                $inputobject = $server.Databases | Where-Object { $_.DatabaseOwner -ne 'sa'}
             }
 			
             switch ($Access)
