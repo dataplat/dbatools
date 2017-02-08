@@ -77,7 +77,7 @@ Returns databases on multiple instances piped into the function
 		[switch]$User,
         [switch]$Owner,
         [switch]$Encrypted,
-		[ValidateSet('Online', 'Offline', 'Emergency')]
+		[ValidateSet('Online', 'Offline')]
 		[string]$State,
 		[ValidateSet('ReadOnly', 'ReadWrite')]
 		[string]$Access,
@@ -123,51 +123,36 @@ Returns databases on multiple instances piped into the function
 				$inputobject = $server.Databases | Where-Object { $_.Name -in $databases }
 			}
 			
-			if ($state -eq "Online")
-			{
-                $inputobject = $server.Databases | Where-Object { $_.status -eq 'Normal' }
-			}
 			
-			if ($state -eq "Offline")
-			{
-				$inputobject = $server.Databases | Where-Object { $_.status -eq 'Offline'} 
-			}
-			
+            switch ($state) 
+            {
+                "Online" {$inputobject = $server.Databases | Where-Object { $_.status -eq 'Normal' }}
+                "Offline" {$inputobject = $server.Databases | Where-Object { $_.status -eq 'Offline'}}
+            }
+
             if ($owner)
             {    
                 $inputobject = $server.Databases | Where-Object { $_.Owner -ne 'sa'}
             }
 			
-            if ($Access -eq "ReadOnly")
-			{
-				$inputobject = $server.Databases | Where-Object { $_.ReadOnly }
-			}
-
-            if ($Access -eq "ReadWrite")
-			{
-				$inputobject = $server.Databases | Where-Object { $_.ReadOnly -eq $false }
-			}
+            switch ($Access)
+            {
+                "ReadOnly" {$inputobject = $server.Databases | Where-Object { $_.ReadOnly }}
+                "ReadWrite" {$inputobject = $server.Databases | Where-Object { $_.ReadOnly -eq $false }}
+            }
             
             if ($Encrypted)
 			{
 				$inputobject = $server.Databases | Where-Object { $_.EncryptionEnabled -eq $true }
 			}
 			
-            if ($RecoveryModel -eq "Full")
-			{
-				$inputobject = $server.Databases | Where-Object { $_.RecoveryModel -eq 'Full' }
-			}
-
-            if ($RecoveryModel -eq "Simple")
-			{
-				$inputobject = $server.Databases | Where-Object { $_.RecoveryModel -eq 'Simple' }
-			}
-            
-            if ($RecoveryModel -eq "BulkLogged")
-			{
-				$inputobject = $server.Databases | Where-Object { $_.RecoveryModel -eq 'BulkLogged' }
-			}
-
+            switch ($RecoverModel)
+            {
+                "Full" {$inputobject = $server.Databases | Where-Object { $_.RecoveryModel -eq 'Full' }}
+                "Simple" {$inputobject = $server.Databases | Where-Object { $_.RecoveryModel -eq 'Simple' }}
+                "BulkLogged" {$inputobject = $server.Databases | Where-Object { $_.RecoveryModel -eq 'BulkLogged' }}
+            }
+         
            	Select-DefaultView -InputObject $inputobject  -Property $defaults
 		}
 	}
