@@ -90,6 +90,9 @@ Takes dbobject from pipeline
 .PARAMETER NumberFiles
 Number of files to split the backup. Default is 3.
 
+.PARAMETER NoCopyOnly
+By default, Copy-SqlDatabase backups are backed up with COPY_ONLY, which avoids breaking the LSN backup chain. This parameter will set CopyOnly to $false.
+
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
@@ -176,7 +179,8 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		[object]$DbPipeline,
 		[parameter(Position = 21, ParameterSetName = "DbBackup")]
 		[ValidateRange(1, 64)]
-		[int]$NumberFiles = 3
+		[int]$NumberFiles = 3,
+        [switch]$NoCopyOnly
 	)
 	
 	DynamicParam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential -NoSystem } }
@@ -362,7 +366,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			$backup = New-Object "Microsoft.SqlServer.Management.Smo.Backup"
 			$backup.Database = $dbname
 			$backup.Action = "Database"
-			$backup.CopyOnly = $true
+			$backup.CopyOnly = $CopyOnly
 			$val = 0
 			
 			while ($val -lt $numberfiles)
@@ -741,7 +745,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 	
 	PROCESS
 	{
-		
+		$copyonly = !$NoCopyOnly
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude

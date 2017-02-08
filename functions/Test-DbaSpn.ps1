@@ -177,13 +177,8 @@ have be a valid login with appropriate rights on the domain you specify
 					if ($spn.Cluster)
 					{
 						$hostentry = ($services.advancedproperties | Where-Object Name -eq 'VSNAME').Value.ToLower()
-						
-						
-						if ($hostentry -notmatch "\.")
-						{
-							$hostentry = "$hostentry.$domain"
-						}
-						
+						Write-Verbose "Found cluster $hostentry"
+						$hostentry = ([System.Net.Dns]::GetHostEntry($hostentry)).HostName
 						$spn.ComputerName = $hostentry
 					}
 					
