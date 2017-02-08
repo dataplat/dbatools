@@ -110,7 +110,7 @@ Returns databases on multiple instances piped into the function
 			
 			if ($System)
 			{
-				$inputobject = $server.Databases | Where-Object { $_.IsSystemObject -eq $true }
+				$inputobject = $server.Databases | Where-Object { $_.IsSystemObject }
 			}
 			
 			if ($User)
@@ -143,7 +143,7 @@ Returns databases on multiple instances piped into the function
             
             if ($Encrypted)
 			{
-				$inputobject = $server.Databases | Where-Object { $_.EncryptionEnabled -eq $true }
+				$inputobject = $server.Databases | Where-Object { $_.EncryptionEnabled }
 			}
 			
             switch ($RecoverModel)
