@@ -47,14 +47,14 @@ Gets the SQL Server related services on computers sql1 and sql2, and shows them 
 	Param (
 		[parameter(ValueFromPipeline = $true)]
 		[Alias("cn","host","Server")]
-		[string[]]$ComputerName = 'localhost',
-		[PsCredential]$Credential
+		[string[]]$ComputerName = $env:COMPUTERNAME,
+		[PSCredential] [System.Management.Automation.CredentialAttribute()]$Credential
 	)
 	
 BEGIN
     {
     $functionName = "Get-DbaSqlService"
-    { $ComputerName = $ComputerName | ForEach-Object {$_.split("\")[0]} | Select-Object -Unique }
+    $ComputerName = $ComputerName | ForEach-Object {$_.split("\")[0]} | Select-Object -Unique
     }
 PROCESS
     {
