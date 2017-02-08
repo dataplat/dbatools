@@ -101,6 +101,12 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 				continue
 			}
 			
+			if ($server.versionMajor -lt 9)
+			{
+				Write-Warning "This command only supports SQL Server 2005 and above."
+				Continue
+			}
+			
 			if ($IncludeSystemDatabases)
 			{
 				$dbs = $server.Databases | Where-Object { $_.Status -eq "normal" }
