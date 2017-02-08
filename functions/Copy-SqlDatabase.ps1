@@ -90,7 +90,7 @@ Takes dbobject from pipeline
 .PARAMETER NumberFiles
 Number of files to split the backup. Default is 3.
 
-.PARAMETER CopyFiles
+.PARAMETER CopyOnly
 Performs the backup with COPY_ONLY to not break the LSN backup chain.
 
 .NOTES 
