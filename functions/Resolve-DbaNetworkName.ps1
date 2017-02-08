@@ -153,7 +153,15 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 				try
 				{
 					Write-Verbose "Getting computer information from server $Computer via CIM (WSMan)"
-					$CIMsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
+					if ($Credential)
+					{
+						$CIMsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
+					}
+					else
+					{
+						$CIMsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue
+					}
+					
 					$conn = Get-CimInstance -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -CimSession $CIMsession
 				}
 				catch
@@ -166,7 +174,16 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 					{
 						Write-Verbose "Getting computer information from server $Computer via CIM (DCOM)"
 						$sessionoption = New-CimSessionOption -Protocol DCOM
-						$CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
+						if ($Credential)
+						{
+							$CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
+							
+						}
+						else
+						{
+							$CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue
+						}
+						
 						$conn = Get-CimInstance -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -CimSession $CIMsession
 					}
 					catch
@@ -177,7 +194,15 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 			    if ( !$conn )
 			    {
 				    Write-Verbose "Getting computer information from server $Computer via WMI (DCOM)"
-				    $conn = Get-WmiObject -ComputerName $Computer -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -ErrorAction SilentlyContinue -Credential $Credential
+					
+					if ($Credential)
+					{
+						$conn = Get-WmiObject -ComputerName $Computer -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -ErrorAction SilentlyContinue -Credential $Credential
+					}
+					else
+					{
+						$conn = Get-WmiObject -ComputerName $Computer -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -ErrorAction SilentlyContinue
+					}
 				}
 				
 				if (!$conn)
