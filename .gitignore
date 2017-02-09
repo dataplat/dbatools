@@ -7,4 +7,4 @@ dbatools-exceptions.txt
 # ignore the settings folder and files for VSCode
 .vscode/*
 
-test.ps1
+
