@@ -782,6 +782,11 @@ Will NOT perform a DBCC CHECKDB!
                         Throw "File has been changed. You must have 6 columns on your file"
                     }
                 }
+                if ([string]::IsNullOrEmpty($database))
+                {
+                    $FilesToMove | Select-Object dbname -First
+                    $database = ($FilesToMove | Select-Object dbname -First 1).dbname
+                }
     
             }
             else
