@@ -47,7 +47,7 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
         $cnt = ($FullDBAnchor | Group-Object -Property FirstLSN | Measure-Object).count
         Foreach ($tFile in $FullDBAnchor){write-verbose "$($tfile.FirstLsn) - $($tfile.BackupTypeDescription)"}
         Write-Verbose "$FunctionName - db count = $cnt"
-        Write-Error "$FunctionName - More than 1 full backup from a different LSN, or less than 1, neither supported"
+        Write-Warning "$FunctionName - More than 1 full backup from a different LSN, or less than 1, neither supported"
 
         return $false
         break;
@@ -59,7 +59,7 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
     $RecoveryForkID = ($FullDBAnchor | Select-Object -First 1).RecoveryForkID
     if (($FilteredRestoreFiles | Where-Object {$_.RecoveryForkID -ne $RecoveryForkID}).count -gt 0)
     {
-        Write-Error "$FunctionName - Multiple RecoveryForkIDs found, not supported"
+        Write-Warning "$FunctionName - Multiple RecoveryForkIDs found, not supported"
         return $false
         break
     }
@@ -72,7 +72,7 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
     {
         if (($BackupWrongLSN | Where-Object {$_.LastLSN -lt $FullDBLastLSN}).count -gt 0)
         {
-            Write-Error "$FunctionName - We have non matching LSNs - not supported"
+            Write-Warning "$FunctionName - We have non matching LSNs - not supported"
             return $false
             break;
         }
@@ -81,7 +81,7 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
     #Check for no more than a single Differential backup
     if (($DiffAnchor | Measure-Object).count -gt 1)
     {
-        Write-Error "$FunctionName - More than 1 differential backup, not  supported"
+        Write-Warning "$FunctionName - More than 1 differential backup, not  supported"
         return $false
         break;        
     } 
@@ -103,14 +103,14 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
         {
             if ($TranLogBackups[$i].FirstLSN -gt $TlogAnchor.LastLSN)
             {
-                Write-Error "$FunctionName - Break in LSN Chain between $($TlogAnchor.BackupPath) and $($TranLogBackups[($i)].BackupPath) "
+                Write-Warning "$FunctionName - Break in LSN Chain between $($TlogAnchor.BackupPath) and $($TranLogBackups[($i)].BackupPath) "
                 return $false
                 break
             }
         }else {
             if ($TranLogBackups[($i-1)].LastLsn -ne $TranLogBackups[($i)].FirstLSN -and ($TranLogBackups[($i)] -ne $TranLogBackups[($i-1)]))
             {
-                Write-Error "$FunctionName - Break in transaction log between $($TranLogBackups[($i-1)].BackupPath) and $($TranLogBackups[($i)].BackupPath) "
+                Write-Warning "$FunctionName - Break in transaction log between $($TranLogBackups[($i-1)].BackupPath) and $($TranLogBackups[($i)].BackupPath) "
                 return $false
                 break
             }

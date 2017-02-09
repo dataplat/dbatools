@@ -48,8 +48,14 @@ Function Restore-DBFromFilteredArray
     }
     End
     {
-
-		$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+		try 
+		{
+			$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential	
+		}
+		catch {
+			Write-Warning "$FunctionName - Cannot connect to $SqlServer" -WarningAction Stop
+		}
+		
 		$ServerName = $Server.name
 		$Server.ConnectionContext.StatementTimeout = 0
 		$Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
@@ -79,7 +85,7 @@ Function Restore-DBFromFilteredArray
 			}
 			else 
 			{
-				Write-Error "$FunctionName - $DBname exists, and no WithReplace switch specified"
+				Write-warning "$FunctionName - $DBname exists, must use WithReplace to overwrite" -WarningAction Stop
 				break
 			}
 		}
@@ -124,7 +130,7 @@ Function Restore-DBFromFilteredArray
 					}	
 				} elseif ($DestinationDataDirectory -ne '' -and $FileStructure -ne $NUll)
 				{
-					Write-Error "Conflicting options only one of FileStructure or DestinationDataDirectory allowed"
+					Write-Warning "$FunctionName - Conflicting options only one of FileStructure or DestinationDataDirectory allowed" -WarningAction Stop
 				} 		
 			}
 
@@ -182,6 +188,7 @@ Function Restore-DBFromFilteredArray
 					$Restore.Devices.Add($device)
 				}
 				Write-Verbose "$FunctionName - Performing restore action"
+				$RestoreComplete = $true
 				if ($ScriptOnly)
 				{
 					$script = $restore.Script($server)
@@ -217,7 +224,8 @@ Function Restore-DBFromFilteredArray
 			catch
 			{
 				write-verbose "$FunctionName - Closing Server connection"
-				Write-Warning $_.Exception.InnerException
+				$RestoreComplete = $False
+				Write-Warning $_.Exception.InnerException -WarningAction stop
 				#Exit as once one restore has failed there's no point continuing
 				break
 				
@@ -228,6 +236,7 @@ Function Restore-DBFromFilteredArray
                     SqlInstance = $SqlServer
                     DatabaseName = $DatabaseName
                     DatabaseOwner = $server.ConnectionContext.TrueLogin
+					RestoreComplete  = $RestoreComplete
                     BackupFilesCount = $RestoreFiles.Length
                     RestoredFilesCount = $RestoreFiles[0].Filelist.PhysicalName.count
                     NoRecovery = $restore.NoRecovery

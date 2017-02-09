@@ -54,7 +54,7 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
             $Fullbackup = $SQLBackupdetails | where-object {$_.BackupType -eq '1' -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1
             if ($Fullbackup -eq $null)
             {
-                Write-Error "$FunctionName - No Full backup found to anchor the restore"
+                Write-Warning "$FunctionName - No Full backup found to anchor the restore" -WarningAction Stop
             }
             #This scans for striped full backups to build the results
             $Results += $SQLBackupdetails | where-object {$_.BackupType -eq "1" -and $_.FirstLSN -eq $FullBackup.FirstLSN}

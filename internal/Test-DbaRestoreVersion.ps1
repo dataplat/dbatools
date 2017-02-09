@@ -54,7 +54,7 @@ Checks that the Restore chain in $FilteredFiles is compatiable with the SQL Serv
     #Test to make sure we don't have an upgrade mid backup chain, there's a reason I'm paranoid..
     if ([int]$RestoreVersion -ne $RestoreVersion)
     {
-        Write-Error "$FunctionName - Version number change during backups - $RestoreVersion"
+        Write-Warning "$FunctionName - Version number change during backups - $RestoreVersion"
         return $false
         break
     }
@@ -62,14 +62,14 @@ Checks that the Restore chain in $FilteredFiles is compatiable with the SQL Serv
     $Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
     if ($RestoreVersion -gt $Server.VersionMajor)
     {
-        Write-Error "$FunctionName - Backups are from a newer version of SQL Server than $($Server.Name)"
+        Write-Warning "$FunctionName - Backups are from a newer version of SQL Server than $($Server.Name)"
         return $false
         break   
     }
 
     if (($Server.VersionMajor -gt 10 -and $RestoreVersion -lt 9)  )
     {
-        Write-Error "$FunctionName - This version - $RestoreVersion - too old to restore on to $($Server.Name)"
+        Write-Warning "$FunctionName - This version - $RestoreVersion - too old to restore on to $($Server.Name)"
         return $false
         break 
     }

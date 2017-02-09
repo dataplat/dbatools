@@ -232,7 +232,7 @@ c:\DataFiles and all the log files into c:\LogFiles
             if (($FilteredFiles.DatabaseName | Group-Object | Measure-Object).count -gt 1)
             {
                 $dbs = ($FilteredFiles | Select DatabaseName) -join (',')
-                Write-Error "$FunctionName - We can only handle 1 Database at a time - $dbs"
+                Write-Warning "$FunctionName - We can only handle 1 Database at a time - $dbs" -WarningAction Stop
             }
 
             IF($DatabaseName -eq '')
