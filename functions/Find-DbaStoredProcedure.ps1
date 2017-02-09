@@ -85,6 +85,7 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 		$databases = $psboundparameters.Databases
 		$sql = "SELECT p.name, m.definition as TextBody FROM sys.sql_modules m, sys.procedures p WHERE m.object_id = p.object_id"
 		if (!$IncludeSystemObjects) { $sql = "$sql AND p.is_ms_shipped = 0" }
+		$everyserverspcount = 0
 	}
 	process
 	{
@@ -132,9 +133,11 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 					
 					foreach ($row in $rows)
 					{
-						$totalcount++; $sproccount++
+						$totalcount++; $sproccount++; $everyserverspcount++
 						
-						Write-Verbose "Looking in StoredProcedure: $proc TextBody for $pattern"
+						$proc = $row.name
+						
+						Write-Debug "Looking in StoredProcedure: $proc TextBody for $pattern"
 						if ($row.TextBody -match $Pattern)
 						{
 							$sp = $db.StoredProcedures | Where-Object name -eq $row.name
@@ -164,10 +167,10 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 					
 					foreach ($sp in $storedprocedures)
 					{
-						$totalcount++; $sproccount++
+						$totalcount++; $sproccount++;  $everyserverspcount++
 						$proc = $sp.Name
 						
-						Write-Verbose "Looking in StoredProcedure: $proc TextBody for $pattern"
+						Write-Debug "Looking in StoredProcedure: $proc TextBody for $pattern"
 						if ($sp.TextBody -match $Pattern)
 						{
 
@@ -194,5 +197,9 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 			}
 			Write-Verbose "Evaluated $totalcount total stored procedures in $dbcount databases"
 		}
+	}
+	end
+	{
+		Write-Verbose "Evaluated $everyserverspcount total stored procedures"
 	}
 }
