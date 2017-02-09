@@ -22,7 +22,8 @@ Function Restore-DBFromFilteredArray
         [switch]$ScriptOnly,
 		[switch]$VerifyOnly,
 		[object]$filestructure,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[switch]$UseDestinationDefaultDirectories
 	)
     
 	    Begin
@@ -35,6 +36,7 @@ Function Restore-DBFromFilteredArray
         $Results = @()
         $InternalFiles = @()
 		$Output = @()
+
     }
     # -and $_.BackupStartDate -lt $RestoreTime
     process
@@ -52,6 +54,11 @@ Function Restore-DBFromFilteredArray
 		$Server.ConnectionContext.StatementTimeout = 0
 		$Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
 		$Restore.ReplaceDatabase = $ReplaceDatabase
+		if (UseDestinationDefaultDirectories)
+		{
+			$DestinationDataDirectory = $server.DefaultFile
+			$DestinationLogDirectory = $Server.DefaultLog
+		}
 
 		If ($null -ne $Server.Databases[$DbName] -and $ScriptOnly -eq $false)
 		{

@@ -33,6 +33,9 @@ If only this parameter is specified, then all database files (data and log) will
 Path to restore the database log files to.
 This parameter can only be specified alongside DestinationDataDirectory.
 
+.PARAMETER UseDestinationDefaultDirectories
+Switch that tells the restore to use the default Data and Log locations on the target server
+
 .PARAMETER RestoreTime
 Specify a DateTime object to which you want the database restored to. Default is to the latest point available 
 
@@ -161,16 +164,22 @@ c:\DataFiles and all the log files into c:\LogFiles
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[hashtable]$FileMapping,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
-		[switch]$IgnoreLogBackup					
+		[switch]$IgnoreLogBackup,
+        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
+        [switch]$UseDestinationDefaultDirectories					
 	)
     BEGIN
     {
         $FunctionName = "Restore-DbaBackup"
         $BackupFiles = @()
         
+        if ($DestinationLogDirectory -ne '' -and UseDestinationDefaultDirectories)
+        {
+            Write-Warning  "$FunctionName - DestinationLogDirectory and UseDestinationDefaultDirectories are mutually exclusive" -WarningAction Stop  
+        }
         if ($DestinationLogDirectory -ne '' -and $DestinationDataDirectory -eq '')
         {
-            Throw "$FunctionName - DestinationLogDirectory can only be specified with DestinationDataDirectory"
+            Write-Warning  "$FunctionName - DestinationLogDirectory can only be specified with DestinationDataDirectory" -WarningAction Stop
         }
     }
     PROCESS
