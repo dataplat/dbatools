@@ -38,6 +38,10 @@ Known bug before SQL Server 2012
         http://connect.microsoft.com/SQLServer/feedback/details/481594/log-growth-not-working-properly-with-specific-growth-sizes-vlfs-also-not-created-appropriately
         https://connect.microsoft.com/SQLServer/feedback/details/357502/transaction-log-file-size-will-not-grow-exactly-4gb-when-filegrowth-4gb
 
+How it works?
+    The transaction log will growth in chunks until it reachs the desired size. 
+    Example: If you have a log file with 8192MB and you say that the target size is 81920MB (80GB) it will growth in chunks of 8192MB until reach the 81920MB. 8192 -> 16384 -> 24576 ... 73728 -> 81920
+
 .PARAMETER SqlServer 
     Represents the name/ip of the instance where the database(s) that you want to grow exist
      
@@ -245,14 +249,13 @@ https://dbatools.io/Expand-SqlTLogResponsibly
 					
 					Write-Verbose "Verifying if sufficient space exists ($([System.Math]::Round($($requiredSpace / 1024.0), 2))MB) on the volume to perform this task"
 					
-					# SQL 2005 or lower version. The "VolumeFreeSpace" property is empty
-                    # When using SMO v12 and validating SQL 2008 also empty (BUG?)
                     [long]$TotalTLogFreeDiskSpaceKB = 0
                     Write-Output "Get TLog drive free space"
                     [object]$AllDrivesFreeDiskSpace = Get-DbaDiskSpace -ComputerName $sourcenetbios -Unit KB | Select-Object Name, SizeInKB
                     
-                    #Verfiy path using Split-Path on $logfile.FileName in backwards. This way we will catch the LUNs. Example: "K:\Log01" as LUN name
+                    #Verfiy path using Split-Path on $logfile.FileName in backwards. This way we will catch the LUNs. Example: "K:\Log01" as LUN name. Need to add final backslash if not there
                     $DrivePath = Split-Path $logfile.FileName -parent
+                    $DrivePath = if(!($DrivePath.EndsWith("\"))) {"$DrivePath\"} else {$DrivePath}
                     Do  
                     {
                         if ($AllDrivesFreeDiskSpace | Where-Object {$DrivePath -eq "$($_.Name)"})
@@ -265,6 +268,7 @@ https://dbatools.io/Expand-SqlTLogResponsibly
                         {
                             $match = $false
                             $DrivePath = Split-Path $DrivePath -parent
+                            $DrivePath = if(!($DrivePath.EndsWith("\"))) {"$DrivePath\"} else {$DrivePath}
                         }
 
                     }
@@ -437,7 +441,7 @@ https://dbatools.io/Expand-SqlTLogResponsibly
 							else
 							{
 								$title = "Choose increment value for database '$db':"
-								$message = "The input value for increment size was $([System.Math]::Round($LogIncrementSize/1024, 0))MB. However the suggested value for increment is $($SuggestLogIncrentSize/1024)MB.`r`n Do you want to use the suggested value of $([System.Math]::Round($SuggestLogIncrementSize/1024, 0))MB insted of $([System.Math]::Round($LogIncrementSize/1024, 0))MB"
+								$message = "The input value for increment size was $([System.Math]::Round($LogIncrementSize/1024, 0))MB. However the suggested value for increment is $($SuggestLogIncrementSize/1024)MB.`r`nDo you want to use the suggested value of $([System.Math]::Round($SuggestLogIncrementSize/1024, 0))MB insted of $([System.Math]::Round($LogIncrementSize/1024, 0))MB"
 								$yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Uses recomended size."
 								$no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Will use parameter value."
 								$options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
@@ -477,24 +481,24 @@ https://dbatools.io/Expand-SqlTLogResponsibly
 										Write-Verbose "$step - Grow the $logfile file in $([System.Math]::Round($($LogIncrementSize / 1024.0), 2)) MB"
 										$currentSize += $LogIncrementSize
 									}
-								}
-								
-								#When -WhatIf Switch, do not run
-								if ($PSCmdlet.ShouldProcess("$step - File will grow to $([System.Math]::Round($($currentSize/1024.0), 2)) MB", "This action will grow the file $logfile on database $db to $([System.Math]::Round($($currentSize/1024.0), 2)) MB .`r`nDo you wish to continue?", "Performe grow"))
-								{
-									Write-Verbose "$step - Set size $logfile to $([System.Math]::Round($($currentSize/1024.0), 2)) MB"
-									$logfile.size = $currentSize
+
+								    #When -WhatIf Switch, do not run
+								    if ($PSCmdlet.ShouldProcess("$step - File will grow to $([System.Math]::Round($($currentSize/1024.0), 2)) MB", "This action will grow the file $logfile on database $db to $([System.Math]::Round($($currentSize/1024.0), 2)) MB .`r`nDo you wish to continue?", "Performe grow"))
+								    {
+									    Write-Verbose "$step - Set size $logfile to $([System.Math]::Round($($currentSize/1024.0), 2)) MB"
+									    $logfile.size = $currentSize
 									
-									Write-Verbose "$step - Applying changes"
-									$logfile.Alter()
-									Write-Verbose "$step - Changes have been applied"
+									    Write-Verbose "$step - Applying changes"
+									    $logfile.Alter()
+									    Write-Verbose "$step - Changes have been applied"
 									
-									#Will put the info like VolumeFreeSpace up to date
-									$logfile.Refresh()
-								}
+									    #Will put the info like VolumeFreeSpace up to date
+									    $logfile.Refresh()
+								    }
+                                }
 								
-								Write-Verbose "`r`n$step - [OK] Growth process for logfile '$logfile' on database '$db', has been finished."
-								
+                                Write-Verbose "`r`n$step - [OK] Growth process for logfile '$logfile' on database '$db', has been finished."
+
 								Write-Verbose "$step - Grow $logfile log file on $db database finished"
 							}
 						}

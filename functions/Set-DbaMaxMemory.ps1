@@ -3,7 +3,6 @@ Function Set-DbaMaxMemory
 <# 
 .SYNOPSIS 
 Sets SQL Server 'Max Server Memory' configuration setting to a new value then displays information this setting. 
-Works on SQL Server 2000-2014.
 
 .DESCRIPTION
 Sets SQL Server max memory then displays information relating to SQL Server Max Memory configuration settings. 
@@ -14,7 +13,6 @@ determine the default optimum RAM to use, then sets the SQL max value to that nu
 Jonathan notes that the formula used provides a *general recommendation* that doesn't account for everything that may 
 be going on in your specific environment. 
 
-THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
 .PARAMETER SqlServer
 Allows you to specify a comma separated list of servers to query.
@@ -34,9 +32,6 @@ Windows Authentication will be used if SqlCredential is not specified. SQL Serve
 Results of Get-DbaMaxMemory to be passed into the command
 
 .NOTES 
-Author  : Chrissy LeMaire (@cl), netnerds.net
-Requires: sysadmin access on SQL Servers
-
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -91,7 +86,7 @@ of the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use th
 		
 		if ($Collection -eq $null)
 		{
-			$Collection = Test-DbaMaxMemory -SqlServer $SqlServer
+			$Collection = Test-DbaMaxMemory -SqlServer $SqlServer -SqlCredential $SqlCredential
 		}
 		
 		$Collection | Add-Member -NotePropertyName OldMaxValue -NotePropertyValue 0

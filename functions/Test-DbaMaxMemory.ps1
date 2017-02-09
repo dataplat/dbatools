@@ -10,8 +10,6 @@ total memory, currently configured SQL max memory, and the calculated recommenda
 
 Jonathan notes that the formula used provides a *general recommendation* that doesn't account for everything that may be going on in your specific environment. 
 
-THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
-
 .PARAMETER SqlServer
 Allows you to specify a comma separated list of servers to query.
 
@@ -23,9 +21,6 @@ $cred = Get-Credential, then pass $cred variable to this parameter.
 Windows Authentication will be used when SqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
 .NOTES 
-Author  : Chrissy LeMaire (@cl), netnerds.net
-Requires: sysadmin access on SQL Servers
-
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -36,7 +31,7 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK 
-https://dbatools.io/Get-DbaMaxMemoryory
+https://dbatools.io/Test-DbaMaxMemory
 
 .EXAMPLE   
 Test-DbaMaxMemory -SqlServer sqlcluster,sqlserver2012
@@ -80,7 +75,7 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 
             $server = Get-DbaMaxMemory -SqlServer $servername -SqlCredential $SqlCredential
 			
-			if($server -eq $null)
+			if($null -eq $server)
             {
                 continue;
             }
