@@ -18,7 +18,8 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
         [parameter(Mandatory = $true)]
         [object]$SqlServer,
         [DateTime]$RestoreTime = (Get-Date).addyears(1),
-        [System.Management.Automation.PSCredential]$SqlCredential 
+        [System.Management.Automation.PSCredential]$SqlCredential,
+        [switch]$IgnoreLogBackup
 
 	)
     Begin
@@ -71,9 +72,9 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
                 $Results += $Diffbackups
             }
             
-            if ($FullBackup.RecoverModel -eq 'SIMPLE')
+            if ($FullBackup.RecoverModel -eq 'SIMPLE' -or $IgnoreLogBackup)
             {
-                Write-Verbose "$FunctionName - Database in simple mode, skip Transaction logs"
+                Write-Verbose "$FunctionName - Database in simple mode or IgnoreLogBackup is true, skipping Transaction logs"
             }
             else
             {

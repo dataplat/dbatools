@@ -71,6 +71,9 @@ $FileMapping = @{'DataFile1'='c:\restoredfiles\Datafile1.mdf';'DataFile3'='d:\Da
 And files not specified in the mapping will be restore to their original location
 This Parameter is exclusive with RestoreLocation
 
+.PARAMETER IgnoreLogBackup
+This switch tells the function to ignore transaction log backups. The process will restore to the latest full or differential backup point only
+
 .NOTES
 Original Author: Stuart Moore (@napalmgram), stuart-moore.com
 
@@ -156,7 +159,9 @@ c:\DataFiles and all the log files into c:\LogFiles
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
         [switch]$MaintenanceSolutionBackup ,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
-		[hashtable]$FileMapping			
+		[hashtable]$FileMapping,
+        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
+		[switch]$IgnoreLogBackup					
 	)
     BEGIN
     {
@@ -205,7 +210,7 @@ c:\DataFiles and all the log files into c:\LogFiles
     }
     END
     {
-        $AllFilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer:$SqlServer -RestoreTime:$RestoreTime -SqlCredential:$SqlCredential
+        $AllFilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer:$SqlServer -RestoreTime:$RestoreTime -SqlCredential:$SqlCredential -IgnoreLogBackup:$IgnoreLogBackup
         Write-Verbose "$FunctionName - $($AllFilteredFiles.count) dbs to restore"
         
         ForEach ($FilteredFileSet in $AllFilteredFiles)
