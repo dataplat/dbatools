@@ -34,6 +34,7 @@ Function Restore-DBFromFilteredArray
 
         $Results = @()
         $InternalFiles = @()
+		$Output = @()
     }
     # -and $_.BackupStartDate -lt $RestoreTime
     process
@@ -178,7 +179,7 @@ Function Restore-DBFromFilteredArray
 				Write-Verbose "$FunctionName - Performing restore action"
 				if ($ScriptOnly)
 				{
-					$restore.Script($server)
+					$script = $restore.Script($server)
 				}
 				elseif ($VerifyOnly)
 				{
@@ -201,7 +202,7 @@ Function Restore-DBFromFilteredArray
 					$Restore.sqlrestore($Server)
 					if ($scripts)
 					{
-						$restore.Script($Server)
+						$script = $restore.Script($Server)
 					}
 					Write-Progress -id 1 -activity "Restoring $DbName to $ServerName" -status "Complete" -Completed
 					
@@ -218,6 +219,22 @@ Function Restore-DBFromFilteredArray
 			}
 			finally
 			{	
+				[PSCustomObject]@{
+                    SqlInstance = $SqlServer
+                    DatabaseName = $DatabaseName
+                    DatabaseOwner = $server.ConnectionContext.TrueLogin
+                    BackupFilesCount = $RestoreFiles.Length
+                    RestoredFilesCount = $RestoreFiles[0].Filelist.PhysicalName.count
+                    NoRecovery = $restore.NoRecovery
+                    BackupSizeMB = ($RestoreFiles | measure-object -property BackupSizeMb -Sum).sum
+                    CompressedBackupSizeMB = ($RestoreFiles | measure-object -property CompressedBackupSizeMb -Sum).sum
+                    BackupFile = $RestoreFiles.BackupPath -join ','
+					RestoredFile = $RestoreFiles[0].Filelist.PhysicalName -join ','
+					BackupSize = ($RestoreFiles | measure-object -property BackupSize -Sum).sum
+					CompressedBackupSize = ($RestoreFiles | measure-object -property CompressedBackupSize -Sum).sum
+                    TSql = $script  
+					BackupFileRaw = $RestoreFiles					
+                } | Select-DefaultView -ExcludeProperty BackupSize, CompressedBackupSize, BackupFileRaw 
 				while ($Restore.Devices.count -gt 0)
 				{
 					$device = $restore.devices[0]
@@ -227,11 +244,6 @@ Function Restore-DBFromFilteredArray
 				$server.ConnectionContext.Disconnect()
 			}
 			
-		}
-		if ($NoRecovery -eq $false -and $ScriptOnly -eq $false)
-		{
-			Write-Verbose "$FunctionName - Performing Recovery"
-			Invoke-SQLcmd2 -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Restore database $DbName with recovery"
 		}
 		$server.ConnectionContext.Disconnect()
 	}
