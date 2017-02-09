@@ -13,8 +13,8 @@ Function Restore-DBFromFilteredArray
 		[string]$DbName,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object[]]$Files,
-        [String]$RestoreLocation,
-		[String]$RestoreLogLocation,
+        [String]$DestinationDataDirectory,
+		[String]$DestinationLogDirectory,
         [DateTime]$RestoreTime = (Get-Date).addyears(1),  
 		[switch]$NoRecovery,
 		[switch]$ReplaceDatabase,
@@ -89,21 +89,21 @@ Function Restore-DBFromFilteredArray
 			foreach ($File in $RestoreFiles[0].Filelist)
 			{
 
-				if ($RestoreLocation -ne '' -and $FileStructure -eq $NUll)
+				if ($DestinationDataDirectory -ne '' -and $FileStructure -eq $NUll)
 				{
 					
 					$MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
 					$MoveFile.LogicalFileName = $File.LogicalName
-					if ($File.Type -eq 'L' -and $RestoreLogLocation -ne '')
+					if ($File.Type -eq 'L' -and $DestinationLogDirectory -ne '')
 					{
-						$MoveFile.PhysicalFileName = $RestoreLogLocation + '\' + (split-path $file.PhysicalName -leaf)					
+						$MoveFile.PhysicalFileName = $DestinationLogDirectory + '\' + (split-path $file.PhysicalName -leaf)					
 					}
 					else {
-						$MoveFile.PhysicalFileName = $RestoreLocation + '\' + (split-path $file.PhysicalName -leaf)	
+						$MoveFile.PhysicalFileName = $DestinationDataDirectory + '\' + (split-path $file.PhysicalName -leaf)	
 					}
 					$null = $Restore.RelocateFiles.Add($MoveFile)
 					
-				} elseif ($RestoreLocation -eq '' -and $FileStructure -ne $NUll)
+				} elseif ($DestinationDataDirectory -eq '' -and $FileStructure -ne $NUll)
 				{
 
 					$FileStructure = $FileStructure.values
@@ -116,9 +116,9 @@ Function Restore-DBFromFilteredArray
 
 						$null = $Restore.RelocateFiles.Add($MoveFile)
 					}	
-				} elseif ($RestoreLocation -ne '' -and $FileStructure -ne $NUll)
+				} elseif ($DestinationDataDirectory -ne '' -and $FileStructure -ne $NUll)
 				{
-					Write-Error "Conflicting options only one of FileStructure or RestoreLocation allowed"
+					Write-Error "Conflicting options only one of FileStructure or DestinationDataDirectory allowed"
 				} 		
 			}
 

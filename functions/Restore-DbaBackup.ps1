@@ -25,13 +25,13 @@ Accepts multiple paths seperated by ','
 .PARAMETER FileList
 A Files object(s) containing SQL Server backup files. Each file passed in will be parsed.
 
-.PARAMETER RestoreLocation
+.PARAMETER DestinationDataDirectory
 Path to restore the SQL Server backups to on the target instance.
 If only this parameter is specified, then all database files (data and log) will be restored to this location
 
-.PARAMETER RestoreLogLocation
+.PARAMETER DestinationLogDirectory
 Path to restore the database log files to.
-This parameter can only be specified alongside RestoreLocation.
+This parameter can only be specified alongside DestinationDataDirectory.
 
 .PARAMETER RestoreTime
 Specify a DateTime object to which you want the database restored to. Default is to the latest point available 
@@ -69,7 +69,7 @@ You must have sysadmin role membership on the instance for this to work.
 A hashtable that can be used to move specific files to a location.
 $FileMapping = @{'DataFile1'='c:\restoredfiles\Datafile1.mdf';'DataFile3'='d:\DataFile3.mdf'}
 And files not specified in the mapping will be restore to their original location
-This Parameter is exclusive with RestoreLocation
+This Parameter is exclusive with DestinationDataDirectory
 
 .PARAMETER IgnoreLogBackup
 This switch tells the function to ignore transaction log backups. The process will restore to the latest full or differential backup point only
@@ -92,7 +92,7 @@ Restore-DbaBackup -SqlServer server1\instance1 -path \\server2\backups
 Scans all the backup files in \\server2\backups, filters them and restores the database to server1\instance1
 
 .EXAMPLE
-Restore-DbaBackup -SqlServer server1\instance1 -path \\server2\backups -MaintenanceSolutionBackup -RestoreLocation c:\restores
+Restore-DbaBackup -SqlServer server1\instance1 -path \\server2\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\restores
 
 Scans all the backup files in \\server2\backups$ stored in an Ola Hallengren style folder structure,
  filters them and restores the database to the c:\restores folder on server1\instance1 
@@ -104,20 +104,20 @@ Takes the provided files from multiple directories and restores them on  server1
 
 .EXAMPLE
 $RestoreTime = Get-Date('11:19 23/12/2016')
-Restore-DbaBackup -SqlServer server1\instance1 -path \\server2\backups -MaintenanceSolutionBackup -RestoreLocation c:\restores -RestoreTime $RestoreTime
+Restore-DbaBackup -SqlServer server1\instance1 -path \\server2\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\restores -RestoreTime $RestoreTime
 
 Scans all the backup files in \\server2\backups stored in an Ola Hallengren style folder structure,
  filters them and restores the database to the c:\restores folder on server1\instance1 up to 11:19 23/12/2016
 
 .EXAMPLE
-Restore-DbaBackup -SqlServer server1\instance1 -path \\server2\backups -RestoreLocation c:\restores -OutputScriptOnly | Out-File -Filepath c:\scripts\restore.sql
+Restore-DbaBackup -SqlServer server1\instance1 -path \\server2\backups -DestinationDataDirectory c:\restores -OutputScriptOnly | Out-File -Filepath c:\scripts\restore.sql
 
 Scans all the backup files in \\server2\backups stored in an Ola Hallengren style folder structure,
  filters them and generate the T-SQL Scripts to restore the database to the latest point in time, 
  and then stores the output in a file for later retrieval
 
 .EXAMPLE
-Restore-DbaBackup -SqlServer server1\instance1 -path c:\backups -RestoreLocation c:\DataFiles -RestoreLogLocation c:\LogFile
+Restore-DbaBackup -SqlServer server1\instance1 -path c:\backups -DestinationDataDirectory c:\DataFiles -DestinationLogDirectory c:\LogFile
 
 Scans all the files in c:\backups and then restores them onto the SQL Server Instance server1\instance1, placing data files
 c:\DataFiles and all the log files into c:\LogFiles
@@ -139,9 +139,9 @@ c:\DataFiles and all the log files into c:\LogFiles
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[string]$DatabaseName,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
-        [String]$RestoreLocation,
+        [String]$DestinationDataDirectory,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
-        [String]$RestoreLogLocation,
+        [String]$DestinationLogDirectory,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
         [DateTime]$RestoreTime = (Get-Date).addyears(1),
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]  
@@ -167,9 +167,9 @@ c:\DataFiles and all the log files into c:\LogFiles
     {
         $FunctionName = "Restore-DbaBackup"
         $BackupFiles = @()
-        if ($RestoreLogLocation -ne '' -and $RestoreLocation -eq '')
+        if ($DestinationLogDirectory -ne '' -and $DestinationDataDirectory -eq '')
         {
-            Throw "$FunctionName - RestoreLogLocation can only be specified with RestoreLocation"
+            Throw "$FunctionName - DestinationLogDirectory can only be specified with DestinationDataDirectory"
         }
     }
     PROCESS
@@ -234,7 +234,7 @@ c:\DataFiles and all the log files into c:\LogFiles
             if((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlServer $SqlServer -SqlCredential $SqlCredential))
             {
                 try{
-                    $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -RestoreLocation $RestoreLocation -RestoreLogLocation $RestoreLogLocation -NoRecovery:$NoRecovery -Replace:$WithReplace -Scripts:$OutputScript -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly
+                    $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -Replace:$WithReplace -Scripts:$OutputScript -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly
                     "Database $databasename restored successfully"
                 }
                 catch{
