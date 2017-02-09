@@ -361,7 +361,7 @@ Will NOT perform a DBCC CHECKDB!
 
             if ($PSCmdlet.ShouldProcess($sourcenetbios, "Generating hash for file '$FilePath'"))
             {
-                Write-Output "Generating hash for file: '$FilePath'"
+                Write-Verbose "Generating hash for file: '$FilePath'"
                 $stream = New-Object io.FileStream ($FilePath, 'open')
                 $Provider = New-Object System.Security.Cryptography.MD5CryptoServiceProvider 
                 $Hash = New-Object System.Text.StringBuilder 
@@ -374,7 +374,7 @@ Will NOT perform a DBCC CHECKDB!
                     $stream.Close() 
                 }
 
-                return $Hash
+                return $Hash.ToString()
             }
 
         }
@@ -1216,7 +1216,8 @@ Will NOT perform a DBCC CHECKDB!
                             Write-Verbose "File copy NOK! Hash is not the same."
                             Write-Verbose "Deleting destination file '$DestinationFilePath'!"
                             Remove-Item -Path $DestinationFilePath
-                            Write-Output "File '$DestinationFilePath' deleted" 
+                            Write-Output "File '$DestinationFilePath' deleted because file hash was not the same. Moving next file." 
+                            Continue
                         }
                     }
                     else
