@@ -107,13 +107,11 @@ Function Restore-DBFromFilteredArray
 				} elseif ($DestinationDataDirectory -eq '' -and $FileStructure -ne $NUll)
 				{
 
-					$FileStructure = $FileStructure.values
-
-					foreach ($File in $FileStructure)
+					foreach ($key in $FileStructure.keys)
 					{
 						$MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
-						$MoveFile.LogicalFileName = $File.logical
-						$MoveFile.PhysicalFileName = $File.physical
+						$MoveFile.LogicalFileName = $key
+						$MoveFile.PhysicalFileName = $filestructure[$key]
 
 						$null = $Restore.RelocateFiles.Add($MoveFile)
 					}	
