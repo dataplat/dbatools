@@ -76,10 +76,10 @@ foreach ($command in $commands)
 		
 		Context "Test parameter help for $commandName" {
 			
-			$Common = 'Debug', 'ErrorAction', 'ErrorVariable', 'InformationAction', 'InformationVariable', 'OutBuffer', 'OutVariable',
-			'PipelineVariable', 'Verbose', 'WarningAction', 'WarningVariable'
+			$Common = 'Confirm', 'Debug', 'ErrorAction', 'ErrorVariable', 'InformationAction', 'InformationVariable', 'OutBuffer', 'OutVariable',
+			'PipelineVariable', 'Verbose', 'WarningAction', 'WarningVariable', 'WhatIf'
 			
-			$parameters = $command.ParameterSets.Parameters | Sort-Object -Property Name -Unique | Where-Object { $_.Name -notin $common }
+			$parameters = $command.ParameterSets.Parameters | Sort-Object -Property Name -Unique | Where-Object Name -notin $common
 			$parameterNames = $parameters.Name
 			$HelpParameterNames = $Help.Parameters.Parameter.Name | Sort-Object -Unique
 			
