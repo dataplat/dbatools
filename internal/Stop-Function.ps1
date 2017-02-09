@@ -77,9 +77,12 @@
             Author:      Friedrich Weinmann
             Editors:     -
             Created on:  08.02.2017
-            Last Change: 08.02.2017
-            Version:     1.0
+            Last Change: 10.02.2017
+            Version:     1.1
             
+            Release 1.1 (10.02.2017, Friedrich Weinmann)
+            - Fixed Bug: Fails on Write-Error
+    
             Release 1.0 (08.02.2017, Friedrich Weinmann)
             - Initial Release
     #>
@@ -130,7 +133,7 @@
     {
         if ($SilentlyContinue)
         {
-            Write-Error $record -Category $Category -TargetObject $Target -Exception $Exception -ErrorId $record.FullyQualifiedErrorId
+            Write-Error -Message $record -Category $Category -TargetObject $Target -Exception $Exception -ErrorId $record.FullyQualifiedErrorId
             if ($ContinueLabel) { continue $ContinueLabel }
             else { Continue }
         }
@@ -148,7 +151,7 @@
         Write-Warning -Message $Message
         
         # This ensures that the error is stored in the $error variable AND has its Stacktrace (simply adding the record would lack the stacktrace)
-        $null = Write-Error $record -Category $Category -TargetObject $Target -Exception $Exception -ErrorId $record.FullyQualifiedErrorId 2>&1
+        $null = Write-Error -Message $record -Category $Category -TargetObject $Target -Exception $Exception -ErrorId $record.FullyQualifiedErrorId 2>&1
         
         if ($Continue)
         {
