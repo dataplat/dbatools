@@ -50,7 +50,7 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
             Write-Verbose "$FunctionName - Find Newest Full backup"
             $ServerName, $databaseName = $Database.Name.split(',')
             $SQLBackupdetails = $AllSQLBackupdetails | Where-Object {$_.ServerName -eq $ServerName -and $_.DatabaseName -eq $DatabaseName.trim()}
-            $Fullbackup = $SQLBackupdetails | where-object {$_.BackupType -eq "1" -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1
+            $Fullbackup = $SQLBackupdetails | where-object {$_.BackupType -eq '1' -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1
             if ($Fullbackup -eq $null)
             {
                 Write-Error "$FunctionName - No Full backup found to anchor the restore"
@@ -85,7 +85,7 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
                 $Tlogfinal = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.BackupStartDate -gt $RestoreTime} | Sort-Object -Property LastLSN  | select -First 1
                 $Results += $Tlogfinal
                 $TlogCount = ($Results | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'}).count
-                Write-Verbose "$FunctionName - $TLogCountt Transaction Log backups found"
+                Write-Verbose "$FunctionName - $TLogCount Transaction Log backups found"
             }
             Write-Verbose "$FunctionName - Returning Results to caller"
             $OutResults += @([PSCustomObject]@{ID=$DatabaseName;values=$Results})

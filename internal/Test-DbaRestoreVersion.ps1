@@ -48,6 +48,7 @@ Checks that the Restore chain in $FilteredFiles is compatiable with the SQL Serv
         [System.Management.Automation.PSCredential]$SqlCredential
         
 	)
+    $FunctionName = 'Test-DbaRestoreVersion'
     $RestoreVersion = ($FilteredRestoreFiles.SoftwareVersionMajor | Measure-Object -average).average
     Write-Verbose "$FunctionName - RestoreVersion is $RestoreVersion"
     #Test to make sure we don't have an upgrade mid backup chain, there's a reason I'm paranoid..

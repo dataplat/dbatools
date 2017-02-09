@@ -162,7 +162,6 @@ c:\DataFiles and all the log files into c:\LogFiles
     {
         $FunctionName = "Restore-DbaBackup"
         $BackupFiles = @()
-
         if ($RestoreLogLocation -ne '' -and $RestoreLocation -eq '')
         {
             Throw "$FunctionName - RestoreLogLocation can only be specified with RestoreLocation"

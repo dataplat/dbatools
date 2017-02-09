@@ -79,7 +79,7 @@ Function Restore-DBFromFilteredArray
 		{
 	
 			$RestoreFiles = @($InternalFiles | Where-Object {$_.FirstLSN -eq $RestorePoint.Name})
-			Write-verbose "$FunctionName - Restoring $($RestorePoint.Name)"
+			Write-verbose "$FunctionName - Restoring backup starting at LSN $($RestorePoint.Name)"
 			if ($Restore.RelocateFiles.count -gt 0)
 			{
 				$Restore.RelocateFiles.Clear()

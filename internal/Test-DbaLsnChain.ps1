@@ -40,6 +40,7 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
 
     #Need to anchor  with full backup:
     $FunctionName = "Test-DbaLsnChain"
+    Write-Verbose "$FunctionName - Testing LSN Chain"
     $FullDBAnchor = $FilteredRestoreFiles | Where-Object {$_.BackupTypeDescription -eq 'Database'}
     if (($FullDBAnchor | Group-Object -Property FirstLSN | Measure-Object).count -ne 1)
     {
@@ -116,7 +117,8 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
         }
         $i++
 
-    }   
+    }  
+    Write-Verbose "$FunctionName - Passed LSN Chain checks" 
     return $true
 }
 
