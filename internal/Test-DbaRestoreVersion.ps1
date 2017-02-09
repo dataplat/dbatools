@@ -73,6 +73,7 @@ Checks that the Restore chain in $FilteredFiles is compatiable with the SQL Serv
         return $false
         break 
     }
+    $server.ConnectionContext.Disconnect()
     return $True
 }
 

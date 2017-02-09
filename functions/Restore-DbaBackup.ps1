@@ -235,6 +235,7 @@ c:\DataFiles and all the log files into c:\LogFiles
             {
                 try{
                     $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -RestoreLocation $RestoreLocation -RestoreLogLocation $RestoreLogLocation -NoRecovery:$NoRecovery -Replace:$WithReplace -Scripts:$OutputScript -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly
+                    "Database $databasename restored successfully"
                 }
                 catch{
                     Write-Exception $_

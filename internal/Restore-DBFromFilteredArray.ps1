@@ -54,12 +54,14 @@ Function Restore-DBFromFilteredArray
 
 		If ($null -ne $Server.Databases[$DbName] -and $ScriptOnly -eq $false)
 		{
+			$null = $server.databases["Master"]
 			If ($ReplaceDatabase -eq $true)
 			{				
 				try
 				{
-					Write-Verbose "$FunctionName - Set $DbName offline to kill processes"
-					Invoke-SQLcmd2 -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; use $DbName"
+					Write-Verbose "$FunctionName - Set $DbName single_user to kill processes"
+					#Invoke-SQLcmd2 -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Alter database $DbName set single_user with rollback immediate;Alter database $DbName set Multi_user with rollback immediate;" -database master
+					Invoke-SQLcmd2 -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; Alter database $DbName set online with rollback immediate" -database master
 
 				}
 				catch
@@ -79,7 +81,7 @@ Function Restore-DBFromFilteredArray
 		{
 	
 			$RestoreFiles = @($InternalFiles | Where-Object {$_.FirstLSN -eq $RestorePoint.Name})
-			Write-verbose "$FunctionName - Restoring backup starting at LSN $($RestorePoint.Name)"
+			Write-verbose "$FunctionName - Restoring backup starting at LSN $($RestorePoint.Name) in $($RestoreFiles[0].BackupPath)"
 			if ($Restore.RelocateFiles.count -gt 0)
 			{
 				$Restore.RelocateFiles.Clear()
@@ -173,7 +175,7 @@ Function Restore-DBFromFilteredArray
 					$Device.devicetype = "File"
 					$Restore.Devices.Add($device)
 				}
-				Write-Verbose "$FunctionName - Performaing restore action"
+				Write-Verbose "$FunctionName - Performing restore action"
 				if ($ScriptOnly)
 				{
 					$restore.Script($server)
@@ -204,15 +206,25 @@ Function Restore-DBFromFilteredArray
 					Write-Progress -id 1 -activity "Restoring $DbName to $ServerName" -status "Complete" -Completed
 					
 				}
+
+			}
+			catch
+			{
+				write-verbose "$FunctionName - Closing Server connection"
+				Write-Warning $_.Exception.InnerException
+				#Exit as once one restore has failed there's no point continuing
+				break
+				
+			}
+			finally
+			{	
 				while ($Restore.Devices.count -gt 0)
 				{
 					$device = $restore.devices[0]
 					$null = $restore.devices.remove($Device)
 				}
-			}
-			catch
-			{
-				Write-Warning $_.Exception.InnerException
+				write-verbose "$FunctionName - Closing Server connection"
+				$server.ConnectionContext.Disconnect()
 			}
 			
 		}
@@ -221,6 +233,6 @@ Function Restore-DBFromFilteredArray
 			Write-Verbose "$FunctionName - Performing Recovery"
 			Invoke-SQLcmd2 -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Restore database $DbName with recovery"
 		}
-		#$server.ConnectionContext.Disconnect()
+		$server.ConnectionContext.Disconnect()
 	}
 }
