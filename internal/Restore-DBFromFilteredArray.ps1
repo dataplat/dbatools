@@ -60,7 +60,7 @@ Function Restore-DBFromFilteredArray
 		$Server.ConnectionContext.StatementTimeout = 0
 		$Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
 		$Restore.ReplaceDatabase = $ReplaceDatabase
-		if (UseDestinationDefaultDirectories)
+		if ($UseDestinationDefaultDirectories)
 		{
 			$DestinationDataDirectory = $server.DefaultFile
 			$DestinationLogDirectory = $Server.DefaultLog
@@ -225,7 +225,8 @@ Function Restore-DBFromFilteredArray
 			{
 				write-verbose "$FunctionName - Closing Server connection"
 				$RestoreComplete = $False
-				Write-Warning $_.Exception.InnerException -WarningAction stop
+				$ExitError = $_.Exception.InnerException
+				Write-Warning "$FunctionName - $ExitError" -WarningAction stop
 				#Exit as once one restore has failed there's no point continuing
 				break
 				
@@ -247,8 +248,9 @@ Function Restore-DBFromFilteredArray
 					BackupSize = ($RestoreFiles | measure-object -property BackupSize -Sum).sum
 					CompressedBackupSize = ($RestoreFiles | measure-object -property CompressedBackupSize -Sum).sum
                     TSql = $script  
-					BackupFileRaw = $RestoreFiles					
-                } | Select-DefaultView -ExcludeProperty BackupSize, CompressedBackupSize, BackupFileRaw 
+					BackupFileRaw = $RestoreFiles
+					ExitError = $ExitError				
+                } | Select-DefaultView -ExcludeProperty BackupSize, CompressedBackupSize, ExitError, BackupFileRaw 
 				while ($Restore.Devices.count -gt 0)
 				{
 					$device = $restore.devices[0]

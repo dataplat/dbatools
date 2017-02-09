@@ -173,7 +173,7 @@ c:\DataFiles and all the log files into c:\LogFiles
         $FunctionName = "Restore-DbaBackup"
         $BackupFiles = @()
         
-        if ($DestinationLogDirectory -ne '' -and UseDestinationDefaultDirectories)
+        if ($DestinationLogDirectory -ne '' -and $UseDestinationDefaultDirectories)
         {
             Write-Warning  "$FunctionName - DestinationLogDirectory and UseDestinationDefaultDirectories are mutually exclusive" -WarningAction Stop  
         }
@@ -245,11 +245,16 @@ c:\DataFiles and all the log files into c:\LogFiles
             {
                 try{
                     $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -Replace:$WithReplace -Scripts:$OutputScript -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly
-                    "Database $databasename restored successfully"
+                    $Completed='successfully'
                 }
                 catch{
                     Write-Exception $_
+                    $Completed='unsuccessfully'
                     return
+                }
+                Finally
+                {
+                    Write-Verbose "Database $databasename restored $Completes"
                 }
             }
             $DatabaseName = ''
