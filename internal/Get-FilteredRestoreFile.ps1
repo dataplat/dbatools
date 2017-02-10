@@ -44,7 +44,7 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
         Write-Verbose "$FunctionName - Read File headers (Read-DBABackupHeader)"
         $AllSQLBackupdetails  = $InternalFiles | Select-Object -ExpandProperty FullName | Read-DBAbackupheader -sqlserver $SQLSERVER -SqlCredential:$SqlCredential
         Write-Verbose "$FunctionName - $($AllSQLBackupdetails.count) Files to filter"
-        $Databases = $AllSQLBackupdetails  | group Servername, DatabaseName
+        $Databases = $AllSQLBackupdetails  | Group-Object -Property Servername, DatabaseName
         Write-Verbose "$FunctionName - $(($Databases | Measure-Object).count) database to process"
         Foreach ($Database in $Databases){
             $Results = @()
@@ -54,7 +54,8 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
             $Fullbackup = $SQLBackupdetails | where-object {$_.BackupType -eq '1' -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1
             if ($Fullbackup -eq $null)
             {
-                Write-Warning "$FunctionName - No Full backup found to anchor the restore" -WarningAction Stop
+                Write-Warning "$FunctionName - No Full backup found to anchor the restore" 
+                break
             }
             #This scans for striped full backups to build the results
             $Results += $SQLBackupdetails | where-object {$_.BackupType -eq "1" -and $_.FirstLSN -eq $FullBackup.FirstLSN}

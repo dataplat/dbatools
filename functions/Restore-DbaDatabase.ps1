@@ -166,21 +166,55 @@ c:\DataFiles and all the log files into c:\LogFiles
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[switch]$IgnoreLogBackup,
         [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
-        [switch]$UseDestinationDefaultDirectories					
+        [switch]$UseDestinationDefaultDirectories,
+        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
+        [switch]$UseSourceDirectories						
 	)
     BEGIN
     {
         $FunctionName = "Restore-DbaDatabase"
         $BackupFiles = @()
-        
-        if ($DestinationLogDirectory -ne '' -and $UseDestinationDefaultDirectories)
+        $UseDestinationDefaultDirectories=$true
+        #Check compatible relocation options used:
+
+        $ParamCount = 0
+        if ($null -ne $FileMapping)
         {
-            Write-Warning  "$FunctionName - DestinationLogDirectory and UseDestinationDefaultDirectories are mutually exclusive" -WarningAction Stop  
+            $ParamCount +=1
+        } 
+        if ($UseSourceDirectories)
+        {
+            $ParamCount +=1
+        }
+        if ('' -ne $DestinationDataDirectory)
+        {
+            $ParamCount +=1
+        }
+        if ($ParamCount -gt 1)        
+        {
+            Write-Warning "$FunctionName - $Paramcount You've specified incompatible Location parameters. Please only specify one of FileMapping,UseSourceDirectories or DestinationDataDirectory" 
+            break
+        }
+
+        if ($DestinationLogDirectory -ne '' -and $UseSourceDirectories)
+        {
+            Write-Warning  "$FunctionName - DestinationLogDirectory and UseDestinationDefaultDirectories are mutually exclusive" 
+            break  
         }
         if ($DestinationLogDirectory -ne '' -and $DestinationDataDirectory -eq '')
         {
-            Write-Warning  "$FunctionName - DestinationLogDirectory can only be specified with DestinationDataDirectory" -WarningAction Stop
+            Write-Warning  "$FunctionName - DestinationLogDirectory can only be specified with DestinationDataDirectory"
+            break
         }
+        if ($null -ne $FileMapping)
+        {
+            $UseDestinationDefaultDirectories = $false 
+        }
+        if ($UseSourceDirectories)
+        {
+            $UseDestinationDefaultDirectories = $false        
+        }
+    
     }
     PROCESS
     {
@@ -247,20 +281,21 @@ c:\DataFiles and all the log files into c:\LogFiles
             Write-Verbose "$FunctionName - Starting FileSet"
             if (($FilteredFiles.DatabaseName | Group-Object | Measure-Object).count -gt 1)
             {
-                $dbs = ($FilteredFiles | Select DatabaseName) -join (',')
-                Write-Warning "$FunctionName - We can only handle 1 Database at a time - $dbs" -WarningAction Stop
+                $dbs = ($FilteredFiles | Select-Object -Property DatabaseName) -join (',')
+                Write-Warning "$FunctionName - We can only handle 1 Database at a time - $dbs" 
+                break
             }
 
             IF($DatabaseName -eq '')
             {
-                $DatabaseName = ($FilteredFiles | Select DatabaseName -unique).DatabaseName
+                $DatabaseName = ($FilteredFiles | Select-Object -Property  DatabaseName -unique).DatabaseName
                 Write-Verbose "$FunctionName - Dbname set from backup = $DatabaseName"
             }
 
             if((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlServer $SqlServer -SqlCredential $SqlCredential))
             {
                 try{
-                    $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -Replace:$WithReplace -Scripts:$OutputScript -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories
+                    $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -Replace:$WithReplace -Scripts:$OutputScript -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -UseSourceDirectories:$UseSourceDirectories
                     $Completed='successfully'
                 }
                 catch{

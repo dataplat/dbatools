@@ -23,7 +23,8 @@ Function Restore-DBFromFilteredArray
 		[switch]$VerifyOnly,
 		[object]$filestructure,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[switch]$UseDestinationDefaultDirectories
+		[switch]$UseDestinationDefaultDirectories,
+		[switch]$UseSourceDirectories
 	)
     
 	    Begin
@@ -54,7 +55,8 @@ Function Restore-DBFromFilteredArray
 		}
 		catch {
 			$server.ConnectionContext.Disconnect()
-			Write-Warning "$FunctionName - Cannot connect to $SqlServer" -WarningAction Stop
+			Write-Warning "$FunctionName - Cannot connect to $SqlServer" 
+			break
 
 		}
 		
@@ -87,7 +89,7 @@ Function Restore-DBFromFilteredArray
 			}
 			else 
 			{
-				Write-warning "$FunctionName - $DBname exists, must use WithReplace to overwrite" -WarningAction Stop
+				Write-warning "$FunctionName - $DBname exists, must use WithReplace to overwrite" 
 				break
 			}
 		}
