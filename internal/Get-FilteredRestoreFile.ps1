@@ -24,7 +24,7 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
 	)
     Begin
     {
-        $FunctionName = "Get-FilteredRestoreFile"
+        $FunctionName =(Get-PSCallstack)[0].Command
         Write-Verbose "$FunctionName - Starting"
 
 

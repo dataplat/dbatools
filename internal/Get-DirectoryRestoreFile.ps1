@@ -13,6 +13,7 @@ Takes path, checks for validity. Scans for usual backup file
 		[string]$Path
 	)
        
+        $FunctionName =(Get-PSCallstack)[0].Command
         Write-Verbose "$FunctionName - Starting"
         Write-Verbose "$FunctionName - Checking Path"
         if ((Test-Path $Path) -ne $true){

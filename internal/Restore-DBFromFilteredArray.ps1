@@ -29,7 +29,7 @@ Function Restore-DBFromFilteredArray
     
 	    Begin
     {
-        $FunctionName = "Restore-DBFromFilteredArray"
+        $FunctionName =(Get-PSCallstack)[0].Command
         Write-Verbose "$FunctionName - Starting"
 
 

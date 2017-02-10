@@ -18,7 +18,7 @@ Takes path, checks for validity. Scans for usual backup file
         [System.Management.Automation.PSCredential]$SqlCredential
     )
        
-        $FunctionName = "Get-XpDirTreeRestoreFile"
+        $FunctionName =(Get-PSCallstack)[0].Command
         
         Write-Verbose "$FunctionName - Starting"
         Write-Verbose "$FunctionName - Checking Path"

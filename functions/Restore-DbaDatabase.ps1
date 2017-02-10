@@ -172,7 +172,7 @@ c:\DataFiles and all the log files into c:\LogFiles
 	)
     BEGIN
     {
-        $FunctionName = "Restore-DbaDatabase"
+        $FunctionName = $FunctionName =(Get-PSCallstack)[0].Command
         $BackupFiles = @()
         $UseDestinationDefaultDirectories=$true
         #Check compatible relocation options used:
