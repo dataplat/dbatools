@@ -206,15 +206,11 @@ c:\DataFiles and all the log files into c:\LogFiles
             Write-Warning  "$FunctionName - DestinationLogDirectory can only be specified with DestinationDataDirectory"
             break
         }
-        if ($null -ne $FileMapping)
+        if (($null -ne $FileMapping) -or $UseSourceDirectories -or ($DestinationDataDirectory -ne ''))   
         {
             $UseDestinationDefaultDirectories = $false 
         }
-        if ($UseSourceDirectories)
-        {
-            $UseDestinationDefaultDirectories = $false        
-        }
-    
+   
     }
     PROCESS
     {

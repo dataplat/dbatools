@@ -84,7 +84,7 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
                 $Tlogs = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.DatabaseBackupLSN -eq $Fullbackup.FirstLsn -and $_.LastLSN -gt $TlogStartLSN -and $_.BackupStartDate -lt $RestoreTime}
                 $Results += $Tlogs
                 #Catch the last Tlog that covers the restore time!
-                $Tlogfinal = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.BackupStartDate -gt $RestoreTime} | Sort-Object -Property LastLSN  | select -First 1
+                $Tlogfinal = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.BackupStartDate -gt $RestoreTime} | Sort-Object -Property LastLSN  | Select-Object -First 1
                 $Results += $Tlogfinal
                 $TlogCount = ($Results | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'}).count
                 Write-Verbose "$FunctionName - $TLogCount Transaction Log backups found"

@@ -104,24 +104,24 @@ Function Restore-DBFromFilteredArray
 			{
 				$Restore.RelocateFiles.Clear()
 			}
-			foreach ($File in $RestoreFiles[0].Filelist)
-			{
-
 				if ($DestinationDataDirectory -ne '' -and $FileStructure -eq $NUll)
 				{
-					
-					$MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
-					$MoveFile.LogicalFileName = $File.LogicalName
-					if ($File.Type -eq 'L' -and $DestinationLogDirectory -ne '')
-					{
-						$MoveFile.PhysicalFileName = $DestinationLogDirectory + '\' + (split-path $file.PhysicalName -leaf)					
-					}
-					else {
-						$MoveFile.PhysicalFileName = $DestinationDataDirectory + '\' + (split-path $file.PhysicalName -leaf)	
-					}
-					$null = $Restore.RelocateFiles.Add($MoveFile)
-					
-				} elseif ($DestinationDataDirectory -eq '' -and $FileStructure -ne $NUll)
+					foreach ($File in $RestoreFiles[0].Filelist)
+			        {
+                        $MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
+                        $MoveFile.LogicalFileName = $File.LogicalName
+                        if ($File.Type -eq 'L' -and $DestinationLogDirectory -ne '')
+                        {
+                            $MoveFile.PhysicalFileName = $DestinationLogDirectory + '\' + (split-path $file.PhysicalName -leaf)					
+                        }
+                        else {
+                            $MoveFile.PhysicalFileName = $DestinationDataDirectory + '\' + (split-path $file.PhysicalName -leaf)	
+                        }
+                        $null = $Restore.RelocateFiles.Add($MoveFile)
+                    }
+
+				} 
+                elseif ($DestinationDataDirectory -eq '' -and $FileStructure -ne $NUll)
 				{
 
 					foreach ($key in $FileStructure.keys)
@@ -132,11 +132,12 @@ Function Restore-DBFromFilteredArray
 
 						$null = $Restore.RelocateFiles.Add($MoveFile)
 					}	
-				} elseif ($DestinationDataDirectory -ne '' -and $FileStructure -ne $NUll)
+				} 
+                elseif ($DestinationDataDirectory -ne '' -and $FileStructure -ne $NUll)
 				{
-					Write-Warning "$FunctionName - Conflicting options only one of FileStructure or DestinationDataDirectory allowed" -WarningAction Stop
-				} 		
-			}
+					Write-Warning "$FunctionName - Conflicting options only one of FileStructure or DestinationDataDirectory allowed"
+                    break
+				} 
 
 			try
 			{
