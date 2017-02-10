@@ -79,13 +79,13 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
     }
     $DiffAnchor = $FilteredRestoreFiles | Where-Object {$_.BackupTypeDescription -eq 'Database Differential'}
     #Check for no more than a single Differential backup
-    if (($DiffAnchor | Measure-Object).count -gt 1)
+    if (($DiffAnchor.FirstLSN | Select-Object -unique | Measure-Object).count -gt 1)
     {
         Write-Warning "$FunctionName - More than 1 differential backup, not  supported"
         return $false
         break;        
     } 
-    elseif (($DiffAnchor.FirstLSN | Select-Object -unique | Measure-Object).count -eq 1)
+    elseif (($DiffAnchor | Measure-Object).count -eq 1)
     {
         $TlogAnchor = $DiffAnchor
     } 
