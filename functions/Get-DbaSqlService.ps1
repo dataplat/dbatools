@@ -117,6 +117,7 @@ PROCESS
                   else
                   {
                     Write-Warning "$FunctionName - can't create CIMsession via DCom on $Computer"
+                    continue
                   }
                   if ( $namespace.Name )
                   {
@@ -144,7 +145,7 @@ PROCESS
                   }
                   else
                   {
-                  Write-Warning "$FunctionName - No ComputerManagement Namespace on $Computer. Please not that this function is available from SQL 2005 up."
+                  Write-Warning "$FunctionName - No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up."
                   }
                 }
             }
