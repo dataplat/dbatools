@@ -244,7 +244,7 @@ c:\DataFiles and all the log files into c:\LogFiles
             if((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlServer $SqlServer -SqlCredential $SqlCredential))
             {
                 try{
-                    $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -Replace:$WithReplace -Scripts:$OutputScript -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly
+                    $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -Replace:$WithReplace -Scripts:$OutputScript -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories
                     $Completed='successfully'
                 }
                 catch{

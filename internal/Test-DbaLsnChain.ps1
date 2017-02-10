@@ -85,7 +85,7 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
         return $false
         break;        
     } 
-    elseif (($DiffAnchor | Measure-Object).count -eq 1)
+    elseif (($DiffAnchor.FirstLSN | Select-Object -unique | Measure-Object).count -eq 1)
     {
         $TlogAnchor = $DiffAnchor
     } 
