@@ -38,6 +38,9 @@ Returns last differential backup set
 .PARAMETER LastLog
 Returns last log backup set
 
+.PARAMETER IgnoreCopyOnly
+If set, Get-DbaBackupHistory will ignore CopyOnly backups
+
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
@@ -100,6 +103,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 		[object[]]$SqlServer,
 		[Alias("SqlCredential")]
 		[PsCredential]$Credential,
+		[switch]$IgnoreCopyOnly,
 		[Parameter(ParameterSetName = "NoLast")]
 		[switch]$Force,
 		[Parameter(ParameterSetName = "NoLast")]
@@ -295,6 +299,11 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 					if ($Since -ne $null)
 					{
 						$wherearray += "backupset.backup_finish_date >= '$since'"
+					}
+
+					if ($IgnoreCopyOnly)
+					{
+						$wherearray += "is_copy_only='0'"	
 					}
 					
 					if ($where.length -gt 0)
