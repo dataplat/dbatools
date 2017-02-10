@@ -220,6 +220,19 @@ c:\DataFiles and all the log files into c:\LogFiles
     }
     END
     {
+		try 
+		{
+			$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential	          
+		}
+		catch {
+            $server.ConnectionContext.Disconnect()
+			Write-Warning "$FunctionName - Cannot connect to $SqlServer" -WarningAction Stop
+		}
+        If ($null -ne $Server.Databases[$DbName] -and $WithReplace -eq $false)
+		{
+            Write-Warning "$FunctionName - $DbName exists on Sql Instance $SqlServer , must specify WithReplace to continue"
+        }
+        $server.ConnectionContext.Disconnect()
         $AllFilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer:$SqlServer -RestoreTime:$RestoreTime -SqlCredential:$SqlCredential -IgnoreLogBackup:$IgnoreLogBackup
         Write-Verbose "$FunctionName - $($AllFilteredFiles.count) dbs to restore"
         

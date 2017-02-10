@@ -53,7 +53,9 @@ Function Restore-DBFromFilteredArray
 			$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential	
 		}
 		catch {
+			$server.ConnectionContext.Disconnect()
 			Write-Warning "$FunctionName - Cannot connect to $SqlServer" -WarningAction Stop
+
 		}
 		
 		$ServerName = $Server.name
