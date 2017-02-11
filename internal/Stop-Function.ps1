@@ -60,14 +60,14 @@
         .EXAMPLE
             Stop-Function -Message "Foo failed bar! $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_
             return
-            
+
             Depending on whether $silent is true or false it will:
             - Throw a bloody terminating error. Game over.
             - Write a nice warning about how Foo failed bar, then terminate the function. The return on the next line will then end the calling function.
-    
+
         .EXAMPLE
             Stop-Function -Message "Foo failed bar!" -Silent $Silent -Category InvalidOperation -Target $foo -Continue
-    
+
             Depending on whether $silent is true or false it will:
             - Throw a bloody terminating error. Game over.
             - Write a nice warning about how Foo failed bar, then call continue to process the next item in the loop.
@@ -77,9 +77,12 @@
             Author:      Friedrich Weinmann
             Editors:     -
             Created on:  08.02.2017
-            Last Change: 08.02.2017
-            Version:     1.0
+            Last Change: 10.02.2017
+            Version:     1.1
             
+            Release 1.1 (10.02.2017, Friedrich Weinmann)
+            - Fixed Bug: Fails on Write-Error
+    
             Release 1.0 (08.02.2017, Friedrich Weinmann)
             - Initial Release
     #>
@@ -120,7 +123,7 @@
     
     $Exception = New-Object System.Exception($Message, $InnerErrorRecord.Exception)
     if (-not $Category) { $Category = $InnerErrorRecord.CategoryInfo.Category }
-    $record = New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools-$FunctionName", $Category, $Target)
+    $record = New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $Target)
     
     # Manage Debugging
     Write-Debug "[$FunctionName] $Message"
@@ -130,7 +133,7 @@
     {
         if ($SilentlyContinue)
         {
-            Write-Error $record -Category $Category -TargetObject $Target -Exception $Exception -ErrorId $record.FullyQualifiedErrorId
+            Write-Error -Message $record -Category $Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue
             if ($ContinueLabel) { continue $ContinueLabel }
             else { Continue }
         }
@@ -148,7 +151,7 @@
         Write-Warning -Message $Message
         
         # This ensures that the error is stored in the $error variable AND has its Stacktrace (simply adding the record would lack the stacktrace)
-        $null = Write-Error $record -Category $Category -TargetObject $Target -Exception $Exception -ErrorId $record.FullyQualifiedErrorId 2>&1
+        $null = Write-Error -Message $record -Category $Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue 2>&1
         
         if ($Continue)
         {
