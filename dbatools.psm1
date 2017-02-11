@@ -51,12 +51,28 @@ foreach ($assembly in $assemblies)
 
 #>
 
-# All internal functions privately avaialble within the toolset
+# All internal functions privately available within the toolset
 foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\*.ps1")) { . $function }
-foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\dynamicparams\*.ps1")) { . $function }
 
 # All exported functions
 foreach ($function in (Get-ChildItem "$PSScriptRoot\functions\*.ps1")) { . $function }
+
+# Finally register autocompletion
+# Use the conditional clause to make the TabExpansionPlusPlus module optional.
+if (Get-Command -Name Register-ArgumentCompleter -ErrorAction Ignore)
+{
+    # Test whether we have Tab Expansion Plus available (used in dynamicparams scripts ran below)
+    if (Get-Command TabExpansionPlusPlus\Register-ArgumentCompleter -ErrorAction Ignore)
+    {
+        $TEPP = $true
+    }
+    else
+    {
+        $TEPP = $false
+    }
+    
+    foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\dynamicparams\*.ps1")) { . $function }
+}
 
 # Not supporting the provider path at this time
 # if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\")) { throw "Please change to another drive and reload the module." }
