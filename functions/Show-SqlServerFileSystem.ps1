@@ -216,7 +216,8 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
 		
 		if ($textbox.Text.length -gt 0)
 		{
-			return $textbox.Text
+			$drive = $textbox.Text + '\'
+			return $drive
 		}
 	}
 }
