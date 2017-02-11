@@ -119,9 +119,9 @@ Limitations: Does not support Application Roles yet
 	
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	Param (
-		[parameter(Mandatory=$true, ValueFromPipeline = $true)]
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object]$Source,
-		[parameter(Mandatory=$true)]
+		[parameter(Mandatory = $true)]
 		[object]$Destination,
 		[object]$SourceSqlCredential,
 		[object]$DestinationSqlCredential,
