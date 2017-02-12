@@ -202,7 +202,8 @@
 		'Test-DbaSpn',
 		'Set-DbaSpn',
 		'Remove-DbaSpn',
-		'Get-DbaDatabase'
+		'Get-DbaDatabase',
+		'Find-DbaUserObject'
 	)
 	
 	<# coming soon
