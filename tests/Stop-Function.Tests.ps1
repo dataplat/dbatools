@@ -1,4 +1,5 @@
-﻿#Thank you Warren http://ramblingcookiemonster.github.io/Testing-DSC-with-Pester-and-AppVeyor/
+﻿<#
+#Thank you Warren http://ramblingcookiemonster.github.io/Testing-DSC-with-Pester-and-AppVeyor/
 
 if (-not $PSScriptRoot)
 {
@@ -361,3 +362,4 @@ Describe "$Name Tests"{
         #endregion Evaluate Results
     }
 }
+#>
