@@ -277,7 +277,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 								 INNER JOIN msdb..backupmediaset mediaset ON mediafamily.media_set_id = mediaset.media_set_id
 								 INNER JOIN msdb..backupset backupset ON backupset.media_set_id = mediaset.media_set_id"
 					
-					if ($databases -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff)
+					if ($databases -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $IgnoreCopyOnly)
 					{
 						$where = " WHERE "
 					}
