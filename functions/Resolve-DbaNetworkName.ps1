@@ -20,6 +20,9 @@ This can be the name of a computer, a SMO object, an IP address or a SQL Instanc
 .PARAMETER Credential
 Credential object used to connect to the SQL Server as a different user
 
+.PARAMETER Turbo
+Resolves without accessing the serer itself. Faster but may be less accurate.
+
 .NOTES
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
@@ -56,7 +59,9 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("cn", "host", "ServerInstance", "Server", "SqlServer")]
 		[object]$ComputerName,
-		[PsCredential]$Credential
+		[PsCredential]$Credential,
+		[Alias("FastParrot")]
+		[switch]$Turbo
 	)
 	
 	PROCESS
@@ -71,9 +76,68 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 			}
 			
 			$OGComputer = $Computer
+			
+			if ($Computer -eq "localhost" -or $Computer -eq ".")
+			{
+				$Computer = $env:COMPUTERNAME
+			}
+			
 			$Computer = $Computer.Split('\')[0]
 			Write-Verbose "Connecting to server $Computer"
-			$ipaddress = ((Test-Connection -ComputerName $Computer -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
+			
+			try
+			{
+				$ipaddress = ((Test-Connection -ComputerName $Computer -Count 1 -ErrorAction Stop).Ipv4Address).IPAddressToString
+			}
+			catch
+			{
+				try
+				{
+					$ipaddress = ((Test-Connection -ComputerName "$Computer.$env:USERDNSDOMAIN" -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
+					$Computer = "$Computer.$env:USERDNSDOMAIN"
+				}
+				catch
+				{
+					$Computer = $OGComputer
+				}
+			}
+			
+			if ($Turbo)
+			{
+				try
+				{
+					$fqdn = [System.Net.Dns]::GetHostByAddress($ipaddress).HostName
+				}
+				catch
+				{
+					try
+					{
+						$fqdn = ([System.Net.Dns]::GetHostEntry($Computer)).HostName
+					}
+					catch
+					{
+						throw "DNS name does not exist"
+					}
+				}
+				
+				if ($fqdn -notmatch "\.")
+				{
+					$dnsdomain = $env:USERDNSDOMAIN.ToLower()
+					$fqdn = "$fqdn.$dnsdomain"
+				}
+				
+				$hostname = $fqdn.Split(".")[0]
+				
+				[PSCustomObject]@{
+					InputName = $OGComputer
+					ComputerName = $hostname.ToUpper()
+					DNSHostname = $hostname
+					IPAddress = $ipaddress
+					Domain = $fqdn.Replace("$hostname.", "")
+					FQDN = $fqdn
+				}
+				return
+			}
 			
 			if ( $ipaddress )
 			{
@@ -89,7 +153,15 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 				try
 				{
 					Write-Verbose "Getting computer information from server $Computer via CIM (WSMan)"
-					$CIMsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
+					if ($Credential)
+					{
+						$CIMsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
+					}
+					else
+					{
+						$CIMsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue
+					}
+					
 					$conn = Get-CimInstance -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -CimSession $CIMsession
 				}
 				catch
@@ -102,7 +174,16 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 					{
 						Write-Verbose "Getting computer information from server $Computer via CIM (DCOM)"
 						$sessionoption = New-CimSessionOption -Protocol DCOM
-						$CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
+						if ($Credential)
+						{
+							$CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
+							
+						}
+						else
+						{
+							$CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue
+						}
+						
 						$conn = Get-CimInstance -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -CimSession $CIMsession
 					}
 					catch
@@ -113,7 +194,15 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 			    if ( !$conn )
 			    {
 				    Write-Verbose "Getting computer information from server $Computer via WMI (DCOM)"
-				    $conn = Get-WmiObject -ComputerName $Computer -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -ErrorAction SilentlyContinue -Credential $Credential
+					
+					if ($Credential)
+					{
+						$conn = Get-WmiObject -ComputerName $Computer -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -ErrorAction SilentlyContinue -Credential $Credential
+					}
+					else
+					{
+						$conn = Get-WmiObject -ComputerName $Computer -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -ErrorAction SilentlyContinue
+					}
 				}
 				
 				if (!$conn)
@@ -137,8 +226,23 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 				}
 			}
 			
+			
+			try
+			{
+				Write-Verbose "Resolving $($conn.DNSHostname) using GetHostEntry"
+				$hostentry = ([System.Net.Dns]::GetHostEntry($conn.DNSHostname)).HostName
+			}
+			catch
+			{
+				Write-Verbose "GetHostEntry failed"
+			}
+			
 			$fqdn = "$($conn.DNSHostname).$($conn.Domain)"
-			if ($fqdn = ".") { $fqdn = $null }
+			if ($fqdn -eq ".")
+			{
+				Write-Verbose "No full FQDN found. Setting to null"
+				$fqdn = $null
+			}
 			
 			[PSCustomObject]@{
 				InputName = $OGComputer
@@ -146,6 +250,7 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 				IPAddress = $ipaddress
 				DNSHostName = $conn.DNSHostname
 				Domain = $conn.Domain
+				DNSHostEntry = $hostentry
 				FQDN = $fqdn
 			}
 		}

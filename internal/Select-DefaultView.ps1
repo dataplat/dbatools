@@ -1,4 +1,4 @@
-﻿Function Select-DefaultField
+﻿Function Select-DefaultView
 {
 	<# 
 	
@@ -14,7 +14,7 @@
 	[CmdletBinding()]
 	param (
 		[parameter(ValueFromPipeline = $true)]
-		[pscustomobject]$InputObject,
+		[object]$InputObject,
 		[string[]]$Property,
 		[string[]]$ExcludeProperty
 	)

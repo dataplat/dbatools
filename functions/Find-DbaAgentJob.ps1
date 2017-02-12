@@ -18,7 +18,10 @@ Find all jobs that havent ran in the INT number of previous day(s)
 
 .PARAMETER Disabled
 Find all jobs that are disabled
-	
+
+.PARAMETER Failed
+Find all jobs that have failed
+
 .PARAMETER NoSchedule
 Find all jobs with schedule set to it
 	
@@ -42,7 +45,10 @@ Filter based on StepName. This is a regex pattern by default so no asterisks are
 
 .PARAMETER Exact
 Job Names and Step Names are searched for by regex by default. Use Exact to return only exact matches.
-
+	
+.PARAMETER Since
+Datetime object used to narrow the results to a date
+	
 .NOTES 
 Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
 
@@ -76,6 +82,10 @@ Returns all agent jobs that havent ran in the last 10 ignoring jobs "Yearly - Ro
 Find-DbaAgentJob -SqlServer Dev01 -Category "REPL-Distribution", "REPL-Snapshot" -Detailed | Format-Table -AutoSize -Wrap 
 Returns all job/s on Dev01 that are in either category "REPL-Distribution" or "REPL-Snapshot" with detailed output
 
+.EXAMPLE
+Find-DbaAgentJob -SQLServer Dev01, Dev02 -Failed -Since '7/1/2016 10:47:00'
+Returns all agent job(s) that have failed since July of 2016 (and still have history in msdb)
+	
 .EXAMPLE 
 Get-SqlRegisteredServerName -SqlServer CMSServer -Group Production | Find-DbaAgentJob -Disabled -NoSchedule -Detailed | Format-Table -AutoSize -Wrap
 Queries CMS server to return all SQL instances in the Production folder and then list out all agent jobs that have either been disabled or have no schedule. 
@@ -96,12 +106,22 @@ Returns all agent job(s) that are named exactly Mybackup
 		[switch]$Exact,
 		[int]$LastUsed,
 		[switch]$Disabled,
+		[switch]$Failed,
 		[switch]$NoSchedule,
 		[switch]$NoEmailNotification,
 		[string[]]$Category,
 		[string]$Owner,
-		[string[]]$Exclude
+		[string[]]$Exclude,
+		[datetime]$Since
 	)
+	begin
+	{
+		if ($Failed, $Name, $StepName, $LastUsed, $Disabled, $Disabled, $NoSchedule, $NoEmailNotification, $Category, $Owner, $Exclude -notcontains $true)
+		{
+			Write-Warning "At least one search term must be specified"
+			continue
+		}
+	}
 	PROCESS
 	{
 		foreach ($servername in $SqlServer)
@@ -120,6 +140,12 @@ Returns all agent job(s) that are named exactly Mybackup
 			
 			$jobs = $server.JobServer.jobs
 			$output = @()
+			
+			if ($Failed)
+			{
+				Write-Verbose "Checking for failed jobs"
+				$output += $jobs | Where-Object { $_.LastRunOutcome -ne "Success" }
+			}
 			
 			if ($Name)
 			{
@@ -226,6 +252,13 @@ Returns all agent job(s) that are named exactly Mybackup
 				$output = $output | Where-Object { $Exclude -notcontains $_.Name }
 			}
 			
+			if ($Since)
+			{
+				#$Since = $Since.ToString("yyyy-MM-dd HH:mm:ss")
+				Write-Verbose "Getting only jobs whose LastRunDate is greater than or equal to $since"
+				$output = $output | Where-Object { $_.LastRunDate -ge $since }
+			}
+			
 			$jobs = $output | Select-Object -Unique
 			
 			foreach ($job in $jobs)
@@ -243,7 +276,7 @@ Returns all agent job(s) that are named exactly Mybackup
 					Category = $job.Category
 					OwnerLoginName = $job.OwnerLoginName
 					Job = $job
-				} | Select-DefaultField -ExcludeProperty Job
+				} | Select-DefaultView -ExcludeProperty Job
 			}
 		}
 	}
