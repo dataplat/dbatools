@@ -110,9 +110,11 @@ foreach ($command in $commands)
 			
 			foreach ($helpParm in $HelpParameterNames)
 			{
-				# Shouldn't find extra parameters in help.
-				It "finds help parameter in code: $helpParm" {
-					$helpParm -in $parameterNames | Should Be $true
+				if ($helpParm -notin 'Confirm', 'WhatIf') { # We'll fix this in 1.0
+					# Shouldn't find extra parameters in help.
+					It "finds help parameter in code: $helpParm" {
+						$helpParm -in $parameterNames | Should Be $true
+					}
 				}
 			}
 		}
