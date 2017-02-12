@@ -86,6 +86,7 @@
             Release 1.0 (08.02.2017, Friedrich Weinmann)
             - Initial Release
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding(DefaultParameterSetName = 'Plain')]
     Param (
         [Parameter(Mandatory = $true)]

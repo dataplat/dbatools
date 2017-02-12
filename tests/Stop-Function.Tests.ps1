@@ -1,5 +1,4 @@
-﻿<#
-#Thank you Warren http://ramblingcookiemonster.github.io/Testing-DSC-with-Pester-and-AppVeyor/
+﻿#Thank you Warren http://ramblingcookiemonster.github.io/Testing-DSC-with-Pester-and-AppVeyor/
 
 if (-not $PSScriptRoot)
 {
@@ -14,7 +13,7 @@ if ($env:APPVEYOR_REPO_BRANCH -and $env:APPVEYOR_REPO_BRANCH -notlike "master")
 
 
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace('.Tests.', '.')
-Import-Module $PSScriptRoot\..\functions\$sut -Force
+Import-Module $PSScriptRoot\..\internal\$sut -Force
 Import-Module PSScriptAnalyzer
 ## Added PSAvoidUsingPlainTextForPassword as credential is an object and therefore fails. We can ignore any rules here under special circumstances agreed by admins :-)
 $Rules = (Get-ScriptAnalyzerRule).Where{ $_.RuleName -notin ('PSAvoidUsingPlainTextForPassword') }
@@ -26,7 +25,7 @@ Describe 'Script Analyzer Tests' {
         {
             $i = $rules.IndexOf($rule)
             It "passes the PSScriptAnalyzer Rule number $i - $rule  " {
-                (Invoke-ScriptAnalyzer -Path "$PSScriptRoot\..\functions\$sut" -IncludeRule $rule.RuleName).Count | Should Be 0
+                (Invoke-ScriptAnalyzer -Path "$PSScriptRoot\..\internal\$sut" -IncludeRule $rule.RuleName).Count | Should Be 0
             }
         }
     }
@@ -362,4 +361,3 @@ Describe "$Name Tests"{
         #endregion Evaluate Results
     }
 }
-#>
