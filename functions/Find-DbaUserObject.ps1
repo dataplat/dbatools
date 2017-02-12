@@ -242,21 +242,21 @@ Shows all user owned (non-sa, non-dbo) objects and verbose output
 				
 				if (-not $pattern)
 				{
-					$schs = $db.Schemas | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -ne "dbo" -and $sysSchemas -notcontains $_.Owner }
+					$schemas = $db.Schemas | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -ne "dbo" -and $sysSchemas -notcontains $_.Owner }
 				}
 				else
 				{
-					$schs = $db.Schemas | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -match $pattern -and $sysSchemas -notcontains $_.Owner }
+					$schemas = $db.Schemas | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -match $pattern -and $sysSchemas -notcontains $_.Owner }
 				}
-				foreach ($sch in $schs)
+				foreach ($schema in $schemas)
 				{
 					[PSCustomObject]@{
 						ComputerName = $server.NetName
 						SqlInstance = $server.ServiceName
 						Type = "Schema"
-						Owner = $sch.Owner
-						Name = $sch.Name
-						Parent = $sch.Parent.Name
+						Owner = $schema.Owner
+						Name = $schema.Name
+						Parent = $schema.Parent.Name
 					}
 				}
 				
