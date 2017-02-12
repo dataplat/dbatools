@@ -1,7 +1,8 @@
-﻿Function Find-DbaUserObject {
+﻿Function Find-DbaUserObject
+{
 <#
 .SYNOPSIS
-Loops over multiple SMO objects to find objects owned by users. or for any object owned by a specific user using the -Pattern parameter
+Searches SQL Server to find user-owned objects (ie. not dbo or sa) or for any object owned by a specific user specified by the Pattern parameter.
 
 .DESCRIPTION
 Looks at the below list of objects to see if they are either owned by a user or a specific user (using the parameter -Pattern)
@@ -16,15 +17,14 @@ Looks at the below list of objects to see if they are either owned by a user or 
     Dabtabase Assembles
     Database Synonyms
 
-.PARAMETER SqlServer
-SQLServer name or SMO object representing the SQL Server to connect to. This can be a
-collection and recieve pipeline input
+.PARAMETER SqlInstance
+SqlInstance name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input
 
 .PARAMETER SqlCredential
-PSCredential object to connect as. If not specified, currend Windows login will be used.
+PSCredential object to connect as. If not specified, current Windows login will be used.
 
-.PARAMETER Patterm
-String value that you want to search for in the stored procedure textbody
+.PARAMETER Pattern
+The regex pattern that the command will search for
 
 .NOTES 
 Original Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
@@ -37,292 +37,294 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.	
 
 .LINK
-https://dbatools.io/Get-DbaStoredProcedure
+https://dbatools.io/Find-DbaUserObject
 
 .EXAMPLE
-Get-DbaStoredProcedure -SqlServer DEV01 -Value "html" -Verbose
+Find-DbaUserObject -SqlInstance DEV01 -Pattern ad\stephen
 
-Checks in all user databases stored procedures for "html" in the textbody
-
+Searches user objects for owner ad\stephen
+	
 .EXAMPLE
-Get-DbaStoredProcedure -SqlServer DEV01 -Database MyDB -Value "html" -Verbose
+Find-DbaUserObject -SqlInstance DEV01 -Verbose
 
-Checks in "mydb" database stored procedures for "html" in the textbody
+Shows all user owned (non-sa, non-dbo) objects and verbose output 
 #>
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[string[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer", "SqlInstances")]
+		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-        [string]$Pattern
+		[string]$Pattern
 	)
-    process
-    {
-        Write-Verbose "Starting"
-        foreach ($Instance in $SqlServer)
-        {
-            try
-	        {
-	            Write-Verbose "Connecting to $Instance"
-                $server = Connect-SqlServer -SqlServer $Instance -SqlCredential $sqlcredential
-	        }
-	        catch
-	        {
-	            Write-Warning "Failed to connect to: $Instance"
-                continue
-	        }
-           
-            ## Credentials
-            if (-not $pattern)
-            {
-                write-verbose "Gather data on credentials"
-                $creds = $server.Credentials 
-                write-verbose "Gather data on proxy accounts"
-                $proxys = $server.JobServer.ProxyAccounts
-                write-verbose "Gather data on endpoints"
-                $endPoints = $server.Endpoints|  Where-Object {$_.Owner -ne "sa"}
-                write-verbose "Gather data on Agent Jobs ownership"
-                $jobs = $allJobs | Where-Object {$_.OwnerLoginName  -ne "sa"}
-            }
-            else
-            {
-                write-verbose "Gather data on credentials"
-                $creds = $server.Credentials | Where-Object {$_.Identity -eq $pattern}
-                write-verbose "Gather data on proxy accounts"
-                $proxys = $server.JobServer.ProxyAccounts | Where-Object {$_.CredentialIdentity -eq $Pattern} 
-                write-verbose "Gather data on endpoints"
-                $endPoints = $server.Endpoints|  Where-Object {$_.Owner -eq $Pattern}
-                write-verbose "Gather data on Agent Jobs ownership"
-                $jobs = $allJobs | Where-Object {$_.OwnerLoginName  -eq $Pattern}
-            }
-            
-             
-            ## dbs
-            if (-not $Pattern)
-            {
-                foreach ($db in $server.Databases | Where-Object{$_.Owner -ne "sa"})
-                {
-                    write-verbose "checking if $db is owned "
-                    $d = $server.Databases.Item("$db")
-                    $out = [PSCustomObject]@{
-                        ComputerName = $server.NetName
-                        SqlInstance = $server.InstanceName
-		                ObjectType = "Database" 
-                        ObjectOwner = $db.Owner
-                        ObjectName = $db.Name
-                        ObjectDetails = $NULL
-                    }
-                    $out 
-                }
-            }
-            else
-            {
-                foreach ($db in $server.Databases | Where-Object {$_.Owner -eq $Pattern})
-                {
-
-                    $d = $server.Databases.Item("$db")
-                    $out = [PSCustomObject]@{
-                        ComputerName = $server.NetName
-                        SqlInstance = $server.InstanceName
-		                ObjectType = "Database" 
-                        ObjectOwner = $db.Owner
-                        ObjectName = $db.Name
-                        ObjectDetails = $NULL
-                    }
-                    $out 
-                }          
-            
-            }      
-
-            ## agent jobs 
-            if (-not $Pattern)
-            {
-                foreach ($job in $server.JobServer.Jobs | Where-Object {$_.OwnerLoginName -ne "sa"})
-                {
-                    $out = [PSCustomObject]@{
-                        ComputerName = $server.NetName
-                        SqlInstance = $server.InstanceName
-                        ObjectType = "Agent Job" 
-                        ObjectOwner = $job.OwnerLoginName
-                        ObjectName = $job.Name
-                        ObjectDetails = $NULL
-                    }
-                    $out
-                }
-            }
-            else
-            {
-                foreach ($job in $server.JobServer.Jobs | Where-Object {$_.OwnerLoginName -eq $Pattern})
-                {
-                    $out = [PSCustomObject]@{
-                        ComputerName = $server.NetName
-                        SqlInstance = $server.InstanceName
-                        ObjectType = "Agent Job" 
-                        ObjectOwner = $job.OwnerLoginName
-                        ObjectName = $job.Name
-                        ObjectDetails = $NULL
-                    }
-                    $out
-                }
-            }
-            ## credentials
-            foreach ($cred in $creds)
-            {
-                ## list credentials using the account
-                
-                $out = [PSCustomObject]@{
-                    ComputerName = $server.NetName
-                    SqlInstance = $server.InstanceName
-		            ObjectType = "Credential" 
-                    ObjectOwner = $cred.Identity
-                    ObjectName = $cred.Name
-                    ObjectDetails = $NULL
-                }
-                $out
-            }
-            
-            ## proxys
-            foreach ($proxy in $proxys)
-            {
-                $out = [PSCustomObject]@{
-                ComputerName = $server.NetName
-                SqlInstance = $server.InstanceName
-		        ObjectType = "Proxy" 
-                ObjectOwner = $proxy.CredentialIdentity
-                ObjectName = $proxy.Name
-                ObjectDetails = $NULL
-                }
-                $out
-            
-                ## list agent jobs steps using proxy
-                foreach ($job in $server.JobServer.Jobs)
-                {
-                    foreach ($step in $job.JobSteps | Where-Object {$_.ProxyName -eq $proxy.Name})
-                    {
-                        $out = [PSCustomObject]@{
-                            ComputerName = $server.NetName
-                            SqlInstance = $server.InstanceName
-		                    ObjectType = "Agent Step" 
-                            ObjectOwner = $step.ProxyName
-                            ObjectName = $job.Name
-                            ObjectDetails = $step.Name
-                        }
-                        $out
-                    }
-                }
-            }
-            
-
-            ## endpoints
-            foreach ($endPoint in $endPoints)
-            {
-                $out = [PSCustomObject]@{
-                    ComputerName = $server.NetName
-                    SqlInstance = $server.InstanceName
-		            ObjectType = "Endpoint" 
-                    ObjectOwner = $endpoint.Owner
-                    ObjectName = $endPoint.Name
-                    ObjectDetails = $NULL
-                }
-                $out
-            }
-
-            ## Loop internal database
-            foreach ($db in $server.Databases | Where-Object {$_.Status -eq "Normal"})
-            {
-                Write-Verbose "Gather user owned object in database: $db"
-                ##schemas
-                $sysSchemas = "DatabaseMailUserRole", "db_ssisadmin", "db_ssisltduser", "db_ssisoperator", "SQLAgentOperatorRole", "SQLAgentReaderRole", "SQLAgentUserRole", "TargetServersRole", "RSExecRole"
-
-                if (-not $Pattern)
-                {
-                    $schs = $db.Schemas | Where-Object {$_.IsSystemObject -eq 0 -and $_.Owner -ne "dbo"  -and $sysSchemas -notcontains $_.Owner}
-                }
-                else
-                {
-                   $schs = $db.Schemas | Where-Object {$_.IsSystemObject -eq 0 -and $_.Owner -eq $Pattern  -and $sysSchemas -notcontains $_.Owner} 
-                }
-                foreach ($sch in $schs)
-                {
-                    $out = [PSCustomObject]@{
-                        ComputerName = $server.NetName
-                        SqlInstance = $server.InstanceName
-		                ObjectType = "Schema" 
-                        ObjectOwner = $sch.Owner
-                        ObjectName = $sch.Name
-                        ObjectDetails = $db.Name
-                        }
-                        $out
-                }
-
-                ## database roles
-                if (-not $Pattern)
-                {
-                    $roles = $db.Roles | Where-Object {$_.IsSystemObject -eq 0 -and $_.Owner -ne "dbo"}
-                }
-                else
-                {
-                    $roles = $db.Roles | Where-Object {$_.IsSystemObject -eq 0 -and $_.Owner -eq $Pattern}
-                }
-                foreach ($role in $roles)
-                {
-                    $out = [PSCustomObject]@{
-                        ComputerName = $server.NetName
-                        SqlInstance = $server.InstanceName
-		                ObjectType = "Database Role" 
-                        ObjectOwner = $role.Owner
-                        ObjectName = $role.Name
-                        ObjectDetails = $db.Name
-                        }
-                        $out
-                }
-
-                ## assembly
-                if (-not $Pattern)
-                {             
-                    $Assemblies = $db.Assemblies | Where-Object {$_.IsSystemObject -eq 0 -and $_.Owner -ne "dbo"}
-                }
-                else
-                {
-                    $Assemblies = $db.Assemblies | Where-Object {$_.IsSystemObject -eq 0 -and $_.Owner -eq $Pattern}
-                }
-                foreach ($Assemblie in $Assemblies)
-                {
-                    $out = [PSCustomObject]@{
-                        ComputerName = $server.NetName
-                        SqlInstance = $server.InstanceName
-		                ObjectType = "Database Assembly" 
-                        ObjectOwner = $Assemblie.Owner
-                        ObjectName = $Assemblie.Name
-                        ObjectDetails = $db.Name
-                        }
-                        $out
-                }
-
-              ## synonyms
-                if (-not $Pattern)
-                {             
-                    $Synonymss = $db.Synonyms | Where-Object {$_.IsSystemObject -eq 0 -and $_.Owner -ne "dbo"}
-                }
-                else
-                {
-                    $Synonymss = $db.Synonyms | Where-Object {$_.IsSystemObject -eq 0 -and $_.Owner -eq $Pattern}
-                }
-                foreach ($Synonyms in $Synonymss)
-                {
-                    $out = [PSCustomObject]@{
-                        ComputerName = $server.NetName
-                        SqlInstance = $server.InstanceName
-		                ObjectType = "Database Synonyms" 
-                        ObjectOwner = $Synonyms.Owner
-                        ObjectName = $Synonyms.Name
-                        ObjectDetails = $db.Name
-                        }
-                        $out
-                }
-            }  
-
-        }
-    }
+	process
+	{
+		if ($Pattern -like "*\*")
+		{
+			Write-Verbose "Slash found in pattern"
+			$slashcount = ($Pattern -split "\\" | Measure-Object | Select-Object -ExpandProperty Count) - 1
+			if ($slashcount -eq 1)
+			{
+				Write-Verbose "Too few slashes, adding extra as required by regex"
+				$Pattern = $Pattern.Replace('\', '\\')
+				Write-Verbose "Pattern now $pattern"
+			}
+		}
+		
+		Write-Verbose "Starting"
+		foreach ($Instance in $SqlInstance)
+		{
+			try
+			{
+				Write-Verbose "Connecting to $Instance"
+				$server = Connect-SqlServer -SqlServer $Instance -SqlCredential $sqlcredential
+			}
+			catch
+			{
+				Write-Warning "Failed to connect to: $Instance"
+				continue
+			}
+			
+			$saname = Get-SaLoginName $server
+			
+			## Credentials
+			if (-not $pattern)
+			{
+				Write-Verbose "Gather data on credentials"
+				$creds = $server.Credentials
+				Write-Verbose "Gather data on proxy accounts"
+				$proxies = $server.JobServer.ProxyAccounts
+				Write-Verbose "Gather data on endpoints"
+				$endPoints = $server.Endpoints | Where-Object { $_.Owner -ne $saname }
+				Write-Verbose "Gather data on Agent Jobs ownership"
+				$jobs = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -ne $saname }
+			}
+			else
+			{
+				Write-Verbose "Gather data on credentials"
+				$creds = $server.Credentials | Where-Object { $_.Identity -match $pattern }
+				Write-Verbose "Gather data on proxy accounts"
+				$proxies = $server.JobServer.ProxyAccounts | Where-Object { $_.CredentialIdentity -match $pattern }
+				Write-Verbose "Gather data on endpoints"
+				$endPoints = $server.Endpoints | Where-Object { $_.Owner -match $pattern }
+				Write-Verbose "Gather data on Agent Jobs ownership"
+				$jobs = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -match $pattern }
+			}
+			
+			
+			## dbs
+			if (-not $pattern)
+			{
+				foreach ($db in $server.Databases | Where-Object{ $_.Owner -ne $saname })
+				{
+					Write-Verbose "checking if $db is owned "
+					
+					[PSCustomObject]@{
+						ComputerName = $server.NetName
+						SqlInstance = $server.ServiceName
+						Type = "Database"
+						Owner = $db.Owner
+						Name = $db.Name
+						Parent = $db.Parent.Name
+					}
+				}
+			}
+			else
+			{
+				foreach ($db in $server.Databases | Where-Object { $_.Owner -match $pattern })
+				{
+					
+					[PSCustomObject]@{
+						ComputerName = $server.NetName
+						SqlInstance = $server.ServiceName
+						Type = "Database"
+						Owner = $db.Owner
+						Name = $db.Name
+						Parent = $db.Parent.Name
+					}
+				}
+			}
+			
+			## agent jobs 
+			if (-not $pattern)
+			{
+				foreach ($job in $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -ne $saname })
+				{
+					[PSCustomObject]@{
+						ComputerName = $server.NetName
+						SqlInstance = $server.ServiceName
+						Type = "Agent Job"
+						Owner = $job.OwnerLoginName
+						Name = $job.Name
+						Parent = $job.Parent.Name
+					}
+				}
+			}
+			else
+			{
+				foreach ($job in $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -match $pattern })
+				{
+					[PSCustomObject]@{
+						ComputerName = $server.NetName
+						SqlInstance = $server.ServiceName
+						Type = "Agent Job"
+						Owner = $job.OwnerLoginName
+						Name = $job.Name
+						Parent = $job.Parent.Name
+					}
+				}
+			}
+			
+			## credentials
+			foreach ($cred in $creds)
+			{
+				## list credentials using the account
+				
+				[PSCustomObject]@{
+					ComputerName = $server.NetName
+					SqlInstance = $server.ServiceName
+					Type = "Credential"
+					Owner = $cred.Identity
+					Name = $cred.Name
+					Parent = $cred.Parent.Name
+				}
+			}
+			
+			## proxys
+			foreach ($proxy in $proxies)
+			{
+				[PSCustomObject]@{
+					ComputerName = $server.NetName
+					SqlInstance = $server.ServiceName
+					Type = "Proxy"
+					Owner = $proxy.CredentialIdentity
+					Name = $proxy.Name
+					Parent = $proxy.Parent.Name
+				}
+				
+				## list agent jobs steps using proxy
+				foreach ($job in $server.JobServer.Jobs)
+				{
+					foreach ($step in $job.JobSteps | Where-Object { $_.ProxyName -eq $proxy.Name })
+					{
+						[PSCustomObject]@{
+							ComputerName = $server.NetName
+							SqlInstance = $server.ServiceName
+							Type = "Agent Step"
+							Owner = $step.ProxyName
+							Name = $step.Name
+							Parent = $step.Parent.Name #$step.Name
+						}
+					}
+				}
+			}
+			
+			
+			## endpoints
+			foreach ($endPoint in $endPoints)
+			{
+				[PSCustomObject]@{
+					ComputerName = $server.NetName
+					SqlInstance = $server.ServiceName
+					Type = "Endpoint"
+					Owner = $endpoint.Owner
+					Name = $endPoint.Name
+					Parent = $endPoint.Parent.Name
+				}
+			}
+			
+			## Loop internal database
+			foreach ($db in $server.Databases | Where-Object { $_.Status -eq "Normal" })
+			{
+				Write-Verbose "Gather user owned object in database: $db"
+				##schemas
+				$sysSchemas = "DatabaseMailUserRole", "db_ssisadmin", "db_ssisltduser", "db_ssisoperator", "SQLAgentOperatorRole", "SQLAgentReaderRole", "SQLAgentUserRole", "TargetServersRole", "RSExecRole"
+				
+				if (-not $pattern)
+				{
+					$schs = $db.Schemas | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -ne "dbo" -and $sysSchemas -notcontains $_.Owner }
+				}
+				else
+				{
+					$schs = $db.Schemas | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -match $pattern -and $sysSchemas -notcontains $_.Owner }
+				}
+				foreach ($sch in $schs)
+				{
+					[PSCustomObject]@{
+						ComputerName = $server.NetName
+						SqlInstance = $server.ServiceName
+						Type = "Schema"
+						Owner = $sch.Owner
+						Name = $sch.Name
+						Parent = $sch.Parent.Name
+					}
+				}
+				
+				## database roles
+				if (-not $pattern)
+				{
+					$roles = $db.Roles | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -ne "dbo" }
+				}
+				else
+				{
+					$roles = $db.Roles | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -match $pattern }
+				}
+				foreach ($role in $roles)
+				{
+					[PSCustomObject]@{
+						ComputerName = $server.NetName
+						SqlInstance = $server.ServiceName
+						Type = "Database Role"
+						Owner = $role.Owner
+						Name = $role.Name
+						Parent = $role.Parent.Name
+					}
+				}
+				
+				## assembly
+				if (-not $pattern)
+				{
+					$assemblies = $db.Assemblies | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -ne "dbo" }
+				}
+				else
+				{
+					$assemblies = $db.Assemblies | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -match $pattern }
+				}
+				
+				foreach ($assembly in $assemblies)
+				{
+					[PSCustomObject]@{
+						ComputerName = $server.NetName
+						SqlInstance = $server.ServiceName
+						Type = "Database Assembly"
+						Owner = $assembly.Owner
+						Name = $assembly.Name
+						Parent = $assembly.Parent.Name
+					}
+				}
+				
+				## synonyms
+				if (-not $pattern)
+				{
+					$synonyms = $db.Synonyms | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -ne "dbo" }
+				}
+				else
+				{
+					$synonyms = $db.Synonyms | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -match $pattern }
+				}
+				
+				foreach ($synonym in $synonyms)
+				{
+					[PSCustomObject]@{
+						ComputerName = $server.NetName
+						SqlInstance = $server.ServiceName
+						Type = "Database Synonyms"
+						Owner = $synonym.Owner
+						Name = $synonym.Name
+						Parent = $synonym.Parent.Name
+					}
+				}
+			}
+		}
+	}
 }
