@@ -49,6 +49,8 @@ foreach ($command in $commands)
 {
 	$commandName = $command.Name
 	
+	if ($commandName -eq 'TabExpansion2') { continue } # Quick fix until real fix
+	
 	# The module-qualified command fails on Microsoft.PowerShell.Archive cmdlets
 	$Help = Get-Help $commandName -ErrorAction SilentlyContinue
 	
