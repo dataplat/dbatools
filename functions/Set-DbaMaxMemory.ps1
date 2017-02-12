@@ -33,6 +33,12 @@ Function Set-DbaMaxMemory
         .PARAMETER Silent
             Replaces user friendly yellow warnings with bloody red exceptions of doom!
             Use this if you want the function to throw terminating errors you want to catch.
+    
+        .PARAMETER WhatIf
+            Shows what would happen if the cmdlet runs. The cmdlet is not run.
+    
+        .PARAMETER Confirm
+            Prompts you for confirmation before running the cmdlet.
 
         .EXAMPLE 
             Set-DbaMaxMemory sqlserver1

@@ -76,8 +76,8 @@ foreach ($command in $commands)
 		
 		Context "Test parameter help for $commandName" {
 			
-			$Common = 'Confirm', 'Debug', 'ErrorAction', 'ErrorVariable', 'InformationAction', 'InformationVariable', 'OutBuffer', 'OutVariable',
-			'PipelineVariable', 'Verbose', 'WarningAction', 'WarningVariable', 'WhatIf'
+			$Common = 'Debug', 'ErrorAction', 'ErrorVariable', 'InformationAction', 'InformationVariable', 'OutBuffer', 'OutVariable',
+			'PipelineVariable', 'Verbose', 'WarningAction', 'WarningVariable'
 			
 			$parameters = $command.ParameterSets.Parameters | Sort-Object -Property Name -Unique | Where-Object Name -notin $common
 			$parameterNames = $parameters.Name
@@ -110,11 +110,9 @@ foreach ($command in $commands)
 			
 			foreach ($helpParm in $HelpParameterNames)
 			{
-				if ($helpParm -notin 'Confirm', 'WhatIf') { # We'll fix this in 1.0
-					# Shouldn't find extra parameters in help.
-					It "finds help parameter in code: $helpParm" {
-						$helpParm -in $parameterNames | Should Be $true
-					}
+				# Shouldn't find extra parameters in help.
+				It "finds help parameter in code: $helpParm" {
+					$helpParm -in $parameterNames | Should Be $true
 				}
 			}
 		}
