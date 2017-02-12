@@ -57,21 +57,16 @@ Shows all user owned (non-sa, non-dbo) objects and verbose output
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string]$Pattern
 	)
-	process
+	begin
 	{
-		if ($Pattern -like "*\*")
+		if ($Pattern -match '^[\w\d\.-]+\\[\w\d\.-]+$')
 		{
-			Write-Verbose "Slash found in pattern"
-			$slashcount = ($Pattern -split "\\" | Measure-Object | Select-Object -ExpandProperty Count) - 1
-			if ($slashcount -eq 1)
-			{
 				Write-Verbose "Too few slashes, adding extra as required by regex"
 				$Pattern = $Pattern.Replace('\', '\\')
-				Write-Verbose "Pattern now $pattern"
-			}
 		}
-		
-		Write-Verbose "Starting"
+	}
+	process
+	{
 		foreach ($Instance in $SqlInstance)
 		{
 			try
