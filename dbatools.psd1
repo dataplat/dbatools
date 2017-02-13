@@ -202,7 +202,11 @@
 		'Test-DbaSpn',
 		'Set-DbaSpn',
 		'Remove-DbaSpn',
-		'Get-DbaDatabase'
+		'Get-DbaDatabase',
+		'Find-DbaUserObject',
+		'Get-DbaSqlService',
+		'Find-DbaDependency',
+		'Clear-DbaSqlConnectionPool'
 	)
 	
 	<# coming soon
