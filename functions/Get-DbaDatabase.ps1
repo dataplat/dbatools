@@ -68,22 +68,29 @@ Returns only the user databases on the local default SQL Server instance
 Returns databases on multiple instances piped into the function
 
 #>
-	[CmdletBinding()]
+	[CmdletBinding(DefaultParameterSetName = "Default")]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Alias("SystemDbOnly")]
+		[parameter(ParameterSetName = "NoUserDb")]
 		[switch]$NoUserDb,
 		[Alias("UserDbOnly")]
+		[parameter(ParameterSetName = "NoSystemDb")]
 		[switch]$NoSystemDb,
+		[parameter(ParameterSetName = "DbBackuOwner")]
 		[string[]]$Owner,
+		[parameter(ParameterSetName = "Encrypted")]
 		[switch]$Encrypted,
+		[parameter(ParameterSetName = "Status")]
 		[ValidateSet('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')]
 		[string]$Status,
+		[parameter(ParameterSetName = "Access")]
 		[ValidateSet('ReadOnly', 'ReadWrite')]
 		[string]$Access,
+		[parameter(ParameterSetName = "RecoveryModel")]
 		[ValidateSet('Full', 'Simple', 'BulkLogged')]
 		[string]$RecoveryModel
 	)
