@@ -19,11 +19,13 @@ The SQL Server instance.
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. 
 
 .PARAMETER Path
-Path to SQL Server backup files. These files will be scanned using the desired method, default is a non recursive folder scan
+Path to SQL Server backup files. 
+
+Paths passed in as strings will be scanned using the desired method, default is a non recursive folder scan
 Accepts multiple paths seperated by ','
 
-.PARAMETER File
-A Files object(s) containing SQL Server backup files. Each file passed in will be parsed.
+Or it can consist of FileInfo objects, such as the output of Get-ChildItem or Get-Item. This allows you to work with 
+your own filestructures as needed
 
 .PARAMETER DestinationDataDirectory
 Path to restore the SQL Server backups to on the target instance.
@@ -32,6 +34,12 @@ If only this parameter is specified, then all database files (data and log) will
 .PARAMETER DestinationLogDirectory
 Path to restore the database log files to.
 This parameter can only be specified alongside DestinationDataDirectory.
+
+.PARAMETER DestinationFilePrefix 
+This value will be prefixed to ALL restored files (log and data). This is just a simple string prefix. If you 
+want to perform more complex rename operations then please use the FileMapping parameter
+
+This will apply to all file move options, except for FileMapping
 
 .PARAMETER UseDestinationDefaultDirectories
 Switch that tells the restore to use the default Data and Log locations on the target server
@@ -54,9 +62,6 @@ Indicates if the database should be recovered after last restore. Default is to 
 .PARAMETER WithReplace
 Switch indicated is the restore is allowed to replace an existing database.
 
-.PARAMETER OutputScript
-Switch to indicate if T-SQL restore scripts should be written out
-
 .PARAMETER OutputScriptOnly
 Switch indicates that ONLY T-SQL scripts should be generated, no restore takes place
 
@@ -76,19 +81,19 @@ This Parameter is exclusive with DestinationDataDirectory
 
 .PARAMETER IgnoreLogBackup
 This switch tells the function to ignore transaction log backups. The process will restore to the latest full or differential backup point only
-	
-.PARAMETER UseSourceDirectories
-Use the source structure
+
+.PARAMETER ReuseSourceFolderStructure
+By default, databases will be migrated to the destination Sql Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. 
+The same structure on the SOURCE will be kept exactly, so consider this if you're migrating between different versions and use part of Microsoft's default Sql structure (MSSql12.INSTANCE, etc)
+
+*Note, to reuse destination folder structure, specify -WithReplace
 	
 .PARAMETER Confirm
 Prompts to confirm certain actions
 	
-.PARAMETER Force
-Unsure
-	
 .PARAMETER WhatIf
 Shows what would happen if the command would execute, but does not actually perform the command
-	
+
 .NOTES
 Original Author: Stuart Moore (@napalmgram), stuart-moore.com
 
@@ -102,12 +107,12 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .EXAMPLE
-Restore-DbaDatabase -SqlServer server1\instance1 -path \\server2\backups 
+Restore-DbaDatabase -SqlServer server1\instance1 -Path \\server2\backups 
 
 Scans all the backup files in \\server2\backups, filters them and restores the database to server1\instance1
 
 .EXAMPLE
-Restore-DbaDatabase -SqlServer server1\instance1 -path \\server2\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\restores
+Restore-DbaDatabase -SqlServer server1\instance1 -Path \\server2\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\restores
 
 Scans all the backup files in \\server2\backups$ stored in an Ola Hallengren style folder structure,
  filters them and restores the database to the c:\restores folder on server1\instance1 
@@ -119,69 +124,57 @@ Takes the provided files from multiple directories and restores them on  server1
 
 .EXAMPLE
 $RestoreTime = Get-Date('11:19 23/12/2016')
-Restore-DbaDatabase -SqlServer server1\instance1 -path \\server2\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\restores -RestoreTime $RestoreTime
+Restore-DbaDatabase -SqlServer server1\instance1 -Path \\server2\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\restores -RestoreTime $RestoreTime
 
 Scans all the backup files in \\server2\backups stored in an Ola Hallengren style folder structure,
  filters them and restores the database to the c:\restores folder on server1\instance1 up to 11:19 23/12/2016
 
 .EXAMPLE
-Restore-DbaDatabase -SqlServer server1\instance1 -path \\server2\backups -DestinationDataDirectory c:\restores -OutputScriptOnly | Out-File -Filepath c:\scripts\restore.sql
+Restore-DbaDatabase -SqlServer server1\instance1 -Path \\server2\backups -DestinationDataDirectory c:\restores -OutputScriptOnly | Out-File -Filepath c:\scripts\restore.sql
 
 Scans all the backup files in \\server2\backups stored in an Ola Hallengren style folder structure,
  filters them and generate the T-SQL Scripts to restore the database to the latest point in time, 
  and then stores the output in a file for later retrieval
 
 .EXAMPLE
-Restore-DbaDatabase -SqlServer server1\instance1 -path c:\backups -DestinationDataDirectory c:\DataFiles -DestinationLogDirectory c:\LogFile
+Restore-DbaDatabase -SqlServer server1\instance1 -Path c:\backups -DestinationDataDirectory c:\DataFiles -DestinationLogDirectory c:\LogFile
 
 Scans all the files in c:\backups and then restores them onto the SQL Server Instance server1\instance1, placing data files
 c:\DataFiles and all the log files into c:\LogFiles
  
+.EXAMPLE
+$File = Get-ChildItem c:\backups, \\server1\backups -recurse 
+$File | Restore-DbaDatabase -SqlServer Server1\Instance -UseDestinationDefaultDirectories
+
+This will take all of the files found under the folders c:\backups and \\server1\backups, and pipeline them into
+Restore-DbaDatabase. Restore-DbaDatabase will then scan all of the files, and restore all of the databases included
+to the latest point in time covered by their backups. All data and log files will be moved to the default SQL Sever 
+folder for those file types as defined on the target instance.
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	param (
-        [parameter(Mandatory = $true, ParameterSetName="Paths")]
-        [string[]]$Path,
-        [parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName="Files")]
-        [object[]]$File,
-        [parameter(Mandatory = $true,ParameterSetName="Paths")]
-        [parameter(Mandatory = $true,ParameterSetName="Files")]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [object[]]$Path,
+        [parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
-		[System.Management.Automation.PSCredential]$SqlCredential,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
+  		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string]$DatabaseName,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
         [String]$DestinationDataDirectory,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
         [String]$DestinationLogDirectory,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
-        [DateTime]$RestoreTime = (Get-Date).addyears(1),
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]  
+        [DateTime]$RestoreTime = (Get-Date).addyears(1),          
 		[switch]$NoRecovery,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[switch]$WithReplace,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
-		[switch]$OutputScript,
-        [Parameter(ParameterSetName="Paths")]
         [Switch]$XpDirTree,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
         [switch]$OutputScriptOnly,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[switch]$VerifyOnly,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
         [switch]$MaintenanceSolutionBackup ,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[hashtable]$FileMapping,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[switch]$IgnoreLogBackup,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
         [switch]$UseDestinationDefaultDirectories,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
-        [switch]$UseSourceDirectories,
-        [switch]$Force						
+        [switch]$ReuseSourceFolderStructure,
+        [string]$DestinationFilePrefix=''					
 	)
     BEGIN
     {
@@ -195,7 +188,7 @@ c:\DataFiles and all the log files into c:\LogFiles
         {
             $ParamCount +=1
         } 
-        if ($UseSourceDirectories)
+        if ($ReuseSourceFolderStructure)
         {
             $ParamCount +=1
         }
@@ -205,11 +198,11 @@ c:\DataFiles and all the log files into c:\LogFiles
         }
         if ($ParamCount -gt 1)        
         {
-            Write-Warning "$FunctionName - $Paramcount You've specified incompatible Location parameters. Please only specify one of FileMapping,UseSourceDirectories or DestinationDataDirectory" 
+            Write-Warning "$FunctionName - $Paramcount You've specified incompatible Location parameters. Please only specify one of FileMapping,$ReuseSourceFolderStructure or DestinationDataDirectory" 
             break
         }
 
-        if ($DestinationLogDirectory -ne '' -and $UseSourceDirectories)
+        if ($DestinationLogDirectory -ne '' -and $ReuseSourceFolderStructure)
         {
             Write-Warning  "$FunctionName - DestinationLogDirectory and UseDestinationDefaultDirectories are mutually exclusive" 
             break  
@@ -219,7 +212,7 @@ c:\DataFiles and all the log files into c:\LogFiles
             Write-Warning  "$FunctionName - DestinationLogDirectory can only be specified with DestinationDataDirectory"
             break
         }
-        if (($null -ne $FileMapping) -or $UseSourceDirectories -or ($DestinationDataDirectory -ne ''))   
+        if (($null -ne $FileMapping) -or $ReuseSourceFolderStructure -or ($DestinationDataDirectory -ne ''))   
         {
             $UseDestinationDefaultDirectories = $false 
         }
@@ -227,40 +220,45 @@ c:\DataFiles and all the log files into c:\LogFiles
     }
     PROCESS
     {
-        if ($PSCmdlet.ParameterSetName -eq "Paths")
+        
+        foreach ($f in $path)
         {
-            Write-Verbose "$FunctionName : Paths passed in" 
-            foreach ($p in $path)
-            {  
-                if ($XpDirTree)
-                {
-                    $BackupFiles += Get-XPDirTreeRestoreFile -path $p -SqlServer $SqlServer -SqlCredential $SqlCredential
-                }
-                elseif ((Get-Item $p).PSIsContainer -ne $true)
-                {
-                    Write-Verbose "$FunctionName : Single file"
-                    $BackupFiles += Get-item $p
-                } 
-                elseif ($MaintenanceSolutionBackup )
-                {
-                    Write-Verbose "$FunctionName : Ola Style Folder"
-                    $BackupFiles += Get-OlaHRestoreFile -path $p
-                } 
-                else 
-                {
-                    Write-Verbose "$FunctionName : Standard Directory"
-                    $BackupFiles += Get-DirectoryRestoreFile -path $p
-                }
-            }
-        }elseif($PSCmdlet.ParameterSetName -eq "Files")
-        {
-            Write-Verbose "$FunctionName : Files passed in $($File.count)" 
-            Foreach ($FileTmp in $File)
+            if ($f -is [string])
             {
-                $BackupFiles += $FileTmp
+                Write-Verbose "$FunctionName : Paths passed in" 
+                foreach ($p in $f)
+                {  
+                    if ($XpDirTree)
+                    {
+                        $BackupFiles += Get-XPDirTreeRestoreFile -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential
+                    }
+                    elseif ((Get-Item $p).PSIsContainer -ne $true)
+                    {
+                        Write-Verbose "$FunctionName : Single file"
+                        $BackupFiles += Get-item $p
+                    } 
+                    elseif ($MaintenanceSolutionBackup )
+                    {
+                        Write-Verbose "$FunctionName : Ola Style Folder"
+                        $BackupFiles += Get-OlaHRestoreFile -Path $p
+                    } 
+                    else 
+                    {
+                        Write-Verbose "$FunctionName : Standard Directory"
+                        $BackupFiles += Get-DirectoryRestoreFile -Path $p
+                    }
+                }
+            } 
+            elseif (($f -is [System.IO.FileInfo]) -or ($f -is [System.Object] -and $f.FullName.Length -ne 0 ))
+            {
+                Write-Verbose "$FunctionName : Files passed in $($Path.count)" 
+                Foreach ($FileTmp in $Path)
+                {
+                    $BackupFiles += $FileTmp
+                }
             }
         }
-    }
+        }
     END
     {
 		try 
@@ -276,6 +274,7 @@ c:\DataFiles and all the log files into c:\LogFiles
             If (($null -ne $Server.Databases[$DatabaseName]) -and ($WithReplace -eq $false))
             {
                 Write-Warning "$FunctionName - $DatabaseName exists on Sql Instance $SqlServer , must specify WithReplace to continue"
+                break
             }
         }
         $server.ConnectionContext.Disconnect()
@@ -304,7 +303,7 @@ c:\DataFiles and all the log files into c:\LogFiles
             if((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlServer $SqlServer -SqlCredential $SqlCredential))
             {
                 try{
-                    $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -Replace:$WithReplace -Scripts:$OutputScript -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -UseSourceDirectories:$UseSourceDirectories -force:$force 
+                    $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -Replace:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix:$DestinationFilePrefix
                     $Completed='successfully'
                 }
                 catch{

@@ -15,6 +15,7 @@ Function Restore-DBFromFilteredArray
         [object[]]$Files,
         [String]$DestinationDataDirectory,
 		[String]$DestinationLogDirectory,
+		[String]$DestinationFilePrefix,
         [DateTime]$RestoreTime = (Get-Date).addyears(1),  
 		[switch]$NoRecovery,
 		[switch]$ReplaceDatabase,
@@ -24,7 +25,7 @@ Function Restore-DBFromFilteredArray
 		[object]$filestructure,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$UseDestinationDefaultDirectories,
-		[switch]$UseSourceDirectories,
+		[switch]$ReuseSourceFolderStructure,
 		[switch]$Force
 	)
     
@@ -40,7 +41,6 @@ Function Restore-DBFromFilteredArray
 		$Output = @()
 
     }
-    # -and $_.BackupStartDate -lt $RestoreTime
     process
         {
 
@@ -93,6 +93,11 @@ Function Restore-DBFromFilteredArray
 					}
 				} 
 			}
+			else
+			{
+				Write-Warning "$FunctionName - Database exists and will not be overwritten without the WithReplace switch"
+				break
+			}
 
 		}
 
@@ -110,16 +115,24 @@ Function Restore-DBFromFilteredArray
 			}
 				if ($DestinationDataDirectory -ne '' -and $FileStructure -eq $NUll)
 				{
+					if ($DestinationDataDirectory[-1] -eq '\')
+					{
+						$DestinationDataDirectory = $DestinationDataDirectory.Substring(0,($DestinationDataDirectory.length -1))
+					}
+					if ($DestinationLogDirectory[-1] -eq '\')
+					{
+						$DestinationLogDirectory = $DestinationLogDirectory.Substring(0,($DestinationLogDirectory.length -1))
+					}
 					foreach ($File in $RestoreFiles[0].Filelist)
 			        {
                         $MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
                         $MoveFile.LogicalFileName = $File.LogicalName
                         if ($File.Type -eq 'L' -and $DestinationLogDirectory -ne '')
                         {
-                            $MoveFile.PhysicalFileName = $DestinationLogDirectory + '\' + (split-path $file.PhysicalName -leaf)					
+                            $MoveFile.PhysicalFileName = $DestinationLogDirectory + '\' + $DestinationFilePrefix + (split-path $file.PhysicalName -leaf)					
                         }
                         else {
-                            $MoveFile.PhysicalFileName = $DestinationDataDirectory + '\' + (split-path $file.PhysicalName -leaf)	
+                            $MoveFile.PhysicalFileName = $DestinationDataDirectory + '\' + $DestinationFilePrefix + (split-path $file.PhysicalName -leaf)	
                         }
                         $LogicalFileMoves += "Relocating $($MoveFile.LogicalFileName) to $($MoveFile.PhysicalFileName)"
 						$null = $Restore.RelocateFiles.Add($MoveFile)
@@ -158,7 +171,7 @@ Function Restore-DBFromFilteredArray
 				if ($RestoreTime -gt (Get-Date))
 				{
 						$restore.ToPointInTime = $null
-						$ConfirmPointInTime = ""
+						$ConfirmPointInTime = "restoring to latest point in time"
 				}
 				elseif ($RestoreFiles[0].RecoveryModel -ne 'Simple')
 				{
@@ -234,10 +247,7 @@ Function Restore-DBFromFilteredArray
 				{
 					Write-Progress -id 1 -activity "Restoring $DbName to ServerName" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
 					$Restore.sqlrestore($Server)
-					if ($scripts)
-					{
-						$script = $restore.Script($Server)
-					}
+					$script = $restore.Script($Server)
 					Write-Progress -id 1 -activity "Restoring $DbName to $ServerName" -status "Complete" -Completed
 					
 				}
@@ -259,10 +269,11 @@ Function Restore-DBFromFilteredArray
                     SqlInstance = $SqlServer
                     DatabaseName = $DatabaseName
                     DatabaseOwner = $server.ConnectionContext.TrueLogin
+					NoRecovery = $restore.NoRecovery
+					WithReplace = $ReplaceDatabase
 					RestoreComplete  = $RestoreComplete
                     BackupFilesCount = $RestoreFiles.Length
                     RestoredFilesCount = $RestoreFiles[0].Filelist.PhysicalName.count
-                    NoRecovery = $restore.NoRecovery
                     BackupSizeMB = ($RestoreFiles | measure-object -property BackupSizeMb -Sum).sum
                     CompressedBackupSizeMB = ($RestoreFiles | measure-object -property CompressedBackupSizeMb -Sum).sum
                     BackupFile = $RestoreFiles.BackupPath -join ','
