@@ -13,18 +13,17 @@ Takes path, checks for validity. Scans for usual backup file
 		[string]$Path
 	)
        
+        $FunctionName =(Get-PSCallstack)[0].Command
         Write-Verbose "$FunctionName - Starting"
         Write-Verbose "$FunctionName - Checking Path"
         if ((Test-Path $Path) -ne $true){
-            break
+            Write-Warning "$FunctionName - $Path is not reachable" -WarningAction stop
         }
         #Path needs to end \* to use includes, which is faster than Where-Object
         $PathCheckArray = $path.ToCharArray()
         if ($PathCheckArray[-2] -eq '\' -and $PathCheckArray[-1] -eq '*'){
             #We're good    
         } elseif ($PathCheckArray[-2] -ne '\' -and $PathCheckArray[-1] -eq '*') {
-            #We have \\some\path*, insert a \
-            write-verbose "here"
             $Path = ($PathCheckArray[0..(($PathCheckArray.length)-2)] -join (''))+"\*"
         } elseif ($PathCheckArray[-2] -eq '\' -and $PathCheckArray[-1] -ne '*') {
             #Append a * to the end

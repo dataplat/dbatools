@@ -165,7 +165,7 @@
 		'Get-DbaMaxMemory',
 		'Set-DbaMaxMemory',
 		'Test-DbaMaxMemory',
-		'Restore-DbaBackup',
+		'Restore-DbaDatabase',
 		'Get-DbaDatabaseSnapshot',
 		'Remove-DbaDatabaseSnapshot',
 		'Get-DbaRoleMember',
