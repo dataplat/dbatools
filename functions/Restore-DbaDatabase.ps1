@@ -105,12 +105,12 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .EXAMPLE
-Restore-DbaDatabase -SqlServer server1\instance1 -path \\server2\backups 
+Restore-DbaDatabase -SqlServer server1\instance1 -Path \\server2\backups 
 
 Scans all the backup files in \\server2\backups, filters them and restores the database to server1\instance1
 
 .EXAMPLE
-Restore-DbaDatabase -SqlServer server1\instance1 -path \\server2\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\restores
+Restore-DbaDatabase -SqlServer server1\instance1 -Path \\server2\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\restores
 
 Scans all the backup files in \\server2\backups$ stored in an Ola Hallengren style folder structure,
  filters them and restores the database to the c:\restores folder on server1\instance1 
@@ -122,20 +122,20 @@ Takes the provided files from multiple directories and restores them on  server1
 
 .EXAMPLE
 $RestoreTime = Get-Date('11:19 23/12/2016')
-Restore-DbaDatabase -SqlServer server1\instance1 -path \\server2\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\restores -RestoreTime $RestoreTime
+Restore-DbaDatabase -SqlServer server1\instance1 -Path \\server2\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\restores -RestoreTime $RestoreTime
 
 Scans all the backup files in \\server2\backups stored in an Ola Hallengren style folder structure,
  filters them and restores the database to the c:\restores folder on server1\instance1 up to 11:19 23/12/2016
 
 .EXAMPLE
-Restore-DbaDatabase -SqlServer server1\instance1 -path \\server2\backups -DestinationDataDirectory c:\restores -OutputScriptOnly | Out-File -Filepath c:\scripts\restore.sql
+Restore-DbaDatabase -SqlServer server1\instance1 -Path \\server2\backups -DestinationDataDirectory c:\restores -OutputScriptOnly | Out-File -Filepath c:\scripts\restore.sql
 
 Scans all the backup files in \\server2\backups stored in an Ola Hallengren style folder structure,
  filters them and generate the T-SQL Scripts to restore the database to the latest point in time, 
  and then stores the output in a file for later retrieval
 
 .EXAMPLE
-Restore-DbaDatabase -SqlServer server1\instance1 -path c:\backups -DestinationDataDirectory c:\DataFiles -DestinationLogDirectory c:\LogFile
+Restore-DbaDatabase -SqlServer server1\instance1 -Path c:\backups -DestinationDataDirectory c:\DataFiles -DestinationLogDirectory c:\LogFile
 
 Scans all the files in c:\backups and then restores them onto the SQL Server Instance server1\instance1, placing data files
 c:\DataFiles and all the log files into c:\LogFiles
@@ -221,7 +221,7 @@ c:\DataFiles and all the log files into c:\LogFiles
                 {  
                     if ($XpDirTree)
                     {
-                        $BackupFiles += Get-XPDirTreeRestoreFile -path $p -SqlServer $SqlServer -SqlCredential $SqlCredential
+                        $BackupFiles += Get-XPDirTreeRestoreFile -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential
                     }
                     elseif ((Get-Item $p).PSIsContainer -ne $true)
                     {
@@ -231,12 +231,12 @@ c:\DataFiles and all the log files into c:\LogFiles
                     elseif ($MaintenanceSolutionBackup )
                     {
                         Write-Verbose "$FunctionName : Ola Style Folder"
-                        $BackupFiles += Get-OlaHRestoreFile -path $p
+                        $BackupFiles += Get-OlaHRestoreFile -Path $p
                     } 
                     else 
                     {
                         Write-Verbose "$FunctionName : Standard Directory"
-                        $BackupFiles += Get-DirectoryRestoreFile -path $p
+                        $BackupFiles += Get-DirectoryRestoreFile -Path $p
                     }
                 }
             } 
