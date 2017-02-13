@@ -1,4 +1,5 @@
-function Invoke-Sqlcmd2
+# Global since it is no longer in the manifest
+function global:Invoke-Sqlcmd2
 {
     <#
     .SYNOPSIS

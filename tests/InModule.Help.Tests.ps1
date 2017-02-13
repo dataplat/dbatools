@@ -13,6 +13,7 @@
 #>
 
 $ModuleBase = Split-Path -Parent $MyInvocation.MyCommand.Path
+. "$ModuleBase\InModule.Help.Exceptions.ps1"
 
 # For tests in .\Tests subdirectory
 if ((Split-Path $ModuleBase -Leaf) -eq 'Tests')
@@ -47,11 +48,12 @@ $commands = Get-Command -Module $module -CommandType Cmdlet, Function, Workflow 
 
 foreach ($command in $commands)
 {
-	$commandName = $command.Name
-	
-	if ($commandName -eq 'TabExpansion2') { continue } # Quick fix until real fix
-	
-	# The module-qualified command fails on Microsoft.PowerShell.Archive cmdlets
+    $commandName = $command.Name
+    
+    # Skip all functions that are on the exclusions list
+    if ($global:FunctionHelpTestExceptions -contains $commandName) { continue }
+    
+    # The module-qualified command fails on Microsoft.PowerShell.Archive cmdlets
 	$Help = Get-Help $commandName -ErrorAction SilentlyContinue
 	
 	Describe "Test help for $commandName" {
