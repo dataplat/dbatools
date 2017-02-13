@@ -5,7 +5,7 @@ Function Restore-DBFromFilteredArray
 	Internal function. Restores .bak file to SQL database. Creates db if it doesn't exist. $filestructure is
 	a custom object that contains logical and physical file locations.
 #>
-	[CmdletBinding()]
+	[CmdletBinding(SupportsShouldProcess = $true)]
 	param (
         [parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
@@ -24,7 +24,8 @@ Function Restore-DBFromFilteredArray
 		[object]$filestructure,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$UseDestinationDefaultDirectories,
-		[switch]$UseSourceDirectories
+		[switch]$UseSourceDirectories,
+		[switch]$Force
 	)
     
 	    Begin
@@ -64,35 +65,34 @@ Function Restore-DBFromFilteredArray
 		$Server.ConnectionContext.StatementTimeout = 0
 		$Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
 		$Restore.ReplaceDatabase = $ReplaceDatabase
-		if ($UseDestinationDefaultDirectories)
+		
 		{
-			$DestinationDataDirectory = $server.DefaultFile
-			$DestinationLogDirectory = $Server.DefaultLog
+			$DestinationDataDirectory = Get-SqlDefaultPaths $Server data
+			$DestinationLogDirectory = Get-SqlDefaultPaths $Server log
 		}
 
 		If ($DbName -in $Server.databases.name -and $ScriptOnly -eq $false)
 		{
 			If ($ReplaceDatabase -eq $true)
-			{				
-				try
+			{	
+				if($Pscmdlet.ShouldProcess("Killing processes in $dbname on $SqlServer as it exists and WithReplace specified  `n","Cannot proceed if processes exist, ","Database Exists and WithReplace specified, need to kill processes to restore"))			
 				{
-					Write-Verbose "$FunctionName - Set $DbName single_user to kill processes"
-					#Stop-DbaProcess -SqlServer $Server -Databases $Dbname -WarningAction continue
-					
-					#Invoke-SQLcmd2 -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Alter database $DbName set single_user with rollback immediate;Alter database $DbName set Multi_user with rollback immediate;" -database master
-					Invoke-SQLcmd2 -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; Alter database $DbName set online with rollback immediate" -database master
+					try
+					{
+						Write-Verbose "$FunctionName - Set $DbName single_user to kill processes"
+						#Stop-DbaProcess -SqlServer $Server -Databases $Dbname -WarningAction continue
+						
+						#Invoke-SQLcmd2 -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Alter database $DbName set single_user with rollback immediate;Alter database $DbName set Multi_user with rollback immediate;" -database master
+						Invoke-SQLcmd2 -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; Alter database $DbName set online with rollback immediate" -database master
 
-				}
-				catch
-				{
-					Write-Verbose "$FunctionName - No processes to kill"
-				}
+					}
+					catch
+					{
+						Write-Verbose "$FunctionName - No processes to kill"
+					}
+				} 
 			}
-			else 
-			{
-				Write-warning "$FunctionName - $DBname exists, must use WithReplace to overwrite" 
-				break
-			}
+
 		}
 
 		$RestorePoints = $InternalFiles | Sort-Object BackupTypeDescription, FirstLSN | Group-Object -Property FirstLSN | Select-Object -property Name 
@@ -100,7 +100,9 @@ Function Restore-DBFromFilteredArray
 		{
 	
 			$RestoreFiles = @($InternalFiles | Where-Object {$_.FirstLSN -eq $RestorePoint.Name})
+			$RestoreFileNames = $RestoreFiles.BackupPath -join '`n ,'
 			Write-verbose "$FunctionName - Restoring backup starting at LSN $($RestorePoint.Name) in $($RestoreFiles[0].BackupPath)"
+			$LogicalFileMoves = @()
 			if ($Restore.RelocateFiles.count -gt 0)
 			{
 				$Restore.RelocateFiles.Clear()
@@ -118,7 +120,8 @@ Function Restore-DBFromFilteredArray
                         else {
                             $MoveFile.PhysicalFileName = $DestinationDataDirectory + '\' + (split-path $file.PhysicalName -leaf)	
                         }
-                        $null = $Restore.RelocateFiles.Add($MoveFile)
+                        $LogicalFileMoves += "Relocating $($MoveFile.LogicalFileName) to $($MoveFile.PhysicalFileName)"
+						$null = $Restore.RelocateFiles.Add($MoveFile)
                     }
 
 				} 
@@ -132,6 +135,7 @@ Function Restore-DBFromFilteredArray
 						$MoveFile.PhysicalFileName = $filestructure[$key]
 
 						$null = $Restore.RelocateFiles.Add($MoveFile)
+						$LogicalFileMoves += "Relocating $($MoveFile.LogicalFileName) to $($MoveFile.PhysicalFileName)"
 					}	
 				} 
                 elseif ($DestinationDataDirectory -ne '' -and $FileStructure -ne $NUll)
@@ -139,9 +143,9 @@ Function Restore-DBFromFilteredArray
 					Write-Warning "$FunctionName - Conflicting options only one of FileStructure or DestinationDataDirectory allowed"
                     break
 				} 
+				$LogicalFileMovesString = $LogicalFileMoves -join ", `n"
 
-			try
-			{
+
 				Write-Verbose "$FunctionName - Beginning Restore"
 				$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
 					Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
@@ -153,14 +157,16 @@ Function Restore-DBFromFilteredArray
 				if ($RestoreTime -gt (Get-Date))
 				{
 						$restore.ToPointInTime = $null
+						$ConfirmPointInTime = ""
 				}
 				elseif ($RestoreFiles[0].RecoveryModel -ne 'Simple')
 				{
 					$Restore.ToPointInTime = $RestoreTime
+					$ConfirmPointInTime = "restoring to $RestoreTime"
 				} 
 				else 
 				{
-					Write-Verbose "$FunctionName - Restoring a Simmple mode db, no restoretime"	
+					Write-Verbose "$FunctionName - Restoring a Simple mode db, no restoretime"	
 				}
 				if ($DbName -ne '')
 				{
@@ -198,6 +204,11 @@ Function Restore-DBFromFilteredArray
 					$Restore.Devices.Add($device)
 				}
 				Write-Verbose "$FunctionName - Performing restore action"
+		$ConfirmMessage = "`n Restore Database $DbName on $SqlServer `n from files: $RestoreFileNames `n with these file moves: `n $LogicalFileMovesString `n $ConfirmPointInTime `n `n"
+		If ($Pscmdlet.ShouldProcess($ConfirmMessage))
+		{
+			try
+			{
 				$RestoreComplete = $true
 				if ($ScriptOnly)
 				{
@@ -229,7 +240,7 @@ Function Restore-DBFromFilteredArray
 					Write-Progress -id 1 -activity "Restoring $DbName to $ServerName" -status "Complete" -Completed
 					
 				}
-
+		
 			}
 			catch
 			{
@@ -269,7 +280,7 @@ Function Restore-DBFromFilteredArray
 				write-verbose "$FunctionName - Closing Server connection"
 				$server.ConnectionContext.Disconnect()
 			}
-			
+		}	
 		}
 		$server.ConnectionContext.Disconnect()
 	}
