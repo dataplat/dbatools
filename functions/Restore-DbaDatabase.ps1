@@ -27,7 +27,6 @@ Accepts multiple paths seperated by ','
 Or it can consist of FileInfo objects, such as the output of Get-ChildItem or Get-Item. This allows you to work with 
 your own filestructures as needed
 
-
 .PARAMETER DestinationDataDirectory
 Path to restore the SQL Server backups to on the target instance.
 If only this parameter is specified, then all database files (data and log) will be restored to this location
@@ -35,6 +34,12 @@ If only this parameter is specified, then all database files (data and log) will
 .PARAMETER DestinationLogDirectory
 Path to restore the database log files to.
 This parameter can only be specified alongside DestinationDataDirectory.
+
+.PARAMETER DestinationFilePrefix 
+This value will be prefixed to ALL restored files (log and data). This is just a simple string prefix. If you 
+want to perform more complex rename operations then please use the FileMapping parameter
+
+This will apply to all file move options, except for FileMapping
 
 .PARAMETER UseDestinationDefaultDirectories
 Switch that tells the restore to use the default Data and Log locations on the target server
@@ -168,7 +173,8 @@ folder for those file types as defined on the target instance.
 		[hashtable]$FileMapping,
 		[switch]$IgnoreLogBackup,
         [switch]$UseDestinationDefaultDirectories,
-        [switch]$ReuseSourceFolderStructure					
+        [switch]$ReuseSourceFolderStructure,
+        [string]$DestinationFilePrefix=''					
 	)
     BEGIN
     {
@@ -297,7 +303,7 @@ folder for those file types as defined on the target instance.
             if((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlServer $SqlServer -SqlCredential $SqlCredential))
             {
                 try{
-                    $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -Replace:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure 
+                    $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -Replace:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix:$DestinationFilePrefix
                     $Completed='successfully'
                 }
                 catch{

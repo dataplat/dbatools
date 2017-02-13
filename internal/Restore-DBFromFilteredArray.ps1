@@ -15,6 +15,7 @@ Function Restore-DBFromFilteredArray
         [object[]]$Files,
         [String]$DestinationDataDirectory,
 		[String]$DestinationLogDirectory,
+		[String]$DestinationFilePrefix,
         [DateTime]$RestoreTime = (Get-Date).addyears(1),  
 		[switch]$NoRecovery,
 		[switch]$ReplaceDatabase,
@@ -95,7 +96,6 @@ Function Restore-DBFromFilteredArray
 			else
 			{
 				Write-Warning "$FunctionName - Database exists and will not be overwritten without the WithReplace switch"
-				return $false
 				break
 			}
 
@@ -129,10 +129,10 @@ Function Restore-DBFromFilteredArray
                         $MoveFile.LogicalFileName = $File.LogicalName
                         if ($File.Type -eq 'L' -and $DestinationLogDirectory -ne '')
                         {
-                            $MoveFile.PhysicalFileName = $DestinationLogDirectory + '\' + (split-path $file.PhysicalName -leaf)					
+                            $MoveFile.PhysicalFileName = $DestinationLogDirectory + '\' + $DestinationFilePrefix + (split-path $file.PhysicalName -leaf)					
                         }
                         else {
-                            $MoveFile.PhysicalFileName = $DestinationDataDirectory + '\' + (split-path $file.PhysicalName -leaf)	
+                            $MoveFile.PhysicalFileName = $DestinationDataDirectory + '\' + $DestinationFilePrefix + (split-path $file.PhysicalName -leaf)	
                         }
                         $LogicalFileMoves += "Relocating $($MoveFile.LogicalFileName) to $($MoveFile.PhysicalFileName)"
 						$null = $Restore.RelocateFiles.Add($MoveFile)
