@@ -40,7 +40,6 @@ Function Restore-DBFromFilteredArray
 		$Output = @()
 
     }
-    # -and $_.BackupStartDate -lt $RestoreTime
     process
         {
 
@@ -242,10 +241,7 @@ Function Restore-DBFromFilteredArray
 				{
 					Write-Progress -id 1 -activity "Restoring $DbName to ServerName" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
 					$Restore.sqlrestore($Server)
-					if ($scripts)
-					{
-						$script = $restore.Script($Server)
-					}
+					$script = $restore.Script($Server)
 					Write-Progress -id 1 -activity "Restoring $DbName to $ServerName" -status "Complete" -Completed
 					
 				}
@@ -267,10 +263,11 @@ Function Restore-DBFromFilteredArray
                     SqlInstance = $SqlServer
                     DatabaseName = $DatabaseName
                     DatabaseOwner = $server.ConnectionContext.TrueLogin
+					NoRecovery = $restore.NoRecovery
+					WithReplace = $ReplaceDatabase
 					RestoreComplete  = $RestoreComplete
                     BackupFilesCount = $RestoreFiles.Length
                     RestoredFilesCount = $RestoreFiles[0].Filelist.PhysicalName.count
-                    NoRecovery = $restore.NoRecovery
                     BackupSizeMB = ($RestoreFiles | measure-object -property BackupSizeMb -Sum).sum
                     CompressedBackupSizeMB = ($RestoreFiles | measure-object -property CompressedBackupSizeMb -Sum).sum
                     BackupFile = $RestoreFiles.BackupPath -join ','
