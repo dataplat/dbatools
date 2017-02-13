@@ -206,7 +206,8 @@
 		'Find-DbaUserObject',
 		'Get-DbaSqlService',
 		'Find-DbaDependency',
-		'Clear-DbaSqlConnectionPool'
+		'Clear-DbaSqlConnectionPool',
+		'Find-DbaCommand'
 	)
 	
 	<# coming soon
