@@ -78,13 +78,13 @@ This Parameter is exclusive with DestinationDataDirectory
 This switch tells the function to ignore transaction log backups. The process will restore to the latest full or differential backup point only
 	
 .PARAMETER UseSourceDirectories
-Use the source structure
+Use the source structure - please change to something singular, perhaps ReuseSourceFolderStructure (Copy-SqlDatabases's param name) or something similar.
 	
 .PARAMETER Confirm
 Prompts to confirm certain actions
 	
 .PARAMETER Force
-Unsure
+Force is passed to an internal command but the internal command does not employ the Force
 	
 .PARAMETER WhatIf
 Shows what would happen if the command would execute, but does not actually perform the command
