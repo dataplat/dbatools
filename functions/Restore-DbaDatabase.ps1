@@ -129,45 +129,26 @@ c:\DataFiles and all the log files into c:\LogFiles
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	param (
-        [parameter(Mandatory = $true, ParameterSetName="Paths")]
-        [string[]]$Path,
-        [parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName="Files")]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object[]]$File,
-        [parameter(Mandatory = $true,ParameterSetName="Paths")]
-        [parameter(Mandatory = $true,ParameterSetName="Files")]
+        [parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
-		[System.Management.Automation.PSCredential]$SqlCredential,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
+  		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string]$DatabaseName,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
         [String]$DestinationDataDirectory,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
         [String]$DestinationLogDirectory,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
-        [DateTime]$RestoreTime = (Get-Date).addyears(1),
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]  
+        [DateTime]$RestoreTime = (Get-Date).addyears(1),          
 		[switch]$NoRecovery,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[switch]$WithReplace,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[switch]$OutputScript,
-        [Parameter(ParameterSetName="Paths")]
         [Switch]$XpDirTree,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
         [switch]$OutputScriptOnly,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[switch]$VerifyOnly,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
         [switch]$MaintenanceSolutionBackup ,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[hashtable]$FileMapping,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
 		[switch]$IgnoreLogBackup,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
         [switch]$UseDestinationDefaultDirectories,
-        [Parameter(ParameterSetName="Paths")][Parameter(ParameterSetName="Files")]
         [switch]$UseSourceDirectories,
         [switch]$Force						
 	)
