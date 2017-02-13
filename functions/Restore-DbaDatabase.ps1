@@ -19,11 +19,14 @@ The SQL Server instance.
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. 
 
 .PARAMETER Path
-Path to SQL Server backup files. These files will be scanned using the desired method, default is a non recursive folder scan
+Path to SQL Server backup files. 
+
+Paths passed in as strings will be scanned using the desired method, default is a non recursive folder scan
 Accepts multiple paths seperated by ','
 
-.PARAMETER File
-A Files object(s) containing SQL Server backup files. Each file passed in will be parsed.
+Or it can consist of FileInfo objects, such as the output of Get-ChildItem or Get-Item. This allows you to work with 
+your own filestructures as needed
+
 
 .PARAMETER DestinationDataDirectory
 Path to restore the SQL Server backups to on the target instance.
@@ -140,12 +143,20 @@ Restore-DbaDatabase -SqlServer server1\instance1 -Path c:\backups -DestinationDa
 Scans all the files in c:\backups and then restores them onto the SQL Server Instance server1\instance1, placing data files
 c:\DataFiles and all the log files into c:\LogFiles
  
+.EXAMPLE
+$File = Get-ChildItem c:\backups, \\server1\backups -recurse 
+$File | Restore-DbaDatabase -SqlServer Server1\Instance -UseDestinationDefaultDirectories
+
+This will take all of the files found under the folders c:\backups and \\server1\backups, and pipeline them into
+Restore-DbaDatabase. Restore-DbaDatabase will then scan all of the files, and restore all of the databases included
+to the latest point in time covered by their backups. All data and log files will be moved to the default SQL Sever 
+folder for those file types as defined on the target instance.
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [object[]]$File,
+        [object[]]$Path,
         [parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
@@ -212,7 +223,7 @@ c:\DataFiles and all the log files into c:\LogFiles
     PROCESS
     {
         
-        foreach ($f in $file)
+        foreach ($f in $path)
         {
             if ($f -is [string])
             {
@@ -242,8 +253,8 @@ c:\DataFiles and all the log files into c:\LogFiles
             } 
             elseif (($f -is [System.IO.FileInfo]) -or ($f -is [System.Object] -and $f.FullName.Length -ne 0 ))
             {
-                Write-Verbose "$FunctionName : Files passed in $($File.count)" 
-                Foreach ($FileTmp in $File)
+                Write-Verbose "$FunctionName : Files passed in $($Path.count)" 
+                Foreach ($FileTmp in $Path)
                 {
                     $BackupFiles += $FileTmp
                 }
