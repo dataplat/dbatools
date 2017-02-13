@@ -76,7 +76,19 @@ This Parameter is exclusive with DestinationDataDirectory
 
 .PARAMETER IgnoreLogBackup
 This switch tells the function to ignore transaction log backups. The process will restore to the latest full or differential backup point only
-
+	
+.PARAMETER UseSourceDirectories
+Use the source structure
+	
+.PARAMETER Confirm
+Prompts to confirm certain actions
+	
+.PARAMETER Force
+Unsure
+	
+.PARAMETER WhatIf
+Shows what would happen if the command would execute, but does not actually perform the command
+	
 .NOTES
 Original Author: Stuart Moore (@napalmgram), stuart-moore.com
 
