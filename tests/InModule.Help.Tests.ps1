@@ -49,6 +49,8 @@ foreach ($command in $commands)
 {
 	$commandName = $command.Name
 	
+	if ($commandName -eq 'TabExpansion2') { continue } # Quick fix until real fix
+	
 	# The module-qualified command fails on Microsoft.PowerShell.Archive cmdlets
 	$Help = Get-Help $commandName -ErrorAction SilentlyContinue
 	
@@ -79,7 +81,7 @@ foreach ($command in $commands)
 			$Common = 'Debug', 'ErrorAction', 'ErrorVariable', 'InformationAction', 'InformationVariable', 'OutBuffer', 'OutVariable',
 			'PipelineVariable', 'Verbose', 'WarningAction', 'WarningVariable'
 			
-			$parameters = $command.ParameterSets.Parameters | Sort-Object -Property Name -Unique | Where-Object { $_.Name -notin $common }
+			$parameters = $command.ParameterSets.Parameters | Sort-Object -Property Name -Unique | Where-Object Name -notin $common
 			$parameterNames = $parameters.Name
 			$HelpParameterNames = $Help.Parameters.Parameter.Name | Sort-Object -Unique
 			

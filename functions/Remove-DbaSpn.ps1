@@ -61,7 +61,7 @@ Connects to Active Directory and removes a provided SPN to the given account. Us
 		[Alias("RequiredSPN")]
 		[string]$SPN,
 		[Parameter(Mandatory = $true, ValueFromPipelineByPropertyName)]
-		[Alias("InstanceServiceAccount")]
+		[Alias("InstanceServiceAccount", "AccountName")]
 		[string]$ServiceAccount,
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
 		[pscredential]$Credential
@@ -69,6 +69,7 @@ Connects to Active Directory and removes a provided SPN to the given account. Us
 	
 	process
 	{
+		$OGServiceAccount = $ServiceAccount
 		if ($serviceaccount -like "*\*")
 		{
 			Write-Debug "Account provided in in domain\user format, stripping out domain info..."
@@ -111,7 +112,7 @@ Connects to Active Directory and removes a provided SPN to the given account. Us
 			$adentry = $result.GetDirectoryEntry()
 			$delegate = $true
 			
-			if ($PSCmdlet.ShouldProcess("$spn", "Removing SPN to service account"))
+			if ($PSCmdlet.ShouldProcess("$spn", "Removing SPN for service account"))
 			{
 				try
 				{
@@ -119,19 +120,23 @@ Connects to Active Directory and removes a provided SPN to the given account. Us
 					Write-Verbose "Remove SPN $spn for samaccount $serviceaccount"
 					$adentry.CommitChanges()
 					$set = $false
+					$status = "Successfully removed SPN"
 					$delegate = $true
 				}
 				catch
 				{
 					Write-Warning "Could not remove SPN. Error returned was: $_"
 					$set = $true
+					$status = "Failed to remove SPN"
 					$delegate = $false
 				}
 				
 				[pscustomobject]@{
 					Name = $spn
+					ServiceAccount = $OGServiceAccount
 					Property = "servicePrincipalName"
 					IsSet = $set
+					Notes = $status
 				}
 			}
 			
@@ -139,7 +144,7 @@ Connects to Active Directory and removes a provided SPN to the given account. Us
 			
 			# Don't forget delegation!
 			$adentry = $result.GetDirectoryEntry()
-			if ($PSCmdlet.ShouldProcess("$spn", "Remove delegation for service account for SPN"))
+			if ($PSCmdlet.ShouldProcess("$spn", "Removing delegation for service account for SPN"))
 			{
 				try
 				{
@@ -147,17 +152,21 @@ Connects to Active Directory and removes a provided SPN to the given account. Us
 					Write-Verbose "Removed kerberos delegation for $spn for samaccount $serviceaccount"
 					$adentry.CommitChanges()
 					$set = $false
+					$status = "Successfully removed delegation"
 				}
 				catch
 				{
 					Write-Warning "Could not remove delegation. Error returned was: $_"
 					$set = $true
+					$status = "Failed to remove delegation"
 				}
 				
 				[pscustomobject]@{
 					Name = $spn
+					ServiceAccount = $OGServiceAccount
 					Property = "msDS-AllowedToDelegateTo"
 					IsSet = $set
+					Notes = $status
 				}
 			}
 		}

@@ -84,7 +84,23 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 			
 			$Computer = $Computer.Split('\')[0]
 			Write-Verbose "Connecting to server $Computer"
-			$ipaddress = ((Test-Connection -ComputerName $Computer -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
+			
+			try
+			{
+				$ipaddress = ((Test-Connection -ComputerName $Computer -Count 1 -ErrorAction Stop).Ipv4Address).IPAddressToString
+			}
+			catch
+			{
+				try
+				{
+					$ipaddress = ((Test-Connection -ComputerName "$Computer.$env:USERDNSDOMAIN" -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
+					$Computer = "$Computer.$env:USERDNSDOMAIN"
+				}
+				catch
+				{
+					$Computer = $OGComputer
+				}
+			}
 			
 			if ($Turbo)
 			{
@@ -137,7 +153,15 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 				try
 				{
 					Write-Verbose "Getting computer information from server $Computer via CIM (WSMan)"
-					$CIMsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
+					if ($Credential)
+					{
+						$CIMsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
+					}
+					else
+					{
+						$CIMsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue
+					}
+					
 					$conn = Get-CimInstance -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -CimSession $CIMsession
 				}
 				catch
@@ -150,7 +174,16 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 					{
 						Write-Verbose "Getting computer information from server $Computer via CIM (DCOM)"
 						$sessionoption = New-CimSessionOption -Protocol DCOM
-						$CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
+						if ($Credential)
+						{
+							$CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
+							
+						}
+						else
+						{
+							$CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue
+						}
+						
 						$conn = Get-CimInstance -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -CimSession $CIMsession
 					}
 					catch
@@ -161,7 +194,15 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 			    if ( !$conn )
 			    {
 				    Write-Verbose "Getting computer information from server $Computer via WMI (DCOM)"
-				    $conn = Get-WmiObject -ComputerName $Computer -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -ErrorAction SilentlyContinue -Credential $Credential
+					
+					if ($Credential)
+					{
+						$conn = Get-WmiObject -ComputerName $Computer -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -ErrorAction SilentlyContinue -Credential $Credential
+					}
+					else
+					{
+						$conn = Get-WmiObject -ComputerName $Computer -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -ErrorAction SilentlyContinue
+					}
 				}
 				
 				if (!$conn)
@@ -185,8 +226,23 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 				}
 			}
 			
+			
+			try
+			{
+				Write-Verbose "Resolving $($conn.DNSHostname) using GetHostEntry"
+				$hostentry = ([System.Net.Dns]::GetHostEntry($conn.DNSHostname)).HostName
+			}
+			catch
+			{
+				Write-Verbose "GetHostEntry failed"
+			}
+			
 			$fqdn = "$($conn.DNSHostname).$($conn.Domain)"
-			if ($fqdn -eq ".") { $fqdn = $null }
+			if ($fqdn -eq ".")
+			{
+				Write-Verbose "No full FQDN found. Setting to null"
+				$fqdn = $null
+			}
 			
 			[PSCustomObject]@{
 				InputName = $OGComputer
@@ -194,6 +250,7 @@ Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostNa
 				IPAddress = $ipaddress
 				DNSHostName = $conn.DNSHostname
 				Domain = $conn.Domain
+				DNSHostEntry = $hostentry
 				FQDN = $fqdn
 			}
 		}
