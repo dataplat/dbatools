@@ -77,6 +77,21 @@ This Parameter is exclusive with DestinationDataDirectory
 .PARAMETER IgnoreLogBackup
 This switch tells the function to ignore transaction log backups. The process will restore to the latest full or differential backup point only
 
+.PARAMETER UseSourceDirectories
+By default, databases will be migrated to the destination Sql Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. 
+The same structure on the SOURCE will be kept exactly, so consider this if you're migrating between different versions and use part of Microsoft's default Sql structure (MSSql12.INSTANCE, etc)
+
+*Note, to reuse destination folder structure, specify -WithReplace
+	
+.PARAMETER Confirm
+Prompts to confirm certain actions
+	
+.PARAMETER Force
+Unsure
+	
+.PARAMETER WhatIf
+Shows what would happen if the command would execute, but does not actually perform the command
+
 .NOTES
 Original Author: Stuart Moore (@napalmgram), stuart-moore.com
 
