@@ -2,8 +2,6 @@ function Expand-SqlTLogResponsibly
 {
 <#
 
-
-
 .SYNOPSIS
 This command will help you to automatically grow your T-Log database file in a responsible way (preventing the generation of too many VLFs).
 
