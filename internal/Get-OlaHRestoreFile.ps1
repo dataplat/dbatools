@@ -12,11 +12,11 @@ Takes path, checks for validity. Scans for usual backup file
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[string]$Path
 	)
-        $FunctionName = "Get-OlaHRestoreFile"
+        $FunctionName =(Get-PSCallstack)[0].Command
         Write-Verbose "$FunctionName - Starting"
         Write-Verbose "$FunctionName - Checking Path"
         if ((Test-Path $Path) -ne $true){
-           throw [System.IO.FileNotFoundException] "Error: $Path is not valid"
+           Write-Warning "$FunctionName - $Path is not valid" -WarningAction stop
        
         }
         #There should be at least FULL folder, DIFF and LOG are nice as well

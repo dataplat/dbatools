@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.709'
+	ModuleVersion = '0.8.900'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -66,6 +66,7 @@
 	
 	# Functions to export from this module
 	FunctionsToExport = @(
+		'Restore-DbaDatabase',
 		'Start-SqlMigration',
 		'Copy-SqlDatabase',
 		'Copy-SqlLogin',
@@ -164,7 +165,7 @@
 		'Get-DbaMaxMemory',
 		'Set-DbaMaxMemory',
 		'Test-DbaMaxMemory',
-		'Restore-DbaBackup',
+		'Restore-DbaDatabase',
 		'Get-DbaDatabaseSnapshot',
 		'Remove-DbaDatabaseSnapshot',
 		'Get-DbaRoleMember',
@@ -201,7 +202,12 @@
 		'Test-DbaSpn',
 		'Set-DbaSpn',
 		'Remove-DbaSpn',
-		'Get-DbaDatabase'
+		'Get-DbaDatabase',
+		'Find-DbaUserObject',
+		'Get-DbaSqlService',
+		'Find-DbaDependency',
+		'Clear-DbaSqlConnectionPool',
+		'Find-DbaCommand'
 	)
 	
 	<# coming soon
