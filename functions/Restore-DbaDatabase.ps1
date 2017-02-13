@@ -76,22 +76,7 @@ This Parameter is exclusive with DestinationDataDirectory
 
 .PARAMETER IgnoreLogBackup
 This switch tells the function to ignore transaction log backups. The process will restore to the latest full or differential backup point only
-	
-.PARAMETER UseSourceDirectories
-By default, databases will be migrated to the destination Sql Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. 
-The same structure on the SOURCE will be kept exactly, so consider this if you're migrating between different versions and use part of Microsoft's default Sql structure (MSSql12.INSTANCE, etc)
 
-*N ote, to reuse destination folder structure, specify -WithReplace
-	
-.PARAMETER Confirm
-Prompts to confirm certain actions
-	
-.PARAMETER Force
-Unsure
-	
-.PARAMETER WhatIf
-Shows what would happen if the command would execute, but does not actually perform the command
-	
 .NOTES
 Original Author: Stuart Moore (@napalmgram), stuart-moore.com
 
@@ -230,40 +215,45 @@ c:\DataFiles and all the log files into c:\LogFiles
     }
     PROCESS
     {
-        if ($PSCmdlet.ParameterSetName -eq "Paths")
+        
+        foreach ($f in $file)
         {
-            Write-Verbose "$FunctionName : Paths passed in" 
-            foreach ($p in $path)
-            {  
-                if ($XpDirTree)
-                {
-                    $BackupFiles += Get-XPDirTreeRestoreFile -path $p -SqlServer $SqlServer -SqlCredential $SqlCredential
-                }
-                elseif ((Get-Item $p).PSIsContainer -ne $true)
-                {
-                    Write-Verbose "$FunctionName : Single file"
-                    $BackupFiles += Get-item $p
-                } 
-                elseif ($MaintenanceSolutionBackup )
-                {
-                    Write-Verbose "$FunctionName : Ola Style Folder"
-                    $BackupFiles += Get-OlaHRestoreFile -path $p
-                } 
-                else 
-                {
-                    Write-Verbose "$FunctionName : Standard Directory"
-                    $BackupFiles += Get-DirectoryRestoreFile -path $p
-                }
-            }
-        }elseif($PSCmdlet.ParameterSetName -eq "Files")
-        {
-            Write-Verbose "$FunctionName : Files passed in $($File.count)" 
-            Foreach ($FileTmp in $File)
+            if ($f -is [string])
             {
-                $BackupFiles += $FileTmp
+                Write-Verbose "$FunctionName : Paths passed in" 
+                foreach ($p in $f)
+                {  
+                    if ($XpDirTree)
+                    {
+                        $BackupFiles += Get-XPDirTreeRestoreFile -path $p -SqlServer $SqlServer -SqlCredential $SqlCredential
+                    }
+                    elseif ((Get-Item $p).PSIsContainer -ne $true)
+                    {
+                        Write-Verbose "$FunctionName : Single file"
+                        $BackupFiles += Get-item $p
+                    } 
+                    elseif ($MaintenanceSolutionBackup )
+                    {
+                        Write-Verbose "$FunctionName : Ola Style Folder"
+                        $BackupFiles += Get-OlaHRestoreFile -path $p
+                    } 
+                    else 
+                    {
+                        Write-Verbose "$FunctionName : Standard Directory"
+                        $BackupFiles += Get-DirectoryRestoreFile -path $p
+                    }
+                }
+            } 
+            elseif (($f -is [System.IO.FileInfo]) -or ($f -is [System.Object] -and $f.FullName.Length -ne 0 ))
+            {
+                Write-Verbose "$FunctionName : Files passed in $($File.count)" 
+                Foreach ($FileTmp in $File)
+                {
+                    $BackupFiles += $FileTmp
+                }
             }
         }
-    }
+        }
     END
     {
 		try 

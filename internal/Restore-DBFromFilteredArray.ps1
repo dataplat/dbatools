@@ -110,6 +110,14 @@ Function Restore-DBFromFilteredArray
 			}
 				if ($DestinationDataDirectory -ne '' -and $FileStructure -eq $NUll)
 				{
+					if ($DestinationDataDirectory[-1] -eq '\')
+					{
+						$DestinationDataDirectory = $DestinationDataDirectory.Substring(0,($DestinationDataDirectory.length -1))
+					}
+					if ($DestinationLogDirectory[-1] -eq '\')
+					{
+						$DestinationLogDirectory = $DestinationLogDirectory.Substring(0,($DestinationLogDirectory.length -1))
+					}
 					foreach ($File in $RestoreFiles[0].Filelist)
 			        {
                         $MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
@@ -158,7 +166,7 @@ Function Restore-DBFromFilteredArray
 				if ($RestoreTime -gt (Get-Date))
 				{
 						$restore.ToPointInTime = $null
-						$ConfirmPointInTime = ""
+						$ConfirmPointInTime = "restoring to latest point in time"
 				}
 				elseif ($RestoreFiles[0].RecoveryModel -ne 'Simple')
 				{
