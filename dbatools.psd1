@@ -204,7 +204,9 @@
 		'Remove-DbaSpn',
 		'Get-DbaDatabase',
 		'Find-DbaUserObject',
-		'Get-DbaSqlService'
+		'Get-DbaSqlService',
+		'Find-DbaDependency',
+		'Clear-DbaSqlConnectionPool'
 	)
 	
 	<# coming soon
