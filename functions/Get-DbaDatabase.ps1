@@ -2,43 +2,44 @@
 {
 <#
 .SYNOPSIS
-Gets a SQL database object for each database that is present in the target instance of SQL Server.
+Gets SQL Database information for each database that is present in the target instance(s) of SQL Server.
 
 .DESCRIPTION
- The Get-DbaDatabase command gets a SQL database object for each database that is present in the target instance of
- SQL Server. If the name of the database is provided, the command will return only this specific database object.
+ The Get-DbaDatabase command gets SQL database information for each database that is present in the target instance(s) of
+ SQL Server. If the name of the database is provided, the command will return only the specific database information.
 	
 .PARAMETER SqlInstance
-SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input.
+SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
+to be executed against multiple SQL Server instances.
 
 .PARAMETER SqlCredential
 PSCredential object to connect as. If not specified, current Windows login will be used.
 
-.PARAMETER System
-Returns only system databases
+.PARAMETER IncludeSystemDb
+Returns all SQL Server System databases from the SQL Server instance(s) executed against.
 
-.PARAMETER User
-Returns only user databases
+.PARAMETER IncludeUserDb
+Returns SQL Server user databases from the SQL Server instance(s) executed against.
 	
 .PARAMETER State
-Returns only online databases
+Returns SQL Server databases in the status passed to the function.  Could include Emergency, Online, Offline, Recovering, Restoring, Standby or Suspect 
+statuses of databases from the SQL Server instance(s) executed against.
 
 .PARAMETER Access
-Returns databases that are Read Only or all other databases
+Returns SQL Server databases that are Read Only or all other Online databases from the SQL Server intance(s) executed against.
 
 .PARAMETER DatabaseOwner
-Returns all databases not owned by SA
+Returns list of SQL Server databases not owned by SA from the SQL Server instance(s) executed against.
 
 .PARAMETER Encrypted
-Returns all databases that have TDE enabled
+Returns list of SQL Server databases that have TDE enabled from the SQL Server instance(s) executed against.
 
 .PARAMETER RecoveryModel
-Returns databases for Full, Simple or Bulk Logged recovery models
+Returns list of SQL Server databases in Full, Simple or Bulk Logged recovery models from the SQL Server instance(s) executed against.
 
-
-
-	
 .NOTES
+Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
+
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -55,11 +56,11 @@ Get-DbaDatabase -SqlServer localhost
 Returns all databases on the local default SQL Server instance
 
 .EXAMPLE
-Get-DbaDatabase -SqlServer localhost -System
+Get-DbaDatabase -SqlServer localhost -IncludeSystemDb
 Returns only the system databases on the local default SQL Server instance
 
 .EXAMPLE
-Get-DbaDatabase -SqlServer localhost -User
+Get-DbaDatabase -SqlServer localhost -IncludeUserDb
 Returns only the user databases on the local default SQL Server instance
 	
 .EXAMPLE
@@ -73,12 +74,13 @@ Returns databases on multiple instances piped into the function
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[switch]$System,
-		[switch]$User,
+		[switch]$IncludeSystemDb,
+		[switch]$IncludeUserDb,
         [switch]$DatabaseOwner,
         [switch]$Encrypted,
-		[ValidateSet('Online', 'Offline')]
-		[string]$State,
+		#[ValidateSet([enum]::GetValues([Microsoft.SqlServer.Management.Smo.DatabaseStatus]))]
+        [ValidateSet('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')]
+        [string]$State,
 		[ValidateSet('ReadOnly', 'ReadWrite')]
 		[string]$Access,
         [ValidateSet('Full', 'Simple', 'BulkLogged')]
@@ -89,7 +91,7 @@ Returns databases on multiple instances piped into the function
 	
 	BEGIN
 	{
-		$databases = $psboundparameters.Databases
+    	$databases = $psboundparameters.Databases
 	}
 	
 	PROCESS
@@ -98,7 +100,7 @@ Returns databases on multiple instances piped into the function
 		{
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+    			$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
 			}
 			catch
 			{
@@ -108,26 +110,30 @@ Returns databases on multiple instances piped into the function
 			
 			$defaults = 'Name', 'Status', 'ContainmentType', 'RecoveryModel', 'CompatibilityLevel', 'Collation', 'Owner', 'EncryptionEnabled'
 			
-			if ($System)
+			if ($IncludeSystemDb)
 			{
-				$inputobject = $server.Databases | Where-Object { $_.IsSystemObject }
+            		$inputobject = $server.Databases | Where-Object { $_.IsSystemObject }
 			}
 			
-			if ($User)
+			if ($IncludeUserDb)
 			{
-				$inputobject = $server.Databases | Where-Object { $_.IsSystemObject -eq $false }
+                $inputobject = $server.Databases | Where-Object { $_.IsSystemObject -eq $false }
 			}
 			
 			if ($databases)
 			{
-				$inputobject = $server.Databases | Where-Object { $_.Name -in $databases }
+                $inputobject = $server.Databases | Where-Object { $_.Name -in $databases }
 			}
-			
 			
             switch ($state) 
             {
-                "Online" {$inputobject = $server.Databases | Where-Object { $_.status -eq 'Normal' }}
-                "Offline" {$inputobject = $server.Databases | Where-Object { $_.status -eq 'Offline'}}
+                "EmergencyMode" {$inputobject = $server.Databases | Where-Object { $_.status -eq 'EmergencyMode' }}
+                "Normal" {$inputobject = $server.Databases | Where-Object { $_.status -eq 'Normal'}}
+                "Offline" {$inputobject = $server.Databases | Where-Object { $_.status -eq 'Offline' }}
+                "Recovering" {$inputobject = $server.Databases | Where-Object { $_.status -eq 'Recovering'}}
+                "Restoring" {$inputobject = $server.Databases | Where-Object { $_.status -eq 'Restoring' }}
+                "Standby" {$inputobject = $server.Databases | Where-Object { $_.status -eq 'Standby'}}
+                "Suspect" {$inputobject = $server.Databases | Where-Object { $_.status -eq 'Suspect' }}
             }
 
             if ($DatabaseOwner)
@@ -143,10 +149,10 @@ Returns databases on multiple instances piped into the function
             
             if ($Encrypted)
 			{
-				$inputobject = $server.Databases | Where-Object { $_.EncryptionEnabled }
+            	$inputobject = $server.Databases | Where-Object { $_.EncryptionEnabled }
 			}
 			
-            switch ($RecoverModel)
+            switch ($RecoveryModel)
             {
                 "Full" {$inputobject = $server.Databases | Where-Object { $_.RecoveryModel -eq 'Full' }}
                 "Simple" {$inputobject = $server.Databases | Where-Object { $_.RecoveryModel -eq 'Simple' }}
