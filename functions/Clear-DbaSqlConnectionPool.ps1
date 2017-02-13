@@ -58,7 +58,7 @@ Clears all connection pools on workstation27
 		
 		ForEach ($Computer in $Computername)
 		{
-			If ($Computer -ne $env:COMPUTERNAME -and $Computer -ne "localhost" -and $Computer -ne ".")
+			If ($Computer -ne $env:COMPUTERNAME -and $Computer -ne "localhost" -and $Computer -ne "." -and $Computer -ne "127.0.0.1")
 			{
 				Write-Verbose "Clearing all pools on remote computer $Computer"
 				if ($credential)
