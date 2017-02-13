@@ -24,7 +24,7 @@ Function Restore-DBFromFilteredArray
 		[object]$filestructure,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$UseDestinationDefaultDirectories,
-		[switch]$UseSourceDirectories,
+		[switch]$ReuseSourceFolderStructure,
 		[switch]$Force
 	)
     

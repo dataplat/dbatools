@@ -149,7 +149,7 @@ c:\DataFiles and all the log files into c:\LogFiles
 		[hashtable]$FileMapping,
 		[switch]$IgnoreLogBackup,
         [switch]$UseDestinationDefaultDirectories,
-        [switch]$UseSourceDirectories,
+        [switch]$ReuseSourceFolderStructure,
         [switch]$Force						
 	)
     BEGIN
@@ -164,7 +164,7 @@ c:\DataFiles and all the log files into c:\LogFiles
         {
             $ParamCount +=1
         } 
-        if ($UseSourceDirectories)
+        if ($ReuseSourceFolderStructure)
         {
             $ParamCount +=1
         }
@@ -174,11 +174,11 @@ c:\DataFiles and all the log files into c:\LogFiles
         }
         if ($ParamCount -gt 1)        
         {
-            Write-Warning "$FunctionName - $Paramcount You've specified incompatible Location parameters. Please only specify one of FileMapping,UseSourceDirectories or DestinationDataDirectory" 
+            Write-Warning "$FunctionName - $Paramcount You've specified incompatible Location parameters. Please only specify one of FileMapping,$ReuseSourceFolderStructure or DestinationDataDirectory" 
             break
         }
 
-        if ($DestinationLogDirectory -ne '' -and $UseSourceDirectories)
+        if ($DestinationLogDirectory -ne '' -and $ReuseSourceFolderStructure)
         {
             Write-Warning  "$FunctionName - DestinationLogDirectory and UseDestinationDefaultDirectories are mutually exclusive" 
             break  
@@ -188,7 +188,7 @@ c:\DataFiles and all the log files into c:\LogFiles
             Write-Warning  "$FunctionName - DestinationLogDirectory can only be specified with DestinationDataDirectory"
             break
         }
-        if (($null -ne $FileMapping) -or $UseSourceDirectories -or ($DestinationDataDirectory -ne ''))   
+        if (($null -ne $FileMapping) -or $ReuseSourceFolderStructure -or ($DestinationDataDirectory -ne ''))   
         {
             $UseDestinationDefaultDirectories = $false 
         }
@@ -278,7 +278,7 @@ c:\DataFiles and all the log files into c:\LogFiles
             if((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlServer $SqlServer -SqlCredential $SqlCredential))
             {
                 try{
-                    $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -Replace:$WithReplace -Scripts:$OutputScript -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -UseSourceDirectories:$UseSourceDirectories -force:$force 
+                    $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -Replace:$WithReplace -Scripts:$OutputScript -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -$ReuseSourceFolderStructure:$ReuseSourceFolderStructure -force:$force 
                     $Completed='successfully'
                 }
                 catch{
