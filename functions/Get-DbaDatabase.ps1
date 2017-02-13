@@ -15,21 +15,21 @@ to be executed against multiple SQL Server instances.
 .PARAMETER SqlCredential
 PSCredential object to connect as. If not specified, current Windows login will be used.
 
-.PARAMETER IncludeSystemDb
+.PARAMETER NoUserDb
 Returns all SQL Server System databases from the SQL Server instance(s) executed against.
 
-.PARAMETER IncludeUserDb
+.PARAMETER NoSystemDb
 Returns SQL Server user databases from the SQL Server instance(s) executed against.
 	
-.PARAMETER State
+.PARAMETER Status
 Returns SQL Server databases in the status passed to the function.  Could include Emergency, Online, Offline, Recovering, Restoring, Standby or Suspect 
 statuses of databases from the SQL Server instance(s) executed against.
 
 .PARAMETER Access
 Returns SQL Server databases that are Read Only or all other Online databases from the SQL Server intance(s) executed against.
 
-.PARAMETER DatabaseOwner
-Returns list of SQL Server databases not owned by SA from the SQL Server instance(s) executed against.
+.PARAMETER Owner
+Returns list of SQL Server databases owned by the specified logins
 
 .PARAMETER Encrypted
 Returns list of SQL Server databases that have TDE enabled from the SQL Server instance(s) executed against.
@@ -56,11 +56,11 @@ Get-DbaDatabase -SqlServer localhost
 Returns all databases on the local default SQL Server instance
 
 .EXAMPLE
-Get-DbaDatabase -SqlServer localhost -IncludeSystemDb
+Get-DbaDatabase -SqlServer localhost -NoUserDb
 Returns only the system databases on the local default SQL Server instance
 
 .EXAMPLE
-Get-DbaDatabase -SqlServer localhost -IncludeUserDb
+Get-DbaDatabase -SqlServer localhost -NoSystemDb
 Returns only the user databases on the local default SQL Server instance
 	
 .EXAMPLE
@@ -74,24 +74,31 @@ Returns databases on multiple instances piped into the function
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[switch]$IncludeSystemDb,
-		[switch]$IncludeUserDb,
-        [switch]$DatabaseOwner,
-        [switch]$Encrypted,
-		#[ValidateSet([enum]::GetValues([Microsoft.SqlServer.Management.Smo.DatabaseStatus]))]
-        [ValidateSet('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')]
-        [string]$State,
+		[Alias("SystemDbOnly")]
+		[switch]$NoUserDb,
+		[Alias("UserDbOnly")]
+		[switch]$NoSystemDb,
+		[string[]]$Owner,
+		[switch]$Encrypted,
+		[ValidateSet('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')]
+		[string]$Status,
 		[ValidateSet('ReadOnly', 'ReadWrite')]
 		[string]$Access,
-        [ValidateSet('Full', 'Simple', 'BulkLogged')]
-        [string]$RecoveryModel
+		[ValidateSet('Full', 'Simple', 'BulkLogged')]
+		[string]$RecoveryModel
 	)
 	
 	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
 	BEGIN
 	{
-    	$databases = $psboundparameters.Databases
+		$databases = $psboundparameters.Databases
+		
+		if ($NoUserDb -and $NoSystemDb)
+		{
+			Write-Warning "You cannot specify both NoUserDb and NoSystemDb"
+			continue
+		}
 	}
 	
 	PROCESS
@@ -100,7 +107,7 @@ Returns databases on multiple instances piped into the function
 		{
 			try
 			{
-    			$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
 			}
 			catch
 			{
@@ -110,56 +117,54 @@ Returns databases on multiple instances piped into the function
 			
 			$defaults = 'Name', 'Status', 'ContainmentType', 'RecoveryModel', 'CompatibilityLevel', 'Collation', 'Owner', 'EncryptionEnabled'
 			
-			if ($IncludeSystemDb)
+			if ($NoUserDb)
 			{
-            		$inputobject = $server.Databases | Where-Object { $_.IsSystemObject }
+				$inputobject = $server.Databases | Where-Object { $_.IsSystemObject }
 			}
 			
-			if ($IncludeUserDb)
+			if ($NoSystemDb)
 			{
-                $inputobject = $server.Databases | Where-Object { $_.IsSystemObject -eq $false }
+				$inputobject = $server.Databases | Where-Object { $_.IsSystemObject -eq $false }
 			}
 			
 			if ($databases)
 			{
-                $inputobject = $server.Databases | Where-Object { $_.Name -in $databases }
+				$inputobject = $server.Databases | Where-Object { $_.Name -in $databases }
 			}
 			
-            switch ($state) 
-            {
-                "EmergencyMode" {$inputobject = $server.Databases | Where-Object { $_.status -eq 'EmergencyMode' }}
-                "Normal" {$inputobject = $server.Databases | Where-Object { $_.status -eq 'Normal'}}
-                "Offline" {$inputobject = $server.Databases | Where-Object { $_.status -eq 'Offline' }}
-                "Recovering" {$inputobject = $server.Databases | Where-Object { $_.status -eq 'Recovering'}}
-                "Restoring" {$inputobject = $server.Databases | Where-Object { $_.status -eq 'Restoring' }}
-                "Standby" {$inputobject = $server.Databases | Where-Object { $_.status -eq 'Standby'}}
-                "Suspect" {$inputobject = $server.Databases | Where-Object { $_.status -eq 'Suspect' }}
-            }
-
-            if ($DatabaseOwner)
-            {    
-                $inputobject = $server.Databases | Where-Object { $_.DatabaseOwner -ne 'sa'}
-            }
-			
-            switch ($Access)
-            {
-                "ReadOnly" {$inputobject = $server.Databases | Where-Object { $_.ReadOnly }}
-                "ReadWrite" {$inputobject = $server.Databases | Where-Object { $_.ReadOnly -eq $false }}
-            }
-            
-            if ($Encrypted)
+			if ($status)
 			{
-            	$inputobject = $server.Databases | Where-Object { $_.EncryptionEnabled }
+				$inputobject = $server.Databases | Where-Object { $_.Status -eq $status }
 			}
 			
-            switch ($RecoveryModel)
-            {
-                "Full" {$inputobject = $server.Databases | Where-Object { $_.RecoveryModel -eq 'Full' }}
-                "Simple" {$inputobject = $server.Databases | Where-Object { $_.RecoveryModel -eq 'Simple' }}
-                "BulkLogged" {$inputobject = $server.Databases | Where-Object { $_.RecoveryModel -eq 'BulkLogged' }}
-            }
-         
-           	Select-DefaultView -InputObject $inputobject  -Property $defaults
+			if ($Owner)
+			{
+				$inputobject = $server.Databases | Where-Object { $_.Owner -in $Owner }
+			}
+			
+			switch ($Access)
+			{
+				"ReadOnly" { $inputobject = $server.Databases | Where-Object { $_.ReadOnly } }
+				"ReadWrite" { $inputobject = $server.Databases | Where-Object { $_.ReadOnly -eq $false } }
+			}
+			
+			if ($Encrypted)
+			{
+				$inputobject = $server.Databases | Where-Object { $_.EncryptionEnabled }
+			}
+			
+			if ($RecoveryModel)
+			{
+				$inputobject = $server.Databases | Where-Object { $_.RecoveryModel -eq $RecoveryModel }
+			}
+			
+			# I forgot the pretty way to do this
+			if (!$NoUserDb -and !$NoSystemDb -and !$databases -and !$status -and !$Owner -and !$Access -and !$Encrypted -and !$RecoveryModel)
+			{
+				$inputobject = $server.Databases
+			}
+			
+			Select-DefaultView -InputObject $inputobject -Property $defaults
 		}
 	}
 }
