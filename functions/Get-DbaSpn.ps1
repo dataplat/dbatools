@@ -17,7 +17,7 @@ The accounts you want to retrieve set SPNs for.
 .PARAMETER Credential
 User credential to connect to the remote servers or active directory. This is a required parameter.
 	
-.PARAMETER ShowAccountNameAll
+.PARAMETER ByAccount
 Shows all SPNs registered by the specified AccountName otherwise, only results will be shown for the specified ComputerName (which is localhost by default)
 
 .NOTES 
@@ -53,23 +53,14 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
         [string[]]$ComputerName = $env:COMPUTERNAME,
         [Parameter(Mandatory = $false)]
 		[string[]]$AccountName,
-		[switch]$ShowAccountNameAll,
+		[switch]$ByAccount,
 		[Parameter(Mandatory = $false)]
         [PSCredential]$Credential
-    )
-	process
-	{	
-		if ($ComputerName)
-		{
-			if ($ComputerName[0].EndsWith('$'))
-			{
-				$AccountName = $ComputerName
-				$ComputerName = $null
-			}
-		}
-		
-		if ($ShowAccountNameAll)
-		{
+	)
+	begin
+	{
+		Function Process-Account ($AccountName, $ByAccount) {
+			
 			ForEach ($account in $AccountName)
 			{
 				$ogaccount = $account
@@ -130,7 +121,6 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 							$serviceclass = ($spn -Split "\/")[0]
 						}
 					}
-					
 					[pscustomobject] @{
 						Input = $ogaccount
 						AccountName = $ogaccount
@@ -142,15 +132,28 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 			}
 			continue
 		}
-		
-		foreach ($server in $ComputerName)
+	}
+	
+	process
+	{	
+		foreach ($computer in $ComputerName)
 		{
-			Write-Verbose "Getting SQL Server SPN for $server"
-			$spns = Test-DbaSpn -ComputerName $server -Credential $Credential
+			if ($computer)
+			{
+				if ($computer.EndsWith('$'))
+				{
+					Write-Verbose "$computer is an account name. Processing as account."
+					Process-Account -AccountName $computer -ByAccount:$true
+					continue
+				}
+			}
+			
+			Write-Verbose "Getting SQL Server SPN for $computer"
+			$spns = Test-DbaSpn -ComputerName $computer -Credential $Credential
 			
 			$sqlspns = 0
 			$spncount = $spns.count
-			Write-Verbose "Calculated $spncount SQL SPN entries that should exist for $server"
+			Write-Verbose "Calculated $spncount SQL SPN entries that should exist for $computer"
 			foreach ($spn in $spns | Where-Object { $_.IsSet -eq $true })
 			{
 				$sqlspns++
@@ -160,7 +163,7 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 					if ($accountName -eq $spn.InstanceServiceAccount)
 					{
 						[pscustomobject] @{
-							Input = $server
+							Input = $computer
 							AccountName = $spn.InstanceServiceAccount
 							ServiceClass = "MSSQLSvc"
 							Port = $spn.Port
@@ -171,7 +174,7 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 				else
 				{
 					[pscustomobject] @{
-						Input = $server
+						Input = $computer
 						AccountName = $spn.InstanceServiceAccount
 						ServiceClass = "MSSQLSvc"
 						Port = $spn.Port
@@ -179,7 +182,15 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 					}
 				}
 			}
-			Write-Verbose "Found $sqlspns set SQL SPN entries for $server"
+			Write-Verbose "Found $sqlspns set SQL SPN entries for $computer"
+		}
+		
+		if ($AccountName)
+		{
+			foreach ($account in $AccountName)
+			{
+				Process-Account -AccountName $account -ByAccount:$ByAccount
+			}
 		}
 	}
 }
