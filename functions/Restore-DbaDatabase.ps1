@@ -272,6 +272,7 @@ folder for those file types as defined on the target instance.
             If (($null -ne $Server.Databases[$DatabaseName]) -and ($WithReplace -eq $false))
             {
                 Write-Warning "$FunctionName - $DatabaseName exists on Sql Instance $SqlServer , must specify WithReplace to continue"
+                break
             }
         }
         $server.ConnectionContext.Disconnect()

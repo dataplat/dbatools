@@ -92,6 +92,12 @@ Function Restore-DBFromFilteredArray
 					}
 				} 
 			}
+			else
+			{
+				Write-Warning "$FunctionName - Database exists and will not be overwritten without the WithReplace switch"
+				return $false
+				break
+			}
 
 		}
 
