@@ -9,7 +9,7 @@ Get a list of set SPNs. SPNs are set at the AD account level. You can either ret
 a given active directry account. You can query one, or both. You'll get a list of every SPN found for either search term.
 
 .PARAMETER ComputerName
-The servers you want to return set SPNs for. This is defaulted automatically to lcoalhost.
+The servers you want to return set SPNs for. This is defaulted automatically to localhost.
 
 .PARAMETER AccountName
 The accounts you want to retrieve set SPNs for.
