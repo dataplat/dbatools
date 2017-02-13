@@ -22,7 +22,7 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 Path to SQL Server backup files. These files will be scanned using the desired method, default is a non recursive folder scan
 Accepts multiple paths seperated by ','
 
-.PARAMETER FileList
+.PARAMETER File
 A Files object(s) containing SQL Server backup files. Each file passed in will be parsed.
 
 .PARAMETER DestinationDataDirectory
@@ -132,7 +132,7 @@ c:\DataFiles and all the log files into c:\LogFiles
         [parameter(Mandatory = $true, ParameterSetName="Paths")]
         [string[]]$Path,
         [parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName="Files")]
-        [object[]]$FileList,
+        [object[]]$File,
         [parameter(Mandatory = $true,ParameterSetName="Paths")]
         [parameter(Mandatory = $true,ParameterSetName="Files")]
 		[Alias("ServerInstance", "SqlInstance")]
@@ -242,10 +242,10 @@ c:\DataFiles and all the log files into c:\LogFiles
             }
         }elseif($PSCmdlet.ParameterSetName -eq "Files")
         {
-            Write-Verbose "$FunctionName : Files passed in $($FileList.count)" 
-            Foreach ($File in $FileList)
+            Write-Verbose "$FunctionName : Files passed in $($File.count)" 
+            Foreach ($FileTmp in $File)
             {
-                $BackupFiles += $File
+                $BackupFiles += $FileTmp
             }
         }
     }
