@@ -66,6 +66,7 @@ Function Restore-DBFromFilteredArray
 		$Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
 		$Restore.ReplaceDatabase = $ReplaceDatabase
 		
+		if ($UseDestinationDefaultDirectories)
 		{
 			$DestinationDataDirectory = Get-SqlDefaultPaths $Server data
 			$DestinationLogDirectory = Get-SqlDefaultPaths $Server log
@@ -204,8 +205,8 @@ Function Restore-DBFromFilteredArray
 					$Restore.Devices.Add($device)
 				}
 				Write-Verbose "$FunctionName - Performing restore action"
-		$ConfirmMessage = "`n Restore Database $DbName on $SqlServer `n from files: $RestoreFileNames `n with these file moves: `n $LogicalFileMovesString `n $ConfirmPointInTime `n `n"
-		If ($Pscmdlet.ShouldProcess($ConfirmMessage))
+		$ConfirmMessage = "`n Restore Database $DbName on $SqlServer `n from files: $RestoreFileNames `n with these file moves: `n $LogicalFileMovesString `n $ConfirmPointInTime `n"
+		If ($Pscmdlet.ShouldProcess("$DBName on $SqlServer `n `n",$ConfirmMessage))
 		{
 			try
 			{
