@@ -78,13 +78,16 @@ This Parameter is exclusive with DestinationDataDirectory
 This switch tells the function to ignore transaction log backups. The process will restore to the latest full or differential backup point only
 	
 .PARAMETER UseSourceDirectories
-Use the source structure - please change to something singular, perhaps ReuseSourceFolderStructure (Copy-SqlDatabases's param name) or something similar.
+By default, databases will be migrated to the destination Sql Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. 
+The same structure on the SOURCE will be kept exactly, so consider this if you're migrating between different versions and use part of Microsoft's default Sql structure (MSSql12.INSTANCE, etc)
+
+*N ote, to reuse destination folder structure, specify -WithReplace
 	
 .PARAMETER Confirm
 Prompts to confirm certain actions
 	
 .PARAMETER Force
-Force is passed to an internal command but the internal command does not employ the Force
+Unsure
 	
 .PARAMETER WhatIf
 Shows what would happen if the command would execute, but does not actually perform the command
