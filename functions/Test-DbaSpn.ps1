@@ -259,9 +259,16 @@ have be a valid login with appropriate rights on the domain you specify
 						}
 						else
 						{
+							#If this is a named instance, replace the instance name with a port number (for non-dynamic ported named instances)
 							$newspn.Port = $port
-							$newspn.RequiredSPN = $newspn.RequiredSPN + ":" + $port
 							$newspn.DynamicPort = $false
+
+							if ($newspn.InstanceName -eq "MSSQLSERVER") {
+								$newspn.RequiredSPN = $newspn.RequiredSPN + ":" + $port
+							} else {
+								$newspn.RequiredSPN = $newspn.RequiredSPN.Replace($newSPN.InstanceName, $newspn.Port)
+							}
+
 						}
 						
 						$spns += $newspn
