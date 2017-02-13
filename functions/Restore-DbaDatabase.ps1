@@ -57,9 +57,6 @@ Indicates if the database should be recovered after last restore. Default is to 
 .PARAMETER WithReplace
 Switch indicated is the restore is allowed to replace an existing database.
 
-.PARAMETER OutputScript
-Switch to indicate if T-SQL restore scripts should be written out
-
 .PARAMETER OutputScriptOnly
 Switch indicates that ONLY T-SQL scripts should be generated, no restore takes place
 
@@ -164,7 +161,6 @@ folder for those file types as defined on the target instance.
         [DateTime]$RestoreTime = (Get-Date).addyears(1),          
 		[switch]$NoRecovery,
 		[switch]$WithReplace,
-		[switch]$OutputScript,
         [Switch]$XpDirTree,
         [switch]$OutputScriptOnly,
 		[switch]$VerifyOnly,
@@ -301,7 +297,7 @@ folder for those file types as defined on the target instance.
             if((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlServer $SqlServer -SqlCredential $SqlCredential))
             {
                 try{
-                    $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -Replace:$WithReplace -Scripts:$OutputScript -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure 
+                    $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -Replace:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure 
                     $Completed='successfully'
                 }
                 catch{
