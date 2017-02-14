@@ -1,22 +1,35 @@
 ﻿<#
-		Function Backup-DbaDatabase
+
+# If backup file isn't provided, auto generate in Default backup dir?
+# Can you please compare the options Microsoft provides? If it's too crazy, we can make this 1.0
+# needs to accept credential and needs help, per usual, this is just a skeleton.
+
+Function Backup-DbaDatabase
 		{
 			[CmdletBinding()]
 			param (
-				[object]$sqlInstance,
-				[string]$dbname,
-				[string]$backupfile,
-				[int]$numberfiles
+				[object]$SqlInstance,
+				[string]$DatabaseName,
+				[string]$BackupFile,
+				[switch]$NoCopyOnly,
+				[ValidateSet('Full', 'Log', 'Differential')] # Unsure of the names
+				[string]$Type = "Full",
+				[int]$FileCount = 1
+				[parameter(ValueFromPipeline = $True)]
+				[object]$Database # Gotten from Get-DbaDatabase
 			)
 			
-			$sqlInstance.ConnectionContext.StatementTimeout = 0
-			$backup = New-Object "Microsoft.SqlServer.Management.Smo.Backup"
-			$backup.Database = $dbname
-			$backup.Action = "Database"
-			$backup.CopyOnly = $true
+			if ($Type -eq "Full") { $type = "Database" } #maybe others?
 			$val = 0
+			$copyonly = !$NoCopyOnly
 			
-			while ($val -lt $numberfiles)
+			$server.ConnectionContext.StatementTimeout = 0
+			$backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
+			$backup.Database = $dbname
+			$backup.Action = $Type
+			$backup.CopyOnly = $copyonly
+			
+			while ($val -lt $filecount)
 			{
 				$device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem
 				$device.DeviceType = "File"
@@ -37,7 +50,7 @@
 			
 			try
 			{
-				$backup.SqlBackup($sqlInstance)
+				$backup.SqlBackup($server)
 				Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -status "Complete" -Completed
 				Write-Output "Backup succeeded"
 				return $true
