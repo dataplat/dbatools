@@ -102,6 +102,7 @@
         catch
         {
           $Computer = $OGComputer
+          $ipaddress = ([System.Net.Dns]::GetHostEntry($Computer)).AddressList[0].IPAddressToString
         }
       }
 			
