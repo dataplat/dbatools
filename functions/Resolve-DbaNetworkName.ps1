@@ -120,6 +120,7 @@
           catch
           {
             Write-Warning "$functionName - DNS name does not exist"
+            continue
           }
         }
 				
