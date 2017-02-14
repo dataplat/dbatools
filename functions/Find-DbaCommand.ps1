@@ -99,12 +99,6 @@ Finds all commands searching the entire help for "snapshot", rebuilding the inde
             [pscustomobject]$thebase
         }
 
-        function Get-DbaIdxPath() {
-            $docs = [Environment]::GetFolderPath("mydocuments")
-            $idxpath = Join-Path $docs "dbatools-index.json"
-            $idxpath
-        }
-
         function Get-DbaIndex() {
             $dbamodule = Get-Module dbatools
             $allcommands = $dbamodule.ExportedCommands
@@ -122,7 +116,7 @@ Finds all commands searching the entire help for "snapshot", rebuilding the inde
     }
     PROCESS
     {
-        $idxfile = Get-DbaIdxPath
+        $idxfile = Get-ConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
         if(!(Test-Path $idxfile) -or $Rebuild) {
             Write-Verbose "Rebuilding index into $idxfile"
             $swrebuild = [system.diagnostics.stopwatch]::startNew()
