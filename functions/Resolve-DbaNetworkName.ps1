@@ -213,6 +213,7 @@
           catch
           {
             Write-Warning "$functionName - No .NET information from $Computer"
+            continue
           }
         }
       }
