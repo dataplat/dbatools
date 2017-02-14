@@ -178,7 +178,7 @@ Returns all active directory users within all windows AD groups that have logins
 					continue
 				}
 			}
-			Select-DefaultField -InputObject $res -Property SqlInstance, Login, MemberOf
+			Select-DefaultView -InputObject $res -Property SqlInstance, Login, MemberOf
 		}
 	}
 }
