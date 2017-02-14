@@ -12,11 +12,12 @@ Function Backup-DbaDatabase
 		[object[]]$DatabaseName, # Gotten from Get-DbaDatabase
 		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[string]$BackupFile,
+		[string]$BackupPath,
 		[switch]$NoCopyOnly,
 		[ValidateSet('Full', 'Log', 'Differential','Diff','Database')] # Unsure of the names
 		[string]$BackupType = "Full",
-		[int]$FileCount = 1
+		[int]$FileCount = 1,
+		[switch]$CreateFolders
 
 	)
 	BEGIN
@@ -76,7 +77,12 @@ Function Backup-DbaDatabase
 			$backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
 			$backup.Database = $Database.Name
 			$Type = "Database"
-			if ($BackupType -eq "Log") {$Type = "Log" }
+			$Suffix = "bak"
+			if ($BackupType -eq "Log")
+			{
+					$Type = "Log" 
+					$Suffix = "trn"
+			}
 			$backup.Action = $Type
 			$backup.CopyOnly = $copyonly
 			if ($Type -eq "Differential")
@@ -87,7 +93,7 @@ Function Backup-DbaDatabase
 			{
 				$device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem
 				$device.DeviceType = "File"
-				$device.Name = $backupfile.Replace(".bak", "-$val.bak")
+				$device.Name = $backupfile.Replace(".$suffix", "-$val.$suffix")
 				$backup.Devices.Add($device)
 				$val++
 			}
