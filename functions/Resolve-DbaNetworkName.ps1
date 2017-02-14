@@ -59,8 +59,8 @@
     [parameter(Mandatory, ValueFromPipeline)]
     [Alias('cn', 'host', 'ServerInstance', 'Server', 'SqlServer')]
     [object]$ComputerName = $env:COMPUTERNAME,
-    [System.Management.Automation.Credential()]$Credential = [System.Management.Automation.PSCredential]::Empty,
-    [Alias("FastParrot")]
+    [System.Management.Automation.Credential()]$Credential,
+    [Alias('FastParrot')]
     [switch]$Turbo
   )
   BEGIN
