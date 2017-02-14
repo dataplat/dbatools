@@ -2,7 +2,7 @@
 {
 <#
 .SYNOPSIS
-Returns information about the network connection of the target computer including NetBIOS name, IP Address and domain name.
+Returns information about the network connection of the target computer including NetBIOS name, IP Address, domain name and fully qualified domain name (FQDN).
 
 .DESCRIPTION
 Retrieves the IPAddress, ComputerName from one computer.
@@ -35,77 +35,97 @@ You should have received a copy of the GNU General Public License along with thi
 .EXAMPLE
 Resolve-DbaNetworkName -ComputerName ServerA
 
-Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain
+Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for ServerA
+	
+.EXAMPLE
+Resolve-DbaNetworkName -SqlServer sql2016\sqlexpress
 
+Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for the SQL instance sql2016\sqlexpress
+	
+.EXAMPLE
+Resolve-DbaNetworkName -SqlServer sql2016\sqlexpress, sql2014
+
+Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for the SQL instance sql2016\sqlexpress and sql2014
+
+Get-SqlRegisteredServerName -SqlServer sql2014 | Resolve-DbaNetworkName
+	
+Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-SqlRegisteredServerName
 #>
 	[CmdletBinding()]
 	param (
-		[Parameter(Mandatory = $true)]
-		[Alias("cn", "host", "ServerInstance", "SqlInstance","Server","SqlServer")]
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[Alias("cn", "host", "ServerInstance", "SqlInstance", "Server", "SqlServer")]
 		[object]$ComputerName,
 		[PsCredential]$Credential
 	)
-
-    $conn = $ipaddress = $CIMsession = $null
 	
-    if ($ComputerName.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
-    {
-        $ComputerName = $ComputerName.NetName
-    }
-
-    $ComputerName = $ComputerName.Split('\')[0]
-    Write-Verbose "Connecting to server $ComputerName"
-	$ipaddress = ((Test-Connection -ComputerName $ComputerName -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
-
-    if ( $ipaddress )
-    {
-        if ( $host.Version.Major -gt 2 )
-        {
-            Write-Verbose "Your PowerShell Version is $($host.Version.Major)"
-            Write-Verbose "IP Address from $computername is $ipaddress"
-            try
-            {
-                Write-Verbose "Getting computer information from server $ComputerName via CIM (WinRM)"
-                $CIMsession = New-CimSession -ComputerName $ComputerName -ErrorAction SilentlyContinue -Credential $Credential
-                $conn = Get-CimInstance -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -CimSession $CIMsession
-            }
-            catch
-            {
-                Write-Warning "No WinRM connection to $computername"
-            }
-            if (!$conn)
-            {
-                try
-                {
-                    Write-Verbose "Getting computer information from server $ComputerName via CIM (DCOM)"
-                    $sessionoption = New-CimSessionOption -Protocol DCOM
-                    $CIMsession = New-CimSession -ComputerName $ComputerName -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
-                    $conn = Get-CimInstance -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -CimSession $CIMsession
-                }
-                catch
-                {
-                    Write-Warning "No DCOM connection to $computername"
-                }
-            }
-        }
-        if (!$conn)
-        {
-            Write-Verbose "Getting computer information from server $ComputerName via WMI (DCOM)"
-            $conn = Get-WmiObject -ComputerName $ComputerName -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -ErrorAction SilentlyContinue -Credential $Credential
-        }
-
-        [PSCustomObject]@{
-        InputName = $computername
-        ComputerName = $conn.Name
-        IPAddress = $ipaddress
-        DNSHostName = $conn.DNSHostname
-        Domain = $conn.Domain
-        }
-    }
-
-    else
-    {
-        Write-Warning "Computer $computername not available"
-    }
-    
+	PROCESS
+	{
+		foreach ($Computer in $ComputerName)
+		{
+			$conn = $ipaddress = $CIMsession = $null
+			
+			if ($Computer.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
+			{
+				$Computer = $Computer.NetName
+			}
+			
+			$OGComputer = $Computer
+			$Computer = $Computer.Split('\')[0]
+			Write-Verbose "Connecting to server $Computer"
+			$ipaddress = ((Test-Connection -ComputerName $Computer -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
+			
+			if ($ipaddress)
+			{
+				if ($host.Version.Major -gt 2)
+				{
+					Write-Verbose "Your PowerShell Version is $($host.Version.Major)"
+					Write-Verbose "IP Address from $Computer is $ipaddress"
+					try
+					{
+						Write-Verbose "Getting computer information from server $Computer via CIM (WinRM)"
+						$CIMsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
+						$conn = Get-CimInstance -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -CimSession $CIMsession
+					}
+					catch
+					{
+						Write-Verbose "No WinRM connection to $Computer"
+					}
+					if (!$conn)
+					{
+						try
+						{
+							Write-Verbose "Getting computer information from server $Computer via CIM (DCOM)"
+							$sessionoption = New-CimSessionOption -Protocol DCOM
+							$CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
+							$conn = Get-CimInstance -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -CimSession $CIMsession
+						}
+						catch
+						{
+							Write-Warning "No DCOM connection to $Computer"
+						}
+					}
+				}
+				if (!$conn)
+				{
+					Write-Verbose "Getting computer information from server $Computer via WMI (DCOM)"
+					$conn = Get-WmiObject -ComputerName $Computer -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -ErrorAction SilentlyContinue -Credential $Credential
+				}
+				
+				[PSCustomObject]@{
+					InputName = $OGComputer
+					ComputerName = $conn.Name
+					IPAddress = $ipaddress
+					DNSHostName = $conn.DNSHostname
+					Domain = $conn.Domain
+					FQDN = "$($conn.DNSHostname).$($conn.Domain)"
+				}
+			}
+			
+			else
+			{
+				Write-Warning "Computer $Computer not available"
+			}
+		}
+	}
 }

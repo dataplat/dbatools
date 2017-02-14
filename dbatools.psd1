@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.69'
+	ModuleVersion = '0.8.70'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -171,7 +171,13 @@
 		'Resolve-DbaNetworkName',
 		'Test-DbaValidLogin',
 		'Get-DbaMemoryUsage',
-		'Export-DbaAvailabilityGroup'
+		'Export-DbaAvailabilityGroup',
+		'Out-DbaDataTable',
+		'Write-DbaDataTable',
+		'New-DbaDatabaseSnapshot',
+		'Restore-DbaDatabaseSnapshot',
+		'Get-DbaTrigger',
+		'Invoke-Sqlcmd2'
 	)
 	
 	# Cmdlets to export from this module
@@ -221,7 +227,7 @@
 			LicenseUri = "http://www.gnu.org/licenses/gpl-3.0.en.html"
 			
 			# Release notes for this particular version of the module
-			# ReleaseNotes = False
+			ReleaseNotes = "https://dbatools.io/releases"
 			
 			# If true, the LicenseUrl points to an end-user license (not just a source license) which requires the user agreement before use.
 			# RequireLicenseAcceptance = ""

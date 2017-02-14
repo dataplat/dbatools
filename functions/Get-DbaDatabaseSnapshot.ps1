@@ -34,17 +34,17 @@ You should have received a copy of the GNU General Public License along with thi
 .EXAMPLE
 Get-DbaDatabaseSnapshot -SqlServer sqlserver2014a
 
-Returns a custom object displaying Server, Database, DatabaseCreated, SnapshotOf
+Returns a custom object displaying Server, Database, DatabaseCreated, SnapshotOf, SizeMB, DatabaseCreated
 
 .EXAMPLE
 Get-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Databases HR, Accounting
 
-Returns informations for database snapshots having HR and Accounting as base dbs
+Returns information for database snapshots having HR and Accounting as base dbs
 
 .EXAMPLE
 Get-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Snapshots HR_snapshot, Accounting_snapshot
 
-Returns informations for database snapshots HR_snapshot and Accounting_snapshot
+Returns information for database snapshots HR_snapshot and Accounting_snapshot
 
 #>
 	[CmdletBinding()]
@@ -112,12 +112,10 @@ Returns informations for database snapshots HR_snapshot and Accounting_snapshot
 					SnapshotOf = $db.DatabaseSnapshotBaseName
 					SizeMB = [Math]::Round($db.Size,2)
 					DatabaseCreated = $db.createDate
-					IsReadCommittedSnapshotOn = $db.IsReadCommittedSnapshotOn
-					SnapshotIsolationState = $db.SnapshotIsolationState
 					SnapshotDb = $db
 				}
 				
-				Select-DefaultField -InputObject $object -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated, IsReadCommittedSnapshotOn, SnapshotIsolationState
+				Select-DefaultField -InputObject $object -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated
 			}
 		}
 	}
