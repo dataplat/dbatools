@@ -13,11 +13,12 @@ Function Backup-DbaDatabase
 		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string]$BackupPath,
+		[string]$BackupFileName,
 		[switch]$NoCopyOnly,
 		[ValidateSet('Full', 'Log', 'Differential','Diff','Database')] # Unsure of the names
 		[string]$BackupType = "Full",
 		[int]$FileCount = 1,
-		[switch]$CreateFolders
+		[switch]$CreateFolder=$true
 
 	)
 	BEGIN
@@ -50,9 +51,23 @@ Function Backup-DbaDatabase
             $server.ConnectionContext.Disconnect()
 			Write-Warning "$FunctionName - Cannot connect to $SqlInstance" -WarningAction Stop
 		}
-		$BackupHistory = Get-DbaBackupHistory -SqlServer $SqlInstance -databases ($Databases.Name -join ',') -LastFull
+		if ($databases.count -gt 1 -and $BackupFileName -ne '')
+		{
+			Write-warning "$FunctionName - 1 BackupFile specified, but more than 1 database."
+			break
+		}
+		if ($databases.count -gt 1 -and $BackupPath -eq '')
+		{
+			$BackupPath = $server.BackupDirectory
+		}
+		else 
+		{
+			$MultiFile = $true	
+		}
+		$BackupHistory = Get-DbaBackupHistory -SqlServer $SqlInstance -databases ($Databases.Name -join ',') -LastFull -ErrorAction SilentlyContinue
 		ForEach ($Database in $Databases)
 		{
+			Write-Verbose "$FunctionName - Backup up database $($Database.name)"
 			if ($Database.RecoveryModel -ne '')
 			{
 				$Database.RecoveryModel = $server.databases[$Database.Name].RecoveryModel
@@ -89,6 +104,24 @@ Function Backup-DbaDatabase
 			{
 				$backup.Incremental = $true
 			}
+			if ($MultiFile)
+			{
+				Write-Verbose "$($Database.name)"
+				if ($CreateFolder)
+				{
+					if((Test-Path ($BackupPath+'\'+$Database.name)) -eq $false)
+					{
+						$BackupPath = $BackupPath+'\'+$Database.name
+						New-Item $BackupPath -type Directory
+						
+					}
+				}
+				$TimeStamp = (Get-date -Format yyyyMMddHHmm)
+				$BackupFile = $BackupPath+"\"+($Database.name)+"_"+$Timestamp+"."+$suffix
+
+			}
+			Write-Verbose "$FunctionName - Backing up to $backupfile"
+		
 			while ($val -lt $filecount)
 			{
 				$device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem
