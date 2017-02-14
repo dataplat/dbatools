@@ -10,10 +10,15 @@ Finds dbatools commands searching through the inline help text, building a conso
 .PARAMETER Tag
 Finds all commands tagged with this tag
 
+.PARAMETER Author
+Finds all commands tagged with this author
+
+.PARAMETER Rebuild
+Rebuilds the index
+
 .NOTES
 Tags: find
 Author: niphlod
-
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
