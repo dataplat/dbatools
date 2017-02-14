@@ -3,7 +3,7 @@
 $source = @'
 using System;
 
-namespace SqlCollective.DbaTools
+namespace sqlcollective.dbatools
 {
     namespace Configuration
     {

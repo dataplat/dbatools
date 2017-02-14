@@ -92,19 +92,19 @@
     #endregion Prepare Names
     
     #region Process Record
-    if (([SqlCollective.DbaTools.Configuration.Config]::Cfg[$FullName]) -and (-not $Default))
+    if (([sqlcollective.dbatools.Configuration.Config]::Cfg[$FullName]) -and (-not $Default))
     {
-        if ($PSBoundParameters.ContainsKey("Hidden")) { [SqlCollective.DbaTools.Configuration.Config]::Cfg[$FullName].Hidden = $Hidden }
-        [SqlCollective.DbaTools.Configuration.Config]::Cfg[$FullName].Value = $Value
+        if ($PSBoundParameters.ContainsKey("Hidden")) { [sqlcollective.dbatools.Configuration.Config]::Cfg[$FullName].Hidden = $Hidden }
+        [sqlcollective.dbatools.Configuration.Config]::Cfg[$FullName].Value = $Value
     }
-    elseif (-not [SqlCollective.DbaTools.Configuration.Config]::Cfg[$FullName])
+    elseif (-not [sqlcollective.dbatools.Configuration.Config]::Cfg[$FullName])
     {
-        $Config = New-Object SqlCollective.DbaTools.Configuration.Config
+        $Config = New-Object sqlcollective.dbatools.Configuration.Config
         $Config.Name = $name
         $Config.Module = $Module
         $Config.Value = $Value
         $Config.Hidden = $Hidden
-        [SqlCollective.DbaTools.Configuration.Config]::Cfg[$FullName] = $Config
+        [sqlcollective.dbatools.Configuration.Config]::Cfg[$FullName] = $Config
     }
     #endregion Process Record
 }

@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-16"?>
 <Configuration>
 <ViewDefinitions>
-<!-- SqlCollective.DbaTools.Configuration.Config -->
+<!-- sqlcollective.dbatools.Configuration.Config -->
 <View>
-  <Name>SqlCollective.DbaTools.Configuration.Config</Name>
+  <Name>sqlcollective.dbatools.Configuration.Config</Name>
   <ViewSelectedBy>
-    <TypeName>SqlCollective.DbaTools.Configuration.Config</TypeName>
+    <TypeName>sqlcollective.dbatools.Configuration.Config</TypeName>
   </ViewSelectedBy>
   <TableControl>
     <AutoSize />
