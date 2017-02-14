@@ -107,7 +107,7 @@ Finds all commands searching the entire help for "snapshot", rebuilding the inde
                 $x = Get-DbaHelp $c.Key
                 $helpcoll.Add($x)
             }
-            $dest = Get-DbaIdxPath
+            $dest = Get-ConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
             if ($Pscmdlet.ShouldProcess($dest, "Recreating index"))
             {
                 $helpcoll | ConvertTo-Json | Out-File $dest
