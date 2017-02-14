@@ -280,7 +280,7 @@ Function Restore-DBFromFilteredArray
 					NoRecovery = $restore.NoRecovery
 					WithReplace = $ReplaceDatabase
 					RestoreComplete  = $RestoreComplete
-                    BackupFilesCount = $RestoreFiles.Length
+                    BackupFilesCount = $RestoreFiles.Count
                     RestoredFilesCount = $RestoreFiles[0].Filelist.PhysicalName.count
                     BackupSizeMB = ($RestoreFiles | measure-object -property BackupSizeMb -Sum).sum
                     CompressedBackupSizeMB = ($RestoreFiles | measure-object -property CompressedBackupSizeMb -Sum).sum
