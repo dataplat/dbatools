@@ -161,11 +161,11 @@
           if ( $Credential )
           {
             $CIMsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
-            $conn = Get-CimInstance -Query "Select * FROM Win32_computersystem" -CimSession $CIMsession
+            $conn = Get-CimInstance -Query "Select * FROM Win32_computersystem" -CimSession $CIMsession -ErrorAction SilentlyContinue
           }
           else
           {
-            $conn = Get-CimInstance -Query "Select * FROM Win32_computersystem" -ComputerName $Computer
+            $conn = Get-CimInstance -Query "Select * FROM Win32_computersystem" -ComputerName $Computer -ErrorAction SilentlyContinue
           }
         }
         catch
