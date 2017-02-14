@@ -246,7 +246,7 @@ folder for those file types as defined on the target instance.
                     else 
                     {
                         Write-Verbose "$FunctionName : Standard Directory"
-                        $FileCheck = $BackFiles.Count()
+                        $FileCheck = $BackupFiles.count
                         $BackupFiles += Get-DirectoryRestoreFile -Path $p
                         if ((($BackupFiles.count)-$FileCheck) -eq 0)
                         {
