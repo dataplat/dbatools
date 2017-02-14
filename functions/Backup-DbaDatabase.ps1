@@ -1,18 +1,28 @@
-﻿<#
-
-# If backup file isn't provided, auto generate in Default backup dir?
-# Can you please compare the options Microsoft provides? If it's too crazy, we can make this 1.0
-# needs to accept credential and needs help, per usual, this is just a skeleton.
-#>
-Function Backup-DbaDatabase
+﻿Function Backup-DbaDatabase
 {
+<#
+.SYNOPSIS
+
+.DESCRIPTION
+
+.PARAMETER DatabaseName
+.PARAMETER SqlInstance
+.PARAMETER SqlCredential
+.PARAMETER BackupPath
+.PARAMETER BackupFileName
+.PARAMETER NoCopyOnly
+.PARAMETER BackupType
+.PARAMETER FileCount
+.PARAMETER CreateFolder
+
+#>
 	[CmdletBinding()]
 	param (
 		[parameter(ValueFromPipeline = $True)]
 		[object[]]$DatabaseName, # Gotten from Get-DbaDatabase
 		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[string]$BackupPath,
+		[string[]]$BackupPath,
 		[string]$BackupFileName,
 		[switch]$NoCopyOnly,
 		[ValidateSet('Full', 'Log', 'Differential','Diff','Database')] # Unsure of the names
@@ -29,6 +39,10 @@ Function Backup-DbaDatabase
 	PROCESS
 	{
 	
+		if ($BackupPath.count -gt 1)
+		{
+			$Filecount = $BackupPath.count
+		}
 		foreach ($Name in $DatabaseName)
 		{
 			if ($Name -is [String])
@@ -64,7 +78,13 @@ Function Backup-DbaDatabase
 		{
 			$MultiFile = $true	
 		}
-		$BackupHistory = Get-DbaBackupHistory -SqlServer $SqlInstance -databases ($Databases.Name -join ',') -LastFull -ErrorAction SilentlyContinue
+		try
+		{
+			$BackupHistory = Get-DbaBackupHistory -SqlServer $SqlInstance -databases ($Databases.Name -join ',') -LastFull -ErrorAction SilentlyContinue
+		}
+		Catch
+		{}
+		Write-Verbose "$FunctionName - $($Databases.count) database to backup"
 		ForEach ($Database in $Databases)
 		{
 			Write-Verbose "$FunctionName - Backup up database $($Database.name)"
@@ -106,18 +126,19 @@ Function Backup-DbaDatabase
 			}
 			if ($MultiFile)
 			{
-				Write-Verbose "$($Database.name)"
+				Write-Verbose "-$($Database.name)-"
 				if ($CreateFolder)
 				{
 					if((Test-Path ($BackupPath+'\'+$Database.name)) -eq $false)
 					{
 						$BackupPath = $BackupPath+'\'+$Database.name
 						New-Item $BackupPath -type Directory
-						
+						Write-Host "backupath = $BackupPath"
 					}
 				}
+				write-verbose "-$backupPath-"
 				$TimeStamp = (Get-date -Format yyyyMMddHHmm)
-				$BackupFile = $BackupPath+"\"+($Database.name)+"_"+$Timestamp+"."+$suffix
+				$BackupFile = "$BackupPath\$(($Database.name).trim())_+$Timestamp.$suffix"
 
 			}
 			Write-Verbose "$FunctionName - Backing up to $backupfile"
@@ -145,13 +166,13 @@ Function Backup-DbaDatabase
 				$backup.SqlBackup($server)
 				Write-Progress -id 1 -activity "Backing up database $($Database.Name)  to $backupfile" -status "Complete" -Completed
 				Write-Output "Backup succeeded"
-				return $true
+		#		return $true
 			}
 			catch
 			{
 				Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
 				Write-Exception $_
-				return $false
+		#		return $false
 			}
 		}
 	}
