@@ -119,7 +119,7 @@
           }
           catch
           {
-            throw "$functionName - DNS name does not exist"
+            Write-Warning "$functionName - DNS name does not exist"
           }
         }
 				
@@ -134,9 +134,10 @@
         [PSCustomObject]@{
           InputName = $OGComputer
           ComputerName = $hostname.ToUpper()
-          DNSHostname = $hostname
           IPAddress = $ipaddress
+          DNSHostname = $hostname
           Domain = $fqdn.Replace("$hostname.", "")
+          DNSHostEntry = $fqdn
           FQDN = $fqdn
         }
         return
@@ -156,16 +157,15 @@
         try
         {
           Write-Verbose "$functionName - Getting computer information from server $Computer via CIM (WSMan)"
-          if ($Credential)
+          if ( $Credential )
           {
             $CIMsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
+            $conn = Get-CimInstance -Query "Select * FROM Win32_computersystem" -CimSession $CIMsession
           }
           else
           {
-            $CIMsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue
+            $conn = Get-CimInstance -Query "Select * FROM Win32_computersystem" -ComputerName $Computer
           }
-					
-          $conn = Get-CimInstance -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -CimSession $CIMsession
         }
         catch
         {
@@ -177,7 +177,7 @@
           {
             Write-Verbose "$functionName - Getting computer information from server $Computer via CIM (DCOM)"
             $sessionoption = New-CimSessionOption -Protocol DCOM
-            if ($Credential)
+            if ( $Credential )
             {
               $CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
 							
@@ -187,7 +187,7 @@
               $CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue
             }
 						
-            $conn = Get-CimInstance -Query "Select Name, Caption, DNSHostName, Domain FROM Win32_computersystem" -CimSession $CIMsession
+            $conn = Get-CimInstance -Query "Select * FROM Win32_computersystem" -CimSession $CIMsession
           }
           catch
           {
@@ -195,9 +195,9 @@
           }
         }
 
-        if (!$conn)
+        if ( !$conn )
         {
-          Write-Verbose "$functionName - No CIM from $Computer. Defaulting to .NET"
+          Write-Verbose "$functionName - No CIM from $Computer. Getting HostName via .NET"
           try
           {
             $fqdn = ([System.Net.Dns]::GetHostEntry($Computer)).HostName
@@ -211,7 +211,7 @@
           }
           catch
           {
-            # ouch, no dice
+            Write-Warning "$functionName - No .NET information from $Computer"
           }
         }
       }
@@ -224,7 +224,7 @@
       }
       catch
       {
-        Write-Verbose "$functionName - GetHostEntry failed"
+        Write-Warning "$functionName - GetHostEntry failed"
       }
 			
       $fqdn = "$($conn.DNSHostname).$($conn.Domain)"
