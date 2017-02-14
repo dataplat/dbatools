@@ -92,15 +92,19 @@
 			{
 				try
 				{
+					Write-Verbose "Resolving $Computer using GetHostEntry"
 					$ipaddress = ([System.Net.Dns]::GetHostEntry($Computer)).AddressList[0].IPAddressToString
+					Write-Verbose "Resolving $ipaddress using GetHostByAddress"
 					$fqdn = [System.Net.Dns]::GetHostByAddress($ipaddress).HostName
 				}
 				catch
 				{
 					try
 					{
-						$ipaddress = ([System.Net.Dns]::GetHostEntry($Computer)).AddressList[0].IPAddressToString
-						$fqdn = ([System.Net.Dns]::GetHostEntry($Computer)).HostName
+						Write-Verbose "Resolving $Computer and IP using GetHostEntry"
+						$resolved = [System.Net.Dns]::GetHostEntry($Computer)
+						$ipaddress = $resolved.AddressList[0].IPAddressToString
+						$fqdn = $resolved.HostName
 					}
 					catch
 					{
