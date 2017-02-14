@@ -103,18 +103,18 @@ Function Restore-DBFromFilteredArray
 
  		$RestorePoints  = @()
         $if = $InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Database'} | Group-Object FirstLSN
-		$RestorePoints  += @([PSCustomObject]@{order=1;'Files' = $if.group})
+		$RestorePoints  += @([PSCustomObject]@{order=[int64]1;'Files' = $if.group})
         $if = $InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Database Differential'}| Group-Object FirstLSN
-		$RestorePoints  += @([PSCustomObject]@{order=2;'Files' = $if.group})
+		$RestorePoints  += @([PSCustomObject]@{order=[int64]2;'Files' = $if.group})
   		foreach ($if in ($InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} | Group-Object FirstLSN))
  		{
-   			$RestorePoints  += [PSCustomObject]@{order=$if.Name; 'Files' = $if.group}
+   			$RestorePoints  += [PSCustomObject]@{order=[int64]($if.Name); 'Files' = $if.group}
 		}
 		foreach ($RestorePoint in ($RestorePoints | Sort-object -property order))
 		{
 			$RestoreFiles = $RestorePoint.files
 			$RestoreFileNames = $RestoreFiles.BackupPath -join '`n ,'
-			Write-verbose "$FunctionName - Restoring backup starting at LSN $($RestoreFiles[0].FirstLSN) in $($RestoreFiles[0].BackupPath)"
+			Write-verbose "$FunctionName - Restoring backup starting at order $($RestorePoint.order) - LSN $($RestoreFiles[0].FirstLSN) in $($RestoreFiles[0].BackupPath)"
 			$LogicalFileMoves = @()
 			if ($Restore.RelocateFiles.count -gt 0)
 			{
