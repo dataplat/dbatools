@@ -51,30 +51,22 @@ foreach ($assembly in $assemblies)
 
 #>
 
+# Load our own custom library
+# Should always come before function imports
+. "$PSScriptRoot\bin\library.ps1"
+
 # All internal functions privately available within the toolset
 foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\*.ps1")) { . $function }
 
 # All exported functions
 foreach ($function in (Get-ChildItem "$PSScriptRoot\functions\*.ps1")) { . $function }
 
+# Run all optional code
+# Note: Each optional file must include a conditional governing whether it's run at all.
+# Validations were moved into the other files, in order to prevent having to update dbatools.psm1 every time
+foreach ($function in (Get-ChildItem "$PSScriptRoot\optional\*.ps1")) { . $function }
 
-
-#region Optional / Conditional components
-# Only import our own TEPP implementation if the official one isn't available
-if (-not (Get-Command -Name Register-ArgumentCompleter -ErrorAction Ignore))
-{
-    . "$PSScriptRoot\optional\TabExpansionPlusPlus.ps1"
-}
-
-# Only import Invoke-SqlCmd2, if the original isn't already available
-if (-not (Get-Command -Name Invoke-SqlCmd2 -ErrorAction Ignore -ListImported))
-{
-    . "$PSScriptRoot\optional\Invoke-SqlCmd2.ps1"
-}
-#endregion Optional / Conditional components
-
-
-# Finally register autocompletion
+#region Register autocompletion
 # Test whether we have Tab Expansion Plus available (used in dynamicparams scripts ran below)
 if (Get-Command TabExpansionPlusPlus\Register-ArgumentCompleter -ErrorAction Ignore)
 {
@@ -86,6 +78,13 @@ else
 }
 
 foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\dynamicparams\*.ps1")) { . $function }
+#endregion Register autocompletion
+
+# Load configuration system
+# Should always go last
+. "$PSScriptRoot\internal\configurations\configuration.ps1"
+
+# Loading 
 
 # Not supporting the provider path at this time
 # if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\")) { throw "Please change to another drive and reload the module." }

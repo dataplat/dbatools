@@ -71,7 +71,6 @@ Get-Module $ModuleName | Remove-Module
 # Because ModuleBase includes version number, this imports the required version
 # of the module
 $null = Import-Module $ModuleBase\$ModuleName.psd1 -PassThru -ErrorAction Stop 
-Get-ChildItem "$Modulebase\internal\" |ForEach-Object {. $_.fullname}
 
     Describe "$Name Tests" -Tag @('Command'){
         InModuleScope 'dbatools' {

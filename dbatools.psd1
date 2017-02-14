@@ -59,7 +59,7 @@
 	TypesToProcess = @()
 	
 	# Format files (xml) to be loaded when importing this module
-	FormatsToProcess = @()
+	FormatsToProcess = @('xml\dbatools.Format.ps1xml')
 	
 	# Modules to import as nested modules of the module specified in ModuleToProcess
 	NestedModules = @()
@@ -207,7 +207,10 @@
 		'Get-DbaSqlService',
 		'Find-DbaDependency',
 		'Clear-DbaSqlConnectionPool',
-		'Find-DbaCommand'
+		'Find-DbaCommand',
+		'Get-DbaConfig',
+		'Get-DbaConfigValue',
+		'Set-DbaConfig'
 	)
 	
 	<# coming soon
