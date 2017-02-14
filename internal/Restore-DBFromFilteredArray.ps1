@@ -101,13 +101,20 @@ Function Restore-DBFromFilteredArray
 
 		}
 
-		$RestorePoints = $InternalFiles | Sort-Object BackupTypeDescription, FirstLSN | Group-Object -Property FirstLSN | Select-Object -property Name 
-		foreach ($RestorePoint in $RestorePoints)
+ 		$RestorePoints  = @()
+        $if = $InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Database'} | Group-Object FirstLSN
+		$RestorePoints  += @([PSCustomObject]@{order=1;'Files' = $if.group})
+        $if = $InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Database Differential'}| Group-Object FirstLSN
+		$RestorePoints  += @([PSCustomObject]@{order=2;'Files' = $if.group})
+  		foreach ($if in ($InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} | Group-Object FirstLSN))
+ 		{
+   			$RestorePoints  += [PSCustomObject]@{order=$if.Name; 'Files' = $if.group}
+		}
+		foreach ($RestorePoint in ($RestorePoints | Sort-object -property order))
 		{
-	
-			$RestoreFiles = @($InternalFiles | Where-Object {$_.FirstLSN -eq $RestorePoint.Name})
+			$RestoreFiles = $RestorePoint.files
 			$RestoreFileNames = $RestoreFiles.BackupPath -join '`n ,'
-			Write-verbose "$FunctionName - Restoring backup starting at LSN $($RestorePoint.Name) in $($RestoreFiles[0].BackupPath)"
+			Write-verbose "$FunctionName - Restoring backup starting at LSN $($RestoreFiles[0].FirstLSN) in $($RestoreFiles[0].BackupPath)"
 			$LogicalFileMoves = @()
 			if ($Restore.RelocateFiles.count -gt 0)
 			{
@@ -212,6 +219,7 @@ Function Restore-DBFromFilteredArray
 				}
 				Foreach ($RestoreFile in $RestoreFiles)
 				{
+					Write-Verbose "$FunctionName - Adding device"
 					$Device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
 					$Device.Name = $RestoreFile.BackupPath
 					$Device.devicetype = "File"
@@ -255,7 +263,7 @@ Function Restore-DBFromFilteredArray
 			}
 			catch
 			{
-				write-verbose "$FunctionName - Closing Server connection"
+				write-verbose "$FunctionName - Failed, Closing Server connection"
 				$RestoreComplete = $False
 				$ExitError = $_.Exception.InnerException
 				Write-Warning "$FunctionName - $ExitError" -WarningAction stop
@@ -289,7 +297,7 @@ Function Restore-DBFromFilteredArray
 					$device = $restore.devices[0]
 					$null = $restore.devices.remove($Device)
 				}
-				write-verbose "$FunctionName - Closing Server connection"
+				write-verbose "$FunctionName - Succeeded, Closing Server connection"
 				$server.ConnectionContext.Disconnect()
 			}
 		}	

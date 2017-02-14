@@ -223,6 +223,7 @@ folder for those file types as defined on the target instance.
         
         foreach ($f in $path)
         {
+            Write-Verbose "type = $($f.gettype())"
             if ($f -is [string])
             {
                 Write-Verbose "$FunctionName : Paths passed in" 
@@ -245,7 +246,12 @@ folder for those file types as defined on the target instance.
                     else 
                     {
                         Write-Verbose "$FunctionName : Standard Directory"
+                        $FileCheck = $BackFiles.Count()
                         $BackupFiles += Get-DirectoryRestoreFile -Path $p
+                        if ((($BackupFiles.count)-$FileCheck) -eq 0)
+                        {
+                            $BackupFiles += Get-OlaHRestoreFile -Path $p
+                        }
                     }
                 }
             } 
