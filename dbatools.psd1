@@ -207,7 +207,10 @@
 		'Get-DbaSqlService',
 		'Find-DbaDependency',
 		'Clear-DbaSqlConnectionPool',
-		'Find-DbaCommand'
+		'Find-DbaCommand',
+		'Get-DbaConfig',
+		'Get-DbaConfigValue',
+		'Set-DbaConfig'
 	)
 	
 	<# coming soon
