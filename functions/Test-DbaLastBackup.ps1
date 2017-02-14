@@ -222,6 +222,7 @@ Restores data and log files to alternative locations and only restores databases
 			
 			foreach ($dbname in $dblist)
 			{
+				if ($dbname -eq 'tempdb') { continue }
 				
 				$db = $sourceserver.databases[$dbname]
 				
