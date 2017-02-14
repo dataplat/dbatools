@@ -54,198 +54,205 @@
 	
       Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-SqlRegisteredServerName
   #>
-  [CmdletBinding()]
-  param (
-    [parameter(Mandatory, ValueFromPipeline)]
-    [Alias('cn', 'host', 'ServerInstance', 'Server', 'SqlServer')]
-    [object]$ComputerName = $env:COMPUTERNAME,
-    [System.Management.Automation.Credential()]$Credential,
-    [Alias('FastParrot')]
-    [switch]$Turbo
-  )
-  BEGIN
-  {
-    $functionName = (Get-PSCallstack)[0].Command
-  }
-  PROCESS
-  {
-    foreach ( $Computer in $ComputerName )
-    {
-      $conn = $ipaddress = $CIMsession = $null
+	[CmdletBinding()]
+	param (
+		[parameter(Mandatory, ValueFromPipeline)]
+		[Alias('cn', 'host', 'ServerInstance', 'Server', 'SqlServer')]
+		[object]$ComputerName = $env:COMPUTERNAME,
+		[System.Management.Automation.Credential()]
+		$Credential,
+		[Alias('FastParrot')]
+		[switch]$Turbo
+	)
+	BEGIN
+	{
+		$functionName = (Get-PSCallstack)[0].Command
+	}
+	PROCESS
+	{
+		foreach ($Computer in $ComputerName)
+		{
+			$conn = $ipaddress = $CIMsession = $null
 			
-      if ( $Computer.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server] )
-      {
-        $Computer = $Computer.NetName
-      }
+			if ($Computer.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
+			{
+				$Computer = $Computer.NetName
+			}
 			
-      $OGComputer = $Computer
+			$OGComputer = $Computer
 			
-      if ($Computer -eq 'localhost' -or $Computer -eq '.')
-      {
-        $Computer = $env:COMPUTERNAME
-      }
+			if ($Computer -eq 'localhost' -or $Computer -eq '.')
+			{
+				$Computer = $env:COMPUTERNAME
+			}
 			
-      $Computer = $Computer.Split('\')[0]
-      Write-Verbose "$functionName - Connecting to server $Computer"
+			$Computer = $Computer.Split('\')[0]
 			
-      try
-      {
-        $ipaddress = ((Test-Connection -ComputerName $Computer -Count 1 -ErrorAction Stop).Ipv4Address).IPAddressToString
-      }
-      catch
-      {
-        try
-        {
-          $ipaddress = ((Test-Connection -ComputerName "$Computer.$env:USERDNSDOMAIN" -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
-          $Computer = "$Computer.$env:USERDNSDOMAIN"
-        }
-        catch
-        {
-          $Computer = $OGComputer
-          $ipaddress = ([System.Net.Dns]::GetHostEntry($Computer)).AddressList[0].IPAddressToString
-        }
-      }
-			
-      if ($Turbo)
-      {
-        try
-        {
-          $fqdn = [System.Net.Dns]::GetHostByAddress($ipaddress).HostName
-        }
-        catch
-        {
-          try
-          {
-            $fqdn = ([System.Net.Dns]::GetHostEntry($Computer)).HostName
-          }
-          catch
-          {
-            Write-Warning "$functionName - DNS name does not exist"
-            continue
-          }
-        }
+			if ($Turbo)
+			{
+				try
+				{
+					$ipaddress = ([System.Net.Dns]::GetHostEntry($Computer)).AddressList[0].IPAddressToString
+					$fqdn = [System.Net.Dns]::GetHostByAddress($ipaddress).HostName
+				}
+				catch
+				{
+					try
+					{
+						$ipaddress = ([System.Net.Dns]::GetHostEntry($Computer)).AddressList[0].IPAddressToString
+						$fqdn = ([System.Net.Dns]::GetHostEntry($Computer)).HostName
+					}
+					catch
+					{
+						Write-Warning "$functionName - DNS name does not exist"
+						continue
+					}
+				}
 				
-        if ($fqdn -notmatch "\.")
-        {
-          $dnsdomain = $env:USERDNSDOMAIN.ToLower()
-          $fqdn = "$fqdn.$dnsdomain"
-        }
+				if ($fqdn -notmatch "\.")
+				{
+					$dnsdomain = $env:USERDNSDOMAIN.ToLower()
+					$fqdn = "$fqdn.$dnsdomain"
+				}
 				
-        $hostname = $fqdn.Split(".")[0]
+				$hostname = $fqdn.Split(".")[0]
 				
-        [PSCustomObject]@{
-          InputName = $OGComputer
-          ComputerName = $hostname.ToUpper()
-          IPAddress = $ipaddress
-          DNSHostname = $hostname
-          Domain = $fqdn.Replace("$hostname.", "")
-          DNSHostEntry = $fqdn
-          FQDN = $fqdn
-        }
-        return
-      }
+				[PSCustomObject]@{
+					InputName = $OGComputer
+					ComputerName = $hostname.ToUpper()
+					IPAddress = $ipaddress
+					DNSHostname = $hostname
+					Domain = $fqdn.Replace("$hostname.", "")
+					DNSHostEntry = $fqdn
+					FQDN = $fqdn
+				}
+				return
+			}
 			
-      if ( $ipaddress )
-      {
-          Write-Verbose "$functionName - IP Address from $Computer is $ipaddress"
-      }
-      else
-      {
-        Write-Warning "$functionName - No IP Address returned from Computer $Computer"
-      }
-      if ( $host.Version.Major -gt 2 )
-      {
-        Write-Verbose "$functionName - Your PowerShell Version is $($host.Version.Major)"
-        try
-        {
-          Write-Verbose "$functionName - Getting computer information from server $Computer via CIM (WSMan)"
-          if ( $Credential )
-          {
-            $CIMsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
-            $conn = Get-CimInstance -Query "Select * FROM Win32_computersystem" -CimSession $CIMsession -ErrorAction SilentlyContinue
-          }
-          else
-          {
-            $conn = Get-CimInstance -Query "Select * FROM Win32_computersystem" -ComputerName $Computer -ErrorAction SilentlyContinue
-          }
-        }
-        catch
-        {
-          Write-Verbose "$functionName - No WSMan connection to $Computer"
-        }
-        if ( !$conn )
-        {
-          try
-          {
-            Write-Verbose "$functionName - Getting computer information from server $Computer via CIM (DCOM)"
-            $sessionoption = New-CimSessionOption -Protocol DCOM
-            if ( $Credential )
-            {
-              $CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
+			Write-Verbose "$functionName - Connecting to server $Computer"
+			
+			try
+			{
+				$ipaddress = ((Test-Connection -ComputerName $Computer -Count 1 -ErrorAction Stop).Ipv4Address).IPAddressToString
+			}
+			catch
+			{
+				try
+				{
+					$ipaddress = ((Test-Connection -ComputerName "$Computer.$env:USERDNSDOMAIN" -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
+					$Computer = "$Computer.$env:USERDNSDOMAIN"
+				}
+				catch
+				{
+					$Computer = $OGComputer
+					$ipaddress = ([System.Net.Dns]::GetHostEntry($Computer)).AddressList[0].IPAddressToString
+				}
+			}
+			
+			if ($ipaddress)
+			{
+				Write-Verbose "$functionName - IP Address from $Computer is $ipaddress"
+			}
+			else
+			{
+				Write-Warning "$functionName - No IP Address returned from Computer $Computer"
+				Write-Warning "$functionName - Using pure .NET to resolve"
+				return (Resolve-DbaNetworkName -ComputerName $Computer -Turbo)
+			}
+			
+			if ($host.Version.Major -gt 2)
+			{
+				Write-Verbose "$functionName - Your PowerShell Version is $($host.Version.Major)"
+				try
+				{
+					Write-Verbose "$functionName - Getting computer information from server $Computer via CIM (WSMan)"
+					if ($Credential)
+					{
+						$CIMsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
+						$conn = Get-CimInstance -Query "Select * FROM Win32_computersystem" -CimSession $CIMsession -ErrorAction SilentlyContinue
+					}
+					else
+					{
+						$conn = Get-CimInstance -Query "Select * FROM Win32_computersystem" -ComputerName $Computer -ErrorAction SilentlyContinue
+					}
+				}
+				catch
+				{
+					Write-Verbose "$functionName - No WSMan connection to $Computer"
+				}
+				if (!$conn)
+				{
+					try
+					{
+						Write-Verbose "$functionName - Getting computer information from server $Computer via CIM (DCOM)"
+						$sessionoption = New-CimSessionOption -Protocol DCOM
+						if ($Credential)
+						{
+							$CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
 							
-            }
-            else
-            {
-              $CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue
-            }
+						}
+						else
+						{
+							$CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue
+						}
 						
-            $conn = Get-CimInstance -Query "Select * FROM Win32_computersystem" -CimSession $CIMsession
-          }
-          catch
-          {
-            Write-Warning "$functionName - No DCOM connection for CIM to $Computer"
-          }
-        }
-
-        if ( !$conn )
-        {
-          Write-Verbose "$functionName - No CIM from $Computer. Getting HostName via .NET"
-          try
-          {
-            $fqdn = ([System.Net.Dns]::GetHostEntry($Computer)).HostName
-            $hostname = $fqdn.Split(".")[0]
+						$conn = Get-CimInstance -Query "Select * FROM Win32_computersystem" -CimSession $CIMsession
+					}
+					catch
+					{
+						Write-Warning "$functionName - No DCOM connection for CIM to $Computer"
+					}
+				}
+				
+				if (!$conn)
+				{
+					Write-Verbose "$functionName - No CIM from $Computer. Getting HostName via .NET"
+					try
+					{
+						$fqdn = ([System.Net.Dns]::GetHostEntry($Computer)).HostName
+						$hostname = $fqdn.Split(".")[0]
 						
-            $conn = [PSCustomObject]@{
-              Name = $Computer
-              DNSHostname = $hostname
-              Domain = $fqdn.Replace("$hostname.", "")
-            }
-          }
-          catch
-          {
-            Write-Warning "$functionName - No .NET information from $Computer"
-            continue
-          }
-        }
-      }
+						$conn = [PSCustomObject]@{
+							Name = $Computer
+							DNSHostname = $hostname
+							Domain = $fqdn.Replace("$hostname.", "")
+						}
+					}
+					catch
+					{
+						Write-Warning "$functionName - No .NET information from $Computer"
+						continue
+					}
+				}
+			}
 			
 			
-      try
-      {
-        Write-Verbose "$functionName - Resolving $($conn.DNSHostname) using GetHostEntry"
-        $hostentry = ([System.Net.Dns]::GetHostEntry($conn.DNSHostname)).HostName
-      }
-      catch
-      {
-        Write-Warning "$functionName - GetHostEntry failed"
-      }
+			try
+			{
+				Write-Verbose "$functionName - Resolving $($conn.DNSHostname) using GetHostEntry"
+				$hostentry = ([System.Net.Dns]::GetHostEntry($conn.DNSHostname)).HostName
+			}
+			catch
+			{
+				Write-Warning "$functionName - GetHostEntry failed"
+			}
 			
-      $fqdn = "$($conn.DNSHostname).$($conn.Domain)"
-      if ($fqdn -eq ".")
-      {
-        Write-Verbose "$functionName - No full FQDN found. Setting to null"
-        $fqdn = $null
-      }
+			$fqdn = "$($conn.DNSHostname).$($conn.Domain)"
+			if ($fqdn -eq ".")
+			{
+				Write-Verbose "$functionName - No full FQDN found. Setting to null"
+				$fqdn = $null
+			}
 			
-      [PSCustomObject]@{
-        InputName = $OGComputer
-        ComputerName = $conn.Name
-        IPAddress = $ipaddress
-        DNSHostName = $conn.DNSHostname
-        Domain = $conn.Domain
-        DNSHostEntry = $hostentry
-        FQDN = $fqdn
-      }
-    }
-  }
+			[PSCustomObject]@{
+				InputName = $OGComputer
+				ComputerName = $conn.Name
+				IPAddress = $ipaddress
+				DNSHostName = $conn.DNSHostname
+				Domain = $conn.Domain
+				DNSHostEntry = $hostentry
+				FQDN = $fqdn
+			}
+		}
+	}
 }
