@@ -1,4 +1,4 @@
-Function Disable-SqlLogonTrigger
+﻿Function Disable-SqlLogonTrigger
 {
 <#
 .SYNOPSIS

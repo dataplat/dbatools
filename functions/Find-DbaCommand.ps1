@@ -1,4 +1,4 @@
-Function Find-DbaCommand
+﻿Function Find-DbaCommand
 {
 <#
 .SYNOPSIS
@@ -57,12 +57,12 @@ Find-DbaCommand -Tag copy
 Finds all commands tagged with "copy"
 
 .EXAMPLE
-Find-DbaCommand -Author "chrissy"
+Find-DbaCommand -Author chrissy
 
 Finds every command whose author contains our beloved "chrissy"
 
 .EXAMPLE
-Find-DbaCommand -Pattern "snapshot" -Rebuild
+Find-DbaCommand -Pattern snapshot -Rebuild
 
 Finds all commands searching the entire help for "snapshot", rebuilding the index (good for developers)
 #>
@@ -114,23 +114,28 @@ Finds all commands searching the entire help for "snapshot", rebuilding the inde
         }
 
         function Get-DbaIndex() {
-            $dbamodule = Get-Module dbatools
+            $dbamodule = Get-Module -Name dbatools
             $allcommands = $dbamodule.ExportedCommands
             $helpcoll = New-Object System.Collections.Generic.List[System.Object]
             foreach($c in $allcommands.GetEnumerator()) {
                 $x = Get-DbaHelp $c.Key
                 $helpcoll.Add($x)
-            }
-            $dest = Get-DbaConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
+			}
+						
+			# $dest = Get-DbaConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
+			$dest = "$moduledirectory\bin\dbatools-index.json"
             if ($Pscmdlet.ShouldProcess($dest, "Recreating index"))
             {
                 $helpcoll | ConvertTo-Json | Out-File $dest
             }
-        }
-    }
-    PROCESS
+		}
+		
+		$moduledirectory = (Get-Module -Name dbatools).ModuleBase
+	}
+	PROCESS
     {
-        $idxfile = Get-DbaConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
+		# $idxfile = Get-DbaConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
+		$idxfile = "$moduledirectory\bin\dbatools-index.json"
         if(!(Test-Path $idxfile) -or $Rebuild) {
             Write-Verbose "Rebuilding index into $idxfile"
             $swrebuild = [system.diagnostics.stopwatch]::startNew()
@@ -142,12 +147,18 @@ Finds all commands searching the entire help for "snapshot", rebuilding the inde
         $result = $consolidated
         if($Pattern.length -gt 0) {
             $result = $result | Where-Object { $_.psobject.properties.value -like "*$Pattern*" }
-        }
-        if($Tag.length -gt 0) {
-            $result = $result | Where-Object Tags -contains $Tag
-        }
+		}
+		
+		if ($Tag.length -gt 0)
+		{
+			# need to remove the spaces in tags, added for human ease. 
+			# I forgot how to pretty tho, so match for now
+			# less accurate, needs help
+			$result = $result | Where-Object { $_.Tags -match $tag }
+		}
+		
         if($Author.length -gt 0) {
-            $result = $result | Where-Object Author -like '*$Author*'
+            $result = $result | Where-Object Author -like "*$Author*"
         }
         Select-DefaultView -InputObject $result -Property CommandName, Synopsis
     }

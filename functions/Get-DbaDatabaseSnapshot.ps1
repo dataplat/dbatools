@@ -20,6 +20,7 @@ Return information for only specific base dbs
 Return information for only specific snapshots
 
 .NOTES
+Tags: Snapshot
 Author: niphlod
 
 dbatools PowerShell module (https://dbatools.io)

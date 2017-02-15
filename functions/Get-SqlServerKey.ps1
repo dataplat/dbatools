@@ -1,4 +1,4 @@
-Function Get-SqlServerKey
+﻿Function Get-SqlServerKey
 {
 <# 
 .SYNOPSIS 

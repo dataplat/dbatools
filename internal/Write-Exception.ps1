@@ -1,4 +1,4 @@
-Function Write-Exception
+﻿Function Write-Exception
 {
 <#
 .SYNOPSIS

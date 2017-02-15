@@ -1,4 +1,4 @@
-Function Restore-Database
+﻿Function Restore-Database
 {
 <# 
 	.SYNOPSIS

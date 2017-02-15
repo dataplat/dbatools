@@ -1,4 +1,4 @@
-Function Watch-SqlDbLogin
+﻿Function Watch-SqlDbLogin
 {
 <# 
 .SYNOPSIS 

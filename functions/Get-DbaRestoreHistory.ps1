@@ -30,7 +30,8 @@ Returns default information plus From (\\server\backups\test.bak) and To (the md
 .PARAMETER Force
 Returns a ton of information about the backup history with no max rows
 
-.NOTES 
+.NOTES
+Tags: DisasterRecovery, Backup, Restore
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 

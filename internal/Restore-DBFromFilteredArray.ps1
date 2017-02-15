@@ -1,4 +1,4 @@
-Function Restore-DBFromFilteredArray
+﻿Function Restore-DBFromFilteredArray
 {
 <# 
 	.SYNOPSIS

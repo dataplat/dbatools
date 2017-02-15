@@ -1,4 +1,4 @@
-function Get-DirectoryRestoreFile
+﻿function Get-DirectoryRestoreFile
 {
 <#
 .SYNOPSIS
