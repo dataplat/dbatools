@@ -2,10 +2,11 @@ Function New-DbaSqlDirectory
 {
 <#
 .SYNOPSIS
-Tests if file or directory exists from the perspective of the SQL Server service account
+Creates new path as specified by the path variable
 
 .DESCRIPTION
-Uses master.dbo.xp_fileexist to determine if a file or directory exists
+Uses master.dbo.xp_create_subdir to create the path
+Returns $true if the path can be created, $false otherwise
 
 .PARAMETER SqlServer
 The SQL Server you want to run the test on.
@@ -49,13 +50,13 @@ https://dbatools.io/New-DbaSqlDirectory
 .EXAMPLE
 New-DbaSqlDirectory -SqlServer sqlcluster -Path L:\MSAS12.MSSQLSERVER\OLAP
 
-Tests whether the service account running the "sqlcluster" SQL Server isntance can access L:\MSAS12.MSSQLSERVER\OLAP. Logs into sqlcluster using Windows credentials. 
+If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\OLAP it will do and return $true, if not it will return $false. 
 
 .EXAMPLE
 $credential = Get-Credential
 New-DbaSqlDirectory -SqlServer sqlcluster -SqlCredential $credential -Path L:\MSAS12.MSSQLSERVER\OLAP
 
-Tests whether the service account running the "sqlcluster" SQL Server isntance can access L:\MSAS12.MSSQLSERVER\OLAP. Logs into sqlcluster using SQL authentication. 
+If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\OLAP it will do and return $true, if not it will return $false. Uses a SqlCredential to connect
 #>
 	[CmdletBinding()]
     [OutputType([bool])]
