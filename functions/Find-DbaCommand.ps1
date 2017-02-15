@@ -16,6 +16,15 @@ Finds all commands tagged with this author
 .PARAMETER Rebuild
 Rebuilds the index
 
+.PARAMETER Pattern
+Searches help for all commands in dbatools for the specified pattern and displays all results
+
+.PARAMETER Confirm
+Confirms overwrite of index
+
+.PARAMETER WhatIf
+Displays what would happen if the command is run
+
 .NOTES
 Tags: find
 Author: niphlod
