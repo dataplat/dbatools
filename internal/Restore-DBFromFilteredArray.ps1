@@ -81,9 +81,7 @@ Function Restore-DBFromFilteredArray
 					try
 					{
 						Write-Verbose "$FunctionName - Set $DbName single_user to kill processes"
-						#Stop-DbaProcess -SqlServer $Server -Databases $Dbname -WarningAction continue
-						
-						#Invoke-SQLcmd2 -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Alter database $DbName set single_user with rollback immediate;Alter database $DbName set Multi_user with rollback immediate;" -database master
+						Stop-DbaProcess -SqlServer $Server -Databases $Dbname -WarningAction Silentlycontinue
 						Invoke-SQLcmd2 -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; Alter database $DbName set online with rollback immediate" -database master
 
 					}
