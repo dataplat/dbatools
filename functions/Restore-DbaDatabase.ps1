@@ -189,10 +189,16 @@ folder for those file types as defined on the target instance.
 		{
 			if ($Path.StartsWith("\\") -eq $false)
 			{
-				#$newpath = Join-AdminUnc $SqlServer "$path"
+				# Many internal functions parse using Get-ChildItem. 
+				# We need to use Test-SqlPath and other commands instead
+				# Prevent people from trying 
+				
 				Write-Warning "Currently, you can only use UNC paths when running this command remotely. We expect to support local paths shortly."
-				#Write-Warning "Run this command on the server itself or try $newpath."
 				continue
+				
+				#$newpath = Join-AdminUnc $SqlServer "$path"
+				#Write-Warning "Run this command on the server itself or try $newpath."
+				
 			}
 		}
 		
