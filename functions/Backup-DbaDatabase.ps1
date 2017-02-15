@@ -198,9 +198,12 @@ Backs up every database in a normal start on localhost\sqlexpress2016, striping 
 			
 			if ($BackupFileName)
 			{
-				if ($BackupFileName -notmatch "\:")
+				if ($BackupFileName -notlike "*:*")
 				{
-					$BackupDirectory = $server.BackupDirectory
+					if (!$BackupDirectory)
+					{
+						$BackupDirectory = $server.BackupDirectory
+					}
 					$BackupFileName = "$BackupDirectory\$BackupFileName"
 				}
 				
