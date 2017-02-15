@@ -35,6 +35,7 @@ Prompts you for confirmation before executing any changing operations within the
 Internal parameter
 
 .NOTES
+Tags: Snapshot
 Author: niphlod
 
 dbatools PowerShell module (https://dbatools.io)

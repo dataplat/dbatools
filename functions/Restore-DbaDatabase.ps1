@@ -1,4 +1,4 @@
-function Restore-DbaDatabase
+﻿function Restore-DbaDatabase
 {
 <#
 .SYNOPSIS 
@@ -95,6 +95,7 @@ Prompts to confirm certain actions
 Shows what would happen if the command would execute, but does not actually perform the command
 
 .NOTES
+Tags: DisasterRecovery, Backup, Restore
 Original Author: Stuart Moore (@napalmgram), stuart-moore.com
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -223,6 +224,7 @@ folder for those file types as defined on the target instance.
         
         foreach ($f in $path)
         {
+            Write-Verbose "type = $($f.gettype())"
             if ($f -is [string])
             {
                 Write-Verbose "$FunctionName : Paths passed in" 
@@ -245,7 +247,12 @@ folder for those file types as defined on the target instance.
                     else 
                     {
                         Write-Verbose "$FunctionName : Standard Directory"
+                        $FileCheck = $BackupFiles.count
                         $BackupFiles += Get-DirectoryRestoreFile -Path $p
+                        if ((($BackupFiles.count)-$FileCheck) -eq 0)
+                        {
+                            $BackupFiles += Get-OlaHRestoreFile -Path $p
+                        }
                     }
                 }
             } 

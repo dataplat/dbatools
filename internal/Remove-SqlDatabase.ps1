@@ -1,4 +1,4 @@
-Function Remove-SqlDatabase
+﻿Function Remove-SqlDatabase
 {
 <#
 .SYNOPSIS

@@ -22,7 +22,8 @@ Returns fewer columns for an easy overview
 .PARAMETER FileList
 Returns detailed information about the files within the backup	
 
-.NOTES 
+.NOTES
+Tags: DisasterRecovery, Backup, Restore
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -139,8 +140,17 @@ Gets a list of all .bak files on the \\nas\sql share and reads the headers using
 			$gb = $datatable.Columns.Add("BackupSizeGB")
 			$gb.Expression = "BackupSizeMB / 1024"
 			
+			if ($null -eq $datatable.Columns['CompressedBackupSize'])
+			{
+				$formula = "0"
+			}
+			else
+			{
+				$formula = "CompressedBackupSize / 1024 / 1024"
+			}
+			
 			$cmb = $datatable.Columns.Add("CompressedBackupSizeMB", [int])
-			$cmb.Expression = "CompressedBackupSize / 1024 / 1024"
+			$cmb.Expression = $formula
 			$cgb = $datatable.Columns.Add("CompressedBackupSizeGB")
 			$cgb.Expression = "CompressedBackupSizeMB / 1024"
 			
