@@ -74,7 +74,7 @@ Performing the operation "Restoring model as dbatools-testrestore-model" on targ
 [Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is "Y"):
 	
 .NOTES
-Tags: DisasterRecovery
+Tags: DisasterRecovery, Backup
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 

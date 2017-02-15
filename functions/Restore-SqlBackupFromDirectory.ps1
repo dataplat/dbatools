@@ -43,7 +43,7 @@ Prompts you for confirmation before executing any changing operations within the
 Leaves the databases in No Recovery state to enable further backups to be added
 
 .NOTES
-Tags: DisasterRecovery
+Tags: DisasterRecovery, Backup
 Author  : Chrissy LeMaire, netnerds.net
 Requires: sysadmin access on destination SQL Server.
 

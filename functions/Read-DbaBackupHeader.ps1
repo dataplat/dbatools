@@ -23,7 +23,7 @@ Returns fewer columns for an easy overview
 Returns detailed information about the files within the backup	
 
 .NOTES
-Tags: DisasterRecovery
+Tags: DisasterRecovery, Backup
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 

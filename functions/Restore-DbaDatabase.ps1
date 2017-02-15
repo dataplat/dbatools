@@ -95,7 +95,7 @@ Prompts to confirm certain actions
 Shows what would happen if the command would execute, but does not actually perform the command
 
 .NOTES
-Tags: DisasterRecovery
+Tags: DisasterRecovery, Backup
 Original Author: Stuart Moore (@napalmgram), stuart-moore.com
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)

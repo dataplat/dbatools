@@ -81,7 +81,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .NOTES
-Tags: Storage
+Tags: Storage, Backup
 This script will not analyze the actual number of VLFs. Use Test-DbaVirtualLogFile or run t-sql "DBCC LOGINFO" statements
 This script uses Get-DbaDiskSpace dbatools command to get the TLog's drive free space
        

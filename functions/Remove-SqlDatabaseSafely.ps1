@@ -64,7 +64,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .NOTES
-Tags: DisasterRecovery
+Tags: DisasterRecovery, Backup
 Original Author: Rob Sewell @SQLDBAWithBeard, sqldbawithabeard.com
                  With huge thanks to Grant Fritchey and his verify your backups video 
                  Take a look its only 3 minutes long

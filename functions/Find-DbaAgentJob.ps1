@@ -50,7 +50,7 @@ Job Names and Step Names are searched for by regex by default. Use Exact to retu
 Datetime object used to narrow the results to a date
 	
 .NOTES
-Tags: DisasterRecovery
+Tags: DisasterRecovery, Backup
 Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)

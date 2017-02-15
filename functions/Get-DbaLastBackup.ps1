@@ -25,7 +25,7 @@ Return information for all but these specific databases
 Shows concise information including Server name, Database name, and the date the last time backups were performed
 
 .NOTES
-Tags: DisasterRecovery
+Tags: DisasterRecovery, Backup
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
 dbatools PowerShell module (https://dbatools.io)

@@ -24,7 +24,7 @@ Windows Authentication will be used if SqlCredential is not specified. SQL Serve
 Returns default information plus 'Notes' column
 
 .NOTES
-Tags: DisasterRecovery
+Tags: DisasterRecovery, Backup
 Original Author: Cláudio Silva (@ClaudioESSilva)
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire

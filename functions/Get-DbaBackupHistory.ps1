@@ -42,7 +42,7 @@ Returns last log backup set
 If set, Get-DbaBackupHistory will ignore CopyOnly backups
 
 .NOTES
-Tags: Storage, DisasterRecovery
+Tags: Storage, DisasterRecovery, Backup
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
