@@ -30,7 +30,7 @@ Shows only the local filenames
 Shows only the remote filenames
 	
 .NOTES
-Tags: DisasterRecovery
+Tags: DisasterRecovery, Orphan
 Author: Sander Stad (@sqlstad), sqlstad.nl
 Requires: sysadmin access on SQL Servers
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
