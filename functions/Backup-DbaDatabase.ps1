@@ -8,15 +8,14 @@ Backup one or more SQL Sever databases from a SQL Server SqlInstance
 Performs a backup of a specified type of 1 or more databases on a SQL Server Instance.
 These backups may be Full, Differential or Transaction log backups
 
-.PARAMETER DatabaseName
-Names of the databases to be backed up. May be either a list of comma seperated names, or if can be piped in from
-Get-DbaDatabases
-
 .PARAMETER SqlInstance
 The SQL Server instance hosting the databases to be backed up
 
 .PARAMETER SqlCredential
 Credentials to connect to the SQL Server instance if the calling user doesn't have permission
+
+.PARAMETER Databases
+Names of the databases to be backed up. This is auto-populated from the server.
 
 .PARAMETER BackupFileName
 name of the file to backup to. This is only accepted for single database backups
@@ -27,7 +26,7 @@ If the same name is used repeatedly, SQL Server will add backups to the same fil
 
 Sql Server needs permissions to write to the location. Path names are based on the Sql Server (c:\ is the c drive on the SQL Server, not the machine running the script)
 
-.PARAMETER BackupPath
+.PARAMETER BackupDirectory
 Path to place the backup files. If not specified the backups will be placed in the default backup location for SQLInstance
 If multiple paths are specified, the backups will be stiped across these locations. This will overwrite the FileCount option
 
@@ -41,18 +40,12 @@ This switch indicates that you wish to take normal backups. Be aware that these 
 
 For more details please refer to this MSDN article - https://msdn.microsoft.com/en-us/library/ms191495.aspx 
 
-.PARAMETER BackupType
+.PARAMETER Type
 The type of SQL Server backup to perform.
 Accepted values are Full, Log, Differential, Diff, Database
 
-.PARAMETER FileCount
-Number of files to stripe each backup across if a single BackupPath is provided.
-
-File Names with be suffixed with x-of-y to enable identifying striped sets, where y is the number of files in the set and x is from 1 to you
-
-.PARAMETER CreateFolder
-Switch to indicate that a folder should be created under each folder for each database if it doesn't already existing
-Folders are created by the Sql Instance, and checks will be made for write permissions
+.PARAMETER DatabaseCollection
+Internal parameter
 
 .NOTES
 Tags: DisasterRecovery, Backup, Restore
@@ -66,94 +59,104 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .EXAMPLE 
-Backup-DbaDatabase -SqlInstance Server1 -Databases HR, Finance -BackupType Full
+Backup-DbaDatabase -SqlInstance Server1 -Databases HR, Finance -Type Full
 
 This will perform a full database backup on the databases HR and Finance on SQL Server Instance Server1 to Server1's 
 default backup directory 
 
 .EXAMPLE
-Backup-DbaDatabase -SqlInstance Server1 -Databases HR,Finance -BackupType Full -BackupPath \\server2\backups,\\server3\backups -CreateFolder
+Backup-DbaDatabase -SqlInstance Server1 -Databases HR,Finance -Type Full -BackupDirectory \\server2\backups,\\server3\backups -CreateFolder
 
 This will perform a full Copy Only database backup on the databases HR and Finance on SQL Server Instance Server1 striping the files across the 2 fileshares, creaing folders 
 for each database
 
 .EXAMPLE
-Get-DbaDatabase -SqlInstance localhost\sqlexpress2016 -Status Normal -Exclude tempdb | Backup-DbaDatabase -SqlInstance localhost\sqlexpress2016 -BackupType diff -BackupPath d:\backups,e:\backups -CreateFolder
+Get-DbaDatabase -SqlInstance localhost\sqlexpress2016 -Status Normal -Exclude tempdb | Backup-DbaDatabase -SqlInstance localhost\sqlexpress2016 -Type diff -BackupDirectory d:\backups,e:\backups -CreateFolder
 
 Backs up every database in a normal start on localhost\sqlexpress2016, striping the backups across d:\backups and e:\backups for improved performance. Each DB has it's own folder under each of the backup paths
 
 #>
-	[CmdletBinding()]
+	[CmdletBinding(DefaultParameterSetName = "Default")]
 	param (
-		[parameter(ValueFromPipeline = $True)]
-		[object[]]$DatabaseName,
-		[object]$SqlInstance,
+		[parameter(ParameterSetName = "NoPipe", Mandatory)]
+		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[string[]]$BackupPath,
+		[string[]]$BackupDirectory,
 		[string]$BackupFileName,
 		[switch]$NoCopyOnly,
-		[ValidateSet('Full', 'Log', 'Differential','Diff','Database')] 
-		[string]$BackupType = "Full",
-		[int]$FileCount = 1,
-		[switch]$CreateFolder=$true
-
+		[ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
+		[string]$Type = "Full",
+		[parameter(ParameterSetName = "Pipe", Mandatory, ValueFromPipeline)]
+		[object[]]$DatabaseCollection
+		
 	)
+	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
+	
 	BEGIN
 	{
-		$FunctionName = $FunctionName =(Get-PSCallstack)[0].Command
-		$Databases = @()
+		$FunctionName = $FunctionName = (Get-PSCallstack)[0].Command
+				
+		if ($SqlInstance)
+		{
+			$databases = $psboundparameters.Databases
+			
+			if ($null -eq $databases)
+			{
+				Write-Warning "$FunctionName - You must specify -Databases when not using the pipeline"
+				continue
+			}
+			
+			try
+			{
+				$Server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+			}
+			catch
+			{
+				Write-Warning "$FunctionName - Cannot connect to $SqlInstance"
+				continue
+			}
+			
+			$DatabaseCollection = $server.Databases | Where-Object { $_.Name -in $databases }
+			
+			if ($BackupDirectory.count -gt 1)
+			{
+				$Filecount = $BackupDirectory.count
+			}
+			
+			if ($database.count -gt 1 -and $BackupFileName)
+			{
+				Write-Warning "$FunctionName - 1 BackupFile specified, but more than 1 database."
+				break
+			}
+		}
 	}
-	PROCESS
-	{
 	
-		if ($BackupPath.count -gt 1)
+	PROCESS
+	{		
+		if (!$SqlInstance -and !$DatabaseCollection)
 		{
-			$Filecount = $BackupPath.count
+			Write-Warning "You must specify a server and database or pipe some databases"
+			continue
 		}
-		foreach ($Name in $DatabaseName)
-		{
-			if ($Name -is [String])
-			{
-				$Databases += [PSCustomObject]@{Name = $Name; RecoveryModel=$null}
-			}
-			elseif ($Name -is [System.Object] -and $Name.Name.Length -ne 0 )
-			{
-				$Databases += [PSCustomObject]@{Name = $name.name; RecoveryModel= $RecoveryModel}
-			}
-		}
-	}
-	END
-	{
-		try 
-		{
-			$Server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential	          
-		}
-		catch {
-            $server.ConnectionContext.Disconnect()
-			Write-Warning "$FunctionName - Cannot connect to $SqlInstance" -WarningAction Stop
-		}
-
-		if ($databases.count -gt 1 -and $BackupFileName -ne '')
-		{
-			Write-warning "$FunctionName - 1 BackupFile specified, but more than 1 database."
-			break
-		}
-
 		
-		try
+		Write-Verbose "$FunctionName - $($database.count) database to backup"
+		
+		ForEach ($Database in $databasecollection)
 		{
-			$tmp = @($Databases.Name) 
-			$BackupHistory = Get-DbaBackupHistory -SqlServer $SqlInstance -databases $Databases.Name  -LastFull -ErrorAction SilentlyContinue
-			write-Verbose ($Databases.Name -join ',')
-		}
-		Catch
-		{
-			$_.exception
-		}
-		Write-Verbose "$FunctionName - $($Databases.count) database to backup"
-		ForEach ($Database in $Databases)
-		{
+			if ($server -eq $null) { $server = $Database.Parent }
+			
+			try
+			{
+				$BackupHistory = Get-DbaBackupHistory -SqlServer $server -databases $database.Name -LastFull -ErrorAction SilentlyContinue
+				Write-Verbose ($database.Name -join ',')
+			}
+			Catch
+			{
+				$_.exception
+			}
+			
 			$FailReasons = @()
+			
 			Write-Verbose "$FunctionName - Backup up database $($Database.name)"
 			if ($Database.RecoveryModel -eq $null)
 			{
@@ -161,21 +164,23 @@ Backs up every database in a normal start on localhost\sqlexpress2016, striping 
 				Write-Verbose "$($DataBase.Name) is in $($Database.RecoveryModel) recovery model"
 			}
 			
-			if ($Database.RecoveryModel -eq 'Simple' -and $BackupType -eq 'Log')
+			if ($Database.RecoveryModel -eq 'Simple' -and $Type -eq 'Log')
 			{
 				$FailReason = "$($Database.Name) is in simple recovery mode, cannot take log backup"
 				$FailReasons += $FailReason
 				Write-Warning "$FunctionName - $FailReason"
-
+				
 			}
-			$FullExists = $BackupHistory | Where-Object {$_.Database -eq $Database.Name}
-			if ($BackupType -ne "Full" -and $FullExists.length -eq 0)
+			
+			$FullExists = $BackupHistory | Where-Object { $_.Database -eq $Database.Name }
+			
+			if ($Type -ne "Full" -and $FullExists.length -eq 0)
 			{
 				$FailReason = "$($Database.Name) does not have an existing full backup, cannot take log or differentialbackup"
 				$FailReasons += $FailReason
-				Write-Warning "$FunctionName - $FailReason"	
+				Write-Warning "$FunctionName - $FailReason"
 			}
-
+			
 			$val = 0
 			$copyonly = !$NoCopyOnly
 			
@@ -184,75 +189,101 @@ Backs up every database in a normal start on localhost\sqlexpress2016, striping 
 			$backup.Database = $Database.Name
 			$Type = "Database"
 			$Suffix = "bak"
-			if ($BackupType -eq "Log")
+			if ($Type -eq "Log")
 			{
-					$Type = "Log" 
-					$Suffix = "trn"
+				$Type = "Log"
+				$Suffix = "trn"
 			}
 			$backup.Action = $Type
 			$backup.CopyOnly = $copyonly
-			if ($BackupType -in ('diff','differential'))
+			if ($Type -in ('diff', 'differential'))
 			{
 				$backup.Incremental = $true
 			}
 			Write-Verbose "$FunctionName - Sorting Paths"
+			
 			#If a backupfilename has made it this far, use it
 			$FinalBackupPath = @()
-			if ($BackupFileName -ne '')
+			
+			if ($BackupFileName)
 			{
+				if ($BackupFileName -notmatch "\:")
+				{
+					$BackupDirectory = $server.BackupDirectory
+					$BackupFileName = "$BackupDirectory\$BackupFileName"
+				}
+				
 				Write-Verbose "$FunctionName - Single db and filename"
-				if (Test-SqlPath -SqlServer $SqlInstance -Path (Split-Path $BackupFileName))
+				if (Test-SqlPath -SqlServer $server -Path (Split-Path $BackupFileName))
 				{
 					$FinalBackupPath += $BackupFileName
-				}else{
+				}
+				else
+				{
 					$FailReason = "Sql Server cannot write to the location $(Split-Path $BackupFileName)"
 					$FailReasons += $FailReason
-					Write-Warning "$FunctionName - $FailReason"	
+					Write-Warning "$FunctionName - $FailReason"
 				}
 			}
 			else
 			{
-				$TimeStamp = (Get-date -Format yyyyMMddHHmm)
-				Foreach ($path in $BackupPath)
+				if ($BackupDirectory -eq $null)
 				{
-					if ($CreateFolder){
-						$Path = $path+"\"+$Database.name
-					}
-					if( (New-DbaSqlDirectory -SqlServer:$SqlInstance -SqlCredential:$SqlCredential -Path $path) -eq $false)
+					$BackupDirectory = $server.BackupDirectory
+				}
+								
+				$TimeStamp = (Get-date -Format yyyyMMddHHmm)
+				
+				Foreach ($path in $BackupDirectory)
+				{
+					if ($CreateFolder)
 					{
+						$Path = $path + "\" + $Database.name
+						
+						if ((New-DbaSqlDirectory -SqlServer:$SqlInstance -SqlCredential:$SqlCredential -Path $path) -eq $false)
+						{
 							$FailReason = "Cannot create or write to folder $path"
 							$FailReasons += $FailReason
-							Write-Warning "$FunctionName - $FailReason"	
+							Write-Warning "$FunctionName - $FailReason"
+						}
 					}
 					else
 					{
-						$FinaLBackupPath += "$path\$(($Database.name).trim())_$Timestamp.$suffix"
+						$FinaLBackupPath += "$BackupDirectory\$(($Database.name).trim())_$Timestamp.$suffix"
 					}
 				}
 			}
-			Write-Verbose "before reasons"
+			
+			Write-Verbose "before failreasons"
 			if ($FailReasons.count -eq 0)
 			{
 				$val = 1
-				if (($FinalBackupPath.count -gt 1) -or $BackupPath -ne'')
+				if (($FinalBackupPath.count -gt 1) -or $BackupDirectory)
 				{
 					$filecount = $FinalBackupPath.count
 					foreach ($backupfile in $FinalBackupPath)
 					{
 						$device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem
 						$device.DeviceType = "File"
-						$device.Name = $backupfile.Replace(".$suffix", "-$val-of-$filecount.$suffix")
+						if ($filecount -gt 1)
+						{
+							$device.Name = $backupfile.Replace(".$suffix", "-$val-of-$filecount.$suffix")
+						}
+						else
+						{
+							$device.Name = $backupfile.Replace(".$suffix", "-$val.$suffix")
+						}
 						$backup.Devices.Add($device)
 						$val++
 					}
 				}
 				else
 				{
-					while ($val -lt ($filecount+1))
+					while ($val -lt ($filecount + 1))
 					{
 						$device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem
 						$device.DeviceType = "File"
-						if ($filecount -gt  1)
+						if ($filecount -gt 1)
 						{
 							Write-Verbose "$FunctionName - adding stripes"
 							$tFinalBackupPath = $FinalBackupPath.Replace(".$suffix", "-$val-of-$filecount.$suffix")
@@ -276,9 +307,9 @@ Backs up every database in a normal start on localhost\sqlexpress2016, striping 
 				try
 				{
 					$backup.SqlBackup($server)
-					$Tsql = $backup.Script($Server)
+					$Tsql = $backup.Script($server)
 					Write-Progress -id 1 -activity "Backing up database $($Database.Name)  to $backupfile" -status "Complete" -Completed
-					$BackupComplete =  $true
+					$BackupComplete = $true
 				}
 				catch
 				{
@@ -287,28 +318,37 @@ Backs up every database in a normal start on localhost\sqlexpress2016, striping 
 					$BackupComplete = $false
 				}
 			}
-			if ($failreasons.count -eq 0)
-			{
-				$failreasons += "None to report"
 			
-			[PSCustomObject]@{
-				SqlInstance = $SqlInstance
-				DatabaseName = $($Database.Name)
-				BackupComplete = $BackupComplete
-				BackupFilesCount = $filecount
-				BackupFiles = (split-path $backup.Devices.name -leaf)
-				BackupFilesComplete = ($backup.Devices.name)
-				BackupFolders = (split-path $backup.Devices.name)
-				TSql = $Tsql  
-				FailReasons = $FailReasons -join (',')				
-			} 
-			#| Select-DefaultView 
+			if ($failreasons.count -eq 0)
+			{		
+				[PSCustomObject]@{
+					SqlInstance = $server.name
+					DatabaseName = $($Database.Name)
+					BackupComplete = $BackupComplete
+					BackupFilesCount = $filecount
+					BackupFile = (split-path $backup.Devices.name -leaf)
+					BackupFolder = (split-path $backup.Devices.name)
+					BackupPath = ($backup.Devices.name)
+					Script = $Tsql
+					#FailReasons = $FailReasons -join (',')
+				}
+			}
 		}
-	
-		}
-	
 	}
 }
 
+<#
 
+[int]$FileCount = 1,
+[switch]$CreateFolder,
 
+.PARAMETER FileCount
+Number of files to stripe each backup across if a single BackupDirectory is provided.
+
+File Names with be suffixed with x-of-y to enable identifying striped sets, where y is the number of files in the set and x is from 1 to you
+
+.PARAMETER CreateFolder
+Switch to indicate that a folder should be created under each folder for each database if it doesn't already existing
+Folders are created by the Sql Instance, and checks will be made for write permissions
+
+#>
