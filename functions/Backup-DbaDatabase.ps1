@@ -78,7 +78,7 @@ Backs up every database in a normal start on localhost\sqlexpress2016, striping 
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	param (
-		[parameter(ParameterSetName = "NoPipe", Mandatory)]
+		[parameter(ParameterSetName = "NoPipe", Mandatory = $true)]
 		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string]$BackupDirectory,
@@ -86,7 +86,7 @@ Backs up every database in a normal start on localhost\sqlexpress2016, striping 
 		[switch]$NoCopyOnly,
 		[ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
 		[string]$Type = "Full",
-		[parameter(ParameterSetName = "Pipe", Mandatory, ValueFromPipeline)]
+		[parameter(ParameterSetName = "Pipe", Mandatory = $true, ValueFromPipeline = $true)]
 		[object[]]$DatabaseCollection
 		
 	)
@@ -96,16 +96,10 @@ Backs up every database in a normal start on localhost\sqlexpress2016, striping 
 	{
 		$FunctionName = $FunctionName = (Get-PSCallstack)[0].Command
 				
-		if ($SqlInstance)
+		if ($SqlInstance.length -ne 0)
 		{
 			$databases = $psboundparameters.Databases
-			
-			if ($null -eq $databases)
-			{
-				Write-Warning "$FunctionName - You must specify -Databases when not using the pipeline"
-				continue
-			}
-			
+			Write-Verbose "Connecting to $SqlInstance"
 			try
 			{
 				$Server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
@@ -147,7 +141,7 @@ Backs up every database in a normal start on localhost\sqlexpress2016, striping 
 			
 			$FailReasons = @()
 			
-			Write-Verbose "$FunctionName - Backup up database $($Database.name)"
+			Write-Verbose "$FunctionName - Backup up database $database"
 			
 			if ($Database.RecoveryModel -eq $null)
 			{
@@ -327,14 +321,14 @@ Backs up every database in a normal start on localhost\sqlexpress2016, striping 
 					BackupFolder = (split-path $backup.Devices.name)
 					BackupPath = ($backup.Devices.name)
 					Script = $Tsql
-					FailReasons = $FailReasons -join (',')
+					Notes = $FailReasons -join (',')
 				} 
 			} else {
 				[PSCustomObject]@{
 					SqlInstance = $server.name
 					DatabaseName = $($Database.Name)
 					BackupComplete = $false
-					FailReasons = $FailReasons -join (',')	
+					Notes = $FailReasons -join (',')	
 				}
 				$failreasones =@()
 			}
