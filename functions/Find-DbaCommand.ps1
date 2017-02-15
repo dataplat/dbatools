@@ -121,7 +121,7 @@ Finds all commands searching the entire help for "snapshot", rebuilding the inde
                 $x = Get-DbaHelp $c.Key
                 $helpcoll.Add($x)
             }
-            $dest = Get-ConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
+            $dest = Get-DbaConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
             if ($Pscmdlet.ShouldProcess($dest, "Recreating index"))
             {
                 $helpcoll | ConvertTo-Json | Out-File $dest
@@ -130,7 +130,7 @@ Finds all commands searching the entire help for "snapshot", rebuilding the inde
     }
     PROCESS
     {
-        $idxfile = Get-ConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
+        $idxfile = Get-DbaConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
         if(!(Test-Path $idxfile) -or $Rebuild) {
             Write-Verbose "Rebuilding index into $idxfile"
             $swrebuild = [system.diagnostics.stopwatch]::startNew()
