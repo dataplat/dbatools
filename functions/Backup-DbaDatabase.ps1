@@ -261,11 +261,13 @@ Backs up every database in a normal start on localhost\sqlexpress2016, striping 
 						$device.DeviceType = "File"
 						if ($filecount -gt 1)
 						{
-							$device.Name = $backupfile.Replace(".$suffix", "-$val-of-$filecount.$suffix")
+							$device.Name = $backupfile
+							#.Replace(".$suffix", "-$val-of-$filecount.$suffix")
 						}
 						else
 						{
-							$device.Name = $backupfile.Replace(".$suffix", "-$val.$suffix")
+							$device.Name = $backupfile
+							#.Replace(".$suffix", "-$val.$suffix")
 						}
 						$backup.Devices.Add($device)
 						$val++
@@ -280,7 +282,8 @@ Backs up every database in a normal start on localhost\sqlexpress2016, striping 
 						if ($filecount -gt 1)
 						{
 							Write-Verbose "$FunctionName - adding stripes"
-							$tFinalBackupPath = $FinalBackupPath.Replace(".$suffix", "-$val-of-$filecount.$suffix")
+							$tFinalBackupPath = $FinalBackupPath
+							#.Replace(".$suffix", "-$val-of-$filecount.$suffix")
 						}
 						$device.Name = $tFinalBackupPath
 						Write-Verbose $tFinalBackupPath
