@@ -23,12 +23,32 @@ name of the file to backup to. This is only accepted for single database backups
 If no name is specified then the backup files will be named DatabaseName_yyyyMMddHHmm (ie; Database1_201714022131)
 with the appropriate extension.
 
+<<<<<<< Updated upstream
 .PARAMETER BackupPath
 Path to place the backup files. If not specified the backups will be placed in the default backup location for SQLInstance
 If multuple paths specified, the backups will be stiped across these locations. This will overwrite the FileCount option
 
 .PARAMETER NoCopyOnly
 By default function performa
+=======
+If the same name is used repeatedly, SQL Server will add backups to the same file at an incrementing position
+
+Sql Server needs permissions to write to the location. Path names are based on the Sql Server (c:\ is the c drive on the SQL Server, not the machine running the script)
+
+.PARAMETER BackupPath
+Path to place the backup files. If not specified the backups will be placed in the default backup location for SQLInstance
+If multiple paths are specified, the backups will be stiped across these locations. This will overwrite the FileCount option
+
+If path does not exist Sql Server will attmept to create it. Folders are created by the Sql Instance, and checks will be made for write permissions
+
+File Names with be suffixed with x-of-y to enable identifying striped sets, where y is the number of files in the set and x is from 1 to you
+
+.PARAMETER NoCopyOnly
+By default function performs a Copy Only backup. These backups do not intefere with the restore chain of the database, so are safe to take.
+This switch indicates that you wish to take normal backups. Be aware that these WILL break your restore chains, so use at your own risk
+
+For more details please refer to this MSDN article - https://msdn.microsoft.com/en-us/library/ms191495.aspx 
+>>>>>>> Stashed changes
 
 .PARAMETER BackupType
 The type of SQL Server backup to perform.
@@ -37,17 +57,37 @@ Accepted values are Full, Log, Differential, Diff, Database
 .PARAMETER FileCount
 Number of files to stripe each backup across if a single BackupPath is provided.
 
+<<<<<<< Updated upstream
 .PARAMETER CreateFolder
 Switch to indicate that a folder should be created under each folder for each database if it doesn't already existing
+=======
+File Names with be suffixed with x-of-y to enable identifying striped sets, where y is the number of files in the set and x is from 1 to you
+
+.PARAMETER CreateFolder
+Switch to indicate that a folder should be created under each folder for each database if it doesn't already existing
+Folders are created by the Sql Instance, and checks will be made for write permissions
+>>>>>>> Stashed changes
 
 .EXAMPLE 
 Backup-DbaDatabase -SqlInstance Server1 -Databases HR, Finance -BackupType Full
 
 This will perform a full database backup on the databases HR and Finance on SQL Server Instance Server1 to Server1's 
+<<<<<<< Updated upstream
 default backup directory
 
 .EXAMPLE
 
+=======
+default backup directory 
+
+.EXAMPLE
+Backup-DbaDatase -SqlInstance Server1 -Databases HR,Funance -BackupType Full -BackupPath \\server2\backups,\\server3\backups -CreateFolder
+
+This will perform a full Copy Only database backup on the databases HR and Finance on SQL Server Instance Server1 striping the files across the 2 fileshares, creaing folders 
+for each database
+
+.EXAMPLE
+>>>>>>> Stashed changes
 #>
 	[CmdletBinding()]
 	param (
@@ -84,7 +124,11 @@ default backup directory
 			}
 			elseif ($Name -is [System.Object] -and $Name.Name.Length -ne 0 )
 			{
+<<<<<<< Updated upstream
 				$Databases += [PSCustomObject]@{Name = 'name'; RecoveryModel= $RecoveryModel}
+=======
+				$Databases += [PSCustomObject]@{Name = $name.name; RecoveryModel= $RecoveryModel}
+>>>>>>> Stashed changes
 			}
 		}
 	}
@@ -262,6 +306,12 @@ default backup directory
 				DatabaseName = $($Database.Name)
 				BackupComplete = $BackupComplete
 				BackupFilesCount = $filecount
+<<<<<<< Updated upstream
+=======
+				BackupFiles = (split-path $backup.Devices.name -leaf)
+				BackupFilesComplete = ($backup.Devices.name)
+				BackupFolders = (split-path $backup.Devices.name)
+>>>>>>> Stashed changes
 				TSql = $Tsql  
 				FailReasons = $FailReasons -join (',')				
 			} 
