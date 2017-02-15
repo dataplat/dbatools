@@ -1,4 +1,4 @@
-Function Read-DbaBackupHeader
+﻿Function Read-DbaBackupHeader
 {
 <#
 .SYNOPSIS 

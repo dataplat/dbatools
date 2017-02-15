@@ -1,4 +1,4 @@
-Function Copy-SqlPolicyManagement
+﻿Function Copy-SqlPolicyManagement
 {
 <#
 .SYNOPSIS

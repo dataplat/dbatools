@@ -1,4 +1,4 @@
-Function Get-DbaLastBackup
+﻿Function Get-DbaLastBackup
 {
 <#
 .SYNOPSIS

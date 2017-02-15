@@ -1,4 +1,4 @@
-Function Copy-SqlDatabaseAssembly
+﻿Function Copy-SqlDatabaseAssembly
 {
 <#
 .SYNOPSIS 

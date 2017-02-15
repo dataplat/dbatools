@@ -1,4 +1,4 @@
-Function Copy-SqlResourceGovernor
+﻿Function Copy-SqlResourceGovernor
 {
 <#
 .SYNOPSIS

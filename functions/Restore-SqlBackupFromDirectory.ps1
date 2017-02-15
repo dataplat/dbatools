@@ -1,4 +1,4 @@
-Function Restore-SqlBackupFromDirectory
+﻿Function Restore-SqlBackupFromDirectory
 {
 <# 
 .SYNOPSIS 

@@ -1,4 +1,4 @@
-Function Show-SqlWhoIsActive
+﻿Function Show-SqlWhoIsActive
 {
 <#
 .SYNOPSIS

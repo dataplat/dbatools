@@ -1,4 +1,4 @@
-Function Test-DbaSpn
+﻿Function Test-DbaSpn
 {
 <#
 .SYNOPSIS 

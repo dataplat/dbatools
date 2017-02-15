@@ -1,4 +1,4 @@
-function Measure-DbaBackupThroughput
+ï»¿function Measure-DbaBackupThroughput
 {
 <#
 .SYNOPSIS
@@ -136,7 +136,7 @@ Will fill this in
 				
 				foreach ($history in $histories)
 				{
-					$timetaken = New-TimeSpan –Start $history.Start –End $history.End
+					$timetaken = New-TimeSpan â€“Start $history.Start â€“End $history.End
 					
 					if ($timetaken.TotalMilliseconds -eq 0)
 					{

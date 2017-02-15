@@ -1,4 +1,4 @@
-Function Get-DbaStartupParameter
+﻿Function Get-DbaStartupParameter
 {
 <#
 .SYNOPSIS

@@ -1,4 +1,4 @@
-Function Copy-SqlSysDbUserObjects
+﻿Function Copy-SqlSysDbUserObjects
 {
 <#
 .SYNOPSIS

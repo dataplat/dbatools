@@ -1,4 +1,4 @@
-Function Get-DbaBackupHistory
+﻿Function Get-DbaBackupHistory
 {
 <#
 .SYNOPSIS

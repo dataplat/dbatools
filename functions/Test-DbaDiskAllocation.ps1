@@ -1,4 +1,4 @@
-Function Test-DbaDiskAllocation
+﻿Function Test-DbaDiskAllocation
 {
 <#
 .SYNOPSIS

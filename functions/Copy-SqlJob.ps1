@@ -1,4 +1,4 @@
-Function Copy-SqlJob
+﻿Function Copy-SqlJob
 {
 <#
 .SYNOPSIS

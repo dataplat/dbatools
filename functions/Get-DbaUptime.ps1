@@ -1,4 +1,4 @@
-function Get-DbaUptime
+﻿function Get-DbaUptime
 {
 <#
 .SYNOPSIS

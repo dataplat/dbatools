@@ -1,4 +1,4 @@
-Function Test-DbaFullRecoveryModel
+﻿Function Test-DbaFullRecoveryModel
 {
 <#
 .SYNOPSIS
@@ -25,7 +25,7 @@ Returns default information plus 'Notes' column
 
 .NOTES
 Tags: DisasterRecovery, Backup
-Original Author: Cl�udio Silva (@ClaudioESSilva)
+Original Author: Cláudio Silva (@ClaudioESSilva)
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 

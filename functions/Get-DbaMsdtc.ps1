@@ -1,4 +1,4 @@
-Function Get-DbaMsdtc
+﻿Function Get-DbaMsdtc
 {
 <#
 .SYNOPSIS

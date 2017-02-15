@@ -1,4 +1,4 @@
-function Get-DbaXEventsSession
+﻿function Get-DbaXEventsSession
 {
  <#
 .SYNOPSIS

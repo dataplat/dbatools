@@ -1,4 +1,4 @@
-Function Copy-SqlAgentCategory
+﻿Function Copy-SqlAgentCategory
 {
 <#
 .SYNOPSIS 

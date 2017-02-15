@@ -1,4 +1,4 @@
-function Get-DbaSpn
+﻿function Get-DbaSpn
 {
 <#
 .SYNOPSIS

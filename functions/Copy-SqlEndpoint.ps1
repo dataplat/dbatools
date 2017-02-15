@@ -1,4 +1,4 @@
-Function Copy-SqlEndpoint
+﻿Function Copy-SqlEndpoint
 {
 <#
 .SYNOPSIS 

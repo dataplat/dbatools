@@ -1,4 +1,4 @@
-FUNCTION Find-DbaAgentJob
+﻿FUNCTION Find-DbaAgentJob
 {
 <#
 .SYNOPSIS 

@@ -1,4 +1,4 @@
-Function Resolve-DbaNetworkName
+﻿Function Resolve-DbaNetworkName
 {
   <#
       .SYNOPSIS

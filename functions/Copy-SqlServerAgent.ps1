@@ -1,4 +1,4 @@
-Function Copy-SqlServerAgent
+﻿Function Copy-SqlServerAgent
 {
 <#
 .SYNOPSIS
