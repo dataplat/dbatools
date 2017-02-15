@@ -105,12 +105,15 @@ Function Restore-DBFromFilteredArray
         $if = $InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Database'} | Group-Object FirstLSN
 		$RestorePoints  += @([PSCustomObject]@{order=[int64]1;'Files' = $if.group})
         $if = $InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Database Differential'}| Group-Object FirstLSN
-		$RestorePoints  += @([PSCustomObject]@{order=[int64]2;'Files' = $if.group})
-  		foreach ($if in ($InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} | Group-Object FirstLSN))
+		if ($if -ne $null){
+			$RestorePoints  += @([PSCustomObject]@{order=[int64]2;'Files' = $if.group})
+		}
+		foreach ($if in ($InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} | Group-Object FirstLSN))
  		{
    			$RestorePoints  += [PSCustomObject]@{order=[int64]($if.Name); 'Files' = $if.group}
 		}
-		foreach ($RestorePoint in ($RestorePoints | Sort-object -property order))
+		$SortedRestorePoints = $RestorePoints | Sort-object -property order
+		foreach ($RestorePoint in $SortedRestorePoints)
 		{
 			$RestoreFiles = $RestorePoint.files
 			$RestoreFileNames = $RestoreFiles.BackupPath -join '`n ,'
@@ -178,12 +181,14 @@ Function Restore-DBFromFilteredArray
 				if ($RestoreTime -gt (Get-Date))
 				{
 						$restore.ToPointInTime = $null
-						$ConfirmPointInTime = "restoring to latest point in time"
+						Write-Verbose "$FunctionName - restoring to latest point in time"
+
 				}
 				elseif ($RestoreFiles[0].RecoveryModel -ne 'Simple')
 				{
 					$Restore.ToPointInTime = $RestoreTime
-					$ConfirmPointInTime = "restoring to $RestoreTime"
+					Write-Verbose "$FunctionName - restoring to $RestoreTime"
+					
 				} 
 				else 
 				{
@@ -302,6 +307,9 @@ Function Restore-DBFromFilteredArray
 			}
 		}	
 		}
-		$server.ConnectionContext.Disconnect()
+		if ($server.ConnectionContext.exists)
+		{
+			$server.ConnectionContext.Disconnect()
+		}
 	}
 }
