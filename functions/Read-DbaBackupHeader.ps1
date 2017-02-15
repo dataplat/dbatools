@@ -1,4 +1,4 @@
-﻿Function Read-DbaBackupHeader
+Function Read-DbaBackupHeader
 {
 <#
 .SYNOPSIS 
@@ -22,7 +22,8 @@ Returns fewer columns for an easy overview
 .PARAMETER FileList
 Returns detailed information about the files within the backup	
 
-.NOTES 
+.NOTES
+Tags: DisasterRecovery
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 

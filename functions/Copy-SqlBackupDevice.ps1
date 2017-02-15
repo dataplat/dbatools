@@ -43,7 +43,7 @@ Prompts you for confirmation before executing any changing operations within the
 Drops and recreates the backup device if it exists
 
 .NOTES
-Tags: Migration
+Tags: Migration, DisasterRecovery
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 

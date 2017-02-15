@@ -34,7 +34,8 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm 
 Prompts you for confirmation before executing any changing operations within the command. 
 
-.NOTES 
+.NOTES
+Tags: DisasterRecovery
 Original Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
