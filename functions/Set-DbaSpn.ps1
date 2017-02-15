@@ -1,4 +1,4 @@
-Function Set-DbaSpn
+﻿Function Set-DbaSpn
 {
 <#
 .SYNOPSIS

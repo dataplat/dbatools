@@ -1,4 +1,4 @@
-Function Copy-SqlDataCollector
+﻿Function Copy-SqlDataCollector
 {
 <#
 .SYNOPSIS

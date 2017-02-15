@@ -1,4 +1,4 @@
-Function Get-DbaTcpPort
+﻿Function Get-DbaTcpPort
 {
 <#
 .SYNOPSIS

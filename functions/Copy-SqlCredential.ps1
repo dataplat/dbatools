@@ -1,4 +1,4 @@
-Function Copy-SqlCredential
+﻿Function Copy-SqlCredential
 {
 <# 
 .SYNOPSIS 

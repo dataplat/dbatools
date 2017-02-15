@@ -1,4 +1,4 @@
-Function Import-CsvToSql
+﻿Function Import-CsvToSql
 {
 <# 
 .SYNOPSIS

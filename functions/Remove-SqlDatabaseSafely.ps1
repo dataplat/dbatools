@@ -1,4 +1,4 @@
-Function Remove-SqlDatabaseSafely
+﻿Function Remove-SqlDatabaseSafely
 {
 <#
 .SYNOPSIS

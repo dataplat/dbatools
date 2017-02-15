@@ -1,4 +1,4 @@
-Function Copy-SqlCustomError
+﻿Function Copy-SqlCustomError
 {
 <#
 .SYNOPSIS 

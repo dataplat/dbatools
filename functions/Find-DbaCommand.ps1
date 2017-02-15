@@ -1,4 +1,4 @@
-Function Find-DbaCommand
+﻿Function Find-DbaCommand
 {
 <#
 .SYNOPSIS

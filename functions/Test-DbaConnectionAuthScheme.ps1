@@ -1,4 +1,4 @@
-Function Test-DbaConnectionAuthScheme
+﻿Function Test-DbaConnectionAuthScheme
 {
 <#
 .SYNOPSIS

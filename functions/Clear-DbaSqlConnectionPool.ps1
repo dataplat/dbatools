@@ -1,4 +1,4 @@
-Function Clear-DbaSqlConnectionPool
+﻿Function Clear-DbaSqlConnectionPool
 {
 <#
 .SYNOPSIS

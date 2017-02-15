@@ -1,4 +1,4 @@
-Function Get-DbaPageFileSetting
+﻿Function Get-DbaPageFileSetting
 {
 <#
 .SYNOPSIS

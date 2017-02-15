@@ -1,4 +1,4 @@
-function Test-DbaVirtualLogFile
+﻿function Test-DbaVirtualLogFile
 {
 <#
 .SYNOPSIS

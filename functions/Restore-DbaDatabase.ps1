@@ -1,4 +1,4 @@
-function Restore-DbaDatabase
+﻿function Restore-DbaDatabase
 {
 <#
 .SYNOPSIS 

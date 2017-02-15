@@ -1,4 +1,4 @@
-Function Export-SqlSpConfigure
+﻿Function Export-SqlSpConfigure
 {
 <#
 .SYNOPSIS

@@ -1,4 +1,4 @@
-Function Test-DbaServerName
+﻿Function Test-DbaServerName
 {
 <#
 .SYNOPSIS
