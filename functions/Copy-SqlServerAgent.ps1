@@ -51,7 +51,8 @@ Drops and recreates the objects if it exists
 .PARAMETER DisableJobsOnSource
 Disables the jobs on source
 
-.NOTES 
+.NOTES
+Tags: Migration
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 

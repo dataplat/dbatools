@@ -44,7 +44,8 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm 
 Prompts you for confirmation before executing any changing operations within the command. 
 
-.NOTES 
+.NOTES
+Tags: Migration
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
@@ -84,7 +85,8 @@ Sync-SqlLoginPermissions -Source sqlserver2014a -Destination sqlcluster -Login r
 
 Copies permissions ONLY for logins netnerds and realcajun.
 
-.NOTES 
+.NOTES
+Tags: Migration
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 Limitations: Does not support Application Roles yet

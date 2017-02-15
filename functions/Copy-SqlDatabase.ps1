@@ -1,4 +1,4 @@
-﻿Function Copy-SqlDatabase
+Function Copy-SqlDatabase
 {
 <#
 .SYNOPSIS 
@@ -93,7 +93,8 @@ Number of files to split the backup. Default is 3.
 .PARAMETER NoCopyOnly
 By default, Copy-SqlDatabase backups are backed up with COPY_ONLY, which avoids breaking the LSN backup chain. This parameter will set CopyOnly to $false.
 
-.NOTES 
+.NOTES
+Tags: Migration
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 Limitations: Doesn't cover what it doesn't cover (replication, certificates, etc)
