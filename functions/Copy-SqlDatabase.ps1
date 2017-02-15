@@ -94,7 +94,7 @@ Number of files to split the backup. Default is 3.
 By default, Copy-SqlDatabase backups are backed up with COPY_ONLY, which avoids breaking the LSN backup chain. This parameter will set CopyOnly to $false.
 
 .NOTES
-Tags: Migration, DisasterRecovery, Backup
+Tags: Migration, DisasterRecovery, Backup, Restore
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 Limitations: Doesn't cover what it doesn't cover (replication, certificates, etc)
