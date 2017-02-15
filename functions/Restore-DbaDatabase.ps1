@@ -235,7 +235,7 @@ folder for those file types as defined on the target instance.
 				# We need to use Test-SqlPath and other commands instead
 				# Prevent people from trying 
 				
-				Write-Warning "Currently, you can only use UNC paths when running this command remotely. We expect to support local paths shortly."
+				Write-Warning "Currently, you can only use UNC paths when running this command remotely. We expect to support non-UNC paths for remote servers shortly."
 				return
 				
 				#$newpath = Join-AdminUnc $SqlServer "$path"
