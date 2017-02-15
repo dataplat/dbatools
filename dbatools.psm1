@@ -51,25 +51,32 @@ foreach ($assembly in $assemblies)
 
 #>
 
+# This technique helps a little bit
+# https://becomelotr.wordpress.com/2017/02/13/expensive-dot-sourcing/
+
 # All internal functions privately available within the toolset
-foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\*.ps1")) { . $function }
+foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\*.ps1"))
+{
+	. ([scriptblock]::Create([io.file]::ReadAllText($function)))
+}
 
 # All exported functions
-foreach ($function in (Get-ChildItem "$PSScriptRoot\functions\*.ps1")) { . $function }
-
-
+foreach ($function in (Get-ChildItem "$PSScriptRoot\functions\*.ps1"))
+{
+	. ([scriptblock]::Create([io.file]::ReadAllText($function)))
+}
 
 #region Optional / Conditional components
 # Only import our own TEPP implementation if the official one isn't available
 if (-not (Get-Command -Name Register-ArgumentCompleter -ErrorAction Ignore))
 {
-    . "$PSScriptRoot\optional\TabExpansionPlusPlus.ps1"
+	. ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\optional\TabExpansionPlusPlus.ps1")))
 }
 
 # Only import Invoke-SqlCmd2, if the original isn't already available
 if (-not (Get-Command -Name Invoke-SqlCmd2 -ErrorAction Ignore -ListImported))
 {
-    . "$PSScriptRoot\optional\Invoke-SqlCmd2.ps1"
+	. ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\optional\Invoke-SqlCmd2.ps1")))
 }
 #endregion Optional / Conditional components
 
@@ -85,7 +92,10 @@ else
     $TEPP = $false
 }
 
-foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\dynamicparams\*.ps1")) { . $function }
+foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\dynamicparams\*.ps1"))
+{
+	. ([scriptblock]::Create([io.file]::ReadAllText($function)))
+}
 
 # Not supporting the provider path at this time
 # if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\")) { throw "Please change to another drive and reload the module." }

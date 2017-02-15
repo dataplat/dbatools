@@ -81,9 +81,7 @@ Function Restore-DBFromFilteredArray
 					try
 					{
 						Write-Verbose "$FunctionName - Set $DbName single_user to kill processes"
-						#Stop-DbaProcess -SqlServer $Server -Databases $Dbname -WarningAction continue
-						
-						#Invoke-SQLcmd2 -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Alter database $DbName set single_user with rollback immediate;Alter database $DbName set Multi_user with rollback immediate;" -database master
+						Stop-DbaProcess -SqlServer $Server -Databases $Dbname -WarningAction Silentlycontinue
 						Invoke-SQLcmd2 -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; Alter database $DbName set online with rollback immediate" -database master
 
 					}
@@ -101,13 +99,23 @@ Function Restore-DBFromFilteredArray
 
 		}
 
-		$RestorePoints = $InternalFiles | Sort-Object BackupTypeDescription, FirstLSN | Group-Object -Property FirstLSN | Select-Object -property Name 
-		foreach ($RestorePoint in $RestorePoints)
+ 		$RestorePoints  = @()
+        $if = $InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Database'} | Group-Object FirstLSN
+		$RestorePoints  += @([PSCustomObject]@{order=[int64]1;'Files' = $if.group})
+        $if = $InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Database Differential'}| Group-Object FirstLSN
+		if ($if -ne $null){
+			$RestorePoints  += @([PSCustomObject]@{order=[int64]2;'Files' = $if.group})
+		}
+		foreach ($if in ($InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} | Group-Object FirstLSN))
+ 		{
+   			$RestorePoints  += [PSCustomObject]@{order=[int64]($if.Name); 'Files' = $if.group}
+		}
+		$SortedRestorePoints = $RestorePoints | Sort-object -property order
+		foreach ($RestorePoint in $SortedRestorePoints)
 		{
-	
-			$RestoreFiles = @($InternalFiles | Where-Object {$_.FirstLSN -eq $RestorePoint.Name})
+			$RestoreFiles = $RestorePoint.files
 			$RestoreFileNames = $RestoreFiles.BackupPath -join '`n ,'
-			Write-verbose "$FunctionName - Restoring backup starting at LSN $($RestorePoint.Name) in $($RestoreFiles[0].BackupPath)"
+			Write-verbose "$FunctionName - Restoring backup starting at order $($RestorePoint.order) - LSN $($RestoreFiles[0].FirstLSN) in $($RestoreFiles[0].BackupPath)"
 			$LogicalFileMoves = @()
 			if ($Restore.RelocateFiles.count -gt 0)
 			{
@@ -171,12 +179,14 @@ Function Restore-DBFromFilteredArray
 				if ($RestoreTime -gt (Get-Date))
 				{
 						$restore.ToPointInTime = $null
-						$ConfirmPointInTime = "restoring to latest point in time"
+						Write-Verbose "$FunctionName - restoring to latest point in time"
+
 				}
 				elseif ($RestoreFiles[0].RecoveryModel -ne 'Simple')
 				{
 					$Restore.ToPointInTime = $RestoreTime
-					$ConfirmPointInTime = "restoring to $RestoreTime"
+					Write-Verbose "$FunctionName - restoring to $RestoreTime"
+					
 				} 
 				else 
 				{
@@ -212,6 +222,7 @@ Function Restore-DBFromFilteredArray
 				}
 				Foreach ($RestoreFile in $RestoreFiles)
 				{
+					Write-Verbose "$FunctionName - Adding device"
 					$Device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
 					$Device.Name = $RestoreFile.BackupPath
 					$Device.devicetype = "File"
@@ -255,7 +266,7 @@ Function Restore-DBFromFilteredArray
 			}
 			catch
 			{
-				write-verbose "$FunctionName - Closing Server connection"
+				write-verbose "$FunctionName - Failed, Closing Server connection"
 				$RestoreComplete = $False
 				$ExitError = $_.Exception.InnerException
 				Write-Warning "$FunctionName - $ExitError" -WarningAction stop
@@ -272,28 +283,33 @@ Function Restore-DBFromFilteredArray
 					NoRecovery = $restore.NoRecovery
 					WithReplace = $ReplaceDatabase
 					RestoreComplete  = $RestoreComplete
-                    BackupFilesCount = $RestoreFiles.Length
+                    BackupFilesCount = $RestoreFiles.Count
                     RestoredFilesCount = $RestoreFiles[0].Filelist.PhysicalName.count
                     BackupSizeMB = ($RestoreFiles | measure-object -property BackupSizeMb -Sum).sum
                     CompressedBackupSizeMB = ($RestoreFiles | measure-object -property CompressedBackupSizeMb -Sum).sum
                     BackupFile = $RestoreFiles.BackupPath -join ','
-					RestoredFile = $RestoreFiles[0].Filelist.PhysicalName -join ','
+					RestoredFile = (Split-Path $Restore.RelocateFiles.PhysicalFileName -Leaf) -join ','
+					RestoredFileFull = $RestoreFiles[0].Filelist.PhysicalName -join ','
+					RestoreDirectory = ((Split-Path $Restore.RelocateFiles.PhysicalFileName) | sort-Object -unique) -join ','
 					BackupSize = ($RestoreFiles | measure-object -property BackupSize -Sum).sum
 					CompressedBackupSize = ($RestoreFiles | measure-object -property CompressedBackupSize -Sum).sum
                     TSql = $script  
 					BackupFileRaw = $RestoreFiles
 					ExitError = $ExitError				
-                } | Select-DefaultView -ExcludeProperty BackupSize, CompressedBackupSize, ExitError, BackupFileRaw 
+                } | Select-DefaultView -ExcludeProperty BackupSize, CompressedBackupSize, ExitError, BackupFileRaw, RestoredFileFull 
 				while ($Restore.Devices.count -gt 0)
 				{
 					$device = $restore.devices[0]
 					$null = $restore.devices.remove($Device)
 				}
-				write-verbose "$FunctionName - Closing Server connection"
+				write-verbose "$FunctionName - Succeeded, Closing Server connection"
 				$server.ConnectionContext.Disconnect()
 			}
 		}	
 		}
-		$server.ConnectionContext.Disconnect()
+		if ($server.ConnectionContext.exists)
+		{
+			$server.ConnectionContext.Disconnect()
+		}
 	}
 }
