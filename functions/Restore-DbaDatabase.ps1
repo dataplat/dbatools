@@ -87,6 +87,10 @@ By default, databases will be migrated to the destination Sql Server's default d
 The same structure on the SOURCE will be kept exactly, so consider this if you're migrating between different versions and use part of Microsoft's default Sql structure (MSSql12.INSTANCE, etc)
 
 *Note, to reuse destination folder structure, specify -WithReplace
+
+.PARAMETER Silent
+Replaces user friendly yellow warnings with bloody red exceptions of doom!
+Use this if you want the function to throw terminating errors you want to catch.
 	
 .PARAMETER Confirm
 Prompts to confirm certain actions
@@ -175,7 +179,8 @@ folder for those file types as defined on the target instance.
 		[switch]$IgnoreLogBackup,
 		[switch]$UseDestinationDefaultDirectories,
 		[switch]$ReuseSourceFolderStructure,
-		[string]$DestinationFilePrefix = ''
+		[string]$DestinationFilePrefix = '',
+		[switch]$Silent
 	)
 	BEGIN
 	{
@@ -238,8 +243,7 @@ folder for those file types as defined on the target instance.
 				# We need to use Test-SqlPath and other commands instead
 				# Prevent people from trying 
 				
-				Write-Warning "Currently, you can only use UNC paths when running this command remotely. We expect to support non-UNC paths for remote servers shortly."
-				continue
+				Stop-Function -Message "Currently, you can only use UNC paths when running this command remotely. We expect to support non-UNC paths for remote servers shortly." -Silent $Silent -Category InvalidArgument -Target $f -Continue
 				
 				#$newpath = Join-AdminUnc $SqlServer "$path"
 				#Write-Warning "Run this command on the server itself or try $newpath."
