@@ -1,4 +1,4 @@
-if (-not (Get-Command -Name Invoke-SqlCmd2 -ErrorAction Ignore -ListImported))
+﻿if (-not (Get-Command -Name Invoke-SqlCmd2 -ErrorAction Ignore -ListImported))
 {
     
     # Global since it is no longer in the manifest
