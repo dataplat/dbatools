@@ -179,29 +179,6 @@ folder for those file types as defined on the target instance.
 	)
     BEGIN
 	{
-		$base = $SqlServer.Split("\")[0]
-		
-		if ($base -eq "." -or $base -eq "localhost" -or $base -eq $env:computername -or $base -eq "127.0.0.1")
-		{
-			# they can use whatever path they like
-		}
-		else
-		{
-			if ($Path.StartsWith("\\") -eq $false)
-			{
-				# Many internal functions parse using Get-ChildItem. 
-				# We need to use Test-SqlPath and other commands instead
-				# Prevent people from trying 
-				
-				Write-Warning "Currently, you can only use UNC paths when running this command remotely. We expect to support local paths shortly."
-				continue
-				
-				#$newpath = Join-AdminUnc $SqlServer "$path"
-				#Write-Warning "Run this command on the server itself or try $newpath."
-				
-			}
-		}
-		
 		$FunctionName = $FunctionName =(Get-PSCallstack)[0].Command
         $BackupFiles = @()
         $UseDestinationDefaultDirectories=$true
@@ -244,8 +221,30 @@ folder for those file types as defined on the target instance.
     }
     PROCESS
     {
-        
-        foreach ($f in $path)
+		$base = $SqlServer.Split("\")[0]
+		
+		if ($base -eq "." -or $base -eq "localhost" -or $base -eq $env:computername -or $base -eq "127.0.0.1")
+		{
+			# they can use whatever path they like
+		}
+		else
+		{
+			if ($Path.StartsWith("\\") -eq $false)
+			{
+				# Many internal functions parse using Get-ChildItem. 
+				# We need to use Test-SqlPath and other commands instead
+				# Prevent people from trying 
+				
+				Write-Warning "Currently, you can only use UNC paths when running this command remotely. We expect to support local paths shortly."
+				return
+				
+				#$newpath = Join-AdminUnc $SqlServer "$path"
+				#Write-Warning "Run this command on the server itself or try $newpath."
+				
+			}
+		}
+		
+		foreach ($f in $path)
         {
             Write-Verbose "type = $($f.gettype())"
             if ($f -is [string])
