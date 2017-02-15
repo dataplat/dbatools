@@ -145,19 +145,10 @@ Backs up every database in a normal start on localhost\sqlexpress2016, striping 
 		{
 			if ($server -eq $null) { $server = $Database.Parent }
 			
-			try
-			{
-				$BackupHistory = Get-DbaBackupHistory -SqlServer $server -databases $database.Name -LastFull -ErrorAction SilentlyContinue
-				Write-Verbose ($database.Name -join ',')
-			}
-			Catch
-			{
-				$_.exception
-			}
-			
 			$FailReasons = @()
 			
 			Write-Verbose "$FunctionName - Backup up database $($Database.name)"
+			
 			if ($Database.RecoveryModel -eq $null)
 			{
 				$Database.RecoveryModel = $server.databases[$Database.Name].RecoveryModel
@@ -172,9 +163,9 @@ Backs up every database in a normal start on localhost\sqlexpress2016, striping 
 				
 			}
 			
-			$FullExists = $BackupHistory | Where-Object { $_.Database -eq $Database.Name }
-			
-			if ($Type -ne "Full" -and $FullExists.length -eq 0)
+			$lastfull = $database.LastBackupDate.Year
+		
+			if ($Type -ne "Full" -and $lastfull -eq 1)
 			{
 				$FailReason = "$($Database.Name) does not have an existing full backup, cannot take log or differentialbackup"
 				$FailReasons += $FailReason
