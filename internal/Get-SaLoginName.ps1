@@ -1,4 +1,4 @@
-Function Get-SaLoginName
+﻿Function Get-SaLoginName
 {
 	[CmdletBinding()]
 	param (

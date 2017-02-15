@@ -1,4 +1,4 @@
-Function Update-SqlPermissions
+﻿Function Update-SqlPermissions
 {
  <#
  
