@@ -313,8 +313,8 @@ Backs up every database in a normal start on localhost\sqlexpress2016, striping 
 				}
 			}
 			
-			if ($failreasons.count -eq 0)
-			{		
+			if ($FailReasons.length -eq 0)
+			{
 				[PSCustomObject]@{
 					SqlInstance = $server.name
 					DatabaseName = $($Database.Name)
@@ -324,9 +324,18 @@ Backs up every database in a normal start on localhost\sqlexpress2016, striping 
 					BackupFolder = (split-path $backup.Devices.name)
 					BackupPath = ($backup.Devices.name)
 					Script = $Tsql
-					#FailReasons = $FailReasons -join (',')
+					FailReasons = $FailReasons -join (',')
+				} 
+			} else {
+				[PSCustomObject]@{
+					SqlInstance = $server.name
+					DatabaseName = $($Database.Name)
+					BackupComplete = $false
+					FailReasons = $FailReasons -join (',')	
 				}
+				$failreasones =@()
 			}
+			
 		}
 	}
 }
