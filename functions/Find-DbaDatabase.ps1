@@ -1,4 +1,4 @@
-﻿Function Find-DbaDatabase
+Function Find-DbaDatabase
 {
 <#
 .SYNOPSIS
@@ -28,6 +28,7 @@ Search for an exact match instead of a pattern
 Output a more detailed view showing regular output plus Tables, StoredProcedures, Views and ExtendedProperties to see they closely match to help find related databases.
 
 .NOTES
+Tags: DisasterRecovery
 Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
 
 dbatools PowerShell module (https://dbatools.io)

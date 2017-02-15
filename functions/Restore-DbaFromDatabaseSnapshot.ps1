@@ -1,4 +1,4 @@
-﻿Function Restore-DbaFromDatabaseSnapshot
+Function Restore-DbaFromDatabaseSnapshot
 {
 <#
 .SYNOPSIS
@@ -34,6 +34,7 @@ If restoring from a snapshot involves dropping any other shapshot, you need to e
 use -Force to let this command delete the ones not involved in the restore process.
 
 .NOTES
+Tags: DisasterRecovery, Snapshot, Backup, Restore
 Author: niphlod
 
 dbatools PowerShell module (https://dbatools.io)

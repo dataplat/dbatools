@@ -25,7 +25,8 @@ $cred = Get-Credential, this pass this $cred to the SqlCredential parameter.
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
 To connect as a different Windows user, run PowerShell as that user.
 
-.NOTES 
+.NOTES
+Tags: DisasterRecovery
 Author: Chrissy LeMaire (@cl), netnerds.net
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire

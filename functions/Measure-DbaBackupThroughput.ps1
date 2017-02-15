@@ -1,4 +1,4 @@
-ï»¿function Measure-DbaBackupThroughput
+function Measure-DbaBackupThroughput
 {
 <#
 .SYNOPSIS
@@ -36,7 +36,8 @@ Datetime object used to narrow the results to a date
 Measure only the last backup
 
 
-.NOTES 
+.NOTES
+Tags: DisasterRecovery, Backup
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -135,7 +136,7 @@ Will fill this in
 				
 				foreach ($history in $histories)
 				{
-					$timetaken = New-TimeSpan â€“Start $history.Start â€“End $history.End
+					$timetaken = New-TimeSpan –Start $history.Start –End $history.End
 					
 					if ($timetaken.TotalMilliseconds -eq 0)
 					{

@@ -29,7 +29,8 @@ Shows only the local filenames
 .PARAMETER RemoteOnly
 Shows only the remote filenames
 	
-.NOTES 
+.NOTES
+Tags: DisasterRecovery, Orphan
 Author: Sander Stad (@sqlstad), sqlstad.nl
 Requires: sysadmin access on SQL Servers
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)

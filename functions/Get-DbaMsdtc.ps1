@@ -1,4 +1,4 @@
-﻿Function Get-DbaMsdtc
+Function Get-DbaMsdtc
 {
 <#
 .SYNOPSIS
@@ -13,6 +13,7 @@ Requires: Windows administrator access on Servers
 The SQL Server (or server in general) that you're connecting to.
 
 .NOTES
+Tags: WSMan, CIM
 Author: Klaas Vandenberghe ( powerdbaklaas )
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)

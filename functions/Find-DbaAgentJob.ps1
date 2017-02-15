@@ -1,4 +1,4 @@
-﻿FUNCTION Find-DbaAgentJob
+FUNCTION Find-DbaAgentJob
 {
 <#
 .SYNOPSIS 
@@ -49,7 +49,8 @@ Job Names and Step Names are searched for by regex by default. Use Exact to retu
 .PARAMETER Since
 Datetime object used to narrow the results to a date
 	
-.NOTES 
+.NOTES
+Tags: DisasterRecovery, Backup
 Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)

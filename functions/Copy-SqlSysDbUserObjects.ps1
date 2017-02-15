@@ -37,7 +37,9 @@ Prompts you for confirmation before executing any changing operations within the
 
 .EXAMPLE
 Copy-SqlSysDbUserObjects $sourceserver $destserver
-
+	
+.NOTES
+Tags: Migration
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
