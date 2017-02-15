@@ -1,4 +1,4 @@
-﻿Function Clear-DbaSqlConnectionPool
+Function Clear-DbaSqlConnectionPool
 {
 <#
 .SYNOPSIS
@@ -19,6 +19,7 @@ A remote workstation or server name
 Credential for running the command remotely
 
 .NOTES
+Tags: WSMan
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 

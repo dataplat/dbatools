@@ -1,4 +1,4 @@
-﻿Function Test-DbaSpn
+Function Test-DbaSpn
 {
 <#
 .SYNOPSIS 
@@ -29,7 +29,8 @@ The credential you want to use to connect to the remote server and active direct
 If your server resides on a different domain than what your current session is authenticated against, you can specify a domain here. This
 parameter is optional.
 
-.NOTES 
+.NOTES
+Tags: SQLWMI, SPN
 Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)

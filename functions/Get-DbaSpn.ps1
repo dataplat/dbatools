@@ -1,4 +1,4 @@
-﻿function Get-DbaSpn
+function Get-DbaSpn
 {
 <#
 .SYNOPSIS
@@ -20,7 +20,8 @@ User credential to connect to the remote servers or active directory. This is a 
 .PARAMETER ByAccount
 Shows all SPNs registered by the specified AccountName otherwise, only results will be shown for the specified ComputerName (which is localhost by default)
 
-.NOTES 
+.NOTES
+Tags: SPN
 Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
 	
 dbatools PowerShell module (https://dbatools.io)

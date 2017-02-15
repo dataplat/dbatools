@@ -24,7 +24,8 @@ Excludes the Windows server information
 .PARAMETER WindowsOnly
 Excludes the SQL server information
 
-.NOTES 
+.NOTES
+Tags: CIM
 Original Author: Stuart Moore (@napalmgram), stuart-moore.com
 	
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)

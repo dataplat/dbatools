@@ -1,4 +1,4 @@
-﻿Function Set-DbaSpn
+Function Set-DbaSpn
 {
 <#
 .SYNOPSIS
@@ -29,7 +29,8 @@ Turns confirmations before changes on or off
 .PARAMETER WhatIf
 Shows what would happen if the command was executed	
 	
-.NOTES 
+.NOTES
+Tags: SPN
 Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
 
 dbatools PowerShell module (https://dbatools.io)

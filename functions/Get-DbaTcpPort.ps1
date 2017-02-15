@@ -1,4 +1,4 @@
-﻿Function Get-DbaTcpPort
+Function Get-DbaTcpPort
 {
 <#
 .SYNOPSIS
@@ -23,7 +23,8 @@ Remote sqlwmi is used by default. If this doesn't work, then remoting is used. I
 .PARAMETER NoIpv6
 Excludes IPv6 information when -Detailed is specified.
 
-.NOTES 
+.NOTES
+Tags: SQLWMI
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
