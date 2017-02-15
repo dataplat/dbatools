@@ -170,7 +170,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			if ($type -in 'diff', 'differential')
 			{
 				Write-Verbose "Creating differential backup"
-				
+				$type = "Database"
 				$backup.Incremental = $true
 			}
 			
