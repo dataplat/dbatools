@@ -288,9 +288,9 @@ Function Restore-DBFromFilteredArray
                     BackupSizeMB = ($RestoreFiles | measure-object -property BackupSizeMb -Sum).sum
                     CompressedBackupSizeMB = ($RestoreFiles | measure-object -property CompressedBackupSizeMb -Sum).sum
                     BackupFile = $RestoreFiles.BackupPath -join ','
-					RestoredFile = (Split-Path $RestoreFiles[0].Filelist.PhysicalName -Leaf) -join ','
+					RestoredFile = (Split-Path $Restore.RelocateFiles.PhysicalFileName -Leaf) -join ','
 					RestoredFileFull = $RestoreFiles[0].Filelist.PhysicalName -join ','
-					RestoreDirectory = ((Split-Path $RestoreFiles[0].Filelist.PhysicalName) | sort-Object -unique) -join ','
+					RestoreDirectory = ((Split-Path $Restore.RelocateFiles.PhysicalFileName) | sort-Object -unique) -join ','
 					BackupSize = ($RestoreFiles | measure-object -property BackupSize -Sum).sum
 					CompressedBackupSize = ($RestoreFiles | measure-object -property CompressedBackupSize -Sum).sum
                     TSql = $script  
