@@ -288,13 +288,15 @@ Function Restore-DBFromFilteredArray
                     BackupSizeMB = ($RestoreFiles | measure-object -property BackupSizeMb -Sum).sum
                     CompressedBackupSizeMB = ($RestoreFiles | measure-object -property CompressedBackupSizeMb -Sum).sum
                     BackupFile = $RestoreFiles.BackupPath -join ','
-					RestoredFile = $RestoreFiles[0].Filelist.PhysicalName -join ','
+					RestoredFile = (Split-Path $RestoreFiles[0].Filelist.PhysicalName -Leaf) -join ','
+					RestoredFileFull = $RestoreFiles[0].Filelist.PhysicalName -join ','
+					RestoreDirectory = ((Split-Path $RestoreFiles[0].Filelist.PhysicalName) | sort-Object -unique) -join ','
 					BackupSize = ($RestoreFiles | measure-object -property BackupSize -Sum).sum
 					CompressedBackupSize = ($RestoreFiles | measure-object -property CompressedBackupSize -Sum).sum
                     TSql = $script  
 					BackupFileRaw = $RestoreFiles
 					ExitError = $ExitError				
-                } | Select-DefaultView -ExcludeProperty BackupSize, CompressedBackupSize, ExitError, BackupFileRaw 
+                } | Select-DefaultView -ExcludeProperty BackupSize, CompressedBackupSize, ExitError, BackupFileRaw, RestoredFileFull 
 				while ($Restore.Devices.count -gt 0)
 				{
 					$device = $restore.devices[0]
