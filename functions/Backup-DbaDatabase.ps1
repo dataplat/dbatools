@@ -81,7 +81,7 @@ Backs up every database in a normal start on localhost\sqlexpress2016, striping 
 		[parameter(ParameterSetName = "NoPipe", Mandatory)]
 		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[string[]]$BackupDirectory,
+		[string]$BackupDirectory,
 		[string]$BackupFileName,
 		[switch]$NoCopyOnly,
 		[ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
