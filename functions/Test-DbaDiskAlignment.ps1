@@ -35,6 +35,7 @@ An alternate SqlCredential object when connecting to and verifying the location 
 Skip checking for the presence of SQL Server and simply check all disks for alignment. This can be useful if SQL Server is not yet installed or is dormant.
 
 .NOTES
+Tags: Storage
 The preferred way to determine if your disks are aligned (or not) is to calculate:
   1. Partition offset ÷ stripe unit size
   2. Stripe unit size ÷ File allocation unit size

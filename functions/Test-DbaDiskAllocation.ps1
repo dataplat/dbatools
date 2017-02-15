@@ -32,7 +32,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .NOTES
-Tags: CIM
+Tags: CIM, Storage
 Requires: Windows sysadmin access on SQL Servers
 	
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)

@@ -1,4 +1,4 @@
-﻿Function Get-DbaBackupHistory
+Function Get-DbaBackupHistory
 {
 <#
 .SYNOPSIS
@@ -41,7 +41,8 @@ Returns last log backup set
 .PARAMETER IgnoreCopyOnly
 If set, Get-DbaBackupHistory will ignore CopyOnly backups
 
-.NOTES 
+.NOTES
+Tags: Storage
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
