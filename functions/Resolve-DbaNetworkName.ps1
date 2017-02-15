@@ -56,11 +56,10 @@
   #>
 	[CmdletBinding()]
 	param (
-		[parameter(Mandatory, ValueFromPipeline)]
+		[parameter(ValueFromPipeline)]
 		[Alias('cn', 'host', 'ServerInstance', 'Server', 'SqlServer')]
-		[object]$ComputerName = $env:COMPUTERNAME,
-		[System.Management.Automation.Credential()]
-		$Credential,
+		[object[]]$ComputerName = $env:COMPUTERNAME,
+    [PSCredential] [System.Management.Automation.CredentialAttribute()]$Credential,
 		[Alias('FastParrot')]
 		[switch]$Turbo
 	)
@@ -92,23 +91,23 @@
 			{
 				try
 				{
-					Write-Verbose "Resolving $Computer using GetHostEntry"
+					Write-Verbose "$functionName - Resolving $Computer using .NET.Dns GetHostEntry"
 					$ipaddress = ([System.Net.Dns]::GetHostEntry($Computer)).AddressList[0].IPAddressToString
-					Write-Verbose "Resolving $ipaddress using GetHostByAddress"
+					Write-Verbose "$functionName - Resolving $ipaddress using .NET.Dns GetHostByAddress"
 					$fqdn = [System.Net.Dns]::GetHostByAddress($ipaddress).HostName
 				}
 				catch
 				{
 					try
 					{
-						Write-Verbose "Resolving $Computer and IP using GetHostEntry"
+						Write-Verbose "$functionName - Resolving $Computer and IP using .NET.Dns GetHostEntry"
 						$resolved = [System.Net.Dns]::GetHostEntry($Computer)
 						$ipaddress = $resolved.AddressList[0].IPAddressToString
 						$fqdn = $resolved.HostName
 					}
 					catch
 					{
-						Write-Warning "$functionName - DNS name does not exist"
+						Write-Warning "$functionName - DNS name not found"
 						continue
 					}
 				}
@@ -133,7 +132,7 @@
 				return
 			}
 			
-			Write-Verbose "$functionName - Connecting to server $Computer"
+			Write-Verbose "$functionName - Connecting to $Computer"
 			
 			try
 			{
@@ -159,8 +158,8 @@
 			}
 			else
 			{
-				Write-Warning "$functionName - No IP Address returned from Computer $Computer"
-				Write-Warning "$functionName - Using pure .NET to resolve"
+				Write-Warning "$functionName - No IP Address returned from $Computer"
+				Write-Verbose "$functionName - Using .NET.Dns to resolve IP Address"
 				return (Resolve-DbaNetworkName -ComputerName $Computer -Turbo)
 			}
 			
@@ -169,7 +168,7 @@
 				Write-Verbose "$functionName - Your PowerShell Version is $($host.Version.Major)"
 				try
 				{
-					Write-Verbose "$functionName - Getting computer information from server $Computer via CIM (WSMan)"
+					Write-Verbose "$functionName - Getting computer information from $Computer via CIM (WSMan)"
 					if ($Credential)
 					{
 						$CIMsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
@@ -188,7 +187,7 @@
 				{
 					try
 					{
-						Write-Verbose "$functionName - Getting computer information from server $Computer via CIM (DCOM)"
+						Write-Verbose "$functionName - Getting computer information from $Computer via CIM (DCOM)"
 						$sessionoption = New-CimSessionOption -Protocol DCOM
 						if ($Credential)
 						{
@@ -210,7 +209,7 @@
 				
 				if (!$conn)
 				{
-					Write-Verbose "$functionName - No CIM from $Computer. Getting HostName via .NET"
+					Write-Verbose "$functionName - No CIM from $Computer. Getting HostName via .NET.Dns"
 					try
 					{
 						$fqdn = ([System.Net.Dns]::GetHostEntry($Computer)).HostName
@@ -224,7 +223,7 @@
 					}
 					catch
 					{
-						Write-Warning "$functionName - No .NET information from $Computer"
+						Write-Warning "$functionName - No .NET.Dns information from $Computer"
 						continue
 					}
 				}
@@ -233,12 +232,12 @@
 			
 			try
 			{
-				Write-Verbose "$functionName - Resolving $($conn.DNSHostname) using GetHostEntry"
+				Write-Verbose "$functionName - Resolving $($conn.DNSHostname) using .NET.Dns GetHostEntry"
 				$hostentry = ([System.Net.Dns]::GetHostEntry($conn.DNSHostname)).HostName
 			}
 			catch
 			{
-				Write-Warning "$functionName - GetHostEntry failed"
+				Write-Warning "$functionName - .NET.Dns GetHostEntry failed for $($conn.DNSHostname)"
 			}
 			
 			$fqdn = "$($conn.DNSHostname).$($conn.Domain)"

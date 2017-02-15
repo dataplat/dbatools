@@ -1,4 +1,4 @@
-function Test-DbaLsnChain
+﻿function Test-DbaLsnChain
 {
 <#
 .SYNOPSIS 

@@ -1,4 +1,4 @@
-Function Rename-LogicalFile
+﻿Function Rename-LogicalFile
 {
 <# 
 	.SYNOPSIS

@@ -1,4 +1,4 @@
-Function Set-DbaDatabaseState
+﻿Function Set-DbaDatabaseState
 {
 <#
 .SYNOPSIS

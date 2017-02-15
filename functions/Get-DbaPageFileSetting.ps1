@@ -19,6 +19,7 @@ This can be the name of a computer, a SMO object, an IP address or a SQL Instanc
 Credential object used to connect to the Computer as a different user
 
 .NOTES
+Tags: CIM
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
 dbatools PowerShell module (https://dbatools.io)

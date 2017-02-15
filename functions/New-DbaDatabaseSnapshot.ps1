@@ -40,6 +40,7 @@ NB: You can't then restore the Database from the newly-created snapshot.
 For details, check https://msdn.microsoft.com/en-us/library/bb895334.aspx
 
 .NOTES
+Tags: DisasterRecovery, Snapshot, Restore
 Author: niphlod
 
 dbatools PowerShell module (https://dbatools.io)

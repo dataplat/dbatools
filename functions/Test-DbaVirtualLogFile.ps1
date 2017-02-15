@@ -34,6 +34,7 @@ Specify one or more databases to exclude.
 Returns all information provided by DBCC LOGINFO plus the server name and database name
 
 .NOTES
+Tags: DisasterRecovery, Backup
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
