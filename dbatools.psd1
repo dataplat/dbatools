@@ -211,7 +211,9 @@
 		'Get-DbaConfig',
 		'Get-DbaConfigValue',
 		'Set-DbaConfig',
-		'Get-DbaSqlClientProtocol'
+		'Get-DbaSqlClientProtocol',
+		'Backup-DbaDatabase',
+		'New-DbaSqlDirectory'
 	)
 	
 	<# coming soon
