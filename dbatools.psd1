@@ -210,7 +210,8 @@
 		'Find-DbaCommand',
 		'Get-DbaConfig',
 		'Get-DbaConfigValue',
-		'Set-DbaConfig'
+		'Set-DbaConfig',
+		'Get-DbaSqlClientProtocol'
 	)
 	
 	<# coming soon
