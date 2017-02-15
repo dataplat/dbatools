@@ -1,4 +1,4 @@
-Function Connect-AsServer
+﻿Function Connect-AsServer
 {
 <# 
 .SYNOPSIS 
