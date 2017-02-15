@@ -59,22 +59,15 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .EXAMPLE 
-Backup-DbaDatabase -SqlInstance Server1 -Databases HR, Finance -Type Full
+Backup-DbaDatabase -SqlInstance Server1 -Databases HR, Finance
 
 This will perform a full database backup on the databases HR and Finance on SQL Server Instance Server1 to Server1's 
 default backup directory 
-
+	
 .EXAMPLE
-Backup-DbaDatabase -SqlInstance Server1 -Databases HR,Finance -Type Full -BackupDirectory \\server2\backups,\\server3\backups -CreateFolder
+Backup-DbaDatabase -SqlInstance sql2016 -BackupDirectory C:\temp -Databases AdventureWorks2014 -Type Full
 
-This will perform a full Copy Only database backup on the databases HR and Finance on SQL Server Instance Server1 striping the files across the 2 fileshares, creaing folders 
-for each database
-
-.EXAMPLE
-Get-DbaDatabase -SqlInstance localhost\sqlexpress2016 -Status Normal -Exclude tempdb | Backup-DbaDatabase -SqlInstance localhost\sqlexpress2016 -Type diff -BackupDirectory d:\backups,e:\backups -CreateFolder
-
-Backs up every database in a normal start on localhost\sqlexpress2016, striping the backups across d:\backups and e:\backups for improved performance. Each DB has it's own folder under each of the backup paths
-
+Backs up AdventureWorks2014 to sql2016's C:\temp folder 
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	param (
@@ -85,7 +78,7 @@ Backs up every database in a normal start on localhost\sqlexpress2016, striping 
 		[string]$BackupFileName,
 		[switch]$NoCopyOnly,
 		[ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
-		[string]$Type = "Full",
+		[string]$Type = "Database",
 		[parameter(ParameterSetName = "Pipe", Mandatory = $true, ValueFromPipeline = $true)]
 		[object[]]$DatabaseCollection
 		
@@ -172,19 +165,29 @@ Backs up every database in a normal start on localhost\sqlexpress2016, striping 
 			$server.ConnectionContext.StatementTimeout = 0
 			$backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
 			$backup.Database = $Database.Name
-			$Type = "Database"
 			$Suffix = "bak"
-			if ($Type -eq "Log")
+			
+			if ($type -in 'diff', 'differential')
 			{
-				$Type = "Log"
-				$Suffix = "trn"
-			}
-			$backup.Action = $Type
-			$backup.CopyOnly = $copyonly
-			if ($Type -in ('diff', 'differential'))
-			{
+				Write-Verbose "Creating differential backup"
+				
 				$backup.Incremental = $true
 			}
+			
+			if ($Type -eq "Log")
+			{
+				Write-Verbose "Creating log backup"
+				$Suffix = "trn"
+			}
+			
+			if ($type -eq 'Full')
+			{
+				$type = "Database"
+			}
+			
+			$backup.CopyOnly = $copyonly
+			$backup.Action = $type
+			
 			Write-Verbose "$FunctionName - Sorting Paths"
 			
 			#If a backupfilename has made it this far, use it
@@ -350,5 +353,16 @@ File Names with be suffixed with x-of-y to enable identifying striped sets, wher
 .PARAMETER CreateFolder
 Switch to indicate that a folder should be created under each folder for each database if it doesn't already existing
 Folders are created by the Sql Instance, and checks will be made for write permissions
+
+.EXAMPLE
+Backup-DbaDatabase -SqlInstance Server1 -Databases HR,Finance -Type Full -BackupDirectory \\server2\backups,\\server3\backups -CreateFolder
+
+This will perform a full Copy Only database backup on the databases HR and Finance on SQL Server Instance Server1 striping the files across the 2 fileshares, creaing folders 
+for each database
+
+.EXAMPLE
+Get-DbaDatabase -SqlInstance localhost\sqlexpress2016 -Status Normal -Exclude tempdb | Backup-DbaDatabase -SqlInstance localhost\sqlexpress2016 -Type diff -BackupDirectory d:\backups,e:\backups -CreateFolder
+
+Backs up every database in a normal start on localhost\sqlexpress2016, striping the backups across d:\backups and e:\backups for improved performance. Each DB has it's own folder under each of the backup paths
 
 #>
