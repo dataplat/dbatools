@@ -218,7 +218,7 @@ Backs up every database in a normal start on localhost\sqlexpress2016, striping 
 			}
 			else
 			{
-				if ($BackupDirectory -eq $null)
+				if (!$BackupDirectory)
 				{
 					$BackupDirectory = $server.BackupDirectory
 				}
