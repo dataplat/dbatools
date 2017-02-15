@@ -210,7 +210,10 @@
 		'Find-DbaCommand',
 		'Get-DbaConfig',
 		'Get-DbaConfigValue',
-		'Set-DbaConfig'
+		'Set-DbaConfig',
+		'Get-DbaSqlClientProtocol',
+		'Backup-DbaDatabase',
+		'New-DbaSqlDirectory'
 	)
 	
 	<# coming soon
