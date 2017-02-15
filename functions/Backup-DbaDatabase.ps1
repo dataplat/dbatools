@@ -54,6 +54,16 @@ File Names with be suffixed with x-of-y to enable identifying striped sets, wher
 Switch to indicate that a folder should be created under each folder for each database if it doesn't already existing
 Folders are created by the Sql Instance, and checks will be made for write permissions
 
+.NOTES
+Tags: DisasterRecovery, Backup, Restore
+Original Author: Stuart Moore (@napalmgram), stuart-moore.com
+
+dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+Copyright (C) 2016 Chrissy LeMaire
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .EXAMPLE 
 Backup-DbaDatabase -SqlInstance Server1 -Databases HR, Finance -BackupType Full
@@ -62,22 +72,27 @@ This will perform a full database backup on the databases HR and Finance on SQL 
 default backup directory 
 
 .EXAMPLE
-Backup-DbaDatase -SqlInstance Server1 -Databases HR,Funance -BackupType Full -BackupPath \\server2\backups,\\server3\backups -CreateFolder
+Backup-DbaDatabase -SqlInstance Server1 -Databases HR,Finance -BackupType Full -BackupPath \\server2\backups,\\server3\backups -CreateFolder
 
 This will perform a full Copy Only database backup on the databases HR and Finance on SQL Server Instance Server1 striping the files across the 2 fileshares, creaing folders 
 for each database
+
+.EXAMPLE
+Get-DbaDatabase -SqlInstance localhost\sqlexpress2016 -Status Normal -Exclude tempdb | Backup-DbaDatabase -SqlInstance localhost\sqlexpress2016 -BackupType diff -BackupPath d:\backups,e:\backups -CreateFolder
+
+Backs up every database in a normal start on localhost\sqlexpress2016, striping the backups across d:\backups and e:\backups for improved performance. Each DB has it's own folder under each of the backup paths
 
 #>
 	[CmdletBinding()]
 	param (
 		[parameter(ValueFromPipeline = $True)]
-		[object[]]$DatabaseName, # Gotten from Get-DbaDatabase
+		[object[]]$DatabaseName,
 		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string[]]$BackupPath,
 		[string]$BackupFileName,
 		[switch]$NoCopyOnly,
-		[ValidateSet('Full', 'Log', 'Differential','Diff','Database')] # Unsure of the names
+		[ValidateSet('Full', 'Log', 'Differential','Diff','Database')] 
 		[string]$BackupType = "Full",
 		[int]$FileCount = 1,
 		[switch]$CreateFolder=$true
@@ -275,7 +290,7 @@ for each database
 			if ($failreasons.count -eq 0)
 			{
 				$failreasons += "None to report"
-			}
+			
 			[PSCustomObject]@{
 				SqlInstance = $SqlInstance
 				DatabaseName = $($Database.Name)
@@ -293,7 +308,7 @@ for each database
 		}
 	
 	}
-
+}
 
 
 
