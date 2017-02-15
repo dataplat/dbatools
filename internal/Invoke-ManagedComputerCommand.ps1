@@ -1,4 +1,4 @@
-Function Invoke-ManagedComputerCommand
+﻿Function Invoke-ManagedComputerCommand
 {
 <#
 .SYNOPSIS

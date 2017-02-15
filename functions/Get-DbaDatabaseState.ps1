@@ -1,4 +1,4 @@
-Function Get-DbaDatabaseState
+﻿Function Get-DbaDatabaseState
 {
 <#
 .SYNOPSIS

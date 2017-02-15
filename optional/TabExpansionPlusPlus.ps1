@@ -1,4 +1,4 @@
-if (-not (Get-Command -Name Register-ArgumentCompleter -ErrorAction Ignore))
+﻿if (-not (Get-Command -Name Register-ArgumentCompleter -ErrorAction Ignore))
 {
     
     #############################################################################

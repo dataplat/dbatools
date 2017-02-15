@@ -1,4 +1,4 @@
-Function Get-GenericArgumentCompleter
+﻿Function Get-GenericArgumentCompleter
 {
 	param (
 		[string]$name,

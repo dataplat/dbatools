@@ -1,4 +1,4 @@
-Function Get-SqlSaLogin
+﻿Function Get-SqlSaLogin
 {
 <#
 .SYNOPSIS
