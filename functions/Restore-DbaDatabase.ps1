@@ -155,200 +155,201 @@ folder for those file types as defined on the target instance.
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [object[]]$Path,
-        [parameter(Mandatory = $true)]
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[object[]]$Path,
+		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
-  		[System.Management.Automation.PSCredential]$SqlCredential,
+		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string]$DatabaseName,
-        [String]$DestinationDataDirectory,
-        [String]$DestinationLogDirectory,
-        [DateTime]$RestoreTime = (Get-Date).addyears(1),          
+		[String]$DestinationDataDirectory,
+		[String]$DestinationLogDirectory,
+		[DateTime]$RestoreTime = (Get-Date).addyears(1),
 		[switch]$NoRecovery,
 		[switch]$WithReplace,
-        [Switch]$XpDirTree,
-        [switch]$OutputScriptOnly,
+		[Switch]$XpDirTree,
+		[switch]$OutputScriptOnly,
 		[switch]$VerifyOnly,
-        [switch]$MaintenanceSolutionBackup ,
+		[switch]$MaintenanceSolutionBackup,
 		[hashtable]$FileMapping,
 		[switch]$IgnoreLogBackup,
-        [switch]$UseDestinationDefaultDirectories,
-        [switch]$ReuseSourceFolderStructure,
-        [string]$DestinationFilePrefix=''					
+		[switch]$UseDestinationDefaultDirectories,
+		[switch]$ReuseSourceFolderStructure,
+		[string]$DestinationFilePrefix = ''
 	)
-    BEGIN
+	BEGIN
 	{
-		$FunctionName = $FunctionName =(Get-PSCallstack)[0].Command
-        $BackupFiles = @()
-        $UseDestinationDefaultDirectories=$true
-        #Check compatible relocation options used:
-
-        $ParamCount = 0
-        if ($null -ne $FileMapping)
-        {
-            $ParamCount +=1
-        } 
-        if ($ReuseSourceFolderStructure)
-        {
-            $ParamCount +=1
-        }
-        if ('' -ne $DestinationDataDirectory)
-        {
-            $ParamCount +=1
-        }
-        if ($ParamCount -gt 1)        
-        {
-            Write-Warning "$FunctionName - $Paramcount You've specified incompatible Location parameters. Please only specify one of FileMapping,$ReuseSourceFolderStructure or DestinationDataDirectory" 
-            break
-        }
-
-        if ($DestinationLogDirectory -ne '' -and $ReuseSourceFolderStructure)
-        {
-            Write-Warning  "$FunctionName - DestinationLogDirectory and UseDestinationDefaultDirectories are mutually exclusive" 
-            break  
-        }
-        if ($DestinationLogDirectory -ne '' -and $DestinationDataDirectory -eq '')
-        {
-            Write-Warning  "$FunctionName - DestinationLogDirectory can only be specified with DestinationDataDirectory"
-            break
-        }
-        if (($null -ne $FileMapping) -or $ReuseSourceFolderStructure -or ($DestinationDataDirectory -ne ''))   
-        {
-            $UseDestinationDefaultDirectories = $false 
-        }
-   
-    }
-    PROCESS
-    {
 		$base = $SqlServer.Split("\")[0]
 		
 		if ($base -eq "." -or $base -eq "localhost" -or $base -eq $env:computername -or $base -eq "127.0.0.1")
 		{
-			# they can use whatever path they like
+			$islocal = $true
 		}
-		else
+		
+		$FunctionName = $FunctionName = (Get-PSCallstack)[0].Command
+		$BackupFiles = @()
+		$UseDestinationDefaultDirectories = $true
+		#Check compatible relocation options used:
+		
+		$ParamCount = 0
+		if ($null -ne $FileMapping)
 		{
-			if ($Path.StartsWith("\\") -eq $false)
+			$ParamCount += 1
+		}
+		if ($ReuseSourceFolderStructure)
+		{
+			$ParamCount += 1
+		}
+		if ('' -ne $DestinationDataDirectory)
+		{
+			$ParamCount += 1
+		}
+		if ($ParamCount -gt 1)
+		{
+			Write-Warning "$FunctionName - $Paramcount You've specified incompatible Location parameters. Please only specify one of FileMapping,$ReuseSourceFolderStructure or DestinationDataDirectory"
+			break
+		}
+		
+		if ($DestinationLogDirectory -ne '' -and $ReuseSourceFolderStructure)
+		{
+			Write-Warning  "$FunctionName - DestinationLogDirectory and UseDestinationDefaultDirectories are mutually exclusive"
+			break
+		}
+		if ($DestinationLogDirectory -ne '' -and $DestinationDataDirectory -eq '')
+		{
+			Write-Warning  "$FunctionName - DestinationLogDirectory can only be specified with DestinationDataDirectory"
+			break
+		}
+		if (($null -ne $FileMapping) -or $ReuseSourceFolderStructure -or ($DestinationDataDirectory -ne ''))
+		{
+			$UseDestinationDefaultDirectories = $false
+		}
+		
+	}
+	PROCESS
+	{
+		foreach ($f in $path)
+		{
+			
+			
+			if ($f.StartsWith("\\") -eq $false -and $islocal -ne $true)
 			{
 				# Many internal functions parse using Get-ChildItem. 
 				# We need to use Test-SqlPath and other commands instead
 				# Prevent people from trying 
 				
 				Write-Warning "Currently, you can only use UNC paths when running this command remotely. We expect to support non-UNC paths for remote servers shortly."
-				return
+				continue
 				
 				#$newpath = Join-AdminUnc $SqlServer "$path"
 				#Write-Warning "Run this command on the server itself or try $newpath."
-				
+			}
+			
+			Write-Verbose "type = $($f.gettype())"
+			if ($f -is [string])
+			{
+				Write-Verbose "$FunctionName : Paths passed in"
+				foreach ($p in $f)
+				{
+					if ($XpDirTree)
+					{
+						$BackupFiles += Get-XPDirTreeRestoreFile -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential
+					}
+					elseif ((Get-Item $p).PSIsContainer -ne $true)
+					{
+						Write-Verbose "$FunctionName : Single file"
+						$BackupFiles += Get-item $p
+					}
+					elseif ($MaintenanceSolutionBackup)
+					{
+						Write-Verbose "$FunctionName : Ola Style Folder"
+						$BackupFiles += Get-OlaHRestoreFile -Path $p
+					}
+					else
+					{
+						Write-Verbose "$FunctionName : Standard Directory"
+						$FileCheck = $BackupFiles.count
+						$BackupFiles += Get-DirectoryRestoreFile -Path $p
+						if ((($BackupFiles.count) - $FileCheck) -eq 0)
+						{
+							$BackupFiles += Get-OlaHRestoreFile -Path $p
+						}
+					}
+				}
+			}
+			elseif (($f -is [System.IO.FileInfo]) -or ($f -is [System.Object] -and $f.FullName.Length -ne 0))
+			{
+				Write-Verbose "$FunctionName : Files passed in $($Path.count)"
+				Foreach ($FileTmp in $Path)
+				{
+					$BackupFiles += $FileTmp
+				}
 			}
 		}
-		
-		foreach ($f in $path)
-        {
-            Write-Verbose "type = $($f.gettype())"
-            if ($f -is [string])
-            {
-                Write-Verbose "$FunctionName : Paths passed in" 
-                foreach ($p in $f)
-                {  
-                    if ($XpDirTree)
-                    {
-                        $BackupFiles += Get-XPDirTreeRestoreFile -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential
-                    }
-                    elseif ((Get-Item $p).PSIsContainer -ne $true)
-                    {
-                        Write-Verbose "$FunctionName : Single file"
-                        $BackupFiles += Get-item $p
-                    } 
-                    elseif ($MaintenanceSolutionBackup )
-                    {
-                        Write-Verbose "$FunctionName : Ola Style Folder"
-                        $BackupFiles += Get-OlaHRestoreFile -Path $p
-                    } 
-                    else 
-                    {
-                        Write-Verbose "$FunctionName : Standard Directory"
-                        $FileCheck = $BackupFiles.count
-                        $BackupFiles += Get-DirectoryRestoreFile -Path $p
-                        if ((($BackupFiles.count)-$FileCheck) -eq 0)
-                        {
-                            $BackupFiles += Get-OlaHRestoreFile -Path $p
-                        }
-                    }
-                }
-            } 
-            elseif (($f -is [System.IO.FileInfo]) -or ($f -is [System.Object] -and $f.FullName.Length -ne 0 ))
-            {
-                Write-Verbose "$FunctionName : Files passed in $($Path.count)" 
-                Foreach ($FileTmp in $Path)
-                {
-                    $BackupFiles += $FileTmp
-                }
-            }
-        }
-        }
-    END
-    {
-		try 
+	}
+	END
+	{
+		try
 		{
-			$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential	          
+			$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 		}
-		catch {
-            $server.ConnectionContext.Disconnect()
+		catch
+		{
+			$server.ConnectionContext.Disconnect()
 			Write-Warning "$FunctionName - Cannot connect to $SqlServer" -WarningAction Stop
 		}
-        if ($null -ne $DatabaseName)
-        {
-            If (($null -ne $Server.Databases[$DatabaseName]) -and ($WithReplace -eq $false))
-            {
-                Write-Warning "$FunctionName - $DatabaseName exists on Sql Instance $SqlServer , must specify WithReplace to continue"
-                break
-            }
-        }
-        $server.ConnectionContext.Disconnect()
-        $AllFilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer:$SqlServer -RestoreTime:$RestoreTime -SqlCredential:$SqlCredential -IgnoreLogBackup:$IgnoreLogBackup
-        Write-Verbose "$FunctionName - $($AllFilteredFiles.count) dbs to restore"
-        
-        ForEach ($FilteredFileSet in $AllFilteredFiles)
-      
-        {
-            $FilteredFiles = $FilteredFileSet.values
-           
-            Write-Verbose "$FunctionName - Starting FileSet"
-            if (($FilteredFiles.DatabaseName | Group-Object | Measure-Object).count -gt 1)
-            {
-                $dbs = ($FilteredFiles | Select-Object -Property DatabaseName) -join (',')
-                Write-Warning "$FunctionName - We can only handle 1 Database at a time - $dbs" 
-                break
-            }
-
-            IF($DatabaseName -eq '')
-            {
-                $DatabaseName = ($FilteredFiles | Select-Object -Property  DatabaseName -unique).DatabaseName
-                Write-Verbose "$FunctionName - Dbname set from backup = $DatabaseName"
-            }
-
-            if((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlServer $SqlServer -SqlCredential $SqlCredential))
-            {
-                try{
-                    $FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -Replace:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix:$DestinationFilePrefix
-                    
-                    $Completed='successfully'
-                }
-                catch{
-                    Write-Exception $_
-                    $Completed='unsuccessfully'
-                    return
-                }
-                Finally
-                {
-                    Write-Verbose "Database $databasename restored $Completes"
-                }
-            }
-            $DatabaseName = ''
-        }
-    }
+		if ($null -ne $DatabaseName)
+		{
+			If (($null -ne $Server.Databases[$DatabaseName]) -and ($WithReplace -eq $false))
+			{
+				Write-Warning "$FunctionName - $DatabaseName exists on Sql Instance $SqlServer , must specify WithReplace to continue"
+				break
+			}
+		}
+		$server.ConnectionContext.Disconnect()
+		$AllFilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer:$SqlServer -RestoreTime:$RestoreTime -SqlCredential:$SqlCredential -IgnoreLogBackup:$IgnoreLogBackup
+		Write-Verbose "$FunctionName - $($AllFilteredFiles.count) dbs to restore"
+		
+		ForEach ($FilteredFileSet in $AllFilteredFiles)
+		{
+			$FilteredFiles = $FilteredFileSet.values
+			
+			Write-Verbose "$FunctionName - Starting FileSet"
+			if (($FilteredFiles.DatabaseName | Group-Object | Measure-Object).count -gt 1)
+			{
+				$dbs = ($FilteredFiles | Select-Object -Property DatabaseName) -join (',')
+				Write-Warning "$FunctionName - We can only handle 1 Database at a time - $dbs"
+				break
+			}
+			
+			IF ($DatabaseName -eq '')
+			{
+				$DatabaseName = ($FilteredFiles | Select-Object -Property DatabaseName -unique).DatabaseName
+				Write-Verbose "$FunctionName - Dbname set from backup = $DatabaseName"
+			}
+			
+			if ((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlServer $SqlServer -SqlCredential $SqlCredential))
+			{
+				try
+				{
+					$FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -Replace:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix:$DestinationFilePrefix
+					
+					$Completed = 'successfully'
+				}
+				catch
+				{
+					Write-Exception $_
+					$Completed = 'unsuccessfully'
+					return
+				}
+				Finally
+				{
+					Write-Verbose "Database $databasename restored $Completes"
+				}
+			}
+			$DatabaseName = ''
+		}
+	}
 }
 
 
