@@ -67,18 +67,35 @@ Tests whether the service account running the "sqlcluster" SQL Server isntance c
 		[string]$Path,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
-
+	
 	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+	
+	$Path = $Path.Replace("'", "''")
+	
+	$exists = Test-SqlPath -SqlServer $SqlServer -SqlCredential $SqlCredential -Path $Path
+	
+	if ($exists)
+	{
+		Write-Warning "$Path already exists"
+		return
+	}
+	
 	$sql = "EXEC master.dbo.xp_create_subdir'$path'"
+	Write-Debug $sql
+	
 	try
-    {
+	{
         $query = $server.ConnectionContext.ExecuteNonQuery($sql)
         $Created = $true
     }
     catch
     {
         $Created = $false
-    }
-    return $created
-   
+	}
+	
+	[pscustomobject]@{
+		Server = $SqlServer
+		Path = $Path
+		Created = $Created
+	}   
 }
