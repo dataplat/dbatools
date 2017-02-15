@@ -1,4 +1,4 @@
-﻿Function Get-DbaMemoryUsage
+Function Get-DbaMemoryUsage
 {
 <#
 .SYNOPSIS
@@ -22,6 +22,7 @@ Credential object used to connect to the SQL Server as a different user
 Shows concise information including Server name, Database name, and the date the last time backups were performed
 
 .NOTES
+Tags: Memory
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
 dbatools PowerShell module (https://dbatools.io)
