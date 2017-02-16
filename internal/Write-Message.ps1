@@ -92,6 +92,7 @@
             - Write-Verbose: Level 5
             - Write-Debug:   Level 8
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWriteHost", "")]
     [CmdletBinding(DefaultParameterSetName = 'Level')]
     Param (
         [Parameter(Mandatory = $true)]
@@ -121,7 +122,7 @@
         $Target
     )
     
-    $timestmap = Get-Date -Format "HH:mm:ss"
+    $timestamp = Get-Date -Format "HH:mm:ss"
     $NewMessage = "[$FunctionName][$timestamp] $Message"
     
     #region Handle Errors
@@ -164,7 +165,7 @@
             Write-Verbose $NewMessage
         }
         
-        if (($max_debug -ge $Level) -and ($max_debug -le $Level))
+        if (($max_debug -ge $Level) -and ($min_debug -le $Level))
         {
             Write-Debug $NewMessage
         }
