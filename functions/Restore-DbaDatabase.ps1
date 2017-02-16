@@ -9,11 +9,15 @@ Upon bein passed a list of potential backups files this command will scan the fi
 backup sets. It will then filter those files down to a set that can perform the requested restore, checking that we have a 
 full restore chain to the point in time requested by the caller.
 
+The function defaults to working on a remote instance. This means that all paths passed in must be relative to the remote instance.
+XpDirTree will be used to perform the file scans
+
+
 Various means can be used to pass in a list of files to be considered. The default is to non recursively scan the folder
 passed in. 
 
 .PARAMETER SqlServer
-The SQL Server instance. 
+The SQL Server instance to restore to.
 
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. 
@@ -42,10 +46,12 @@ want to perform more complex rename operations then please use the FileMapping p
 This will apply to all file move options, except for FileMapping
 
 .PARAMETER UseDestinationDefaultDirectories
-Switch that tells the restore to use the default Data and Log locations on the target server
+Switch that tells the restore to use the default Data and Log locations on the target server. If the don't exist, 
+the function will try to create them
 
 .PARAMETER RestoreTime
-Specify a DateTime object to which you want the database restored to. Default is to the latest point available 
+Specify a DateTime object to which you want the database restored to. Default is to the latest point  available 
+in the specified backups
 
 .PARAMETER MaintenanceSolutionBackup
 Switch to indicate the backup files are in a folder structure as created by Ola Hallengreen's maintenance scripts.
@@ -62,7 +68,7 @@ A string which will be prefixed to the start of the restore Database's Name
 Useful if restoring a copy to the same sql sevrer for testing.
 
 .PARAMETER NoRecovery
-Indicates if the database should be recovered after last restore. Default is to recover
+Indicates if the databases should be recovered after last restore. Default is to recover
 
 .PARAMETER WithReplace
 Switch indicated is the restore is allowed to replace an existing database.
