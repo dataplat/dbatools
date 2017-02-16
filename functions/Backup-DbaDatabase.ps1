@@ -118,9 +118,9 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 				$Filecount = $BackupDirectory.count
 			}
 			
-			if ($database.count -gt 1 -and $BackupFileName)
+			if ($DatabaseCollection.count -gt 1 -and $BackupFileName -ne '')
 			{
-				Write-Warning "$FunctionName - 1 BackupFile specified, but more than 1 database."
+				Write-Warning "$FunctionName - 1 BackupFile specified, but more than 1 database." -WarningAction stop
 				break
 			}
 		}
@@ -134,7 +134,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			continue
 		}
 		
-		Write-Verbose "$FunctionName - $($database.count) database to backup"
+		Write-Verbose "$FunctionName - $($DatabaseCollection.count) database to backup"
 		
 		ForEach ($Database in $databasecollection)
 		{
@@ -184,7 +184,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			
 			if ($Type -eq "Log")
 			{
-				Write-Verbose "Creating log backup"
+				Write-Verbose "$FunctionName - Creating log backup"
 				$Suffix = "trn"
 			}
 			
@@ -201,7 +201,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			#If a backupfilename has made it this far, use it
 			$FinalBackupPath = @()
 			
-			if ($BackupFileName -eq 'sjklsfks')
+			if ($BackupFileName -ne '')
 			{
 				if ($BackupFileName -notlike "*:*")
 				{
@@ -209,7 +209,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					{
 						$BackupDirectory = $server.BackupDirectory
 					}
-					$BackupFileName = "$BackupDirectory\$BackupFileName"
+					$BackupFileName = "$BackupDirectory\$BackupFileName.$Suffix"
 				}
 				
 				Write-Verbose "$FunctionName - Single db and filename"
@@ -228,7 +228,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			{
 				if (!$BackupDirectory)
 				{
-					$BackupDirectory = $server.BackupDirectory
+					$BackupDirectory += $server.BackupDirectory
 				}
 
 				if ($BackupFileName -eq '')	
@@ -255,8 +255,14 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					}
 					else
 					{
+						if ((New-DbaSqlDirectory -SqlServer:$SqlInstance -SqlCredential:$SqlCredential -Path $path).created -eq $false)
+						{
+							$FailReason = "Cannot create or write to folder $path"
+							$FailReasons += $FailReason
+							Write-Warning "$FunctionName - $FailReason"
+						}
 						$FinaLBackupPath += "$path\$BackupFileName.$suffix"
-						Write-Verbose "$FunctionName - t= $path\$BackupFileName.$suffix"
+						Write-Verbose "$FunctionName - q= $path\$BackupFileName.$suffix"
 					}
 				}
 			}
@@ -282,6 +288,8 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 				}
 			}
 			Write-Verbose "before failreasons"
+			$script = ''
+			$backupComplete = $false
 			if ($FailReasons.count -eq 0)
 			{
 				$filecount = $FinalBackupPath.count
@@ -307,7 +315,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 				try
 				{
 					$backup.SqlBackup($server)
-					$Tsql = $backup.Script($server)
+					$script = $backup.Script($server)
 					Write-Progress -id 1 -activity "Backing up database $($Database.Name)  to $backupfile" -status "Complete" -Completed
 					$BackupComplete = $true
 				}
@@ -319,7 +327,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 				}
 		
 			
-				[PSCustomObject]@{
+	<#			[PSCustomObject]@{
 					SqlInstance = $server.name
 					DatabaseName = $($Database.Name)
 					BackupComplete = $BackupComplete
@@ -330,20 +338,21 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					Script = $Tsql
 					Notes = $FailReasons -join (',')
 				} 
-			} else {
-				[PSCustomObject]@{
+			} else {#>
+			}
+			[PSCustomObject]@{
 					SqlInstance = $server.name
 					DatabaseName = $($Database.Name)
-					BackupComplete = $false
+					BackupComplete = $BackupComplete
 					BackupFilesCount = $FinalBackupPath.count	
 					BackupFile = (split-path $FinalBackupPath -leaf)
-					BackupFolder = (split-path $FinalBackupPath)
-					BackupPath = ($backup.Devices.name)
-					Script = 'N/A'
+					BackupFolder = (split-path $FinalBackupPath | Sort-Object -Unique)
+					BackupPath = ($FinalBackupPath | Sort-Object -Unique)
+					Script = $script
 					Notes = $FailReasons -join (',')	
 				}
 				$failreasones =@()
-			}
+			
 			
 		}
 	}
