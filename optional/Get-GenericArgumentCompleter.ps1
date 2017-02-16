@@ -1,4 +1,6 @@
-﻿Function Get-GenericArgumentCompleter
+﻿if (-not (Get-Command -Name Register-ArgumentCompleter -ErrorAction Ignore))
+{
+Function Get-GenericArgumentCompleter
 {
 	param (
 		[string]$name,
@@ -22,4 +24,5 @@
 			}
 		}
 	}
+}
 }

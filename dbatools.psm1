@@ -54,6 +54,10 @@ foreach ($assembly in $assemblies)
 # This technique helps a little bit
 # https://becomelotr.wordpress.com/2017/02/13/expensive-dot-sourcing/
 
+# Load our own custom library
+# Should always come before function imports
+. ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\bin\library.ps1")))
+
 # All internal functions privately available within the toolset
 foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\*.ps1"))
 {
@@ -66,24 +70,15 @@ foreach ($function in (Get-ChildItem "$PSScriptRoot\functions\*.ps1"))
 	. ([scriptblock]::Create([io.file]::ReadAllText($function)))
 }
 
-#region Optional / Conditional components
-# Only import our own TEPP implementation if the official one isn't available
-if (-not (Get-Command -Name New-CompletionResult -ErrorAction Ignore))
+# Run all optional code
+# Note: Each optional file must include a conditional governing whether it's run at all.
+# Validations were moved into the other files, in order to prevent having to update dbatools.psm1 every time
+foreach ($function in (Get-ChildItem "$PSScriptRoot\optional\*.ps1"))
 {
-	. ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\optional\TabExpansionPlusPlus.ps1")))
-	. ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\optional\Get-GenericArgumentCompleter.ps1")))
+    . ([scriptblock]::Create([io.file]::ReadAllText($function)))
 }
 
-
-# Only import Invoke-SqlCmd2, if the original isn't already available
-if (-not (Get-Command -Name Invoke-SqlCmd2 -ErrorAction Ignore -ListImported))
-{
-	. ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\optional\Invoke-SqlCmd2.ps1")))
-}
-#endregion Optional / Conditional components
-
-
-# Finally register autocompletion
+#region Finally register autocompletion
 # Test whether we have Tab Expansion Plus available (used in dynamicparams scripts ran below)
 if (Get-Command TabExpansionPlusPlus\Register-ArgumentCompleter -ErrorAction Ignore)
 {
@@ -98,6 +93,12 @@ foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\dynamicparams\*.ps1
 {
 	. ([scriptblock]::Create([io.file]::ReadAllText($function)))
 }
+#endregion Finally register autocompletion
+
+# Load configuration system
+# Should always go last
+. ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\internal\configurations\configuration.ps1")))
+
 
 # Not supporting the provider path at this time
 # if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\")) { throw "Please change to another drive and reload the module." }
