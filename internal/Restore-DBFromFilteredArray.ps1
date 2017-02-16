@@ -257,8 +257,8 @@
 				else
 				{
 					Write-Progress -id 1 -activity "Restoring $DbName to ServerName" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-					$Restore.sqlrestore($Server)
 					$script = $restore.Script($Server)
+					$Restore.sqlrestore($Server)
 					Write-Progress -id 1 -activity "Restoring $DbName to $ServerName" -status "Complete" -Completed
 					
 				}

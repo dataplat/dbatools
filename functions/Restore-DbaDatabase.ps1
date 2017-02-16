@@ -54,7 +54,12 @@ we have an anchoring full backup. Because we can rely on specific locations for 
 backup solution, we can rely on file locations.
 
 .PARAMETER DatabaseName
-Name to restore the database under
+Name to restore the database under. 
+Only works with a single database restore. If multiple database are found in the provided paths then we will exit
+
+.PARAMETER RestoredDatababaseNamePrefix
+A string which will be prefixed to the start of the restore Database's Name
+Useful if restoring a copy to the same sql sevrer for testing.
 
 .PARAMETER NoRecovery
 Indicates if the database should be recovered after last restore. Default is to recover
@@ -175,7 +180,8 @@ folder for those file types as defined on the target instance.
 		[switch]$IgnoreLogBackup,
 		[switch]$UseDestinationDefaultDirectories,
 		[switch]$ReuseSourceFolderStructure,
-		[string]$DestinationFilePrefix = ''
+		[string]$DestinationFilePrefix = '',
+		[string]$RestoredDatababaseNamePrefix
 	)
 	BEGIN
 	{
@@ -231,18 +237,25 @@ folder for those file types as defined on the target instance.
 		foreach ($f in $path)
 		{
 			
-			
-			if ($f.StartsWith("\\") -eq $false -and $islocal -ne $true)
+			#$f.StartsWith("\\") -eq $false -and 
+			if ($islocal -ne $true)
 			{
+				Write-Verbose "$FunctionName - Working remotely, and non UNC path used. Dropping to XpDirTree, all paths evaluated at $SqlServer"
 				# Many internal functions parse using Get-ChildItem. 
 				# We need to use Test-SqlPath and other commands instead
 				# Prevent people from trying 
 				
-				Write-Warning "Currently, you can only use UNC paths when running this command remotely. We expect to support non-UNC paths for remote servers shortly."
-				continue
+				#Write-Warning "Currently, you can only use UNC paths when running this command remotely. We expect to support non-UNC paths for remote servers shortly."
+				#continue
 				
 				#$newpath = Join-AdminUnc $SqlServer "$path"
 				#Write-Warning "Run this command on the server itself or try $newpath."
+				if ($XpDirTree -ne $true)
+				{
+					Write-Verbose "$FunctionName - Only XpDirTree is safe on remote server"
+					$XpDirTree = $true
+					$MaintenanceSolutionBackup = $false
+				}
 			}
 			
 			Write-Verbose "type = $($f.gettype())"
@@ -253,7 +266,21 @@ folder for those file types as defined on the target instance.
 				{
 					if ($XpDirTree)
 					{
-						$BackupFiles += Get-XPDirTreeRestoreFile -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential
+						if ($p -match '\.\w{3}\Z' )
+						{
+							if (Test-SqlPath -Path $p -SqlServer:$SqlServer -SqlCredential:$SqlCredential)
+							{
+								$BackupFiles += $p
+							}
+							else
+							{
+								Write-Warning "$FunctionName - $p cannot be access by $SqlServer"
+							}
+						}
+						else
+						{
+							$BackupFiles += Get-XPDirTreeRestoreFile -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential
+						}
 					}
 					elseif ((Get-Item $p).PSIsContainer -ne $true)
 					{
@@ -282,13 +309,71 @@ folder for those file types as defined on the target instance.
 				Write-Verbose "$FunctionName : Files passed in $($Path.count)"
 				Foreach ($FileTmp in $Path)
 				{
-					$BackupFiles += $FileTmp
+					Write-Verbose "Type - $($FileTmp.GetType()), length =$($FileTmp.length)"
+					if($FileTmp -is [System.Io.FileInfo] -and $isLocal -eq $False )
+					{
+						Write-Verbose "File object"
+						if ($FileTmp.PsIsContainer)
+						{
+							$BackupFiles += Get-XPDirTreeRestoreFile -Path $FileTmp.Fullname -SqlServer $SqlServer -SqlCredential $SqlCredential
+						}
+						else
+						{
+							if (Test-SqlPath -Path $FileTmp.FullName -SqlServer:$SqlServer -SqlCredential:$SqlCredential)
+							{
+								$BackupFiles += $FileTmp
+							}
+							else
+							{
+								Write-Warning "$FunctionName - $($FileTmp.FullName) cannot be access by $SqlServer"
+							}
+
+						}
+					}
+					elseif(($FileTmp -is [System.Management.Automation.PSCustomObject] )) #Dealing with Pipeline input 					
+					{
+						Write-Verbose "Should be pipe input "
+						if ($FileTmp.PSobject.Properties.name -match "Server")
+						{
+							#Most likely incoming from Get-DbaBackupHistory
+							if($Filetmp.Server -ne $SqlServer -and $FileTmp.Full -notlike '\\\\*')
+							{
+								Write-Warning "$FunctionName - Backups from a different server and on a local drive, can't access"
+								Continue
+							}
+						}
+						if ($FileTmp.FullName -notmatch '\.\w{3}\Z' )
+						{
+							Write-Verbose "it's file"
+							$BackupFiles += Get-XPDirTreeRestoreFile -Path $FileTmp.Fullname -SqlServer $SqlServer -SqlCredential $SqlCredential
+						}
+						elseif ($FileTmp.FullName -match '\.\w{3}\Z' )
+						{
+							Write-Verbose "it's folder"
+							if (Test-SqlPath -Path $FileTmp.FullName -SqlServer:$SqlServer -SqlCredential:$SqlCredential)
+							{
+								$BackupFiles += $FileTmp
+							}
+							else
+							{
+								Write-Warning "$FunctionName - $($FileTmp.FullName) cannot be access by $SqlServer"
+							}
+
+						}
+					}
+					else
+					{	
+						Write-Verbose "Dropped to Default"
+						$BackupFiles += $FileTmp
+					}
 				}
 			}
 		}
 	}
 	END
 	{
+
+
 		try
 		{
 			$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
@@ -310,6 +395,12 @@ folder for those file types as defined on the target instance.
 		$AllFilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer:$SqlServer -RestoreTime:$RestoreTime -SqlCredential:$SqlCredential -IgnoreLogBackup:$IgnoreLogBackup
 		Write-Verbose "$FunctionName - $($AllFilteredFiles.count) dbs to restore"
 		
+		if ($AllFilteredFiles.count -gt 1 -and $DatabaseName -ne '')
+		{
+			Write-Warning "$FunctionName -  DatabaseName parameter and multiple database restores is not compatible "
+			break
+		}
+		
 		ForEach ($FilteredFileSet in $AllFilteredFiles)
 		{
 			$FilteredFiles = $FilteredFileSet.values
@@ -324,7 +415,7 @@ folder for those file types as defined on the target instance.
 			
 			IF ($DatabaseName -eq '')
 			{
-				$DatabaseName = ($FilteredFiles | Select-Object -Property DatabaseName -unique).DatabaseName
+				$DatabaseName = $RestoredDatababaseNamePrefix+($FilteredFiles | Select-Object -Property DatabaseName -unique).DatabaseName
 				Write-Verbose "$FunctionName - Dbname set from backup = $DatabaseName"
 			}
 			
@@ -344,7 +435,7 @@ folder for those file types as defined on the target instance.
 				}
 				Finally
 				{
-					Write-Verbose "Database $databasename restored $Completes"
+					Write-Verbose "Database $databasename restored $Completed"
 				}
 			}
 			$DatabaseName = ''
