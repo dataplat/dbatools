@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+﻿[cmdletbinding()]
 param (
 	[string]$Path
 )
