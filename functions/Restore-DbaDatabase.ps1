@@ -185,6 +185,8 @@ folder for those file types as defined on the target instance.
 	)
 	BEGIN
 	{
+		#Don't like nulls
+		$islocal = $false
 		$base = $SqlServer.Split("\")[0]
 		
 		if ($base -eq "." -or $base -eq "localhost" -or $base -eq $env:computername -or $base -eq "127.0.0.1")
@@ -392,6 +394,49 @@ folder for those file types as defined on the target instance.
 			}
 		}
 		$server.ConnectionContext.Disconnect()
+		if ($islocal -eq $false)
+		{
+			Write-Verbose "$FunctionName - Remote server, checking folders"
+			if ($DestinationDataDirectory -ne '')
+			{
+				if ((Test-SqlPath -Path $DestinationDataDirectory -SqlServer:$SqlServer -SqlCredential:$SqlCredential) -ne $true)
+				{
+					if ((New-DbaSqlDirectory -Path $DestinationDataDirectory -SqlServer:$SqlServer -SqlCredential:$SqlCredential).Created -ne $true)
+					{
+						Write-Warning "$FunctionName - DestinationDataDirectory $DestinationDataDirectory does not exist, and could not be created on $SqlServer"
+						break
+					}
+					else
+					{
+						Write-Verbose "$FunctionName - DestinationDataDirectory $DestinationDataDirectory  created on $SqlServer"
+					}
+				}
+				else
+				{
+					Write-Verbose "$FunctionName - DestinationDataDirectory $DestinationDataDirectory  exists on $SqlServer"	
+				}
+			}
+			if ($DestinationLogDirectory -ne '')
+			{
+				if ((Test-SqlPath -Path $DestinationLogDirectory -SqlServer:$SqlServer -SqlCredential:$SqlCredential) -ne $true)
+				{
+					if((New-DbaSqlDirectory -Path $DestinationLogDirectory -SqlServer:$SqlServer -SqlCredential:$SqlCredential).Created -ne $true)
+					{
+						Write-Warning "$FunctionName - DestinationLogDirectory $DestinationLogDirectory does not exist, and could not be created on $SqlServer"
+						break
+					}
+					else
+					{
+						Write-Verbose "$FunctionName - DestinationLogDirectory $DestinationLogDirectory  created on $SqlServer"
+					}
+				}
+				else
+				{
+					Write-Verbose "$FunctionName - DestinationLogDirectory $DestinationLogDirectory  exists on $SqlServer"	
+				}
+			}
+		}
+		
 		$AllFilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer:$SqlServer -RestoreTime:$RestoreTime -SqlCredential:$SqlCredential -IgnoreLogBackup:$IgnoreLogBackup
 		Write-Verbose "$FunctionName - $($AllFilteredFiles.count) dbs to restore"
 		
