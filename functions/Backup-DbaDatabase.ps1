@@ -114,7 +114,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			
 			if ($BackupDirectory.count -gt 1)
 			{
-				Write-Verbose "$FunctionName - Multiple Backup Directories"
+				Write-Verbose "$FunctionName - Multiple Backup Directories, striping"
 				$Filecount = $BackupDirectory.count
 			}
 			
@@ -250,7 +250,6 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 						}
 						else {
 							$FinaLBackupPath += "$path\$BackupFileName.$suffix"
-							Write-Verbose "$FunctionName - t= $path\$BackupFileName.$suffix"
 						}
 					}
 					else
@@ -261,8 +260,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 							$FailReasons += $FailReason
 							Write-Warning "$FunctionName - $FailReason"
 						}
-						$FinaLBackupPath += "$path\$BackupFileName.$suffix"
-						Write-Verbose "$FunctionName - q= $path\$BackupFileName.$suffix"
+						$FinalBackupPath += "$path\$BackupFileName.$suffix"
 					}
 				}
 			}
@@ -325,20 +323,6 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					Write-Exception $_
 					$BackupComplete = $false
 				}
-		
-			
-	<#			[PSCustomObject]@{
-					SqlInstance = $server.name
-					DatabaseName = $($Database.Name)
-					BackupComplete = $BackupComplete
-					BackupFilesCount = $filecount
-					BackupFile = (split-path $backup.Devices.name -leaf)
-					BackupFolder = (split-path $backup.Devices.name)
-					BackupPath = ($backup.Devices.name)
-					Script = $Tsql
-					Notes = $FailReasons -join (',')
-				} 
-			} else {#>
 			}
 			[PSCustomObject]@{
 					SqlInstance = $server.name
@@ -357,30 +341,3 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 		}
 	}
 }
-
-<#
-
-[int]$FileCount = 1,
-[switch]$CreateFolder,
-
-.PARAMETER FileCount
-Number of files to stripe each backup across if a single BackupDirectory is provided.
-
-File Names with be suffixed with x-of-y to enable identifying striped sets, where y is the number of files in the set and x is from 1 to you
-
-.PARAMETER CreateFolder
-Switch to indicate that a folder should be created under each folder for each database if it doesn't already existing
-Folders are created by the Sql Instance, and checks will be made for write permissions
-
-.EXAMPLE
-Backup-DbaDatabase -SqlInstance Server1 -Databases HR,Finance -Type Full -BackupDirectory \\server2\backups,\\server3\backups -CreateFolder
-
-This will perform a full Copy Only database backup on the databases HR and Finance on SQL Server Instance Server1 striping the files across the 2 fileshares, creaing folders 
-for each database
-
-.EXAMPLE
-Get-DbaDatabase -SqlInstance localhost\sqlexpress2016 -Status Normal -Exclude tempdb | Backup-DbaDatabase -SqlInstance localhost\sqlexpress2016 -Type diff -BackupDirectory d:\backups,e:\backups -CreateFolder
-
-Backs up every database in a normal start on localhost\sqlexpress2016, striping the backups across d:\backups and e:\backups for improved performance. Each DB has it's own folder under each of the backup paths
-
-#>
