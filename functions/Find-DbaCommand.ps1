@@ -57,109 +57,116 @@ Find-DbaCommand -Tag copy
 Finds all commands tagged with "copy"
 
 .EXAMPLE
+Find-DbaCommand -Tag copy,user
+
+Finds all commands tagged with BOTH "copy" and "user"
+
+.EXAMPLE
 Find-DbaCommand -Author chrissy
 
 Finds every command whose author contains our beloved "chrissy"
+
+.EXAMPLE
+Find-DbaCommand -Author chrissy -Tag copy
+
+Finds every command whose author contains our beloved "chrissy" and it tagged as "copy"
 
 .EXAMPLE
 Find-DbaCommand -Pattern snapshot -Rebuild
 
 Finds all commands searching the entire help for "snapshot", rebuilding the index (good for developers)
 #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
-    Param (
-        [String]$Pattern,
-        [String]$Tag,
-        [String]$Author,
-        [switch]$Rebuild
-    )
-    BEGIN
-    {
-        $tagsRex = ([regex]'(?m)^[\s]{0,15}Tags:(.*)$')
-        $authorRex = ([regex]'(?m)^[\s]{0,15}Author:(.*)$')
+	[CmdletBinding(SupportsShouldProcess = $true)]
+	Param (
+		[String]$Pattern,
+		[String[]]$Tag,
+		[String]$Author,
+		[switch]$Rebuild
+	)
+	BEGIN
+	{
+		$tagsRex = ([regex]'(?m)^[\s]{0,15}Tags:(.*)$')
+		$authorRex = ([regex]'(?m)^[\s]{0,15}Author:(.*)$')
 
-        function Get-DbaHelp([String]$commandname) {
-            $thishelp = Get-Help $commandname -Full
-            $thebase = @{}
-            $thebase.CommandName = $commandname
-            $thebase.Name = $thishelp.name
+		function Get-DbaHelp([String]$commandname) {
+			$thishelp = Get-Help $commandname -Full
+			$thebase = @{}
+			$thebase.CommandName = $commandname
+			$thebase.Name = $thishelp.name
 
-            ## fetch the description
-            $thebase.Description = $thishelp.Description.text
+			## fetch the description
+			$thebase.Description = $thishelp.Description.text
 
-            ## fetch examples
-            $thebase.Examples = $thishelp.Examples | Out-String -Width 120
+			## fetch examples
+			$thebase.Examples = $thishelp.Examples | Out-String -Width 120
 
-            ## fetch help link
-            $thebase.Links = ($thishelp.relatedLinks).navigationLink.uri
+			## fetch help link
+			$thebase.Links = ($thishelp.relatedLinks).navigationLink.uri
 
-            ## fetch the synopsis
-            $thebase.Synopsis = $thishelp.Synopsis
+			## fetch the synopsis
+			$thebase.Synopsis = $thishelp.Synopsis
 
-            ## store notes
-            $as = $thishelp.alertSet | Out-String -Width 120
+			## store notes
+			$as = $thishelp.alertSet | Out-String -Width 120
 
-            ## fetch the tags
-            $tags = $tagsrex.Match($as).Groups[1].Value
-            if($tags) {
-                $thebase.Tags = $tags.Trim().Split(',')
-            }
-            ## fetch the author
-            $author = $authorRex.Match($as).Groups[1].Value
-            if($author) {
-                $thebase.Author = $author.Trim()
-            }
-
-            [pscustomobject]$thebase
-        }
-
-        function Get-DbaIndex() {
-            $dbamodule = Get-Module -Name dbatools
-            $allcommands = $dbamodule.ExportedCommands
-            $helpcoll = New-Object System.Collections.Generic.List[System.Object]
-            foreach($c in $allcommands.GetEnumerator()) {
-                $x = Get-DbaHelp $c.Key
-                $helpcoll.Add($x)
+			## fetch the tags
+			$tags = $tagsrex.Match($as).Groups[1].Value
+			if($tags) {
+				$thebase.Tags = $tags.Split(',').Trim()
 			}
-						
-			# $dest = Get-DbaConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
-			$dest = "$moduledirectory\bin\dbatools-index.json"
-            if ($Pscmdlet.ShouldProcess($dest, "Recreating index"))
-            {
-                $helpcoll | ConvertTo-Json | Out-File $dest
-            }
+			## fetch the author
+			$author = $authorRex.Match($as).Groups[1].Value
+			if($author) {
+				$thebase.Author = $author.Trim()
+			}
+
+			[pscustomobject]$thebase
 		}
-		
+
+		function Get-DbaIndex() {
+			if ($Pscmdlet.ShouldProcess($dest, "Recreating index")) {
+				$dbamodule = Get-Module -Name dbatools
+				$allcommands = $dbamodule.ExportedCommands
+				$helpcoll = New-Object System.Collections.Generic.List[System.Object]
+				foreach($c in $allcommands.GetEnumerator()) {
+					$x = Get-DbaHelp $c.Key
+					$helpcoll.Add($x)
+				}
+				# $dest = Get-DbaConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
+				$dest = "$moduledirectory\bin\dbatools-index.json"
+				$helpcoll | ConvertTo-Json | Out-File $dest
+			}
+		}
+
 		$moduledirectory = (Get-Module -Name dbatools).ModuleBase
 	}
 	PROCESS
-    {
+	{
 		# $idxfile = Get-DbaConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
 		$idxfile = "$moduledirectory\bin\dbatools-index.json"
-        if(!(Test-Path $idxfile) -or $Rebuild) {
-            Write-Verbose "Rebuilding index into $idxfile"
-            $swrebuild = [system.diagnostics.stopwatch]::startNew()
-            Get-DbaIndex
-            Write-Verbose "Rebuild done in $($swrebuild.Elapsedmilliseconds)ms"
+		if(!(Test-Path $idxfile) -or $Rebuild) {
+			Write-Verbose "Rebuilding index into $idxfile"
+			$swrebuild = [system.diagnostics.stopwatch]::startNew()
+			Get-DbaIndex
+			Write-Verbose "Rebuild done in $($swrebuild.Elapsedmilliseconds)ms"
 
-        }
-        $consolidated = Get-Content $idxfile | ConvertFrom-Json
-        $result = $consolidated
-        if($Pattern.length -gt 0) {
-            $result = $result | Where-Object { $_.psobject.properties.value -like "*$Pattern*" }
 		}
-		
+		$consolidated = Get-Content $idxfile | ConvertFrom-Json
+		$result = $consolidated
+		if($Pattern.length -gt 0) {
+			$result = $result | Where-Object { $_.psobject.properties.value -like "*$Pattern*" }
+		}
+
 		if ($Tag.length -gt 0)
 		{
-			# need to remove the spaces in tags, added for human ease. 
-			# I forgot how to pretty tho, so match for now
-			# less accurate, needs help
-			$result = $result | Where-Object { $_.Tags -match $tag }
+			foreach($t in $Tag) {
+				$result = $result | Where-Object Tags -contains $t
+			}
 		}
-		
-        if($Author.length -gt 0) {
-            $result = $result | Where-Object Author -like "*$Author*"
-        }
-        Select-DefaultView -InputObject $result -Property CommandName, Synopsis
-    }
+
+		if($Author.length -gt 0) {
+			$result = $result | Where-Object Author -like "*$Author*"
+		}
+		Select-DefaultView -InputObject $result -Property CommandName, Synopsis
+	}
 }
