@@ -276,7 +276,7 @@ folder for those file types as defined on the target instance.
 							}
 							else
 							{
-								Write-Warning "$FunctionName - $p cannot be access by $SqlServer"
+								Write-Warning "$FunctionName - $p cannot be access by $SqlServer" -WarningAction Stop
 							}
 						}
 						else
@@ -327,7 +327,7 @@ folder for those file types as defined on the target instance.
 							}
 							else
 							{
-								Write-Warning "$FunctionName - $($FileTmp.FullName) cannot be access by $SqlServer"
+								Write-Warning "$FunctionName - $($FileTmp.FullName) cannot be access by $SqlServer" -WarningAction stop
 							}
 
 						}
@@ -340,8 +340,7 @@ folder for those file types as defined on the target instance.
 							#Most likely incoming from Get-DbaBackupHistory
 							if($Filetmp.Server -ne $SqlServer -and $FileTmp.Full -notlike '\\\\*')
 							{
-								Write-Warning "$FunctionName - Backups from a different server and on a local drive, can't access"
-								Continue
+								Write-Warning "$FunctionName - Backups from a different server and on a local drive, can't access" -WarningAction stop
 							}
 						}
 						if ($FileTmp.FullName -notmatch '\.\w{3}\Z' )
@@ -358,7 +357,7 @@ folder for those file types as defined on the target instance.
 							}
 							else
 							{
-								Write-Warning "$FunctionName - $($FileTmp.FullName) cannot be access by $SqlServer"
+								Write-Warning "$FunctionName - $($FileTmp.FullName) cannot be accessed by $SqlServer"
 							}
 
 						}
