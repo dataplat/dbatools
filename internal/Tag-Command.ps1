@@ -1,4 +1,4 @@
-function Tag-Command([string]$Tag, [string]$Keyword)
+﻿function Tag-Command([string]$Tag, [string]$Keyword)
 {
 <#
 .SYNOPSIS
