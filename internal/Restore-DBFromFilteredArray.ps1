@@ -26,7 +26,8 @@
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$UseDestinationDefaultDirectories,
 		[switch]$ReuseSourceFolderStructure,
-		[switch]$Force
+		[switch]$Force,
+		[string]$RestoredDatababaseNamePrefix
 	)
     
 	    Begin
@@ -101,14 +102,14 @@
 
  		$RestorePoints  = @()
         $if = $InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Database'} | Group-Object FirstLSN
-		$RestorePoints  += @([PSCustomObject]@{order=[int64]1;'Files' = $if.group})
+		$RestorePoints  += @([PSCustomObject]@{order=[Decimal]1;'Files' = $if.group})
         $if = $InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Database Differential'}| Group-Object FirstLSN
 		if ($if -ne $null){
-			$RestorePoints  += @([PSCustomObject]@{order=[int64]2;'Files' = $if.group})
+			$RestorePoints  += @([PSCustomObject]@{order=[Decimal]2;'Files' = $if.group})
 		}
 		foreach ($if in ($InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} | Group-Object FirstLSN))
  		{
-   			$RestorePoints  += [PSCustomObject]@{order=[int64]($if.Name); 'Files' = $if.group}
+   			$RestorePoints  += [PSCustomObject]@{order=[Decimal]($if.Name); 'Files' = $if.group}
 		}
 		$SortedRestorePoints = $RestorePoints | Sort-object -property order
 		foreach ($RestorePoint in $SortedRestorePoints)
