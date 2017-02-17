@@ -108,8 +108,13 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 		if ($SqlInstance.length -ne 0)
 		{
 			if ($PSCmdlet.ParameterSetName -ne 'Pipe')
-			{
+			{	
+				Write-Verbose "$Functionname - Databases paramter used"
 				$databases = $psboundparameters.Databases
+			}
+			else
+			{
+				Write-Verbose "$functionName - Pipeline input"
 			}
 			Write-Verbose "Connecting to $SqlInstance"
 			try
@@ -136,20 +141,11 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 	{
 		if ($PSCmdlet.ParameterSetName -eq 'Pipe')
 		{			
-			foreach ($tdb in $ArrDatabases)
-			{
-				$PipeDbs += $tdb.name
-			}
+			$DatabaseCollection = $server.Databases | Where-Object { $_.Name -in ($Arrdatabases.name) }
+		}else{
+			$DatabaseCollection = $server.Databases | Where-Object { $_.Name -in $databases }
 		}
 
-	}
-	END
-	{
-		if ($PSCmdlet.ParameterSetName -eq 'Pipe')
-		{
-			$databases = $PipeDbs
-		}	
-		$DatabaseCollection = $server.Databases | Where-Object { $_.Name -in $databases }
 		if (!$SqlInstance -and !$DatabaseCollection)
 		{
 			Write-Warning "You must specify a server and database or pipe some databases"
@@ -342,13 +338,19 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					$script = $backup.Script($server)
 					Write-Progress -id 1 -activity "Backing up database $($Database.Name)  to $backupfile" -status "Complete" -Completed
 					$BackupComplete = $true
+					Write-Verbose "$Functionname - Backup of $($Database.Name) completed succesfully"
 				}
 				catch
 				{
 					Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
 					Write-Exception $_
 					$BackupComplete = $false
+					
 				}
+			}
+			if ($BackupComplete -eq $false)
+			{
+				Write-Verbose "$Functionname - Backup of $($Database.Name) failed"
 			}
 			[PSCustomObject]@{
 					SqlInstance = $server.name
@@ -363,5 +365,9 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 				}
 				$failreasones =@()				
 		}
+	}
+	END
+	{
+		$server.ConnectionContext.Disconnect()
 	}
 }
