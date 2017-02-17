@@ -1,8 +1,8 @@
-﻿if (-not (Get-Command -Name Invoke-SqlCmd2 -ErrorAction Ignore -ListImported))
+﻿if (-not (Get-Item function:\Invoke-Sqlcmd2 -ErrorAction Ignore))
 {
     
     # Global since it is no longer in the manifest
-    function global:Invoke-Sqlcmd2
+    function Invoke-Sqlcmd2
     {
         <#
             .SYNOPSIS
