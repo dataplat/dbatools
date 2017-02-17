@@ -70,8 +70,8 @@ PROCESS
       {
         Write-Verbose "$FunctionName - Getting Privileges on $Computer"
         $Priv = $null
-        $Priv = Invoke-Command -ComputerName $computer -ScriptBlock {secedit /export /cfg C:\Windows\Temp\secpol.cfg > $NULL ;
-        Get-Content C:\Windows\Temp\secpol.cfg | Where-Object { $_ -match "SeBatchLogonRight" -or $_ -match 'SeManageVolumePrivilege' -or $_ -match 'SeLockMemoryPrivilege' }}
+        $Priv = Invoke-Command -ComputerName $computer -ScriptBlock {$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("") ; secedit /export /cfg $temp\secpol.cfg > $NULL ;
+        Get-Content $temp\secpol.cfg | Where-Object { $_ -match "SeBatchLogonRight" -or $_ -match 'SeManageVolumePrivilege' -or $_ -match 'SeLockMemoryPrivilege' }}
         try
         {
           Write-Verbose "$FunctionName - Getting Batch Logon Privileges on $Computer"
@@ -110,7 +110,7 @@ PROCESS
           }
         }
         Write-Verbose "$FunctionName - Removing secpol file on $computer"
-        Invoke-Command -ComputerName $computer -ScriptBlock {Remove-Item C:\Windows\Temp\secpol.cfg -Force > $NULL }
+        Invoke-Command -ComputerName $computer -ScriptBlock {$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("") ; Remove-Item $temp\secpol.cfg -Force > $NULL }
       }
       else
       {
