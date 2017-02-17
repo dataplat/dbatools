@@ -8,6 +8,7 @@ Watches the gallery for updates to dbatools. Mostly for fun.
 Watches the gallery for updates to dbatools. Only supports Windows 10.
 
 .NOTES
+Tags: JustForFun
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -23,14 +24,61 @@ https://dbatools.io/Watch-DbaUpdate
 .EXAMPLE   
 Watch-DbaUpdate
 
-Watches the gallery for udpates to dbatools.
-
-# PERSISTENT PARAM
+Watches the gallery for updates to dbatools.
 #>	
-	[CmdletBinding()]
-	Param (
-		[switch]$persistent
-	)
+	BEGIN
+	{
+		function Show-Notification (
+				$title = "dbatools update",
+				$text = "Version $galleryversion is now available"
+			)
+		{
+			$null = [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime]
+			$templatetype = [Windows.UI.Notifications.ToastTemplateType]::ToastImageAndText01
+			$template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent($templatetype)
+			
+			#Convert to .NET type for XML manipuration
+			$toastXml = [xml]$template.GetXml()
+			$null = $toastXml.GetElementsByTagName("text").AppendChild($toastXml.CreateTextNode($title))
+			
+			$image = $toastXml.GetElementsByTagName("image")
+			# unsure why $PSScriptRoot isnt't working here
+			$base = $module.ModuleBase
+			$image.setAttribute("src", "$base\bin\thor.png")
+			$image.setAttribute("alt", "thor")
+			
+			#Convert back to WinRT type
+			$xml = New-Object Windows.Data.Xml.Dom.XmlDocument
+			$xml.LoadXml($toastXml.OuterXml)
+			
+			$toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
+			$toast.Tag = "PowerShell"
+			$toast.Group = "PowerShell"
+			$toast.ExpirationTime = [DateTimeOffset]::Now.AddHours(6)
+			
+			$notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($text)
+			$notifier.Show($toast)
+		}
+		
+		function Create-Job
+		{
+			$script = {
+				$scriptblock = [scriptblock]::Create('Watch-DbaUpdate')
+				$trigger = New-JobTrigger -Once -At (Get-Date).Date -RepeatIndefinitely -RepetitionInterval (New-TimeSpan -Minutes 5)
+				$options = New-ScheduledJobOption -ContinueIfGoingOnBattery -StartIfOnBattery
+				Register-ScheduledJob -Name 'dbatools version check' -ScriptBlock $scriptblock -Trigger $trigger -ScheduledJobOption $options
+			}
+			
+			If (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
+			{
+				Start-Process powershell -Verb runAs -ArgumentList $script.tostring()
+			}
+			else
+			{
+				$null = Invoke-Command -ScriptBlock $script
+			}
+		}
+	}
 	
 	PROCESS
 	{
@@ -38,6 +86,28 @@ Watches the gallery for udpates to dbatools.
 		{
 			Write-Warning "This command only supports Windows 10 and above"
 			return
+		}
+		
+		if ($null -eq (Get-ScheduledJob -Name "dbatools version check" -ErrorAction SilentlyContinue))
+		{
+			Write-Warning "Watch-DbaUpdate runs as a Scheduled Job which must be created. This will only happen once."
+			
+			Create-Job
+			
+			Start-Sleep -Seconds 2
+			
+			if ($null -eq (Get-ScheduledJob -Name "dbatools version check" -ErrorAction SilentlyContinue))
+			{
+				Write-Warning "Couldn't create job :("
+				return
+			}
+			else
+			{
+				$module = Get-Module -Name dbatools
+				Write-Warning "Job created! A notication should appear momentarily. Here's something cute to look at in the interim."
+				Show-Notification -title "dbatools ❤ you" -text "come hang out at dbatools.io/slack"
+				return
+			}
 		}
 		
 		# leave this in for the workflow
@@ -56,49 +126,6 @@ Watches the gallery for udpates to dbatools.
 		if ($galleryversion -le $localversion) { return }
 		#if ($findmodule.PublishedDate -gt (Get-Date).AddDays(-1)) { return }
 		
-		$null = [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime]
-		$templatetype = [Windows.UI.Notifications.ToastTemplateType]::ToastImageAndText03
-		$template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent($templatetype)
-		
-		#Convert to .NET type for XML manipuration
-		$toastXml = [xml]$template.GetXml()
-		$null = $toastXml.GetElementsByTagName("text").AppendChild($toastXml.CreateTextNode("dbatools update"))
-		
-		$image = $toastXml.GetElementsByTagName("image")
-		# unsure why $PSScriptRoot isnt't working here
-		$base = $module.ModuleBase
-		$image.setAttribute("src", "$base\bin\thor.png")
-		$image.setAttribute("alt", "thor")
-		
-		#Convert back to WinRT type
-		$xml = New-Object Windows.Data.Xml.Dom.XmlDocument
-		$xml.LoadXml($toastXml.OuterXml)
-		
-		$toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
-		$toast.Tag = "PowerShell"
-		$toast.Group = "PowerShell"
-		$toast.ExpirationTime = [DateTimeOffset]::Now.AddMinutes(5)
-		
-		$notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("Version $galleryversion is now available in the gallery. Version $localversion is currently installed.")
-		$notifier.Show($toast)
-		
-<#
-		
-		
-workflow Resume_Workflow
-{
-	
-}
-# Create the scheduled job properties
-$options = New-ScheduledJobOption -ContinueIfGoingOnBattery -StartIfOnBattery
-$AtStartup = New-JobTrigger -AtStartup
-$scriptblock = { Resume-Job -Name new_resume_workflow_job -Wait }
-
-# Register the scheduled job
-Register-ScheduledJob -Name Resume_Workflow_Job -Trigger $AtStartup -ScriptBlock $scriptblock -ScheduledJobOption $options
-
-# Execute the workflow as a new job
-Resume_Workflow -AsJob -JobName new_resume_workflow_job
-#>
+		Show-Notification
 	}
 }
