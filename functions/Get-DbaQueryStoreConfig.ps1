@@ -30,14 +30,23 @@ This program is free software: you can redistribute it and/or modify it under th
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
 
-
 .LINK
 https://dbatools.io/Get-QueryStoreConfig
 
 .EXAMPLE
 Get-DbaQueryStoreConfig -SqlServer ServerA\sql
 
-Returns Query Store configuration settings for every Query Store enabled database on the ServerA\sql instance.
+Returns Query Store configuration settings for every database on the ServerA\sql instance.
+
+.EXAMPLE
+Get-DbaQueryStoreConfig -SqlServer ServerA\sql | Where-Object {$_.ActualState -eq "ReadWrite"}
+
+Returns the Query Store configuration for all databases on ServerA\sql where the Query Store feature is in Read/Write mode.
+
+.EXAMPLE
+Get-DbaQueryStoreConfig -SqlServer localhost | format-table -AutoSize -Wrap
+
+Returns Query Store configuration settings for every database on the ServerA\sql instance inside a table format.
 
 	
 #>
@@ -46,7 +55,8 @@ Returns Query Store configuration settings for every Query Store enabled databas
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
-		[PsCredential]$Credential
+		[PsCredential]$Credential,
+        [string[]]$State
 	)
 
 	DynamicParam {
@@ -61,32 +71,6 @@ Returns Query Store configuration settings for every Query Store enabled databas
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
 
-        # Create a datatable to hold the Query Store configuration
-        $QSCDT = New-Object System.Data.DataTable
-
-        # Define the columns
-        $QSCDT_Instance = New-Object System.Data.DataColumn ‘Instance’,([string])
-        $QSCDT_Database = New-Object System.Data.DataColumn ‘Database’,([string])
-        $QSCDT_ActualState = New-Object System.Data.DataColumn ‘ActualState’,([string])
-        $QSCDT_FlushInterval = New-Object System.Data.DataColumn ‘FlushInterval’,([string])
-        $QSCDT_CollectionInterval = New-Object System.Data.DataColumn ‘CollectionInterval’,([string])
-        $QSCDT_MaxSize = New-Object System.Data.DataColumn ‘MaxSize’,([string])
-        $QSCDT_CurrentSize = New-Object System.Data.DataColumn ‘CurrentSize’,([string])
-        $QSCDT_CaptureMode = New-Object System.Data.DataColumn ‘CaptureMode’,([string])
-        $QSCDT_CleanupMode = New-Object System.Data.DataColumn ‘CleanupMode’,([string])
-        $QSCDT_StaleQueryThreshold = New-Object System.Data.DataColumn ‘StaleQueryThreshold’,([string])
-
-        # Add columns to the datatable
-        $QSCDT.Columns.Add($QSCDT_Instance)
-        $QSCDT.Columns.Add($QSCDT_Database)
-        $QSCDT.Columns.Add($QSCDT_ActualState)
-        $QSCDT.Columns.Add($QSCDT_FlushInterval)
-        $QSCDT.Columns.Add($QSCDT_CollectionInterval)
-        $QSCDT.Columns.Add($QSCDT_MaxSize)
-        $QSCDT.Columns.Add($QSCDT_CurrentSize)
-        $QSCDT.Columns.Add($QSCDT_CaptureMode)
-        $QSCDT.Columns.Add($QSCDT_CleanupMode)
-        $QSCDT.Columns.Add($QSCDT_StaleQueryThreshold)
 	}
 
 	PROCESS
@@ -112,15 +96,13 @@ Returns Query Store configuration settings for every Query Store enabled databas
 				}
 			}
 
-            $sqlVersion = $server.Version
-
-            $sqlVersion = $sqlVersion.ToString().Split(".")[0]
+            $sqlVersion = $server.VersionMajor
 
             if($sqlVersion -ilt "13")
                 {
 
-                Write-Warning "The SQL Server Instance has a lower SQL Server version than SQL Server 2016. Skipping server."
-                break
+                Write-Warning "The SQL Server Instance ($servername) has a lower SQL Server version than SQL Server 2016. Skipping server."
+                continue
                 }
 
             
@@ -149,27 +131,21 @@ Returns Query Store configuration settings for every Query Store enabled databas
 					Continue
 				}
 
-                # Start processing
-
-                $QSCDT_Row = $QSCDT.NewRow()
-
-                $QSCDT_Row.Instance = $servername
-                $QSCDT_Row.Database = $db.name
-                $QSCDT_Row.ActualState = $db.QueryStoreOptions.ActualState
-                $QSCDT_Row.FlushInterval = $db.QueryStoreOptions.DataFlushIntervalInSeconds
-                $QSCDT_Row.CollectionInterval = $db.QueryStoreOptions.StatisticsCollectionIntervalInMinutes
-                $QSCDT_Row.MaxSize = $db.QueryStoreOptions.MaxStorageSizeInMB
-                $QSCDT_Row.CurrentSize = $db.QueryStoreOptions.CurrentStorageSizeInMB
-                $QSCDT_Row.CaptureMode = $db.QueryStoreOptions.QueryCaptureMode
-                $QSCDT_Row.CleanupMode = $db.QueryStoreOptions.SizeBasedCleanupMode
-                $QSCDT_Row.StaleQueryThreshold = $db.QueryStoreOptions.StaleQueryThresholdInDays
-
-                $QSCDT.Rows.Add($QSCDT_Row)
-                       
+                [pscustomobject]@{
+                Instance = $servername
+                Database = $db.name
+                ActualState = $db.QueryStoreOptions.ActualState
+                FlushInterval = $db.QueryStoreOptions.DataFlushIntervalInSeconds
+                CollectionInterval = $db.QueryStoreOptions.StatisticsCollectionIntervalInMinutes
+                MaxSize = $db.QueryStoreOptions.MaxStorageSizeInMB
+                CurrentSize = $db.QueryStoreOptions.CurrentStorageSizeInMB
+                CaptureMode = $db.QueryStoreOptions.QueryCaptureMode
+                CleanupMode = $db.QueryStoreOptions.SizeBasedCleanupMode
+                StaleQueryThreshold = $db.QueryStoreOptions.StaleQueryThresholdInDays
+                }
+                      
 			}
         }
-
-    $QSCDT | Format-Table -Property Instance, Database, ActualState, FlushInterval, CollectionInterval, MaxSize, CurrentSize, CaptureMode, CleanupMode, StaleQueryThreshold -Wrap -AutoSize 
 
     }
 	
