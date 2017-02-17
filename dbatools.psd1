@@ -214,7 +214,9 @@
 		'Get-DbaSqlClientProtocol',
 		'Backup-DbaDatabase',
 		'New-DbaSqlDirectory',
-		'Get-DbaPrivilege'
+		'Get-DbaPrivilege',
+		'Watch-DbaUpdate',
+		'Get-DbaQueryStoreConfig'
 	)
 	
 	<# coming soon
