@@ -2,12 +2,10 @@ Function Get-DbaQueryStoreConfig
 {
 <#
 .SYNOPSIS
-Get the Query Store configuration for all Query Store enabled databases.
+Get the Query Store configuration for Query Store enabled databases.
 	
 .DESCRIPTION
 Retrieves and returns the Query Store configuration for every database that has the Query Store feature enabled.
-
-Default output includes
 	
 .PARAMETER SqlServer
 The SQL Server that you're connecting to.
@@ -55,8 +53,7 @@ Returns Query Store configuration settings for every database on the ServerA\sql
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
-		[PsCredential]$Credential,
-        [string[]]$State
+		[PsCredential]$Credential
 	)
 
 	DynamicParam {
