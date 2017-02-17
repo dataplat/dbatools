@@ -34,7 +34,21 @@ Watches the gallery for udpates to dbatools.
 			return
 		}
 		
-		if (!(Get-Module -Name dbatools)) { Import-Module dbatools }
+		# leave this in for the workflow
+		$module = Get-Module -Name dbatools
+		
+		if (!$module)
+		{
+			Import-Module dbatools
+			$module = Get-Module -Name dbatools
+		}
+		
+		#$findmodule = Find-Module -Name dbatools -Repository PSGallery
+		#$currentversion = $findmodule.Version
+		$galleryversion = [version]"0.8.903"
+		$localversion = $module.Version
+		if ($galleryversion -le $localversion) { return }
+		#if ($findmodule.PublishedDate -gt (Get-Date).AddDays(-1)) { return }
 		
 		$null = [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime]
 		$templatetype = [Windows.UI.Notifications.ToastTemplateType]::ToastImageAndText03
@@ -45,7 +59,9 @@ Watches the gallery for udpates to dbatools.
 		$null = $toastXml.GetElementsByTagName("text").AppendChild($toastXml.CreateTextNode("dbatools update"))
 		
 		$image = $toastXml.GetElementsByTagName("image")
-		$image.setAttribute("src", "$PSScriptRoot\bin\thor.png")
+		# unsure why $PSScriptRoot isnt't worknig here
+		$base = $module.ModuleBase
+		$image.setAttribute("src", "$base\bin\thor.png")
 		$image.setAttribute("alt", "thor")
 		
 		#Convert back to WinRT type
@@ -57,10 +73,12 @@ Watches the gallery for udpates to dbatools.
 		$toast.Group = "PowerShell"
 		$toast.ExpirationTime = [DateTimeOffset]::Now.AddMinutes(5)
 		
-		$notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("new version")
+		$notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("Version $galleryversion is now available in the gallery. Version $localversion is currently installed.")
 		$notifier.Show($toast)
 		
 <#
+		
+		
 workflow Resume_Workflow
 {
 	
@@ -78,5 +96,3 @@ Resume_Workflow -AsJob -JobName new_resume_workflow_job
 #>
 	}
 }
-
-Watch-DbaUpdate
