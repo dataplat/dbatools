@@ -151,12 +151,17 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			Write-Warning "You must specify a server and database or pipe some databases"
 			continue
 		}
+		if ($DatabaseCollection.Count -eq 0)
+		{
+			Write-Warning "The databases specified do not exist on $SqlInstance"
+			continue	
+		}
 		if ($DatabaseCollection.count -gt 1 -and $BackupFileName -ne '')
 		{
 			Write-Warning "$FunctionName - 1 BackupFile specified, but more than 1 database." -WarningAction stop
 			break
 		}
-		Write-Verbose "$FunctionName - $($DatabaseCollection.count) database to backup"
+		Write-Verbose "$FunctionName - $($DatabaseCollection.count) databases to backup"
 		
 		ForEach ($Database in $databasecollection)
 		{
