@@ -25,7 +25,9 @@ Watch-DbaUpdate
 
 Watches the gallery for udpates to dbatools.
 
+# PERSISTENT PARAM
 #>	
+	
 	PROCESS
 	{
 		if (([Environment]::OSVersion).Version.Major -lt 10)
