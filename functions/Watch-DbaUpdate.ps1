@@ -2,7 +2,7 @@
 {
 <# 
 .SYNOPSIS 
-Watches the gallery for updates to dbatools.
+Watches the gallery for updates to dbatools. Mostly for fun.
 
 .DESCRIPTION 
 Watches the gallery for updates to dbatools. Only supports Windows 10.
@@ -27,6 +27,10 @@ Watches the gallery for udpates to dbatools.
 
 # PERSISTENT PARAM
 #>	
+	[CmdletBinding()]
+	Param (
+		[switch]$persistent
+	)
 	
 	PROCESS
 	{
@@ -61,7 +65,7 @@ Watches the gallery for udpates to dbatools.
 		$null = $toastXml.GetElementsByTagName("text").AppendChild($toastXml.CreateTextNode("dbatools update"))
 		
 		$image = $toastXml.GetElementsByTagName("image")
-		# unsure why $PSScriptRoot isnt't worknig here
+		# unsure why $PSScriptRoot isnt't working here
 		$base = $module.ModuleBase
 		$image.setAttribute("src", "$base\bin\thor.png")
 		$image.setAttribute("alt", "thor")
