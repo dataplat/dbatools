@@ -213,7 +213,8 @@
 		'Set-DbaConfig',
 		'Get-DbaSqlClientProtocol',
 		'Backup-DbaDatabase',
-		'New-DbaSqlDirectory'
+		'New-DbaSqlDirectory',
+		'Get-DbaPrivilege'
 	)
 	
 	<# coming soon
