@@ -83,11 +83,11 @@
 
 $ParameterName = "Tag"
 
-# Get all internal functions
+# Get all internal functions - nm, just get one for now
 # Null the variable before you call, as on Windows 6.1 machines it might otherwise reregister previous commands if the current one returns no result
 # (So yeah, it's an insurance)
 $commands = $null
-$commands = Get-Command -Name "*-Dba*" -CommandType Function -ListImported -ParameterName $ParameterName -ErrorAction Ignore
+$commands = Get-Command -Name Find-DbaCommand -CommandType Function -ParameterName $ParameterName -ErrorAction Ignore
 
 foreach ($command in $commands)
 {

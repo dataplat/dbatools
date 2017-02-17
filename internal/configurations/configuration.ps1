@@ -59,8 +59,10 @@ if ($var = Get-Variable "dbatools_config" -Scope Global -ErrorAction Ignore)
 }
 #endregion Implement user profile
 
+$configpath = $ExecutionContext.SessionState.Module.ModuleBase + "\internal\configurations"
+
 # Import other configuration files
-foreach ($file in (Get-ChildItem -Path $PSScriptRoot -Exclude "configuration.ps1"))
+foreach ($file in (Get-ChildItem -Path $configpath -Exclude "configuration.ps1"))
 {
     . $file.FullName
 }
