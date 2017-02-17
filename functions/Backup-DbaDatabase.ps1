@@ -48,6 +48,9 @@ Accepted values are Full, Log, Differential, Diff, Database
 THis is the number of striped copies of the backups you wish to create
 This value is overwritten if you specify multiple Backup Directories
 
+.PARAMETER CreateFolder
+If switch enabled then each databases will be backed up into a seperate folder on each of the specified backuppaths
+
 .PARAMETER DatabaseCollection
 Internal parameter
 
@@ -75,47 +78,30 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	param (
-		[parameter(ParameterSetName = "NoPipe", Mandatory = $true)][parameter(ParameterSetName = "Pipe")]
+		[parameter(ParameterSetName = "Pipe", Mandatory = $true)]
 		[object[]]$SqlInstance,
-		[parameter(ParameterSetName = "NoPipe")][parameter(ParameterSetName = "Pipe")]
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[parameter(ParameterSetName = "NoPipe")][parameter(ParameterSetName = "Pipe")]
 		[string[]]$BackupDirectory,
-		[parameter(ParameterSetName = "NoPipe")][parameter(ParameterSetName = "Pipe")]
 		[string]$BackupFileName,
-		[parameter(ParameterSetName = "NoPipe")][parameter(ParameterSetName = "Pipe")]
 		[switch]$NoCopyOnly,
-		[parameter(ParameterSetName = "NoPipe")][parameter(ParameterSetName = "Pipe")]
 		[ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
 		[string]$Type = "Database",
-		[parameter(ParameterSetName = "Pipe",Mandatory = $true, ValueFromPipeline = $true)]
-		[object[]]$Arrdatabases,
-		[parameter(ParameterSetName = "NoPipe")][parameter(ParameterSetName = "Pipe")]
+		[parameter(ParameterSetName = "NoPipe", Mandatory = $true, ValueFromPipeline = $true)]
+		[object[]]$DatabaseCollection,
 		[switch]$CreateFolder,
-		[parameter(ParameterSetName = "NoPipe")][parameter(ParameterSetName = "Pipe")]
 		[int]$FileCount=0
 
 		
 	)
 	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
+	
 	BEGIN
 	{
 		$FunctionName = $FunctionName = (Get-PSCallstack)[0].Command
-		$PipeDbs = @()
-		
-
-
+				
 		if ($SqlInstance.length -ne 0)
 		{
-			if ($PSCmdlet.ParameterSetName -ne 'Pipe')
-			{	
-				Write-Verbose "$Functionname - Databases paramter used"
-				$databases = $psboundparameters.Databases
-			}
-			else
-			{
-				Write-Verbose "$functionName - Pipeline input"
-			}
+			$databases = $psboundparameters.Databases
 			Write-Verbose "Connecting to $SqlInstance"
 			try
 			{
@@ -123,45 +109,34 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			}
 			catch
 			{
-				Write-Warning "$FunctionName - Cannot connect to $SqlInstance"
+				Write-Warning "$FunctionName - Cannot connect to $SqlInstance £"
 				continue
 			}
-
-	
+			
+			$DatabaseCollection = $server.Databases | Where-Object { $_.Name -in $databases }
+			
 			if ($BackupDirectory.count -gt 1)
 			{
 				Write-Verbose "$FunctionName - Multiple Backup Directories, striping"
 				$Filecount = $BackupDirectory.count
 			}
 			
-
+			if ($DatabaseCollection.count -gt 1 -and $BackupFileName -ne '')
+			{
+				Write-Warning "$FunctionName - 1 BackupFile specified, but more than 1 database." -WarningAction stop
+				break
+			}
 		}
-	}		
+	}
 	PROCESS
-	{
-		if ($PSCmdlet.ParameterSetName -eq 'Pipe')
-		{			
-			$DatabaseCollection = $server.Databases | Where-Object { $_.Name -in ($Arrdatabases.name) }
-		}else{
-			$DatabaseCollection = $server.Databases | Where-Object { $_.Name -in $databases }
-		}
-
+	{		
 		if (!$SqlInstance -and !$DatabaseCollection)
 		{
 			Write-Warning "You must specify a server and database or pipe some databases"
 			continue
 		}
-		if ($DatabaseCollection.Count -eq 0)
-		{
-			Write-Warning "The databases specified do not exist on $SqlInstance"
-			continue	
-		}
-		if ($DatabaseCollection.count -gt 1 -and $BackupFileName -ne '')
-		{
-			Write-Warning "$FunctionName - 1 BackupFile specified, but more than 1 database." -WarningAction stop
-			break
-		}
-		Write-Verbose "$FunctionName - $($DatabaseCollection.count) databases to backup"
+		
+		Write-Verbose "$FunctionName - $($DatabaseCollection.count) database to backup"
 		
 		ForEach ($Database in $databasecollection)
 		{
@@ -187,7 +162,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			
 			$lastfull = $database.LastBackupDate.Year
 		
-			if (($Type -notin 'Full','database') -and $lastfull -eq 1)
+			if ($Type -ne "Full" -and $lastfull -eq 1)
 			{
 				$FailReason = "$($Database.Name) does not have an existing full backup, cannot take log or differentialbackup"
 				$FailReasons += $FailReason
@@ -269,7 +244,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					{
 						$Path = $path + "\" + $Database.name
 						Write-Verbose "$FunctionName - Creating Folder $Path"	
-						if ((New-DbaSqlDirectory -SqlServer:$SqlInstance -SqlCredential:$SqlCredential -Path $path).created -eq $false)
+						if ((New-DbaSqlDirectory -SqlServer:$server -SqlCredential:$SqlCredential -Path $path).created -eq $false)
 						{
 							$FailReason = "Cannot create or write to folder $path"
 							$FailReasons += $FailReason
@@ -281,7 +256,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					}
 					else
 					{
-						if ((New-DbaSqlDirectory -SqlServer:$SqlInstance -SqlCredential:$SqlCredential -Path $path).created -eq $false)
+						if ((New-DbaSqlDirectory -SqlServer:$server -SqlCredential:$SqlCredential -Path $path).created -eq $false)
 						{
 							$FailReason = "Cannot create or write to folder $path"
 							$FailReasons += $FailReason
@@ -343,19 +318,13 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					$script = $backup.Script($server)
 					Write-Progress -id 1 -activity "Backing up database $($Database.Name)  to $backupfile" -status "Complete" -Completed
 					$BackupComplete = $true
-					Write-Verbose "$Functionname - Backup of $($Database.Name) completed succesfully"
 				}
 				catch
 				{
 					Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
 					Write-Exception $_
 					$BackupComplete = $false
-					
 				}
-			}
-			if ($BackupComplete -eq $false)
-			{
-				Write-Verbose "$Functionname - Backup of $($Database.Name) failed"
 			}
 			[PSCustomObject]@{
 					SqlInstance = $server.name
@@ -368,11 +337,9 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					Script = $script
 					Notes = $FailReasons -join (',')	
 				}
-				$failreasones =@()				
+				$failreasones =@()
+			
+			
 		}
-	}
-	END
-	{
-		$server.ConnectionContext.Disconnect()
 	}
 }
