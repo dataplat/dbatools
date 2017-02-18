@@ -2,7 +2,7 @@
 {
 <# 
 .SYNOPSIS 
-Just for fun - watches the PowerShell Gallery for updates to dbatools - notifies max every 6 hours.
+Just for fun - checks the PowerShell Gallery ever few hours for updates to dbatools - notifies max every 6 hours.
 
 .DESCRIPTION 
 Only supports Windows 10. Not sure how to make the notification last longer (like Slack does).
@@ -57,6 +57,7 @@ Watches the gallery for updates to dbatools.
 			$toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
 			$toast.Tag = "PowerShell"
 			$toast.Group = "PowerShell"
+			# This doesn't work
 			$toast.ExpirationTime = [DateTimeOffset]::Now.AddHours(6)
 			
 			$notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($text)
@@ -68,8 +69,9 @@ Watches the gallery for updates to dbatools.
 			$script = {
 				try
 				{
+					# create a task, check every 3 hours
 					$action = New-ScheduledTaskAction –Execute 'powershell.exe' -Argument '–NoProfile -NoLogo -NonInteractive -WindowStyle Hidden Watch-DbaUpdate'
-					$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date -RepetitionInterval (New-TimeSpan -Minutes 1)
+					$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date -RepetitionInterval (New-TimeSpan -Hours 3)
 					$principal = New-ScheduledTaskPrincipal -LogonType S4U -UserId (whoami)
 					$settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([timespan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd
 					$task = Register-ScheduledTask -Principal $principal -TaskName 'dbatools version check' -Action $action -Trigger $trigger -Settings $settings -ErrorAction Stop
