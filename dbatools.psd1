@@ -216,7 +216,8 @@
 		'New-DbaSqlDirectory',
 		'Get-DbaPrivilege',
 		'Watch-DbaUpdate',
-		'Get-DbaQueryStoreConfig'
+		'Get-DbaQueryStoreConfig',
+		'Unregister-DbaWatchUpdate'
 	)
 	
 	<# coming soon
