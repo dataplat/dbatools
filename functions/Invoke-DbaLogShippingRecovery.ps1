@@ -294,7 +294,7 @@ Shows what would happen if the command were executed.
         Write-Output ("Finished Recovery for '" + $ls.secondary_database + "'")
 
         # Reset the log ship details
-        $logshipping_details = $null
+        $logshipping_details = $null 
     }
 
     END
