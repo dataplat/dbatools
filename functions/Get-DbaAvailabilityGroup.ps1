@@ -120,7 +120,8 @@ Returns true/false if the server, sqlserver2014a, is the primary replica for AG-
 			
 			if (!$agReplicas)
 			{
-				return "No data found"
+				Write-Warning "[$servername] Availability Groups not found"
+                continue
 			}
 			
 			
