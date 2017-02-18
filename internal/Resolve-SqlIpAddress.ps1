@@ -1,4 +1,4 @@
-Function Resolve-SqlIpAddress
+﻿Function Resolve-SqlIpAddress
 {
 	[CmdletBinding()]
 	param (

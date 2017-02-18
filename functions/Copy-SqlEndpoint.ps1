@@ -1,4 +1,4 @@
-Function Copy-SqlEndpoint
+﻿Function Copy-SqlEndpoint
 {
 <#
 .SYNOPSIS 
@@ -40,7 +40,8 @@ Prompts you for confirmation before executing any changing operations within the
 .PARAMETER Force
 Drops and recreates the endpoint if it exists
 
-.NOTES 
+.NOTES
+Tags: Migration
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 

@@ -1,4 +1,4 @@
-function Get-XpDirTreeRestoreFile
+﻿function Get-XpDirTreeRestoreFile
 {
 <#
 .SYNOPSIS
@@ -18,7 +18,7 @@ Takes path, checks for validity. Scans for usual backup file
         [System.Management.Automation.PSCredential]$SqlCredential
     )
        
-        $FunctionName = "Get-XpDirTreeRestoreFile"
+        $FunctionName =(Get-PSCallstack)[0].Command
         
         Write-Verbose "$FunctionName - Starting"
         Write-Verbose "$FunctionName - Checking Path"
@@ -28,7 +28,7 @@ Takes path, checks for validity. Scans for usual backup file
         }
         Catch
         {
-            throw $_
+            Write-Warning "$FunctionName - Cannot connect to $sqlServer" -WarningAction stop
         }
 
         if ($Path[-1] -ne "\")
@@ -37,7 +37,7 @@ Takes path, checks for validity. Scans for usual backup file
         }
         If (!(Test-SqlPath -SQLServer $sqlserver -SqlCredential $SqlCredential -path $path))
         {
-            Throw "$FunctionName - SQLServer $sqlserver cannot access $path"
+            Write-warning "$FunctionName - SQLServer $sqlserver cannot access $path"
         }
         $query = "EXEC master.sys.xp_dirtree '$Path',1,1;"
         $queryResult = Invoke-Sqlcmd2 -ServerInstance $sqlServer -Credential $SqlCredential -Database tempdb -Query $query

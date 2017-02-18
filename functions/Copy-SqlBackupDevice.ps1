@@ -1,4 +1,4 @@
-Function Copy-SqlBackupDevice
+﻿Function Copy-SqlBackupDevice
 {
 <#
 .SYNOPSIS
@@ -42,7 +42,8 @@ Prompts you for confirmation before executing any changing operations within the
 .PARAMETER Force
 Drops and recreates the backup device if it exists
 
-.NOTES 
+.NOTES
+Tags: Migration, DisasterRecovery, Backup
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 

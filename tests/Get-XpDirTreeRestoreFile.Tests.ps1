@@ -1,4 +1,4 @@
-#Thank you Warren http://ramblingcookiemonster.github.io/Testing-DSC-with-Pester-and-AppVeyor/
+﻿#Thank you Warren http://ramblingcookiemonster.github.io/Testing-DSC-with-Pester-and-AppVeyor/
 
 if(-not $PSScriptRoot)
 {
@@ -18,7 +18,7 @@ Import-Module $PSScriptRoot\..\internal\$sut -Force
 
 . $PSScriptRoot\..\internal\Connect-SQLServer.ps1 
 . $PSScriptRoot\..\functions\Test-SQLPath.ps1 
-. $PSScriptRoot\..\functions\Invoke-SqlCmd2.ps1
+. $PSScriptRoot\..\optional\Invoke-SqlCmd2.ps1
 Describe "Get-XpDirTree Unit Tests" -Tag 'Unittests'{
     mock Connect-SqlServer {$true}
     mock Test-SqlPath {$true}
