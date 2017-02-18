@@ -66,7 +66,6 @@
 	
 	# Functions to export from this module
 	FunctionsToExport = @(
-		'Restore-DbaDatabase',
 		'Start-SqlMigration',
 		'Copy-SqlDatabase',
 		'Copy-SqlLogin',
@@ -165,7 +164,6 @@
 		'Get-DbaMaxMemory',
 		'Set-DbaMaxMemory',
 		'Test-DbaMaxMemory',
-		'Restore-DbaDatabase',
 		'Get-DbaDatabaseSnapshot',
 		'Remove-DbaDatabaseSnapshot',
 		'Get-DbaRoleMember',
