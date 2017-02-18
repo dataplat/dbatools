@@ -5,7 +5,9 @@
 Watches the gallery for updates to dbatools. Mostly for fun.
 
 .DESCRIPTION 
-Watches the gallery for updates to dbatools. Only supports Windows 10.
+Watches the gallery for updates to dbatools. Only supports Windows 10. Not sure how to make the notification last until it's acknowledged.
+	
+Anyone know how to make it clickable so that it opens an URL?
 
 .NOTES
 Tags: JustForFun
@@ -29,12 +31,12 @@ Watches the gallery for updates to dbatools.
 	BEGIN
 	{
 		function Show-Notification (
-				$title = "dbatools update",
-				$text = "Version $galleryversion is now available"
-			)
+			$title = "dbatools update",
+			$text = "Version $galleryversion is now available"
+		)
 		{
 			$null = [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime]
-			$templatetype = [Windows.UI.Notifications.ToastTemplateType]::ToastImageAndText01
+			$templatetype = [Windows.UI.Notifications.ToastTemplateType]::ToastImageAndText02
 			$template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent($templatetype)
 			
 			#Convert to .NET type for XML manipuration
@@ -44,6 +46,7 @@ Watches the gallery for updates to dbatools.
 			$image = $toastXml.GetElementsByTagName("image")
 			# unsure why $PSScriptRoot isnt't working here
 			$base = $module.ModuleBase
+			
 			$image.setAttribute("src", "$base\bin\thor.png")
 			$image.setAttribute("alt", "thor")
 			
@@ -60,22 +63,33 @@ Watches the gallery for updates to dbatools.
 			$notifier.Show($toast)
 		}
 		
-		function Create-Job
+		function Create-Task
 		{
 			$script = {
-				$scriptblock = [scriptblock]::Create('Watch-DbaUpdate')
-				$trigger = New-JobTrigger -Once -At (Get-Date).Date -RepeatIndefinitely -RepetitionInterval (New-TimeSpan -Minutes 5)
-				$options = New-ScheduledJobOption -ContinueIfGoingOnBattery -StartIfOnBattery
-				Register-ScheduledJob -Name 'dbatools version check' -ScriptBlock $scriptblock -Trigger $trigger -ScheduledJobOption $options
+				try
+				{
+					$action = New-ScheduledTaskAction –Execute 'powershell.exe' -Argument '–NoProfile -NoLogo -NonInteractive -WindowStyle Hidden Watch-DbaUpdate'
+					$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date -RepetitionInterval (New-TimeSpan -Minutes 1)
+					$principal = New-ScheduledTaskPrincipal -LogonType S4U -UserId (whoami)
+					$settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([timespan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd
+					$task = Register-ScheduledTask -Principal $principal -TaskName 'dbatools version check' -Action $action -Trigger $trigger -Settings $settings -ErrorAction Stop
+					return $true	
+				}
+				catch
+				{
+					return $false
+				}
 			}
 			
+			# Needs admin creds to setup the kind of PowerShell window that doesn't appear for a millisecond
+			# which is a millisecond too long
 			If (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
 			{
-				Start-Process powershell -Verb runAs -ArgumentList $script.tostring()
+				return (Start-Process powershell -Verb runAs -ArgumentList $script.tostring() -ErrorAction Stop)
 			}
 			else
 			{
-				$null = Invoke-Command -ScriptBlock $script
+				return (Invoke-Command -ScriptBlock $script -ErrorAction Stop)
 			}
 		}
 	}
@@ -88,23 +102,21 @@ Watches the gallery for updates to dbatools.
 			return
 		}
 		
-		if ($null -eq (Get-ScheduledJob -Name "dbatools version check" -ErrorAction SilentlyContinue))
+		if ($null -eq (Get-ScheduledTask -TaskName "dbatools version check" -ErrorAction SilentlyContinue))
 		{
-			Write-Warning "Watch-DbaUpdate runs as a Scheduled Job which must be created. This will only happen once."
+			Write-Warning "Watch-DbaUpdate runs as a Scheduled Task which must be created. This will only happen once."
 			
-			Create-Job
+			$result = Create-Task
 			
-			Start-Sleep -Seconds 2
-			
-			if ($null -eq (Get-ScheduledJob -Name "dbatools version check" -ErrorAction SilentlyContinue))
+			if ($result -eq $false)
 			{
-				Write-Warning "Couldn't create job :("
+				Write-Warning "Couldn't create task :("
 				return
 			}
 			else
 			{
 				$module = Get-Module -Name dbatools
-				Write-Warning "Job created! A notication should appear momentarily. Here's something cute to look at in the interim."
+				Write-Warning "Task created! A notication should appear momentarily. Here's something cute to look at in the interim."
 				Show-Notification -title "dbatools ❤ you" -text "come hang out at dbatools.io/slack"
 				return
 			}
@@ -119,13 +131,40 @@ Watches the gallery for updates to dbatools.
 			$module = Get-Module -Name dbatools
 		}
 		
-		#$findmodule = Find-Module -Name dbatools -Repository PSGallery
-		#$currentversion = $findmodule.Version
+		#$galleryversion = (Find-Module -Name dbatools -Repository PSGallery).Version
 		$galleryversion = [version]"0.8.903"
 		$localversion = $module.Version
-		if ($galleryversion -le $localversion) { return }
-		#if ($findmodule.PublishedDate -gt (Get-Date).AddDays(-1)) { return }
 		
-		Show-Notification
+		if ($galleryversion -le $localversion) { return }
+		
+		$file = "$env:LOCALAPPDATA\dbatools\watchupdate.xml"
+		
+		$new = [pscustomobject]@{
+			NotifyTime = (Get-Date)
+			NotifyVersion = $galleryversion
+		}
+		
+		if (Test-Path $file)
+		{
+			$old = Import-Clixml -Path $file -ErrorAction SilentlyContinue
+			
+			if ($old.NotifyTime -lt (Get-Date).AddMinutes(-4))
+			{
+				Export-Clixml -InputObject $new -Path $file
+				Show-Notification
+			}
+		}
+		else
+		{
+			$directory = Split-Path $file
+			
+			if (!(Test-Path $directory))
+			{
+				$null = New-Item -ItemType Directory -Path $directory
+			}
+			
+			Export-Clixml -InputObject $new -Path $file
+			Show-Notification
+		}
 	}
 }
