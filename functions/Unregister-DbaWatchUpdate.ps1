@@ -28,7 +28,6 @@ Removes the scheduled task created by Watch-DbaUpdate.
 #>	
 	process
 	{
-		
 		if (([Environment]::OSVersion).Version.Major -lt 10)
 		{
 			Write-Warning "This command only supports Windows 10 and above"
@@ -36,16 +35,24 @@ Removes the scheduled task created by Watch-DbaUpdate.
 		}
 		
 		$script = {
-			$task = Get-ScheduledTask -TaskName "dbatools version check" -ErrorAction SilentlyContinue
-			if ($null -eq $task)
-			{
-				Write-Warning "Task doesn't exist"
-				return
-			}
 			
-			$task | Unregister-ScheduledTask -Confirm:$false
-			$file = "$env:LOCALAPPDATA\dbatools\watchupdate.xml"
-			Remove-Item $file
+			try
+			{
+				$task = Get-ScheduledTask -TaskName "dbatools version check" -ErrorAction SilentlyContinue
+				if ($null -eq $task)
+				{
+					Write-Warning "Task doesn't exist - nothing to do."
+					return
+				}
+				
+				$task | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue
+				$file = "$env:LOCALAPPDATA\dbatools\watchupdate.xml"
+				Remove-Item $file -ErrorAction SilentlyContinue
+			}
+			catch
+			{
+				Write-Warning "Task could not be deleted."	
+			}
 		}
 		
 		# Needs admin creds to remove the task because of the way it was setup
