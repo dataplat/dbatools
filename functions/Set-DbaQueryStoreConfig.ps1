@@ -1,4 +1,4 @@
-Function Set-DbaQueryStoreConfig
+ï»¿Function Set-DbaQueryStoreConfig
 {
 <#
 .SYNOPSIS
@@ -74,104 +74,109 @@ Configure the Query Store settings for all user databases except the AdventureWo
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
 		[PsCredential]$Credential,
-        [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][ValidateSet(“ReadWrite”,”ReadOnly”,”Off”)][string[]]$State,
-        [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][int64]$FlushInterval,
-        [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][int64]$CollectionInterval,
-        [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][int64]$MaxSize,
-        [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][ValidateSet(“Auto”,”All”)][string[]]$CaptureMode,
-        [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][ValidateSet(“Auto”,”Off”)][string[]]$CleanupMode,
-        [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][int64]$StaleQueryThreshold
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[ValidateSet("ReadWrite", "ReadOnly", "Off")]
+		[string[]]$State,
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[int64]$FlushInterval,
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[int64]$CollectionInterval,
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[int64]$MaxSize,
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[ValidateSet("Auto", "All")]
+		[string[]]$CaptureMode,
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[ValidateSet("Auto", "Off")]
+		[string[]]$CleanupMode,
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[int64]$StaleQueryThreshold
 	)
-
-	DynamicParam {
-		if ($SqlServer) {
+	
+	DynamicParam
+	{
+		if ($SqlServer)
+		{
 			return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential
 		}
 	}
-
+	
 	BEGIN
 	{
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
-
 	}
-
+	
 	PROCESS
 	{
 		foreach ($servername in $SqlServer)
 		{
-            Write-Verbose "Connecting to $servername"
+			Write-Verbose "Connecting to $servername"
 			try
 			{
 				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
-
 			}
 			catch
 			{
-				if ($SqlServer.count -eq 1)
-				{
-					throw $_
-				}
-				else
-				{
-					Write-Warning "Can't connect to $servername. Moving on."
-					Continue
-				}
+				Write-Warning "Can't connect to $servername. Moving on."
+				Continue
 			}
-
-            $sqlVersion = $server.VersionMajor
-
-            if($sqlVersion -ilt "13")
-                {
-
-                Write-Warning "The SQL Server Instance ($servername) has a lower SQL Server version than SQL Server 2016. Skipping server."
-                continue
-                }
-
-            
-            # We have to exclude all the system databases since they cannot have the Query Store feature enabled
-			$dbs = $server.Databases | Where-Object { $_.name -ne 'TempDb' -and $_.name -ne 'master' -and $_.name -ne 'msdb' -and $_.name -ne 'model' }
-
+			
+			if ($server.VersionMajor -lt 13)
+			{
+				
+				Write-Warning "The SQL Server Instance ($servername) has a lower SQL Server version than SQL Server 2016. Skipping server."
+				continue
+			}
+			
+			# We have to exclude all the system databases since they cannot have the Query Store feature enabled
+			$dbs = $server.Databases | Where-Object { $_.name -ne 'tempdb' -and $_.name -ne 'master' -and $_.name -ne 'msdb' -and $_.name -ne 'model' }
+			
 			if ($databases.count -gt 0)
 			{
 				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
 			}
-
+			
 			if ($exclude.count -gt 0)
 			{
 				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
 			}
-
-
+			
+			
 			foreach ($db in $dbs)
 			{
-                $result = $null
+				$result = $null
 				Write-Verbose "Processing $($db.name) on $servername"
-
+				
 				if ($db.IsAccessible -eq $false)
 				{
 					Write-Warning "The database $($db.name) on server $servername is not accessible. Skipping database."
 					Continue
 				}
-
-                # Set Query Store Configuration
-                $db.QueryStoreOptions.DesiredState = $State
-                $db.QueryStoreOptions.DataFlushIntervalInSeconds = $FlushInterval
-                $db.QueryStoreOptions.StatisticsCollectionIntervalInMinutes = $CollectionInterval
-                $db.QueryStoreOptions.MaxStorageSizeInMB = $MaxSize
-                $db.QueryStoreOptions.QueryCaptureMode = $CaptureMode
-                $db.QueryStoreOptions.SizeBasedCleanupMode = $CleanupMode
-                $db.QueryStoreOptions.StaleQueryThresholdInDays = $StaleQueryThreshold
-
-                # Alter the Query Store Configuration
-                Write-Verbose "Altering Query Store configuration on database $($db.name)."
-
-                $db.QueryStoreOptions.Alter()
-                      
+				
+				# Set Query Store Configuration
+				$db.QueryStoreOptions.DesiredState = $State
+				$db.QueryStoreOptions.DataFlushIntervalInSeconds = $FlushInterval
+				$db.QueryStoreOptions.StatisticsCollectionIntervalInMinutes = $CollectionInterval
+				$db.QueryStoreOptions.MaxStorageSizeInMB = $MaxSize
+				$db.QueryStoreOptions.QueryCaptureMode = $CaptureMode
+				$db.QueryStoreOptions.SizeBasedCleanupMode = $CleanupMode
+				$db.QueryStoreOptions.StaleQueryThresholdInDays = $StaleQueryThreshold
+				
+				# Alter the Query Store Configuration
+				Write-Verbose "Altering Query Store configuration on database $db."
+				
+				$db.QueryStoreOptions.Alter()
+				
 			}
-        }
-
-    }
-	
+		}
+	}
 }
