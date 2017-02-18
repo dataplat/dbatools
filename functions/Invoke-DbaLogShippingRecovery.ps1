@@ -30,7 +30,7 @@ If this value is not supplied all databases will be recovered
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
+$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
 To connect as a different Windows user, run PowerShell as that user.
@@ -81,9 +81,6 @@ Recovers the database db1, db2, db3, db4 to a normal status
 Invoke-DbaLogShippingRecovery -SqlServer 'server1' -Verbose -WhatIf
 
 Shows what would happen if the command were executed.
-
-TODO!!!!
-Check met whatif of de job doorloopt
 
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
