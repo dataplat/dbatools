@@ -217,6 +217,7 @@
 		'Get-DbaPrivilege',
 		'Watch-DbaUpdate',
 		'Get-DbaQueryStoreConfig',
+		'Set-DbaQueryStoreConfig',
 		'Unregister-DbaWatchUpdate'
 	)
 	
