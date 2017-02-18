@@ -2,10 +2,10 @@
 {
 <# 
 .SYNOPSIS 
-Watches the gallery for updates to dbatools. Mostly for fun.
+Just for fun - watches the PowerShell Gallery for updates to dbatools - notifies max every 6 hours.
 
 .DESCRIPTION 
-Watches the gallery for updates to dbatools. Only supports Windows 10. Not sure how to make the notification last until it's acknowledged.
+Only supports Windows 10. Not sure how to make the notification last longer (like Slack does).
 	
 Anyone know how to make it clickable so that it opens an URL?
 
@@ -122,7 +122,7 @@ Watches the gallery for updates to dbatools.
 			}
 		}
 		
-		# leave this in for the workflow
+		# leave this in for the scheduled task
 		$module = Get-Module -Name dbatools
 		
 		if (!$module)
@@ -131,8 +131,7 @@ Watches the gallery for updates to dbatools.
 			$module = Get-Module -Name dbatools
 		}
 		
-		#$galleryversion = (Find-Module -Name dbatools -Repository PSGallery).Version
-		$galleryversion = [version]"0.8.903"
+		$galleryversion = (Find-Module -Name dbatools -Repository PSGallery).Version
 		$localversion = $module.Version
 		
 		if ($galleryversion -le $localversion) { return }
@@ -148,7 +147,7 @@ Watches the gallery for updates to dbatools.
 		{
 			$old = Import-Clixml -Path $file -ErrorAction SilentlyContinue
 			
-			if ($old.NotifyTime -lt (Get-Date).AddMinutes(-4))
+			if ($old.NotifyTime -lt (Get-Date).AddHours(-6))
 			{
 				Export-Clixml -InputObject $new -Path $file
 				Show-Notification
