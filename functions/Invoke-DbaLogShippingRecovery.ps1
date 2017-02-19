@@ -103,7 +103,7 @@ Shows what would happen if the command were executed.
 
     PROCESS
     {
-        Write-Message -Message "Started Log Shipping Recovery." -Level 2 -Silent $Silent
+        Write-Message -Message "Started Log Shipping Recovery" -Level 2 -Silent $Silent
 
         #region Query setup
         # Query for retrieving the log shipping information
