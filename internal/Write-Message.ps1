@@ -165,8 +165,16 @@
         
         if ((-not $Silent) -and ($max_info -ge $Level) -and ($min_info -le $Level))
         {
-            if ($Host.Version.Major -ge 5) { Write-Information $NewMessage }
-            else { Write-Host $NewMessage -ForegroundColor (Get-DbaConfigValue -Name 'message.infocolor' -Fallback 'Cyan') }
+            if ($Host.Version.Major -ge 5)
+            {
+                Write-Information $NewMessage
+                
+                if ($InformationPreference -notlike "Continue")
+                {
+                    Write-Host $NewMessage -ForegroundColor (Get-DbaConfigValue -Name 'message.infocolor' -Fallback 'Cyan') -ErrorAction Ignore
+                }
+            }
+            else { Write-Host $NewMessage -ForegroundColor (Get-DbaConfigValue -Name 'message.infocolor' -Fallback 'Cyan') -ErrorAction Ignore }
             $channels += "Information"
         }
         
