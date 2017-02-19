@@ -148,7 +148,6 @@ FROM    msdb.dbo.log_shipping_secondary AS lss
         catch
         {
             Stop-Function -Message "Error retrieving the log shipping details" -Silent $Silent -InnerErrorRecord $_ -Target $SqlServer
-            Write-Error $_.Exception.Message
             
             return
         }
