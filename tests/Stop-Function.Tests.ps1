@@ -51,7 +51,7 @@ Describe "$Name Tests"{
         }
         
         It "Should have written the test warning 'Nonsilent Foo'" {
-            $warning | Should BeLike "Nonsilent Foo"
+            $warning[0] | Should BeLike "*Nonsilent Foo"
         }
         
         It "Should have created an error record with the correct exception" {
@@ -96,7 +96,7 @@ Describe "$Name Tests"{
         }
         
         It "Should have written the test warning 'Nonsilent Foo'" {
-            $warning | Should BeLike "Nonsilent Foo"
+            $warning[0] | Should BeLike "*Nonsilent Foo"
         }
         
         It "Should have created an error record with the correct exception" {

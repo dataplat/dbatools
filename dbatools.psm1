@@ -96,9 +96,14 @@ foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\dynamicparams\*.ps1
 #endregion Finally register autocompletion
 
 # Load configuration system
-# Should always go last
+# Should always go next to last
 . ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\internal\configurations\configuration.ps1")))
 
+# Load scripts that must be individually run at the end #
+#-------------------------------------------------------#
+
+# Start the logging system (requires the configuration system up and running)
+. ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\internal\scripts\logfilescript.ps1")))
 
 # Not supporting the provider path at this time
 # if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\")) { throw "Please change to another drive and reload the module." }
