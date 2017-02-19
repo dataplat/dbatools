@@ -91,7 +91,7 @@ Shows what would happen if the command were executed.
         [Parameter(Mandatory=$false, Position=2, ValueFromPipeline=$true)]
         [string[]]$Database = $null,
         [Parameter(Mandatory=$false, Position=3)][switch]$NoRecovery,
-        [Parameter(Mandatory=$false, Position=4)][bool]$Silent,
+        [Parameter(Mandatory=$false, Position=4)][switch]$Silent,
         [Parameter(Mandatory=$false, Position=5)][System.Management.Automation.PSCredential]$SqlCredential
 	)
 
