@@ -99,7 +99,6 @@ Shows what would happen if the command were executed.
     {
         Write-Message -Message "Attempting to connect to Sql Server.." -Level 2 -Silent $Silent
 		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-        $SqlServer.gettype()
     }
 
     PROCESS
