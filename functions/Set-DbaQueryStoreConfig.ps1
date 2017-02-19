@@ -58,6 +58,11 @@ Set-DbaQueryStoreConfig -SqlServer ServerA\SQL -State ReadWrite -FlushInterval 6
 Configure the Query Store settings for all user databases in the ServerA\SQL Instance.
 
 .EXAMPLE
+Set-DbaQueryStoreConfig -SQLServer ServerA\SQL -FlushInterval 600
+
+Only configure the FlushInterval setting for all Query Store databases in the ServerA\SQL Instance.
+
+.EXAMPLE
 Set-DbaQueryStoreConfig -SqlServer ServerA\SQL -Databases AdventureWorks -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode all -CleanupMode Auto -StaleQueryThreshold 100
 
 Configure the Query Store settings for the AdventureWorks database in the ServerA\SQL Instance.
@@ -74,13 +79,13 @@ Configure the Query Store settings for all user databases except the AdventureWo
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
 		[PsCredential]$Credential,
-        [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][ValidateSet(“ReadWrite”,”ReadOnly”,”Off”)][string[]]$State,
-        [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][int64]$FlushInterval,
-        [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][int64]$CollectionInterval,
-        [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][int64]$MaxSize,
-        [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][ValidateSet(“Auto”,”All”)][string[]]$CaptureMode,
-        [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][ValidateSet(“Auto”,”Off”)][string[]]$CleanupMode,
-        [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][int64]$StaleQueryThreshold
+        [ValidateSet(“ReadWrite”,”ReadOnly”,”Off”)][string[]]$State,
+        [int64]$FlushInterval,
+        [int64]$CollectionInterval,
+        [int64]$MaxSize,
+        [ValidateSet(“Auto”,”All”)][string[]]$CaptureMode,
+        [ValidateSet(“Auto”,”Off”)][string[]]$CleanupMode,
+        [int64]$StaleQueryThreshold
 	)
 
 	DynamicParam {
@@ -155,14 +160,40 @@ Configure the Query Store settings for all user databases except the AdventureWo
 					Continue
 				}
 
-                # Set Query Store Configuration
+                if ($State)
+                {
                 $db.QueryStoreOptions.DesiredState = $State
+                }
+
+                if ($FlushInterval)
+                {                
                 $db.QueryStoreOptions.DataFlushIntervalInSeconds = $FlushInterval
+                }
+
+                if ($CollectionInterval)
+                {
                 $db.QueryStoreOptions.StatisticsCollectionIntervalInMinutes = $CollectionInterval
+                }
+
+                if ($MaxSize)
+                {
                 $db.QueryStoreOptions.MaxStorageSizeInMB = $MaxSize
+                }
+
+                if ($CaptureMode)
+                {
                 $db.QueryStoreOptions.QueryCaptureMode = $CaptureMode
+                }
+
+                if ($CleanupMode)
+                {
                 $db.QueryStoreOptions.SizeBasedCleanupMode = $CleanupMode
+                }
+
+                if ($StaleQueryThreshold)
+                {
                 $db.QueryStoreOptions.StaleQueryThresholdInDays = $StaleQueryThreshold
+                }
 
                 # Alter the Query Store Configuration
                 Write-Verbose "Altering Query Store configuration on database $($db.name)."
