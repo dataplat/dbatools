@@ -30,6 +30,16 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eConnect-DbaSqlServer -SqlServer sql2014\r\n\r\nCreates an SMO Server object that connects using Windows Authentication\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$wincred = Get-Credential ad\\sqladmin\r\n\r\nConnect-DbaSqlServer -SqlServer sql2014 -Credential $wincred\r\n\r\nCreates an SMO Server object that connects using alternative Windows credentials\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$sqlcred = Get-Credential sqladmin\r\n\r\n$server = Connect-DbaSqlServer -SqlServer sql2014 -Credential $sqlcred\r\n\r\nLogin to sql2014 as SQL login sqladmin.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$server = Connect-DbaSqlServer -SqlServer sql2014 -ClientName \"mah connection\"\r\n\r\nCreates an SMO Server object that connects using Windows Authentication and uses the client name \"mah connection\". So \r\nwhen you open up profiler or use extended events, you can search for \"mah connection\".\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e$server = Connect-DbaSqlServer -SqlServer sql2014 -AppendConnectionString \"Packet \r\nSize=4096;AttachDbFilename=C:\\MyFolder\\MyDataFile.mdf;User Instance=true;\"\r\n\r\nCreates an SMO Server object that connects to sql2014 using Windows Authentication, then it sets the packet size (this \r\ncan also be done via -PacketSize) and other connection attributes.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003e$server = Connect-DbaSqlServer -SqlServer sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover\r\n\r\nCreates an SMO Server object that connects using Windows Authentication that uses TCPIP and has MultiSubnetFailover \r\nenabled.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003e$server = Connect-DbaSqlServer sql2016 -ApplicationIntent ReadOnly\r\n\r\nConnects with ReadOnly ApplicantionIntent.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Copy-DbaQueryStoreConfig",
+        "Description":  "Copies the configuration of a Query Store enabled database and sets the copied configuration on other databases.",
+        "Tags":  "QueryStore",
+        "Author":  "Enrico van de Laar ( @evdlaar )",
+        "Synopsis":  "Copies the configuration of a Query Store enabled database and sets the copied configuration on other databases.",
+        "Name":  "Copy-DbaQueryStoreConfig",
+        "Links":  "https://dbatools.io/Copy-QueryStoreConfig",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaQueryStoreConfig -Source ServerA\\SQL -SourceDatabase AdventureWorks -Destination ServerB\\SQL \r\n-AllDatabases\r\n\r\nCopy the Query Store configuration of the AdventureWorks database in the ServerA\\SQL Instance and apply it on all user \r\ndatabases in the ServerB\\SQL Instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaQueryStoreConfig -Source ServerA\\SQL -SourceDatabase AdventureWorks -Destination ServerB\\SQL \r\n-DestinationDatabase WorldWideTraders\r\n\r\nCopy the Query Store configuration of the AdventureWorks database in the ServerA\\SQL Instance and apply it to the \r\nWorldWideTraders database in the ServerB\\SQL Instance.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Copy-SqlAgentCategory",
         "Description":  "By default, all SQL Agent categories for Jobs, Operators and Alerts are copied. \n\nThe -OperatorCategories parameter is autopopulated for command-line completion and can be used to copy only specific operator categories.\nThe -AgentCategories parameter is autopopulated for command-line completion and can be used to copy only specific agent categories.\nThe -JobCategories parameter is autopopulated for command-line completion and can be used to copy only specific job categories.\n\nIf the category already exists on the destination, it will be skipped unless -Force is used.",
         "Tags":  "Migration",
@@ -685,6 +695,7 @@
     {
         "CommandName":  "Get-DbaQueryStoreConfig",
         "Description":  "Retrieves and returns the Query Store configuration for every database that has the Query Store feature enabled.",
+        "Tags":  "QueryStore",
         "Author":  "Enrico van de Laar ( @evdlaar )",
         "Synopsis":  "Get the Query Store configuration for Query Store enabled databases.",
         "Name":  "Get-DbaQueryStoreConfig",
@@ -1020,19 +1031,6 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eResolve-DbaNetworkName -ComputerName ServerA\r\n\r\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for ServerA\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eResolve-DbaNetworkName -SqlServer sql2016\\sqlexpress\r\n\r\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for the SQL instance \r\nsql2016\\sqlexpress\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eResolve-DbaNetworkName -SqlServer sql2016\\sqlexpress, sql2014\r\n\r\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for the SQL instance \r\nsql2016\\sqlexpress and sql2014\r\n\r\nGet-SqlRegisteredServerName -SqlServer sql2014 | Resolve-DbaNetworkName\r\n\r\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers \r\nreturned by Get-SqlRegisteredServerName\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Restore-DbaDatabase",
-        "Description":  "Upon bein passed a list of potential backups files this command will scan the files, select those that contain SQL Server\nbackup sets. It will then filter those files down to a set that can perform the requested restore, checking that we have a \nfull restore chain to the point in time requested by the caller.\n\nVarious means can be used to pass in a list of files to be considered. The default is to non recursively scan the folder\npassed in.",
-        "Tags":  [
-                     "DisasterRecovery",
-                     "Backup",
-                     "Restore"
-                 ],
-        "Synopsis":  "Restores a SQL Server Database from a set of backupfiles",
-        "Name":  "Restore-DbaDatabase",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRestore-DbaDatabase -SqlServer server1\\instance1 -Path \\\\server2\\backups\r\n\r\nScans all the backup files in \\\\server2\\backups, filters them and restores the database to server1\\instance1\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRestore-DbaDatabase -SqlServer server1\\instance1 -Path \\\\server2\\backups -MaintenanceSolutionBackup \r\n-DestinationDataDirectory c:\\restores\r\n\r\nScans all the backup files in \\\\server2\\backups$ stored in an Ola Hallengren style folder structure,\r\n filters them and restores the database to the c:\\restores folder on server1\\instance1\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-ChildItem c:\\SQLbackups1\\, \\\\server\\sqlbackups2 | Restore-DbaDatabase -SqlServer server1\\instance1\r\n\r\nTakes the provided files from multiple directories and restores them on  server1\\instance1\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$RestoreTime = Get-Date(\u002711:19 23/12/2016\u0027)\r\n\r\nRestore-DbaDatabase -SqlServer server1\\instance1 -Path \\\\server2\\backups -MaintenanceSolutionBackup \r\n-DestinationDataDirectory c:\\restores -RestoreTime $RestoreTime\r\n\r\nScans all the backup files in \\\\server2\\backups stored in an Ola Hallengren style folder structure,\r\n filters them and restores the database to the c:\\restores folder on server1\\instance1 up to 11:19 23/12/2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eRestore-DbaDatabase -SqlServer server1\\instance1 -Path \\\\server2\\backups -DestinationDataDirectory c:\\restores \r\n-OutputScriptOnly | Select-Object -ExpandPropert Tsql | Out-File -Filepath c:\\scripts\\restore.sql\r\n\r\nScans all the backup files in \\\\server2\\backups stored in an Ola Hallengren style folder structure,\r\n filters them and generate the T-SQL Scripts to restore the database to the latest point in time, \r\n and then stores the output in a file for later retrieval\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eRestore-DbaDatabase -SqlServer server1\\instance1 -Path c:\\backups -DestinationDataDirectory c:\\DataFiles \r\n-DestinationLogDirectory c:\\LogFile\r\n\r\nScans all the files in c:\\backups and then restores them onto the SQL Server Instance server1\\instance1, placing data \r\nfiles\r\nc:\\DataFiles and all the log files into c:\\LogFiles\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003e$File = Get-ChildItem c:\\backups, \\\\server1\\backups -recurse\r\n\r\n$File | Restore-DbaDatabase -SqlServer Server1\\Instance -UseDestinationDefaultDirectories\r\n\r\nThis will take all of the files found under the folders c:\\backups and \\\\server1\\backups, and pipeline them into\r\nRestore-DbaDatabase. Restore-DbaDatabase will then scan all of the files, and restore all of the databases included\r\nto the latest point in time covered by their backups. All data and log files will be moved to the default SQL Sever \r\nfolder for those file types as defined on the target instance.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
         "CommandName":  "Restore-DbaFromDatabaseSnapshot",
         "Description":  "Restores the database from the snapshot, discarding every modification made to the database\nNB: Restoring to a snapshot will result in every other snapshot of the same database to be dropped\nIt also fixes some long-standing bugs in SQL Server when restoring from snapshots",
         "Tags":  [
@@ -1068,7 +1066,7 @@
         "Synopsis":  "Sets configuration entries.",
         "Name":  "Set-DbaConfig",
         "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaConfig -Name \u0027User\u0027 -Value \"Friedrich\"\r\n\r\nCreates a configuration entry named \"User\" with the value \"Friedrich\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaConfig \u0027ConfigLink\u0027 \u0027https://www.example.com/config.xml\u0027 \u0027Company\u0027 -Hidden\r\n\r\nCreates a configuration entry named \"ConfigLink\" in the \"Company\" module with the value \r\n\u0027https://www.example.com/config.xml\u0027.\r\nThis entry is hidden from casual discovery using Get-Config.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaConfig \u0027Network.Firewall\u0027 \u002710.0.0.2\u0027 -Default\r\n\r\nCreates a configuration entry named \"Firewall\" in the \"Network\" module with the value \u002710.0.0.2\u0027\r\nThis is only set, if the setting does not exist yet. If it does, this command will apply no changes.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaConfig -Name \u0027User\u0027 -Value \"Friedrich\" -Description \"The user under which the show must go on.\"\r\n\r\nCreates a configuration entry named \"User\" with the value \"Friedrich\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaConfig \u0027ConfigLink\u0027 \u0027https://www.example.com/config.xml\u0027 \u0027Company\u0027 -Hidden\r\n\r\nCreates a configuration entry named \"ConfigLink\" in the \"Company\" module with the value \r\n\u0027https://www.example.com/config.xml\u0027.\r\nThis entry is hidden from casual discovery using Get-Config.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaConfig \u0027Network.Firewall\u0027 \u002710.0.0.2\u0027 -Default\r\n\r\nCreates a configuration entry named \"Firewall\" in the \"Network\" module with the value \u002710.0.0.2\u0027\r\nThis is only set, if the setting does not exist yet. If it does, this command will apply no changes.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Set-DbaDatabaseOwner",
@@ -1118,6 +1116,16 @@
         "Name":  "Set-DbaPowerPlan",
         "Links":  "https://dbatools.io/Set-DbaPowerPlan",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaPowerPlan -ComputerName sqlserver2014a\r\n\r\nSets the Power Plan to High Performance. Skips it if its already set.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaPowerPlan -ComputerName sqlcluster -CustomPowerPlan \u0027Maximum Performance\u0027\r\n\r\nSets the Power Plan to the custom power plan called \"Maximum Performance\". Skips it if its already set.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Set-DbaQueryStoreConfig",
+        "Description":  "Configure Query Store settings for a specific or multiple databases.",
+        "Tags":  "QueryStore",
+        "Author":  "Enrico van de Laar ( @evdlaar )",
+        "Synopsis":  "Configure Query Store settings for a specific or multiple databases.",
+        "Name":  "Set-DbaQueryStoreConfig",
+        "Links":  "https://dbatools.io/Set-QueryStoreConfig",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaQueryStoreConfig -SqlInstance ServerA\\SQL -State ReadWrite -FlushInterval 600 -CollectionInterval 10 \r\n-MaxSize 100 -CaptureMode All -CleanupMode Auto -StaleQueryThreshold 100\r\n\r\nConfigure the Query Store settings for all user databases in the ServerA\\SQL Instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaQueryStoreConfig -SqlInstance ServerA\\SQL -FlushInterval 600\r\n\r\nOnly configure the FlushInterval setting for all Query Store databases in the ServerA\\SQL Instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaQueryStoreConfig -SqlInstance ServerA\\SQL -Databases AdventureWorks -State ReadWrite -FlushInterval 600 \r\n-CollectionInterval 10 -MaxSize 100 -CaptureMode all -CleanupMode Auto -StaleQueryThreshold 100\r\n\r\nConfigure the Query Store settings for the AdventureWorks database in the ServerA\\SQL Instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaQueryStoreConfig -SqlInstance ServerA\\SQL -Exclude AdventureWorks -State ReadWrite -FlushInterval 600 \r\n-CollectionInterval 10 -MaxSize 100 -CaptureMode all -CleanupMode Auto -StaleQueryThreshold 100\r\n\r\nConfigure the Query Store settings for all user databases except the AdventureWorks database in the ServerA\\SQL \r\nInstance.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Set-DbaSpn",
@@ -1406,6 +1414,15 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-SqlTempDbConfiguration -SqlServer localhost\r\n\r\nChecks tempdb on the localhost machine.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-SqlTempDbConfiguration -SqlServer localhost -Detailed\r\n\r\nChecks tempdb on the localhost machine. All rest results are shown.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Unregister-DbaWatchUpdate",
+        "Description":  "Removes the scheduled task created by Watch-DbaUpdate so that notifications no longer pop up.",
+        "Tags":  "JustForFun",
+        "Synopsis":  "Removes the scheduled task created by Watch-DbaUpdate so that notifications no longer pop up.",
+        "Name":  "Unregister-DbaWatchUpdate",
+        "Links":  "https://dbatools.io/Unregister-DbaWatchUpdate",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eUnregister-DbaWatchUpdate\r\n\r\nRemoves the scheduled task created by Watch-DbaUpdate.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Update-dbatools",
         "Description":  "Exported function. Updates dbatools. Deletes current copy and replaces it with freshest copy.",
         "Synopsis":  "Exported function. Updates dbatools. Deletes current copy and replaces it with freshest copy.",
@@ -1420,6 +1437,15 @@
         "Name":  "Update-SqlWhoIsActive",
         "Links":  "https://dbatools.io/Update-SqlWhoIsActive",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eUpdate-SqlWhoIsActive -SqlServer sqlserver2014a -Database master\r\n\r\nUpdates sp_WhoIsActive to sqlserver2014a\u0027s master database. Logs in using Windows Authentication.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eUpdate-SqlWhoIsActive -SqlServer sqlserver2014a -SqlCredential $cred\r\n\r\nPops up a dialog box asking which database on sqlserver2014a you want to install the proc to. Logs into SQL Server \r\nusing SQL Authentication.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Watch-DbaUpdate",
+        "Description":  "Only supports Windows 10. Not sure how to make the notification last longer (like Slack does).\n\t\nAnyone know how to make it clickable so that it opens an URL?",
+        "Tags":  "JustForFun",
+        "Synopsis":  "Just for fun - checks the PowerShell Gallery ever few hours for updates to dbatools - notifies max every 6 hours.",
+        "Name":  "Watch-DbaUpdate",
+        "Links":  "https://dbatools.io/Watch-DbaUpdate",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eWatch-DbaUpdate\r\n\r\nWatches the gallery for updates to dbatools.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Watch-SqlDbLogin",

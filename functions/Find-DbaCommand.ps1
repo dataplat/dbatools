@@ -134,7 +134,7 @@ Finds all commands searching the entire help for "snapshot", rebuilding the inde
 				}
 				# $dest = Get-DbaConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
 				$dest = "$moduledirectory\bin\dbatools-index.json"
-				$helpcoll | ConvertTo-Json | Out-File $dest
+				$helpcoll | ConvertTo-Json | Out-File $dest -Encoding UTF8
 			}
 		}
 
