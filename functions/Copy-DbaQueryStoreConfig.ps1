@@ -43,7 +43,7 @@ Performing the operation "Changing Desired State" on target "pubs on SQL2016\VNE
 
 .NOTES
 Author: Enrico van de Laar ( @evdlaar )
-
+Tags: QueryStore
 dbatools PowerShell module (https://dbatools.io)
 Copyright (C) 2016 Chrissy LeMaire
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -133,7 +133,6 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
 		
 		# We have to exclude all the system databases since they cannot have the Query Store feature enabled
 		$dbs = $destserver.Databases | Where-Object { $_.IsSystemObject -eq $false }
-		
 		
 		if ($DestinationDatabase.count -gt 0)
 		{
