@@ -217,7 +217,8 @@
 		'Get-DbaQueryStoreConfig',
 		'Set-DbaQueryStoreConfig',
 		'Unregister-DbaWatchUpdate',
-		'Restore-DbaDatabase'
+		'Restore-DbaDatabase',
+		'Copy-DbaQueryStoreConfig'
 	)
 	
 	<# coming soon
