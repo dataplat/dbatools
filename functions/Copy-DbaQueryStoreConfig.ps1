@@ -1,4 +1,4 @@
-Function Copy-DbaQueryStoreConfig
+﻿Function Copy-DbaQueryStoreConfig
 {
 <#
 .SYNOPSIS
@@ -7,19 +7,22 @@ Copies the configuration of a Query Store enabled database and sets the copied c
 .DESCRIPTION
 Copies the configuration of a Query Store enabled database and sets the copied configuration on other databases.
 	
-.PARAMETER SourceSqlServer
+.PARAMETER Source
 The SQL Server that you're connecting to.
 
 .PARAMETER SourceDatabase
 The database from which you want to copy the Query Store configuration.
 
-.PARAMETER Credential
-Credential object used to connect to the SQL Server as a different user.
+.PARAMETER SourceSqlCredential
+Credential object used to connect to the source SQL Server as a different user.
 
-.PARAMETER TargetSqlServer
+.PARAMETER SourceSqlCredential
+Credential object used to connect to the source SQL Server as a different user.
+
+.PARAMETER Destination
 The target server where the databases reside on which you want to enfore the copied Query Store configuration from the SourceDatabase.
 
-.PARAMETER Databases
+.PARAMETER DestinationDatabase
 The databases that will recieve a copy of the Query Store configuration of the SourceDatabase.
 
 .PARAMETER Exclude
@@ -38,120 +41,111 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Copy-QueryStoreConfig
 
 .EXAMPLE
-Copy-DbaQueryStoreConfig -SourceSqlServer ServerA\SQL -SourceDatabase AdventureWorks -TargetSqlServer ServerB\SQL
+Copy-DbaQueryStoreConfig -Source ServerA\SQL -SourceDatabase AdventureWorks -Destination ServerB\SQL -AllDatabases
 
 Copy the Query Store configuration of the AdventureWorks database in the ServerA\SQL Instance and apply it on all user databases in the ServerB\SQL Instance.
 
 .EXAMPLE
-Copy-DbaQueryStoreConfig -SourceSqlServer ServerA\SQL -SourceDatabase AdventureWorks -TargetSqlServer ServerB\SQL -Databases WorldWideTraders
+Copy-DbaQueryStoreConfig -Source ServerA\SQL -SourceDatabase AdventureWorks -Destination ServerB\SQL -DestinationDatabase WorldWideTraders
 
 Copy the Query Store configuration of the AdventureWorks database in the ServerA\SQL Instance and apply it to the WorldWideTraders database in the ServerB\SQL Instance.
 	
 #>
 	[CmdletBinding()]
 	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)][string[]]$SourceSqlServer,
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)][string[]]$SourceDatabase,
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)][string[]]$TargetSqlServer,
-		[PsCredential]$Credential
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[object[]]$Source,
+		[System.Management.Automation.PSCredential]$SourceSqlCredential,
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[object[]]$SourceDatabase,
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[object[]]$Destination,
+		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+		[object[]]$DestinationDatabase,
+		[object[]]$Exclude,
+		[switch]$AllDatabases
 	)
-
-	DynamicParam {
-		if ($SourceSqlServer) {
-			return Get-ParamSqlDatabases -SqlServer $TargetSqlServer[0] -SqlCredential $Credential
-		}
-	}
-
+	
 	BEGIN
 	{
-		# Convert from RuntimeDefinedParameter object to regular array
-		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
-
-        Write-Verbose "Connecting to source: $SourceSqlServer"
-			try
-			{
-				$server = Connect-SqlServer -SqlServer $SourceSqlServer -SqlCredential $Credential
-
-			}
-			catch
-			{
-				if ($SourceSqlServer.count -eq 1)
-				{
-					throw $_
-				}
-				else
-				{
-					Write-Warning "Can't connect to $SourceSqlServer."
-					Continue
-				}
-			}
-
-        # Grab the Query Store configuration from the SourceDatabase through the Get-DbaQueryStoreConfig function
-        $SourceQSConfig = Get-DbaQueryStoreConfig -SqlServer $SourceSqlServer -Databases $SourceDatabase
-
-	}
-
-	PROCESS
-	{
-
-        Write-Verbose "Connecting to target: $TargetSqlServer"
-        try
+	
+		Write-Verbose "Connecting to source: $Source"
+		try
 		{
-			$targetserver = Connect-SqlServer -SqlServer $TargetSqlServer -SqlCredential $Credential
-
+			$server = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+			
 		}
 		catch
 		{
-			if ($TargetSqlServer.count -eq 1)
-			{
-				throw $_
-			}
-			else
-			{
-				Write-Warning "Can't connect to $TargetSqlServer."
-				Continue
-			}
+			Write-Warning "Can't connect to $Source."
+			continue
 		}
-
-        $sqlVersion = $targetserver.VersionMajor
-
-        if($sqlVersion -ilt "13")
-        {
-        Write-Warning "The SQL Server Instance ($TargetSqlServer) has a lower SQL Server version than SQL Server 2016. Skipping server."
-        continue
-        }
-
-        # We have to exclude all the system databases since they cannot have the Query Store feature enabled
-		$dbs = $targetserver.Databases | Where-Object { $_.name -ne 'TempDb' -and $_.name -ne 'master' -and $_.name -ne 'msdb' -and $_.name -ne 'model' }
-
-        if ($databases.count -gt 0)
+		
+		# Grab the Query Store configuration from the SourceDatabase through the Get-DbaQueryStoreConfig function
+		$SourceQSConfig = Get-DbaQueryStoreConfig -SqlServer $server -Databases $SourceDatabase
+		
+	}
+	
+	PROCESS
+	{
+		if (!$DestinationDatabase -and !$exclude -and !$alldatabases)
+		{
+			Write-Warning "You must specify databases to execute against using either -DestinationDatabase, -Exclude or -AllDatabases"
+			continue
+		}
+		
+		Write-Verbose "Connecting to target: $Destination"
+		try
+		{
+			$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $Credential
+			
+		}
+		catch
+		{
+				Write-Warning "Can't connect to $Destination."
+				continue
+		}
+		
+		if ($sourceserver.VersionMajor -lt 13)
+		{
+			Write-Warning "The source SQL Server Instance ($source) has a lower SQL Server version than SQL Server 2016. Skipping server."
+			continue
+		}
+		
+		if ($destserver.VersionMajor -lt 13)
+		{
+			Write-Warning "The SQL Server Instance ($destination) has a lower SQL Server version than SQL Server 2016. Skipping server."
+			continue
+		}
+		
+		# We have to exclude all the system databases since they cannot have the Query Store feature enabled
+		$dbs = $destserver.Databases | Where-Object { $_.IsSystemObject -eq $false }
+		
+		if ($DestinationDatabase.count -gt 0)
 		{
 			$dbs = $dbs | Where-Object { $databases -contains $_.Name }
 		}
-
-		if ($exclude.count -gt 0)
+		
+		if ($Exclude.count -gt 0)
 		{
-			$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
+			$dbs = $dbs | Where-Object { $databases -notcontains $_.Name }
 		}
-
+		
+		
 		foreach ($db in $dbs)
 		{
-            $result = $null
-			Write-Verbose "Processing target database: $($db.name) on $targetservername"
-
+			$result = $null
+			Write-Verbose "Processing target database: $db on $destination"
+			
 			if ($db.IsAccessible -eq $false)
 			{
-				Write-Warning "The database $($db.name) on server $targetservername is not accessible. Skipping database."
-				Continue
+				Write-Warning "The database $db on server $destination is not accessible. Skipping database."
+				continue
 			}
-            
-            # Set the Query Store configuration through the Set-DbaQueryStoreConfig function
-            Set-DbaQueryStoreConfig -SqlServer $TargetSqlServer -Databases $($db.name) -State $SourceQSConfig.ActualState -FlushInterval $SourceQSConfig.FlushInterval -CollectionInterval $SourceQSConfig.CollectionInterval -MaxSize $SourceQSConfig.MaxSize -CaptureMode $SourceQSConfig.CaptureMode -CleanupMode $SourceQSConfig.CleanupMode -StaleQueryThreshold $SourceQSConfig.StaleQueryThreshold
-                      
-		}  
-
-
-    }
-	
+			
+			Write-Verbose "Executing Set-DbaQueryStoreConfig"
+			# Set the Query Store configuration through the Set-DbaQueryStoreConfig function
+			Set-DbaQueryStoreConfig -SqlInstance $Destination -SqlCredential $DestinationSqlCredential -Databases $($db.name) -State $SourceQSConfig.ActualState -FlushInterval $SourceQSConfig.FlushInterval -CollectionInterval $SourceQSConfig.CollectionInterval -MaxSize $SourceQSConfig.MaxSize -CaptureMode $SourceQSConfig.CaptureMode -CleanupMode $SourceQSConfig.CleanupMode -StaleQueryThreshold $SourceQSConfig.StaleQueryThreshold -WhatIf:$whatif
+		}
+	}
 }
