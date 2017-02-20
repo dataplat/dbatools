@@ -95,7 +95,7 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
 		}
 		
 		# Grab the Query Store configuration from the SourceDatabase through the Get-DbaQueryStoreConfig function
-		$SourceQSConfig = Get-DbaQueryStoreConfig -SqlServer $Source -Databases $SourceDatabase
+		$SourceQSConfig = Get-DbaQueryStoreConfig -SqlServer $sourceserver -Databases $SourceDatabase
 		
 	}
 	
