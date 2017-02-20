@@ -1,4 +1,4 @@
-<#
+﻿<#
 
 	Attempt to load all versions of SMO from vNext to 2005 - this is why RequiredAssemblies can't be used.
 
