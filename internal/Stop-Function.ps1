@@ -122,12 +122,14 @@
         $ContinueLabel
     )
     
+    $timestamp = Get-Date
+    
     $Exception = New-Object System.Exception($Message, $InnerErrorRecord.Exception)
     if (-not $Category) { $Category = $InnerErrorRecord.CategoryInfo.Category }
     $record = New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $Target)
     
     # Manage Debugging
-    Write-Debug "[$FunctionName] $Message"
+    Write-Message -Message $Message -Warning -Silent $Silent -FunctionName $FunctionName
     
     #region Silent Mode
     if ($Silent)
@@ -135,11 +137,12 @@
         if ($SilentlyContinue)
         {
             Write-Error -Message $record -Category $Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue
+            [sqlcollective.dbatools.dbaSystem.DebugHost]::WriteErrorEntry($Record, $FunctionName, $timestamp, $Message)
             if ($ContinueLabel) { continue $ContinueLabel }
             else { Continue }
         }
         
-        Write-Debug "[$FunctionName] Terminating function"
+        Write-Message -Message "Terminating function!" -Level 9 -Silent $Silent -FunctionName $FunctionName
         
         
         throw $record
@@ -149,10 +152,9 @@
     #region Non-Silent Mode
     else
     {
-        Write-Warning -Message $Message
-        
         # This ensures that the error is stored in the $error variable AND has its Stacktrace (simply adding the record would lack the stacktrace)
         $null = Write-Error -Message $record -Category $Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue 2>&1
+        [sqlcollective.dbatools.dbaSystem.DebugHost]::WriteErrorEntry($Record, $FunctionName, $timestamp, $Message)
         
         if ($Continue)
         {
@@ -161,7 +163,7 @@
         }
         else
         {
-            Write-Debug "[$FunctionName] Terminating function!"
+            Write-Message -Message "Terminating function!" -Warning -Silent $Silent -FunctionName $FunctionName
             return
         }
     }

@@ -18,6 +18,9 @@
       <TableColumnHeader>
 	    <Alignment>Left</Alignment>
       </TableColumnHeader>
+      <TableColumnHeader>
+	    <Alignment>Left</Alignment>
+      </TableColumnHeader>
     </TableHeaders>
     <TableRowEntries>
       <TableRowEntry>
@@ -32,6 +35,9 @@
           </TableColumnItem>
           <TableColumnItem>
             <PropertyName>Value</PropertyName>
+          </TableColumnItem>
+          <TableColumnItem>
+            <PropertyName>Description</PropertyName>
           </TableColumnItem>
         </TableColumnItems>
       </TableRowEntry>
