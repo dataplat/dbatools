@@ -16,8 +16,8 @@ The database from which you want to copy the Query Store configuration.
 .PARAMETER SourceSqlCredential
 Credential object used to connect to the source SQL Server as a different user.
 
-.PARAMETER SourceSqlCredential
-Credential object used to connect to the source SQL Server as a different user.
+.PARAMETER DestinationSqlCredential
+Credential object used to connect to the destination SQL Server as a different user.
 
 .PARAMETER Destination
 The target server where the databases reside on which you want to enfore the copied Query Store configuration from the SourceDatabase.
@@ -25,6 +25,9 @@ The target server where the databases reside on which you want to enfore the cop
 .PARAMETER DestinationDatabase
 The databases that will recieve a copy of the Query Store configuration of the SourceDatabase.
 
+.PARAMETER AllDatabases
+Run command against all user databases	
+	
 .PARAMETER Exclude
 Copy Query Store configuration for all but these specific databases.
 
