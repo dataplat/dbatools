@@ -218,7 +218,8 @@
 		'Set-DbaQueryStoreConfig',
 		'Unregister-DbaWatchUpdate',
 		'Restore-DbaDatabase',
-		'Copy-DbaQueryStoreConfig'
+		'Copy-DbaQueryStoreConfig',
+		'Invoke-DbaLogShippingRecovery'
 	)
 	
 	<# coming soon
