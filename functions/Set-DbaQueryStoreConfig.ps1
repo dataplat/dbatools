@@ -43,6 +43,16 @@ Set the query cleanup mode policy. Valid options are "Auto" and "Off".
 .PARAMETER StaleQueryThreshold
 Set the stale query threshold in days.
 
+.PARAMETER WhatIf
+Shows what would happen if the command were to run
+	
+.PARAMETER Confirm
+Prompts for confirmation of every step. For example:
+
+Are you sure you want to perform this action?
+Performing the operation "Changing Desired State" on target "pubs on SQL2016\VNEXT".
+[Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is "Y"):
+
 .NOTES
 Author: Enrico van de Laar ( @evdlaar )
 
@@ -171,7 +181,7 @@ Configure the Query Store settings for all user databases except the AdventureWo
 				
 				if ($State)
 				{
-					if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing state to $state"))
+					if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing DesiredState to $state"))
 					{
 						$db.QueryStoreOptions.DesiredState = $State
 					}

@@ -28,6 +28,16 @@ The databases that will recieve a copy of the Query Store configuration of the S
 .PARAMETER Exclude
 Copy Query Store configuration for all but these specific databases.
 
+.PARAMETER WhatIf
+Shows what would happen if the command were to run
+	
+.PARAMETER Confirm
+Prompts for confirmation of every step. For example:
+
+Are you sure you want to perform this action?
+Performing the operation "Changing Desired State" on target "pubs on SQL2016\VNEXT".
+[Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is "Y"):
+
 .NOTES
 Author: Enrico van de Laar ( @evdlaar )
 
@@ -51,13 +61,13 @@ Copy-DbaQueryStoreConfig -Source ServerA\SQL -SourceDatabase AdventureWorks -Des
 Copy the Query Store configuration of the AdventureWorks database in the ServerA\SQL Instance and apply it to the WorldWideTraders database in the ServerB\SQL Instance.
 	
 #>
-	[CmdletBinding()]
+	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object[]]$Source,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[object[]]$SourceDatabase,
+		[object]$SourceDatabase,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object[]]$Destination,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
@@ -72,7 +82,7 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
 		Write-Verbose "Connecting to source: $Source"
 		try
 		{
-			$server = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+			$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 			
 		}
 		catch
@@ -82,7 +92,7 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
 		}
 		
 		# Grab the Query Store configuration from the SourceDatabase through the Get-DbaQueryStoreConfig function
-		$SourceQSConfig = Get-DbaQueryStoreConfig -SqlServer $server -Databases $SourceDatabase
+		$SourceQSConfig = Get-DbaQueryStoreConfig -SqlServer $sourceserver -Databases $SourceDatabase
 		
 	}
 	
@@ -94,7 +104,7 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
 			continue
 		}
 		
-		Write-Verbose "Connecting to target: $Destination"
+		Write-Verbose "Connecting to destination: $Destination"
 		try
 		{
 			$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $Credential
@@ -114,29 +124,34 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
 		
 		if ($destserver.VersionMajor -lt 13)
 		{
-			Write-Warning "The SQL Server Instance ($destination) has a lower SQL Server version than SQL Server 2016. Skipping server."
+			Write-Warning "The destination SQL Server Instance ($destination) has a lower SQL Server version than SQL Server 2016. Skipping server."
 			continue
 		}
 		
 		# We have to exclude all the system databases since they cannot have the Query Store feature enabled
 		$dbs = $destserver.Databases | Where-Object { $_.IsSystemObject -eq $false }
 		
+		
 		if ($DestinationDatabase.count -gt 0)
 		{
-			$dbs = $dbs | Where-Object { $databases -contains $_.Name }
+			$dbs = $dbs | Where-Object { $DestinationDatabase -contains $_.Name }
 		}
 		
 		if ($Exclude.count -gt 0)
 		{
-			$dbs = $dbs | Where-Object { $databases -notcontains $_.Name }
+			$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
 		}
 		
+		if ($dbs.count -eq 0)
+		{
+			Write-Warning "No matching databases found. Check the spelling and try again."
+			return
+		}
 		
 		foreach ($db in $dbs)
 		{
-			$result = $null
-			Write-Verbose "Processing target database: $db on $destination"
-			
+			Write-Verbose "Processing destination database: $db on $destination"
+	
 			if ($db.IsAccessible -eq $false)
 			{
 				Write-Warning "The database $db on server $destination is not accessible. Skipping database."
@@ -145,7 +160,7 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
 			
 			Write-Verbose "Executing Set-DbaQueryStoreConfig"
 			# Set the Query Store configuration through the Set-DbaQueryStoreConfig function
-			Set-DbaQueryStoreConfig -SqlInstance $Destination -SqlCredential $DestinationSqlCredential -Databases $($db.name) -State $SourceQSConfig.ActualState -FlushInterval $SourceQSConfig.FlushInterval -CollectionInterval $SourceQSConfig.CollectionInterval -MaxSize $SourceQSConfig.MaxSize -CaptureMode $SourceQSConfig.CaptureMode -CleanupMode $SourceQSConfig.CleanupMode -StaleQueryThreshold $SourceQSConfig.StaleQueryThreshold -WhatIf:$whatif
+			Set-DbaQueryStoreConfig -SqlInstance $Destination -SqlCredential $DestinationSqlCredential -Databases $($db.name) -State $SourceQSConfig.ActualState -FlushInterval $SourceQSConfig.FlushInterval -CollectionInterval $SourceQSConfig.CollectionInterval -MaxSize $SourceQSConfig.MaxSize -CaptureMode $SourceQSConfig.CaptureMode -CleanupMode $SourceQSConfig.CleanupMode -StaleQueryThreshold $SourceQSConfig.StaleQueryThreshold
 		}
 	}
 }
