@@ -26,7 +26,7 @@ The target server where the databases reside on which you want to enfore the cop
 The databases that will recieve a copy of the Query Store configuration of the SourceDatabase.
 
 .PARAMETER AllDatabases
-Run command against all user databases	
+Set copied Query Store configuration on all databases on the destination server.	
 	
 .PARAMETER Exclude
 Copy Query Store configuration for all but these specific databases.
@@ -81,7 +81,7 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
 	
 	BEGIN
 	{
-	
+		
 		Write-Verbose "Connecting to source: $Source"
 		try
 		{
@@ -91,11 +91,11 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
 		catch
 		{
 			Write-Warning "Can't connect to $Source."
-			continue
+			break
 		}
 		
 		# Grab the Query Store configuration from the SourceDatabase through the Get-DbaQueryStoreConfig function
-		$SourceQSConfig = Get-DbaQueryStoreConfig -SqlServer $sourceserver -Databases $SourceDatabase
+		$SourceQSConfig = Get-DbaQueryStoreConfig -SqlServer $Source -Databases $SourceDatabase
 		
 	}
 	
@@ -107,62 +107,54 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
 			continue
 		}
 		
-		Write-Verbose "Connecting to destination: $Destination"
-		try
+		foreach ($destinationserver in $Destination)
 		{
-			$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $Credential
 			
-		}
-		catch
-		{
-				Write-Warning "Can't connect to $Destination."
-				continue
-		}
-		
-		if ($sourceserver.VersionMajor -lt 13)
-		{
-			Write-Warning "The source SQL Server Instance ($source) has a lower SQL Server version than SQL Server 2016. Skipping server."
-			continue
-		}
-		
-		if ($destserver.VersionMajor -lt 13)
-		{
-			Write-Warning "The destination SQL Server Instance ($destination) has a lower SQL Server version than SQL Server 2016. Skipping server."
-			continue
-		}
-		
-		# We have to exclude all the system databases since they cannot have the Query Store feature enabled
-		$dbs = $destserver.Databases | Where-Object { $_.IsSystemObject -eq $false }
-		
-		if ($DestinationDatabase.count -gt 0)
-		{
-			$dbs = $dbs | Where-Object { $DestinationDatabase -contains $_.Name }
-		}
-		
-		if ($Exclude.count -gt 0)
-		{
-			$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
-		}
-		
-		if ($dbs.count -eq 0)
-		{
-			Write-Warning "No matching databases found. Check the spelling and try again."
-			return
-		}
-		
-		foreach ($db in $dbs)
-		{
-			Write-Verbose "Processing destination database: $db on $destination"
-	
-			if ($db.IsAccessible -eq $false)
+			Write-Verbose "Connecting to destination: $Destination"
+			try
 			{
-				Write-Warning "The database $db on server $destination is not accessible. Skipping database."
+				$destserver = Connect-SqlServer -SqlServer $destinationserver -SqlCredential $DestinationSqlCredential
+				
+			}
+			catch
+			{
+				Write-Warning "Can't connect to $destinationserver."
 				continue
 			}
 			
-			Write-Verbose "Executing Set-DbaQueryStoreConfig"
-			# Set the Query Store configuration through the Set-DbaQueryStoreConfig function
-			Set-DbaQueryStoreConfig -SqlInstance $Destination -SqlCredential $DestinationSqlCredential -Databases $($db.name) -State $SourceQSConfig.ActualState -FlushInterval $SourceQSConfig.FlushInterval -CollectionInterval $SourceQSConfig.CollectionInterval -MaxSize $SourceQSConfig.MaxSize -CaptureMode $SourceQSConfig.CaptureMode -CleanupMode $SourceQSConfig.CleanupMode -StaleQueryThreshold $SourceQSConfig.StaleQueryThreshold
+			# We have to exclude all the system databases since they cannot have the Query Store feature enabled
+			$dbs = $destserver.Databases | Where-Object { $_.IsSystemObject -eq $false }
+			
+			if ($DestinationDatabase.count -gt 0)
+			{
+				$dbs = $dbs | Where-Object { $DestinationDatabase -contains $_.Name }
+			}
+			
+			if ($Exclude.count -gt 0)
+			{
+				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
+			}
+			
+			if ($dbs.count -eq 0)
+			{
+				Write-Warning "No matching databases found. Check the spelling and try again."
+				return
+			}
+			
+			foreach ($db in $dbs)
+			{
+				Write-Verbose "Processing destination database: $db on $destination"
+				
+				if ($db.IsAccessible -eq $false)
+				{
+					Write-Warning "The database $db on server $destination is not accessible. Skipping database."
+					continue
+				}
+				
+				Write-Verbose "Executing Set-DbaQueryStoreConfig"
+				# Set the Query Store configuration through the Set-DbaQueryStoreConfig function
+				Set-DbaQueryStoreConfig -SqlInstance $Destination -Credential $DestinationSqlCredential -Databases $($db.name) -State $SourceQSConfig.ActualState -FlushInterval $SourceQSConfig.FlushInterval -CollectionInterval $SourceQSConfig.CollectionInterval -MaxSize $SourceQSConfig.MaxSize -CaptureMode $SourceQSConfig.CaptureMode -CleanupMode $SourceQSConfig.CleanupMode -StaleQueryThreshold $SourceQSConfig.StaleQueryThreshold
+			}
 		}
 	}
 }
