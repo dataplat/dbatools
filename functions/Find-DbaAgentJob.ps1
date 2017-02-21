@@ -117,7 +117,7 @@ Returns all agent job(s) that are named exactly Mybackup
 	)
 	begin
 	{
-		if ($Failed, [boolean]$Name, [boolean]$StepName, $LastUsed, $Disabled, $NoSchedule, $NoEmailNotification, [boolean]$Category, [boolean]$Owner, [boolean]$Exclude -notcontains $true)
+		if ($Failed, [boolean]$Name, [boolean]$StepName, [boolean]$LastUsed.ToString(), $Disabled, $NoSchedule, $NoEmailNotification, [boolean]$Category, [boolean]$Owner, [boolean]$Exclude -notcontains $true)
 		{
 			Write-Warning "At least one search term must be specified"
 			continue
@@ -199,12 +199,12 @@ Returns all agent job(s) that are named exactly Mybackup
 					}
 				}
 			}
-			
-			if ($LastUsed)
+
+			if ([boolean]$LastUsed.ToString() -eq $true)
 			{
-				$Since = $LastUsed * -1
-				$SinceDate = (Get-date).AddDays($Since)
-				Write-Verbose "Finding job/s not ran in last $Since days"
+				$DaysBack = $LastUsed * -1
+				$SinceDate = (Get-date).AddDays($DaysBack)
+				Write-verbose "Finding job/s not ran in last $LastUsed days"
 				$output += $jobs | Where-Object { $_.LastRunDate -le $SinceDate }
 			}
 			
@@ -225,11 +225,11 @@ Returns all agent job(s) that are named exactly Mybackup
 				$output += $jobs | Where-Object { $_.OperatorToEmail -eq "" }
 			}
 			
+
 			if ($Category)
 			{
-				Write-Verbose "Finding job/s that have no email operator defined"
-				$output += $jobs | Where-Object { $Category -contains $_.Category }
-			}
+				Write-Verbose "Finding job/s that have the specified category defined"
+                $output += $jobs | Where-Object { $Category -contains $_.Category }			}
 			
 			if ($Owner)
 			{
