@@ -11,7 +11,7 @@ Gets SQL Security Audit information for each instance(s) of SQL Server.
 SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
 to be executed against multiple SQL Server instances.
 
-.PARAMETER SqlCredential
+.PARAMETER Credential
 PSCredential object to connect as. If not specified, current Windows login will be used.
 
 .NOTES
@@ -41,7 +41,7 @@ Returns all Security Audits for the local and sql2016 SQL Server instances
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[object]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[System.Management.Automation.PSCredential]$Credential
 	)
 	
 	PROCESS
@@ -51,7 +51,7 @@ Returns all Security Audits for the local and sql2016 SQL Server instances
 			Write-Verbose "Attempting to connect to $instance"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
 			}
 			catch
 			{
