@@ -1,11 +1,11 @@
-FUNCTION Get-DbaSecurityAudit
+﻿FUNCTION Get-DbaAudit
 {
 <#
 .SYNOPSIS
 Gets SQL Security Audit information for each instance(s) of SQL Server.
 
 .DESCRIPTION
- The Get-DbaSecurityAudit command gets SQL Security Audit information for each instance(s) of SQL Server.
+ The Get-DbaAudit command gets SQL Security Audit information for each instance(s) of SQL Server.
 	
 .PARAMETER SqlInstance
 SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
@@ -26,14 +26,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.	
 
 .LINK
-https://dbatools.io/Get-DbaSecurityAudit
+https://dbatools.io/Get-DbaAudit
 
 .EXAMPLE
-Get-DbaSecurityAudit -SqlServer localhost
+Get-DbaAudit -SqlServer localhost
 Returns all Security Audits on the local default SQL Server instance
 
 .EXAMPLE
-Get-DbaSecurityAudit -SqlServer localhost, sql2016
+Get-DbaAudit -SqlServer localhost, sql2016
 Returns all Security Audits for the local and sql2016 SQL Server instances
 
 #>
@@ -47,7 +47,7 @@ Returns all Security Audits for the local and sql2016 SQL Server instances
 	PROCESS
 	{
 		foreach ($servername in $sqlserver)
-        {	
+		{
 			Write-Verbose "Attempting to connect to $servername"
 			try
 			{
@@ -58,25 +58,21 @@ Returns all Security Audits for the local and sql2016 SQL Server instances
 				Write-Warning "Can't connect to $servername or access denied. Skipping."
 				continue
 			}
-
-            if ($server.versionMajor -lt 10)
-            {
-                Write-Warning "Server Audits are only supported in SQL Server 2008 and above. Quitting."
-                return
-            }
 			
-            $serveraudits = $server.Audits
-
-            foreach ($audit in $serveraudits)
-            {
-            	[pscustomobject]@{
-				Server = $server.name
-                Name = $audit.name
-                Status = $audit.enabled
-                FilePath = $audit.filepath
-                FileName = $audit.filename
-                }
-		    } 
+			if ($server.versionMajor -lt 10)
+			{
+				Write-Warning "Server Audits are only supported in SQL Server 2008 and above. Quitting."
+				continue
+			}
+			
+			foreach ($audit in $server.Audits)
+			{
+				Add-Member -InputObject $audit -MemberType NoteProperty ComputerName -value $audit.Parent.NetName
+				Add-Member -InputObject $audit -MemberType NoteProperty InstanceName -value $audit.Parent.ServiceName
+				Add-Member -InputObject $audit -MemberType NoteProperty SqlInstance -value $audit.Parent.DomainInstanceName
+				
+				Select-DefaultView -InputObject $audit -Property ComputerName, InstanceName, SqlInstance, Name, 'Enabled as IsEnabled', FilePath, FileName
+			}
 		}
 	}
 }
