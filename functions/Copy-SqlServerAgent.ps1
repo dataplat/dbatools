@@ -15,7 +15,7 @@ This function could use some refining, as *all* job objects are copied.
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
 .PARAMETER Source
-Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER Destination
 Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -46,18 +46,11 @@ Requires: sysadmin access on SQL Servers
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
 https://dbatools.io/Copy-SqlServerAgent
@@ -70,8 +63,7 @@ Copies all job server objects from sqlserver2014a to sqlcluster, using Windows c
 .EXAMPLE   
 Copy-SqlServerAgent -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
-Copies all job objects from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a
-and Windows credentials for sqlcluster.
+Copies all job objects from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
 .EXAMPLE   
 Copy-SqlServerTrigger -Source sqlserver2014a -Destination sqlcluster -WhatIf
@@ -111,8 +103,8 @@ Shows what would happen if the command were executed.
 		
 		# All of these support whatif inside of them
 		Copy-SqlAgentCategory -Source $sourceserver -Destination $destserver -Force:$force
-		Copy-SqlAlert -Source $sourceserver -Destination $destserver -Force:$force -IncludeDefaults
 		Copy-SqlOperator -Source $sourceserver -Destination $destserver -Force:$force
+		Copy-SqlAlert -Source $sourceserver -Destination $destserver -Force:$force -IncludeDefaults
 		Copy-SqlProxyAccount -Source $sourceserver -Destination $destserver -Force:$force
 		Copy-SqlSharedSchedule -Source $sourceserver -Destination $destserver -Force:$force
 		Copy-SqlJob -Source $sourceserver -Destination $destserver -Force:$force -DisableOnDestination:$DisableJobsOnDestination -DisableOnSource:$DisableJobsOnSource

@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.3.5'
+	ModuleVersion = '0.8.5.56'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -20,7 +20,7 @@
 	Author = 'Chrissy LeMaire'
 	
 	# Company or vendor of this module
-	CompanyName = 'netnerds.net'
+	CompanyName = 'dbatools.io'
 	
 	# Copyright statement for this module
 	Copyright = '2016 Chrissy LeMaire'
@@ -110,15 +110,41 @@
 		'Reset-SqlAdmin',
 		'Watch-SqlDbLogin',
 		'Expand-SqlTLogResponsibly',
-		'Show-SqlMigrationConstraint',
+		'Test-SqlMigrationConstraint',
 		'Get-SqlRegisteredServerName',
 		'Test-SqlNetworkLatency',
 		'Find-SqlDuplicateIndex',
 		'Show-SqlServerFileSystem',
-		'Get-DiskSpace',
+		'Get-DbaDiskSpace',
 		'Remove-SqlDatabaseSafely',
 		'Show-SqlDatabaseList',
-		'Show-SqlWhoIsActive'
+		'Show-SqlWhoIsActive',
+		'Set-SqlTempDbConfiguration',
+		'Test-SqlTempDbConfiguration',
+		'Repair-SqlOrphanUser',
+		'Remove-SqlOrphanUser',
+		'Find-SqlUnusedIndex',
+		'Install-SqlWhoIsActive',
+		'Update-SqlWhoIsActive',
+		'Test-DbaDiskAllocation',
+		'Test-DbaPowerPlan',
+		'Set-DbaPowerPlan',
+		'Test-DbaDiskAlignment',
+		'Get-DbaDatabaseFreespace',
+		'Get-DbaClusterActiveNode',
+		'Test-DbaDatabaseOwner',
+		'Set-DbaDatabaseOwner',
+		'Test-DbaJobOwner',
+		'Set-DbaJobOwner',
+		'Test-DbaVirtualLogFile',
+		'Get-DbaRestoreHistory',
+		'Get-DbaTcpPort',
+		'Test-DbaDatabaseCompatibility',
+		'Test-DbaDatabaseCollation',
+		'Test-DbaConnectionAuthScheme',
+		'Test-DbaServerName',
+		'Repair-DbaServerName',
+		'Stop-DbaProcess'
 	)
 	
 	# Cmdlets to export from this module
@@ -128,7 +154,15 @@
 	VariablesToExport = '*'
 	
 	# Aliases to export from this module
-	AliasesToExport = 'Reset-SqlSaPassword','Copy-SqlUserDefinedMessage','Copy-SqlJobServer','Restore-HallengrenBackup'
+	# Aliases are stored in dbatools.psm1
+	AliasesToExport = 'Reset-SqlSaPassword',
+	'Copy-SqlUserDefinedMessage',
+	'Copy-SqlJobServer',
+	'Restore-HallengrenBackup',
+	'Update-SqlWhoIsActive',
+	'Show-SqlMigrationConstraint',
+	'Test-SqlDiskAllocation',
+	'Get-DiskSpace'
 	
 	# List of all modules packaged with this module
 	ModuleList = @()

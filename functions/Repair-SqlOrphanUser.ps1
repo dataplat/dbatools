@@ -2,18 +2,18 @@
 {
 <#
 .SYNOPSIS
-Find orphan users with existing login and map
+Find orphan users with existing login and remap.
 
 .DESCRIPTION
 An orphan user is defined by a user that does not have their matching login. (Login property = "")
+	
 If the matching login exists it must be:
     .Enabled
     .Not a system object
     .Not locked
-    .Have the same name that login
+    .Have the same name that user
 
-You can drop users that does not have their matching login by especifing the parameter -RemoveNotExisting
-This will be made by calling Remove-SqlOrphanUser function
+You can drop users that does not have their matching login by especifing the parameter -RemoveNotExisting This will be made by calling Remove-SqlOrphanUser function.
 	
 .PARAMETER SqlServer
 The SQL Server instance.
@@ -24,6 +24,9 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+
+.PARAMETER Users
+List of users to repair
 
 .PARAMETER RemoveNotExisting
 If passed, all users that not have their matching login will be dropped from database
@@ -52,23 +55,33 @@ https://dbatools.io/Repair-SqlOrphanUser
 .EXAMPLE
 Repair-SqlOrphanUser -SqlServer sql2005 
 
-Will find all orphan users of all databases present on server 'sql2005'
+Will find and repair all orphan users of all databases present on server 'sql2005'
 
 .EXAMPLE   
 Repair-SqlOrphanUser -SqlServer sqlserver2014a -SqlCredential $cred
 	
-Will find all orphan users of all databases present on server 'sqlserver2014a'. Will be verified using SQL credentials. 
+Will find and repair all orphan users of all databases present on server 'sqlserver2014a'. Will be verified using SQL credentials. 
 	
 .EXAMPLE   
 Repair-SqlOrphanUser -SqlServer sqlserver2014a -Databases db1, db2
 
-Will find all orphan users on both db1 and db2 databases
+Will find and repair all orphan users on both db1 and db2 databases
+
+.EXAMPLE   
+Repair-SqlOrphanUser -SqlServer sqlserver2014a -Databases db1 -Users OrphanUser
+
+Will find and repair user 'OrphanUser' on 'db1' database
+
+.EXAMPLE   
+Repair-SqlOrphanUser -SqlServer sqlserver2014a -Users OrphanUser
+
+Will find and repair user 'OrphanUser' on all databases
 
 .EXAMPLE   
 Repair-SqlOrphanUser -SqlServer sqlserver2014a -RemoveNotExisting
 
 Will find all orphan users of all databases present on server 'sqlserver2014a'
-Will also remove all users that does not have their matching login
+Will also remove all users that does not have their matching login by calling Remove-SqlOrphanUser function
 	
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
@@ -77,6 +90,8 @@ Will also remove all users that does not have their matching login
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
         [object]$SqlCredential,
+        [parameter(Mandatory = $false, ValueFromPipeline = $true)]
+        [object[]]$Users,
         [switch]$RemoveNotExisting
 	)
 
@@ -85,18 +100,17 @@ Will also remove all users that does not have their matching login
 	BEGIN
 	{
         Write-Output "Attempting to connect to Sql Server.."
-		$sourceserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 	}
 	
 	PROCESS
 	{
-
         # Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
 		
         if ($databases.Count -eq 0)
         {
-            $databases = $sourceserver.Databases | Where-Object {$_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true}
+            $databases = $server.Databases | Where-Object {$_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true}
         }
         else
         {
@@ -107,18 +121,20 @@ Will also remove all users that does not have their matching login
 		    }
             else
             {
-                $databases = $sourceserver.Databases | Where-Object {$_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true -and ($databases -contains $_.Name)}
+                $databases = $server.Databases | Where-Object {$_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true -and ($databases -contains $_.Name)}
             }
         }
 
         if ($databases.Count -gt 0)
         {
+            $start = [System.Diagnostics.Stopwatch]::StartNew()
+
             foreach ($db in $databases)
             {
                 try
                 {
                     #if SQL 2012 or higher only validate databases with ContainmentType = NONE
-                    if ($sourceserver.versionMajor -gt 10)
+                    if ($server.versionMajor -gt 10)
 		            {
                         if ($db.ContainmentType -ne [Microsoft.SqlServer.Management.Smo.ContainmentType]::None)
                         {
@@ -129,35 +145,72 @@ Will also remove all users that does not have their matching login
 
                     Write-Output "Validating users on database '$db'"
 
-                    $Users = $db.Users | Where {$_.Login -eq "" -and ("dbo","guest","sys","INFORMATION_SCHEMA" -notcontains $_.Name)}
+                    if ($Users.Count -eq 0)
+                    {
+                        $Users = $db.Users | Where {$_.Login -eq "" -and ("dbo","guest","sys","INFORMATION_SCHEMA" -notcontains $_.Name)}
+                    }
+                    else
+                    {
+                        if ($pipedatabase.Length -gt 0)
+		                {
+			                $Source = $pipedatabase[3].parent.name
+			                $Users = $pipedatabase.name
+		                }
+                        else
+                        {
+                            $Users = $db.Users | Where {$_.Login -eq "" -and ($Users -contains $_.Name)}
+                        }
+                    }
                     
                     if ($Users.Count -gt 0)
                     {
-                        Write-Output "Orphan users found on database '$db'"
+                        Write-Verbose "Orphan users found"
+                        $UsersToRemove = @()
                         foreach ($User in $Users)
                         {
-                            $ExistLogin = $sourceserver.logins | Where-Object {$_.Isdisabled -eq $False -and 
+                            $ExistLogin = $server.logins | Where-Object {$_.Isdisabled -eq $False -and 
                                                                                $_.IsSystemObject -eq $False -and 
                                                                                $_.IsLocked -eq $False -and 
                                                                                $_.Name -eq $User.Name }
 
                             if ($ExistLogin)
                             {
-                                $query = "ALTER USER " + $User + " WITH LOGIN = " + $User
-                                $sourceserver.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
-                                
-                                Write-Output "User '$($User.Name)' mapped with their login"
+                                if ($server.versionMajor -gt 8)
+                                {
+                                    $query = "ALTER USER " + $User + " WITH LOGIN = " + $User
+                                }
+                                else
+                                {
+                                    $query = "exec sp_change_users_login 'update_one', '$User'"
+                                }
+
+                                if ($Pscmdlet.ShouldProcess($db.Name, "Mapping user '$($User.Name)'"))
+				                {
+                                    $server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
+                                    Write-Output "`r`nUser '$($User.Name)' mapped with their login"
+                                }
                             }
                             else
                             {
                                 if ($RemoveNotExisting -eq $true)
                                 {
-                                    #Will call Remove-SqlOrphanUser function
+                                    #add user to collection
+                                    $UsersToRemove += $User
                                 }
                                 else
                                 {
-                                    Write-Output "Orphan user $($User.Name) does not have matching login"
+                                    Write-Warning "Orphan user $($User.Name) does not have matching login."
                                 }
+                            }
+                        }
+
+                        #With the colelction complete invoke remove.
+                        if ($RemoveNotExisting -eq $true)
+                        {
+                            if ($Pscmdlet.ShouldProcess($db.Name, "Remove-SqlOrphanUser"))
+				            {
+                                Write-Verbose "Calling 'Remove-SqlOrphanUser'"
+                                Remove-SqlOrphanUser -SqlServer $SqlServer -SqlCredential $SqlCredential -Databases $db.Name -Users $UsersToRemove
                             }
                         }
                     }
@@ -165,6 +218,8 @@ Will also remove all users that does not have their matching login
                     {
                         Write-Output "No orphan users found on database '$db'"
                     }
+                    #reset collection
+                    $Users = $null
                 }
                 catch
                 {
@@ -180,6 +235,9 @@ Will also remove all users that does not have their matching login
 	
 	END
 	{
-		$sourceserver.ConnectionContext.Disconnect()
+        $server.ConnectionContext.Disconnect()
+        
+        $totaltime = ($start.Elapsed)
+		Write-Output "Total Elapsed time: $totaltime"
 	}
 }

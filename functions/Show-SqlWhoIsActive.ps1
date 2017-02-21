@@ -250,77 +250,26 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 	
 	BEGIN
 	{
-		
-		Function Get-SpWhoIsActive {
-			
-			$url = 'http://sqlblog.com/files/folders/42453/download.aspx'
-			$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-			$zipfile = "$temp\spwhoisactive.zip"
-
-			try
-			{
-				Invoke-WebRequest $url -OutFile $zipfile
-			}
-			catch
-			{
-				#try with default proxy and usersettings
-				(New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-				Invoke-WebRequest $url -OutFile $zipfile
-			}
-			
-			# Unblock if there's a block
-			Unblock-File $zipfile -ErrorAction SilentlyContinue
-			
-			# Keep it backwards compatible
-			$shell = New-Object -COM Shell.Application
-			$zipPackage = $shell.NameSpace($zipfile)
-			$destinationFolder = $shell.NameSpace($temp)
-			$destinationFolder.CopyHere($zipPackage.Items())
-	
-			Remove-Item -Path $zipfile
-		}
-		
-		
-		Function Install-SpWhoisActive
+		function Get-WindowTitle
 		{
-			if ($database.length -eq 0)
+			$title = "sp_WhoIsActive "
+			foreach ($param in $passedparams)
 			{
-				$database = Show-SqlDatabaseList -SqlServer $sourceserver -Title "Install sp_WhoisActive" -Header "sp_WhoIsActive not found. To deploy, select a database or hit cancel to quit." -DefaultDb "master"
+				$sqlparam = $paramdictionary[$param]
+				$value = $localparams[$param]
 				
-				if ($database.length -eq 0)
+				switch ($value)
 				{
-					throw "You must select a database to install the procedure"
+					$true { $value = 1 }
+					$false { $value = 0 }
 				}
-
-				if ($database -ne 'master')
-				{
-					Write-Warning "You have selected a database other than master. When you run Show-SqlWhoIsActive in the future, you must specify -Database $database"
-				}
+				
+				$title = "$title $sqlparam = $value, "
 			}
 			
 			
-			$sqlfile = (Get-ChildItem "$temp\who*active*.sql" | Select -First 1).Name
-			$sqlfile = "$temp\$sqlfile"
-			
-			$sql = [IO.File]::ReadAllText($sqlfile)
-			$sql = $sql -replace 'USE master', ''
-			$batches = $sql -split "GO\r\n"
-			
-			foreach ($batch in $batches)
-			{
-				try
-				{
-					$null = $sourceserver.databases[$database].ExecuteNonQuery($batch)
-					
-				}
-				catch
-				{
-					Write-Exception $_
-					throw "Can't install stored procedure. See exception text for details."
-				}
-			}
-			
-			return $database
+			$title = $title.TrimEnd(", ")
+			return $title
 		}
 		
 		Function Invoke-SpWhoisActive
@@ -331,6 +280,9 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 			
 			if ($database.Length -gt 0)
 			{
+				# database is being returned as something weird. change it to string without using a method then trim.
+				$database = "$database"
+				$database = $database.Trim()
 				$sqlconnection.ChangeDatabase($database)
 			}
 			
@@ -397,7 +349,7 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 	}
 	
 	PROCESS
-	{		
+	{
 		$database = $psboundparameters.Database
 		$passedparams = $psboundparameters.Keys | Where-Object { 'SqlServer', 'SqlCredential', 'OutputAs', 'ServerInstance', 'SqlInstance', 'Database' -notcontains $_ }
 		$localparams = $psboundparameters
@@ -412,24 +364,16 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 			{
 				Write-Warning "Procedure not found, installing."
 				Write-Warning "The author of this stored procedure recommends deploying this procedure to your master database. `n         You will now be prompted to select a database to deploy this stored procedure to."
-
-				$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-				$sqlfile = (Get-ChildItem "$temp\who*active*.sql" | Select -First 1).FullName
 				
-				if ($sqlfile.Length -eq 0)
+				if ($database.length -gt 0)
 				{
-					try
-					{
-						Write-Output "Downloading sp_WhoIsActive zip file, unzipping and installing."
-						Get-SpWhoIsActive
-					}
-					catch
-					{
-						throw "Couldn't download sp_WhoIsActive. Please download and install manually from http://sqlblog.com/files/folders/42453/download.aspx."
-					}
+					$database = Install-SqlWhoisActive -SqlServer $sourceserver -Database $database -OutputDatabaseName
+				}
+				else
+				{
+					$database = Install-SqlWhoisActive -SqlServer $sourceserver -OutputDatabaseName
 				}
 				
-				$database = Install-SpWhoisActive
 				
 				try
 				{
@@ -443,7 +387,7 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 			}
 			else
 			{
-				Write-warning "Invalid query."	
+				Write-warning "Invalid query."
 			}
 		}
 	}
@@ -460,13 +404,15 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 		
 		if ($OutputAs -eq "DataTable")
 		{
-			return $datatable
+			return $datatable.Tables
 		}
 		else
 		{
+			$windowtitle = Get-WindowTitle
+			
 			foreach ($table in $datatable.Tables)
 			{
-				$table | Out-GridView -Title "sp_WhoIsActive"
+				$table | Out-GridView -Title $windowtitle
 			}
 		}
 	}

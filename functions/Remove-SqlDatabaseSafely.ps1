@@ -9,7 +9,7 @@ Performs a DBCC CHECKDB on the database, backs up the database with Checksum and
 performs a DBCC CHECKDB and drops the database
 
 By default the initial DBCC CHECKDB is performed
-By default the jobs and databases are created on the same server. Use -DestinationServer to use a seperate server
+By default the jobs and databases are created on the same server. Use -Destination to use a seperate server
 
 It will start the SQL Agent Service on the Destination Server if it is not running
 
@@ -161,7 +161,14 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 	BEGIN
 	{
 		$databases = $psboundparameters.Databases
+		
+		if ($AllDatabases -eq $false -and $databases.length -eq 0)
+		{
+			throw "You must specify at least one database. Use -Databases or -AllDatabases."
+		}
+		
 		$sourceserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $sqlCredential -ParameterConnection
+		
 		
 		if ($SqlServer -ne $destination)
 		{
@@ -210,33 +217,33 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		function Start-SqlAgent
 		{
 			
-			if ($destserver.InstanceName -eq $null)
+			if ($destserver.VersionMajor -eq 8)
 			{
-				$serviceName = 'SqlServerAgent'
+				$serviceName = 'MSSQLSERVER'
 			}
 			else
 			{
 				$instance = $destserver.InstanceName
-				$serviceName = "SQLAgent`$$instance"
-				$SqlServiceName = "MSSQL`$$instance"
+				if ($instance.length -eq 0) { $instance = "MSSQLSERVER" }
+				$serviceName = "SQL Server Agent ($instance)"
 			}
 			
 			if ($Pscmdlet.ShouldProcess($destination, "Starting Sql Agent"))
 			{
 			try
 			{
-				$ipaddr = Resolve-SqlIpAddress $destination
-				$agentservice = Get-Service -ComputerName $ipaddr -Name $serviceName
+					$ipaddr = Resolve-SqlIpAddress $destserver
+					$agentservice = Get-Service -ComputerName $ipaddr -DisplayName $serviceName
 
 					if ($agentservice.Status -ne 'Running')
 					{
 						$agentservice.Start()
-						$timeout = new-timespan -seconds 60
+						$timeout = New-Timespan -seconds 60
 						$sw = [diagnostics.stopwatch]::StartNew()
-						$agentstatus = (Get-Service -ComputerName $ipaddr -Name $serviceName).Status
+						$agentstatus = (Get-Service -ComputerName $ipaddr -DisplayName $serviceName).Status
 						while ($dbStatus -ne 'Running' -and $sw.elapsed -lt $timeout)
 						{
-							$dbStatus = (Get-Service -ComputerName $ipaddr -Name $serviceName).Status
+							$dbStatus = (Get-Service -ComputerName $ipaddr -DisplayName $serviceName).Status
 						}
 					}
 				}
@@ -408,6 +415,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 	}
 	PROCESS
 	{
+		Start-SqlAgent
 		
 		$start = Get-Date
 		Write-Output "Starting Rationalisation Script at $start"

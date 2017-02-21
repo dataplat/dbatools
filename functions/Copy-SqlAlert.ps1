@@ -42,18 +42,11 @@ Requires: sysadmin access on SQL Servers
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
 https://dbatools.io/Copy-SqlAlert
@@ -66,8 +59,7 @@ Copies all alerts from sqlserver2014a to sqlcluster, using Windows credentials. 
 .EXAMPLE   
 Copy-SqlAlert -Source sqlserver2014a -Destination sqlcluster -Alert PSAlert -SourceSqlCredential $cred -Force
 
-Copies a single alert, the PSAlert alert from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a
-and Windows credentials for sqlcluster. If a alert with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+Copies a single alert, the PSAlert alert from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a alert with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 .EXAMPLE   
 Copy-SqlAlert -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
@@ -140,8 +132,12 @@ Shows what would happen if the command were executed using force.
 				{
 					try
 					{
-						Write-Verbose "Dropping Alert $alertname"
-						$destserver.JobServer.Alerts[$alertname].Drop()
+						Write-Verbose "Dropping Alert $alertname on $destserver"
+						#$destserver.JobServer.Alerts[$alertname].Drop()
+						
+						$sql = "EXEC msdb.dbo.sp_delete_alert @name = N'$($alert.name)';"
+						Write-Verbose $sql
+						$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 					}
 					catch
 					{
@@ -150,7 +146,7 @@ Shows what would happen if the command were executed using force.
 					}
 				}
 			}
-			
+			# job is created here.
 			If ($Pscmdlet.ShouldProcess($destination, "Creating Alert $alertname"))
 			{
 				try
@@ -170,12 +166,6 @@ Shows what would happen if the command were executed using force.
 			
 			$destserver.JobServer.Alerts.Refresh()
 			$destserver.JobServer.Jobs.Refresh()
-			
-			$newalert = $destserver.JobServer.Alerts[$alertname]	
-			$notifications = $alert.EnumNotifications()
-			$newnotifications = $newalert.EnumNotifications()
-			$job = $alert.JobId
-			$jobname = $alert.JobName
 			
 			# Super workaround but it works
 			if ($alert.JobId -ne '00000000-0000-0000-0000-000000000000')
@@ -199,6 +189,62 @@ Shows what would happen if the command were executed using force.
 					}
 				}
 			}
+			
+			
+			$newalert = $destserver.JobServer.Alerts[$alertname]
+			$notifications = $alert.EnumNotifications()
+			$newnotifications = $newalert.EnumNotifications()
+			$job = $alert.JobId
+			$jobname = $alert.JobName
+			
+			If ($Pscmdlet.ShouldProcess($destination, "Moving Notifications $alertname"))
+			{
+				try
+				{
+					foreach ($notify in $notifications)
+					# cant add them this way, we need to modify the existing one or give all options that are supported.
+					{
+						$nm = @()
+						if ($notify.UseNetSend -eq $true)
+						{
+							write-verbose "Adding net send"
+							$nm += "NetSend"
+						}
+						
+						if ($notify.UseEmail -eq $true)
+						{
+							write-verbose "Adding email"
+							$nm += "NotifyEmail"
+						}
+						
+						if ($notify.UsePager -eq $true)
+						{
+							write-verbose "Adding pager"
+							$nm += "Pager"
+						}
+						$nml = $nm -join ", "
+						
+						$newalert.AddNotification($notify.OperatorName, [Microsoft.SqlServer.Management.Smo.Agent.NotifyMethods]$nml) # concat the notify methods together       
+					}
+				}
+				catch
+				{
+					$e = $_.Exception
+					$line = $_.InvocationInfo.ScriptLineNumber
+					$msg = $e.Message
+					
+					if ($e -like '*The specified @operator_name (''*'') does not exist*')
+					{
+						Write-Warning "One or more operators for this alert are not configured and will not be added to this alert."
+						Write-Warning "Please run Copy-SqlOperator if you would like to move operators to destination server."
+					}
+					else
+					{
+						Write-Error "caught exception: $e at $line : $msg"
+					}
+				}
+			}
+			
 		}
 	}
 	

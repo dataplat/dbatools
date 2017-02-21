@@ -7,17 +7,14 @@ Migrates logins from source to destination SQL Servers. Supports SQL Server vers
 .DESCRIPTION
 SQL Server 2000: Migrates logins with SIDs, passwords, server roles and database roles.
 
-SQL Server 2005 & above: Migrates logins with SIDs, passwords, defaultdb, server roles & securables,
-database permissions & securables, login attributes (enforce password policy, expiration, etc)
+SQL Server 2005 & above: Migrates logins with SIDs, passwords, defaultdb, server roles & securables, database permissions & securables, login attributes (enforce password policy, expiration, etc.)
 
-The login hash algorithm changed in SQL Server 2012, and is not backwards compatible with previous SQL
-versions. This means that while SQL Server 2000 logins can be migrated to SQL Server 2012, logins
-created in SQL Server 2012 can only be migrated to SQL Server 2012 and above.
+The login hash algorithm changed in SQL Server 2012, and is not backwards compatible with previous SQL versions. This means that while SQL Server 2000 logins can be migrated to SQL Server 2012, logins created in SQL Server 2012 can only be migrated to SQL Server 2012 and above.
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
 .PARAMETER Source
-Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER Destination
 Destination SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -64,18 +61,11 @@ Requires: sysadmin access on SQL Servers
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
 https://dbatools.io/Copy-SqlLogin
@@ -83,8 +73,7 @@ https://dbatools.io/Copy-SqlLogin
 .EXAMPLE
 Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -Force
 
-Copies all logins from source server to destination server. If a SQL login on source exists on the destination,
-the destination login will be dropped and recreated.
+Copies all logins from source server to destination server. If a SQL login on source exists on the destination, the destination login will be dropped and recreated.
 
 .EXAMPLE
 Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred

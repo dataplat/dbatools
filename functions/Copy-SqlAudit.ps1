@@ -10,7 +10,7 @@ By default, all audits are copied. The -Audits parameter is autopopulated for co
 If the audit already exists on the destination, it will be skipped unless -Force is used. 
 
 .PARAMETER Source
-Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER Destination
 Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -38,18 +38,11 @@ Requires: sysadmin access on SQL Servers
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
 https://dbatools.io/Copy-SqlAudit
@@ -62,8 +55,7 @@ Copies all server audits from sqlserver2014a to sqlcluster, using Windows creden
 .EXAMPLE   
 Copy-SqlAudit -Source sqlserver2014a -Destination sqlcluster -Audit tg_noDbDrop -SourceSqlCredential $cred -Force
 
-Copies a single audit, the tg_noDbDrop audit from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a
-and Windows credentials for sqlcluster. If an audit with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+Copies a single audit, the tg_noDbDrop audit from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an audit with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 .EXAMPLE   
 Copy-SqlAudit -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
