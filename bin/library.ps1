@@ -511,8 +511,12 @@ namespace sqlcollective.dbatools
 '@
 #endregion Source Code
 
-try { Add-Type $source -ErrorAction Stop }
+try
+{
+	Add-Type $source -ErrorAction Stop
+}
 catch
 {
-    throw
+	# nothing -- it's just already added
+	continue
 }
