@@ -217,9 +217,9 @@
 		'Get-DbaQueryStoreConfig',
 		'Set-DbaQueryStoreConfig',
 		'Unregister-DbaWatchUpdate',
-		#'Restore-DbaDatabase',
+		'Restore-DbaDatabase',
 		#'Get-DbaLinkedServer',
-		#'Invoke-DbaLogShippingRecovery',
+		'Invoke-DbaLogShippingRecovery',
 		'Copy-DbaQueryStoreConfig'
 	)
 	
