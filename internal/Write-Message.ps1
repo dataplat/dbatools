@@ -16,12 +16,12 @@
             - Message output to users
     
             At what complexity what path for the information is chosen is determined by the configuration settings:
-            message.maximum.info
-            message.maximum.verbose
-            message.maximum.debug
-            message.minimum.info
-            message.minimum.verbose
-            message.minimum.debug
+            message.maximuminfo
+            message.maximumverbose
+            message.maximumdebug
+            message.minimuminfo
+            message.minimumverbose
+            message.minimumdebug
             Which can be set to any level from 1 through 9
             Depending on the configuration it is very possible to have multiple paths chosen simultaneously
     
@@ -133,42 +133,68 @@
         
         if ($Silent) { Write-Error -Message $record -Category $ErrorRecord.CategoryInfo.Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue }
         else { $null = Write-Error -Message $record -Category $ErrorRecord.CategoryInfo.Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue 2>&1 }
+        
+        [sqlcollective.dbatools.dbaSystem.DebugHost]::WriteErrorEntry($Error[0], $FunctionName, $timestamp, $Message)
     }
     #endregion Handle Errors
+    
+    $channels = @()
     
     #region Warning Mode
     if ($Warning)
     {
-        if (-not $Silent) { Write-Warning $NewMessage }
+        if (-not $Silent)
+        {
+            Write-Warning $NewMessage
+            $channels += "Warning"
+        }
         Write-Debug $NewMessage
+        $channels += "Debug"
     }
     #endregion Warning Mode
     
     #region Message Mode
     else
     {
-        $max_info = Get-DbaConfigValue -Name 'message.maximum.info' -Fallback 3
-        $max_verbose = Get-DbaConfigValue -Name 'message.maximum.verbose' -Fallback 6
-        $max_debug = Get-DbaConfigValue -Name 'message.maximum.debug' -Fallback 9
-        $min_info = Get-DbaConfigValue -Name 'message.minimum.info' -Fallback 1
-        $min_verbose = Get-DbaConfigValue -Name 'message.minimum.verbose' -Fallback 4
-        $min_debug = Get-DbaConfigValue -Name 'message.minimum.debug' -Fallback 1
+        $max_info = [sqlcollective.dbatools.dbaSystem.MessageHost]::MaximumInformation
+        $max_verbose = [sqlcollective.dbatools.dbaSystem.MessageHost]::MaximumVerbose
+        $max_debug = [sqlcollective.dbatools.dbaSystem.MessageHost]::MaximumDebug
+        $min_info = [sqlcollective.dbatools.dbaSystem.MessageHost]::MinimumInformation
+        $min_verbose = [sqlcollective.dbatools.dbaSystem.MessageHost]::MinimumVerbose
+        $min_debug = [sqlcollective.dbatools.dbaSystem.MessageHost]::MinimumDebug
         
         if ((-not $Silent) -and ($max_info -ge $Level) -and ($min_info -le $Level))
         {
-            if ($Host.Version.Major -ge 5) { Write-Information $NewMessage }
-            else { Write-Host $NewMessage -ForegroundColor (Get-DbaConfigValue -Name 'message.infocolor' -Fallback 'Cyan') }
+            if ($Host.Version.Major -ge 5)
+            {
+                Write-Information $NewMessage
+                
+                if ($InformationPreference -notlike "Continue")
+                {
+                    Write-Host $NewMessage -ForegroundColor (Get-DbaConfigValue -Name 'message.infocolor' -Fallback 'Cyan') -ErrorAction Ignore
+                }
+            }
+            else { Write-Host $NewMessage -ForegroundColor (Get-DbaConfigValue -Name 'message.infocolor' -Fallback 'Cyan') -ErrorAction Ignore }
+            $channels += "Information"
         }
         
         if (($max_verbose -ge $Level) -and ($min_verbose -le $Level))
         {
             Write-Verbose $NewMessage
+            $channels += "Verbose"
         }
         
         if (($max_debug -ge $Level) -and ($min_debug -le $Level))
         {
             Write-Debug $NewMessage
+            $channels += "Debug"
         }
     }
     #endregion Message Mode
+    
+    $channel_Result = $channels -join ", "
+    if ($channel_Result)
+    {
+        [sqlcollective.dbatools.dbaSystem.DebugHost]::WriteLogEntry($Message, $channel_Result, $timestamp, $FunctionName, $Level)
+    }
 }

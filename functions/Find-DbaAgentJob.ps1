@@ -117,7 +117,7 @@ Returns all agent job(s) that are named exactly Mybackup
 	)
 	begin
 	{
-		if ($Failed, $Name, $StepName, $LastUsed, $Disabled, $Disabled, $NoSchedule, $NoEmailNotification, $Category, $Owner, $Exclude -notcontains $true)
+		if ($Failed, [boolean]$Name, [boolean]$StepName, $LastUsed, $Disabled, $NoSchedule, $NoEmailNotification, [boolean]$Category, [boolean]$Owner, [boolean]$Exclude -notcontains $true)
 		{
 			Write-Warning "At least one search term must be specified"
 			continue
