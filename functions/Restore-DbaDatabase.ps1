@@ -9,11 +9,15 @@ Upon bein passed a list of potential backups files this command will scan the fi
 backup sets. It will then filter those files down to a set that can perform the requested restore, checking that we have a 
 full restore chain to the point in time requested by the caller.
 
+The function defaults to working on a remote instance. This means that all paths passed in must be relative to the remote instance.
+XpDirTree will be used to perform the file scans
+
+
 Various means can be used to pass in a list of files to be considered. The default is to non recursively scan the folder
 passed in. 
 
 .PARAMETER SqlServer
-The SQL Server instance. 
+The SQL Server instance to restore to.
 
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. 
@@ -42,10 +46,12 @@ want to perform more complex rename operations then please use the FileMapping p
 This will apply to all file move options, except for FileMapping
 
 .PARAMETER UseDestinationDefaultDirectories
-Switch that tells the restore to use the default Data and Log locations on the target server
+Switch that tells the restore to use the default Data and Log locations on the target server. If the don't exist, 
+the function will try to create them
 
 .PARAMETER RestoreTime
-Specify a DateTime object to which you want the database restored to. Default is to the latest point available 
+Specify a DateTime object to which you want the database restored to. Default is to the latest point  available 
+in the specified backups
 
 .PARAMETER MaintenanceSolutionBackup
 Switch to indicate the backup files are in a folder structure as created by Ola Hallengreen's maintenance scripts.
@@ -54,10 +60,15 @@ we have an anchoring full backup. Because we can rely on specific locations for 
 backup solution, we can rely on file locations.
 
 .PARAMETER DatabaseName
-Name to restore the database under
+Name to restore the database under. 
+Only works with a single database restore. If multiple database are found in the provided paths then we will exit
+
+.PARAMETER RestoredDatababaseNamePrefix
+A string which will be prefixed to the start of the restore Database's Name
+Useful if restoring a copy to the same sql sevrer for testing.
 
 .PARAMETER NoRecovery
-Indicates if the database should be recovered after last restore. Default is to recover
+Indicates if the databases should be recovered after last restore. Default is to recover
 
 .PARAMETER WithReplace
 Switch indicated is the restore is allowed to replace an existing database.
@@ -175,10 +186,13 @@ folder for those file types as defined on the target instance.
 		[switch]$IgnoreLogBackup,
 		[switch]$UseDestinationDefaultDirectories,
 		[switch]$ReuseSourceFolderStructure,
-		[string]$DestinationFilePrefix = ''
+		[string]$DestinationFilePrefix = '',
+		[string]$RestoredDatababaseNamePrefix
 	)
 	BEGIN
 	{
+		#Don't like nulls
+		$islocal = $false
 		$base = $SqlServer.Split("\")[0]
 		
 		if ($base -eq "." -or $base -eq "localhost" -or $base -eq $env:computername -or $base -eq "127.0.0.1")
@@ -231,18 +245,25 @@ folder for those file types as defined on the target instance.
 		foreach ($f in $path)
 		{
 			
-			
-			if ($f.StartsWith("\\") -eq $false -and $islocal -ne $true)
+			#$f.StartsWith("\\") -eq $false -and 
+			if ($islocal -ne $true)
 			{
+				Write-Verbose "$FunctionName - Working remotely, and non UNC path used. Dropping to XpDirTree, all paths evaluated at $SqlServer"
 				# Many internal functions parse using Get-ChildItem. 
 				# We need to use Test-SqlPath and other commands instead
 				# Prevent people from trying 
 				
-				Write-Warning "Currently, you can only use UNC paths when running this command remotely. We expect to support non-UNC paths for remote servers shortly."
-				continue
+				#Write-Warning "Currently, you can only use UNC paths when running this command remotely. We expect to support non-UNC paths for remote servers shortly."
+				#continue
 				
 				#$newpath = Join-AdminUnc $SqlServer "$path"
 				#Write-Warning "Run this command on the server itself or try $newpath."
+				if ($XpDirTree -ne $true)
+				{
+					Write-Verbose "$FunctionName - Only XpDirTree is safe on remote server"
+					$XpDirTree = $true
+					$MaintenanceSolutionBackup = $false
+				}
 			}
 			
 			Write-Verbose "type = $($f.gettype())"
@@ -253,7 +274,21 @@ folder for those file types as defined on the target instance.
 				{
 					if ($XpDirTree)
 					{
-						$BackupFiles += Get-XPDirTreeRestoreFile -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential
+						if ($p -match '\.\w{3}\Z' )
+						{
+							if (Test-SqlPath -Path $p -SqlServer:$SqlServer -SqlCredential:$SqlCredential)
+							{
+								$BackupFiles += $p
+							}
+							else
+							{
+								Write-Warning "$FunctionName - $p cannot be access by $SqlServer" -WarningAction Stop
+							}
+						}
+						else
+						{
+							$BackupFiles += Get-XPDirTreeRestoreFile -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential
+						}
 					}
 					elseif ((Get-Item $p).PSIsContainer -ne $true)
 					{
@@ -282,13 +317,70 @@ folder for those file types as defined on the target instance.
 				Write-Verbose "$FunctionName : Files passed in $($Path.count)"
 				Foreach ($FileTmp in $Path)
 				{
-					$BackupFiles += $FileTmp
+					Write-Verbose "Type - $($FileTmp.GetType()), length =$($FileTmp.length)"
+					if($FileTmp -is [System.Io.FileInfo] -and $isLocal -eq $False )
+					{
+						Write-Verbose "File object"
+						if ($FileTmp.PsIsContainer)
+						{
+							$BackupFiles += Get-XPDirTreeRestoreFile -Path $FileTmp.Fullname -SqlServer $SqlServer -SqlCredential $SqlCredential
+						}
+						else
+						{
+							if (Test-SqlPath -Path $FileTmp.FullName -SqlServer:$SqlServer -SqlCredential:$SqlCredential)
+							{
+								$BackupFiles += $FileTmp
+							}
+							else
+							{
+								Write-Warning "$FunctionName - $($FileTmp.FullName) cannot be access by $SqlServer" -WarningAction stop
+							}
+
+						}
+					}
+					elseif(($FileTmp -is [System.Management.Automation.PSCustomObject] )) #Dealing with Pipeline input 					
+					{
+						Write-Verbose "Should be pipe input "
+						if ($FileTmp.PSobject.Properties.name -match "Server")
+						{
+							#Most likely incoming from Get-DbaBackupHistory
+							if($Filetmp.Server -ne $SqlServer -and $FileTmp.Full -notlike '\\\\*')
+							{
+								Write-Warning "$FunctionName - Backups from a different server and on a local drive, can't access" -WarningAction stop
+							}
+						}
+						if ($FileTmp.FullName -notmatch '\.\w{3}\Z' )
+						{
+							Write-Verbose "it's file"
+							$BackupFiles += Get-XPDirTreeRestoreFile -Path $FileTmp.Fullname -SqlServer $SqlServer -SqlCredential $SqlCredential
+						}
+						elseif ($FileTmp.FullName -match '\.\w{3}\Z' )
+						{
+							Write-Verbose "it's folder"
+							if (Test-SqlPath -Path $FileTmp.FullName -SqlServer:$SqlServer -SqlCredential:$SqlCredential)
+							{
+								$BackupFiles += $FileTmp
+							}
+							else
+							{
+								Write-Warning "$FunctionName - $($FileTmp.FullName) cannot be accessed by $SqlServer"
+							}
+
+						}
+					}
+					else
+					{	
+						Write-Verbose "Dropped to Default"
+						$BackupFiles += $FileTmp
+					}
 				}
 			}
 		}
 	}
 	END
 	{
+
+
 		try
 		{
 			$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
@@ -307,8 +399,57 @@ folder for those file types as defined on the target instance.
 			}
 		}
 		$server.ConnectionContext.Disconnect()
+		if ($islocal -eq $false)
+		{
+			Write-Verbose "$FunctionName - Remote server, checking folders"
+			if ($DestinationDataDirectory -ne '')
+			{
+				if ((Test-SqlPath -Path $DestinationDataDirectory -SqlServer:$SqlServer -SqlCredential:$SqlCredential) -ne $true)
+				{
+					if ((New-DbaSqlDirectory -Path $DestinationDataDirectory -SqlServer:$SqlServer -SqlCredential:$SqlCredential).Created -ne $true)
+					{
+						Write-Warning "$FunctionName - DestinationDataDirectory $DestinationDataDirectory does not exist, and could not be created on $SqlServer"
+						break
+					}
+					else
+					{
+						Write-Verbose "$FunctionName - DestinationDataDirectory $DestinationDataDirectory  created on $SqlServer"
+					}
+				}
+				else
+				{
+					Write-Verbose "$FunctionName - DestinationDataDirectory $DestinationDataDirectory  exists on $SqlServer"	
+				}
+			}
+			if ($DestinationLogDirectory -ne '')
+			{
+				if ((Test-SqlPath -Path $DestinationLogDirectory -SqlServer:$SqlServer -SqlCredential:$SqlCredential) -ne $true)
+				{
+					if((New-DbaSqlDirectory -Path $DestinationLogDirectory -SqlServer:$SqlServer -SqlCredential:$SqlCredential).Created -ne $true)
+					{
+						Write-Warning "$FunctionName - DestinationLogDirectory $DestinationLogDirectory does not exist, and could not be created on $SqlServer"
+						break
+					}
+					else
+					{
+						Write-Verbose "$FunctionName - DestinationLogDirectory $DestinationLogDirectory  created on $SqlServer"
+					}
+				}
+				else
+				{
+					Write-Verbose "$FunctionName - DestinationLogDirectory $DestinationLogDirectory  exists on $SqlServer"	
+				}
+			}
+		}
+		
 		$AllFilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer:$SqlServer -RestoreTime:$RestoreTime -SqlCredential:$SqlCredential -IgnoreLogBackup:$IgnoreLogBackup
 		Write-Verbose "$FunctionName - $($AllFilteredFiles.count) dbs to restore"
+		
+		if ($AllFilteredFiles.count -gt 1 -and $DatabaseName -ne '')
+		{
+			Write-Warning "$FunctionName -  DatabaseName parameter and multiple database restores is not compatible "
+			break
+		}
 		
 		ForEach ($FilteredFileSet in $AllFilteredFiles)
 		{
@@ -324,7 +465,7 @@ folder for those file types as defined on the target instance.
 			
 			IF ($DatabaseName -eq '')
 			{
-				$DatabaseName = ($FilteredFiles | Select-Object -Property DatabaseName -unique).DatabaseName
+				$DatabaseName = $RestoredDatababaseNamePrefix+($FilteredFiles | Select-Object -Property DatabaseName -unique).DatabaseName
 				Write-Verbose "$FunctionName - Dbname set from backup = $DatabaseName"
 			}
 			
@@ -344,7 +485,7 @@ folder for those file types as defined on the target instance.
 				}
 				Finally
 				{
-					Write-Verbose "Database $databasename restored $Completes"
+					Write-Verbose "Database $databasename restored $Completed"
 				}
 			}
 			$DatabaseName = ''

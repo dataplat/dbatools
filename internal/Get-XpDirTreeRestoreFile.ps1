@@ -37,7 +37,7 @@ Takes path, checks for validity. Scans for usual backup file
         }
         If (!(Test-SqlPath -SQLServer $sqlserver -SqlCredential $SqlCredential -path $path))
         {
-            Write-warning "$FunctionName - SQLServer $sqlserver cannot access $path" -WarningAction stop
+            Write-warning "$FunctionName - SQLServer $sqlserver cannot access $path"
         }
         $query = "EXEC master.sys.xp_dirtree '$Path',1,1;"
         $queryResult = Invoke-Sqlcmd2 -ServerInstance $sqlServer -Credential $SqlCredential -Database tempdb -Query $query

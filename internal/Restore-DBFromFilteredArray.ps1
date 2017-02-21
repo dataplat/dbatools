@@ -26,7 +26,8 @@
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$UseDestinationDefaultDirectories,
 		[switch]$ReuseSourceFolderStructure,
-		[switch]$Force
+		[switch]$Force,
+		[string]$RestoredDatababaseNamePrefix
 	)
     
 	    Begin
@@ -101,22 +102,48 @@
 
  		$RestorePoints  = @()
         $if = $InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Database'} | Group-Object FirstLSN
-		$RestorePoints  += @([PSCustomObject]@{order=[int64]1;'Files' = $if.group})
+		$RestorePoints  += @([PSCustomObject]@{order=[Decimal]1;'Files' = $if.group})
         $if = $InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Database Differential'}| Group-Object FirstLSN
 		if ($if -ne $null){
-			$RestorePoints  += @([PSCustomObject]@{order=[int64]2;'Files' = $if.group})
+			$RestorePoints  += @([PSCustomObject]@{order=[Decimal]2;'Files' = $if.group})
 		}
 		foreach ($if in ($InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} | Group-Object FirstLSN))
  		{
-   			$RestorePoints  += [PSCustomObject]@{order=[int64]($if.Name); 'Files' = $if.group}
+   			$RestorePoints  += [PSCustomObject]@{order=[Decimal]($if.Name); 'Files' = $if.group}
 		}
 		$SortedRestorePoints = $RestorePoints | Sort-object -property order
+		if ($ReuseSourceFolderStructure)
+		{
+			Write-Verbose "$functionName - Checking for folders for Reusing old structure"
+			foreach ($File in ($RestorePoints.Files.filelist.PhysicalName | Sort-Object -Unique))
+			{
+				write-verbose "File = $file"
+				if ((Test-SqlPath -Path $File -SqlServer:$SqlServer -SqlCredential:$SqlCredential) -ne $true)
+					{
+					if ((New-DbaSqlDirectory -Path $File -SqlServer:$SqlServer -SqlCredential:$SqlCredential).Created -ne $true)
+					{
+						write-Warning  "$FunctionName - Destination File $File does not exist, and could not be created on $SqlServer" -WarningAction stop
+
+						return
+					}
+					else
+					{
+						Write-Verbose "$FunctionName - Destination File $Fil  created on $SqlServer"
+					}
+				}
+				else
+				{
+					Write-Verbose "$FunctionName - Destination File $File  exists on $SqlServer"	
+				}
+			}
+		}
 		foreach ($RestorePoint in $SortedRestorePoints)
 		{
 			$RestoreFiles = $RestorePoint.files
 			$RestoreFileNames = $RestoreFiles.BackupPath -join '`n ,'
 			Write-verbose "$FunctionName - Restoring backup starting at order $($RestorePoint.order) - LSN $($RestoreFiles[0].FirstLSN) in $($RestoreFiles[0].BackupPath)"
 			$LogicalFileMoves = @()
+
 			if ($Restore.RelocateFiles.count -gt 0)
 			{
 				$Restore.RelocateFiles.Clear()
@@ -257,8 +284,8 @@
 				else
 				{
 					Write-Progress -id 1 -activity "Restoring $DbName to ServerName" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-					$Restore.sqlrestore($Server)
 					$script = $restore.Script($Server)
+					$Restore.sqlrestore($Server)
 					Write-Progress -id 1 -activity "Restoring $DbName to $ServerName" -status "Complete" -Completed
 					
 				}
@@ -276,6 +303,15 @@
 			}
 			finally
 			{	
+				if($ReuseSourceFolderStructure){
+					$RestoreDirectory = ((Split-Path $RestoreFiles[0].FileList.PhysicalName) | sort-Object -unique) -join ','
+					$RestoredFile = ((Split-Path $RestoreFiles[0].FileList.PhysicalName -Leaf) | sort-Object -unique) -join ','
+				}
+				else
+				{
+					$RestoreDirectory = ((Split-Path $Restore.RelocateFiles.PhysicalFileName) | sort-Object -unique) -join ','
+					$RestoredFile = (Split-Path $Restore.RelocateFiles.PhysicalFileName -Leaf) -join ','
+				}
 				[PSCustomObject]@{
                     SqlInstance = $SqlServer
                     DatabaseName = $DatabaseName
@@ -288,9 +324,9 @@
                     BackupSizeMB = ($RestoreFiles | measure-object -property BackupSizeMb -Sum).sum
                     CompressedBackupSizeMB = ($RestoreFiles | measure-object -property CompressedBackupSizeMb -Sum).sum
                     BackupFile = $RestoreFiles.BackupPath -join ','
-					RestoredFile = (Split-Path $Restore.RelocateFiles.PhysicalFileName -Leaf) -join ','
+					RestoredFile = $RestoredFile
 					RestoredFileFull = $RestoreFiles[0].Filelist.PhysicalName -join ','
-					RestoreDirectory = ((Split-Path $Restore.RelocateFiles.PhysicalFileName) | sort-Object -unique) -join ','
+					RestoreDirectory = $RestoreDirectory
 					BackupSize = ($RestoreFiles | measure-object -property BackupSize -Sum).sum
 					CompressedBackupSize = ($RestoreFiles | measure-object -property CompressedBackupSize -Sum).sum
                     TSql = $script  

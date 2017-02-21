@@ -44,6 +44,13 @@ For more details please refer to this MSDN article - https://msdn.microsoft.com/
 The type of SQL Server backup to perform.
 Accepted values are Full, Log, Differential, Diff, Database
 
+.PARAMETER FileCount
+THis is the number of striped copies of the backups you wish to create
+This value is overwritten if you specify multiple Backup Directories
+
+.PARAMETER CreateFolder
+If switch enabled then each databases will be backed up into a seperate folder on each of the specified backuppaths
+
 .PARAMETER DatabaseCollection
 Internal parameter
 
@@ -71,17 +78,18 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	param (
-		[parameter(ParameterSetName = "NoPipe", Mandatory = $true)]
+		[parameter(ParameterSetName = "Pipe", Mandatory = $true)]
 		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[string]$BackupDirectory,
+		[string[]]$BackupDirectory,
 		[string]$BackupFileName,
 		[switch]$NoCopyOnly,
 		[ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
 		[string]$Type = "Database",
-		[parameter(ParameterSetName = "Pipe", Mandatory = $true, ValueFromPipeline = $true)]
-		[object[]]$DatabaseCollection
-		
+		[parameter(ParameterSetName = "NoPipe", Mandatory = $true, ValueFromPipeline = $true)]
+		[object[]]$DatabaseCollection,
+		[switch]$CreateFolder,
+		[int]$FileCount=0
 	)
 	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
@@ -99,7 +107,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			}
 			catch
 			{
-				Write-Warning "$FunctionName - Cannot connect to $SqlInstance"
+				Write-Warning "$FunctionName - Cannot connect to $SqlInstance £"
 				continue
 			}
 			
@@ -107,17 +115,17 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			
 			if ($BackupDirectory.count -gt 1)
 			{
+				Write-Verbose "$FunctionName - Multiple Backup Directories, striping"
 				$Filecount = $BackupDirectory.count
 			}
 			
-			if ($database.count -gt 1 -and $BackupFileName)
+			if ($DatabaseCollection.count -gt 1 -and $BackupFileName -ne '')
 			{
-				Write-Warning "$FunctionName - 1 BackupFile specified, but more than 1 database."
+				Write-Warning "$FunctionName - 1 BackupFile specified, but more than 1 database." -WarningAction stop
 				break
 			}
 		}
 	}
-	
 	PROCESS
 	{		
 		if (!$SqlInstance -and !$DatabaseCollection)
@@ -126,43 +134,47 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			continue
 		}
 		
-		Write-Verbose "$FunctionName - $($database.count) database to backup"
+		Write-Verbose "$FunctionName - $($DatabaseCollection.count) database to backup"
 		
 		ForEach ($Database in $databasecollection)
 		{
-			if ($server -eq $null) { $server = $Database.Parent }
+			$failures = @()
+			$dbname = $Database.name
+			if ($dbname -eq "tempdb")
+			{
+				Write-Warning "Backing up tempdb not supported"
+				continue
+			}
 			
-			$FailReasons = @()
+			if ($server -eq $null) { $server = $Database.Parent }
 			
 			Write-Verbose "$FunctionName - Backup up database $database"
 			
 			if ($Database.RecoveryModel -eq $null)
 			{
 				$Database.RecoveryModel = $server.databases[$Database.Name].RecoveryModel
-				Write-Verbose "$($DataBase.Name) is in $($Database.RecoveryModel) recovery model"
+				Write-Verbose "$dbname is in $($Database.RecoveryModel) recovery model"
 			}
 			
 			if ($Database.RecoveryModel -eq 'Simple' -and $Type -eq 'Log')
 			{
-				$FailReason = "$($Database.Name) is in simple recovery mode, cannot take log backup"
-				$FailReasons += $FailReason
-				Write-Warning "$FunctionName - $FailReason"
-				
+				$failreason = "$database is in simple recovery mode, cannot take log backup"
+				$failures += $failreason
+				Write-Warning "$FunctionName - $failreason"
 			}
 			
 			$lastfull = $database.LastBackupDate.Year
 		
-			if ($Type -ne "Full" -and $lastfull -eq 1)
+			if ($Type -ne "Database" -and $lastfull -eq 1)
 			{
-				$FailReason = "$($Database.Name) does not have an existing full backup, cannot take log or differentialbackup"
-				$FailReasons += $FailReason
-				Write-Warning "$FunctionName - $FailReason"
+				$failreason = "$database does not have an existing full backup, cannot take log or differentialbackup"
+				$failures += $failreason
+				Write-Warning "$FunctionName - $failreason"
 			}
 			
-			$val = 0
 			$copyonly = !$NoCopyOnly
 			
-			$server.ConnectionContext.StatementTimeout = 0
+			$server.ConnectionContext.StatementTimeout = $val = 0
 			$backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
 			$backup.Database = $Database.Name
 			$Suffix = "bak"
@@ -176,7 +188,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			
 			if ($Type -eq "Log")
 			{
-				Write-Verbose "Creating log backup"
+				Write-Verbose "$FunctionName - Creating log backup"
 				$Suffix = "trn"
 			}
 			
@@ -201,108 +213,125 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					{
 						$BackupDirectory = $server.BackupDirectory
 					}
-					$BackupFileName = "$BackupDirectory\$BackupFileName"
+					
+					$BackupFileName = "$BackupDirectory\$BackupFileName" # removed auto suffix
 				}
 				
 				Write-Verbose "$FunctionName - Single db and filename"
+				
 				if (Test-SqlPath -SqlServer $server -Path (Split-Path $BackupFileName))
 				{
 					$FinalBackupPath += $BackupFileName
 				}
 				else
 				{
-					$FailReason = "Sql Server cannot write to the location $(Split-Path $BackupFileName)"
-					$FailReasons += $FailReason
-					Write-Warning "$FunctionName - $FailReason"
+					$failreason = "SQL Server cannot write to the location $(Split-Path $BackupFileName)"
+					$failures += $failreason
+					Write-Warning "$FunctionName - $failreason"
 				}
 			}
 			else
 			{
 				if (!$BackupDirectory)
 				{
-					$BackupDirectory = $server.BackupDirectory
+					$BackupDirectory += $server.BackupDirectory
 				}
-								
-				$TimeStamp = (Get-date -Format yyyyMMddHHmm)
+	
+				$timestamp = (Get-date -Format yyyyMMddHHmm)
+				$BackupFileName = "$($dbname)_$timestamp"
 				
 				Foreach ($path in $BackupDirectory)
 				{
 					if ($CreateFolder)
 					{
 						$Path = $path + "\" + $Database.name
-						
-						if ((New-DbaSqlDirectory -SqlServer:$SqlInstance -SqlCredential:$SqlCredential -Path $path) -eq $false)
+						Write-Verbose "$FunctionName - Creating Folder $Path"	
+						if ((New-DbaSqlDirectory -SqlServer $server -SqlCredential $SqlCredential -Path $path).Created -eq $false)
 						{
-							$FailReason = "Cannot create or write to folder $path"
-							$FailReasons += $FailReason
-							Write-Warning "$FunctionName - $FailReason"
+							$failreason = "Cannot create or write to folder $path"
+							$failures += $failreason
+							Write-Warning "$FunctionName - $failreason"
+						}
+						else
+						{
+							$FinalBackupPath += "$path\$BackupFileName.$suffix"
 						}
 					}
 					else
 					{
-						$FinaLBackupPath += "$BackupDirectory\$(($Database.name).trim())_$Timestamp.$suffix"
+						$FinalBackupPath += "$path\$BackupFileName.$suffix"
 					}
+					<#
+					The code below attempts to create the directory even when $CreateFolder -- was it supposed to be Test-SqlPath?
+					else
+					{
+						if ((New-DbaSqlDirectory -SqlServer $server -SqlCredential $SqlCredential -Path $path).Created -eq $false)
+						{
+							$failreason = "Cannot create or write to folder $path"
+							$failures += $failreason
+							Write-Warning "$FunctionName - $failreason"
+						}
+						$FinalBackupPath += "$path\$BackupFileName.$suffix"
+					}
+					#>
 				}
 			}
 			
-			Write-Verbose "before failreasons"
-			if ($FailReasons.count -eq 0)
+			$file = New-Object System.IO.FileInfo($FinalBackupPath[0])
+			$suffix = $file.Extension
+			
+			if ($FileCount -gt 1 -and $FinalBackupPath.count -eq 1)
 			{
-				$val = 1
-				if (($FinalBackupPath.count -gt 1) -or $BackupDirectory)
+				Write-Verbose "$FunctionName - Striping for Filecount of $filecount"
+				$stripes = $filecount
+				
+				for ($i= 2; $i -lt $stripes+1; $i++)
 				{
-					$filecount = $FinalBackupPath.count
-					foreach ($backupfile in $FinalBackupPath)
-					{
-						$device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-						$device.DeviceType = "File"
-						if ($filecount -gt 1)
-						{
-							$device.Name = $backupfile
-							#.Replace(".$suffix", "-$val-of-$filecount.$suffix")
-						}
-						else
-						{
-							$device.Name = $backupfile
-							#.Replace(".$suffix", "-$val.$suffix")
-						}
-						$backup.Devices.Add($device)
-						$val++
-					}
+					$FinalBackupPath += $FinalBackupPath[0].Replace("$suffix", "-$i-of-$stripes$($suffix)")
 				}
-				else
+				$FinalBackupPath[0] = $FinalBackupPath[0].Replace("$suffix", "-1-of-$stripes$($suffix)")
+			
+			}
+			elseif ($FinalBackupPath.count -gt 1)
+			{
+				Write-Verbose "$FunctionName - String for Backup path count of $($FinalBackupPath.count)"
+				$stripes = $FinalbackupPath.count
+				for ($i= 1; $i -lt $stripes+1; $i++)
 				{
-					while ($val -lt ($filecount + 1))
-					{
-						$device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-						$device.DeviceType = "File"
-						if ($filecount -gt 1)
-						{
-							Write-Verbose "$FunctionName - adding stripes"
-							$tFinalBackupPath = $FinalBackupPath
-							#.Replace(".$suffix", "-$val-of-$filecount.$suffix")
-						}
-						$device.Name = $tFinalBackupPath
-						Write-Verbose $tFinalBackupPath
-						$backup.Devices.Add($device)
-						$val++
-					}
+					$FinalBackupPath[($i-1)] = $FinalBackupPath[($i-1)].Replace($suffix, "-$i-of-$stripes$($suffix)")
 				}
+			}
+			
+			$script = $null
+			$backupComplete = $false
+			
+			if (!$failures)
+			{
+				$filecount = $FinalBackupPath.count
+				
+				foreach ($backupfile in $FinalBackupPath)
+				{
+					$device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem
+					$device.DeviceType = "File"
+					$device.Name = $backupfile
+					$backup.Devices.Add($device)
+				}
+				
 				Write-Verbose "$FunctionName - Devices added"
 				$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-					Write-Progress -id 1 -activity "Backing up database $($Database.Name)  to $backupfile" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
+					Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
 				}
 				$backup.add_PercentComplete($percent)
 				$backup.PercentCompleteNotification = 1
 				$backup.add_Complete($complete)
 				
-				Write-Progress -id 1 -activity "Backing up database $($Database.Name)  to $backupfile" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+				Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
 				
 				try
 				{
 					$backup.SqlBackup($server)
-					$Tsql = $backup.Script($server)
-					Write-Progress -id 1 -activity "Backing up database $($Database.Name)  to $backupfile" -status "Complete" -Completed
+					$script = $backup.Script($server)
+					Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -status "Complete" -Completed
 					$BackupComplete = $true
 				}
 				catch
@@ -313,56 +342,18 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 				}
 			}
 			
-			if ($FailReasons.length -eq 0)
-			{
-				[PSCustomObject]@{
+			[PSCustomObject]@{
 					SqlInstance = $server.name
-					DatabaseName = $($Database.Name)
+					DatabaseName = $dbname
 					BackupComplete = $BackupComplete
-					BackupFilesCount = $filecount
-					BackupFile = (split-path $backup.Devices.name -leaf)
-					BackupFolder = (split-path $backup.Devices.name)
-					BackupPath = ($backup.Devices.name)
-					Script = $Tsql
-					Notes = $FailReasons -join (',')
-				} 
-			} else {
-				[PSCustomObject]@{
-					SqlInstance = $server.name
-					DatabaseName = $($Database.Name)
-					BackupComplete = $false
-					Notes = $FailReasons -join (',')	
-				}
-				$failreasones =@()
+					BackupFilesCount = $FinalBackupPath.count	
+					BackupFile = (split-path $FinalBackupPath -leaf)
+					BackupFolder = (split-path $FinalBackupPath | Sort-Object -Unique)
+					BackupPath = ($FinalBackupPath | Sort-Object -Unique)
+					Script = $script
+					Notes = $failures -join (',')
 			}
-			
+			$BackupFileName = $null
 		}
 	}
 }
-
-<#
-
-[int]$FileCount = 1,
-[switch]$CreateFolder,
-
-.PARAMETER FileCount
-Number of files to stripe each backup across if a single BackupDirectory is provided.
-
-File Names with be suffixed with x-of-y to enable identifying striped sets, where y is the number of files in the set and x is from 1 to you
-
-.PARAMETER CreateFolder
-Switch to indicate that a folder should be created under each folder for each database if it doesn't already existing
-Folders are created by the Sql Instance, and checks will be made for write permissions
-
-.EXAMPLE
-Backup-DbaDatabase -SqlInstance Server1 -Databases HR,Finance -Type Full -BackupDirectory \\server2\backups,\\server3\backups -CreateFolder
-
-This will perform a full Copy Only database backup on the databases HR and Finance on SQL Server Instance Server1 striping the files across the 2 fileshares, creaing folders 
-for each database
-
-.EXAMPLE
-Get-DbaDatabase -SqlInstance localhost\sqlexpress2016 -Status Normal -Exclude tempdb | Backup-DbaDatabase -SqlInstance localhost\sqlexpress2016 -Type diff -BackupDirectory d:\backups,e:\backups -CreateFolder
-
-Backs up every database in a normal start on localhost\sqlexpress2016, striping the backups across d:\backups and e:\backups for improved performance. Each DB has it's own folder under each of the backup paths
-
-#>
