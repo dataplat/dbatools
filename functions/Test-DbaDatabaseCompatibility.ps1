@@ -53,15 +53,16 @@ Lots of detailed information for database and server compatibility level for all
 .EXAMPLE   
 Get-SqlRegisteredServerName -SqlServer sql2014 | Test-DbaDatabaseCompatibility
 
-Returns db/server collation information for every database on every server listed in the Central Management Server on sql2016
+Returns db/server compatibility information for every database on every server listed in the Central Management Server on sql2016
 	
 #>
 	[CmdletBinding()]
+	[OutputType("System.Collections.ArrayList")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
-		[PsCredential]$Credential,
+		[System.Management.Automation.PSCredential]$Credential,
 		[switch]$Detailed
 	)
 	
@@ -119,7 +120,7 @@ Returns db/server collation information for every database on every server liste
 						Server = $server.name
 						ServerLevel = $serverversion
 						Database = $db.name
-						DatabaseCollation = $db.CompatibilityLevel
+						DatabaseCompatibility = $db.CompatibilityLevel
 						IsEqual = $db.CompatibilityLevel -eq $serverversion
 					})
 			}

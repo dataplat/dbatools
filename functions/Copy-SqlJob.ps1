@@ -1,4 +1,4 @@
-Function Copy-SqlJob
+﻿Function Copy-SqlJob
 {
 <#
 .SYNOPSIS
@@ -38,7 +38,17 @@ Disable the job on the source server
 .PARAMETER DisableOnDestination
 Disable the newly migrated job on the destination server
 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
+.PARAMETER Force
+Drops and recreates the Job if it exists
+
 .NOTES
+Tags: Migration
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
@@ -103,8 +113,25 @@ Shows what would happen if the command were executed using force.
 		foreach ($job in $serverjobs)
 		{
 			$jobname = $job.name
+			$jobId = $job.JobId
 
 			if ($jobs.count -gt 0 -and $jobs -notcontains $jobname -or $exclude -contains $jobname) { continue }
+
+			$sql = "
+				SELECT sp.[name] AS MaintenancePlanName
+				FROM msdb.dbo.sysmaintplan_plans AS sp
+				INNER JOIN msdb.dbo.sysmaintplan_subplans AS sps
+					ON sps.plan_id = sp.id
+				WHERE job_id = '$($jobId)'"
+			Write-Debug $sql
+
+			$MaintenancePlan = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
+			$MaintPlanName = $MaintenancePlan.MaintenancePlanName
+
+			if ($MaintenancePlan) {
+				Write-Warning "[Job: $jobname] Associated with Maintenance Plan: $($MaintPlanName). Skipping."
+				continue
+			}
 
 			$dbnames = $job.JobSteps.Databasename | Where-Object { $_.length -gt 0 }
 			$missingdb = $dbnames | Where-Object { $destserver.Databases.Name -notcontains $_ }

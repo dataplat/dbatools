@@ -25,7 +25,14 @@ If you want to use SQL Server Authentication to connect.
 .PARAMETER Detailed
 Show a detailed list.
 
-.NOTES 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
+.NOTES
+Tags: CIM, Storage
 Requires: Windows sysadmin access on SQL Servers
 	
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -57,6 +64,7 @@ To return true or false for ALL disks being formatted to 64k
 	
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
+	[OutputType("System.Collections.ArrayList","System.Boolean")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServer")]
@@ -87,8 +95,12 @@ To return true or false for ALL disks being formatted to 64k
 			try
 			{
 				Write-Verbose "Getting disk information from $server"
-				$query = "Select Label, BlockSize, Name from Win32_Volume WHERE FileSystem='NTFS'"
-				$disks = Get-WmiObject -ComputerName $ipaddr -Query $query | Sort-Object -Property Name
+				$sessionoptions = New-CimSessionOption -Protocol DCOM
+				$CIMsession = New-CimSession -ComputerName $ipaddr -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $SqlCredential
+
+				# $query = "Select Label, BlockSize, Name from Win32_Volume WHERE FileSystem='NTFS'"
+				# $disks = Get-WmiObject -ComputerName $ipaddr -Query $query | Sort-Object -Property Name
+				$disks = Get-CimInstance -CimSession $CIMsession -ClassName win32_volume -Filter "FileSystem='NTFS'" -ErrorAction Stop | Sort-Object -Property Name
 			}
 			catch
 			{
@@ -217,7 +229,7 @@ To return true or false for ALL disks being formatted to 64k
 			
 			$data = Get-AllDiskAllocation $server
 			
-			if ($data.Server -eq $null)
+			if ([string]::IsNullOrEmpty( ($data.Server) ) )
 			{
 				Write-Verbose "Server query failed. Removing from processed collection"
 				$null = $processed.Remove($server)

@@ -1,4 +1,4 @@
-Function Copy-SqlLogin
+﻿Function Copy-SqlLogin
 {
 <#
 .SYNOPSIS
@@ -38,7 +38,7 @@ To connect as a different Windows user, run PowerShell as that user.
 .PARAMETER Exclude
 Excludes specified logins. This list is auto-populated for tab completion.
 
-.PARAMETER Login
+.PARAMETER Logins
 Migrates ONLY specified logins. This list is auto-populated for tab completion. Multiple logins allowed.
 
 .PARAMETER SyncOnly
@@ -50,11 +50,25 @@ Calls Export-SqlLogin and exports all logins to a T-SQL formatted file. This doe
 
 .PARAMETER SyncSaName
 Want to sync up the name of the sa account on the source and destination? Use this switch.
-	
+
 .PARAMETER Force
 Force drops and recreates logins. Logins that own jobs cannot be dropped at this time.
 
-.NOTES 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+	
+.PARAMETER pipelogin
+Takes the parameters required from a login object that has been piped ot the command
+
+.PARAMETER LoginRenameHashtable
+Takes a hash table that will pass to Rename-DbaLogin and update the login and mappings once the copy is completed.
+
+
+.NOTES
+Tags: Migration
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
@@ -83,7 +97,7 @@ Authenticates to SQL Servers using SQL Authentication.
 Copies all logins except for realcajun. If a login already exists on the destination, the login will not be migrated.
 
 .EXAMPLE
-Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds -force
+Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -Logins realcajun, netnerds -force
 
 Copies ONLY logins netnerds and realcajun. If login realcajun or netnerds exists on the destination, they will be dropped and recreated.
 
@@ -92,7 +106,13 @@ Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -SyncOnly
 
 Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. If a matching login does not exist on the destination, the login will be skipped.
 
-.NOTES 
+.EXAMPLE 
+Copy-SqlLogin -LoginRenameHashtable @{ "OldUser" ="newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred 
+
+Copys down OldUser and then renames it to newlogin.
+
+.NOTES
+Tags: Migration
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 Limitations: Does not support Application Roles yet
@@ -103,7 +123,7 @@ Limitations: Does not support Application Roles yet
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object]$Source,
-		[parameter(ParameterSetName = "Live", Mandatory = $true)]
+		[parameter(Mandatory = $true)]
 		[object]$Destination,
 		[object]$SourceSqlCredential,
 		[object]$DestinationSqlCredential,
@@ -113,7 +133,8 @@ Limitations: Does not support Application Roles yet
 		[parameter(ParameterSetName = "Live")]
 		[switch]$Force,
 		[switch]$SyncSaName,
-		[object]$pipelogin
+		[object]$pipelogin,
+		[hashtable]$LoginRenameHashtable 
 	)
 	
 	DynamicParam { if ($source) { return Get-ParamSqlLogins -SqlServer $source -SqlCredential $SourceSqlCredential } }
@@ -142,22 +163,38 @@ Limitations: Does not support Application Roles yet
 					}
 					continue
 				}
+
+				if(($destserver.LoginMode -ne [Microsoft.SqlServer.Management.Smo.ServerLoginMode]::Mixed) -and ($sourcelogin.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin))
+				{ 
+					Write-Warning "$Destination does not have Mixed Mode enabled. $username is an SqlLogin so it needs mixed mode enabled. Enable this after the migration completes."				 
+				}
 				
 				$userbase = ($username.Split("\")[0]).ToLower()
+				
 				if ($servername -eq $userbase -or $username.StartsWith("NT "))
 				{
-					If ($Pscmdlet.ShouldProcess("console", "Stating $username is skipped because it is a local machine name."))
+					if ($sourceserver.netname -ne $destserver.netname)
 					{
-						Write-Output "$username is skipped because it is a local machine name."
+						If ($Pscmdlet.ShouldProcess("console", "Stating $username was skipped because it is a local machine name."))
+						{
+							Write-Warning "$username was skipped because it is a local machine name."
+						}
+						continue
 					}
-					continue
+					else
+					{
+						If ($Pscmdlet.ShouldProcess("console", "Stating local login $username since the source and destination server reside on the same machine."))
+						{
+							Write-Output "Copying local login $username since the source and destination server reside on the same machine."
+						}
+					}
 				}
 				
 				if (($login = $destserver.Logins.Item($username)) -ne $null -and !$force)
 				{
 					If ($Pscmdlet.ShouldProcess("console", "Stating $username is skipped because it exists at destination."))
 					{
-						Write-Output "$username already exists in destination. Use -force to drop and recreate."
+						Write-Warning "$username already exists in destination. Use -Force to drop and recreate."
 					}
 					continue
 				}
@@ -177,7 +214,6 @@ Limitations: Does not support Application Roles yet
 						Write-Output "Force was specified. Attempting to drop $username on $destination"
 						try
 						{
-							$destserver.EnumProcesses() | Where { $_.Login -eq $username } | ForEach-Object { $destserver.KillProcess($_.spid) }
 							
 							$owneddbs = $destserver.Databases | Where { $_.Owner -eq $username }
 							
@@ -197,7 +233,10 @@ Limitations: Does not support Application Roles yet
 								$ownedjob.Alter()
 							}
 							
-							$login.drop()
+							$login.Disable()
+							$destserver.EnumProcesses() | Where-Object { $_.Login -eq $username } | ForEach-Object { $destserver.KillProcess($_.spid) }
+							$login.Drop()
+							
 							Write-Output "Successfully dropped $username on $destination"
 						}
 						catch
@@ -282,7 +321,7 @@ Limitations: Does not support Application Roles yet
 								$sid = "0x"; $sourcelogin.sid | % { $sid += ("{0:X}" -f $_).PadLeft(2, "0") }
 								$sqlfailsafe = "CREATE LOGIN [$username] WITH PASSWORD = $hashedpass HASHED, SID = $sid, 
 												DEFAULT_DATABASE = [$defaultdb], CHECK_POLICY = $checkpolicy, 
-												CHECK_EXPIRATION = $checkexpiration, DEFAULT_LANGUAGE = [$language]"
+												CHECK_EXPIRATION = $checkexpiration, DEFAULT_LANGUAGE = [$($sourcelogin.Language)]"
 								
 								$null = $destserver.ConnectionContext.ExecuteNonQuery($sqlfailsafe)
 								$destlogin = $destserver.logins[$username]
@@ -339,6 +378,21 @@ Limitations: Does not support Application Roles yet
 				If ($Pscmdlet.ShouldProcess($destination, "Updating SQL login $username permissions"))
 				{
 					Update-SqlPermissions -sourceserver $sourceserver -sourcelogin $sourcelogin -destserver $destserver -destlogin $destlogin
+				}
+				
+				
+				if ($LoginRenameHashtable.Keys -contains $username) { 
+					$NewLogin = $LoginRenameHashtable[$username]
+
+					if ($Pscmdlet.ShouldProcess($destination, "Renaming SQL Login $username to $NewLogin")) {
+						try { 
+							Rename-DbaLogin -SqlInstance $destserver -Login $username -NewLogin $NewLogin
+						} catch { 
+							Write-Exception $_ 
+						}
+					}
+					
+
 				}
 			}
 		}

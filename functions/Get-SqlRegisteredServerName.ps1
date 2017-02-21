@@ -103,13 +103,33 @@ Gets a list of server IP addresses in the HR and Accouting groups from the Centr
 	PROCESS
 	{
 		
+		# see notes at Get-ParamSqlCmsGroups
+		Function Find-CmsGroup($CmsGrp, $base = '', $stopat)
+		{
+			$results = @()
+			foreach($el in $CmsGrp) {
+				if($base -eq ''){
+					$partial = $el.name
+				} else {
+					$partial = "$base\$($el.name)"
+				}
+				if ($partial -eq $stopat) {
+					return $el
+				} else {
+					foreach($group in $el.ServerGroups) {
+						$results += Find-CmsGroup $group $partial $stopat
+					}
+				}
+			}
+			return $results
+		}
 		
 		$servers = @()
 		if ($groups -ne $null)
 		{
 			foreach ($group in $groups)
 			{
-				$cms = $cmstore.ServerGroups["DatabaseEngineServerGroup"].ServerGroups[$group]
+				$cms = Find-CmsGroup $cmstore.DatabaseEngineServerGroup.ServerGroups '' $group
 				$servers += ($cms.GetDescendantRegisteredServers()).servername
 			}
 		}

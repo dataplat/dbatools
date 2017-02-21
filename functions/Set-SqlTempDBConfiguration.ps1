@@ -52,8 +52,15 @@ File path to create tempdb log file in. If not specified, current tempdb locatio
 .PARAMETER Script
 Switch to generate script for tempdb configuration.
 
+.PARAMETER OutFile
+Path to file to save the generated script for tempdb configuration
+
 .PARAMETER WhatIf
 Switch to generate configuration object.
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
 .LINK
 https://dbatools.io/Set-SqltempdbConfiguration
 

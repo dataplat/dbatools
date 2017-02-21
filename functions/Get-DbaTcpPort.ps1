@@ -23,7 +23,8 @@ Remote sqlwmi is used by default. If this doesn't work, then remoting is used. I
 .PARAMETER NoIpv6
 Excludes IPv6 information when -Detailed is specified.
 
-.NOTES 
+.NOTES
+Tags: SQLWMI
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -170,6 +171,7 @@ Returns an object with server name, IPAddress (just ipv4), port and static ($tru
 				catch
 				{
 					Write-Warning "Could not get detailed information for $servername"
+					Write-Warning $_.Exception.Message
 				}
 				
 				$cleanedup = $allips | Sort-Object IPAddress | Select-Object Server, IPAddress, Port, Static
