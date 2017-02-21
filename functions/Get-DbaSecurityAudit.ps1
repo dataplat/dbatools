@@ -2,11 +2,10 @@ FUNCTION Get-DbaSecurityAudit
 {
 <#
 .SYNOPSIS
-Gets SQL Database information for each database that is present in the target instance(s) of SQL Server.
+Gets SQL Security Audit information for each instance(s) of SQL Server.
 
 .DESCRIPTION
- The Get-DbaDatabase command gets SQL database information for each database that is present in the target instance(s) of
- SQL Server. If the name of the database is provided, the command will return only the specific database information.
+ The Get-DbaSecurityAudit command gets SQL Security Audit information for each instance(s) of SQL Server.
 	
 .PARAMETER SqlInstance
 SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
@@ -14,28 +13,6 @@ to be executed against multiple SQL Server instances.
 
 .PARAMETER SqlCredential
 PSCredential object to connect as. If not specified, current Windows login will be used.
-
-.PARAMETER NoUserDb
-Returns all SQL Server System databases from the SQL Server instance(s) executed against.
-
-.PARAMETER NoSystemDb
-Returns SQL Server user databases from the SQL Server instance(s) executed against.
-	
-.PARAMETER Status
-Returns SQL Server databases in the status passed to the function.  Could include Emergency, Online, Offline, Recovering, Restoring, Standby or Suspect 
-statuses of databases from the SQL Server instance(s) executed against.
-
-.PARAMETER Access
-Returns SQL Server databases that are Read Only or all other Online databases from the SQL Server intance(s) executed against.
-
-.PARAMETER Owner
-Returns list of SQL Server databases owned by the specified logins
-
-.PARAMETER Encrypted
-Returns list of SQL Server databases that have TDE enabled from the SQL Server instance(s) executed against.
-
-.PARAMETER RecoveryModel
-Returns list of SQL Server databases in Full, Simple or Bulk Logged recovery models from the SQL Server instance(s) executed against.
 
 .NOTES
 Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
@@ -49,122 +26,57 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.	
 
 .LINK
-https://dbatools.io/Get-DbaDatabase
+https://dbatools.io/Get-DbaSecurityAudit
 
 .EXAMPLE
-Get-DbaDatabase -SqlServer localhost
-Returns all databases on the local default SQL Server instance
+Get-DbaSecurityAudit -SqlServer localhost
+Returns all Security Audits on the local default SQL Server instance
 
 .EXAMPLE
-Get-DbaDatabase -SqlServer localhost -NoUserDb
-Returns only the system databases on the local default SQL Server instance
-
-.EXAMPLE
-Get-DbaDatabase -SqlServer localhost -NoSystemDb
-Returns only the user databases on the local default SQL Server instance
-	
-.EXAMPLE
-'localhost','sql2016' | Get-DbaDatabase
-Returns databases on multiple instances piped into the function
+Get-DbaSecurityAudit -SqlServer localhost, sql2016
+Returns all Security Audits for the local and sql2016 SQL Server instances
 
 #>
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
-		[Alias("SystemDbOnly")]
-		[switch]$NoUserDb,
-		[Alias("UserDbOnly")]
-		[switch]$NoSystemDb,
-		[string[]]$Owner,
-		[switch]$Encrypted,
-		[ValidateSet('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')]
-		[string]$Status,
-		[ValidateSet('ReadOnly', 'ReadWrite')]
-		[string]$Access,
-		[ValidateSet('Full', 'Simple', 'BulkLogged')]
-		[string]$RecoveryModel
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential
 	)
-	
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
-	
-	BEGIN
-	{
-		$databases = $psboundparameters.Databases
-		
-		if ($NoUserDb -and $NoSystemDb)
-		{
-			Write-Warning "You cannot specify both NoUserDb and NoSystemDb"
-			continue
-		}
-	}
 	
 	PROCESS
 	{
-		foreach ($instance in $SqlInstance)
-		{
+		foreach ($servername in $sqlserver)
+        {	
+			Write-Verbose "Attempting to connect to $servername"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
 			}
 			catch
 			{
-				Write-Warning "Failed to connect to: $instance"
+				Write-Warning "Can't connect to $servername or access denied. Skipping."
 				continue
 			}
+
+            if ($server.versionMajor -lt 10)
+            {
+                Write-Warning "Server Audits are only supported in SQL Server 2008 and above. Quitting."
+                return
+            }
 			
-			$defaults = 'Name', 'Status', 'ContainmentType', 'RecoveryModel', 'CompatibilityLevel', 'Collation', 'Owner', 'EncryptionEnabled'
-			
-			if ($NoUserDb)
-			{
-				$inputobject = $server.Databases | Where-Object { $_.IsSystemObject }
-			}
-			
-			if ($NoSystemDb)
-			{
-				$inputobject = $server.Databases | Where-Object { $_.IsSystemObject -eq $false }
-			}
-			
-			if ($databases)
-			{
-				$inputobject = $server.Databases | Where-Object { $_.Name -in $databases }
-			}
-			
-			if ($status)
-			{
-				$inputobject = $server.Databases | Where-Object { $_.Status -eq $status }
-			}
-			
-			if ($Owner)
-			{
-				$inputobject = $server.Databases | Where-Object { $_.Owner -in $Owner }
-			}
-			
-			switch ($Access)
-			{
-				"ReadOnly" { $inputobject = $server.Databases | Where-Object { $_.ReadOnly } }
-				"ReadWrite" { $inputobject = $server.Databases | Where-Object { $_.ReadOnly -eq $false } }
-			}
-			
-			if ($Encrypted)
-			{
-				$inputobject = $server.Databases | Where-Object { $_.EncryptionEnabled }
-			}
-			
-			if ($RecoveryModel)
-			{
-				$inputobject = $server.Databases | Where-Object { $_.RecoveryModel -eq $RecoveryModel }
-			}
-			
-			# I forgot the pretty way to do this
-			if (!$NoUserDb -and !$NoSystemDb -and !$databases -and !$status -and !$Owner -and !$Access -and !$Encrypted -and !$RecoveryModel)
-			{
-				$inputobject = $server.Databases
-			}
-			
-			Select-DefaultView -InputObject $inputobject -Property $defaults
+            $serveraudits = $server.Audits
+
+            foreach ($audit in $serveraudits)
+            {
+            	[pscustomobject]@{
+				Server = $server.name
+                Name = $audit.name
+                Status = $audit.enabled
+                FilePath = $audit.filepath
+                FileName = $audit.filename
+                }
+		    } 
 		}
 	}
 }
