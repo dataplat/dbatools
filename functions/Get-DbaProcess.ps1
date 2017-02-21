@@ -112,12 +112,12 @@ Shows information about the processes that were initiated by hosts (computers/cl
 		
 		if ($logins.count -gt 0)
 		{
-			$allsessions += $processes | Where-Object { $_.Login -in $Logins -and $_.Spid -notin $allsessions.Spid  }
+			$allsessions += $processes | Where-Object { $_.Login -in $Logins -and $_.Spid -notin $allsessions.Spid }
 		}
 		
 		if ($spids.count -gt 0)
 		{
-			$allsessions += $processes | Where-Object { ($_.Spid -in $spids -or $_.BlockingSpid -in $spids) -and $_.Spid -notin $allsessions.Spid  }
+			$allsessions += $processes | Where-Object { ($_.Spid -in $spids -or $_.BlockingSpid -in $spids) -and $_.Spid -notin $allsessions.Spid }
 		}
 		
 		if ($hosts.count -gt 0)
@@ -148,26 +148,28 @@ Shows information about the processes that were initiated by hosts (computers/cl
 		
 		if ($exclude.count -gt 0)
 		{
-			$allsessions = $allsessions | Where-Object { $exclude -notcontains $_.SPID -and $_.Spid -notin $allsessions.Spid  }
+			$allsessions = $allsessions | Where-Object { $exclude -notcontains $_.SPID -and $_.Spid -notin $allsessions.Spid }
 		}
 		
 		if ($Detailed)
 		{
-			Select-DefaultField -ExcludeProperty SqlServer -InputObject ($allsessions | Select-Object SqlServer, Spid, Login, Host, Database, BlockingSpid, Program, @{
-				name = "Status"; expression = {
-					if ($_.Status -eq "") { "sleeping" }
-					else { $_.Status }
-				}
-			}, @{
-				name = "Command"; expression = {
-					if ($_.Command -eq "") { "AWAITING COMMAND" }
-					else { $_.Command }
-				}
-			}, Cpu, MemUsage, IsSystem)
+			$object = ($allsessions | Select-Object SqlServer, Spid, Login, Host, Database, BlockingSpid, Program, @{
+					name = "Status"; expression = {
+						if ($_.Status -eq "") { "sleeping" }
+						else { $_.Status }
+					}
+				}, @{
+					name = "Command"; expression = {
+						if ($_.Command -eq "") { "AWAITING COMMAND" }
+						else { $_.Command }
+					}
+				}, Cpu, MemUsage, IsSystem)
+			
+			Select-DefaultView -InputObject $object -Property Spid, Login, Host, Database, BlockingSpid, Program, Status, Command, Cpu, MemUsage, IsSystem
 		}
 		else
 		{
-			Select-DefaultField -ExcludeProperty SqlServer -InputObject ($allsessions | Select-Object SqlServer, Spid, Login, Host, Database, BlockingSpid, Program, @{
+			$object = ($allsessions | Select-Object SqlServer, Spid, Login, Host, Database, BlockingSpid, Program, @{
 					name = "Status"; expression = {
 						if ($_.Status -eq "") { "sleeping" }
 						else { $_.Status }
@@ -178,6 +180,8 @@ Shows information about the processes that were initiated by hosts (computers/cl
 						else { $_.Command }
 					}
 				})
+			
+			Select-DefaultView -InputObject $object -Property Spid, Login, Host, Database, BlockingSpid, Program, Status, Command
 		}
 	}
 }

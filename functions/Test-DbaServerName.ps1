@@ -26,6 +26,7 @@ Specifies if the servername is updatable. If updatable -eq $false, it will retur
 This is an internal parameter used by Repair-DbaServerName which produces warnings of its own.
 
 .NOTES
+Tags: SPN
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 

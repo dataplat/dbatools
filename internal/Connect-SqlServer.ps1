@@ -1,4 +1,4 @@
-Function Connect-SqlServer
+﻿Function Connect-SqlServer
 {
 <# 
 .SYNOPSIS 
@@ -20,7 +20,6 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 		if ($ParameterConnection)
 		{
 			$paramserver = New-Object Microsoft.SqlServer.Management.Smo.Server
-			$paramserver.ConnectionContext.ConnectTimeout = 2
 			$paramserver.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
 			$paramserver.ConnectionContext.ConnectionString = $SqlServer.ConnectionContext.ConnectionString
 			
@@ -72,6 +71,18 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlServer
 	$server.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
 	
+	<#
+	 Just realized this will not work because it's SMO ;) We will return to if this is still needed and how to handle it in 1.0.
+	
+	if ($server.Configuration.SmoAndDmoXPsEnabled.RunValue -eq 0)
+    {
+        Write-Error "Accessing this server via SQL Management Objects (SMO) or Distributed Management Objects (DMO) is currently not permitted.
+                     Enable the option 'SMO and DMO XPs' on your instance using sp_configure to continue.
+                     Note that this will require 'Show Advanced Options' to be enabled using sp_configure as well."
+        break
+    }
+	#>
+	
 	try
 	{
 		if ($SqlCredential.username -ne $null)
@@ -102,11 +113,7 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 	{
 		if ($ParameterConnection)
 		{
-			$server.ConnectionContext.ConnectTimeout = 2
-		}
-		else
-		{
-			$server.ConnectionContext.ConnectTimeout = 3
+			$server.ConnectionContext.ConnectTimeout = 7
 		}
 		
 		$server.ConnectionContext.Connect()

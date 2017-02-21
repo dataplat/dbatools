@@ -1,4 +1,4 @@
-<#
+﻿<#
 
 	These are all the functions for tab completion (auto-population of params)
 	To use, place this after params in a function
@@ -2026,7 +2026,11 @@ Function Get-ParamSqlAllProcessInfo
 			"Exclude" { $items = $processes.Spid }
 			"Spid" { $items = $processes.Spid }
 			"Database" { $items = $server.Databases.Name }
-			"Login" { $items = $server.Logins.Name }
+			"Login" {
+				$items = $server.Logins.Name
+				$items += ($server.EnumProcesses()).Login
+				$items = $items | Select -Unique
+			}
 			
 			Default
 			{

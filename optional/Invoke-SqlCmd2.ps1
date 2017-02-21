@@ -1,4 +1,4 @@
-function Invoke-Sqlcmd2
+﻿function Invoke-Sqlcmd2
 {
     <#
     .SYNOPSIS

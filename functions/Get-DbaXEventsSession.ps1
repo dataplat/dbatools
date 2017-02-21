@@ -17,6 +17,7 @@ Credential object used to connect to the SQL Server as a different user
 Only return specific sessions. This parameter is auto-populated.
 
 .NOTES
+Tags: Memory
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 	
 dbatools PowerShell module (https://dbatools.io)
