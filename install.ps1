@@ -1,9 +1,9 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param (
 	[string]$Path
 )
 
-$localpath = $(Join-Path -Path (Split-Path -Path $profile) -ChildPath '\Modules\dbatools')
+$localpath = $localpath = (Get-Module -Name dbatools).ModuleBase
 
 try
 {
