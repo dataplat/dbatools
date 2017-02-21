@@ -116,7 +116,9 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 		[Parameter(ParameterSetName = "Last")]
 		[switch]$LastDiff,
 		[Parameter(ParameterSetName = "Last")]
-		[switch]$LastLog
+		[switch]$LastLog,
+		[Parameter(ParameterSetName = "NoLast")]
+		[switch]$raw
 	)
 	
 	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential } }
@@ -131,6 +133,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 	
 	PROCESS
 	{
+		Write-Verbose "Raw = $raw"
 		$databases = $psboundparameters.Databases
 		foreach ($server in $SqlServer)
 		{
@@ -155,9 +158,9 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				if ($last)
 				{
 					if ($databases -eq $null) { $databases = $sourceserver.databases.name }
-					Get-DbaBackupHistory -SqlServer $sourceserver -LastFull -Databases $databases
-					Get-DbaBackupHistory -SqlServer $sourceserver -LastDiff -Databases $databases
-					Get-DbaBackupHistory -SqlServer $sourceserver -LastLog -Databases $databases
+					Get-DbaBackupHistory -SqlServer $sourceserver -LastFull -Databases $databases -raw:$raw
+					Get-DbaBackupHistory -SqlServer $sourceserver -LastDiff -Databases $databases -raw:$raw
+					Get-DbaBackupHistory -SqlServer $sourceserver -LastLog -Databases $databases -raw:$raw
 				}
 				elseif ($LastFull -or $LastDiff -or $LastLog)
 				{
@@ -320,7 +323,34 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				{
 					Write-Debug $sql
 					$results = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
-					$results = $results | Select-Object *, @{Name="FullName";Expression={$_.Path}}
+					if ($raw){
+						write-verbose "no raw"
+						$results = $results | Select-Object *, @{Name="FullName";Expression={$_.Path}}
+					}
+					else
+					{	
+						write-verbose "grouping"
+						$grouped  = $results | group mediasetid
+						$gresults = @()
+						foreach ($group in $grouped){
+							$gresults += [PSCustomObject]@{
+								Server = $group.Group[0].Server
+								Database = $group.Group[0].Database
+								UserName = $group.Group[0].UserName
+								Start = ($group.Group.Start | measure-object -Minimum).Minimum
+								End = ($group.Group.End | measure-object -Maximum).Maximum
+								Duration = ($group.Group.Duration | measure-object -Maximum).Maximum
+								Path = $group.Group.Path
+								TotalSizeMb = ($group.group.TotalSizeMb | measure-object  -Sum).sum
+								Type = $group.Group[0].Type
+								MediaSetID = $group.Group[0].MediaSetId
+								DeviceType = $group.Group[0].DeviceType
+								Software = $group.Group[0].Software
+								}
+
+						}
+						$results = $gresults | Sort-Object -Property End -Descending
+					}
 					foreach ($result in $results)
 					{ 
 						$result | Select-DefaultView -ExcludeProperty FullName
