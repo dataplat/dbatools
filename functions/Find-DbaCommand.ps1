@@ -8,11 +8,17 @@ Finds dbatools commands searching through the inline help text
 Finds dbatools commands searching through the inline help text, building a consolidated json index and querying it because Get-Help is too slow
 
 .PARAMETER Tag
-Finds all commands tagged with this tag
+Finds all commands tagged with this auto-populated tag
 
 .PARAMETER Author
 Finds all commands tagged with this author
 
+.PARAMETER MinimumVersion
+Finds all commands tagged with this auto-populated minimum version
+	
+.PARAMETER MaximumVersion
+Finds all commands tagged with this auto-populated maximum version
+	
 .PARAMETER Rebuild
 Rebuilds the index
 
