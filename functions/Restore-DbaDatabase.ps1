@@ -276,13 +276,14 @@ folder for those file types as defined on the target instance.
 					{
 						if ($p -match '\.\w{3}\Z' )
 						{
-							if (Test-SqlPath -Path $p -SqlServer:$SqlServer -SqlCredential:$SqlCredential)
+							if (Test-SqlPath -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential)
 							{
 								$BackupFiles += $p
 							}
 							else
 							{
-								Write-Warning "$FunctionName - $p cannot be access by $SqlServer" -WarningAction Stop
+								Write-Warning "$FunctionName - $p cannot be accessed by $SqlServer"
+								continue
 							}
 						}
 						else
@@ -333,7 +334,8 @@ folder for those file types as defined on the target instance.
 							}
 							else
 							{
-								Write-Warning "$FunctionName - $($FileTmp.FullName) cannot be access by $SqlServer" -WarningAction stop
+								Write-Warning "$FunctionName - $($FileTmp.FullName) cannot be accessed by $SqlServer"
+								continue
 							}
 
 						}
@@ -387,8 +389,8 @@ folder for those file types as defined on the target instance.
 		}
 		catch
 		{
-			$server.ConnectionContext.Disconnect()
-			Write-Warning "$FunctionName - Cannot connect to $SqlServer" -WarningAction Stop
+			Write-Warning "$FunctionName - Cannot connect to $SqlServer"
+			continue
 		}
 		if ($null -ne $DatabaseName)
 		{
@@ -404,9 +406,9 @@ folder for those file types as defined on the target instance.
 			Write-Verbose "$FunctionName - Remote server, checking folders"
 			if ($DestinationDataDirectory -ne '')
 			{
-				if ((Test-SqlPath -Path $DestinationDataDirectory -SqlServer:$SqlServer -SqlCredential:$SqlCredential) -ne $true)
+				if ((Test-SqlPath -Path $DestinationDataDirectory -SqlServer $SqlServer -SqlCredential $SqlCredential) -ne $true)
 				{
-					if ((New-DbaSqlDirectory -Path $DestinationDataDirectory -SqlServer:$SqlServer -SqlCredential:$SqlCredential).Created -ne $true)
+					if ((New-DbaSqlDirectory -Path $DestinationDataDirectory -SqlServer $SqlServer -SqlCredential $SqlCredential).Created -ne $true)
 					{
 						Write-Warning "$FunctionName - DestinationDataDirectory $DestinationDataDirectory does not exist, and could not be created on $SqlServer"
 						break
@@ -423,9 +425,9 @@ folder for those file types as defined on the target instance.
 			}
 			if ($DestinationLogDirectory -ne '')
 			{
-				if ((Test-SqlPath -Path $DestinationLogDirectory -SqlServer:$SqlServer -SqlCredential:$SqlCredential) -ne $true)
+				if ((Test-SqlPath -Path $DestinationLogDirectory -SqlServer $SqlServer -SqlCredential $SqlCredential) -ne $true)
 				{
-					if((New-DbaSqlDirectory -Path $DestinationLogDirectory -SqlServer:$SqlServer -SqlCredential:$SqlCredential).Created -ne $true)
+					if((New-DbaSqlDirectory -Path $DestinationLogDirectory -SqlServer $SqlServer -SqlCredential $SqlCredential).Created -ne $true)
 					{
 						Write-Warning "$FunctionName - DestinationLogDirectory $DestinationLogDirectory does not exist, and could not be created on $SqlServer"
 						break
@@ -442,7 +444,7 @@ folder for those file types as defined on the target instance.
 			}
 		}
 		
-		$AllFilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer:$SqlServer -RestoreTime:$RestoreTime -SqlCredential:$SqlCredential -IgnoreLogBackup:$IgnoreLogBackup
+		$AllFilteredFiles = Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup -Files $BackupFiles
 		Write-Verbose "$FunctionName - $($AllFilteredFiles.count) dbs to restore"
 		
 		if ($AllFilteredFiles.count -gt 1 -and $DatabaseName -ne '')
@@ -456,6 +458,7 @@ folder for those file types as defined on the target instance.
 			$FilteredFiles = $FilteredFileSet.values
 			
 			Write-Verbose "$FunctionName - Starting FileSet"
+			
 			if (($FilteredFiles.DatabaseName | Group-Object | Measure-Object).count -gt 1)
 			{
 				$dbs = ($FilteredFiles | Select-Object -Property DatabaseName) -join (',')

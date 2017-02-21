@@ -41,12 +41,22 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
     }
     End
     {
-        Write-Verbose "$FunctionName - Read File headers (Read-DBABackupHeader)"
-        $AllSQLBackupdetails  = $InternalFiles | Select-Object -ExpandProperty FullName | Read-DBAbackupheader -sqlserver $SQLSERVER -SqlCredential:$SqlCredential
-        Write-Verbose "$FunctionName - $($AllSQLBackupdetails.count) Files to filter"
+		Write-Verbose "$FunctionName - Read File headers (Read-DBABackupHeader)"
+		
+		if ($InternalFiles.FullName -eq $null)
+		{
+			$AllSQLBackupdetails = $InternalFiles | Read-DBAbackupheader -sqlserver $SQLSERVER -SqlCredential $SqlCredential
+		}
+		else
+		{
+			$AllSQLBackupdetails = $InternalFiles | Select-Object -ExpandProperty FullName | Read-DBAbackupheader -sqlserver $SQLSERVER -SqlCredential $SqlCredential
+		}
+		
+		Write-Verbose "$FunctionName - $($AllSQLBackupdetails.count) Files to filter"
         $Databases = $AllSQLBackupdetails  | Group-Object -Property Servername, DatabaseName
         Write-Verbose "$FunctionName - $(($Databases | Measure-Object).count) database to process"
-        Foreach ($Database in $Databases){
+		
+		foreach ($Database in $Databases){
             $Results = @()
             Write-Verbose "$FunctionName - Find Newest Full backup"
             $ServerName, $databaseName = $Database.Name.split(',')

@@ -56,10 +56,8 @@
 			$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential	
 		}
 		catch {
-			$server.ConnectionContext.Disconnect()
 			Write-Warning "$FunctionName - Cannot connect to $SqlServer" 
 			break
-
 		}
 		
 		$ServerName = $Server.name
