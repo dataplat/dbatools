@@ -29,33 +29,33 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Get-DbaAudit
 
 .EXAMPLE
-Get-DbaAudit -SqlServer localhost
+Get-DbaAudit -SqlInstance localhost
 Returns all Security Audits on the local default SQL Server instance
 
 .EXAMPLE
-Get-DbaAudit -SqlServer localhost, sql2016
+Get-DbaAudit -SqlInstance localhost, sql2016
 Returns all Security Audits for the local and sql2016 SQL Server instances
 
 #>
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[object]$SqlServer,
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
 	PROCESS
 	{
-		foreach ($servername in $sqlserver)
+		foreach ($instance in $SqlInstance)
 		{
-			Write-Verbose "Attempting to connect to $servername"
+			Write-Verbose "Attempting to connect to $instance"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
 			}
 			catch
 			{
-				Write-Warning "Can't connect to $servername or access denied. Skipping."
+				Write-Warning "Can't connect to $instance or access denied. Skipping."
 				continue
 			}
 			
