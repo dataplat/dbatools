@@ -188,7 +188,8 @@ Returns database restore information for every database on every server listed i
 			}
 			catch
 			{
-				Write-Warning "$_ `nMoving on"
+				Write-Warning $_
+				Write-Exception $_
 				continue
 			}
 		}
