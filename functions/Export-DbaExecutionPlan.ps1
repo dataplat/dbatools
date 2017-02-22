@@ -265,12 +265,17 @@ Returns database restore information for every database on every server listed i
 				
 				foreach ($row in ($datatable.Rows))
 				{
+					
+					$sqlhandle = "0x"; $row.sqlhandle | ForEach-Object { $sqlhandle += ("{0:X}" -f $_).PadLeft(2, "0") }
+					$planhandle = "0x"; $row.planhandle | ForEach-Object { $planhandle += ("{0:X}" -f $_).PadLeft(2, "0") }
+					
 					$object = [pscustomobject]@{
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
 						SqlInstance = $server.DomainInstanceName
 						DatabaseName = $row.DatabaseName
-						SqlHandle = $row.SqlHandle
+						SqlHandle = $sqlhandle
+						PlanHandle = $planhandle
 						SingleStatementPlan = $row.SingleStatementPlan
 						BatchQueryPlan = $row.BatchQueryPlan
 						QueryPosition = $row.QueryPosition

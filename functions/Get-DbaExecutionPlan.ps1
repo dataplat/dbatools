@@ -201,6 +201,8 @@ Returns database restore information for every database on every server listed i
 				foreach ($row in ($datatable.Rows))
 				{
 					$simple = ([xml]$row.SingleStatementPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtSimple
+					$sqlhandle = "0x"; $row.sqlhandle | ForEach-Object { $sqlhandle += ("{0:X}" -f $_).PadLeft(2, "0") }
+					$planhandle = "0x"; $row.planhandle | ForEach-Object { $planhandle += ("{0:X}" -f $_).PadLeft(2, "0") }
 					
 					[pscustomobject]@{
 						ComputerName = $server.NetName
@@ -209,8 +211,8 @@ Returns database restore information for every database on every server listed i
 						DatabaseName = $row.DatabaseName
 						ObjectName = $row.ObjectName
 						QueryPosition = $row.QueryPosition
-						SqlHandle = $row.SqlHandle
-						PlanHandle = $row.PlanHandle
+						SqlHandle = $SqlHandle
+						PlanHandle = $PlanHandle
 						CreationTime = $row.CreationTime
 						LastExecutionTime = $row.LastExecutionTime
 						StatementCondition = ([xml]$row.SingleStatementPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtCond
