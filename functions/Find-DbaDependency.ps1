@@ -7,16 +7,7 @@ Finds and scripts object dependencies
 .DESCRIPTION
 Finds and scripts object dependencies
 
-.PARAMETER SqlInstance
-SqlInstance name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input
-
-.PARAMETER SqlCredential
-PSCredential object to connect as. If not specified, current Windows login will be used.
-
-.PARAMETER Pattern
-The regex pattern that the command will search for
-
-.PARAMETER Name
+.PARAMETER InputObject
 The regex pattern that the command will search for
 	
 .PARAMETER IncludeParent
@@ -26,9 +17,6 @@ The regex pattern that the command will search for
 The regex pattern that the command will search for
 	
 .PARAMETER AllowSystemObjects
-The regex pattern that the command will search for
-
-.PARAMETER SmoObject
 The regex pattern that the command will search for
 	
 .NOTES 
@@ -48,22 +36,13 @@ Find-DbaDependency -SqlInstance sql2012 -Type Table -Name Northwind.dbo.Customer
 
 Gets depenencies for the Customers table in the Northwind Database
 #>
-	[CmdletBinding(DefaultParameterSetName = "Default")]
+	[CmdletBinding()]
 	Param (
-		[parameter(Position = 0, Mandatory = $true, ParameterSetName = "NotPiped")]
-		[Alias("ServerInstance", "SqlServer", "SqlInstances")]
-		[object[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
-		[parameter(Mandatory = $true, ParameterSetName = "NotPiped")]
-		[ValidateSet('Table', 'Database', 'Whatever', 'NoIdea', 'MaybeThisIsntEvenRightPlzFigureOut')]
-		[string]$Type = "Table",
-		[parameter(Mandatory = $true, ParameterSetName = "NotPiped")]
-		[string[]]$Name,
+		[parameter(ValueFromPipeline = $True, Mandatory = $true)]
+		[object[]]$InputObject,
 		[switch]$IncludeParent,
 		[switch]$IncludeScript,
-		[switch]$AllowSystemObjects,
-		[parameter(ValueFromPipeline = $True, Mandatory = $true, ParameterSetName = "Piped")]
-		[object[]]$SmoObject
+		[switch]$AllowSystemObjects
 	)
 	begin
 	{
@@ -112,7 +91,7 @@ Gets depenencies for the Customers table in the Northwind Database
 				}
 				
 				# This gets the full on SMO object that you can grab all the info from
-				$richobject = $server.GetSmoObject($dependency.urn)
+				$richobject = $server.GetInputObject($dependency.urn)
 
 				$object = [pscustomobject]@{
 					ComputerName = $server.NetName
@@ -148,9 +127,9 @@ Gets depenencies for the Customers table in the Northwind Database
 	process
 	{
 		$urndupes = @()
-		if ($SmoObject)
+		if ($InputObject)
 		{
-			foreach ($object in $SmoObject)
+			foreach ($object in $InputObject)
 			{
 				if ($null -eq $object.urn)
 				{
@@ -175,64 +154,5 @@ Gets depenencies for the Customers table in the Northwind Database
 			}
 			return
 		}
-		
-		<#
-		# it will be wayyyy easier to use Get-DbaWhatever for thisand just use SMO object
-		
-		foreach ($Instance in $SqlInstance)
-		{
-			try
-			{
-				Write-Verbose "Connecting to $Instance"
-				$server = Connect-SqlServer -SqlServer $Instance -SqlCredential $sqlcredential
-			}
-			catch
-			{
-				Write-Warning "Failed to connect to: $Instance"
-				continue
-			}
-			
-			if ($Type -eq "Table")
-			{
-				if ($Name -notmatch "^[\w\d\.-]+\.[\w\d\.-]+\.[\w\d\.-]+$")
-				{
-					Write-Warning "Tables must be fully qualified. Please pass name in the format of database.schema.table"
-					continue
-				}
-				
-				$database, $schema, $table = $Name.Split(".")
-				
-				try
-				{
-					$smotable = $server.Databases[$database].Tables | Where-Object { $_.Name -eq $table -and $_.Schema -eq $schema }
-				}
-				catch
-				{
-					Write-Warning "table note found"
-				}
-				
-				if ($null -eq $smotable)
-				{
-					if ($null -eq $server.Databases[$database])
-					{
-						Write-Warning "Database ($database) does not exist"
-					}
-					else
-					{
-						Write-Warning "Table ($table) with schema owner $schema does not exist"
-					}
-					continue
-				}
-				
-				if ($includeparent)
-				{
-					Get-Dependency $smotable # check because it's returning the object as a dependent of itself
-					$includeparent = $false
-				}
-				
-				Get-Dependency $smotable
-			}
-		}
-		#>
 	}
 }
