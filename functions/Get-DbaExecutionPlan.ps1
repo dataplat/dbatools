@@ -230,7 +230,9 @@ Returns database restore information for every database on every server listed i
 						QueryPlan = $simple.QueryPlan
 						BatchConditionXml = ([xml]$row.BatchQueryPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtCond
 						BatchSimpleXml = ([xml]$row.BatchQueryPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtSimple
-					} | Select-DefaultView -ExcludeProperty BatchQueryPlan, SingleStatementPlan
+						BatchConditionXmlRaw = [xml]$row.BatchQueryPlan
+						BatchSimpleXmlRaw = [xml]$row.BatchQueryPlan
+					} | Select-DefaultView -ExcludeProperty BatchQueryPlan, SingleStatementPlan, BatchConditionXmlRaw, BatchSimpleXmlRaw
 				}
 			}
 			catch
