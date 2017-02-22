@@ -78,6 +78,9 @@ Function Find-DbaDependency
                 
                 $OriginalResource,
                 
+                [int]
+                $Tier,
+                
                 [string]
                 $FunctionName,
                 
@@ -135,6 +138,7 @@ Function Find-DbaDependency
                     Parent = $object.Name
                     ParentType = $object.Urn.Type
                     Dependent = $richobject.Name
+                    DependentTier = $Tier
                     Type = $dependency.Urn.Type
                     Owner = $richobject.Owner
                     Urn = $richobject.Urn
@@ -163,6 +167,7 @@ Function Find-DbaDependency
                     IncludeScript = $IncludeScript
                     AllowSystemObjects = $AllowSystemObjects
                     OriginalResource = $OriginalResource
+                    Tier = $Tier + 1
                     FunctionName = $FunctionName
                     Silent = $Silent
                 }
@@ -202,10 +207,11 @@ Function Find-DbaDependency
                     IncludeScript = $IncludeScript
                     AllowSystemObjects = $AllowSystemObjects
                     OriginalResource = $object
+                    Tier = 1
                     FunctionName = $FunctionName
                     Silent = $Silent
                 }
-                Get-Dependency @splat
+                Get-Dependency @splat | Sort-Object Tier -Descending | Select-DefaultView -ExcludeProperty Urn, Object
             }
             return
         }
