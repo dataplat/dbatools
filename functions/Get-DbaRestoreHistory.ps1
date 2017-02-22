@@ -24,9 +24,6 @@ Return restore information for all but these specific databases
 .PARAMETER Since
 Datetime object used to narrow the results to a date
 	
-.PARAMETER Detailed
-Returns default information plus From (\\server\backups\test.bak) and To (the mdf and ldf locations) information
-	
 .PARAMETER Force
 Returns a ton of information about the backup history with no max rows
 
@@ -55,12 +52,12 @@ Get-DbaRestoreHistory -SqlServer sqlserver2014a -Databases db1, db2 -Since '7/1/
 Returns restore information only for databases db1 and db2 on sqlserve2014a since July 1, 2016 at 10:47 AM.
 	
 .EXAMPLE   
-Get-DbaRestoreHistory -SqlServer sqlserver2014a, sql2016 -Detailed -Exclude db1
+Get-DbaRestoreHistory -SqlServer sqlserver2014a, sql2016 -Exclude db1
 
 Lots of detailed information for all databases except db1 on sqlserver2014a and sql2016
 
 .EXAMPLE   
-Get-DbaRestoreHistory -SqlServer sql2014 -Databases AdventureWorks2014, pubs -Detailed | Format-Table
+Get-DbaRestoreHistory -SqlServer sql2014 -Databases AdventureWorks2014, pubs | Format-Table
 
 Adds From and To file information to output, returns information only for AdventureWorks2014 and pubs, and makes the output pretty
 
@@ -78,7 +75,6 @@ Returns database restore information for every database on every server listed i
 		[Alias("SqlCredential")]
 		[PsCredential]$Credential,
 		[datetime]$Since,
-		[switch]$Detailed,
 		[switch]$Force
 	)
 	
@@ -187,12 +183,8 @@ Returns database restore information for every database on every server listed i
 				$sql = "$select $from $where"
 				Write-Debug $sql
 				
-				if ($Detailed -eq $true -or $Force -eq $true)
-				{
-					return $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
-				}
+				$server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
 				
-				$server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty From, To, RowError, Rowstate, table, itemarray, haserrors
 			}
 			catch
 			{
