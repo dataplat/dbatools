@@ -341,7 +341,7 @@ folder for those file types as defined on the target instance.
 					}
 					elseif(($FileTmp -is [System.Management.Automation.PSCustomObject] )) #Dealing with Pipeline input 					
 					{
-						Write-Verbose "Should be pipe input "
+						Write-Verbose "$FunctionName - Should be pipe input "
 						if ($FileTmp.PSobject.Properties.name -match "Server")
 						{
 							#Most likely incoming from Get-DbaBackupHistory
@@ -362,8 +362,8 @@ folder for those file types as defined on the target instance.
 							Write-Verbose "$FunctionName - it's folder"
 							ForEach ($ft in $Filetmp.FullName)
 							{			
-								Write-Verbose "$FunctionName - Testing $($ft)"					
-								if (Test-SqlPath -Path $ft -SqlServer:$SqlServer -SqlCredential:$SqlCredential)
+								Write-Verbose "$FunctionName - Piped files Testing $($ft)"					
+								if (Test-SqlPath -Path $ft -SqlServer $SqlServer -SqlCredential $SqlCredential)
 								{
 									$BackupFiles += $ft
 								}
