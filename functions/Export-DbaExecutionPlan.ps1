@@ -13,10 +13,10 @@ Thanks to
 	http://www.scarydba.com/2017/02/13/export-plans-cache-sqlplan-file/
 for the idea and query.
 	
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 
-.PARAMETER Credential
+.PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user
 
 .PARAMETER Databases
@@ -33,7 +33,16 @@ Datetime object used to narrow the results to a date
 
 .PARAMETER Path
 The directory where all of the sqlxml files will be exported
-	
+
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
+.PARAMETER PipedObject
+Internal parameter
+
 .NOTES
 Tags: Performance
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -126,7 +135,10 @@ Returns database restore information for every database on every server listed i
 				
 				try
 				{
-					$queryplan.Save($filename)
+					If ($Pscmdlet.ShouldProcess("localhost", "Writing XML file to $filename"))
+					{
+						$queryplan.Save($filename)
+					}
 				}
 				catch
 				{
@@ -140,7 +152,10 @@ Returns database restore information for every database on every server listed i
 				
 				try
 				{
-					$statementplan.Save($filename)
+					If ($Pscmdlet.ShouldProcess("localhost", "Writing XML file to $filename"))
+					{
+						$statementplan.Save($filename)
+					}
 				}
 				catch
 				{
@@ -148,8 +163,11 @@ Returns database restore information for every database on every server listed i
 				}
 			}
 			
-			Add-Member -InputObject $object -MemberType NoteProperty -Name OutputFile -Value $filename
-			Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, DatabaseName, SqlHandle, CreationTime, LastExecutionTime, OutputFile
+			If ($Pscmdlet.ShouldProcess("console", "Showing output object"))
+			{
+				Add-Member -InputObject $object -MemberType NoteProperty -Name OutputFile -Value $filename
+				Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, DatabaseName, SqlHandle, CreationTime, LastExecutionTime, OutputFile
+			}
 		}
 	}
 	

@@ -13,10 +13,10 @@ Thanks to
 	http://www.scarydba.com/2017/02/13/export-plans-cache-sqlplan-file/
 for the idea and query.
 	
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 
-.PARAMETER Credential
+.PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user
 
 .PARAMETER Databases
