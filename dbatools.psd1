@@ -220,7 +220,8 @@
 		'Restore-DbaDatabase',
 		#'Get-DbaLinkedServer',
 		#'Invoke-DbaLogShippingRecovery',
-		'Copy-DbaQueryStoreConfig'
+		'Copy-DbaQueryStoreConfig',
+		'Get-DbaExecutionPlan'
 	)
 	
 	# Cmdlets to export from this module
