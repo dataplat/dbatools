@@ -5,6 +5,11 @@ param (
 
 $localpath = $localpath = (Get-Module -Name dbatools).ModuleBase
 
+if ($null -eq $localpath)
+{
+	$localpath = "$HOME\Documents\WindowsPowerShell\Modules\dbatools"	
+}
+
 try
 {
 	if ($Path.length -eq 0)

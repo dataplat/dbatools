@@ -41,6 +41,9 @@ Returns last log backup set
 .PARAMETER IgnoreCopyOnly
 If set, Get-DbaBackupHistory will ignore CopyOnly backups
 
+.PARAMETER Raw
+By default the command will group mediasets (striped backups across multiple files) into a single return object. If you'd prefer to have an object per backp file returned, use this switch
+
 .NOTES
 Tags: Storage, DisasterRecovery, Backup
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -116,13 +119,15 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 		[Parameter(ParameterSetName = "Last")]
 		[switch]$LastDiff,
 		[Parameter(ParameterSetName = "Last")]
-		[switch]$LastLog
+		[switch]$LastLog,
+		[switch]$raw
 	)
 	
 	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential } }
 	
 	BEGIN
 	{
+		$FunctionName = $FunctionName = (Get-PSCallstack)[0].Command
 		if ($Since -ne $null)
 		{
 			$Since = $Since.ToString("yyyy-MM-dd HH:mm:ss")
@@ -132,21 +137,20 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 	PROCESS
 	{
 		$databases = $psboundparameters.Databases
-		foreach ($server in $SqlServer)
+		foreach ($instance in $SqlServer)
 		{
 			try
 			{
-				Write-Verbose "Connecting to $server"
-				$sourceserver = Connect-SqlServer -SqlServer $server -SqlCredential $Credential
-				$servername = $sourceserver.name
+				Write-Verbose "$FunctionName - Connecting to $instance"
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
 				
-				if ($sourceserver.VersionMajor -lt 9)
+				if ($server.VersionMajor -lt 9)
 				{
-					Write-Warning "SQL Server 2000 not supported"
+					Write-Warning "$FunctionName - SQL Server 2000 not supported"
 					continue
 				}
 				$BackupSizeColumn = 'backup_size'
-				if ($sourceserver.VersionMajor -ge 10)
+				if ($server.VersionMajor -ge 10)
 				{
 					# 2008 introduced compressed_backup_size
 					$BackupSizeColumn = 'compressed_backup_size'
@@ -154,16 +158,16 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				
 				if ($last)
 				{
-					if ($databases -eq $null) { $databases = $sourceserver.databases.name }
-					Get-DbaBackupHistory -SqlServer $sourceserver -LastFull -Databases $databases
-					Get-DbaBackupHistory -SqlServer $sourceserver -LastDiff -Databases $databases
-					Get-DbaBackupHistory -SqlServer $sourceserver -LastLog -Databases $databases
+					if ($databases -eq $null) { $databases = $server.databases.name }
+					Get-DbaBackupHistory -SqlServer $server -LastFull -Databases $databases -raw:$raw
+					Get-DbaBackupHistory -SqlServer $server -LastDiff -Databases $databases -raw:$raw
+					Get-DbaBackupHistory -SqlServer $server -LastLog -Databases $databases -raw:$raw
 				}
 				elseif ($LastFull -or $LastDiff -or $LastLog)
 				{
 					$sql = @()
 					
-					if ($databases -eq $null) { $databases = $sourceserver.databases.name }
+					if ($databases -eq $null) { $databases = $server.databases.name }
 					
 					if ($LastFull) { $first = 'D'; $second = 'P' }
 					if ($LastDiff) { $first = 'I'; $second = 'Q' }
@@ -172,7 +176,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 					$databases = $databases | Select-Object -Unique
 					foreach ($database in $databases)
 					{
-						Write-Verbose "Processing $database"
+						Write-Verbose "$FunctionName - Processing $database"
 						
 						$sql += "SELECT
 								  a.BackupSetRank,
@@ -188,11 +192,11 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 								  a.MediaSetId,
 								  a.Software
 								FROM (SELECT
-								  RANK() OVER (ORDER BY backupset.media_set_id DESC) AS 'BackupSetRank',
-								  '$servername' AS Server,
+								  RANK() OVER (ORDER BY backupset.backup_start_date DESC) AS 'BackupSetRank',
 								  backupset.database_name AS [Database],
 								  backupset.user_name AS Username,
 								  backupset.backup_start_date AS Start,
+								  backupset.server_name as [server],
 								  backupset.backup_finish_date AS [End],
 								  CAST(DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS varchar(4)) + ' ' + 'Seconds' AS Duration,
 								  mediafamily.physical_device_name AS Path,
@@ -237,14 +241,14 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				{
 					if ($Force -eq $true)
 					{
-						$select = "SELECT '$servername' AS [Server], * "
+						$select = "SELECT * "
 					}
 					else
 					{
 						$select = "SELECT
-									  '$servername' AS [Server],
 									  backupset.database_name AS [Database],
 									  backupset.user_name AS Username,
+									  backupset.server_name as [server],
 									  backupset.backup_start_date AS [Start],
 									  backupset.backup_finish_date AS [End],
 									  CAST(DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS varchar(4)) + ' ' + 'Seconds' AS Duration,
@@ -319,8 +323,38 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				if (!$last)
 				{
 					Write-Debug $sql
-					$results = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
-					$results = $results | Select-Object *, @{Name="FullName";Expression={$_.Path}}
+					$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
+					if ($raw){
+						write-verbose "$FunctionName - Raw Ouput"
+						$results = $results | Select-Object *, @{Name="FullName";Expression={$_.Path}}
+					}
+					else
+					{	
+						write-verbose "$FunctionName - Grouped output"
+						$GroupedResults  = $results | Group-Object -Property mediasetid
+						$GroupResults = @()
+						foreach ($group in $GroupedResults){
+							$GroupResults += [PSCustomObject]@{
+								ComputerName = $server.NetName
+								InstanceName = $server.ServiceName
+								SqlInstance = $server.DomainInstanceName
+								Database = $group.Group[0].Database
+								UserName = $group.Group[0].UserName
+								Start = ($group.Group.Start | measure-object -Minimum).Minimum
+								End = ($group.Group.End | measure-object -Maximum).Maximum
+								Duration = ($group.Group.Duration | measure-object -Maximum).Maximum
+								Path = $group.Group.Path
+								TotalSizeMb = ($group.group.TotalSizeMb | measure-object  -Sum).sum
+								Type = $group.Group[0].Type
+								MediaSetID = $group.Group[0].MediaSetId
+								DeviceType = $group.Group[0].DeviceType
+								Software = $group.Group[0].Software
+								FullName =  $group.Group.Path
+								}
+
+						}
+						$results = $GroupResults | Sort-Object -Property End -Descending
+					}
 					foreach ($result in $results)
 					{ 
 						$result | Select-DefaultView -ExcludeProperty FullName
