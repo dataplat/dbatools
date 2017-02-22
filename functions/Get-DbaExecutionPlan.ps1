@@ -5,7 +5,7 @@
 Gets execution plans and metadata
 	
 .DESCRIPTION
-Gets execution plans and metadata
+Gets execution plans and metadata. Can pipe to Export-DbaExecutionPlan :D
 	
 Thanks to https://www.simple-talk.com/sql/t-sql-programming/dmvs-for-query-plan-metadata/ for the idea and query.
 	
