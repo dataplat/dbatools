@@ -277,7 +277,7 @@ folder for those file types as defined on the target instance.
 					{
 						if ($p -match '\.\w{3}\Z' )
 						{
-							if (Test-SqlPath -Path $p -SqlServer:$SqlServer -SqlCredential:$SqlCredential)
+							if (Test-SqlPath -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential)
 							{
 								$BackupFiles += $p
 							}
@@ -328,7 +328,7 @@ folder for those file types as defined on the target instance.
 						}
 						else
 						{
-							if (Test-SqlPath -Path $FileTmp.FullName -SqlServer:$SqlServer -SqlCredential:$SqlCredential)
+							if (Test-SqlPath -Path $FileTmp.FullName -SqlServer $SqlServer -SqlCredential $SqlCredential)
 							{
 								$BackupFiles += $FileTmp
 							}
@@ -412,9 +412,9 @@ folder for those file types as defined on the target instance.
 			Write-Verbose "$FunctionName - Remote server, checking folders"
 			if ($DestinationDataDirectory -ne '')
 			{
-				if ((Test-SqlPath -Path $DestinationDataDirectory -SqlServer:$SqlServer -SqlCredential:$SqlCredential) -ne $true)
+				if ((Test-SqlPath -Path $DestinationDataDirectory -SqlServer $SqlServer -SqlCredential $SqlCredential) -ne $true)
 				{
-					if ((New-DbaSqlDirectory -Path $DestinationDataDirectory -SqlServer:$SqlServer -SqlCredential:$SqlCredential).Created -ne $true)
+					if ((New-DbaSqlDirectory -Path $DestinationDataDirectory -SqlServer $SqlServer -SqlCredential $SqlCredential).Created -ne $true)
 					{
 						Write-Warning "$FunctionName - DestinationDataDirectory $DestinationDataDirectory does not exist, and could not be created on $SqlServer"
 						break
@@ -431,9 +431,9 @@ folder for those file types as defined on the target instance.
 			}
 			if ($DestinationLogDirectory -ne '')
 			{
-				if ((Test-SqlPath -Path $DestinationLogDirectory -SqlServer:$SqlServer -SqlCredential:$SqlCredential) -ne $true)
+				if ((Test-SqlPath -Path $DestinationLogDirectory -SqlServer $SqlServer -SqlCredential $SqlCredential) -ne $true)
 				{
-					if((New-DbaSqlDirectory -Path $DestinationLogDirectory -SqlServer:$SqlServer -SqlCredential:$SqlCredential).Created -ne $true)
+					if((New-DbaSqlDirectory -Path $DestinationLogDirectory -SqlServer $SqlServer -SqlCredential $SqlCredential).Created -ne $true)
 					{
 						Write-Warning "$FunctionName - DestinationLogDirectory $DestinationLogDirectory does not exist, and could not be created on $SqlServer"
 						break
@@ -450,7 +450,7 @@ folder for those file types as defined on the target instance.
 			}
 		}
 		
-		$AllFilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer:$SqlServer -RestoreTime:$RestoreTime -SqlCredential:$SqlCredential -IgnoreLogBackup:$IgnoreLogBackup
+		$AllFilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup
 		Write-Verbose "$FunctionName - $($AllFilteredFiles.count) dbs to restore"
 		
 		if ($AllFilteredFiles.count -gt 1 -and $DatabaseName -ne '')
@@ -481,7 +481,7 @@ folder for those file types as defined on the target instance.
 			{
 				try
 				{
-					$FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -Replace:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure:$FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix:$DestinationFilePrefix
+					$FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -Replace:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure $FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix
 					
 					$Completed = 'successfully'
 				}
