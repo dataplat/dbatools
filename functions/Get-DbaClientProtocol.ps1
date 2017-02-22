@@ -8,6 +8,7 @@
     Gets the SQL Server related client protocols on one or more computers.
 
     Requires Local Admin rights on destination computer(s).
+    The client protocols can be enabled and disabled when retrieved via WSMan.
 
     .PARAMETER ComputerName
     The SQL Server (or server in general) that you're connecting to. This command handles named instances.
@@ -41,6 +42,12 @@
     Get-DbaClientProtocol -ComputerName sql1,sql2 | Out-Gridview
 
     Gets the SQL Server related client protocols on computers sql1 and sql2, and shows them in a grid view.
+
+    .EXAMPLE
+    (Get-DbaClientProtocol -ComputerName sql1 | Where { $_.DisplayName = 'via' }).Disable()
+
+    Disables the VIA ClientNetworkProtocol on computer sql1.
+    If succesfull, returncode 0 is shown.
 
 #>
 [CmdletBinding()]
