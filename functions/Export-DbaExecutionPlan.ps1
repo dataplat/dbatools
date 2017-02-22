@@ -7,7 +7,11 @@ Gets execution plans and metadata
 .DESCRIPTION
 Gets execution plans and metadata. Can pipe to Export-DbaExecutionPlan :D
 	
-Thanks to https://www.simple-talk.com/sql/t-sql-programming/dmvs-for-query-plan-metadata/ for the idea and query.
+Thanks to 
+	https://www.simple-talk.com/sql/t-sql-programming/dmvs-for-query-plan-metadata/
+	and
+	http://www.scarydba.com/2017/02/13/export-plans-cache-sqlplan-file/
+for the idea and query.
 	
 .PARAMETER SqlServer
 The SQL Server that you're connecting to.
