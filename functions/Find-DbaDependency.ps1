@@ -2,20 +2,10 @@
 {
 <#
 .SYNOPSIS
-Searches SQL Server to find user-owned objects (ie. not dbo or sa) or for any object owned by a specific user specified by the Pattern parameter.
+Finds and scripts object dependencies
 
 .DESCRIPTION
-Looks at the below list of objects to see if they are either owned by a user or a specific user (using the parameter -Pattern)
-    Database Owner
-    Agent Job Owner
-    Used in Credential
-    USed in Proxy
-    SQL Agent Steps using a Proxy
-    Endpoints
-    Database Schemas
-    Database Roles
-    Dabtabase Assembles
-    Database Synonyms
+Finds and scripts object dependencies
 
 .PARAMETER SqlInstance
 SqlInstance name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input
@@ -26,8 +16,22 @@ PSCredential object to connect as. If not specified, current Windows login will 
 .PARAMETER Pattern
 The regex pattern that the command will search for
 
+.PARAMETER Name
+The regex pattern that the command will search for
+	
+.PARAMETER IncludeParent
+The regex pattern that the command will search for
+
+.PARAMETER IncludeScript
+The regex pattern that the command will search for
+	
+.PARAMETER AllowSystemObjects
+The regex pattern that the command will search for
+
+.PARAMETER SmoObject
+The regex pattern that the command will search for
+	
 .NOTES 
-Original Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -55,16 +59,15 @@ Gets depenencies for the Customers table in the Northwind Database
 		[string]$Type = "Table",
 		[parameter(Mandatory = $true, ParameterSetName = "NotPiped")]
 		[string[]]$Name,
-		# same goes for this
-
 		[switch]$IncludeParent,
+		[switch]$IncludeScript,
 		[switch]$AllowSystemObjects,
 		[parameter(ValueFromPipeline = $True, Mandatory = $true, ParameterSetName = "Piped")]
 		[object[]]$SmoObject
 	)
 	begin
 	{
-		function Get-Dependency
+		function Get-Dependency ($object)
 		{
 			# This probably can't reuse objects
 			$scripter = New-Object Microsoft.SqlServer.Management.Smo.Scripter
@@ -95,12 +98,26 @@ Gets depenencies for the Customers table in the Northwind Database
 			
 			foreach ($dependency in $dependencies)
 			{
+				$urnstring = $dependency.urn.toString()
+				
+				if ($urnstring -notin $urndupes)
+				{
+					Write-Warning "not a dupe"
+					$urndupes += $urnstring
+				}
+				else
+				{
+					Write-Warning "caught a dupe $urnstring"
+					continue
+				}
+				
 				# This gets the full on SMO object that you can grab all the info from
 				$richobject = $server.GetSmoObject($dependency.urn)
-				
-				[pscustomobject]@{
+
+				$object = [pscustomobject]@{
 					ComputerName = $server.NetName
-					SqlInstance = $server.ServiceName
+					InstanceName = $server.ServiceName
+					SqlInstance = $server.DomainInstanceName
 					Parent = $object.Name
 					ParentType = $object.Urn.Type # whatever
 					Dependent = $richobject.Name
@@ -108,29 +125,59 @@ Gets depenencies for the Customers table in the Northwind Database
 					Owner = $richobject.Owner # or whatever
 					Urn = $richobject.Urn
 					Object = $richobject
-					# Script = $Object.Script() #mmm this may not work. Check to see if a Script() method exists first?
-					# And so on
-				} | Select-DefaultView -ExcludeProperty Urn, Object, Script
+				}
+				
+				if ($includeScript)
+				{
+					$script = $scripter.EnumScriptWithList($richobject)
+					
+					# I can't remember how to remove these options and their syntax is breaking stuff
+					$script = $script -replace "SET ANSI_NULLS ON", ""
+					$script = $script -replace "SET QUOTED_IDENTIFIER ON", ""
+					$script = "$script
+					go
+					"
+					Add-Member -InputObject $object -MemberType NoteProperty -Name Script -Value $script
+				}
+				
+				$object | Select-DefaultView -ExcludeProperty Urn, Object
+				Get-Dependency $richobject
 			}
 		}
 	}
 	process
 	{
+		$urndupes = @()
 		if ($SmoObject)
 		{
 			foreach ($object in $SmoObject)
 			{
-				# Find the parent to pass on to the function
+				if ($null -eq $object.urn)
+				{
+					Write-Warning "$object is not a valid SMO object"
+					continue
+				}
+				
+				# Find the server object to pass on to the function
 				$parent = $object.parent
+				
 				do { $parent = $parent.parent }
 				until ($parent.urn.type -eq "Server")
+				
 				$server = $parent
 				
-				# Do it!
+				if ($includeparent)
+				{
+					Get-Dependency $object
+				}
+				
 				Get-Dependency $object
 			}
 			return
 		}
+		
+		<#
+		# it will be wayyyy easier to use Get-DbaWhatever for thisand just use SMO object
 		
 		foreach ($Instance in $SqlInstance)
 		{
@@ -161,7 +208,7 @@ Gets depenencies for the Customers table in the Northwind Database
 				}
 				catch
 				{
-					# will catch below
+					Write-Warning "table note found"
 				}
 				
 				if ($null -eq $smotable)
@@ -177,8 +224,15 @@ Gets depenencies for the Customers table in the Northwind Database
 					continue
 				}
 				
-				Get-Dependency $smotable # check because it's returning the object as a dependent of itself
+				if ($includeparent)
+				{
+					Get-Dependency $smotable # check because it's returning the object as a dependent of itself
+					$includeparent = $false
+				}
+				
+				Get-Dependency $smotable
 			}
 		}
+		#>
 	}
 }
