@@ -32,9 +32,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Find-DbaDependency
 	
 .EXAMPLE
-Find-DbaDependency -SqlInstance sql2012 -Type Table -Name Northwind.dbo.Customers
+$table = (Get-DbaDatabase -SqlInstance sql2012 Northwind).tables | Where Name -eq Customers
+$table | Find-DbaDependency
 
-Gets depenencies for the Customers table in the Northwind Database
 #>
 	[CmdletBinding()]
 	Param (
@@ -46,9 +46,9 @@ Gets depenencies for the Customers table in the Northwind Database
 	)
 	begin
 	{
+		# This is a fucntion that runs recursively against rich SMO objects
 		function Get-Dependency ($object)
 		{
-			# This probably can't reuse objects
 			$scripter = New-Object Microsoft.SqlServer.Management.Smo.Scripter
 			$options = New-Object Microsoft.SqlServer.Management.Smo.ScriptingOptions
 			$options.DriAll = $true
@@ -57,11 +57,10 @@ Gets depenencies for the Customers table in the Northwind Database
 			$scripter.Options = $options
 			$scripter.Server = $server
 			
-			# This has to be one by one in order to keep track of what you were originally searching for
-			
 			$urnCollection = New-Object Microsoft.SqlServer.Management.Smo.UrnCollection
 			$urn = $object.urn
 			$type = $object.urn.Type
+						
 			Write-Verbose "Adding $object which is a $type"
 			$urnCollection.Add([Microsoft.SqlServer.Management.Sdk.Sfc.Urn]$object.urn)
 			
@@ -69,14 +68,13 @@ Gets depenencies for the Customers table in the Northwind Database
 			$progressReportEventHandler = [Microsoft.SqlServer.Management.Smo.ProgressReportEventHandler] { $name = $_.Current.GetAttribute('Name'); Write-Verbose "Analysed $name" }
 			$scripter.add_DiscoveryProgress($progressReportEventHandler)
 			
-			#create the dependency tree
 			$dependencyTree = $scripter.DiscoverDependencies($urnCollection, $IncludeParent) #look for the parent objects for each object
-			
-			#and walk the dependencies to get the dependency tree.
 			$dependencies = $scripter.WalkDependencies($dependencyTree)
 			
 			foreach ($dependency in $dependencies)
 			{
+				
+				# This checks to see if it's already been done because of recursion
 				$urnstring = $dependency.urn.toString()
 				
 				if ($urnstring -notin $urndupes)
@@ -91,17 +89,17 @@ Gets depenencies for the Customers table in the Northwind Database
 				}
 				
 				# This gets the full on SMO object that you can grab all the info from
-				$richobject = $server.GetInputObject($dependency.urn)
+				$richobject = $server.GetSmoObject($dependency.urn)
 
 				$object = [pscustomobject]@{
 					ComputerName = $server.NetName
 					InstanceName = $server.ServiceName
 					SqlInstance = $server.DomainInstanceName
 					Parent = $object.Name
-					ParentType = $object.Urn.Type # whatever
+					ParentType = $object.Urn.Type
 					Dependent = $richobject.Name
 					Type = $dependency.Urn.Type
-					Owner = $richobject.Owner # or whatever
+					Owner = $richobject.Owner
 					Urn = $richobject.Urn
 					Object = $richobject
 				}
@@ -113,19 +111,20 @@ Gets depenencies for the Customers table in the Northwind Database
 					# I can't remember how to remove these options and their syntax is breaking stuff
 					$script = $script -replace "SET ANSI_NULLS ON", ""
 					$script = $script -replace "SET QUOTED_IDENTIFIER ON", ""
-					$script = "$script
-					go
-					"
+					$script = "$script go"
 					Add-Member -InputObject $object -MemberType NoteProperty -Name Script -Value $script
 				}
 				
 				$object | Select-DefaultView -ExcludeProperty Urn, Object
+				
+				# This is recursion
 				Get-Dependency $richobject
 			}
 		}
 	}
 	process
 	{
+		# This should be helpful for recursion?
 		$urndupes = @()
 		if ($InputObject)
 		{
