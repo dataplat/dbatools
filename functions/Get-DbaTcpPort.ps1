@@ -130,7 +130,14 @@ Returns an object with server name, IPAddress (just ipv4), port and static ($tru
 					$resolved = Resolve-DbaNetworkName -ComputerName $servername -Verbose:$false
 					$fqdn = $resolved.FQDN
 					$computername = $resolved.ComputerName
-					$someips = Invoke-ManagedComputerCommand -ComputerName $fqdn -ArgumentList $computername -ScriptBlock $scriptblock
+					try
+					{
+						$someips = Invoke-ManagedComputerCommand -ComputerName $computername -ArgumentList $computername -ScriptBlock $scriptblock
+					}
+					catch
+					{
+						$someips = Invoke-ManagedComputerCommand -ComputerName $fqdn -ArgumentList $fqdn -ScriptBlock $scriptblock
+					}
 				}
 				catch
 				{
