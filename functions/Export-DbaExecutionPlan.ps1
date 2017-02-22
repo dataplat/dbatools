@@ -27,11 +27,8 @@ Datetime object used to narrow the results to a date
 .PARAMETER SinceLastExecution
 Datetime object used to narrow the results to a date
 
-.PARAMETER ExcludeEmptyQueryPlan
-Exclude results with empty query plan
-
-.PARAMETER Force
-Returns a ton of raw information about the execution plans
+.PARAMETER Path
+The directory where all of the sqlxml files will be exported
 	
 .NOTES
 Tags: Performance
@@ -75,17 +72,21 @@ Returns database restore information for every database on every server listed i
 #>
 	[cmdletbinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
 	Param (
-		[parameter(ParameterSetName = 'RegularPiped', Mandatory = $true, ValueFromPipeline = $true)]
+		[parameter(ParameterSetName = 'NotPiped', Mandatory)]
 		[Alias("ServerInstance", "SqlServer")]
 		[string[]]$SqlInstance,
+		[parameter(ParameterSetName = 'NotPiped')]
 		[Alias("Credential")]
 		[PsCredential]$SqlCredential,
+		[parameter(ParameterSetName = 'Piped', Mandatory)]
+		[parameter(ParameterSetName = 'NotPiped', Mandatory)]
+		[string]$Path,
+		[parameter(ParameterSetName = 'NotPiped')]
 		[datetime]$SinceCreation,
+		[parameter(ParameterSetName = 'NotPiped')]
 		[datetime]$SinceLastExecution,
-		[Parameter(ParameterSetName='GetPiped', Mandatory, ValueFromPipelineByPropertyName)]
-		[xml]$BatchConditionXmlRaw,
-		[Parameter(ParameterSetName = 'GetPiped', Mandatory, ValueFromPipelineByPropertyName)]
-		[xml]$BatchSimpleXmlRaw
+		[Parameter(ParameterSetName = 'Piped', Mandatory, ValueFromPipeline)]
+		[object[]]$PipedObject
 	)
 	
 	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
@@ -105,10 +106,66 @@ Returns database restore information for every database on every server listed i
 		{
 			$SinceLastExecution = $SinceLastExecution.ToString("yyyy-MM-dd HH:mm:ss")
 		}
+		
+		function Process-Object ($object)
+		{
+			$instancename = $object.SqlInstance
+			$dbname = $object.DatabaseName
+			$queryposition = $object.QueryPosition
+			$sqlhandle = "0x"; $object.sqlhandle | ForEach-Object { $sqlhandle += ("{0:X}" -f $_).PadLeft(2, "0") }
+			$sqlhandle = $sqlhandle.TrimStart('0x02000000').TrimEnd('0000000000000000000000000000000000000000')
+			$shortname = "$instancename-$dbname-$queryposition-$sqlhandle"
+			
+			foreach ($queryplan in $object.BatchQueryPlanRaw)
+			{
+				$filename = "$path\$shortname-batch.sqlplan"
+				
+				try
+				{
+					$queryplan.Save($filename)
+				}
+				catch
+				{
+					Write-Verbose "Skipped query plan for $filename because it is null"
+				}
+			}
+			
+			foreach ($statementplan in $object.SingleStatementPlanRaw)
+			{
+				$filename = "$path\$shortname.sqlplan"
+				
+				try
+				{
+					$statementplan.Save($filename)
+				}
+				catch
+				{
+					Write-Verbose "Skipped statement plan for $filename because it is null"
+				}
+			}
+			
+			Add-Member -InputObject $object -MemberType NoteProperty -Name OutputFile -Value $filename
+			Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, DatabaseName, SqlHandle, CreationTime, LastExecutionTime, OutputFile
+		}
 	}
 	
 	PROCESS
 	{
+		if (!(Test-Path $Path))
+		{
+			$null = New-Item -ItemType Directory -Path $Path
+		}
+		
+		if ($PipedObject)
+		{
+			
+			foreach ($object in $pipedobject)
+			{
+				Process-Object $object
+				return
+			}
+		}
+		
 		foreach ($instance in $sqlinstance)
 		{
 			try
@@ -186,26 +243,29 @@ Returns database restore information for every database on every server listed i
 				
 				foreach ($row in ($datatable.Rows))
 				{
-					$simple = ([xml]$row.SingleStatementPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtSimple
-					
-					[pscustomobject]@{
+					$object = [pscustomobject]@{
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
 						SqlInstance = $server.DomainInstanceName
 						DatabaseName = $row.DatabaseName
-						ObjectName = $row.ObjectName
+						SqlHandle = $row.SqlHandle
 						SingleStatementPlan = $row.SingleStatementPlan
 						BatchQueryPlan = $row.BatchQueryPlan
 						QueryPosition = $row.QueryPosition
 						CreationTime = $row.CreationTime
 						LastExecutionTime = $row.LastExecutionTime
-					} | Select-DefaultView -ExcludeProperty BatchQueryPlan, SingleStatementPlan
+						BatchQueryPlanRaw = [xml]$row.BatchQueryPlan
+						SingleStatementPlanRaw = [xml]$row.SingleStatementPlan
+					}
+					
+					Process-Object $object
 				}
 			}
 			catch
 			{
-				# Will fix this tomorrow, Fred ;)
-				Write-Warning $_.Exception
+				Write-Warning $_
+				continue
+				# Stop-Function -Message $_.Exception -Silent $Silent -InnerErrorRecord $_ -Target $filename
 			}
 		}
 	}

@@ -204,8 +204,6 @@ Returns database restore information for every database on every server listed i
 						SqlInstance = $server.DomainInstanceName
 						DatabaseName = $row.DatabaseName
 						ObjectName = $row.ObjectName
-						SingleStatementPlan = $row.SingleStatementPlan
-						BatchQueryPlan = $row.BatchQueryPlan
 						QueryPosition = $row.QueryPosition
 						SqlHandle = $row.SqlHandle
 						PlanHandle = $row.PlanHandle
@@ -230,9 +228,9 @@ Returns database restore information for every database on every server listed i
 						QueryPlan = $simple.QueryPlan
 						BatchConditionXml = ([xml]$row.BatchQueryPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtCond
 						BatchSimpleXml = ([xml]$row.BatchQueryPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtSimple
-						BatchConditionXmlRaw = [xml]$row.BatchQueryPlan
-						BatchSimpleXmlRaw = [xml]$row.BatchQueryPlan
-					} | Select-DefaultView -ExcludeProperty BatchQueryPlan, SingleStatementPlan, BatchConditionXmlRaw, BatchSimpleXmlRaw
+						BatchQueryPlanRaw = [xml]$row.BatchQueryPlan
+						SingleStatementPlanRaw = [xml]$row.SingleStatementPlan
+					} | Select-DefaultView -ExcludeProperty BatchQueryPlan, SingleStatementPlan, BatchConditionXmlRaw, BatchQueryPlanRaw, SingleStatementPlanRaw
 				}
 			}
 			catch
