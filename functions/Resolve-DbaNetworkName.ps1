@@ -85,7 +85,9 @@
 				$Computer = $env:COMPUTERNAME
 			}
 			
-			$Computer = $Computer.Split('\')[0]
+			$Computer = $Computer.Split('\\')[0]
+			$Computer = ($Computer -Split ('\:'))[0]
+			$Computer = ($Computer.Split('\,'))[0]
 			
 			if ($Turbo)
 			{
