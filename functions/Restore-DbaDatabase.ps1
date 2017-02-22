@@ -244,24 +244,26 @@ folder for those file types as defined on the target instance.
 	{
 		foreach ($f in $path)
 		{
-	
-			if ($f.StartsWith("\\") -eq $false -and  $islocal -ne $true)
+			if ($f.Gettype -is [string])
 			{
-				Write-Verbose "$FunctionName - Working remotely, and non UNC path used. Dropping to XpDirTree, all paths evaluated at $SqlServer"
-				# Many internal functions parse using Get-ChildItem. 
-				# We need to use Test-SqlPath and other commands instead
-				# Prevent people from trying 
-				
-				#Write-Warning "Currently, you can only use UNC paths when running this command remotely. We expect to support non-UNC paths for remote servers shortly."
-				#continue
-				
-				#$newpath = Join-AdminUnc $SqlServer "$path"
-				#Write-Warning "Run this command on the server itself or try $newpath."
-				if ($XpDirTree -ne $true)
+				if ($f.StartsWith("\\") -eq $false -and  $islocal -ne $true)
 				{
-					Write-Verbose "$FunctionName - Only XpDirTree is safe on remote server"
-					$XpDirTree = $true
-					$MaintenanceSolutionBackup = $false
+					Write-Verbose "$FunctionName - Working remotely, and non UNC path used. Dropping to XpDirTree, all paths evaluated at $SqlServer"
+					# Many internal functions parse using Get-ChildItem. 
+					# We need to use Test-SqlPath and other commands instead
+					# Prevent people from trying 
+					
+					#Write-Warning "Currently, you can only use UNC paths when running this command remotely. We expect to support non-UNC paths for remote servers shortly."
+					#continue
+					
+					#$newpath = Join-AdminUnc $SqlServer "$path"
+					#Write-Warning "Run this command on the server itself or try $newpath."
+					if ($XpDirTree -ne $true)
+					{
+						Write-Verbose "$FunctionName - Only XpDirTree is safe on remote server"
+						$XpDirTree = $true
+						$MaintenanceSolutionBackup = $false
+					}
 				}
 			}
 			
@@ -348,21 +350,25 @@ folder for those file types as defined on the target instance.
 								Write-Warning "$FunctionName - Backups from a different server and on a local drive, can't access" -WarningAction stop
 							}
 						}
-						if ($FileTmp.FullName -notmatch '\.\w{3}\Z' )
+						if ([bool]($FileTmp.FullName -notmatch '\.\w{3}\Z' ))
 						{
-							Write-Verbose "it's file"
+							Write-Verbose "$FunctionName - it's file"
 							$BackupFiles += Get-XPDirTreeRestoreFile -Path $FileTmp.Fullname -SqlServer $SqlServer -SqlCredential $SqlCredential
 						}
-						elseif ($FileTmp.FullName -match '\.\w{3}\Z' )
+						elseif ([bool]($FileTmp.FullName -match '\.\w{3}\Z' ))
 						{
-							Write-Verbose "it's folder"
-							if (Test-SqlPath -Path $FileTmp.FullName -SqlServer:$SqlServer -SqlCredential:$SqlCredential)
-							{
-								$BackupFiles += $FileTmp
-							}
-							else
-							{
-								Write-Warning "$FunctionName - $($FileTmp.FullName) cannot be accessed by $SqlServer"
+							Write-Verbose "$FunctionName - it's folder"
+							ForEach ($ft in $Filetmp.FullName)
+							{			
+								Write-Verbose "$FunctionName - Testing $($ft)"					
+								if (Test-SqlPath -Path $ft -SqlServer:$SqlServer -SqlCredential:$SqlCredential)
+								{
+									$BackupFiles += $ft
+								}
+								else
+								{
+									Write-Warning "$FunctionName - $($ft) cannot be accessed by $SqlServer"
+								}
 							}
 
 						}
