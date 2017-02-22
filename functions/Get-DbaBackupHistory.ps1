@@ -41,6 +41,9 @@ Returns last log backup set
 .PARAMETER IgnoreCopyOnly
 If set, Get-DbaBackupHistory will ignore CopyOnly backups
 
+.PARAMETER Raw
+By default the command will group mediasets (striped backups across multiple files) into a single return object. If you'd prefer to have an object per backp file returned, use this switch
+
 .NOTES
 Tags: Storage, DisasterRecovery, Backup
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -116,13 +119,15 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 		[Parameter(ParameterSetName = "Last")]
 		[switch]$LastDiff,
 		[Parameter(ParameterSetName = "Last")]
-		[switch]$LastLog
+		[switch]$LastLog,
+		[switch]$raw
 	)
 	
 	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential } }
 	
 	BEGIN
 	{
+		$FunctionName = $FunctionName = (Get-PSCallstack)[0].Command
 		if ($Since -ne $null)
 		{
 			$Since = $Since.ToString("yyyy-MM-dd HH:mm:ss")
@@ -136,13 +141,13 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 		{
 			try
 			{
-				Write-Verbose "Connecting to $server"
+				Write-Verbose "$FunctionName - Connecting to $server"
 				$sourceserver = Connect-SqlServer -SqlServer $server -SqlCredential $Credential
 				$servername = $sourceserver.name
 				
 				if ($sourceserver.VersionMajor -lt 9)
 				{
-					Write-Warning "SQL Server 2000 not supported"
+					Write-Warning "$FunctionName - SQL Server 2000 not supported"
 					continue
 				}
 				$BackupSizeColumn = 'backup_size'
@@ -155,9 +160,9 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				if ($last)
 				{
 					if ($databases -eq $null) { $databases = $sourceserver.databases.name }
-					Get-DbaBackupHistory -SqlServer $sourceserver -LastFull -Databases $databases
-					Get-DbaBackupHistory -SqlServer $sourceserver -LastDiff -Databases $databases
-					Get-DbaBackupHistory -SqlServer $sourceserver -LastLog -Databases $databases
+					Get-DbaBackupHistory -SqlServer $sourceserver -LastFull -Databases $databases -raw:$raw
+					Get-DbaBackupHistory -SqlServer $sourceserver -LastDiff -Databases $databases -raw:$raw
+					Get-DbaBackupHistory -SqlServer $sourceserver -LastLog -Databases $databases -raw:$raw
 				}
 				elseif ($LastFull -or $LastDiff -or $LastLog)
 				{
@@ -172,7 +177,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 					$databases = $databases | Select-Object -Unique
 					foreach ($database in $databases)
 					{
-						Write-Verbose "Processing $database"
+						Write-Verbose "$FunctionName - Processing $database"
 						
 						$sql += "SELECT
 								  a.BackupSetRank,
@@ -320,7 +325,35 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				{
 					Write-Debug $sql
 					$results = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
-					$results = $results | Select-Object *, @{Name="FullName";Expression={$_.Path}}
+					if ($raw){
+						write-verbose "$FunctionName - Raw Ouput"
+						$results = $results | Select-Object *, @{Name="FullName";Expression={$_.Path}}
+					}
+					else
+					{	
+						write-verbose "$FunctionName - Grouped output"
+						$GroupedResults  = $results | Group-Object -Property mediasetid
+						$GroupResults = @()
+						foreach ($group in $GroupedResults){
+							$GroupResults += [PSCustomObject]@{
+								Server = $group.Group[0].Server
+								Database = $group.Group[0].Database
+								UserName = $group.Group[0].UserName
+								Start = ($group.Group.Start | measure-object -Minimum).Minimum
+								End = ($group.Group.End | measure-object -Maximum).Maximum
+								Duration = ($group.Group.Duration | measure-object -Maximum).Maximum
+								Path = $group.Group.Path
+								TotalSizeMb = ($group.group.TotalSizeMb | measure-object  -Sum).sum
+								Type = $group.Group[0].Type
+								MediaSetID = $group.Group[0].MediaSetId
+								DeviceType = $group.Group[0].DeviceType
+								Software = $group.Group[0].Software
+								FullName =  $group.Group.Path
+								}
+
+						}
+						$results = $GroupResults | Sort-Object -Property End -Descending
+					}
 					foreach ($result in $results)
 					{ 
 						$result | Select-DefaultView -ExcludeProperty FullName
