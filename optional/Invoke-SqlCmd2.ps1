@@ -170,7 +170,7 @@
 				   ValueFromPipelineByPropertyName = $true,
 				   ValueFromRemainingArguments = $false,
 				   HelpMessage = 'SQL Server Instance required...')]
-		[Alias('Instance', 'Instances', 'ComputerName', 'Server', 'Servers', 'SqlServer','SqlInstance')]
+		[Alias('Instance', 'Instances', 'ComputerName', 'Server', 'Servers', 'SqlServer')]
 		[ValidateNotNullOrEmpty()]
 		[object[]]$ServerInstance,
 		[Parameter(Position = 1,
@@ -375,19 +375,9 @@
 			{
 				$Conn = $SQLConnection
 			}
-			elseif ($ServerInstance.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
+			elseif ($SQLInstance.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
 			{
-				$Conn = $ServerInstance.ConnectionContext.SqlConnectionObject
-				
-				Try
-				{
-					$conn.Open()
-				}
-				Catch
-				{
-					Write-Error $_
-					continue
-				}
+				$Conn = $SQLInstance.ConnectionContext.SqlConnectionObject
 			}
 			else
 			{
