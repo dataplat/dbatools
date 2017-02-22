@@ -143,7 +143,6 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 			{
 				Write-Verbose "$FunctionName - Connecting to $instance"
 				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
-				$servername = $server.name
 				
 				if ($server.VersionMajor -lt 9)
 				{
@@ -194,7 +193,6 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 								  a.Software
 								FROM (SELECT
 								  RANK() OVER (ORDER BY backupset.backup_start_date DESC) AS 'BackupSetRank',
-								  '$servername' AS Server,
 								  backupset.database_name AS [Database],
 								  backupset.user_name AS Username,
 								  backupset.backup_start_date AS Start,
