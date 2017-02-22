@@ -209,7 +209,7 @@
 		'Get-DbaConfig',
 		'Get-DbaConfigValue',
 		'Set-DbaConfig',
-		'Get-DbaSqlClientProtocol',
+		'Get-DbaClientProtocol',
 		'Backup-DbaDatabase',
 		'New-DbaSqlDirectory',
 		'Get-DbaPrivilege',
@@ -221,7 +221,8 @@
 		#'Get-DbaLinkedServer',
 		#'Invoke-DbaLogShippingRecovery',
 		'Copy-DbaQueryStoreConfig',
-		'Get-DbaExecutionPlan'
+		'Get-DbaExecutionPlan',
+		'Export-DbaExecutionPlan'
 	)
 	
 	# Cmdlets to export from this module
