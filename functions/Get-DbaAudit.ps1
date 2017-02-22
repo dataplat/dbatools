@@ -11,7 +11,7 @@ Gets SQL Security Audit information for each instance(s) of SQL Server.
 SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
 to be executed against multiple SQL Server instances.
 
-.PARAMETER SqlCredential
+.PARAMETER Credential
 PSCredential object to connect as. If not specified, current Windows login will be used.
 
 .NOTES
@@ -29,33 +29,33 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Get-DbaAudit
 
 .EXAMPLE
-Get-DbaAudit -SqlServer localhost
+Get-DbaAudit -SqlInstance localhost
 Returns all Security Audits on the local default SQL Server instance
 
 .EXAMPLE
-Get-DbaAudit -SqlServer localhost, sql2016
+Get-DbaAudit -SqlInstance localhost, sql2016
 Returns all Security Audits for the local and sql2016 SQL Server instances
 
 #>
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[object]$SqlInstance,
+		[System.Management.Automation.PSCredential]$Credential
 	)
 	
 	PROCESS
 	{
-		foreach ($servername in $sqlserver)
+		foreach ($instance in $SqlInstance)
 		{
-			Write-Verbose "Attempting to connect to $servername"
+			Write-Verbose "Attempting to connect to $instance"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
 			}
 			catch
 			{
-				Write-Warning "Can't connect to $servername or access denied. Skipping."
+				Write-Warning "Can't connect to $instance or access denied. Skipping."
 				continue
 			}
 			
