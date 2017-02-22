@@ -137,21 +137,21 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 	PROCESS
 	{
 		$databases = $psboundparameters.Databases
-		foreach ($server in $SqlServer)
+		foreach ($instance in $SqlServer)
 		{
 			try
 			{
-				Write-Verbose "$FunctionName - Connecting to $server"
-				$sourceserver = Connect-SqlServer -SqlServer $server -SqlCredential $Credential
-				$servername = $sourceserver.name
+				Write-Verbose "$FunctionName - Connecting to $instance"
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
+				$servername = $server.name
 				
-				if ($sourceserver.VersionMajor -lt 9)
+				if ($server.VersionMajor -lt 9)
 				{
 					Write-Warning "$FunctionName - SQL Server 2000 not supported"
 					continue
 				}
 				$BackupSizeColumn = 'backup_size'
-				if ($sourceserver.VersionMajor -ge 10)
+				if ($server.VersionMajor -ge 10)
 				{
 					# 2008 introduced compressed_backup_size
 					$BackupSizeColumn = 'compressed_backup_size'
@@ -159,16 +159,16 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				
 				if ($last)
 				{
-					if ($databases -eq $null) { $databases = $sourceserver.databases.name }
-					Get-DbaBackupHistory -SqlServer $sourceserver -LastFull -Databases $databases -raw:$raw
-					Get-DbaBackupHistory -SqlServer $sourceserver -LastDiff -Databases $databases -raw:$raw
-					Get-DbaBackupHistory -SqlServer $sourceserver -LastLog -Databases $databases -raw:$raw
+					if ($databases -eq $null) { $databases = $server.databases.name }
+					Get-DbaBackupHistory -SqlServer $server -LastFull -Databases $databases -raw:$raw
+					Get-DbaBackupHistory -SqlServer $server -LastDiff -Databases $databases -raw:$raw
+					Get-DbaBackupHistory -SqlServer $server -LastLog -Databases $databases -raw:$raw
 				}
 				elseif ($LastFull -or $LastDiff -or $LastLog)
 				{
 					$sql = @()
 					
-					if ($databases -eq $null) { $databases = $sourceserver.databases.name }
+					if ($databases -eq $null) { $databases = $server.databases.name }
 					
 					if ($LastFull) { $first = 'D'; $second = 'P' }
 					if ($LastDiff) { $first = 'I'; $second = 'Q' }
@@ -242,12 +242,11 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				{
 					if ($Force -eq $true)
 					{
-						$select = "SELECT '$servername' AS [Server], * "
+						$select = "SELECT * "
 					}
 					else
 					{
 						$select = "SELECT
-									  '$servername' AS [Server],
 									  backupset.database_name AS [Database],
 									  backupset.user_name AS Username,
 									  backupset.backup_start_date AS [Start],
@@ -324,7 +323,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				if (!$last)
 				{
 					Write-Debug $sql
-					$results = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
+					$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
 					if ($raw){
 						write-verbose "$FunctionName - Raw Ouput"
 						$results = $results | Select-Object *, @{Name="FullName";Expression={$_.Path}}
@@ -336,7 +335,9 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 						$GroupResults = @()
 						foreach ($group in $GroupedResults){
 							$GroupResults += [PSCustomObject]@{
-								Server = $group.Group[0].Server
+								ComputerName = $server.NetName
+								InstanceName = $server.ServiceName
+								SqlInstance = $server.DomainInstanceName
 								Database = $group.Group[0].Database
 								UserName = $group.Group[0].UserName
 								Start = ($group.Group.Start | measure-object -Minimum).Minimum
