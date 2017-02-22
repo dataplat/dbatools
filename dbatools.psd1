@@ -222,7 +222,8 @@
 		#'Invoke-DbaLogShippingRecovery',
 		'Copy-DbaQueryStoreConfig',
 		'Get-DbaExecutionPlan',
-		'Export-DbaExecutionPlan'
+		'Export-DbaExecutionPlan',
+		'Get-DbaServerProtocol'
 	)
 	
 	# Cmdlets to export from this module
