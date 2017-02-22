@@ -196,6 +196,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 								  backupset.database_name AS [Database],
 								  backupset.user_name AS Username,
 								  backupset.backup_start_date AS Start,
+								  backupset.server_name as [server],
 								  backupset.backup_finish_date AS [End],
 								  CAST(DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS varchar(4)) + ' ' + 'Seconds' AS Duration,
 								  mediafamily.physical_device_name AS Path,
@@ -247,6 +248,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 						$select = "SELECT
 									  backupset.database_name AS [Database],
 									  backupset.user_name AS Username,
+									  backupset.server_name as [server],
 									  backupset.backup_start_date AS [Start],
 									  backupset.backup_finish_date AS [End],
 									  CAST(DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS varchar(4)) + ' ' + 'Seconds' AS Duration,
