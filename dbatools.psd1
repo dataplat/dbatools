@@ -209,7 +209,7 @@
 		'Get-DbaConfig',
 		'Get-DbaConfigValue',
 		'Set-DbaConfig',
-		'Get-DbaClientProtocol ',
+		'Get-DbaClientProtocol',
 		'Backup-DbaDatabase',
 		'New-DbaSqlDirectory',
 		'Get-DbaPrivilege',
