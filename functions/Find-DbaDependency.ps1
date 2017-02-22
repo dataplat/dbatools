@@ -94,7 +94,6 @@ Function Find-DbaDependency
             $scripter.Server = $Server
             
             $urnCollection = New-Object Microsoft.SqlServer.Management.Smo.UrnCollection
-            $urn = $object.urn
             
             Write-Message -Silent $Silent -Level 5 -Message "Adding $object which is a $($object.urn.Type)" -FunctionName $FunctionName
             $urnCollection.Add([Microsoft.SqlServer.Management.Sdk.Sfc.Urn]$object.urn)
@@ -173,8 +172,6 @@ Function Find-DbaDependency
     }
     process
     {
-        # This should be helpful for recursion?
-        $urndupes = @()
         if ($InputObject)
         {
             foreach ($object in $InputObject)
