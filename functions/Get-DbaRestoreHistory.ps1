@@ -98,26 +98,34 @@ Returns database restore information for every database on every server listed i
 	
 	PROCESS
 	{
-		foreach ($server in $SqlServer)
+		foreach ($instance in $SqlServer)
 		{
 			try
 			{
-				$sourceserver = Connect-SqlServer -SqlServer $server -SqlCredential $Credential
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
 				
-				if ($sourceserver.VersionMajor -lt 9)
+				if ($server.VersionMajor -lt 9)
 				{
 					Write-Warning "SQL Server 2000 not supported"
 					continue
 				}
 				
+				$computername = $server.NetName
+				$instancename = $server.ServiceName
+				$servername = $server.DomainInstanceName
+				
 				if ($force -eq $true)
 				{
-					$select = "SELECT * "
+					$select = "SELECT '$computername' AS [ComputerName],
+					'$instancename' AS [InstanceName],
+					'$servername' AS [SqlInstance], * "
 				}
 				else
 				{
 					$select = "SELECT 
-				     '$server' AS [Server],
+				    '$computername' AS [ComputerName],
+					'$instancename' AS [InstanceName],
+					'$servername' AS [SqlInstance],
 				     rsh.destination_database_name AS [Database],
 				     --rsh.restore_history_id as RestoreHistoryID,
 				     rsh.user_name AS [Username],
@@ -181,10 +189,10 @@ Returns database restore information for every database on every server listed i
 				
 				if ($Detailed -eq $true -or $Force -eq $true)
 				{
-					return $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
+					return $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
 				}
 				
-				$sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty From, To, RowError, Rowstate, table, itemarray, haserrors
+				$server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty From, To, RowError, Rowstate, table, itemarray, haserrors
 			}
 			catch
 			{
