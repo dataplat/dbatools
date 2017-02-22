@@ -132,10 +132,12 @@ Returns an object with server name, IPAddress (just ipv4), port and static ($tru
 					$computername = $resolved.ComputerName
 					try
 					{
+						Write-Verbose "Trying with ComputerName ($computername)"
 						$someips = Invoke-ManagedComputerCommand -ComputerName $computername -ArgumentList $computername -ScriptBlock $scriptblock
 					}
 					catch
 					{
+						Write-Verbose "Trying with FQDN because ComputerName failed"
 						$someips = Invoke-ManagedComputerCommand -ComputerName $fqdn -ArgumentList $fqdn -ScriptBlock $scriptblock
 					}
 				}
