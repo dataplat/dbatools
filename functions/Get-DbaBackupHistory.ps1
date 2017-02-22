@@ -41,6 +41,9 @@ Returns last log backup set
 .PARAMETER IgnoreCopyOnly
 If set, Get-DbaBackupHistory will ignore CopyOnly backups
 
+.PARAMETER Raw
+By default the command will group mediasets (striped backups across multiple files) into a single return object. If you'd prefer to have an object per backp file returned, use this switch
+
 .NOTES
 Tags: Storage, DisasterRecovery, Backup
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -117,7 +120,6 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 		[switch]$LastDiff,
 		[Parameter(ParameterSetName = "Last")]
 		[switch]$LastLog,
-		[Parameter(ParameterSetName = "NoLast")]
 		[switch]$raw
 	)
 	
@@ -125,6 +127,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 	
 	BEGIN
 	{
+		$FunctionName = $FunctionName = (Get-PSCallstack)[0].Command
 		if ($Since -ne $null)
 		{
 			$Since = $Since.ToString("yyyy-MM-dd HH:mm:ss")
@@ -133,19 +136,18 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 	
 	PROCESS
 	{
-		Write-Verbose "Raw = $raw"
 		$databases = $psboundparameters.Databases
 		foreach ($server in $SqlServer)
 		{
 			try
 			{
-				Write-Verbose "Connecting to $server"
+				Write-Verbose "$FunctionName - Connecting to $server"
 				$sourceserver = Connect-SqlServer -SqlServer $server -SqlCredential $Credential
 				$servername = $sourceserver.name
 				
 				if ($sourceserver.VersionMajor -lt 9)
 				{
-					Write-Warning "SQL Server 2000 not supported"
+					Write-Warning "$FunctionName - SQL Server 2000 not supported"
 					continue
 				}
 				$BackupSizeColumn = 'backup_size'
@@ -175,7 +177,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 					$databases = $databases | Select-Object -Unique
 					foreach ($database in $databases)
 					{
-						Write-Verbose "Processing $database"
+						Write-Verbose "$FunctionName - Processing $database"
 						
 						$sql += "SELECT
 								  a.BackupSetRank,
@@ -324,16 +326,16 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 					Write-Debug $sql
 					$results = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
 					if ($raw){
-						write-verbose "no raw"
+						write-verbose "$FunctionName - Raw Ouput"
 						$results = $results | Select-Object *, @{Name="FullName";Expression={$_.Path}}
 					}
 					else
 					{	
-						write-verbose "grouping"
-						$grouped  = $results | group mediasetid
-						$gresults = @()
-						foreach ($group in $grouped){
-							$gresults += [PSCustomObject]@{
+						write-verbose "$FunctionName - Grouped output"
+						$GroupedResults  = $results | Group-Object -Property mediasetid
+						$GroupResults = @()
+						foreach ($group in $GroupedResults){
+							$GroupResults += [PSCustomObject]@{
 								Server = $group.Group[0].Server
 								Database = $group.Group[0].Database
 								UserName = $group.Group[0].UserName
@@ -346,10 +348,11 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 								MediaSetID = $group.Group[0].MediaSetId
 								DeviceType = $group.Group[0].DeviceType
 								Software = $group.Group[0].Software
+								FullName =  $group.Group.Path
 								}
 
 						}
-						$results = $gresults | Sort-Object -Property End -Descending
+						$results = $GroupResults | Sort-Object -Property End -Descending
 					}
 					foreach ($result in $results)
 					{ 
