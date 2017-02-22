@@ -220,7 +220,7 @@ folder for those file types as defined on the target instance.
 		}
 		if ($ParamCount -gt 1)
 		{
-			Write-Warning "$FunctionName - $Paramcount You've specified incompatible Location parameters. Please only specify one of FileMapping,$ReuseSourceFolderStructure or DestinationDataDirectory"
+			Write-Warning "$FunctionName - $Paramcount You've specified incompatible Location parameters. Please only specify one of FileMapping,ReuseSourceFolderStructure or DestinationDataDirectory"
 			break
 		}
 		
