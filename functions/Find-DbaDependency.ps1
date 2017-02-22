@@ -211,7 +211,7 @@ Function Find-DbaDependency
                     FunctionName = $FunctionName
                     Silent = $Silent
                 }
-                Get-Dependency @splat | Sort-Object Tier -Descending | Select-DefaultView -ExcludeProperty Urn, Object
+                Get-Dependency @splat | Sort-Object Tier -Descending # | Select-DefaultView -ExcludeProperty Urn, Object
             }
             return
         }
