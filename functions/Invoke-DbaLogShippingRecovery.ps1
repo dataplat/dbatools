@@ -38,6 +38,11 @@ To connect as a different Windows user, run PowerShell as that user.
 Allows you to choose to not restore the database to a functional state (Normal) in the final steps of the process.
 By default the database is restored to a functional state (Normal). 
 
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
+
+.PARAMETER Force
+Use this parameter to force the function to continue and perform any adjusting actions to successfully execute
 
 .NOTES 
 Author: Sander Stad (@sqlstad), sqlstad.nl
@@ -70,7 +75,6 @@ Invoke-DbaLogShippingRecovery -SqlServer 'server1' -database 'db_logship' -Verbo
 
 Recovers the database "db_logship" to a normal status
 
-
 .EXAMPLE   
 db1, db2, db3, db4 | Invoke-DbaLogShippingRecovery -SqlServer 'server1' -Verbose
 
@@ -92,13 +96,23 @@ Shows what would happen if the command were executed.
         [string[]]$Database = $null,
         [Parameter(Mandatory=$false, Position=3)][switch]$NoRecovery,
         [Parameter(Mandatory=$false, Position=4)][switch]$Silent,
-        [Parameter(Mandatory=$false, Position=5)][System.Management.Automation.PSCredential]$SqlCredential
+        [Parameter(Mandatory=$false, Position=5)][System.Management.Automation.PSCredential]$SqlCredential,
+        [Parameter(Mandatory=$false, Position=6)][switch]$Force
 	)
 
     BEGIN
     {
         Write-Message -Message "Attempting to connect to Sql Server.." -Level 2 -Silent $Silent
-		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+        try 
+        {
+            $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+        }
+        catch 
+        {
+            Stop-Function -Message "Could not connect to Sql Server instance" -Silent $Silent -InnerErrorRecord $_ -Target $SqlServer 
+            return
+        }
+		
     }
 
     PROCESS
@@ -141,7 +155,8 @@ FROM    msdb.dbo.log_shipping_secondary AS lss
         #endregion Query setup
 
         # Retrieve the log shipping information from the secondary instance
-        try{
+        try
+        {
             Write-Message -Message "Retrieving log shipping information from the secondary instance" -Level 5 -Silent $Silent
             $logshipping_details = Invoke-Sqlcmd2 -ServerInstance $SqlServer -Database 'msdb' -Query $query 
         }
@@ -152,6 +167,72 @@ FROM    msdb.dbo.log_shipping_secondary AS lss
             return
         }
         
+        # Checking the status of the SQL Server Agent service
+        Write-Message -Message ("Checking the status of the SQL Server Agent" + $ls.secondary_database + "'") -Level 2 -Silent $Silent
+        $agentservice = Get-Service | Where-Object -like -value '*sql*agent*' -Property 'name'
+
+        if($agentservice.Status -ne 'Running')
+        {
+            # Check if the service needs to be started forcefully
+            if($Force)
+            {
+                try
+                {
+                    # Start the service
+                    $agentservice.Start()
+                }
+                catch
+                {
+                    # Stop the funcion when the service was unable to start
+                    Stop-Function -Message "Unable to start SQL Server Agent Service" -Silent $Silent -InnerErrorRecord $_ -Target $SqlServer
+
+                    return
+                }
+            }
+
+            # If the force switch and the silent switch are not set
+            if((!$Force) -and (!$Silent))
+            {
+                # Set up the parts for the user choice
+                $Title = "SQL Server Agent is not running"
+                $Info = "Do you want to start the SQL Server Agent service?"
+                
+                $Options = [System.Management.Automation.Host.ChoiceDescription[]] @("&Start", "&Quit")
+                [int]$Defaultchoice = 0
+                $choice = $host.UI.PromptForChoice($Title , $Info , $Options, $Defaultchoice)
+
+                # Check the given option 
+                if($choice -eq 0)
+                {
+                    try
+                    {
+                        # Start the service
+                        $agentservice.Start()
+                    }
+                    catch
+                    {
+                        # Stop the funcion when the service was unable to start
+                        Stop-Function -Message "Unable to start SQL Server Agent Service" -Silent $Silent -InnerErrorRecord $_ -Target $SqlServer
+                    }
+                }
+                else 
+                {
+                    Stop-Function -Message ("The SQL Server Agent service needs to be started to be able to recover the databases") -Silent $Silent -InnerErrorRecord $_ -Target $SqlServer
+
+                    return
+                }
+            }
+
+            # If the force switch it not set and the silent switch is set
+            if((!$Force) -and ($Silent))
+            {
+                Stop-Function -Message ("The SQL Server Agent service needs to be started to be able to recover the databases") -Silent $Silent -InnerErrorRecord $_ -Target $SqlServer
+
+                return
+            }
+
+        }
+
         # Check if there are any databases to recover
         if($logshipping_details -ne $null)
         {
