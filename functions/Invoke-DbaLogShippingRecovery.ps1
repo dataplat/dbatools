@@ -98,9 +98,9 @@ Shows what would happen if the command were executed.
         [object]$SqlServer,
         [Parameter(Mandatory=$false, Position=2, ValueFromPipeline=$true)]
         [string[]]$Database = $null,
-        [Parameter(Mandatory=$false, Position=3)][switch]$NoRecovery,
-        [Parameter(Mandatory=$false, Position=4)][switch]$Silent,
-        [Parameter(Mandatory=$false, Position=5)][System.Management.Automation.PSCredential]$SqlCredential,
+        [Parameter(Mandatory=$false, Position=3)][System.Management.Automation.PSCredential]$SqlCredential,
+        [Parameter(Mandatory=$false, Position=4)][switch]$NoRecovery,
+        [Parameter(Mandatory=$false, Position=5)][switch]$Silent,
         [Parameter(Mandatory=$false, Position=6)][switch]$Force,
         [Parameter(Mandatory=$false, Position=7)][int]$Delay = 5
 	)
