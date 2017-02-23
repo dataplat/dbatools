@@ -305,7 +305,7 @@ folder for those file types as defined on the target instance.
 						catch
 						{
 							Write-Warning "$p does not exist or access denied"
-							return
+							continue
 						}
 						Write-Verbose "$FunctionName : Single file"
 						$BackupFiles += Get-item $p
