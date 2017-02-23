@@ -330,7 +330,7 @@
 						RestoredFileFull = $RestoreFiles[0].Filelist.PhysicalName -join ','
 						RestoreDirectory = $RestoreDirectory
 						BackupSize = ($RestoreFiles | measure-object -property BackupSize -Sum).sum
-						CompressedBackupSize = ($RestoreFiles | measure-object -property CompressedBackupSize -Sum).sum
+						CompressedBackupSize = if([bool]($RestoreFiles.PSobject.Properties.name -match 'CompressedBackupSize')){($RestoreFiles | measure-object -property CompressedBackupSize -Sum).sum}else{0}
 						Script = $script  
 						BackupFileRaw = $RestoreFiles
 						ExitError = $ExitError				
