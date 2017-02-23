@@ -44,7 +44,7 @@ Takes path, checks for validity. Scans for usual backup file
         #$queryresult
         $dirs = $queryResult | where-object { $_.file -eq 0 }
         $Results = @()
-              $Results += $queryResult | where-object { $_.file -eq 1 } | Select @{Name="FullName";Expression={$PATH+$_."Subdirectory"}}
+              $Results += $queryResult | where-object { $_.file -eq 1 } | Select-Object @{Name="FullName";Expression={$PATH+$_."Subdirectory"}}
   
         ForEach ($d in $dirs) 
         {

@@ -318,10 +318,10 @@ folder for those file types as defined on the target instance.
 				Write-Verbose "$FunctionName : Files passed in $($Path.count)"
 				Foreach ($FileTmp in $Path)
 				{
-					Write-Verbose "Type - $($FileTmp.GetType()), length =$($FileTmp.length)"
+					Write-Verbose "$FunctionName - Type - $($FileTmp.GetType()), length =$($FileTmp.length)"
 					if($FileTmp -is [System.Io.FileInfo] -and $isLocal -eq $False )
 					{
-						Write-Verbose "File object"
+						Write-Verbose "$FunctionName - File object"
 						if ($FileTmp.PsIsContainer)
 						{
 							$BackupFiles += Get-XPDirTreeRestoreFile -Path $FileTmp.Fullname -SqlServer $SqlServer -SqlCredential $SqlCredential
@@ -354,15 +354,18 @@ folder for those file types as defined on the target instance.
 						}
 						if ([bool]($FileTmp.FullName -notmatch '\.\w{3}\Z' ))
 						{
-							Write-Verbose "$FunctionName - it's file"
-							$BackupFiles += Get-XPDirTreeRestoreFile -Path $FileTmp.Fullname -SqlServer $SqlServer -SqlCredential $SqlCredential
+
+							foreach ($dir in $Filetmp.path){
+															Write-Verbose "$FunctionName - it's a folder, passing to Get-XpDirTree - $($dir)"
+								$BackupFiles += Get-XPDirTreeRestoreFile -Path $dir -SqlServer $SqlServer -SqlCredential $SqlCredential
+							}
 						}
 						elseif ([bool]($FileTmp.FullName -match '\.\w{3}\Z' ))
 						{
 							Write-Verbose "$FunctionName - it's folder"
 							ForEach ($ft in $Filetmp.FullName)
 							{			
-								Write-Verbose "$FunctionName - Piped files Testing $($ft)"					
+								Write-Verbose "$FunctionName - Piped files Test-SqlPath $($ft)"					
 								if (Test-SqlPath -Path $ft -SqlServer $SqlServer -SqlCredential $SqlCredential)
 								{
 									$BackupFiles += $ft
