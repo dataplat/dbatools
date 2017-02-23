@@ -87,13 +87,13 @@
 					}
 					catch
 					{
-						Write-Verbose "$FunctionName - No processes to kill"
+						Write-Verbose "$FunctionName - No processes to kill in $DbName"
 					}
 				} 
 			}
 			else
 			{
-				Write-Warning "$FunctionName - Database exists and will not be overwritten without the WithReplace switch"
+				Write-Warning "$FunctionName - Database $DbName exists and will not be overwritten without the WithReplace switch"
 				break
 			}
 
@@ -121,7 +121,7 @@
 					{
 					if ((New-DbaSqlDirectory -Path $File -SqlServer:$SqlServer -SqlCredential:$SqlCredential).Created -ne $true)
 					{
-						write-Warning  "$FunctionName - Destination File $File does not exist, and could not be created on $SqlServer" -WarningAction stop
+						write-Warning  "$FunctionName - Destination File $File does not exist, and could not be created on $SqlServer"
 
 						return
 					}
@@ -140,7 +140,7 @@
 		{
 			$RestoreFiles = $RestorePoint.files
 			$RestoreFileNames = $RestoreFiles.BackupPath -join '`n ,'
-			Write-verbose "$FunctionName - Restoring backup starting at order $($RestorePoint.order) - LSN $($RestoreFiles[0].FirstLSN) in $($RestoreFiles[0].BackupPath)"
+			Write-verbose "$FunctionName - Restoring $Dbname backup starting at order $($RestorePoint.order) - LSN $($RestoreFiles[0].FirstLSN) in $($RestoreFiles[0].BackupPath)"
 			$LogicalFileMoves = @()
 
 			if ($Restore.RelocateFiles.count -gt 0)
@@ -194,7 +194,7 @@
 				$LogicalFileMovesString = $LogicalFileMoves -join ", `n"
 
 
-				Write-Verbose "$FunctionName - Beginning Restore"
+				Write-Verbose "$FunctionName - Beginning Restore of $Dbname"
 				$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
 					Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
 				}
@@ -205,7 +205,7 @@
 				if ($RestoreTime -gt (Get-Date))
 				{
 						$restore.ToPointInTime = $null
-						Write-Verbose "$FunctionName - restoring to latest point in time"
+						Write-Verbose "$FunctionName - restoring $DbName to latest point in time"
 
 				}
 				elseif ($RestoreFiles[0].RecoveryModel -ne 'Simple')
@@ -329,8 +329,8 @@
 						RestoredFile = $RestoredFile
 						RestoredFileFull = $RestoreFiles[0].Filelist.PhysicalName -join ','
 						RestoreDirectory = $RestoreDirectory
-						BackupSize = ($RestoreFiles | measure-object -property BackupSize -Sum).sum
-						CompressedBackupSize = ($RestoreFiles | measure-object -property CompressedBackupSize -Sum).sum
+						BackupSize =  ($RestoreFiles | measure-object -property BackupSize -Sum).sum
+						CompressedBackupSize = if([bool]($RestoreFiles.PSobject.Properties.name -match 'CompressedBackupSize')){($RestoreFiles | measure-object -property CompressedBackupSize -Sum).sum}else{$null}
 						Script = $script  
 						BackupFileRaw = $RestoreFiles
 						ExitError = $ExitError				
