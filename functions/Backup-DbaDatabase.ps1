@@ -140,9 +140,16 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 		{
 			$failures = @()
 			$dbname = $Database.name
+			
 			if ($dbname -eq "tempdb")
 			{
 				Write-Warning "Backing up tempdb not supported"
+				continue
+			}
+			
+			if ($Database.DatabaseSnapshotBaseName)
+			{
+				Write-Warning "Backing up snapshots not supported. $dbname skipped."
 				continue
 			}
 			
