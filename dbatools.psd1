@@ -223,7 +223,8 @@
 		'Copy-DbaQueryStoreConfig',
 		'Get-DbaExecutionPlan',
 		'Export-DbaExecutionPlan',
-		'Get-DbaServerProtocol'
+		'Get-DbaServerProtocol',
+		'Get-DbaLocaleSetting'
 	)
 	
 	# Cmdlets to export from this module
