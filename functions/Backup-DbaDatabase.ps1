@@ -147,12 +147,18 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 				continue
 			}
 			
+			if ($Database.Status -ne 'Normal')
+			{
+				Write-Warning "Database status not Normal. $dbname skipped."
+				continue
+			}
+			
 			if ($Database.DatabaseSnapshotBaseName)
 			{
 				Write-Warning "Backing up snapshots not supported. $dbname skipped."
 				continue
 			}
-			
+						
 			if ($server -eq $null) { $server = $Database.Parent }
 			
 			Write-Verbose "$FunctionName - Backup up database $database"
