@@ -102,7 +102,7 @@ Shows what would happen if the command were executed.
         [Parameter(Mandatory=$false, Position=4)][switch]$Silent,
         [Parameter(Mandatory=$false, Position=5)][System.Management.Automation.PSCredential]$SqlCredential,
         [Parameter(Mandatory=$false, Position=6)][switch]$Force,
-        [Parameter(Mandatory=$false, Position=6)][int]$Delay = 5
+        [Parameter(Mandatory=$false, Position=7)][int]$Delay = 5
 	)
 
     BEGIN
