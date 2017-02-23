@@ -44,6 +44,10 @@ Use this switch to disable any kind of verbose messages
 .PARAMETER Force
 Use this parameter to force the function to continue and perform any adjusting actions to successfully execute
 
+.PARAMETER Delay
+Set the delay in seconds to wait for the copy and/or restore jobs. 
+By default the delay is 5 seconds
+
 .NOTES 
 Author: Sander Stad (@sqlstad), sqlstad.nl
 Requires: sysadmin access on SQL Servers
@@ -97,7 +101,8 @@ Shows what would happen if the command were executed.
         [Parameter(Mandatory=$false, Position=3)][switch]$NoRecovery,
         [Parameter(Mandatory=$false, Position=4)][switch]$Silent,
         [Parameter(Mandatory=$false, Position=5)][System.Management.Automation.PSCredential]$SqlCredential,
-        [Parameter(Mandatory=$false, Position=6)][switch]$Force
+        [Parameter(Mandatory=$false, Position=6)][switch]$Force,
+        [Parameter(Mandatory=$false, Position=6)][int]$Delay = 5
 	)
 
     BEGIN
@@ -254,7 +259,7 @@ FROM    msdb.dbo.log_shipping_secondary AS lss
                         $latestfile = Get-ChildItem -Path $ls.backup_source_directory -filter ("*" + $ls.primary_database + "*") | Where-Object {($_.Extension -eq '.trn') } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
                     
                         # Check if the latest file is also the latest copied file
-                        if($latestfile.Name -ne [string]$ls.last_copied_file.Split('\')[-1])
+                        if($latestfile.Name -ne ([string]$ls.last_copied_file).Split('\')[-1])
                         {
                             Write-Message -Message "Synchronizing the latest transaction log backup file(s)" -Level 5 -Silent $Silent
 
@@ -271,10 +276,10 @@ FROM    msdb.dbo.log_shipping_secondary AS lss
 
                                 Write-Message -Message "Waiting for the copy action to complete.." -Level 5 -Silent $Silent
 
-                                while($latestfile.Name -ne [string]$latestcopy.last_copied_file.Split('\')[-1])
+                                while($latestfile.Name -ne ([string]$latestcopy.last_copied_file).Split('\')[-1])
                                 {
                                     # Sleep for while to let the files be copied
-                                    Start-Sleep -Seconds 5
+                                    Start-Sleep -Seconds $Delay
 
                                     # Again get the latest file to check if the process can continue
                                     $latestcopy = Invoke-Sqlcmd2 -ServerInstance $SqlServer -Database 'msdb' -Query $query
@@ -304,7 +309,7 @@ FROM    msdb.dbo.log_shipping_secondary AS lss
 
                     #region Restore of remaining backup files
                     # Check if the last copied file is newer than the last restored file
-                    if($latestfile.Name -ne [string]$latestrestore.last_restored_file.Split('\')[-1])
+                    if($latestfile.Name -ne ([string]$latestrestore.last_restored_file).Split('\')[-1])
                     {
                         Write-Message -Message "Last file found has not yet been restored yet" -Level 5 -Silent $Silent
                         # Start the restore job
@@ -316,10 +321,10 @@ FROM    msdb.dbo.log_shipping_secondary AS lss
                             Write-Message -Message "Waiting for the restore action to complete.."-Level 5 -Silent $Silent
 
                             # Check if the jobs is still running
-                            while($latestfile.Name -ne [string]$latestrestore.last_restored_file.Split('\')[-1])
+                            while($latestfile.Name -ne ([string]$latestrestore.last_restored_file).Split('\')[-1])
                             {
                                 # Sleep for while to let the files be copied
-                                Start-Sleep -Seconds 5
+                                Start-Sleep -Seconds $Delay
 
                                 # Again get the latest file to check if the process can continue
                                 $latestrestore = Invoke-Sqlcmd2 -ServerInstance $SqlServer -Database 'msdb' -Query $query
@@ -345,7 +350,7 @@ FROM    msdb.dbo.log_shipping_secondary AS lss
                         {
                             if($PSCmdlet.ShouldProcess($ls.secondary_database, "Restoring database with recovery"))
                             {
-                                Write-Message -Message "Restoring the database to it's normal state"
+                                Write-Message -Message "Restoring the database to it's normal state" -Level 2 -Silent $Silent
                                 $query = "RESTORE DATABASE " + $ls.secondary_database + " WITH RECOVERY"
                                 Invoke-Sqlcmd2 -ServerInstance $SqlServer -Database 'master' -Query $query 
                             }
