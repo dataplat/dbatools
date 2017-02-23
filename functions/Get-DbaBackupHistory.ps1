@@ -267,6 +267,8 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 										ELSE NULL
 									  END AS Type,
 									  backupset.media_set_id AS MediaSetId,
+									  mediafamily.media_family_id as mediafamilyid,
+		   							  backupset.backup_set_id as backupsetid,
 									  CASE mediafamily.device_type
 										WHEN 2 THEN 'Disk'
 										WHEN 102 THEN 'Permanent Disk  Device'
