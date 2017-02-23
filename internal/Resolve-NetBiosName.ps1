@@ -1,4 +1,4 @@
-Function Resolve-NetBiosName
+﻿Function Resolve-NetBiosName
 {
  <#
 .SYNOPSIS

@@ -1,4 +1,4 @@
-Function Invoke-SmoCheck
+﻿Function Invoke-SmoCheck
 {
 <# 
 .SYNOPSIS 

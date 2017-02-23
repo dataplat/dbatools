@@ -1,4 +1,4 @@
-Function Update-SqlDbReadOnly
+﻿Function Update-SqlDbReadOnly
 {
 <#
 .SYNOPSIS

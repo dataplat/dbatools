@@ -1,4 +1,4 @@
-Function Test-SqlAgent
+﻿Function Test-SqlAgent
 {
 <#
 .SYNOPSIS

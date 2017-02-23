@@ -1,4 +1,4 @@
-Function Get-DbaMaxMemory
+﻿Function Get-DbaMaxMemory
 {
 <# 
 .SYNOPSIS 
@@ -17,7 +17,8 @@ $cred = Get-Credential, then pass $cred variable to this parameter.
 
 Windows Authentication will be used when SqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
-.NOTES 
+.NOTES
+Tags: Memory
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -51,7 +52,6 @@ Find all servers in Server Central Management Server that have 'Max Server Memor
 	
 	PROCESS
 	{
-		$collection = @()
 		foreach ($servername in $sqlserver)
         {	
 			Write-Verbose "Attempting to connect to $servername"

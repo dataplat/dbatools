@@ -1,4 +1,4 @@
-Function Get-SqlDefaultPaths
+﻿Function Get-SqlDefaultPaths
 {
 <#
 .SYNOPSIS

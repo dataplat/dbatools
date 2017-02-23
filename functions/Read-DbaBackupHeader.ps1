@@ -22,7 +22,8 @@ Returns fewer columns for an easy overview
 .PARAMETER FileList
 Returns detailed information about the files within the backup	
 
-.NOTES 
+.NOTES
+Tags: DisasterRecovery, Backup, Restore
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -132,24 +133,64 @@ Gets a list of all .bak files on the \\nas\sql share and reads the headers using
 			
 			$datatable = $restore.ReadBackupHeader($server)
 			$fl = $datatable.Columns.Add("FileList", [object])
-			$datatable.rows[0].FileList = $allfiles.rows
+			#$datatable.rows[0].FileList = $allfiles.rows
 			
 			$mb = $datatable.Columns.Add("BackupSizeMB", [int])
 			$mb.Expression = "BackupSize / 1024 / 1024"
 			$gb = $datatable.Columns.Add("BackupSizeGB")
 			$gb.Expression = "BackupSizeMB / 1024"
 			
+			if ($null -eq $datatable.Columns['CompressedBackupSize'])
+			{
+				$formula = "0"
+			}
+			else
+			{
+				$formula = "CompressedBackupSize / 1024 / 1024"
+			}
+			
 			$cmb = $datatable.Columns.Add("CompressedBackupSizeMB", [int])
-			$cmb.Expression = "CompressedBackupSize / 1024 / 1024"
+			$cmb.Expression = $formula
 			$cgb = $datatable.Columns.Add("CompressedBackupSizeGB")
 			$cgb.Expression = "CompressedBackupSizeMB / 1024"
 			
 			$null = $datatable.Columns.Add("SqlVersion")
+
+
 			$null = $datatable.Columns.Add("BackupPath")
+		#	$datatable.Columns["BackupPath"].DefaultValue = $Path
 			$dbversion = $datatable.Rows[0].DatabaseVersion
 			
-			$datatable.Rows[0].SqlVersion = (Convert-DbVersionToSqlVersion $dbversion)
-			$datatable.Rows[0].BackupPath = $file
+		#	$datatable.Rows[0].SqlVersion = (Convert-DbVersionToSqlVersion $dbversion)
+			$BackupSlot = 1
+			ForEach ($row in $DataTable)
+			{
+				$row.SqlVersion = (Convert-DbVersionToSqlVersion $dbversion)
+				$row.BackupPath = $file
+				try
+				{
+					$restore.FileNumber = $BackupSlot
+					$allfiles = $restore.ReadFileList($server)
+				}
+				catch
+				{
+					$shortname = Split-Path $file -Leaf
+					if (!(Test-SqlPath -SqlServer $server -Path $file))
+					{
+						Write-Warning "File $shortname does not exist or access denied. The SQL Server service account may not have access to the source directory."
+					}
+					else
+					{
+						Write-Warning "File list for $shortname could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or tiemouts with the SQL Server, or the SQL Server service account does not have access to the source directory."
+					}
+					
+					Write-Exception $_
+					return
+				}
+				$row.FileList = $allfiles
+				$BackupSlot++
+
+			}
 			
 			if ($Simple)
 			{

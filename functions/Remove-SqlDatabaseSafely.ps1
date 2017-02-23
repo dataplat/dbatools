@@ -63,7 +63,8 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm 
 Prompts you for confirmation before executing any changing operations within the command. 
 
-.NOTES 
+.NOTES
+Tags: DisasterRecovery, Backup, Restore
 Original Author: Rob Sewell @SQLDBAWithBeard, sqldbawithabeard.com
                  With huge thanks to Grant Fritchey and his verify your backups video 
                  Take a look its only 3 minutes long
@@ -209,7 +210,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		
 		if ($alldatabases -or $databases.count -eq 0)
 		{
-			$databases = ($sourceserver.databases | Where-Object{ $_.IsSystemObject -eq $false }).Name
+			$databases = ($sourceserver.databases | Where-Object{ $_.IsSystemObject -eq $false -and ($_.Status -match 'Offline') -eq  $false}).Name
 		}
 		
 		if (!(Test-SqlPath -SqlServer $destserver -Path $backupFolder))

@@ -1,4 +1,4 @@
-Function Invoke-ManagedComputerCommand
+﻿Function Invoke-ManagedComputerCommand
 {
 <#
 .SYNOPSIS
@@ -85,7 +85,6 @@ Internal command
 		}
 		catch
 		{
-			Write-Exception $_
 			throw $_
 		}
 	}
