@@ -296,8 +296,17 @@ folder for those file types as defined on the target instance.
 							$BackupFiles += Get-XPDirTreeRestoreFile -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential
 						}
 					}
-					elseif ((Get-Item $p).PSIsContainer -ne $true)
+					elseif ((Get-Item $p -ErrorAction SilentlyContinue).PSIsContainer -ne $true)
 					{
+						try
+						{
+							$null = Get-Item $p -ErrorAction Stop
+						}
+						catch
+						{
+							Write-Warning "$p does not exist or access denied"
+							continue
+						}
 						Write-Verbose "$FunctionName : Single file"
 						$BackupFiles += Get-item $p
 					}
