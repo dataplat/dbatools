@@ -3,6 +3,17 @@
 	$text = "Version $galleryversion is now available"
 )
 {
+	# ensure the dbatools 'app' exists in registry so that it doesn't immediately disappear from Action Center
+	$regpath = 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Notifications\Settings'
+	$appid = "dbatools"
+	
+	if (!(Test-Path -Path "$regpath\$appid"))
+	{
+		Write-Output "Adding required registry entry at $("$regpath\$appid")"
+		$null = New-Item -Path $regpath -Name $appid
+		$null = New-ItemProperty -Path "$regpath\$appid" -Name 'ShowInActionCenter' -Value 1 -PropertyType 'DWORD'
+	}
+	
 	$null = [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime]
 	$templatetype = [Windows.UI.Notifications.ToastTemplateType]::ToastImageAndText02
 	$template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent($templatetype)

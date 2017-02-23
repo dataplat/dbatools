@@ -30,40 +30,6 @@ Watches the gallery for updates to dbatools.
 #>	
 	BEGIN
 	{
-		function Show-Notification (
-			$title = "dbatools update",
-			$text = "Version $galleryversion is now available"
-		)
-		{
-			$null = [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime]
-			$templatetype = [Windows.UI.Notifications.ToastTemplateType]::ToastImageAndText02
-			$template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent($templatetype)
-
-			$toastXml = [xml]$template.GetXml()
-			$toastTextElements = $toastXml.GetElementsByTagName("text")
-			
-			$null = $toastTextElements[0].AppendChild($toastXml.CreateTextNode($title))
-			$null = $toastTextElements[1].AppendChild($toastXml.CreateTextNode($text))
-			
-			# make it last longer
-			#$singletoast = $toastXml.SelectSingleNode("/toast")
-			#$singletoast.SetAttribute("duration", "long")
-			
-			$image = $toastXml.GetElementsByTagName("image")
-			$base = $module.ModuleBase
-			
-			$image.setAttribute("src", "$base\bin\thor.png")
-			$image.setAttribute("alt", "thor")
-			
-			$xml = New-Object Windows.Data.Xml.Dom.XmlDocument
-			$xml.LoadXml($toastXml.OuterXml)
-			
-			$toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
-			$toast.Tag = "PowerShell"
-			$toast.Group = "dbatools"
-			$notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("dbatools").Show($toast)
-		}
-		
 		function Create-Task
 		{
 			$script = {
@@ -104,34 +70,9 @@ Watches the gallery for updates to dbatools.
 			return
 		}
 		
-		# Show up in Action Center for a while
-		$regpath = 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Notifications\Settings'
-		$appid = "dbatools"
-		
-		if (!(Test-Path -Path "$regpath\$appid"))
-		{
-			$null = New-Item -Path $regpath -Name $appid
-			$null = New-ItemProperty -Path "$regpath\$appid" -Name 'ShowInActionCenter' -Value 1 -PropertyType 'DWORD'
-		}
-		
 		if ($null -eq (Get-ScheduledTask -TaskName "dbatools version check" -ErrorAction SilentlyContinue))
 		{
-			Write-Warning "Watch-DbaUpdate runs as a Scheduled Task which must be created. This will only happen once."
-			
-			$result = Create-Task
-			
-			if ($result -eq $false)
-			{
-				Write-Warning "Couldn't create task :("
-				return
-			}
-			else
-			{
-				$module = Get-Module -Name dbatools
-				Write-Warning "Task created! A notication should appear momentarily. Here's something cute to look at in the interim."
-				Show-Notification -title "dbatools ❤ you" -text "come hang out at dbatools.io/slack"
-				return
-			}
+			Install-DbaWatchUpdate
 		}
 		
 		# leave this in for the scheduled task
