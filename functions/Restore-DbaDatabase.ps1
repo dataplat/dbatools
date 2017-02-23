@@ -244,6 +244,11 @@ folder for those file types as defined on the target instance.
 	{
 		foreach ($f in $path)
 		{
+			if ($f.FullName)
+			{
+				$f = $f.FullName
+			}
+			
 			if ($f.Gettype -is [string])
 			{
 				if ($f.StartsWith("\\") -eq $false -and  $islocal -ne $true)
@@ -397,7 +402,6 @@ folder for those file types as defined on the target instance.
 		}
 		catch
 		{
-			$server.ConnectionContext.Disconnect()
 			Write-Warning "$FunctionName - Cannot connect to $SqlServer"
 			Return
 		}
@@ -409,7 +413,7 @@ folder for those file types as defined on the target instance.
 				break
 			}
 		}
-		$server.ConnectionContext.Disconnect()
+
 		if ($islocal -eq $false)
 		{
 			Write-Verbose "$FunctionName - Remote server, checking folders"
