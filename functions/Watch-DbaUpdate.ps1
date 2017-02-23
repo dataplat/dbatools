@@ -30,40 +30,6 @@ Watches the gallery for updates to dbatools.
 #>	
 	BEGIN
 	{
-		function Show-Notification (
-			$title = "dbatools update",
-			$text = "Version $galleryversion is now available"
-		)
-		{
-			$null = [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime]
-			$templatetype = [Windows.UI.Notifications.ToastTemplateType]::ToastImageAndText02
-			$template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent($templatetype)
-			
-			#Convert to .NET type for XML manipuration
-			$toastXml = [xml]$template.GetXml()
-			$null = $toastXml.GetElementsByTagName("text").AppendChild($toastXml.CreateTextNode($title))
-			
-			$image = $toastXml.GetElementsByTagName("image")
-			# unsure why $PSScriptRoot isnt't working here
-			$base = $module.ModuleBase
-			
-			$image.setAttribute("src", "$base\bin\thor.png")
-			$image.setAttribute("alt", "thor")
-			
-			#Convert back to WinRT type
-			$xml = New-Object Windows.Data.Xml.Dom.XmlDocument
-			$xml.LoadXml($toastXml.OuterXml)
-			
-			$toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
-			$toast.Tag = "PowerShell"
-			$toast.Group = "PowerShell"
-			# This doesn't work
-			$toast.ExpirationTime = [DateTimeOffset]::Now.AddHours(6)
-			
-			$notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($text)
-			$notifier.Show($toast)
-		}
-		
 		function Create-Task
 		{
 			$script = {
@@ -106,22 +72,7 @@ Watches the gallery for updates to dbatools.
 		
 		if ($null -eq (Get-ScheduledTask -TaskName "dbatools version check" -ErrorAction SilentlyContinue))
 		{
-			Write-Warning "Watch-DbaUpdate runs as a Scheduled Task which must be created. This will only happen once."
-			
-			$result = Create-Task
-			
-			if ($result -eq $false)
-			{
-				Write-Warning "Couldn't create task :("
-				return
-			}
-			else
-			{
-				$module = Get-Module -Name dbatools
-				Write-Warning "Task created! A notication should appear momentarily. Here's something cute to look at in the interim."
-				Show-Notification -title "dbatools ❤ you" -text "come hang out at dbatools.io/slack"
-				return
-			}
+			Install-DbaWatchUpdate
 		}
 		
 		# leave this in for the scheduled task
