@@ -28,40 +28,7 @@ Watch-DbaUpdate
 
 Watches the gallery for updates to dbatools.
 #>	
-	BEGIN
-	{
-		function Create-Task
-		{
-			$script = {
-				try
-				{
-					# create a task, check every 3 hours
-					$action = New-ScheduledTaskAction –Execute 'powershell.exe' -Argument '–NoProfile -NoLogo -NonInteractive -WindowStyle Hidden Watch-DbaUpdate'
-					$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date -RepetitionInterval (New-TimeSpan -Hours 3)
-					$principal = New-ScheduledTaskPrincipal -LogonType S4U -UserId (whoami)
-					$settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([timespan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd
-					$task = Register-ScheduledTask -Principal $principal -TaskName 'dbatools version check' -Action $action -Trigger $trigger -Settings $settings -ErrorAction Stop
-					return $true	
-				}
-				catch
-				{
-					return $false
-				}
-			}
-			
-			# Needs admin creds to setup the kind of PowerShell window that doesn't appear for a millisecond
-			# which is a millisecond too long
-			If (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
-			{
-				return (Start-Process powershell -Verb runAs -ArgumentList $script.tostring() -ErrorAction Stop)
-			}
-			else
-			{
-				return (Invoke-Command -ScriptBlock $script -ErrorAction Stop)
-			}
-		}
-	}
-	
+
 	PROCESS
 	{
 		if (([Environment]::OSVersion).Version.Major -lt 10)
@@ -92,15 +59,17 @@ Watches the gallery for updates to dbatools.
 		$file = "$env:LOCALAPPDATA\dbatools\watchupdate.xml"
 		
 		$new = [pscustomobject]@{
-			NotifyTime = (Get-Date)
 			NotifyVersion = $galleryversion
 		}
+		
+		# now that notifications stay until they are checked, we just have to keep
+		# track of the last version we notified about
 		
 		if (Test-Path $file)
 		{
 			$old = Import-Clixml -Path $file -ErrorAction SilentlyContinue
 			
-			if ($old.NotifyTime -lt (Get-Date).AddHours(-6))
+			if ($galleryversion -gt $old.NotifyVersion)
 			{
 				Export-Clixml -InputObject $new -Path $file
 				Show-Notification
