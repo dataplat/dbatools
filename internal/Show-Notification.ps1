@@ -9,7 +9,7 @@
 	
 	if (!(Test-Path -Path "$regpath\$appid"))
 	{
-		Write-Output "Adding required registry entry at $("$regpath\$appid")"
+		Write-Verbose "Adding required registry entry at $("$regpath\$appid")"
 		$null = New-Item -Path $regpath -Name $appid
 		$null = New-ItemProperty -Path "$regpath\$appid" -Name 'ShowInActionCenter' -Value 1 -PropertyType 'DWORD'
 	}
