@@ -220,7 +220,7 @@ Gets a list of all .bak files on the \\nas\sql share and reads the headers using
 				$datatable
 			}
 			
-			remove-variable DataTable
+			Remove-Variable DataTable -ErrorAction SilentlyContinue
 		}
 	$LoopCnt++
 	}
