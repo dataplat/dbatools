@@ -1,4 +1,4 @@
-﻿# Not supporting the provider path at this time
+# Not supporting the provider path at this time
 if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\"))
 {
 	Write-Warning "SQLSERVER:\ provider not supported. Please change to another directory and reload the module."
@@ -21,17 +21,17 @@ $smoversions = "14.0.0.0", "13.0.0.0", "12.0.0.0", "11.0.0.0", "10.0.0.0", "9.0.
 
 foreach ($smoversion in $smoversions)
 {
-    try
-    {
-        Add-Type -AssemblyName "Microsoft.SqlServer.Smo, Version=$smoversion, Culture=neutral, PublicKeyToken=89845dcd8080cc91" -ErrorAction Stop
-        $smoadded = $true
-    }
-    catch
-    {
-        $smoadded = $false
-    }
-    
-    if ($smoadded -eq $true) { break }
+	try
+	{
+		Add-Type -AssemblyName "Microsoft.SqlServer.Smo, Version=$smoversion, Culture=neutral, PublicKeyToken=89845dcd8080cc91" -ErrorAction Stop
+		$smoadded = $true
+	}
+	catch
+	{
+		$smoadded = $false
+	}
+	
+	if ($smoadded -eq $true) { break }
 }
 
 if ($smoadded -eq $false) { throw "Can't load SMO assemblies. You must have SQL Server Management Studio installed to proceed." }
@@ -42,14 +42,14 @@ $assemblies = "Management.Common", "Dmf", "Instapi", "SqlWmiManagement", "Connec
 
 foreach ($assembly in $assemblies)
 {
-    try
-    {
-        Add-Type -AssemblyName "Microsoft.SqlServer.$assembly, Version=$smoversion, Culture=neutral, PublicKeyToken=89845dcd8080cc91" -ErrorAction Stop
-    }
-    catch
-    {
-        # Don't care
-    }
+	try
+	{
+		Add-Type -AssemblyName "Microsoft.SqlServer.$assembly, Version=$smoversion, Culture=neutral, PublicKeyToken=89845dcd8080cc91" -ErrorAction Stop
+	}
+	catch
+	{
+		# Don't care
+	}
 }
 
 <# 
@@ -82,18 +82,18 @@ foreach ($function in (Get-ChildItem "$PSScriptRoot\functions\*.ps1"))
 # Validations were moved into the other files, in order to prevent having to update dbatools.psm1 every time
 foreach ($function in (Get-ChildItem "$PSScriptRoot\optional\*.ps1"))
 {
-    . ([scriptblock]::Create([io.file]::ReadAllText($function)))
+	. ([scriptblock]::Create([io.file]::ReadAllText($function)))
 }
 
 #region Finally register autocompletion
 # Test whether we have Tab Expansion Plus available (used in dynamicparams scripts ran below)
 if (Get-Command TabExpansionPlusPlus\Register-ArgumentCompleter -ErrorAction Ignore)
 {
-    $TEPP = $true
+	$TEPP = $true
 }
 else
 {
-    $TEPP = $false
+	$TEPP = $false
 }
 
 foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\dynamicparams\*.ps1"))
