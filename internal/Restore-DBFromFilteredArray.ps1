@@ -94,7 +94,7 @@
 			else
 			{
 				Write-Warning "$FunctionName - Database $DbName exists and will not be overwritten without the WithReplace switch"
-				break
+				return
 			}
 
 		}
