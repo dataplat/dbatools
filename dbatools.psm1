@@ -1,4 +1,11 @@
-﻿<#
+﻿# Not supporting the provider path at this time
+if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\"))
+{
+	Write-Warning "SQLSERVER:\ provider not supported. Please change to another directory and reload the module."
+	Write-Warning "Going to continue loading anyway, but expect issues."
+}
+
+<#
 
 	Attempt to load all versions of SMO from vNext to 2005 - this is why RequiredAssemblies can't be used.
 
@@ -104,9 +111,6 @@ foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\dynamicparams\*.ps1
 
 # Start the logging system (requires the configuration system up and running)
 . ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\internal\scripts\logfilescript.ps1")))
-
-# Not supporting the provider path at this time
-# if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\")) { throw "Please change to another drive and reload the module." }
 
 # I renamed this function to be more accurate
 Set-Alias -Name Reset-SqlSaPassword -Value Reset-SqlAdmin
