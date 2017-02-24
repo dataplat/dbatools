@@ -136,7 +136,7 @@ Will fill this in
 				
 				foreach ($history in $histories)
 				{
-					$timetaken = New-TimeSpan –Start $history.Start –End $history.End
+					$timetaken = New-TimeSpan -Start $history.Start -End $history.End
 					
 					if ($timetaken.TotalMilliseconds -eq 0)
 					{

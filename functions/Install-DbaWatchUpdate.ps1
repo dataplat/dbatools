@@ -38,7 +38,7 @@ Adds the scheduled task needed by Watch-DbaUpdate
 			try
 			{
 				# create a task, check every 3 hours
-				$action = New-ScheduledTaskAction –Execute 'powershell.exe' -Argument '–NoProfile -NoLogo -NonInteractive -WindowStyle Hidden Watch-DbaUpdate'
+				$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -NoLogo -NonInteractive -WindowStyle Hidden Watch-DbaUpdate'
 				$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date -RepetitionInterval (New-TimeSpan -Hours 3)
 				$principal = New-ScheduledTaskPrincipal -LogonType S4U -UserId (whoami)
 				$settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([timespan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd
@@ -68,7 +68,7 @@ Adds the scheduled task needed by Watch-DbaUpdate
 				{
 					$module = Get-Module -Name dbatools
 					Write-Warning "Task created! A notication should appear momentarily. Here's something cute to look at in the interim."
-					Show-Notification -title "dbatools ❤ you" -text "come hang out at dbatools.io/slack"
+					Show-Notification -title "dbatools wants you" -text "come hang out at dbatools.io/slack"
 				}
 			}
 			catch
