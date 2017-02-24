@@ -137,8 +137,8 @@
 			}
 		}
 		$RestoreCount=0
-		$RPCount = $SortedRestorePoints.count
-
+		$RPCount = if($SortedRestorePoints.count -gt 0){$SortedRestorePoints.count}else{1}
+		Write-Verbose "RPcount = $rpcount"
 		foreach ($RestorePoint in $SortedRestorePoints)
 		{
 			$RestoreCount++
