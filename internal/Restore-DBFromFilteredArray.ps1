@@ -136,8 +136,13 @@
 				}
 			}
 		}
+		$RestoreCount=0
+		$RPCount = $SortedRestorePoints.count
+
 		foreach ($RestorePoint in $SortedRestorePoints)
 		{
+			$RestoreCount++
+			Write-Progress -id 123 -Activity "Restoring $DbName" -Status "Restore status" -percentcomplete (($RestoreCount/($RpCount))*100)
 			$RestoreFiles = $RestorePoint.files
 			$RestoreFileNames = $RestoreFiles.BackupPath -join '`n ,'
 			Write-verbose "$FunctionName - Restoring $Dbname backup starting at order $($RestorePoint.order) - LSN $($RestoreFiles[0].FirstLSN) in $($RestoreFiles[0].BackupPath)"

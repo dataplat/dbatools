@@ -43,14 +43,14 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
     {
 		Write-Verbose "$FunctionName - Read File headers (Read-DBABackupHeader)"
 		
-		if ($InternalFiles.FullName -eq $null)
-		{
-			$AllSQLBackupdetails = $InternalFiles | Read-DBAbackupheader -sqlserver $SQLSERVER -SqlCredential $SqlCredential
-		}
-		else
-		{
-			$AllSQLBackupdetails = $InternalFiles | Select-Object -ExpandProperty FullName | Read-DBAbackupheader -sqlserver $SQLSERVER -SqlCredential $SqlCredential
-		}
+#		if ($InternalFiles.FullName -eq $null)
+#		{
+			$AllSQLBackupdetails = $InternalFiles | %{if($_.fullname -ne $null){$_.Fullname}else{$_}} | Read-DBAbackupheader -sqlserver $SQLSERVER -SqlCredential $SqlCredential
+#		}
+#		else
+#		{
+#			$AllSQLBackupdetails = $InternalFiles | Select-Object -ExpandProperty FullName | Read-DBAbackupheader -sqlserver $SQLSERVER -SqlCredential $SqlCredential
+#		}
 		
 		Write-Verbose "$FunctionName - $($AllSQLBackupdetails.count) Files to filter"
         $Databases = $AllSQLBackupdetails  | Group-Object -Property Servername, DatabaseName
