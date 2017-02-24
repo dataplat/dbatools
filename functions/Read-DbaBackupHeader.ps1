@@ -207,6 +207,11 @@ Gets a list of all .bak files on the \\nas\sql share and reads the headers using
 
 				}
 			}
+			else
+			{
+				Write-Warning "File $shortname does not exist or access denied. The SQL Server service account may not have access to the source directory."
+				return
+			}
 			if ($Simple)
 			{
 				$datatable | Select-Object DatabaseName, BackupFinishDate, RecoveryModel, BackupSizeMB, CompressedBackupSizeMB, DatabaseCreationDate, UserName, ServerName, SqlVersion, BackupPath
