@@ -142,7 +142,7 @@
 		foreach ($RestorePoint in $SortedRestorePoints)
 		{
 			$RestoreCount++
-			Write-Progress -id 123 -Activity "Restoring $DbName" -Status "Restore status" -percentcomplete (($RestoreCount/($RpCount))*100)
+			Write-Progress -id 1 -Activity "Restoring" -Status "Restoring File" -CurrentOperation "$RestoreCount of $RpCount for database $Dbname"
 			$RestoreFiles = $RestorePoint.files
 			$RestoreFileNames = $RestoreFiles.BackupPath -join '`n ,'
 			Write-verbose "$FunctionName - Restoring $Dbname backup starting at order $($RestorePoint.order) - LSN $($RestoreFiles[0].FirstLSN) in $($RestoreFiles[0].BackupPath)"
@@ -201,7 +201,7 @@
 
 				Write-Verbose "$FunctionName - Beginning Restore of $Dbname"
 				$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-					Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
+					Write-Progress -id 2 -activity "Restoring $dbname to $servername" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
 				}
 				$Restore.add_PercentComplete($percent)
 				$Restore.PercentCompleteNotification = 1
@@ -273,9 +273,9 @@
 				}
 				elseif ($VerifyOnly)
 				{
-					Write-Progress -id 1 -activity "Verifying $dbname backup file on $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+					Write-Progress -id 2 -activity "Verifying $dbname backup file on $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
 					$Verify = $restore.sqlverify($server)
-					Write-Progress -id 1 -activity "Verifying $dbname backup file on $servername" -status "Complete" -Completed
+					Write-Progress -id 2 -activity "Verifying $dbname backup file on $servername" -status "Complete" -Completed
 					
 					if ($verify -eq $true)
 					{
@@ -288,10 +288,10 @@
 				}
 				else
 				{
-					Write-Progress -id 1 -activity "Restoring $DbName to ServerName" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+					Write-Progress -id 2 -activity "Restoring $DbName to ServerName" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
 					$script = $restore.Script($Server)
 					$Restore.sqlrestore($Server)
-					Write-Progress -id 1 -activity "Restoring $DbName to $ServerName" -status "Complete" -Completed
+					Write-Progress -id 2 -activity "Restoring $DbName to $ServerName" -status "Complete" -Completed
 					
 				}
 		

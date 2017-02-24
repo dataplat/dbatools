@@ -88,6 +88,7 @@ Gets a list of all .bak files on the \\nas\sql share and reads the headers using
 	
 	BEGIN
 	{
+		$LoopCnt = 1
 		$FunctionName = $FunctionName = (Get-PSCallstack)[0].Command
 		Write-Verbose "$FunctionName - Connecting to $SqlServer"
 		try
@@ -104,13 +105,14 @@ Gets a list of all .bak files on the \\nas\sql share and reads the headers using
 	
 	PROCESS
 	{
-		$LoopCnt = 1
+		
 		$PathCount = $path.length
 		Write-verbose "$FunctionName - $pathcount files to scan"
 		foreach ($file in $path)
 		{
-			Write-Progress -Id 1 -Activity Updating -Status 'Progress' -PercentComplete (($LoopCnt/$PathCount)*100) -CurrentOperation "Scanning Restore headers"
 			if ($file.FullName -ne $null) { $file = $file.FullName }
+			Write-Progress -Id 1 -Activity Updating -Status 'Progress' -CurrentOperation "Scanning Restore headers on File $LoopCnt - $file"
+			
 			Write-Verbose "$FunctionName - Scanning file $file"
 			$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
 			$device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem $file, FILE
@@ -217,9 +219,10 @@ Gets a list of all .bak files on the \\nas\sql share and reads the headers using
 			{
 				$datatable
 			}
-			$LoopCnt++
+			
 			remove-variable DataTable
 		}
+	$LoopCnt++
 	}
 	
 	END
