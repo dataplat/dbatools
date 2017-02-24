@@ -300,7 +300,7 @@ folder for those file types as defined on the target instance.
 					{
 						try
 						{
-							$null = Get-Item $p -ErrorAction Stop
+							$BackupFiles += Get-Item $p -ErrorAction Stop
 						}
 						catch
 						{
