@@ -43,14 +43,14 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
     {
 		Write-Verbose "$FunctionName - Read File headers (Read-DBABackupHeader)"
 		
-		if ($InternalFiles.FullName -eq $null)
-		{
-			$AllSQLBackupdetails = $InternalFiles | Read-DBAbackupheader -sqlserver $SQLSERVER -SqlCredential $SqlCredential
-		}
-		else
-		{
-			$AllSQLBackupdetails = $InternalFiles | Select-Object -ExpandProperty FullName | Read-DBAbackupheader -sqlserver $SQLSERVER -SqlCredential $SqlCredential
-		}
+#		if ($InternalFiles.FullName -eq $null)
+#		{
+			$AllSQLBackupdetails = $InternalFiles | %{if($_.fullname -ne $null){$_.Fullname}else{$_}} | Read-DBAbackupheader -sqlserver $SQLSERVER -SqlCredential $SqlCredential
+#		}
+#		else
+#		{
+#			$AllSQLBackupdetails = $InternalFiles | Select-Object -ExpandProperty FullName | Read-DBAbackupheader -sqlserver $SQLSERVER -SqlCredential $SqlCredential
+#		}
 		
 		Write-Verbose "$FunctionName - $($AllSQLBackupdetails.count) Files to filter"
         $Databases = $AllSQLBackupdetails  | Group-Object -Property Servername, DatabaseName
@@ -75,7 +75,7 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
             $DiffbackupsLSN = ($SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Database Differential' -and $_.DatabaseBackupLSN -eq $Fullbackup.FirstLsn -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1).FirstLSN
             #Scan for striped differential backups
             $Diffbackups = $SqlBackupDetails | Where-Object {$_.BackupTypeDescription -eq 'Database Differential' -and $_.DatabaseBackupLSN -eq $Fullbackup.FirstLsn -and $_.FirstLSN -eq $DiffBackupsLSN}
-           $TlogStartlsn = 0
+            $TlogStartlsn = 0
             if ($null -ne $Diffbackups){
                 Write-Verbose "$FunctionName - we have at least one diff so look for tlogs after the last one"
                 #If we have a Diff backup, we only need T-log backups post that point
@@ -91,7 +91,9 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
             {
 
                 Write-Verbose "$FunctionName - Got a Full/Diff backups, now find all Tlogs needed"
+                $AllTlogs = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} 
                 $Tlogs = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.DatabaseBackupLSN -eq $Fullbackup.FirstLsn -and $_.LastLSN -gt $TlogStartLSN -and $_.BackupStartDate -lt $RestoreTime}
+                Write-Verbose "$FunctionName - Filtered $($Alltlogs.count) down to $($Tlogs.count)"
                 $Results += $Tlogs
                 #Catch the last Tlog that covers the restore time!
                 $Tlogfinal = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.BackupStartDate -gt $RestoreTime} | Sort-Object -Property LastLSN  | Select-Object -First 1

@@ -272,7 +272,7 @@ folder for those file types as defined on the target instance.
 				}
 			}
 			
-			Write-Verbose "type = $($f.gettype())"
+			Write-Verbose "$FunctionName - type = $($f.gettype())"
 			if ($f -is [string])
 			{
 				Write-Verbose "$FunctionName : Paths passed in"
@@ -375,7 +375,7 @@ folder for those file types as defined on the target instance.
 						{
 
 							foreach ($dir in $Filetmp.path){
-															Write-Verbose "$FunctionName - it's a folder, passing to Get-XpDirTree - $($dir)"
+								Write-Verbose "$FunctionName - it's a folder, passing to Get-XpDirTree - $($dir)"
 								$BackupFiles += Get-XPDirTreeRestoreFile -Path $dir -SqlServer $SqlServer -SqlCredential $SqlCredential
 							}
 						}
@@ -399,7 +399,7 @@ folder for those file types as defined on the target instance.
 					}
 					else
 					{	
-						Write-Verbose "Dropped to Default"
+						Write-Verbose "$FunctionName - Dropped to Default"
 						$BackupFiles += $FileTmp
 					}
 				}
@@ -470,7 +470,11 @@ folder for those file types as defined on the target instance.
 				}
 			}
 		}
-		
+<#		
+		return $BackupFiles
+	}
+}
+	#>
 		$AllFilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup
 		Write-Verbose "$FunctionName - $($AllFilteredFiles.count) dbs to restore"
 		
@@ -521,5 +525,6 @@ folder for those file types as defined on the target instance.
 		}
 	}
 }
+
 
 
