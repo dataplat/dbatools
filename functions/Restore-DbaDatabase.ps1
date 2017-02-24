@@ -304,11 +304,16 @@ folder for those file types as defined on the target instance.
 						}
 						catch
 						{
-							Write-Warning "$p does not exist or access denied"
-							continue
+							if (Test-SqlPath -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential)
+							{
+								$BackupFiles += $p
+							}
+							else
+							{
+								Write-Warning "$FunctionName - $p cannot be accessed by $SqlServer"
+								continue
+							}
 						}
-						Write-Verbose "$FunctionName : Single file"
-						$BackupFiles += Get-item $p
 					}
 					elseif ($MaintenanceSolutionBackup)
 					{
