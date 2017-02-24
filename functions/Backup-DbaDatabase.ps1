@@ -365,7 +365,8 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					BackupPath = ($FinalBackupPath | Sort-Object -Unique)
 					Script = $script
 					Notes = $failures -join (',')
-			}
+					FullName = ($FinalBackupPath | Sort-Object -Unique)
+			} | Select-DefaultView -ExcludeProperty FullName
 			$BackupFileName = $null
 		}
 	}
