@@ -279,6 +279,12 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 										WHEN 7 THEN 'Virtual Device'
 										ELSE 'Unknown'
 									  END AS DeviceType,
+									  backupset.position,
+									  backupset.first_lsn,
+									  backupset.database_backup_lsn,
+									  backupset.checkpoint_lsn,
+									  backupset.last_lsn,
+		   							  backupset.software_major_version,
 									  mediaset.software_name AS Software"
 					}
 					
@@ -338,6 +344,14 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 						$GroupedResults  = $results | Group-Object -Property backupsetid
 						$GroupResults = @()
 						foreach ($group in $GroupedResults){
+							
+							$FileSql = "select
+										file_type as FileType,
+										logical_name as LogicalName,
+										physical_name as PhysicalName
+										from msdb.dbo.backupfile
+										where backup_set_id='$($Group.group[0].BackupSetID)'"
+							write-Debug "$FunctionName = FileSQL: $FileSql"
 							$GroupResults += [PSCustomObject]@{
 								ComputerName = $server.NetName
 								InstanceName = $server.ServiceName
@@ -354,6 +368,13 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 								DeviceType = $group.Group[0].DeviceType
 								Software = $group.Group[0].Software
 								FullName =  $group.Group.Path
+								FileList = $server.ConnectionContext.ExecuteWithResults($Filesql).Tables.Rows
+								Position = $group.Group[0].Position
+								FirstLsn = $group.Group[0].First_LSN
+								DatabaseBackupLsn = $group.Group[0].database_backup_lsn
+								CheckpointLsn = $group.Group[0].checkpoint_lsn
+								LastLsn = $group.Group[0].Last_Lsn
+								SoftwareVersionMajor = $group.Group[0].Software_Major_Version
 								}
 
 						}
@@ -361,7 +382,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 					}
 					foreach ($result in $results)
 					{ 
-						$result | Select-DefaultView -ExcludeProperty FullName
+						$result | Select-DefaultView -ExcludeProperty FullName, Filelist, Position, FirstLsn, DatabaseBackupLSN, CheckPointLsn, LastLsn, SoftwareVersionMajor
 					}				
                 }
 			}
