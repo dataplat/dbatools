@@ -192,6 +192,32 @@ function Get-DbaDependency
                 }
             }
         }
+        
+        function Select-DependencyPrecedence
+        {
+            [CmdletBinding()]
+            Param (
+                [Parameter(ValueFromPipeline = $true)]
+                $Dependency
+            )
+            
+            Begin
+            {
+                $list = @()
+            }
+            Process
+            {
+                foreach ($dep in $Dependency)
+                {
+                    # Killing the pipeline is generally a bad idea, but since we have to group and sort things, we have not really a choice
+                    $list += $dep
+                }
+            }
+            End
+            {
+                $list | Group-Object -Property Object | ForEach-Object { $_.Group | Sort-Object -Property Tier -Descending | Select-Object -First 1 } | Sort-Object Tier
+            }
+        }
         #endregion Utility functions
     }
     Process
@@ -226,7 +252,7 @@ function Get-DbaDependency
             
             if ($IncludeSelf) { $resolved = Read-DependencyTree -InputObject $tree.FirstChild -Tier 0 -Parent $tree.FirstChild -EnumParents $EnumParents }
             else { $resolved = Read-DependencyTree -InputObject $tree.FirstChild.FirstChild -Tier 1 -Parent $tree.FirstChild -EnumParents $EnumParents }
-            $resolved | Get-DependencyTreeNodeDetail -Server $server -OriginalResource $Item -AllowSystemObjects $AllowSystemObjects | Sort-Object -Property Tier
+            $resolved | Get-DependencyTreeNodeDetail -Server $server -OriginalResource $Item -AllowSystemObjects $AllowSystemObjects | Select-DependencyPrecedence
         }
     }
 }
