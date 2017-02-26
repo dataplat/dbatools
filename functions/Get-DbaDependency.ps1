@@ -1,26 +1,20 @@
 function Get-DbaDependency
 {
     <#
-       .SYNOPSIS
+        .SYNOPSIS
             Finds object dependencies and their relevant creation scripts.
         
         .DESCRIPTION
             This function recursively finds all objects that are dependent on the one passed to it.
             It will then retrieve rich information from them, including their creation scripts and the order in which it should be applied.
-    
+            
             By using the EnumParents switch, the function will instead retrieve all items the input depends upon (including their creation scripts).
-    
-            When retrieving everything that depends on the input, the lower the tier, the earlier it should be installed.
-            When retrieving everything that the input depends upon however, the higher the tier, the earlier it should be installed.
-        
+            
             For more details on dependency, see:
             https://technet.microsoft.com/en-us/library/ms345449(v=sql.105).aspx
-  
+        
         .PARAMETER InputObject
             The SMO object to parse
-	
-        .PARAMETER IncludeScript
-            Setting this switch will cause the function to also retrieve the creation script of the dependency.
         
         .PARAMETER AllowSystemObjects
             Normally, system objects are ignored by this function as dependencies.
@@ -29,16 +23,23 @@ function Get-DbaDependency
         .PARAMETER EnumParents
             Causes the function to retrieve all objects the input depends upon, rather than retrieving everything that depends on the input.
         
+        .PARAMETER IncludeSelf
+            Includes the object whose dependencies are retrieves itself.
+            Useful when exporting an entire logic structure in order to recreate it in another database.
+        
         .PARAMETER Silent
             Replaces user friendly yellow warnings with bloody red exceptions of doom!
             Use this if you want the function to throw terminating errors you want to catch.
         
+        .PARAMETER IncludeScript
+            Setting this switch will cause the function to also retrieve the creation script of the dependency.
+        
         .EXAMPLE
             $table = (Get-DbaDatabase -SqlInstance sql2012 Northwind).tables | Where Name -eq Customers
             $table | Get-DbaDependency
-        
+            
             Returns everything that depends on the "Customers" table
-    
+        
         .LINK
             https://dbatools.io/Get-DbaDependency
     #>
@@ -52,6 +53,9 @@ function Get-DbaDependency
         
         [switch]
         $EnumParents,
+        
+        [switch]
+        $IncludeSelf,
         
         [switch]
         $Silent
@@ -115,14 +119,18 @@ function Get-DbaDependency
                 $Tier,
                 
                 [System.Object]
-                $Parent
+                $Parent,
+                
+                [bool]
+                $EnumParents
             )
             
             Add-Member -InputObject $InputObject -Name Parent -Value $Parent -MemberType NoteProperty
-            Add-Member -InputObject $InputObject -Name Tier -Value $Tier -MemberType NoteProperty -PassThru
+            if ($EnumParents) { Add-Member -InputObject $InputObject -Name Tier -Value ($Tier * -1) -MemberType NoteProperty -PassThru }
+            else { Add-Member -InputObject $InputObject -Name Tier -Value $Tier -MemberType NoteProperty -PassThru }
             
-            if ($InputObject.HasChildNodes) { Read-DependencyTree -InputObject $InputObject.FirstChild -Tier ($Tier + 1) -Parent $InputObject }
-            if ($InputObject.NextSibling) { Read-DependencyTree -InputObject $InputObject.NextSibling -Tier $Tier -Parent $Parent }
+            if ($InputObject.HasChildNodes) { Read-DependencyTree -InputObject $InputObject.FirstChild -Tier ($Tier + 1) -Parent $InputObject -EnumParents $EnumParents }
+            if ($InputObject.NextSibling) { Read-DependencyTree -InputObject $InputObject.NextSibling -Tier $Tier -Parent $Parent -EnumParents $EnumParents }
         }
         
         function Get-DependencyTreeNodeDetail
@@ -158,31 +166,29 @@ function Get-DbaDependency
                     $richobject = $Server.GetSmoObject($Item.urn)
                     $parent = $Server.GetSmoObject($Item.Parent.Urn)
                     
-                    $NewObject = [pscustomobject]@{
-                        ComputerName = $server.NetName
-                        InstanceName = $server.ServiceName
-                        SqlInstance = $server.DomainInstanceName
-                        Parent = $parent.Name
-                        ParentType = $parent.Urn.Type
-                        Dependent = $richobject.Name
-                        IsSchemaBound = $Item.IsSchemaBound
-                        Type = $Item.Urn.Type
-                        Owner = $richobject.Owner
-                        Urn = $richobject.Urn
-                        Object = $richobject
-                        Tier = $Item.Tier
-                        Script = ""
-                        OriginalResource = $OriginalResource
-                    }
+                    $NewObject = New-Object sqlcollective.dbatools.Database.Dependency
+                    $NewObject.ComputerName = $server.NetName
+                    $NewObject.ServiceName = $server.ServiceName
+                    $NewObject.SqlInstance = $server.DomainInstanceName
+                    $NewObject.Dependent = $richobject.Name
+                    $NewObject.Type = $Item.Urn.Type
+                    $NewObject.Owner = $richobject.Owner
+                    $NewObject.IsSchemaBound = $Item.IsSchemaBound
+                    $NewObject.Parent = $parent.Name
+                    $NewObject.ParentType = $parent.Urn.Type
+                    $NewObject.Tier = $Item.Tier
+                    $NewObject.Object = $richobject
+                    $NewObject.Urn = $richobject.Urn
+                    $NewObject.OriginalResource = $OriginalResource
                     
                     $SQLscript = $scripter.EnumScriptWithList($richobject)
                     
                     # I can't remember how to remove these options and their syntax is breaking stuff
                     $SQLscript = $SQLscript -replace "SET ANSI_NULLS ON", ""
                     $SQLscript = $SQLscript -replace "SET QUOTED_IDENTIFIER ON", ""
-                    $NewObject.script = "$SQLscript `r`ngo"
-					
-					Select-DefaultView -InputObject $NewObject -ExcludeProperty Script, Urn, Tier, OriginalResource
+                    $NewObject.Script = "$SQLscript `r`ngo"
+                    
+                    $NewObject
                 }
             }
         }
@@ -217,9 +223,10 @@ function Get-DbaDependency
                 Write-Message -Message "No dependencies detected for $($Item)" -Level 2 -Silent $Silent
                 continue
             }
-            $resolved = Read-DependencyTree -InputObject $tree.FirstChild.FirstChild -Tier 0 -Parent $tree.FirstChild
-            if ($EnumParents) { $resolved | Get-DependencyTreeNodeDetail -Server $server -OriginalResource $Item -AllowSystemObjects $AllowSystemObjects | Sort-Object -Property Tier -Descending }
-            else { $resolved | Get-DependencyTreeNodeDetail -Server $server -OriginalResource $Item -AllowSystemObjects $AllowSystemObjects | Sort-Object -Property Tier }
+            
+            if ($IncludeSelf) { $resolved = Read-DependencyTree -InputObject $tree.FirstChild -Tier 0 -Parent $tree.FirstChild -EnumParents $EnumParents }
+            else { $resolved = Read-DependencyTree -InputObject $tree.FirstChild.FirstChild -Tier 1 -Parent $tree.FirstChild -EnumParents $EnumParents }
+            $resolved | Get-DependencyTreeNodeDetail -Server $server -OriginalResource $Item -AllowSystemObjects $AllowSystemObjects | Sort-Object -Property Tier -Descending
         }
     }
 }
