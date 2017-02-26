@@ -137,21 +137,20 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 	PROCESS
 	{
 		$databases = $psboundparameters.Databases
-		foreach ($server in $SqlServer)
+		foreach ($instance in $SqlServer)
 		{
 			try
 			{
-				Write-Verbose "$FunctionName - Connecting to $server"
-				$sourceserver = Connect-SqlServer -SqlServer $server -SqlCredential $Credential
-				$servername = $sourceserver.name
+				Write-Verbose "$FunctionName - Connecting to $instance"
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
 				
-				if ($sourceserver.VersionMajor -lt 9)
+				if ($server.VersionMajor -lt 9)
 				{
 					Write-Warning "$FunctionName - SQL Server 2000 not supported"
 					continue
 				}
 				$BackupSizeColumn = 'backup_size'
-				if ($sourceserver.VersionMajor -ge 10)
+				if ($server.VersionMajor -ge 10)
 				{
 					# 2008 introduced compressed_backup_size
 					$BackupSizeColumn = 'compressed_backup_size'
@@ -159,16 +158,16 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				
 				if ($last)
 				{
-					if ($databases -eq $null) { $databases = $sourceserver.databases.name }
-					Get-DbaBackupHistory -SqlServer $sourceserver -LastFull -Databases $databases -raw:$raw
-					Get-DbaBackupHistory -SqlServer $sourceserver -LastDiff -Databases $databases -raw:$raw
-					Get-DbaBackupHistory -SqlServer $sourceserver -LastLog -Databases $databases -raw:$raw
+					if ($databases -eq $null) { $databases = $server.databases.name }
+					Get-DbaBackupHistory -SqlServer $server -LastFull -Databases $databases -raw:$raw
+					Get-DbaBackupHistory -SqlServer $server -LastDiff -Databases $databases -raw:$raw
+					Get-DbaBackupHistory -SqlServer $server -LastLog -Databases $databases -raw:$raw
 				}
 				elseif ($LastFull -or $LastDiff -or $LastLog)
 				{
 					$sql = @()
 					
-					if ($databases -eq $null) { $databases = $sourceserver.databases.name }
+					if ($databases -eq $null) { $databases = $server.databases.name }
 					
 					if ($LastFull) { $first = 'D'; $second = 'P' }
 					if ($LastDiff) { $first = 'I'; $second = 'Q' }
@@ -194,10 +193,10 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 								  a.Software
 								FROM (SELECT
 								  RANK() OVER (ORDER BY backupset.backup_start_date DESC) AS 'BackupSetRank',
-								  '$servername' AS Server,
 								  backupset.database_name AS [Database],
 								  backupset.user_name AS Username,
 								  backupset.backup_start_date AS Start,
+								  backupset.server_name as [server],
 								  backupset.backup_finish_date AS [End],
 								  CAST(DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS varchar(4)) + ' ' + 'Seconds' AS Duration,
 								  mediafamily.physical_device_name AS Path,
@@ -213,6 +212,8 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 									ELSE NULL
 								  END AS Type,
 								  backupset.media_set_id AS MediaSetId,
+								  mediafamily.media_family_id as mediafamilyid,
+		   						  backupset.backup_set_id as backupsetid,
 								  CASE mediafamily.device_type
 									WHEN 2 THEN 'Disk'
 									WHEN 102 THEN 'Permanent Disk  Device'
@@ -242,14 +243,14 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				{
 					if ($Force -eq $true)
 					{
-						$select = "SELECT '$servername' AS [Server], * "
+						$select = "SELECT * "
 					}
 					else
 					{
 						$select = "SELECT
-									  '$servername' AS [Server],
 									  backupset.database_name AS [Database],
 									  backupset.user_name AS Username,
+									  backupset.server_name as [server],
 									  backupset.backup_start_date AS [Start],
 									  backupset.backup_finish_date AS [End],
 									  CAST(DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS varchar(4)) + ' ' + 'Seconds' AS Duration,
@@ -266,6 +267,8 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 										ELSE NULL
 									  END AS Type,
 									  backupset.media_set_id AS MediaSetId,
+									  mediafamily.media_family_id as mediafamilyid,
+		   							  backupset.backup_set_id as backupsetid,
 									  CASE mediafamily.device_type
 										WHEN 2 THEN 'Disk'
 										WHEN 102 THEN 'Permanent Disk  Device'
@@ -324,7 +327,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				if (!$last)
 				{
 					Write-Debug $sql
-					$results = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
+					$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
 					if ($raw){
 						write-verbose "$FunctionName - Raw Ouput"
 						$results = $results | Select-Object *, @{Name="FullName";Expression={$_.Path}}
@@ -332,11 +335,13 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 					else
 					{	
 						write-verbose "$FunctionName - Grouped output"
-						$GroupedResults  = $results | Group-Object -Property mediasetid
+						$GroupedResults  = $results | Group-Object -Property backupsetid
 						$GroupResults = @()
 						foreach ($group in $GroupedResults){
 							$GroupResults += [PSCustomObject]@{
-								Server = $group.Group[0].Server
+								ComputerName = $server.NetName
+								InstanceName = $server.ServiceName
+								SqlInstance = $server.DomainInstanceName
 								Database = $group.Group[0].Database
 								UserName = $group.Group[0].UserName
 								Start = ($group.Group.Start | measure-object -Minimum).Minimum
@@ -345,7 +350,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 								Path = $group.Group.Path
 								TotalSizeMb = ($group.group.TotalSizeMb | measure-object  -Sum).sum
 								Type = $group.Group[0].Type
-								MediaSetID = $group.Group[0].MediaSetId
+								BackupSetupId = $group.Group[0].BackupSetId
 								DeviceType = $group.Group[0].DeviceType
 								Software = $group.Group[0].Software
 								FullName =  $group.Group.Path

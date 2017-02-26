@@ -24,7 +24,7 @@ SqlInstance name or SMO object representing the SQL Server to connect to.
 This can be a collection and receive pipeline input.
 
 .PARAMETER SqlCredential
-PSCredential object to connect as. If not specified, currend Windows login will be used.
+PSCredential object to connect as. If not specified, current Windows login will be used.
 
 .PARAMETER Type
 By default, this command measures the speed of Full backups. You can also specify Log or Differential.
@@ -136,7 +136,7 @@ Will fill this in
 				
 				foreach ($history in $histories)
 				{
-					$timetaken = New-TimeSpan –Start $history.Start –End $history.End
+					$timetaken = New-TimeSpan -Start $history.Start -End $history.End
 					
 					if ($timetaken.TotalMilliseconds -eq 0)
 					{

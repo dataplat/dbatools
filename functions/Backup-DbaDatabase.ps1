@@ -140,12 +140,25 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 		{
 			$failures = @()
 			$dbname = $Database.name
+			
 			if ($dbname -eq "tempdb")
 			{
 				Write-Warning "Backing up tempdb not supported"
 				continue
 			}
 			
+			if ($Database.Status -ne 'Normal')
+			{
+				Write-Warning "Database status not Normal. $dbname skipped."
+				continue
+			}
+			
+			if ($Database.DatabaseSnapshotBaseName)
+			{
+				Write-Warning "Backing up snapshots not supported. $dbname skipped."
+				continue
+			}
+						
 			if ($server -eq $null) { $server = $Database.Parent }
 			
 			Write-Verbose "$FunctionName - Backup up database $database"
@@ -352,7 +365,8 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					BackupPath = ($FinalBackupPath | Sort-Object -Unique)
 					Script = $script
 					Notes = $failures -join (',')
-			}
+					FullName = ($FinalBackupPath | Sort-Object -Unique)
+			} | Select-DefaultView -ExcludeProperty FullName
 			$BackupFileName = $null
 		}
 	}

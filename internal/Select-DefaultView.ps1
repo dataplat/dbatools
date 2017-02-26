@@ -18,40 +18,43 @@
 		[string[]]$Property,
 		[string[]]$ExcludeProperty
 	)
-	
+	process
+	{
+		
 	if ($InputObject -eq $null) { return }
 	
-	if ($ExcludeProperty)
-	{
-		$properties = ($InputObject.PsObject.Members | Where-Object MemberType -ne 'Method' | Where-Object { $_.Name -notin $ExcludeProperty }).Name
-		$defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', [string[]]$properties)
-	}
-	else
-	{
-		# property needs to be string
-		if ("$property" -like "* as *")
+		if ($ExcludeProperty)
 		{
-			$newproperty = @()
-			foreach ($p in $property)
+			$properties = ($InputObject.PsObject.Members | Where-Object MemberType -ne 'Method' | Where-Object { $_.Name -notin $ExcludeProperty }).Name
+			$defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', [string[]]$properties)
+		}
+		else
+		{
+			# property needs to be string
+			if ("$property" -like "* as *")
 			{
-				if ($p -like "* as *")
+				$newproperty = @()
+				foreach ($p in $property)
 				{
-					$old, $new = $p -isplit " as "
-					$inputobject | Add-Member -MemberType AliasProperty -Name $new -Value $old -Force
-					$newproperty += $new
+					if ($p -like "* as *")
+					{
+						$old, $new = $p -isplit " as "
+						$inputobject | Add-Member -MemberType AliasProperty -Name $new -Value $old -Force
+						$newproperty += $new
+					}
+					else
+					{
+						$newproperty += $p
+					}
 				}
-				else
-				{
-					$newproperty += $p
-				}
+				$property = $newproperty
 			}
-			$property = $newproperty
+			
+			$defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', [string[]]$Property)
 		}
 		
-		$defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', [string[]]$Property)
+		$standardmembers = [System.Management.Automation.PSMemberInfo[]]@($defaultset)
+		$inputobject | Add-Member MemberSet PSStandardMembers $standardmembers -Force
+		$inputobject
 	}
-	
-	$standardmembers = [System.Management.Automation.PSMemberInfo[]]@($defaultset)
-	$inputobject | Add-Member MemberSet PSStandardMembers $standardmembers -Force
-	$inputobject
 }
