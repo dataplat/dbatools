@@ -8,11 +8,17 @@ Finds dbatools commands searching through the inline help text
 Finds dbatools commands searching through the inline help text, building a consolidated json index and querying it because Get-Help is too slow
 
 .PARAMETER Tag
-Finds all commands tagged with this tag
+Finds all commands tagged with this auto-populated tag
 
 .PARAMETER Author
 Finds all commands tagged with this author
 
+.PARAMETER MinimumVersion
+Finds all commands tagged with this auto-populated minimum version
+	
+.PARAMETER MaximumVersion
+Finds all commands tagged with this auto-populated maximum version
+	
 .PARAMETER Rebuild
 Rebuilds the index
 
@@ -81,92 +87,131 @@ Finds all commands searching the entire help for "snapshot", rebuilding the inde
 		[String]$Pattern,
 		[String[]]$Tag,
 		[String]$Author,
+		[String]$MinimumVersion,
+		[String]$MaximumVersion,
 		[switch]$Rebuild
 	)
 	BEGIN
 	{
 		$tagsRex = ([regex]'(?m)^[\s]{0,15}Tags:(.*)$')
 		$authorRex = ([regex]'(?m)^[\s]{0,15}Author:(.*)$')
-
-		function Get-DbaHelp([String]$commandname) {
+		$minverRex = ([regex]'(?m)^[\s]{0,15}MinimumVersion:(.*)$')
+		$maxverRex = ([regex]'(?m)^[\s]{0,15}MaximumVersion:(.*)$')
+		
+		function Get-DbaHelp([String]$commandname)
+		{
 			$thishelp = Get-Help $commandname -Full
-			$thebase = @{}
+			$thebase = @{ }
 			$thebase.CommandName = $commandname
 			$thebase.Name = $thishelp.name
-
+			
 			## fetch the description
 			$thebase.Description = $thishelp.Description.text
-
+			
 			## fetch examples
 			$thebase.Examples = $thishelp.Examples | Out-String -Width 120
-
+			
 			## fetch help link
 			$thebase.Links = ($thishelp.relatedLinks).navigationLink.uri
-
+			
 			## fetch the synopsis
 			$thebase.Synopsis = $thishelp.Synopsis
-
+			
 			## store notes
 			$as = $thishelp.alertSet | Out-String -Width 120
-
+			
 			## fetch the tags
 			$tags = $tagsrex.Match($as).Groups[1].Value
-			if($tags) {
+			if ($tags)
+			{
 				$thebase.Tags = $tags.Split(',').Trim()
 			}
 			## fetch the author
 			$author = $authorRex.Match($as).Groups[1].Value
-			if($author) {
+			if ($author)
+			{
 				$thebase.Author = $author.Trim()
 			}
-
+			
+			## fetch MinimumVersion
+			$MinimumVersion = $minverRex.Match($as).Groups[1].Value
+			if ($MinimumVersion)
+			{
+				$thebase.MinimumVersion = $MinimumVersion.Trim()
+			}
+			
+			## fetch MaximumVersion
+			$MaximumVersion = $maxverRex.Match($as).Groups[1].Value
+			if ($MaximumVersion)
+			{
+				$thebase.MaximumVersion = $MaximumVersion.Trim()
+			}
+			
 			[pscustomobject]$thebase
 		}
-
-		function Get-DbaIndex() {
-			if ($Pscmdlet.ShouldProcess($dest, "Recreating index")) {
+		
+		function Get-DbaIndex()
+		{
+			if ($Pscmdlet.ShouldProcess($dest, "Recreating index"))
+			{
 				$dbamodule = Get-Module -Name dbatools
 				$allcommands = $dbamodule.ExportedCommands
 				$helpcoll = New-Object System.Collections.Generic.List[System.Object]
-				foreach($c in $allcommands.GetEnumerator()) {
+				foreach ($c in $allcommands.GetEnumerator())
+				{
 					$x = Get-DbaHelp $c.Key
 					$helpcoll.Add($x)
 				}
 				# $dest = Get-DbaConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
 				$dest = "$moduledirectory\bin\dbatools-index.json"
-				$helpcoll | ConvertTo-Json | Out-File $dest
+				$helpcoll | ConvertTo-Json | Out-File $dest -Encoding UTF8
 			}
 		}
-
+		
 		$moduledirectory = (Get-Module -Name dbatools).ModuleBase
 	}
 	PROCESS
 	{
 		# $idxfile = Get-DbaConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
 		$idxfile = "$moduledirectory\bin\dbatools-index.json"
-		if(!(Test-Path $idxfile) -or $Rebuild) {
+		if (!(Test-Path $idxfile) -or $Rebuild)
+		{
 			Write-Verbose "Rebuilding index into $idxfile"
 			$swrebuild = [system.diagnostics.stopwatch]::startNew()
 			Get-DbaIndex
 			Write-Verbose "Rebuild done in $($swrebuild.Elapsedmilliseconds)ms"
-
+			
 		}
 		$consolidated = Get-Content $idxfile | ConvertFrom-Json
 		$result = $consolidated
-		if($Pattern.length -gt 0) {
+		if ($Pattern.length -gt 0)
+		{
 			$result = $result | Where-Object { $_.psobject.properties.value -like "*$Pattern*" }
 		}
-
+		
 		if ($Tag.length -gt 0)
 		{
-			foreach($t in $Tag) {
+			foreach ($t in $Tag)
+			{
 				$result = $result | Where-Object Tags -contains $t
 			}
 		}
-
-		if($Author.length -gt 0) {
+		
+		if ($Author.length -gt 0)
+		{
 			$result = $result | Where-Object Author -like "*$Author*"
 		}
+		
+		if ($MinimumVersion.length -gt 0)
+		{
+			$result = $result | Where-Object MinimumVersion -ge $MinimumVersion
+		}
+		
+		if ($MaximumVersion.length -gt 0)
+		{
+			$result = $result | Where-Object MaximumVersion -le $MaximumVersion
+		}
+		
 		Select-DefaultView -InputObject $result -Property CommandName, Synopsis
 	}
 }

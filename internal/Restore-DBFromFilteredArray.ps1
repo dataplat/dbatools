@@ -56,10 +56,9 @@
 			$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential	
 		}
 		catch {
-			$server.ConnectionContext.Disconnect()
+
 			Write-Warning "$FunctionName - Cannot connect to $SqlServer" 
 			break
-
 		}
 		
 		$ServerName = $Server.name
@@ -253,6 +252,7 @@
 					$Device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
 					$Device.Name = $RestoreFile.BackupPath
 					$Device.devicetype = "File"
+					$Restore.FileNumber = $RestoreFile.Position
 					$Restore.Devices.Add($device)
 				}
 				Write-Verbose "$FunctionName - Performing restore action"
@@ -312,27 +312,34 @@
 					$RestoreDirectory = ((Split-Path $Restore.RelocateFiles.PhysicalFileName) | sort-Object -unique) -join ','
 					$RestoredFile = (Split-Path $Restore.RelocateFiles.PhysicalFileName -Leaf) -join ','
 				}
-				[PSCustomObject]@{
-                    SqlInstance = $SqlServer
-                    DatabaseName = $DatabaseName
-                    DatabaseOwner = $server.ConnectionContext.TrueLogin
-					NoRecovery = $restore.NoRecovery
-					WithReplace = $ReplaceDatabase
-					RestoreComplete  = $RestoreComplete
-                    BackupFilesCount = $RestoreFiles.Count
-                    RestoredFilesCount = $RestoreFiles[0].Filelist.PhysicalName.count
-                    BackupSizeMB = ($RestoreFiles | measure-object -property BackupSizeMb -Sum).sum
-                    CompressedBackupSizeMB = ($RestoreFiles | measure-object -property CompressedBackupSizeMb -Sum).sum
-                    BackupFile = $RestoreFiles.BackupPath -join ','
-					RestoredFile = $RestoredFile
-					RestoredFileFull = $RestoreFiles[0].Filelist.PhysicalName -join ','
-					RestoreDirectory = $RestoreDirectory
-					BackupSize = ($RestoreFiles | measure-object -property BackupSize -Sum).sum
-					CompressedBackupSize = ($RestoreFiles | measure-object -property CompressedBackupSize -Sum).sum
-                    TSql = $script  
-					BackupFileRaw = $RestoreFiles
-					ExitError = $ExitError				
-                } | Select-DefaultView -ExcludeProperty BackupSize, CompressedBackupSize, ExitError, BackupFileRaw, RestoredFileFull 
+				if (!$ScriptOnly)
+				{
+					[PSCustomObject]@{
+						SqlInstance = $SqlServer
+						DatabaseName = $DatabaseName
+						DatabaseOwner = $server.ConnectionContext.TrueLogin
+						NoRecovery = $restore.NoRecovery
+						WithReplace = $ReplaceDatabase
+						RestoreComplete  = $RestoreComplete
+						BackupFilesCount = $RestoreFiles.Count
+						RestoredFilesCount = $RestoreFiles[0].Filelist.PhysicalName.count
+						BackupSizeMB = ($RestoreFiles | measure-object -property BackupSizeMb -Sum).sum
+						CompressedBackupSizeMB = ($RestoreFiles | measure-object -property CompressedBackupSizeMb -Sum).sum
+						BackupFile = $RestoreFiles.BackupPath -join ','
+						RestoredFile = $RestoredFile
+						RestoredFileFull = $RestoreFiles[0].Filelist.PhysicalName -join ','
+						RestoreDirectory = $RestoreDirectory
+						BackupSize = ($RestoreFiles | measure-object -property BackupSize -Sum).sum
+						CompressedBackupSize = ($RestoreFiles | measure-object -property CompressedBackupSize -Sum).sum
+						Script = $script  
+						BackupFileRaw = $RestoreFiles
+						ExitError = $ExitError				
+					} | Select-DefaultView -ExcludeProperty BackupSize, CompressedBackupSize, ExitError, BackupFileRaw, RestoredFileFull 
+				} 
+				else
+				{
+					$script
+				}
 				while ($Restore.Devices.count -gt 0)
 				{
 					$device = $restore.devices[0]

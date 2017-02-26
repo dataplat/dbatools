@@ -188,7 +188,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 								  a.MediaSetId,
 								  a.Software
 								FROM (SELECT
-								  RANK() OVER (ORDER BY backupset.media_set_id DESC) AS 'BackupSetRank',
+								  RANK() OVER (ORDER BY backupset.backup_start_date DESC) AS 'BackupSetRank',
 								  '$servername' AS Server,
 								  backupset.database_name AS [Database],
 								  backupset.user_name AS Username,
