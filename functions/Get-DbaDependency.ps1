@@ -244,7 +244,9 @@ function Get-DbaDependency
             $server = $parent
             
             $tree = Get-DependencyTree -Object $Item -AllowSystemObjects $false -Server $server -FunctionName (Get-PSCallStack)[0].COmmand -Silent $Silent -EnumParents $EnumParents
-            if ($tree.Count -lt 2)
+            $limitCount = 2
+            if ($EnumParents) { $limitCount = 1}
+            if ($tree.Count -lt $limitCount)
             {
                 Write-Message -Message "No dependencies detected for $($Item)" -Level 2 -Silent $Silent
                 continue
