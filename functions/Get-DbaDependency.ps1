@@ -218,7 +218,8 @@ function Get-DbaDependency
                 continue
             }
             $resolved = Read-DependencyTree -InputObject $tree.FirstChild.FirstChild -Tier 0 -Parent $tree.FirstChild
-            $resolved | Get-DependencyTreeNodeDetail -Server $server -OriginalResource $Item -AllowSystemObjects $AllowSystemObjects | Sort-Object -Property Tier
+            if ($EnumParents) { $resolved | Get-DependencyTreeNodeDetail -Server $server -OriginalResource $Item -AllowSystemObjects $AllowSystemObjects | Sort-Object -Property Tier -Descending }
+            else { $resolved | Get-DependencyTreeNodeDetail -Server $server -OriginalResource $Item -AllowSystemObjects $AllowSystemObjects | Sort-Object -Property Tier }
         }
     }
 }
