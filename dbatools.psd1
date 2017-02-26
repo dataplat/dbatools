@@ -203,7 +203,7 @@
 		'Get-DbaDatabase',
 		'Find-DbaUserObject',
 		'Get-DbaSqlService',
-		'Find-DbaDependency',
+		'Get-DbaDependency',
 		'Clear-DbaSqlConnectionPool',
 		'Find-DbaCommand',
 		'Get-DbaConfig',
