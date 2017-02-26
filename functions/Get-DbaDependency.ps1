@@ -181,8 +181,8 @@ function Get-DbaDependency
                     $SQLscript = $SQLscript -replace "SET ANSI_NULLS ON", ""
                     $SQLscript = $SQLscript -replace "SET QUOTED_IDENTIFIER ON", ""
                     $NewObject.script = "$SQLscript `r`ngo"
-                    
-                    $NewObject
+					
+					Select-DefaultView -InputObject $NewObject -ExcludeProperty Script, Urn, Tier, OriginalResource
                 }
             }
         }
