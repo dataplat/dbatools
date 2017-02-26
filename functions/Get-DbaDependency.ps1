@@ -15,7 +15,10 @@ function Get-DbaDependency
         
             For more details on dependency, see:
             https://technet.microsoft.com/en-us/library/ms345449(v=sql.105).aspx
-        
+  
+        .PARAMETER InputObject
+            The SMO object to parse
+	
         .PARAMETER IncludeScript
             Setting this switch will cause the function to also retrieve the creation script of the dependency.
         
