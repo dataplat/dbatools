@@ -58,7 +58,7 @@
         <Label>T.</Label>
       </TableColumnHeader>
       <TableColumnHeader>
-        <Label>S. Bound</Label>
+        <Label>Schema</Label>
       </TableColumnHeader>
       <TableColumnHeader>
       </TableColumnHeader>
