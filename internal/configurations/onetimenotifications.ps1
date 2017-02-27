@@ -1,4 +1,4 @@
-﻿<#
+<#
 This configuration script is for all notifications that shown once only.
 Basically, if you want to show a message only once per session, make that dependent on a configuration flag.
 

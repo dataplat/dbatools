@@ -1,4 +1,4 @@
-﻿$Path = Split-Path -Parent $MyInvocation.MyCommand.Path
+$Path = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ModulePath = (get-item $Path ).parent.FullName
 $ModuleName = (Split-Path -Leaf $MyInvocation.MyCommand.Path) -Replace ".Tests.ps1"
 $ManifestPath   = "$ModulePath\$ModuleName.psd1"

@@ -1,4 +1,4 @@
-﻿## Thank you Warren http://ramblingcookiemonster.github.io/Testing-DSC-with-Pester-and-AppVeyor/
+## Thank you Warren http://ramblingcookiemonster.github.io/Testing-DSC-with-Pester-and-AppVeyor/
 
 if(-not $PSScriptRoot) {
 	$PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
