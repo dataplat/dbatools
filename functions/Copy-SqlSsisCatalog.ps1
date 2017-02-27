@@ -502,7 +502,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
 		if ($Pscmdlet.ShouldProcess($Destination, "Refresh folders for project deployment"))
 		{
 			try { $destinationFolders.Alter() }
-			catch { } # Sometimes it says Alter() doesn't exist Ãƒâ€šÃ‚Â¯\_(ÃƒÂ£Ã†â€™Ã¢â‚¬Å¾)_/Ãƒâ€šÃ‚Â¯
+			catch { } # Sometimes it says Alter() doesn't exist
 			$destinationFolders.Refresh()
 		}
 		

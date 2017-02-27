@@ -107,7 +107,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			}
 			catch
 			{
-				Write-Warning "$FunctionName - Cannot connect to $SqlInstance Ã‚Â£"
+				Write-Warning "$FunctionName - Cannot connect to $SqlInstance"
 				continue
 			}
 			

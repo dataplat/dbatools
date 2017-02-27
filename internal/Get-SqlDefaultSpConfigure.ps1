@@ -307,7 +307,7 @@ switch ($SqlVersion)
 #region SQL2014
     12 {
         [pscustomobject]@{
-                        "access check cache bucket countÃƒâ€šÃ‚Â (A)"=0
+                        "access check cache bucket count"=0
                         "access check cache quota"=0
                         "ad hoc distributed queries"=0
                         "affinity I/O mask"=0

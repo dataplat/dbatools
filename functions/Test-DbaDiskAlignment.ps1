@@ -37,8 +37,8 @@ Skip checking for the presence of SQL Server and simply check all disks for alig
 .NOTES
 Tags: Storage
 The preferred way to determine if your disks are aligned (or not) is to calculate:
-  1. Partition offset ÃƒÆ’Ã‚Â· stripe unit size
-  2. Stripe unit size ÃƒÆ’Ã‚Â· File allocation unit size
+  1. Partition offset - stripe unit size
+  2. Stripe unit size - File allocation unit size
 
 References:
     Disk Partition Alignment Best Practices for SQL Server - https://technet.microsoft.com/en-us/library/dd758814(v=sql.100).aspx
