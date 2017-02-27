@@ -66,7 +66,7 @@ Returns all SQl Agent Categories for the local and sql2016 SQL Server instances
 				Add-Member -InputObject $jobCategory -MemberType NoteProperty InstanceName -value $jobCategory.Parent.Parent.ServiceName
 				Add-Member -InputObject $jobCategory -MemberType NoteProperty SqlInstance -value $jobCategory.Parent.Parent.DomainInstanceName
 				
-				Select-DefaultView -InputObject $jobCategory -Property ComputerName, InstanceName, SqlInstance, Name
+				Select-DefaultView -InputObject $jobCategory -Property ComputerName, InstanceName, SqlInstance, ID, CategoryType, Name
 			}
 		}
 	}
