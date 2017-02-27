@@ -1,4 +1,4 @@
-﻿Function Get-OfflineSqlFileStructure
+Function Get-OfflineSqlFileStructure
 {
 <#
 .SYNOPSIS

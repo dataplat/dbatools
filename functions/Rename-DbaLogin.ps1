@@ -1,4 +1,4 @@
-﻿Function Rename-DbaLogin
+Function Rename-DbaLogin
 {
 <#
 .SYNOPSIS 

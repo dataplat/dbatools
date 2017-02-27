@@ -1,4 +1,4 @@
-﻿function Get-DbaDatabaseFreespace
+function Get-DbaDatabaseFreespace
 {
 <#
 .SYNOPSIS

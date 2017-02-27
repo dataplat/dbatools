@@ -1,4 +1,4 @@
-﻿Function New-DbaSqlDirectory
+Function New-DbaSqlDirectory
 {
 <#
 .SYNOPSIS

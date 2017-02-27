@@ -1,4 +1,4 @@
-﻿function Test-DbaJobOwner
+function Test-DbaJobOwner
 {
 <#
 .SYNOPSIS

@@ -1,4 +1,4 @@
-﻿Function Get-SmoServerForDynamicParams
+Function Get-SmoServerForDynamicParams
 {
 	if ($fakeBoundParameter.length -eq 0) { return }
 	

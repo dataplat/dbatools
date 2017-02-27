@@ -1,4 +1,4 @@
-﻿Function Copy-SqlExtendedEvent
+Function Copy-SqlExtendedEvent
 {
 <#
 .SYNOPSIS

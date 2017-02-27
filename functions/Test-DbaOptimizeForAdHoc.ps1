@@ -1,4 +1,4 @@
-﻿Function Test-DbaOptimizeForAdHoc
+Function Test-DbaOptimizeForAdHoc
 {
 <# 
 .SYNOPSIS 
