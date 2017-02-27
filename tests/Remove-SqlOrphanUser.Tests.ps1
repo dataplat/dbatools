@@ -21,8 +21,6 @@ if($env:APPVEYOR_REPO_BRANCH -and $env:APPVEYOR_REPO_BRANCH -notlike "master")
     $Verbose.add("Verbose",$True)
 }
 
-
-
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace('.Tests.', '.')
 Import-Module $PSScriptRoot\..\functions\$sut -Force
 Import-Module PSScriptAnalyzer

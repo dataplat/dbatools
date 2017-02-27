@@ -38,7 +38,7 @@ Prompts you for confirmation before executing any changing operations within the
 Results of Test-SQLMaxDop to be passed into the command
 
 .NOTES 
-Author  : ClÃƒÂ¡udio Silva (@claudioessilva)
+Author  : Claudio Silva (@claudioessilva)
 Requires: sysadmin access on SQL Servers
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)

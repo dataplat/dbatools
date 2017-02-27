@@ -25,7 +25,7 @@ Returns default information plus 'Notes' column
 
 .NOTES
 Tags: DisasterRecovery, Backup
-Original Author: ClÃƒÂ¡udio Silva (@ClaudioESSilva)
+Original Author: Claudio Silva (@ClaudioESSilva)
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 

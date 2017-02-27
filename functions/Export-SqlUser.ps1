@@ -61,7 +61,7 @@ Export-SqlUser -SqlServer sqlserver2008 -User User1 -FilePath C:\temp\users.sql 
 Exports user User1 fron sqlsever2008 to the file  C:\temp\users.sql with sintax to run on SQL Server 2016
 
 .NOTES
-Original Author: ClÃƒÂ¡udio Silva (@ClaudioESSilva)
+Original Author: Claudio Silva (@ClaudioESSilva)
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 

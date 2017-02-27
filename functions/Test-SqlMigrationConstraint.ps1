@@ -49,7 +49,7 @@ Windows Authentication will be used if DestinationSqlCredential is not specified
 
 
 .NOTES 
-Original Author: ClÃƒÂ¡udio Silva (@ClaudioESSilva)
+Original Author: Claudio Silva (@ClaudioESSilva)
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 This program is free software: you can redistribute it and/or modify
