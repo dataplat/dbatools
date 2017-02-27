@@ -59,19 +59,14 @@ Returns all Backup Devices for the local and sql2016 SQL Server instances
 				continue
 			}
 			
-			if ($server.versionMajor -lt 10)
-			{
-				Write-Warning "Server Audits are only supported in SQL Server 2008 and above. Quitting."
-				continue
-			}
 			
-			foreach ($auditSpecification in $server.ServerAuditSpecifications)
+			foreach ($backupDevice in $server.BackupDevices)
 			{
-				Add-Member -InputObject $auditSpecification -MemberType NoteProperty ComputerName -value $auditSpecification.Parent.NetName
-				Add-Member -InputObject $auditSpecification -MemberType NoteProperty InstanceName -value $auditSpecification.Parent.ServiceName
-				Add-Member -InputObject $auditSpecification -MemberType NoteProperty SqlInstance -value $auditSpecification.Parent.DomainInstanceName
+				Add-Member -InputObject $backupDevice -MemberType NoteProperty ComputerName -value $backupDevice.Parent.NetName
+				Add-Member -InputObject $backupDevice -MemberType NoteProperty InstanceName -value $backupDevice.Parent.ServiceName
+				Add-Member -InputObject $backupDevice -MemberType NoteProperty SqlInstance -value $backupDevice.Parent.DomainInstanceName
 				
-				Select-DefaultView -InputObject $auditSpecification -Property ComputerName, InstanceName, SqlInstance, ID, Name, AuditName, 'Enabled as IsEnabled'
+				Select-DefaultView -InputObject $backupDevice -Property ComputerName, InstanceName, SqlInstance, Name, BackupDeviceType, PhysicalLocation
 			}
 		}
 	}
