@@ -30,11 +30,11 @@ https://dbatools.io/Get-DbaAuditSpecification
 
 .EXAMPLE
 Get-DbaAuditSpecification -SqlInstance localhost
-Returns all Security Audits on the local default SQL Server instance
+Returns all Security Audit Specifications on the local default SQL Server instance
 
 .EXAMPLE
 Get-DbaAuditSpecification -SqlInstance localhost, sql2016
-Returns all Security Audits for the local and sql2016 SQL Server instances
+Returns all Security Audit Specifications for the local and sql2016 SQL Server instances
 
 #>
 	[CmdletBinding()]
