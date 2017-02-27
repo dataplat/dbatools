@@ -28,6 +28,7 @@ Shows detailed information about the server and database collations
 
 .NOTES 
 Author: Brandon Abshire, netnerds.net
+Tags: Identity
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
