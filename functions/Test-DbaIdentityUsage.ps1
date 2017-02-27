@@ -1,14 +1,13 @@
-﻿Function Test-DbaIdentityUsage
+Function Test-DbaIdentityUsage
 {
 <# 
 .SYNOPSIS 
-Displays information relating to IDENTITY seed usage.  Works on SQL Server 2008-2016.
+Displays information relating to IDENTITY seed usage.  Works on SQL Server 2008 and above.
 
 .DESCRIPTION 
 IDENTITY seeds have max values based off of their data type.  This module will locate identity columns and report the seed usage.
 
-
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 Allows you to specify a comma separated list of servers to query.
 
 .PARAMETER SqlCredential
@@ -56,35 +55,34 @@ Check identity seeds on server sql2008 for only the TestDB database, limiting re
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-        [string[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer", "SqlServers")]
+		[string[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-        [parameter(Position = 1, Mandatory = $false)]
+		[parameter(Position = 1, Mandatory = $false)]
 		[int]$Threshold,
-        [parameter(Position = 2, Mandatory = $false)]
-        [switch]$NoSystemDb,
-        [parameter(Position = 3, Mandatory = $false)]
-        [switch]$Detailed
+		[parameter(Position = 2, Mandatory = $false)]
+		[switch]$NoSystemDb,
+		[parameter(Position = 3, Mandatory = $false)]
+		[switch]$Detailed
 	)
 	
-	DynamicParam {
-		if ($SqlServer) {
-			return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential
+	DynamicParam
+	{
+		if ($SqlInstance)
+		{
+			return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential
 		}
 	}
-
+	
 	BEGIN
 	{
-
-        $databases = $psboundparameters.Databases
+		
+		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
-        
-        $threshold = 0
-        $threshold = $psboundparameters.Threshold
-
-        $collection = New-Object System.Collections.ArrayList
-
-        $sql = "	;WITH CTE_1
+		
+		$threshold = $psboundparameters.Threshold
+		
+		$sql = "	;WITH CTE_1
 		AS
 		(
 		  SELECT SCHEMA_NAME(o.schema_id) AS SchemaName,
@@ -143,96 +141,88 @@ Check identity seeds on server sql2008 for only the TestDB database, limiting re
 		  FROM CTE_2
 	--	 WHERE [PercentUsed] > 80
 		ORDER BY [PercentUsed] DESC"
-
+		
 	}
 	
 	PROCESS
 	{
 		
-		foreach ($servername in $sqlserver)
+		foreach ($instance in $SqlInstance)
 		{
-			Write-Verbose "Attempting to connect to $servername"
+			Write-Verbose "Attempting to connect to $instance"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
 			}
 			catch
 			{
-				Write-Warning "Can't connect to $servername or access denied. Skipping."
+				Write-Warning "Can't connect to $instance or access denied. Skipping."
 				continue
 			}
 			
 			if ($server.versionMajor -lt 10)
 			{
-				Write-Warning "This function does not support versions lower than SQL Server 2008 (v10). Skipping server $servername."
+				Write-Warning "This function does not support versions lower than SQL Server 2008 (v10). Skipping server $instance."
 				
 				Continue
 			}
 			
-
+			
 			$dbs = $server.Databases
-
+			
 			if ($databases.count -gt 0)
 			{
 				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
 			}
-
+			
 			if ($exclude.count -gt 0)
 			{
 				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
 			}
-
-            if ($NoSystemDb)
-            {
-                $dbs = $dbs | Where-Object { $_.IsSystemObject -eq $false }
-            }
-
-
-            foreach ($db in $dbs)
+			
+			if ($NoSystemDb)
 			{
-				Write-Verbose "Processing $($db.name) on $servername"
-
+				$dbs = $dbs | Where-Object { $_.IsSystemObject -eq $false }
+			}
+			
+			
+			foreach ($db in $dbs)
+			{
+				Write-Verbose "Processing $db on $instance"
+				
 				if ($db.IsAccessible -eq $false)
 				{
-					Write-Warning "The database $($db.name) is not accessible. Skipping database."
+					Write-Warning "The database $db is not accessible. Skipping database."
 					Continue
 				}
-
-                $resultTable = $db.ExecuteWithResults($sql).Tables[0]
-                #$resultTable
-
-
-                foreach ($row in $resultTable)
-                {
-
-                    if ($row.PercentUsed -ge $threshold)
-                        {
-				        $null = $collection.Add(
-                        [PSCustomObject]@{
-					        Server = $server.name
-					        Database = $row.DatabaseName
-					        Schema = $row.SchemaName
-                            Table = $row.TableName
-					        Column = $row.ColumnName
-					        SeedValue = $row.SeedValue
-                            IncrementValue = $row.IncrementValue
-					        LastValue = $row.LastValue
-					        MaxNumberRows = $row.MaxNumberRows
-                            NumberOfUses = $row.NumberOfUses
-					        PercentUsed = $row.PercentUsed
-                        })
-                        }
-                }
+				
+				foreach ($row in $db.ExecuteWithResults($sql).Tables[0])
+				{
+					if ($row.PercentUsed -eq [System.DBNull]::Value)
+					{
+						continue
+					}
+					
+					if ($row.PercentUsed -ge $threshold)
+					{
+						[PSCustomObject]@{
+							ComputerName = $server.NetName
+							InstanceName = $server.ServiceName
+							SqlInstance = $server.DomainInstanceName
+							Database = $row.DatabaseName
+							Schema = $row.SchemaName
+							Table = $row.TableName
+							Column = $row.ColumnName
+							SeedValue = $row.SeedValue
+							IncrementValue = $row.IncrementValue
+							LastValue = $row.LastValue
+							MaxNumberRows = $row.MaxNumberRows
+							NumberOfUses = $row.NumberOfUses
+							PercentUsed = $row.PercentUsed
+						}
+					}
+				}
 			}
+		}
 	}
-
-   If ($detailed) 
-    {    
-        return ($collection) 
-    }
-   Else 
-    { 
-        return ($collection | Format-Table -Property *) 
-    }
-}
 }
