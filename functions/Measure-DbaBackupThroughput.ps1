@@ -127,7 +127,7 @@ Will fill this in
 				# Splatting didnt work
 				if ($since)
 				{	
-					$histories = Get-DbaBackupHistory -SqlServer $server -Databases $database -Last:$last -Since $since | Where-Object Type -eq $Type
+					$histories = Get-DbaBackupHistory -SqlServer $server -Databases $database -Since $since | Where-Object Type -eq $Type
 				}
 				else
 				{
