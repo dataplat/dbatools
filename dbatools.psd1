@@ -227,7 +227,8 @@
 		'Get-DbaServerProtocol',
 		'Get-DbaLocaleSetting',
 		'Get-DbaSqlBuildReference',
-		'Set-DbaSpConfigure'	
+		'Set-DbaSpConfigure',
+		'Test-DbaIdentityUsage'
 	)
 	
 	# Cmdlets to export from this module
