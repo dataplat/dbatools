@@ -60,24 +60,23 @@ Returns all Database Assembly for the local and sql2016 SQL Server instances
 			}
 			
 			
-            $sourceassemblies = @()
+            
 		    foreach ($database in $Server.Databases)
 		    {
 			    try
 			    {
-        			$userassemblies = $database.assemblies | Where-Object { $_.isSystemObject -eq $false }
-				    foreach ($assembly in $userassemblies)
+				    foreach ($assembly in $database.assemblies | Where-Object { $_.isSystemObject -eq $false })
 				    {
-					    $sourceassemblies += $assembly
+					    
+                        Add-Member -InputObject $assembly -MemberType NoteProperty ComputerName -value $assembly.Parent.Parent.NetName
+				        Add-Member -InputObject $assembly -MemberType NoteProperty InstanceName -value $assembly.Parent.Parent.ServiceName
+		        		Add-Member -InputObject $assembly -MemberType NoteProperty SqlInstance -value $assembly.Parent.Parent.DomainInstanceName
+				
+        				Select-DefaultView -InputObject $assembly -Property ComputerName, InstanceName, SqlInstance, ID, Name, Owner, AssemblySecurityLevel
+
 				    }
 			    }
 			    catch { }
-
-				Add-Member -InputObject $sourceassemblies -MemberType NoteProperty ComputerName -value $sourceassemblies.Parent.NetName
-				Add-Member -InputObject $sourceassemblies -MemberType NoteProperty InstanceName -value $sourceassemblies.Parent.ServiceName
-				Add-Member -InputObject $sourceassemblies -MemberType NoteProperty SqlInstance -value $sourceassemblies.Parent.DomainInstanceName
-				
-				Select-DefaultView -InputObject $sourceassemblies -Property ComputerName, InstanceName, SqlInstance, ID, Name, Owner, AssemblySecurityLevel
 			}
 		}
 	}
