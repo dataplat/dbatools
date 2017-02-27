@@ -22,9 +22,6 @@ Allows you to specify a minimum % of the seed range being utilized.  This can be
 .PARAMETER NoSystemDb
 Allows you to suppress output on system databases
 
-.PARAMETER Detailed
-Shows detailed information about the server and database collations
-
 .NOTES 
 Author: Brandon Abshire, netnerds.net
 Tags: Identity
@@ -59,11 +56,9 @@ Check identity seeds on server sql2008 for only the TestDB database, limiting re
 		[string[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[parameter(Position = 1, Mandatory = $false)]
-		[int]$Threshold,
+		[int]$Threshold = 0,
 		[parameter(Position = 2, Mandatory = $false)]
-		[switch]$NoSystemDb,
-		[parameter(Position = 3, Mandatory = $false)]
-		[switch]$Detailed
+		[switch]$NoSystemDb
 	)
 	
 	DynamicParam
@@ -82,7 +77,7 @@ Check identity seeds on server sql2008 for only the TestDB database, limiting re
 		
 		$threshold = $psboundparameters.Threshold
 		
-		$sql = "	;WITH CTE_1
+		$sql = ";WITH CTE_1
 		AS
 		(
 		  SELECT SCHEMA_NAME(o.schema_id) AS SchemaName,
@@ -106,7 +101,7 @@ Check identity seeds on server sql2008 for only the TestDB database, limiting re
 				 -- Divide by increment_value to shows the max number of values that can be used
 				 -- E.g: smallint identity column that starts on the lower possible value (-32768) and have an increment of 2 will only accept ABS(32768 - 32767 - 1) / 2 = 32768 rows
 				 CAST( 
-						ABS(
+						--ABS(
 						CONVERT(bigint, seed_value) 
 						- 
 						Case
@@ -121,7 +116,8 @@ Check identity seeds on server sql2008 for only the TestDB database, limiting re
 							WHEN CONVERT(bigint, seed_value) <= 0 THEN 1
 							ELSE 0
 							END
-						) / CONVERT(bigint, increment_value) 
+						--) 
+                        / CONVERT(bigint, increment_value) 
 					AS Numeric(20, 0)) AS MaxNumberRows
 			FROM sys.identity_columns a
 				INNER JOIN sys.objects o
@@ -133,14 +129,15 @@ Check identity seeds on server sql2008 for only the TestDB database, limiting re
 		CTE_2
 		AS
 		(
-		SELECT SchemaName, TableName, ColumnName, CONVERT(BIGINT, SeedValue) AS SeedValue, CONVERT(BIGINT, IncrementValue) AS IncrementValue, LastValue, MaxNumberRows, NumberOfUses, 
-			   CONVERT(Numeric(18,2), ((CONVERT(Float, NumberOfUses) / CONVERT(Float, (MaxNumberRows)) * 100))) AS [PercentUsed]
+		SELECT SchemaName, TableName, ColumnName, CONVERT(BIGINT, SeedValue) AS SeedValue, CONVERT(BIGINT, IncrementValue) AS IncrementValue, LastValue, ABS(CONVERT(FLOAT,MaxNumberRows)) AS MaxNumberRows, NumberOfUses, 
+			   CONVERT(Numeric(18,2), ((CONVERT(Float, NumberOfUses) / ABS(CONVERT(FLOAT,MaxNumberRows)) * 100))) AS [PercentUsed]
 		  FROM CTE_1
 		)
 		SELECT DB_NAME() as DatabaseName, SchemaName, TableName, ColumnName, SeedValue, IncrementValue, LastValue, MaxNumberRows, NumberOfUses, [PercentUsed]
-		  FROM CTE_2
-	--	 WHERE [PercentUsed] > 80
-		ORDER BY [PercentUsed] DESC"
+		  FROM CTE_2"
+
+        If($Threshold -gt 0) { $sql += " WHERE [PercentUsed] >= " + $Threshold + " ORDER BY [PercentUsed] DESC" }
+        Else { $sql += " ORDER BY [PercentUsed] DESC" }
 		
 	}
 	
