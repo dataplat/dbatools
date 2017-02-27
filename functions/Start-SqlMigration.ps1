@@ -1,4 +1,4 @@
-﻿Function Start-SqlMigration
+Function Start-SqlMigration
 {
 <# 
 .SYNOPSIS 

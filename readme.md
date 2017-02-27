@@ -1,4 +1,4 @@
-﻿# dbatools
+# dbatools
 [![licence badge]][licence]
 [![Build status](https://ci.appveyor.com/api/projects/status/cy5sm45x6atculse/branch/master?svg=true)](https://ci.appveyor.com/project/sqlcollaborative/dbatools/branch/master)
 

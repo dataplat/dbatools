@@ -1,4 +1,4 @@
-﻿Function Copy-SqlProxyAccount
+Function Copy-SqlProxyAccount
 {
 <#
 .SYNOPSIS 

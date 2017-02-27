@@ -1,4 +1,4 @@
-﻿function Get-DbaPrivilege
+function Get-DbaPrivilege
 {
   <#
       .SYNOPSIS

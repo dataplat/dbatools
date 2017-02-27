@@ -1,4 +1,4 @@
-﻿Function Update-SqlWhoIsActive
+Function Update-SqlWhoIsActive
 {
 <#
 .SYNOPSIS

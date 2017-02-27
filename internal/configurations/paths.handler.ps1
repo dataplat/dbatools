@@ -1,4 +1,4 @@
-﻿#region Path.DbatoolsLogPath
+#region Path.DbatoolsLogPath
 $ScriptBlock = {
     Param (
         $Value

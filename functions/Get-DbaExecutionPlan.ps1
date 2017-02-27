@@ -1,4 +1,4 @@
-﻿Function Get-DbaExecutionPlan
+Function Get-DbaExecutionPlan
 {
 <#
 .SYNOPSIS
@@ -54,27 +54,22 @@ https://dbatools.io/Get-DbaExecutionPlan
 .EXAMPLE
 Get-DbaExecutionPlan -SqlInstance sqlserver2014a
 
-Returns server name, database, username, restore type, date for all restored databases on sqlserver2014a.
+Gets all execution plans on  sqlserver2014a
 
 .EXAMPLE   
 Get-DbaExecutionPlan -SqlInstance sqlserver2014a -Databases db1, db2 -SinceLastExecution '7/1/2016 10:47:00'
 
-Returns restore information only for databases db1 and db2 on sqlserve2014a since July 1, 2016 at 10:47 AM.
+Gets all execution plans for databases db1 and db2 on sqlserve2014a since July 1, 2016 at 10:47 AM.
 	
 .EXAMPLE   
-Get-DbaExecutionPlan -SqlInstance sqlserver2014a, sql2016 -Force -Exclude db1
+Get-DbaExecutionPlan -SqlInstance sqlserver2014a, sql2016 -Exclude db1 | Format-Table
 
-Lots of detailed information for all databases except db1 on sqlserver2014a and sql2016
-
-.EXAMPLE   
-Get-DbaExecutionPlan -SqlInstance sql2014 -Databases AdventureWorks2014, pubs -Force | Format-Table
-
-Adds From and To file information to output, returns information only for AdventureWorks2014 and pubs, and makes the output pretty
+Gets execution plan info for all databases except db1 on sqlserver2014a and sql2016 and makes the output pretty
 
 .EXAMPLE   
-Get-SqlRegisteredServerName -SqlInstance sql2016 | Get-DbaExecutionPlan
+Get-DbaExecutionPlan -SqlInstance sql2014 -Databases AdventureWorks2014, pubs -Force
 
-Returns database restore information for every database on every server listed in the Central Management Server on sql2016
+Gets super detailed information for execution plans on only for AdventureWorks2014 and pubs
 	
 #>
 	[CmdletBinding()]

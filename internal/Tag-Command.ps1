@@ -1,4 +1,4 @@
-﻿function Invoke-TagCommand ([string]$Tag, [string]$Keyword)
+function Invoke-TagCommand ([string]$Tag, [string]$Keyword)
 {
 <#
 .SYNOPSIS

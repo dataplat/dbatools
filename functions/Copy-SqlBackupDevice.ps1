@@ -1,4 +1,4 @@
-﻿Function Copy-SqlBackupDevice
+Function Copy-SqlBackupDevice
 {
 <#
 .SYNOPSIS

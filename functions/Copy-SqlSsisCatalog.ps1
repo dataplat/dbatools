@@ -1,4 +1,4 @@
-﻿Function Copy-SqlSsisCatalog
+Function Copy-SqlSsisCatalog
 {
 <#
 .SYNOPSIS 
@@ -502,7 +502,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
 		if ($Pscmdlet.ShouldProcess($Destination, "Refresh folders for project deployment"))
 		{
 			try { $destinationFolders.Alter() }
-			catch { } # Sometimes it says Alter() doesn't exist Â¯\_(ãƒ„)_/Â¯
+			catch { } # Sometimes it says Alter() doesn't exist
 			$destinationFolders.Refresh()
 		}
 		

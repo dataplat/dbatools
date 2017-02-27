@@ -1,4 +1,4 @@
-﻿
+
 #region Source Code
 $source = @'
 using System;

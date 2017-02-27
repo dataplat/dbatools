@@ -1,4 +1,4 @@
-﻿function Get-OlaHRestoreFile
+function Get-OlaHRestoreFile
 {
 <#
 .SYNOPSIS

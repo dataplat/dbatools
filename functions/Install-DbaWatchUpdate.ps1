@@ -1,4 +1,4 @@
-﻿Function Install-DbaWatchUpdate
+Function Install-DbaWatchUpdate
 {
 <# 
 .SYNOPSIS 
