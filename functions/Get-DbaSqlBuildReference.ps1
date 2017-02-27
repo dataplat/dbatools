@@ -125,5 +125,4 @@ Does the same as above but logs in as SQL user "sqladmin"
 			Select-DefaultView -InputObject $object -Property SqlInstance, NameLevel, SPLevel, CULevel, KBLevel, SupportedUntil, MatchType, Warning
 		}
 	}
-
 }
