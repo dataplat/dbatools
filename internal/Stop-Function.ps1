@@ -1,4 +1,4 @@
-﻿function Stop-Function
+function Stop-Function
 {
     <#
         .SYNOPSIS

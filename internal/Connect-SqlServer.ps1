@@ -1,4 +1,4 @@
-﻿Function Connect-SqlServer
+Function Connect-SqlServer
 {
 <# 
 .SYNOPSIS 

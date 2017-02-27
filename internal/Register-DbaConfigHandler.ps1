@@ -1,4 +1,4 @@
-﻿function Register-DbaConfigHandler
+function Register-DbaConfigHandler
 {
     <#
         .SYNOPSIS

@@ -1,4 +1,4 @@
-﻿Function Select-DefaultView
+Function Select-DefaultView
 {
 	<# 
 	

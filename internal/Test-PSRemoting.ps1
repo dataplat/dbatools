@@ -1,4 +1,4 @@
-﻿#requires -version 3.0
+#requires -version 3.0
  
 Function Test-PSRemoting {
 <#
