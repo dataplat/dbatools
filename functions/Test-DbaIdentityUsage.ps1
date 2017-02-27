@@ -20,6 +20,12 @@ Windows Authentication will be used if DestinationSqlCredential is not specified
 .PARAMETER Threshold
 Allows you to specify a minimum % of the seed range being utilized.  This can be used to ignore seeds that have only utilized a small fraction of the range.
 
+.PARAMETER NoSystemDb
+Allows you to suppress output on system databases
+
+.PARAMETER Detailed
+Shows detailed information about the server and database collations
+
 .NOTES 
 Author: Brandon Abshire, netnerds.net
 
@@ -55,7 +61,9 @@ Check identity seeds on server sql2008 for only the TestDB database, limiting re
         [parameter(Position = 1, Mandatory = $false)]
 		[int]$Threshold,
         [parameter(Position = 2, Mandatory = $false)]
-        [switch]$NoSystemDb
+        [switch]$NoSystemDb,
+        [parameter(Position = 3, Mandatory = $false)]
+        [switch]$Detailed
 	)
 	
 	DynamicParam {
@@ -75,27 +83,65 @@ Check identity seeds on server sql2008 for only the TestDB database, limiting re
 
         $collection = New-Object System.Collections.ArrayList
 
-        $sql = "Select DB_NAME(), Object_Name(id.object_id) As [table_name]
-        , id.name As [column_name]
-        , t.name As [data_type]
-        , Cast(id.last_value As bigint) As [last_value]
-        , Case 
-            When t.name = 'tinyint'   Then 255 
-            When t.name = 'smallint'  Then 32767 
-            When t.name = 'int'       Then 2147483647 
-            When t.name = 'bigint'    Then 9223372036854775807
-          End As [max_value]
-		, convert(bigint,id.last_value) / Case 
-            When t.name = 'tinyint'   Then 255 
-            When t.name = 'smallint'  Then 32767 
-            When t.name = 'int'       Then 2147483647 
-            When t.name = 'bigint'    Then 9223372036854775807
-          End * 100 As [percentUsed]
-    From sys.identity_columns As id
-    Join sys.types As t
-        On id.system_type_id = t.system_type_id
-    Where id.last_value Is Not Null
-    Order by PercentUsed DESC"
+        $sql = "	;WITH CTE_1
+		AS
+		(
+		  SELECT SCHEMA_NAME(o.schema_id) AS SchemaName,
+				 OBJECT_NAME(a.Object_id) as TableName,
+				 a.Name as ColumnName,
+				 seed_value AS SeedValue,
+				 CONVERT(bigint, increment_value) as IncrementValue,
+
+				 CONVERT(bigint, ISNULL(a.last_value, seed_value)) AS LastValue,
+
+				 CONVERT(bigint,
+								(
+									CONVERT(bigint, ISNULL(last_value, seed_value)) 
+									- CONVERT(bigint, seed_value) 
+									+ (CASE WHEN CONVERT(bigint, seed_value) <> 0 THEN 1 ELSE 0 END) 
+								)
+								/
+								CONVERT(bigint, increment_value)
+						) AS NumberOfUses,
+
+				 -- Divide by increment_value to shows the max number of values that can be used
+				 -- E.g: smallint identity column that starts on the lower possible value (-32768) and have an increment of 2 will only accept ABS(32768 - 32767 - 1) / 2 = 32768 rows
+				 CAST( 
+						ABS(
+						CONVERT(bigint, seed_value) 
+						- 
+						Case
+							When b.name = 'tinyint'   Then 255
+							When b.name = 'smallint'  Then 32767
+							When b.name = 'int'       Then 2147483647
+							When b.name = 'bigint'    Then 9223372036854775807
+						End 
+						-
+						-- When less than 0 the 0 counts too
+						CASE 
+							WHEN CONVERT(bigint, seed_value) <= 0 THEN 1
+							ELSE 0
+							END
+						) / CONVERT(bigint, increment_value) 
+					AS Numeric(20, 0)) AS MaxNumberRows
+			FROM sys.identity_columns a
+				INNER JOIN sys.objects o
+				   ON a.object_id = o.object_id
+				INNER JOIN sys.types As b
+				   ON a.system_type_id = b.system_type_id
+		  WHERE a.seed_value is not null
+		),
+		CTE_2
+		AS
+		(
+		SELECT SchemaName, TableName, ColumnName, CONVERT(BIGINT, SeedValue) AS SeedValue, CONVERT(BIGINT, IncrementValue) AS IncrementValue, LastValue, MaxNumberRows, NumberOfUses, 
+			   CONVERT(Numeric(18,2), ((CONVERT(Float, NumberOfUses) / CONVERT(Float, (MaxNumberRows)) * 100))) AS [PercentUsed]
+		  FROM CTE_1
+		)
+		SELECT DB_NAME() as DatabaseName, SchemaName, TableName, ColumnName, SeedValue, IncrementValue, LastValue, MaxNumberRows, NumberOfUses, [PercentUsed]
+		  FROM CTE_2
+	--	 WHERE [PercentUsed] > 80
+		ORDER BY [PercentUsed] DESC"
 
 	}
 	
@@ -152,31 +198,40 @@ Check identity seeds on server sql2008 for only the TestDB database, limiting re
 				}
 
                 $resultTable = $db.ExecuteWithResults($sql).Tables[0]
-                
+                #$resultTable
+
 
                 foreach ($row in $resultTable)
                 {
 
-                    if ($row.percentUsed -ge $threshold)
+                    if ($row.PercentUsed -ge $threshold)
                         {
-                        $percentUsed = [Math]::Round($row.percentUsed,2)
-
 				        $null = $collection.Add(
                         [PSCustomObject]@{
 					        Server = $server.name
-					        Database = $db.name
-					        Table = $row.table_name
-					        Column = $row.column_name
-					        DataType = $row.data_type
-					        Last_Value = $row.last_value
-					        Max_Value = $row.max_value
-					        PercentUsed = $percentUsed
+					        Database = $row.DatabaseName
+					        Schema = $row.SchemaName
+                            Table = $row.TableName
+					        Column = $row.ColumnName
+					        SeedValue = $row.SeedValue
+                            IncrementValue = $row.IncrementValue
+					        LastValue = $row.LastValue
+					        MaxNumberRows = $row.MaxNumberRows
+                            NumberOfUses = $row.NumberOfUses
+					        PercentUsed = $row.PercentUsed
                         })
                         }
                 }
 			}
 	}
 
-   return ($collection | Format-Table)
+   If ($detailed) 
+    {    
+        return ($collection) 
+    }
+   Else 
+    { 
+        return ($collection | Format-Table -Property *) 
+    }
 }
 }
