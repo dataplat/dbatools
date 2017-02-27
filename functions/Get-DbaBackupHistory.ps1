@@ -120,7 +120,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 		[switch]$LastDiff,
 		[Parameter(ParameterSetName = "Last")]
 		[switch]$LastLog,
-		[switch]$raw
+		[switch]$Raw
 	)
 	
 	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential } }
