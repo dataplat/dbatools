@@ -1,4 +1,4 @@
-﻿Function Copy-SqlCentralManagementServer
+Function Copy-SqlCentralManagementServer
 {
 <# 
 .SYNOPSIS 
