@@ -1,4 +1,4 @@
-﻿Function Set-DbaMaxMemory
+Function Set-DbaMaxMemory
 {
     <# 
         .SYNOPSIS 

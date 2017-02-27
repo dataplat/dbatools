@@ -1,4 +1,4 @@
-﻿Function Copy-SqlLogin
+Function Copy-SqlLogin
 {
 <#
 .SYNOPSIS

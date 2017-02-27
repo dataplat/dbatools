@@ -1,11 +1,11 @@
-﻿Function Export-DbaExecutionPlan
+Function Export-DbaExecutionPlan
 {
 <#
 .SYNOPSIS
-Gets execution plans and metadata
+Exports execution plans to disk. 
 	
 .DESCRIPTION
-Gets execution plans and metadata. Can pipe to Export-DbaExecutionPlan :D
+Exports execution plans to disk. Can pipe from Export-DbaExecutionPlan :D
 	
 Thanks to 
 	https://www.simple-talk.com/sql/t-sql-programming/dmvs-for-query-plan-metadata/
@@ -60,27 +60,12 @@ https://dbatools.io/Export-DbaExecutionPlan
 .EXAMPLE
 Export-DbaExecutionPlan -SqlInstance sqlserver2014a
 
-Returns server name, database, username, restore type, date for all restored databases on sqlserver2014a.
+Exports all execution plans for sqlserver2014a.
 
 .EXAMPLE   
 Export-DbaExecutionPlan -SqlInstance sqlserver2014a -Databases db1, db2 -SinceLastExecution '7/1/2016 10:47:00'
 
-Returns restore information only for databases db1 and db2 on sqlserve2014a since July 1, 2016 at 10:47 AM.
-	
-.EXAMPLE   
-Export-DbaExecutionPlan -SqlInstance sqlserver2014a, sql2016 -Force -Exclude db1
-
-Lots of detailed information for all databases except db1 on sqlserver2014a and sql2016
-
-.EXAMPLE   
-Export-DbaExecutionPlan -SqlInstance sql2014 -Databases AdventureWorks2014, pubs -Force | Format-Table
-
-Adds From and To file information to output, returns information only for AdventureWorks2014 and pubs, and makes the output pretty
-
-.EXAMPLE   
-Get-SqlRegisteredServerName -SqlInstance sql2016 | Export-DbaExecutionPlan
-
-Returns database restore information for every database on every server listed in the Central Management Server on sql2016
+Exports all execution plans for databases db1 and db2 on sqlserve2014a since July 1, 2016 at 10:47 AM.
 	
 #>
 	[cmdletbinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]

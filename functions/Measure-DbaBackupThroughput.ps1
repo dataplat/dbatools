@@ -1,4 +1,4 @@
-﻿function Measure-DbaBackupThroughput
+function Measure-DbaBackupThroughput
 {
 <#
 .SYNOPSIS

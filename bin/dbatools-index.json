@@ -1,4 +1,4 @@
-﻿[
+[
     {
         "CommandName":  "Backup-DbaDatabase",
         "Description":  "Performs a backup of a specified type of 1 or more databases on a SQL Server Instance.\nThese backups may be Full, Differential or Transaction log backups",

@@ -1,4 +1,4 @@
-﻿function Get-XpDirTreeRestoreFile
+function Get-XpDirTreeRestoreFile
 {
 <#
 .SYNOPSIS

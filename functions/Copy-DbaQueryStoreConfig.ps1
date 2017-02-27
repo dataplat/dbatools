@@ -1,4 +1,4 @@
-﻿Function Copy-DbaQueryStoreConfig
+Function Copy-DbaQueryStoreConfig
 {
 <#
 .SYNOPSIS

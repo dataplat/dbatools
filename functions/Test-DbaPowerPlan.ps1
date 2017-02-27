@@ -1,4 +1,4 @@
-﻿Function Test-DbaPowerPlan
+Function Test-DbaPowerPlan
 {
 <#
 .SYNOPSIS

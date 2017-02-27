@@ -1,4 +1,4 @@
-﻿Function Set-DbaQueryStoreConfig
+Function Set-DbaQueryStoreConfig
 {
 <#
 .SYNOPSIS

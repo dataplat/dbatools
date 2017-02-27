@@ -1,4 +1,4 @@
-﻿function Get-FilteredRestoreFile
+function Get-FilteredRestoreFile
 {
 <#
 .SYNOPSIS

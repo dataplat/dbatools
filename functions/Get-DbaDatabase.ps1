@@ -1,4 +1,4 @@
-﻿FUNCTION Get-DbaDatabase
+FUNCTION Get-DbaDatabase
 {
 <#
 .SYNOPSIS

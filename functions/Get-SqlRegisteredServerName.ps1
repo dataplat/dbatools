@@ -1,4 +1,4 @@
-﻿Function Get-SqlRegisteredServerName
+Function Get-SqlRegisteredServerName
 {
 <#
 .SYNOPSIS

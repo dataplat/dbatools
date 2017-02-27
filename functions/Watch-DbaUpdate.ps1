@@ -1,4 +1,4 @@
-﻿Function Watch-DbaUpdate
+Function Watch-DbaUpdate
 {
 <# 
 .SYNOPSIS 

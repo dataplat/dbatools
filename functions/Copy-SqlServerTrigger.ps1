@@ -1,4 +1,4 @@
-﻿Function Copy-SqlServerTrigger
+Function Copy-SqlServerTrigger
 {
 <#
 .SYNOPSIS 
