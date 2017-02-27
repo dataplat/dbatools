@@ -1,4 +1,4 @@
-﻿Function Get-DbaAvailabilityGroup
+Function Get-DbaAvailabilityGroup
 {
 <#
 .SYNOPSIS 

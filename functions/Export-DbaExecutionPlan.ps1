@@ -1,4 +1,4 @@
-﻿Function Export-DbaExecutionPlan
+Function Export-DbaExecutionPlan
 {
 <#
 .SYNOPSIS

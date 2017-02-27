@@ -1,4 +1,4 @@
-﻿Function Get-DbaDatabaseSnapshot
+Function Get-DbaDatabaseSnapshot
 {
 <#
 .SYNOPSIS

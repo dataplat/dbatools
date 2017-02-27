@@ -1,4 +1,4 @@
-﻿FUNCTION Get-DbaAudit
+FUNCTION Get-DbaAudit
 {
 <#
 .SYNOPSIS

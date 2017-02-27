@@ -1,4 +1,4 @@
-﻿Function Get-DbaExecutionPlan
+Function Get-DbaExecutionPlan
 {
 <#
 .SYNOPSIS

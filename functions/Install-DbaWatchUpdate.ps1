@@ -1,4 +1,4 @@
-﻿Function Install-DbaWatchUpdate
+Function Install-DbaWatchUpdate
 {
 <# 
 .SYNOPSIS 
@@ -68,7 +68,7 @@ Adds the scheduled task needed by Watch-DbaUpdate
 				{
 					$module = Get-Module -Name dbatools
 					Write-Warning "Task created! A notication should appear momentarily. Here's something cute to look at in the interim."
-					Show-Notification -title "dbatools ❤ you" -text "come hang out at dbatools.io/slack"
+					Show-Notification -title "dbatools Ã¢ÂÂ¤ you" -text "come hang out at dbatools.io/slack"
 				}
 			}
 			catch

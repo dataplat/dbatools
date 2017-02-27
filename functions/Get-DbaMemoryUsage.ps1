@@ -1,4 +1,4 @@
-﻿Function Get-DbaMemoryUsage
+Function Get-DbaMemoryUsage
 {
 <#
 .SYNOPSIS
