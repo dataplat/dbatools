@@ -47,28 +47,29 @@ Get-DbaSqlBuildReference -Build "12.00.4502"
 Returns information about a build identified by  "12.00.4502" (which is SQL 2014 with SP1 and CU11)
 
 #>
-
+	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
 	[CmdletBinding()]
-
 	Param (
 		[Parameter(
-            ParameterSetName='Server',
-            Mandatory = $true,
-            ValueFromPipeline = $true
-        )]
+			ParameterSetName='Server',
+			Mandatory = $true,
+			ValueFromPipeline = $true
+		)]
 		[Alias("ServerInstance", "SqlServer")]
 		[string[]]$SqlInstance,
 		[parameter(ParameterSetName = "Server")]
 		[PSCredential]
 		[System.Management.Automation.CredentialAttribute()]$Credential,
 		[Parameter(
-            ParameterSetName='BuildString'
-        )]
-        [string[]]$Build
+			ParameterSetName='BuildString'
+		)]
+		[string[]]$Build
 	)
 
 	BEGIN {
-		function Find-DbaSqlBuildReferenceIndex() {
+		function Find-DbaSqlBuildReferenceIndex {
+			[CmdletBinding()]
+			Param()
 			$idxfile = "$moduledirectory\bin\dbatools-buildref-index.json"
 			if (!(Test-Path $idxfile)) {
 				Write-Warning "Unable to read local file"
@@ -77,11 +78,17 @@ Returns information about a build identified by  "12.00.4502" (which is SQL 2014
 			}
 		}
 
-		function Get-DbaSqlBuildReferenceIndex() {
+		function Get-DbaSqlBuildReferenceIndex {
+			[CmdletBinding()]
+			Param()
 			return Find-DbaSqlBuildReferenceIndex | ConvertFrom-Json
 		}
 
-		function Compare-DbaSqlBuildGreater([string]$firstref, [string]$secondref) {
+		function Compare-DbaSqlBuildGreater {
+			[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
+			[CmdletBinding()]
+			[OutputType([bool])]
+			Param([string]$firstref, [string]$secondref)
 			$first = $firstref.split('.') | Foreach-Object { [convert]::ToInt32($_) }
 			$second = $secondref.split('.') | Foreach-Object { [convert]::ToInt32($_) }
 			$x = 0
@@ -96,7 +103,7 @@ Returns information about a build identified by  "12.00.4502" (which is SQL 2014
 			}
 		}
 
-		$moduledirectory = (Get-Module -Name dbatools).ModuleBase
+		$moduledirectory = $MyInvocation.MyCommand.Module.ModuleBase
 
 		$IdxRef = Get-DbaSqlBuildReferenceIndex
 		$LastUpdated = Get-Date -Date $IdxRef.LastUpdated
@@ -104,7 +111,11 @@ Returns information about a build identified by  "12.00.4502" (which is SQL 2014
 			Write-Warning "Index is Stale, Last Update on: $(Get-Date -Date $LastUpdated -f s)"
 		}
 
-		function Resolve-DbaSqlBuild([string]$build) {
+		function Resolve-DbaSqlBuild {
+			[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
+			[CmdletBinding()]
+			[OutputType([System.Collections.Hashtable])]
+			Param([string]$build)
 			$LookFor = ($build.split('.')[0..2] | Foreach-Object { [convert]::ToInt32($_) }) -join '.'
 			Write-Verbose "Looking for $LookFor"
 			$SqlVersion = $build.split('.')[0..1] -join '.'
@@ -145,7 +156,6 @@ Returns information about a build identified by  "12.00.4502" (which is SQL 2014
 			}
 			return $Detected
 		}
-
 	}
 	PROCESS {
 		foreach ($instance in $SqlInstance) {
