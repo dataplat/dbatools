@@ -1,11 +1,11 @@
-﻿FUNCTION Get-DbaAgentCategory
+﻿FUNCTION Get-DbaJobCategory
 {
 <#
 .SYNOPSIS
-Gets SQL Agent Category information for each instance(s) of SQL Server.
+Gets SQL Agent Job Category information for each instance(s) of SQL Server.
 
 .DESCRIPTION
- The Get-DbaAgentCategory returns connected SMO object for SQL Agent Category information for each instance(s) of SQL Server.
+ The Get-DbaJobCategory returns connected SMO object for SQL Agent Job Category information for each instance(s) of SQL Server.
 	
 .PARAMETER SqlInstance
 SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
@@ -26,15 +26,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.	
 
 .LINK
-https://dbatools.io/Get-DbaAgentCategory
+https://dbatools.io/Get-DbaJobCategory
 
 .EXAMPLE
-Get-DbaAgentCategory -SqlInstance localhost
-Returns all SQL Agent Categories on the local default SQL Server instance
+Get-DbaJobCategory -SqlInstance localhost
+Returns all SQL Agent Job Categories on the local default SQL Server instance
 
 .EXAMPLE
-Get-DbaAgentCategory -SqlInstance localhost, sql2016
-Returns all SQl Agent Categories for the local and sql2016 SQL Server instances
+Get-DbaJobCategory -SqlInstance localhost, sql2016
+Returns all SQl Agent Job Categories for the local and sql2016 SQL Server instances
 
 #>
 	[CmdletBinding()]
