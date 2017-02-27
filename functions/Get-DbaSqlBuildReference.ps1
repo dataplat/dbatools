@@ -17,6 +17,9 @@ Credential object used to connect to the SQL Server as a different user.
 .PARAMETER Build
 Instead of connecting to a real instance, pass a string identifying the build to get the info back.
 
+.PARAMETER Silent
+Replaces user friendly yellow warnings with bloody red exceptions of doom!
+
 .NOTES
 Author: niphlod
 Tags: SqlBuild
@@ -63,18 +66,24 @@ Returns information about a build identified by  "12.00.4502" (which is SQL 2014
 		[Parameter(
 			ParameterSetName='BuildString'
 		)]
-		[string[]]$Build
+		[string[]]$Build,
+		[switch]$Silent
 	)
 
 	BEGIN {
 		function Find-DbaSqlBuildReferenceIndex {
 			[CmdletBinding()]
 			Param()
-			$idxfile = "$moduledirectory\bin\dbatools-buildref-index.json"
-			if (!(Test-Path $idxfile)) {
-				Write-Warning "Unable to read local file"
+			$orig_idxfile = "$moduledirectory\bin\dbatools-buildref-index.json"
+			$DbatoolsData = Get-DbaConfigValue -Name 'Path.DbatoolsData'
+			$writable_idxfile = Join-Path $DbatoolsData "dbatools-buildref-index.json"
+			if (!(Test-Path $orig_idxfile)) {
+				Write-Message -Message "Unable to read local file" -Warning -Silent $Silent
 			} else {
-				return (Get-Content $idxfile)
+				if(!(Test-Path $writable_idxfile)) {
+					Copy-Item $orig_idxfile $writable_idxfile
+				}
+				return (Get-Content $writable_idxfile)
 			}
 		}
 
@@ -108,7 +117,7 @@ Returns information about a build identified by  "12.00.4502" (which is SQL 2014
 		$IdxRef = Get-DbaSqlBuildReferenceIndex
 		$LastUpdated = Get-Date -Date $IdxRef.LastUpdated
 		if ($LastUpdated -lt (Get-Date).AddDays(-45)) {
-			Write-Warning "Index is Stale, Last Update on: $(Get-Date -Date $LastUpdated -f s)"
+			Write-Message -Message "Index is Stale, Last Update on: $(Get-Date -Date $LastUpdated -f s)" -Warning
 		}
 
 		function Resolve-DbaSqlBuild {
@@ -117,14 +126,14 @@ Returns information about a build identified by  "12.00.4502" (which is SQL 2014
 			[OutputType([System.Collections.Hashtable])]
 			Param([string]$build)
 			$LookFor = ($build.split('.')[0..2] | Foreach-Object { [convert]::ToInt32($_) }) -join '.'
-			Write-Verbose "Looking for $LookFor"
+			Write-Message -Message "Looking for $LookFor" -Level 5 -Silent $Silent
 			$SqlVersion = $build.split('.')[0..1] -join '.'
 			$IdxVersion = $IdxRef.Data | Where-Object Version -like "$SqlVersion.*"
 			$Detected = @{}
 			$MatchType = 'Approximate'
-			Write-Verbose "We have $($IdxVersion.Length) in store for this Release"
+			Write-Message -Message "We have $($IdxVersion.Length) in store for this Release" -Level 5 -Silent $Silent
 			If($IdxVersion.Length -eq 0) {
-				Write-Warning "No info in store for this Release"
+				Write-Message -Message "No info in store for this Release" -Warning -Silent $Silent
 				$Detected.Warning = "No info in store for this Release"
 			}
 			$LastVer = $IdxVersion[0]
@@ -159,12 +168,11 @@ Returns information about a build identified by  "12.00.4502" (which is SQL 2014
 	}
 	PROCESS {
 		foreach ($instance in $SqlInstance) {
-			Write-Verbose "Connecting to $instance"
+			Write-Message -Message "Connecting to $instance" -Level 5 -Silent $Silent
 			try {
 				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
 			} catch {
-				Write-Warning "Can't connect to $instance"
-				Continue
+				Stop-Function -Message "Can't connect to $instance" -Silent $Silent -Category InvalidArgument -Target $instance -Continue
 			}
 			$LookFor = $server.Version.toString()
 			$Detected = Resolve-DbaSqlBuild $LookFor
