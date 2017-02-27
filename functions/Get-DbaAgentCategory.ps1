@@ -11,8 +11,8 @@ Gets SQL Agent Category information for each instance(s) of SQL Server.
 SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
 to be executed against multiple SQL Server instances.
 
-.PARAMETER Credential
-PSCredential object to connect as. If not specified, current Windows login will be used.
+.PARAMETER SqlCredential
+SqlCredential object to connect as. If not specified, current Windows login will be used.
 
 .NOTES
 Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
