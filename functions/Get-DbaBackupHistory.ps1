@@ -159,9 +159,13 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				if ($last)
 				{
 					if ($databases -eq $null) { $databases = $server.databases.name }
-					Get-DbaBackupHistory -SqlServer $server -LastFull -Databases $databases -raw:$raw
-					Get-DbaBackupHistory -SqlServer $server -LastDiff -Databases $databases -raw:$raw
-					Get-DbaBackupHistory -SqlServer $server -LastLog -Databases $databases -raw:$raw
+					
+					foreach ($database in $databases)
+					{
+						Get-DbaBackupHistory -SqlServer $server -LastFull -Databases $database -raw:$raw
+						Get-DbaBackupHistory -SqlServer $server -LastDiff -Databases $database -raw:$raw
+						Get-DbaBackupHistory -SqlServer $server -LastLog -Databases $database -raw:$raw
+					}
 				}
 				elseif ($LastFull -or $LastDiff -or $LastLog)
 				{
@@ -309,10 +313,10 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 					{
 						$wherearray += "backupset.backup_finish_date >= '$since'"
 					}
-
+					
 					if ($IgnoreCopyOnly)
 					{
-						$wherearray += "is_copy_only='0'"	
+						$wherearray += "is_copy_only='0'"
 					}
 					
 					if ($where.length -gt 0)
