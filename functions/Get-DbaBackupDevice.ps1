@@ -66,7 +66,7 @@ Returns all Backup Devices for the local and sql2016 SQL Server instances
 				Add-Member -InputObject $backupDevice -MemberType NoteProperty InstanceName -value $backupDevice.Parent.ServiceName
 				Add-Member -InputObject $backupDevice -MemberType NoteProperty SqlInstance -value $backupDevice.Parent.DomainInstanceName
 				
-				Select-DefaultView -InputObject $backupDevice -Property ComputerName, InstanceName, SqlInstance, Name, BackupDeviceType, PhysicalLocation
+				Select-DefaultView -InputObject $backupDevice -Property ComputerName, InstanceName, SqlInstance, Name, BackupDeviceType, PhysicalLocation, SkipTapeLabel
 			}
 		}
 	}
