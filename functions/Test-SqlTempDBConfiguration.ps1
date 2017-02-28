@@ -60,8 +60,8 @@ Checks tempdb on the localhost machine. All rest results are shown.
 	Param (
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
-		[string[]]$SqlServer,
-		[object]$SqlCredential,
+		[object[]]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Switch]$Detailed
 	)
 
