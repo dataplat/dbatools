@@ -235,7 +235,10 @@
 		'Get-DbaCredential',
 		'Get-DbaBackupDevice',
 		'Get-DbaAuditSpecification',
-		'Get-DbaJobCategory'
+		'Get-DbaJobCategory',
+		'Get-DbaDatabaseEncryption',
+		'New-DbaSsisCatalog',
+		'Remove-DbaDatabase'
 	)
 	
 	# Cmdlets to export from this module
