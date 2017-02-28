@@ -37,9 +37,9 @@ Param(
     [ValidateSet(“excel”,”csv”,”clixml”)] 
     [string]$OutputType = "clixml",
     [ValidateScript({Test-Path $_})]
-    [string]$OutputLocation = [Environment]::GetFolderPath("mydocuments"),
+    [System.IO.FileInfo]$OutputLocation = [Environment]::GetFolderPath("mydocuments"),
     [ValidateScript({Test-Path $_})]
-    [string]$ScriptLocation = [Environment]::GetFolderPath("mydocuments"),
+    [System.IO.FileInfo]$ScriptLocation = $PSModulePath + "internal\content", 
     [string[]]$QueryName,
     [switch]$UseSelectionHelper,
     [switch]$InstanceOnly,
