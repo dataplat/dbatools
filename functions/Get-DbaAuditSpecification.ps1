@@ -71,7 +71,7 @@ Returns all Security Audit Specifications for the local and sql2016 SQL Server i
 				Add-Member -InputObject $auditSpecification -MemberType NoteProperty InstanceName -value $auditSpecification.Parent.ServiceName
 				Add-Member -InputObject $auditSpecification -MemberType NoteProperty SqlInstance -value $auditSpecification.Parent.DomainInstanceName
 				
-				Select-DefaultView -InputObject $auditSpecification -Property ComputerName, InstanceName, SqlInstance, ID, Name, AuditName, 'Enabled as IsEnabled'
+				Select-DefaultView -InputObject $auditSpecification -Property ComputerName, InstanceName, SqlInstance, ID, Name, AuditName, Enabled, CreateDate, DateLastModified, Guid
 			}
 		}
 	}
