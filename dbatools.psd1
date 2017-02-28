@@ -230,7 +230,12 @@
 		'Set-DbaSpConfigure',
 		'Test-DbaIdentityUsage',
 		'Get-DbaDatabaseAssembly',
-		'Get-DbaAgentJob'
+		'Get-DbaAgentJob',
+		'Get-DbaCustomError',
+		'Get-DbaCredential',
+		'Get-DbaBackupDevice',
+		'Get-DbaAuditSpecification',
+		'Get-DbaJobCategory'
 	)
 	
 	# Cmdlets to export from this module
