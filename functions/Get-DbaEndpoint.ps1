@@ -66,7 +66,7 @@ Returns all Endpoint(s) for the local and sql2016 SQL Server instances
 				Add-Member -InputObject $endpoint -MemberType NoteProperty InstanceName -value $endpoint.Parent.ServiceName
 				Add-Member -InputObject $endpoint -MemberType NoteProperty SqlInstance -value $endpoint.Parent.DomainInstanceName
 				
-				Select-DefaultView -InputObject $endpoint -Property ComputerName, InstanceName, SqlInstance, ID, Name, EndpointType, Owner
+				Select-DefaultView -InputObject $endpoint -Property ComputerName, InstanceName, SqlInstance, ID, Name, EndpointType, Owner, IsAdminEndpoint, IsSystemObject
 			}
 		}
 	}
