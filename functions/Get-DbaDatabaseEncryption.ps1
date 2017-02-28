@@ -55,7 +55,7 @@
                 if ($db.EncryptionEnabled -eq $true)
                 {
        
-            $out = [PSCustomObject]@{
+                [PSCustomObject]@{
                         Server = $server.name
                         Instance = $server.InstanceName
                         Database = $db
@@ -67,13 +67,13 @@
                         KeyLength = $null
                         Owner = $null			
                     } 
-                    $out
+                   
                 }
 
                 foreach ($cert in $db.Certificates)
                 {
     
- $out = [PSCustomObject]@{
+                    [PSCustomObject]@{
                         Server = $server.name
                         Instance = $server.InstanceName
                         Database = $db
@@ -85,13 +85,13 @@
                         KeyLength = $null
                         Owner = $cert.Owner			
                     }
-                     $out
+                    
                 }
                 
                 foreach ($ak in $db.AsymmetricKeys)
                 {
   
-$out = [PSCustomObject]@{
+                    [PSCustomObject]@{
                         Server = $server.name
                         Instance = $server.InstanceName
                         Database = $db
@@ -103,12 +103,12 @@ $out = [PSCustomObject]@{
                         KeyLength = $ak.KeyLength
                         Owner = $ak.Owner	
                     }
-                     $out
+                    
                 }
                 foreach ($sk in $db.SymmetricKeys)
                 {
 
-   $out = [PSCustomObject]@{
+                    [PSCustomObject]@{
                         Server = $server.name
                         Instance = $server.InstanceName
                         Database = $db
@@ -120,10 +120,9 @@ $out = [PSCustomObject]@{
                         KeyLength = $sk.KeyLength
                         Owner = $sk.Owner	
                     }
-                     $out
                 }
             }
-       }  
-   }		
+        }  
+    }		
 }
 
