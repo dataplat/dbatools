@@ -100,6 +100,7 @@ Returns databases on multiple instances piped into the function
 	BEGIN
 	{
 		$databases = $psboundparameters.Databases
+		$exclude = $psboundparameters.Exclude
 		
 		if ($NoUserDb -and $NoSystemDb)
 		{
@@ -169,6 +170,11 @@ Returns databases on multiple instances piped into the function
 			if (!$NoUserDb -and !$NoSystemDb -and !$databases -and !$status -and !$Owner -and !$Access -and !$Encrypted -and !$RecoveryModel)
 			{
 				$inputobject = $server.Databases
+			}
+			
+			if ($exclude)
+			{
+				$inputobject = $inputobject | Where-Object {$_.Name -notin $exclude }
 			}
 			
 			Select-DefaultView -InputObject $inputobject -Property $defaults
