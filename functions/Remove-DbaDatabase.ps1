@@ -2,12 +2,12 @@
 {
 <#
 .SYNOPSIS
-Removes the hell out of a database - with some prompts.
+Drops a database, hopefully even the really stuck ones.
 
 .DESCRIPTION
 Tries a bunch of different ways to remove a database or two or more.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server instance holding the databases to be removed.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 .PARAMETER SqlCredential
@@ -36,32 +36,50 @@ Copyright (C) 2016 Chrissy LeMaire
 https://dbatools.io/Remove-DbaDatabase
 
 .EXAMPLE 
+Remove-DbaDatabase -SqlInstance sql2016 -Databases containeddb
 
+Prompts then removes the database containeddb on SQL Server sql2016
+	
+.EXAMPLE 
+Remove-DbaDatabase -SqlInstance sql2016 -Databases containeddb, mydb
+	
+Prompts then removes the databases containeddb and mydb on SQL Server sql2016
+	
+.EXAMPLE 
+Remove-DbaDatabase -SqlInstance sql2016 -Databases containeddb -Confirm:$false
 
+Does not prompt and swiftly removes containeddb on SQL Server sql2016
 #>
-	[CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
+	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[parameter(Mandatory = $false)]
 		[object]$SqlCredential
 	)
 	
-	DynamicParam { if ($sqlserver) { return Get-ParamSqlDatabases -SqlServer $sqlserver -SqlCredential $SqlCredential } }
+	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance -SqlCredential $SqlCredential } }
 	
 	BEGIN
 	{
+		$confirmpreference = "Low"
 		$databases = $psboundparameters.Databases
+		
+		if (-not $databases)
+		{
+			Write-Warning "You must select one or more databases to drop"
+			continue
+		}
 	}
 	
 	PROCESS
 	{
-		
 		foreach ($instance in $SqlInstance)
 		{
 			try
 			{
+				Write-Verbose "Connecting to $instance"
 				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
 			}
 			catch
@@ -70,39 +88,73 @@ https://dbatools.io/Remove-DbaDatabase
 				continue
 			}
 			
-			$inputobject = $server.Databases | Where-Object { $_.Name -in $databases }
-			
-			
-			if ($dbname -notmatch "[")
-			{
-				$dbname = "[$dbname]"
-			}
-			
-			
-			try
-			{
-				$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-				$server.KillDatabase($dbname)
-				$server.Refresh()
-			}
-			catch
+			$databases = $server.Databases | Where-Object { $_.Name -in $databases }
+
+			foreach ($db in $databases)
 			{
 				try
 				{
-					$null = $server.ConnectionContext.ExecuteNonQuery("DROP DATABASE $escapedname")
-					return "Successfully dropped $dbname on $($server.name)"
+					if ($Pscmdlet.ShouldProcess("$db on $server", "KillDatabase"))
+					{
+						$server.KillDatabase($db.name)
+						$server.Refresh()
+						
+						[pscustomobject]@{
+							ComputerName = $server.NetName
+							InstanceName = $server.ServiceName
+							SqlInstance = $server.Name
+							Database = $db.name
+							Status = "Dropped"
+						}
+					}
 				}
 				catch
 				{
+					return
 					try
 					{
-						$server.databases[$dbname].Drop()
-						$server.Refresh()
-						return "Successfully dropped $dbname on $($server.name)"
+						if ($Pscmdlet.ShouldProcess("$db on $server", "alter db set single_user with rollback immediate then drop"))
+						{
+							$null = $server.ConnectionContext.ExecuteNonQuery("alter database $db set single_user with rollback immediate; drop database $db")
+							
+							[pscustomobject]@{
+								ComputerName = $server.NetName
+								SqlInstance = $server.Name
+								InstanceName = $server.ServiceName
+								Database = $db.name
+								Status = "Dropped"
+							}
+						}
 					}
 					catch
 					{
-						return $_
+						try
+						{
+							if ($Pscmdlet.ShouldProcess("$db on $server", "SMO drop"))
+							{
+								$server.databases[$dbname].Drop()
+								$server.Refresh()
+								
+								[pscustomobject]@{
+									ComputerName = $server.NetName
+									SqlInstance = $server.Name
+									InstanceName = $server.ServiceName
+									Database = $db.name
+									Status = "Dropped"
+								}
+							}
+						}
+						catch
+						{
+							Write-Warning "Could not drop database $db on $server"
+							[pscustomobject]@{
+								ComputerName = $server.NetName
+								SqlInstance = $server.Name
+								InstanceName = $server.ServiceName
+								Database = $db.name
+								Status = $_
+							}
+						}
 					}
 				}
 			}
