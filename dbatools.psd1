@@ -228,7 +228,9 @@
 		'Get-DbaLocaleSetting',
 		'Get-DbaSqlBuildReference',
 		'Set-DbaSpConfigure',
-		'Test-DbaIdentityUsage'
+		'Test-DbaIdentityUsage',
+		'Get-DbaDatabaseAssembly',
+		'Get-DbaAgentJob'
 	)
 	
 	# Cmdlets to export from this module
