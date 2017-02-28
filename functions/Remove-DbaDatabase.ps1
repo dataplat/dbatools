@@ -54,15 +54,16 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
+		[object[]]$SqlInstance,
 		[parameter(Mandatory = $false)]
 		[object]$SqlCredential
 	)
 	
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance -SqlCredential $SqlCredential } }
+	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
 	BEGIN
 	{
+		# Prompt ppl
 		$confirmpreference = "Low"
 		$databases = $psboundparameters.Databases
 		
@@ -102,7 +103,7 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 						[pscustomobject]@{
 							ComputerName = $server.NetName
 							InstanceName = $server.ServiceName
-							SqlInstance = $server.Name
+							SqlInstance = $server.DomainInstanceName
 							Database = $db.name
 							Status = "Dropped"
 						}
@@ -119,8 +120,8 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 							
 							[pscustomobject]@{
 								ComputerName = $server.NetName
-								SqlInstance = $server.Name
 								InstanceName = $server.ServiceName
+								SqlInstance = $server.DomainInstanceName
 								Database = $db.name
 								Status = "Dropped"
 							}
@@ -137,8 +138,8 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 								
 								[pscustomobject]@{
 									ComputerName = $server.NetName
-									SqlInstance = $server.Name
 									InstanceName = $server.ServiceName
+									SqlInstance = $server.DomainInstanceName
 									Database = $db.name
 									Status = "Dropped"
 								}
@@ -149,8 +150,8 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 							Write-Warning "Could not drop database $db on $server"
 							[pscustomobject]@{
 								ComputerName = $server.NetName
-								SqlInstance = $server.Name
 								InstanceName = $server.ServiceName
+								SqlInstance = $server.DomainInstanceName
 								Database = $db.name
 								Status = $_
 							}
