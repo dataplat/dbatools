@@ -133,6 +133,9 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 				SqlServerName = $sqlservername
 				IsEqual = $serverinstancename -eq $sqlservername
 				RenameRequired = $serverinstancename -ne $sqlservername
+                Updatable = $null
+                Warnings = $null
+                Blockers = $null
 			}
 
 			if ($Detailed)
@@ -165,8 +168,12 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 					{
 						$rstext = "Reporting Services exists. When it is started again, it must be updated."
 					}
-					$serverinfo | Add-Member -NotePropertyName Warnings -NotePropertyValue $rstext
+					$serverinfo.Warnings = $rstext
 				}
+                else
+                {
+                    $serverinfo.Warnings = "N/A"
+                }
 
 				# check for mirroring
 				$mirroreddb = $server.Databases | Where-Object { $_.IsMirroringEnabled -eq $true }
@@ -203,12 +210,10 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 
 				if ($reasons.length -gt 0)
 				{
-					$serverinfo | Add-Member -NotePropertyName Updatable -NotePropertyValue $false
-					$serverinfo | Add-Member -NotePropertyName Blockers -NotePropertyValue $reasons
 				}
 				else
 				{
-					$serverinfo | Add-Member -NotePropertyName Updatable -NotePropertyValue $true
+                    $serverinfo.Blockers = "N/A"
 				}
 			}
 
@@ -218,6 +223,13 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 
 	END
 	{
-		return $collection
+        if ($Detailed)
+	    {
+            return $collection
+        }
+        else
+        {
+		    return $collection | Select-DefaultView -ExcludeProperty Warnings, Blockers
+        }
 	}
 }
