@@ -162,11 +162,11 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 				{
 					if ($rs.Status -eq 'Running')
 					{
-						$rstext = "Reporting Services must be stopped and updated."
+						$rstext = "Reporting Services ($instance) must be stopped and updated."
 					}
 					else
 					{
-						$rstext = "Reporting Services exists. When it is started again, it must be updated."
+						$rstext = "Reporting Services ($instance) exists. When it is started again, it must be updated."
 					}
 					$serverinfo.Warnings = $rstext
 				}
@@ -210,9 +210,12 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 
 				if ($reasons.length -gt 0)
 				{
+                    $serverinfo.Updatable = $false
+                    $serverinfo.Blockers = $reasons
 				}
 				else
 				{
+                    $serverinfo.Updatable = $true
                     $serverinfo.Blockers = "N/A"
 				}
 			}
