@@ -1,4 +1,4 @@
-﻿FUNCTION Get-DbaAgentJob
+FUNCTION Get-DbaAgentJob
 {
 <#
 .SYNOPSIS
@@ -66,7 +66,7 @@ Returns all SQl Agent Job for the local and sql2016 SQL Server instances
 				Add-Member -InputObject $agentJob -MemberType NoteProperty InstanceName -value $agentJob.Parent.Parent.ServiceName
 				Add-Member -InputObject $agentJob -MemberType NoteProperty SqlInstance -value $agentJob.Parent.Parent.DomainInstanceName
 				
-				Select-DefaultView -InputObject $agentJob -Property ComputerName, InstanceName, SqlInstance, Name, Category, 'IsEnabled as Enabled'
+				Select-DefaultView -InputObject $agentJob -Property ComputerName, InstanceName, SqlInstance, Name, Category, OwnerLoginName, 'IsEnabled as Enabled', LastRunDate, DateCreated, HasSchedule, OperatorToEmail
 			}
 		}
 	}
