@@ -1,4 +1,4 @@
-﻿<#
+<#
 This is designed for all paths you need configurations for.
 #>
 

@@ -1,4 +1,4 @@
-﻿function Find-DbaLoginInGroup
+function Find-DbaLoginInGroup
 {
 <#
 .SYNOPSIS
@@ -28,7 +28,7 @@ SQLServer name or SMO object representing the SQL Server to connect to. This can
 collection and recieve pipeline input.
 
 .PARAMETER SqlCredential
-PSCredential object to connect under. If not specified, currend Windows login will be used.
+PSCredential object to connect under. If not specified, current Windows login will be used.
 
 .PARAMETER Login
 Find all AD Groups used on the instance that an individual login is a member of.

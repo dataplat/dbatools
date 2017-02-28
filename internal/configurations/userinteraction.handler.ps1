@@ -1,4 +1,4 @@
-﻿#region message.maximuminfo
+#region message.maximuminfo
 $ScriptBlock = {
     Param (
         $Value

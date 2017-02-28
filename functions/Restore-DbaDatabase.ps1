@@ -1,4 +1,4 @@
-﻿function Restore-DbaDatabase
+function Restore-DbaDatabase
 {
 <#
 .SYNOPSIS 
@@ -244,6 +244,11 @@ folder for those file types as defined on the target instance.
 	{
 		foreach ($f in $path)
 		{
+			if ($f.FullName)
+			{
+				$f = $f.FullName
+			}
+			
 			if ($f.Gettype -is [string])
 			{
 				if ($f.StartsWith("\\") -eq $false -and  $islocal -ne $true)
@@ -267,7 +272,7 @@ folder for those file types as defined on the target instance.
 				}
 			}
 			
-			Write-Verbose "type = $($f.gettype())"
+			Write-Verbose "$FunctionName - type = $($f.gettype())"
 			if ($f -is [string])
 			{
 				Write-Verbose "$FunctionName : Paths passed in"
@@ -291,10 +296,24 @@ folder for those file types as defined on the target instance.
 							$BackupFiles += Get-XPDirTreeRestoreFile -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential
 						}
 					}
-					elseif ((Get-Item $p).PSIsContainer -ne $true)
+					elseif ((Get-Item $p -ErrorAction SilentlyContinue).PSIsContainer -ne $true)
 					{
-						Write-Verbose "$FunctionName : Single file"
-						$BackupFiles += Get-item $p
+						try
+						{
+							$BackupFiles += Get-Item $p -ErrorAction Stop
+						}
+						catch
+						{
+							if (Test-SqlPath -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential)
+							{
+								$BackupFiles += $p
+							}
+							else
+							{
+								Write-Warning "$FunctionName - $p cannot be accessed by $SqlServer"
+								continue
+							}
+						}
 					}
 					elseif ($MaintenanceSolutionBackup)
 					{
@@ -318,10 +337,10 @@ folder for those file types as defined on the target instance.
 				Write-Verbose "$FunctionName : Files passed in $($Path.count)"
 				Foreach ($FileTmp in $Path)
 				{
-					Write-Verbose "Type - $($FileTmp.GetType()), length =$($FileTmp.length)"
+					Write-Verbose "$FunctionName - Type - $($FileTmp.GetType()), length =$($FileTmp.length)"
 					if($FileTmp -is [System.Io.FileInfo] -and $isLocal -eq $False )
 					{
-						Write-Verbose "File object"
+						Write-Verbose "$FunctionName - File object"
 						if ($FileTmp.PsIsContainer)
 						{
 							$BackupFiles += Get-XPDirTreeRestoreFile -Path $FileTmp.Fullname -SqlServer $SqlServer -SqlCredential $SqlCredential
@@ -354,15 +373,18 @@ folder for those file types as defined on the target instance.
 						}
 						if ([bool]($FileTmp.FullName -notmatch '\.\w{3}\Z' ))
 						{
-							Write-Verbose "$FunctionName - it's file"
-							$BackupFiles += Get-XPDirTreeRestoreFile -Path $FileTmp.Fullname -SqlServer $SqlServer -SqlCredential $SqlCredential
+
+							foreach ($dir in $Filetmp.path){
+								Write-Verbose "$FunctionName - it's a folder, passing to Get-XpDirTree - $($dir)"
+								$BackupFiles += Get-XPDirTreeRestoreFile -Path $dir -SqlServer $SqlServer -SqlCredential $SqlCredential
+							}
 						}
 						elseif ([bool]($FileTmp.FullName -match '\.\w{3}\Z' ))
 						{
 							Write-Verbose "$FunctionName - it's folder"
 							ForEach ($ft in $Filetmp.FullName)
 							{			
-								Write-Verbose "$FunctionName - Piped files Testing $($ft)"					
+								Write-Verbose "$FunctionName - Piped files Test-SqlPath $($ft)"					
 								if (Test-SqlPath -Path $ft -SqlServer $SqlServer -SqlCredential $SqlCredential)
 								{
 									$BackupFiles += $ft
@@ -377,7 +399,7 @@ folder for those file types as defined on the target instance.
 					}
 					else
 					{	
-						Write-Verbose "Dropped to Default"
+						Write-Verbose "$FunctionName - Dropped to Default"
 						$BackupFiles += $FileTmp
 					}
 				}
@@ -394,7 +416,6 @@ folder for those file types as defined on the target instance.
 		}
 		catch
 		{
-			$server.ConnectionContext.Disconnect()
 			Write-Warning "$FunctionName - Cannot connect to $SqlServer"
 			Return
 		}
@@ -406,7 +427,7 @@ folder for those file types as defined on the target instance.
 				break
 			}
 		}
-		$server.ConnectionContext.Disconnect()
+
 		if ($islocal -eq $false)
 		{
 			Write-Verbose "$FunctionName - Remote server, checking folders"
@@ -449,7 +470,11 @@ folder for those file types as defined on the target instance.
 				}
 			}
 		}
-		
+<#		
+		return $BackupFiles
+	}
+}
+	#>
 		$AllFilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup
 		Write-Verbose "$FunctionName - $($AllFilteredFiles.count) dbs to restore"
 		
@@ -500,5 +525,6 @@ folder for those file types as defined on the target instance.
 		}
 	}
 }
+
 
 

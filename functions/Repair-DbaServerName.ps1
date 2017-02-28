@@ -1,4 +1,4 @@
-﻿Function Repair-DbaServerName
+Function Repair-DbaServerName
 {
 <#
 .SYNOPSIS

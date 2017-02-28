@@ -1,4 +1,4 @@
-﻿function Write-Message
+function Write-Message
 {
     <#
         .SYNOPSIS

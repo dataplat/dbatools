@@ -1,4 +1,4 @@
-﻿Function Copy-SqlSharedSchedule
+Function Copy-SqlSharedSchedule
 {
 <#
 .SYNOPSIS 

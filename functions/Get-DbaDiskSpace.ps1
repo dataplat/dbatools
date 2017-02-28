@@ -1,4 +1,4 @@
-﻿Function Get-DbaDiskSpace
+Function Get-DbaDiskSpace
 {
 <#
 .SYNOPSIS
