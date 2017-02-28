@@ -1,4 +1,42 @@
 ﻿function Get-DbaDatabaseEncryption {
+<#
+.SYNOPSIS
+Returns a summary of encrption used on databases based to it.
+
+.DESCRIPTION
+Shows if a database has Transparaent Data encrption, any certificates, asymmetric keys or symmetric keys with details for each.
+
+.PARAMETER SqlServer
+SQLServer name or SMO object representing the SQL Server to connect to. This can be a
+collection and recieve pipeline input
+
+.PARAMETER SqlCredential
+PSCredential object to connect as. If not specified, currend Windows login will be used.
+
+.PARAMETER Database
+Define the database you wish to search
+
+.NOTES 
+Original Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+Copyright (C) 2016 Chrissy LeMaire
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.	
+
+.LINK
+https://dbatools.io/Get-DbaDatabaseEncryption
+
+.EXAMPLE
+Get-DbaDatabaseEncryption -SqlServer DEV01
+List all encrpytion found on the instance by database
+
+.EXAMPLE
+Get-DbaDatabaseEncryption -SqlServer DEV01 -Database MyDB
+List all encrption found in MyDB 
+#>
 	[CmdletBinding()]
 	param ([parameter(ValueFromPipeline, Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
