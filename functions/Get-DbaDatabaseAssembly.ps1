@@ -60,23 +60,26 @@ Returns all Database Assembly for the local and sql2016 SQL Server instances
 			}
 			
 			
-            
-		    foreach ($database in $Server.Databases)
-		    {
-			    try
-			    {
-				    foreach ($assembly in $database.assemblies | Where-Object { $_.isSystemObject -eq $false })
-				    {
-					    
-                        Add-Member -InputObject $assembly -MemberType NoteProperty ComputerName -value $assembly.Parent.Parent.NetName
-				        Add-Member -InputObject $assembly -MemberType NoteProperty InstanceName -value $assembly.Parent.Parent.ServiceName
-		        		Add-Member -InputObject $assembly -MemberType NoteProperty SqlInstance -value $assembly.Parent.Parent.DomainInstanceName
-				
-        				Select-DefaultView -InputObject $assembly -Property ComputerName, InstanceName, SqlInstance, ID, Name, Owner, AssemblySecurityLevel
-
-				    }
-			    }
-			    catch { }
+			
+			foreach ($database in $Server.Databases)
+			{
+				try
+				{
+					foreach ($assembly in $database.assemblies)
+					{
+						
+						Add-Member -InputObject $assembly -MemberType NoteProperty ComputerName -value $assembly.Parent.Parent.NetName
+						Add-Member -InputObject $assembly -MemberType NoteProperty InstanceName -value $assembly.Parent.Parent.ServiceName
+						Add-Member -InputObject $assembly -MemberType NoteProperty SqlInstance -value $assembly.Parent.Parent.DomainInstanceName
+						
+						Select-DefaultView -InputObject $assembly -Property ComputerName, InstanceName, SqlInstance, ID, Name, Owner, 'AssemblySecurityLevel as SecurityLevel', CreateDate, IsSystemObject, Version
+						
+					}
+				}
+				catch
+				{
+					Write-Warning $_	
+				}
 			}
 		}
 	}
