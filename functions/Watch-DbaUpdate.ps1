@@ -2,10 +2,10 @@ Function Watch-DbaUpdate
 {
 <# 
 .SYNOPSIS 
-Just for fun - checks the PowerShell Gallery every 3 hours for updates to dbatools. Notifies once max per release.
+Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once max per release.
 
 .DESCRIPTION 
-Just for fun - checks the PowerShell Gallery every 3 hours for updates to dbatools. Notifies once max per release.
+Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once max per release.
 	
 Anyone know how to make it clickable so that it opens an URL?
 
