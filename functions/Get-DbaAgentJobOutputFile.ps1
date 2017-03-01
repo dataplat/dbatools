@@ -1,4 +1,4 @@
-﻿Function Get-DbaJobOutputFile
+﻿Function Get-DbaJobAgentOutputFile
 {
 <#
 .Synopsis
@@ -21,45 +21,45 @@
     The Agent Job Name to provide Output File Path for. Also available dynamically. If ommitted all Agent Jobs will be used
 
 .EXAMPLE
-   Get-DbaJobOutputFile -SqlServer SERVERNAME -Jobs 'The Agent Job' 
+   Get-DbaJobAgentOutputFile -SqlServer SERVERNAME -Jobs 'The Agent Job' 
 
    This will return the paths to the output files for each of the job step of the The Agent Job Job 
    on the SERVERNAME instance  
 
 .EXAMPLE
-   Get-DbaJobOutputFile -SqlServer SERVERNAME 
+   Get-DbaJobAgentOutputFile -SqlServer SERVERNAME 
 
    This will return the paths to the output files for each of the job step of all the Agent Jobs
    on the SERVERNAME instance   
 
 .EXAMPLE
-   Get-DbaJobOutputFile -SqlServer SERVERNAME,SERVERNAME2 -Jobs 'The Agent Job'
+   Get-DbaJobAgentOutputFile -SqlServer SERVERNAME,SERVERNAME2 -Jobs 'The Agent Job'
 
    This will return the paths to the output files for each of the job step of the The Agent Job Job 
    on the SERVERNAME instance and SERVERNAME2
 
 .EXAMPLE
    $Servers = 'SERVER','SERVER\INSTANCE1'
-   Get-DbaJobOutputFile -SqlServer $Servers -Jobs 'The Agent Job' -OpenFile 
+   Get-DbaJobAgentOutputFile -SqlServer $Servers -Jobs 'The Agent Job' -OpenFile 
 
    This will return the paths to the output files for each of the job step of the The Agent Job Job 
    on the SERVER instance and the SERVER\INSTANCE1 and open the files if they are available
 
 .EXAMPLE 
-   Get-DbaJobOutputFile -SqlServer SERVERNAME  | Out-GridView
+   Get-DbaJobAgentOutputFile -SqlServer SERVERNAME  | Out-GridView
 
    This will return the paths to the output files for each of the job step of all the Agent Jobs
    on the SERVERNAME instance and Pipe them to Out-GridView
 
 .EXAMPLE 
-   (Get-DbaJobOutputFile -SqlServer SERVERNAME | ogv -PassThru).FileName | Invoke-Item
+   (Get-DbaJobAgentOutputFile -SqlServer SERVERNAME | ogv -PassThru).FileName | Invoke-Item
 
    This will return the paths to the output files for each of the job step of all the Agent Jobs
    on the SERVERNAME instance and Pipe them to Out-GridView and enable you to choose the output
    file and open it
    
 .EXAMPLE 
-   Get-DbaJobOutputFile -SqlServer SERVERNAME -Verbose
+   Get-DbaJobAgentOutputFile -SqlServer SERVERNAME -Verbose
 
    This will return the paths to the output files for each of the job step of all the Agent Jobs
    on the SERVERNAME instance and also show the job steps without an output file

@@ -1,5 +1,5 @@
 ﻿
-Function Set-DbaJobOutPutFile
+Function Set-DbaJobAgentOutputFile
 {
 <#
 .Synopsis
@@ -22,7 +22,7 @@ Function Set-DbaJobOutPutFile
 .PARAMETER OutputFile
     The Full Path to the New Output file
 .EXAMPLE
-   Set-DbaJobOutPutFile -sqlserver SERVERNAME -JobName 'The Agent Job' -OutPutFile E:\Logs\AgentJobStepOutput.txt
+   Set-DbaJobAgentOutputFile -sqlserver SERVERNAME -JobName 'The Agent Job' -OutPutFile E:\Logs\AgentJobStepOutput.txt
 
    Sets the Job step for The Agent job on SERVERNAME to E:\Logs\AgentJobStepOutput.txt
 .NOTES
@@ -98,7 +98,7 @@ param
 				{
                     $Step.OutputFileName = $OutputFile
                     $Step.Alter()
-                    Write-Output "Successfully added Output file $OutputFile to $($Job.Name) - You can check with Get-DbaJobOutputFile -sqlserver $sqlserver -Jobs '$JobName'"
+                    Write-Output "Successfully added Output file $OutputFile to $($Job.Name) - You can check with Get-DbaJobAgentOutputFile -sqlserver $sqlserver -Jobs '$JobName'"
                 }
         }
         catch
