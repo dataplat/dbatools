@@ -16,7 +16,7 @@ Function Set-DbaJobOutPutFile
 .PARAMETER JobName
     The Agent Job Name to provide Output File Path for. Also available dynamically
 
-.PARAMETER JobStep
+.PARAMETER Step
     The Agent Job Step to provide Output File Path for. Also available dynamically
 
 .PARAMETER OutputFile
@@ -31,7 +31,7 @@ Function Set-DbaJobOutPutFile
 #>
 [CmdletBinding(SupportsShouldProcess = $true)]
 param
-(
+(# The Server/instance 
         [Parameter(Mandatory=$true,HelpMessage='The SQL Server Instance', 
                    ValueFromPipeline=$true,
                    ValueFromPipelineByPropertyName=$true, 
@@ -39,18 +39,16 @@ param
                    Position=0)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
-        [string]$SqlServer,
-        [Parameter(Mandatory=$false,HelpMessage='SQL Credential', 
+        [object]$SqlServer,
+       [Parameter(Mandatory=$false,HelpMessage='SQL Credential', 
                    ValueFromPipeline=$true,
                    ValueFromPipelineByPropertyName=$true, 
-                   ValueFromRemainingArguments=$false, 
-                   Position=1)]
+                   ValueFromRemainingArguments=$false)]
         [System.Management.Automation.PSCredential]$SqlCredential,
         [Parameter(Mandatory=$true,HelpMessage='The Full Output File Path', 
                    ValueFromPipeline=$true,
                    ValueFromPipelineByPropertyName=$true, 
-                   ValueFromRemainingArguments=$false, 
-                   Position=2)]
+                   ValueFromRemainingArguments=$false)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
         [string]$OutputFile,
@@ -59,77 +57,46 @@ param
                    ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
-        [object]$JobStep)
+        [object]$Step)
 
-    DynamicParam {
-            # Set the dynamic parameters' name
-            $ParameterName = 'JobName'
-            
-            # Create the dictionary 
-            $RuntimeParameterDictionary = New-Object -TypeName System.Management.Automation.RuntimeDefinedParameterDictionary
+    DynamicParam { if ($SqlServer) { return (Get-ParamSqlJobs -SqlServer $SqlServer -SqlCredential $SourceSqlCredential) } }
 
-            # Create the collection of attributes
-            $AttributeCollection = New-Object -TypeName System.Collections.ObjectModel.Collection[System.Attribute]
-            
-            # Create and set the parameters' attributes
-            $ParameterAttribute = New-Object -TypeName System.Management.Automation.ParameterAttribute
-            $ParameterAttribute.Mandatory = $true
-            $ParameterAttribute.Position = 1
-
-            # Add the attributes to the attributes collection
-            $AttributeCollection.Add($ParameterAttribute)
-
-            # Generate and set the ValidateSet 
-            $Server = Connect-DbaSqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
-            $arrSet = ($server.JobServer.Jobs).Name
-            $ValidateSetAttribute = New-Object -TypeName System.Management.Automation.ValidateSetAttribute -ArgumentList ($arrSet)
-
-            # Add the ValidateSet to the attributes collection
-            $AttributeCollection.Add($ValidateSetAttribute)
-
-            # Create and return the dynamic parameter
-            $RuntimeParameter = New-Object -TypeName System.Management.Automation.RuntimeDefinedParameter -ArgumentList ($ParameterName, [string], $AttributeCollection)
-            $RuntimeParameterDictionary.Add($ParameterName, $RuntimeParameter)
-            return $RuntimeParameterDictionary
-    }
-
-    begin 
+    BEGIN
     {
-            # Bind the parameter to a friendly variable
-            $JobName = $PsBoundParameters[$ParameterName]
-            $Server = Connect-DbaSqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
+            $JobName = $psboundparameters.Jobs   
     }
-    process
+    PROCESS
     {
+        $Server = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
         $Job = $server.JobServer.Jobs[$JobName]
-
-        If(!$Jobstep)
+        If(!$Step)
         {
             if( ($Job.JobSteps).Count -gt 1)
             {
                 Write-output "Which Job Step do you wish to add output file to?"
-                $JobStep = $Job.JobSteps| Out-GridView -Title "Choose the Job Steps to add an output file to" -PassThru -Verbose
+                $Step = $Job.JobSteps| Out-GridView -Title "Choose the Job Steps to add an output file to" -PassThru -Verbose
             }
             else
             {
-                $Jobstep = $Job.JobSteps
+                $Step = $Job.JobSteps
             }
         }
-#
-        Write-Output "Adding $OutputFile to $($JobStep.Name)"
-        Write-Output "Current Output File = $(($Jobstep).OutputFileName)"
+
+        Write-Output "Current Output File for $($Job.Name) is $(($Step).OutputFileName)"
+        Write-Output "Adding $OutputFile to $($Step.Name) for $($Job.Name)"
+
         try
         {
-           If ($Pscmdlet.ShouldProcess($($JobStep.Name), "Changing Output File from $(($Jobstep).OutputFileName) to $OutputFile"))
+           If ($Pscmdlet.ShouldProcess($($Step.Name), "Changing Output File from $(($Step).OutputFileName) to $OutputFile"))
 				{
-                    $Jobstep.OutputFileName = $OutputFile
-                    $Jobstep.Alter()
-                    Write-Output "Successfully added Output file - You can check with Get-DbaJobOutputFile -sqlserver $sqlserver -JobName '$JobName'"
+                    $Step.OutputFileName = $OutputFile
+                    $Step.Alter()
+                    Write-Output "Successfully added Output file $OutputFile to $($Job.Name) - You can check with Get-DbaJobOutputFile -sqlserver $sqlserver -Jobs '$JobName'"
                 }
         }
         catch
         {
-           Write-Warning "Failed to add $OutputFile to $(($JobStep).Name) for $JobName - Run `$error[0] | fl -force to find out why!"
+           Write-Warning "Failed to add $OutputFile to $(($Step).Name) for $JobName - Run `$error[0] | fl -force to find out why!"
         }
     }
     end
