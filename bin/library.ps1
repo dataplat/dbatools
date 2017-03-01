@@ -1,4 +1,4 @@
-
+﻿
 #region Test whether the module had already been imported
 $ImportLibrary = $true
 try
@@ -657,7 +657,12 @@ namespace sqlcollective.dbatools
             /// <summary>
             /// This message barely made the cut from being culled. Of purely development internal interest, and even there is 'interest' a strong word for it.
             /// </summary>
-            InternalComment = 9
+            InternalComment = 9,
+
+            /// <summary>
+            /// This message is a warning, sure sign something went badly wrong
+            /// </summary>
+            Warning = 666
         }
     }
 }
@@ -670,6 +675,7 @@ namespace sqlcollective.dbatools
     }
     catch
     {
+        #region Warning
         Write-Warning @'
 Dear User,
 
@@ -698,5 +704,6 @@ aka "The guy who made most of The Library that Failed to import"
 
 '@
         throw
+        #endregion Warning
     }
 }

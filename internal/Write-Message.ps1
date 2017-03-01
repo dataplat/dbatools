@@ -35,9 +35,12 @@
             - 4-6 Output only visible when requesting extra verbosity (using Write-Verbose)
             - 1-9 Debugging information, written using Write-Debug
             The specific level of verbosity preference can be configured using the settings of the message.maximum and message.minimum namespace.
+    
+            In addition, it is possible to select the level "Warning" which moves the message out of the configurable range:
+            The user will always be shown this message, unless he silences the entire thing with -Silent
             
             Possible levels:
-            Critical (1), Important / Host (2), Significant (3), VeryVerbose (4), Verbose (5), SomewhatVerbose (6), System (7), Debug (8), InternalComment (9)
+            Critical (1), Important / Host (2), Significant (3), VeryVerbose (4), Verbose (5), SomewhatVerbose (6), System (7), Debug (8), InternalComment (9), Warning (666)
             Either one of the strings or its respective number will do as input.
         
         .PARAMETER Silent
@@ -55,9 +58,7 @@
             The error will be added to the $Error variable and enqued in the dbatools debugging system.
         
         .PARAMETER Warning
-            This call is to be considered a warning. This will suppress the regular mode of checking which level of verbosity should occur.
-            In warning mode, a warning is written unless the function is set to silent.
-            In all cases, a Debug entry is written.
+            Deprecated, do not use anymore
         
         .PARAMETER Once
             Setting this parameter will cause this function to write the message only once per session.
@@ -108,11 +109,10 @@
         
         [Parameter(Mandatory = $true, ParameterSetName = 'Level')]
         [sqlcollective.dbatools.dbaSystem.MessageLevel]
-        $Level = "Critical",
+        $Level = "Warning",
         
-        [Parameter(Mandatory = $true)]
         [bool]
-        $Silent,
+        $Silent = $Silent,
         
         [string]
         $FunctionName = ((Get-PSCallStack)[0].Command),
@@ -150,11 +150,24 @@
     $channels = @()
     
     #region Warning Mode
-    if ($Warning)
+    if ($Warning -or ($Level -like "Warning"))
     {
         if (-not $Silent)
         {
-            Write-Warning $NewMessage
+            if ($PSBoundParameters.ContainsKey("Once"))
+            {
+                $OnceName = "MessageOnce.$FunctionName.$Once"
+                
+                if (-not (Get-DbaConfigValue -Name $OnceName))
+                {
+                    Write-Warning $NewMessage
+                    Set-DbaConfig -Name $OnceName -Value $True -Hidden -Silent -ErrorAction Ignore
+                }
+            }
+            else
+            {
+                Write-Warning $NewMessage
+            }
             $channels += "Warning"
         }
         Write-Debug $NewMessage
