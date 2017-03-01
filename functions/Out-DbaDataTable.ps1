@@ -1,4 +1,4 @@
-﻿Function Out-DbaDataTable
+Function Out-DbaDataTable
 {
 <#
 .SYNOPSIS 

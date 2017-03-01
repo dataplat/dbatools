@@ -1,4 +1,4 @@
-﻿Function Find-DbaUserObject
+Function Find-DbaUserObject
 {
 <#
 .SYNOPSIS

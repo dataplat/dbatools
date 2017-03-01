@@ -1,4 +1,4 @@
-﻿Function Copy-SqlAlert
+Function Copy-SqlAlert
 {
 <#
 .SYNOPSIS 
