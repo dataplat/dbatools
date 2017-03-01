@@ -12,33 +12,37 @@ Takes path, checks for validity. Scans for usual backup file
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[string]$Path
 	)
-        $FunctionName =(Get-PSCallstack)[0].Command
-        Write-Verbose "$FunctionName - Starting"
-        Write-Verbose "$FunctionName - Checking Path"
-        if ((Test-Path $Path) -ne $true){
-           Write-Warning "$FunctionName - $Path is not valid" -WarningAction stop
-       
-        }
-        #There should be at least FULL folder, DIFF and LOG are nice as well
-        Write-Verbose "$FunctionName - Checking we have a FULL folder"
-        if (Test-Path -Path $Path\FULL)
-        {
-            Write-Verbose "$FunctionName - We have a FULL folder, scanning"
-            $Results = Get-ChildItem -Path $Path\FULL -Filter *.bak
-            $results = @($results)
-        } else {
-            Throw "$FunctionName - Don't have a FULL folder"
-        }
-        if (Test-Path -Path $Path\Log)
-        {
-            Write-Verbose "$FunctionName - We have a LOG folder, scanning"
-            $Results += Get-ChildItem -Path $Path\LOG -filter *.trn
-        }
-        if(Test-Path -Path $Path\Diff)
-        {
-            Write-Verbose "$FunctionName - We have a DIFF folder, scanning"
-            $Results += Get-ChildItem -Path $Path\DIFF -filter *.bak
-        }
-
-        return $Results
+	$FunctionName = (Get-PSCallstack)[0].Command
+	Write-Verbose "$FunctionName - Starting"
+	Write-Verbose "$FunctionName - Checking Path"
+	if ((Test-Path $Path) -ne $true)
+	{
+		Write-Warning "$FunctionName - $Path is not valid" -WarningAction stop
+		
+	}
+	#There should be at least FULL folder, DIFF and LOG are nice as well
+	Write-Verbose "$FunctionName - Checking we have a FULL folder"
+	if (Test-Path -Path $Path\FULL)
+	{
+		Write-Verbose "$FunctionName - We have a FULL folder, scanning"
+		$Results = Get-ChildItem -Path $Path\FULL -Filter *.bak
+		$results = @($results)
+	}
+	else
+	{
+		write-warning "$FunctionName - Don't have a FULL folder"
+		return
+	}
+	if (Test-Path -Path $Path\Log)
+	{
+		Write-Verbose "$FunctionName - We have a LOG folder, scanning"
+		$Results += Get-ChildItem -Path $Path\LOG -filter *.trn
+	}
+	if (Test-Path -Path $Path\Diff)
+	{
+		Write-Verbose "$FunctionName - We have a DIFF folder, scanning"
+		$Results += Get-ChildItem -Path $Path\DIFF -filter *.bak
+	}
+	
+	return $Results
 }
