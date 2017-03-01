@@ -1,4 +1,4 @@
-﻿Function Test-DbaLastBackup
+Function Test-DbaLastBackup
 {
 <#
 .SYNOPSIS

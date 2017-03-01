@@ -1,4 +1,4 @@
-﻿Function Test-SqlQueryComplete
+Function Test-SqlQueryComplete
 {
 	param (
 		[Alias("SqlServer")]

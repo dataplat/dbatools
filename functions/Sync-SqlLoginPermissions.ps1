@@ -1,4 +1,4 @@
-﻿Function Sync-SqlLoginPermissions
+Function Sync-SqlLoginPermissions
 {
 <#
 .SYNOPSIS

@@ -1,4 +1,4 @@
-﻿Function Get-DbaRoleMember
+Function Get-DbaRoleMember
 {
 <#
 .SYNOPSIS

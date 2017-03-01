@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-16"?>
 <Configuration>
 <ViewDefinitions>
 <!-- sqlcollective.dbatools.Configuration.Config -->
@@ -44,5 +44,66 @@
     </TableRowEntries>
   </TableControl>
 </View>
+
+<!-- sqlcollective.dbatools.Database.Dependency -->
+<View>
+  <Name>sqlcollective.dbatools.Database.Dependency</Name>
+  <ViewSelectedBy>
+    <TypeName>sqlcollective.dbatools.Database.Dependency</TypeName>
+  </ViewSelectedBy>
+  <TableControl>
+    <AutoSize />
+    <TableHeaders>
+      <TableColumnHeader>
+        <Label>T.</Label>
+      </TableColumnHeader>
+      <TableColumnHeader>
+        <Label>Schema</Label>
+      </TableColumnHeader>
+      <TableColumnHeader>
+      </TableColumnHeader>
+      <TableColumnHeader>
+      </TableColumnHeader>
+      <TableColumnHeader>
+      </TableColumnHeader>
+      <TableColumnHeader>
+      </TableColumnHeader>
+      <TableColumnHeader>
+      </TableColumnHeader>
+      <TableColumnHeader>
+      </TableColumnHeader>
+    </TableHeaders>
+    <TableRowEntries>
+      <TableRowEntry>
+        <TableColumnItems>
+          <TableColumnItem>
+            <PropertyName>Tier</PropertyName>
+          </TableColumnItem>
+          <TableColumnItem>
+            <PropertyName>IsSchemaBound</PropertyName>
+          </TableColumnItem>
+          <TableColumnItem>
+            <PropertyName>Dependent</PropertyName>
+          </TableColumnItem>
+          <TableColumnItem>
+            <PropertyName>Type</PropertyName>
+          </TableColumnItem>
+          <TableColumnItem>
+            <PropertyName>Parent</PropertyName>
+          </TableColumnItem>
+          <TableColumnItem>
+            <PropertyName>ParentType</PropertyName>
+          </TableColumnItem>
+          <TableColumnItem>
+            <PropertyName>Owner</PropertyName>
+          </TableColumnItem>
+          <TableColumnItem>
+            <PropertyName>Object</PropertyName>
+          </TableColumnItem>
+        </TableColumnItems>
+      </TableRowEntry>
+    </TableRowEntries>
+  </TableControl>
+</View>
 </ViewDefinitions>
-</Configuration>	
+</Configuration>

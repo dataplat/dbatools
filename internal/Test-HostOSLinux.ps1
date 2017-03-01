@@ -1,4 +1,4 @@
-﻿Function Test-HostOSLinux
+Function Test-HostOSLinux
 {
 	param (
 		[object]$sqlserver,

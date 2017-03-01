@@ -1,4 +1,4 @@
-﻿Function Get-DbaLastGoodCheckDb
+Function Get-DbaLastGoodCheckDb
 {
 <#
 .SYNOPSIS
