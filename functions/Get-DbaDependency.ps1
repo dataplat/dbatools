@@ -5,10 +5,10 @@ function Get-DbaDependency
             Finds object dependencies and their relevant creation scripts.
         
         .DESCRIPTION
-            This function recursively finds all objects that the input depends upon.
+            This function recursively finds all objects that depends on the input.
             It will then retrieve rich information from them, including their creation scripts and the order in which it should be applied.
             
-            By using the 'Dependents' switch, the function will instead retrieve all items that depend on the input (including their creation scripts).
+            By using the 'Parents' switch, the function will instead retrieve all items that the input depends on (including their creation scripts).
             
             For more details on dependency, see:
             https://technet.microsoft.com/en-us/library/ms345449(v=sql.105).aspx
@@ -20,8 +20,8 @@ function Get-DbaDependency
             Normally, system objects are ignored by this function as dependencies.
             This switch overrides that behavior.
         
-        .PARAMETER Dependents
-            Causes the function to retrieve all objects that depend on the input, rather than retrieving everything that the input depends on.
+        .PARAMETER Parents
+            Causes the function to retrieve all objects that the input depends on, rather than retrieving everything that depends on the input.
         
         .PARAMETER IncludeSelf
             Includes the object whose dependencies are retrieves itself.
@@ -52,7 +52,7 @@ function Get-DbaDependency
         $AllowSystemObjects,
         
         [switch]
-        $Dependents,
+        $Parents,
         
         [switch]
         $IncludeSelf,
@@ -215,7 +215,7 @@ function Get-DbaDependency
             }
             End
             {
-                $list | Group-Object -Property Object | ForEach-Object { $_.Group | Sort-Object -Property Tier -Descending | Select-Object -First 1 } | Sort-Object Tier -Descending
+                $list | Group-Object -Property Object | ForEach-Object { $_.Group | Sort-Object -Property Tier -Descending | Select-Object -First 1 } | Sort-Object Tier
             }
         }
         #endregion Utility functions
@@ -243,17 +243,17 @@ function Get-DbaDependency
             
             $server = $parent
             
-            $tree = Get-DependencyTree -Object $Item -AllowSystemObjects $false -Server $server -FunctionName (Get-PSCallStack)[0].COmmand -Silent $Silent -EnumParents (-not $Dependents)
+            $tree = Get-DependencyTree -Object $Item -AllowSystemObjects $false -Server $server -FunctionName (Get-PSCallStack)[0].COmmand -Silent $Silent -EnumParents $Parents
             $limitCount = 2
-            if ($IncludeSelf) { $limitCount = 1}
+            if ($IncludeSelf) { $limitCount = 1 }
             if ($tree.Count -lt $limitCount)
             {
                 Write-Message -Message "No dependencies detected for $($Item)" -Level 2 -Silent $Silent
                 continue
             }
             
-            if ($IncludeSelf) { $resolved = Read-DependencyTree -InputObject $tree.FirstChild -Tier 0 -Parent $tree.FirstChild -EnumParents $Dependents }
-            else { $resolved = Read-DependencyTree -InputObject $tree.FirstChild.FirstChild -Tier 1 -Parent $tree.FirstChild -EnumParents $Dependents }
+            if ($IncludeSelf) { $resolved = Read-DependencyTree -InputObject $tree.FirstChild -Tier 0 -Parent $tree.FirstChild -EnumParents $Parents }
+            else { $resolved = Read-DependencyTree -InputObject $tree.FirstChild.FirstChild -Tier 1 -Parent $tree.FirstChild -EnumParents $Parents }
             $resolved | Get-DependencyTreeNodeDetail -Server $server -OriginalResource $Item -AllowSystemObjects $AllowSystemObjects | Select-DependencyPrecedence
         }
     }
