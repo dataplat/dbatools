@@ -371,46 +371,44 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 				Write-Warning "The author of this stored procedure recommends deploying this procedure to your master database. `n         You will now be prompted to select a database to deploy this stored procedure to."
 				
 				if ($database.length -gt 0)
-				{
-					$ConfirmPreference = "Low"
-					$database = Install-SqlWhoisActive -SqlServer $sourceserver -Database $database -OutputDatabaseName
-					$ConfirmPreference = "High"
+				{			
+					$ConfirmPreference = "low"		
+					$database = Install-SqlWhoisActive -SqlServer $sourceserver -Database $database -OutputDatabaseName -fromget					
 				}
 				else
-				{
-					$ConfirmPreference = "Low"
-					$database = Install-SqlWhoisActive -SqlServer $sourceserver -OutputDatabaseName 
-					$ConfirmPreference = "High"
+				{	
+					$ConfirmPreference = "low"
+					$database = Install-SqlWhoisActive -SqlServer $sourceserver -OutputDatabaseName -fromget 					
 				}
 				
 				
-				try
-				{					
-					$datatable = Invoke-SpWhoisActive
-				}
-				catch
-				{
-					Write-Exception $_
-					throw "Cannot execute procedure."
-				}
+				# try
+				# {					
+				# 	$datatable = Invoke-SpWhoisActive
+				# }
+				# catch
+				# {
+				# 	Write-Exception $_
+				# 	throw "Cannot execute procedure."
+				# }
 			}
 			else
 			{
 				Write-warning "Invalid query."
 			}
-		}
-	}
+		 }
+	}	
 	
-	END
-	{
-		$sourceserver.ConnectionContext.Disconnect()
+	# END
+	# {
+	# 	$sourceserver.ConnectionContext.Disconnect()
 		
-		if ($datatable.Tables.Rows.Count -eq 0)
-		{
-			Write-Output "0 results returned"
-			return
-		}
+	# 	if ($datatable.Tables.Rows.Count -eq 0)
+	# 	{
+	# 		Write-Output "0 results returned"
+	# 		return
+	# 	}
 		
-		return $datatable.Tables
-	}
+	# 	return $datatable.Tables
+	# }
 }

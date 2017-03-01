@@ -69,7 +69,8 @@ This command doesn't support passing both servers and default database, but you 
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
 		[object]$SqlCredential,
-		[switch]$OutputDatabaseName
+		[switch]$OutputDatabaseName,
+		[switch]$FromGet
 	)
 	
 	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabase -SqlServer $sqlserver[0] -SqlCredential $SqlCredential } }
@@ -110,8 +111,8 @@ This command doesn't support passing both servers and default database, but you 
 	PROCESS
 	{
 		# Used a dynamic parameter? Convert from RuntimeDefinedParameter object to regular array
-		$Database = $psboundparameters.Database
-		
+		$Database = $psboundparameters.Database			
+
 		foreach ($server in $sqlserver)
 		{
 			# please continue to use these variable names for consistency
@@ -120,6 +121,8 @@ This command doesn't support passing both servers and default database, but you 
 			
 			if ($database.length -eq 0)
 			{
+				if ($FromGet) {$ConfirmPreference="high"}
+
 				$database = Show-SqlDatabaseList -SqlServer $sourceserver -Title "Install sp_WhoisActive" -Header "sp_WhoIsActive not found. To deploy, select a database or hit cancel to quit." -DefaultDb "master"
 				
 				if ($database.length -eq 0)
