@@ -194,7 +194,14 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 								  a.Type,
 								  a.TotalSizeMB,
 								  a.MediaSetId,
-								  a.Software
+								  a.Software,
+								a.backupsetid,
+		 						 a.position,
+								a.first_lsn,
+								a.database_backup_lsn,
+								a.checkpoint_lsn,
+								a.last_lsn,
+								a.software_major_version
 								FROM (SELECT
 								  RANK() OVER (ORDER BY backupset.backup_start_date DESC) AS 'BackupSetRank',
 								  backupset.database_name AS [Database],
@@ -228,6 +235,12 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 									WHEN 7 THEN 'Virtual Device'
 									ELSE 'Unknown'
 								  END AS DeviceType,
+									backupset.position,
+									backupset.first_lsn,
+									backupset.database_backup_lsn,
+									backupset.checkpoint_lsn,
+									backupset.last_lsn,
+									backupset.software_major_version,
 								  mediaset.software_name AS Software
 								FROM msdb..backupmediafamily AS mediafamily
 								INNER JOIN msdb..backupmediaset AS mediaset
