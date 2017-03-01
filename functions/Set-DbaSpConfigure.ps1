@@ -79,7 +79,7 @@ Returns information on the action that would be performed. No actual change will
 		
 		if (!$configs)
 		{
-			Stop-Function -Message "You must select one or more configurations to modify" -Target $Instance -InnerErrorRecord $_
+			Stop-Function -Message "You must select one or more configurations to modify" -Target $Instance
 		}
 	}
 	
@@ -95,7 +95,7 @@ Returns information on the action that would be performed. No actual change will
 			}
 			catch
 			{
-				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $Instance -InnerErrorRecord $_
+				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $Instance
 			}
 			
 			#Grab the current config value
@@ -135,12 +135,12 @@ Returns information on the action that would be performed. No actual change will
 					#If it's a dynamic setting we're all clear, otherwise let the user know that SQL needs to be restarted for the change to take
 					if ($isDynamic -eq $false)
 					{
-						Write-Message -Level Warning -Message "Config set for $configs, but restart of SQL Server is required for the new value ($value) to be used (old value: $($value))" -Target $Instance -ErrorRecord $_
+						Write-Message -Level Warning -Message "Config set for $configs, but restart of SQL Server is required for the new value ($value) to be used (old value: $($value))" -Target $Instance
 					}
 				}
 				catch
 				{
-					Write-Message -Level Warning -Message "Unable to change config setting" -Target $Instance -ErrorRecord $_
+					Write-Message -Level Warning -Message "Unable to change config setting" -Target $Instance
 				}
 			}
 		}
