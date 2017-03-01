@@ -72,19 +72,6 @@
             - Throw a bloody terminating error. Game over.
             - Write a nice warning about how Foo failed bar, then call continue to process the next item in the loop.
             In both cases, the error record added to $error will have the content of $foo added, the better to figure out what went wrong.
-        
-        .NOTES
-            Author:      Friedrich Weinmann
-            Editors:     -
-            Created on:  08.02.2017
-            Last Change: 10.02.2017
-            Version:     1.1
-            
-            Release 1.1 (10.02.2017, Friedrich Weinmann)
-            - Fixed Bug: Fails on Write-Error
-    
-            Release 1.0 (08.02.2017, Friedrich Weinmann)
-            - Initial Release
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding(DefaultParameterSetName = 'Plain')]
@@ -93,9 +80,8 @@
         [string]
         $Message,
         
-        [Parameter(Mandatory = $true)]
         [bool]
-        $Silent,
+        $Silent = $Silent,
         
         [Parameter(ParameterSetName = 'Plain')]
         [Parameter(ParameterSetName = 'Exception')]
