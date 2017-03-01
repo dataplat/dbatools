@@ -123,8 +123,6 @@ Returns databases on multiple instances piped into the function
 				continue
 			}
 			
-			$defaults = 'Name', 'Status', 'RecoveryModel', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup'
-			
 			if ($NoUserDb)
 			{
 				$inputobject = $server.Databases | Where-Object { $_.IsSystemObject }
@@ -177,7 +175,16 @@ Returns databases on multiple instances piped into the function
 				$inputobject = $inputobject | Where-Object {$_.Name -notin $exclude }
 			}
 			
-			Select-DefaultView -InputObject $inputobject -Property $defaults
+			$defaults = 'ComputerName', 'InstanceName', 'SqlInstance','Name', 'Status', 'RecoveryModel', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup'
+			
+			foreach ($db in $inputobject)
+			{
+				Add-Member -InputObject $db -MemberType NoteProperty ComputerName -value $server.NetName
+				Add-Member -InputObject $db -MemberType NoteProperty InstanceName -value $server.ServiceName
+				Add-Member -InputObject $db -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
+				
+				Select-DefaultView -InputObject $db -Property $defaults
+			}
 		}
 	}
 }
