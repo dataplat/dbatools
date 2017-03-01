@@ -27,7 +27,10 @@ Shows what would happen if the command were to run. No actions are actually perf
 
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages
-	
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command.
+
 .NOTES 
 Original Author: Nic Cain, https://sirsql.net/
 Tags: Config
@@ -76,7 +79,7 @@ Returns information on the action that would be performed. No actual change will
 		
 		if (!$configs)
 		{
-			Stop-Function -Message "You must select one or more configurations to modify"
+			Stop-Function -Message "You must select one or more configurations to modify" -Target $Instance -InnerErrorRecord $_
 		}
 	}
 	
@@ -92,7 +95,7 @@ Returns information on the action that would be performed. No actual change will
 			}
 			catch
 			{
-				Stop-Function -Message "Failed to connect to: $instance" -Continue
+				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $Instance -InnerErrorRecord $_
 			}
 			
 			#Grab the current config value
@@ -105,13 +108,13 @@ Returns information on the action that would be performed. No actual change will
 			#Let us not waste energy setting the value to itself
 			if ($currentRunValue -eq $value)
 			{
-				Stop-Function -Message "Value to set is the same as the existing value. No work being performed."
+				Stop-Function -Message "Value to set is the same as the existing value. No work being performed." -Continue
 			}
 			
 			#Going outside the min/max boundary can be done, but it can break SQL, so I don't think allowing that is wise at this juncture
 			if ($value -le $minValue -or $value -gt $maxValue)
 			{
-				Stop-Function -Message "Value out of range for $configs (min: $minValue - max $maxValue)"
+				Stop-Function -Message "Value out of range for $configs (min: $minValue - max $maxValue)" -Continue
 			}
 			
 			If ($Pscmdlet.ShouldProcess($SqlInstance, "Adjusting server configuration $configs from $currentValue to $value."))
@@ -132,12 +135,12 @@ Returns information on the action that would be performed. No actual change will
 					#If it's a dynamic setting we're all clear, otherwise let the user know that SQL needs to be restarted for the change to take
 					if ($isDynamic -eq $false)
 					{
-						Write-Message -Level Warning -Message "Config set for $configs, but restart of SQL Server is required for the new value ($value) to be used (old value: $($value))"
+						Write-Message -Level Warning -Message "Config set for $configs, but restart of SQL Server is required for the new value ($value) to be used (old value: $($value))" -Target $Instance -ErrorRecord $_
 					}
 				}
 				catch
 				{
-					Write-Message -Level Warning -Message "Unable to change config setting - $error"
+					Write-Message -Level Warning -Message "Unable to change config setting" -Target $Instance -ErrorRecord $_
 				}
 			}
 		}
