@@ -16,13 +16,13 @@ $cred = Get-Credential, this pass this $cred to the param.
 
 Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
-.PARAMETER MaxResults
+.PARAMETER MaxResultsPerDb
 Allows you to limit the number of results returned, as many systems can have very large amounts of query plans.  Default value is 100 results.
 
 .PARAMETER MinExecs
 Allows you to limit the scope to queries that have been executed a minimum number of time. Default value is 100 executions.
 
-.PARAMETER MinExecTime
+.PARAMETER MinExecMs
 Allows you to limit the scope to queries with a specified average execution time.  Default value is 500 (ms).
 
 .PARAMETER NoSystemDb
@@ -50,7 +50,7 @@ Get-DbaQueryExecutionTime -SqlServer sql2008 -Database TestDB
 Return the top 100 slowest stored procedures or statements on server sql2008 for only the TestDB database.
 
 .EXAMPLE   
-Get-DbaQueryExecutionTime -SqlServer sql2008 -Database TestDB -MaxResults 100 -MinExecs 200 -MinExecTime 1000
+Get-DbaQueryExecutionTime -SqlServer sql2008 -Database TestDB -MaxResultsPerDb 100 -MinExecs 200 -MinExecMs 1000
 Return the top 100 slowest stored procedures or statements on server sql2008 for only the TestDB database, 
 limiting results to queries with more than 200 total executions and an execution time over 1000ms or higher.
 
@@ -63,11 +63,11 @@ limiting results to queries with more than 200 total executions and an execution
 		[string[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[parameter(Position = 1, Mandatory = $false)]
-		[int]$MaxResults = 100,
+		[int]$MaxResultsPerDb = 100,
 		[parameter(Position = 2, Mandatory = $false)]
 		[int]$MinExecs = 100,
 		[parameter(Position = 3, Mandatory = $false)]
-		[int]$MinExecTime = 500,
+		[int]$MinExecMs = 500,
 		[parameter(Position = 4, Mandatory = $false)]
 		[switch]$NoSystemDb
 	)
@@ -85,12 +85,12 @@ limiting results to queries with more than 200 total executions and an execution
 		
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
-		$MaxResults = $psboundparameters.MaxResults
-        $MinExecs = $psboundparameters.MinExecs
-        $MinExecTime = $psboundparameters.MinExecTime
-
-
-        $sql = ";With StatsCTE AS 
+		$MaxResultsPerDb = $psboundparameters.MaxResultsPerDb
+		$MinExecs = $psboundparameters.MinExecs
+		$MinExecMs = $psboundparameters.MinExecMs
+		
+		
+		$sql = ";With StatsCTE AS 
             (
 			    SELECT 
                     DB_NAME() as DatabaseName, 
@@ -108,11 +108,11 @@ limiting results to queries with more than 200 total executions and an execution
 			        OBJECT_NAME(object_id) as full_statement_text
                 FROM    sys.dm_exec_procedure_stats
                 WHERE   database_id = DB_ID()"
-        
-        If($MinExecs) { $sql += "`n AND execution_count >= " + $MinExecs }
-        If($MinExecTime) { $sql += "`n AND (total_worker_time / execution_count) / 1000 >= " + $MinExecTime }
-
-        $sql += "`n UNION
+		
+		If ($MinExecs) { $sql += "`n AND execution_count >= " + $MinExecs }
+		If ($MinExecMs) { $sql += "`n AND (total_worker_time / execution_count) / 1000 >= " + $MinExecMs }
+		
+		$sql += "`n UNION
             SELECT
 		        DB_NAME() as DatabaseName, 
                 ( qs.total_worker_time / qs.execution_count ) / 1000 AS AvgExec_ms ,
@@ -135,15 +135,18 @@ limiting results to queries with more than 200 total executions and an execution
             CROSS APPLY sys.dm_exec_plan_attributes(qs.plan_handle) as pa
             CROSS APPLY sys.dm_exec_sql_text(qs.sql_handle) as st
             WHERE st.dbid = DB_ID() OR (pa.attribute = 'dbid' and pa.value = DB_ID())"
-        
-        If($MinExecs) { $sql += "`n AND execution_count >= " + $MinExecs }
-        If($MinExecTime) { $sql += "`n AND (total_worker_time / execution_count) / 1000 >= " + $MinExecTime }
-
-        If($MaxResults) { $sql += ")`n SELECT TOP " + $MaxResults }
-        Else { $sql += ")
-                        SELECT " }
-
-        $sql += "`n     DatabaseName,
+		
+		If ($MinExecs) { $sql += "`n AND execution_count >= " + $MinExecs }
+		If ($MinExecMs) { $sql += "`n AND (total_worker_time / execution_count) / 1000 >= " + $MinExecMs }
+		
+		If ($MaxResultsPerDb) { $sql += ")`n SELECT TOP " + $MaxResultsPerDb }
+		Else
+		{
+			$sql += ")
+                        SELECT "
+		}
+		
+		$sql += "`n     DatabaseName,
 	                    AvgExec_ms,
 	                    execution_count,
 	                    MaxExec_ms,
@@ -157,35 +160,37 @@ limiting results to queries with more than 200 total executions and an execution
                         SQLText,
 	                    full_statement_text
                     FROM StatsCTE "
-
-        If($MinExecs -or $MinExecTime) 
-        { 
-            $sql += "`n WHERE `n"
-            
-            If($MinExecs) 
-            { 
-                $sql += " execution_count >= " + $MinExecs 
-            }
-            
-            If($MinExecTime -and $MinExecs) 
-            { 
-                $sql += "`n AND AvgExec_ms >= " + $MinExecTime 
-            }
-            Else
-            {
-                $sql += "`n AvgExecs_ms >= " + $MinExecTime
-            }
-        }
-
-        
-        $sql += "`n ORDER BY AvgExec_ms DESC"
-
+		
+		If ($MinExecs -or $MinExecMs)
+		{
+			$sql += "`n WHERE `n"
+			
+			If ($MinExecs)
+			{
+				$sql += " execution_count >= " + $MinExecs
+			}
+			
+			If ($MinExecMs -gt 0 -and $MinExecs)
+			{
+				$sql += "`n AND AvgExec_ms >= " + $MinExecMs
+			}
+			elseif ($MinExecMs)
+			{
+				$sql += "`n AvgExecs_ms >= " + $MinExecMs
+			}
+		}
+		
+		
+		$sql += "`n ORDER BY AvgExec_ms DESC"
 	}
 	
 	PROCESS
 	{
-        Write-Warning "Results may take time, depending on system resources and size of buffer cache."
-        Write-Warning "Consider limiting results using -MaxResults, -MinExecs and -MinExecTime parameters."
+		if (!$MaxResultsPerDb -and !$MinExecs -and !$MinExecMs)
+		{
+			Write-Warning "Results may take time, depending on system resources and size of buffer cache."
+			Write-Warning "Consider limiting results using -MaxResultsPerDb, -MinExecs and -MinExecMs parameters."
+		}
 		
 		foreach ($instance in $SqlInstance)
 		{
@@ -215,16 +220,15 @@ limiting results to queries with more than 200 total executions and an execution
 				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
 			}
 			
-			if ($exclude.count -gt 0)
-			{
-				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
-			}
-			
 			if ($NoSystemDb)
 			{
 				$dbs = $dbs | Where-Object { $_.IsSystemObject -eq $false }
 			}
 			
+			if ($exclude.count -gt 0)
+			{
+				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
+			}
 			
 			foreach ($db in $dbs)
 			{
@@ -239,25 +243,25 @@ limiting results to queries with more than 200 total executions and an execution
 				foreach ($row in $db.ExecuteWithResults($sql).Tables[0])
 				{
 					[PSCustomObject]@{
-							ComputerName = $server.NetName
-							InstanceName = $server.ServiceName
-							SqlInstance = $server.DomainInstanceName
-							Database = $row.DatabaseName
-							ProcName = $row.ProcName
-                            ObjectID = $row.object_id
-							Type_Desc = $row.type_desc
-                            Executions = $row.Execution_Count							
-                            AvgExec_ms = $row.AvgExec_ms
-							MaxExec_ms = $row.MaxExec_ms
-							Cached_Time = $row.cached_time
-							Last_Exec_Time = $row.last_execution_time
-							Total_Worker_Time_ms = $row.total_worker_time_ms
-							Total_Elapsed_Time_ms = $row.total_elapsed_time_ms
-                            SQLText = $row.SQLText
-                            Full_Statement_Text = $row.full_statement_text
-						} | Select-DefaultView -ExcludeProperty Full_Statement_Text
+						ComputerName = $server.NetName
+						InstanceName = $server.ServiceName
+						SqlInstance = $server.DomainInstanceName
+						Database = $row.DatabaseName
+						ProcName = $row.ProcName
+						ObjectID = $row.object_id
+						Type_Desc = $row.type_desc
+						Executions = $row.Execution_Count
+						AvgExec_ms = $row.AvgExec_ms
+						MaxExec_ms = $row.MaxExec_ms
+						Cached_Time = $row.cached_time
+						Last_Exec_Time = $row.last_execution_time
+						Total_Worker_Time_ms = $row.total_worker_time_ms
+						Total_Elapsed_Time_ms = $row.total_elapsed_time_ms
+						SQLText = $row.SQLText
+						Full_Statement_Text = $row.full_statement_text
+					} | Select-DefaultView -ExcludeProperty Full_Statement_Text
 				}
-              }
+			}
 		}
 	}
 }
