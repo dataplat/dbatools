@@ -1,16 +1,17 @@
-﻿function Invoke-DbaGlennBerryDMVDownloadScript
+﻿function Get-DbaDiagnosticQueryScript
 {
 <#
 .SYNOPSIS 
-Invoke-DbaGlennBerryDMVDownloadScript downloads the most recent version of all Glenn Berry DMV scripts
+Get-DbaDiagnosticQueryScript downloads the most recent version of all Glenn Berry DMV scripts
 
 .DESCRIPTION
-This function is mainly used by Get-DbaGlennBerryDMV, but can also be used independently to download the Glenn Berry DMV scripts.
+The dbatools module will have the diagnostice queries pre-installed. Use this only to update to a more recent version or specific versions.
+This function is mainly used by Invoke-DbaDiagnosticQuery, but can also be used independently to download the Glenn Berry DMV scripts.
 Use this function to pre-download the scripts from a device with an Internet connection.
-The function Get-DbaGlennBerryDMV will try to download these scripts automatically, but it obviously needs an internet connection to do that.
+The function Invoke-DbaDiagnosticQuery will try to download these scripts automatically, but it obviously needs an internet connection to do that.
 	
 .EXAMPLE   
-Invoke-DbaGlennBerryDMVDownloadScript -ScriptLocation c:\users\myusername\documents\
+Get-DbaDiagnosticQueryScript -ScriptLocation c:\users\myusername\documents\
 
 Downloads the most recent version of all Glenn Berry DMV scripts to the specified location.
 If ScriptLocation is not specified, the "My Documents" location will be used
@@ -24,7 +25,7 @@ Param(
 )
     [Reflection.Assembly]::LoadWithPartialName("System.Web") | Out-Null
 
-    Write-Output "Downloading GlennBerryDMV scripts"
+    Write-Output "Downloading SQL Server Diagnostic Query scripts"
 
     $GlennBerryRSS = "http://www.sqlskills.com/blogs/glenn/feed/"
     $GlennBerrySQL = @()
@@ -73,7 +74,7 @@ Param(
 
     foreach($item in $GlennBerrySQL | Sort-Object FileVersion -Descending | Where-Object FileVersion -eq ($GlennBerrySQL.FileVersion | Measure-Object -Maximum).Maximum)
     {
-        $filename = "{0}\GlennBerryDMV_{1}_{2}.sql" -f $ScriptLocation, $item.SQLVersion, $item.FileVersion
+        $filename = "{0}\SQLServerDiagnosticQueries_{1}_{2}.sql" -f $ScriptLocation, $item.SQLVersion, $item.FileVersion
         Invoke-WebRequest -Uri $item.URL -OutFile $filename
     }
 }

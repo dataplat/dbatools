@@ -2,7 +2,7 @@
 -- SQL Server 2014 Diagnostic Information Queries
 -- Glenn Berry 
 -- February 2017
--- Last Modified: February 21, 2017
+-- Last Modified: February 23, 2017
 -- http://sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -73,7 +73,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 --                                                          12.0.4474		SP1 CU9		    10/17/2016				12.0.5522		SP2 CU2			10/17/2016
 --															12.0.4487		SP1 CU9 + HF	11/8/2016				12.0.5532		SP2 CU2 + HF    11/8/2016  https://technet.microsoft.com/library/security/MS16-136
 --                                                          12.0.4491       SP1 CU10		12/28/2016				12.0.5537		SP2 CU3			12/28/2016
---															12.0.4502		SP1 CU11		2/20/2017				12.0.5540		SP2 CU4
+--															12.0.4502		SP1 CU11		2/21/2017				12.0.5540		SP2 CU4			2/21/2017
 
 
 -- Announcing updates to the SQL Server Incremental Servicing Model (ISM)
@@ -84,6 +84,9 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 
 -- SQL Server 2014 build versions
 -- http://support.microsoft.com/kb/2936603
+
+-- Where to find information about the latest SQL Server builds
+-- https://support.microsoft.com/en-us/help/957826/where-to-find-information-about-the-latest-sql-server-builds
 
 -- Recommended updates and configuration options for SQL Server 2012 and SQL Server 2014 used with high-performance workloads
 -- http://support.microsoft.com/kb/2964518/EN-US

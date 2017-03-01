@@ -2,7 +2,7 @@
 -- SQL Server 2016 Diagnostic Information Queries
 -- Glenn Berry 
 -- February 2017
--- Last Modified: February 9, 2017
+-- Last Modified: February 23, 2017
 -- http://sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -78,6 +78,9 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 
 -- SQL Server 2016 build versions 
 -- https://support.microsoft.com/en-us/kb/3177312
+
+-- Where to find information about the latest SQL Server builds
+-- https://support.microsoft.com/en-us/help/957826/where-to-find-information-about-the-latest-sql-server-builds
 
 -- Download SQL Server Management Studio (SSMS)
 -- https://msdn.microsoft.com/en-us/library/mt238290.aspx				

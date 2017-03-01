@@ -2,7 +2,7 @@
 -- SQL Server 2012 Diagnostic Information Queries
 -- Glenn Berry 
 -- February 2017
--- Last Modified: February 9, 2017
+-- Last Modified: February 23, 2017
 -- http://sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -101,6 +101,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- The SQL Server 2012 builds that were released after SQL Server 2012 was released
 -- http://support.microsoft.com/kb/2692828
 
+-- Where to find information about the latest SQL Server builds
+-- https://support.microsoft.com/en-us/help/957826/where-to-find-information-about-the-latest-sql-server-builds
 
 -- Recommended updates and configuration options for SQL Server 2012 and SQL Server 2014 used with high-performance workloads
 -- http://support.microsoft.com/kb/2964518/EN-US

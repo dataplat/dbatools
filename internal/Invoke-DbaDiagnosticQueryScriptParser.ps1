@@ -1,4 +1,4 @@
-﻿function Invoke-DbaGlennBerryDMVScriptParser
+﻿function Invoke-DbaDiagnosticQueryScriptParser
 {
 [CmdletBinding(DefaultParameterSetName="Default")] 
 

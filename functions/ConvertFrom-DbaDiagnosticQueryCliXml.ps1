@@ -1,22 +1,22 @@
-﻿function ConvertFrom-DbaGlenBerryDMVCliXml
+﻿function ConvertFrom-DbaDiagnosticQueryCliXml
 {
 <#
 .SYNOPSIS 
-ConvertFrom-DbaGlennBerryDMVCliXml can convert clixml output from Get-DbaGlennBerryDMV to csv or excel
+ConvertFrom-DbaDiagnosticQueryCliXml can convert clixml output from Invoke-DbaDiagnosticQuery to csv or excel
 
 .DESCRIPTION
-The default output format of Get-DbaGlennBerryDMV is clixml. It can also output to csv and excel. 
+The default output format of Invoke-DbaDiagnosticQuery is clixml. It can also output to csv and excel. 
 However, csv output can generate a lot of files and excel output depends on the ImportExcel module by Doug Fike (https://github.com/dfinke/ImportExcel)
-ConvertFrom-DbaGlennBerryDMVCliXml can be used to convert from the default export type to the other available export types.
+ConvertFrom-DbaDiagnosticQueryCliXml can be used to convert from the default export type to the other available export types.
 	
 .EXAMPLE   
-ConvertFrom-DbaGlennBerryDMVCliXml -clixmlfile c:\users\myusername\documents\myfilename.clixml -to excel -OutputLocation c:\users\myusername\documents\
+ConvertFrom-DbaDiagnosticQueryCliXml -clixmlfile c:\users\myusername\documents\myfilename.clixml -to excel -OutputLocation c:\users\myusername\documents\
 
 Converts the specified clixml to possibly multiple excel sheets
 If no OutputLocation is specified, the "My Documents" location will be used
 
 .EXAMPLE   
-ConvertFrom-DbaGlennBerryDMVCliXml -clixmlfile c:\users\myusername\documents\myfilename.clixml -to csv -OutputLocation c:\users\myusername\documents\
+ConvertFrom-DbaDiagnosticQueryCliXml -clixmlfile c:\users\myusername\documents\myfilename.clixml -to csv -OutputLocation c:\users\myusername\documents\
 
 Converts the specified clixml to  multiple csv files
 If no OutputLocation is specified, the "My Documents" location will be used
@@ -70,12 +70,12 @@ Param(
                 if ($result.dbSpecific)
                 {
                     Write-Verbose -Message ("Exporting clixml to {0}: {1:00} - {2} for Instance {3} ({4})"-f $to, $result.querynr, $result.Name, $sqlserver, $result.DatabaseName)
-                    $result.result | Export-Excel -Path $OutputLocation\GlennBerryDMV_$($sqlserver.Replace("\", "$"))_$($result.DatabaseName).xlsx -WorkSheetname $($result.Name) -AutoSize -AutoFilter -BoldTopRow -FreezeTopRow   
+                    $result.result | Export-Excel -Path $OutputLocation\SqlServerDiagnosticQueries_$($sqlserver.Replace("\", "$"))_$($result.DatabaseName).xlsx -WorkSheetname $($result.Name) -AutoSize -AutoFilter -BoldTopRow -FreezeTopRow   
                 }
                 else
                 {
                     Write-Verbose -Message ("Exporting clixml to {0}: {1:00} - {2} for Instance {3}"-f $to, $result.querynr, $result.Name, $sqlserver)
-                    $result.result | Export-Excel -Path $OutputLocation\GlennBerryDMV_$($sqlserver.Replace("\", "$")).xlsx -WorkSheetname $($result.Name) -AutoSize -AutoFilter -BoldTopRow -FreezeTopRow   
+                    $result.result | Export-Excel -Path $OutputLocation\SqlServerDiagnosticQueries_$($sqlserver.Replace("\", "$")).xlsx -WorkSheetname $($result.Name) -AutoSize -AutoFilter -BoldTopRow -FreezeTopRow   
                 }
 
             }
@@ -84,12 +84,12 @@ Param(
                 if ($result.dbSpecific)
                 {
                     Write-Verbose -Message ("Exporting clixml to {0}: {1:00} - {2} for Instance {3} ({4})"-f $to, $result.querynr, $result.Name, $sqlserver, $result.DatabaseName)
-                    $result | Export-Csv -Path $OutputLocation\GlennBerryDMV_$($sqlserver.Replace("\", "$"))_$($result.DatabaseName)_$($result.QueryNr)_$($result.Name.Replace(" ", "_")).csv -NoTypeInformation
+                    $result | Export-Csv -Path $OutputLocation\SqlServerDiagnosticQueries_$($sqlserver.Replace("\", "$"))_$($result.DatabaseName)_$($result.QueryNr)_$($result.Name.Replace(" ", "_")).csv -NoTypeInformation
                 }
                 else
                 {
                     Write-Verbose -Message ("Exporting clixml to {0}: {1:00} - {2} for Instance {3}"-f $to, $result.querynr, $result.Name, $sqlserver)
-                    $result | Export-Csv -Path $OutputLocation\GlennBerryDMV_$($sqlserver.Replace("\", "$"))_$($result.QueryNr)_$($result.Name.Replace(" ", "_")).csv -NoTypeInformation
+                    $result | Export-Csv -Path $OutputLocation\SqlServerDiagnosticQueries_$($sqlserver.Replace("\", "$"))_$($result.QueryNr)_$($result.Name.Replace(" ", "_")).csv -NoTypeInformation
                 }
             }
         } 

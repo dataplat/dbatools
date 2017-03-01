@@ -1,12 +1,16 @@
-﻿function Get-DbaGlennBerryDMV
+﻿function Start-DbaDiagnosticQuery
 {
 <#
 .SYNOPSIS 
-Get-DbaGlennBerryDMV runs the scripts provided by Glenn Berry's DMV scripts on specified servers.
+Start-DbaDiagnosticQuery runs the scripts provided by Glenn Berry's DMV scripts on specified servers.
 
 .DESCRIPTION
-This is the main function of the GlennBerryDMV related functions in dbatools. 
-It will download the most recent version of all .sql files from Glenn Berry if they are not available.
+This is the main function of the Sql Server Diagnostic Queries related functions in dbatools. 
+The diagnostic queries are developed and maintained by Glenn Berry and they can be found here along with a lot of documentation:
+http://www.sqlskills.com/blogs/glenn/category/dmv-queries/
+
+The most recent version of the diagnostic queries are included in the dbatools module. 
+But it is possible to download a newer set or a specific version to an alternative location and parse and run those scripts.
 It will run all or a selection of those scripts on one or multiple servers and export the result to either clixml, csv or excel.
 
 The excel output relies on the ImportExcel module by Doug Finke (https://github.com/dfinke/ImportExcel), which is not part of dbatools
@@ -15,19 +19,16 @@ The default directory for the output is the "my documents" directory. This is al
 And it is the directory where the .sql files will be downloaded to if no alternative directory is specified.
 	
 .EXAMPLE   
-Get-DbaGlennBerryDMV 
+Start-DbaDiagnosticQuery 
 
 Runs all scripts for the default instance on the local computer and saves the output in the "My Documents" directory in clixml format
 
 .EXAMPLE   
+Start-DbaDiagnosticQuery -SqlServer mysqlserver -OutputType excel -UseSelectionHelper
 
+Provides a gridview with all the queries to choose from and will run the selection made by the user on the Sql Server instance specified. 
+It will output the results into Excel files. (This feature requires the ImportExcel module (https://github.com/dfinke/ImportExcel)
 
-Copies a single custom error, the custom error with ID number 6000 from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a custom error with the same name exists on sqlcluster, it will be updated because -Force was used.
-
-.EXAMPLE   
-Copy-SqlCustomError -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
-
-Shows what would happen if the command were executed using force.
 #>
 
 [CmdletBinding(DefaultParameterSetName="Default", SupportsShouldProcess = $true)] 
@@ -69,13 +70,13 @@ Param(
 
         $scriptversions = @()
 
-        $scriptfiles = Get-ChildItem "$ScriptLocation\GlennBerryDMV_*_*.sql"
+        $scriptfiles = Get-ChildItem "$ScriptLocation\SQLServerDiagnosticQueries_*_*.sql"
 
         if (!$scriptfiles)
         {
             Write-Verbose "No files, download?"
-            Invoke-DbaGlennBerryDMVDownloadScript -ScriptLocation $ScriptLocation
-            $scriptfiles = Get-ChildItem "$ScriptLocation\GlennBerryDMV_*_*.sql"
+            Get-DbaDiagnosticQueryScript -ScriptLocation $ScriptLocation
+            $scriptfiles = Get-ChildItem "$ScriptLocation\SQLServerDiagnosticQueries_*_*.sql"
             if (!$scriptfiles)
             {
                 write-output "Unable to download scripts, do you have an internet connection?"
@@ -96,7 +97,7 @@ Param(
         {
             if ($file.BaseName.Split("_")[2] -eq $currentdate)
             {
-                $script = Invoke-DbaGlennBerryDMVScriptParser -filename $file.fullname
+                $script = Invoke-DbaDiagnosticQueryScriptParser -filename $file.fullname
                 $properties = @{Version = $file.basename.split("_")[1]; Script = $script}
                 $newscript = New-Object -TypeName PSObject -Property $properties
                 $scriptversions += $newscript
@@ -112,7 +113,7 @@ Param(
 
     END
     {
-        Write-Output "Running Glenn Berry DMV scripts on $($SqlServers.count) server(s), exporting to $OutputType at $OutputLocation" 
+        Write-Output "Running diagnostic queries on $($SqlServers.count) server(s), exporting to $OutputType at $OutputLocation" 
         $servercounter = 0
         foreach ($SqlServer in $SqlServers | Select-Object -ExpandProperty SqlServer)
         {
@@ -121,7 +122,7 @@ Param(
 
             $smoSqlServer = Connect-DbaSqlServer -SqlServer $SqlServer
 
-            $out = "Collecting Glenn Berry DMV Data from Server: {0}" -f $SqlServer
+            $out = "Collecting diagnostic query Data from Server: {0}" -f $SqlServer
             Write-Verbose -Message $out
 
             if (!$NoProgressBar){Write-Progress -Id 0 -Activity "Running Scripts on SQL Server" -Status ("Instance {0} of {1}" -f $servercounter, $sqlservers.count) -CurrentOperation $SqlServer -PercentComplete (($servercounter / $SqlServers.count) * 100)}
@@ -153,7 +154,7 @@ Param(
             if ($null -eq $first) {$first = $true}
             if ($UseSelectionHelper -and $first)
             {
-                $QueryName = Invoke-DbaGlennBerryDMVSelectionHelper $script
+                $QueryName = Invoke-DbaDiagnosticQueriesSelectionHelper $script
                 $first = $false
             }
 
@@ -183,7 +184,7 @@ Param(
                     $Counter += 1
                     if ($PSCmdlet.ShouldProcess($SqlServer, $scriptpart.QueryName))
                     {
-                        if (!$NoProgressBar){Write-Progress -Id 1 -ParentId 0 -Activity "Collecting DMV Data" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.Name -PercentComplete (($Counter / $scriptcount) * 100)}
+                        if (!$NoProgressBar){Write-Progress -Id 1 -ParentId 0 -Activity "Collecting diagnostic queries Data" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.Name -PercentComplete (($Counter / $scriptcount) * 100)}
                         try
                         {
                             $result = Invoke-Sqlcmd -ServerInstance $SqlServer -Database master -Query $($scriptpart.Text) -ErrorAction Stop
@@ -201,8 +202,8 @@ Param(
                         {
                             switch ($OutputType)
                             {
-                                "Excel"  {$result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors | Export-Excel -Path $OutputLocation\GlennBerryDMV_$($sqlserver.Replace("\", "$")).xlsx -WorkSheetname $($scriptpart.QueryName) -AutoSize -AutoFilter -BoldTopRow -FreezeTopRow}
-                                "CSV"    {$result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors | Export-Csv -Path $OutputLocation\GlennBerryDMV_$($sqlserver.Replace("\", "$"))_$($scriptpart.QueryNr)_$($scriptpart.QueryName.Replace(" ", "_")).csv -NoTypeInformation}
+                                "Excel"  {$result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors | Export-Excel -Path $OutputLocation\SqlServerDiagnosticQueries_$($sqlserver.Replace("\", "$")).xlsx -WorkSheetname $($scriptpart.QueryName) -AutoSize -AutoFilter -BoldTopRow -FreezeTopRow}
+                                "CSV"    {$result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors | Export-Csv -Path $OutputLocation\SqlServerDiagnosticQueries_$($sqlserver.Replace("\", "$"))_$($scriptpart.QueryNr)_$($scriptpart.QueryName.Replace(" ", "_")).csv -NoTypeInformation}
                                 "CliXml" 
                                 {
                                     $clixmlresult = $result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors
@@ -220,8 +221,8 @@ Param(
                     {
                         if ($PSCmdlet.ShouldProcess(('{0} ({1})' -f $SqlServer, $database.name), $scriptpart.QueryName))
                         {
-                            if (!$NoProgressBar){Write-Progress -Id 0 -Activity "Running Scripts on SQL Server" -Status ("Instance {0} of {1}" -f $servercounter, $sqlservers.count) -CurrentOperation $SqlServer -PercentComplete (($servercounter / $SqlServers.count) * 100)}
-                            if (!$NoProgressBar){Write-Progress -Id 1 -ParentId 0 -Activity "Collecting DMV Data" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.Name -PercentComplete (($Counter / $scriptcount) * 100)}
+                            if (!$NoProgressBar){Write-Progress -Id 0 -Activity "Running diagnostic queries on SQL Server" -Status ("Instance {0} of {1}" -f $servercounter, $sqlservers.count) -CurrentOperation $SqlServer -PercentComplete (($servercounter / $SqlServers.count) * 100)}
+                            if (!$NoProgressBar){Write-Progress -Id 1 -ParentId 0 -Activity "Collecting diagnostic query Data" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.Name -PercentComplete (($Counter / $scriptcount) * 100)}
                             try
                             {
                                 $result = Invoke-Sqlcmd -ServerInstance $SqlServer -Database $($database.Name) -Query $($scriptpart.Text) -ErrorAction Stop
@@ -239,8 +240,8 @@ Param(
                             {
                                 switch ($OutputType)
                                 {
-                                    "Excel"  {$result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors | Export-Excel -Path $OutputLocation\GlennBerryDMV_$($sqlserver.Replace("\", "$"))_$($database.name).xlsx -WorkSheetname $($scriptpart.QueryName) -AutoSize -AutoFilter -BoldTopRow -FreezeTopRow}
-                                    "CSV"    {$result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors | Export-Csv -Path $OutputLocation\GlennBerryDMV_$($sqlserver.Replace("\", "$"))_$($database.name)_$($scriptpart.QueryNr)_$($scriptpart.QueryName.Replace(" ", "_")).csv -NoTypeInformation}
+                                    "Excel"  {$result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors | Export-Excel -Path $OutputLocation\SqlServerDiagnosticQueries_$($sqlserver.Replace("\", "$"))_$($database.name).xlsx -WorkSheetname $($scriptpart.QueryName) -AutoSize -AutoFilter -BoldTopRow -FreezeTopRow}
+                                    "CSV"    {$result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors | Export-Csv -Path $OutputLocation\SqlServerDiagnosticQueries_$($sqlserver.Replace("\", "$"))_$($database.name)_$($scriptpart.QueryNr)_$($scriptpart.QueryName.Replace(" ", "_")).csv -NoTypeInformation}
                                     "CliXml" 
                                     {
                                         $clixmlresult = $result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors
@@ -252,7 +253,7 @@ Param(
                     }                
                 }
             }
-        if ($OutputType -eq "CliXml"){$clixml | Export-Clixml -Path $OutputLocation\GlennBerryDMV_$($sqlserver.Replace("\", "$")).clixml}
+        if ($OutputType -eq "CliXml"){$clixml | Export-Clixml -Path $OutputLocation\SqlServerDiagnosticQueries_$($sqlserver.Replace("\", "$")).clixml}
         }
     }
 
