@@ -519,7 +519,7 @@ folder for those file types as defined on the target instance.
 					# Execute the restore
 					$FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery $NoRecovery -Replace $WithReplace -ScriptOnly $OutputScriptOnly -FileStructure $FileMapping -VerifyOnly $VerifyOnly -UseDestinationDefaultDirectories $UseDestinationDefaultDirectories -ReuseSourceFolderStructure $ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix
 					
-					# Set the database to single user
+					# Set the database to multiple users
 					$Database.UserAccess = [Microsoft.SqlServer.Management.Smo.DatabaseUserAccess]::Multiple
 					$Database.Alter();
 
