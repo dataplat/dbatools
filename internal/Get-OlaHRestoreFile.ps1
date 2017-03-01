@@ -16,6 +16,7 @@ Takes path, checks for validity. Scans for usual backup file
 	
 	Write-Verbose "$FunctionName - Starting"
 	Write-Verbose "$FunctionName - Checking Path"
+	
 	if ((Test-Path $Path) -ne $true)
 	{
 		Write-Warning "$FunctionName - $Path is not valid"
@@ -33,7 +34,15 @@ Takes path, checks for validity. Scans for usual backup file
 	}
 	else
 	{
-		Write-Warning "$FunctionName - Don't have a FULL folder"
+		if ($MaintenanceSolutionBackup)
+		{
+			Write-Warning "$FunctionName - Don't have a FULL folder"
+		}
+		else
+		{
+			Write-Warning "$FunctionName - No valid backup found - even tried MaintenanceSolution structure"
+		}
+		
 		return
 	}
 	if (Test-Path -Path $Path\Log)
