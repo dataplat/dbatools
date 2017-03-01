@@ -9,8 +9,7 @@ This function changes the configured value for sp_configure settings. If the set
 This is designed to be safe and will not allow for configurations to be set outside of the defined configuration min and max values. 
 While it is possible to set below the min, or above the max this can cause serious problems with SQL Server (including startup failures), and so is not permitted.
 
-
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 SQLServer name or SMO object representing the SQL Server to connect to. This can be a
 collection and recieve pipeline input
 
@@ -20,12 +19,15 @@ PSCredential object to connect as. If not specified, current Windows login will 
 .PARAMETER Configs
 The name of the configuration to be set -- Configs is autopopulated for tabbing convenience. 
 	
-.PARAMETER value
+.PARAMETER Value
 The new value for the configuration
 
 .PARAMETER WhatIf
 Shows what would happen if the command were to run. No actions are actually performed.
 
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
+	
 .NOTES 
 Original Author: Nic Cain, https://sirsql.net/
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -52,29 +54,36 @@ Set-DbaSpConfigure -SqlServer localhost -configs XPCmdShellEnabled -value 1 -Wha
 Returns information on the action that would be performed. No actual change will be made.
 
 
-
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[string[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[string[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-        [Parameter(Mandatory = $false)]
-        [Alias("NewValue", "Newconfig")]
-        [int]$value
+		[Parameter(Mandatory = $false)]
+		[Alias("NewValue", "NewConfig")]
+		[int]$Value,
+		[switch]$Silent
 	)
 	
-	DynamicParam { if ($SqlServer) { return (Get-ParamSqlServerConfigs -SqlServer $SqlServer -SqlCredential $SqlCredential) } }
+	DynamicParam { if ($SqlInstance) { return (Get-ParamSqlServerConfigs -SqlServer $SqlInstance -SqlCredential $SqlCredential) } }
 	
 	BEGIN
 	{
 		$configs = $psboundparameters.Configs
+		
+		if (!$configs)
+		{
+			Stop-Function -Message "You must select one or more configurations to modify"
+		}
 	}
 	
 	PROCESS
 	{
-		FOREACH ($instance in $SqlServer)
+		if (Test-FunctionInterrupt) { return }
+		
+		FOREACH ($instance in $SqlInstance)
 		{
 			TRY
 			{
@@ -82,47 +91,58 @@ Returns information on the action that would be performed. No actual change will
 			}
 			CATCH
 			{
-				Write-Warning "Failed to connect to: $instance"
-				continue
+				Stop-Function -Message "Failed to connect to: $instance" -Continue
 			}
 			
-            #Grab the current config value
-            $currentValues = ($server.Configuration.$configs)
-            $currentRunValue = $currentValues.RunValue
-            $minValue = $currentValues.Minimum
-            $maxValue = $currentValues.Maximum
-            $isDynamic = $currentValues.IsDynamic
-            
-            #Let us not waste energy setting the value to itself
-            if ($currentRunValue -eq $value) { write-warning "Value to set is the same as the existing value. No work being performed." ;break; }
-
-            #Going outside the min/max boundary can be done, but it can break SQL, so I don't think allowing that is wise at this juncture
-            if ($value -le $minValue -or $value -gt $maxValue) { Write-Error "Value out of range for $($configs) (min: $($minValue) - max $($maxValue))"; break; }
-
-            
-            If ($Pscmdlet.ShouldProcess($SqlServer, "Adjusting server configuration $($configs) from $($currentValue) to $($value)."))
-            {
-                try
-                {
-                    $server.Configuration.$configs.ConfigValue = $value;
-                    $server.Configuration.Alter();
-
-                    #If it's a dynamic setting we're all clear, otherwise let the user know that SQL needs to be restarted for the change to take
-                    if ($isDynamic -eq $true)
-                        {
-                            Write-Output "Config for $($configs) changed. Old value: $($currentRunValue)  New Value: $($value)"
-                        }
-                    else
-                        {
-                            Write-Warning "Config set for $($configs), but restart of SQL Server is required for the new value ($($value)) to be used (old value: $($value))"
-                        }
-
-                }
-                catch
-                {
-                    Write-Error "Unable to change config setting - $($Error)"
-                }
-            }
+			#Grab the current config value
+			$currentValues = ($server.Configuration.$configs)
+			$currentRunValue = $currentValues.RunValue
+			$minValue = $currentValues.Minimum
+			$maxValue = $currentValues.Maximum
+			$isDynamic = $currentValues.IsDynamic
+			
+			#Let us not waste energy setting the value to itself
+			if ($currentRunValue -eq $value)
+			{
+				Stop-Function -Message "Value to set is the same as the existing value. No work being performed."
+			}
+			
+			#Going outside the min/max boundary can be done, but it can break SQL, so I don't think allowing that is wise at this juncture
+			if ($value -le $minValue -or $value -gt $maxValue)
+			{
+				Stop-Function -Message "Value out of range for $configs (min: $minValue - max $maxValue)"
+			}
+			
+			
+			If ($Pscmdlet.ShouldProcess($SqlInstance, "Adjusting server configuration $configs from $currentValue to $value."))
+			{
+				try
+				{
+					$server.Configuration.$configs.ConfigValue = $value
+					$server.Configuration.Alter()
+					
+					#If it's a dynamic setting we're all clear, otherwise let the user know that SQL needs to be restarted for the change to take
+					if ($isDynamic -eq $true)
+					{
+						Write-Output "Config for $configs changed. Old value: $currentRunValue  New Value: $value"
+						
+						[pscustomobject]@{
+							ComputerName = $server.NetName
+							InstanceName = $server.ServiceName
+							SqlInstance = $server.DomainInstanceName
+						}
+					}
+					else
+					{
+						Write-Message -Level Warning -Message "Config set for $configs, but restart of SQL Server is required for the new value ($value) to be used (old value: $($value))"
+					}
+					
+				}
+				catch
+				{
+					Write-Message -Level Warning -Message "Unable to change config setting - $error"
+				}
+			}
 			
 		}
 	}
