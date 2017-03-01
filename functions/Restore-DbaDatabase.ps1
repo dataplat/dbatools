@@ -1,4 +1,4 @@
-function Restore-DbaDatabase
+﻿function Restore-DbaDatabase
 {
 <#
 .SYNOPSIS 
@@ -272,7 +272,7 @@ folder for those file types as defined on the target instance.
 				}
 			}
 			
-			Write-Verbose "$FunctionName - type = $($f.gettype())"
+			Write-Verbose "type = $($f.gettype())"
 			if ($f -is [string])
 			{
 				Write-Verbose "$FunctionName : Paths passed in"
@@ -399,7 +399,7 @@ folder for those file types as defined on the target instance.
 					}
 					else
 					{	
-						Write-Verbose "$FunctionName - Dropped to Default"
+						Write-Verbose "Dropped to Default"
 						$BackupFiles += $FileTmp
 					}
 				}
@@ -470,12 +470,8 @@ folder for those file types as defined on the target instance.
 				}
 			}
 		}
-<#		
-		return $BackupFiles
-	}
-}
-	#>
-		$AllFilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup
+		
+		$AllFilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup $IgnoreLogBackup
 		Write-Verbose "$FunctionName - $($AllFilteredFiles.count) dbs to restore"
 		
 		if ($AllFilteredFiles.count -gt 1 -and $DatabaseName -ne '')
@@ -496,7 +492,7 @@ folder for those file types as defined on the target instance.
 				break
 			}
 			
-			IF ($DatabaseName -eq '')
+			IF ($DatabaseName -eq '')  
 			{
 				$DatabaseName = $RestoredDatababaseNamePrefix+($FilteredFiles | Select-Object -Property DatabaseName -unique).DatabaseName
 				Write-Verbose "$FunctionName - Dbname set from backup = $DatabaseName"
@@ -505,9 +501,28 @@ folder for those file types as defined on the target instance.
 			if ((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlServer $SqlServer -SqlCredential $SqlCredential))
 			{
 				try
-				{
-					$FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -Replace:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure $FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix
+				{  
+					$Database = $Server.Databases[$DatabaseName]
+
+					# Check if there are any open connections
+					if($Database.ActiveConnections -ge 1)
+					{
+						Write-Verbose "Active connections found. Closing connections.."
+						$Server.KillAllProcesses($DatabaseName)
+					}
 					
+					# Set the database to single user
+					$Database.UserAccess = [Microsoft.SqlServer.Management.Smo.DatabaseUserAccess]::Single
+					$Database.Alter([Microsoft.SqlServer.Management.Smo.TerminationClause]"RollbackTransactionsImmediately");
+					$Database.Refresh();
+
+					# Execute the restore
+					$FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery $NoRecovery -Replace $WithReplace -ScriptOnly $OutputScriptOnly -FileStructure $FileMapping -VerifyOnly $VerifyOnly -UseDestinationDefaultDirectories $UseDestinationDefaultDirectories -ReuseSourceFolderStructure $ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix
+					
+					# Set the database to single user
+					$Database.UserAccess = [Microsoft.SqlServer.Management.Smo.DatabaseUserAccess]::Multiple
+					$Database.Alter();
+
 					$Completed = 'successfully'
 				}
 				catch
@@ -525,6 +540,5 @@ folder for those file types as defined on the target instance.
 		}
 	}
 }
-
 
 
