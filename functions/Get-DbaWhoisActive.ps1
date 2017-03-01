@@ -415,14 +415,14 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 		{
 			return $datatable.Tables
 		}
-		else
-		{
-			$windowtitle = Get-WindowTitle
+		# else
+		# {
+		# 	$windowtitle = Get-WindowTitle
 			
-			foreach ($table in $datatable.Tables)
-			{
-				$table | Out-GridView -Title $windowtitle
-			}
-		}
+		# 	foreach ($table in $datatable.Tables)
+		# 	{
+		# 		$table | Out-GridView -Title $windowtitle
+		# 	}
+		# }
 	}
 }
