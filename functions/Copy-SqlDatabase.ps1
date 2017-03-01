@@ -1,4 +1,4 @@
-﻿Function Copy-SqlDatabase
+Function Copy-SqlDatabase
 {
 <#
 .SYNOPSIS 
@@ -90,7 +90,11 @@ Takes dbobject from pipeline
 .PARAMETER NumberFiles
 Number of files to split the backup. Default is 3.
 
-.NOTES 
+.PARAMETER NoCopyOnly
+By default, Copy-SqlDatabase backups are backed up with COPY_ONLY, which avoids breaking the LSN backup chain. This parameter will set CopyOnly to $false.
+
+.NOTES
+Tags: Migration, DisasterRecovery, Backup, Restore
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 Limitations: Doesn't cover what it doesn't cover (replication, certificates, etc)
@@ -176,14 +180,14 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		[object]$DbPipeline,
 		[parameter(Position = 21, ParameterSetName = "DbBackup")]
 		[ValidateRange(1, 64)]
-		[int]$NumberFiles = 3
+		[int]$NumberFiles = 3,
+        [switch]$NoCopyOnly
 	)
 	
 	DynamicParam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential -NoSystem } }
 	
 	BEGIN
 	{
-		
 		# Global Database Function
 		Function Get-SqlFileStructure
 		{
@@ -203,7 +207,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				
 				$where = "Filetype <> 'LOG' and Filetype <> 'FULLTEXT'"
 				
-				$datarows = $dbfiletable.Tables[0].Select("dbname = '$dbname' and $where")
+				$datarows = $dbfiletable.Tables.Select("dbname = '$dbname' and $where")
 				
 				# Data Files
 				foreach ($file in $datarows)
@@ -214,13 +218,27 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					{
 						$d.physical = $file.filename
 					}
+					elseif ($WithReplace)
+					{
+						$name = $file.name
+						$destfile = $remotedbfiletable.Tables[0].Select("dbname = '$dbname' and name = '$name'")
+						$d.physical = $destfile.filename
+						
+						if ($null -eq $d.physical)
+						{
+							$directory = Get-SqlDefaultPaths $destserver data
+							$filename = Split-Path $file.filename -Leaf
+							$d.physical = "$directory\$filename"
+						}
+					}
 					else
 					{
 						$directory = Get-SqlDefaultPaths $destserver data
-						$filename = Split-Path $($file.filename) -leaf
+						$filename = Split-Path $file.filename -Leaf
 						$d.physical = "$directory\$filename"
 					}
 					$d.logical = $file.name
+					
 					$d.remotefilename = Join-AdminUNC $destnetbios $d.physical
 					$destinationfiles.add($file.name, $d)
 					
@@ -294,10 +312,23 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					{
 						$d.physical = $file.filename
 					}
+					elseif ($WithReplace)
+					{
+						$name = $file.name
+						$destfile = $remotedbfiletable.Tables[0].Select("dbname = '$dbname' and name = '$name'")
+						$d.physical = $destfile.filename
+						
+						if ($null -eq $d.physical)
+						{
+							$directory = Get-SqlDefaultPaths $destserver data
+							$filename = Split-Path $file.filename -Leaf
+							$d.physical = "$directory\$filename"
+						}
+					}
 					else
 					{
 						$directory = Get-SqlDefaultPaths $destserver log
-						$filename = Split-Path $($file.filename) -leaf
+						$filename = Split-Path $file.filename -Leaf
 						$d.physical = "$directory\$filename"
 					}
 					$d.logical = $file.name
@@ -321,7 +352,6 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			Write-Progress -id 1 -Activity "Processing database file structure" -Status "Completed" -Completed
 			return $filestructure
 		}
-		
 		# Backup Restore
 		Function Backup-SqlDatabase
 		{
@@ -337,7 +367,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			$backup = New-Object "Microsoft.SqlServer.Management.Smo.Backup"
 			$backup.Database = $dbname
 			$backup.Action = "Database"
-			$backup.CopyOnly = $true
+			$backup.CopyOnly = $CopyOnly
 			$val = 0
 			
 			while ($val -lt $numberfiles)
@@ -353,6 +383,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
 			}
 			$backup.add_PercentComplete($percent)
+			$backup.PercentCompleteNotification = 1
 			$backup.add_Complete($complete)
 			
 			Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
@@ -388,7 +419,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			$server.ConnectionContext.StatementTimeout = 0
 			$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
 			
-			if ($WithReplace -eq $false -or $server.databases[$dbname] -eq $null)
+			if ($WithReplace -or $server.databases[$dbname] -eq $null)
 			{
 				foreach ($file in $filestructure.databases[$dbname].destination.values)
 				{
@@ -435,13 +466,33 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				{
 					foreach ($backupfile in $filestodelete)
 					{
-						If (Test-Path $backupfile)
+						try
 						{
-							Remove-Item $backupfile
+							If (Test-Path $backupfile -ErrorAction Stop)
+							{
+								Write-Verbose "Deleting $backupfile"
+								Remove-Item $backupfile -ErrorAction Stop
+							}
+						}
+						catch
+						{
+							try
+							{
+								Write-Verbose "Trying alternate SQL method to delete $backupfile"
+								$sql = "EXEC master.sys.xp_delete_file 0, '$backupfile'"
+								Write-Debug $sql
+								$null = $server.ConnectionContext.ExecuteNonQuery($sql)
+							}
+							catch
+							{
+								Write-Warning "Cannot delete backup file $backupfile"
+								
+								# Set NoBackupCleanup so that there's a warning at the end
+								$NoBackupCleanup = $true
+							}
 						}
 					}
 				}
-				
 				return $true
 			}
 			catch
@@ -695,7 +746,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 	
 	PROCESS
 	{
-		
+		$copyonly = !$NoCopyOnly
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
@@ -740,12 +791,23 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		{
 			if ($(Test-SqlPath -SqlServer $sourceserver -Path $NetworkShare) -eq $false)
 			{
-				throw "$Source cannot access $NetworkShare"
+				Write-Warning "$Source may not be able to access $NetworkShare. Trying anyway."
 			}
 			
 			if ($(Test-SqlPath -SqlServer $destserver -Path $NetworkShare) -eq $false)
 			{
-				throw "$Destination cannot access $NetworkShare"
+				Write-Warning "$Destination may not be able to access $NetworkShare. Trying anyway."
+			}
+			
+			if ($networkshare.StartsWith('\\'))
+			{
+				$shareserver = ($networkshare -split "\\")[2]
+				$hostentry = ([Net.Dns]::GetHostEntry($shareserver)).HostName -split "\."
+				
+				if ($shareserver -ne $hostentry[0])
+				{
+					Write-Warning "Using CNAME records for the network share may present an issue if an SPN has not been created. Trying anyway. If it doesn't work, use a different (A record) hostname."
+				}
 			}
 		}
 		
@@ -771,10 +833,18 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				throw "Network share must be a valid UNC path (\\server\share)."
 			}
 			
-			if (!(Test-Path $NetworkShare))
+			try
+			{
+				if (Test-Path $NetworkShare -ErrorAction Stop)
+				{
+					Write-Verbose "$networkshare share can be accessed."
+				}
+			}
+			catch
 			{
 				Write-Warning "$networkshare share cannot be accessed. Still trying anyway, in case the SQL Server service accounts have access."
 			}
+			
 		}
 		
 		Write-Output "Checking to ensure server is not SQL Server 7 or below"
@@ -902,6 +972,17 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		}
 		
 		$dbfiletable = $sourceserver.Databases['master'].ExecuteWithResults($sql)
+		
+		if ($destserver.versionMajor -eq 8)
+		{
+			$sql = "select DB_NAME (dbid) as dbname, name, filename, CASE WHEN groupid = 0 THEN 'LOG' ELSE 'ROWS' END as filetype from sysaltfiles"
+		}
+		else
+		{
+			$sql = "SELECT db.name AS dbname, type_desc AS FileType, mf.name, Physical_Name AS filename FROM sys.master_files mf INNER JOIN  sys.databases db ON db.database_id = mf.database_id"
+		}
+		
+		$remotedbfiletable = $destserver.Databases['master'].ExecuteWithResults($sql)
 		
 		$filestructure = Get-SqlFileStructure -sourceserver $sourceserver -destserver $destserver -databaselist $databaselist -ReuseSourceFolderStructure $ReuseSourceFolderStructure
 		

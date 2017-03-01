@@ -48,6 +48,7 @@ Prompts you for confirmation before executing any changing operations within the
 Drops and recreates the Job if it exists
 
 .NOTES
+Tags: Migration
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 

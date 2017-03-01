@@ -24,7 +24,8 @@ Excludes the Windows server information
 .PARAMETER WindowsOnly
 Excludes the SQL server information
 
-.NOTES 
+.NOTES
+Tags: CIM
 Original Author: Stuart Moore (@napalmgram), stuart-moore.com
 	
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -61,7 +62,7 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance", "ComputerName")]
-		[string[]]$SqlServer,
+		[object[]]$SqlServer,
 		[parameter(ParameterSetName = "Sql")]
 		[Switch]$SqlOnly,
 		[parameter(ParameterSetName = "Windows")]
@@ -73,8 +74,21 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 	
 	PROCESS
 	{
-		foreach ($servername in $SqlServer)
+		foreach ($instance in $SqlServer)
 		{
+			if ($instance.Gettype().FullName -eq [System.Management.Automation.PSCustomObject] )
+			{
+				$servername = $instance.SqlInstance
+			}
+			elseif ($instance.Gettype().FullName -eq [Microsoft.SqlServer.Management.Smo.Server])
+			{
+				$servername = $instance.NetName
+			}
+			else
+			{
+				$servername = $instance
+			}
+						
 			if ($WindowsOnly -ne $true)
 			{
 				
@@ -99,7 +113,7 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 			
 			if ($SqlOnly -ne $true)
 			{
-				$WindowsServerName = (Resolve-DbaNetworkName $servername).ComputerName
+				$WindowsServerName = (Resolve-DbaNetworkName $servername -Credential $WindowsCredential).ComputerName
 
 				try
 				{
@@ -139,7 +153,7 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 				[PSCustomObject]@{
 					ComputerName = $server.NetName
 					InstanceName = $server.ServiceName
-					SqlInstance = $server.Name
+					SqlServer = $server.Name
 					SqlUptime = $SQLUptime
 					SqlStartTime = $SQLStartTime
 					SinceSqlStart = $SQLUptimeString
@@ -159,7 +173,7 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 				[PSCustomObject]@{
 					ComputerName = $WindowsServerName
 					InstanceName = $server.ServiceName
-					SqlInstance = $server.Name
+					SqlServer = $server.Name
 					SqlUptime = $SQLUptime
 					WindowsUptime = $WindowsUptime
 					SqlStartTime = $SQLStartTime

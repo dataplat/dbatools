@@ -1,4 +1,4 @@
-﻿Function Test-DbaPowerPlan
+Function Test-DbaPowerPlan
 {
 <#
 .SYNOPSIS
@@ -81,7 +81,7 @@ To return detailed information Power Plans
 			try
 			{
 				Write-Verbose "Testing connection to $server and resolving IP address"
-				$ipaddr = (Test-Connection $server -Count 1 -ErrorAction SilentlyContinue).Ipv4Address | Select-Object -First 1
+				$ipaddr = (Test-Connection $server -Count 1 -ErrorAction Stop).Ipv4Address | Select-Object -First 1
 			}
 			catch
 			{

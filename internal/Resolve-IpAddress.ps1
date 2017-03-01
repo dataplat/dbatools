@@ -1,4 +1,4 @@
-﻿Function Resolve-IpAddress
+Function Resolve-IpAddress
 {
 	# Uses the Beard's method to resolve IPs
 	[CmdletBinding()]

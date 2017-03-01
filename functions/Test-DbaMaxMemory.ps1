@@ -20,7 +20,8 @@ $cred = Get-Credential, then pass $cred variable to this parameter.
 
 Windows Authentication will be used when SqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
-.NOTES 
+.NOTES
+Tags: Memory
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -75,7 +76,7 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 
             $server = Get-DbaMaxMemory -SqlServer $servername -SqlCredential $SqlCredential
 			
-			if($server -eq $null)
+			if($null -eq $server)
             {
                 continue;
             }

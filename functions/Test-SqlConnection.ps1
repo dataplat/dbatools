@@ -51,7 +51,8 @@ DefaultSQLPortOpen : True
 RemotingPortOpen   : True
 
 
-.NOTES 
+.NOTES
+Tags: CIM
 Original Author: Chrissy LeMaire
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
@@ -94,8 +95,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	
 	$serverinfo.ServerName = $sqlserver
 	
+	[regex]$portdetection = ":\d{1,5}$"
+	if ($sqlserver.LastIndexOf(":") -ne -1)
+	{
+		$portnumber = $sqlserver.substring($sqlserver.LastIndexOf(":"))
+		if ($portnumber -match $portdetection)
+		{
+			$replacedportseparator = $portnumber -replace ":", ","
+			$sqlserver = $sqlserver -replace $portnumber, $replacedportseparator
+		}
+	}
+	
 	Write-Output "Determining SQL Server base address"
-	$baseaddress = $sqlserver.Split("\")[0]
+	$baseaddress = $sqlserver.Split(",")[0]
+	$baseaddress = $baseaddress.Split("\")[0]
 	try { $instance = $sqlserver.Split("\")[1] }
 	catch { $instance = "(Default)" }
 	if ([string]::IsNullOrEmpty($instance)) { $instance = "(Default)" }

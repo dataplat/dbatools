@@ -80,13 +80,13 @@ Returns database files and free space information for the db1 and db2 on localho
 	
 	BEGIN
 	{
-		$outputraw = @()
 		$sql = "SELECT 
 				    @@SERVERNAME as SqlServer
 				    ,DB_NAME() as DBName
 				    ,f.name AS [FileName]
 				    ,fg.name AS [Filegroup] 
 				    ,f.physical_name AS [PhysicalName]
+				    ,f.type_desc AS [FileType]
 				    ,CAST(CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int)/128.0 AS FLOAT) as [UsedSpaceMB]
 				    ,CAST(f.size/128.0 - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int)/128.0 AS FLOAT) AS [FreeSpaceMB]
 				    ,CAST((f.size/128.0) AS FLOAT) AS [FileSizeMB]
@@ -147,13 +147,22 @@ Returns database files and free space information for the db1 and db2 on localho
 	
 	PROCESS
 	{
-		foreach ($s in $SqlServer)
+		foreach ($instance in $SqlServer)
 		{
-			#For each SQL Server in collection, connect and get SMO object
-			Write-Verbose "Connecting to $s"
-			$server = Connect-SqlServer $s -SqlCredential $SqlCredential
+            try
+            {
+			    #For each SQL Server in collection, connect and get SMO object
+			    Write-Verbose "Connecting to $instance"
+			    $server = Connect-SqlServer $instance -SqlCredential $SqlCredential
+            }
+            catch
+            {
+					Write-Warning "Can't connect to $instance. Moving on."
+					Continue
+			}
+			
 			#If IncludeSystemDBs is true, include systemdbs
-			#only look at online databases (Status equal normal)
+			#look at all databases, online/offline/accessible/inaccessible and tell user if a db can't be queried.
 			try
 			{
 				if ($databases.length -gt 0)
@@ -177,7 +186,7 @@ Returns database files and free space information for the db1 and db2 on localho
 			catch
 			{
 				Write-Exception $_
-				throw "Unable to gather dbs for $($s.name)"
+				Write-Warning "Unable to gather databases for $instance"
 				continue
 			}
 			
@@ -185,46 +194,62 @@ Returns database files and free space information for the db1 and db2 on localho
 			{
 				try
 				{
-					Write-Verbose "Querying $($s) - $($db.name)."
-                    #write-debug $sql
-					#Execute query against individual database and add to output
-					$outputraw += ($db.ExecuteWithResults($sql)).Tables[0]
+					Write-Verbose "Querying $instance - $db"
+                    If($db.status -ne 'Normal' -or $db.IsAccessible -eq $false)
+                    {
+                        Write-Warning "$db is not accessible."
+						continue
+                    }
+					    #Execute query against individual database and add to output
+					    foreach ($row in ($db.ExecuteWithResults($sql)).Tables[0])
+						{
+							If ($row.UsedSpaceMB -is [System.DBNull]) { $UsedMB = 0 } Else { $UsedMB = [Math]::Round($row.UsedSpaceMB) }
+							If ($row.FreeSpaceMB -is [System.DBNull]) { $FreeMB = 0 } Else { $FreeMB = [Math]::Round($row.FreeSpaceMB) }
+							If ($row.PercentUsed -is [System.DBNull]) { $PercentUsed = 0 } Else { $PercentUsed = [Math]::Round($row.PercentUsed) }
+							If ($row.SpaceBeforeMax -is [System.DBNull]) { $SpaceUntilMax = 0 } Else { $SpaceUntilMax = [Math]::Round($row.SpaceBeforeMax) }
+							If ($row.UnusableSpaceMB -is [System.DBNull]) { $UnusableSpace = 0 } Else { $UnusableSpace = [Math]::Round($row.UnusableSpaceMB) }
+
+							[pscustomobject]@{
+								Server = $row.SqlServer
+								Database = $row.DBName
+								FileName = $row.FileName
+								FileGroup = $row.FileGroup
+								PhysicalName = $row.PhysicalName
+								FileType = $row.FileType
+								UsedSpaceMB = $UsedMB
+								FreeSpaceMB = $FreeMB
+								FileSizeMB = $row.FileSizeMB
+								PercentUsed = $PercentUsed
+								AutoGrowth = $row.GrowthMB
+								AutoGrowType = $row.GrowthType
+								SpaceUntilMaxSizeMB = $SpaceUntilMax
+								AutoGrowthPossibleMB = $row.PossibleAutoGrowthMB
+								UnusableSpaceMB = $UnusableSpace
+							}
+						}
 				}
 				catch
 				{
 					Write-Exception $_
-					throw "Unable to query $($s) - $($db.name)"
+					Write-Warning "Unable to query $instance - $db"
 					continue
+				}
+				
+				foreach ($row in $result)
+				{
+					[pscustomobject]@{
+						SqlServer = $row.SqlServer
+						DatabaseName = $row.DBName
+						FileName = $row.FileName
+						FileGroup = $row.FileGroup
+						PhysicalName = $row.PhysicalName
+						UsedSpaceMB = $row.UsedSpaceMB
+						FreeSpaceMB = $row.FreeSpaceMB
+						FileSizeMB = $row.FileSizeMB
+						PercentUsed = $row.PercentUSed
+					}
 				}
 			}
 		}
-	}
-	END
-	{
-		#Sanitize output into array of custom objects, not DataRow objects
-		Write-Verbose 'Sanitizing output, converting DataRow to custom PSObject.'
-		$output = @()
-		foreach ($row in $outputraw)
-		{
-			$outrow = [ordered]@{
-				'SqlServer' = $row.SqlServer;`
-				'DatabaseName' = $row.DBName;`
-				'FileName' = $row.FileName;`
-				'FileGroup' = $row.FileGroup;`
-				'PhysicalName' = $row.PhysicalName;`
-				'UsedSpaceMB' = [Math]::Round($row.UsedSpaceMB,2);`
-				'FreeSpaceMB' = [Math]::Round($row.FreeSpaceMB,2);`
-				'FileSizeMB' = $row.FileSizeMB;`
-				'PercentUsed' = [Math]::Round($row.PercentUsed,2);`
-				'AutoGrowth' = $row.GrowthMB;`
-				'AutoGrowType' = $row.GrowthType;`
-				'SpaceUntilMaxSizeMB' = [Math]::Round($row.SpaceBeforeMax,2);`
-				'AutoGrowthPossibleMB' = $row.PossibleAutoGrowthMB;`
-				'UnusableSpaceMB' = [Math]::Round($row.UnusableSpaceMB,2)
-			}
-			$output += New-Object psobject -Property $outrow
-		}
-
-		return $output
 	}
 }

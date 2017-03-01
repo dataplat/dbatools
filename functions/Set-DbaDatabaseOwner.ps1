@@ -1,4 +1,4 @@
-﻿function Set-DbaDatabaseOwner
+function Set-DbaDatabaseOwner
 {
 <#
 .SYNOPSIS

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+<ViewDefinitions>
+<!-- sqlcollective.dbatools.Configuration.Config -->
+<View>
+  <Name>sqlcollective.dbatools.Configuration.Config</Name>
+  <ViewSelectedBy>
+    <TypeName>sqlcollective.dbatools.Configuration.Config</TypeName>
+  </ViewSelectedBy>
+  <TableControl>
+    <AutoSize />
+    <TableHeaders>
+      <TableColumnHeader>
+	    <Label>Name</Label>
+      </TableColumnHeader>
+      <TableColumnHeader>
+      </TableColumnHeader>
+      <TableColumnHeader>
+	    <Alignment>Left</Alignment>
+      </TableColumnHeader>
+      <TableColumnHeader>
+	    <Alignment>Left</Alignment>
+      </TableColumnHeader>
+    </TableHeaders>
+    <TableRowEntries>
+      <TableRowEntry>
+        <TableColumnItems>
+          <TableColumnItem>
+            <ScriptBlock>
+              $_.Module + "." + $_.Name
+            </ScriptBlock>
+          </TableColumnItem>
+          <TableColumnItem>
+            <PropertyName>Type</PropertyName>
+          </TableColumnItem>
+          <TableColumnItem>
+            <PropertyName>Value</PropertyName>
+          </TableColumnItem>
+          <TableColumnItem>
+            <PropertyName>Description</PropertyName>
+          </TableColumnItem>
+        </TableColumnItems>
+      </TableRowEntry>
+    </TableRowEntries>
+  </TableControl>
+</View>
+</ViewDefinitions>
+</Configuration>

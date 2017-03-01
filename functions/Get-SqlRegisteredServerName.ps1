@@ -1,11 +1,11 @@
-﻿Function Get-SqlRegisteredServerName
+Function Get-SqlRegisteredServerName
 {
 <#
 .SYNOPSIS
 Gets list of SQL Server names stored in SQL Server Central Management Server
 
 .DESCRIPTION
-Returns a simple array of server namess
+Returns a simple array of server names
 
 .PARAMETER SqlServer
 The SQL Server instance. 
@@ -19,7 +19,7 @@ Windows Authentication will be used if SqlCredential is not specified. SQL Serve
 Auto-populated list of groups in SQL Server Central Management Server. You can specify one or more, comma separated.
 		
 .PARAMETER NoCmsServer
-By default, the Central Management Server name is included in the list. use -NoCmsServer to exclude the CMS itself.
+By default, the Central Management Server name is included in the list. Use -NoCmsServer to exclude the CMS itself.
 	
 .PARAMETER NetBiosName
 Returns just the NetBios names of each server
@@ -60,12 +60,12 @@ Gets a list of all server names from the Central Management Server on sqlserver2
 .EXAMPLE 
 Get-SqlRegisteredServerName -SqlServer sqlserver2014a -Groups HR, Accounting
 	
-Gets a list of server names in the HR and Accouting groups from the Central Management Server on sqlserver2014a.
+Gets a list of server names in the HR and Accounting groups from the Central Management Server on sqlserver2014a.
 	
 .EXAMPLE 
 Get-SqlRegisteredServerName -SqlServer sqlserver2014a -Groups HR, Accounting -IpAddr
 	
-Gets a list of server IP addresses in the HR and Accouting groups from the Central Management Server on sqlserver2014a.
+Gets a list of server IP addresses in the HR and Accounting groups from the Central Management Server on sqlserver2014a.
 	
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
