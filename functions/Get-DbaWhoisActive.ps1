@@ -157,8 +157,6 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER OutputAs
-The data format of the output, either Out-GridView (default) or datatable
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
 
@@ -208,15 +206,13 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 	
 #>
 	
-	[CmdletBinding(SupportsShouldProcess = $true)]
+	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact="High")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias('ServerInstance', 'SqlInstance')]
 		[object]$SqlServer,
 		[object]$SqlCredential,
 		[Alias('As')]
-		[ValidateSet('Datatable', 'GridView')]
-		[string]$OutputAs = 'GridView',
 		[ValidateLength(0, 128)]
 		[string]$Filter,
 		[ValidateSet('Session', 'Program', 'Database', 'Login', 'Host')]
@@ -376,16 +372,20 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 				
 				if ($database.length -gt 0)
 				{
+					$ConfirmPreference = "Low"
 					$database = Install-SqlWhoisActive -SqlServer $sourceserver -Database $database -OutputDatabaseName
+					$ConfirmPreference = "High"
 				}
 				else
 				{
-					$database = Install-SqlWhoisActive -SqlServer $sourceserver -OutputDatabaseName
+					$ConfirmPreference = "Low"
+					$database = Install-SqlWhoisActive -SqlServer $sourceserver -OutputDatabaseName 
+					$ConfirmPreference = "High"
 				}
 				
 				
 				try
-				{
+				{					
 					$datatable = Invoke-SpWhoisActive
 				}
 				catch
