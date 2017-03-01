@@ -1,4 +1,4 @@
-Function Show-SqlWhoIsActive
+Function Get-DbaWhoisActive
 {
 <#
 .SYNOPSIS
