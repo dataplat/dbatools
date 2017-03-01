@@ -372,15 +372,15 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 				
 				if ($database.length -gt 0)
 				{								
-					$database = Install-SqlWhoisActive -SqlServer $sourceserver -Database $database -OutputDatabaseName -fromget					
+					$database = Install-SqlWhoisActive -SqlServer $sourceserver -Database $database -OutputDatabaseName -fromget
 				}
 				else
 				{	
-					$database = Install-SqlWhoisActive -SqlServer $sourceserver -OutputDatabaseName -fromget 					
+					$database = Install-SqlWhoisActive -SqlServer $sourceserver -OutputDatabaseName -fromget
 				}				
 				
 				try
-				{					
+				{
 					$datatable = Invoke-SpWhoisActive
 				}
 				catch

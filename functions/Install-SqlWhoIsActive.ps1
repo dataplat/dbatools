@@ -111,7 +111,7 @@ This command doesn't support passing both servers and default database, but you 
 	PROCESS
 	{
 		# Used a dynamic parameter? Convert from RuntimeDefinedParameter object to regular array
-		$Database = $psboundparameters.Database			
+		$Database = $psboundparameters.Database
 
 		foreach ($server in $sqlserver)
 		{
