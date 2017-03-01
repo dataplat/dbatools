@@ -46,7 +46,7 @@
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
-		[object]$SqlCredential,
+		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$Detailed,
 		[switch]$Silent
 	)
