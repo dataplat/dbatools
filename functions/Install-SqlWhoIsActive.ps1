@@ -24,6 +24,9 @@ Windows Authentication will be used if SqlCredential is not specified. SQL Serve
 .PARAMETER OutputDatabaseName
 Outputs just the database name instead of the success message
 
+.PARAMETER FromGet 
+Will prompt the user if they want to install this procedure on the target server if called from the Get-DbaWhoIsActive function.
+
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire

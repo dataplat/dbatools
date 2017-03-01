@@ -2,7 +2,7 @@ Function Get-DbaWhoisActive
 {
 <#
 .SYNOPSIS
-Outputs results of Adam Machanic's sp_WhoIsActive to a GridView (default) or DataTable, and installs it if necessary.
+Outputs results of Adam Machanic's sp_WhoIsActive DataTable, and installs it if necessary.
 
 .DESCRIPTION
 Output results of Adam Machanic's sp_WhoIsActive to a GridView (default) or DataTable, and installs it if necessary. 
