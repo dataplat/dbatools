@@ -1,4 +1,4 @@
-﻿Function Copy-SqlServerRole
+Function Copy-SqlServerRole
 {
 <#
 .SYNOPSIS 

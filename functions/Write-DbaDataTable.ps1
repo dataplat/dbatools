@@ -1,4 +1,4 @@
-﻿Function Write-DbaDataTable
+Function Write-DbaDataTable
 {
 <#
 .SYNOPSIS

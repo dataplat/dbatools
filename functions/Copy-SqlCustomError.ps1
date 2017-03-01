@@ -1,4 +1,4 @@
-﻿Function Copy-SqlCustomError
+Function Copy-SqlCustomError
 {
 <#
 .SYNOPSIS 
@@ -98,7 +98,7 @@ Shows what would happen if the command were executed using force.
 		
 		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
 		{
-			throw "Custom Errors are only supported in SQL Server 2000 and above. Quitting."
+			throw "Custom Errors are only supported in SQL Server 2005 and above. Quitting."
 		}
 	}
 	

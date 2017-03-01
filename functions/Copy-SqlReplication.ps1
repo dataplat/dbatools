@@ -1,4 +1,4 @@
-﻿<#
+<#
 #$transfer.Options.ContinueScriptingOnError
 # replace names
 # Load SMO, create server object, test connection, disconnect

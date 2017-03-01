@@ -1,4 +1,4 @@
-﻿Function Remove-DbaBackup
+Function Remove-DbaBackup
 {
 <#
 .SYNOPSIS

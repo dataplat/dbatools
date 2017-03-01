@@ -1,4 +1,4 @@
-﻿Function Test-SqlLoginAccess
+Function Test-SqlLoginAccess
 {
 <#
 .SYNOPSIS

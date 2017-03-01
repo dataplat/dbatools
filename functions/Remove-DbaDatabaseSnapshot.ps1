@@ -1,4 +1,4 @@
-﻿Function Remove-DbaDatabaseSnapshot
+Function Remove-DbaDatabaseSnapshot
 {
 <#
 .SYNOPSIS

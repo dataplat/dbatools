@@ -1,4 +1,4 @@
-﻿## This is a template file for the ScriptAnalyser tests for each command.
+## This is a template file for the ScriptAnalyser tests for each command.
 ## It Should be named $CommandName.Tests.ps1 the capital T is important as is the . !!
 ## The help will be analysed via the inModuleHelp.Tests.ps1 file so you dont need to worry about that.
 ## Add you own functional tests to the end of this file
@@ -20,8 +20,6 @@ if($env:APPVEYOR_REPO_BRANCH -and $env:APPVEYOR_REPO_BRANCH -notlike "master")
 {
     $Verbose.add("Verbose",$True)
 }
-
-
 
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace('.Tests.', '.')
 Import-Module $PSScriptRoot\..\functions\$sut -Force

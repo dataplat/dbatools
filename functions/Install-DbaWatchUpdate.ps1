@@ -1,4 +1,4 @@
-﻿Function Install-DbaWatchUpdate
+Function Install-DbaWatchUpdate
 {
 <# 
 .SYNOPSIS 
@@ -39,7 +39,7 @@ Adds the scheduled task needed by Watch-DbaUpdate
 			{
 				# create a task, check every 3 hours
 				$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -NoLogo -NonInteractive -WindowStyle Hidden Watch-DbaUpdate'
-				$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date -RepetitionInterval (New-TimeSpan -Hours 3)
+				$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date -RepetitionInterval (New-TimeSpan -Hours 1)
 				$principal = New-ScheduledTaskPrincipal -LogonType S4U -UserId (whoami)
 				$settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([timespan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd
 				$task = Register-ScheduledTask -Principal $principal -TaskName 'dbatools version check' -Action $action -Trigger $trigger -Settings $settings -ErrorAction Stop
