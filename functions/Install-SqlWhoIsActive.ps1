@@ -63,7 +63,7 @@ This command doesn't support passing both servers and default database, but you 
 
 #>
 	
-	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact="High")]
+	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact='High')]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
 		[Alias("ServerInstance", "SqlInstance")]
@@ -121,8 +121,6 @@ This command doesn't support passing both servers and default database, but you 
 			
 			if ($database.length -eq 0)
 			{
-				if ($FromGet) {$ConfirmPreference="high"}
-
 				$database = Show-SqlDatabaseList -SqlServer $sourceserver -Title "Install sp_WhoisActive" -Header "sp_WhoIsActive not found. To deploy, select a database or hit cancel to quit." -DefaultDb "master"
 				
 				if ($database.length -eq 0)
@@ -161,34 +159,36 @@ This command doesn't support passing both servers and default database, but you 
 			$sql = [IO.File]::ReadAllText($sqlfile)
 			$sql = $sql -replace 'USE master', ''
 			$batches = $sql -split "GO\r\n"
-			
-			foreach ($batch in $batches)
-			{
-				try
+
+			if ($PSCmdlet.ShouldProcess($SqlServer) -and $FromGet) 
+			{  
+				$ConfirmPreference = 'low'
+               	foreach ($batch in $batches)
 				{
-					if ($FromGet) {$ConfirmPreference="high"}
-					$null = $sourceserver.databases[$database].ExecuteNonQuery($batch)
-					
+					try
+					{					
+						$null = $sourceserver.databases[$database].ExecuteNonQuery($batch)
+					}
+					catch
+					{
+						Write-Exception $_
+						throw "Can't install stored procedure. See exception text for details."
+					}
 				}
-				catch
+
+				if ($OutputDatabaseName -eq $true)
 				{
-					Write-Exception $_
-					throw "Can't install stored procedure. See exception text for details."
+					return $database
 				}
-			}
-			
-			if ($OutputDatabaseName -eq $true)
-			{
-				return $database
-			}
-			else
-			{
-				Write-Output "Finished installing/updating sp_WhoIsActive in $database on $server"
-			}
-			
-			$sourceserver.ConnectionContext.Disconnect()
-		}
-	}
+				else
+				{
+					Write-Output "Finished installing/updating sp_WhoIsActive in $database on $server"
+				}
+				
+				$sourceserver.ConnectionContext.Disconnect()
+		    } 
+            }
+	    }
 	
 	END
 	{
