@@ -240,7 +240,8 @@
 		'New-DbaSsisCatalog',
 		'Remove-DbaDatabase',
 		'Get-DbaQueryExecutionTime',
-		'Get-DbaTempdbUsage'
+		'Get-DbaTempdbUsage',
+		'Get-DbaWhoisActive'
 	)
 	
 	# Cmdlets to export from this module
