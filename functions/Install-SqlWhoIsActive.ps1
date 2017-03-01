@@ -63,7 +63,7 @@ This command doesn't support passing both servers and default database, but you 
 
 #>
 	
-	[CmdletBinding()]
+	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact="High")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
 		[Alias("ServerInstance", "SqlInstance")]
@@ -166,6 +166,7 @@ This command doesn't support passing both servers and default database, but you 
 			{
 				try
 				{
+					if ($FromGet) {$ConfirmPreference="high"}
 					$null = $sourceserver.databases[$database].ExecuteNonQuery($batch)
 					
 				}
