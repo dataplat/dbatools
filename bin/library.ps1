@@ -1,4 +1,4 @@
-﻿
+
 #region Test whether the module had already been imported
 $ImportLibrary = $true
 try
