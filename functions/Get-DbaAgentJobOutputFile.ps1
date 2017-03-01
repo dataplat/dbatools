@@ -87,13 +87,12 @@ param
         [ValidateNotNullOrEmpty()]
         [object]$SqlServer,
         [Parameter(Mandatory=$false,HelpMessage='SQL Credential', 
-                   ValueFromPipeline=$true,
                    ValueFromPipelineByPropertyName=$true, 
                    ValueFromRemainingArguments=$false, 
                    Position=1)]
         [System.Management.Automation.PSCredential]$SqlCredential
 )
-    DynamicParam { if ($SqlServer) { return (Get-ParamSqlJobs -SqlServer $SqlServer -SqlCredential $SourceSqlCredential) } }
+    DynamicParam { if ($SqlServer) { return (Get-ParamSqlJobs -SqlServer $SqlServer -SqlCredential $SqlCredential) } }
 
 	BEGIN 
     {
@@ -135,17 +134,13 @@ param
                     }
                     else
                     {
-                        Write-Verbose "$(($Step).Name) for $JobName has No Output File"
+                        Write-Verbose "$(($Step).Name) for $($JobName) has No Output File"
                     }
                 }
             }      
          
             $server.ConnectionContext.Disconnect()
         }
-    }
-    END
-    {
-
     }
 }
 
