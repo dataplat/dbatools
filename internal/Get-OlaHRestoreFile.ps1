@@ -13,15 +13,18 @@ Takes path, checks for validity. Scans for usual backup file
 		[string]$Path
 	)
 	$FunctionName = (Get-PSCallstack)[0].Command
+	
 	Write-Verbose "$FunctionName - Starting"
 	Write-Verbose "$FunctionName - Checking Path"
 	if ((Test-Path $Path) -ne $true)
 	{
-		Write-Warning "$FunctionName - $Path is not valid" -WarningAction stop
-		
+		Write-Warning "$FunctionName - $Path is not valid"
+		return
 	}
+	
 	#There should be at least FULL folder, DIFF and LOG are nice as well
 	Write-Verbose "$FunctionName - Checking we have a FULL folder"
+	
 	if (Test-Path -Path $Path\FULL)
 	{
 		Write-Verbose "$FunctionName - We have a FULL folder, scanning"
@@ -30,7 +33,7 @@ Takes path, checks for validity. Scans for usual backup file
 	}
 	else
 	{
-		write-warning "$FunctionName - Don't have a FULL folder"
+		Write-Warning "$FunctionName - Don't have a FULL folder"
 		return
 	}
 	if (Test-Path -Path $Path\Log)
