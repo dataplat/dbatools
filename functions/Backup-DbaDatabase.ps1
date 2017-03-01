@@ -346,6 +346,9 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					$script = $backup.Script($server)
 					Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -status "Complete" -Completed
 					$BackupComplete = $true
+					$Filelist = @()
+					$FileList += $server.Databases[$dbname].FileGroups.Files | Select-Object @{Name="FileType";Expression={"D"}}, @{Name="LogicalName";Expression={$_.Name}}, @{Name="PhysicalName";Expression={$_.FileName}}
+					$FileList += $server.Databases[$dbname].LofFiles | Select-Object @{Name="FileType";Expression={"L"}}, @{Name="LogicalName";Expression={$_.Name}}, @{Name="PhysicalName";Expression={$_.FileName}}
 				}
 				catch
 				{
@@ -366,7 +369,9 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					Script = $script
 					Notes = $failures -join (',')
 					FullName = ($FinalBackupPath | Sort-Object -Unique)
-			} | Select-DefaultView -ExcludeProperty FullName
+					FileList = $FileList
+					SoftwareVersionMajor = $server.VersionMajor
+			} | Select-DefaultView -ExcludeProperty FullName, FileList, SoftwareVersionMajor
 			$BackupFileName = $null
 		}
 	}

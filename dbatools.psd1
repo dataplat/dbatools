@@ -234,11 +234,14 @@
 		'Get-DbaCustomError',
 		'Get-DbaCredential',
 		'Get-DbaBackupDevice',
-		'Get-DbaAuditSpecification',
+		'Get-DbaServerAuditSpecification',
 		'Get-DbaJobCategory',
 		'Get-DbaDatabaseEncryption',
 		'New-DbaSsisCatalog',
-		'Remove-DbaDatabase'
+		'Remove-DbaDatabase',
+		'Get-DbaQueryExecutionTime',
+		'Get-DbaTempdbUsage',
+		'Find-DbaDatabaseGrowthEvent'
 	)
 	
 	# Cmdlets to export from this module

@@ -34,7 +34,7 @@ Returns all SQL Agent Job Categories on the local default SQL Server instance
 
 .EXAMPLE
 Get-DbaJobCategory -SqlInstance localhost, sql2016
-Returns all SQl Agent Job Categories for the local and sql2016 SQL Server instances
+Returns all SQL Agent Job Categories for the local and sql2016 SQL Server instances
 
 #>
 	[CmdletBinding()]
