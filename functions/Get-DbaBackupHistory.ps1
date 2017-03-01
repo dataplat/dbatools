@@ -159,9 +159,13 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				if ($last)
 				{
 					if ($databases -eq $null) { $databases = $server.databases.name }
-					Get-DbaBackupHistory -SqlServer $server -LastFull -Databases $databases -raw:$raw
-					Get-DbaBackupHistory -SqlServer $server -LastDiff -Databases $databases -raw:$raw
-					Get-DbaBackupHistory -SqlServer $server -LastLog -Databases $databases -raw:$raw
+					
+					foreach ($db in $databases)
+					{
+						Get-DbaBackupHistory -SqlServer $server -LastFull -Databases $db -raw:$raw
+						Get-DbaBackupHistory -SqlServer $server -LastDiff -Databases $db -raw:$raw
+						Get-DbaBackupHistory -SqlServer $server -LastLog -Databases $db -raw:$raw
+					}
 				}
 				elseif ($LastFull -or $LastDiff -or $LastLog)
 				{
