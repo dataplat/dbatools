@@ -26,6 +26,9 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm 
 Prompts you for confirmation before executing any changing operations within the command. 
 
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
+
 .NOTES
 Tags: Delete
 
@@ -50,47 +53,46 @@ Remove-DbaDatabase -SqlInstance sql2016 -Databases containeddb -Confirm:$false
 
 Does not prompt and swiftly removes containeddb on SQL Server sql2016
 #>
-	[CmdletBinding(SupportsShouldProcess = $true)]
+	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
 		[parameter(Mandatory = $false)]
-		[object]$SqlCredential
+		[object]$SqlCredential,
+		[switch]$Silent
 	)
 	
 	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
 	BEGIN
 	{
-		# Prompt ppl
-		$confirmpreference = "Low"
 		$databases = $psboundparameters.Databases
 		
 		if (-not $databases)
 		{
-			Write-Warning "You must select one or more databases to drop"
-			continue
+			Stop-Function -Message "You must select one or more databases to drop"
 		}
 	}
 	
 	PROCESS
 	{
+		if (Test-FunctionInterrupt) { return }
+		
 		foreach ($instance in $SqlInstance)
 		{
 			try
 			{
-				Write-Verbose "Connecting to $instance"
+				Write-Message -Level Verbose -Message "Connecting to $instance"
 				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
 			}
 			catch
 			{
-				Write-Warning "Failed to connect to: $instance"
-				continue
+				Stop-Function -Message "Failed to connect to: $instance" -Continue
 			}
 			
 			$databases = $server.Databases | Where-Object { $_.Name -in $databases }
-
+			
 			foreach ($db in $databases)
 			{
 				try
@@ -146,7 +148,8 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 						}
 						catch
 						{
-							Write-Warning "Could not drop database $db on $server"
+							Write-Message -Level Verbose -Message "Could not drop database $db on $server"
+							
 							[pscustomobject]@{
 								ComputerName = $server.NetName
 								InstanceName = $server.ServiceName
