@@ -81,7 +81,7 @@
                 return $datatable
             }
 
-            $SqlServ.ConnectionContext.Disconnect()
+            $server.ConnectionContext.Disconnect()
         }
 	}
 	
