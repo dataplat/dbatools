@@ -27,7 +27,8 @@ Function Restore-DBFromFilteredArray
 		[switch]$UseDestinationDefaultDirectories,
 		[switch]$ReuseSourceFolderStructure,
 		[switch]$Force,
-		[string]$RestoredDatababaseNamePrefix
+		[string]$RestoredDatababaseNamePrefix,
+		[switch]$TrustDbBackupHistory
 	)
     
 	    Begin
@@ -98,7 +99,25 @@ Function Restore-DBFromFilteredArray
 			}
 
 		}
-
+		$MissingFiles = @()
+		if ($TrustDbBackupHistory)
+		{
+			Write-Verbose "$FunctionName - Trusted File checks"
+			Foreach ($File in $InternalFiles)
+			{
+				Write-Verbose "$FunctionName - Checking $($File.BackupPath) exists"
+				if((Test-SqlPath -SqlServer $sqlServer -SqlCredential $SqlCredential -Path $File.BackupPath) -eq $false)
+				{
+					Write-verbose "$$FunctionName - $($File.backupPath) is missing"
+					$MissingFiles += $File.BackupPath
+				}
+			}
+			if ($MissingFiles.Length -gt 0)
+			{
+				Write-Warning "$FunctionName - Files $($MissingFiles -join ',') are missing, cannot progress"
+				return false
+			}
+		}
  		$RestorePoints  = @()
         $if = $InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Database'} | Group-Object FirstLSN
 		$RestorePoints  += @([PSCustomObject]@{order=[Decimal]1;'Files' = $if.group})

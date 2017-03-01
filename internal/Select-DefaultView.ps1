@@ -6,9 +6,10 @@ Function Select-DefaultView
 	
 	See it in action in Get-DbaSnapshot and Remove-DbaDatabaseSnapshot
 	
-	this is all from boe, thanks boe! 
+	a lot of this is from boe, thanks boe! 
 	https://learn-powershell.net/2013/08/03/quick-hits-set-the-default-property-display-in-powershell-on-custom-objects/
 	
+	TypeName creates a new type so that we can use ps1xml to modify the output
 	#>
 	
 	[CmdletBinding()]
@@ -16,13 +17,19 @@ Function Select-DefaultView
 		[parameter(ValueFromPipeline = $true)]
 		[object]$InputObject,
 		[string[]]$Property,
-		[string[]]$ExcludeProperty
+		[string[]]$ExcludeProperty,
+		[string]$TypeName
 	)
 	process
 	{
 		
 	if ($InputObject -eq $null) { return }
-	
+		
+		if ($TypeName)
+		{
+			$InputObject.PSObject.TypeNames.Insert(0, "dbatools.$TypeName")
+		}
+		
 		if ($ExcludeProperty)
 		{
 			$properties = ($InputObject.PsObject.Members | Where-Object MemberType -ne 'Method' | Where-Object { $_.Name -notin $ExcludeProperty }).Name

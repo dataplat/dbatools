@@ -120,7 +120,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 		[switch]$LastDiff,
 		[Parameter(ParameterSetName = "Last")]
 		[switch]$LastLog,
-		[switch]$Raw
+		[switch]$raw
 	)
 	
 	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential } }
@@ -159,13 +159,9 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				if ($last)
 				{
 					if ($databases -eq $null) { $databases = $server.databases.name }
-					
-					foreach ($database in $databases)
-					{
-						Get-DbaBackupHistory -SqlServer $server -LastFull -Databases $database -raw:$raw
-						Get-DbaBackupHistory -SqlServer $server -LastDiff -Databases $database -raw:$raw
-						Get-DbaBackupHistory -SqlServer $server -LastLog -Databases $database -raw:$raw
-					}
+					Get-DbaBackupHistory -SqlServer $server -LastFull -Databases $databases -raw:$raw
+					Get-DbaBackupHistory -SqlServer $server -LastDiff -Databases $databases -raw:$raw
+					Get-DbaBackupHistory -SqlServer $server -LastLog -Databases $databases -raw:$raw
 				}
 				elseif ($LastFull -or $LastDiff -or $LastLog)
 				{
@@ -283,6 +279,12 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 										WHEN 7 THEN 'Virtual Device'
 										ELSE 'Unknown'
 									  END AS DeviceType,
+									  backupset.position,
+									  backupset.first_lsn,
+									  backupset.database_backup_lsn,
+									  backupset.checkpoint_lsn,
+									  backupset.last_lsn,
+		   							  backupset.software_major_version,
 									  mediaset.software_name AS Software"
 					}
 					
@@ -332,16 +334,26 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				{
 					Write-Debug $sql
 					$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
-					if ($raw){
+					if ($raw)
+					{
 						write-verbose "$FunctionName - Raw Ouput"
-						$results = $results | Select-Object *, @{Name="FullName";Expression={$_.Path}}
+						$results = $results | Select-Object *, @{ Name = "FullName"; Expression = { $_.Path } }
 					}
 					else
-					{	
+					{
 						write-verbose "$FunctionName - Grouped output"
-						$GroupedResults  = $results | Group-Object -Property backupsetid
+						$GroupedResults = $results | Group-Object -Property backupsetid
 						$GroupResults = @()
-						foreach ($group in $GroupedResults){
+						foreach ($group in $GroupedResults)
+						{
+							
+							$FileSql = "select
+										file_type as FileType,
+										logical_name as LogicalName,
+										physical_name as PhysicalName
+										from msdb.dbo.backupfile
+										where backup_set_id='$($Group.group[0].BackupSetID)'"
+							write-Debug "$FunctionName = FileSQL: $FileSql"
 							$GroupResults += [PSCustomObject]@{
 								ComputerName = $server.NetName
 								InstanceName = $server.ServiceName
@@ -352,22 +364,29 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 								End = ($group.Group.End | measure-object -Maximum).Maximum
 								Duration = ($group.Group.Duration | measure-object -Maximum).Maximum
 								Path = $group.Group.Path
-								TotalSizeMb = ($group.group.TotalSizeMb | measure-object  -Sum).sum
+								TotalSizeMb = ($group.group.TotalSizeMb | measure-object -Sum).sum
 								Type = $group.Group[0].Type
 								BackupSetupId = $group.Group[0].BackupSetId
 								DeviceType = $group.Group[0].DeviceType
 								Software = $group.Group[0].Software
-								FullName =  $group.Group.Path
-								}
-
+								FullName = $group.Group.Path
+								FileList = $server.ConnectionContext.ExecuteWithResults($Filesql).Tables.Rows
+								Position = $group.Group[0].Position
+								FirstLsn = $group.Group[0].First_LSN
+								DatabaseBackupLsn = $group.Group[0].database_backup_lsn
+								CheckpointLsn = $group.Group[0].checkpoint_lsn
+								LastLsn = $group.Group[0].Last_Lsn
+								SoftwareVersionMajor = $group.Group[0].Software_Major_Version
+							}
+							
 						}
 						$results = $GroupResults | Sort-Object -Property End -Descending
 					}
 					foreach ($result in $results)
-					{ 
-						$result | Select-DefaultView -ExcludeProperty FullName
-					}				
-                }
+					{
+						$result | Select-DefaultView -ExcludeProperty FullName, Filelist, Position, FirstLsn, DatabaseBackupLSN, CheckPointLsn, LastLsn, SoftwareVersionMajor
+					}
+				}
 			}
 			catch
 			{
