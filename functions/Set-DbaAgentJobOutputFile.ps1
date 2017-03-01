@@ -98,7 +98,7 @@ param
 				{
                     $Step.OutputFileName = $OutputFile
                     $Step.Alter()
-                    Write-Output "Successfully added Output file $OutputFile to $($Job.Name) - You can check with Get-DbaAgentJobOutputFile-sqlserver $sqlserver -Jobs '$JobName'"
+                    Write-Output "Successfully added Output file $OutputFile to $($Job.Name) - You can check with Get-DbaAgentJobOutputFile -sqlserver $sqlserver -Jobs '$JobName'"
                 }
         }
         catch
