@@ -1,4 +1,4 @@
-﻿function Invoke-Sqlcmd2
+function Invoke-Sqlcmd2
 {
     <#
     .SYNOPSIS
@@ -504,7 +504,7 @@
 				'PSObject'
 				{
 					#Scrub DBNulls - Provides convenient results you can use comparisons with
-					#Introduces overhead (e.g. ~2000 rows w/ ~80 columns went from .15 Seconds to .65 Seconds - depending on your data could be much more!)
+					#Introduces overhead (e.g. 2000 rows w/ 80 columns went from .15 Seconds to .65 Seconds - depending on your data could be much more!)
 					foreach ($row in $ds.Tables[0].Rows)
 					{
 						[DBNullScrubber]::DataRowToPSObject($row)

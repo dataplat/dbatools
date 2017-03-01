@@ -1,4 +1,4 @@
-# Not supporting the provider path at this time
+# Not supporting the provider path at this time 2/28/2017 - 63ms
 if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\"))
 {
 	Write-Warning "SQLSERVER:\ provider not supported. Please change to another directory and reload the module."
@@ -13,7 +13,7 @@ if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\"))
 
 	Not all versions support supporting assemblies, so ignore and let the command catch it.
 
-	This takes about 11ms on a newer machine.
+	This takes about 11-50ms on a newer machine.
 
 #>
 
@@ -62,16 +62,16 @@ foreach ($assembly in $assemblies)
 # https://becomelotr.wordpress.com/2017/02/13/expensive-dot-sourcing/
 
 # Load our own custom library
-# Should always come before function imports
+# Should always come before function imports - 141ms
 . ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\bin\library.ps1")))
 
-# All internal functions privately available within the toolset
+# All internal functions privately available within the toolset - 221ms
 foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\*.ps1"))
 {
 	. ([scriptblock]::Create([io.file]::ReadAllText($function)))
 }
 
-# All exported functions
+# All exported functions - 600ms
 foreach ($function in (Get-ChildItem "$PSScriptRoot\functions\*.ps1"))
 {
 	. ([scriptblock]::Create([io.file]::ReadAllText($function)))
@@ -80,12 +80,13 @@ foreach ($function in (Get-ChildItem "$PSScriptRoot\functions\*.ps1"))
 # Run all optional code
 # Note: Each optional file must include a conditional governing whether it's run at all.
 # Validations were moved into the other files, in order to prevent having to update dbatools.psm1 every time
+# 96ms
 foreach ($function in (Get-ChildItem "$PSScriptRoot\optional\*.ps1"))
 {
 	. ([scriptblock]::Create([io.file]::ReadAllText($function)))
 }
 
-#region Finally register autocompletion
+#region Finally register autocompletion - 32ms
 # Test whether we have Tab Expansion Plus available (used in dynamicparams scripts ran below)
 if (Get-Command TabExpansionPlusPlus\Register-ArgumentCompleter -ErrorAction Ignore)
 {
@@ -96,6 +97,7 @@ else
 	$TEPP = $false
 }
 
+# dynamic params - 136ms
 foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\dynamicparams\*.ps1"))
 {
 	. ([scriptblock]::Create([io.file]::ReadAllText($function)))
@@ -106,13 +108,13 @@ foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\dynamicparams\*.ps1
 # Should always go next to last
 . ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\internal\configurations\configuration.ps1")))
 
-# Load scripts that must be individually run at the end #
-#-------------------------------------------------------#
+# Load scripts that must be individually run at the end - 30ms #
+#--------------------------------------------------------------#
 
 # Start the logging system (requires the configuration system up and running)
 . ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\internal\scripts\logfilescript.ps1")))
 
-# I renamed this function to be more accurate
+# I renamed this function to be more accurate - 1ms
 Set-Alias -Name Reset-SqlSaPassword -Value Reset-SqlAdmin
 Set-Alias -Name Copy-SqlUserDefinedMessage -Value Copy-SqlCustomError
 Set-Alias -Name Copy-SqlJobServer -Value Copy-SqlServerAgent

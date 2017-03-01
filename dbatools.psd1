@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.928'
+	ModuleVersion = '0.8.931'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -225,7 +225,22 @@
 		'Get-DbaExecutionPlan',
 		'Export-DbaExecutionPlan',
 		'Get-DbaServerProtocol',
-		'Get-DbaLocaleSetting'
+		'Get-DbaLocaleSetting',
+		'Get-DbaSqlBuildReference',
+		'Set-DbaSpConfigure',
+		'Test-DbaIdentityUsage',
+		'Get-DbaDatabaseAssembly',
+		'Get-DbaAgentJob',
+		'Get-DbaCustomError',
+		'Get-DbaCredential',
+		'Get-DbaBackupDevice',
+		'Get-DbaServerAuditSpecification',
+		'Get-DbaJobCategory',
+		'Get-DbaDatabaseEncryption',
+		'New-DbaSsisCatalog',
+		'Remove-DbaDatabase',
+		'Get-DbaQueryExecutionTime',
+		'Get-DbaTempdbUsage'
 	)
 	
 	# Cmdlets to export from this module

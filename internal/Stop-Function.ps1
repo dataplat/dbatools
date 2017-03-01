@@ -97,10 +97,10 @@
         [bool]
         $Silent,
         
-        [Parameter(Mandatory = $true, ParameterSetName = 'Plain')]
-        [Parameter(Mandatory = $false, ParameterSetName = 'Exception')]
+        [Parameter(ParameterSetName = 'Plain')]
+        [Parameter(ParameterSetName = 'Exception')]
         [System.Management.Automation.ErrorCategory]
-        $Category,
+        $Category = ([System.Management.Automation.ErrorCategory]::NotSpecified),
         
         [Parameter(ParameterSetName = 'Exception')]
         [System.Management.Automation.ErrorRecord]
@@ -125,7 +125,7 @@
     $timestamp = Get-Date
     
     $Exception = New-Object System.Exception($Message, $InnerErrorRecord.Exception)
-    if (-not $Category) { $Category = $InnerErrorRecord.CategoryInfo.Category }
+    if (-not $PSBoundParameters.ContainsKey("Category") -and ($PSBoundParameters.ContainsKey("InnerErrorRecord"))) { $Category = $InnerErrorRecord.CategoryInfo.Category }
     $record = New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $Target)
     
     # Manage Debugging
@@ -142,6 +142,8 @@
             else { Continue }
         }
         
+        # Extra insurance that it'll stop
+        Set-Variable -Name "__dbatools_interrupt_function_78Q9VPrM6999g6zo24Qn83m09XF56InEn4hFrA8Fwhu5xJrs6r" -Scope 1 -Value $true
         Write-Message -Message "Terminating function!" -Level 9 -Silent $Silent -FunctionName $FunctionName
         
         
@@ -163,6 +165,9 @@
         }
         else
         {
+            # Make sure the function knows it should be stopping
+            Set-Variable -Name "__dbatools_interrupt_function_78Q9VPrM6999g6zo24Qn83m09XF56InEn4hFrA8Fwhu5xJrs6r" -Scope 1 -Value $true
+            
             Write-Message -Message "Terminating function!" -Warning -Silent $Silent -FunctionName $FunctionName
             return
         }

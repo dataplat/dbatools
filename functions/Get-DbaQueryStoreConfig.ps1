@@ -1,4 +1,4 @@
-﻿Function Get-DbaQueryStoreConfig
+Function Get-DbaQueryStoreConfig
 {
 <#
 .SYNOPSIS

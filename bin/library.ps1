@@ -1,4 +1,4 @@
-﻿
+
 #region Test whether the module had already been imported
 $ImportLibrary = $true
 try
@@ -393,7 +393,7 @@ namespace sqlcollective.dbatools
             /// <param name="Timestamp">When was the message generated</param>
             /// <param name="FunctionName">What function wrote the message</param>
             /// <param name="Level">At what level was the function written</param>
-            public static void WriteLogEntry(string Message, LogEntryType Type, DateTime Timestamp, string FunctionName, int Level)
+            public static void WriteLogEntry(string Message, LogEntryType Type, DateTime Timestamp, string FunctionName, MessageLevel Level)
             {
                 LogEntry temp = new LogEntry(Message, Type, Timestamp, FunctionName, Level);
                 if (MessageLogFileEnabled) { OutQueueLog.Enqueue(temp); }
@@ -437,7 +437,7 @@ namespace sqlcollective.dbatools
             /// <summary>
             /// What level was the message?
             /// </summary>
-            public int Level;
+            public MessageLevel Level;
 
             /// <summary>
             /// Creates an empty log entry
@@ -455,7 +455,7 @@ namespace sqlcollective.dbatools
             /// <param name="Timestamp">When was the message logged</param>
             /// <param name="FunctionName">What function wrote the message</param>
             /// <param name="Level">What level was the message written at.</param>
-            public LogEntry(string Message, LogEntryType Type, DateTime Timestamp, string FunctionName, int Level)
+            public LogEntry(string Message, LogEntryType Type, DateTime Timestamp, string FunctionName, MessageLevel Level)
             {
                 this.Message = Message;
                 this.Type = Type;
@@ -603,6 +603,62 @@ namespace sqlcollective.dbatools
 
             #endregion Defines
         }
+
+        /// <summary>
+        /// The various levels of verbosity available.
+        /// </summary>
+        public enum MessageLevel
+        {
+            /// <summary>
+            /// Very important message, should be shown to the user as a high priority
+            /// </summary>
+            Critical = 1,
+
+            /// <summary>
+            /// Important message, the user should read this
+            /// </summary>
+            Important = 2,
+
+            /// <summary>
+            /// Important message, the user should read this
+            /// </summary>
+            Host = 2,
+
+            /// <summary>
+            /// Message relevant to the user.
+            /// </summary>
+            Significant = 3,
+
+            /// <summary>
+            /// Not important to the regular user, still of some interest to the curious
+            /// </summary>
+            VeryVerbose = 4,
+
+            /// <summary>
+            /// Background process information, in case the user wants some detailed information on what is currently happening.
+            /// </summary>
+            Verbose = 5,
+
+            /// <summary>
+            /// A footnote in current processing, rarely of interest to the user
+            /// </summary>
+            SomewhatVerbose = 6,
+
+            /// <summary>
+            /// A message of some interest from an internal system persepctive, but largely irrelevant to the user.
+            /// </summary>
+            System = 7,
+
+            /// <summary>
+            /// Something only of interest to a debugger
+            /// </summary>
+            Debug = 8,
+
+            /// <summary>
+            /// This message barely made the cut from being culled. Of purely development internal interest, and even there is 'interest' a strong word for it.
+            /// </summary>
+            InternalComment = 9
+        }
     }
 }
 '@
@@ -614,6 +670,33 @@ namespace sqlcollective.dbatools
     }
     catch
     {
+        Write-Warning @'
+Dear User,
+
+in the name of the dbatools team I apologize for the inconvenience.
+Generally, when something goes wrong we try to handle it for you and interpret
+it for you in a way you can understand. Unfortunately, something went wrong with
+importing our main library, so all the systems making this possible don't work
+yet. This really shouldn't happen in any PowerShell environment imaginable, but
+... well, it hapend and you are reading this message.
+
+Please, in order to help us prevent this from happening again, visit us at:
+https://github.com/sqlcollaborative/dbatools/issues
+and tell us about this failure. All information will be appreciated, but 
+especially valuable are:
+- Exports of the exception: $Error | Export-Clixml error.xml -Depth 4
+- Screenshots
+- Environment information (Operating System, Hardware Stats, .NET Version,
+  PowerShell Version and whatever else you may consider of potential impact.)
+
+Again, I apologize for the inconvenience and hope we will be able to speedily
+resolve the issue.
+
+Best Regards,
+Friedrich Weinmann
+aka "The guy who made most of The Library that Failed to import"
+
+'@
         throw
     }
 }

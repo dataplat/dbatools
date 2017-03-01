@@ -1,4 +1,4 @@
-﻿Function Show-SqlServerFileSystem
+Function Show-SqlServerFileSystem
 {
 <#
 .SYNOPSIS
