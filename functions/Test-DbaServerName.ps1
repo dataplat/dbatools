@@ -62,20 +62,14 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
-		[string[]]$SqlServer,
+		[object[]]$SqlServer,
 		[PsCredential]$Credential,
 		[switch]$Detailed,
 		[switch]$NoWarning
 	)
 
-	BEGIN
-	{
-		$collection = New-Object System.Collections.ArrayList
-	}
-
 	PROCESS
 	{
-		$servercount++
 
 		foreach ($servername in $SqlServer)
 		{
@@ -85,15 +79,8 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 			}
 			catch
 			{
-				if ($servercount -eq 1 -and $SqlServer.count -eq 1) # This helps with handling servernames being passed via commandline or via pipeline
-				{
-					throw $_
-				}
-				else
-				{
 					Write-Warning "Can't connect to $servername. Moving on."
 					Continue
-				}
 			}
 
 			if ($server.isClustered)
@@ -133,7 +120,7 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 				SqlServerName = $sqlservername
 				IsEqual = $serverinstancename -eq $sqlservername
 				RenameRequired = $serverinstancename -ne $sqlservername
-                Updatable = $null
+                Updatable = "N/A"
                 Warnings = $null
                 Blockers = $null
 			}
@@ -219,20 +206,15 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
                     $serverinfo.Blockers = "N/A"
 				}
 			}
-
-			$null = $collection.Add($serverinfo)
+			
+			if ($Detailed)
+			{
+				$serverinfo
+			}
+			else
+			{
+				$serverinfo | Select-DefaultView -ExcludeProperty Warnings, Blockers
+			}
 		}
-	}
-
-	END
-	{
-        if ($Detailed)
-	    {
-            return $collection
-        }
-        else
-        {
-		    return $collection | Select-DefaultView -ExcludeProperty Warnings, Blockers
-        }
 	}
 }
