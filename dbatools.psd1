@@ -234,7 +234,7 @@
 		'Get-DbaCustomError',
 		'Get-DbaCredential',
 		'Get-DbaBackupDevice',
-		'Get-DbaAuditSpecification',
+		'Get-DbaServerAuditSpecification',
 		'Get-DbaJobCategory',
 		'Get-DbaDatabaseEncryption',
 		'New-DbaSsisCatalog',
