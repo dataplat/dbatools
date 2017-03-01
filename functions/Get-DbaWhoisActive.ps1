@@ -386,7 +386,8 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 				catch
 				{
 					Write-Exception $_
-					throw "Cannot execute procedure."
+					Write-Warning "You declined to install who is active, exiting..."
+					Continue
 				}
 			}
 			else
