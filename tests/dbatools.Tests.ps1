@@ -90,5 +90,6 @@ $Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction Silently
 
 		}
 
-	}#>
+	}
 }
+#>

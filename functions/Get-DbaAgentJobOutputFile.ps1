@@ -121,25 +121,24 @@ param
             {
                 foreach($Step in $Job.JobSteps)
                 {
-                        if($Step.OutputFileName)
-                        {
-                            $fileName = Join-AdminUNC $Server.ComputerNamePhysicalNetBIOS $Step.OutputFileName
-                            [pscustomobject]@{
-                            ComputerName = $Server.ComputerNamePhysicalNetBIOS
-                            InstanceName = $Server.Instancename
-                            SqlInstance = $Server.Name
-                            Job = $Job.Name
-                            JobStep = $step.Name
-                            FileName = $FileName
-                            }
-                        }
-                        else
-                        {
-                            Write-Verbose "$(($Step).Name) for $JobName has No Output File"
+                    if($Step.OutputFileName)
+                    {
+                        $fileName = Join-AdminUNC $Server.ComputerNamePhysicalNetBIOS $Step.OutputFileName
+                        [pscustomobject]@{
+                        ComputerName = $Server.ComputerNamePhysicalNetBIOS
+                        InstanceName = $Server.Instancename
+                        SqlInstance = $Server.Name
+                        Job = $Job.Name
+                        JobStep = $step.Name
+                        OutputFile = $FileName
                         }
                     }
-            }
-            
+                    else
+                    {
+                        Write-Verbose "$(($Step).Name) for $JobName has No Output File"
+                    }
+                }
+            }      
          
             $server.ConnectionContext.Disconnect()
         }
