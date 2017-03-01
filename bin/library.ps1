@@ -670,6 +670,33 @@ namespace sqlcollective.dbatools
     }
     catch
     {
+        Write-Warning @'
+Dear User,
+
+in the name of the dbatools team I apologize for the inconvenience.
+Generally, when something goes wrong we try to handle it for you and interpret
+it for you in a way you can understand. Unfortunately, something went wrong with
+importing our main library, so all the systems making this possible don't work
+yet. This really shouldn't happen in any PowerShell environment imaginable, but
+... well, it hapend and you are reading this message.
+
+Please, in order to help us prevent this from happening again, visit us at:
+https://github.com/sqlcollaborative/dbatools/issues
+and tell us about this failure. All information will be appreciated, but 
+especially valuable are:
+- Exports of the exception: $Error | Export-Clixml error.xml -Depth 4
+- Screenshots
+- Environment information (Operating System, Hardware Stats, .NET Version,
+  PowerShell Version and whatever else you may consider of potential impact.)
+
+Again, I apologize for the inconvenience and hope we will be able to speedily
+resolve the issue.
+
+Best Regards,
+Friedrich Weinmann
+aka "The guy who made most of The Library that Failed to import"
+
+'@
         throw
     }
 }
