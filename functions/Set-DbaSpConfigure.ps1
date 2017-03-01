@@ -30,6 +30,7 @@ Use this switch to disable any kind of verbose messages
 	
 .NOTES 
 Original Author: Nic Cain, https://sirsql.net/
+Tags: Config
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -69,7 +70,7 @@ Returns information on the action that would be performed. No actual change will
 	
 	DynamicParam { if ($SqlInstance) { return (Get-ParamSqlServerConfigs -SqlServer $SqlInstance -SqlCredential $SqlCredential) } }
 	
-	BEGIN
+	begin
 	{
 		$configs = $psboundparameters.Configs
 		
@@ -79,17 +80,17 @@ Returns information on the action that would be performed. No actual change will
 		}
 	}
 	
-	PROCESS
+	process
 	{
 		if (Test-FunctionInterrupt) { return }
 		
-		FOREACH ($instance in $SqlInstance)
+		foreach ($instance in $SqlInstance)
 		{
-			TRY
+			try
 			{
 				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
 			}
-			CATCH
+			catch
 			{
 				Stop-Function -Message "Failed to connect to: $instance" -Continue
 			}
@@ -113,7 +114,6 @@ Returns information on the action that would be performed. No actual change will
 				Stop-Function -Message "Value out of range for $configs (min: $minValue - max $maxValue)"
 			}
 			
-			
 			If ($Pscmdlet.ShouldProcess($SqlInstance, "Adjusting server configuration $configs from $currentValue to $value."))
 			{
 				try
@@ -121,29 +121,25 @@ Returns information on the action that would be performed. No actual change will
 					$server.Configuration.$configs.ConfigValue = $value
 					$server.Configuration.Alter()
 					
-					#If it's a dynamic setting we're all clear, otherwise let the user know that SQL needs to be restarted for the change to take
-					if ($isDynamic -eq $true)
-					{
-						Write-Output "Config for $configs changed. Old value: $currentRunValue  New Value: $value"
-						
-						[pscustomobject]@{
-							ComputerName = $server.NetName
-							InstanceName = $server.ServiceName
-							SqlInstance = $server.DomainInstanceName
-						}
+					[pscustomobject]@{
+						ComputerName = $server.NetName
+						InstanceName = $server.ServiceName
+						SqlInstance = $server.DomainInstanceName
+						OldValue = $currentRunValue
+						NewValue = $value
 					}
-					else
+					
+					#If it's a dynamic setting we're all clear, otherwise let the user know that SQL needs to be restarted for the change to take
+					if ($isDynamic -eq $false)
 					{
 						Write-Message -Level Warning -Message "Config set for $configs, but restart of SQL Server is required for the new value ($value) to be used (old value: $($value))"
 					}
-					
 				}
 				catch
 				{
 					Write-Message -Level Warning -Message "Unable to change config setting - $error"
 				}
 			}
-			
 		}
 	}
 }
