@@ -111,7 +111,14 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 				continue
 			}
 			
-			$DatabaseCollection = $server.Databases | Where-Object { $_.Name -in $databases }
+			if ($databases)
+			{
+				$DatabaseCollection = $server.Databases | Where-Object { $_.Name -in $databases }
+			}
+			else
+			{
+				$DatabaseCollection = $server.Databases
+			}
 			
 			if ($BackupDirectory.count -gt 1)
 			{
