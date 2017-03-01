@@ -4,15 +4,18 @@
 .Synopsis
    Returns the Output File for each step of one or many agent job with the Job Names provided dynamically if 
    required for one or more SQL Instances
+
 .DESCRIPTION
    This function returns for one or more SQL Instances the output file value for each step of one or many agent job with the Job Names 
-   provided dynamically if required
+   provided dynamically. It will not return anything if there is no Output File
 
 .PARAMETER SqlServer 
     The SQL Server that you're connecting to. Or an array of SQL Servers
 
 .PARAMETER SQLCredential
-    Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determiend by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
+    Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determiend by 
+    the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it 
+    contains a backslash.
 
 .PARAMETER JobName
     The Agent Job Name to provide Output File Path for. Also available dynamically. If ommitted all Agent Jobs will be used
@@ -54,6 +57,12 @@
    This will return the paths to the output files for each of the job step of all the Agent Jobs
    on the SERVERNAME instance and Pipe them to Out-GridView and enable you to choose the output
    file and open it
+   
+.EXAMPLE 
+   Get-DbaJobOutputFile -SqlServer SERVERNAME -Verbose
+
+   This will return the paths to the output files for each of the job step of all the Agent Jobs
+   on the SERVERNAME instance and also show the job steps without an output file
 
 .NOTES
    AUTHOR - Rob Sewell https://sqldbawithabeard.com
@@ -98,30 +107,13 @@ param
             $jobs = $Server.JobServer.Jobs
             if ($JobName)
             {
-                $Job = $server.JobServer.Jobs[$JobName]
-            }
-            else
-            {
-                foreach($Job in $Jobs)
+                try
                 {
-                foreach($Step in $Job.JobSteps)
+                    $Jobs = $server.JobServer.Jobs[$JobName]
+                }
+                catch
                 {
-                    if($Step.OutputFileName)
-                    {
-                        $fileName = Join-AdminUNC $Server.ComputerNamePhysicalNetBIOS $Step.OutputFileName
-                    }
-                    else
-                    {
-                        $fileName = 'No Output File'
-                    }
-                    [pscustomobject]@{
-                    ComputerName = $Server.ComputerNamePhysicalNetBIOS
-                    InstanceName = $Server.Instancename
-                    SqlInstance = $Server.Name
-                    Job = $Job.Name
-                    JobStep = $step.Name
-                    FileName = $FileName
-                    }
+                    Write-Warning "Cannot find $JobName on $SQLServer"
                 }
             }
             else
@@ -133,22 +125,23 @@ param
                         if($Step.OutputFileName)
                         {
                             $fileName = Join-AdminUNC $Server.ComputerNamePhysicalNetBIOS $Step.OutputFileName
+                            [pscustomobject]@{
+                            ComputerName = $Server.ComputerNamePhysicalNetBIOS
+                            InstanceName = $Server.Instancename
+                            SqlInstance = $Server.Name
+                            Job = $Job.Name
+                            JobStep = $step.Name
+                            FileName = $FileName
+                            }
                         }
                         else
                         {
-                            $fileName = 'No Output File'
-                        }
-                        [pscustomobject]@{
-                        ComputerName = $Server.ComputerNamePhysicalNetBIOS
-                        InstanceName = $Server.Instancename
-                        SqlInstance = $Server.Name
-                        Job = $Job.Name
-                        JobStep = $step.Name
-                        FileName = $FileName
+                            Write-Verbose "$(($Step).Name) for $JobName has No Output File"
                         }
                     }
                 }
-            }             
+            }
+         
             $server.ConnectionContext.Disconnect()
         }
     }
