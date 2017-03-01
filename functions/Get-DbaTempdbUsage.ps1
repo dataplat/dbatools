@@ -73,13 +73,13 @@
 			if ($Detailed -eq $true)
 			{
 				$sql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName, SERVERPROPERTY('InstanceName') AS InstanceName, SERVERPROPERTY('ServerName') AS SqlInstance, t.session_id AS SPID, r.command AS StatementCommand, r.start_time AS StartTime, t.user_objects_alloc_page_count * 8 AS UserObjectAllocatedSpace, t.user_objects_dealloc_page_count * 8 AS UserObjectDeallocatedSpace, t.internal_objects_alloc_page_count * 8 AS InternalObjectAllocatedSpace, t.internal_objects_dealloc_page_count * 8 AS InternalObjectDeallocatedSpace, r.reads AS RequestedReads, r.writes AS RequestedWrites, r.logical_reads AS RequestedLogicalReads, r.cpu_time AS RequestedCPUTime, s.is_user_process AS IsUserProcess, s.[status] AS Status, DB_NAME(s.database_id) AS [Database], s.login_name AS LoginName, s.original_login_name AS OriginalLoginName, s.nt_domain AS NTDomain, s.nt_user_name AS NTUserName, s.[host_name] AS HostName, s.[program_name] AS ProgramName, s.login_time AS LoginTime, s.last_request_start_time AS LastRequestedStartTime, s.last_request_end_time AS LastRequestedEndTime FROM sys.dm_db_session_space_usage AS t INNER JOIN sys.dm_exec_sessions AS s ON s.session_id = t.session_id INNER JOIN sys.dm_exec_requests AS r ON r.session_id = s.session_id WHERE t.user_objects_alloc_page_count + t.user_objects_dealloc_page_count + t.internal_objects_alloc_page_count + t.internal_objects_dealloc_page_count > 0"
-				$server.ConnectionContext.ExecuteWithResults($sql).Tables
 			}
 			else
 			{
 				$sql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName, SERVERPROPERTY('InstanceName') AS InstanceName, SERVERPROPERTY('ServerName') AS SqlInstance, t.session_id AS SPID, r.command AS StatementCommand, r.start_time AS StartTime, t.user_objects_alloc_page_count * 8 AS UserObjectAllocatedSpace, t.user_objects_dealloc_page_count * 8 AS UserObjectDeallocatedSpace, t.internal_objects_alloc_page_count * 8 AS InternalObjectAllocatedSpace, t.internal_objects_dealloc_page_count * 8 AS InternalObjectDeallocatedSpace, r.reads AS RequestedReads, r.writes AS RequestedWrites, r.logical_reads AS RequestedLogicalReads, r.cpu_time AS RequestedCPUTime, s.is_user_process AS IsUserProcess, s.[status] AS Status, DB_NAME(s.database_id) AS [Database], s.login_name AS LoginName FROM sys.dm_db_session_space_usage AS t INNER JOIN sys.dm_exec_sessions AS s ON s.session_id = t.session_id INNER JOIN sys.dm_exec_requests AS r ON r.session_id = s.session_id WHERE t.user_objects_alloc_page_count + t.user_objects_dealloc_page_count + t.internal_objects_alloc_page_count + t.internal_objects_dealloc_page_count > 0"
-				$server.ConnectionContext.ExecuteWithResults($sql).Tables
 			}
+
+            $server.ConnectionContext.ExecuteWithResults($sql).Tables
 		}
 	}
 }
