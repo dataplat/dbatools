@@ -1,4 +1,4 @@
-﻿Function Find-DbaDatabaseGrowthEvent
+Function Find-DbaDatabaseGrowthEvent
 {
 <#
 .SYNOPSIS
@@ -36,7 +36,7 @@ Get-DBADatabaseGrowthEvent -SqlServer ServerA\SQL2016, ServerA\SQL2014
 Returns any database AutoGrow events in the Default Traces for every database on ServerA\sql2016 & ServerA\SQL2014.
 
 .EXAMPLE
-Get-DbaQueryStoreConfig -SqlServer ServerA\SQL2016 | format-table -AutoSize -Wrap
+Get-DbaQueryStoreConfig -SqlServer ServerA\SQL2016 | Format-Table -AutoSize -Wrap
 
 RetuReturns any database AutoGrow events in the Default Trace for every database on the ServerA\SQL2016 instance in a table format.
 	
@@ -49,9 +49,14 @@ RetuReturns any database AutoGrow events in the Default Trace for every database
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	PROCESS
+	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
+	
+	begin
 	{
-		$query =   "begin try  
+		$databases = $psboundparameters.Databases
+		$exclude = $psboundparameters.Exclude
+		
+		$query = "begin try  
                     if (select convert(int,value_in_use) from sys.configurations where name = 'default trace enabled' ) = 1 
                     begin 
                     declare @curr_tracefilename varchar(500) ; 
@@ -64,8 +69,8 @@ RetuReturns any database AutoGrow events in the Default Trace for every database
                     set @curr_tracefilename = reverse(@curr_tracefilename) ;
                     set @base_tracefilename = left( @curr_tracefilename,len(@curr_tracefilename) - @indx) + '\log.trc' ;  
 
-                    select  @@SERVERNAME AS SQLInstance
-					,		CONVERT(INT,(dense_rank() over (order by StartTime desc))%2) as l1
+                    select SERVERPROPERTY('MachineName') AS ComputerName, SERVERPROPERTY('InstanceName') AS InstanceName, SERVERPROPERTY('ServerName') AS SqlInstance
+					,		CONVERT(INT,(dense_rank() over (order by StartTime desc))%2) as OrderRank
                     ,       convert(int, EventClass) as EventClass
                     ,       DatabaseName
                     ,       Filename
@@ -77,18 +82,21 @@ RetuReturns any database AutoGrow events in the Default Trace for every database
                     where EventClass >=  92      and EventClass <=  95        and ServerName = @@servername   --and DatabaseName = @DatabaseName
                     order by StartTime desc ;   
                     end     else    
-                    select -1 as l1, 0 as EventClass, 0 DatabaseName, 0 as Filename, 0 as Duration, 0 as StartTime, 0 as EndTime,0 as ChangeInSize 
+                    select -1 as OrderRank, 0 as EventClass, 0 DatabaseName, 0 as Filename, 0 as Duration, 0 as StartTime, 0 as EndTime,0 as ChangeInSize 
                     end try 
                     begin catch 
-                    select -100 as l1
+                    select -100 as OrderRank
                     ,       ERROR_NUMBER() as EventClass
                     ,       ERROR_SEVERITY() DatabaseName
                     ,       ERROR_STATE() as Filename
                     ,       ERROR_MESSAGE() as Duration
                     ,       1 as StartTime, 1 as EndTime,1 as ChangeInSize 
                     end catch"
-
-        foreach ($instance in $SqlInstance)
+	}
+	
+	process
+	{
+		foreach ($instance in $SqlInstance)
 		{
 			Write-Verbose "Connecting to $instance"
 			try
@@ -102,31 +110,28 @@ RetuReturns any database AutoGrow events in the Default Trace for every database
 				continue
 			}
 			
-			#$db = 'master'
-			if ($db.IsAccessible -eq $false)
+			$dbs = $server.Databases
+			
+			if ($databases)
 			{
-				Write-Warning "The database $db on server $instance is not accessible. Skipping database."
-				Continue
+				$dbs = $dbs | Where-Object { $_.Name -in $databases }
 			}
 			
-
-            <# Additional Section to spin up the DataTable that we use for 
-                collecting & inserting the rows into SQL Server         #>
-            $datatable = $null
-            $datatable = New-Object System.Data.Datatable
-            $null = $datatable.Columns.Add("SQLInstance",[string])
-            $null = $datatable.Columns.Add("l1",[INT])
-            $null = $datatable.Columns.Add("EventClass",[int])
-            $null = $datatable.Columns.Add("DatabaseName")
-            $null = $datatable.Columns.Add("Filename")
-            $null = $datatable.Columns.Add("Duration",[int])
-            $null = $datatable.Columns.Add("StartTime",[datetime])
-            $null = $datatable.Columns.Add("EndTime",[datetime])
-            $null = $datatable.Columns.Add("ChangeInSize",[decimal])
-
-            [void]$datatable.Merge($server.Databases['master'].ExecuteWithResults($query).Tables[0])
-            
-			$datatable
+			if ($exclude)
+			{
+				$dbs = $dbs | Where-Object { $_.Name -notin $exclude }
+			}
+			
+			foreach ($db in $dbs)
+			{
+				if ($db.IsAccessible -eq $false)
+				{
+					Write-Warning "The database $db on server $instance is not accessible. Skipping database."
+					Continue
+				}
+				
+				$db.ExecuteWithResults($query).Tables | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, EventClass, DatabaseName, Filename, Duration, StartTime, EndTime, ChangeInSize
 			}
 		}
+	}
 }
