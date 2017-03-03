@@ -1,5 +1,4 @@
-﻿
-Function Set-DbaJobAgentOutputFile
+﻿Function Set-DbaAgentJobOutputFile
 {
 <#
 .Synopsis
@@ -7,7 +6,7 @@ Function Set-DbaJobAgentOutputFile
 .DESCRIPTION
    Sets the OutPut File for a step of an agent job with the Job Names and steps provided dynamically if required
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
     The SQL Server that you're connecting to.
 
 .PARAMETER SQLCredential
@@ -22,7 +21,7 @@ Function Set-DbaJobAgentOutputFile
 .PARAMETER OutputFile
     The Full Path to the New Output file
 .EXAMPLE
-   Set-DbaJobAgentOutputFile -sqlserver SERVERNAME -JobName 'The Agent Job' -OutPutFile E:\Logs\AgentJobStepOutput.txt
+   Set-DbaAgentJobOutputFile -sqlserver SERVERNAME -JobName 'The Agent Job' -OutPutFile E:\Logs\AgentJobStepOutput.txt
 
    Sets the Job step for The Agent job on SERVERNAME to E:\Logs\AgentJobStepOutput.txt
 .NOTES
@@ -36,78 +35,115 @@ Function Set-DbaJobAgentOutputFile
     You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
 
 #>
-[CmdletBinding(SupportsShouldProcess = $true)]
-param
-(# The Server/instance 
-        [Parameter(Mandatory=$true,HelpMessage='The SQL Server Instance', 
-                   ValueFromPipeline=$true,
-                   ValueFromPipelineByPropertyName=$true, 
-                   ValueFromRemainingArguments=$false, 
-                   Position=0)]
-        [ValidateNotNull()]
-        [ValidateNotNullOrEmpty()]
-        [object]$SqlServer,
-       [Parameter(Mandatory=$false,HelpMessage='SQL Credential', 
-                   ValueFromPipeline=$true,
-                   ValueFromPipelineByPropertyName=$true, 
-                   ValueFromRemainingArguments=$false)]
-        [System.Management.Automation.PSCredential]$SqlCredential,
-        [Parameter(Mandatory=$true,HelpMessage='The Full Output File Path', 
-                   ValueFromPipeline=$true,
-                   ValueFromPipelineByPropertyName=$true, 
-                   ValueFromRemainingArguments=$false)]
-        [ValidateNotNull()]
-        [ValidateNotNullOrEmpty()]
-        [string]$OutputFile,
-        [Parameter(Mandatory=$false,HelpMessage='The Job Step name', 
-                   ValueFromPipeline=$true,
-                   ValueFromPipelineByPropertyName=$true)]
-        [ValidateNotNull()]
-        [ValidateNotNullOrEmpty()]
-        [object]$Step)
-
-    DynamicParam { if ($SqlServer) { return (Get-ParamSqlJobs -SqlServer $SqlServer -SqlCredential $SourceSqlCredential) } }
-
-    BEGIN
-    {
-            $JobName = $psboundparameters.Jobs   
-    }
-    PROCESS
-    {
-        $Server = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
-        $Job = $server.JobServer.Jobs[$JobName]
-        If(!$Step)
-        {
-            if( ($Job.JobSteps).Count -gt 1)
-            {
-                Write-output "Which Job Step do you wish to add output file to?"
-                $Step = $Job.JobSteps| Out-GridView -Title "Choose the Job Steps to add an output file to" -PassThru -Verbose
-            }
-            else
-            {
-                $Step = $Job.JobSteps
-            }
-        }
-
-        Write-Output "Current Output File for $($Job.Name) is $(($Step).OutputFileName)"
-        Write-Output "Adding $OutputFile to $($Step.Name) for $($Job.Name)"
-
-        try
-        {
-           If ($Pscmdlet.ShouldProcess($($Step.Name), "Changing Output File from $(($Step).OutputFileName) to $OutputFile"))
+	[CmdletBinding(SupportsShouldProcess = $true)]
+	param
+	(# The Server/instance 
+		[Parameter(Mandatory = $true, HelpMessage = 'The SQL Server Instance',
+				   ValueFromPipeline = $true,
+				   ValueFromPipelineByPropertyName = $true,
+				   ValueFromRemainingArguments = $false,
+				   Position = 0)]
+		[ValidateNotNull()]
+		[ValidateNotNullOrEmpty()]
+		[Alias("ServerInstance", "SqlServer")]
+		[object[]]$SqlInstance,
+		[Parameter(Mandatory = $false, HelpMessage = 'SQL Credential',
+				   ValueFromPipeline = $true,
+				   ValueFromPipelineByPropertyName = $true,
+				   ValueFromRemainingArguments = $false)]
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[Parameter(Mandatory = $true, HelpMessage = 'The Full Output File Path',
+				   ValueFromPipeline = $true,
+				   ValueFromPipelineByPropertyName = $true,
+				   ValueFromRemainingArguments = $false)]
+		[ValidateNotNull()]
+		[ValidateNotNullOrEmpty()]
+		[string]$OutputFile,
+		[Parameter(Mandatory = $false, HelpMessage = 'The Job Step name',
+				   ValueFromPipeline = $true,
+				   ValueFromPipelineByPropertyName = $true)]
+		[ValidateNotNull()]
+		[ValidateNotNullOrEmpty()]
+		[object]$Step)
+	
+	DynamicParam { if ($sqlinstance) { return (Get-ParamSqlJobs -SqlServer $sqlinstance -SqlCredential $SourceSqlCredential) } }
+	
+	BEGIN
+	{
+		$JobName = $psboundparameters.Jobs
+	}
+	PROCESS
+	{
+		foreach ($instance in $sqlinstance)
+		{
+		try
+		{
+			$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+		}
+		catch
+		{
+			Write-Warning "Failed to connect to: $instance"
+			continue
+		}
+		
+		if (!$JobName)
+		{
+			# This is because jobname isn't yet required
+			Write-Warning "You must specify a jobname"
+			return
+		}
+			
+			foreach ($name in $JobName)
+			{
+				$Job = $server.JobServer.Jobs[$name]
+				
+				If (!$step)
 				{
-                    $Step.OutputFileName = $OutputFile
-                    $Step.Alter()
-                    Write-Output "Successfully added Output file $OutputFile to $($Job.Name) - You can check with Get-DbaAgentJobOutputFile -sqlserver $sqlserver -Jobs '$JobName'"
-                }
-        }
-        catch
-        {
-           Write-Warning "Failed to add $OutputFile to $(($Step).Name) for $JobName - Run `$error[0] | fl -force to find out why!"
-        }
-    }
-    end
-    {
-          $server.ConnectionContext.Disconnect()
-    }
+					if (($Job.JobSteps).Count -gt 1)
+					{
+						Write-output "Which Job Step do you wish to add output file to?"
+						$steps = $Job.JobSteps | Out-GridView -Title "Choose the Job Steps to add an output file to" -PassThru -Verbose
+					}
+					else
+					{
+						$steps = $Job.JobSteps
+					}
+				}
+				
+				if (!$steps)
+				{
+					$steps = $server.jobs
+				}
+				
+				foreach ($smostep in $steps)
+				{
+					Write-Verbose "Current Output File for $($Job.Name) is $(($smostep).OutputFileName)"
+					Write-Verbose "Adding $OutputFile to $($smostep.Name) for $($Job.Name)"
+					
+					try
+					{
+						If ($Pscmdlet.ShouldProcess($($smostep.Name), "Changing Output File from $(($smostep).OutputFileName) to $OutputFile"))
+						{
+							$smostep.OutputFileName = $OutputFile
+							$smostep.Alter()
+							$smostep.Refresh()
+							
+							[pscustomobject]@{
+								ComputerName = $server.NetName
+								InstanceName = $server.ServiceName
+								SqlInstance = $server.DomainInstanceName
+								Job = $Job.Name
+								JobStep = $smostep.Name
+								OutputFileName = $smostep.OutputFileName
+							}
+						}
+					}
+					catch
+					{
+						Write-Warning "Failed to add $OutputFile to $smostep for $JobName"
+					}
+				}
+			}
+		}
+	}
 }
