@@ -20,7 +20,10 @@ The SQL Server (or server in general) that you're connecting to. The -SqlServer 
 If your organization uses a custom power plan that's considered best practice, specify it here.
 
 .PARAMETER Detailed
-Show a detailed list.
+This parameter will be removed in 1.0. Default is now to show a detailed list.
+
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
 
 .NOTES
 Requires: WMI access to servers
@@ -53,7 +56,7 @@ Test-DbaPowerPlan -ComputerName sqlserver2014a -Detailed
 To return detailed information Power Plans
 
 #>
-	Param (
+	param (
 		[parameter(ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServer")]
 		[string[]]$ComputerName = $env:COMPUTERNAME,
@@ -63,7 +66,7 @@ To return detailed information Power Plans
 		[switch]$Silent
 	)
 	
-	BEGIN
+	begin
 	{
 		If ($Detailed)
 		{
@@ -78,7 +81,7 @@ To return detailed information Power Plans
 		$sessionoption = New-CimSessionOption -Protocol DCom
 	}
 	
-	PROCESS
+	process
 	{
 		foreach ($computer in $ComputerName)
 		{
@@ -130,7 +133,14 @@ To return detailed information Power Plans
 			}
 			catch
 			{
-				Stop-Function -Message "This command does not support Windows 2000"
+				if ($_.Exception -match "namespace")
+				{
+					Stop-Function -Message "Can't get Power Plan Info for $Computer. Unsupported operating system." -Continue -InnerErrorRecord $_
+				}
+				else
+				{
+					Stop-Function -Message "Can't get Power Plan Info for $Computer. Check logs for more details." -Continue -InnerErrorRecord $_
+				}
 			}
 			
 			$powerplan = $powerplans | Where-Object { $_.IsActive -eq 'True' } | Select-Object ElementName, InstanceID
