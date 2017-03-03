@@ -243,7 +243,9 @@
 		'Get-DbaTempdbUsage',
 		'Find-DbaDatabaseGrowthEvent',
 		'Get-DbaNetworkActivity',
-		'Get-DbaWhoisActive'
+		'Get-DbaWhoisActive',
+		'Get-DbaAgentJobOutputFile',
+		'Set-DbaJobAgentOutputFile'
 	)
 	
 	# Cmdlets to export from this module
