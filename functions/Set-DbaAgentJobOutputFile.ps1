@@ -33,7 +33,8 @@
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
     You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
-
+	
+	# todo - allow piping and add -All
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	param
@@ -64,9 +65,9 @@
 				   ValueFromPipelineByPropertyName = $true)]
 		[ValidateNotNull()]
 		[ValidateNotNullOrEmpty()]
-		[object]$Step)
+		[object[]]$Step)
 	
-	DynamicParam { if ($sqlinstance) { return (Get-ParamSqlJobs -SqlServer $sqlinstance -SqlCredential $SourceSqlCredential) } }
+	DynamicParam { if ($sqlinstance) { return (Get-ParamSqlJobs -SqlServer $sqlinstance[0] -SqlCredential $SourceSqlCredential) } }
 	
 	BEGIN
 	{
@@ -76,28 +77,38 @@
 	{
 		foreach ($instance in $sqlinstance)
 		{
-		try
-		{
-			$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
-		}
-		catch
-		{
-			Write-Warning "Failed to connect to: $instance"
-			continue
-		}
-		
-		if (!$JobName)
-		{
-			# This is because jobname isn't yet required
-			Write-Warning "You must specify a jobname"
-			return
-		}
+			try
+			{
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+			}
+			catch
+			{
+				Write-Warning "Failed to connect to: $instance"
+				continue
+			}
+			
+			if (!$JobName)
+			{
+				# This is because jobname isn't yet required
+				Write-Warning "You must specify a jobname using -Jobs"
+				return
+			}
 			
 			foreach ($name in $JobName)
 			{
 				$Job = $server.JobServer.Jobs[$name]
 				
-				If (!$step)
+				If ($step)
+				{
+					$steps = $Job.JobSteps | Where-Object Name -in $step
+					
+					if (!$steps)
+					{
+						Write-Warning "$step didn't return any steps"
+						return
+					}
+				}
+				else
 				{
 					if (($Job.JobSteps).Count -gt 1)
 					{
@@ -109,38 +120,37 @@
 						$steps = $Job.JobSteps
 					}
 				}
-				
 				if (!$steps)
 				{
-					$steps = $server.jobs
+					$steps = $Job.JobSteps
 				}
 				
-				foreach ($smostep in $steps)
+				foreach ($jobstep in $steps)
 				{
-					Write-Verbose "Current Output File for $($Job.Name) is $(($smostep).OutputFileName)"
-					Write-Verbose "Adding $OutputFile to $($smostep.Name) for $($Job.Name)"
+					Write-Verbose "Current Output File for $job is $($jobstep.OutputFileName)"
+					Write-Verbose "Adding $OutputFile to $jobstep for $Job"
 					
 					try
 					{
-						If ($Pscmdlet.ShouldProcess($($smostep.Name), "Changing Output File from $(($smostep).OutputFileName) to $OutputFile"))
+						If ($Pscmdlet.ShouldProcess($jobstep, "Changing Output File from $($jobstep.OutputFileName) to $OutputFile"))
 						{
-							$smostep.OutputFileName = $OutputFile
-							$smostep.Alter()
-							$smostep.Refresh()
+							$jobstep.OutputFileName = $OutputFile
+							$jobstep.Alter()
+							$jobstep.Refresh()
 							
 							[pscustomobject]@{
 								ComputerName = $server.NetName
 								InstanceName = $server.ServiceName
 								SqlInstance = $server.DomainInstanceName
 								Job = $Job.Name
-								JobStep = $smostep.Name
-								OutputFileName = $smostep.OutputFileName
+								JobStep = $jobstep.Name
+								OutputFileName = $jobstep.OutputFileName
 							}
 						}
 					}
 					catch
 					{
-						Write-Warning "Failed to add $OutputFile to $smostep for $JobName"
+						Write-Warning "Failed to add $OutputFile to $jobstep for $JobName"
 					}
 				}
 			}
