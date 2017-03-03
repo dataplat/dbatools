@@ -71,9 +71,9 @@ To return detailed information Power Plans
 	
 	begin
 	{
-		If ($Detailed)
+		if ($Detailed)
 		{
-			Write-Warning "Detailed is deprecated and will be removed in dbatools 1.0"
+			Write-Message -Level Warning -Message "Detailed is deprecated and will be removed in dbatools 1.0"
 		}
 		
 		$bpPowerPlan = [PSCustomObject]@{
@@ -124,7 +124,7 @@ To return detailed information Power Plans
 			
 			if ($null -eq $cimsession.id)
 			{
-				Stop-Function -Message "Can't create CimSession on $computer"
+				Stop-Function -Message "Can't create CimSession on $computer" -Target $Computer
 			}
 			
 			Write-Message -Level Verbose -Message "Getting Power Plan information from $Computer"
@@ -137,11 +137,11 @@ To return detailed information Power Plans
 			{
 				if ($_.Exception -match "namespace")
 				{
-					Stop-Function -Message "Can't get Power Plan Info for $Computer. Unsupported operating system." -Continue -InnerErrorRecord $_
+					Stop-Function -Message "Can't get Power Plan Info for $Computer. Unsupported operating system." -Continue -InnerErrorRecord $_ -Target $Computer
 				}
 				else
 				{
-					Stop-Function -Message "Can't get Power Plan Info for $Computer. Check logs for more details." -Continue -InnerErrorRecord $_
+					Stop-Function -Message "Can't get Power Plan Info for $Computer. Check logs for more details." -Continue -InnerErrorRecord $_ -Target $Computer
 				}
 			}
 			
@@ -162,7 +162,7 @@ To return detailed information Power Plans
 				}
 			}
 			
-			Write-Verbose "Recommended GUID is $($bpPowerPlan.InstanceID) and you have $($powerplan.InstanceID)"
+			Write-Message -Level Verbose -Message "Recommended GUID is $($bpPowerPlan.InstanceID) and you have $($powerplan.InstanceID)"
 			
 			if ($null -eq $powerplan.InstanceID)
 			{
