@@ -1,6 +1,23 @@
+﻿
+#region Test whether the module had already been imported
+$ImportLibrary = $true
+try
+{
+    $null = New-Object sqlcollective.dbatools.Configuration.Config
+    
+    # No need to load the library again, if the module was once already imported.
+    $ImportLibrary = $false
+}
+catch
+{
+    
+}
+#endregion Test whether the module had already been imported
 
-#region Source Code
-$source = @'
+if ($ImportLibrary)
+{
+    #region Source Code
+    $source = @'
 using System;
 
 namespace sqlcollective.dbatools
@@ -66,6 +83,86 @@ namespace sqlcollective.dbatools
             /// Setting this to true will cause the element to not be discovered unless using the '-Force' parameter on "Get-DbaConfig"
             /// </summary>
             public bool Hidden = false;
+        }
+    }
+
+    namespace Database
+    {
+        /// <summary>
+        /// Class containing all dependency information over a database object
+        /// </summary>
+        [Serializable]
+        public class Dependency
+        {
+            /// <summary>
+            /// The name of the SQL server from whence the query came
+            /// </summary>
+            public string ComputerName;
+
+            /// <summary>
+            /// Name of the service running the database containing the dependency
+            /// </summary>
+            public string ServiceName;
+
+            /// <summary>
+            /// The Instance the database containing the dependency is running in.
+            /// </summary>
+            public string SqlInstance;
+
+            /// <summary>
+            /// The name of the dependent
+            /// </summary>
+            public string Dependent;
+
+            /// <summary>
+            /// The kind of object the dependent is
+            /// </summary>
+            public string Type;
+
+            /// <summary>
+            /// The owner of the dependent (usually the Database)
+            /// </summary>
+            public string Owner;
+
+            /// <summary>
+            /// Whether the dependency is Schemabound. If it is, then the creation statement order is of utmost importance.
+            /// </summary>
+            public bool IsSchemaBound;
+
+            /// <summary>
+            /// The immediate parent of the dependent. Useful in multi-tier dependencies.
+            /// </summary>
+            public string Parent;
+
+            /// <summary>
+            /// The type of object the immediate parent is.
+            /// </summary>
+            public string ParentType;
+
+            /// <summary>
+            /// The script used to create the object.
+            /// </summary>
+            public string Script;
+
+            /// <summary>
+            /// The tier in the dependency hierarchy tree. Used to determine, which dependency must be applied in which order.
+            /// </summary>
+            public int Tier;
+
+            /// <summary>
+            /// The smo object of the dependent.
+            /// </summary>
+            public object Object;
+
+            /// <summary>
+            /// The Uniform Resource Name of the dependent.
+            /// </summary>
+            public object Urn;
+
+            /// <summary>
+            /// The object of the original resource, from which the dependency hierachy has been calculated.
+            /// </summary>
+            public object OriginalResource;
         }
     }
 
@@ -296,7 +393,7 @@ namespace sqlcollective.dbatools
             /// <param name="Timestamp">When was the message generated</param>
             /// <param name="FunctionName">What function wrote the message</param>
             /// <param name="Level">At what level was the function written</param>
-            public static void WriteLogEntry(string Message, LogEntryType Type, DateTime Timestamp, string FunctionName, int Level)
+            public static void WriteLogEntry(string Message, LogEntryType Type, DateTime Timestamp, string FunctionName, MessageLevel Level)
             {
                 LogEntry temp = new LogEntry(Message, Type, Timestamp, FunctionName, Level);
                 if (MessageLogFileEnabled) { OutQueueLog.Enqueue(temp); }
@@ -340,7 +437,7 @@ namespace sqlcollective.dbatools
             /// <summary>
             /// What level was the message?
             /// </summary>
-            public int Level;
+            public MessageLevel Level;
 
             /// <summary>
             /// Creates an empty log entry
@@ -358,7 +455,7 @@ namespace sqlcollective.dbatools
             /// <param name="Timestamp">When was the message logged</param>
             /// <param name="FunctionName">What function wrote the message</param>
             /// <param name="Level">What level was the message written at.</param>
-            public LogEntry(string Message, LogEntryType Type, DateTime Timestamp, string FunctionName, int Level)
+            public LogEntry(string Message, LogEntryType Type, DateTime Timestamp, string FunctionName, MessageLevel Level)
             {
                 this.Message = Message;
                 this.Type = Type;
@@ -506,17 +603,107 @@ namespace sqlcollective.dbatools
 
             #endregion Defines
         }
+
+        /// <summary>
+        /// The various levels of verbosity available.
+        /// </summary>
+        public enum MessageLevel
+        {
+            /// <summary>
+            /// Very important message, should be shown to the user as a high priority
+            /// </summary>
+            Critical = 1,
+
+            /// <summary>
+            /// Important message, the user should read this
+            /// </summary>
+            Important = 2,
+
+            /// <summary>
+            /// Important message, the user should read this
+            /// </summary>
+            Host = 2,
+
+            /// <summary>
+            /// Message relevant to the user.
+            /// </summary>
+            Significant = 3,
+
+            /// <summary>
+            /// Not important to the regular user, still of some interest to the curious
+            /// </summary>
+            VeryVerbose = 4,
+
+            /// <summary>
+            /// Background process information, in case the user wants some detailed information on what is currently happening.
+            /// </summary>
+            Verbose = 5,
+
+            /// <summary>
+            /// A footnote in current processing, rarely of interest to the user
+            /// </summary>
+            SomewhatVerbose = 6,
+
+            /// <summary>
+            /// A message of some interest from an internal system persepctive, but largely irrelevant to the user.
+            /// </summary>
+            System = 7,
+
+            /// <summary>
+            /// Something only of interest to a debugger
+            /// </summary>
+            Debug = 8,
+
+            /// <summary>
+            /// This message barely made the cut from being culled. Of purely development internal interest, and even there is 'interest' a strong word for it.
+            /// </summary>
+            InternalComment = 9,
+
+            /// <summary>
+            /// This message is a warning, sure sign something went badly wrong
+            /// </summary>
+            Warning = 666
+        }
     }
 }
 '@
-#endregion Source Code
+    #endregion Source Code
+    
+    try
+    {
+        Add-Type $source -ErrorAction Stop
+    }
+    catch
+    {
+        #region Warning
+        Write-Warning @'
+Dear User,
 
-try
-{
-	Add-Type $source -ErrorAction Stop
-}
-catch
-{
-	# nothing -- it's just already added
-	continue
+in the name of the dbatools team I apologize for the inconvenience.
+Generally, when something goes wrong we try to handle it for you and interpret
+it for you in a way you can understand. Unfortunately, something went wrong with
+importing our main library, so all the systems making this possible don't work
+yet. This really shouldn't happen in any PowerShell environment imaginable, but
+... well, it hapend and you are reading this message.
+
+Please, in order to help us prevent this from happening again, visit us at:
+https://github.com/sqlcollaborative/dbatools/issues
+and tell us about this failure. All information will be appreciated, but 
+especially valuable are:
+- Exports of the exception: $Error | Export-Clixml error.xml -Depth 4
+- Screenshots
+- Environment information (Operating System, Hardware Stats, .NET Version,
+  PowerShell Version and whatever else you may consider of potential impact.)
+
+Again, I apologize for the inconvenience and hope we will be able to speedily
+resolve the issue.
+
+Best Regards,
+Friedrich Weinmann
+aka "The guy who made most of The Library that Failed to import"
+
+'@
+        throw
+        #endregion Warning
+    }
 }

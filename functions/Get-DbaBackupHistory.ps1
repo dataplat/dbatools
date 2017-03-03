@@ -149,19 +149,25 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 					Write-Warning "$FunctionName - SQL Server 2000 not supported"
 					continue
 				}
-				$BackupSizeColumn = 'backup_size'
+				#$BackupSizeColumn = 'backup_size'
+				$BackupSizeColumn = "CAST(backupset.backup_size / 1048576 AS numeric(10, 2)) AS TotalSizeMB"
 				if ($server.VersionMajor -ge 10)
 				{
 					# 2008 introduced compressed_backup_size
-					$BackupSizeColumn = 'compressed_backup_size'
+					#$BackupSizeColumn = 'compressed_backup_size'
+					$BackupSizeColumn += ",backupset.compressed_backup_size"
 				}
 				
 				if ($last)
 				{
 					if ($databases -eq $null) { $databases = $server.databases.name }
-					Get-DbaBackupHistory -SqlServer $server -LastFull -Databases $databases -raw:$raw
-					Get-DbaBackupHistory -SqlServer $server -LastDiff -Databases $databases -raw:$raw
-					Get-DbaBackupHistory -SqlServer $server -LastLog -Databases $databases -raw:$raw
+					
+					foreach ($db in $databases)
+					{
+						Get-DbaBackupHistory -SqlServer $server -LastFull -Databases $db -raw:$raw
+						Get-DbaBackupHistory -SqlServer $server -LastDiff -Databases $db -raw:$raw
+						Get-DbaBackupHistory -SqlServer $server -LastLog -Databases $db -raw:$raw
+					}
 				}
 				elseif ($LastFull -or $LastDiff -or $LastLog)
 				{
@@ -190,7 +196,14 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 								  a.Type,
 								  a.TotalSizeMB,
 								  a.MediaSetId,
-								  a.Software
+								  a.Software,
+								a.backupsetid,
+		 						 a.position,
+								a.first_lsn,
+								a.database_backup_lsn,
+								a.checkpoint_lsn,
+								a.last_lsn,
+								a.software_major_version
 								FROM (SELECT
 								  RANK() OVER (ORDER BY backupset.backup_start_date DESC) AS 'BackupSetRank',
 								  backupset.database_name AS [Database],
@@ -200,7 +213,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 								  backupset.backup_finish_date AS [End],
 								  CAST(DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS varchar(4)) + ' ' + 'Seconds' AS Duration,
 								  mediafamily.physical_device_name AS Path,
-								  CAST(backupset.$BackupSizeColumn / 1048576 AS numeric(10, 2)) AS TotalSizeMB,
+								  $BackupSizeColumn,
 								  CASE backupset.type
 									WHEN 'L' THEN 'Log'
 									WHEN 'D' THEN 'Full'
@@ -224,6 +237,12 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 									WHEN 7 THEN 'Virtual Device'
 									ELSE 'Unknown'
 								  END AS DeviceType,
+									backupset.position,
+									backupset.first_lsn,
+									backupset.database_backup_lsn,
+									backupset.checkpoint_lsn,
+									backupset.last_lsn,
+									backupset.software_major_version,
 								  mediaset.software_name AS Software
 								FROM msdb..backupmediafamily AS mediafamily
 								INNER JOIN msdb..backupmediaset AS mediaset
@@ -255,7 +274,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 									  backupset.backup_finish_date AS [End],
 									  CAST(DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS varchar(4)) + ' ' + 'Seconds' AS Duration,
 									  mediafamily.physical_device_name AS Path,
-									  CAST((backupset.$BackupSizeColumn / 1048576) AS numeric(10, 2)) AS TotalSizeMB,
+									 $BackupSizeColumn,
 									  CASE backupset.type
 										WHEN 'L' THEN 'Log'
 										WHEN 'D' THEN 'Full'
@@ -365,6 +384,10 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 								Duration = ($group.Group.Duration | measure-object -Maximum).Maximum
 								Path = $group.Group.Path
 								TotalSizeMb = ($group.group.TotalSizeMb | measure-object -Sum).sum
+								BackupSizeMb = ($group.group.TotalSizeMb | measure-object -Sum).sum
+								BackupSize = (($group.group.TotalSizeMb | measure-object -Sum).sum)*8*1024
+								CompressedBackupSize = ($group.group.compressed_backup_size | measure-object -Sum).sum
+								CompressedBackupSizeMb = ($group.group.compressed_backup_size | measure-object -Sum).sum / 1mb
 								Type = $group.Group[0].Type
 								BackupSetupId = $group.Group[0].BackupSetId
 								DeviceType = $group.Group[0].DeviceType
@@ -384,7 +407,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 					}
 					foreach ($result in $results)
 					{
-						$result | Select-DefaultView -ExcludeProperty FullName, Filelist, Position, FirstLsn, DatabaseBackupLSN, CheckPointLsn, LastLsn, SoftwareVersionMajor
+						$result | Select-DefaultView -ExcludeProperty FullName, Filelist, Position, FirstLsn, DatabaseBackupLSN, CheckPointLsn, LastLsn, SoftwareVersionMajor, CompressedBackupSize, CompressedBackupSizeMb, BackupSize
 					}
 				}
 			}

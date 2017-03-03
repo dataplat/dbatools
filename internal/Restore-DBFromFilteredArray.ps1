@@ -348,7 +348,7 @@ Function Restore-DBFromFilteredArray
 						BackupFilesCount = $RestoreFiles.Count
 						RestoredFilesCount = $RestoreFiles[0].Filelist.PhysicalName.count
 						BackupSizeMB = ($RestoreFiles | measure-object -property BackupSizeMb -Sum).sum
-						CompressedBackupSizeMB = ($RestoreFiles | measure-object -property CompressedBackupSizeMb -Sum).sum
+						CompressedBackupSizeMB = if([bool]($RestoreFiles.PSobject.Properties.name -match 'CompressedBackupSizeMb')){($RestoreFiles | measure-object -property CompressedBackupSizeMB -Sum).sum}else{$null}
 						BackupFile = $RestoreFiles.BackupPath -join ','
 						RestoredFile = $RestoredFile
 						RestoredFileFull = $RestoreFiles[0].Filelist.PhysicalName -join ','
