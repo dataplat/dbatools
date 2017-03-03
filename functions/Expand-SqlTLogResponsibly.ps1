@@ -1,4 +1,4 @@
-﻿function Expand-SqlTLogResponsibly
+function Expand-SqlTLogResponsibly
 {
 <#
 
@@ -85,7 +85,7 @@ Tags: Storage, Backup
 This script will not analyze the actual number of VLFs. Use Test-DbaVirtualLogFile or run t-sql "DBCC LOGINFO" statements
 This script uses Get-DbaDiskSpace dbatools command to get the TLog's drive free space
        
-Original Author: ClÃ¡udio Silva (@ClaudioESSilva)
+Original Author: Claudio Silva (@ClaudioESSilva)
 Requires: ALTER DATABASE permission
 Limitations: Freespace cannot be validated on the directory where the log file resides in SQL Server 2005.
 

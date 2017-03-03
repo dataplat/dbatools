@@ -1,4 +1,4 @@
-﻿Function Set-DbaMaxDop
+Function Set-DbaMaxDop
 {
 <# 
 .SYNOPSIS 
@@ -38,7 +38,7 @@ Prompts you for confirmation before executing any changing operations within the
 Results of Test-SQLMaxDop to be passed into the command
 
 .NOTES 
-Author  : Cláudio Silva (@claudioessilva)
+Author  : Claudio Silva (@claudioessilva)
 Requires: sysadmin access on SQL Servers
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)

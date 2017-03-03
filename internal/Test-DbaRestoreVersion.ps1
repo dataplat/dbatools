@@ -1,4 +1,4 @@
-﻿function Test-DbaRestoreVersion
+function Test-DbaRestoreVersion
 {
 <#
 .SYNOPSIS 

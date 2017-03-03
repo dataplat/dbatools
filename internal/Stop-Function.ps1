@@ -72,19 +72,6 @@
             - Throw a bloody terminating error. Game over.
             - Write a nice warning about how Foo failed bar, then call continue to process the next item in the loop.
             In both cases, the error record added to $error will have the content of $foo added, the better to figure out what went wrong.
-        
-        .NOTES
-            Author:      Friedrich Weinmann
-            Editors:     -
-            Created on:  08.02.2017
-            Last Change: 10.02.2017
-            Version:     1.1
-            
-            Release 1.1 (10.02.2017, Friedrich Weinmann)
-            - Fixed Bug: Fails on Write-Error
-    
-            Release 1.0 (08.02.2017, Friedrich Weinmann)
-            - Initial Release
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding(DefaultParameterSetName = 'Plain')]
@@ -93,14 +80,13 @@
         [string]
         $Message,
         
-        [Parameter(Mandatory = $true)]
         [bool]
-        $Silent,
+        $Silent = $Silent,
         
-        [Parameter(Mandatory = $true, ParameterSetName = 'Plain')]
-        [Parameter(Mandatory = $false, ParameterSetName = 'Exception')]
+        [Parameter(ParameterSetName = 'Plain')]
+        [Parameter(ParameterSetName = 'Exception')]
         [System.Management.Automation.ErrorCategory]
-        $Category,
+        $Category = ([System.Management.Automation.ErrorCategory]::NotSpecified),
         
         [Parameter(ParameterSetName = 'Exception')]
         [System.Management.Automation.ErrorRecord]
@@ -122,12 +108,14 @@
         $ContinueLabel
     )
     
+    $timestamp = Get-Date
+    
     $Exception = New-Object System.Exception($Message, $InnerErrorRecord.Exception)
-    if (-not $Category) { $Category = $InnerErrorRecord.CategoryInfo.Category }
+    if (-not $PSBoundParameters.ContainsKey("Category") -and ($PSBoundParameters.ContainsKey("InnerErrorRecord"))) { $Category = $InnerErrorRecord.CategoryInfo.Category }
     $record = New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $Target)
     
     # Manage Debugging
-    Write-Debug "[$FunctionName] $Message"
+    Write-Message -Message $Message -Warning -Silent $Silent -FunctionName $FunctionName
     
     #region Silent Mode
     if ($Silent)
@@ -135,11 +123,14 @@
         if ($SilentlyContinue)
         {
             Write-Error -Message $record -Category $Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue
+            [sqlcollective.dbatools.dbaSystem.DebugHost]::WriteErrorEntry($Record, $FunctionName, $timestamp, $Message)
             if ($ContinueLabel) { continue $ContinueLabel }
             else { Continue }
         }
         
-        Write-Debug "[$FunctionName] Terminating function"
+        # Extra insurance that it'll stop
+        Set-Variable -Name "__dbatools_interrupt_function_78Q9VPrM6999g6zo24Qn83m09XF56InEn4hFrA8Fwhu5xJrs6r" -Scope 1 -Value $true
+        Write-Message -Message "Terminating function!" -Level 9 -Silent $Silent -FunctionName $FunctionName
         
         
         throw $record
@@ -149,10 +140,9 @@
     #region Non-Silent Mode
     else
     {
-        Write-Warning -Message $Message
-        
         # This ensures that the error is stored in the $error variable AND has its Stacktrace (simply adding the record would lack the stacktrace)
         $null = Write-Error -Message $record -Category $Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue 2>&1
+        [sqlcollective.dbatools.dbaSystem.DebugHost]::WriteErrorEntry($Record, $FunctionName, $timestamp, $Message)
         
         if ($Continue)
         {
@@ -161,7 +151,10 @@
         }
         else
         {
-            Write-Debug "[$FunctionName] Terminating function!"
+            # Make sure the function knows it should be stopping
+            Set-Variable -Name "__dbatools_interrupt_function_78Q9VPrM6999g6zo24Qn83m09XF56InEn4hFrA8Fwhu5xJrs6r" -Scope 1 -Value $true
+            
+            Write-Message -Message "Terminating function!" -Warning -Silent $Silent -FunctionName $FunctionName
             return
         }
     }
