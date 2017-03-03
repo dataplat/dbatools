@@ -103,7 +103,7 @@ To return detailed information Power Plans
 				$cimsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
 			}
 			
-			if (!$cimsession.Protocol)
+			if ($null -eq $cimsession.id)
 			{
 				Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan failed. Creating CimSession on $computer over DCom"
 				
