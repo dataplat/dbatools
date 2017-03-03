@@ -94,8 +94,7 @@ To return detailed information Power Plans
 			
 			if (!$Computer)
 			{
-				Stop-Function -Message "Couldn't resolve hostname. Skipping."
-				continue
+				Stop-Function -Message "Couldn't resolve hostname. Skipping." -Continue
 			}
 			
 			Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan"
