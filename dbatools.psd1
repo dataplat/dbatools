@@ -220,7 +220,7 @@
 		'Set-DbaQueryStoreConfig',
 		'Restore-DbaDatabase',
 		#'Get-DbaLinkedServer',
-		#'Invoke-DbaLogShippingRecovery',
+		'Invoke-DbaLogShippingRecovery',
 		'Copy-DbaQueryStoreConfig',
 		'Get-DbaExecutionPlan',
 		'Export-DbaExecutionPlan',
