@@ -134,7 +134,7 @@ param
                     }
                     else
                     {
-                        Write-Verbose "$(($Step).Name) for $($JobName) has No Output File"
+                        Write-Verbose "$(($Step).Name) for $($Job.Name) has No Output File"
                     }
                 }
             }      
