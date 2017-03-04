@@ -48,6 +48,12 @@ Use this parameter to force the function to continue and perform any adjusting a
 Set the delay in seconds to wait for the copy and/or restore jobs. 
 By default the delay is 5 seconds
 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
 .NOTES 
 Author: Sander Stad (@sqlstad), sqlstad.nl
 Requires: sysadmin access on SQL Servers
