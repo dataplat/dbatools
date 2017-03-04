@@ -9,7 +9,7 @@
    This function returns for one or more SQL Instances the output file value for each step of one or many agent job with the Job Names 
    provided dynamically. It will not return anything if there is no Output File
 
-.PARAMETER SqlServer 
+.PARAMETER SqlInstance 
     The SQL Server that you're connecting to. Or an array of SQL Servers
 
 .PARAMETER SQLCredential
@@ -75,72 +75,83 @@
     You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
 
 #>
-[CmdletBinding()]
-param
-(# The Server/instance 
-        [Parameter(Mandatory=$true,HelpMessage='The SQL Server Instance', 
-                   ValueFromPipeline=$true,
-                   ValueFromPipelineByPropertyName=$true, 
-                   ValueFromRemainingArguments=$false, 
-                   Position=0)]
-        [ValidateNotNull()]
-        [ValidateNotNullOrEmpty()]
-        [object]$SqlServer,
-        [Parameter(Mandatory=$false,HelpMessage='SQL Credential', 
-                   ValueFromPipelineByPropertyName=$true, 
-                   ValueFromRemainingArguments=$false, 
-                   Position=1)]
-        [System.Management.Automation.PSCredential]$SqlCredential
-)
-    DynamicParam { if ($SqlServer) { return (Get-ParamSqlJobs -SqlServer $SqlServer -SqlCredential $SqlCredential) } }
-
-	BEGIN 
-    {
-		$jobname = $psboundparameters.Jobs   
-    }
-    PROCESS
-    {
-        foreach ($instance in $sqlserver)
-        {
-            $Server = Connect-SqlServer -SqlServer $instance  -SqlCredential $SqlCredential
-            $jobs = $Server.JobServer.Jobs
-            if ($JobName)
-            {
-                try
-                {
-                    $Jobs = $server.JobServer.Jobs[$JobName]
-                }
-                catch
-                {
-                    Write-Warning "Cannot find $JobName on $SQLServer"
-                }
-            }
-
-            foreach($Job in $Jobs)
-            {
-                foreach($Step in $Job.JobSteps)
-                {
-                    if($Step.OutputFileName)
-                    {
-                        $fileName = Join-AdminUNC $Server.ComputerNamePhysicalNetBIOS $Step.OutputFileName
+	[CmdletBinding()]
+	param
+	(
+		[Parameter(Mandatory = $true, HelpMessage = 'The SQL Server Instance',
+				   ValueFromPipeline = $true,
+				   ValueFromPipelineByPropertyName = $true,
+				   ValueFromRemainingArguments = $false,
+				   Position = 0)]
+		[ValidateNotNull()]
+		[ValidateNotNullOrEmpty()]
+		[Alias("ServerInstance", "SqlServer")]
+		[object[]]$SqlInstance,
+		[Parameter(Mandatory = $false, HelpMessage = 'SQL Credential',
+				   ValueFromPipelineByPropertyName = $true,
+				   ValueFromRemainingArguments = $false,
+				   Position = 1)]
+		[System.Management.Automation.PSCredential]$SqlCredential
+	)
+	
+	DynamicParam { if ($SqlInstance) { return (Get-ParamSqlJobs -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential) } }
+	
+	BEGIN
+	{
+		$jobname = $psboundparameters.Jobs
+	}
+	PROCESS
+	{
+		foreach ($instance in $sqlinstance)
+		{
+			try
+			{
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+			}
+			catch
+			{
+				Write-Warning "Failed to connect to: $instance"
+				continue
+			}
+			
+			$jobs = $Server.JobServer.Jobs
+			
+			if ($JobName)
+			{
+				$jobs = @()
+				
+				foreach ($name in $jobname)
+				{
+					$jobs += $server.JobServer.Jobs[$name]
+				}
+			}
+			else
+			{
+				$jobs = $server.JobServer.Jobs
+			}
+			
+			foreach ($Job in $Jobs)
+			{
+				foreach ($Step in $Job.JobSteps)
+				{
+					if ($Step.OutputFileName)
+					{
 						[pscustomobject]@{
-						ComputerName = $server.NetName
-						InstanceName = $server.ServiceName
-						SqlInstance = $server.DomainInstanceName
-						Job = $Job.Name
-                        JobStep = $step.Name
-                        OutputFile = $FileName
-                        }
-                    }
-                    else
-                    {
-                        Write-Verbose "$(($Step).Name) for $($Job.Name) has No Output File"
-                    }
-                }
-            }      
-         
-            $server.ConnectionContext.Disconnect()
-        }
-    }
+							ComputerName = $server.NetName
+							InstanceName = $server.ServiceName
+							SqlInstance = $server.DomainInstanceName
+							Job = $Job.Name
+							JobStep = $step.Name
+							OutputFileName = $Step.OutputFileName
+							RemoteOutputFileName = Join-AdminUNC $Server.ComputerNamePhysicalNetBIOS $Step.OutputFileName
+						}
+					}
+					else
+					{
+						Write-Verbose "$step for $job has no output file"
+					}
+				}
+			}
+		}
+	}
 }
-
