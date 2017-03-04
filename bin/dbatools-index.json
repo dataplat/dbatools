@@ -424,6 +424,16 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaDatabase -SqlServer \"DEV01\", \"DEV02\", \"UAT01\", \"UAT02\", \"PROD01\", \"PROD02\" -Pattern Report\r\n\r\nReturns all database from the SqlInstances that have a database with Report in the name\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaDatabase -SqlServer \"DEV01\", \"DEV02\", \"UAT01\", \"UAT02\", \"PROD01\", \"PROD02\" -Pattern TestDB -Exact \r\n-Detailed\r\n\r\nReturns all database from the SqlInstances that have a database named TestDB with a detailed output.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaDatabase -SqlServer \"DEV01\", \"DEV02\", \"UAT01\", \"UAT02\", \"PROD01\", \"PROD02\" -Property ServiceBrokerGuid \r\n-Pattern \u0027-faeb-495a-9898-f25a782835f5\u0027 -Detailed\r\n\r\nReturns all database from the SqlInstances that have the same Service Broker GUID with a deatiled output\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Find-DbaDatabaseGrowthEvent",
+        "Description":  "Finds any database AutoGrow events in the Default Trace.",
+        "Tags":  "AutoGrow",
+        "Author":  "Aaron Nelson",
+        "Synopsis":  "Finds any database AutoGrow events in the Default Trace.",
+        "Name":  "Find-DbaDatabaseGrowthEvent",
+        "Links":  "https://dbatools.io/Find-DbaDatabaseGrowthEvent",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eFind-DBADatabaseGrowthEvent -SqlServer localhost\r\n\r\nReturns any database AutoGrow events in the Default Trace for every database on the localhost instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eFind-DBADatabaseGrowthEvent -SqlServer ServerA\\SQL2016, ServerA\\SQL2014\r\n\r\nReturns any database AutoGrow events in the Default Traces for every database on ServerA\\sql2016 \u0026 ServerA\\SQL2014.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eFind-DBADatabaseGrowthEvent -SqlServer ServerA\\SQL2016 | Format-Table -AutoSize -Wrap\r\n\r\nReturns any database AutoGrow events in the Default Trace for every database on the ServerA\\SQL2016 instance in a table \r\nformat.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Find-DbaLoginInGroup",
         "Description":  "Outputs all the active directory groups members for a server, or limits it to find a specific AD user in the groups",
         "Synopsis":  "Finds Logins in Active Directory groups that have logins on the SQL Instance.",
@@ -493,6 +503,14 @@
         "Name":  "Get-DbaAgentJob",
         "Links":  "https://dbatools.io/Get-DbaAgentJob",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost\r\n\r\nReturns all SQL Agent Job on the local default SQL Server instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost, sql2016\r\n\r\nReturns all SQl Agent Job for the local and sql2016 SQL Server instances\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaAgentJobOutputFile",
+        "Description":  "This function returns for one or more SQL Instances the output file value for each step of one or many agent job with the Job Names \nprovided dynamically. It will not return anything if there is no Output File",
+        "Synopsis":  "Returns the Output File for each step of one or many agent job with the Job Names provided dynamically if \nrequired for one or more SQL Instances",
+        "Name":  "Get-DbaAgentJobOutputFile",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlServer SERVERNAME -Jobs \u0027The Agent Job\u0027\r\n\r\nThis will return the paths to the output files for each of the job step of the The Agent Job Job \r\non the SERVERNAME instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlServer SERVERNAME\r\n\r\nThis will return the paths to the output files for each of the job step of all the Agent Jobs\r\non the SERVERNAME instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlServer SERVERNAME,SERVERNAME2 -Jobs \u0027The Agent Job\u0027\r\n\r\nThis will return the paths to the output files for each of the job step of the The Agent Job Job \r\non the SERVERNAME instance and SERVERNAME2\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$Servers = \u0027SERVER\u0027,\u0027SERVER\\INSTANCE1\u0027\r\n\r\nGet-DbaAgentJobOutputFile -SqlServer $Servers -Jobs \u0027The Agent Job\u0027 -OpenFile \r\n\r\nThis will return the paths to the output files for each of the job step of the The Agent Job Job \r\non the SERVER instance and the SERVER\\INSTANCE1 and open the files if they are available\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlServer SERVERNAME  | Out-GridView\r\n\r\nThis will return the paths to the output files for each of the job step of all the Agent Jobs\r\non the SERVERNAME instance and Pipe them to Out-GridView\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003e(Get-DbaAgentJobOutputFile -SqlServer SERVERNAME | ogv -PassThru).FileName | Invoke-Item\r\n\r\nThis will return the paths to the output files for each of the job step of all the Agent Jobs\r\non the SERVERNAME instance and Pipe them to Out-GridView and enable you to choose the output\r\nfile and open it\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlServer SERVERNAME -Verbose\r\n\r\nThis will return the paths to the output files for each of the job step of all the Agent Jobs\r\non the SERVERNAME instance and also show the job steps without an output file\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaAgentOperator",
@@ -756,6 +774,16 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaMsdtc -ComputerName srv0042\r\n\r\nGet DTC status for the server srv0042\r\n\r\nComputerName                 : srv0042\r\nDTCServiceName               : Distributed Transaction Coordinator\r\nDTCServiceState              : Running\r\nDTCServiceStatus             : OK\r\nDTCServiceStartMode          : Manual\r\nDTCServiceAccount            : NT AUTHORITY\\NetworkService\r\nDTCCID_MSDTC                 : b2aefacb-85d1-46b8-8047-7bb88e08d38a\r\nDTCCID_MSDTCUIS              : 205bd32c-b022-4d0c-aa3e-2e5dc65c6d35\r\nDTCCID_MSDTCTIPGW            : 3e743aa0-ead6-4569-ba7b-fe1aaea0a1eb\r\nDTCCID_MSDTCXATM             : 667fc4b8-c2f5-4c3f-ad75-728b113f36c5\r\nnetworkDTCAccess             : 0\r\nnetworkDTCAccessAdmin        : 0\r\nnetworkDTCAccessClients      : 0\r\nnetworkDTCAccessInbound      : 0\r\nnetworkDTCAccessOutBound     : 0\r\nnetworkDTCAccessTip          : 0\r\nnetworkDTCAccessTransactions : 0\r\nXATransactions               : 0\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$Computers = (Get-Content D:\\configfiles\\SQL\\MySQLInstances.txt | % {$_.split(\u0027\\\u0027)[0]})\r\n\r\n$Computers | Get-DbaMsdtc\r\n\r\nGet DTC status for all the computers in a .txt file\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaMsdtc -Computername $Computers | where { $_.dtcservicestate -ne \u0027running\u0027 }\r\n\r\nGet DTC status for all the computers where the MSDTC Service is not running\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaMsdtc -ComputerName srv0042 | Out-Gridview\r\n\r\nGet DTC status for the computer srv0042 and show in a grid view\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaNetworkActivity",
+        "Description":  "Gets the Current traffic on every Network Interface on a computer.\nSee https://msdn.microsoft.com/en-us/library/aa394293(v=vs.85).aspx\n\nRequires Local Admin rights on destination computer(s).",
+        "Tags":  "Network",
+        "Author":  "Klaas Vandenberghe ( @PowerDBAKlaas )",
+        "Synopsis":  "Gets the Current traffic on every Network Interface on a computer.",
+        "Name":  "Get-DbaNetworkActivity",
+        "Links":  "https://dbatools.io/Get-DbaNetworkActivity",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaNetworkActivity -ComputerName sqlserver2014a\r\n\r\nGets the Current traffic on every Network Interface on computer sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027 | Get-DbaNetworkActivity\r\n\r\nGets the Current traffic on every Network Interface on computers sql1, sql2 and sql3.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaNetworkActivity -ComputerName sql1,sql2 | Out-Gridview\r\n\r\nGets the Current traffic on every Network Interface on computers sql1 and sql2, and shows them in a grid view.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaPageFileSetting",
         "Description":  "WMI class Win32_ComputerSystem tells us if Page File is managed automatically.\nIf TRUE all other properties do not exist.\nIf FALSE classes Win32_PageFile, Win32_PageFileSetting en Win32_PageFileUsage are examined.\nCIM is used, first via WinRM, and if not successful, via DCOM.\nThis function needs to be executed as a user with local admin rights on the target computer(s).",
         "Tags":  "CIM",
@@ -1002,6 +1030,15 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInstall-SqlWhoIsActive -SqlServer sqlserver2014a -Database master\r\n\r\nInstalls sp_WhoIsActive to sqlserver2014a\u0027s master database. Logs in using Windows Authentication.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInstall-SqlWhoIsActive -SqlServer sqlserver2014a -SqlCredential $cred\r\n\r\nPops up a dialog box asking which database on sqlserver2014a you want to install the proc to. Logs into SQL Server \r\nusing SQL Authentication.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$servers = Get-SqlRegisteredServerName sqlserver\r\n\r\nInstall-SqlWhoIsActive -SqlServer $servers -Database master\r\n\r\nThis command doesn\u0027t support passing both servers and default database, but you can accomplish the same thing by \r\npassing an array and specifying a database.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Invoke-DbaLogShippingRecovery",
+        "Description":  "By default all the databases for a particular instance are recovered.\nIf the database is in the right state, either standby or recovering, the process will try to recover the database.\n\nAt first the function will check if the backup source directory can still be reached.\nIf so it will look up the last transaction log backup for the database. If that backup file is not the last copied file the log shipping copy job will be started.\nIf the directory cannot be reached for the function will continue to the restoring process.\nAfter the copy job check is performed the job is disabled to prevent the job to run.\n\nFor the restore the log shipping status is checked in the msdb database.\nIf the last restored file is not the same as the last file name found, the log shipping restore job will be executed.\nAfter the restore job check is performed the job is disabled to prevent the job to run\n\nThe last part is to set the databse online by restoring the databases with recovery",
+        "Author":  "Sander Stad (@sqlstad), sqlstad.nl",
+        "Synopsis":  "Invoke-DbaLogShippingRecovery recovers log shipped databases to a normal state to act upon a migration or disaster.",
+        "Name":  "Invoke-DbaLogShippingRecovery",
+        "Links":  "https://dbatools.io/Invoke-DbaLogShippingRecovery",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaLogShippingRecovery -SqlServer server1\r\n\r\nRecovers all the databases on the instance that are enabled for log shiping\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaLogShippingRecovery -SqlServer server1 -SqlCredential $cred -Verbose\r\n\r\nRecovers all the databases on the instance that are enabled for log shiping using a credential\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaLogShippingRecovery -SqlServer server1 -database db_logship -Verbose\r\n\r\nRecovers the database \"db_logship\" to a normal status\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003edb1, db2, db3, db4 | Invoke-DbaLogShippingRecovery -SqlServer server1 -Verbose\r\n\r\nRecovers the database db1, db2, db3, db4 to a normal status\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaLogShippingRecovery -SqlServer server1 -WhatIf\r\n\r\nShows what would happen if the command were executed.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Invoke-Sqlcmd2",
         "Description":  "Runs a T-SQL script. Invoke-Sqlcmd2 runs the whole scipt and only captures the first selected result set, such as the output of PRINT statements when -verbose parameter is specified.\nParamaterized queries are supported.\n\nHelp details below borrowed from Invoke-Sqlcmd",
         "Synopsis":  "Runs a T-SQL script.",
@@ -1218,6 +1255,14 @@
         "Name":  "Restore-SqlBackupFromDirectory",
         "Links":  "https://dbatools.io/Restore-SqlBackupFromDirectory",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRestore-SqlBackupFromDirectory -ServerName sqlcluster -Path \\\\fileserver\\share\\sqlbackups\\SQLSERVER2014A\r\n\r\nDescription\r\n\r\nAll user databases contained within \\\\fileserver\\share\\sqlbackups\\SQLSERVERA will be restored to sqlcluster, down the \r\nmost recent full/differential/logs.\r\n\r\n\r\nRequires -Version 3.0\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Set-DbaAgentJobOutputFile",
+        "Description":  "Sets the OutPut File for a step of an agent job with the Job Names and steps provided dynamically if required",
+        "Synopsis":  "Sets the OutPut File for a step of an agent job with the Job Names and steps provided dynamically",
+        "Name":  "Set-DbaAgentJobOutputFile",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJobOutputFile -sqlserver SERVERNAME -JobName \u0027The Agent Job\u0027 -OutPutFile \r\nE:\\Logs\\AgentJobStepOutput.txt\r\n\r\nSets the Job step for The Agent job on SERVERNAME to E:\\Logs\\AgentJobStepOutput.txt\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Set-DbaConfig",
