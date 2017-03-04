@@ -20,6 +20,13 @@
 
 .PARAMETER OutputFile
     The Full Path to the New Output file
+	
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+	
 .EXAMPLE
    Set-DbaAgentJobOutputFile -sqlserver SERVERNAME -JobName 'The Agent Job' -OutPutFile E:\Logs\AgentJobStepOutput.txt
 
@@ -120,6 +127,7 @@
 						$steps = $Job.JobSteps
 					}
 				}
+				
 				if (!$steps)
 				{
 					$steps = $Job.JobSteps
@@ -127,12 +135,14 @@
 				
 				foreach ($jobstep in $steps)
 				{
-					Write-Verbose "Current Output File for $job is $($jobstep.OutputFileName)"
+					$currentoutputfile = $jobstep.OutputFileName
+					
+					Write-Verbose "Current Output File for $job is $currentoutputfile"
 					Write-Verbose "Adding $OutputFile to $jobstep for $Job"
 					
 					try
 					{
-						If ($Pscmdlet.ShouldProcess($jobstep, "Changing Output File from $($jobstep.OutputFileName) to $OutputFile"))
+						If ($Pscmdlet.ShouldProcess($jobstep, "Changing Output File from $currentoutputfile to $OutputFile"))
 						{
 							$jobstep.OutputFileName = $OutputFile
 							$jobstep.Alter()
@@ -144,7 +154,7 @@
 								SqlInstance = $server.DomainInstanceName
 								Job = $Job.Name
 								JobStep = $jobstep.Name
-								OutputFileName = $jobstep.OutputFileName
+								OutputFileName = $currentoutputfile
 							}
 						}
 					}
