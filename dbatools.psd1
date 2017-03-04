@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.933'
+	ModuleVersion = '0.8.937'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -59,6 +59,7 @@
 	TypesToProcess = @()
 	
 	# Format files (xml) to be loaded when importing this module
+	# "xml\dbatools.Format.ps1xml"
 	FormatsToProcess = @("xml\dbatools.Format.ps1xml")
 	
 	# Modules to import as nested modules of the module specified in ModuleToProcess
@@ -241,7 +242,11 @@
 		'Remove-DbaDatabase',
 		'Get-DbaQueryExecutionTime',
 		'Get-DbaTempdbUsage',
-		'Find-DbaDatabaseGrowthEvent'
+		'Find-DbaDatabaseGrowthEvent',
+		'Get-DbaNetworkActivity',
+		'Get-DbaWhoisActive',
+		'Get-DbaAgentJobOutputFile',
+		'Set-DbaAgentJobOutputFile'
 	)
 	
 	# Cmdlets to export from this module

@@ -160,7 +160,7 @@ Function Resolve-DbaNetworkName
 			}
 			else
 			{
-				Write-Warning "$functionName - No IP Address returned from $Computer"
+				Write-Verbose "$functionName - No IP Address returned from $Computer"
 				Write-Verbose "$functionName - Using .NET.Dns to resolve IP Address"
 				return (Resolve-DbaNetworkName -ComputerName $Computer -Turbo)
 			}
