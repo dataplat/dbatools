@@ -154,13 +154,13 @@ Shows what would happen if the command were executed.
 				return
 			}
 			
-			if (!$databases)
+			if (!$database)
 			{
-				$databases = $server.databases
+				$database = $server.databases
 			}
 			else
 			{
-				$databases = $server.databases | Where-Object Name -in $databases
+				$database = $server.databases | Where-Object Name -in $database
 			}
 		}
 		else
@@ -175,12 +175,139 @@ Shows what would happen if the command were executed.
 			{
 				$islocal = $true
 			}
+			
+			if ($null -eq $instancename)
+			{
+				$instancename = "MSSQLSERVER"
+			}
 		}
 		
-		Write-Message -Message "Started Log Shipping Recovery" -Level 2
+		#region CIM Session creation
+		$servername = $server.netname
+		Write-Message -Level Verbose -Message "Creating CimSession on $servername over WSMan"
 		
-		foreach ($db in $databases)
-		{	
+		# in case it's piped and already connected
+		if ($cimsession.id -eq $null)
+		{
+			# Check if the CIM session needs to be created using a credential
+			if (!$Credential)
+			{
+				$cimsession = New-CimSession -ComputerName $servername -ErrorAction SilentlyContinue
+			}
+			else
+			{
+				$cimsession = New-CimSession -ComputerName $servername -ErrorAction SilentlyContinue -Credential $SqlCredential
+			}
+			
+			# Create a CIM session if it's not yet created
+			if ($cimsession.id -eq $null)
+			{
+				Write-Message -Level Verbose -Message "Creating CimSession on $servername over WSMan failed. Creating CimSession on $servername over DCom"
+				
+				if (!$Credential)
+				{
+					$cimsession = New-CimSession -ComputerName $servername -SessionOption $SessionOption -ErrorAction SilentlyContinue -Credential $SqlCredential
+				}
+				else
+				{
+					$cimsession = New-CimSession -ComputerName $servername -SessionOption $SessionOption -ErrorAction SilentlyContinue
+				}
+			}
+			
+			# Check if the CIM session was created successfully
+			if ($cimsession.id -eq $null)
+			{
+				Stop-Function -Message "Can't create CimSession on $servername"
+				return
+			}
+		}
+		# Checking the status of the SQL Server Agent service
+		Write-Message -Message "Retrieving the status of the SQL Server Agent $secondarydb" -Level 2
+		
+		# Get the agent service from the CIM session
+		try
+		{
+			$agentservice = Get-CimInstance -CimSession $cimsession -classname Win32_Service -ErrorAction Stop | Where-Object { $_.DisplayName -eq "SQL Server Agent ($instancename)" }
+		}
+		catch
+		{
+			if ($_.Exception -match "namespace")
+			{
+				Stop-Function -Message "Can't get SQL Server Agent Info for '$server'. Unsupported operating system."
+			}
+			else
+			{
+				Stop-Function -Message "Can't get SQL Server Agent Info for '$server'. Check logs for more details."
+			}
+		}
+		#endregion CIM Session creation
+		
+		#region SQL Server Agent check
+		# Check if the service is running
+		if ($agentservice.State -ne 'Running')
+		{
+			# Check if the service needs to be started forcefully
+			if ($Force)
+			{
+				try
+				{
+					# Start the service
+					$agentservice | Invoke-CimMethod -MethodName StartService
+				}
+				catch
+				{
+					# Stop the funcion when the service was unable to start
+					Stop-Function -Message "Unable to start SQL Server Agent Service" -InnerErrorRecord $_ -Target $sqlinstance
+					
+					return
+				}
+			}
+			
+			# If the force switch and the silent switch are not set
+			if (!$Force -and !$Silent)
+			{
+				# Set up the parts for the user choice
+				$Title = "SQL Server Agent is not running"
+				$Info = "Do you want to start the SQL Server Agent service?"
+				
+				$Options = [System.Management.Automation.Host.ChoiceDescription[]] @("&Start", "&Quit")
+				[int]$Defaultchoice = 0
+				$choice = $host.UI.PromptForChoice($Title, $Info, $Options, $Defaultchoice)
+				
+				# Check the given option 
+				if ($choice -eq 0)
+				{
+					try
+					{
+						# Start the service
+						$agentservice | Invoke-CimMethod -MethodName StartService
+					}
+					catch
+					{
+						# Stop the funcion when the service was unable to start
+						Stop-Function -Message "Unable to start SQL Server Agent Service" -InnerErrorRecord $_ -Target $sqlinstance
+						return
+					}
+				}
+				else
+				{
+					Stop-Function -Message "The SQL Server Agent service needs to be started to be able to recover the databases" -InnerErrorRecord $_ -Target $sqlinstance
+					return
+				}
+			}
+			
+			# If the force switch it not set and the silent switch is set
+			if ((!$Force) -and ($Silent))
+			{
+				Stop-Function -Message "The SQL Server Agent service needs to be started to be able to recover the databases" -InnerErrorRecord $_ -Target $sqlinstance
+				return
+			}
+		}
+		#endregion SQL Server Agent check
+		
+		Write-Message -Message "Started Log Shipping Recovery" -Level 2
+		foreach ($db in $database)
+		{
 			# Query for retrieving the log shipping information
 			$query = "SELECT  lss.primary_server, lss.primary_database, lsd.secondary_database, lss.backup_source_directory,
 				        lss.backup_destination_directory, lss.last_copied_file, lss.last_copied_date,
@@ -200,134 +327,16 @@ Shows what would happen if the command were executed.
 			}
 			catch
 			{
-				Stop-Function -Message ("Error retrieving the log shipping details: " + $_.Exception.Message) -InnerErrorRecord $_ -Target $sqlinstance
+				Stop-Function -Message "Error retrieving the log shipping details: $($_.Exception.Message)" -InnerErrorRecord $_ -Target $sqlinstance
 				
 				return
 			}
-			
-			#region CIM Session creation
-			Write-Message -Level Verbose -Message "Creating CimSession on $server over WSMan"
-			
-			# Check if the CIM session needs to be created using a credential
-			if (!$Credential)
-			{
-				$CIMSession = New-CimSession -ComputerName $server -ErrorAction SilentlyContinue
-			}
-			else
-			{
-				$CIMSession = New-CimSession -ComputerName $server -ErrorAction SilentlyContinue -Credential $SqlCredential
-			}
-			
-			# Create a CIM session if it's not yet created
-			if ($CIMSession.id -eq $null)
-			{
-				Write-Message -Level Verbose -Message "Creating CimSession on $server over WSMan failed. Creating CimSession on $server over DCom"
-				
-				if (!$Credential)
-				{
-					$CIMSession = New-CimSession -ComputerName $server -SessionOption $SessionOption -ErrorAction SilentlyContinue -Credential $SqlCredential
-				}
-				else
-				{
-					$CIMSession = New-CimSession -ComputerName $server -SessionOption $SessionOption -ErrorAction SilentlyContinue
-				}
-			}
-			
-			# Check if the CIM session was created successfully
-			if ($CIMSession.id -eq $null)
-			{
-				Stop-Function -Message "Can't create CimSession on $server"
-			}
-			
-			# Checking the status of the SQL Server Agent service
-			Write-Message -Message "Retrieving the status of the SQL Server Agent $secondarydb" -Level 2
-			
-			# Get the agent service from the CIM session
-			try
-			{
-				$agentservice = Get-CimInstance -CimSession $CIMSession -classname Win32_Service -ErrorAction Stop | Where-Object -like -value ('*sql*agent*$' + $instancename) -Property 'Name'
-			}
-			catch
-			{
-				if ($_.Exception -match "namespace")
-				{
-					Stop-Function -Message "Can't get SQL Server Agent Info for '$server'. Unsupported operating system."
-				}
-				else
-				{
-					Stop-Function -Message "Can't get SQL Server Agent Info for '$server'. Check logs for more details."
-				}
-			}
-			#endregion CIM Session creation
-			
-			#region SQL Server Agent check
-			# Check if the service is running
-			if ($agentservice.State -ne 'Running')
-			{
-				# Check if the service needs to be started forcefully
-				if ($Force)
-				{
-					try
-					{
-						# Start the service
-						$agentservice | Invoke-CimMethod -MethodName StartService
-					}
-					catch
-					{
-						# Stop the funcion when the service was unable to start
-						Stop-Function -Message "Unable to start SQL Server Agent Service" -InnerErrorRecord $_ -Target $sqlinstance
-						
-						return
-					}
-				}
-				
-				# If the force switch and the silent switch are not set
-				if ((!$Force) -and (!$Silent))
-				{
-					# Set up the parts for the user choice
-					$Title = "SQL Server Agent is not running"
-					$Info = "Do you want to start the SQL Server Agent service?"
-					
-					$Options = [System.Management.Automation.Host.ChoiceDescription[]] @("&Start", "&Quit")
-					[int]$Defaultchoice = 0
-					$choice = $host.UI.PromptForChoice($Title, $Info, $Options, $Defaultchoice)
-					
-					# Check the given option 
-					if ($choice -eq 0)
-					{
-						try
-						{
-							# Start the service
-							$agentservice | Invoke-CimMethod -MethodName StartService
-						}
-						catch
-						{
-							# Stop the funcion when the service was unable to start
-							Stop-Function -Message "Unable to start SQL Server Agent Service" -InnerErrorRecord $_ -Target $sqlinstance
-						}
-					}
-					else
-					{
-						Stop-Function -Message ("The SQL Server Agent service needs to be started to be able to recover the databases") -InnerErrorRecord $_ -Target $sqlinstance
-						
-						return
-					}
-				}
-				
-				# If the force switch it not set and the silent switch is set
-				if ((!$Force) -and ($Silent))
-				{
-					Stop-Function -Message ("The SQL Server Agent service needs to be started to be able to recover the databases") -InnerErrorRecord $_ -Target $sqlinstance
-					return
-				}
-			}
-			#endregion SQL Server Agent check
 			
 			#region Log Shipping Recovery
 			# Check if the agent is running
 			if ($agentservice.State -ne 'Running')
 			{
-				Stop-Function -Message ("The SQL Server Agent service needs to be started to be able to recover the databases") -InnerErrorRecord $_ -Target $sqlinstance
+				Stop-Function -Message "The SQL Server Agent service needs to be started to be able to recover the databases" -InnerErrorRecord $_ -Target $sqlinstance
 				return
 			}
 			else
@@ -351,7 +360,7 @@ Shows what would happen if the command were executed.
 						}
 						else
 						{
-							Write-Message -Message ("Started Recovery for '" + $secondarydb + "'") -Level 2
+							Write-Message -Message "Started Recovery for $secondarydb" -Level 2
 							
 							#region Copy of remaining backup files
 							# Check if the backup source directory can be reached
@@ -397,15 +406,15 @@ Shows what would happen if the command were executed.
 							#endregion Copy of remaining backup files
 							
 							# Disable the log shipping copy job on the secondary instance
-							if ($PSCmdlet.ShouldProcess($sqlinstance, ("Disabling copy job " + $ls.copyjob)))
+							if ($PSCmdlet.ShouldProcess($sqlinstance, "Disabling copy job $($ls.copyjob)"))
 							{
-								Write-Message -Message ("Disabling copy job " + $ls.copyjob) -Level 5
+								Write-Message -Message "Disabling copy job $($ls.copyjob)" -Level 5
 								$server.JobServer.Jobs[$ls.copyjob].IsEnabled = $false
 								$server.JobServer.Jobs[$ls.copyjob].Alter()
 							}
 							
 							# Check if the file has been copied
-							$query = "SELECT last_restored_file FROM dbo.log_shipping_secondary_databases WHERE secondary_database = '" + $secondarydb + "'"
+							$query = "SELECT last_restored_file FROM dbo.log_shipping_secondary_databases WHERE secondary_database = '$secondarydb'"
 							$latestrestore = Invoke-Sqlcmd2 -ServerInstance $server -Database msdb -Query $query
 							
 							#region Restore of remaining backup files
@@ -416,7 +425,7 @@ Shows what would happen if the command were executed.
 								# Start the restore job
 								if ($PSCmdlet.ShouldProcess($sqlinstance, ("Starting restore job " + $ls.restorejob)))
 								{
-									Write-Message -Message ("Starting restore job " + $ls.restorejob) -Level 5
+									Write-Message -Message "Starting restore job $($ls.restorejob)" -Level 5
 									$server.JobServer.Jobs[$ls.restorejob].Start()
 									
 									Write-Message -Message "Waiting for the restore action to complete.." -Level 5
@@ -435,7 +444,7 @@ Shows what would happen if the command were executed.
 							#endregion Restore of remaining backup files
 							
 							# Disable the log shipping restore job on the secondary instance
-							if ($PSCmdlet.ShouldProcess($sqlinstance, ("Disabling restore job " + $ls.restorejob)))
+							if ($PSCmdlet.ShouldProcess($sqlinstance, "Disabling restore job $($ls.restorejob)"))
 							{
 								Write-Message -Message ("Disabling restore job " + $ls.restorejob) -Level 5
 								$server.JobServer.Jobs[$ls.restorejob].IsEnabled = $false
@@ -452,8 +461,8 @@ Shows what would happen if the command were executed.
 									if ($PSCmdlet.ShouldProcess($secondarydb, "Restoring database with recovery"))
 									{
 										Write-Message -Message "Restoring the database to it's normal state" -Level 2
-										$query = "RESTORE DATABASE " + $secondarydb + " WITH RECOVERY"
-										Invoke-Sqlcmd2 -ServerInstance $server -Database 'master' -Query $query
+										$query = "RESTORE DATABASE [$secondarydb] WITH RECOVERY"
+										Invoke-Sqlcmd2 -ServerInstance $server -Database master -Query $query
 									}
 								}
 								elseif ($NoRecovery -eq $true) # what else could norecovery be?
@@ -466,7 +475,7 @@ Shows what would happen if the command were executed.
 					}
 				}
 				
-				Write-Message -Message ("Finished Recovery for '" + $secondarydb + "'") -Level 2
+				Write-Message -Message ("Finished Recovery for $secondarydb") -Level 2
 				
 				# Reset the log ship details
 				$logshipping_details = $null
