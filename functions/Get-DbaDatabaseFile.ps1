@@ -56,7 +56,6 @@ Function Get-DbaDatabaseFile
 
     Will return an object for every file that includes Impromptu in it's Physical File name
     If not exist on the specified instance it will return false.
-
     
     #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
@@ -64,7 +63,6 @@ Function Get-DbaDatabaseFile
 		[parameter(ParameterSetName = "Pipe", Mandatory = $true)]
 		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-        [parameter(ParameterSetName = "NoPipe", Mandatory = $true, ValueFromPipeline = $true)]
         [object[]]$DatabaseCollection,
         [string]$DataFilePath='#'
 
@@ -74,7 +72,7 @@ Function Get-DbaDatabaseFile
     BEGIN
 	{
 		$FunctionName = $FunctionName = (Get-PSCallstack)[0].Command
-				
+		$output = @{}	
 		if ($SqlInstance.length -ne 0)
 		{
 			$databases = $psboundparameters.Databases
@@ -104,6 +102,7 @@ Function Get-DbaDatabaseFile
     {
         if ($DataFilePath -eq '#')
         {
+            $oresults = @{}
             Write-Verbose "$FunctionName - Databases provided"
             $sql = "select 
                 fg.name as fgname,
@@ -142,10 +141,11 @@ Function Get-DbaDatabaseFile
 
             foreach ($db in $DatabaseCollection)
             {
-
-                $results = Invoke-SqlCmd2 -ServerInstance $server -Query $sql -Database $db.name
+                Write-Verbose "$FunctionName - Querying database $($db.name)"
+                $results = Invoke-SqlCmd2 -ServerInstance $server.name -Query $sql -Database $($db.name) 
+ 
                 $Grouped = $results | Group-Object -Property fgname
-                $FileGroups = @()
+                $FileGroups = @{ }
                 Foreach ($Name in $Grouped)
                 {
                     $GroupName = $Name.Name
@@ -154,20 +154,18 @@ Function Get-DbaDatabaseFile
                         $GroupName = "LOGS"
                     }
 
-                    $FileGroups += [PSCustomObject]@{
+                    $FileGroups += @{$GroupName = [PSCustomObject]@{
                                     Name = $GroupName
                                     ID = $Name[0].group[0].data_space_id
                                     IsDefault = $Name.group[0].FGIsDefault
                                     IsReadonly =  $Name.group[0].FGIsReadOnly
                                     Size = ($Name.group.Size | Measure-Object -sum).sum
-                                    Files = $Name.group | select AvailableSpace,BytesReadFromDisk,BytesWrittenToDisk,FileName,Growth,GrowthType,ID,IsOffline,IsPrimaryFile,IsReadOnly,IsReadOnlyMedia,IsSparse,MaxSize,NumberOfDiskReads,NumberOfDiskWrites,Size,UsedSpace,VolumeFreeSpace,Name,State
-                            }
+                                    Files = $Name.group | Select-Object AvailableSpace,BytesReadFromDisk,BytesWrittenToDisk,FileName,Growth,GrowthType,ID,IsOffline,IsPrimaryFile,IsReadOnly,IsReadOnlyMedia,IsSparse,MaxSize,NumberOfDiskReads,NumberOfDiskWrites,Size,UsedSpace,VolumeFreeSpace,Name,State
+                            }}
                 }
-                [PSCustomObject]@{DatabaseName = $db.Name
-                                            SqlInstance = $server
-                                            FileGroups = $FileGroups
-                                            }
+                $output += @{"$($db.name)" = $FileGroups}
             }
+            $output
     }
     else
     {
