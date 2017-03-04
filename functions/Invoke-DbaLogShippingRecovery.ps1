@@ -90,14 +90,14 @@ Invoke-DbaLogShippingRecovery -SqlServer server1 -WhatIf
 Shows what would happen if the command were executed.
 
 #>
-	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+	[CmdletBinding(SupportsShouldProcess = $true)]
 	param
 	(
-		[Parameter(Mandatory = $true, Position = 1)]
+		[Parameter(Position = 1)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object]$SqlInstance,
 		[Parameter(Mandatory = $false, Position = 2, ValueFromPipeline = $true)]
-		[object[]]$Database = $null,
+		[object[]]$Database,
 		[Parameter(Mandatory = $false, Position = 3)]
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Parameter(Mandatory = $false, Position = 4)]
@@ -112,48 +112,75 @@ Shows what would happen if the command were executed.
 	
 	begin
 	{
-		# Check the instance if it is a named instance
-		$servername, $instancename = $sqlinstance.Split("\")
-		
-		if ($null -eq $instancename)
-		{
-			$instancename = "MSSQLSERVER"
-		}
-		
-		$islocal = $false
-		
-		# Check if it's local or remote
-		if ($servername -in ".", "localhost", $env:ServerNamename, "127.0.0.1")
-		{
-			$islocal = $true
-		}
-		
-		Write-Message -Message "Attempting to connect to Sql Server.." -Level 2
-		try
-		{
-			$server = Connect-SqlServer -SqlServer $sqlinstance -SqlCredential $SqlCredential
-		}
-		catch
-		{
-			Stop-Function -Message "Could not connect to Sql Server instance" -InnerErrorRecord $_ -Target $sqlinstance
-			return
-		}
-		
 		# Setting the CIM session options
 		$SessionOption = New-CimSessionOption -Protocol DCom
 	}
-	
+	# TODO - ADD -All switch and docs
 	process
 	{
+		if (!$sqlinstance -and !$database.name)
+		{
+			# You can prolly do this with 
+			Stop-Function -Message "You must pipe an SMO database object or specify SqlInstance"
+			return
+		}
+		
+		if ($sqlinstance)
+		{
+			# Check the instance if it is a named instance
+			$servername, $instancename = $sqlinstance.Split("\")
+			
+			if ($null -eq $instancename)
+			{
+				$instancename = "MSSQLSERVER"
+			}
+			
+			$islocal = $false
+			
+			# Check if it's local or remote
+			if ($servername -in ".", "localhost", $env:ServerNamename, "127.0.0.1")
+			{
+				$islocal = $true
+			}
+			
+			Write-Message -Message "Attempting to connect to Sql Server" -Level 2
+			try
+			{
+				$server = Connect-SqlServer -SqlServer $sqlinstance -SqlCredential $SqlCredential
+			}
+			catch
+			{
+				Stop-Function -Message "Could not connect to Sql Server instance" -InnerErrorRecord $_ -Target $sqlinstance
+				return
+			}
+			
+			if (!$databases)
+			{
+				$databases = $server.databases
+			}
+			else
+			{
+				$databases = $server.databases | Where-Object Name -in $databases
+			}
+		}
+		else
+		{
+			# get the connected SMO object from the $databases
+			$firstdb = $database[0]
+			$server = $firstdb.Parent
+			$servername, $instancename = $server.Name.Split("\")
+			
+			# Check if it's local or remote
+			if ($servername -in ".", "localhost", $env:ServerNamename, "127.0.0.1")
+			{
+				$islocal = $true
+			}
+		}
+		
 		Write-Message -Message "Started Log Shipping Recovery" -Level 2
 		
 		foreach ($db in $databases)
-		{
-			if ($db.name -ne $null)
-			{
-				$db = $db.name
-			}
-			
+		{	
 			# Query for retrieving the log shipping information
 			$query = "SELECT  lss.primary_server, lss.primary_database, lsd.secondary_database, lss.backup_source_directory,
 				        lss.backup_destination_directory, lss.last_copied_file, lss.last_copied_date,
@@ -169,7 +196,7 @@ Shows what would happen if the command were executed.
 			try
 			{
 				Write-Message -Message "Retrieving log shipping information from the secondary instance" -Level 5
-				$logshipping_details = Invoke-Sqlcmd2 -ServerInstance $sqlinstance -Database msdb -Query $query
+				$logshipping_details = Invoke-Sqlcmd2 -ServerInstance $server -Database msdb -Query $query
 			}
 			catch
 			{
@@ -347,7 +374,7 @@ Shows what would happen if the command were executed.
 										
 										# Check if the file has been copied
 										$query = "SELECT last_copied_file FROM msdb.dbo.log_shipping_secondary WHERE primary_database = '$($ls.primary_database)'"
-										$latestcopy = Invoke-Sqlcmd2 -ServerInstance $sqlinstance -Database msdb -Query $query
+										$latestcopy = Invoke-Sqlcmd2 -ServerInstance $server -Database msdb -Query $query
 										
 										Write-Message -Message "Waiting for the copy action to complete.." -Level 5
 										
@@ -357,7 +384,7 @@ Shows what would happen if the command were executed.
 											Start-Sleep -Seconds $Delay
 											
 											# Again get the latest file to check if the process can continue
-											$latestcopy = Invoke-Sqlcmd2 -ServerInstance $sqlinstance -Database msdb -Query $query
+											$latestcopy = Invoke-Sqlcmd2 -ServerInstance $server -Database msdb -Query $query
 										}
 									}
 									Write-Message -Message "Copying of backup files finished" -Level 5
@@ -379,7 +406,7 @@ Shows what would happen if the command were executed.
 							
 							# Check if the file has been copied
 							$query = "SELECT last_restored_file FROM dbo.log_shipping_secondary_databases WHERE secondary_database = '" + $secondarydb + "'"
-							$latestrestore = Invoke-Sqlcmd2 -ServerInstance $sqlinstance -Database msdb -Query $query
+							$latestrestore = Invoke-Sqlcmd2 -ServerInstance $server -Database msdb -Query $query
 							
 							#region Restore of remaining backup files
 							# Check if the last copied file is newer than the last restored file
@@ -401,7 +428,7 @@ Shows what would happen if the command were executed.
 										Start-Sleep -Seconds $Delay
 										
 										# Again get the latest file to check if the process can continue
-										$latestrestore = Invoke-Sqlcmd2 -ServerInstance $sqlinstance -Database msdb -Query $query
+										$latestrestore = Invoke-Sqlcmd2 -ServerInstance $server -Database msdb -Query $query
 									}
 								}
 							}
@@ -426,7 +453,7 @@ Shows what would happen if the command were executed.
 									{
 										Write-Message -Message "Restoring the database to it's normal state" -Level 2
 										$query = "RESTORE DATABASE " + $secondarydb + " WITH RECOVERY"
-										Invoke-Sqlcmd2 -ServerInstance $sqlinstance -Database 'master' -Query $query
+										Invoke-Sqlcmd2 -ServerInstance $server -Database 'master' -Query $query
 									}
 								}
 								elseif ($NoRecovery -eq $true) # what else could norecovery be?
@@ -446,10 +473,5 @@ Shows what would happen if the command were executed.
 			}
 			#endregion Log Shipping Recovery
 		}
-	}
-	
-	END
-	{
-		Write-Message -Message "Finished Log Shipping Recovery" -Level 1
 	}
 }
