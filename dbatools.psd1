@@ -245,7 +245,7 @@
 		'Get-DbaNetworkActivity',
 		'Get-DbaWhoisActive',
 		'Get-DbaAgentJobOutputFile',
-		'Set-DbaJobAgentOutputFile'
+		'Set-DbaAgentJobOutputFile'
 	)
 	
 	# Cmdlets to export from this module

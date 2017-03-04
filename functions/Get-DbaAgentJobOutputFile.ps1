@@ -123,11 +123,11 @@ param
                     if($Step.OutputFileName)
                     {
                         $fileName = Join-AdminUNC $Server.ComputerNamePhysicalNetBIOS $Step.OutputFileName
-                        [pscustomobject]@{
-                        ComputerName = $Server.ComputerNamePhysicalNetBIOS
-                        InstanceName = $Server.Instancename
-                        SqlInstance = $Server.Name
-                        Job = $Job.Name
+						[pscustomobject]@{
+						ComputerName = $server.NetName
+						InstanceName = $server.ServiceName
+						SqlInstance = $server.DomainInstanceName
+						Job = $Job.Name
                         JobStep = $step.Name
                         OutputFile = $FileName
                         }
