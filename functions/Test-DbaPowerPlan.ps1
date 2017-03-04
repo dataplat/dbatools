@@ -16,7 +16,7 @@ http://www.sqlskills.com/blogs/glenn/windows-power-plan-effects-on-newer-intel-p
 .PARAMETER ComputerName
 The SQL Server (or server in general) that you're connecting to. The -SqlServer parameter also works.
 
-PARAMETER Credential
+.PARAMETER Credential
 Credential object used to connect to the server as a different user
 
 .PARAMETER CustomPowerPlan
