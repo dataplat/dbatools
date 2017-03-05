@@ -76,6 +76,11 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
             return
         }
 
+        if ($server.databases[$Database].Status -ne 'Normal')
+        {
+            Write-Warning "$FunctionName - $Database is not in a normal State, command will not run."
+            return
+        }
         if ($IgnoreLimit)
         {
             Write-Warning "$FunctionName - Please be aware that ignoring the recommended limits may impact on the performance of the SQL Server database and the calling system"
@@ -89,6 +94,7 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
                 return
             }
         }
+
 
         $sql = "select * from fn_dblog(NULL,NULL)"
         Write-Verbose "$FunctionName - Starting Log retrieval"
