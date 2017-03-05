@@ -143,18 +143,48 @@ Function Get-DbaDatabaseFile
                 {
                     $sql = ($sql, $sql2008, $sqlfrom, $sql2008from) -join "`n"
                 }
-                else
+                elseif ($server.VersionMajor -ge 9)
                 {
                     $sql = ($sql, $sqlfrom) -join "`n"
+                }
+                else
+                {
+                    $sql = "select 
+                        fg.groupname as fgname,
+                        fg.groupname as parent,
+                        fg.groupid as 'data_space_id',
+                        NULL as type,
+                        NULL AS type_desc,
+                        CAST(fg.Status & 0x10 as BIT) as FGIsDefault,
+                        CAST(fg.Status & 0x8 as BIT) as FGIsReadOnly,
+                        df.fileid as 'ID',
+                        CONVERT(INT,df.status & 0x40) / 64 as 'type',
+                        case CONVERT(INT,df.status & 0x40) / 64 when 1 then 'LOG' else 'ROWS' end as type_desc,
+                        df.name,
+                        df.filename as 'FileName',
+                        'Existing' as 'State',
+                        df.maxsize as 'MaxSize',
+                        df.growth as 'Growth',
+                        fileproperty(df.name, 'spaceused') as 'UsedSpace',
+                        df.size as 'Size',
+                        (df.size) - fileproperty(df.name, 'spaceused') as 'AvailableSpace',
+                        case CONVERT(INT,df.status & 0x20000000) / 536870912 when 1 then 'True' else 'False' End as 'IsOffline',
+                        case CONVERT(INT,df.status & 0x10) / 16 when 1 then 'True' when 0 then 'False' End as 'IsReadOnly',
+                        case CONVERT(INT,df.status & 0x1000) / 4096 when 1 then 'True' when 0 then 'False' End as 'IsReadOnlyMedia',
+                        case CONVERT(INT,df.status & 0x10000000) / 268435456 when 1 then 'True' when 0 then 'False' End as 'IsSparse',
+                        case CONVERT(INT,df.status & 0x100000) / 1048576 when 1 then 'Percent' when 0 then 'kb' End as 'GrowthType',
+                        case CONVERT(INT,df.status & 0x1000) / 4096 when 1 then 'True' when 0 then 'False' End as 'IsReadOnly'
+                        from sysfiles df
+                        left outer join  sysfilegroups fg on df.groupid=fg.groupid"
                 }
 
             foreach ($db in $DatabaseCollection)
             {
                 Write-Verbose "$FunctionName - Querying database $($db.name)"
-                $results = Invoke-SqlCmd2 -ServerInstance $server.name -Query $sql -Database $($db.name) -verbose
+                $results = Invoke-SqlCmd2 -ServerInstance $server.name -Query $sql -Database $($db.name)
  
                 $Grouped = $results | Group-Object -Property fgname
-                $FileGroups = @{ }
+                $FileGroups = @()
                 Foreach ($Name in $Grouped)
                 {
                     $GroupName = $Name.Name
@@ -163,18 +193,22 @@ Function Get-DbaDatabaseFile
                         $GroupName = "LOGS"
                     }
 
-                    $FileGroups += @{$GroupName = [PSCustomObject]@{
+                    $FileGroups += [PSCustomObject]@{
                                     Name = $GroupName
                                     ID = $Name[0].group[0].data_space_id
                                     IsDefault = $Name.group[0].FGIsDefault
                                     IsReadonly =  $Name.group[0].FGIsReadOnly
                                     Size = ($Name.group.Size | Measure-Object -sum).sum
                                     Files = $Name.group | Select-Object AvailableSpace,BytesReadFromDisk,BytesWrittenToDisk,FileName,Growth,GrowthType,ID,IsOffline,IsPrimaryFile,IsReadOnly,IsReadOnlyMedia,IsSparse,MaxSize,NumberOfDiskReads,NumberOfDiskWrites,Size,UsedSpace,VolumeFreeSpace,Name,State
-                            }}
+                            }
                 }
-                $output += @{"$($db.name)" = $FileGroups}
+               [PSCustomObject]@{
+                        SqlInstance = $server.name
+                        Database = $db.name
+                        FileGroups = $FileGroups
+                    }
             }
-            $output
+
     }
     else
     {
