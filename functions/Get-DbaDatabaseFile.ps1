@@ -129,20 +129,29 @@ Function Get-DbaDatabaseFile
                 case df.is_sparse when 1 then 'True' when 0 then 'False' End as 'IsSparse',
                 case df.is_percent_growth when 1 then 'Percent' when 0 then 'kb' End as 'GrowthType',
                 case df.is_read_only when 1 then 'True' when 0 then 'False' End as 'IsReadOnly',
-                vs.available_bytes as 'VolumeFreeSpace',
                 vfs.num_of_writes as 'NumberOfDiskWrites',
                 vfs.num_of_reads as 'NumberOfDiskReads',
                 vfs.num_of_bytes_read as 'BytesReadFromDisk',
-                vfs.num_of_bytes_written as 'BytesWrittenToDisk'
-                from sys.database_files df
+                vfs.num_of_bytes_written as 'BytesWrittenToDisk'"
+                $sqlfrom ="from sys.database_files df
                 left outer join  sys.filegroups fg on df.data_space_id=fg.data_space_id
-                inner join sys.dm_io_virtual_file_stats(db_id(),NULL) vfs on df.file_id=vfs.file_id
-                cross apply sys.dm_os_volume_stats(db_id(),df.file_id) vs"
+                inner join sys.dm_io_virtual_file_stats(db_id(),NULL) vfs on df.file_id=vfs.file_id"
+                $sql2008 = ",vs.available_bytes as 'VolumeFreeSpace'"
+                $sql2008from = "cross apply sys.dm_os_volume_stats(db_id(),df.file_id) vs"
+
+                if ($server.VersionMajor -ge 11)
+                {
+                    $sql = ($sql, $sql2008, $sqlfrom, $sql2008from) -join "`n"
+                }
+                else
+                {
+                    $sql = ($sql, $sqlfrom) -join "`n"
+                }
 
             foreach ($db in $DatabaseCollection)
             {
                 Write-Verbose "$FunctionName - Querying database $($db.name)"
-                $results = Invoke-SqlCmd2 -ServerInstance $server.name -Query $sql -Database $($db.name) 
+                $results = Invoke-SqlCmd2 -ServerInstance $server.name -Query $sql -Database $($db.name) -verbose
  
                 $Grouped = $results | Group-Object -Property fgname
                 $FileGroups = @{ }
