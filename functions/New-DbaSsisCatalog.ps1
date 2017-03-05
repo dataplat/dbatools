@@ -14,8 +14,11 @@ SQL Server you wish to run the function on.
 Credenitals used to connect to the SQL Server
 
 .PARAMETER SsisCredential
-Optional Password that will be used for the security key in SSISDB. You must pass in a PowerShell credential - only the password is required for SSIS but PowerShell insists you add a username, so add whatever.
+Required password that will be used for the security key in SSISDB. You must pass in a PowerShell credential - only the password is required for SSIS but PowerShell insists you add a username, so add whatever.
 
+.PARAMETER SsisCatalog
+SSIS catalog name. By default, this is SSISDB.	
+	
 .PARAMETER Silent 
 Use this switch to disable any kind of verbose messages
 
@@ -34,15 +37,10 @@ You should have received a copy of the GNU General Public License along with thi
 .LINK
 https://dbatools.io/New-DbaSsisCatalog
 
-.EXAMPLE
-New-DbaSsisCatalog -SqlServer DEV01
-
-Creates the SSIS Catalog on server DEV01 without a password
-
 .EXAMPLE   
 New-DbaSsisCatalog -SqlServer DEV01 -SsisCredential (Get-Credential)
 
-Prompts for username/password - while only password is used, the username must be filled out nevertheless. Then creates the SSIS Catalog on server DEV01 with a password. 
+Prompts for username/password - while only password is used, the username must be filled out nevertheless. Then creates the SSIS Catalog on server DEV01 with the specified password. 
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
@@ -51,7 +49,9 @@ Prompts for username/password - while only password is used, the username must b
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[System.Management.Automation.PSCredential]$SsisPassword,
+		[parameter(Mandatory = $true)]
+		[System.Management.Automation.PSCredential]$SsisCredential,
+		[string]$SsisCatalog = "SSISDB",
 		[switch]$Silent
 	)
 	
@@ -87,30 +87,38 @@ Prompts for username/password - while only password is used, the username must b
 				Stop-Function -Message "SSIS is not running on $instance" -Continue -Target $instance
 			}
 			
-			$SSIS = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $server
+			#if SQL 2012 or higher only validate databases with ContainmentType = NONE
+			$clrenabled = Get-DbaSpConfigure -SqlServer $server | Where-Object ConfigName -eq IsSqlClrEnabled
 			
-			if ($SSIS.Catalogs["SSISDB"])
+			if (!$clrenabled.RunningValue)
 			{
-				Stop-Function -Message "SSIS Catalog already exists" -Continue -Target $SSIS.Catalogs["SSISDB"]
+				Stop-Function -Message 'CLR Integration must be enabled.  You can enable it by running Set-DbaSpConfigure -SqlInstance sql2012 -Configs IsSqlClrEnabled -Value $true' -Continue -Target $instance
+			}
+			
+			$ssis = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $server
+			
+			if ($ssis.Catalogs[$SsisCatalog])
+			{
+				Stop-Function -Message "SSIS Catalog already exists" -Continue -Target $ssis.Catalogs[$SsisCatalog]
 			}
 			else
 			{
 				try
 				{
-					if (!($SsisCredential))
-					{
-						$SSISDB = New-Object Microsoft.SqlServer.Management.IntegrationServices.Catalog ($SSISServer, "SSISDB")
-						$SSISDB.Create()
-					}
-					else
-					{
-						$SSISDB = New-Object Microsoft.SqlServer.Management.IntegrationServices.Catalog ($SSISServer, "SSISDB", $SsisCredential.GetNetworkCredential().Password)
-						$SSISDB.Create()
+					$ssisdb = New-Object Microsoft.SqlServer.Management.IntegrationServices.Catalog ($ssis, $SsisCatalog, $($SsisCredential.GetNetworkCredential().Password))
+					$ssisdb.Create()
+					
+					[pscustomobject]@{
+						ComputerName = $server.NetName
+						InstanceName = $server.ServiceName
+						SqlInstance = $server.DomainInstanceName
+						SsisCatalog = $SsisCatalog
+						Created = $true
 					}
 				}
 				catch
 				{
-					Write-Message -Level Warning -Message "Failed to create SSIS Catalog" -Target $_
+					Stop-Function -Message "Failed to create SSIS Catalog: $_" -Target $_ -Continue
 				}
 			}
 		}
