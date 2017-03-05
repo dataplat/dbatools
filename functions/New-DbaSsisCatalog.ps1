@@ -19,6 +19,12 @@ Required password that will be used for the security key in SSISDB. You must pas
 .PARAMETER SsisCatalog
 SSIS catalog name. By default, this is SSISDB.	
 	
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+	
 .PARAMETER Silent 
 Use this switch to disable any kind of verbose messages
 
@@ -103,22 +109,25 @@ Prompts for username/password - while only password is used, the username must b
 			}
 			else
 			{
-				try
+				if ($Pscmdlet.ShouldProcess($server, "Creating SSIS catalog: $SsisCatalog"))
 				{
-					$ssisdb = New-Object Microsoft.SqlServer.Management.IntegrationServices.Catalog ($ssis, $SsisCatalog, $($SsisCredential.GetNetworkCredential().Password))
-					$ssisdb.Create()
-					
-					[pscustomobject]@{
-						ComputerName = $server.NetName
-						InstanceName = $server.ServiceName
-						SqlInstance = $server.DomainInstanceName
-						SsisCatalog = $SsisCatalog
-						Created = $true
+					try
+					{
+						$ssisdb = New-Object Microsoft.SqlServer.Management.IntegrationServices.Catalog ($ssis, $SsisCatalog, $($SsisCredential.GetNetworkCredential().Password))
+						$ssisdb.Create()
+						
+						[pscustomobject]@{
+							ComputerName = $server.NetName
+							InstanceName = $server.ServiceName
+							SqlInstance = $server.DomainInstanceName
+							SsisCatalog = $SsisCatalog
+							Created = $true
+						}
 					}
-				}
-				catch
-				{
-					Stop-Function -Message "Failed to create SSIS Catalog: $_" -Target $_ -Continue
+					catch
+					{
+						Stop-Function -Message "Failed to create SSIS Catalog: $_" -Target $_ -Continue
+					}
 				}
 			}
 		}
