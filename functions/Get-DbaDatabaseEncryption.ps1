@@ -1,4 +1,5 @@
-﻿function Get-DbaDatabaseEncryption {
+function Get-DbaDatabaseEncryption
+{
 <#
 .SYNOPSIS
 Returns a summary of encrption used on databases based to it.
@@ -6,7 +7,7 @@ Returns a summary of encrption used on databases based to it.
 .DESCRIPTION
 Shows if a database has Transparaent Data encrption, any certificates, asymmetric keys or symmetric keys with details for each.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 SQLServer name or SMO object representing the SQL Server to connect to. This can be a
 collection and recieve pipeline input
 
@@ -16,6 +17,9 @@ PSCredential object to connect as. If not specified, currend Windows login will 
 .PARAMETER Database
 Define the database you wish to search
 
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
+	
 .NOTES 
 Original Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -30,35 +34,47 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Get-DbaDatabaseEncryption
 
 .EXAMPLE
-Get-DbaDatabaseEncryption -SqlServer DEV01
+Get-DbaDatabaseEncryption -SqlInstance DEV01
 List all encrpytion found on the instance by database
 
 .EXAMPLE
-Get-DbaDatabaseEncryption -SqlServer DEV01 -Database MyDB
+Get-DbaDatabaseEncryption -SqlInstance DEV01 -Database MyDB
 List all encrption found in MyDB 
 #>
 	[CmdletBinding()]
 	param ([parameter(ValueFromPipeline, Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[switch]$IncludeSystemDBs)
+		[switch]$IncludeSystemDBs,
+		[switch]$Silent
+	)
 	
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
+	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlInstance $SqlInstance[0] -SqlCredential $SourceSqlCredential } }
 	
 	BEGIN
 	{
 		$databases = $psboundparameters.Databases
-        $exclude = $psboundparameters.Exclude
-    }
-
+		$exclude = $psboundparameters.Exclude
+	}
+	
 	PROCESS
 	{
-		foreach ($s in $SqlServer)
+		foreach ($instance in $SqlInstance)
 		{
 			#For each SQL Server in collection, connect and get SMO object
-			Write-Verbose "Connecting to $s"
-			$server = Connect-SqlServer $s -SqlCredential $SqlCredential
+			Write-Verbose "Connecting to $instance"
+			
+			try
+			{
+				Write-Message -Level Verbose -Message "Connecting to $instance"
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+			}
+			catch
+			{
+				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
+			}
+			
 			#If IncludeSystemDBs is true, include systemdbs
 			#only look at online databases (Status equal normal)
 			try
@@ -83,84 +99,86 @@ List all encrption found in MyDB
 			}
 			catch
 			{
-				Write-Exception $_
-				throw "Unable to gather dbs for $($s.name)"
-				continue
+				Stop-Function -Message "Unable to gather dbs for $instance" -Target $instance -Continue
 			}
 			
 			foreach ($db in $dbs)
-			{    
-                if ($db.EncryptionEnabled -eq $true)
-                {
-       
-                [PSCustomObject]@{
-                        Server = $server.name
-                        Instance = $server.InstanceName
-                        Database = $db
-                        Encryption = "EncryptionEnabled (tde)"
-                        Name =  $null
-                        LastBackup = $null 
-                        PrivateKeyEncryptionType = $null
-                        EncryptionAlgorithm = $null
-                        KeyLength = $null
-                        Owner = $null			
-                    } 
-                   
-                }
-
-                foreach ($cert in $db.Certificates)
-                {
-    
-                    [PSCustomObject]@{
-                        Server = $server.name
-                        Instance = $server.InstanceName
-                        Database = $db
-                        Encryption = "Certificate"
-                        Name =  $cert.Name
-                        LastBackup = $cert.LastBackupDate
-                        PrivateKeyEncryptionType = $cert.PrivateKeyEncryptionType
-                        EncryptionAlgorithm = $null
-                        KeyLength = $null
-                        Owner = $cert.Owner			
-                    }
-                    
-                }
-                
-                foreach ($ak in $db.AsymmetricKeys)
-                {
-  
-                    [PSCustomObject]@{
-                        Server = $server.name
-                        Instance = $server.InstanceName
-                        Database = $db
-                        Encryption = "Asymentric key"
-                        Name =  $ak.Name
-                        LastBackup = $null
-                        PrivateKeyEncryptionType = $ak.PrivateKeyEncryptionType
-                        EncryptionAlgorithm = $ak.KeyEncryptionAlgorithm
-                        KeyLength = $ak.KeyLength
-                        Owner = $ak.Owner	
-                    }
-                    
-                }
-                foreach ($sk in $db.SymmetricKeys)
-                {
-
-                    [PSCustomObject]@{
-                        Server = $server.name
-                        Instance = $server.InstanceName
-                        Database = $db
-                        Encryption = "Symmetric key"
-                        Name =  $sk.Name
-                        LastBackup = $null
-                        PrivateKeyEncryptionType = $sk.PrivateKeyEncryptionType
-                        EncryptionAlgorithm = $ak.EncryptionAlgorithm
-                        KeyLength = $sk.KeyLength
-                        Owner = $sk.Owner	
-                    }
-                }
-            }
-        }  
-    }		
+			{
+				Write-Message -Level Verbose -Message "Processing $db"
+				
+				if ($db.EncryptionEnabled -eq $true)
+				{
+					
+					[PSCustomObject]@{
+						ComputerName = $server.NetName
+						InstanceName = $server.ServiceName
+						SqlInstance = $server.DomainInstanceName
+						Database = $db
+						Encryption = "EncryptionEnabled (tde)"
+						Name = $null
+						LastBackup = $null
+						PrivateKeyEncryptionType = $null
+						EncryptionAlgorithm = $null
+						KeyLength = $null
+						Owner = $null
+					}
+					
+				}
+				
+				foreach ($cert in $db.Certificates)
+				{
+					
+					[PSCustomObject]@{
+						ComputerName = $server.NetName
+						InstanceName = $server.ServiceName
+						SqlInstance = $server.DomainInstanceName
+						Database = $db
+						Encryption = "Certificate"
+						Name = $cert.Name
+						LastBackup = $cert.LastBackupDate
+						PrivateKeyEncryptionType = $cert.PrivateKeyEncryptionType
+						EncryptionAlgorithm = $null
+						KeyLength = $null
+						Owner = $cert.Owner
+					}
+					
+				}
+				
+				foreach ($ak in $db.AsymmetricKeys)
+				{
+					
+					[PSCustomObject]@{
+						ComputerName = $server.NetName
+						InstanceName = $server.ServiceName
+						SqlInstance = $server.DomainInstanceName
+						Database = $db
+						Encryption = "Asymentric key"
+						Name = $ak.Name
+						LastBackup = $null
+						PrivateKeyEncryptionType = $ak.PrivateKeyEncryptionType
+						EncryptionAlgorithm = $ak.KeyEncryptionAlgorithm
+						KeyLength = $ak.KeyLength
+						Owner = $ak.Owner
+					}
+					
+				}
+				foreach ($sk in $db.SymmetricKeys)
+				{
+					
+					[PSCustomObject]@{
+						Server = $server.name
+						Instance = $server.InstanceName
+						Database = $db
+						Encryption = "Symmetric key"
+						Name = $sk.Name
+						LastBackup = $null
+						PrivateKeyEncryptionType = $sk.PrivateKeyEncryptionType
+						EncryptionAlgorithm = $ak.EncryptionAlgorithm
+						KeyLength = $sk.KeyLength
+						Owner = $sk.Owner
+					}
+				}
+			}
+		}
+	}
 }
-
