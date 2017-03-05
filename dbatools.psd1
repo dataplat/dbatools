@@ -247,7 +247,8 @@
 		'Get-DbaWhoisActive',
 		'Get-DbaAgentJobOutputFile',
 		'Set-DbaAgentJobOutputFile',
-		'Test-DbaLinkedServerConnection'
+		'Test-DbaLinkedServerConnection',
+		'Get-DbaDatabaseFile'
 	)
 	
 	# Cmdlets to export from this module
