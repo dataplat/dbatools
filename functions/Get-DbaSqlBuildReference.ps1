@@ -8,17 +8,11 @@ Returns SQL Server Build infos on a SQL instance
 Returns info about the specific build of a SQL instance, including the SP, the CU and the reference KB, wherever possible.
 It also includes End Of Support dates as specified on Microsoft Lifecycle Policy
 
-.PARAMETER SqlInstance
-The SQL Server that you're connecting to.
-
-.PARAMETER Credential
-Credential object used to connect to the SQL Server as a different user.
-
 .PARAMETER Build
 Instead of connecting to a real instance, pass a string identifying the build to get the info back.
 
 .PARAMETER Silent
-Replaces user friendly yellow warnings with bloody red exceptions of doom!
+Use this switch to disable any kind of verbose messages
 
 .NOTES
 Author: niphlod
@@ -34,38 +28,26 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Get-DbaSqlBuildReference
 
 .EXAMPLE
-Get-DbaSqlBuildReference -SqlInstance sqlserver2014a
-
-Returns SqlInstance, SPLevel, CULevel, KBLevel, SupportedUntil for server sqlserver2014a
-
-.EXAMPLE
-$cred = Get-Credential sqladmin
-Get-DbaSqlBuildReference -SqlInstance sqlserver2014a -SqlCredential $cred
-
-Does the same as above but logs in as SQL user "sqladmin"
-
-.EXAMPLE
 Get-DbaSqlBuildReference -Build "12.00.4502"
 
 Returns information about a build identified by  "12.00.4502" (which is SQL 2014 with SP1 and CU11)
+
+.EXAMPLE
+Get-DbaSqlBuildReference -Build "12.0.4502","10.50.4260"
+
+Returns information builds identified by these versions strings
+
+.EXAMPLE
+Get-SqlRegisteredServerName | % { Connect-DbaSqlServer -sqlserver $_ } | % {
+    Get-DbaSqlBuildReference $_.Version | Add-Member -Name "SqlInstance" -Value $_.Name -MemberType NoteProperty -PassThru
+}
+
+Integrate with other commandlets to have builds checked for all your registered servers
 
 #>
 	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
 	[CmdletBinding()]
 	Param (
-		[Parameter(
-			ParameterSetName='Server',
-			Mandatory = $true,
-			ValueFromPipeline = $true
-		)]
-		[Alias("ServerInstance", "SqlServer")]
-		[string[]]$SqlInstance,
-		[parameter(ParameterSetName = "Server")]
-		[PSCredential]
-		[System.Management.Automation.CredentialAttribute()]$Credential,
-		[Parameter(
-			ParameterSetName='BuildString'
-		)]
 		[string[]]$Build,
 		[switch]$Silent
 	)
@@ -130,7 +112,7 @@ Returns information about a build identified by  "12.00.4502" (which is SQL 2014
 			$SqlVersion = $build.split('.')[0..1] -join '.'
 			$IdxVersion = $IdxRef.Data | Where-Object Version -like "$SqlVersion.*"
 			$Detected = @{}
-			$MatchType = 'Approximate'
+			$Detected.MatchType = 'Approximate'
 			Write-Message -Message "We have $($IdxVersion.Length) in store for this Release" -Level 5 -Silent $Silent
 			If($IdxVersion.Length -eq 0) {
 				Write-Message -Message "No info in store for this Release" -Warning -Silent $Silent
@@ -142,7 +124,7 @@ Returns information about a build identified by  "12.00.4502" (which is SQL 2014
 					$Detected.Name = $el.Name
 				}
 				if(Compare-DbaSqlBuildGreater -firstref $el.Version -secondref $LookFor) {
-					$MatchType = 'Approximate'
+					$Detected.MatchType = 'Approximate'
 					$Detected.Warning = "$LookFor not found, closest build we have is $($LastVer.Version)"
 					break
 				}
@@ -159,7 +141,7 @@ Returns information about a build identified by  "12.00.4502" (which is SQL 2014
 				}
 				$Detected.KB = $el.KBList
 				if($el.Version -eq $LookFor) {
-					$MatchType = 'Exact'
+					$Detected.MatchType = 'Exact'
 					break
 				}
 			}
@@ -167,44 +149,18 @@ Returns information about a build identified by  "12.00.4502" (which is SQL 2014
 		}
 	}
 	PROCESS {
-		foreach ($instance in $SqlInstance) {
-			Write-Message -Message "Connecting to $instance" -Level 5 -Silent $Silent
-			try {
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
-			} catch {
-				Stop-Function -Message "Can't connect to $instance" -Silent $Silent -Category InvalidArgument -Target $instance -Continue
-			}
-			$LookFor = $server.Version.toString()
-			$Detected = Resolve-DbaSqlBuild $LookFor
-			$object = [PSCustomObject]@{
-					SqlInstance   = $server.Name
-					InstanceName  = $server.ServiceName
-					ComputerName  = $server.NetName
-					NameLevel = $Detected.Name
-					SPLevel = $Detected.SP
-					CULevel = $Detected.CU
-					KBLevel = $Detected.KB
-					SupportedUntil = $Detected.SupportedUntil
-					MatchType = $MatchType
-					Warning = $Detected.Warning
-					Version = $LookFor
-					Instance = $server
-			}
-			Select-DefaultView -InputObject $object -Property SqlInstance, Version, NameLevel, SPLevel, CULevel, KBLevel, SupportedUntil, MatchType, Warning
-		}
 		foreach($buildstr in $Build) {
 			$Detected = Resolve-DbaSqlBuild $buildstr
-			$object = [PSCustomObject]@{
+			[PSCustomObject]@{
+					Build = $buildstr
 					NameLevel = $Detected.Name
 					SPLevel = $Detected.SP
 					CULevel = $Detected.CU
 					KBLevel = $Detected.KB
 					SupportedUntil = $Detected.SupportedUntil
-					MatchType = $MatchType
+					MatchType = $Detected.MatchType
 					Warning = $Detected.Warning
-					Version = $buildstr
 			}
-			Select-DefaultView -InputObject $object -Property Version, NameLevel, SPLevel, CULevel, KBLevel, SupportedUntil, MatchType, Warning
 		}
 	}
 }
