@@ -625,6 +625,11 @@ namespace sqlcollective.dbatools
             Host = 2,
 
             /// <summary>
+            /// Important message, the user should read this
+            /// </summary>
+            Output = 2,
+
+            /// <summary>
             /// Message relevant to the user.
             /// </summary>
             Significant = 3,
