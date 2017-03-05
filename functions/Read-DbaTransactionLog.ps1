@@ -16,7 +16,7 @@ system running this function
 .PARAMETER SqlInstace
 A SQL Server instance to connect to
 
-.PARAMETER $SqlCredential
+.PARAMETER SqlCredential
 A credeial to use to conect to the SQL Instance rather than using Windows Authentication
 
 .PARAMETER Database
@@ -24,6 +24,9 @@ Database to read the transaction log of
 
 .PARAMETER IgnoreLimit
 Switch to indicate that you wish to bypass the recommended limits of the function
+
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
 
 .NOTES
 Original Author: Stuart Moore (@napalmgram), stuart-moore.com
@@ -37,7 +40,6 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 .EXAMPLE
 $Log = Read-DbaTransactionLog -SqlInstance sql2016 -Database MyDatabase
 
@@ -48,57 +50,60 @@ $Log = Read-DbaTransactionLog -SqlInstance sql2016 -Database MyDatabase -IgnoreL
 
 Will read the contents of the transaction log of MyDatabase on SQL Server Instance sql2016 into the local PowerShell object $Log, ignoring the recommnedation of not returning more that 0.5GB of log
 
-
-
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	Param (
 		[parameter(Position = 0, Mandatory = $true)]
-		[Alias("ServerInstance","SqlServer")]
-		[string]$SqlInstance,
-        [System.Management.Automation.PSCredential]$SqlCredential,
-        [parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[parameter(Mandatory = $true)]
 		[string]$Database,
-        [Switch]$IgnoreLimit    
+		[Switch]$IgnoreLimit,
+		[switch]$Silent
 	)
-    
-    END
-    {
-        $FunctionName = $FunctionName = (Get-PSCallstack)[0].Command
-
-        try
-        {
-            $server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch
-        {
-            Write-Warning "$FunctionName - Cannot connect to $SqlInstance"
-            return
-        }
-
-        if ($server.databases[$Database].Status -ne 'Normal')
-        {
-            Write-Warning "$FunctionName - $Database is not in a normal State, command will not run."
-            return
-        }
-        if ($IgnoreLimit)
-        {
-            Write-Warning "$FunctionName - Please be aware that ignoring the recommended limits may impact on the performance of the SQL Server database and the calling system"
-        }
-        else
-        {
-            #Warn if more than 0.5GB of live log. Dodgy conversion as SMO returns the value in an unhelpful format :(
-            if ($server.databases[$Database].LogFiles.usedspace/1000 -ge 500 )
-            {
-                Write-Warning "$FunctionName - $Database has more than 0.5 Gb of live log data, returning this may have an impact on the database and the calling system. If you wish to proceed please rerun with the -IgnoreLimit switch"
-                return
-            }
-        }
-
-
-        $sql = "select * from fn_dblog(NULL,NULL)"
-        Write-Verbose "$FunctionName - Starting Log retrieval"
-        $results = Invoke-SqlCmd2 -SqlServer $server.name -Query $sql -Database $Database
-        $results
-    }
+	
+	END
+	{
+		try
+		{
+			$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+		}
+		catch
+		{
+			Stop-Function -Message "Failed to connect to: $instance"
+			return
+		}
+		
+		if (-not $server.databases[$Database])
+		{
+			Stop-Function -Message "$Database does not exist"
+			return
+		}
+		
+		if ($server.databases[$Database].Status -ne 'Normal')
+		{
+			Stop-Function -Message "$Database is not in a normal State, command will not run."
+			return
+		}
+		
+		if ($IgnoreLimit)
+		{
+			Write-Message -Level Verbose -Message "Please be aware that ignoring the recommended limits may impact on the performance of the SQL Server database and the calling system"
+		}
+		else
+		{
+			#Warn if more than 0.5GB of live log. Dodgy conversion as SMO returns the value in an unhelpful format :(
+			if ($server.databases[$Database].LogFiles.usedspace/1000 -ge 500) # this will cause enumeration and needs to be addressed
+			{
+				Stop-Function -Message "$Database has more than 0.5 Gb of live log data, returning this may have an impact on the database and the calling system. If you wish to proceed please rerun with the -IgnoreLimit switch"
+				return
+			}
+		}
+		
+		$sql = "select * from fn_dblog(NULL,NULL)"
+		Write-Message -Level Debug -Message $sql
+		Write-Message -Level Verbose -Message "Starting Log retrieval"
+		Invoke-SqlCmd2 -ServerInstance $server -Query $sql -Database $Database
+	}
 }
