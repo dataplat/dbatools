@@ -86,6 +86,274 @@ namespace sqlcollective.dbatools
         }
     }
 
+    namespace Connection
+    {
+        using System.Collections.Generic;
+        using System.Management.Automation;
+
+        /// <summary>
+        /// Provides static tools for managing connections
+        /// </summary>
+        public static class ConnectionHost
+        {
+            /// <summary>
+            /// List of all registered connections.
+            /// </summary>
+            public static Dictionary<string, ManagementConnection> Connections = new Dictionary<string, ManagementConnection>();
+        }
+
+        /// <summary>
+        /// Contains management connection information for a windows server
+        /// </summary>
+        [Serializable]
+        public class ManagementConnection
+        {
+            /// <summary>
+            /// The computer to connect to
+            /// </summary>
+            public string ComputerName;
+
+            #region Connection Stats
+            /// <summary>
+            /// Did the last connection attempt using CimRM work?
+            /// </summary>
+            public bool CimRM;
+
+            /// <summary>
+            /// When was the last connection attempt using CimRM?
+            /// </summary>
+            public DateTime LastCimRM;
+
+            /// <summary>
+            /// Did the last connection attempt using CimDCOM work?
+            /// </summary>
+            public bool CimDCOM;
+
+            /// <summary>
+            /// When was the last connection attempt using CimRM?
+            /// </summary>
+            public DateTime LastCimDCOM;
+
+            /// <summary>
+            /// Did the last connection attempt using Wmi work?
+            /// </summary>
+            public bool Wmi;
+
+            /// <summary>
+            /// When was the last connection attempt using CimRM?
+            /// </summary>
+            public DateTime LastWmi;
+
+            /// <summary>
+            /// Did the last connection attempt using PowerShellRemoting work?
+            /// </summary>
+            public bool PowerShellRemoting;
+
+            /// <summary>
+            /// When was the last connection attempt using CimRM?
+            /// </summary>
+            public DateTime LastPowerShellRemoting;
+            #endregion Connection Stats
+
+            #region Credential Management
+            /// <summary>
+            /// Any registered credentials to use on the connection.
+            /// </summary>
+            public PSCredential Credentials;
+
+            /// <summary>
+            /// Whether the default credentials override explicitly specified credentials
+            /// </summary>
+            public bool OverrideInputCredentials;
+
+            /// <summary>
+            /// Credentials known to not work. They will not be used when specified.
+            /// </summary>
+            public List<PSCredential> KnownBadCredentials = new List<PSCredential>();
+
+            /// <summary>
+            /// Adds a credentials object to the list of credentials known to not work.
+            /// </summary>
+            /// <param name="Credential">The bad credential that must be punished</param>
+            public void AddBadCredential(PSCredential Credential)
+            {
+                if (Credential == null) { return; }
+                foreach (PSCredential cred in KnownBadCredentials)
+                {
+                    if (cred.UserName.ToLower() == Credential.UserName.ToLower())
+                    {
+                        if (cred.GetNetworkCredential().Password == Credential.GetNetworkCredential().Password)
+                            return;
+                    }
+                }
+                KnownBadCredentials.Add(Credential);
+            }
+
+            /// <summary>
+            /// Calculates, which credentials to use. Will consider input, compare it with know not-working credentials or use the configured working credentials for that.
+            /// </summary>
+            /// <param name="Credential">Any credential object a user may have explicitly specified.</param>
+            /// <returns>The Credentials to use</returns>
+            public PSCredential GetCredential(PSCredential Credential)
+            {
+                if (OverrideInputCredentials) { return Credentials; }
+                if (Credential == null) { return null; }
+
+                foreach (PSCredential cred in KnownBadCredentials)
+                {
+                    if (cred.UserName.ToLower() == Credential.UserName.ToLower())
+                    {
+                        if (cred.GetNetworkCredential().Password == Credential.GetNetworkCredential().Password)
+                            return Credentials;
+                    }
+                }
+
+                return Credential;
+            }
+
+            /// <summary>
+            /// Tests whether the input credential is on the list known, bad credentials
+            /// </summary>
+            /// <param name="Credential">The credential to test</param>
+            /// <returns>True if the credential is known to not work, False if it is not yet known to not work</returns>
+            public bool IsBadCredential(PSCredential Credential)
+            {
+                if (Credential == null) { return false; }
+
+                foreach (PSCredential cred in KnownBadCredentials)
+                {
+                    if (cred.UserName.ToLower() == Credential.UserName.ToLower())
+                    {
+                        if (cred.GetNetworkCredential().Password == Credential.GetNetworkCredential().Password)
+                            return true;
+                    }
+                }
+
+                return false;
+            }
+
+            /// <summary>
+            /// Removes an item from the list of known bad credentials
+            /// </summary>
+            /// <param name="Credential">The credential to remove</param>
+            public void RemoveBadCredential(PSCredential Credential)
+            {
+                if (Credential == null) { return; }
+
+                foreach (PSCredential cred in KnownBadCredentials)
+                {
+                    if (cred.UserName.ToLower() == Credential.UserName.ToLower())
+                    {
+                        if (cred.GetNetworkCredential().Password == Credential.GetNetworkCredential().Password)
+                        {
+                            KnownBadCredentials.Remove(cred);
+                        }
+                    }
+                }
+
+                return;
+            }
+            #endregion Credential Management
+
+            #region Connection Types
+            /// <summary>
+            /// Connectiontypes that will never be used
+            /// </summary>
+            public ManagementConnectionType DisabledConnectionTypes = ManagementConnectionType.None;
+            
+            /// <summary>
+            /// Returns the next connection type to try.
+            /// </summary>
+            /// <param name="ExcludedTypes">Exclude any type already tried and failed</param>
+            /// <returns>The next type to try.</returns>
+            public ManagementConnectionType GetConnectionType(ManagementConnectionType ExcludedTypes)
+            {
+                ManagementConnectionType temp = ExcludedTypes | DisabledConnectionTypes;
+
+                if ((ManagementConnectionType.CimRM & temp) == 0)
+                    return ManagementConnectionType.CimRM;
+
+                if ((ManagementConnectionType.CimDCOM & temp) == 0)
+                    return ManagementConnectionType.CimDCOM;
+
+                if ((ManagementConnectionType.Wmi & temp) == 0)
+                    return ManagementConnectionType.Wmi;
+
+                if ((ManagementConnectionType.PowerShellRemoting & temp) == 0)
+                    return ManagementConnectionType.PowerShellRemoting;
+
+                throw new PSInvalidOperationException("No connectiontypes left to try!");
+            }
+
+            /// <summary>
+            /// Returns a list of all available connection types whose inherent timeout has expired.
+            /// </summary>
+            /// <param name="Timestamp">All last connection failures older than this point in time are considered to be expired</param>
+            /// <returns>A list of all valid connection types</returns>
+            public List<ManagementConnectionType> GetConnectionTypesTimed(DateTime Timestamp)
+            {
+                List<ManagementConnectionType> types = new List<ManagementConnectionType>();
+
+                if (((DisabledConnectionTypes & ManagementConnectionType.CimRM) == 0) && ((CimRM) || (LastCimRM < Timestamp)))
+                    types.Add(ManagementConnectionType.CimRM);
+
+                if (((DisabledConnectionTypes & ManagementConnectionType.CimDCOM) == 0) && ((CimDCOM) || (LastCimDCOM < Timestamp)))
+                    types.Add(ManagementConnectionType.CimDCOM);
+
+                if (((DisabledConnectionTypes & ManagementConnectionType.Wmi) == 0) && ((Wmi) || (LastWmi < Timestamp)))
+                    types.Add(ManagementConnectionType.Wmi);
+
+                if (((DisabledConnectionTypes & ManagementConnectionType.PowerShellRemoting) == 0) && ((PowerShellRemoting) || (LastPowerShellRemoting < Timestamp)))
+                    types.Add(ManagementConnectionType.PowerShellRemoting);
+
+                return types;
+            }
+
+            /// <summary>
+            /// Returns a list of all available connection types whose inherent timeout has expired.
+            /// </summary>
+            /// <param name="Timespan">All last connection failures older than this far back into the past are considered to be expired</param>
+            /// <returns>A list of all valid connection types</returns>
+            public List<ManagementConnectionType> GetConnectionTypesTimed(TimeSpan Timespan)
+            {
+                return GetConnectionTypesTimed(DateTime.Now - Timespan);
+            }
+            #endregion Connection Types
+        }
+
+        /// <summary>
+        /// The various ways to connect to a windows server fopr management purposes.
+        /// </summary>
+        [Flags]
+        public enum ManagementConnectionType
+        {
+            /// <summary>
+            /// No Connection-Type
+            /// </summary>
+            None = 0,
+
+            /// <summary>
+            /// Cim over a WinRM connection
+            /// </summary>
+            CimRM = 1,
+
+            /// <summary>
+            /// Cim over a DCOM connection
+            /// </summary>
+            CimDCOM = 2,
+
+            /// <summary>
+            /// WMI Connection
+            /// </summary>
+            Wmi = 4,
+
+            /// <summary>
+            /// Connecting with PowerShell remoting and performing WMI queries locally
+            /// </summary>
+            PowerShellRemoting = 8
+        }
+    }
+
     namespace Database
     {
         /// <summary>
@@ -618,11 +886,6 @@ namespace sqlcollective.dbatools
             /// Important message, the user should read this
             /// </summary>
             Important = 2,
-
-            /// <summary>
-            /// Important message, the user should read this
-            /// </summary>
-            Host = 2,
 
             /// <summary>
             /// Important message, the user should read this

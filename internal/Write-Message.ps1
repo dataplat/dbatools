@@ -40,7 +40,7 @@
             The user will always be shown this message, unless he silences the entire thing with -Silent
             
             Possible levels:
-            Critical (1), Important / Host / Output (2), Significant (3), VeryVerbose (4), Verbose (5), SomewhatVerbose (6), System (7), Debug (8), InternalComment (9), Warning (666)
+            Critical (1), Important / Output (2), Significant (3), VeryVerbose (4), Verbose (5), SomewhatVerbose (6), System (7), Debug (8), InternalComment (9), Warning (666)
             Either one of the strings or its respective number will do as input.
         
         .PARAMETER Silent
