@@ -248,7 +248,8 @@
 		'Get-DbaAgentJobOutputFile',
 		'Set-DbaAgentJobOutputFile',
 		'Test-DbaLinkedServerConnection',
-		'Get-DbaDatabaseFile'
+		'Get-DbaDatabaseFile',
+		'Read-DbaTransactionLog'
 	)
 	
 	# Cmdlets to export from this module
