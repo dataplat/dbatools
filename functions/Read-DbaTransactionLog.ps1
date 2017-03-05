@@ -13,7 +13,7 @@ A soft limit of 0.5GB of log as been implemented. This is based on testing. This
 at the users request, but please be aware that this may have an impact on your target databases and on the 
 system running this function
 
-.PARAMETER SqlInstace
+.PARAMETER SqlInstance
 A SQL Server instance to connect to
 
 .PARAMETER SqlCredential
