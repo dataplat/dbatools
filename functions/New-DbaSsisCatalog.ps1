@@ -1,23 +1,26 @@
-﻿Function New-DbaSsisCatalog {
+Function New-DbaSsisCatalog
+{
 <#
 .SYNOPSIS 
-Enables the SSIS Catalog on a SQL Server 2012 +
+Enables the SSIS Catalog on a SQL Server 2012+
 
 .DESCRIPTION
 After installing the SQL Server Engine and SSIS you still have to enable the SSIS Catalog. This function will enable the catalog and gives the option of supplying the password. 
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 SQL Server you wish to run the function on.
 
 .PARAMETER SqlCredential
 Credenitals used to connect to the SQL Server
 
 .PARAMETER SsisCredential
-Optional Password that will be used for the security key in SSISDB
+Optional Password that will be used for the security key in SSISDB. You must pass in a PowerShell credential - only the password is required for SSIS but PowerShell insists you add a username, so add whatever.
+
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
 
 .NOTES 
-Author: Chrissy LeMaire (@cl), netnerds.net
-Requires: sysadmin access on SQL Servers
+Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
@@ -31,87 +34,85 @@ You should have received a copy of the GNU General Public License along with thi
 .LINK
 https://dbatools.io/New-DbaSsisCatalog
 
-.EXAMPLE   
-New-DbaSsisCatalog -SqlServer DEV01 -SsisCredential MySuperPassword
+.EXAMPLE
+New-DbaSsisCatalog -SqlServer DEV01
 
-Creates the SSIS Catalog on server DEV01
+Creates the SSIS Catalog on server DEV01 without a password
+
+.EXAMPLE   
+New-DbaSsisCatalog -SqlServer DEV01 -SsisCredential (Get-Credential)
+
+Prompts for username/password - while only password is used, the username must be filled out nevertheless. Then creates the SSIS Catalog on server DEV01 with a password. 
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[string[]]$SqlServer,
-        [System.Management.Automation.PSCredential]$SqlCredential,
-        [string]$SsisPassword
-
-        )
-	PROCESS
+		[Alias("ServerInstance", "SqlServer")]
+		[object[]]$SqlInstance,
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[System.Management.Automation.PSCredential]$SsisPassword,
+		[switch]$Silent
+	)
+	
+	process
 	{
-        foreach ($Instance in $SqlServer)
+		foreach ($instance in $SqlInstance)
 		{
-            Write-Verbose "Attempting to connect to $Instance"
+			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+			
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $Instance -SqlCredential $SqlCredential
+				Write-Message -Level Verbose -Message "Connecting to $instance"
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
 			}
 			catch
 			{
-				Write-Warning "Can't connect to $Instance or access denied. Skipping."
-				continue
+				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
 			}
-
-            ## $SsisCredential.GetNetworkCredential().password
-
-            #if SQL 2012 or higher only validate databases with ContainmentType = NONE
-            if (!($server.versionMajor -gt 10))
-		    {
-                write-Warning "This version of SQL Server cannot have SSIS catalog"
-                break
-            }
-            ## need to check if ssis installed
-            if ($true)
-            {
-                Write-Warning "You do not have SSIS installed on this instance"
-            }
-
-            ## check if SSIS and Engine running on box
-            $services = Get-DbaSqlService -ComputerName $server.NetName 
-            $ssis_scv = $Services | Where {$_.ServiceType -eq "SSIS" -and $_.State -eq "Running"} 
-            
-            if (-not $ssis_scv)
-            {
-                write-warning "SSIS is not running on the server you supplied"
-                break
-            }
-
-            $SSIS = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $server
-
-            if(!$SSIS.Catalogs["SSISDB"])
-            {
-                try
-                {
-                    if (!($SsisCredential))
-                    {
-                        $SSISDB = New-Object Microsoft.SqlServer.Management.IntegrationServices.Catalog ($SSISServer, "SSISDB")           
-                        $SSISDB.Create()  
-                    }
-                    else
-                    {
-                        $SSISDB = New-Object Microsoft.SqlServer.Management.IntegrationServices.Catalog ($SSISServer, "SSISDB", $SsisPassword)           
-                        $SSISDB.Create()
-                    }
-                }
-                catch
-                {
-                    
-                    Write-Warning "Failed to create SSIS Catalog error: '($_.Exception.Message)'"
-                }
-            } 
-            else
-            {
-                Write-Warning "SSIS Catalog already exists for this server"
-            }
-        } 
-    } 
-} 
+			
+			#if SQL 2012 or higher only validate databases with ContainmentType = NONE
+			if ($server.versionMajor -lt 10)
+			{
+				Stop-Function -Message "This version of SQL Server cannot have SSIS catalog" -Continue -Target $instance
+			}
+			
+			## check if SSIS and Engine running on box
+			$services = Get-DbaSqlService -ComputerName $server.NetName
+			
+			$ssisservice = $Services | Where-Object { $_.ServiceType -eq "SSIS" -and $_.State -eq "Running" }
+			
+			if (-not $ssisservice)
+			{
+				Stop-Function -Message "SSIS is not running on $instance" -Continue -Target $instance
+			}
+			
+			$SSIS = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $server
+			
+			if ($SSIS.Catalogs["SSISDB"])
+			{
+				Stop-Function -Message "SSIS Catalog already exists" -Continue -Target $SSIS.Catalogs["SSISDB"]
+			}
+			else
+			{
+				try
+				{
+					if (!($SsisCredential))
+					{
+						$SSISDB = New-Object Microsoft.SqlServer.Management.IntegrationServices.Catalog ($SSISServer, "SSISDB")
+						$SSISDB.Create()
+					}
+					else
+					{
+						$SSISDB = New-Object Microsoft.SqlServer.Management.IntegrationServices.Catalog ($SSISServer, "SSISDB", $SsisCredential.GetNetworkCredential().Password)
+						$SSISDB.Create()
+					}
+				}
+				catch
+				{
+					Write-Message -Level Warning -Message "Failed to create SSIS Catalog" -Target $_
+				}
+			}
+		}
+	}
+}
