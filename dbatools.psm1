@@ -63,18 +63,18 @@ foreach ($assembly in $assemblies)
 
 # Load our own custom library
 # Should always come before function imports - 141ms
-Invoke-Expression ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\bin\library.ps1")))
+Invoke-Expression ([io.file]::ReadAllText("$PSScriptRoot\bin\library.ps1"))
 
 # All internal functions privately available within the toolset - 221ms
 foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\*.ps1"))
 {
-	Invoke-Expression ([scriptblock]::Create([io.file]::ReadAllText($function)))
+	Invoke-Expression ([io.file]::ReadAllText($function))
 }
 
 # All exported functions - 600ms
 foreach ($function in (Get-ChildItem "$PSScriptRoot\functions\*.ps1"))
 {
-	Invoke-Expression [scriptblock]::Create([io.file]::ReadAllText($function)))
+	Invoke-Expression ([io.file]::ReadAllText($function))
 }
 
 # Run all optional code
@@ -83,7 +83,7 @@ foreach ($function in (Get-ChildItem "$PSScriptRoot\functions\*.ps1"))
 # 96ms
 foreach ($function in (Get-ChildItem "$PSScriptRoot\optional\*.ps1"))
 {
-	Invoke-Expression ([scriptblock]::Create([io.file]::ReadAllText($function)))
+	Invoke-Expression ([io.file]::ReadAllText($function))
 }
 
 #region Finally register autocompletion - 32ms
@@ -100,19 +100,19 @@ else
 # dynamic params - 136ms
 foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\dynamicparams\*.ps1"))
 {
-	Invoke-Expression ([scriptblock]::Create([io.file]::ReadAllText($function)))
+	Invoke-Expression ([io.file]::ReadAllText($function))
 }
 #endregion Finally register autocompletion
 
 # Load configuration system
 # Should always go next to last
-Invoke-Expression ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\internal\configurations\configuration.ps1")))
+Invoke-Expression ([io.file]::ReadAllText("$PSScriptRoot\internal\configurations\configuration.ps1"))
 
 # Load scripts that must be individually run at the end - 30ms #
 #--------------------------------------------------------------#
 
 # Start the logging system (requires the configuration system up and running)
-Invoke-Expression ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\internal\scripts\logfilescript.ps1")))
+Invoke-Expression ([io.file]::ReadAllText("$PSScriptRoot\internal\scripts\logfilescript.ps1"))
 
 # I renamed this function to be more accurate - 1ms
 Set-Alias -Name Reset-SqlSaPassword -Value Reset-SqlAdmin
