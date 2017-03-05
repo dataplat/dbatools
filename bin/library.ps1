@@ -153,6 +153,72 @@ namespace sqlcollective.dbatools
             /// When was the last connection attempt using CimRM?
             /// </summary>
             public DateTime LastPowerShellRemoting;
+
+            /// <summary>
+            /// Report the successful connection against the computer of this connection
+            /// </summary>
+            /// <param name="Type">What connection type succeeded?</param>
+            public void ReportSuccess(ManagementConnectionType Type)
+            {
+                switch (Type)
+                {
+                    case ManagementConnectionType.CimRM:
+                        CimRM = true;
+                        LastCimRM = DateTime.Now;
+                        break;
+
+                    case ManagementConnectionType.CimDCOM:
+                        CimDCOM = true;
+                        LastCimDCOM = DateTime.Now;
+                        break;
+
+                    case ManagementConnectionType.Wmi:
+                        Wmi = true;
+                        LastWmi = DateTime.Now;
+                        break;
+
+                    case ManagementConnectionType.PowerShellRemoting:
+                        PowerShellRemoting = true;
+                        LastPowerShellRemoting = DateTime.Now;
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+
+            /// <summary>
+            /// Report the failure of connecting to the target computer
+            /// </summary>
+            /// <param name="Type">What connection type failed?</param>
+            public void ReportFailure(ManagementConnectionType Type)
+            {
+                switch (Type)
+                {
+                    case ManagementConnectionType.CimRM:
+                        CimRM = false;
+                        LastCimRM = DateTime.Now;
+                        break;
+
+                    case ManagementConnectionType.CimDCOM:
+                        CimDCOM = false;
+                        LastCimDCOM = DateTime.Now;
+                        break;
+
+                    case ManagementConnectionType.Wmi:
+                        Wmi = false;
+                        LastWmi = DateTime.Now;
+                        break;
+
+                    case ManagementConnectionType.PowerShellRemoting:
+                        PowerShellRemoting = false;
+                        LastPowerShellRemoting = DateTime.Now;
+                        break;
+
+                    default:
+                        break;
+                }
+            }
             #endregion Connection Stats
 
             #region Credential Management
@@ -193,18 +259,23 @@ namespace sqlcollective.dbatools
             /// Calculates, which credentials to use. Will consider input, compare it with know not-working credentials or use the configured working credentials for that.
             /// </summary>
             /// <param name="Credential">Any credential object a user may have explicitly specified.</param>
+            /// <param name="DisableBadCredentialCache">Whether to check for bad credentials and exclude them.</param>
+            /// <param name="WasBound">Whether the user of the calling function explicitly specified credentials to use.</param>
             /// <returns>The Credentials to use</returns>
-            public PSCredential GetCredential(PSCredential Credential)
+            public PSCredential GetCredential(PSCredential Credential, bool DisableBadCredentialCache, bool WasBound)
             {
-                if (OverrideInputCredentials) { return Credentials; }
+                if (OverrideInputCredentials || !WasBound) { return Credentials; }
                 if (Credential == null) { return null; }
 
-                foreach (PSCredential cred in KnownBadCredentials)
+                if (!DisableBadCredentialCache)
                 {
-                    if (cred.UserName.ToLower() == Credential.UserName.ToLower())
+                    foreach (PSCredential cred in KnownBadCredentials)
                     {
-                        if (cred.GetNetworkCredential().Password == Credential.GetNetworkCredential().Password)
-                            return Credentials;
+                        if (cred.UserName.ToLower() == Credential.UserName.ToLower())
+                        {
+                            if (cred.GetNetworkCredential().Password == Credential.GetNetworkCredential().Password)
+                                return Credentials;
+                        }
                     }
                 }
 
@@ -270,16 +341,28 @@ namespace sqlcollective.dbatools
             {
                 ManagementConnectionType temp = ExcludedTypes | DisabledConnectionTypes;
 
-                if ((ManagementConnectionType.CimRM & temp) == 0)
+                if (((ManagementConnectionType.CimRM & temp) == 0) && CimRM)
                     return ManagementConnectionType.CimRM;
 
-                if ((ManagementConnectionType.CimDCOM & temp) == 0)
+                if (((ManagementConnectionType.CimDCOM & temp) == 0) && CimDCOM)
                     return ManagementConnectionType.CimDCOM;
 
-                if ((ManagementConnectionType.Wmi & temp) == 0)
+                if (((ManagementConnectionType.Wmi & temp) == 0) && Wmi)
                     return ManagementConnectionType.Wmi;
 
-                if ((ManagementConnectionType.PowerShellRemoting & temp) == 0)
+                if (((ManagementConnectionType.PowerShellRemoting & temp) == 0) && PowerShellRemoting)
+                    return ManagementConnectionType.PowerShellRemoting;
+
+                if (((ManagementConnectionType.CimRM & temp) == 0) && !CimRM)
+                    return ManagementConnectionType.CimRM;
+
+                if (((ManagementConnectionType.CimDCOM & temp) == 0) && !CimDCOM)
+                    return ManagementConnectionType.CimDCOM;
+
+                if (((ManagementConnectionType.Wmi & temp) == 0) && !Wmi)
+                    return ManagementConnectionType.Wmi;
+
+                if (((ManagementConnectionType.PowerShellRemoting & temp) == 0) && !PowerShellRemoting)
                     return ManagementConnectionType.PowerShellRemoting;
 
                 throw new PSInvalidOperationException("No connectiontypes left to try!");
