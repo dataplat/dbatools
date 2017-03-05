@@ -38,11 +38,11 @@ Get-DbaSqlBuildReference -Build "12.0.4502","10.50.4260"
 Returns information builds identified by these versions strings
 
 .EXAMPLE
-Get-SqlRegisteredServerName | % { Connect-DbaSqlServer -sqlserver $_ } | % {
+Get-SqlRegisteredServerName -SqlServer sqlserver2014a | % { Connect-DbaSqlServer -SqlServer $_ } | % {
     Get-DbaSqlBuildReference $_.Version | Add-Member -Name "SqlInstance" -Value $_.Name -MemberType NoteProperty -PassThru
 }
 
-Integrate with other commandlets to have builds checked for all your registered servers
+Integrate with other commandlets to have builds checked for all your registered servers on sqlserver2014a
 
 #>
 	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
