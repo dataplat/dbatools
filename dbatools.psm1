@@ -63,18 +63,18 @@ foreach ($assembly in $assemblies)
 
 # Load our own custom library
 # Should always come before function imports - 141ms
-. ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\bin\library.ps1")))
+([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\bin\library.ps1"))).Invoke()
 
 # All internal functions privately available within the toolset - 221ms
 foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\*.ps1"))
 {
-	. ([scriptblock]::Create([io.file]::ReadAllText($function)))
+	([scriptblock]::Create([io.file]::ReadAllText($function))).Invoke()
 }
 
 # All exported functions - 600ms
 foreach ($function in (Get-ChildItem "$PSScriptRoot\functions\*.ps1"))
 {
-	. ([scriptblock]::Create([io.file]::ReadAllText($function)))
+	([scriptblock]::Create([io.file]::ReadAllText($function))).Invoke()
 }
 
 # Run all optional code
@@ -83,7 +83,7 @@ foreach ($function in (Get-ChildItem "$PSScriptRoot\functions\*.ps1"))
 # 96ms
 foreach ($function in (Get-ChildItem "$PSScriptRoot\optional\*.ps1"))
 {
-	. ([scriptblock]::Create([io.file]::ReadAllText($function)))
+	([scriptblock]::Create([io.file]::ReadAllText($function))).Invoke()
 }
 
 #region Finally register autocompletion - 32ms
@@ -100,19 +100,19 @@ else
 # dynamic params - 136ms
 foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\dynamicparams\*.ps1"))
 {
-	. ([scriptblock]::Create([io.file]::ReadAllText($function)))
+	([scriptblock]::Create([io.file]::ReadAllText($function))).Invoke()
 }
 #endregion Finally register autocompletion
 
 # Load configuration system
 # Should always go next to last
-. ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\internal\configurations\configuration.ps1")))
+([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\internal\configurations\configuration.ps1"))).Invoke()
 
 # Load scripts that must be individually run at the end - 30ms #
 #--------------------------------------------------------------#
 
 # Start the logging system (requires the configuration system up and running)
-. ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\internal\scripts\logfilescript.ps1")))
+([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\internal\scripts\logfilescript.ps1"))).Invoke()
 
 # I renamed this function to be more accurate - 1ms
 Set-Alias -Name Reset-SqlSaPassword -Value Reset-SqlAdmin
