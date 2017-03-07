@@ -257,7 +257,6 @@ folder for those file types as defined on the target instance.
 				if ("BackupPath" -notin $f.PSobject.Properties.name)
 				{
 					$f = $f | Select-Object *, @{Name="BackupPath";Expression={$_.FullName}}
-					
 				}
 				if ("DatabaseName" -notin $f.PSobject.Properties.name)
 				{
@@ -267,8 +266,17 @@ folder for those file types as defined on the target instance.
 				{
 					$f = $f | Select-Object *,  @{Name="Type";Expression={"Full"}}
 				}
-				
-				$BackupFiles += $f | Select-Object *, @{Name="ServerName";Expression={$_.SqlInstance}}, @{Name="BackupStartDate";Expression={$_.Start}}
+				if ($f.BackupPath.count -gt 1)
+				{
+					foreach ($p in $f.backupPath)
+					{
+						$BackupFiles += $tf | Select-Object *,@{Name="Fullname";Expression={$p}}, @{Name="ServerName";Expression={$_.SqlInstance}}, @{Name="BackupStartDate";Expression={$_.Start}}
+					}	
+				}
+				else
+				{
+						$BackupFiles += $tf | Select-Object *, @{Name="ServerName";Expression={$_.SqlInstance}}, @{Name="BackupStartDate";Expression={$_.Start}}
+				}
 			}
 			else
 			{
