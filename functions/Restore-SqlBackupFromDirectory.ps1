@@ -68,7 +68,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Restore-SqlBackupFromDirectory
 
 .EXAMPLE   
-Restore-SqlBackupFromDirectory -ServerName sqlcluster -Path \\fileserver\share\sqlbackups\SQLSERVER2014A
+Restore-SqlBackupFromDirectory -SqlServer sqlcluster -Path \\fileserver\share\sqlbackups\SQLSERVER2014A
 
 Description
 
