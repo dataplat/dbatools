@@ -277,7 +277,7 @@ folder for those file types as defined on the target instance.
 					$f = $f.FullName
 				}
 				
-				if ($f.Gettype -is [string])
+				if ($f -is [string])
 				{
 					if ($f.StartsWith("\\") -eq $false -and  $islocal -ne $true)
 					{
