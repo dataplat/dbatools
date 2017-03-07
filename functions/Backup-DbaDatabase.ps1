@@ -58,6 +58,9 @@ If not set, function will use the Server's default setting for compression
 .PARAMETER Checksum
 If switch enabled the backup checksum will be calculated
 
+.PARAMETER Verfiy
+If switch enabled, the backup with be verified by running a RESTORE VERIFYONLY against the Sql Instance
+
 .PARAMETER DatabaseCollection
 Internal parameter
 
