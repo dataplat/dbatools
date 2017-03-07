@@ -256,7 +256,7 @@ folder for those file types as defined on the target instance.
 				Write-Verbose "$FunctionName - Trust Database Backup History Set"
 				if ("BackupPath" -notin $f.PSobject.Properties.name)
 				{
-					$f = $f | Select-Object *, @{Name="BackupPath";Expression={$_.FullName}}
+						$f = $f | Select-Object *, @{Name="BackupPath";Expression={$_.FullName}}
 				}
 				if ("DatabaseName" -notin $f.PSobject.Properties.name)
 				{
@@ -266,17 +266,8 @@ folder for those file types as defined on the target instance.
 				{
 					$f = $f | Select-Object *,  @{Name="Type";Expression={"Full"}}
 				}
-				if ($f.BackupPath.count -gt 1)
-				{
-					foreach ($p in $f.backupPath)
-					{
-						$BackupFiles += $tf | Select-Object *,@{Name="Fullname";Expression={$p}}, @{Name="ServerName";Expression={$_.SqlInstance}}, @{Name="BackupStartDate";Expression={$_.Start}}
-					}	
-				}
-				else
-				{
-						$BackupFiles += $tf | Select-Object *, @{Name="ServerName";Expression={$_.SqlInstance}}, @{Name="BackupStartDate";Expression={$_.Start}}
-				}
+
+					$BackupFiles += $F | Select-Object *, @{Name="ServerName";Expression={$_.SqlInstance}}, @{Name="BackupStartDate";Expression={$_.Start}}
 			}
 			else
 			{
@@ -510,7 +501,7 @@ folder for those file types as defined on the target instance.
 		}
 
 		$AllFilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup -TrustDbBackupHistory:$TrustDbBackupHistory
-		
+
 		Write-Verbose "$FunctionName - $($AllFilteredFiles.count) dbs to restore"
 		
 		if ($AllFilteredFiles.count -gt 1 -and $DatabaseName -ne '')
