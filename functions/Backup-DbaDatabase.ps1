@@ -98,7 +98,8 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 		[switch]$CreateFolder,
 		[int]$FileCount=0,
 		[switch]$CompressBackup,
-		[switch]$Checksum
+		[switch]$Checksum,
+		[switch]$Verify
 	)
 	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
@@ -210,7 +211,15 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 
 			if ($CompressBackup)
 			{
-				$backup.CompressionOption =1
+				if ($server.Edition -like 'Express*' -or ($server.VersionMajor -eq 10 -and $server.VersionMinor -eq 0 -and $server.Edition -notlike '*enterprise*') -or $server.VersionMajor -lt 10)
+				{
+					Write-Warning "$FunctionName - Compression is not supported with this version/edition of Sql Server"
+				}
+				else
+				{
+					Write-Verbose "$FunctionName - Compression enabled"
+					$backup.CompressionOption =1
+				}
 			}
 
 			if ($Checksum)
@@ -375,6 +384,33 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					$Filelist = @()
 					$FileList += $server.Databases[$dbname].FileGroups.Files | Select-Object @{Name="FileType";Expression={"D"}}, @{Name="LogicalName";Expression={$_.Name}}, @{Name="PhysicalName";Expression={$_.FileName}}
 					$FileList += $server.Databases[$dbname].LofFiles | Select-Object @{Name="FileType";Expression={"L"}}, @{Name="LogicalName";Expression={$_.Name}}, @{Name="PhysicalName";Expression={$_.FileName}}
+					if ($Verify)
+					{
+						$verifiedresult = [PSCustomObject]@{
+										SqlInstance = $server.name
+										DatabaseName = $dbname
+										BackupComplete = $BackupComplete
+										BackupFilesCount = $FinalBackupPath.count	
+										BackupFile = (split-path $FinalBackupPath -leaf)
+										BackupFolder = (split-path $FinalBackupPath | Sort-Object -Unique)
+										BackupPath = ($FinalBackupPath | Sort-Object -Unique)
+										Script = $script
+										Notes = $failures -join (',')
+										FullName = ($FinalBackupPath | Sort-Object -Unique)
+										FileList = $FileList
+										SoftwareVersionMajor = $server.VersionMajor
+								}  | Restore-DbaDatabase -SqlServer $server.name -SqlCredential $SqlCredential -DatabaseName DbaVerifyOnly -VerifyOnly
+						if ($verifiedResult[0] -eq "Verify successful")
+						{
+							$VerifiedDesc = $verifiedResult[0]
+							$Verified = $true
+						}
+						else
+						{
+							$VerifiedDesc = $verifiedResult[0]
+							$Verified = $false
+						}
+					}
 				}
 				catch
 				{
