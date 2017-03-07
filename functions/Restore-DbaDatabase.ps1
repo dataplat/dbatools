@@ -104,12 +104,17 @@ This switch can be used when piping the output of Get-DbaBackupHistory or Backup
 It allows the user to say that they trust that the output from those commands is correct, and skips the file header
 read portion of the process. This means a faster process, but at the risk of not knowing till halfway through the restore 
 that something is wrong with a file.
-	
+
+.PARAMETERT XpNoRecurse
+If specified, prevents the XpDirTree process from recursing (it's default behaviour)
+
 .PARAMETER Confirm
 Prompts to confirm certain actions
 	
 .PARAMETER WhatIf
 Shows what would happen if the command would execute, but does not actually perform the command
+
+.
 
 .NOTES
 Tags: DisasterRecovery, Backup, Restore
@@ -194,8 +199,7 @@ folder for those file types as defined on the target instance.
 		[switch]$ReuseSourceFolderStructure,
 		[string]$DestinationFilePrefix = '',
 		[string]$RestoredDatababaseNamePrefix,
-		[switch]$TrustDbBackupHistory,
-		[switch]$XpNoRecurse
+		[switch]$TrustDbBackupHistory
 	)
 	BEGIN
 	{
@@ -322,7 +326,7 @@ folder for those file types as defined on the target instance.
 							}
 							else
 							{
-								$BackupFiles += Get-XPDirTreeRestoreFile -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential -XpNoRecurse:$XpNoRecurse
+								$BackupFiles += Get-XPDirTreeRestoreFile -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential
 							}
 						}
 						elseif ((Get-Item $p -ErrorAction SilentlyContinue).PSIsContainer -ne $true)
@@ -372,7 +376,7 @@ folder for those file types as defined on the target instance.
 							Write-Verbose "$FunctionName - File object"
 							if ($FileTmp.PsIsContainer)
 							{
-								$BackupFiles += Get-XPDirTreeRestoreFile -Path $FileTmp.Fullname -SqlServer $SqlServer -SqlCredential $SqlCredential -XpNoRecurse:$XpNoRecurse
+								$BackupFiles += Get-XPDirTreeRestoreFile -Path $FileTmp.Fullname -SqlServer $SqlServer -SqlCredential $SqlCredential
 							}
 							else
 							{
@@ -405,7 +409,7 @@ folder for those file types as defined on the target instance.
 
 								foreach ($dir in $Filetmp.path){
 									Write-Verbose "$FunctionName - it's a folder, passing to Get-XpDirTree - $($dir)"
-									$BackupFiles += Get-XPDirTreeRestoreFile -Path $dir -SqlServer $SqlServer -SqlCredential $SqlCredential -XpNoRecurse:$XpNoRecurse
+									$BackupFiles += Get-XPDirTreeRestoreFile -Path $dir -SqlServer $SqlServer -SqlCredential $SqlCredential
 								}
 							}
 							elseif ([bool]($FileTmp.FullName -match '\.\w{3}\Z' ))

@@ -7,7 +7,6 @@ Internal Function to get SQL Server backfiles from a specified folder using xp_d
 Takes path, checks for validity. Scans for usual backup file 
 .PARAMETER Path
 .PARAMETER 
-
 #>
     [CmdletBinding()]
     Param (
@@ -16,8 +15,7 @@ Takes path, checks for validity. Scans for usual backup file
         [parameter(Mandatory = $true)]
         [Alias("ServerInstance", "SqlInstance")]
         [object]$SqlServer,
-        [System.Management.Automation.PSCredential]$SqlCredential,
-        [Switch]$XpNoRecurse
+        [System.Management.Automation.PSCredential]$SqlCredential
     )
        
         $FunctionName =(Get-PSCallstack)[0].Command
@@ -47,14 +45,12 @@ Takes path, checks for validity. Scans for usual backup file
         $dirs = $queryResult | where-object { $_.file -eq 0 }
         $Results = @()
               $Results += $queryResult | where-object { $_.file -eq 1 } | Select-Object @{Name="FullName";Expression={$PATH+$_."Subdirectory"}}
-        if ($XpNoRecurse -eq $false)      
-        { 
-            ForEach ($d in $dirs) 
-            {
-                $fullpath = "$path$($d.Subdirectory)"
-                Write-Verbose "Enumerating subdirectory '$fullpath'"
-                $Results += Get-XpDirTreeRestoreFile -path $fullpath -SqlServer $SqlServer -SqlCredential $SqlCredential
-            }
+  
+        ForEach ($d in $dirs) 
+        {
+            $fullpath = "$path$($d.Subdirectory)"
+            Write-Verbose "Enumerating subdirectory '$fullpath'"
+            $Results += Get-XpDirTreeRestoreFile -path $fullpath -SqlServer $SqlServer -SqlCredential $SqlCredential
         }
         return $Results
     
