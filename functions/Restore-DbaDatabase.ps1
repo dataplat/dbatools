@@ -267,7 +267,7 @@ folder for those file types as defined on the target instance.
 					$f = $f | Select-Object *,  @{Name="Type";Expression={"Full"}}
 				}
 
-					$BackupFiles += $F | Select-Object *, @{Name="ServerName";Expression={$_.SqlInstance}}, @{Name="BackupStartDate";Expression={$_.Start}}
+				$BackupFiles += $F | Select-Object *, @{Name="ServerName";Expression={$_.SqlInstance}}, @{Name="BackupStartDate";Expression={$_.Start}}
 			}
 			else
 			{

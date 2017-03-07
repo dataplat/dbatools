@@ -43,20 +43,20 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
     End
     {
 
-            $tmpInternalFiles = @()
-            foreach ($row in $InternalFiles)
-            {
-                if ($row.FullName.Count -gt 1){
-                    foreach ($filename in $row.FullName)
-                    {
-                        $newIF  = $row | select *
-                        $NewIf.fullName = $filename.ToString()
-                        $NewIf.BackupPath = $filename.ToString()
-                        $tmpInternalFiles += $NewIf
-                    }
+        $tmpInternalFiles = @()
+        foreach ($row in $InternalFiles)
+        {
+            if ($row.FullName.Count -gt 1){
+                foreach ($filename in $row.FullName)
+                {
+                    $newIF  = $row | select *
+                    $NewIf.fullName = $filename.ToString()
+                    $NewIf.BackupPath = $filename.ToString()
+                    $tmpInternalFiles += $NewIf
                 }
             }
-            $InternalFiles = $tmpInternalFiles    
+        }
+        $InternalFiles = $tmpInternalFiles    
         if ($TrustDbBackupHistory)
         {
             Write-Verbose "$FunctionName - Trusted backup history"
