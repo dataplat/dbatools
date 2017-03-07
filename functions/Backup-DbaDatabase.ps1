@@ -51,6 +51,13 @@ This value is overwritten if you specify multiple Backup Directories
 .PARAMETER CreateFolder
 If switch enabled then each databases will be backed up into a seperate folder on each of the specified backuppaths
 
+.PARAMETER CompressBackup
+If switch enabled, function will try to perform a compressed backup if supported by the version and edition of SQL Server.
+If not set, function will use the Server's default setting for compression
+
+.PARAMETER Checksum
+If switch enabled the backup checksum will be calculated
+
 .PARAMETER DatabaseCollection
 Internal parameter
 
@@ -89,7 +96,9 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 		[parameter(ParameterSetName = "NoPipe", Mandatory = $true, ValueFromPipeline = $true)]
 		[object[]]$DatabaseCollection,
 		[switch]$CreateFolder,
-		[int]$FileCount=0
+		[int]$FileCount=0,
+		[switch]$CompressBackup,
+		[switch]$Checksum
 	)
 	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
@@ -198,7 +207,17 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			$backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
 			$backup.Database = $Database.Name
 			$Suffix = "bak"
-			
+
+			if ($CompressBackup)
+			{
+				$backup.CompressionOption =1
+			}
+
+			if ($Checksum)
+			{
+				$backup.Checksum = $true
+			}
+
 			if ($type -in 'diff', 'differential')
 			{
 				Write-Verbose "Creating differential backup"
@@ -378,6 +397,8 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					FullName = ($FinalBackupPath | Sort-Object -Unique)
 					FileList = $FileList
 					SoftwareVersionMajor = $server.VersionMajor
+					Verified = $Verified
+					VerifiedDesc = $VerifiedDesc
 			} | Select-DefaultView -ExcludeProperty FullName, FileList, SoftwareVersionMajor
 			$BackupFileName = $null
 		}
