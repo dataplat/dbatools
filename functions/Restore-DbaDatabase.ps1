@@ -105,7 +105,7 @@ It allows the user to say that they trust that the output from those commands is
 read portion of the process. This means a faster process, but at the risk of not knowing till halfway through the restore 
 that something is wrong with a file.
 
-.PARAMETERT XpNoRecurse
+.PARAMETER XpNoRecurse
 If specified, prevents the XpDirTree process from recursing (it's default behaviour)
 
 .PARAMETER Confirm
