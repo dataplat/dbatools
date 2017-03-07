@@ -62,9 +62,7 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
 		[Switch]$IgnoreLimit,
 		[switch]$Silent
 	)
-	
-	END
-	{
+
 		try
 		{
 			$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
@@ -110,5 +108,5 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
 		Write-Message -Level Debug -Message $sql
 		Write-Message -Level Verbose -Message "Starting Log retrieval"
 		Invoke-SqlCmd2 -ServerInstance $server.name -Credential $SqlCredential -Query $sql -Database $Database
-	}
+
 }
