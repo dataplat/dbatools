@@ -194,7 +194,8 @@ folder for those file types as defined on the target instance.
 		[switch]$ReuseSourceFolderStructure,
 		[string]$DestinationFilePrefix = '',
 		[string]$RestoredDatababaseNamePrefix,
-		[switch]$TrustDbBackupHistory
+		[switch]$TrustDbBackupHistory,
+		[switch]$XpNoRecurse
 	)
 	BEGIN
 	{
@@ -321,7 +322,7 @@ folder for those file types as defined on the target instance.
 							}
 							else
 							{
-								$BackupFiles += Get-XPDirTreeRestoreFile -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential
+								$BackupFiles += Get-XPDirTreeRestoreFile -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential -XpNoRecurse:$XpNoRecurse
 							}
 						}
 						elseif ((Get-Item $p -ErrorAction SilentlyContinue).PSIsContainer -ne $true)
@@ -371,7 +372,7 @@ folder for those file types as defined on the target instance.
 							Write-Verbose "$FunctionName - File object"
 							if ($FileTmp.PsIsContainer)
 							{
-								$BackupFiles += Get-XPDirTreeRestoreFile -Path $FileTmp.Fullname -SqlServer $SqlServer -SqlCredential $SqlCredential
+								$BackupFiles += Get-XPDirTreeRestoreFile -Path $FileTmp.Fullname -SqlServer $SqlServer -SqlCredential $SqlCredential -XpNoRecurse:$XpNoRecurse
 							}
 							else
 							{
@@ -404,7 +405,7 @@ folder for those file types as defined on the target instance.
 
 								foreach ($dir in $Filetmp.path){
 									Write-Verbose "$FunctionName - it's a folder, passing to Get-XpDirTree - $($dir)"
-									$BackupFiles += Get-XPDirTreeRestoreFile -Path $dir -SqlServer $SqlServer -SqlCredential $SqlCredential
+									$BackupFiles += Get-XPDirTreeRestoreFile -Path $dir -SqlServer $SqlServer -SqlCredential $SqlCredential -XpNoRecurse:$XpNoRecurse
 								}
 							}
 							elseif ([bool]($FileTmp.FullName -match '\.\w{3}\Z' ))
