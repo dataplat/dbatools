@@ -506,7 +506,6 @@ folder for those file types as defined on the target instance.
 		}
 
 		$AllFilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup -TrustDbBackupHistory:$TrustDbBackupHistory
-
 		Write-Verbose "$FunctionName - $($AllFilteredFiles.count) dbs to restore"
 		
 		if ($AllFilteredFiles.count -gt 1 -and $DatabaseName -ne '')
