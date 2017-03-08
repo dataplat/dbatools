@@ -41,7 +41,7 @@ Similar to above but $dbalist gets piped in
 	[CmdletBinding()]
 	param (
 		[Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
-		[PSObject[]]$InputObject
+		[AllowNull()][PSObject[]]$InputObject
 	)
 	
 	BEGIN
@@ -80,9 +80,13 @@ Similar to above but $dbalist gets piped in
 		$datatable = New-Object System.Data.DataTable
 	}
 	
-	PROCESS
-	
+	PROCESS	
 	{
+		if (!$InputObject)
+		{
+			Write-Message -level 2 -Message "The InputObject from the pipe is null, ending function..." -silent $false
+			 Continue 
+		}
 		foreach ($object in $InputObject)
 		{
 			$datarow = $datatable.NewRow()
