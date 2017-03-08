@@ -402,7 +402,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 										FullName = ($FinalBackupPath | Sort-Object -Unique)
 										FileList = $FileList
 										SoftwareVersionMajor = $server.VersionMajor
-								}  | Restore-DbaDatabase -SqlServer $server.name -SqlCredential $SqlCredential -DatabaseName DbaVerifyOnly -VerifyOnly
+								}  | Restore-DbaDatabase -SqlServer $server -SqlCredential $SqlCredential -DatabaseName DbaVerifyOnly -VerifyOnly
 						if ($verifiedResult[0] -eq "Verify successful")
 						{
 							$VerifiedDesc = $verifiedResult[0]

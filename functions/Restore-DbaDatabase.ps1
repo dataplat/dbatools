@@ -200,7 +200,14 @@ folder for those file types as defined on the target instance.
 	{
 		#Don't like nulls
 		$islocal = $false
-		$base = $SqlServer.Split("\")[0]
+		if ($base -is [string])
+		{
+			$base = $SqlServer.Split("\")[0]
+		}
+		else
+		{
+			$base = $SqlServer.name.Split("\")[0]
+		}
 		
 		if ($base -eq "." -or $base -eq "localhost" -or $base -eq $env:computername -or $base -eq "127.0.0.1")
 		{
