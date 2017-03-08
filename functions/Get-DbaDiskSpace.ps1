@@ -21,7 +21,7 @@ Display the disk space information in a specific unit. Valid values include 'Byt
 Check to see if any SQL Data or Log files exists on the disk. Uses Windows authentication to connect by default.
 
 .PARAMETER SqlCredential
-If you want to use SQL Server Authentication to connect.
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
 
 .PARAMETER CheckFragmentation
 Includes a check for fragmentation in all filesystems. This will increase the runtime of the function, as a fragmentation check can take seconds or even minutes for a single volume.
@@ -126,7 +126,7 @@ srv0042 D:\                                                               0     
 		[ValidateSet('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB')]
 		[String]$Unit = 'GB',
 		[Switch]$CheckForSql,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
+		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Switch]$Detailed,
 		[Switch]$CheckFragmentation,
 		[Switch]$AllDrives
@@ -244,7 +244,7 @@ srv0042 D:\                                                               0     
 							try
 							{
 								Write-Verbose "$FunctionName - Checking disk $diskname on $SqlServer"
-								$smoserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $Credential
+								$smoserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 								$sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
 								$sqlcount = $smoserver.Databases['master'].ExecuteWithResults($sql).Tables[0].Count
 								if ($sqlcount -gt 0)
