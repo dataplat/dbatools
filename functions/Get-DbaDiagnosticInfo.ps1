@@ -1,4 +1,3 @@
-#Function Get-DbatoolsEnvironmentInfo
 Function Get-DbaDiagnosticInfo
 {
 <#
@@ -49,11 +48,11 @@ This will show MORE DETAILED information about the computer where DBAtools is be
         # #Write-Verbose "Collecting information about the computer where DBAtools is excuted from"
 
         Write-Verbose "Getting local enivornment information"
-        $localinfo = @{ } | Select-Object Windows, OsArchitecture,PowerShellVersion, PowerShellArchitecture, DbaToolsVersion, ModuleBase, CLR, SMO, DomainUser, RunAsAdmin
+        $localinfo = @{ } | Select-Object OSVersion, OsArchitecture,PowerShellVersion, PowerShellArchitecture, DbaToolsVersion, ModuleBase, CLR, SMO, DomainUser, RunAsAdmin, isPowerShellISE
         
-        $localinfo.Windows = [environment]::OSVersion.Version.ToString() 
+        $localinfo.OSversion = [environment]::OSVersion.Version.ToString() 
         $OsVersion = (Get-WmiObject Win32_OperatingSystem).Caption.ToString()
-        $localinfo.Windows = $OsVersion + "(" + $localinfo.Windows + ")"
+        $localinfo.OSversion = $OsVersion + "(" + $localinfo.OSversion + ")"
         
         $localinfo.OsArchitecture = (Get-WmiObject Win32_OperatingSystem).OSArchitecture.ToString()
 
@@ -67,8 +66,8 @@ This will show MORE DETAILED information about the computer where DBAtools is be
             $localinfo.PowerShellArchitecture = "32-bit PowreShell"
         }
 
-        $localinfo.DbaToolsVersion = (Get-Module dbatools -ListAvailable).Version.ToString()
-        $localinfo.ModuleBase = (Get-Module dbatools -ListAvailable).ModuleBase.ToString()
+        $localinfo.DbaToolsVersion = (Get-Module dbatools).Version.ToString()
+        $localinfo.ModuleBase = (Get-Module dbatools).ModuleBase.ToString()
         $localinfo.CLR = $PSVersionTable.CLRVersion.ToString()
      
         $smo = (([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }).FullName -Split ", ")[1]
@@ -76,7 +75,7 @@ This will show MORE DETAILED information about the computer where DBAtools is be
         
         $localinfo.DomainUser = $env:computername -ne $env:USERDOMAIN
         $localinfo.RunAsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
-
+        $localinfo.isPowerShellISE = [Environment]::CommandLine -match 'ise.exe'  
                 
         #$localinfo
     }
@@ -98,7 +97,7 @@ This will show MORE DETAILED information about the computer where DBAtools is be
         }
     else {
 
-            $BasicLocalInfo = $localinfo | Select-Object Windows, PowerShell, CLR, SMO, RunAsAdmin 
+            $BasicLocalInfo = $localinfo | Select-Object OSVersion, OsArchitecture,PowerShellVersion, PowerShellArchitecture, DbaToolsVersion, ModuleBase, CLR, SMO, DomainUser, RunAsAdmin, isPowerShellISE
             $BasicLocalInfo | clip
             return $BasicLocalInfo
     }
