@@ -59,7 +59,8 @@ This will show MORE DETAILED information about the computer where DBAtools is be
         $localinfo.PowerShellVersion = $PSVersionTable.PSversion.ToString()
 
         #If([Environment]::Is64BitProcess -eq $True) #Works on Powershell 3.0/.Net 4 and above
-        If($env:PROCESSOR_ARCHITECTURE -eq 'AMD64') {
+        #$env:PROCESSOR_ARCHITECTURE -eq 'AMD64' 
+        If([Intptr]::Size -eq 8) {
             $localinfo.PowerShellArchitecture = "64-bit PowerShell"
         }
         else{
