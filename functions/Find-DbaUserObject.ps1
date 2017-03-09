@@ -255,7 +255,7 @@ Shows all user owned (non-sa, non-dbo) objects and verbose output
 					[PSCustomObject]@{
 						ComputerName = $server.NetName
 						SqlInstance = $server.ServiceName
-						Type = "Database"
+						Type = "Server Role"
 						Owner = $role.Owner
 						Name = $role.Name
 						Parent = $role.Parent.Name
