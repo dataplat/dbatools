@@ -94,10 +94,10 @@ Function Test-DbaDiskAlignment
         [switch]
         $Detailed,
         
-        [System.Data.SqlClient.SqlCredential]
+        [System.Management.Automation.PSCredential]
         $Credential,
         
-        [System.Data.SqlClient.SqlCredential]
+        [System.Management.Automation.PSCredential]
         $SqlCredential,
         
         [switch]
