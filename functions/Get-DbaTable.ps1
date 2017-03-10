@@ -44,6 +44,8 @@ using pipeline
 Get-DbaTable -SqlInstance DEV01 -Database MyDB -Table MyTable
 with multiple instances
 .EXAMPLE
+Get-DbaTable -SqlInstance DEV01 -Table MyTable
+REturns information on table called MyTable if it exists in any database on the server, under any schema
 
 
 #>
