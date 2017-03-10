@@ -34,6 +34,9 @@ An alternate SqlCredential object when connecting to and verifying the location 
 .PARAMETER NoSqlCheck
 Skip checking for the presence of SQL Server and simply check all disks for alignment. This can be useful if SQL Server is not yet installed or is dormant.
 
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
+
 .NOTES
 Tags: Storage
 The preferred way to determine if your disks are aligned (or not) is to calculate:
@@ -89,59 +92,72 @@ Displays details about the disk alignmenet calcualtions from multiple servers
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServer")]
-		[string[]]$ComputerName,
+		[object[]]$ComputerName,
 		[switch]$Detailed,
-		[string]$Credential,
+		[System.Data.SqlClient.SqlCredential]$Credential,
 		[System.Data.SqlClient.SqlCredential]$SqlCredential,
-		[switch]$NoSqlCheck
+		[switch]$NoSqlCheck,
+		[switch]$Silent
 	)
 	BEGIN
 	{
+		if ($Detailed)
+		{
+			Write-Message -Level Warning -Message "Detailed is deprecated and will be removed in dbatools 1.0"
+		}
+		
+		$sessionoption = New-CimSessionOption -Protocol DCom
+		
 		Function Get-DiskAlignment
 		{
 			$sqlservers = @()
 			$offsets = @()
-			
+						
 			try
 			{
-				Write-Verbose "Testing connection to $server and resolving IP address."
-				$ipaddr = (Test-Connection $server -Count 1 -ErrorAction SilentlyContinue).Ipv4Address | Select-Object -First 1
-				Write-Verbose "Found $server at $ipaddr on network."
-			}
-			catch
-			{
-				Write-Warning "Can't connect to $server"
-				return
-			}
+				Write-Message -Level Verbose -Message "Gathering information about first partition on each disk for $computer"
+				
+				try
+				{
+					$partitions = Get-CimInstance -CimSession $cimsession -ClassName Win32_DiskPartition -Namespace "root\cimv2" -ErrorAction Stop | Select-Object ElementName, InstanceID, IsActive
+				}
+				catch
+				{
+					if ($_.Exception -match "namespace")
+					{
+						Stop-Function -Message "Can't get disk alignment info for $Computer. Unsupported operating system." -Continue -InnerErrorRecord $_ -Target $Computer
+					}
+					else
+					{
+						Stop-Function -Message "Can't get disk alignment info for $Computer. Check logs for more details." -Continue -InnerErrorRecord $_ -Target $Computer
+					}
+				}
+				
 			
-			try
-			{
-				Write-Verbose "Gathering information about first partition on each disk for $server"
-				$partitions = Get-WmiObject -computerName $ipaddr Win32_DiskPartition
 				$disks = @()
 				$disks += $($partitions | ForEach-Object {
-						Get-WmiObject -computerName $ipaddr -query "ASSOCIATORS OF {Win32_DiskPartition.DeviceID=""$($_.DeviceID.Replace("\", "\\"))""} WHERE AssocClass = Win32_LogicalDiskToPartition" |
-						add-member -membertype noteproperty BlockSize $_.BlockSize -passthru -force |
-						add-member -membertype noteproperty BootPartition $_.BootPartition -passthru |
-						add-member -membertype noteproperty DiskIndex $_.DiskIndex -passthru |
-						add-member -membertype noteproperty Index $_.Index -passthru |
-						add-member -membertype noteproperty NumberOfBlocks $_.NumberOfBlocks -passthru -force |
-						add-member -membertype noteproperty StartingOffset $_.StartingOffset -passthru |
-						add-member -membertype noteproperty Type $_.Type -passthru
+						Get-CimInstance -CimSession $cimsession -Query "ASSOCIATORS OF {Win32_DiskPartition.DeviceID=""$($_.DeviceID.Replace("\", "\\"))""} WHERE AssocClass = Win32_LogicalDiskToPartition" |
+						Add-Member -MemberType noteproperty BlockSize $_.BlockSize -PassThru -Force |
+						Add-Member -MemberType noteproperty BootPartition $_.BootPartition -PassThru |
+						Add-Member -MemberType noteproperty DiskIndex $_.DiskIndex -PassThru |
+						Add-Member -MemberType noteproperty Index $_.Index -PassThru |
+						Add-Member -MemberType noteproperty NumberOfBlocks $_.NumberOfBlocks -PassThru -Force |
+						Add-Member -MemberType noteproperty StartingOffset $_.StartingOffset -PassThru |
+						Add-Member -MemberType noteproperty Type $_.Type -PassThru
 					} |
 					Select-Object BlockSize, BootPartition, Description, DiskIndex, Index, Name, NumberOfBlocks, Size, StartingOffset, Type
 				)
-				Write-Verbose "Gathered WMI information."
+				Write-Message -Level Verbose -Message "Gathered CIM information."
 			}
 			catch
 			{
-				Write-Warning "Can't connect to WMI on $server"
+				Write-Message -Level Warning -Message "Can't connect to CIM on $computer"
 				return
 			}
 			
 			if ($NoSqlCheck -eq $false)
 			{
-				Write-Verbose "Checking for SQL Services"
+				Write-Message -Level Verbose -Message "Checking for SQL Services"
 				$sqlservices = Get-Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like 'SQL Server (*' }
 				foreach ($service in $sqlservices)
 				{
@@ -149,7 +165,7 @@ Displays details about the disk alignmenet calcualtions from multiple servers
 					$instance = $instance.TrimEnd(')')
 					
 					$instancename = $instance.Replace("MSSQLSERVER", "Default")
-					Write-Verbose "Found instance $instancename"
+					Write-Message -Level Verbose -Message "Found instance $instancename"
 					if ($instance -eq 'MSSQLSERVER')
 					{
 						# problems with localhost vs ip, hopefully temporary fix.
@@ -168,7 +184,7 @@ Displays details about the disk alignmenet calcualtions from multiple servers
 					}
 				}
 				$sqlcount = $sqlservers.Count
-				Write-Verbose "$sqlcount instance(s) found"
+				Write-Message -Level Verbose -Message "$sqlcount instance(s) found"
 			}
 			
 			$offsets = @()
@@ -180,9 +196,10 @@ Displays details about the disk alignmenet calcualtions from multiple servers
 					if ($NoSqlCheck -eq $false)
 					{
 						$sqldisk = $false
+						
 						foreach ($sqlserver in $sqlservers)
 						{
-							Write-Verbose "Connecting to SQL instance ($sqlserver)"
+							Write-Message -Level Verbose -Message "Connecting to SQL instance ($sqlserver)"
 							try
 							{
 								if ($SqlCredential -ne $null)
@@ -194,8 +211,8 @@ Displays details about the disk alignmenet calcualtions from multiple servers
 									$smoserver = Connect-SqlServer -SqlServer $sqlserver # win auth
 								}
 								$sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
-								Write-Verbose "Query is: $sql"
-								Write-Verbose "SQL Server is: $SqlServer"
+								Write-Message -Level Verbose -Message "Query is: $sql"
+								Write-Message -Level Verbose -Message "SQL Server is: $SqlServer"
 								$sqlcount = $smoserver.Databases['master'].ExecuteWithResults($sql).Tables[0].Count
 								if ($sqlcount -gt 0)
 								{
@@ -205,8 +222,7 @@ Displays details about the disk alignmenet calcualtions from multiple servers
 							}
 							catch
 							{
-								Write-Warning "Can't connect to $server ($sqlserver)"
-								continue
+								Stop-Function -Message "Can't connect to $computer ($sqlserver)" -Continue
 							}
 						}
 					}
@@ -225,7 +241,8 @@ Displays details about the disk alignmenet calcualtions from multiple servers
 				}
 			}
 			
-			Write-Verbose "Checking $($offsets.count) partitions."
+			Write-Message -Level Verbose -Message "Checking $($offsets.count) partitions."
+			
 			$allpartitions = @()
 			foreach ($partition in $offsets)
 			{
@@ -237,18 +254,19 @@ Displays details about the disk alignmenet calcualtions from multiple servers
 				$stripe_units = @(64, 128, 256, 512, 1024) # still wish I had a better way to verify this or someone to pat my back and say its alright.            
 				
 				# testing dynamic disks, everyone states that info from dynamic disks is not to be trusted, so throw a warning.
-				Write-Verbose "Testing for dynamic disks"
+				Write-Message -Level Verbose -Message "Testing for dynamic disks"
 				if ($type -eq "Logical Disk Manager")
 				{
 					$IsDynamicDisk = $true
-					Write-Warning "Disk is dynamic, all Offset calculations should be suspect, please refer to your vendor to determine actuall Offset calculations."
+					Write-Message -Level Warning -Message "Disk is dynamic, all Offset calculations should be suspect, please refer to your vendor to determine actuall Offset calculations."
 				}
 				else
 				{
 					$IsDynamicDisk = $false
 				}
 				
-				Write-Verbose "Checking for best practices offsets"
+				Write-Message -Level Verbose -Message "Checking for best practices offsets"
+				
 				if ($offset -ne 64 -and $offset -ne 128 -and $offset -ne 256 -and $offset -ne 512 -and $offset -ne 1024)
 				{
 					$IsOffsetBestPractice = $false
@@ -273,7 +291,7 @@ Displays details about the disk alignmenet calcualtions from multiple servers
 					}
 					
 					$output = [PSCustomObject]@{
-						Server = $server
+						Server = $computer
 						Name = "$($partition.Name)"
 						PartitonSizeInMB = $($partition.Size/ 1MB)
 						PartitionType = $partition.Type
@@ -292,86 +310,69 @@ Displays details about the disk alignmenet calcualtions from multiple servers
 			}
 			return $allpartitions
 		}
-		$collection = New-Object System.Collections.ArrayList
-		$processed = New-Object System.Collections.ArrayList
 	}
 	
 	PROCESS
 	{
-		foreach ($server in $ComputerName)
+		foreach ($computer in $ComputerName)
 		{
-			if ($server -match '\\')
+			
+			$computer = Resolve-DbaNetworkName -ComputerName $computer -Credential $credential
+			$ipaddr = $computer.IpAddress
+			$Computer = $computer.ComputerName
+			
+			if (!$Computer)
 			{
-				$server = $server.Split('\\')[0]
+				Stop-Function -Message "Couldn't resolve hostname. Skipping." -Continue
 			}
 			
-			if ($server -notin $processed)
+			Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan"
+			
+			if (!$Credential)
 			{
-				$null = $processed.Add($server)
-				Write-Verbose "Connecting to $server"
+				$cimsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue
 			}
 			else
 			{
-				continue
+				$cimsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
 			}
 			
-			$data = Get-DiskAlignment $server
+			if ($null -eq $cimsession.id)
+			{
+				Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan failed. Creating CimSession on $computer over DCom"
+				
+				if (!$Credential)
+				{
+					$cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
+				}
+				else
+				{
+					$cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue
+				}
+			}
+			
+			if ($null -eq $cimsession.id)
+			{
+				Stop-Function -Message "Can't create CimSession on $computer" -Target $Computer
+			}
+			
+			Write-Message -Level Verbose -Message "Getting Power Plan information from $Computer"
+			
+			
+			$data = Get-DiskAlignment $Computer
+			
 			if ($data.Server -eq $null)
 			{
-				Write-Verbose "Server query failed. Removing from processed collection"
-				$null = $processed.Remove($server)
-				continue
+				Stop-Function -Message "CIM query to $Computer failed." -Continue
 			}
 			
 			if ($data.Count -gt 1)
 			{
-				$data.GetEnumerator() | ForEach-Object { $null = $collection.Add($_) }
+				$data.GetEnumerator()
 			}
 			else
 			{
-				$null = $collection.Add($data)
-			}
-		}
-	}
-	
-	END
-	{
-		if ($Detailed -eq $true)
-		{
-			return $collection
-		}
-		else
-		{
-			$newcollection = @()
-			
-			$serverlist = @{ }
-			foreach ($alloc in $collection) # probably a better way to roll this up so you get one t/f per server
-			{
-				if (-not $serverlist.ContainsKey($alloc.server))
-				{
-					$serverlist.Add($alloc.server, $true)
-				}
-				
-				if ($alloc.IsBestPractice -eq $false)
-				{
-					$serverlist[$alloc.server] = $false
-				}
-			}
-			
-			$serverlist.GetEnumerator() | ForEach-Object {
-				$newcollection += [PSCustomObject]@{
-					Server = $_.Key
-					IsBestPractice = $_.Value
-				}
-			}
-			
-			if ($serverlist.count -eq 1)
-			{
-				return $newcollection.IsBestPractice
-			}
-			else
-			{
-				return $newcollection
+				$data
 			}
 		}
 	}
