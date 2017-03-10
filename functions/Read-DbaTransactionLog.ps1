@@ -13,7 +13,7 @@ A soft limit of 0.5GB of log as been implemented. This is based on testing. This
 at the users request, but please be aware that this may have an impact on your target databases and on the 
 system running this function
 
-.PARAMETER SqlInstace
+.PARAMETER SqlInstance
 A SQL Server instance to connect to
 
 .PARAMETER SqlCredential
@@ -62,9 +62,7 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
 		[Switch]$IgnoreLimit,
 		[switch]$Silent
 	)
-	
-	END
-	{
+
 		try
 		{
 			$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
@@ -94,7 +92,12 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
 		else
 		{
 			#Warn if more than 0.5GB of live log. Dodgy conversion as SMO returns the value in an unhelpful format :(
-			if ($server.databases[$Database].LogFiles.usedspace/1000 -ge 500) # this will cause enumeration and needs to be addressed
+			$SqlSizeCheck = "select 
+								sum(FileProperty(sf.name,'spaceused')*8/1024) as 'SizeMb'
+								from sys.sysfiles sf
+								where CONVERT(INT,sf.status & 0x40) / 64=1"	
+			$TransLogSize = Invoke-SqlCmd2 -ServerInstance $server.name -Credential $SqlCredential -Query $SqlSizeCheck -Database $Database
+			if ($TransLogSize.SizeMb -ge 500) 
 			{
 				Stop-Function -Message "$Database has more than 0.5 Gb of live log data, returning this may have an impact on the database and the calling system. If you wish to proceed please rerun with the -IgnoreLimit switch"
 				return
@@ -104,6 +107,6 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
 		$sql = "select * from fn_dblog(NULL,NULL)"
 		Write-Message -Level Debug -Message $sql
 		Write-Message -Level Verbose -Message "Starting Log retrieval"
-		Invoke-SqlCmd2 -ServerInstance $server -Query $sql -Database $Database
-	}
+		Invoke-SqlCmd2 -ServerInstance $server.name -Credential $SqlCredential -Query $sql -Database $Database
+
 }
