@@ -116,8 +116,8 @@ Only db1 database will be verified for features in use that can't be supported o
 		#>
 
         $editions = @{"Enterprise" = 10; "Developer" = 10; "Evaluation" = 10; "Standard" = 5; "Express" = 1}
-        $notesCanMigrate = "Database can be migrated."
-        $notesCannotMigrate = "Database cannot be migrated."
+        $notesCanMigrate = "Database can be migrated"
+        $notesCannotMigrate = "Database cannot be migrated"
     }
     PROCESS
     {
@@ -139,7 +139,7 @@ Only db1 database will be verified for features in use that can't be supported o
             $databases = $sourceserver.Databases | Where-Object {$_.isSystemObject -eq 0} | Select-Object Name, Status
         }
 
-        if ($databases.Count -gt 0)
+        if (@($databases).Count -gt 0)
         {
 		    if ($databases -contains "master" -or $databases -contains "msdb" -or $databases -contains "tempdb") 
             { 
@@ -167,6 +167,11 @@ Only db1 database will be verified for features in use that can't be supported o
 			    throw "This function does not support versions lower than SQL Server 2008 (v10)"
 		    }
 
+            if (!($sourceserver.Edition.ToString().Split(" ")[0] -in ("Enterprise", "Developer", "Evaluation", "Standard", "Express")))
+            {
+                throw "This function does not support databases running on '$($destserver.Edition.ToString().Split(" ")[0])' edition."
+            }
+
             #if editions differs, from higher to lower one, verify the sys.dm_db_persisted_sku_features - only available from SQL 2008 +
             if (($sourceserver.versionMajor -ge 10 -and $destserver.versionMajor -ge 10))
             {
@@ -188,6 +193,7 @@ Only db1 database will be verified for features in use that can't be supported o
                     if ($dbstatus.Contains("Offline") -eq $false)
                     {
                         [long]$destVersionNumber = $($destserver.VersionString).Replace(".", "")
+                        [long]$sourceVersionNumber = $($sourceServer.VersionString).Replace(".", "")
                         [string]$SourceVersion = "$($sourceServer.Edition) $($sourceServer.ProductLevel) ($($sourceserver.Version))"
                         [string]$DestinationVersion = "$($destserver.Edition) $($destserver.ProductLevel) ($($destserver.Version))"
                         [string]$dbFeatures = ""
@@ -232,7 +238,7 @@ Only db1 database will be verified for features in use that can't be supported o
                                                     DestinationVersion = $DestinationVersion
                                                     Database = $dbName
                                                     FeaturesInUse = $dbFeatures
-                                                    Notes = "$notesCannotMigrate. Destination server edition is EXPRESS which does not support 'ChangeCapture' feature that is in use."
+                                                    Notes = "$notesCannotMigrate. Destination server is running Express Edition which does not support 'ChangeCapture' feature."
                                                 }
                             }
                             else
@@ -254,8 +260,19 @@ Only db1 database will be verified for features in use that can't be supported o
                             Write-Verbose "Source Server Edition: $($sourceserver.Edition) (Weight: $($editions.Item($sourceserver.Edition.ToString().Split(" ")[0])))"
                             Write-Verbose "Destination Server Edition: $($destserver.Edition) (Weight: $($editions.Item($destserver.Edition.ToString().Split(" ")[0])))"
 
-                            #Check for editions. If destination edition is lower than source edition and exists features in use
-                            if (($editions.Item($destserver.Edition.ToString().Split(" ")[0]) -lt $editions.Item($sourceserver.Edition.ToString().Split(" ")[0])) -and (!([string]::IsNullOrEmpty($dbFeatures))))
+                            <#
+                                There is at least one feature in use
+                                Version is the same but edition is lower on destination
+                                Version is lower on destination and edition is lower than DEV/EVA/ENT
+                            #>
+
+                            if (
+                                (!([string]::IsNullOrEmpty($dbFeatures))) `
+                                -and (
+                                            (($destVersionNumber -eq $sourceVersionNumber) -and $editions.Item($destserver.Edition.ToString().Split(" ")[0]) -lt $editions.Item($sourceserver.Edition.ToString().Split(" ")[0])) `
+                                        -or (($destVersionNumber -lt $sourceVersionNumber) -and ($editions.Item($destserver.Edition.ToString().Split(" ")[0]) -lt 10))
+                                      )
+                                )
                             {
                                 [pscustomobject]@{
 						                            SourceInstance = $sourceserver.Name
@@ -264,7 +281,7 @@ Only db1 database will be verified for features in use that can't be supported o
                                                     DestinationVersion = $DestinationVersion
 						                            Database = $dbName
                                                     FeaturesInUse = $dbFeatures
-						                            Notes = "$notesCannotMigrate There are features in use not available on destination instance."
+						                            Notes = "$notesCannotMigrate. There are features in use that are not available on destination instance edition."
 					                            }
                             }
                             #
