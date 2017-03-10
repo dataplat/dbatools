@@ -110,10 +110,3 @@ List all encrption found in MyDB
             }
         }
     }
-}
-
-
-
-
-
-
