@@ -193,15 +193,15 @@ Function Resolve-DbaNetworkName
 						$sessionoption = New-CimSessionOption -Protocol DCOM
 						if ($Credential)
 						{
-							$CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
+							$CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction Stop -Credential $Credential
 							
 						}
 						else
 						{
-							$CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue
+							$CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction Stop
 						}
 						
-						$conn = Get-CimInstance -Query "Select * FROM Win32_computersystem" -CimSession $CIMsession
+						$conn = Get-CimInstance -Query "Select * FROM Win32_computersystem" -CimSession $CIMsession -ErrorAction Stop
 					}
 					catch
 					{
