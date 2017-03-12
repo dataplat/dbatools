@@ -153,6 +153,72 @@ namespace sqlcollective.dbatools
             /// When was the last connection attempt using CimRM?
             /// </summary>
             public DateTime LastPowerShellRemoting;
+
+            /// <summary>
+            /// Report the successful connection against the computer of this connection
+            /// </summary>
+            /// <param name="Type">What connection type succeeded?</param>
+            public void ReportSuccess(ManagementConnectionType Type)
+            {
+                switch (Type)
+                {
+                    case ManagementConnectionType.CimRM:
+                        CimRM = true;
+                        LastCimRM = DateTime.Now;
+                        break;
+
+                    case ManagementConnectionType.CimDCOM:
+                        CimDCOM = true;
+                        LastCimDCOM = DateTime.Now;
+                        break;
+
+                    case ManagementConnectionType.Wmi:
+                        Wmi = true;
+                        LastWmi = DateTime.Now;
+                        break;
+
+                    case ManagementConnectionType.PowerShellRemoting:
+                        PowerShellRemoting = true;
+                        LastPowerShellRemoting = DateTime.Now;
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+
+            /// <summary>
+            /// Report the failure of connecting to the target computer
+            /// </summary>
+            /// <param name="Type">What connection type failed?</param>
+            public void ReportFailure(ManagementConnectionType Type)
+            {
+                switch (Type)
+                {
+                    case ManagementConnectionType.CimRM:
+                        CimRM = false;
+                        LastCimRM = DateTime.Now;
+                        break;
+
+                    case ManagementConnectionType.CimDCOM:
+                        CimDCOM = false;
+                        LastCimDCOM = DateTime.Now;
+                        break;
+
+                    case ManagementConnectionType.Wmi:
+                        Wmi = false;
+                        LastWmi = DateTime.Now;
+                        break;
+
+                    case ManagementConnectionType.PowerShellRemoting:
+                        PowerShellRemoting = false;
+                        LastPowerShellRemoting = DateTime.Now;
+                        break;
+
+                    default:
+                        break;
+                }
+            }
             #endregion Connection Stats
 
             #region Credential Management
@@ -167,6 +233,11 @@ namespace sqlcollective.dbatools
             public bool OverrideInputCredentials;
 
             /// <summary>
+            /// Whether the default windows credentials are known to not work against the target.
+            /// </summary>
+            public bool WindowsCredentialsAreBad;
+
+            /// <summary>
             /// Credentials known to not work. They will not be used when specified.
             /// </summary>
             public List<PSCredential> KnownBadCredentials = new List<PSCredential>();
@@ -177,7 +248,11 @@ namespace sqlcollective.dbatools
             /// <param name="Credential">The bad credential that must be punished</param>
             public void AddBadCredential(PSCredential Credential)
             {
-                if (Credential == null) { return; }
+                if (Credential == null)
+                {
+                    WindowsCredentialsAreBad = true;
+                    return;
+                }
                 foreach (PSCredential cred in KnownBadCredentials)
                 {
                     if (cred.UserName.ToLower() == Credential.UserName.ToLower())
@@ -193,18 +268,23 @@ namespace sqlcollective.dbatools
             /// Calculates, which credentials to use. Will consider input, compare it with know not-working credentials or use the configured working credentials for that.
             /// </summary>
             /// <param name="Credential">Any credential object a user may have explicitly specified.</param>
+            /// <param name="DisableBadCredentialCache">Whether to check for bad credentials and exclude them.</param>
+            /// <param name="WasBound">Whether the user of the calling function explicitly specified credentials to use.</param>
             /// <returns>The Credentials to use</returns>
-            public PSCredential GetCredential(PSCredential Credential)
+            public PSCredential GetCredential(PSCredential Credential, bool DisableBadCredentialCache, bool WasBound)
             {
-                if (OverrideInputCredentials) { return Credentials; }
+                if (OverrideInputCredentials || !WasBound) { return Credentials; }
                 if (Credential == null) { return null; }
 
-                foreach (PSCredential cred in KnownBadCredentials)
+                if (!DisableBadCredentialCache)
                 {
-                    if (cred.UserName.ToLower() == Credential.UserName.ToLower())
+                    foreach (PSCredential cred in KnownBadCredentials)
                     {
-                        if (cred.GetNetworkCredential().Password == Credential.GetNetworkCredential().Password)
-                            return Credentials;
+                        if (cred.UserName.ToLower() == Credential.UserName.ToLower())
+                        {
+                            if (cred.GetNetworkCredential().Password == Credential.GetNetworkCredential().Password)
+                                return Credentials;
+                        }
                     }
                 }
 
@@ -218,7 +298,7 @@ namespace sqlcollective.dbatools
             /// <returns>True if the credential is known to not work, False if it is not yet known to not work</returns>
             public bool IsBadCredential(PSCredential Credential)
             {
-                if (Credential == null) { return false; }
+                if (Credential == null) { return WindowsCredentialsAreBad; }
 
                 foreach (PSCredential cred in KnownBadCredentials)
                 {
@@ -270,16 +350,28 @@ namespace sqlcollective.dbatools
             {
                 ManagementConnectionType temp = ExcludedTypes | DisabledConnectionTypes;
 
-                if ((ManagementConnectionType.CimRM & temp) == 0)
+                if (((ManagementConnectionType.CimRM & temp) == 0) && CimRM)
                     return ManagementConnectionType.CimRM;
 
-                if ((ManagementConnectionType.CimDCOM & temp) == 0)
+                if (((ManagementConnectionType.CimDCOM & temp) == 0) && CimDCOM)
                     return ManagementConnectionType.CimDCOM;
 
-                if ((ManagementConnectionType.Wmi & temp) == 0)
+                if (((ManagementConnectionType.Wmi & temp) == 0) && Wmi)
                     return ManagementConnectionType.Wmi;
 
-                if ((ManagementConnectionType.PowerShellRemoting & temp) == 0)
+                if (((ManagementConnectionType.PowerShellRemoting & temp) == 0) && PowerShellRemoting)
+                    return ManagementConnectionType.PowerShellRemoting;
+
+                if (((ManagementConnectionType.CimRM & temp) == 0) && !CimRM)
+                    return ManagementConnectionType.CimRM;
+
+                if (((ManagementConnectionType.CimDCOM & temp) == 0) && !CimDCOM)
+                    return ManagementConnectionType.CimDCOM;
+
+                if (((ManagementConnectionType.Wmi & temp) == 0) && !Wmi)
+                    return ManagementConnectionType.Wmi;
+
+                if (((ManagementConnectionType.PowerShellRemoting & temp) == 0) && !PowerShellRemoting)
                     return ManagementConnectionType.PowerShellRemoting;
 
                 throw new PSInvalidOperationException("No connectiontypes left to try!");
@@ -319,6 +411,57 @@ namespace sqlcollective.dbatools
                 return GetConnectionTypesTimed(DateTime.Now - Timespan);
             }
             #endregion Connection Types
+
+            #region Internals
+            internal void CopyTo(ManagementConnection Connection)
+            {
+                Connection.ComputerName = ComputerName;
+
+                Connection.CimRM = CimRM;
+                Connection.LastCimRM = LastCimRM;
+                Connection.CimDCOM = CimDCOM;
+                Connection.LastCimDCOM = LastCimDCOM;
+                Connection.Wmi = Wmi;
+                Connection.LastWmi = LastWmi;
+                Connection.PowerShellRemoting = PowerShellRemoting;
+                Connection.LastPowerShellRemoting = LastPowerShellRemoting;
+
+                Connection.Credentials = Credentials;
+                Connection.OverrideInputCredentials = OverrideInputCredentials;
+                Connection.KnownBadCredentials = KnownBadCredentials;
+                Connection.WindowsCredentialsAreBad = WindowsCredentialsAreBad;
+
+                Connection.DisabledConnectionTypes = DisabledConnectionTypes;
+            }
+            #endregion Internals
+
+            #region Constructors
+            /// <summary>
+            /// Creates a new, empty connection object. Necessary for serialization.
+            /// </summary>
+            public ManagementConnection()
+            {
+
+            }
+
+            /// <summary>
+            /// Creates a new default connection object, containing only its computer's name and default results.
+            /// </summary>
+            /// <param name="ComputerName">The computer targeted. Will be forced to lowercase.</param>
+            public ManagementConnection(string ComputerName)
+            {
+                this.ComputerName = ComputerName.ToLower();
+            }
+            #endregion Constructors
+
+            /// <summary>
+            /// Simple string representation
+            /// </summary>
+            /// <returns>Returns the computerName it is connection for</returns>
+            public override string ToString()
+            {
+                return ComputerName;
+            }
         }
 
         /// <summary>
@@ -931,6 +1074,331 @@ namespace sqlcollective.dbatools
             /// This message is a warning, sure sign something went badly wrong
             /// </summary>
             Warning = 666
+        }
+    }
+
+    namespace Parameter
+    {
+        using Connection;
+        using System.Collections.Generic;
+        using System.Management.Automation;
+
+        /// <summary>
+        /// Input converter for Windows Management Information
+        /// </summary>
+        public class DbaWmConnectionParameter
+        {
+            #region Fields of contract
+            /// <summary>
+            /// The resolved connection object
+            /// </summary>
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory | ParameterContractBehavior.Conditional)]
+            public ManagementConnection Connection;
+
+            /// <summary>
+            /// Whether input processing was successful
+            /// </summary>
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory | ParameterContractBehavior.Arbiter)]
+            public bool Success;
+
+            /// <summary>
+            /// The object actually passed to the class
+            /// </summary>
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
+            public object InputObject;
+            #endregion Fields of contract
+
+            /// <summary>
+            /// Implicitly convert all connection parameter objects to the connection-type
+            /// </summary>
+            /// <param name="Input">The parameter object to convert</param>
+            [ParameterContract(ParameterContractType.Operator, ParameterContractBehavior.Conversion)]
+            public static implicit operator ManagementConnection(DbaWmConnectionParameter Input)
+            {
+                return Input.Connection;
+            }
+
+            /// <summary>
+            /// Creates a new DbaWmConnectionParameter based on an input-name
+            /// </summary>
+            /// <param name="ComputerName">The name of the computer the connection is stored for.</param>
+            public DbaWmConnectionParameter(string ComputerName)
+            {
+                InputObject = ComputerName;
+                if (! Utility.Validation.IsValidComputerTarget(ComputerName))
+                {
+                    Success = false;
+                    return;
+                }
+
+
+                bool test = false;
+                try { test = ConnectionHost.Connections[ComputerName.ToLower()] != null; }
+                catch { }
+
+                if (test)
+                {
+                    Connection = ConnectionHost.Connections[ComputerName.ToLower()];
+                }
+
+                else
+                {
+                    Connection = new ManagementConnection(ComputerName.ToLower());
+                    ConnectionHost.Connections[Connection.ComputerName] = Connection;
+                }
+
+                Success = true;
+            }
+
+            /// <summary>
+            /// Creates a new DbaWmConnectionParameter based on an already existing connection object.
+            /// </summary>
+            /// <param name="Connection">The connection to accept</param>
+            public DbaWmConnectionParameter(ManagementConnection Connection)
+            {
+                InputObject = Connection;
+
+                this.Connection = Connection;
+
+                Success = true;
+            }
+
+            /// <summary>
+            /// Tries to convert a generic input object into a true input.
+            /// </summary>
+            /// <param name="Input">Any damn object in the world</param>
+            public DbaWmConnectionParameter(object Input)
+            {
+                InputObject = Input;
+                PSObject tempInput = new PSObject(Input);
+                string typeName = "";
+
+                try { typeName = tempInput.TypeNames[0].ToLower(); }
+                catch
+                {
+                    Success = false;
+                    return;
+                }
+
+                switch (typeName)
+                {
+                    case "sqlcollective.dbatools.connection.managementconnection":
+                        try
+                        {
+                            ManagementConnection con = new ManagementConnection();
+                            con.ComputerName = (string)tempInput.Properties["ComputerName"].Value;
+
+                            con.CimRM = (bool)tempInput.Properties["CimRM"].Value;
+                            con.LastCimRM = (DateTime)tempInput.Properties["LastCimRM"].Value;
+                            con.CimDCOM = (bool)tempInput.Properties["CimDCOM"].Value;
+                            con.LastCimDCOM = (DateTime)tempInput.Properties["LastCimDCOM"].Value;
+                            con.Wmi = (bool)tempInput.Properties["Wmi"].Value;
+                            con.LastWmi = (DateTime)tempInput.Properties["LastWmi"].Value;
+                            con.PowerShellRemoting = (bool)tempInput.Properties["PowerShellRemoting"].Value;
+                            con.LastPowerShellRemoting = (DateTime)tempInput.Properties["LastPowerShellRemoting"].Value;
+
+                            con.Credentials = (PSCredential)tempInput.Properties["Credentials"].Value;
+                            con.OverrideInputCredentials = (bool)tempInput.Properties["OverrideInputCredentials"].Value;
+                            con.KnownBadCredentials = (List<PSCredential>)tempInput.Properties["KnownBadCredentials"].Value;
+                            con.WindowsCredentialsAreBad = (bool)tempInput.Properties["WindowsCredentialsAreBad"].Value;
+
+                            con.DisabledConnectionTypes = (ManagementConnectionType)tempInput.Properties["DisabledConnectionTypes"].Value;
+                        }
+                        catch
+                        {
+                            Success = false;
+                        }
+                        break;
+
+                    default:
+                        Success = false;
+                        break;
+                }
+            }
+        }
+
+        #region ParameterClass Interna
+        /// <summary>
+        /// The attribute used to define the elements of a ParameterClass contract
+        /// </summary>
+        [AttributeUsage(AttributeTargets.All)]
+        public class ParameterContractAttribute : Attribute
+        {
+            private ParameterContractType type;
+            private ParameterContractBehavior behavior;
+
+            /// <summary>
+            /// Returns the type of the element this attribute is supposed to be attached to.
+            /// </summary>
+            public ParameterContractType Type
+            {
+                get
+                {
+                    return type;
+                }
+            }
+
+            /// <summary>
+            /// Returns the behavior to expect from the contracted element. This sets the expectations on how this element is likely to act.
+            /// </summary>
+            public ParameterContractBehavior Behavior
+            {
+                get
+                {
+                    return behavior;
+                }
+            }
+
+            /// <summary>
+            /// Ceates a perfectly common parameter contract attribute. For use with all parameter classes' public elements.
+            /// </summary>
+            /// <param name="Type"></param>
+            /// <param name="Behavior"></param>
+            public ParameterContractAttribute(ParameterContractType Type, ParameterContractBehavior Behavior)
+            {
+                type = Type;
+                behavior = Behavior;
+            }
+        }
+
+        /// <summary>
+        /// Defines how this element will behave
+        /// </summary>
+        [Flags]
+        public enum ParameterContractBehavior
+        {
+            /// <summary>
+            /// This elements is not actually part of the contract. Generally you wouldn't want to add the attribute at all in that case. However, in some places it helps avoiding confusion.
+            /// </summary>
+            NotContracted = 0,
+
+            /// <summary>
+            /// This element may never be null and must be considered in all assignments. Even if the element is de facto not nullable, all constructors must assign it.
+            /// </summary>
+            Mandatory = 1,
+
+            /// <summary>
+            /// This element may contain data, but is not required to. In case of a method, it may simply do nothing
+            /// </summary>
+            Optional = 2,
+
+            /// <summary>
+            /// This method may throw an error when executing and should always be handled with try/catch. Use this on methods that use external calls.
+            /// </summary>
+            Failable = 4,
+
+            /// <summary>
+            /// The content of the thus marked field determines the dependent's state. Generally, only if the arbiter is true, will the dependent elements be mandatory. This behavior may only be assigned to boolean fields.
+            /// </summary>
+            Arbiter = 8,
+
+            /// <summary>
+            /// This behavior can be assigned together with the 'Mandatory' behavior. It means the field is only mandatory if an arbiter field is present and set to true.
+            /// </summary>
+            Conditional = 16,
+
+            /// <summary>
+            /// Converts content. Generally applied only to operators, but some methods may also convert information.
+            /// </summary>
+            Conversion = 32
+        }
+
+        /// <summary>
+        /// Defines what kind of element is granted the contract
+        /// </summary>
+        public enum ParameterContractType
+        {
+            /// <summary>
+            /// The contracted element is a field containing a value
+            /// </summary>
+            Field,
+
+            /// <summary>
+            /// The contracted element is a method, performing an action
+            /// </summary>
+            Method,
+
+            /// <summary>
+            /// The contracted element is an operator, facilitating type conversion. Generally into a dedicated object type this parameterclass abstracts.
+            /// </summary>
+            Operator
+        }
+        #endregion ParameterClass Interna
+    }
+
+    namespace Utility
+    {
+        using System.Text.RegularExpressions;
+
+        /// <summary>
+        /// Static class that holds useful regex patterns, ready for use
+        /// </summary>
+        public static class RegexHelper
+        {
+            /// <summary>
+            /// Pattern that checks for a valid hostname
+            /// </summary>
+            public static string HostName = @"^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$";
+
+            /// <summary>
+            /// Pattern that checks for valid hostnames within a larger text
+            /// </summary>
+            public static string ExHostName = @"([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*";
+
+            /// <summary>
+            /// Pattern that checks for a valid IPv4 address
+            /// </summary>
+            public static string IPv4 = @"^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$";
+
+            /// <summary>
+            /// Pattern that checks for valid IPv4 addresses within a larger text
+            /// </summary>
+            public static string ExIPv4 = @"(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}";
+
+            /// <summary>
+            /// Will match a valid IPv6 address
+            /// </summary>
+            public static string IPv6 = @"^(?:^|(?<=\s))(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))(?=\s|$)$";
+
+            /// <summary>
+            /// Will match any IPv6 address within a larger text
+            /// </summary>
+            public static string ExIPv6 = @"(?:^|(?<=\s))(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))(?=\s|$)";
+
+            /// <summary>
+            /// Will match any string that in its entirety represents a valid target for dns- or ip-based targeting. Combination of HostName, IPv4 and IPv6
+            /// </summary>
+            public static string ComputerTarget = @"^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$|^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$|^(?:^|(?<=\s))(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))(?=\s|$)$";
+
+            /// <summary>
+            /// Will match a valid Guid
+            /// </summary>
+            public static string Guid = @"^(\{{0,1}([0-9a-fA-F]){8}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){12}\}{0,1})$";
+
+            /// <summary>
+            /// Will match any number of valid Guids in a larger text
+            /// </summary>
+            public static string ExGuid = @"(\{{0,1}([0-9a-fA-F]){8}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){12}\}{0,1})";
+        }
+
+        /// <summary>
+        /// Provides helper methods that aid in validating stuff.
+        /// </summary>
+        public static class Validation
+        {
+            /// <summary>
+            /// Tests whether a given string is a valid target for targeting as a computer. Will first convert from idn name.
+            /// </summary>
+            public static bool IsValidComputerTarget(string ComputerName)
+            {
+                try
+                {
+                    System.Globalization.IdnMapping mapping = new System.Globalization.IdnMapping();
+                    string temp = mapping.GetAscii(ComputerName);
+                    return Regex.IsMatch(temp, RegexHelper.ComputerTarget);
+                }
+                catch { return false; }
+            }
         }
     }
 }
