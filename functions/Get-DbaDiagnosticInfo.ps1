@@ -52,10 +52,10 @@ This will show MORE DETAILED information about the computer where DBAtools is be
         $localinfo = @{ } | Select-Object OSVersion, OsArchitecture,PowerShellVersion, PowerShellArchitecture, DbaToolsVersion, ModuleBase, CLR, SMO, DomainUser, RunAsAdmin, isPowerShellISE
         
         $localinfo.OSversion = [environment]::OSVersion.Version.ToString() 
-        $OsVersion = (Get-CimInstance Win32_OperatingSystem).Caption.ToString()
+        $OsVersion = (Get-CimInstance CIM_OperatingSystem).Caption.ToString()
         $localinfo.OSversion = $OsVersion + "(" + $localinfo.OSversion + ")"
         
-        $localinfo.OsArchitecture = (Get-CimInstance Win32_OperatingSystem).OSArchitecture.ToString()
+        $localinfo.OsArchitecture = (Get-CimInstance CIM_OperatingSystem).OSArchitecture.ToString()
 
         $localinfo.PowerShellVersion = $PSVersionTable.PSversion.ToString()
 
