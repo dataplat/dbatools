@@ -39,7 +39,8 @@ This will show MORE DETAILED information about the computer where DBAtools is be
 #>
     Param (
         #[string]$ComputerName = "$ENV:COMPUTERNAME",
-        [switch]$Detailed
+        [switch]$Detailed,
+        [switch]$Clip
     )
     
     try
@@ -91,16 +92,38 @@ This will show MORE DETAILED information about the computer where DBAtools is be
 
     if ($Detailed -eq $true)
         {
+            if($Clip -eq $true)
+            {
+            Write-Output ""   
+            Write-Output "Detailed information about the workstation is collected and copied to the clipboard; you can paste it elsewhere."
+            Write-Output "" 
+
             $localinfo | clip  
+
+            }
+            else {
             return $localinfo
+            }  
+            
             
             #may be add all environment variables back using Get-ChildItem Env: ?
+            #Also Fred recommended a function to collect diagnostic data from memory and log (but can also be implemented here as a switch)
         }
     else {
-
+            
             $BasicLocalInfo = $localinfo | Select-Object OSVersion, OsArchitecture,PowerShellVersion, PowerShellArchitecture, DbaToolsVersion, ModuleBase, CLR, SMO, DomainUser, RunAsAdmin, isPowerShellISE
+            
+            if($Clip -eq $true)
+            {
+            Write-Output "" 
+            Write-Output "Basic information about the workstation is collected and copied to the clipboard; you can paste it elsewhere."
+            Write-Output "" 
             $BasicLocalInfo | clip
+            }
+            else {
             return $BasicLocalInfo
+            }
+            
     }
 
 }
