@@ -125,7 +125,7 @@ Shows what would happen if the command were executed.
 				}
 				catch
 				{
-					Write-Exception $_
+					Stop-Function -InnerErrorRecord $_
 				}
 			}
 		}
@@ -162,8 +162,7 @@ Shows what would happen if the command were executed.
 						}
 						catch
 						{
-							Write-Exception $_
-							continue
+							Stop-Function -InnerErrorRecord $_ -Continue
 						}
 					}
 				}
@@ -180,7 +179,7 @@ Shows what would happen if the command were executed.
 					}
 					catch
 					{
-						Write-Exception $_
+						Stop-Function -InnerErrorRecord $_
 					}
 				}
 			}
@@ -217,8 +216,7 @@ Shows what would happen if the command were executed.
 						}
 						catch
 						{
-							Write-Exception $_
-							continue
+							Stop-Function -InnerErrorRecord $_ -Continue
 						}
 					}
 				}
@@ -236,8 +234,7 @@ Shows what would happen if the command were executed.
 					}
 					catch
 					{
-	
-						Write-Exception $_ 
+						Stop-Function -InnerErrorRecord $_
 					}
 				}
 			}
@@ -271,8 +268,7 @@ Shows what would happen if the command were executed.
 						}
 						catch
 						{
-							Write-Exception $_
-							continue
+							Stop-Function -InnerErrorRecord $_ -Continue
 						}
 					}
 				}
@@ -289,7 +285,7 @@ Shows what would happen if the command were executed.
 					}
 					catch
 					{
-						Write-Exception $_
+						Stop-Function -InnerErrorRecord $_
 					}
 				}
 			}
@@ -304,7 +300,7 @@ Shows what would happen if the command were executed.
 		
 		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
 		{
-			throw "Database Mail is only supported in SQL Server 2005 and above. Quitting."
+			Stop-Function -Message "Database Mail is only supported in SQL Server 2005 and above. Quitting."
 		}
 		
 		$mail = $sourceserver.mail
