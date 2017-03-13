@@ -258,13 +258,12 @@ Shows what would happen if the command were executed.
 				try
 				{
 					# Start the service
-					$agentservice | Invoke-CimMethod -MethodName StartService
+					Invoke-CimMethod -MethodName StartService -CimSession $cimsession -InputObject $agentservice
 				}
 				catch
 				{
 					# Stop the funcion when the service was unable to start
 					Stop-Function -Message "Unable to start SQL Server Agent Service" -InnerErrorRecord $_ -Target $sqlinstance
-					
 					return
 				}
 			}
@@ -286,7 +285,7 @@ Shows what would happen if the command were executed.
 					try
 					{
 						# Start the service
-						$agentservice | Invoke-CimMethod -MethodName StartService
+						 Invoke-CimMethod -MethodName StartService -CimSession $cimsession -InputObject $agentservice
 					}
 					catch
 					{
@@ -303,7 +302,7 @@ Shows what would happen if the command were executed.
 			}
 			
 			# If the force switch it not set and the silent switch is set
-			if ((!$Force) -and ($Silent))
+			if (!$Force -and $Silent)
 			{
 				Stop-Function -Message "The SQL Server Agent service needs to be started to be able to recover the databases" -InnerErrorRecord $_ -Target $sqlinstance
 				return
