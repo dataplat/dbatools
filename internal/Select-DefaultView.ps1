@@ -23,7 +23,7 @@ Function Select-DefaultView
 	process
 	{
 		
-	if ($InputObject -eq $null) { return }
+		if ($InputObject -eq $null) { return }
 		
 		if ($TypeName)
 		{
@@ -46,7 +46,8 @@ Function Select-DefaultView
 					if ($p -like "* as *")
 					{
 						$old, $new = $p -isplit " as "
-						$inputobject | Add-Member -MemberType AliasProperty -Name $new -Value $old -Force
+						
+						Add-Member -InputObject $inputobject -MemberType AliasProperty -Name $new -Value $old -Force -ErrorAction SilentlyContinue
 						$newproperty += $new
 					}
 					else
@@ -61,7 +62,9 @@ Function Select-DefaultView
 		}
 		
 		$standardmembers = [System.Management.Automation.PSMemberInfo[]]@($defaultset)
-		$inputobject | Add-Member MemberSet PSStandardMembers $standardmembers -Force
+		
+		Add-Member -InputObject $inputobject -MemberType MemberSet -Name PSStandardMembers -Value $standardmembers -Force -ErrorAction SilentlyContinue
+		
 		$inputobject
 	}
 }
