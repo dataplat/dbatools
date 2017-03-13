@@ -334,9 +334,11 @@ Shows what would happen if the command were executed.
         $destserver.Mail.Profiles.Refresh()
         Copy-SqlDatabaseMailServer
 
+		$sourceDbMailEnabled = (Get-DbaSpConfigure -SqlServer $sourceserver | Where-Object DisplayName -eq "Database Mail XPs").ConfiguredValue
         $destDbMailEnaled = (Get-DbaSpConfigure -SqlServer $destserver | Where-Object DisplayName -eq "Database Mail XPs").ConfiguredValue
-        if ($destDbMailEnaled -eq 0) {
-            if ($pscmdlet.ShouldProcess($destination, "Enabling Database Mail")) {
+		Write-Message -Level Verbose -Message "$destServer DBMail configuration value: $destDbMailEnaled"
+        if ( ($sourceDbMailEnabled -eq 1) -and ($destDbMailEnaled -eq 0) ) {
+            if ($pscmdlet.ShouldProcess($destination, "Enabling Database Mail on $destServer")) {
                 try {
                     Write-Message -Level Host -Message "Enabling Database Mail on $destserver"
                     Set-DbaSpConfigure -SqlInstance $destserver -Configs "Database Mail XPs" -Value 1
