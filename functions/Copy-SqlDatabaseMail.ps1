@@ -8,7 +8,7 @@ By default, all mail configurations for Profiles, Accounts, Mail Servers and Con
 
 The -Profiles parameter is autopopulated for command-line completion and can be used to copy only specific mail profiles.
 The -Accounts parameter is autopopulated for command-line completion and can be used to copy only specific mail accounts.
-The -MailServers parameter is autopopulated for command-line completion and can be used to copy only specific mail servers.
+The -mailServers parameter is autopopulated for command-line completion and can be used to copy only specific mail servers.
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
@@ -44,7 +44,7 @@ This parameter is autopopulated for command-line completion and can be used to c
 .PARAMETER Accounts
 This parameter is autopopulated for command-line completion and can be used to copy only specific mail accounts.
 
-.PARAMETER MailServers
+.PARAMETER mailServers
 The parameter is autopopulated for command-line completion and can be used to copy only specific mail servers.
 
 .PARAMETER WhatIf
@@ -95,7 +95,7 @@ Shows what would happen if the command were executed.
         [parameter(Mandatory = $true)]
         [object]$Destination,
         [Parameter(ParameterSetName = 'SpecifcTypes')]
-        [ValidateSet('ConfigurationValues', 'Profiles', 'Accounts', 'MailServers')]
+        [ValidateSet('ConfigurationValues', 'Profiles', 'Accounts', 'mailServers')]
         [string[]]$Type,
         [System.Management.Automation.PSCredential]$SourceSqlCredential,
         [System.Management.Automation.PSCredential]$DestinationSqlCredential,
@@ -118,7 +118,7 @@ Shows what would happen if the command were executed.
                     $sql = $mail.ConfigurationValues.Script() | Out-String
                     $sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
                     Write-Verbose $sql
-                    $destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+                    $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
                     $mail.ConfigurationValues.Refresh()
                 }
                 catch {
@@ -128,27 +128,27 @@ Shows what would happen if the command were executed.
         }
 
         function Copy-SqlDatabaseAccount {
-            $sourceaccounts = $sourceserver.Mail.Accounts
-            $destaccounts = $destserver.Mail.Accounts
+            $sourceAccounts = $sourceServer.Mail.Accounts
+            $destAccounts = $destServer.Mail.Accounts
 
             Write-Output "Migrating accounts"
-            foreach ($account in $sourceaccounts) {
-                $accountname = $account.name
-                if ($accounts.count -gt 0 -and $accounts -notcontains $accountname) {
+            foreach ($account in $sourceAccounts) {
+                $accountName = $account.name
+                if ($accounts.count -gt 0 -and $accounts -notcontains $accountName) {
                     continue
                 }
 
-                if ($destaccounts.name -contains $accountname) {
+                if ($destAccounts.name -contains $accountName) {
                     if ($force -eq $false) {
-                        Write-Warning "Account $accountname exists at destination. Use -Force to drop and migrate."
+                        Write-Warning "Account $accountName exists at destination. Use -Force to drop and migrate."
                         continue
                     }
 
-                    If ($pscmdlet.ShouldProcess($destination, "Dropping account $accountname and recreating")) {
+                    If ($pscmdlet.ShouldProcess($destination, "Dropping account $accountName and recreating")) {
                         try {
-                            Write-Verbose "Dropping account $accountname"
-                            $destserver.Mail.Accounts[$accountname].Drop()
-                            $destserver.Mail.Accounts.Refresh()
+                            Write-Verbose "Dropping account $accountName"
+                            $destServer.Mail.Accounts[$accountName].Drop()
+                            $destServer.Mail.Accounts.Refresh()
                         }
                         catch {
                             Stop-Function -InnerErrorRecord $_ -Continue
@@ -156,13 +156,13 @@ Shows what would happen if the command were executed.
                     }
                 }
 
-                if ($pscmdlet.ShouldProcess($destination, "Migrating account $accountname")) {
+                if ($pscmdlet.ShouldProcess($destination, "Migrating account $accountName")) {
                     try {
-                        Write-Output "Copying mail account $accountname"
+                        Write-Output "Copying mail account $accountName"
                         $sql = $account.Script() | Out-String
                         $sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
                         Write-Verbose $sql
-                        $destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+                        $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
                     }
                     catch {
                         Stop-Function -InnerErrorRecord $_
@@ -173,28 +173,28 @@ Shows what would happen if the command were executed.
 
         function Copy-SqlDatabaseMailProfile {
 
-            $sourceprofiles = $sourceserver.Mail.Profiles
-            $destprofiles = $destserver.Mail.Profiles
+            $sourceProfiles = $sourceServer.Mail.Profiles
+            $destProfiles = $destServer.Mail.Profiles
 
             Write-Output "Migrating mail profiles"
-            foreach ($profile in $sourceprofiles) {
+            foreach ($profile in $sourceProfiles) {
 
-                $profilename = $profile.name
-                if ($profiles.count -gt 0 -and $profiles -notcontains $profilename) {
+                $profileName = $profile.name
+                if ($profiles.count -gt 0 -and $profiles -notcontains $profileName) {
                     continue
                 }
 
-                if ($destprofiles.name -contains $profilename) {
+                if ($destProfiles.name -contains $profileName) {
                     if ($force -eq $false) {
-                        Write-Warning "Profile $profilename exists at destination. Use -Force to drop and migrate."
+                        Write-Warning "Profile $profileName exists at destination. Use -Force to drop and migrate."
                         continue
                     }
 
-                    If ($pscmdlet.ShouldProcess($destination, "Dropping profile $profilename and recreating")) {
+                    If ($pscmdlet.ShouldProcess($destination, "Dropping profile $profileName and recreating")) {
                         try {
-                            Write-Verbose "Dropping profile $profilename"
-                            $destserver.Mail.Profiles[$profilename].Drop()
-                            $destserver.Mail.Profiles.Refresh()
+                            Write-Verbose "Dropping profile $profileName"
+                            $destServer.Mail.Profiles[$profileName].Drop()
+                            $destServer.Mail.Profiles.Refresh()
                         }
                         catch {
                             Stop-Function -InnerErrorRecord $_ -Continue
@@ -202,14 +202,14 @@ Shows what would happen if the command were executed.
                     }
                 }
 
-                if ($pscmdlet.ShouldProcess($destination, "Migrating mail profile $profilename")) {
+                if ($pscmdlet.ShouldProcess($destination, "Migrating mail profile $profileName")) {
                     try {
-                        Write-Output "Copying mail profile $profilename"
+                        Write-Output "Copying mail profile $profileName"
                         $sql = $profile.Script() | Out-String
                         $sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
                         Write-Verbose $sql
-                        $destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-                        $destserver.Mail.Profiles.Refresh()
+                        $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+                        $destServer.Mail.Profiles.Refresh()
                     }
                     catch {
                         Stop-Function -InnerErrorRecord $_
@@ -218,27 +218,27 @@ Shows what would happen if the command were executed.
             }
         }
 
-        function Copy-SqlDatabaseMailServer {
-            $sourcemailservers = $sourceserver.Mail.Accounts.MailServers
-            $destmailservers = $destserver.Mail.Accounts.MailServers
+        function Copy-SqlDatabasemailServer {
+            $sourceMailServers = $sourceServer.Mail.Accounts.mailServers
+            $destMailServers = $destServer.Mail.Accounts.mailServers
 
             Write-Output "Migrating mail servers"
-            foreach ($mailserver in $sourcemailservers) {
-                $mailservername = $mailserver.name
-                if ($mailservers.count -gt 0 -and $mailservers -notcontains $mailservername) {
+            foreach ($mailServer in $sourceMailServers) {
+                $mailServerName = $mailServer.name
+                if ($mailServers.count -gt 0 -and $mailServers -notcontains $mailServerName) {
                     continue
                 }
 
-                if ($destmailservers.name -contains $mailservername) {
+                if ($destMailServers.name -contains $mailServerName) {
                     if ($force -eq $false) {
-                        Write-Warning "Mail server $mailservername exists at destination. Use -Force to drop and migrate."
+                        Write-Warning "Mail server $mailServerName exists at destination. Use -Force to drop and migrate."
                         continue
                     }
 
-                    If ($pscmdlet.ShouldProcess($destination, "Dropping mail server $mailservername and recreating")) {
+                    If ($pscmdlet.ShouldProcess($destination, "Dropping mail server $mailServerName and recreating")) {
                         try {
-                            Write-Verbose "Dropping mail server $mailservername"
-                            $destserver.Mail.Accounts.MailServers[$mailservername].Drop()
+                            Write-Verbose "Dropping mail server $mailServerName"
+                            $destServer.Mail.Accounts.mailServers[$mailServerName].Drop()
                         }
                         catch {
                             Stop-Function -InnerErrorRecord $_ -Continue
@@ -246,13 +246,13 @@ Shows what would happen if the command were executed.
                     }
                 }
 
-                if ($pscmdlet.ShouldProcess($destination, "Migrating account mail server $mailservername")) {
+                if ($pscmdlet.ShouldProcess($destination, "Migrating account mail server $mailServerName")) {
                     try {
-                        Write-Output "Copying mail server $mailservername"
-                        $sql = $mailserver.Script() | Out-String
+                        Write-Output "Copying mail server $mailServerName"
+                        $sql = $mailServer.Script() | Out-String
                         $sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
                         Write-Verbose $sql
-                        $destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+                        $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
                     }
                     catch {
                         Stop-Function -InnerErrorRecord $_
@@ -261,18 +261,18 @@ Shows what would happen if the command were executed.
             }
         }
 
-        $sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-        $destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+        $sourceServer = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+        $destServer = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 
-        $source = $sourceserver.DomainInstanceName
-        $destination = $destserver.DomainInstanceName
+        $source = $sourceServer.DomainInstanceName
+        $destination = $destServer.DomainInstanceName
 
 
-        if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9) {
+        if ($sourceServer.versionMajor -lt 9 -or $destServer.versionMajor -lt 9) {
             Stop-Function -Message "Database Mail is only supported in SQL Server 2005 and above. Quitting."
         }
 
-        $mail = $sourceserver.mail
+        $mail = $sourceServer.mail
     }
     process {
 
@@ -281,21 +281,21 @@ Shows what would happen if the command were executed.
             switch ($type) {
                 "ConfigurationValues" {
                     Copy-SqlDatabaseMailConfig
-                    $destserver.Mail.ConfigurationValues.Refresh()
+                    $destServer.Mail.ConfigurationValues.Refresh()
                 }
 
                 "Profiles" {
                     Copy-SqlDatabaseMailProfile
-                    $destserver.Mail.Profiles.Refresh()
+                    $destServer.Mail.Profiles.Refresh()
                 }
 
                 "Accounts" {
                     Copy-SqlDatabaseAccount
-                    $destserver.Mail.Accounts.Refresh()
+                    $destServer.Mail.Accounts.Refresh()
                 }
 
-                "MailServers" {
-                    Copy-SqlDatabaseMailServer
+                "mailServers" {
+                    Copy-SqlDatabasemailServer
                 }
             }
 
@@ -305,43 +305,43 @@ Shows what would happen if the command were executed.
 
         $profiles = $psboundparameters.Profiles
         $accounts = $psboundparameters.Accounts
-        $mailServers = $psboundparameters.MailServers
+        $mailServers = $psboundparameters.mailServers
 
         if (($profiles.count + $accounts.count + $mailServers.count) -gt 0) {
 
             if ($profiles.count -gt 0) {
                 Copy-SqlDatabaseMailProfile -Profiles $profiles
-                $destserver.Mail.Profiles.Refresh()
+                $destServer.Mail.Profiles.Refresh()
             }
 
             if ($accounts.count -gt 0) {
                 Copy-SqlDatabaseAccount -Accounts $accounts
-                $destserver.Mail.Accounts.Refresh()
+                $destServer.Mail.Accounts.Refresh()
             }
 
             if ($mailServers.count -gt 0) {
-                Copy-SqlDatabaseMailServer -MailServers $mailServers
+                Copy-SqlDatabasemailServer -mailServers $mailServers
             }
 
             return
         }
 
         Copy-SqlDatabaseMailConfig
-        $destserver.Mail.ConfigurationValues.Refresh()
+        $destServer.Mail.ConfigurationValues.Refresh()
         Copy-SqlDatabaseAccount
-        $destserver.Mail.Accounts.Refresh()
+        $destServer.Mail.Accounts.Refresh()
         Copy-SqlDatabaseMailProfile
-        $destserver.Mail.Profiles.Refresh()
-        Copy-SqlDatabaseMailServer
+        $destServer.Mail.Profiles.Refresh()
+        Copy-SqlDatabasemailServer
 
-		$sourceDbMailEnabled = (Get-DbaSpConfigure -SqlServer $sourceserver | Where-Object DisplayName -eq "Database Mail XPs").ConfiguredValue
-        $destDbMailEnaled = (Get-DbaSpConfigure -SqlServer $destserver | Where-Object DisplayName -eq "Database Mail XPs").ConfiguredValue
+		$sourceDbMailEnabled = (Get-DbaSpConfigure -SqlServer $sourceServer | Where-Object DisplayName -eq "Database Mail XPs").ConfiguredValue
+        $destDbMailEnaled = (Get-DbaSpConfigure -SqlServer $destServer | Where-Object DisplayName -eq "Database Mail XPs").ConfiguredValue
 		Write-Message -Level Verbose -Message "$destServer DBMail configuration value: $destDbMailEnaled"
         if ( ($sourceDbMailEnabled -eq 1) -and ($destDbMailEnaled -eq 0) ) {
             if ($pscmdlet.ShouldProcess($destination, "Enabling Database Mail on $destServer")) {
                 try {
-                    Write-Message -Level Host -Message "Enabling Database Mail on $destserver"
-                    Set-DbaSpConfigure -SqlInstance $destserver -Configs "Database Mail XPs" -Value 1
+                    Write-Message -Level Host -Message "Enabling Database Mail on $destServer"
+                    Set-DbaSpConfigure -SqlInstance $destServer -Configs "Database Mail XPs" -Value 1
                 }
                 catch {
                     Stop-Function -InnerErrorRecord $_
@@ -351,8 +351,8 @@ Shows what would happen if the command were executed.
     }
 
     end {
-        $sourceserver.ConnectionContext.Disconnect()
-        $destserver.ConnectionContext.Disconnect()
+        $sourceServer.ConnectionContext.Disconnect()
+        $destServer.ConnectionContext.Disconnect()
         if ($pscmdlet.ShouldProcess("console", "Showing finished message")) {
             Write-Output "Mail migration finished"
         }
