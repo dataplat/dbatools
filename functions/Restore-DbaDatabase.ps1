@@ -205,7 +205,7 @@ folder for those file types as defined on the target instance.
 	{
 		#Don't like nulls
 		$islocal = $false
-		if ($base -is [string])
+		if ($null -eq $SqlServer.name)
 		{
 			$base = $SqlServer.Split("\")[0]
 		}
