@@ -111,7 +111,7 @@
     $timestamp = Get-Date
     
     $Exception = New-Object System.Exception($Message, $InnerErrorRecord.Exception)
-    if (-not $PSBoundParameters.ContainsKey("Category") -and ($PSBoundParameters.ContainsKey("InnerErrorRecord"))) { $Category = $InnerErrorRecord.CategoryInfo.Category }
+    if ((-not $PSBoundParameters.ContainsKey("Category")) -and ($PSBoundParameters.ContainsKey("InnerErrorRecord")) -and ($InnerErrorRecord.CategoryInfo.Category)) { $Category = $InnerErrorRecord.CategoryInfo.Category }
     $record = New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $Target)
     
     # Manage Debugging
