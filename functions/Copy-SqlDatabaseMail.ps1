@@ -375,6 +375,19 @@ Shows what would happen if the command were executed.
 		Copy-SqlDatabaseMailProfile
 		$destserver.Mail.Profiles.Refresh()
 		Copy-SqlDatabaseMailServer
+
+        $destDbMailEnaled = (Get-DbaSpConfigure -SqlServer $destserver | Where-Object DisplayName -eq "Database Mail XPs").ConfiguredValue
+        if ($destDbMailEnaled -eq 0) {
+            if ($Pscmdlet.ShouldProcess($destination, "Enabling Database Mail")) {
+                try {
+                    Write-Message -Level Host -Message "Enabling Database Mail on $destserver"
+                    Set-DbaSpConfigure -SqlInstance $destserver -Configs "Database Mail XPs" -Value 1
+                }
+                catch {
+                    Stop-Function -InnerErrorRecord $_
+                }
+            }
+        }
 	}
 	
 	end
