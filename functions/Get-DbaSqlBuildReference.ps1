@@ -159,7 +159,7 @@ Integrate with other commandlets to have builds checked for all your registered 
 	{
 		foreach ($instance in $SqlInstance)
 		{
-			$Detected = Resolve-DbaSqlBuild  $instance.Version.ToString()
+			$Detected = Resolve-DbaSqlBuild -Build $instance.Version.ToString()
 			
 			[PSCustomObject]@{
 				SqlInstance = $instance.DomainInstanceName
@@ -175,7 +175,7 @@ Integrate with other commandlets to have builds checked for all your registered 
 		}
 		
 		foreach($buildstr in $Build) {
-			$Detected = Resolve-DbaSqlBuild $buildstr
+			$Detected = Resolve-DbaSqlBuild -Build $buildstr
 			
 			[PSCustomObject]@{
 					SqlInstance = $null
