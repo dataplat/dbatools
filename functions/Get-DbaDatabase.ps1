@@ -92,7 +92,9 @@ Returns databases on multiple instances piped into the function
 		[string]$Access,
 		[parameter(ParameterSetName = "RecoveryModel")]
 		[ValidateSet('Full', 'Simple', 'BulkLogged')]
-		[string]$RecoveryModel
+		[string]$RecoveryModel,
+		[switch]$NoFullBackup, 
+		[datetime]$NoFullBackupSince = (get-date('01/01/0001 00:00:00'))
 	)
 	
 	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
@@ -173,6 +175,11 @@ Returns databases on multiple instances piped into the function
 			if ($exclude)
 			{
 				$inputobject = $inputobject | Where-Object {$_.Name -notin $exclude }
+			}
+
+			if ($NoFullBackup)
+			{
+				$inputobject = $inputobject | Where-Object {$_.LastBackupDate -eq '01/01/0001 00:00:00'}
 			}
 			
 			$defaults = 'ComputerName', 'InstanceName', 'SqlInstance','Name', 'Status', 'RecoveryModel', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup'
