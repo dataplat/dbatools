@@ -50,38 +50,85 @@ else {
 }
 
 # Removes all versions of the module from the session before importing
-Get-Module $ModuleName | Remove-Module
+#Get-Module $ModuleName | Remove-Module
 
 # Because ModuleBase includes version number, this imports the required version
 # of the module
-$null = Import-Module $ModuleBase\$ModuleName.psd1 -PassThru -ErrorAction Stop
-
+$null = Import-Module $ModuleBase\$ModuleName.psd1 -PassThru #-ErrorAction Stop
 
 
 ###############
 
 ## Validate functionality. 
-<#
+
 
 Describe $name {
-    It "tries to get Powershell version" {
-        $true | Should Be $false
-    }
+	context 'validate Select-Object AND Get-CimInstance' {
+		It "gets Local Computer Info" {
+			$localInfo = [pscustomobject] @{
+				OSVersion              = 'Microsoft Windows 10 Enterprise(10.0.14393.0)'
+				OsArchitecture         = '64-bit'
+				PowerShellVersion      = '5.1.14393.693'
+				PowerShellArchitecture = '64-bit PowerShell'
+				DbaToolsVersion        = '0.8.941'
+				ModuleBase             = 'D:\GitHub\dbatools'
+				CLR                    = '4.0.30319.42000'
+				SMO                    = '13.0.0.0'
+				DomainUser             = 'False'
+				RunAsAdmin             = 'True'
+				isPowerShellISE        = 'False'
+				}
+			Mock Select-Object { 
+				return $localInfo
+				}
+
+				#[System.Management.Automation.PSCustomObject] `
+				#@{OSVersion, OsArchitecture,PowerShellVersion, PowerShellArchitecture, DbaToolsVersion, ModuleBase, CLR, SMO, DomainUser, RunAsAdmin, isPowerShellISE}
+				#[System.Collections.Hashtable]
+
+
+			Mock Get-CimInstance {
+					[pscustomobject]@{
+						Caption = 'Microsoft Windows 10 Enterprise'
+						PSTypeName = 'Microsoft.Management.Infrastructure.CimInstance#root/cimv2/Win32_OperatingSystem'
+					}
+						[pscustomobject]@{
+						OSArchitecture = '64-bit'
+						PSTypeName = 'Microsoft.Management.Infrastructure.CimInstance#root/cimv2/Win32_OperatingSystem'
+					}
+				} -ParameterFilter {$ClassName -And $ClassName -ieq 'CIM_OperatingSystem'}
 
 
 
-    It "tries to get Windows Version" {
-        $true | Should Be $false
-    }
+			
 
-    It "tries to determine if Powershell is running in Adminstrator mode" {
-        $true | Should Be $false
-    }
+			Get-DbaDiagnosticInfo 
 
-    It "tries to get DBAtools version" {
-        $true | Should Be $false
-    }
+			Assert-MockCalled Select-Object -Times 2 -Exactly	
+			Assert-MockCalled Get-CimInstance -Times 2 -Exactly
+			
+		} #end It block
 
+		Context "Checking Output of the function " {
+					
+					It 'Should not return null or Empty' {
+
+					$localInfo = Get-DbaDiagnosticInfo
+
+					$localInfo.OSVersion              | should Not BeNullOrEmpty
+					$localInfo.OsArchitecture         | should Not BeNullOrEmpty
+					$localInfo.PowerShellVersion      | should Not BeNullOrEmpty
+					$localInfo.PowerShellArchitecture | should Not BeNullOrEmpty
+					$localInfo.DbaToolsVersion        | should Not BeNullOrEmpty
+					$localInfo.ModuleBase             | should Not BeNullOrEmpty
+					$localInfo.CLR                    | should Not BeNullOrEmpty
+					$localInfo.SMO                    | should Not BeNullOrEmpty
+					$localInfo.DomainUser             | should Not BeNullOrEmpty
+					$localInfo.RunAsAdmin             | should Not BeNullOrEmpty
+					$localInfo.isPowerShellISE        | should Not BeNullOrEmpty
+			} #end It block
+		}
+		
+	}
     
-
-#>
+}
