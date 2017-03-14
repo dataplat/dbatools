@@ -1,4 +1,4 @@
-﻿Function Get-DbaStartupParameter
+Function Get-DbaStartupParameter
 {
 <#
 .SYNOPSIS
@@ -21,6 +21,7 @@ Credential object used to connect to the Windows Server as a different Windows u
 Shows a simplified output including only Server, Master Data Path, Master Log path, ErrorLog, TraceFlags and ParameterString
 
 .NOTES
+Tags: WSMan, SQLWMI, Memory
 dbatools PowerShell module (https://dbatools.io)
 Copyright (C) 2016 Chrissy LeMaire
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.

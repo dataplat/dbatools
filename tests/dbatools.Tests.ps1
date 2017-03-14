@@ -1,11 +1,11 @@
-﻿$Path = Split-Path -Parent $MyInvocation.MyCommand.Path
+$Path = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ModulePath = (get-item $Path ).parent.FullName
 $ModuleName = (Split-Path -Leaf $MyInvocation.MyCommand.Path) -Replace ".Tests.ps1"
 $ManifestPath   = "$ModulePath\$ModuleName.psd1"
 
 
 # test the module manifest - exports the right functions, processes the right formats, and is generally correct
-
+<#
 Describe "Manifest" {
 
     $Manifest = $null
@@ -71,12 +71,12 @@ $Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction Silently
 	}
 
 
-<#
+
  # Don't want this just yet
 
 	It 'exports all public functions' {
 
-		$FunctionFiles = Get-ChildItem "$ModulePath\functions" -Filter *.ps1 | Select -ExpandProperty BaseName
+		$FunctionFiles = Get-ChildItem "$ModulePath\functions" -Filter *.ps1 | Select-Object -ExpandProperty BaseName
 
 		$FunctionNames = $FunctionFiles
 
@@ -91,7 +91,5 @@ $Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction Silently
 		}
 
 	}
-#>
-
 }
-
+#>

@@ -1,4 +1,4 @@
-﻿Function Remove-DbaBackup
+Function Remove-DbaBackup
 {
 <#
 .SYNOPSIS
@@ -48,6 +48,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .NOTES
+Tags: Storage, DisasterRecovery, Backup
 Original Author: Chris Sommer, @cjsommer, www.cjsommer.com
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)

@@ -1,4 +1,4 @@
-﻿function Get-DbaHelpIndex
+function Get-DbaHelpIndex
 {
 <#
 .SYNOPSIS
@@ -989,6 +989,13 @@ FROM @AllResults;
 					{
 						foreach ($detail in $IndexDetails)
 						{
+							$recentlyused = [datetime]$detail.MostRecentlyUsed
+							
+							if ($recentlyused.year -eq 1900)
+							{
+								$recentlyused = $null
+							}
+							
 							[pscustomobject]@{
 								DatabaseName = $db
 								ObjectName = $detail.FullObjectName
@@ -1002,7 +1009,7 @@ FROM @AllResults;
 								SizeKB = "{0:N0}" -f $detail.SizeKB
 								IndexRows = "{0:N0}" -f $detail.IndexRows
 								IndexLookups = "{0:N0}" -f $detail.IndexLookups
-								MostRecentlyUsed = $detail.MostRecentlyUsed
+								MostRecentlyUsed = $recentlyused
 								StatsSampleRows = "{0:N0}" -f $detail.StatsSampleRows
 								StatsRowMods = "{0:N0}" -f $detail.StatsRowMods
 								HistogramSteps = $detail.HistogramSteps
@@ -1015,6 +1022,13 @@ FROM @AllResults;
 					{
 						foreach ($detail in $IndexDetails)
 						{
+							$recentlyused = [datetime]$detail.MostRecentlyUsed
+							
+							if ($recentlyused.year -eq 1900)
+							{
+								$recentlyused = $null
+							}
+							
 							[pscustomobject]@{
 								DatabaseName = $db
 								ObjectName = $detail.FullObjectName
@@ -1028,7 +1042,7 @@ FROM @AllResults;
 								SizeKB = $detail.SizeKB
 								IndexRows = $detail.IndexRows
 								IndexLookups = $detail.IndexLookups
-								MostRecentlyUsed = $detail.MostRecentlyUsed
+								MostRecentlyUsed = $recentlyused
 								StatsSampleRows = $detail.StatsSampleRows
 								StatsRowMods = $detail.StatsRowMods
 								HistogramSteps = $detail.HistogramSteps

@@ -107,7 +107,8 @@ SqlBulkCopy option. Per Microsoft "Preserve source identity values. When not spe
 .PARAMETER KeepNulls
 SqlBulkCopy option. Per Microsoft "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
 
-.NOTES 
+.NOTES
+Tags: Migration
 Author: Chrissy LeMaire (@cl), netnerds.net
 
 .LINK 

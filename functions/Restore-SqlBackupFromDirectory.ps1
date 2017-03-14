@@ -42,7 +42,8 @@ Prompts you for confirmation before executing any changing operations within the
 .PARAMETER NoRecovery
 Leaves the databases in No Recovery state to enable further backups to be added
 
-.NOTES 
+.NOTES
+Tags: DisasterRecovery, Backup, Restore
 Author  : Chrissy LeMaire, netnerds.net
 Requires: sysadmin access on destination SQL Server.
 

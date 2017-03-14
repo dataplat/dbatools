@@ -1,4 +1,4 @@
-﻿Function Repair-SqlOrphanUser
+Function Repair-SqlOrphanUser
 {
 <#
 .SYNOPSIS
@@ -69,8 +69,9 @@ Repair-SqlOrphanUser -SqlServer sqlserver2014a -RemoveNotExisting
 Will find all orphan users of all databases present on server 'sqlserver2014a'
 Will also remove all users that does not have their matching login by calling Remove-SqlOrphanUser function
 	
-.NOTES 
-Original Author: Cláudio Silva (@ClaudioESSilva)
+.NOTES
+Tags: Orphan
+Original Author: Claudio Silva (@ClaudioESSilva)
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 

@@ -1,4 +1,4 @@
-﻿Function Get-DbaRoleMember
+Function Get-DbaRoleMember
 {
 <#
 .SYNOPSIS
@@ -58,8 +58,8 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
 #>
 	[CmdletBinding()]
 	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("SqlServer", "Server", "Instance")]
+		[parameter(Mandatory, ValueFromPipeline)]
+		[Alias('SqlServer', 'Server', 'Instance')]
 		[string[]]$SqlInstance,
 		[PsCredential]$SqlCredential,
 		[switch]$IncludeServerLevel,
@@ -70,35 +70,36 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
 	{
 		if ($SqlInstance)
 		{
-			Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $Credential
+			Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential
 		}
 	}
 	
-BEGIN
-    {
+	BEGIN
+	{
+    $functionName = (Get-PSCallstack)[0].Command
 		$databases = $psboundparameters.Databases
 	}
 	
-PROCESS
+	PROCESS
 	{
-        foreach ($instance in $sqlinstance)
-        {
-            Write-Verbose "Connecting to $Instance"
+		foreach ($instance in $sqlinstance)
+		{
+			Write-Verbose "$functionName - Connecting to $Instance"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $Instance -SqlCredential $sqlcredential
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
 			}
 			catch
 			{
-				Write-Warning "Failed to connect to $Instance"
+				Write-Warning "$functionName - Failed to connect to $instance"
 				continue
 			}
-
+			
 			if ($IncludeServerLevel)
 			{
-				Write-Verbose "Server Role Members included"
+				Write-Verbose "$functionName - Server Role Members included"
 				$instroles = $null
-				Write-Verbose "Getting Server Roles on $instance"
+				Write-Verbose "$functionName - Getting Server Roles on $instance"
 				$instroles = $server.roles
 				if ($NoFixedRole)
 				{
@@ -106,7 +107,7 @@ PROCESS
 				}
 				ForEach ($instrole in $instroles)
 				{
-					Write-Verbose "Getting Server Role Members for $instrole on $instance"
+					Write-Verbose "$functionName - Getting Server Role Members for $instrole on $instance"
 					$irmembers = $null
 					$irmembers = $instrole.enumserverrolemembers()
 					ForEach ($irmem in $irmembers)
@@ -120,27 +121,36 @@ PROCESS
 					}
 				}
 			}
-				
+			
 			$dbs = $server.Databases
-				
-			if ($databases.count -gt 0)
-			{
-				$dbs = $dbs | Where-Object { $databases -contains $_.Name  }
-			}
-				
+			
+      if ($databases.count -gt 0)
+      {
+        Write-Verbose "$functionName - $($databases.count) databases on $instance"
+        $dbs = $dbs | Where-Object { $databases -contains $_.Name }
+      }
+			
 			foreach ($db in $dbs)
 			{
+				Write-Verbose "$functionName - Checking accessibility of $db on $instance"
+				
+				if ($db.IsAccessible -ne $true)
+				{
+					Write-Warning "$functionName - Database $db on $instance is not accessible"
+					continue
+				}
+				
 				$dbroles = $db.roles
-				Write-Verbose "Getting Database Roles for $($db.name) on $instance"
-					
+				Write-Verbose "$functionName - Getting Database Roles for $db on $instance"
+				
 				if ($NoFixedRole)
 				{
 					$dbroles = $dbroles | Where-Object { $_.isfixedrole -eq $false }
 				}
-					
+				
 				foreach ($dbrole in $dbroles)
 				{
-					Write-Verbose "Getting Database Role Members for $dbrole in $($db.name) on $instance"
+					Write-Verbose "$functionName - Getting Database Role Members for $dbrole in $db on $instance"
 					$dbmembers = $dbrole.enummembers()
 					ForEach ($dbmem in $dbmembers)
 					{
@@ -155,5 +165,4 @@ PROCESS
 			}
 		}
 	}
-END {}
 }

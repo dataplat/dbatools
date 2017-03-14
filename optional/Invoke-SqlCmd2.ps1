@@ -170,9 +170,9 @@ function Invoke-Sqlcmd2
 				   ValueFromPipelineByPropertyName = $true,
 				   ValueFromRemainingArguments = $false,
 				   HelpMessage = 'SQL Server Instance required...')]
-		[Alias('Instance', 'Instances', 'ComputerName', 'Server', 'Servers')]
+		[Alias('Instance', 'Instances', 'ComputerName', 'Server', 'Servers', 'SqlServer')]
 		[ValidateNotNullOrEmpty()]
-		[string[]]$ServerInstance,
+		[object[]]$ServerInstance,
 		[Parameter(Position = 1,
 				   Mandatory = $false,
 				   ValueFromPipelineByPropertyName = $true,
@@ -375,6 +375,10 @@ function Invoke-Sqlcmd2
 			{
 				$Conn = $SQLConnection
 			}
+			elseif ($SQLInstance.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
+			{
+				$Conn = $SQLInstance.ConnectionContext.SqlConnectionObject
+			}
 			else
 			{
 				if ($Credential)
@@ -500,7 +504,7 @@ function Invoke-Sqlcmd2
 				'PSObject'
 				{
 					#Scrub DBNulls - Provides convenient results you can use comparisons with
-					#Introduces overhead (e.g. ~2000 rows w/ ~80 columns went from .15 Seconds to .65 Seconds - depending on your data could be much more!)
+					#Introduces overhead (e.g. 2000 rows w/ 80 columns went from .15 Seconds to .65 Seconds - depending on your data could be much more!)
 					foreach ($row in $ds.Tables[0].Rows)
 					{
 						[DBNullScrubber]::DataRowToPSObject($row)

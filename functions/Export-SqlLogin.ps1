@@ -1,4 +1,4 @@
-﻿Function Export-SqlLogin
+Function Export-SqlLogin
 {
 <#
 .SYNOPSIS
@@ -113,10 +113,15 @@ https://dbatools.io/Export-SqlLogin
 	{
 		if ($sqlserver)
 		{
-			$dbparams = Get-ParamSqlDatabases -SqlServer $sqlserver -SqlCredential $SqlCredential
-			$allparams = Get-ParamSqlLogins -SqlServer $sqlserver -SqlCredential $SqlCredential
-			$null = $allparams.Add("Databases", $dbparams.Databases)
-			return $allparams
+			try { 
+				$dbparams = Get-ParamSqlDatabases -SqlServer $sqlserver -SqlCredential $SqlCredential
+				$allparams = Get-ParamSqlLogins -SqlServer $sqlserver -SqlCredential $SqlCredential
+				$null = $allparams.Add("Databases", $dbparams.Databases)
+				return $allparams
+			} catch {
+				# empty 
+			} 
+			
 		}
 	}
 	

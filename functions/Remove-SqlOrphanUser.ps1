@@ -1,4 +1,4 @@
-﻿Function Remove-SqlOrphanUser
+Function Remove-SqlOrphanUser
 {
 <#
 .SYNOPSIS
@@ -34,7 +34,8 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .NOTES
-Original Author: Cláudio Silva (@ClaudioESSilva)
+Tags: Orphan
+Original Author: Claudio Silva (@ClaudioESSilva)
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -142,7 +143,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
             else
             {
                 #-2 because index base is 0 and we want the one before the last (the last is the actual command)
-                $StackSource = $CallStack[($CallStack.Count – 2)].Command
+                $StackSource = $CallStack[($CallStack.Count - 2)].Command
             }
 
             if ($databases.Count -gt 0)
