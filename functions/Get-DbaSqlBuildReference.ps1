@@ -10,6 +10,9 @@ It also includes End Of Support dates as specified on Microsoft Lifecycle Policy
 
 .PARAMETER Build
 Instead of connecting to a real instance, pass a string identifying the build to get the info back.
+	
+.PARAMETER SqlInstance
+Optionally, an SQL Server SMO object can be passed to the command to be parsed.
 
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages
@@ -38,9 +41,7 @@ Get-DbaSqlBuildReference -Build "12.0.4502","10.50.4260"
 Returns information builds identified by these versions strings
 
 .EXAMPLE
-Get-SqlRegisteredServerName -SqlServer sqlserver2014a | % { Connect-DbaSqlServer -SqlServer $_ } | % {
-    Get-DbaSqlBuildReference $_.Version | Add-Member -Name "SqlInstance" -Value $_.Name -MemberType NoteProperty -PassThru
-}
+Get-SqlRegisteredServerName -SqlServer sqlserver2014a | Foreach-Object { Connect-DbaSqlServer -SqlServer $_ } | Get-DbaSqlBuildReference
 
 Integrate with other commandlets to have builds checked for all your registered servers on sqlserver2014a
 
@@ -49,6 +50,8 @@ Integrate with other commandlets to have builds checked for all your registered 
 	[CmdletBinding()]
 	Param (
 		[string[]]$Build,
+		[Parameter(Mandatory = $false, ValueFromPipeline = $true)]
+		[Microsoft.SqlServer.Management.Smo.Server[]]$SqlInstance,
 		[switch]$Silent
 	)
 
@@ -114,11 +117,15 @@ Integrate with other commandlets to have builds checked for all your registered 
 			$Detected = @{}
 			$Detected.MatchType = 'Approximate'
 			Write-Message -Message "We have $($IdxVersion.Length) in store for this Release" -Level 5 -Silent $Silent
-			If($IdxVersion.Length -eq 0) {
+			If ($IdxVersion.Length -eq 0)
+			{
 				Write-Message -Message "No info in store for this Release" -Warning -Silent $Silent
 				$Detected.Warning = "No info in store for this Release"
 			}
-			$LastVer = $IdxVersion[0]
+			else
+			{
+				$LastVer = $IdxVersion[0]
+			}
 			foreach($el in $IdxVersion) {
 				if($null -ne $el.Name) {
 					$Detected.Name = $el.Name
@@ -148,10 +155,26 @@ Integrate with other commandlets to have builds checked for all your registered 
 			return $Detected
 		}
 	}
-	PROCESS {
+	PROCESS
+	{
+		{
+			
+			[PSCustomObject]@{
+				NameLevel = $Detected.Name
+				SPLevel = $Detected.SP
+				CULevel = $Detected.CU
+				KBLevel = $Detected.KB
+				SupportedUntil = $Detected.SupportedUntil
+				MatchType = $Detected.MatchType
+				Warning = $Detected.Warning
+			}
+		}
+		
 		foreach($buildstr in $Build) {
 			$Detected = Resolve-DbaSqlBuild $buildstr
+			
 			[PSCustomObject]@{
+					SqlInstance = $null
 					Build = $buildstr
 					NameLevel = $Detected.Name
 					SPLevel = $Detected.SP
@@ -160,7 +183,7 @@ Integrate with other commandlets to have builds checked for all your registered 
 					SupportedUntil = $Detected.SupportedUntil
 					MatchType = $Detected.MatchType
 					Warning = $Detected.Warning
-			}
+			} | Select-DefaultView -ExcludeProperty SqlInstance
 		}
 	}
 }
