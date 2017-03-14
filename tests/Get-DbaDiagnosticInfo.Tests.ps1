@@ -108,7 +108,8 @@ Describe $name {
 			Assert-MockCalled Get-CimInstance -Times 2 -Exactly
 			
 		} #end It block
-
+	
+	} -Tag "Unit Tests"
 		Context "Checking Output of the function " {
 					
 					It 'Should not return null or Empty' {
@@ -127,8 +128,8 @@ Describe $name {
 					$localInfo.RunAsAdmin             | should Not BeNullOrEmpty
 					$localInfo.isPowerShellISE        | should Not BeNullOrEmpty
 			} #end It block
-		}
+		} -Tag "Operational Tests"
 		
-	}
+	
     
 }
