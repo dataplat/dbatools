@@ -179,7 +179,7 @@ Returns databases on multiple instances piped into the function
 			Write-verbose "dbs  = $($inputobject.count)"
 			if ($NoFullBackup)
 			{
-				$inputobject = $inputobject | Where-Object {$_.LastBackupDate -eq 0 -or (@($db.EnumBackupSets()).count -eq @($db.EnumBackupSets() | ?{$_.IsCopyOnly}).count )}
+				$inputobject = $inputobject | Where-Object {$_.LastBackupDate -eq 0 -or (((@($_.EnumBackupSets()).count -eq @($_.EnumBackupSets() | Where-Object {$_.IsCopyOnly}).count) -and $_.RecoveryModel -in ('Full','BulkLogged')))}
 			}
 			Write-verbose "dbs  = $($inputobject.count)"
 			if ($null -ne $NoFullBackupSince)
@@ -187,52 +187,29 @@ Returns databases on multiple instances piped into the function
 				$inputobject = $inputobject | Where-Object {$_.LastBackupdate -lt $NoFullBackupSince}				
 			}
 			
-			$defaults = 'ComputerName', 'InstanceName', 'SqlInstance','Name', 'Status', 'RecoveryModel', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup', 'SinceFull', 'SinceDiff', 'SinceLog'
+			$defaults = 'ComputerName', 'InstanceName', 'SqlInstance','Name', 'Status', 'RecoveryModel', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup', 'SinceFull', 'SinceDiff', 'SinceLog', 'Backupstatus'
 			foreach ($db in $inputobject)
 			{
-				$sinceFull = if ($db.LastBackupdate -eq 0)
-								{
-									"No Full Backup ever"
-								}
-								elseif ($db.LastBackupDate -gt (Get-date).adddays(-1))
-								{
-									"No Full backup in the last day"
-								}
-								else
-								{
-									"No Full backup in $((New-TimeSpan -Start $db.LastBackupDate -End (get-date)).days) days"
-								}
-				
-				$sinceDiff = if ($db.LastDifferentialBackupdate -eq 0)
-								{
-									"No Differential Backup ever"
-								}
-								elseif ($db.LastDifferentialBackupDate -gt (Get-date).adddays(-1))
-								{
-									"No Differential backup in the last day"
-								}
-								else
-								{
-									"No Differential backup in $((New-TimeSpan -Start $db.LastDifferentialBackupDate -End (get-date)).days) days"
-								}
-				$sinceLog = if ($db.LastLogBackupdate -eq 0)
-								{
-									"No Log Backup ever"
-								}
-								elseif ($db.LastLogBackupDate -gt (Get-date).adddays(-1))
-								{
-									"No Log backup in the last day"
-								}
-								else
-								{
-									"No Log backup in $((New-TimeSpan -Start $db.LastLogBackupDate -End (get-date)).days) days"
-								}								
+				$SinceFull = if ($db.LastBackupdate -eq 0) {""} else {(New-TimeSpan -Start $db.LastBackupdate).Tostring()}
+                $SinceFull = if ($db.LastBackupdate -eq 0) {""} else {$SinceFull.split('.')[0..($SinceFull.split('.').count - 2)] -join ' days ' }
+
+				$SinceDiff = if ($db.LastDifferentialBackupDate -eq 0) {""} else {(New-TimeSpan -Start $db.LastDifferentialBackupDate).Tostring()}
+                $SinceDiff = if ($db.LastDifferentialBackupDate -eq 0) {""} else {$SinceDiff.split('.')[0..($SinceDiff.split('.').count - 2)] -join ' days ' }
+
+				$SinceLog = if ($db.LastLogBackupDate -eq 0) {""} else {(New-TimeSpan -Start $db.LastLogBackupDate).Tostring()}
+                $SinceLog = if ($db.LastLogBackupDate -eq 0) {""} else {$SinceLog.split('.')[0..($SinceLog.split('.').count - 2)] -join ' days ' }
+				$BackupStatus = ""
+				if	(@($db.EnumBackupSets()).count -eq @($db.EnumBackupSets() | Where-Object{$_.IsCopyOnly}).count -and (@($db.EnumBackupSets()).count -gt 0) )
+				{
+					$BackupStatus = "Only CopyOnly backups"
+				}							
 				Add-Member -InputObject $db -MemberType NoteProperty ComputerName -value $server.NetName
 				Add-Member -InputObject $db -MemberType NoteProperty InstanceName -value $server.ServiceName
 				Add-Member -InputObject $db -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
 				Add-Member -InputObject $db -MemberType NoteProperty SinceFull -value $SinceFull
 				Add-Member -InputObject $db -MemberType NoteProperty SinceDiff -value $SinceDiff
 				Add-Member -InputObject $db -MemberType NoteProperty SinceLog -value $SinceLog
+				Add-Member -InputObject $db -MemberType NoteProperty BackupStatus -value $BackupStatus
 				Select-DefaultView -InputObject $db -Property $defaults
 				
 			}
