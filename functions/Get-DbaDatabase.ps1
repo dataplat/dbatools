@@ -179,7 +179,7 @@ Returns databases on multiple instances piped into the function
 			Write-verbose "dbs  = $($inputobject.count)"
 			if ($NoFullBackup)
 			{
-				$inputobject = $inputobject | Where-Object {$_.LastBackupDate -eq 0}
+				$inputobject = $inputobject | Where-Object {$_.LastBackupDate -eq 0 -or (@($db.EnumBackupSets()).count -eq @($db.EnumBackupSets() | ?{$_.IsCopyOnly}).count )}
 			}
 			Write-verbose "dbs  = $($inputobject.count)"
 			if ($null -ne $NoFullBackupSince)
