@@ -157,9 +157,13 @@ Integrate with other commandlets to have builds checked for all your registered 
 	}
 	PROCESS
 	{
+		foreach ($instance in $SqlInstance)
 		{
+			$Detected = Resolve-DbaSqlBuild  $instance.Version.ToString()
 			
 			[PSCustomObject]@{
+				SqlInstance = $instance.DomainInstanceName
+				Build = $instance.Version.ToString()
 				NameLevel = $Detected.Name
 				SPLevel = $Detected.SP
 				CULevel = $Detected.CU
