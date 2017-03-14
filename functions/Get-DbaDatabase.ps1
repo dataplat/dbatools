@@ -176,12 +176,12 @@ Returns databases on multiple instances piped into the function
 			{
 				$inputobject = $inputobject | Where-Object {$_.Name -notin $exclude }
 			}
-
+			Write-verbose "dbs  = $($inputobject.count)"
 			if ($NoFullBackup)
 			{
-				$inputobject = $inputobject | Where-Object {$_.LastBackupDate -eq '01/01/0001 00:00:00'}
+				$inputobject = $inputobject | Where-Object {$_.LastBackupDate -eq 0}
 			}
-
+			Write-verbose "dbs  = $($inputobject.count)"
 			if ($null -ne $NoFullBackupSince)
 			{
 				$inputobject = $inputobject | Where-Object {$_.LastBackupdate -lt $NoFullBackupSince}				
