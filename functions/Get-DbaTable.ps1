@@ -38,15 +38,11 @@ Return all tables in the Test1 database
 Get-DbaTable -SqlInstance DEV01 -Database MyDB -Table MyTable
 Return only information on the table MyTable from the database MyDB
 .EXAMPLE
-Get-DbaTable -SqlInstance DEV01 -Database MyDB -Table MyTable
-using pipeline
-.EXAMPLE
-Get-DbaTable -SqlInstance DEV01 -Database MyDB -Table MyTable
-with multiple instances
-.EXAMPLE
 Get-DbaTable -SqlInstance DEV01 -Table MyTable
-REturns information on table called MyTable if it exists in any database on the server, under any schema
-
+Returns information on table called MyTable if it exists in any database on the server, under any schema
+.EXAMPLE
+@('localhost','localhost\namedinstance') | Get-DbaTable -Database DBA -Table Commandlog
+Returns information on the CommandLog table in the DBA database on both instances localhost and the named instance localhost\namedinstance
 
 #>
 	[CmdletBinding()]
@@ -123,7 +119,7 @@ REturns information on table called MyTable if it exists in any database on the 
 			{
 				if ($databases.length -gt 0)
 				{
-					$dbs = $server.Databases | Where-Object { $databases -contains $_.Name }
+					$dbs = $server.Databases | Where-Object { $databases -contains $_.Name -and $_.status -eq 'Normal' }
 				}
 				elseif ($IncludeSystemDBs)
 				{
