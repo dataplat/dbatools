@@ -94,7 +94,7 @@ Returns databases on multiple instances piped into the function
 		[ValidateSet('Full', 'Simple', 'BulkLogged')]
 		[string]$RecoveryModel,
 		[switch]$NoFullBackup, 
-		[datetime]$NoFullBackupSince = (get-date('01/01/0001 00:00:00'))
+		[datetime]$NoFullBackupSince
 	)
 	
 	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
@@ -181,16 +181,60 @@ Returns databases on multiple instances piped into the function
 			{
 				$inputobject = $inputobject | Where-Object {$_.LastBackupDate -eq '01/01/0001 00:00:00'}
 			}
+
+			if ($null -ne $NoFullBackupSince)
+			{
+				$inputobject = $inputobject | Where-Object {$_.LastBackupdate -lt $NoFullBackupSince}				
+			}
 			
-			$defaults = 'ComputerName', 'InstanceName', 'SqlInstance','Name', 'Status', 'RecoveryModel', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup'
-			
+			$defaults = 'ComputerName', 'InstanceName', 'SqlInstance','Name', 'Status', 'RecoveryModel', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup', 'SinceFull', 'SinceDiff', 'SinceLog'
 			foreach ($db in $inputobject)
 			{
+				$sinceFull = if ($db.LastBackupdate -eq 0)
+								{
+									"No Full Backup ever"
+								}
+								elseif ($db.LastBackupDate -gt (Get-date).adddays(-1))
+								{
+									"No Full backup in the last day"
+								}
+								else
+								{
+									"No Full backup in $((New-TimeSpan -Start $db.LastBackupDate -End (get-date)).days) days"
+								}
+				
+				$sinceDiff = if ($db.LastDifferentialBackupdate -eq 0)
+								{
+									"No Differential Backup ever"
+								}
+								elseif ($db.LastDifferentialBackupDate -gt (Get-date).adddays(-1))
+								{
+									"No Differential backup in the last day"
+								}
+								else
+								{
+									"No Differential backup in $((New-TimeSpan -Start $db.LastDifferentialBackupDate -End (get-date)).days) days"
+								}
+				$sinceLog = if ($db.LastLogBackupdate -eq 0)
+								{
+									"No Log Backup ever"
+								}
+								elseif ($db.LastLogBackupDate -gt (Get-date).adddays(-1))
+								{
+									"No Log backup in the last day"
+								}
+								else
+								{
+									"No Log backup in $((New-TimeSpan -Start $db.LastLogBackupDate -End (get-date)).days) days"
+								}								
 				Add-Member -InputObject $db -MemberType NoteProperty ComputerName -value $server.NetName
 				Add-Member -InputObject $db -MemberType NoteProperty InstanceName -value $server.ServiceName
 				Add-Member -InputObject $db -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
-				
+				Add-Member -InputObject $db -MemberType NoteProperty SinceFull -value $SinceFull
+				Add-Member -InputObject $db -MemberType NoteProperty SinceDiff -value $SinceDiff
+				Add-Member -InputObject $db -MemberType NoteProperty SinceLog -value $SinceLog
 				Select-DefaultView -InputObject $db -Property $defaults
+				
 			}
 		}
 	}
