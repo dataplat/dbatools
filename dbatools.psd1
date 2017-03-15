@@ -248,7 +248,10 @@
 		'Test-DbaLinkedServerConnection',
 		'Get-DbaDatabaseFile',
 		'Read-DbaTransactionLog',
-		'Get-DbaTable'
+		'Get-DbaTable',
+		'Get-DbaWmObject',
+		'Test-DbaWmConnection'
+		
 		#'Get-DbaLinkedServer',
 		#'Invoke-DbaLogShippingRecovery',
 	)
