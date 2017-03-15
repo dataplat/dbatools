@@ -919,6 +919,16 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSpn -ServerName SQLSERVERA -Credential (Get-Credential)\r\n\r\nReturns a custom object with SearchTerm (ServerName) and the SPNs that were found\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSpn -AccountName doamain\\account -Credential (Get-Credential)\r\n\r\nReturns a custom object with SearchTerm (domain account) and the SPNs that were found\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSpn -ServerName SQLSERVERA,SQLSERVERB -Credential (Get-Credential)\r\n\r\nReturns a custom object with SearchTerm (ServerName) and the SPNs that were found for multiple computers\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaSqlBuildReference",
+        "Description":  "Returns info about the specific build of a SQL instance, including the SP, the CU and the reference KB, wherever possible.\nIt also includes End Of Support dates as specified on Microsoft Lifecycle Policy",
+        "Tags":  "SqlBuild",
+        "Author":  "niphlod",
+        "Synopsis":  "Returns SQL Server Build infos on a SQL instance",
+        "Name":  "Get-DbaSqlBuildReference",
+        "Links":  "https://dbatools.io/Get-DbaSqlBuildReference",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlBuildReference -Build \"12.00.4502\"\r\n\r\nReturns information about a build identified by  \"12.00.4502\" (which is SQL 2014 with SP1 and CU11)\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlBuildReference -Build \"12.0.4502\",\"10.50.4260\"\r\n\r\nReturns information builds identified by these versions strings\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-SqlRegisteredServerName -SqlServer sqlserver2014a | Foreach-Object { Connect-DbaSqlServer -SqlServer $_ } | \r\nGet-DbaSqlBuildReference\r\n\r\nIntegrate with other commandlets to have builds checked for all your registered servers on sqlserver2014a\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaSqlService",
         "Description":  "Gets the SQL Server related services on one or more computers.\n\nRequires Local Admin rights on destination computer(s).",
         "Author":  "Klaas Vandenberghe ( @PowerDBAKlaas )",
@@ -939,6 +949,14 @@
         "Name":  "Get-DbaStartupParameter",
         "Links":  "https://dbatools.io/Get-DbaStartupParameter",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaStartupParameter -SqlServer sql2014\r\n\r\nLogs into SQL WMI as the current user then displays the values for numerous startup parameters.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$wincred = Get-Credential ad\\sqladmin\r\n\r\nGet-DbaStartupParameter -SqlServer sql2014 -Credential $wincred -Simple\r\n\r\nLogs in to WMI using the ad\\sqladmin credential and gathers simplified information about the SQL Server Startup \r\nParameters.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaTable",
+        "Description":  "Shows table information around table row and data sizes and if it has any table type information.",
+        "Synopsis":  "Returns a summary of information on the tables",
+        "Name":  "Get-DbaTable",
+        "Links":  "https://dbatools.io/Get-DbaTable",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTable -SqlInstance DEV01 -Database Test1\r\n\r\nReturn all tables in the Test1 database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTable -SqlInstance DEV01 -Database MyDB -Table MyTable\r\n\r\nReturn only information on the table MyTable from the database MyDB\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTable -SqlInstance DEV01 -Table MyTable\r\n\r\nReturns information on table called MyTable if it exists in any database on the server, under any schema\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e@(\u0027localhost\u0027,\u0027localhost\\namedinstance\u0027) | Get-DbaTable -Database DBA -Table Commandlog\r\n\r\nReturns information on the CommandLog table in the DBA database on both instances localhost and the named instance \r\nlocalhost\\namedinstance\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaTcpPort",
@@ -987,11 +1005,11 @@
     },
     {
         "CommandName":  "Get-SqlRegisteredServerName",
-        "Description":  "Returns a simple array of server names",
-        "Synopsis":  "Gets list of SQL Server names stored in SQL Server Central Management Server",
+        "Description":  "Returns a simple array of server names. Be aware of the dynamic parameter \u0027Group\u0027, which can be used to limit results to one or more groups you have created on the CMS. See get-help for examples.",
+        "Synopsis":  "Gets list of SQL Server names stored in SQL Server Central Management Server.",
         "Name":  "Get-SqlRegisteredServerName",
         "Links":  "https://dbatools.io/Get-SqlRegisteredServerName",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-SqlRegisteredServerName -SqlServer sqlserver2014a\r\n\r\nGets a list of all server names from the Central Management Server on sqlserver2014a, using Windows Credentials\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-SqlRegisteredServerName -SqlServer sqlserver2014a -SqlCredential $credential\r\n\r\nGets a list of all server names from the Central Management Server on sqlserver2014a, using SQL Authentication\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-SqlRegisteredServerName -SqlServer sqlserver2014a -Groups HR, Accounting\r\n\r\nGets a list of server names in the HR and Accounting groups from the Central Management Server on sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-SqlRegisteredServerName -SqlServer sqlserver2014a -Groups HR, Accounting -IpAddr\r\n\r\nGets a list of server IP addresses in the HR and Accounting groups from the Central Management Server on sqlserver2014a.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-SqlRegisteredServerName -SqlServer sqlserver2014a\r\n\r\nGets a list of all server names from the Central Management Server on sqlserver2014a, using Windows Credentials\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-SqlRegisteredServerName -SqlServer sqlserver2014a -SqlCredential $credential\r\n\r\nGets a list of all server names from the Central Management Server on sqlserver2014a, using SQL Authentication\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-SqlRegisteredServerName -SqlServer sqlserver2014a -Group HR, Accounting\r\n\r\nGets a list of server names in the HR and Accounting groups from the Central Management Server on sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-SqlRegisteredServerName -SqlServer sqlserver2014a -Group HR, Accounting -IpAddr\r\n\r\nGets a list of server IP addresses in the HR and Accounting groups from the Central Management Server on sqlserver2014a.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-SqlServerKey",
@@ -1270,7 +1288,7 @@
         "Synopsis":  "Restores SQL Server databases from the backup directory structure created by Ola Hallengren\u0027s database maintenance scripts. Different structures coming soon.",
         "Name":  "Restore-SqlBackupFromDirectory",
         "Links":  "https://dbatools.io/Restore-SqlBackupFromDirectory",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRestore-SqlBackupFromDirectory -ServerName sqlcluster -Path \\\\fileserver\\share\\sqlbackups\\SQLSERVER2014A\r\n\r\nDescription\r\n\r\nAll user databases contained within \\\\fileserver\\share\\sqlbackups\\SQLSERVERA will be restored to sqlcluster, down the \r\nmost recent full/differential/logs.\r\n\r\n\r\nRequires -Version 3.0\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRestore-SqlBackupFromDirectory -SqlServer sqlcluster -Path \\\\fileserver\\share\\sqlbackups\\SQLSERVER2014A\r\n\r\nDescription\r\n\r\nAll user databases contained within \\\\fileserver\\share\\sqlbackups\\SQLSERVERA will be restored to sqlcluster, down the \r\nmost recent full/differential/logs.\r\n\r\n\r\nRequires -Version 3.0\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Set-DbaAgentJobOutputFile",
@@ -1536,6 +1554,15 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaLastBackup -SqlServer sql2016\r\n\r\nDetermines the last full backup for ALL databases, attempts to restore all databases (with a different name and file \r\nstructure), then performs a DBCC CHECKTABLE\r\n\r\nOnce the test is complete, the test restore will be dropped\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaLastBackup -SqlServer sql2016 -Databases master\r\n\r\nDetermines the last full backup for master, attempts to restore it, then performs a DBCC CHECKTABLE\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaLastBackup -SqlServer sql2016 -Databases model, master -VerifyOnly\r\n\r\n\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaLastBackup -SqlServer sql2016 -NoCheck -NoDrop\r\n\r\nSkips the DBCC CHECKTABLE check. This can help speed up the tests but makes it less tested. NoDrop means that the test \r\nrestores will remain on the server.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaLastBackup -SqlServer sql2016 -DataDirectory E:\\bigdrive -LogDirectory L:\\bigdrive -MaxMB 10240\r\n\r\nRestores data and log files to alternative locations and only restores databases that are smaller than 10 GB\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Test-DbaLinkedServerConnection",
+        "Description":  "Test each linked server on the instance",
+        "Author":  "Thomas LaRock ( https://thomaslarock.com )",
+        "Synopsis":  "Test all linked servers from the sql servers passed",
+        "Name":  "Test-DbaLinkedServerConnection",
+        "Links":  "https://dbatools.io/Test-DbaLinkedServerConnection",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaLinkedServerConnection -SqlInstance DEV01\r\n\r\nTest all Linked Servers for the SQL Server instance DEV01\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaLinkedServerConnection -SqlInstance sql2016 | Out-File C:\\temp\\results.txt\r\n\r\nTest all Linked Servers for the SQL Server instance sql2016 and output results to file\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaLinkedServerConnection -SqlInstance sql2016, sql2014, sql2012\r\n\r\nTest all Linked Servers for the SQL Server instances sql2016, sql2014 and sql2012\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$servers = \"sql2016\",\"sql2014\",\"sql2012\"\r\n\r\n$servers | Test-DbaLinkedServerConnection -SqlCredential (Get-Credential sqladmin)\r\n\r\nTest all Linked Servers for the SQL Server instances sql2016, sql2014 and sql2012 using SQL login credentials\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Test-DbaMaxDop",
         "Description":  "Inspired by Sakthivel Chidambaram\u0027s post about SQL Server MAXDOP Calculator (https://blogs.msdn.microsoft.com/sqlsakthi/p/maxdop-calculator-sqlserver/), \nthis script displays a SQL Server\u0027s: max dop configured, and the calculated recommendation.\n\nFor SQL Server 2016 shows:\n    - Instance max dop configured and the calculated recommendation\n    - max dop configured per database (new feature)\n\nMore info: \n    https://support.microsoft.com/en-us/kb/2806535\n    https://blogs.msdn.microsoft.com/sqlsakthi/2012/05/23/wow-we-have-maxdop-calculator-for-sql-server-it-makes-my-job-easier/\n\nThese are just general recommendations for SQL Server and are a good starting point for setting the \"max degree of parallelism\" option.\n\nTHIS CODE IS PROVIDED \"AS IS\", WITH NO WARRANTIES.",
         "Synopsis":  "Displays information relating to SQL Server Max Degree of Paralellism setting.  Works on SQL Server 2005-2016.",
@@ -1765,7 +1792,7 @@
         "Synopsis":  "Restores SQL Server databases from the backup directory structure created by Ola Hallengren\u0027s database maintenance scripts. Different structures coming soon.",
         "Name":  "Restore-SqlBackupFromDirectory",
         "Links":  "https://dbatools.io/Restore-SqlBackupFromDirectory",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRestore-SqlBackupFromDirectory -ServerName sqlcluster -Path \\\\fileserver\\share\\sqlbackups\\SQLSERVER2014A\r\n\r\nDescription\r\n\r\nAll user databases contained within \\\\fileserver\\share\\sqlbackups\\SQLSERVERA will be restored to sqlcluster, down the \r\nmost recent full/differential/logs.\r\n\r\n\r\nRequires -Version 3.0\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRestore-SqlBackupFromDirectory -SqlServer sqlcluster -Path \\\\fileserver\\share\\sqlbackups\\SQLSERVER2014A\r\n\r\nDescription\r\n\r\nAll user databases contained within \\\\fileserver\\share\\sqlbackups\\SQLSERVERA will be restored to sqlcluster, down the \r\nmost recent full/differential/logs.\r\n\r\n\r\nRequires -Version 3.0\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Set-SqlMaxMemory",
