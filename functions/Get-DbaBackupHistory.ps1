@@ -184,7 +184,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 					{
 						Write-Verbose "$FunctionName - Processing $database"
 						
-						$sql += "SELECT
+						$tsql += "SELECT
 								  a.BackupSetRank,
 								  a.Server,
 								  a.[Database],
@@ -211,6 +211,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 								  backupset.backup_start_date AS Start,
 								  backupset.server_name as [server],
 								  backupset.backup_finish_date AS [End],
+								  backupset.is_copy_only,
 								  CAST(DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS varchar(4)) + ' ' + 'Seconds' AS Duration,
 								  mediafamily.physical_device_name AS Path,
 								  $BackupSizeColumn,
@@ -252,8 +253,14 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 								WHERE backupset.database_name = '$database'
 								AND (type = '$first'
 								OR type = '$second')) AS a
-								WHERE a.BackupSetRank = 1
-								ORDER BY a.Type;"
+								WHERE a.BackupSetRank = 1 "
+								if ($IgnoreCopyOnly)
+								{
+									$tsql += " and a.is_copy_only='0' "
+								}
+								$tsql += "ORDER BY a.Type;"
+							
+							$sql += $tsql	
 					}
 					
 					$sql = $sql -join "; "
