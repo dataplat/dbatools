@@ -220,8 +220,6 @@
 		'Get-DbaQueryStoreConfig',
 		'Set-DbaQueryStoreConfig',
 		'Restore-DbaDatabase',
-		#'Get-DbaLinkedServer',
-		#'Invoke-DbaLogShippingRecovery',
 		'Copy-DbaQueryStoreConfig',
 		'Get-DbaExecutionPlan',
 		'Export-DbaExecutionPlan',
@@ -249,7 +247,10 @@
 		'Set-DbaAgentJobOutputFile',
 		'Test-DbaLinkedServerConnection',
 		'Get-DbaDatabaseFile',
-		'Read-DbaTransactionLog'
+		'Read-DbaTransactionLog',
+		'Get-DbaTable'
+		#'Get-DbaLinkedServer',
+		#'Invoke-DbaLogShippingRecovery',
 	)
 	
 	# Cmdlets to export from this module

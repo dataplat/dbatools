@@ -73,7 +73,7 @@ Function Restore-DBFromFilteredArray
 			$DestinationLogDirectory = Get-SqlDefaultPaths $Server log
 		}
 
-		If ($DbName -in $Server.databases.name -and $ScriptOnly -eq $false)
+		If ($DbName -in $Server.databases.name -and $ScriptOnly -eq $false -and $VerfiyOnly -eq $false)
 		{
 			If ($ReplaceDatabase -eq $true)
 			{	
