@@ -68,7 +68,7 @@ Integrate with other commandlets to have builds checked for all your registered 
 				if(!(Test-Path $writable_idxfile)) {
 					Copy-Item $orig_idxfile $writable_idxfile
 				}
-				return (Get-Content $writable_idxfile)
+				return (Get-Content -Raw $writable_idxfile)
 			}
 		}
 
