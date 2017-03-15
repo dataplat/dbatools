@@ -64,6 +64,7 @@ foreach ($assembly in $assemblies)
 # Load our own custom library
 # Should always come before function imports - 141ms
 $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\bin\library.ps1"))), $null, $null)
+$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\bin\typealiases.ps1"))), $null, $null)
 
 # All internal functions privately available within the toolset - 221ms
 foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\*.ps1"))
