@@ -110,7 +110,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 		[switch]$IgnoreCopyOnly,
 		[Parameter(ParameterSetName = "NoLast")]
 		[switch]$Force,
-		[datetime]$Since,
+		[datetime]$Since = '01/01/01 00:00:00',
 		[Parameter(ParameterSetName = "Last")]
 		[switch]$Last,
 		[Parameter(ParameterSetName = "Last")]
@@ -143,10 +143,11 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				Write-Verbose "$FunctionName - Connecting to $instance"
 				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
 				
-				if ($server.VersionMajor -lt 9)
+				if ($server.VersionMajor -lt 9 -and $IgnoreCopyOnly)
 				{
-					Write-Warning "$FunctionName - SQL Server 2000 not supported"
-					continue
+					Write-Warning "$FunctionName - IgnoreCopyOnly not supported on SQL Server 2000"
+					Continue
+					$IgnoreCopyOnly = $false
 				}
 				#$BackupSizeColumn = 'backup_size'
 				$BackupSizeColumn = "CAST(backupset.backup_size / 1048576 AS numeric(10, 2)) AS TotalSizeMB"
@@ -182,8 +183,24 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 					$database = $databases -join ''','''
 					Write-Verbose "$FunctionName - Processing $database"
 					
+					$InnerFilter = " AND (type = '$first' OR type = '$second')"
+					if ($IgnoreCopyOnly)
+					{
+						$InnerFilter += " AND is_copy_only='0' "
+					}
+					if ($Since -ne $null)
+					{
+						$InnerFilter += " AND backup_finish_date >= '$since'"
+					}
+					$InnerFilter += " AND database_name in ('$database')"
+					$innersql = "
+					SELECT MAX(backup_start_date) AS backup_start_date, database_name
+					FROM msdb..backupset
+					WHERE 1=1
+					$InnerFilter
+					GROUP BY database_name
+					"
 					$sql += "SELECT
-								a.BackupSetRank,
 								a.Server,
 								a.[Database],
 								a.Username,
@@ -195,22 +212,24 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 								a.TotalSizeMB,
 								a.MediaSetId,
 								a.Software,
-							a.backupsetid,
+								a.backupsetid,
 								a.position,
-							a.first_lsn,
-							a.database_backup_lsn,
-							a.checkpoint_lsn,
-							a.last_lsn,
-							a.software_major_version
+								a.first_lsn,
+								a.database_backup_lsn,
+								a.checkpoint_lsn,
+								a.last_lsn,
+								a.software_major_version
 							FROM (SELECT
-								RANK() OVER (PARTITION BY database_name ORDER BY backupset.backup_start_date DESC) AS 'BackupSetRank',
 								backupset.database_name AS [Database],
 								backupset.user_name AS Username,
 								backupset.backup_start_date AS Start,
 								backupset.server_name as [server],
-								backupset.backup_finish_date AS [End],
-								backupset.is_copy_only,
-								CAST(DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS varchar(4)) + ' ' + 'Seconds' AS Duration,
+								backupset.backup_finish_date AS [End],"
+							if ($IgnoreCopyOnly)
+							{
+								$sql+= "backupset.is_copy_only,"
+							}	
+							$sql+=	"CAST(DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS varchar(4)) + ' ' + 'Seconds' AS Duration,
 								mediafamily.physical_device_name AS Path,
 								$BackupSizeColumn,
 								CASE backupset.type
@@ -248,6 +267,9 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 								ON mediafamily.media_set_id = mediaset.media_set_id
 							INNER JOIN msdb..backupset AS backupset
 								ON backupset.media_set_id = mediaset.media_set_id
+							INNER JOIN ($innersql) LegacyRank
+							ON LegacyRank.database_name = backupset.database_name
+							AND LegacyRank.backup_start_date = backupset.backup_start_date
 							WHERE backupset.database_name in ('$database')"
 						if ($IgnoreCopyOnly)
 						{
@@ -259,11 +281,8 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 						}
 						$sql+= " AND (type = '$first'
 							OR type = '$second')) AS a
-							WHERE a.BackupSetRank = 1
 							ORDER BY a.Type;"
 						
-	
-
 				}
 				else
 				{
@@ -359,7 +378,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				if (!$last)
 				{
 					Write-Debug $sql
-					$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
+					$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty RowError, Rowstate, table, itemarray, haserrors
 
 					if ($raw)
 					{
