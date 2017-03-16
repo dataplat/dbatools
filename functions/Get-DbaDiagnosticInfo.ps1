@@ -69,7 +69,7 @@ This will show MORE DETAILED information about the computer where DBAtools is be
         }
 
         $localinfo.DbaToolsVersion = (Get-Module dbatools).Version.ToString()
-        $localinfo.ModuleBase = (Get-Module dbatools).ModuleBase.ToString()
+        $localinfo.ModuleBase = (Get-Module dbatools).ModuleBase.ToString() -replace "\\users\\\w+\\","\users\...\"
         $localinfo.CLR = $PSVersionTable.CLRVersion.ToString()
      
         $smo = (([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }).FullName -Split ", ")[1]
