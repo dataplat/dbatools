@@ -37,6 +37,12 @@ Returns list of SQL Server databases that have TDE enabled from the SQL Server i
 .PARAMETER RecoveryModel
 Returns list of SQL Server databases in Full, Simple or Bulk Logged recovery models from the SQL Server instance(s) executed against.
 
+.PARAMETER NoFullBackup
+Returns databases without a full backup recorded by SQL Server. Will indicate those which only have CopyOnly full backups
+
+.PARAMETER NoFullBackupSince
+DateTime value. Returns list of SQL Server databases that haven't had a full backup since the passed iin DateTime
+
 .NOTES
 Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 
@@ -176,26 +182,35 @@ Returns databases on multiple instances piped into the function
 			{
 				$inputobject = $inputobject | Where-Object {$_.Name -notin $exclude }
 			}
-			Write-verbose "dbs  = $($inputobject.count)"
-			if ($NoFullBackup)
+
+			if ($NoFullBackup -or $NoFullBackupSince)
 			{
-				$dabs = (Get-DbaBackuphistory -SqlServer $server -lastfull -ignorecopyonly).Database
-				Write-Verbose "Got dabs"
-				$inputobject = $inputObject  | where-object {$_.name -notin $dabs}
-				Write-verbose "past filter"
-				#$inputobject = $inputobject | Where-Object {$_.LastBackupDate -eq 0 -or (((@($_.EnumBackupSets()).count -eq @($_.EnumBackupSets() | Where-Object {$_.IsCopyOnly}).count) -and $_.RecoveryModel -in ('Full','BulkLogged')))}
+				if($NoFullBackup)
+				{
+					$dabs = (Get-DbaBackuphistory -SqlServer $server -LastFull -IgnoreCopyOnly).Database
+				}
+				else
+				{
+					$dabs = (Get-DbaBackuphistory -SqlServer $server -LastFull -IgnoreCopyOnly -Since $NoFullBackupSince).Database
+				}
+				$inputobject = $inputObject  | where-object {$_.name -notin $dabs -and $_.name -ne 'tempdb'}
 			}
-			Write-verbose "dbs  = $($inputobject.count)"
+
 			if ($null -ne $NoFullBackupSince)
 			{
 				$inputobject = $inputobject | Where-Object {$_.LastBackupdate -lt $NoFullBackupSince}				
 			}
-			
-			$defaults = 'ComputerName', 'InstanceName', 'SqlInstance','Name', 'Status', 'RecoveryModel', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup','SinceFull', 'SinceDiff', 'SinceLog', 'Backupstatus'
+			$defaults = 'ComputerName', 'InstanceName', 'SqlInstance','Name', 'Status', 'RecoveryModel', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup'
+			if ($NoFullBackup)
+			{
+				$defaults += ('SinceFull', 'SinceDiff', 'SinceLog', 'Backupstatus')
+			}
+
 			foreach ($db in $inputobject)
 			{
-				#if ($NoFullBackup)
-				#{				
+				
+				if ($NoFullBackup)
+				{				
 					$SinceFull = if ($db.LastBackupdate -eq 0) {""} else {(New-TimeSpan -Start $db.LastBackupdate).Tostring()}
 					$SinceFull = if ($db.LastBackupdate -eq 0) {""} else {$SinceFull.split('.')[0..($SinceFull.split('.').count - 2)] -join ' days ' }
 
@@ -213,8 +228,7 @@ Returns databases on multiple instances piped into the function
 					Add-Member -InputObject $db -MemberType NoteProperty SinceDiff -value $SinceDiff
 					Add-Member -InputObject $db -MemberType NoteProperty SinceLog -value $SinceLog
 					Add-Member -InputObject $db -MemberType NoteProperty BackupStatus -value $BackupStatus
-					#$defaults = $defaults += ('SinceFull', 'SinceDiff', 'SinceLog', 'Backupstatus')
-				#}					
+				}					
 				Add-Member -InputObject $db -MemberType NoteProperty ComputerName -value $server.NetName
 				Add-Member -InputObject $db -MemberType NoteProperty InstanceName -value $server.ServiceName
 				Add-Member -InputObject $db -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName

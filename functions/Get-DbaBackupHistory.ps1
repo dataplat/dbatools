@@ -110,7 +110,6 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 		[switch]$IgnoreCopyOnly,
 		[Parameter(ParameterSetName = "NoLast")]
 		[switch]$Force,
-		[Parameter(ParameterSetName = "NoLast")]
 		[datetime]$Since,
 		[Parameter(ParameterSetName = "Last")]
 		[switch]$Last,
@@ -122,7 +121,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 		[switch]$LastLog,
 		[switch]$raw
 	)
-	
+	#		[Parameter(ParameterSetName = "NoLast")]
 	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential } }
 	
 	BEGIN
@@ -164,14 +163,14 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 					
 					foreach ($db in $databases)
 					{
-						Get-DbaBackupHistory -SqlServer $server -LastFull -Databases $db -raw:$raw
-						Get-DbaBackupHistory -SqlServer $server -LastDiff -Databases $db -raw:$raw
-						Get-DbaBackupHistory -SqlServer $server -LastLog -Databases $db -raw:$raw
+						Get-DbaBackupHistory -SqlServer $server -LastFull -Databases $db -raw:$raw -Since $Since
+						Get-DbaBackupHistory -SqlServer $server -LastDiff -Databases $db -raw:$raw -Since $Since
+						Get-DbaBackupHistory -SqlServer $server -LastLog -Databases $db -raw:$raw -Since $Since
 					}
 				}
 				elseif ($LastFull -or $LastDiff -or $LastLog)
 				{
-					$sql = @()
+					#$sql = @()
 					
 					if ($databases -eq $null) { $databases = $server.databases.name }
 					
@@ -180,90 +179,92 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 					if ($LastLog) { $first = 'L'; $second = 'L' }
 					
 					$databases = $databases | Select-Object -Unique
-					foreach ($database in $databases)
-					{
-						Write-Verbose "$FunctionName - Processing $database"
-						
-						$tsql += "SELECT
-								  a.BackupSetRank,
-								  a.Server,
-								  a.[Database],
-								  a.Username,
-								  a.Start,
-								  a.[End],
-								  a.Duration,
-								  a.[Path],
-								  a.Type,
-								  a.TotalSizeMB,
-								  a.MediaSetId,
-								  a.Software,
-								a.backupsetid,
-		 						 a.position,
-								a.first_lsn,
-								a.database_backup_lsn,
-								a.checkpoint_lsn,
-								a.last_lsn,
-								a.software_major_version
-								FROM (SELECT
-								  RANK() OVER (ORDER BY backupset.backup_start_date DESC) AS 'BackupSetRank',
-								  backupset.database_name AS [Database],
-								  backupset.user_name AS Username,
-								  backupset.backup_start_date AS Start,
-								  backupset.server_name as [server],
-								  backupset.backup_finish_date AS [End],
-								  backupset.is_copy_only,
-								  CAST(DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS varchar(4)) + ' ' + 'Seconds' AS Duration,
-								  mediafamily.physical_device_name AS Path,
-								  $BackupSizeColumn,
-								  CASE backupset.type
-									WHEN 'L' THEN 'Log'
-									WHEN 'D' THEN 'Full'
-									WHEN 'F' THEN 'File'
-									WHEN 'I' THEN 'Differential'
-									WHEN 'G' THEN 'Differential File'
-									WHEN 'P' THEN 'Partial Full'
-									WHEN 'Q' THEN 'Partial Differential'
-									ELSE NULL
-								  END AS Type,
-								  backupset.media_set_id AS MediaSetId,
-								  mediafamily.media_family_id as mediafamilyid,
-		   						  backupset.backup_set_id as backupsetid,
-								  CASE mediafamily.device_type
-									WHEN 2 THEN 'Disk'
-									WHEN 102 THEN 'Permanent Disk  Device'
-									WHEN 5 THEN 'Tape'
-									WHEN 105 THEN 'Permanent Tape Device'
-									WHEN 6 THEN 'Pipe'
-									WHEN 106 THEN 'Permanent Pipe Device'
-									WHEN 7 THEN 'Virtual Device'
-									ELSE 'Unknown'
-								  END AS DeviceType,
-									backupset.position,
-									backupset.first_lsn,
-									backupset.database_backup_lsn,
-									backupset.checkpoint_lsn,
-									backupset.last_lsn,
-									backupset.software_major_version,
-								  mediaset.software_name AS Software
-								FROM msdb..backupmediafamily AS mediafamily
-								INNER JOIN msdb..backupmediaset AS mediaset
-								  ON mediafamily.media_set_id = mediaset.media_set_id
-								INNER JOIN msdb..backupset AS backupset
-								  ON backupset.media_set_id = mediaset.media_set_id
-								WHERE backupset.database_name = '$database'
-								AND (type = '$first'
-								OR type = '$second')) AS a
-								WHERE a.BackupSetRank = 1 "
-								if ($IgnoreCopyOnly)
-								{
-									$tsql += " and a.is_copy_only='0' "
-								}
-								$tsql += "ORDER BY a.Type;"
-							
-							$sql += $tsql	
-					}
+
+					$database = $databases -join ''','''
+					Write-Verbose "$FunctionName - Processing $database"
 					
-					$sql = $sql -join "; "
+					$sql += "SELECT
+								a.BackupSetRank,
+								a.Server,
+								a.[Database],
+								a.Username,
+								a.Start,
+								a.[End],
+								a.Duration,
+								a.[Path],
+								a.Type,
+								a.TotalSizeMB,
+								a.MediaSetId,
+								a.Software,
+							a.backupsetid,
+								a.position,
+							a.first_lsn,
+							a.database_backup_lsn,
+							a.checkpoint_lsn,
+							a.last_lsn,
+							a.software_major_version
+							FROM (SELECT
+								RANK() OVER (PARTITION BY database_name ORDER BY backupset.backup_start_date DESC) AS 'BackupSetRank',
+								backupset.database_name AS [Database],
+								backupset.user_name AS Username,
+								backupset.backup_start_date AS Start,
+								backupset.server_name as [server],
+								backupset.backup_finish_date AS [End],
+								backupset.is_copy_only,
+								CAST(DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS varchar(4)) + ' ' + 'Seconds' AS Duration,
+								mediafamily.physical_device_name AS Path,
+								$BackupSizeColumn,
+								CASE backupset.type
+								WHEN 'L' THEN 'Log'
+								WHEN 'D' THEN 'Full'
+								WHEN 'F' THEN 'File'
+								WHEN 'I' THEN 'Differential'
+								WHEN 'G' THEN 'Differential File'
+								WHEN 'P' THEN 'Partial Full'
+								WHEN 'Q' THEN 'Partial Differential'
+								ELSE NULL
+								END AS Type,
+								backupset.media_set_id AS MediaSetId,
+								mediafamily.media_family_id as mediafamilyid,
+								backupset.backup_set_id as backupsetid,
+								CASE mediafamily.device_type
+								WHEN 2 THEN 'Disk'
+								WHEN 102 THEN 'Permanent Disk  Device'
+								WHEN 5 THEN 'Tape'
+								WHEN 105 THEN 'Permanent Tape Device'
+								WHEN 6 THEN 'Pipe'
+								WHEN 106 THEN 'Permanent Pipe Device'
+								WHEN 7 THEN 'Virtual Device'
+								ELSE 'Unknown'
+								END AS DeviceType,
+								backupset.position,
+								backupset.first_lsn,
+								backupset.database_backup_lsn,
+								backupset.checkpoint_lsn,
+								backupset.last_lsn,
+								backupset.software_major_version,
+								mediaset.software_name AS Software
+							FROM msdb..backupmediafamily AS mediafamily
+							INNER JOIN msdb..backupmediaset AS mediaset
+								ON mediafamily.media_set_id = mediaset.media_set_id
+							INNER JOIN msdb..backupset AS backupset
+								ON backupset.media_set_id = mediaset.media_set_id
+							WHERE backupset.database_name in ('$database')"
+						if ($IgnoreCopyOnly)
+						{
+							$sql += " AND is_copy_only='0' "
+						}
+						if ($Since -ne $null)
+						{
+							$sql += " AND backupset.backup_finish_date >= '$since'"
+						}
+						$sql+= " AND (type = '$first'
+							OR type = '$second')) AS a
+							WHERE a.BackupSetRank = 1
+							ORDER BY a.Type;"
+						
+	
+
 				}
 				else
 				{
@@ -359,7 +360,10 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				if (!$last)
 				{
 					Write-Debug $sql
+					Write-Verbose "$FunctionName - Calling sql"
 					$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
+					#$results = Invoke-SqlCmd2 -ServerInstance $server -query $sql -as PSObject
+					Write-Verbose "$FunctionName - sql retrieved"
 					if ($raw)
 					{
 						write-verbose "$FunctionName - Raw Ouput"
