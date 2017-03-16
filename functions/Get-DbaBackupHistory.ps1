@@ -121,7 +121,7 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 		[switch]$LastLog,
 		[switch]$raw
 	)
-	#		[Parameter(ParameterSetName = "NoLast")]
+
 	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential } }
 	
 	BEGIN
@@ -170,7 +170,6 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				}
 				elseif ($LastFull -or $LastDiff -or $LastLog)
 				{
-					#$sql = @()
 					
 					if ($databases -eq $null) { $databases = $server.databases.name }
 					
@@ -360,10 +359,8 @@ Lots of detailed information for all databases on sqlserver2014a and sql2016.
 				if (!$last)
 				{
 					Write-Debug $sql
-					Write-Verbose "$FunctionName - Calling sql"
 					$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
-					#$results = Invoke-SqlCmd2 -ServerInstance $server -query $sql -as PSObject
-					Write-Verbose "$FunctionName - sql retrieved"
+
 					if ($raw)
 					{
 						write-verbose "$FunctionName - Raw Ouput"
