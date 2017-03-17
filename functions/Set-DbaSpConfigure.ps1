@@ -117,7 +117,7 @@ Returns information on the action that would be performed. No actual change will
 				Stop-Function -Message "Value out of range for $configs (min: $minValue - max $maxValue)" -Continue
 			}
 			
-			If ($Pscmdlet.ShouldProcess($SqlInstance, "Adjusting server configuration $configs from $currentValue to $value."))
+			If ($Pscmdlet.ShouldProcess($SqlInstance, "Adjusting server configuration $configs from $currentRunValue to $value."))
 			{
 				try
 				{
