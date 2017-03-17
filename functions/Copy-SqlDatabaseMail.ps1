@@ -112,17 +112,17 @@ Shows what would happen if the command were executed.
     begin {
 
         function Copy-SqlDatabaseMailConfig {
-            Write-Output "Migrating mail server configuration values"
+            Write-Message -Message "Migrating mail server configuration values" -Level Output -Silent $Silent
             if ($pscmdlet.ShouldProcess($destination, "Migrating all mail server configuration values")) {
                 try {
                     $sql = $mail.ConfigurationValues.Script() | Out-String
                     $sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
-                    Write-Verbose $sql
+                    Write-Message -Message $sql -Level
                     $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
                     $mail.ConfigurationValues.Refresh()
                 }
                 catch {
-                    Stop-Function -InnerErrorRecord $_
+                    Stop-Function -InnerErrorRecord $_ -Silent $Silent
                 }
             }
         }
@@ -222,40 +222,39 @@ Shows what would happen if the command were executed.
             $sourceMailServers = $sourceServer.Mail.Accounts.mailServers
             $destMailServers = $destServer.Mail.Accounts.mailServers
 
-            Write-Output "Migrating mail servers"
+            Write-Message -Message "Migrating mail servers" -Level Output -Silent $Silent
             foreach ($mailServer in $sourceMailServers) {
                 $mailServerName = $mailServer.name
                 if ($mailServers.count -gt 0 -and $mailServers -notcontains $mailServerName) {
-                    continue
+                    Stop-Function -Message "No data found" -Continue -Silent $Silent
                 }
 
                 if ($destMailServers.name -contains $mailServerName) {
                     if ($force -eq $false) {
-                        Write-Warning "Mail server $mailServerName exists at destination. Use -Force to drop and migrate."
-                        continue
+                        Stop-Function -Message "Mail server $mailServerName exists at destination. Use -Force to drop and migrate." -Target $mailServerName -Silent $Silent -Continue
                     }
 
                     If ($pscmdlet.ShouldProcess($destination, "Dropping mail server $mailServerName and recreating")) {
                         try {
-                            Write-Verbose "Dropping mail server $mailServerName"
+                            Write-Message -Message "Dropping mail server $mailServerName" -Level Verbose -Silent $Silent
                             $destServer.Mail.Accounts.mailServers[$mailServerName].Drop()
                         }
                         catch {
-                            Stop-Function -InnerErrorRecord $_ -Continue
+                            Stop-Function -InnerErrorRecord $_ -Continue -Silent $Silent
                         }
                     }
                 }
 
                 if ($pscmdlet.ShouldProcess($destination, "Migrating account mail server $mailServerName")) {
                     try {
-                        Write-Output "Copying mail server $mailServerName"
+                        Write-Message -Message "Copying mail server $mailServerName" -Level Output -Silent $Silent
                         $sql = $mailServer.Script() | Out-String
                         $sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
-                        Write-Verbose $sql
+                        Write-Message -Message $sql -Level Debug
                         $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
                     }
                     catch {
-                        Stop-Function -InnerErrorRecord $_
+                        Stop-Function -InnerErrorRecord $_ -Silent $Silent
                     }
                 }
             }
@@ -269,7 +268,7 @@ Shows what would happen if the command were executed.
 
 
         if ($sourceServer.versionMajor -lt 9 -or $destServer.versionMajor -lt 9) {
-            Stop-Function -Message "Database Mail is only supported in SQL Server 2005 and above. Quitting."
+            Stop-Function -Message "Database Mail is only supported in SQL Server 2005 and above. Quitting." -Silent $Silent
         }
 
         $mail = $sourceServer.mail
@@ -334,17 +333,20 @@ Shows what would happen if the command were executed.
         $destServer.Mail.Profiles.Refresh()
         Copy-SqlDatabasemailServer
 
-		$sourceDbMailEnabled = (Get-DbaSpConfigure -SqlServer $sourceServer | Where-Object DisplayName -eq "Database Mail XPs").ConfiguredValue
-        $destDbMailEnaled = (Get-DbaSpConfigure -SqlServer $destServer | Where-Object DisplayName -eq "Database Mail XPs").ConfiguredValue
-		Write-Message -Level Verbose -Message "$destServer DBMail configuration value: $destDbMailEnaled"
+		$sourceDbMailEnabled = (Get-DbaSpConfigure -SqlServer $sourceServer -Configs "DatabaseMailEnabled").ConfiguredValue
+		Write-Message -Level Verbose -Message "$sourceServer DBMail configuration value: $sourceDbMailEnabled" -Silent $Silent
+
+        $destDbMailEnaled = (Get-DbaSpConfigure -SqlServer $destServer -Configs "DatabaseMailEnabled").ConfiguredValue
+		Write-Message -Level Verbose -Message "$destServer DBMail configuration value: $destDbMailEnaled" -Silent $Silent
+
         if ( ($sourceDbMailEnabled -eq 1) -and ($destDbMailEnaled -eq 0) ) {
-            if ($pscmdlet.ShouldProcess($destination, "Enabling Database Mail on $destServer")) {
+            if ($pscmdlet.ShouldProcess($destination, "Enabling Database Mail")) {
                 try {
-                    Write-Message -Level Host -Message "Enabling Database Mail on $destServer"
-                    Set-DbaSpConfigure -SqlInstance $destServer -Configs "Database Mail XPs" -Value 1
+                    Write-Message -Message "Enabling Database Mail on $destServer" -Level Output -Silent $Silent
+                    Set-DbaSpConfigure -SqlInstance $destServer -Configs "DatabaseMailEnabled" -Value 1
                 }
                 catch {
-                    Stop-Function -InnerErrorRecord $_
+                    Stop-Function -Message "Cannot enable Database Mail" -InnerErrorRecord $_ -Target $destServer -Silent $Silent
                 }
             }
         }
@@ -354,7 +356,7 @@ Shows what would happen if the command were executed.
         $sourceServer.ConnectionContext.Disconnect()
         $destServer.ConnectionContext.Disconnect()
         if ($pscmdlet.ShouldProcess("console", "Showing finished message")) {
-            Write-Output "Mail migration finished"
+            Write-Message -Message "Mail migration finished" -Level Output -Silent $Silent
         }
     }
 }
