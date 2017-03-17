@@ -20,7 +20,7 @@ Install-Module dbatools
 
 Or if you don't have a version of PowerShell that supports the Gallery, you can install it manually:
 ```powershell
-Invoke-Expression (Invoke-WebRequest https://git.io/vn1hQ)
+Invoke-Expression (Invoke-WebRequest https://dbatools.io/in)
 ```
 
 ## dbatools.io is awesome
