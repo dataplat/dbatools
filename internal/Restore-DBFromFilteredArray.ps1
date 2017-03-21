@@ -73,7 +73,7 @@ Function Restore-DBFromFilteredArray
 			$DestinationLogDirectory = Get-SqlDefaultPaths $Server log
 		}
 
-		If ($DbName -in $Server.databases.name -and $ScriptOnly -eq $false -and $VerfiyOnly -eq $false)
+		If ($DbName -in $Server.databases.name -and ($ScriptOnly -eq $false -or $VerfiyOnly -eq $false))
 		{
 			If ($ReplaceDatabase -eq $true)
 			{	
@@ -181,8 +181,9 @@ Function Restore-DBFromFilteredArray
 					{
 						$DestinationLogDirectory = $DestinationLogDirectory.Substring(0,($DestinationLogDirectory.length -1))
 					}
-					foreach ($File in $RestoreFiles[0].Filelist)
+					foreach ($File in $RestoreFiles.Filelist)
 			        {
+						Write-Verbose "$FunctionName - Moving $($File.PhysicalName)"
                         $MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
                         $MoveFile.LogicalFileName = $File.LogicalName
                         if ($File.Type -eq 'L' -and $DestinationLogDirectory -ne '')
@@ -216,7 +217,7 @@ Function Restore-DBFromFilteredArray
                     break
 				} 
 				$LogicalFileMovesString = $LogicalFileMoves -join ", `n"
-
+				Write-Verbose "$FunctionName - $LogicalFileMovesString"
 
 				Write-Verbose "$FunctionName - Beginning Restore of $Dbname"
 				$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
@@ -259,7 +260,7 @@ Function Restore-DBFromFilteredArray
 					}
 				Write-Verbose "$FunctionName - restore action = $Action"
 				$restore.Action = $Action 
-				if ($RestorePoint -eq $RestorePoints[-1] -and $NoRecovery -ne $true)
+				if ($RestorePoint -eq $SortedRestorePoints[-1] -and $NoRecovery -ne $true)
 				{
 					#Do recovery on last file
 					Write-Verbose "$FunctionName - Doing Recovery on last file"

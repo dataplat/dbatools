@@ -167,7 +167,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 				continue
 			}
 			
-			if ($Database.Status -ne 'Normal')
+			if ('Normal' -notin ($Database.Status -split ',') )
 			{
 				Write-Warning "Database status not Normal. $dbname skipped."
 				continue
