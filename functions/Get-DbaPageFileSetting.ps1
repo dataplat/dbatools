@@ -149,7 +149,7 @@ Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status,
 					CurrentUsage = $null
 				} | Select-DefaultView -Property ComputerName, AutoPageFile
 			}
-			if ( $CIMsession ) { Remove-CimSession $CIMsession }
+			if ( [void]$CIMsession.TestConnection() ) { Remove-CimSession $CIMsession }
 		}
 	}
 }
