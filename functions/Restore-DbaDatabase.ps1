@@ -512,10 +512,17 @@ folder for those file types as defined on the target instance.
 				}
 			}
 		}
-
-		$AllFilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup -TrustDbBackupHistory:$TrustDbBackupHistory
+		#$BackupFiles 
+		#return
+		Write-Verbose "$FunctionName - sorting uniquely"
+		$AllFilteredFiles = $BackupFiles | sort-object -property fullname -unique | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup -TrustDbBackupHistory:$TrustDbBackupHistory
+		
 		Write-Verbose "$FunctionName - $($AllFilteredFiles.count) dbs to restore"
 		
+		#$AllFilteredFiles
+		#return
+		
+
 		if ($AllFilteredFiles.count -gt 1 -and $DatabaseName -ne '')
 		{
 			Write-Warning "$FunctionName -  DatabaseName parameter and multiple database restores is not compatible "
