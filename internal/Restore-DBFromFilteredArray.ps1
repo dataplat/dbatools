@@ -192,6 +192,7 @@ Function Restore-DBFromFilteredArray
                         }
                         else {
                             $MoveFile.PhysicalFileName = $DestinationDataDirectory + '\' + $DestinationFilePrefix + (split-path $file.PhysicalName -leaf)	
+							Write-verbose "$FunctionName - Moving $($file.PhysicalName) to $($MoveFile.PhysicalFileName) "
                         }
                         $LogicalFileMoves += "Relocating $($MoveFile.LogicalFileName) to $($MoveFile.PhysicalFileName)"
 						$null = $Restore.RelocateFiles.Add($MoveFile)
@@ -348,13 +349,13 @@ Function Restore-DBFromFilteredArray
 						RestoreComplete  = $RestoreComplete
 						BackupFilesCount = $RestoreFiles.Count
 						RestoredFilesCount = $RestoreFiles[0].Filelist.PhysicalName.count
-						BackupSizeMB = ($RestoreFiles | measure-object -property BackupSizeMb -Sum).sum
+						BackupSizeMB = if([bool]($RestoreFiles.PSobject.Properties.name -match 'BackupSizeMb')){($RestoreFiles | measure-object -property BackupSizeMb -Sum).sum}else{$null}
 						CompressedBackupSizeMB = if([bool]($RestoreFiles.PSobject.Properties.name -match 'CompressedBackupSizeMb')){($RestoreFiles | measure-object -property CompressedBackupSizeMB -Sum).sum}else{$null}
 						BackupFile = $RestoreFiles.BackupPath -join ','
 						RestoredFile = $RestoredFile
 						RestoredFileFull = $RestoreFiles[0].Filelist.PhysicalName -join ','
 						RestoreDirectory = $RestoreDirectory
-						BackupSize =  ($RestoreFiles | measure-object -property BackupSize -Sum).sum
+						BackupSize =  if([bool]($RestoreFiles.PSobject.Properties.name -match 'BackupSize')){($RestoreFiles | measure-object -property BackupSize -Sum).sum}else{$null}
 						CompressedBackupSize = if([bool]($RestoreFiles.PSobject.Properties.name -match 'CompressedBackupSize')){($RestoreFiles | measure-object -property CompressedBackupSize -Sum).sum}else{$null}
 						Script = $script  
 						BackupFileRaw = $RestoreFiles

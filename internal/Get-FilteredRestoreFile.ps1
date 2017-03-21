@@ -46,7 +46,7 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
    
         if ($TrustDbBackupHistory)
         {
-            Write-Verbose "$FunctionName - Trusted backup history"
+            Write-Verbose "$FunctionName - Trusted backup history loop"
 
             $tmpInternalFiles = @()
             foreach ($row in $InternalFiles)
@@ -60,13 +60,16 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
                         $tmpInternalFiles += $NewIf
                     }
                 }
+                else
+                {
+                    $tmpInternalFiles += $row
+                }
             }
             $InternalFiles = $tmpInternalFiles 
 
             $allsqlBackupDetails += $InternalFiles | Where-Object {$_.Type -eq 'Full'} | select-object *,  @{Name="BackupTypeDescription";Expression={"Database"}},  @{Name="BackupType";Expression={"1"}}
             $allsqlBackupDetails += $InternalFiles | Where-Object {$_.Type -eq 'Log'} | select-object *,  @{Name="BackupTypeDescription";Expression={"Transaction Log"}},  @{Name="BackupType";Expression={"2"}}
             $allsqlBackupDetails += $InternalFiles | Where-Object {$_.Type -eq 'Differential'} | select-object *,  @{Name="BackupTypeDescription";Expression={"Database Differential"}},  @{Name="BackupType";Expression={"5"}}
-
         }
         else
         {

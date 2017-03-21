@@ -268,6 +268,7 @@ folder for those file types as defined on the target instance.
 				Write-Verbose "$FunctionName - Trust Database Backup History Set"
 				if ("BackupPath" -notin $f.PSobject.Properties.name)
 				{
+						Write-Verbose "$FunctionName - adding BackupPath - $($_.Fullname)"
 						$f = $f | Select-Object *, @{Name="BackupPath";Expression={$_.FullName}}
 				}
 				if ("DatabaseName" -notin $f.PSobject.Properties.name)
@@ -280,6 +281,7 @@ folder for those file types as defined on the target instance.
 				}
 
 				$BackupFiles += $F | Select-Object *, @{Name="ServerName";Expression={$_.SqlInstance}}, @{Name="BackupStartDate";Expression={$_.Start}}
+				$str = ($BackUpFiles | select Fullname) -join ',' 
 			}
 			else
 			{
@@ -449,7 +451,6 @@ folder for those file types as defined on the target instance.
 	}
 	END
 	{
-
 
 		try
 		{
