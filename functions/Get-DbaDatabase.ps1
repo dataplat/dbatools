@@ -43,6 +43,12 @@ Returns databases without a full backup recorded by SQL Server. Will indicate th
 .PARAMETER NoFullBackupSince
 DateTime value. Returns list of SQL Server databases that haven't had a full backup since the passed iin DateTime
 
+.PARAMETER NoLogBackup
+Returns databases without a Log backup recorded by SQL Server. Will indicate those which only have CopyOnly Log backups
+
+.PARAMETER NoLogBackupSince
+DateTime value. Returns list of SQL Server databases that haven't had a Log backup since the passed iin DateTime
+
 .NOTES
 Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 
@@ -100,7 +106,9 @@ Returns databases on multiple instances piped into the function
 		[ValidateSet('Full', 'Simple', 'BulkLogged')]
 		[string]$RecoveryModel,
 		[switch]$NoFullBackup, 
-		[datetime]$NoFullBackupSince
+		[datetime]$NoFullBackupSince,
+		[switch]$NoLogBackup, 
+		[datetime]$NoLogBackupSince
 	)
 	
 	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
@@ -195,13 +203,29 @@ Returns databases on multiple instances piped into the function
 				}
 				$inputobject = $inputObject  | where-object {$_.name -notin $dabs -and $_.name -ne 'tempdb'}
 			}
+			if ($NoLogBackup -or $NoLogBackupSince)
+			{
+				if($NoLogBackup)
+				{
+					$dabs = (Get-DbaBackuphistory -SqlServer $server -LastLog -IgnoreCopyOnly).Database
+				}
+				else
+				{
+					$dabs = (Get-DbaBackuphistory -SqlServer $server -LastLog -IgnoreCopyOnly -Since $NoLogBackupSince).Database
+				}
+				$inputobject = $inputObject  | where-object {$_.name -notin $dabs -and $_.name -ne 'tempdb' -and $_.RecoveryModel -ne 'simple'}
+			}
 
 			if ($null -ne $NoFullBackupSince)
 			{
 				$inputobject = $inputobject | Where-Object {$_.LastBackupdate -lt $NoFullBackupSince}				
 			}
+			elseif ($null -ne $NoLogBackupSince)
+			{
+				$inputobject = $inputobject | Where-Object {$_.LastBackupdate -lt $NoLogBackupSince}	
+			}
 			$defaults = 'ComputerName', 'InstanceName', 'SqlInstance','Name', 'Status', 'RecoveryModel', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup'
-			if ($NoFullBackup)
+			if ($NoFullBackup -or $NoLogBackup)
 			{
 				$defaults += ('SinceFull', 'SinceDiff', 'SinceLog', 'Backupstatus')
 			}
@@ -209,7 +233,7 @@ Returns databases on multiple instances piped into the function
 			foreach ($db in $inputobject)
 			{
 				
-				if ($NoFullBackup)
+				if ($NoFullBackup -or $NoFullBackup)
 				{				
 					$SinceFull = if ($db.LastBackupdate -eq 0) {""} else {(New-TimeSpan -Start $db.LastBackupdate).Tostring()}
 					$SinceFull = if ($db.LastBackupdate -eq 0) {""} else {$SinceFull.split('.')[0..($SinceFull.split('.').count - 2)] -join ' days ' }
