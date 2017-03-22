@@ -225,34 +225,35 @@ Returns databases on multiple instances piped into the function
 				$inputobject = $inputobject | Where-Object {$_.LastBackupdate -lt $NoLogBackupSince}	
 			}
 			$defaults = 'ComputerName', 'InstanceName', 'SqlInstance','Name', 'Status', 'RecoveryModel', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup'
-			if ($NoFullBackup -or $NoLogBackup)
-			{
+			#if ($NoFullBackup -or $NoLogBackup)
+			#{
 				$defaults += ('SinceFull', 'SinceDiff', 'SinceLog', 'Backupstatus')
-			}
+			#}
 
 			foreach ($db in $inputobject)
 			{
-				
-				if ($NoFullBackup -or $NoFullBackup)
-				{				
-					$SinceFull = if ($db.LastBackupdate -eq 0) {""} else {(New-TimeSpan -Start $db.LastBackupdate).Tostring()}
-					$SinceFull = if ($db.LastBackupdate -eq 0) {""} else {$SinceFull.split('.')[0..($SinceFull.split('.').count - 2)] -join ' days ' }
+			
+				$SinceFull = if ($db.LastBackupdate -eq 0) {""} else {(New-TimeSpan -Start $db.LastBackupdate).Tostring()}
+				$SinceFull = if ($db.LastBackupdate -eq 0) {""} else {$SinceFull.split('.')[0..($SinceFull.split('.').count - 2)] -join ' days ' }
 
-					$SinceDiff = if ($db.LastDifferentialBackupDate -eq 0) {""} else {(New-TimeSpan -Start $db.LastDifferentialBackupDate).Tostring()}
-					$SinceDiff = if ($db.LastDifferentialBackupDate -eq 0) {""} else {$SinceDiff.split('.')[0..($SinceDiff.split('.').count - 2)] -join ' days ' }
+				$SinceDiff = if ($db.LastDifferentialBackupDate -eq 0) {""} else {(New-TimeSpan -Start $db.LastDifferentialBackupDate).Tostring()}
+				$SinceDiff = if ($db.LastDifferentialBackupDate -eq 0) {""} else {$SinceDiff.split('.')[0..($SinceDiff.split('.').count - 2)] -join ' days ' }
 
-					$SinceLog = if ($db.LastLogBackupDate -eq 0) {""} else {(New-TimeSpan -Start $db.LastLogBackupDate).Tostring()}
-					$SinceLog = if ($db.LastLogBackupDate -eq 0) {""} else {$SinceLog.split('.')[0..($SinceLog.split('.').count - 2)] -join ' days ' }
-					$BackupStatus = ""
+				$SinceLog = if ($db.LastLogBackupDate -eq 0) {""} else {(New-TimeSpan -Start $db.LastLogBackupDate).Tostring()}
+				$SinceLog = if ($db.LastLogBackupDate -eq 0) {""} else {$SinceLog.split('.')[0..($SinceLog.split('.').count - 2)] -join ' days ' }
+				$BackupStatus = ""
+				if ($NoFullBackup -or $NoFullBackupSince)
+				{		
 					if	(@($db.EnumBackupSets()).count -eq @($db.EnumBackupSets() | Where-Object{$_.IsCopyOnly}).count -and (@($db.EnumBackupSets()).count -gt 0) )
 					{
 						$BackupStatus = "Only CopyOnly backups"
 					}	
-					Add-Member -InputObject $db -MemberType NoteProperty SinceFull -value $SinceFull
-					Add-Member -InputObject $db -MemberType NoteProperty SinceDiff -value $SinceDiff
-					Add-Member -InputObject $db -MemberType NoteProperty SinceLog -value $SinceLog
-					Add-Member -InputObject $db -MemberType NoteProperty BackupStatus -value $BackupStatus
-				}					
+				}	
+				Add-Member -InputObject $db -MemberType NoteProperty SinceFull -value $SinceFull
+				Add-Member -InputObject $db -MemberType NoteProperty SinceDiff -value $SinceDiff
+				Add-Member -InputObject $db -MemberType NoteProperty SinceLog -value $SinceLog
+				Add-Member -InputObject $db -MemberType NoteProperty BackupStatus -value $BackupStatus
+	
 				Add-Member -InputObject $db -MemberType NoteProperty ComputerName -value $server.NetName
 				Add-Member -InputObject $db -MemberType NoteProperty InstanceName -value $server.ServiceName
 				Add-Member -InputObject $db -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
