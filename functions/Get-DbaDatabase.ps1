@@ -228,19 +228,11 @@ Returns databases on multiple instances piped into the function
 
 			if ($NoFullBackup -or $NoFullBackupSince -or $NoLogBackup -or $NoLogBackupSince)
 			{
-				$defaults += ('SinceFull', 'SinceDiff', 'SinceLog', 'Notes')
+				$defaults += ('Notes')
 			}
 			foreach ($db in $inputobject)
 			{
 			
-				$SinceFull = if ($db.LastBackupdate -eq 0) {""} else {(New-TimeSpan -Start $db.LastBackupdate).Tostring()}
-				$SinceFull = if ($db.LastBackupdate -eq 0) {""} else {$SinceFull.split('.')[0..($SinceFull.split('.').count - 2)] -join ' days ' }
-
-				$SinceDiff = if ($db.LastDifferentialBackupDate -eq 0) {""} else {(New-TimeSpan -Start $db.LastDifferentialBackupDate).Tostring()}
-				$SinceDiff = if ($db.LastDifferentialBackupDate -eq 0) {""} else {$SinceDiff.split('.')[0..($SinceDiff.split('.').count - 2)] -join ' days ' }
-
-				$SinceLog = if ($db.LastLogBackupDate -eq 0) {""} else {(New-TimeSpan -Start $db.LastLogBackupDate).Tostring()}
-				$SinceLog = if ($db.LastLogBackupDate -eq 0) {""} else {$SinceLog.split('.')[0..($SinceLog.split('.').count - 2)] -join ' days ' }
 				$Notes = $null
 				if ($NoFullBackup -or $NoFullBackupSince)
 				{		
@@ -249,9 +241,6 @@ Returns databases on multiple instances piped into the function
 						$Notes = "Only CopyOnly backups"
 					}	
 				}	
-				Add-Member -InputObject $db -MemberType NoteProperty SinceFull -value $SinceFull
-				Add-Member -InputObject $db -MemberType NoteProperty SinceDiff -value $SinceDiff
-				Add-Member -InputObject $db -MemberType NoteProperty SinceLog -value $SinceLog
 				Add-Member -InputObject $db -MemberType NoteProperty BackupStatus -value $Notes
 	
 				Add-Member -InputObject $db -MemberType NoteProperty ComputerName -value $server.NetName
