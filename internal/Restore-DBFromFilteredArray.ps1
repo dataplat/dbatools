@@ -28,10 +28,13 @@ Function Restore-DBFromFilteredArray
 		[switch]$ReuseSourceFolderStructure,
 		[switch]$Force,
 		[string]$RestoredDatababaseNamePrefix,
-		[switch]$TrustDbBackupHistory
+		[switch]$TrustDbBackupHistory,
+		[int]$MaxTransferSize,
+		[int]$BlockSize,
+		[int]$BufferCount
 	)
     
-	    Begin
+	Begin
     {
         $FunctionName =(Get-PSCallstack)[0].Command
         Write-Verbose "$FunctionName - Starting"
@@ -41,6 +44,19 @@ Function Restore-DBFromFilteredArray
         $Results = @()
         $InternalFiles = @()
 		$Output = @()
+		if (($MaxTransferSize%64kb) -ne 0 -or $MaxTransferSize -gt 4mb)
+		{
+			Write-Warning "$FunctionName - MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
+			break
+		}
+		if ($BlockSize)
+		{
+			if ($BlockSize -notin (0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb))
+			{
+				Write-Warning "$FunctionName - Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
+				break
+			}
+		}
 
     }
     process
@@ -220,6 +236,19 @@ Function Restore-DBFromFilteredArray
 				} 
 				$LogicalFileMovesString = $LogicalFileMoves -join ", `n"
 				Write-Verbose "$FunctionName - $LogicalFileMovesString"
+
+				if ($MaxTransferSize)
+				{
+					$restore.MaxTransferSize = $MaxTransferSize
+				}
+				if ($BufferCount)
+				{
+					$restore.BufferCount = $BufferCount
+				}
+				if ($BlockSize)
+				{
+					$restore.Blocksize = $BlockSize
+				}
 
 				Write-Verbose "$FunctionName - Beginning Restore of $Dbname"
 				$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {

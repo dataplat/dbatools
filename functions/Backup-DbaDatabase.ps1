@@ -55,6 +55,18 @@ If switch enabled then each databases will be backed up into a seperate folder o
 If switch enabled, function will try to perform a compressed backup if supported by the version and edition of SQL Server.
 If not set, function will use the Server's default setting for compression
 
+.PARAMETER MaxTransferSize
+Parameter to set the unit of transfer. Values must be a multiple by 64kb
+
+.PARAMETER Blocksize
+Specifies the block size to use. Must be  one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb or 64kb
+Can be specified in bytes
+Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
+
+.PARAMETER BufferCount
+Number of I/O buffers to use to perform the operation.
+Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
+
 .PARAMETER Checksum
 If switch enabled the backup checksum will be calculated
 
@@ -102,7 +114,10 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 		[int]$FileCount=0,
 		[switch]$CompressBackup,
 		[switch]$Checksum,
-		[switch]$Verify
+		[switch]$Verify,
+		[int]$MaxTransferSize,
+		[int]$BlockSize,
+		[int]$BufferCount
 	)
 	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
@@ -143,6 +158,20 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			{
 				Write-Warning "$FunctionName - 1 BackupFile specified, but more than 1 database." -WarningAction stop
 				break
+			}
+
+			if (($MaxTransferSize%64kb) -ne 0 -or $MaxTransferSize -gt 4mb)
+			{
+				Write-Warning "$FunctionName - MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
+				break
+			}
+			if ($BlockSize)
+			{
+				if ($BlockSize -notin (0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb))
+				{
+					Write-Warning "$FunctionName - Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
+					break
+				}
 			}
 		}
 	}
@@ -375,6 +404,19 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 				$backup.add_PercentComplete($percent)
 				$backup.PercentCompleteNotification = 1
 				$backup.add_Complete($complete)
+
+				if ($MaxTransferSize)
+				{
+					$backup.MaxTransferSize = $MaxTransferSize
+				}
+				if ($BufferCount)
+				{
+					$backup.BufferCount = $BufferCount
+				}
+				if ($BlockSize)
+				{
+					$backup.Blocksize = $BlockSize
+				}
 				
 				Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
 				

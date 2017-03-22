@@ -108,6 +108,18 @@ that something is wrong with a file.
 .PARAMETER XpNoRecurse
 If specified, prevents the XpDirTree process from recursing (it's default behaviour)
 
+.PARAMETER MaxTransferSize
+Parameter to set the unit of transfer. Values must be a multiple by 64kb
+
+.PARAMETER Blocksize
+Specifies the block size to use. Must be  one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb or 64kb
+Can be specified in bytes
+Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
+
+.PARAMETER BufferCount
+Number of I/O buffers to use to perform the operation.
+Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
+
 .PARAMETER Confirm
 Prompts to confirm certain actions
 	
@@ -199,7 +211,10 @@ folder for those file types as defined on the target instance.
 		[switch]$ReuseSourceFolderStructure,
 		[string]$DestinationFilePrefix = '',
 		[string]$RestoredDatababaseNamePrefix,
-		[switch]$TrustDbBackupHistory
+		[switch]$TrustDbBackupHistory,
+		[int]$MaxTransferSize,
+		[int]$BlockSize,
+		[int]$BufferCount
 	)
 	BEGIN
 	{
@@ -256,6 +271,19 @@ folder for those file types as defined on the target instance.
 		if (($null -ne $FileMapping) -or $ReuseSourceFolderStructure -or ($DestinationDataDirectory -ne ''))
 		{
 			$UseDestinationDefaultDirectories = $false
+		}
+		if (($MaxTransferSize%64kb) -ne 0 -or $MaxTransferSize -gt 4mb)
+		{
+			Write-Warning "$FunctionName - MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
+			break
+		}
+		if ($BlockSize)
+		{
+			if ($BlockSize -notin (0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb))
+			{
+				Write-Warning "$FunctionName - Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
+				break
+			}
 		}
 		
 	}
@@ -552,8 +580,7 @@ folder for those file types as defined on the target instance.
 			{
 				try
 				{
-					$FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -TrustDbBackupHistory:$TrustDbBackupHistory -ReplaceDatabase:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure $FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix
-					
+					$FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -TrustDbBackupHistory:$TrustDbBackupHistory -ReplaceDatabase:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure $FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix -MaxTransferSize $MaxTransferSize -BufferCount $BufferCount -BlockSize $BlockSize					
 					$Completed = 'successfully'
 				}
 				catch
