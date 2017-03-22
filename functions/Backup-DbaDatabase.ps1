@@ -429,6 +429,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					$Filelist = @()
 					$FileList += $server.Databases[$dbname].FileGroups.Files | Select-Object @{Name="FileType";Expression={"D"}}, @{Name="LogicalName";Expression={$_.Name}}, @{Name="PhysicalName";Expression={$_.FileName}}
 					$FileList += $server.Databases[$dbname].LofFiles | Select-Object @{Name="FileType";Expression={"L"}}, @{Name="LogicalName";Expression={$_.Name}}, @{Name="PhysicalName";Expression={$_.FileName}}
+					$Verified = $false
 					if ($Verify)
 					{
 						$verifiedresult = [PSCustomObject]@{
@@ -447,12 +448,12 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 								}  | Restore-DbaDatabase -SqlServer $server -SqlCredential $SqlCredential -DatabaseName DbaVerifyOnly -VerifyOnly
 						if ($verifiedResult[0] -eq "Verify successful")
 						{
-							$VerifiedDesc = $verifiedResult[0]
+							$failures += $verifiedResult[0]
 							$Verified = $true
 						}
 						else
 						{
-							$VerifiedDesc = $verifiedResult[0]
+							$failures += $verifiedResult[0]
 							$Verified = $false
 						}
 					}
@@ -464,7 +465,11 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					$BackupComplete = $false
 				}
 			}
-			
+			$OutputExclude = 'FullName', 'FileList', 'SoftwareVersionMajor'
+			if ($failures.count -eq 0)
+			{
+				$OutputExclude += ('Notes')
+			}
 			[PSCustomObject]@{
 					SqlInstance = $server.name
 					DatabaseName = $dbname
@@ -479,8 +484,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					FileList = $FileList
 					SoftwareVersionMajor = $server.VersionMajor
 					Verified = $Verified
-					VerifiedDesc = $VerifiedDesc
-			} | Select-DefaultView -ExcludeProperty FullName, FileList, SoftwareVersionMajor
+			} | Select-DefaultView -ExcludeProperty $OutputExclude
 			$BackupFileName = $null
 		}
 	}
