@@ -224,8 +224,12 @@ Returns databases on multiple instances piped into the function
 			{
 				$inputobject = $inputobject | Where-Object {$_.LastBackupdate -lt $NoLogBackupSince}	
 			}
-			$defaults = 'ComputerName', 'InstanceName', 'SqlInstance','Name', 'Status', 'RecoveryModel', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup','SinceFull', 'SinceDiff', 'SinceLog', 'Backupstatus'
+			$defaults = 'ComputerName', 'InstanceName', 'SqlInstance','Name', 'Status', 'RecoveryModel', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup'
 
+			if ($NoFullBackup -or $NoFullBackupSince -or $NoLogBackup -or $NoLogBackupSince)
+			{
+				$defaults += ('SinceFull', 'SinceDiff', 'SinceLog', 'Backupstatus')
+			}
 			foreach ($db in $inputobject)
 			{
 			
