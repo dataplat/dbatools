@@ -43,6 +43,11 @@ Get-DbaADObject -ADObject "contoso\sqlserver2014$" -Type Group
 
 Seaches in the contoso domain for a sqlserver2014 computer (remember the ending $ for computer objects)
 
+.EXAMPLE
+Get-DbaADObject -ADObject "contoso\ctrlb" -Type User -Silent
+
+Seaches in the contoso domain for a ctrlb user, suppressing all error messages
+
 #>
 	[CmdletBinding()]
 	Param (
@@ -76,8 +81,7 @@ Seaches in the contoso domain for a sqlserver2014 computer (remember the ending 
 		foreach($ADObj in $ADObject) {
 			$Splitted = $ADObj.Split("\")
 			if ($Splitted.Length -ne 2) {
-				Stop-Function -Message "You need to pass ADObject in DOMAIN\object format" -Silent $Silent
-				continue
+				Stop-Function -Message "You need to pass ADObject in DOMAIN\object format" -Continue -Silent $Silent
 			}
 			$Domain, $obj = $Splitted
 			try {
