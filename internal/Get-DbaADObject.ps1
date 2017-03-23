@@ -60,7 +60,7 @@ Seaches in the contoso domain for a ctrlb user, suppressing all error messages
 		try {
 			Add-Type -AssemblyName System.DirectoryServices.AccountManagement
 		} catch {
-			write-warning 'Failed to load the required module'
+			Stop-Function -Message "Failed to load the required module $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_
 		}
 		switch ($Type) {
 			"User" {
@@ -78,6 +78,7 @@ Seaches in the contoso domain for a ctrlb user, suppressing all error messages
 		}
 	}
 	PROCESS {
+		if (Test-FunctionInterrupt) { return }
 		foreach($ADObj in $ADObject) {
 			$Splitted = $ADObj.Split("\")
 			if ($Splitted.Length -ne 2) {
