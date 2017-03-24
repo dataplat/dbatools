@@ -65,7 +65,7 @@ This will show MORE DETAILED information about the computer where DBAtools is be
             $localinfo.PowerShellArchitecture = "64-bit PowerShell"
         }
         else{
-            $localinfo.PowerShellArchitecture = "32-bit PowreShell"
+            $localinfo.PowerShellArchitecture = "32-bit PowerShell"
         }
 
         $localinfo.DbaToolsVersion = (Get-Module dbatools).Version.ToString()
