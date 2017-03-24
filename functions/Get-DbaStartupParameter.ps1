@@ -90,6 +90,10 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 					{
 						$traceflags = "None"
 					}
+					else
+					{
+						$traceflags = $traceflags.substring(2) 
+					}
 					
 					if ($Simple -eq $true)
 					{
@@ -133,7 +137,7 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 							$singleuserdetails = $singleuserparm.TrimStart('-m')
 							# It's possible the person specified an application name
 							# if not, just say that single user is $true
-							if ($singleuserdetails.length -eq 0)
+							if ($singleuserdetails.length -ne 0)
 							{
 								$singleuser = $singleuserdetails
 							}
