@@ -434,7 +434,7 @@ where
             }
             catch
             {
-                Stop-Function -Message "Failed to process Instance $Instance: $($_.Exception.Message)" -InnerErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failed to process Instance $($Instance): $($_.Exception.Message)" -InnerErrorRecord $_ -Target $instance -Continue
             }
         }
     }
