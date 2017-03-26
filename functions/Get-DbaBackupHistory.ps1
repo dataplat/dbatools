@@ -122,7 +122,7 @@ Function Get-DbaBackupHistory
         $Force,
         
         [Parameter(ParameterSetName = "NoLast")]
-        [datetime]
+        [DbaDateTime]
         $Since,
         
         [Parameter(ParameterSetName = "Last")]
@@ -142,28 +142,23 @@ Function Get-DbaBackupHistory
         $LastLog,
         
         [switch]
-        $raw,
+        $Raw,
         
         [switch]
         $Silent
     )
     
-    DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential } }
+    dynamicparam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential } }
     
-    Begin
+    begin
     {
         Write-Message -Level System -Message "Active Parameterset: $($PSCmdlet.ParameterSetName)"
         Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
         
-        if ($Since -ne $null)
-        {
-            $Since = $Since.ToString("yyyy-MM-dd HH:mm:ss")
-        }
-        
         $databases = $psboundparameters.Databases
     }
     
-    Process
+    process
     {
         foreach ($instance in $SqlServer)
         {
@@ -176,11 +171,11 @@ Function Get-DbaBackupHistory
                 {
                     Stop-Function -Message "SQL Server 2000 not supported" -Category LimitsExceeded -Target $instance -Continue
                 }
-                $BackupSizeColumn = 'backup_size'
+                $backupSizeColumn = 'backup_size'
                 if ($server.VersionMajor -ge 10)
                 {
                     # 2008 introduced compressed_backup_size
-                    $BackupSizeColumn = 'compressed_backup_size'
+                    $backupSizeColumn = 'compressed_backup_size'
                 }
                 
                 if ($last)
@@ -189,9 +184,9 @@ Function Get-DbaBackupHistory
                     
                     foreach ($db in $databases)
                     {
-                        Get-DbaBackupHistory -SqlServer $server -LastFull -Databases $db -raw:$raw
-                        Get-DbaBackupHistory -SqlServer $server -LastDiff -Databases $db -raw:$raw
-                        Get-DbaBackupHistory -SqlServer $server -LastLog -Databases $db -raw:$raw
+                        Get-DbaBackupHistory -SqlServer $server -LastFull -Databases $db -raw:$Raw
+                        Get-DbaBackupHistory -SqlServer $server -LastDiff -Databases $db -raw:$Raw
+                        Get-DbaBackupHistory -SqlServer $server -LastLog -Databases $db -raw:$Raw
                     }
                 }
                 elseif ($LastFull -or $LastDiff -or $LastLog)
@@ -232,7 +227,7 @@ FROM (SELECT
   backupset.backup_finish_date AS [End],
   DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS Duration,
   mediafamily.physical_device_name AS Path,
-  backupset.$BackupSizeColumn AS TotalSize,
+  backupset.$backupSizeColumn AS TotalSize,
   CASE backupset.type
 	WHEN 'L' THEN 'Log'
 	WHEN 'D' THEN 'Full'
@@ -289,7 +284,7 @@ SELECT
   backupset.backup_finish_date AS [End],
   DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS Duration,
   mediafamily.physical_device_name AS Path,
-  backupset.$BackupSizeColumn AS TotalSize,
+  backupset.$backupSizeColumn AS TotalSize,
   CASE backupset.type
 	WHEN 'L' THEN 'Log'
 	WHEN 'D' THEN 'Full'
@@ -350,7 +345,7 @@ FROM msdb..backupmediafamily mediafamily
                     
                     if ($Since -ne $null)
                     {
-                        $wherearray += "backupset.backup_finish_date >= '$since'"
+                        $wherearray += "backupset.backup_finish_date >= '$($Since.ToString("yyyy-MM-dd HH:mm:ss"))'"
                     }
                     
                     if ($IgnoreCopyOnly)
@@ -367,12 +362,12 @@ FROM msdb..backupmediafamily mediafamily
                     $sql = "$select $from $where ORDER BY backupset.backup_finish_date DESC"
                 }
                 
-                if (!$last)
+                if (-not $last)
                 {
                     Write-Message -Level Debug -Message $sql
                     Write-Message -Level SomewhatVerbose -Message "Executing sql query"
                     $results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
-                    if ($raw)
+                    if ($Raw)
                     {
                         Write-Message -Level SomewhatVerbose -Message "Processing as Raw Ouput"
                         $results | Select-Object *, @{ Name = "FullName"; Expression = { $_.Path } }
@@ -383,11 +378,11 @@ FROM msdb..backupmediafamily mediafamily
                         Write-Message -Level SomewhatVerbose -Message "Processing as Grouped output"
                         $GroupedResults = $results | Group-Object -Property backupsetid
                         Write-Message -Level SomewhatVerbose -Message "$($GroupedResults.Count) result-groups found"
-                        $GroupResults = @()
+                        $groupResults = @()
                         foreach ($group in $GroupedResults)
                         {
                             
-                            $FileSql = @"
+                            $fileSql = @"
 select
 	file_type as FileType,
 	logical_name as LogicalName,
@@ -397,34 +392,34 @@ from
 where
     backup_set_id='$($Group.group[0].BackupSetID)'
 "@
-                            Write-Message -Level Debug -Message "FileSQL: $FileSql"
+                            Write-Message -Level Debug -Message "FileSQL: $fileSql"
                             
-                            $HistoryObject = New-Object sqlcollective.dbatools.Database.BackupHistory
-                            $HistoryObject.ComputerName = $server.NetName
-                            $HistoryObject.InstanceName = $server.ServiceName
-                            $HistoryObject.SqlInstance = $server.DomainInstanceName
-                            $HistoryObject.Database = $group.Group[0].Database
-                            $HistoryObject.UserName = $group.Group[0].UserName
-                            $HistoryObject.Start = ($group.Group.Start | measure-object -Minimum).Minimum
-                            $HistoryObject.End = ($group.Group.End | measure-object -Maximum).Maximum
-                            $HistoryObject.Duration = New-TimeSpan -Seconds ($group.Group.Duration | measure-object -Maximum).Maximum
-                            $HistoryObject.Path = $group.Group.Path
-                            $HistoryObject.TotalSize = ($group.group.TotalSize | measure-object -Sum).sum
-                            $HistoryObject.Type = $group.Group[0].Type
-                            $HistoryObject.BackupSetupId = $group.Group[0].BackupSetId
-                            $HistoryObject.DeviceType = $group.Group[0].DeviceType
-                            $HistoryObject.Software = $group.Group[0].Software
-                            $HistoryObject.FullName = $group.Group.Path
-                            $HistoryObject.FileList = $server.ConnectionContext.ExecuteWithResults($Filesql).Tables.Rows
-                            $HistoryObject.Position = $group.Group[0].Position
-                            $HistoryObject.FirstLsn = $group.Group[0].First_LSN
-                            $HistoryObject.DatabaseBackupLsn = $group.Group[0].database_backup_lsn
-                            $HistoryObject.CheckpointLsn = $group.Group[0].checkpoint_lsn
-                            $HistoryObject.LastLsn = $group.Group[0].Last_Lsn
-                            $HistoryObject.SoftwareVersionMajor = $group.Group[0].Software_Major_Version
-                            $GroupResults += $HistoryObject
+                            $historyObject = New-Object sqlcollective.dbatools.Database.BackupHistory
+                            $historyObject.ComputerName = $server.NetName
+                            $historyObject.InstanceName = $server.ServiceName
+                            $historyObject.SqlInstance = $server.DomainInstanceName
+                            $historyObject.Database = $group.Group[0].Database
+                            $historyObject.UserName = $group.Group[0].UserName
+                            $historyObject.Start = ($group.Group.Start | Measure-Object -Minimum).Minimum
+                            $historyObject.End = ($group.Group.End | Measure-Object -Maximum).Maximum
+                            $historyObject.Duration = New-TimeSpan -Seconds ($group.Group.Duration | Measure-Object -Maximum).Maximum
+                            $historyObject.Path = $group.Group.Path
+                            $historyObject.TotalSize = ($group.group.TotalSize | Measure-Object -Sum).sum
+                            $historyObject.Type = $group.Group[0].Type
+                            $historyObject.BackupSetupId = $group.Group[0].BackupSetId
+                            $historyObject.DeviceType = $group.Group[0].DeviceType
+                            $historyObject.Software = $group.Group[0].Software
+                            $historyObject.FullName = $group.Group.Path
+                            $historyObject.FileList = $server.ConnectionContext.ExecuteWithResults($fileSql).Tables.Rows
+                            $historyObject.Position = $group.Group[0].Position
+                            $historyObject.FirstLsn = $group.Group[0].First_LSN
+                            $historyObject.DatabaseBackupLsn = $group.Group[0].database_backup_lsn
+                            $historyObject.CheckpointLsn = $group.Group[0].checkpoint_lsn
+                            $historyObject.LastLsn = $group.Group[0].Last_Lsn
+                            $historyObject.SoftwareVersionMajor = $group.Group[0].Software_Major_Version
+                            $groupResults += $historyObject
                         }
-                        $GroupResults | Sort-Object -Property End -Descending
+                        $groupResults | Sort-Object -Property End -Descending
                     }
                 }
             }
