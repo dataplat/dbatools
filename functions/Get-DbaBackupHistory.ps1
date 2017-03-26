@@ -375,7 +375,7 @@ FROM msdb..backupmediafamily mediafamily
                     if ($raw)
                     {
                         Write-Message -Level SomewhatVerbose -Message "Processing as Raw Ouput"
-                        $results = $results | Select-Object *, @{ Name = "FullName"; Expression = { $_.Path } }
+                        $results | Select-Object *, @{ Name = "FullName"; Expression = { $_.Path } }
                         Write-Message -Level SomewhatVerbose -Message "$($results.Count) result sets found"
                     }
                     else
@@ -399,36 +399,32 @@ where
 "@
                             Write-Message -Level Debug -Message "FileSQL: $FileSql"
                             
-                            $obj = New-Object sqlcollective.dbatools.Database.BackupHistory
-                            $obj.ComputerName = $server.NetName
-                            $obj.InstanceName = $server.ServiceName
-                            $obj.SqlInstance = $server.DomainInstanceName
-                            $obj.Database = $group.Group[0].Database
-                            $obj.UserName = $group.Group[0].UserName
-                            $obj.Start = ($group.Group.Start | measure-object -Minimum).Minimum
-                            $obj.End = ($group.Group.End | measure-object -Maximum).Maximum
-                            $obj.Duration = New-TimeSpan -Seconds ($group.Group.Duration | measure-object -Maximum).Maximum
-                            $obj.Path = $group.Group.Path
-                            $obj.TotalSize = ($group.group.TotalSize | measure-object -Sum).sum
-                            $obj.Type = $group.Group[0].Type
-                            $obj.BackupSetupId = $group.Group[0].BackupSetId
-                            $obj.DeviceType = $group.Group[0].DeviceType
-                            $obj.Software = $group.Group[0].Software
-                            $obj.FullName = $group.Group.Path
-                            $obj.FileList = $server.ConnectionContext.ExecuteWithResults($Filesql).Tables.Rows
-                            $obj.Position = $group.Group[0].Position
-                            $obj.FirstLsn = $group.Group[0].First_LSN
-                            $obj.DatabaseBackupLsn = $group.Group[0].database_backup_lsn
-                            $obj.CheckpointLsn = $group.Group[0].checkpoint_lsn
-                            $obj.LastLsn = $group.Group[0].Last_Lsn
-                            $obj.SoftwareVersionMajor = $group.Group[0].Software_Major_Version
-                            $GroupResults += $obj
+                            $HistoryObject = New-Object sqlcollective.dbatools.Database.BackupHistory
+                            $HistoryObject.ComputerName = $server.NetName
+                            $HistoryObject.InstanceName = $server.ServiceName
+                            $HistoryObject.SqlInstance = $server.DomainInstanceName
+                            $HistoryObject.Database = $group.Group[0].Database
+                            $HistoryObject.UserName = $group.Group[0].UserName
+                            $HistoryObject.Start = ($group.Group.Start | measure-object -Minimum).Minimum
+                            $HistoryObject.End = ($group.Group.End | measure-object -Maximum).Maximum
+                            $HistoryObject.Duration = New-TimeSpan -Seconds ($group.Group.Duration | measure-object -Maximum).Maximum
+                            $HistoryObject.Path = $group.Group.Path
+                            $HistoryObject.TotalSize = ($group.group.TotalSize | measure-object -Sum).sum
+                            $HistoryObject.Type = $group.Group[0].Type
+                            $HistoryObject.BackupSetupId = $group.Group[0].BackupSetId
+                            $HistoryObject.DeviceType = $group.Group[0].DeviceType
+                            $HistoryObject.Software = $group.Group[0].Software
+                            $HistoryObject.FullName = $group.Group.Path
+                            $HistoryObject.FileList = $server.ConnectionContext.ExecuteWithResults($Filesql).Tables.Rows
+                            $HistoryObject.Position = $group.Group[0].Position
+                            $HistoryObject.FirstLsn = $group.Group[0].First_LSN
+                            $HistoryObject.DatabaseBackupLsn = $group.Group[0].database_backup_lsn
+                            $HistoryObject.CheckpointLsn = $group.Group[0].checkpoint_lsn
+                            $HistoryObject.LastLsn = $group.Group[0].Last_Lsn
+                            $HistoryObject.SoftwareVersionMajor = $group.Group[0].Software_Major_Version
+                            $GroupResults += $HistoryObject
                         }
-                        $results = $GroupResults | Sort-Object -Property End -Descending
-                    }
-                    foreach ($result in $results)
-                    {
-                        $result
+                        $GroupResults | Sort-Object -Property End -Descending
                     }
                 }
             }
