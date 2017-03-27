@@ -2,40 +2,71 @@ Function New-DbaLogShippingPrimaryDatabase
 {
 <#
 .SYNOPSIS 
-New-DbaLogShippingPrimaryDatabase creates a new log shipping database 
+New-DbaLogShippingPrimaryDatabase sets up the log shipping for the primary database
 
 .DESCRIPTION
-
+To set up log shipping, several configurations need to be made on the primary instance.
+This function takes care of configuring log shipping for a database.
+The function does support values from pipeline so it's possible to enter multiple databases
+at the same time for the same log ship settings.
 
 .PARAMETER SqlServer
+SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2005 or greater.
 
 .PARAMETER SqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
+
+Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER Database
+Database that needs to set up for log shipping.
 
 .PARAMETER BackupDirectory
+Is the path to the backup folder on the primary server. 
 
 .PARAMETER BackupShare
+Is the network path to the backup directory on the primary server. 
 
-.PARAMETER BackupJobName
+.PARAMETER BackupJobNamePrefix
+Is the name of the SQL Server Agent job on the primary server that copies the backup into the backup folder.
+The name if the prefix, the function will add the name of the database.
 
 .PARAMETER BackupRetentionMinutes
+Is the length of time, in minutes, to retain the log backup file in the backup directory on the primary server. 
 
 .PARAMETER BackupThresshold
+Is the length of time, in minutes, after the last backup before a threshold_alert error is raised. The default is 60 minutes. 
 
 .PARAMETER Compression
+Specifies whether a log shipping configuration uses backup compression. This parameter is supported only in SQL Server 2008 Enterprise (or a later version). 
+If the parameter is not set and the version of SQL Server is equal or higher than SQL Server 2008 the default of the server will be retrieved.
 
 .PARAMETER AlertEnabled
+Specifies whether an alert will be raised when backup_threshold is exceeded.
 
 .PARAMETER ThressholdAlertMinutes
+Is the alert to be raised when the backup threshold is exceeded. The default is 14,420. 
 
 .PARAMETER HistoryRetentionMinutes
+Is the length of time in minutes in which the history will be retained. The default is 14,420.
 
 .PARAMETER UseDatabaseSuffix
+Is used to change several parameter values to include the name of the databases. 
+Parameters that will be changed with this parameter are BackupDirectory, BackupShare
 
 .PARAMETER Force
+When set the original settings will be overwriten.
 
 .PARAMETER Silent
+Whether the silent switch was set in the calling function.
+If true, it will write errors, if any, but not write to the screen without explicit override using -Debug or -Verbose.
+If false, it will print a warning if in wrning mode. It will also be willing to write a message to the screen, if the level is within the range configured for that.
+
+.PARAMETER WhatIf
+Shows what would happen if the command were executed 
 
 .NOTES 
 Original Author: Sander Stad (@sqlstad, sqlstad.nl)
@@ -55,14 +86,17 @@ https://dbatools.io/New-DbaLogShippingPrimaryDatabase
     [CmdletBinding(SupportsShouldProcess = $true)]
 
     param (
-		[parameter(Mandatory = $true)]
+		[parameter(Mandatory = $true)][ValidateNotNullOrEmpty()]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential,
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string[]]$Database,
+        [parameter(Mandatory = $true)][ValidateNotNullOrEmpty()]
         [string]$BackupDirectory,
+        [parameter(Mandatory = $true)][ValidateNotNullOrEmpty()]
         [string]$BackupShare,
-        [string]$BackupJobName = "LS_Backup_",
+        [string]$BackupJobNamePrefix = "LS_Backup_",
+        [parameter(Mandatory = $true)][ValidateNotNullOrEmpty()]
         [int]$BackupRetentionMinutes,
         [int]$BackupThresshold = 60,
         [switch]$Compression,
@@ -82,7 +116,7 @@ https://dbatools.io/New-DbaLogShippingPrimaryDatabase
         $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
         
         # Check if the instance is the right version
-        if ($server.versionMajor -lt 9)
+        if ($server.VersionMajor -lt 9)
 		{
 			Stop-Function -Message "Log Shipping is only supported in SQL Server 2005 and above. Quitting." -Silent $Silent
             return
@@ -104,12 +138,10 @@ https://dbatools.io/New-DbaLogShippingPrimaryDatabase
         }
 
         # Check the backup directory
-        if($BackupDirectory.StartsWith("\\"))
+        if(-not (Test-Path($BackupDirectory)))
         {
-            if(-not (Test-Path($BackupDirectory)))
-            {
-                Stop-Function -Message "Backup Directory doesn't exist, please enter a valid directory or check the permissions."
-            }
+            Stop-Function -Message "Backup Directory doesn't exist, please enter a valid directory or check the permissions."
+            return
         }
 
         # Check the backup backup retention
@@ -119,31 +151,26 @@ https://dbatools.io/New-DbaLogShippingPrimaryDatabase
         }
 
         # Check the backup compression setting
-        if(-not $Compression)
+        $BackupCompression = 0
+        if((-not $Compression) -and ($Server.VersionMajor -ge 10))
         {
             $DefaultBackupCompression = Get-DbaSpConfigure -SqlServer $SqlServer -Configs DefaultBackupCompression
-            $Compression = $DefaultBackupCompression.RunningValue
-        }
-
-        # Check if alerting needs to be enabled
-        if($AlertEnabled)
-        {
-            [bool]$ThressholdAlert = 1
+            $BackupCompression = $DefaultBackupCompression.RunningValue
         }
 
         # Check if some things need to be forced
+        $Overwrite = 0 
         if($Force)
         {
-            [bool]$Overwrite = 1
+            $Overwrite = 1
         }
-        else 
-        {
-            [bool]$Overwrite = 0    
-        }
+
     }
 
     PROCESS
     {
+        $NewBackupDirectory = $BackupDirectory
+
         # If the database name needs to be used as the suffix
         if($UseDatabaseSuffix)
         {
@@ -184,51 +211,51 @@ https://dbatools.io/New-DbaLogShippingPrimaryDatabase
                 }
                 catch 
                 {
-                    Stop-Function -Message "Couldn't create backup directory/share $($BackupDirectory). Stopping.." -Silent $Silent
+                    Stop-Function -Message "Couldn't create backup directory/share $($BackupDirectory). $($_.Exception.Message)" -Silent $Silent
                 }
             }
         }
 
         # Set the name for the job
-        if($BackupJobName.EndsWith("_") -or $BackupJobName.EndsWith("-"))
+        if($BackupJobNamePrefix.EndsWith("_") -or $BackupJobNamePrefix.EndsWith("-"))
         {
-            $BackupDirectory += "$($Database)"
+            $BackupJobNamePrefix += "$($Database)"
         } 
         else 
         {
-            $BackupDirectory += "_$($Database)"    
+            $BackupJobNamePrefix += "_$($Database)"    
         }
 
         # Setup the query
-        $Sql = "EXEC master.dbo.sp_add_log_shipping_primary_database 
-		@database = N'$($Database)' 
-		,@backup_directory = N'$($NewBackupDirectory)' 
-		,@backup_share = N'$($NewBackupShare)' 
-		,@backup_job_name = N'$($BackupJobName)' 
-		,@backup_retention_period = $($BackupRetentionMinutes)
-		,@backup_compression = $($Compression)
-		,@backup_threshold = $($BackupThresshold) "
+        $SqlCmd = "EXEC master.dbo.sp_add_log_shipping_primary_database 
+            @database = N'$($Database)' 
+            ,@backup_directory = N'$($NewBackupDirectory)' 
+            ,@backup_share = N'$($NewBackupShare)' 
+            ,@backup_job_name = N'$($BackupJobNamePrefix)' 
+            ,@backup_retention_period = $($BackupRetentionMinutes)
+            ,@backup_compression = $($BackupCompression)
+            ,@backup_threshold = $($BackupThresshold) 
+            ,@history_retention_period = $($HistoryRetentionMinutes) 
+            ,@backup_job_id = @LS_BackupJobId OUTPUT 
+            ,@primary_id = @LS_PrimaryId OUTPUT 
+            ,@overwrite = $($Overwrite) "
 
         if($AlertEnabled)
         {
-            $Sql += ",@threshold_alert_enabled = 1"
+            $SqlCmd += ",@threshold_alert_enabled = 1
+            ,@threshold_alert = $($ThressholdAlertMinutes) "
         }
 
-        $SQL += ",@history_retention_period = $($HistoryRetentionMinutes) 
-		,@backup_job_id = @LS_BackupJobId OUTPUT 
-		,@primary_id = @LS_PrimaryId OUTPUT 
-		,@overwrite = $($Overwrite) "
-
         # Execute the command
-        if ($Pscmdlet.ShouldProcess($SqlServer, "Executing $sql and informing that a restart is required."))
+        if ($Pscmdlet.ShouldProcess($SqlServer, "Executing SQL Command on $($SqlServer)"))
 		{
 			try
 			{
-                $server.Databases['master'].ExecuteNonQuery($Sql)
+                $server.Databases['master'].ExecuteNonQuery($SqlCmd)
             }
             catch
             {
-                Stop-Function -Message "Couldn't create log shipping primary. $($_)"
+                Stop-Function -Message "Couldn't create log shipping primary. $($_.Exception.Message)"
                 return
             }
         }
