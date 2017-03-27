@@ -7,13 +7,35 @@ New-DbaLogShippingPrimaryDatabase creates a new log shipping database
 .DESCRIPTION
 
 
-.PARAMETER Source
-
-.PARAMETER Destination
+.PARAMETER SqlServer
 
 .PARAMETER SqlCredential
 
-.PARAMETER DestinationSqlCredential
+.PARAMETER Database
+
+.PARAMETER BackupDirectory
+
+.PARAMETER BackupShare
+
+.PARAMETER BackupJobName
+
+.PARAMETER BackupRetentionMinutes
+
+.PARAMETER BackupThresshold
+
+.PARAMETER Compression
+
+.PARAMETER AlertEnabled
+
+.PARAMETER ThressholdAlertMinutes
+
+.PARAMETER HistoryRetentionMinutes
+
+.PARAMETER UseDatabaseSuffix
+
+.PARAMETER Force
+
+.PARAMETER Silent
 
 .NOTES 
 Original Author: Sander Stad (@sqlstad, sqlstad.nl)
@@ -36,13 +58,14 @@ https://dbatools.io/New-DbaLogShippingPrimaryDatabase
 		[parameter(Mandatory = $true)]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential,
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string[]]$Database,
         [string]$BackupDirectory,
         [string]$BackupShare,
         [string]$BackupJobName = "LS_Backup_",
         [int]$BackupRetentionMinutes,
-        [switch]$Compression,
         [int]$BackupThresshold = 60,
+        [switch]$Compression,
         [switch]$AlertEnabled,
         [switch]$ThressholdAlertMinutes = 14420,
         [int]$HistoryRetentionMinutes = 14420,
