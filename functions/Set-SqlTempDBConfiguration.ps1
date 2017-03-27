@@ -71,6 +71,11 @@ Switch to generate configuration object.
 .PARAMETER Confirm 
 Prompts you for confirmation before executing any changing operations within the command. 
 
+.PARAMETER Silent
+Whether the silent switch was set in the calling function.
+If true, it will write errors, if any, but not write to the screen without explicit override using -Debug or -Verbose.
+If false, it will print a warning if in wrning mode. It will also be willing to write a message to the screen, if the level is within the range configured for that.
+
 .LINK
 https://dbatools.io/Set-SqltempdbConfiguration
 
