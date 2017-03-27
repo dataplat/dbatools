@@ -1,3 +1,4 @@
+#ValidationTags#FlowControl,Pipeline#
 Function Get-DbaADObject
 {
 <#
@@ -46,7 +47,7 @@ Seaches in the contoso domain for a sqlserver2014 computer (remember the ending 
 .EXAMPLE
 Get-DbaADObject -ADObject "contoso\ctrlb" -Type User -Silent
 
-Seaches in the contoso domain for a ctrlb user, suppressing all error messages
+Seaches in the contoso domain for a ctrlb user, suppressing all error messages and throw exceptions that can be caught instead
 
 #>
 	[CmdletBinding()]
@@ -61,6 +62,7 @@ Seaches in the contoso domain for a ctrlb user, suppressing all error messages
 			Add-Type -AssemblyName System.DirectoryServices.AccountManagement
 		} catch {
 			Stop-Function -Message "Failed to load the required module $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_
+			return
 		}
 		switch ($Type) {
 			"User" {
@@ -82,7 +84,7 @@ Seaches in the contoso domain for a ctrlb user, suppressing all error messages
 		foreach($ADObj in $ADObject) {
 			$Splitted = $ADObj.Split("\")
 			if ($Splitted.Length -ne 2) {
-				Stop-Function -Message "You need to pass ADObject in DOMAIN\object format" -Continue -Silent $Silent
+				Stop-Function -Message "You need to pass ADObject in DOMAIN\object format" -Continue -Silent $Silent -Target $ADObj
 			}
 			$Domain, $obj = $Splitted
 			try {
@@ -90,7 +92,7 @@ Seaches in the contoso domain for a ctrlb user, suppressing all error messages
 				$found = $searchClass::FindByIdentity($ctx, 'sAMAccountName', $obj)
 				$found
 			} catch {
-				Stop-Function -Message "Errors trying to connect to the domain $Domain $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_
+				Stop-Function -Message "Errors trying to connect to the domain $Domain $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_ -Target $ADObj
 			}
 		}
 	}
