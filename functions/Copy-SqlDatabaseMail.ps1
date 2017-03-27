@@ -117,7 +117,7 @@ Shows what would happen if the command were executed.
                 try {
                     $sql = $mail.ConfigurationValues.Script() | Out-String
                     $sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
-                    Write-Message -Message $sql -Level
+                    Write-Message -Message $sql -Level Debug
                     $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
                     $mail.ConfigurationValues.Refresh()
                 }
@@ -202,7 +202,7 @@ Shows what would happen if the command were executed.
 
                 if ($pscmdlet.ShouldProcess($destination, "Migrating mail profile $profileName")) {
                     try {
-                        Write-Output "Copying mail profile $profileName"
+                        Write-Message -Message "Copying mail profile $profileName" -Level Output
                         $sql = $profile.Script() | Out-String
                         $sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
                         Write-Message -Message $sql-Level Debug
