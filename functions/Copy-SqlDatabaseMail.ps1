@@ -1,5 +1,5 @@
 function Copy-SqlDatabaseMail {
-<#
+    <#
 .SYNOPSIS
 Migrates Mail Profiles, Accounts, Mail Servers and Mail Server Configs from one SQL Server to another.
 
@@ -100,7 +100,7 @@ Shows what would happen if the command were executed.
         [System.Management.Automation.PSCredential]$SourceSqlCredential,
         [System.Management.Automation.PSCredential]$DestinationSqlCredential,
         [switch]$Force,
-		[switch]$Silent
+        [switch]$Silent
     )
 
     DynamicParam {
@@ -331,11 +331,11 @@ Shows what would happen if the command were executed.
         $destServer.Mail.Profiles.Refresh()
         Copy-SqlDatabasemailServer
 
-		$sourceDbMailEnabled = (Get-DbaSpConfigure -SqlServer $sourceServer | Where-Object ConfigName -eq "DatabaseMailEnabled").ConfiguredValue
-		Write-Message -Level Output -Message "$sourceServer DBMail configuration value: $sourceDbMailEnabled" -Silent $Silent
-
+        $sourceDbMailEnabled = (Get-DbaSpConfigure -SqlServer $sourceServer | Where-Object ConfigName -eq "DatabaseMailEnabled").ConfiguredValue
+        Write-Message -Level Output -Message "$sourceServer DBMail configuration value: $sourceDbMailEnabled" -Silent $Silent
+        
         $destDbMailEnaled = (Get-DbaSpConfigure -SqlServer $destServer | Where-Object ConfigName -eq "DatabaseMailEnabled").ConfiguredValue
-		Write-Message -Level Output -Message "$destServer DBMail configuration value: $destDbMailEnaled" -Silent $Silent
+        Write-Message -Level Output -Message "$destServer DBMail configuration value: $destDbMailEnaled" -Silent $Silent
 
         if ( ($sourceDbMailEnabled -eq 1) -and ($destDbMailEnaled -eq 0) ) {
             if ($pscmdlet.ShouldProcess($destination, "Enabling Database Mail")) {
