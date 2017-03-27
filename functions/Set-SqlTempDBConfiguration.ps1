@@ -135,6 +135,7 @@ Returns PSObject representing tempdb configuration.
 		if ($server.VersionMajor -lt 9)
 		{
 			Stop-Function -Message "SQL Server 2000 is not supported" -Silent $Silent 
+			return
 		}
 	}
 	
@@ -166,6 +167,7 @@ Returns PSObject representing tempdb configuration.
 			if ((Test-SqlPath -SqlServer $server -Path $DataPath) -eq $false)
 			{
 				Stop-Function -Message "$($DataPath) is an invalid path." -Silent $Silent 
+				return
 			}
 		}
 		else
@@ -181,6 +183,7 @@ Returns PSObject representing tempdb configuration.
 			if ((Test-SqlPath -SqlServer $server -Path $LogPath) -eq $false)
 			{
 				Stop-Function -Message "$($LogPath) is an invalid path." -Silent $Silent 
+				return
 			}
 		}
 		else
@@ -218,11 +221,13 @@ Returns PSObject representing tempdb configuration.
 		if ($CurrentFileCount -gt $DataFileCount)
 		{
 			Stop-Function -Message "Current tempdb not suitable to be reconfigured. The current tempdb has a greater number of files than the calculated configuration." -Silent $Silent
+			return
 		}
 		
 		if ($TooBigCount -gt 0)
 		{
 			Stop-Function -Message "Current tempdb not suitable to be reconfigured. The current tempdb is larger than the calculated configuration." -Silent $Silent
+			return
 		}
 		
 		$EqualCount = $server.Databases['tempdb'].ExecuteWithResults("SELECT count(1) as FileCount FROM sys.database_files WHERE size/128 = $($DataFilesizeSingleMB) AND type = 0").Tables[0].FileCount
@@ -230,6 +235,7 @@ Returns PSObject representing tempdb configuration.
 		if ($EqualCount -gt 0)
 		{
 			Stop-Function -Message "Current tempdb not suitable to be reconfigured. The current tempdb is the same size as the specified DataFileSizeMB." -Silent $Silent
+			return
 		}
 		
 		Write-Message -Message "tempdb configuration validated."  -Level 5 -Silent $Silent
@@ -291,6 +297,7 @@ Returns PSObject representing tempdb configuration.
 				{
 					# write-exception writes the full exception to file
 					Stop-Function -Message "Unable to reconfigure tempdb. $($_)" -Silent $Silent
+					return
 				}
 			}
 		}
