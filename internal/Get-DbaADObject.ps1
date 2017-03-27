@@ -1,3 +1,4 @@
+#ValidationTags#FlowControl,Pipeline#
 Function Get-DbaADObject
 {
 <#
@@ -6,14 +7,19 @@ Get-DbaADObject tries to facilitate searching AD with dbatools, which ATM can't 
 
 .DESCRIPTION
 As working with multiple domains, forests, ldap filters, partitions, etc is quite hard to grasp, let's try to do "the right thing" here and
-facilitate everybody's work with it.
+facilitate everybody's work with it. It either returns the exact matched result or None if it isn't found. You can inspect the raw object
+calling GetUnderlyingObject() on the returned object.
 
 .PARAMETER ADObject
-ATM it takes something in the format "DOMAIN\LdapFilter" but let's see how to make it better
+Pass in both the domain and the login name in NETBIOSDomain\sAMAccountName format (the one everybody is accustomed to)
+
+.PARAMETER Type
+You *should* always know what you are asking for. Please pass in Computer,Group or User to help speeding up the search
+
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
 
 .NOTES
-Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
-Author: Chrissy LeMaire (@cl), netnerds.net
 Author: Niphlod, https://github.com/niphlod
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -24,108 +30,71 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .EXAMPLE
-Get-DbaADObject -ADObject "contoso\(&(objectCategory=User)(sAMAccountName=ctrlb))"
+Get-DbaADObject -ADObject "contoso\ctrlb" -Type User
 
-Seaches in the contoso domain for a ctrlb sAMAccountName
+Seaches in the contoso domain for a ctrlb user
+
+.EXAMPLE
+Get-DbaADObject -ADObject "contoso\sqlcollaborative" -Type Group
+
+Seaches in the contoso domain for a sqlcollaborative group
+
+.EXAMPLE
+Get-DbaADObject -ADObject "contoso\sqlserver2014$" -Type Group
+
+Seaches in the contoso domain for a sqlserver2014 computer (remember the ending $ for computer objects)
+
+.EXAMPLE
+Get-DbaADObject -ADObject "contoso\ctrlb" -Type User -Silent
+
+Seaches in the contoso domain for a ctrlb user, suppressing all error messages and throw exceptions that can be caught instead
 
 #>
 	[CmdletBinding()]
 	Param (
-		[string[]]$ADObject
+		[string[]]$ADObject,
+		[ValidateSet("User","Group","Computer")]
+		[string]$Type,
+		[switch]$Silent
 	)
-
 	BEGIN {
-		function ConvertTo-Dn ([string]$dns)
-		{
-			$array = $dns.Split(".")
-			for ($x = 0; $x -lt $array.Length; $x++)
-			{
-				if ($x -eq ($array.Length - 1)) { $separator = "" }
-				else { $separator = "," }
-				[string]$dn += "DC=" + $array[$x] + $separator
+		try {
+			Add-Type -AssemblyName System.DirectoryServices.AccountManagement
+		} catch {
+			Stop-Function -Message "Failed to load the required module $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_
+			return
+		}
+		switch ($Type) {
+			"User" {
+				$searchClass = [System.DirectoryServices.AccountManagement.UserPrincipal]
 			}
-			return $dn
-		}
-		try
-		{
-			$alldomains = @()
-			$currentforest = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
-			$alldomains += $currentforest.Domains.name
-
-			$cd = $currentforest.Domains
-		}
-		catch
-		{
-			Write-warning "No Active Directory domains Found."
-			break
-		}
-		foreach ($domain in $cd)
-		{
-			try
-			{
-				$alldomains += ($Domain.GetAllTrustRelationships()).TargetName
+			"Group" {
+				$searchClass = [System.DirectoryServices.AccountManagement.GroupPrincipal]
 			}
-			catch
-			{
-				$alldomains = $alldomains | Where-Object { $_ -ne $domain.name }
-				Write-Warning "Couldn't contact $domain"
+			"Computer" {
+				$searchClass = [System.DirectoryServices.AccountManagement.ComputerPrincipal]
+			}
+			default {
+				$searchClass = [System.DirectoryServices.AccountManagement.Principal]
 			}
 		}
-
-		$alldomains = $alldomains | Select-Object -Unique
-
-		# should leverage "process" cache for this, maybe @fred can help
-		$script:domains = @()
-
-		function Resolve-ExpensiveDomain([string]$NetBiosName) {
-			foreach ($domain in $alldomains) {
-				if ($script:domains.DNS -contains $domain) { continue }
-				try {
-					$dn = ConvertTo-Dn $domain
-					$translate = New-Object -comObject NameTranslate
-					$reflection = $translate.GetType()
-					$reflection.InvokeMember("Init", "InvokeMethod", $Null, $translate, (3, $Null)) | out-null
-					$reflection.InvokeMember("Set", "InvokeMethod", $Null, $translate, (1, $dn)) | out-null
-					$netbios = $reflection.InvokeMember("Get", "InvokeMethod", $Null, $translate, 3).Trim("\")
-					$script:domains += [pscustomobject]@{
-						DNS = $domain
-						DN = $dn
-						NetBios = $netbios
-						LDAP = "LDAP://" + $netbios + "/" + $DN
-					}
-					if ($NetBiosName -eq $netbios) {
-						break
-					}
-				} catch {
-					Write-Warning "Removing $domain from domain list"
-				}
-			}
-		}
-
 	}
 	PROCESS {
-		foreach($adobj in $ADObject) {
-			$domain, $filter = $adobj.Split("\")
-			if ($env:USERDOMAIN -eq $domain) {
-				$searcher = New-Object System.DirectoryServices.DirectorySearcher
-				$searcher.Filter = $filter
-			} else {
-				Resolve-ExpensiveDomain -NetBiosName $domain
-				$LDAP = ($script:domains | Where-Object NetBios -eq $domain).LDAP
-				$ad = New-Object System.DirectoryServices.DirectoryEntry $LDAP
-				$searcher = New-Object System.DirectoryServices.DirectorySearcher
-				$searcher.SearchRoot = $ad
-				$searcher.Filter = $filter
+		if (Test-FunctionInterrupt) { return }
+		foreach($ADObj in $ADObject) {
+			$Splitted = $ADObj.Split("\")
+			if ($Splitted.Length -ne 2) {
+				Stop-Function -Message "You need to pass ADObject in DOMAIN\object format" -Continue -Silent $Silent -Target $ADObj
 			}
-			try
-			{
-				$foundobject = $searcher.findAll()
+			$Domain, $obj = $Splitted
+			try {
+				$ctx = New-Object System.DirectoryServices.AccountManagement.PrincipalContext('Domain', $Domain)
+				$found = $searchClass::FindByIdentity($ctx, 'sAMAccountName', $obj)
+				$found
+			} catch {
+				Stop-Function -Message "Errors trying to connect to the domain $Domain $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_ -Target $ADObj
 			}
-			catch
-			{
-				Write-Warning "AD Searcher Error for filter $filter"
-			}
-			$foundobject
 		}
 	}
 }
+
