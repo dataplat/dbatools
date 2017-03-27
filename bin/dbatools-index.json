@@ -1622,7 +1622,7 @@
         "CommandName":  "Test-DbaValidLogin",
         "Description":  "The purpose of this function is to find SQL Server logins that are used by active directory users that are either disabled or removed from the domain. It allows you to \nkeep your logins accurate and up to date by removing accounts that are no longer needed.",
         "Author":  "Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/",
-        "Synopsis":  "Test-DbaValidLogin Finds any logins on SQL instance that are AD logins with either disabled AD user accounts or ones that nolonger exist",
+        "Synopsis":  "Test-DbaValidLogin finds any logins on SQL instance that are AD logins with either disabled AD user accounts or ones that no longer exist",
         "Name":  "Test-DbaValidLogin",
         "Links":  "https://dbatools.io/Test-DbaValidLogin",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaValidLogin -SqlServer Dev01\r\n\r\nTests all logins in the domain ran from (check $env:domain) that are either disabled or do not exist\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaValidLogin -SqlServer Dev01 -FilterBy GroupsOnly -Detailed\r\n\r\nTests all Active directory groups that have logins on Dev01 returning a detailed view.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaValidLogin -SqlServer Dev01 -ExcludeDomains subdomain.ad.local\r\n\r\nTests all logins excluding any that are from the mydomain Domain\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"

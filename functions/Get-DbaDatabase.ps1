@@ -37,6 +37,18 @@ Returns list of SQL Server databases that have TDE enabled from the SQL Server i
 .PARAMETER RecoveryModel
 Returns list of SQL Server databases in Full, Simple or Bulk Logged recovery models from the SQL Server instance(s) executed against.
 
+.PARAMETER NoFullBackup
+Returns databases without a full backup recorded by SQL Server. Will indicate those which only have CopyOnly full backups
+
+.PARAMETER NoFullBackupSince
+DateTime value. Returns list of SQL Server databases that haven't had a full backup since the passed iin DateTime
+
+.PARAMETER NoLogBackup
+Returns databases without a Log backup recorded by SQL Server. Will indicate those which only have CopyOnly Log backups
+
+.PARAMETER NoLogBackupSince
+DateTime value. Returns list of SQL Server databases that haven't had a Log backup since the passed iin DateTime
+
 .NOTES
 Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 
@@ -92,7 +104,11 @@ Returns databases on multiple instances piped into the function
 		[string]$Access,
 		[parameter(ParameterSetName = "RecoveryModel")]
 		[ValidateSet('Full', 'Simple', 'BulkLogged')]
-		[string]$RecoveryModel
+		[string]$RecoveryModel,
+		[switch]$NoFullBackup, 
+		[datetime]$NoFullBackupSince,
+		[switch]$NoLogBackup, 
+		[datetime]$NoLogBackupSince
 	)
 	
 	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
@@ -174,16 +190,64 @@ Returns databases on multiple instances piped into the function
 			{
 				$inputobject = $inputobject | Where-Object {$_.Name -notin $exclude }
 			}
-			
+
+			if ($NoFullBackup -or $NoFullBackupSince)
+			{
+				if($NoFullBackup)
+				{
+					$dabs = (Get-DbaBackuphistory -SqlServer $server -LastFull -IgnoreCopyOnly).Database
+				}
+				else
+				{
+					$dabs = (Get-DbaBackuphistory -SqlServer $server -LastFull -IgnoreCopyOnly -Since $NoFullBackupSince).Database
+				}
+				$inputobject = $inputObject  | where-object {$_.name -notin $dabs -and $_.name -ne 'tempdb'}
+			}
+			if ($NoLogBackup -or $NoLogBackupSince)
+			{
+				if($NoLogBackup)
+				{
+					$dabs = (Get-DbaBackuphistory -SqlServer $server -LastLog -IgnoreCopyOnly).Database
+				}
+				else
+				{
+					$dabs = (Get-DbaBackuphistory -SqlServer $server -LastLog -IgnoreCopyOnly -Since $NoLogBackupSince).Database
+				}
+				$inputobject = $inputObject  | where-object {$_.name -notin $dabs -and $_.name -ne 'tempdb' -and $_.RecoveryModel -ne 'simple'}
+			}
+
+			if ($null -ne $NoFullBackupSince)
+			{
+				$inputobject = $inputobject | Where-Object {$_.LastBackupdate -lt $NoFullBackupSince}				
+			}
+			elseif ($null -ne $NoLogBackupSince)
+			{
+				$inputobject = $inputobject | Where-Object {$_.LastBackupdate -lt $NoLogBackupSince}	
+			}
 			$defaults = 'ComputerName', 'InstanceName', 'SqlInstance','Name', 'Status', 'RecoveryModel', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup'
-			
+
+			if ($NoFullBackup -or $NoFullBackupSince -or $NoLogBackup -or $NoLogBackupSince)
+			{
+				$defaults += ('Notes')
+			}
 			foreach ($db in $inputobject)
 			{
+			
+				$Notes = $null
+				if ($NoFullBackup -or $NoFullBackupSince)
+				{		
+					if	(@($db.EnumBackupSets()).count -eq @($db.EnumBackupSets() | Where-Object{$_.IsCopyOnly}).count -and (@($db.EnumBackupSets()).count -gt 0) )
+					{
+						$Notes = "Only CopyOnly backups"
+					}	
+				}	
+				Add-Member -InputObject $db -MemberType NoteProperty BackupStatus -value $Notes
+	
 				Add-Member -InputObject $db -MemberType NoteProperty ComputerName -value $server.NetName
 				Add-Member -InputObject $db -MemberType NoteProperty InstanceName -value $server.ServiceName
 				Add-Member -InputObject $db -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
-				
 				Select-DefaultView -InputObject $db -Property $defaults
+				
 			}
 		}
 	}
