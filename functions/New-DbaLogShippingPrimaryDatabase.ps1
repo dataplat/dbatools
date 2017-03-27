@@ -108,8 +108,6 @@ https://dbatools.io/New-DbaLogShippingPrimaryDatabase
         [switch]$Silent
     )
 
-    DynamicParam { if ($source) { return (Get-ParamSqlServerDatabases -SqlServer $Source -SqlCredential $SqlCredential) }
-
     BEGIN
     {
         # Connect to the database server
@@ -175,38 +173,32 @@ https://dbatools.io/New-DbaLogShippingPrimaryDatabase
         if($UseDatabaseSuffix)
         {
             # Set the backup directory
-            if($BackupDirectory.EndsWith("\"))
+            if(-not $BackupDirectory.EndsWith("\"))
             {
-                $NewBackupDirectory = "$($BackupDirectory)$($Database)"
+                $NewBackupDirectory = "$($BackupDirectory)\"
             }
-            else 
-            {
-                $NewBackupDirectory += "$($BackupDirectory)\$($Database)"
-            }
-
+            $NewBackupDirectory += "$($Database)"
+            
             # Set the backup share
-            if($BackupShare.EndsWith("\"))
+            if(-not $BackupShare.EndsWith("\"))
             {
-                $NewBackupShare += "$($BackupShare)$($Database)"
+                $NewBackupShare += "$($BackupShare)\"
             }
-            else 
-            {
-                $NewBackupShare += "$($BackupShare)\$($Database)"
-            }
-
+            $NewBackupShare += "$($Database)"
+            
             # Check the existence of the backup dirctory
-            if(-not (Test-Path $BackupShare))
+            if(-not (Test-Path $NewBackupShare))
             {
                 try 
                 {
                     Write-Message -Message "Backup directory/share doesn't exist. Creating.." -Level 5 -Silent $Silent
                     if($IsLocal)
                     {
-                        New-Item -Path $BackupDirectory -ItemType Directory
+                        New-Item -Path $NewBackupDirectory -ItemType Directory
                     }
                     else 
                     {
-                        New-Item -Path $BackupShare -ItemType Directory
+                        New-Item -Path $NewBackupShare -ItemType Directory
                     }
                 }
                 catch 
@@ -264,7 +256,7 @@ https://dbatools.io/New-DbaLogShippingPrimaryDatabase
     
     END
     {
-        Write-Message -Message "Creation of primary log shipping database ended."
+        Write-Message -Message "Creation of primary log shipping database ended." -Level 2 -Silent $Silent
     }
 
 }
