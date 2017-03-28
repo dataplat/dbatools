@@ -58,11 +58,11 @@ Does this
 	{
 		
 		$sourceServer = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
-		$serverLogins = $sourceserver.Logins
-        $logins = $($psboundparameters.Logins).split(",")
+		$serverLogins = $sourceServer.Logins
+        $logins = $psboundparameters.Logins
         $master = $sourceServer.databases["master"]
-        $sql = "SELECT MAX(login_time) AS [Last Login Time], login_name [Login] 
-        FROM sys.dm_exec_sessions WHERE login_name = '{0}'"
+        $sql = "SELECT MAX(login_time) AS [login_time] FROM sys.dm_exec_sessions WHERE login_name = '{0}'"
+		$results = @()
 				
 	}
 	
@@ -74,16 +74,18 @@ Does this
             {            
                 if ( $logins -contains $login.name ) 
                 { 
-                    $master.ExecuteWithResults($sql.replace('{0}',$login.name))
+					$lastLogin = $($master.ExecuteWithResults($sql.replace('{0}',$login.name)).Tables).login_time					
+                    add-member -InputObject $login -NotePropertyName LastLogin $lastLogin
+					$results += $login	
                 }
             }
-        }        
+        }
 	}
 	
 	END
 	{
-	
-        
+		## Output smo login object for passing to the pipeline 
+        return $results
 		
 	}
 }
