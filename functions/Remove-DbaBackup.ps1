@@ -223,7 +223,17 @@ It will also remove any backup folders that no longer contain backup files.
         if ($RemoveEmptyBackupFolder.IsPresent) {
             Write-Message -Message "Removing empty folders" -Level 3 -Silent $Silent
             Get-ChildItem -Directory -Path $Path -Recurse | Foreach-Object { $_.FullName } | Sort-Object -Descending | `
-                Where-Object { @( Get-ChildItem -Force $_ ).Count -eq 0 } | Foreach-Object `
+                Foreach-Object {
+					$OrigPath = $_
+					try {
+						$Contents = @(Get-ChildItem -Force $OrigPath -ea stop)
+					} catch {
+						Write-Message -Message "Can't enumerate $OrigPath $($_.Exception.Message)" -Level Warning -ErrorRecord $_
+					}
+					if ($Contents.Count -eq 0) {
+						return $_
+					}
+				} | Foreach-Object `
             {
                 $FolderPath = $_
                 if ($PSCmdlet.ShouldProcess($Path, "Removing empty folder .$($FolderPath.Replace($Path, ''))")) {
