@@ -71,8 +71,7 @@ Does this
 	END
 	{
 	
-        $Logins
-        # $serverlogins
+        $psboundparameters.Logins | gm 
 		
 	}
 }
