@@ -82,18 +82,18 @@ This will attempt to start the SQL Server service associated with the default in
             {  
                 $wmisvc.Refresh() 
             } 
-            if ($sw.elapsed -ge $timeout){
+            if ($sw.elapsed -lt $timeout){
                 [PSCustomObject]@{
-                    Started = $False
-                    Message = "$displayname on $servername failed to start in a timely manner"
-                    }
+                    Started = $true
+                    Message = "Started $displayname on $servername successfully"
+                    } 
             }
             else 
             {
                 [PSCustomObject]@{
-                    Started = $true
-                    Message = "Started $displayname on $servername successfully"
-                    }                
+                    Started = $False
+                    Message = "$displayname on $servername failed to start in a timely manner"
+                    }
             }
 
         }

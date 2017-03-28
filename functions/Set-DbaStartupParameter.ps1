@@ -133,13 +133,15 @@ After the work has been completed, we can push the original startup parameters b
 
     if ('startUpconfig' -in $PsBoundParameters.keys)
     {
+        Write-Verbose "$FunctionName - Config object passed in"
         $NewStartup = $StartUpConfig
         $TraceFlagsOverride = $true
     }
     else
     {    
+        Write-Verbose "$FunctionName - Parameters passed in"
         $NewStartup = $CurrentStartup.PSObject.copy()
-        foreach ($param in ($PsBoundParameters.keys | ?{$_ -in ($NewStartup.PSObject.Properties)}))
+        foreach ($param in ($PsBoundParameters.keys | ?{$_ -in ($NewStartup.PSObject.Properties.name)}))
         {
             if ($PsBoundParameters.item($param) -ne $NewStartup.$param )
             {
@@ -147,35 +149,87 @@ After the work has been completed, we can push the original startup parameters b
             }
 
         }
+        Write-Verbose "su = $($NewStartup.SingleUser)"
     }
-    if (Test-SqlPath -SqlServer $SqlServer -SqlCredential $Credential -Path (Split-Path $NewStartup.MasterData -Parent))
-    {
-        $ParameterString += "-d$($NewStartup.MasterData);"
+    if (!($CurrentStartup.SingleUser))
+    {       
+        Write-Verbose "$FunctionName - Sql instance is presently configured for single user, skipping path validation" 
+        if ($NewStartup.Masterdata.length -gt 0)
+        {
+            if (Test-SqlPath -SqlServer $SqlServer -SqlCredential $Credential -Path (Split-Path $NewStartup.MasterData -Parent))
+            {
+                $ParameterString += "-d$($NewStartup.MasterData);"
+            }
+            else
+            {
+                Write-Warning "$FunctionName - Specified folder for Master Data file is not reachable by SQL"
+                return
+            }
+        }
+        else
+        {
+            Stop-Function -message -message "MasterData value must be provided" -silent:$true
+        }
+        if($NewStartup.ErrorLog.length -gt 0)
+        {
+            if (Test-SqlPath -SqlServer $SqlServer -SqlCredential $Credential -Path (Split-Path $NewStartup.ErrorLog -Parent))
+            {
+                $ParameterString += "-e$($NewStartup.ErrorLog);"
+            }
+            else
+            {
+                Write-Warning "$FunctionName - Specified folder for ErrorLog  file is not reachable by SQL"
+                return
+            }
+        }
+        else
+        {
+            Stop-Function -message "ErrorLog value must be provided"
+        }
+        if ($NewStartup.MasterLog.Length -gt 0)
+        {
+            if (Test-SqlPath -SqlServer $SqlServer -SqlCredential $Credential -Path (Split-Path $NewStartup.MasterLog -Parent))
+            {
+                $ParameterString += "-l$($NewStartup.MasterLog);"
+            }
+            else
+            {
+                Write-Warning "$FunctionName - Specified folder for Master Log  file is not reachable by SQL"
+                return
+            }
+        }
+        else
+        {
+            Stop-Function -message "MasterLog value must be provided." -silent:$true
+        }
     }
     else
     {
-        Write-Warning "$FunctionName - Specified folder for Master Data file is not reachable by SQL"
-        return
+        if ($NewStartup.MasterData.Length -gt 0)
+        {
+            $ParameterString += "-d$($NewStartup.MasterData);"
+        }
+        else
+        {
+            Stop-Function -message "Must have a value for MasterData" -silent:$true
+        }
+        if ($NewStartup.ErrorLog.Length -gt 0)
+        {
+            $ParameterString += "-e$($NewStartup.ErrorLog);"
+        }
+        else
+        {
+            Stop-Function -message "Must have a value for Errorlog" -silent:$true
+        }
+        if ($NewStartup.MasterLog.Length -gt 0)
+        {
+            $ParameterString += "-l$($NewStartup.MasterLog);"
+        } 
+        else
+        {
+            Stop-Function -message "Must have a value for MsterLog" -silent:$true
+        } 
     }
-    if (Test-SqlPath -SqlServer $SqlServer -SqlCredential $Credential -Path (Split-Path $NewStartup.ErrorLog -Parent))
-    {
-        $ParameterString += "-e$($NewStartup.ErrorLog);"
-    }
-    else
-    {
-        Write-Warning "$FunctionName - Specified folder for ErrorLog  file is not reachable by SQL"
-        return
-    }
-    if (Test-SqlPath -SqlServer $SqlServer -SqlCredential $Credential -Path (Split-Path $NewStartup.MasterLog -Parent))
-    {
-        $ParameterString += "-l$($NewStartup.MasterLog);"
-    }
-    else
-    {
-        Write-Warning "$FunctionName - Specified folder for Master Log  file is not reachable by SQL"
-        return
-    }
-
 
     if ($NewStartup.CommandPromptStart)
     {
@@ -209,14 +263,14 @@ After the work has been completed, we can push the original startup parameters b
     {
         $ParameterString += "-E;"
     }
-    if($TraceFlagsOverride -and $null -ne $TraceFlags)
+    if($TraceFlagsOverride -and 'TraceFlags' -in $PsBoundParameters.keys)
     {
         $NewStartup.TraceFlags = $TraceFlags
         $ParameterString += (($TraceFlags.split(',') | Foreach {"-T$_"}) -join ';')+";"
     }
     else 
     {
-        if ('' -ne $TraceFlags)
+        if ('TraceFlags'  -in $PsBoundParameters.keys)
         {
             
             $oldflags = @($CurrentStartup.TraceFlags) -split ','
@@ -236,7 +290,7 @@ After the work has been completed, we can push the original startup parameters b
     }
 
     $servername, $instancename = ($sqlserver.Split('\'))
-    Write-Verbose "Attempting to connect to $servername"
+    Write-Verbose "Attempting to connect to $instancename on $servername"
     
     if ($instancename.Length -eq 0) { $instancename = "MSSQLSERVER" }
     
@@ -260,7 +314,8 @@ After the work has been completed, we can push the original startup parameters b
                     $false
                 }
     }
-    
+    Write-Debug "$FunctionName - Old ParameterString - $($CurrentStartup.ParameterString)"
+    Write-Debug "$FunctionName - New ParameterString - $ParameterString"
     if ($pscmdlet.ShouldProcess("Setting Sql Server start parameters on $SqlServer to $ParameterString")) {
         $response = Invoke-ManagedComputerCommand -ComputerName $servername -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $servername, $displayname, $ParameterString
     }  

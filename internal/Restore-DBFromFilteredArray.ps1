@@ -31,7 +31,8 @@ Function Restore-DBFromFilteredArray
 		[switch]$TrustDbBackupHistory,
 		[int]$MaxTransferSize,
 		[int]$BlockSize,
-		[int]$BufferCount
+		[int]$BufferCount,
+		[string[]]$DatabaseFilter
 	)
     
 	Begin
@@ -70,14 +71,23 @@ Function Restore-DBFromFilteredArray
     {
 		try 
 		{
-			$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential	
+	#		Write-verbose "$FunctionName - connection state = $($server.ConnectionContext.IsOpen)"
+#			if ($sqlServer -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject])
+#			{
+#				Write-verbose "$FunctionName - Opening SQL Server connection"
+#				$NewConnection = $True
+				$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential	
+#			}
+#			else
+#			{
+#				$server = $SqlServer
+#			}
 		}
 		catch {
-
-			Write-Warning "$FunctionName - Cannot connect to $SqlServer" 
+			throw "$FunctionName - Cannot connect to $SqlServer" 
 			break
 		}
-		
+		Write-verbose "$FunctionName - connection state = $($server.ConnectionContext.IsOpen) connect"
 		$ServerName = $Server.name
 		$Server.ConnectionContext.StatementTimeout = 0
 		$Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
@@ -92,29 +102,34 @@ Function Restore-DBFromFilteredArray
 		If ($DbName -in $Server.databases.name -and ($ScriptOnly -eq $false -or $VerfiyOnly -eq $false))
 		{
 			If ($ReplaceDatabase -eq $true)
-			{	
-				if($Pscmdlet.ShouldProcess("Killing processes in $dbname on $SqlServer as it exists and WithReplace specified  `n","Cannot proceed if processes exist, ","Database Exists and WithReplace specified, need to kill processes to restore"))			
-				{
-					try
+			{
+				if ('master' -notin $DatabaseFilter)
+				{	
+					if($Pscmdlet.ShouldProcess("Killing processes in $dbname on $SqlServer as it exists and WithReplace specified  `n","Cannot proceed if processes exist, ","Database Exists and WithReplace specified, need to kill processes to restore"))			
 					{
-						Write-Verbose "$FunctionName - Set $DbName single_user to kill processes"
-						Stop-DbaProcess -SqlServer $Server -Databases $Dbname -WarningAction Silentlycontinue
-						Invoke-SQLcmd2 -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; Alter database $DbName set online with rollback immediate" -database master
+						try
+						{
+							Write-Verbose "$FunctionName - Set $DbName single_user to kill processes"
+							Stop-DbaProcess -SqlServer $Server -Databases $Dbname -WarningAction Silentlycontinue
+							Invoke-SQLcmd2 -ServerInstance:$server -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; Alter database $DbName set online with rollback immediate" -database master -SqlConnection
 
-					}
-					catch
-					{
-						Write-Verbose "$FunctionName - No processes to kill in $DbName"
-					}
-				} 
+						}
+						catch
+						{
+							Write-Verbose "$FunctionName - No processes to kill in $DbName"
+						}
+					} 
+				}
 			}
 			else
 			{
-				Write-Warning "$FunctionName - Database $DbName exists and will not be overwritten without the WithReplace switch"
+				write-warning "$FunctionName - Database $DbName exists and will not be overwritten without the WithReplace switch"
+				$false
 				return
 			}
 
 		}
+		Write-verbose "$FunctionName - connection state = $($server.ConnectionContext.IsOpen) post invoke"
 		$MissingFiles = @()
 		if ($TrustDbBackupHistory)
 		{
@@ -122,7 +137,7 @@ Function Restore-DBFromFilteredArray
 			Foreach ($File in $InternalFiles)
 			{
 				Write-Verbose "$FunctionName - Checking $($File.BackupPath) exists"
-				if((Test-SqlPath -SqlServer $sqlServer -SqlCredential $SqlCredential -Path $File.BackupPath) -eq $false)
+				if((Test-SqlPath -SqlServer $server -SqlCredential $SqlCredential -Path $File.BackupPath) -eq $false)
 				{
 					Write-verbose "$$FunctionName - $($File.backupPath) is missing"
 					$MissingFiles += $File.BackupPath
@@ -320,6 +335,8 @@ Function Restore-DBFromFilteredArray
 				$RestoreComplete = $true
 				if ($ScriptOnly)
 				{
+					Write-verbose "$FunctionName - Generating Script"
+					Write-verbose "$FunctionName - script connection state = $($server.ConnectionContext.IsOpen)"
 					$script = $restore.Script($server)
 				}
 				elseif ($VerifyOnly)
@@ -343,7 +360,7 @@ Function Restore-DBFromFilteredArray
 					$script = $restore.Script($Server)
 					$Restore.sqlrestore($Server)
 					Write-Progress -id 2 -activity "Restoring $DbName to $ServerName" -status "Complete" -Completed
-					
+					Write-verbose "$FunctionName - connection state = $($server.ConnectionContext.IsOpen)"
 				}
 		
 			}
@@ -402,12 +419,18 @@ Function Restore-DBFromFilteredArray
 					$null = $restore.devices.remove($Device)
 				}
 				write-verbose "$FunctionName - Succeeded, Closing Server connection"
-				$server.ConnectionContext.Disconnect()
+				Write-verbose "$FunctionName - connection state = $($server.ConnectionContext.IsOpen)"
+				if ($NewConnection)
+				{
+					Write-Verbose "$FunctionName - Closing smo connection"
+					$server.ConnectionContext.Disconnect()
+				}
 			}
 		}	
 		}
-		if ($server.ConnectionContext.exists)
+		if ($server.ConnectionContext.exists -and $NewConnection)
 		{
+			Write-Verbose "$FunctionName - Closing smo connection"
 			$server.ConnectionContext.Disconnect()
 		}
 	}

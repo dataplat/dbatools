@@ -214,7 +214,8 @@ folder for those file types as defined on the target instance.
 		[switch]$TrustDbBackupHistory,
 		[int]$MaxTransferSize,
 		[int]$BlockSize,
-		[int]$BufferCount
+		[int]$BufferCount,
+		[string[]]$DatabaseFilter
 	)
 	BEGIN
 	{
@@ -543,7 +544,7 @@ folder for those file types as defined on the target instance.
 		#$BackupFiles 
 		#return
 		Write-Verbose "$FunctionName - sorting uniquely"
-		$AllFilteredFiles = $BackupFiles | sort-object -property fullname -unique | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup -TrustDbBackupHistory:$TrustDbBackupHistory
+		$AllFilteredFiles = $BackupFiles | sort-object -property fullname -unique | Get-FilteredRestoreFile -SqlServer $server -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup -TrustDbBackupHistory:$TrustDbBackupHistory
 		
 		Write-Verbose "$FunctionName - $($AllFilteredFiles.count) dbs to restore"
 		
@@ -557,6 +558,27 @@ folder for those file types as defined on the target instance.
 			break
 		}
 		
+		if ($DatabaseFilter.length -gt 0) {
+			$tAllFilteredFiles = @()
+			foreach ($FilteredFileSet in $AllFilteredFiles)
+			{
+				if ($FilteredFileSet.values.DatabaseName -in $DatabaseFilter)
+				{
+					Write-Verbose "$FunctionName  - adding $($FilteredFileSet.values.DatabaseName)"
+					$tAllFilteredFiles += $FilteredFileSet
+				}
+			}
+			if ($tAllFilteredFiles.count -eq 0)
+			{
+				Write-Warning "No backups for requested databases provided."
+				break
+			}
+			else
+			{
+				$AllFilteredFiles = $tAllFilteredFiles
+			}
+		}
+
 		ForEach ($FilteredFileSet in $AllFilteredFiles)
 		{
 			$FilteredFiles = $FilteredFileSet.values
@@ -576,11 +598,12 @@ folder for those file types as defined on the target instance.
 				Write-Verbose "$FunctionName - Dbname set from backup = $DatabaseName"
 			}
 			
-			if ((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlServer $SqlServer -SqlCredential $SqlCredential))
+			if ((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlServer $server -SqlCredential $SqlCredential))
 			{
+				$completed = 'unsuccessfully'
 				try
 				{
-					$FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -TrustDbBackupHistory:$TrustDbBackupHistory -ReplaceDatabase:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure $FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix -MaxTransferSize $MaxTransferSize -BufferCount $BufferCount -BlockSize $BlockSize					
+					$FilteredFiles | Restore-DBFromFilteredArray -SqlServer $server -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -TrustDbBackupHistory:$TrustDbBackupHistory -ReplaceDatabase:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure $FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix -MaxTransferSize $MaxTransferSize -BufferCount $BufferCount -BlockSize $BlockSize -DatabaseFilter:$DatabaseFilter					
 					$Completed = 'successfully'
 				}
 				catch
@@ -591,11 +614,13 @@ folder for those file types as defined on the target instance.
 				}
 				Finally
 				{
-					Write-Verbose "Database $databasename restored $Completed"
+					Write-Verbose "$FunctionName = Database $databasename restored $Completed"
+					Write-verbose "$FunctionName - connection state = $($server.ConnectionContext.IsOpen)"
 				}
 			}
 			$DatabaseName = ''
-		}
+			}
+			#$server.ConnectionContext.Disconnect()
 	}
 }
 

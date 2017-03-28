@@ -54,7 +54,7 @@ This will attempt to stop the SQL Server service associated with the default ins
     $FunctionName =(Get-PSCallstack)[0].Command
 
     $servername, $instancename = ($sqlserver.Split('\'))
-    Write-Verbose "Attempting to connect to $servername"
+    Write-Verbose "Attempting to stop SQL Servie $instancename on $servername"
     
     if ($instancename.Length -eq 0) { $instancename = "MSSQLSERVER" }
     
@@ -82,17 +82,17 @@ This will attempt to stop the SQL Server service associated with the default ins
             {  
                 $wmisvc.Refresh()  
             }
-            if ($sw.elapsed -ge $timeout){
-                [PSCustomObject]@{
-                    Started = $False
-                    Message = "$displayname on $servername failed to stop in a timely manner"
-                    }
-            }
-            else {
+            if ($sw.elapsed -lt $timeout){
                 [PSCustomObject]@{
                     Stopped = $true
                     Message = "Stopped $displayname on $servername successfully"
-                    }                
+                    }           
+            }
+            else {
+                [PSCustomObject]@{
+                    Started = $False
+                    Message = "$displayname on $servername failed to stop in a timely manner"
+                    }     
             }
         }
         catch
