@@ -246,11 +246,18 @@ After the work has been completed, we can push the original startup parameters b
     }
     if  ($NewStartup.SingleUser)
     {
-        if ($SingleUserDetails -match ' ')
+        if ($SingleUserDetails.length -gt 0)
         {
-            $SingleUserDetails = """$SingleUserDetails"""
+            if ($SingleUserDetails -match ' ')
+            {
+                $SingleUserDetails = """$SingleUserDetails"""
+            }
+            $ParameterString += "-m$SingleUserDetails;"
         }
-        $ParameterString += "-m$SingleUserDetails;"   
+        else
+        {
+            $ParameterString += "-m;"
+        }
     }
     if ($NewStartup.NoLoggingToWinEvents)
     {
