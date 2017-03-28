@@ -64,14 +64,17 @@ Does this
 	
 	PROCESS
 	{
-		
+		if ( $psboundparameters.Logins -ne $null ) 
+        { 
+            
+        }
 		
 	}
 	
 	END
 	{
 	
-        $psboundparameters.Logins | gm 
+        $psboundparameters.Logins
 		
 	}
 }
