@@ -118,6 +118,7 @@ After the work has been completed, we can push the original startup parameters b
         [switch]$MinimalStart,
         [int]$MemoryToReserve,
         [switch]$SingleUser,
+        [string]$SingleUserDetails,
         [switch]$NoLoggingToWinEvents,
         [switch]$StartAsNamedInstance,
         [switch]$DisableMonitoring,
@@ -245,7 +246,11 @@ After the work has been completed, we can push the original startup parameters b
     }
     if  ($NewStartup.SingleUser)
     {
-        $ParameterString += "-m;"   
+        if ($SingleUserDetails -match ' ')
+        {
+            $SingleUserDetails = """$SingleUserDetails"""
+        }
+        $ParameterString += "-m$SingleUserDetails;"   
     }
     if ($NewStartup.NoLoggingToWinEvents)
     {

@@ -137,10 +137,10 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 							$singleuserdetails = $singleuserparm.TrimStart('-m')
 							# It's possible the person specified an application name
 							# if not, just say that single user is $true
-							if ($singleuserdetails.length -ne 0)
-							{
-								$singleuser = $singleuserdetails
-							}
+						#	if ($singleuserdetails.length -ne 0)
+						#	{
+						#		$singleuser = $singleuserdetails
+						#	}
 						}
 						
 						[PSCustomObject]@{
@@ -153,6 +153,7 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 							MinimalStart = $minimalstart
 							MemoryToReserve = $memorytoreserve
 							SingleUser = $singleuser
+							SingleUserName = $singleuserdetails
 							NoLoggingToWinEvents = $noeventlogs
 							StartAsNamedInstance = $instancestart
 							DisableMonitoring = $disablemonitoring
