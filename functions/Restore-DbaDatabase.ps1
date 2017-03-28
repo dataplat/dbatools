@@ -120,6 +120,10 @@ Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
 Number of I/O buffers to use to perform the operation.
 Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
 
+.PARAMETER DatabaseFilter
+A comma seperated list of databases to restore. The function will still scan all files passed in, but will then filter down to just those from the databases listed 
+in this parameter
+
 .PARAMETER Confirm
 Prompts to confirm certain actions
 	
@@ -186,6 +190,11 @@ Restore-DbaDatabase. Restore-DbaDatabase will then scan all of the files, and re
 to the latest point in time covered by their backups. All data and log files will be moved to the default SQL Sever 
 folder for those file types as defined on the target instance.
 
+.EXAMPLE
+Restore-DbaDatabase -SqlServer server1\instance1 -Path c:\backups -DestinationDataDirectory c:\DataFiles -DestinationLogDirectory c:\LogFile -DatabaseFilter Prod1, Finance
+
+Scans all the files in c:\backups and then restores just the Prod1 and Finance databases onto the SQL Server Instance server1\instance1, placing data files
+c:\DataFiles and all the log files into c:\LogFiles
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	param (

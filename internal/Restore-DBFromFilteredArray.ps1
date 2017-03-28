@@ -71,23 +71,12 @@ Function Restore-DBFromFilteredArray
     {
 		try 
 		{
-	#		Write-verbose "$FunctionName - connection state = $($server.ConnectionContext.IsOpen)"
-#			if ($sqlServer -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject])
-#			{
-#				Write-verbose "$FunctionName - Opening SQL Server connection"
-#				$NewConnection = $True
 				$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential	
-#			}
-#			else
-#			{
-#				$server = $SqlServer
-#			}
 		}
 		catch {
 			throw "$FunctionName - Cannot connect to $SqlServer" 
 			break
 		}
-		Write-verbose "$FunctionName - connection state = $($server.ConnectionContext.IsOpen) connect"
 		$ServerName = $Server.name
 		$Server.ConnectionContext.StatementTimeout = 0
 		$Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
@@ -129,7 +118,6 @@ Function Restore-DBFromFilteredArray
 			}
 
 		}
-		Write-verbose "$FunctionName - connection state = $($server.ConnectionContext.IsOpen) post invoke"
 		$MissingFiles = @()
 		if ($TrustDbBackupHistory)
 		{
@@ -336,7 +324,6 @@ Function Restore-DBFromFilteredArray
 				if ($ScriptOnly)
 				{
 					Write-verbose "$FunctionName - Generating Script"
-					Write-verbose "$FunctionName - script connection state = $($server.ConnectionContext.IsOpen)"
 					$script = $restore.Script($server)
 				}
 				elseif ($VerifyOnly)
@@ -419,7 +406,6 @@ Function Restore-DBFromFilteredArray
 					$null = $restore.devices.remove($Device)
 				}
 				write-verbose "$FunctionName - Succeeded, Closing Server connection"
-				Write-verbose "$FunctionName - connection state = $($server.ConnectionContext.IsOpen)"
 				if ($NewConnection)
 				{
 					Write-Verbose "$FunctionName - Closing smo connection"
