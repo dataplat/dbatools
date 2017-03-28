@@ -47,17 +47,18 @@ Does this
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
+		[Alias("ServerInstance", "SqlServer")]
 		[object]$SqlInstance,
 		[object]$SqlCredential 	
 	)				
 
+    DynamicParam { if ($SqlInstance) { return Get-ParamSqlLogins -SqlServer $SqlInstance -SqlCredential $SqlCredential } }
 
 	BEGIN
 	{
 		
-		$sourceserver = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
-		$logins = $sourceserver.Logins
+		$sourceserver = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+		$serverlogins = $sourceserver.Logins
 				
 	}
 	
@@ -70,7 +71,8 @@ Does this
 	END
 	{
 	
-        $logins
+        $Logins
+        # $serverlogins
 		
 	}
 }
