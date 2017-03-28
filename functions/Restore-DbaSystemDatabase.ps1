@@ -17,16 +17,26 @@ function Restore-DbaSystemDatabase
 $CurrentStartup = Get-DbaStartupParameter -SqlServer $SqlServer
 if ($master)
 {
+    Write-Verbose "$FunctionName - Restoring Master, setting single user"
     Set-DbaStartupParameter -SqlServer $SqlServer -SingleUser
     Stop-DbaService -SqlServer $SqlServer
     Start-DbaService -SqlServer $SqlServer
+    Write-Verbose "$FunctionName - Beginning Restore"
     Restore-DbaDatabase -SqlServer $SqlServer -Path $BackupPath -WithReplace -DatabaseFilter master
 }
 if ($model -or $msdb)
 {
     $filter = @()
-    if ($model){$filter += 'model'}
-    if ($msdb){$filter += 'msdb'}
+    if ($model)
+    {
+        Write-Verbose "$FunctionName - Restoring Model, setting filter"
+        $filter += 'model'
+    }
+    if ($msdb)
+    {
+        Write-Verbose "$FunctionName - Restoring msdb, setting Filter"
+        $filter += 'msdb'
+    }
     Set-DbaStartupParameter -SqlServer $SqlServer -SingleUser:$false
     Stop-DbaService -SqlServer $SqlServer
     Start-DbaService -SqlServer $SqlServer
@@ -34,6 +44,7 @@ if ($model -or $msdb)
     {
         Start-Sleep -seconds 15
     }
+    Write-Verbose "Starting restore of $($filter -join ',')"
     Restore-DbaDatabase -SqlServer $SqlServer -Path $BackupPath  -WithReplace -DatabaseFilter $filter
 }
 Set-DbaStartupParameter -SqlServer $SqlServer -StartUpConfig $CurrentStartup 
