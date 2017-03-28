@@ -57,24 +57,33 @@ Does this
 	BEGIN
 	{
 		
-		$sourceserver = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
-		$serverlogins = $sourceserver.Logins
+		$sourceServer = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+		$serverLogins = $sourceserver.Logins
+        $logins = $($psboundparameters.Logins).split(",")
+        $master = $sourceServer.databases["master"]
+        $sql = "SELECT MAX(login_time) AS [Last Login Time], login_name [Login] 
+        FROM sys.dm_exec_sessions WHERE login_name = '{0}'"
 				
 	}
 	
 	PROCESS
 	{
-		if ( $psboundparameters.Logins -ne $null ) 
+        if ( $logins -ne $null ) 
         { 
-            
-        }
-		
+            foreach ( $login in $serverlogins ) 
+            {            
+                if ( $logins -contains $login.name ) 
+                { 
+                    $master.ExecuteWithResults($sql.replace('{0}',$login.name))
+                }
+            }
+        }        
 	}
 	
 	END
 	{
 	
-        $psboundparameters.Logins
+        
 		
 	}
 }
