@@ -2,19 +2,22 @@ Function Get-DbaLogin
 {
 <#
 .SYNOPSIS 
-Simple template
+Function to get an SMO login object of the logins for a given SQL Instance. Takes a server object from the pipe 
 
 .DESCRIPTION
-By default, all SQL Agent categories for Jobs, Operators and Alerts are copied.  
+By default, all SqlLogins are returned save for those starting with ## 
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server instance.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. 
 
+.PARAMETER Logins 
+Dynamic Parameter that will get a list of logins that you can grab from the server. 
+
 .NOTES 
-Original Author: You (@YourTwitter, Yourblog.net)
+Original Author: Mitchell Hamann (@SirCaptainMitch)
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
@@ -26,23 +29,28 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Verb-DbaNoun
+https://dbatools.io/Get-DbaLogin
 
 .EXAMPLE
-Verb-DbaNoun -SqlServer sqlserver2014a
-Copies all policies and conditions from sqlserver2014a to sqlcluster, using Windows credentials. 
+Get-DbaLogin -SqlInstance SQl2016 
+Gets all the logins for a given SQL Server using NT authentication and returns the SMO login objects 
 
 .EXAMPLE   
-Verb-DbaNoun -SqlServer sqlserver2014a -SqlCredential $cred
-Does this, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
+Get-DbaLogin -SqlInstance SQl2016 -SqlCredential $sqlcred 
+Gets all the logins for a given SQL Server using a passed credential object and returns the SMO login objects 
 
 .EXAMPLE   
-Verb-DbaNoun -SqlServer sqlserver2014 -WhatIf
+Get-DbaLogin -SqlServer sqlserver2014 -WhatIf
 Shows what would happen if the command were executed.
+
+.EXAMPLE 
+Get-DbaLogin -SqlInstance SQl2016 -SqlCredential $sqlcred -Logins dbatoolsuser,TheCaptain 
+Get specific user objects from the server
+
+.EXAMPLE 
+Get-DbaLogin -SqlInstance SQl2016 -SqlCredential $sqlcred -Logins dbatoolsuser,TheCaptain 
+Pipeline example 
 	
-.EXAMPLE   
-Verb-DbaNoun -SqlServer sqlserver2014a -Policy 'xp_cmdshell must be disabled'
-Does this 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
@@ -52,40 +60,47 @@ Does this
 		[object]$SqlCredential 	
 	)				
 
-    DynamicParam { if ($SqlInstance) { return Get-ParamSqlLogins -SqlServer $SqlInstance -SqlCredential $SqlCredential } }
+    DynamicParam { if ($SqlInstance) {  return Get-ParamSqlLogins -SqlServer $SqlInstance -SqlCredential $SqlCredential } } 
 
-	BEGIN
-	{
-		
+	begin
+	{		
 		$sourceServer = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
 		$serverLogins = $sourceServer.Logins
-        $logins = $psboundparameters.Logins
-        $master = $sourceServer.databases["master"]
+        $parameterLogins = $psboundparameters.Logins
+        $masterDatabase = $sourceServer.databases["master"]
         $sql = "SELECT MAX(login_time) AS [login_time] FROM sys.dm_exec_sessions WHERE login_name = '{0}'"
-		$results = @()
-				
+		$results = @()				
 	}
 	
-	PROCESS
+	process
 	{
-        if ( $logins -ne $null ) 
+        if ( $parameterLogins -ne $null ) 
         { 
             foreach ( $login in $serverlogins ) 
             {            
-                if ( $logins -contains $login.name ) 
+                if ( $parameterLogins -contains $login.name ) 
                 { 
-					$lastLogin = $($master.ExecuteWithResults($sql.replace('{0}',$login.name)).Tables).login_time					
-                    add-member -InputObject $login -NotePropertyName LastLogin $lastLogin
-					$results += $login	
+					$lastLogin = $($masterDatabase.ExecuteWithResults($sql.replace('{0}',$login.name)).Tables).login_time					
+					add-member -InputObject $login -NotePropertyName LastLogin $lastLogin
+					$results += $login									
                 }
             }
-        }
+        } else { 
+			foreach ($login in $serverLogins)
+			{
+				if (!$login.name.StartsWith("##") -and $login.name -ne 'sa')
+				{
+					$lastLogin = $($masterDatabase.ExecuteWithResults($sql.replace('{0}',$login.name)).Tables).login_time					
+					add-member -InputObject $login -NotePropertyName LastLogin $lastLogin
+					$results += $login
+				}
+			}
+		}
 	}
 	
-	END
+	end
 	{
 		## Output smo login object for passing to the pipeline 
-        return $results
-		
+        return $results		
 	}
 }
