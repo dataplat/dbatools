@@ -362,9 +362,10 @@ c:\DataFiles and all the log files into c:\LogFiles
 						{
 							if ($p -match '\.\w{3}\Z' )
 							{
+								Write-Verbose "$FunctionName - adding simple file"
 								if (Test-SqlPath -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential)
 								{
-									$BackupFiles += $p
+									$BackupFiles += $p | select  @{Name="FileName";Expression={"$_"}}, @{Name="FullName";Expression={"$_"}} -ExcludeProperty length
 								}
 								else
 								{
@@ -492,11 +493,21 @@ c:\DataFiles and all the log files into c:\LogFiles
 
 		try
 		{
-			$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+			if ('master' -in $DatabaseFilter)
+			{
+				Write-Verbose "$FunctionName - Single User connection for master restores"
+				$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ApplicationName dbatoolsSystemk34i23hs3u57w
+			}
+			else
+			{
+				Write-Verbose "$FunctionName - normnal connections"
+				$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+			}
 		}
 		catch
 		{
 			Write-Warning "$FunctionName - Cannot connect to $SqlServer"
+			
 			Return
 		}
 		if ($null -ne $DatabaseName)
@@ -568,6 +579,7 @@ c:\DataFiles and all the log files into c:\LogFiles
 		}
 		
 		if ($DatabaseFilter.length -gt 0) {
+			
 			$tAllFilteredFiles = @()
 			foreach ($FilteredFileSet in $AllFilteredFiles)
 			{
@@ -575,6 +587,10 @@ c:\DataFiles and all the log files into c:\LogFiles
 				{
 					Write-Verbose "$FunctionName  - adding $($FilteredFileSet.values.DatabaseName)"
 					$tAllFilteredFiles += $FilteredFileSet
+				}
+				else
+				{
+					Write-Verbose "$FunctionName  - skipping $($FilteredFileSet.values.DatabaseName)"
 				}
 			}
 			if ($tAllFilteredFiles.count -eq 0)

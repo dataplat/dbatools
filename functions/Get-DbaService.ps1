@@ -39,7 +39,16 @@ Will return the status of all SQL Server services running on  server1\instance
     )
     $FunctionName =(Get-PSCallstack)[0].Command
 
-    $servername, $instancename = ($sqlserver.Split('\'))
+        #$servername, $instancename = ($sqlserver.Split('\'))
+    if ($null -eq $SqlServer.name)
+    {
+        $servername, $instancename = ($sqlserver.Split('\'))
+    }
+    else
+    {
+        $servername, $instancename = ($sqlserver.name.Split('\'))
+    }
+   
     if ($instancename.Length -eq 0) { $instancename = "MSSQLSERVER" }
     Write-Verbose "Attempting to connect to $servername"
     

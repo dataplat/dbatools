@@ -53,11 +53,20 @@ This will attempt to stop the SQL Server service associated with the default ins
     )
     $FunctionName =(Get-PSCallstack)[0].Command
 
-    $servername, $instancename = ($sqlserver.Split('\'))
-    Write-Verbose "Attempting to stop SQL Servie $instancename on $servername"
-    
+    #$servername, $instancename = ($sqlserver.Split('\'))
+    if ($null -eq $SqlServer.name)
+    {
+        $servername, $instancename = ($sqlserver.Split('\'))
+    }
+    else
+    {
+        $servername, $instancename = ($sqlserver.name.Split('\'))
+    }
+   
     if ($instancename.Length -eq 0) { $instancename = "MSSQLSERVER" }
-    
+
+    Write-Verbose "Attempting to stop SQL Service $instancename on $servername" 
+
     If ($Service -eq 'SqlServer')
     {
         $displayname = "SQL Server ($instancename)"  

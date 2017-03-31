@@ -53,7 +53,17 @@ This will attempt to start the SQL Server service associated with the default in
     )
     $FunctionName =(Get-PSCallstack)[0].Command
 
-    $servername, $instancename = ($sqlserver.Split('\'))
+    #$servername, $instancename = ($sqlserver.Split('\'))
+    if ($null -eq $SqlServer.name)
+    {
+        $servername, $instancename = ($sqlserver.Split('\'))
+    }
+    else
+    {
+        $servername, $instancename = ($sqlserver.name.Split('\'))
+    }
+   
+    
     Write-Verbose "Attempting to connect to $servername"
     
     if ($instancename.Length -eq 0) { $instancename = "MSSQLSERVER" }

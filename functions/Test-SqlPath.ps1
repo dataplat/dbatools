@@ -68,7 +68,26 @@ Tests whether the service account running the "sqlcluster" SQL Server isntance c
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 
-	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+	#$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+	try 
+	{
+		if ($sqlServer -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject])
+		{
+			Write-verbose "$FunctionName - Opening SQL Server connection"
+			$NewConnection = $True
+			$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential	
+		}
+		else
+		{
+			Write-Verbose "$FunctionName - reusing SMO connection"
+			$server = $SqlServer
+		}
+	}
+	catch {
+
+		Write-Warning "$FunctionName - Cannot connect to $SqlServer" 
+		break
+	}
 	$sql = "EXEC master.dbo.xp_fileexist '$path'"
 	$fileexist = $server.ConnectionContext.ExecuteWithResults($sql)
 

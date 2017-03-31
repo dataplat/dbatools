@@ -153,8 +153,8 @@ After the work has been completed, we can push the original startup parameters b
         Write-Verbose "su = $($NewStartup.SingleUser)"
     }
     if (!($CurrentStartup.SingleUser))
-    {       
-        Write-Verbose "$FunctionName - Sql instance is presently configured for single user, skipping path validation" 
+    {   
+        Write-Verbose "$FunctionName - Instance currently not in single user mode"    
         if ($NewStartup.Masterdata.length -gt 0)
         {
             if (Test-SqlPath -SqlServer $SqlServer -SqlCredential $Credential -Path (Split-Path $NewStartup.MasterData -Parent))
@@ -206,6 +206,7 @@ After the work has been completed, we can push the original startup parameters b
     }
     else
     {
+        Write-Verbose "$FunctionName - Sql instance is presently configured for single user, skipping path validation" 
         if ($NewStartup.MasterData.Length -gt 0)
         {
             $ParameterString += "-d$($NewStartup.MasterData);"
@@ -275,6 +276,10 @@ After the work has been completed, we can push the original startup parameters b
     {
         $ParameterString += "-E;"
     }
+    if($NewStartup.TraceFlags -eq 'None')
+    {
+        $NewStartup.TraceFlags = ''
+    }
     if($TraceFlagsOverride -and 'TraceFlags' -in $PsBoundParameters.keys)
     {
         $NewStartup.TraceFlags = $TraceFlags
@@ -285,11 +290,15 @@ After the work has been completed, we can push the original startup parameters b
         if ('TraceFlags'  -in $PsBoundParameters.keys)
         {
             
-            $oldflags = @($CurrentStartup.TraceFlags) -split ','
+            $oldflags = @($CurrentStartup.TraceFlags) -split ',' | Where-Object {$_ -ne 'None'}
             $newflags = @($TraceFlags) -split ','
             $oldflags + $newflags
             $NewStartup.TraceFlags = ($oldFlags + $newflags | Sort-Object -Unique) -join ','
             $NewStartup.traceflags
+        }
+        elseif ($TraceFlagsOverride )
+        {
+            $NewStartup.TraceFlags =''
         }
         else
         {

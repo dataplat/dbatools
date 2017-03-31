@@ -23,7 +23,7 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 			$paramserver = New-Object Microsoft.SqlServer.Management.Smo.Server
 			if ($null -ne $ApplicationName)
 			{
-				$paramserver.ConnectionContext.ApplicationName = "dbatools junk name"
+				$paramserver.ConnectionContext.ApplicationName = $ApplicationName
 			}
 			else
 			{
@@ -77,9 +77,9 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 	}
 	
 	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlServer
-	if ($null -ne $ApplicationName)
+	if ('ApplicationName' -in $PsBoundParameters.keys)
 	{
-		$server.ConnectionContext.ApplicationName = "dbatools-$ApplicationName"
+		$server.ConnectionContext.ApplicationName = $ApplicationName
 	}
 	else
 	{

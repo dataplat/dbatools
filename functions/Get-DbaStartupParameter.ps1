@@ -59,7 +59,16 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 			$servercount++
 			try
 			{
-				$instancename = ($servername.Split('\'))[1]
+				#$servername, $instancename = ($sqlserver.Split('\'))
+				if ($null -eq $SqlServer.name)
+				{
+					$servername, $instancename = ($sqlserver.Split('\'))
+				}
+				else
+				{
+					$servername, $instancename = ($sqlserver.name.Split('\'))
+				}
+   
 				Write-Verbose "Attempting to connect to $servername"
 				
 				if ($instancename.Length -eq 0) { $instancename = "MSSQLSERVER" }

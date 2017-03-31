@@ -99,8 +99,8 @@ Function Restore-DBFromFilteredArray
 						try
 						{
 							Write-Verbose "$FunctionName - Set $DbName single_user to kill processes"
-							Stop-DbaProcess -SqlServer $Server -Databases $Dbname -WarningAction Silentlycontinue
-							Invoke-SQLcmd2 -ServerInstance:$server -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; Alter database $DbName set online with rollback immediate" -database master -SqlConnection
+							#Stop-DbaProcess -SqlServer $Server -Databases $Dbname -WarningAction Silentlycontinue
+							Invoke-SQLcmd2 -ServerInstance $server -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; Alter database $DbName set online with rollback immediate" -database master -SqlConnection
 
 						}
 						catch
@@ -408,8 +408,8 @@ Function Restore-DBFromFilteredArray
 				write-verbose "$FunctionName - Succeeded, Closing Server connection"
 				if ($NewConnection)
 				{
-					Write-Verbose "$FunctionName - Closing smo connection"
-					$server.ConnectionContext.Disconnect()
+					#Write-Verbose "$FunctionName - Closing smo connection"
+					#$server.ConnectionContext.Disconnect()
 				}
 			}
 		}	
