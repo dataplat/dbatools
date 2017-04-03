@@ -335,7 +335,7 @@ Restores data and log files to alternative locations and only restores databases
 						
 						if ($VerifyOnly) { $dbccresult = "Skipped" }
 						
-						if (!$NoDrop -and $restoreresult -eq "Success")
+						if (!$NoDrop -and $null -ne $destserver.databases[$dbname])
 						{
 							if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination"))
 							{
