@@ -64,11 +64,6 @@ Sets the port number 1337 for ALLIP's on sqlserver SQLDB2016B and SQLDB2014A
 	)
 	BEGIN
 	{
-		$collection = New-Object System.Collections.ArrayList
-		if ($Port -eq 0 )
-		{
-			throw 'Please specify a specific port using -Port'
-		}
 
 		if ($ipaddress.Length -eq 0)
 		{
