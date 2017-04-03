@@ -272,6 +272,8 @@ Restores data and log files to alternative locations and only restores databases
 						$dbname = $restorelist.DatabaseName
 						$temprestoreinfo = @()
 						
+						$dbccElapsed = $restoreElapsed = $startRestore = $endRestore = $startDbcc = $endDbcc = $null
+						
 						foreach ($file in $filelist)
 						{
 							if ($file.Type -eq 'L')
@@ -303,7 +305,13 @@ Restores data and log files to alternative locations and only restores databases
 						
 						if ($Pscmdlet.ShouldProcess($destination, "Restoring $ogdbname as $dbname"))
 						{
+							$startRestore = Get-Date
 							$restoreresult = Restore-Database -SqlServer $destserver -DbName $dbname -backupfile $lastbackup.path -filestructure $temprestoreinfo -VerifyOnly:$VerifyOnly
+							$endRestore = Get-Date
+							
+							$restorets = New-TimeSpan -Start $startRestore -End $endRestore
+							$ts = [timespan]::fromseconds($restorets.TotalSeconds)
+							$restoreElapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)
 						}
 						
 						if (!$NoCheck -and !$VerifyOnly)
@@ -315,7 +323,13 @@ Restores data and log files to alternative locations and only restores databases
 							}
 							else
 							{
+								$startDbcc = Get-Date
 								$dbccresult = Start-DbccCheck -Server $destserver -DbName $dbname -Table 3>$null
+								$endDbcc = Get-Date
+								
+								$dbccts = New-TimeSpan -Start $startDbcc -End $endDbcc
+								$ts = [timespan]::fromseconds($dbccts.TotalSeconds)
+								$dbccElapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)								
 							}
 						}
 						
@@ -357,6 +371,12 @@ Restores data and log files to alternative locations and only restores databases
 						RestoreResult = $restoreresult
 						DbccResult = $dbccresult
 						SizeMB = ($lastbackup.TotalSizeMB | Measure-Object -Sum).Sum
+						RestoreStart = $startRestore
+						RestoreEnd = $endRestore
+						RestoreElapsed = $restoreElapsed
+						DbccStart = $startDbcc
+						DbccEnd = $endDbcc
+						DbccElapsed = $dbccElapsed
 						BackupTaken = $lastbackup.Start
 						BackupFiles = $lastbackup.Path
 					}
