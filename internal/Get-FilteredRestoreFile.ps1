@@ -106,7 +106,7 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
             if ($null -ne $Diffbackups){
                 Write-Verbose "$FunctionName - we have at least one diff so look for tlogs after the last one"
                 #If we have a Diff backup, we only need T-log backups post that point
-                $TlogStartLSN = ($DiffBackups | select-object -Property FirstLSN -first 1).LastLSN
+                $TlogStartLSN = ($DiffBackups | select-object -Property LastLSN -First 1).LastLSN
                 $Results += $Diffbackups
             }
             
