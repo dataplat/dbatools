@@ -42,7 +42,7 @@ if ($path.length -eq 0)
 Write-Output "Installing module to $path"
 
 Remove-Module dbatools -ErrorAction SilentlyContinue
-$url = 'https://github.com/sqlcollaborative/dbatools/archive/master.zip'
+$url = 'https://dbatools.io/zip'
 
 $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 $zipfile = "$temp\dbatools.zip"
