@@ -89,6 +89,31 @@ Tests all logins excluding any that are from the subdomain Domain
 		if($Detailed) {
 			Write-Message -Message "Detailed is deprecated and will be removed in dbatools 1.0" -Once "DetailedDeprecation" -Level Warning
 		}
+
+		$MappingRaw = @{
+			'SCRIPT'                                 = 1
+			'ACCOUNTDISABLE'                         = 2
+			'HOMEDIR_REQUIRED'                       = 8
+			'LOCKOUT'                                = 16
+			'PASSWD_NOTREQD'                         = 32
+			'PASSWD_CANT_CHANGE'                     = 64
+			'ENCRYPTED_TEXT_PASSWORD_ALLOWED'        = 128
+			'TEMP_DUPLICATE_ACCOUNT'                 = 256
+			'NORMAL_ACCOUNT'                         = 512
+			'INTERDOMAIN_TRUST_ACCOUNT'              = 2048
+			'WORKSTATION_TRUST_ACCOUNT'              = 4096
+			'SERVER_TRUST_ACCOUNT'                   = 8192
+			'DONT_EXPIRE_PASSWD'                     = 65536
+			'MNS_LOGON_ACCOUNT'                      = 131072
+			'SMARTCARD_REQUIRED'                     = 262144
+			'TRUSTED_FOR_DELEGATION'                 = 524288
+			'NOT_DELEGATED'                          = 1048576
+			'USE_DES_KEY_ONLY'                       = 2097152
+			'DONT_REQUIRE_PREAUTH'                   = 4194304
+			'PASSWORD_EXPIRED'                       = 8388608
+			'TRUSTED_TO_AUTHENTICATE_FOR_DELEGATION' = 16777216
+			'PARTIAL_SECRETS_ACCOUNT'                = 67108864
+		}
 	}
 
 	PROCESS
@@ -138,8 +163,7 @@ Tests all logins excluding any that are from the subdomain Domain
 					$windowsGroups = $allwindowsloginsgroups | Where-Object { $_.LoginType -eq 'WindowsGroup' }
 				}
 			}
-			foreach ($login in $windowslogins)
-			{
+			foreach ($login in $windowslogins) {
 				$adlogin = $login.Name
 				$domain, $username = $adlogin.Split("\")
 				if($domain.toUpper() -in $IgnoreDomainsNormalized) {
@@ -161,115 +185,60 @@ Tests all logins excluding any that are from the subdomain Domain
 					Write-Message -Message "AD Searcher Error for $username" -Level Warning
 				}
 
-				$value = $founduser.Properties.userAccountControl
+				$UAC = $founduser.Properties.userAccountControl
 
-				$enabled = $false
-				$adlogindetails = 'Unknown'
-
-				## values from  http://www.netvision.com/ad_useraccountcontrol.php
-				switch ($value)
-				{
-					512      {
-						$enabled = $true
-						$adlogindetails = "Enabled Account"
-					}
-					514      {
-						$enabled = $false
-						$adlogindetails = "Disabled Account"
-					}
-					544      {
-						$enabled = $true
-						$adlogindetails = "Enabled, Password Not Required"
-					}
-					546      {
-						$enabled = $false
-						$adlogindetails = "Disabled, Password Not Required"
-					}
-					66048    {
-						$enabled = $true
-						$adlogindetails = "Enabled, Password Doesn't Expire"
-					}
-					66050    {
-						$enabled = $false
-						$adlogindetails = "Disabled, Password Doesn't Expire"
-					}
-					66080    {
-						$enabled = $true
-						$adlogindetails = "Enabled, Password Doesn't Expire & Not Required"
-					}
-					66082    {
-						$enabled = $false
-						$adlogindetails = "Disabled, Password Doesn't Expire & Not Required"
-					}
-					262656   {
-						$enabled = $true
-						$adlogindetails = "Enabled, Smartcard Required"
-					}
-					262658   {
-						$enabled = $false
-						$adlogindetails = "Disabled, Smartcard Required"
-					}
-					262688   {
-						$enabled = $true
-						$adlogindetails = "Enabled, Smartcard Required, Password Not Required"
-					}
-					262690   {
-						$enabled = $false
-						$adlogindetails = "Disabled, Smartcard Required, Password Not Required"
-					}
-					328192   {
-						$enabled = $true
-						$adlogindetails = "Enabled, Smartcard Required, Password Doesnt Expire"
-					}
-					328194   {
-						$enabled = $false
-						$adlogindetails = "Disabled, Smartcard Required, Password Doesnt Expire"
-					}
-					328224   {
-						$enabled = $true
-						$adlogindetails = "Enabled, Smartcard Required, Password Doesn't Expire & Not Required"
-					}
-					328226   {
-						$enabled = $false
-						$adlogindetails = "Disabled, Smartcard Required, Password Doesn't Expire & Not Required"
-					}
-					590336   {
-						$enabled = $true
-						$adlogindetails = "Enabled, User Cannot Change Password & Password Never Expires"
-					}
-					$null    {
-						$enabled = "Unknown"
-					}
-					default  {
-						Write-Message -Message "unknown value passed from useraccountcontrol Server: $sqlServer Login: $username Domain: $domain Value: $value" -Level Verbose
-						$enabled = "Unknown"
+				$additionalProps = @{
+					AccountNotDelegated = $null
+					AllowReversiblePasswordEncryption  = $null
+					CannotChangePassword  = $null
+					PasswordExpired  = $null
+					Lockedout  = $null
+					Enabled  = $null
+					PasswordNeverExpires  = $null
+					PasswordNotRequired  = $null
+					SmartcardLogonRequired  = $null
+					TrustedForDelegation = $null
+				}
+				if($UAC) {
+					$additionalProps = @{
+						AccountNotDelegated = [bool]($UAC.Value -band $MappingRaw['NOT_DELEGATED'])
+						AllowReversiblePasswordEncryption  = [bool]($UAC.Value -band $MappingRaw['ENCRYPTED_TEXT_PASSWORD_ALLOWED'])
+						CannotChangePassword  = [bool]($UAC.Value -band $MappingRaw['PASSWD_CANT_CHANGE'])
+						PasswordExpired  = [bool]($UAC.Value -band $MappingRaw['PASSWORD_EXPIRED'])
+						Lockedout  = [bool]($UAC.Value -band $MappingRaw['LOCKOUT'])
+						Enabled  = !($UAC.Value -band $MappingRaw['ACCOUNTDISABLE'])
+						PasswordNeverExpires  = [bool]($UAC.Value -band $MappingRaw['DONT_EXPIRE_PASSWD'])
+						PasswordNotRequired  = [bool]($UAC.Value -band $MappingRaw['PASSWD_NOTREQD'])
+						SmartcardLogonRequired  = [bool]($UAC.Value -band $MappingRaw['SMARTCARD_REQUIRED'])
+						TrustedForDelegation = [bool]($UAC.Value -band $MappingRaw['TRUSTED_FOR_DELEGATION'])
+						UserAccountControl = [bool]($UAC.Value)
 					}
 				}
-
-				if ($Detailed)
-				{
-					[PSCustomObject]@{
+				$rtn = [PSCustomObject]@{
 						Server = $server.DomainInstanceName
 						Domain = $domain
 						Login = $username
 						Type = "User"
 						Found = $exists
-						Enabled = $enabled
 						DisabledInSQLServer = $login.IsDisabled
-						ADLoginDetails = $adlogindetails
+						AccountNotDelegated = $additionalProps.AccountNotDelegated
+						AllowReversiblePasswordEncryption  = $additionalProps.AllowReversiblePasswordEncryption
+						CannotChangePassword  = $additionalProps.CannotChangePassword
+						PasswordExpired  = $additionalProps.PasswordExpired
+						Lockedout  = $additionalProps.Lockedout
+						Enabled  = $additionalProps.Enabled
+						PasswordNeverExpires  = $additionalProps.PasswordNeverExpires
+						PasswordNotRequired  = $additionalProps.PasswordNotRequired
+						SmartcardLogonRequired  = $additionalProps.SmartcardLogonRequired
+						TrustedForDelegation = $additionalProps.TrustedForDelegation
+						UserAccountControl = $additionalProps.UserAccountControl
 					}
+				if ($Detailed) {
+					Select-DefaultView -InputObject $rtn -ExcludeProperty UserAccountControl
+				} else {
+					Select-DefaultView -InputObject $rtn -ExcludeProperty UserAccountControl,AccountNotDelegated,AllowReversiblePasswordEncryption,CannotChangePassword,PasswordNeverExpires,SmartcardLogonRequired,TrustedForDelegation
 				}
-				else
-				{
-					[PSCustomObject]@{
-						Server = $server.DomainInstanceName
-						Domain = $domain
-						Login = $username
-						Type = "User"
-						Found = $exists
-						Enabled = $enabled
-					}
-				}
+
 			}
 
 			foreach ($login in $windowsGroups)
@@ -281,42 +250,41 @@ Tests all logins excluding any that are from the subdomain Domain
 					continue
 				}
 				Write-Message -Message "Parsing Login $adlogin on $server" -Level Verbose
-				$exists = $enabled = $false
+				$exists = $false
 				if ($true)
 				{
 					$founduser = Get-DbaADObject -ADObject $adlogin -Type Group -Silent
 					if ($founduser) {
-						$exists = $enabled = $true
+						$exists = $true
 					}
 				}
 				else
 				{
 					Write-Warning -Message "AD Searcher Error for $groupname on $server" -Level Warning
 				}
-
-				if ($Detailed)
-				{
-					[PSCustomObject]@{
-						Server = $server.DomainInstanceName
-						Domain = $domain
-						Login = $groupname
-						Type = "Group"
-						Found = $exists
-						Enabled = $enabled
-						DisabledInSQLServer = $login.IsDisabled
-						ADLoginDetails = 'AD group'
-					}
+				$rtn = [PSCustomObject]@{
+					Server = $server.DomainInstanceName
+					Domain = $domain
+					Login = $groupname
+					Type = "Group"
+					Found = $exists
+					DisabledInSQLServer = $login.IsDisabled
+					AccountNotDelegated = $null
+					AllowReversiblePasswordEncryption  = $null
+					CannotChangePassword  = $null
+					PasswordExpired  = $null
+					Lockedout  = $null
+					Enabled  = $null
+					PasswordNeverExpires  = $null
+					PasswordNotRequired  = $null
+					SmartcardLogonRequired  = $null
+					TrustedForDelegation = $null
+					UserAccountControl = $null
 				}
-				else
-				{
-					[PSCustomObject]@{
-						Server = $server.DomainInstanceName
-						Domain = $domain
-						Login = $groupname
-						Type = "Group"
-						Found = $exists
-						Enabled = $enabled
-					}
+				if ($Detailed) {
+					Select-DefaultView -InputObject $rtn -ExcludeProperty UserAccountControl
+				} else {
+					Select-DefaultView -InputObject $rtn -ExcludeProperty UserAccountControl,AccountNotDelegated,AllowReversiblePasswordEncryption,CannotChangePassword,PasswordNeverExpires,SmartcardLogonRequired,TrustedForDelegation
 				}
 			}
 		}
