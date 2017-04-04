@@ -43,12 +43,12 @@ Sets the port number 1433 for allips on the default instance on sqlserver2014a
 .EXAMPLE
 Set-DbaTcpPort -SqlServer winserver\sqlexpress -IpAddress 192.168.1.22 -Port 1433
 
-Sets the port number 1433 for IP 192.168.1.22 on the sqlexpress instance on sqlserver2014a	
+Sets the port number 1433 for IP 192.168.1.22 on the sqlexpress instance on winserver	
 
 .EXAMPLE
 Set-DbaTcpPort -sqlserver 'SQLDB2014A' ,'SQLDB2016B' -port 1337
 
-Sets the port number 1337 for ALLIP's on sqlserver SQLDB2016B and SQLDB2014A
+Sets the port number 1337 for ALLIP's on sqlserver SQLDB2014A and SQLDB2016B
 #>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
 	Param (
@@ -141,15 +141,18 @@ Sets the port number 1337 for ALLIP's on sqlserver SQLDB2016B and SQLDB2014A
 				}
 				try
 				{
-				    write-verbose "Writing TCPPort $port for $servername\$instancename to $($server.ComputerNamePhysicalNetBIOS)..."
-                    $setip = Invoke-ManagedComputerCommand -ComputerName $server.ComputerNamePhysicalNetBIOS -ScriptBlock $scriptblock -ArgumentList $servername, $instancename, $port, $ipaddress  
+				    
+                    #Clean servername from any instancename to enumerate correct wmi collection
+                    $ServernameNI = $servername.split("\")[0]
+                    write-verbose "Writing TCPPort $port for $ServernameNI\$instancename to $($server.ComputerNamePhysicalNetBIOS)..."
+                    $setip = Invoke-ManagedComputerCommand -ComputerName $ServernameNI -ScriptBlock $scriptblock -ArgumentList $ServernameNI, $instancename, $port, $ipaddress  
                     if ($ipaddress -eq '0.0.0.0') 
                     {
-                        Write-Host "SQLSERVER: $servername\$instancename IPADDRESS: ALLIP's PORT: $port"
+                        Write-Host "SQLSERVER: $ServernameNI\$instancename IPADDRESS: ALLIP's PORT: $port"
                     }
                     else
                     {
-                        Write-Host "SQLSERVER: $servername\$instancename IPADDRESS: $ipaddress PORT: $port"
+                        Write-Host "SQLSERVER: $ServernameNI\$instancename IPADDRESS: $ipaddress PORT: $port"
                     }
                 }   
 				catch
