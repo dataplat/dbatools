@@ -1,3 +1,5 @@
+#ValidationTags#Messaging,FlowControl,Pipeline#
+
 Function Get-DbaBackupHistory
 {
 <#
