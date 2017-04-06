@@ -56,6 +56,9 @@ Are you sure you want to perform this action?
 Performing the operation "Shrink database" on target "pubs on SQL2016\VNEXT".
 [Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is "Y"):
 
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
+
 .NOTES
 Tags: Shrink, Database
 dbatools PowerShell module (https://dbatools.io)
