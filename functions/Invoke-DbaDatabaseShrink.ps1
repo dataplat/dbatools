@@ -121,7 +121,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 				INNER JOIN sys.schemas dbschemas on dbtables.[schema_id] = dbschemas.[schema_id]
 				INNER JOIN sys.indexes AS dbindexes ON dbindexes.[object_id] = indexstats.[object_id]
 				AND indexstats.index_id = dbindexes.index_id
-				WHERE indexstats.database_id = DB_ID()
+				WHERE indexstats.database_id = DB_ID() AND indexstats.avg_fragmentation_in_percent > 0
 				ORDER BY indexstats.avg_fragmentation_in_percent desc"
 	}
 	
@@ -197,9 +197,22 @@ Shrinks all databases on SQL2012 (not ideal for production)
 						
 						Write-Message -Level Verbose -Message "Starting shrink"
 						$start = Get-Date
-						$db.Shrink($PercentFreeSpace, $ShrinkMethod)
-						$db.Refresh()
-						$db.RecalculateSpaceUsage()
+						$server.ConnectionContext.StatementTimeout = 0
+						
+						try
+						{
+							$db.Shrink($PercentFreeSpace, $ShrinkMethod)
+							$db.Refresh()
+							$db.RecalculateSpaceUsage()
+							$success = $true
+							$notes = $null
+						}
+						catch
+						{
+							$success = $false
+							$notes = $_.Exception.InnerException
+						}
+						
 						$end = Get-Date
 						$dbsize = $db.Size
 						Write-Message -Level Verbose -Message "Final size: $([int]$dbsize) MB"
@@ -226,6 +239,12 @@ Shrinks all databases on SQL2012 (not ideal for production)
 				{
 					$db.Refresh()
 					$db.RecalculateSpaceUsage()
+					
+					if ($null -eq $notes)
+					{
+						$notes = "Database shrinks can cause massive index fragmentation and negatively impact performance. You should now run DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE"
+					}
+					
 					[pscustomobject]@{
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
@@ -234,6 +253,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 						Start = $start
 						End = $end
 						Elapsed = $elapsed
+						Success = $success
 						CurrentlyAllocatedMB = [math]::Round($startingsize, 2)
 						CurrentlyUsedMB = [math]::Round($spaceused, 2)
 						FinalSizeMB = [math]::Round($db.size, 2)
@@ -242,7 +262,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 						FinalAvailableMB = [math]::Round(($db.SpaceAvailable/1024), 2)
 						StartingIndexFragmentationAvg = [math]::Round($startingfrag, 1)
 						EndingIndexFragmentationAvg = [math]::Round($endingdefrag, 1)
-						Notes = "Database shrinks can cause massive index fragmentation and negatively impact performance. You should now run DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE"
+						Notes = $notes
 					}
 				}
 			}
