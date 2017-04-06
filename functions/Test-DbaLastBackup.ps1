@@ -14,7 +14,7 @@ Restores all or some of the latest backups and performs a DBCC CHECKTABLE
 5. A DBCC CHECKTABLE is then performed
 6. And the test database is finally dropped
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server to connect to. Unlike many of the other commands, you cannot specify more than one server.
 
 .PARAMETER Destination
@@ -116,10 +116,10 @@ Restores data and log files to alternative locations and only restores databases
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance", "Source")]
-		[string]$SqlServer,
+		[Alias("ServerInstance", "SqlServer", "Source")]
+		[object[]]$SqlInstance,
 		[object]$SqlCredential,
-		[string]$Destination = $SqlServer,
+		[string]$Destination = $SqlInstance,
 		[object]$DestinationCredential,
 		[string]$DataDirectory,
 		[string]$LogDirectory,
@@ -131,263 +131,270 @@ Restores data and log files to alternative locations and only restores databases
 		
 	)
 	
-	DynamicParam { if ($sqlserver) { return Get-ParamSqlDatabases -SqlServer $sqlserver -SqlCredential $SqlCredential } }
+	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
 	BEGIN
 	{
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
-		
-		if ($SqlServer -eq $destination)
-		{
-			$DestinationCredential = $SqlCredential
-		}
-		
-		$sourceserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $sqlCredential
-		$destserver = Connect-SqlServer -SqlServer $destination -SqlCredential $DestinationCredential
-		
-		if ($destserver.VersionMajor -lt $sourceserver.VersionMajor)
-		{
-			Write-Warning "$Destination is a lower version than $Sqlserver. Backups would be incompatible."
-			continue
-		}
-		
-		if ($destserver.VersionMajor -eq $sourceserver.VersionMajor -and $destserver.VersionMinor -lt $sourceserver.VersionMinor)
-		{
-			Write-Warning "$Destination is a lower version than $Sqlserver. Backups would be incompatible."
-			continue
-		}
-		
-		if ($SqlServer -ne $destination)
-		{
-			$sourcerealname = $sourceserver.DomainInstanceName
-			$destrealname = $sourceserver.DomainInstanceName
-			
-			if ($BackupFolder)
-			{
-				if ($BackupFolder.StartsWith("\\") -eq $false -and $sourcerealname -ne $destrealname)
-				{
-					throw "Backup folder must be a network share if the source and destination servers are not the same."
-				}
-			}
-			
-		}
-		
-		$source = $sourceserver.DomainInstanceName
-		$destination = $destserver.DomainInstanceName
-		
-		if ($datadirectory)
-		{
-			if (!(Test-SqlPath -SqlServer $destserver -Path $datadirectory))
-			{
-				$serviceaccount = $destserver.ServiceAccount
-				Write-Warning "Can't access $datadirectory Please check if $serviceaccount has permissions"
-				continue
-			}
-		}
-		else
-		{
-			$datadirectory = Get-SqlDefaultPaths -SqlServer $destserver -FileType mdf
-		}
-		
-		if ($logdirectory)
-		{
-			if (!(Test-SqlPath -SqlServer $destserver -Path $logdirectory))
-			{
-				$serviceaccount = $destserver.ServiceAccount
-				Write-Warning "$Destination can't access its local directory $logdirectory. Please check if $serviceaccount has permissions"
-				continue
-			}
-		}
-		else
-		{
-			$logdirectory = Get-SqlDefaultPaths -SqlServer $destserver -FileType ldf
-		}
-		
-		if ($databases.count -eq 0)
-		{
-			$databases = $sourceserver.databases.Name
-		}
 	}
 	
 	PROCESS
 	{
-		if ($databases -or $exclude)
-		{
-			$dblist = $databases
-			
-			if ($exclude)
+		foreach ($instance in $sqlinstance)
+		{			
+			if ($instance -eq $destination)
 			{
-				$dblist = $dblist | Where-Object $_ -notin $exclude
+				$DestinationCredential = $SqlCredential
 			}
 			
-			foreach ($dbname in $dblist)
+			$sourceserver = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlCredential
+			$destserver = Connect-SqlServer -SqlServer $destination -SqlCredential $DestinationCredential
+			
+			if ($destserver.VersionMajor -lt $sourceserver.VersionMajor)
 			{
-				if ($dbname -eq 'tempdb') { continue }
+				Write-Warning "$Destination is a lower version than $instance. Backups would be incompatible."
+				continue
+			}
+			
+			if ($destserver.VersionMajor -eq $sourceserver.VersionMajor -and $destserver.VersionMinor -lt $sourceserver.VersionMinor)
+			{
+				Write-Warning "$Destination is a lower version than $instance. Backups would be incompatible."
+				continue
+			}
+			
+			if ($instance -ne $destination)
+			{
+				$sourcerealname = $sourceserver.DomainInstanceName
+				$destrealname = $sourceserver.DomainInstanceName
 				
-				$db = $sourceserver.databases[$dbname]
-				
-				# The db check is needed when the number of databases exceeds 255, then it's no longer autopopulated
-				if (!$db)
+				if ($BackupFolder)
 				{
-					Write-Warning "$dbname does not exist on $source."
+					if ($BackupFolder.StartsWith("\\") -eq $false -and $sourcerealname -ne $destrealname)
+					{
+						throw "Backup folder must be a network share if the source and destination servers are not the same."
+					}
+				}
+				
+			}
+			
+			$source = $sourceserver.DomainInstanceName
+			$destination = $destserver.DomainInstanceName
+			
+			if ($datadirectory)
+			{
+				if (!(Test-SqlPath -SqlServer $destserver -Path $datadirectory))
+				{
+					$serviceaccount = $destserver.ServiceAccount
+					Write-Warning "Can't access $datadirectory Please check if $serviceaccount has permissions"
 					continue
 				}
+			}
+			else
+			{
+				$datadirectory = Get-SqlDefaultPaths -SqlServer $destserver -FileType mdf
+			}
+			
+			if ($logdirectory)
+			{
+				if (!(Test-SqlPath -SqlServer $destserver -Path $logdirectory))
+				{
+					$serviceaccount = $destserver.ServiceAccount
+					Write-Warning "$Destination can't access its local directory $logdirectory. Please check if $serviceaccount has permissions"
+					continue
+				}
+			}
+			else
+			{
+				$logdirectory = Get-SqlDefaultPaths -SqlServer $destserver -FileType ldf
+			}
+			
+			if ($databases.count -eq 0)
+			{
+				$databases = $sourceserver.databases.Name
+			}
+			
+			if ($databases -or $exclude)
+			{
+				$dblist = $databases
 				
-				$lastbackup = Get-DbaBackupHistory -SqlServer $sourceserver -Databases $dbname -LastFull
+				if ($exclude)
+				{
+					$dblist = $dblist | Where-Object $_ -notin $exclude
+				}
 				
-				if ($lastbackup -eq $null)
+				foreach ($dbname in $dblist)
 				{
-					$lastbackup = @{ Path = "Not found" }
-					$fileexists = $false
-					$restoreresult = "Skipped"
-					$dbccresult = "Skipped"
-				}
-				elseif ($source -ne $destination -and $lastbackup[0].Path.StartsWith('\\') -eq $false)
-				{
-					$fileexists = "Skipped"
-					$restoreresult = "Restore not located on shared location"
-					$dbccresult = "Skipped"
-				}
-				elseif ((Test-SqlPath -SqlServer $destserver -Path $lastbackup[0].Path) -eq $false)
-				{
-					$fileexists = $false
-					$restoreresult = "Skipped"
-					$dbccresult = "Skipped"
-				}
-				else
-				{
-					$fileexists = $true
-					$restorelist = Read-DbaBackupHeader -SqlServer $destserver -Path $lastbackup[0].Path
-					$mb = $restorelist.BackupSizeMB
+					if ($dbname -eq 'tempdb') { continue }
 					
-					if ($MaxMB -gt 0 -and $MaxMB -lt $mb)
+					$db = $sourceserver.databases[$dbname]
+					
+					# The db check is needed when the number of databases exceeds 255, then it's no longer autopopulated
+					if (!$db)
 					{
-						$restoreresult = "The backup size for $dbname ($mb MB) exceeds the specified maximum size ($MaxMB MB)"
+						Write-Warning "$dbname does not exist on $source."
+						continue
+					}
+					
+					$lastbackup = Get-DbaBackupHistory -SqlServer $sourceserver -Databases $dbname -LastFull
+					
+					if ($lastbackup -eq $null)
+					{
+						$lastbackup = @{ Path = "Not found" }
+						$fileexists = $false
+						$restoreresult = "Skipped"
+						$dbccresult = "Skipped"
+					}
+					elseif ($source -ne $destination -and $lastbackup[0].Path.StartsWith('\\') -eq $false)
+					{
+						$fileexists = "Skipped"
+						$restoreresult = "Restore not located on shared location"
+						$dbccresult = "Skipped"
+					}
+					elseif ((Test-SqlPath -SqlServer $destserver -Path $lastbackup[0].Path) -eq $false)
+					{
+						$fileexists = $false
+						$restoreresult = "Skipped"
 						$dbccresult = "Skipped"
 					}
 					else
 					{
-						$filelist = $restorelist.Filelist
-						$dbname = $restorelist.DatabaseName
-						$temprestoreinfo = @()
+						$fileexists = $true
+						$restorelist = Read-DbaBackupHeader -SqlServer $destserver -Path $lastbackup[0].Path
+						$mb = $restorelist.BackupSizeMB
 						
-						$dbccElapsed = $restoreElapsed = $startRestore = $endRestore = $startDbcc = $endDbcc = $null
-						
-						foreach ($file in $filelist)
+						if ($MaxMB -gt 0 -and $MaxMB -lt $mb)
 						{
-							if ($file.Type -eq 'L')
-							{
-								$dir = $logdirectory
-							}
-							else
-							{
-								$dir = $datadirectory
-							}
+							$restoreresult = "The backup size for $dbname ($mb MB) exceeds the specified maximum size ($MaxMB MB)"
+							$dbccresult = "Skipped"
+						}
+						else
+						{
+							$filelist = $restorelist.Filelist
+							$dbname = $restorelist.DatabaseName
+							$temprestoreinfo = @()
 							
-							$fn = Split-Path $file.PhysicalName -Leaf
-							$temprestoreinfo += [pscustomobject]@{
-								Logical = $file.LogicalName
-								Physical = "$dir\$prefix-$fn"
-							}
-						}
-						
-						$ogdbname = $dbname
-						$dbname = "$prefix-$dbname"
-						
-						$destdb = $destserver.databases[$dbname]
-						
-						if ($destdb)
-						{
-							Write-Warning "$dbname already exists on $destination - skipping"
-							continue
-						}
-						
-						if ($Pscmdlet.ShouldProcess($destination, "Restoring $ogdbname as $dbname"))
-						{
-							$startRestore = Get-Date
-							$restoreresult = Restore-Database -SqlServer $destserver -DbName $dbname -backupfile $lastbackup.path -filestructure $temprestoreinfo -VerifyOnly:$VerifyOnly
-							$endRestore = Get-Date
+							$dbccElapsed = $restoreElapsed = $startRestore = $endRestore = $startDbcc = $endDbcc = $null
 							
-							$restorets = New-TimeSpan -Start $startRestore -End $endRestore
-							$ts = [timespan]::fromseconds($restorets.TotalSeconds)
-							$restoreElapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)
-						}
-						
-						if (!$NoCheck -and !$VerifyOnly)
-						{
-							# shouldprocess is taken care of in Start-DbccCheck
-							if ($ogdbname -eq "master")
+							foreach ($file in $filelist)
 							{
-								$dbccresult = "DBCC CHECKTABLE skipped for restored master ($dbname) database"
-							}
-							else
-							{
-								$startDbcc = Get-Date
-								$dbccresult = Start-DbccCheck -Server $destserver -DbName $dbname -Table 3>$null
-								$endDbcc = Get-Date
+								if ($file.Type -eq 'L')
+								{
+									$dir = $logdirectory
+								}
+								else
+								{
+									$dir = $datadirectory
+								}
 								
-								$dbccts = New-TimeSpan -Start $startDbcc -End $endDbcc
-								$ts = [timespan]::fromseconds($dbccts.TotalSeconds)
-								$dbccElapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)								
+								$fn = Split-Path $file.PhysicalName -Leaf
+								$temprestoreinfo += [pscustomobject]@{
+									Logical = $file.LogicalName
+									Physical = "$dir\$prefix-$fn"
+								}
 							}
-						}
-						
-						if ($VerifyOnly) { $dbccresult = "Skipped" }
-						
-						if (!$NoDrop -and $null -ne $destserver.databases[$dbname])
-						{
-							if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination"))
+							
+							$ogdbname = $dbname
+							$dbname = "$prefix-$dbname"
+							
+							$destdb = $destserver.databases[$dbname]
+							
+							if ($destdb)
 							{
-								## Drop the database
-								try
+								Write-Warning "$dbname already exists on $destination - skipping"
+								continue
+							}
+							
+							if ($Pscmdlet.ShouldProcess($destination, "Restoring $ogdbname as $dbname"))
+							{
+								$startRestore = Get-Date
+								if ($verifyonly)
 								{
-									$removeresult = Remove-SqlDatabase -SqlServer $destserver -DbName $dbname
-									Write-Verbose "Dropped $dbname Database on $destination"
+									
+									$restoreresult = Restore-Database -SqlServer $destserver -DbName $dbname -backupfile $lastbackup.path -filestructure $temprestoreinfo -VerifyOnly:$VerifyOnly
+									
 								}
-								catch
+								else
 								{
-									Write-Warning "Failed to Drop database $dbname on $destination"
-									Write-Exception $_
-									continue
+									# FULL
+									$restoreresult = Restore-Database -SqlServer $destserver -DbName $dbname -backupfile $lastbackup.path -filestructure $temprestoreinfo -VerifyOnly
+								}
+								
+								$endRestore = Get-Date
+								$restorets = New-TimeSpan -Start $startRestore -End $endRestore
+								$ts = [timespan]::fromseconds($restorets.TotalSeconds)
+								$restoreElapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)
+							}
+							
+							if (!$NoCheck -and !$VerifyOnly)
+							{
+								# shouldprocess is taken care of in Start-DbccCheck
+								if ($ogdbname -eq "master")
+								{
+									$dbccresult = "DBCC CHECKTABLE skipped for restored master ($dbname) database"
+								}
+								else
+								{
+									$startDbcc = Get-Date
+									$dbccresult = Start-DbccCheck -Server $destserver -DbName $dbname -Table 3>$null
+									$endDbcc = Get-Date
+									
+									$dbccts = New-TimeSpan -Start $startDbcc -End $endDbcc
+									$ts = [timespan]::fromseconds($dbccts.TotalSeconds)
+									$dbccElapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)
 								}
 							}
-						}
-						
-						if ($destserver.Databases[$dbname] -ne $null -and !$NoDrop)
-						{
-							Write-Warning "$dbname was not dropped"
+							
+							if ($VerifyOnly) { $dbccresult = "Skipped" }
+							
+							if (!$NoDrop -and $null -ne $destserver.databases[$dbname])
+							{
+								if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination"))
+								{
+									## Drop the database
+									try
+									{
+										$removeresult = Remove-SqlDatabase -SqlServer $destserver -DbName $dbname
+										Write-Verbose "Dropped $dbname Database on $destination"
+									}
+									catch
+									{
+										Write-Warning "Failed to Drop database $dbname on $destination"
+										Write-Exception $_
+										continue
+									}
+								}
+							}
+							
+							if ($destserver.Databases[$dbname] -ne $null -and !$NoDrop)
+							{
+								Write-Warning "$dbname was not dropped"
+							}
 						}
 					}
-				}
-				
-				if ($Pscmdlet.ShouldProcess("console", "Showing results"))
-				{
-					[pscustomobject]@{
-						SourceServer = $source
-						TestServer = $destination
-						Database = $db.name
-						FileExists = $fileexists
-						RestoreResult = $restoreresult
-						DbccResult = $dbccresult
-						SizeMB = ($lastbackup.TotalSizeMB | Measure-Object -Sum).Sum
-						RestoreStart = $startRestore
-						RestoreEnd = $endRestore
-						RestoreElapsed = $restoreElapsed
-						DbccStart = $startDbcc
-						DbccEnd = $endDbcc
-						DbccElapsed = $dbccElapsed
-						BackupTaken = $lastbackup.Start
-						BackupFiles = $lastbackup.Path
+					
+					if ($Pscmdlet.ShouldProcess("console", "Showing results"))
+					{
+						[pscustomobject]@{
+							SourceServer = $source
+							TestServer = $destination
+							Database = $db.name
+							FileExists = $fileexists
+							RestoreResult = $restoreresult
+							DbccResult = $dbccresult
+							SizeMB = ($lastbackup.TotalSizeMB | Measure-Object -Sum).Sum
+							RestoreStart = $startRestore
+							RestoreEnd = $endRestore
+							RestoreElapsed = $restoreElapsed
+							DbccStart = $startDbcc
+							DbccEnd = $endDbcc
+							DbccElapsed = $dbccElapsed
+							BackupTaken = $lastbackup.Start
+							BackupFiles = $lastbackup.Path
+						}
 					}
 				}
 			}
 		}
-	}
-	
-	END
-	{
-		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
 	}
 }
