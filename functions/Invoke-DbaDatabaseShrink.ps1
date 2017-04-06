@@ -113,6 +113,16 @@ Shrinks all databases on SQL2012 (not ideal for production)
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
+		
+		$sql = "SELECT 
+				indexstats.avg_fragmentation_in_percent
+				FROM sys.dm_db_index_physical_stats (DB_ID(), NULL, NULL, NULL, NULL) AS indexstats
+				INNER JOIN sys.tables dbtables on dbtables.[object_id] = indexstats.[object_id]
+				INNER JOIN sys.schemas dbschemas on dbtables.[schema_id] = dbschemas.[schema_id]
+				INNER JOIN sys.indexes AS dbindexes ON dbindexes.[object_id] = indexstats.[object_id]
+				AND indexstats.index_id = dbindexes.index_id
+				WHERE indexstats.database_id = DB_ID()
+				ORDER BY indexstats.avg_fragmentation_in_percent desc"
 	}
 	
 	PROCESS
@@ -175,10 +185,10 @@ Shrinks all databases on SQL2012 (not ideal for production)
 				{
 					if ($Pscmdlet.ShouldProcess("$db on $instance", "Shrinking from $([int]$startingsize) MB to $([int]$desiredSpaceAvailable) MB"))
 					{
-						if ($db.Tables.Indexes)
+						if ($db.Tables.Indexes.Name -and $server.VersionMajor -gt 8)
 						{
 							Write-Message -Level Verbose -Message "Getting average fragmentation"
-							$startingfrag = ($db.Tables.Indexes.EnumFragmentation().AverageFragmentation | Measure-Object -Average).Average
+							$startingfrag = (Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sql -Database $db.name | Select-Object -ExpandProperty avg_fragmentation_in_percent | Measure-Object -Average).Average
 						}
 						else
 						{
@@ -193,12 +203,10 @@ Shrinks all databases on SQL2012 (not ideal for production)
 						$dbsize = $db.Size
 						Write-Message -Level Verbose -Message "Final size: $([int]$dbsize) MB"
 						
-						if ($db.Tables.Indexes)
+						if ($db.Tables.Indexes.Name -and $server.VersionMajor -gt 8)
 						{
 							Write-Message -Level Verbose -Message "Refreshing indexes and getting average fragmentation"
-							$db.Tables.Refresh()
-							$db.Tables.Indexes.Refresh()
-							$endingdefrag = ($db.Tables.Indexes.EnumFragmentation().AverageFragmentation | Measure-Object -Average).Average
+							$endingdefrag = (Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sql -Database $db.name | Select-Object -ExpandProperty avg_fragmentation_in_percent | Measure-Object -Average).Average
 						}
 						else
 						{
@@ -225,12 +233,12 @@ Shrinks all databases on SQL2012 (not ideal for production)
 						Start = $start
 						End = $end
 						Elapsed = $elapsed
-						StartingSizeMB = [math]::Round($startingsize, 2)
-						StartingSpaceUsedMB = [math]::Round($spaceused, 2)
+						CurrentlyAllocatedMB = [math]::Round($startingsize, 2)
+						CurrentlyUsedMB = [math]::Round($spaceused, 2)
 						FinalSizeMB = [math]::Round($db.size, 2)
-						StartingSpaceAvailableMB = [math]::Round($spaceavailableMB, 2)
-						DesiredSpaceAvailableMB = [math]::Round($desiredSpaceAvailable, 2)
-						FinalSpaceAvailableMB = [math]::Round(($db.SpaceAvailable/1024), 2)
+						CurrentlyAvailableMB = [math]::Round($spaceavailableMB, 2)
+						DesiredAvailableMB = [math]::Round($desiredSpaceAvailable, 2)
+						FinalAvailableMB = [math]::Round(($db.SpaceAvailable/1024), 2)
 						StartingIndexFragmentationAvg = [math]::Round($startingfrag, 1)
 						EndingIndexFragmentationAvg = [math]::Round($endingdefrag, 1)
 						Notes = "Database shrinks can cause massive index fragmentation and negatively impact performance. You should now run DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE"
