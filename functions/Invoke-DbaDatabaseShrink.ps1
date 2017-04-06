@@ -46,6 +46,9 @@ Specifies the method that is used to shrink the database
 		TruncateOnly	
 			Data distribution is not affected. Files are truncated to reflect allocated space, recovering free space at the end of any file.
 
+.PARAMETER StatementTimeout
+Timeout in minutes. Defaults to 8 hours. Use 0 for infinite.
+
 .PARAMETER WhatIf
 Shows what would happen if the command were to run
 	
@@ -97,6 +100,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 		[int]$PercentFreeSpace = 0,
 		[ValidateSet('Default', 'EmptyFile', 'NoTruncate', 'TruncateOnly')]
 		[string]$ShrinkMethod = "Default",
+		[int]$StatementTimeout = 480,
 		[switch]$Silent
 	)
 	
@@ -106,6 +110,9 @@ Shrinks all databases on SQL2012 (not ideal for production)
 		{
 			Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential
 		}
+		
+		# change from mins to seconds, as needed by Server.ConnectionContext.StatementTimeout
+		$StatementTimeoutMinutes = $StatementTimeout * 60
 	}
 	
 	BEGIN
@@ -145,6 +152,10 @@ Shrinks all databases on SQL2012 (not ideal for production)
 				Stop-Function -Message "Can't connect to $instance. Moving on." -Continue
 			}
 			
+			# changing statement timeout to $StatementTimeout
+			Write-Message -Level Verbose -Message "Changing statement timeout to $StatementTimeout minutes"
+			$server.ConnectionContext.StatementTimeout = $StatementTimeoutMinutes
+			
 			# We have to exclude all the system databases since they cannot have the Query Store feature enabled
 			$dbs = $server.Databases | Where-Object { $_.IsSystemObject -eq $false }
 			
@@ -164,8 +175,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 				
 				if ($db.IsAccessible -eq $false)
 				{
-					Write-Message -Level Warning -Message "The database $db on server $instance is not accessible. Skipping database."
-					Continue
+					Stop-Function -Message "The database $db on server $instance is not accessible. Skipping database." -Continue
 				}
 				
 				$startingsize = $db.Size
@@ -195,9 +205,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 							$startingfrag = $null
 						}
 						
-						Write-Message -Level Verbose -Message "Starting shrink"
 						$start = Get-Date
-						$server.ConnectionContext.StatementTimeout = 0
 						
 						try
 						{
