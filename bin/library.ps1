@@ -20,7 +20,7 @@ if ($ImportLibrary)
     $source = @'
 using System;
 
-namespace sqlcollective.dbatools
+namespace Sqlcollective.Dbatools
 {
     namespace Configuration
     {
@@ -100,6 +100,11 @@ namespace sqlcollective.dbatools
             /// List of all registered connections.
             /// </summary>
             public static Dictionary<string, ManagementConnection> Connections = new Dictionary<string, ManagementConnection>();
+
+            /// <summary>
+            /// The time interval that must pass, before a connection using a known to not work connection protocol is reattempted
+            /// </summary>
+            public static TimeSpan BadConnectionTimeout = new TimeSpan(0, 15, 0);
         }
 
         /// <summary>
@@ -117,7 +122,7 @@ namespace sqlcollective.dbatools
             /// <summary>
             /// Did the last connection attempt using CimRM work?
             /// </summary>
-            public bool CimRM;
+            public ManagementConnectionProtocolState CimRM = ManagementConnectionProtocolState.Unknown;
 
             /// <summary>
             /// When was the last connection attempt using CimRM?
@@ -127,7 +132,7 @@ namespace sqlcollective.dbatools
             /// <summary>
             /// Did the last connection attempt using CimDCOM work?
             /// </summary>
-            public bool CimDCOM;
+            public ManagementConnectionProtocolState CimDCOM = ManagementConnectionProtocolState.Unknown;
 
             /// <summary>
             /// When was the last connection attempt using CimRM?
@@ -137,7 +142,7 @@ namespace sqlcollective.dbatools
             /// <summary>
             /// Did the last connection attempt using Wmi work?
             /// </summary>
-            public bool Wmi;
+            public ManagementConnectionProtocolState Wmi = ManagementConnectionProtocolState.Unknown;
 
             /// <summary>
             /// When was the last connection attempt using CimRM?
@@ -147,7 +152,7 @@ namespace sqlcollective.dbatools
             /// <summary>
             /// Did the last connection attempt using PowerShellRemoting work?
             /// </summary>
-            public bool PowerShellRemoting;
+            public ManagementConnectionProtocolState PowerShellRemoting = ManagementConnectionProtocolState.Unknown;
 
             /// <summary>
             /// When was the last connection attempt using CimRM?
@@ -163,22 +168,22 @@ namespace sqlcollective.dbatools
                 switch (Type)
                 {
                     case ManagementConnectionType.CimRM:
-                        CimRM = true;
+                        CimRM = ManagementConnectionProtocolState.Success;
                         LastCimRM = DateTime.Now;
                         break;
 
                     case ManagementConnectionType.CimDCOM:
-                        CimDCOM = true;
+                        CimDCOM = ManagementConnectionProtocolState.Success;
                         LastCimDCOM = DateTime.Now;
                         break;
 
                     case ManagementConnectionType.Wmi:
-                        Wmi = true;
+                        Wmi = ManagementConnectionProtocolState.Success;
                         LastWmi = DateTime.Now;
                         break;
 
                     case ManagementConnectionType.PowerShellRemoting:
-                        PowerShellRemoting = true;
+                        PowerShellRemoting = ManagementConnectionProtocolState.Success;
                         LastPowerShellRemoting = DateTime.Now;
                         break;
 
@@ -196,22 +201,22 @@ namespace sqlcollective.dbatools
                 switch (Type)
                 {
                     case ManagementConnectionType.CimRM:
-                        CimRM = false;
+                        CimRM = ManagementConnectionProtocolState.Error;
                         LastCimRM = DateTime.Now;
                         break;
 
                     case ManagementConnectionType.CimDCOM:
-                        CimDCOM = false;
+                        CimDCOM = ManagementConnectionProtocolState.Error;
                         LastCimDCOM = DateTime.Now;
                         break;
 
                     case ManagementConnectionType.Wmi:
-                        Wmi = false;
+                        Wmi = ManagementConnectionProtocolState.Error;
                         LastWmi = DateTime.Now;
                         break;
 
                     case ManagementConnectionType.PowerShellRemoting:
-                        PowerShellRemoting = false;
+                        PowerShellRemoting = ManagementConnectionProtocolState.Error;
                         LastPowerShellRemoting = DateTime.Now;
                         break;
 
@@ -345,34 +350,55 @@ namespace sqlcollective.dbatools
             /// Returns the next connection type to try.
             /// </summary>
             /// <param name="ExcludedTypes">Exclude any type already tried and failed</param>
+            /// <param name="Force">Overrides the timeout on bad connections</param>
             /// <returns>The next type to try.</returns>
-            public ManagementConnectionType GetConnectionType(ManagementConnectionType ExcludedTypes)
+            public ManagementConnectionType GetConnectionType(ManagementConnectionType ExcludedTypes, bool Force)
             {
                 ManagementConnectionType temp = ExcludedTypes | DisabledConnectionTypes;
 
-                if (((ManagementConnectionType.CimRM & temp) == 0) && CimRM)
+                #region Use working connections first
+                if (((ManagementConnectionType.CimRM & temp) == 0) && ((CimRM & ManagementConnectionProtocolState.Success) != 0))
                     return ManagementConnectionType.CimRM;
 
-                if (((ManagementConnectionType.CimDCOM & temp) == 0) && CimDCOM)
+                if (((ManagementConnectionType.CimDCOM & temp) == 0) && ((CimDCOM & ManagementConnectionProtocolState.Success) != 0))
                     return ManagementConnectionType.CimDCOM;
 
-                if (((ManagementConnectionType.Wmi & temp) == 0) && Wmi)
+                if (((ManagementConnectionType.Wmi & temp) == 0) && ((Wmi & ManagementConnectionProtocolState.Success) != 0))
                     return ManagementConnectionType.Wmi;
 
-                if (((ManagementConnectionType.PowerShellRemoting & temp) == 0) && PowerShellRemoting)
+                if (((ManagementConnectionType.PowerShellRemoting & temp) == 0) && ((PowerShellRemoting & ManagementConnectionProtocolState.Success) != 0))
                     return ManagementConnectionType.PowerShellRemoting;
+                #endregion Use working connections first
 
-                if (((ManagementConnectionType.CimRM & temp) == 0) && !CimRM)
+                #region Then prefer unknown connections
+                if (((ManagementConnectionType.CimRM & temp) == 0) && ((CimRM & ManagementConnectionProtocolState.Unknown) != 0))
                     return ManagementConnectionType.CimRM;
 
-                if (((ManagementConnectionType.CimDCOM & temp) == 0) && !CimDCOM)
+                if (((ManagementConnectionType.CimDCOM & temp) == 0) && ((CimDCOM & ManagementConnectionProtocolState.Unknown) != 0))
                     return ManagementConnectionType.CimDCOM;
 
-                if (((ManagementConnectionType.Wmi & temp) == 0) && !Wmi)
+                if (((ManagementConnectionType.Wmi & temp) == 0) && ((Wmi & ManagementConnectionProtocolState.Unknown) != 0))
                     return ManagementConnectionType.Wmi;
 
-                if (((ManagementConnectionType.PowerShellRemoting & temp) == 0) && !PowerShellRemoting)
+                if (((ManagementConnectionType.PowerShellRemoting & temp) == 0) && ((PowerShellRemoting & ManagementConnectionProtocolState.Unknown) != 0))
                     return ManagementConnectionType.PowerShellRemoting;
+                #endregion Then prefer unknown connections
+
+                #region Finally try what would not work previously
+                if (((ManagementConnectionType.CimRM & temp) == 0) && ((CimRM & ManagementConnectionProtocolState.Error) != 0) && ((LastCimRM + ConnectionHost.BadConnectionTimeout < DateTime.Now) | Force))
+                    return ManagementConnectionType.CimRM;
+
+                if (((ManagementConnectionType.CimDCOM & temp) == 0) && ((CimDCOM & ManagementConnectionProtocolState.Error) != 0) && ((LastCimDCOM + ConnectionHost.BadConnectionTimeout < DateTime.Now) | Force))
+                    return ManagementConnectionType.CimDCOM;
+
+                if (((ManagementConnectionType.Wmi & temp) == 0) && ((Wmi & ManagementConnectionProtocolState.Error) != 0) && ((LastWmi + ConnectionHost.BadConnectionTimeout < DateTime.Now) | Force))
+                    return ManagementConnectionType.Wmi;
+
+                if (((ManagementConnectionType.PowerShellRemoting & temp) == 0) && ((PowerShellRemoting & ManagementConnectionProtocolState.Error) != 0) && ((LastPowerShellRemoting + ConnectionHost.BadConnectionTimeout < DateTime.Now) | Force))
+                    return ManagementConnectionType.PowerShellRemoting;
+                #endregion Finally try what would not work previously
+
+                // Do not try to use disabled protocols
 
                 throw new PSInvalidOperationException("No connectiontypes left to try!");
             }
@@ -386,16 +412,16 @@ namespace sqlcollective.dbatools
             {
                 List<ManagementConnectionType> types = new List<ManagementConnectionType>();
 
-                if (((DisabledConnectionTypes & ManagementConnectionType.CimRM) == 0) && ((CimRM) || (LastCimRM < Timestamp)))
+                if (((DisabledConnectionTypes & ManagementConnectionType.CimRM) == 0) && ((CimRM == ManagementConnectionProtocolState.Success) || (LastCimRM < Timestamp)))
                     types.Add(ManagementConnectionType.CimRM);
 
-                if (((DisabledConnectionTypes & ManagementConnectionType.CimDCOM) == 0) && ((CimDCOM) || (LastCimDCOM < Timestamp)))
+                if (((DisabledConnectionTypes & ManagementConnectionType.CimDCOM) == 0) && ((CimDCOM == ManagementConnectionProtocolState.Success) || (LastCimDCOM < Timestamp)))
                     types.Add(ManagementConnectionType.CimDCOM);
 
-                if (((DisabledConnectionTypes & ManagementConnectionType.Wmi) == 0) && ((Wmi) || (LastWmi < Timestamp)))
+                if (((DisabledConnectionTypes & ManagementConnectionType.Wmi) == 0) && ((Wmi == ManagementConnectionProtocolState.Success) || (LastWmi < Timestamp)))
                     types.Add(ManagementConnectionType.Wmi);
 
-                if (((DisabledConnectionTypes & ManagementConnectionType.PowerShellRemoting) == 0) && ((PowerShellRemoting) || (LastPowerShellRemoting < Timestamp)))
+                if (((DisabledConnectionTypes & ManagementConnectionType.PowerShellRemoting) == 0) && ((PowerShellRemoting == ManagementConnectionProtocolState.Success) || (LastPowerShellRemoting < Timestamp)))
                     types.Add(ManagementConnectionType.PowerShellRemoting);
 
                 return types;
@@ -465,6 +491,32 @@ namespace sqlcollective.dbatools
         }
 
         /// <summary>
+        /// The various types of state a connection-protocol may have
+        /// </summary>
+        public enum ManagementConnectionProtocolState
+        {
+            /// <summary>
+            /// The default initial state, before any tests are performed
+            /// </summary>
+            Unknown = 1,
+
+            /// <summary>
+            /// A successful connection was last established
+            /// </summary>
+            Success = 2,
+
+            /// <summary>
+            /// Connecting using the relevant protocol failed last it was tried
+            /// </summary>
+            Error = 3,
+
+            /// <summary>
+            /// The relevant protocol has been disabled and should not be used
+            /// </summary>
+            Disabled = 4
+        }
+
+        /// <summary>
         /// The various ways to connect to a windows server fopr management purposes.
         /// </summary>
         [Flags]
@@ -499,6 +551,124 @@ namespace sqlcollective.dbatools
 
     namespace Database
     {
+        using Utility;
+
+        /// <summary>
+        /// Object containing the information about the history of mankind ... or a database backup. WHo knows.
+        /// </summary>
+        public class BackupHistory
+        {
+            /// <summary>
+            /// The name of the computer running MSSQL Server
+            /// </summary>
+            public string ComputerName;
+
+            /// <summary>
+            /// The Instance that was queried
+            /// </summary>
+            public string InstanceName;
+
+            /// <summary>
+            /// The full Instance name as seen from outside
+            /// </summary>
+            public string SqlInstance;
+
+            /// <summary>
+            /// The Database that was backed up
+            /// </summary>
+            public string Database;
+
+            /// <summary>
+            /// The user that is running the backup
+            /// </summary>
+            public string UserName;
+
+            /// <summary>
+            /// When was the backup started
+            /// </summary>
+            public DbaDateTime Start;
+
+            /// <summary>
+            /// When did the backup end
+            /// </summary>
+            public DbaDateTime End;
+
+            /// <summary>
+            /// What was the longest duration among the backups
+            /// </summary>
+            public DbaTimeSpan Duration;
+
+            /// <summary>
+            /// Where is the backup stored
+            /// </summary>
+            public string Path;
+
+            /// <summary>
+            /// What is the total size of the backup
+            /// </summary>
+            public Size TotalSize;
+
+            /// <summary>
+            /// The kind of backup this was
+            /// </summary>
+            public string Type;
+
+            /// <summary>
+            /// The ID for the Backup job
+            /// </summary>
+            public string BackupSetupId;
+
+            /// <summary>
+            /// What kind of backup-device was the backup stored to
+            /// </summary>
+            public string DeviceType;
+
+            /// <summary>
+            /// What is the name of the backup software?
+            /// </summary>
+            public string Software;
+
+            /// <summary>
+            /// The full name of the backup
+            /// </summary>
+            public string FullName;
+
+            /// <summary>
+            /// The files that are part of this backup
+            /// </summary>
+            public string[] FileList;
+
+            /// <summary>
+            /// The position of the backup
+            /// </summary>
+            public int Position;
+
+            /// <summary>
+            /// The first Log Sequence Number
+            /// </summary>
+            public long FirstLsn;
+
+            /// <summary>
+            /// The Log Squence Number that marks the beginning of the backup
+            /// </summary>
+            public long DatabaseBackupLsn;
+
+            /// <summary>
+            /// The checkpoint's Log Sequence Number
+            /// </summary>
+            public long CheckpointLsn;
+
+            /// <summary>
+            /// The last Log Sequence Number
+            /// </summary>
+            public long LastLsn;
+
+            /// <summary>
+            /// The primary version number of the Sql Server
+            /// </summary>
+            public int SoftwareVersionMajor;
+        }
+
         /// <summary>
         /// Class containing all dependency information over a database object
         /// </summary>
@@ -1084,9 +1254,9 @@ namespace sqlcollective.dbatools
         using System.Management.Automation;
 
         /// <summary>
-        /// Input converter for Windows Management Information
+        /// Input converter for Computer Management Information
         /// </summary>
-        public class DbaWmConnectionParameter
+        public class DbaCmConnectionParameter
         {
             #region Fields of contract
             /// <summary>
@@ -1113,7 +1283,7 @@ namespace sqlcollective.dbatools
             /// </summary>
             /// <param name="Input">The parameter object to convert</param>
             [ParameterContract(ParameterContractType.Operator, ParameterContractBehavior.Conversion)]
-            public static implicit operator ManagementConnection(DbaWmConnectionParameter Input)
+            public static implicit operator ManagementConnection(DbaCmConnectionParameter Input)
             {
                 return Input.Connection;
             }
@@ -1122,7 +1292,7 @@ namespace sqlcollective.dbatools
             /// Creates a new DbaWmConnectionParameter based on an input-name
             /// </summary>
             /// <param name="ComputerName">The name of the computer the connection is stored for.</param>
-            public DbaWmConnectionParameter(string ComputerName)
+            public DbaCmConnectionParameter(string ComputerName)
             {
                 InputObject = ComputerName;
                 if (! Utility.Validation.IsValidComputerTarget(ComputerName))
@@ -1154,7 +1324,7 @@ namespace sqlcollective.dbatools
             /// Creates a new DbaWmConnectionParameter based on an already existing connection object.
             /// </summary>
             /// <param name="Connection">The connection to accept</param>
-            public DbaWmConnectionParameter(ManagementConnection Connection)
+            public DbaCmConnectionParameter(ManagementConnection Connection)
             {
                 InputObject = Connection;
 
@@ -1167,7 +1337,7 @@ namespace sqlcollective.dbatools
             /// Tries to convert a generic input object into a true input.
             /// </summary>
             /// <param name="Input">Any damn object in the world</param>
-            public DbaWmConnectionParameter(object Input)
+            public DbaCmConnectionParameter(object Input)
             {
                 InputObject = Input;
                 PSObject tempInput = new PSObject(Input);
@@ -1188,13 +1358,13 @@ namespace sqlcollective.dbatools
                             ManagementConnection con = new ManagementConnection();
                             con.ComputerName = (string)tempInput.Properties["ComputerName"].Value;
 
-                            con.CimRM = (bool)tempInput.Properties["CimRM"].Value;
+                            con.CimRM = (ManagementConnectionProtocolState)tempInput.Properties["CimRM"].Value;
                             con.LastCimRM = (DateTime)tempInput.Properties["LastCimRM"].Value;
-                            con.CimDCOM = (bool)tempInput.Properties["CimDCOM"].Value;
+                            con.CimDCOM = (ManagementConnectionProtocolState)tempInput.Properties["CimDCOM"].Value;
                             con.LastCimDCOM = (DateTime)tempInput.Properties["LastCimDCOM"].Value;
-                            con.Wmi = (bool)tempInput.Properties["Wmi"].Value;
+                            con.Wmi = (ManagementConnectionProtocolState)tempInput.Properties["Wmi"].Value;
                             con.LastWmi = (DateTime)tempInput.Properties["LastWmi"].Value;
-                            con.PowerShellRemoting = (bool)tempInput.Properties["PowerShellRemoting"].Value;
+                            con.PowerShellRemoting = (ManagementConnectionProtocolState)tempInput.Properties["PowerShellRemoting"].Value;
                             con.LastPowerShellRemoting = (DateTime)tempInput.Properties["LastPowerShellRemoting"].Value;
 
                             con.Credentials = (PSCredential)tempInput.Properties["Credentials"].Value;
@@ -1328,7 +1498,1767 @@ namespace sqlcollective.dbatools
 
     namespace Utility
     {
+        using System.Management.Automation;
         using System.Text.RegularExpressions;
+
+        /// <summary>
+        /// Base class for wrapping around a DateTime object
+        /// </summary>
+        public class DbaDateTimeBase : IComparable, IComparable<DateTime>, IEquatable<DateTime> // IFormattable,
+        {
+            #region Properties
+            /// <summary>
+            /// The core resource, containing the actual timestamp
+            /// </summary>
+            internal DateTime _timestamp;
+
+            /// <summary>
+            /// Gets the date component of this instance.
+            /// </summary>
+            public DateTime Date
+            {
+                get { return _timestamp.Date; }
+            }
+
+            /// <summary>
+            /// Gets the day of the month represented by this instance.
+            /// </summary>
+            public int Day
+            {
+                get { return _timestamp.Day; }
+            }
+
+            /// <summary>
+            /// Gets the day of the week represented by this instance.
+            /// </summary>
+            public DayOfWeek DayOfWeek
+            {
+                get { return _timestamp.DayOfWeek; }
+            }
+
+            /// <summary>
+            /// Gets the day of the year represented by this instance.
+            /// </summary>
+            public int DayOfYear
+            {
+                get { return _timestamp.DayOfYear; }
+            }
+
+            /// <summary>
+            /// Gets the hour component of the date represented by this instance.
+            /// </summary>
+            public int Hour
+            {
+                get { return _timestamp.Hour; }
+            }
+
+            /// <summary>
+            /// Gets a value that indicates whether the time represented by this instance is based on local time, Coordinated Universal Time (UTC), or neither.
+            /// </summary>
+            public DateTimeKind Kind
+            {
+                get { return _timestamp.Kind; }
+            }
+
+            /// <summary>
+            /// Gets the milliseconds component of the date represented by this instance.
+            /// </summary>
+            public int Millisecond
+            {
+                get { return _timestamp.Millisecond; }
+            }
+
+            /// <summary>
+            /// Gets the minute component of the date represented by this instance.
+            /// </summary>
+            public int Minute
+            {
+                get { return _timestamp.Minute; }
+            }
+
+            /// <summary>
+            /// Gets the month component of the date represented by this instance.
+            /// </summary>
+            public int Month
+            {
+                get { return _timestamp.Month; }
+            }
+
+            /// <summary>
+            /// Gets the seconds component of the date represented by this instance.
+            /// </summary>
+            public int Second
+            {
+                get { return _timestamp.Second; }
+            }
+
+            /// <summary>
+            /// Gets the number of ticks that represent the date and time of this instance.
+            /// </summary>
+            public long Ticks
+            {
+                get { return _timestamp.Ticks; }
+            }
+
+            /// <summary>
+            /// Gets the time of day for this instance.
+            /// </summary>
+            public TimeSpan TimeOfDay
+            {
+                get { return _timestamp.TimeOfDay; }
+            }
+
+            /// <summary>
+            /// Gets the year component of the date represented by this instance.
+            /// </summary>
+            public int Year
+            {
+                get { return _timestamp.Year; }
+            }
+            #endregion Properties
+
+            #region Constructors
+            /// <summary>
+            /// Constructor that should never be called, since this class should never be instantiated. It's there for implicit calls on child classes.
+            /// </summary>
+            public DbaDateTimeBase()
+            {
+
+            }
+
+            /// <summary>
+            /// Constructs a generic timestamp object wrapper from an input timestamp object.
+            /// </summary>
+            /// <param name="Timestamp">The timestamp to wrap</param>
+            public DbaDateTimeBase(DateTime Timestamp)
+            {
+                _timestamp = Timestamp;
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ticks"></param>
+            public DbaDateTimeBase(long ticks)
+            {
+                _timestamp = new DateTime(ticks);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ticks"></param>
+            /// <param name="kind"></param>
+            public DbaDateTimeBase(long ticks, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(ticks, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            public DbaDateTimeBase(int year, int month, int day)
+            {
+                _timestamp = new DateTime(year, month, day);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="calendar"></param>
+            public DbaDateTimeBase(int year, int month, int day, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            public DbaDateTimeBase(int year, int month, int day, int hour, int minute, int second)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="kind"></param>
+            public DbaDateTimeBase(int year, int month, int day, int hour, int minute, int second, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="calendar"></param>
+            public DbaDateTimeBase(int year, int month, int day, int hour, int minute, int second, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            public DbaDateTimeBase(int year, int month, int day, int hour, int minute, int second, int millisecond)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="kind"></param>
+            public DbaDateTimeBase(int year, int month, int day, int hour, int minute, int second, int millisecond, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="calendar"></param>
+            public DbaDateTimeBase(int year, int month, int day, int hour, int minute, int second, int millisecond, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="calendar"></param>
+            /// <param name="kind"></param>
+            public DbaDateTimeBase(int year, int month, int day, int hour, int minute, int second, int millisecond, System.Globalization.Calendar calendar, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, calendar, kind);
+            }
+            #endregion Constructors
+
+            #region Methods
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public DateTime Add(TimeSpan value)
+            {
+                return _timestamp.Add(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public DateTime AddDays(double value)
+            {
+                return _timestamp.AddDays(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public DateTime AddHours(double value)
+            {
+                return _timestamp.AddHours(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public DateTime AddMilliseconds(double value)
+            {
+                return _timestamp.AddMilliseconds(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public DateTime AddMinutes(double value)
+            {
+                return _timestamp.AddMinutes(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="months"></param>
+            /// <returns></returns>
+            public DateTime AddMonths(int months)
+            {
+                return _timestamp.AddMonths(months);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public DateTime AddSeconds(double value)
+            {
+                return _timestamp.AddSeconds(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public DateTime AddTicks(long value)
+            {
+                return _timestamp.AddTicks(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public DateTime AddYears(int value)
+            {
+                return _timestamp.AddYears(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public int CompareTo(System.Object value)
+            {
+                return _timestamp.CompareTo(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public int CompareTo(DateTime value)
+            {
+                return _timestamp.CompareTo(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public override bool Equals(System.Object value)
+            {
+                return _timestamp.Equals(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public bool Equals(DateTime value)
+            {
+                return _timestamp.Equals(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public string[] GetDateTimeFormats()
+            {
+                return _timestamp.GetDateTimeFormats();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="provider"></param>
+            /// <returns></returns>
+            public string[] GetDateTimeFormats(System.IFormatProvider provider)
+            {
+                return _timestamp.GetDateTimeFormats(provider);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="format"></param>
+            /// <returns></returns>
+            public string[] GetDateTimeFormats(char format)
+            {
+                return _timestamp.GetDateTimeFormats(format);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="format"></param>
+            /// <param name="provider"></param>
+            /// <returns></returns>
+            public string[] GetDateTimeFormats(char format, System.IFormatProvider provider)
+            {
+                return _timestamp.GetDateTimeFormats(format, provider);
+            }
+
+            /// <summary>
+            /// Retrieve base DateTime object, this is a wrapper for
+            /// </summary>
+            /// <returns>Base DateTime object</returns>
+            public DateTime GetBaseObject()
+            {
+                return _timestamp;
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public override int GetHashCode()
+            {
+                return _timestamp.GetHashCode();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public System.TypeCode GetTypeCode()
+            {
+                return _timestamp.GetTypeCode();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public bool IsDaylightSavingTime()
+            {
+                return _timestamp.IsDaylightSavingTime();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public TimeSpan Subtract(DateTime value)
+            {
+                return _timestamp.Subtract(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public DateTime Subtract(TimeSpan value)
+            {
+                return _timestamp.Subtract(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public long ToBinary()
+            {
+                return _timestamp.ToBinary();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public long ToFileTime()
+            {
+                return _timestamp.ToFileTime();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public long ToFileTimeUtc()
+            {
+                return _timestamp.ToFileTimeUtc();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public DateTime ToLocalTime()
+            {
+                return _timestamp.ToLocalTime();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public string ToLongDateString()
+            {
+                return _timestamp.ToLongDateString();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public string ToLongTimeString()
+            {
+                return _timestamp.ToLongTimeString();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public double ToOADate()
+            {
+                return _timestamp.ToOADate();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public string ToShortDateString()
+            {
+                return _timestamp.ToShortDateString();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public string ToShortTimeString()
+            {
+                return _timestamp.ToShortTimeString();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="format"></param>
+            /// <returns></returns>
+            public string ToString(string format)
+            {
+                return _timestamp.ToString(format);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="provider"></param>
+            /// <returns></returns>
+            public string ToString(System.IFormatProvider provider)
+            {
+                return _timestamp.ToString(provider);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="format"></param>
+            /// <param name="provider"></param>
+            /// <returns></returns>
+            public string ToString(string format, System.IFormatProvider provider)
+            {
+                return _timestamp.ToString(format, provider);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public DateTime ToUniversalTime()
+            {
+                return _timestamp.ToUniversalTime();
+            }
+
+
+            #endregion Methods
+
+            #region Operators
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="Timestamp"></param>
+            /// <param name="Duration"></param>
+            /// <returns></returns>
+            public static DbaDateTimeBase operator +(DbaDateTimeBase Timestamp, TimeSpan Duration)
+            {
+                return Timestamp.Add(Duration);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="Timestamp"></param>
+            /// <param name="Duration"></param>
+            /// <returns></returns>
+            public static DbaDateTimeBase operator -(DbaDateTimeBase Timestamp, TimeSpan Duration)
+            {
+                return Timestamp.Subtract(Duration);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="Timestamp1"></param>
+            /// <param name="Timestamp2"></param>
+            /// <returns></returns>
+            public static bool operator ==(DbaDateTimeBase Timestamp1, DbaDateTimeBase Timestamp2)
+            {
+                return (Timestamp1.GetBaseObject().Equals(Timestamp2.GetBaseObject()));
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="Timestamp1"></param>
+            /// <param name="Timestamp2"></param>
+            /// <returns></returns>
+            public static bool operator !=(DbaDateTimeBase Timestamp1, DbaDateTimeBase Timestamp2)
+            {
+                return (!Timestamp1.GetBaseObject().Equals(Timestamp2.GetBaseObject()));
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="Timestamp1"></param>
+            /// <param name="Timestamp2"></param>
+            /// <returns></returns>
+            public static bool operator >(DbaDateTimeBase Timestamp1, DbaDateTimeBase Timestamp2)
+            {
+                return Timestamp1.GetBaseObject() > Timestamp2.GetBaseObject();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="Timestamp1"></param>
+            /// <param name="Timestamp2"></param>
+            /// <returns></returns>
+            public static bool operator <(DbaDateTimeBase Timestamp1, DbaDateTimeBase Timestamp2)
+            {
+                return Timestamp1.GetBaseObject() < Timestamp2.GetBaseObject();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="Timestamp1"></param>
+            /// <param name="Timestamp2"></param>
+            /// <returns></returns>
+            public static bool operator >=(DbaDateTimeBase Timestamp1, DbaDateTimeBase Timestamp2)
+            {
+                return Timestamp1.GetBaseObject() >= Timestamp2.GetBaseObject();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="Timestamp1"></param>
+            /// <param name="Timestamp2"></param>
+            /// <returns></returns>
+            public static bool operator <=(DbaDateTimeBase Timestamp1, DbaDateTimeBase Timestamp2)
+            {
+                return Timestamp1.GetBaseObject() <= Timestamp2.GetBaseObject();
+            }
+            #endregion Operators
+
+            #region Implicit Conversions
+            /// <summary>
+            /// Implicitly convert DbaDateTimeBase to DateTime
+            /// </summary>
+            /// <param name="Base">The source object to convert</param>
+            public static implicit operator DateTime(DbaDateTimeBase Base)
+            {
+                return Base.GetBaseObject();
+            }
+
+            /// <summary>
+            /// Implicitly convert DateTime to DbaDateTimeBase
+            /// </summary>
+            /// <param name="Base">The object to convert</param>
+            public static implicit operator DbaDateTimeBase(DateTime Base)
+            {
+                return new DbaDateTimeBase(Base.Ticks, Base.Kind);
+            }
+            #endregion Implicit Conversions
+        }
+
+        /// <summary>
+        /// A dbatools-internal datetime wrapper for neater display
+        /// </summary>
+        public class DbaDate : DbaDateTimeBase
+        {
+            #region Constructors
+            /// <summary>
+            /// Constructs a generic timestamp object wrapper from an input timestamp object.
+            /// </summary>
+            /// <param name="Timestamp">The timestamp to wrap</param>
+            public DbaDate(DateTime Timestamp)
+            {
+                _timestamp = Timestamp;
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ticks"></param>
+            public DbaDate(long ticks)
+            {
+                _timestamp = new DateTime(ticks);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ticks"></param>
+            /// <param name="kind"></param>
+            public DbaDate(long ticks, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(ticks, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            public DbaDate(int year, int month, int day)
+            {
+                _timestamp = new DateTime(year, month, day);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="calendar"></param>
+            public DbaDate(int year, int month, int day, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            public DbaDate(int year, int month, int day, int hour, int minute, int second)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="kind"></param>
+            public DbaDate(int year, int month, int day, int hour, int minute, int second, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="calendar"></param>
+            public DbaDate(int year, int month, int day, int hour, int minute, int second, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            public DbaDate(int year, int month, int day, int hour, int minute, int second, int millisecond)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="kind"></param>
+            public DbaDate(int year, int month, int day, int hour, int minute, int second, int millisecond, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="calendar"></param>
+            public DbaDate(int year, int month, int day, int hour, int minute, int second, int millisecond, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="calendar"></param>
+            /// <param name="kind"></param>
+            public DbaDate(int year, int month, int day, int hour, int minute, int second, int millisecond, System.Globalization.Calendar calendar, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, calendar, kind);
+            }
+            #endregion Constructors
+
+            /// <summary>
+            /// Provids the default-formated string, using the defined default formatting.
+            /// </summary>
+            /// <returns>Formatted datetime-string</returns>
+            public override string ToString()
+            {
+                if (UtilityHost.DisableCustomDateTime) { return _timestamp.ToString(); }
+                return _timestamp.ToString(UtilityHost.FormatDate);
+            }
+
+            #region Implicit Conversions
+            /// <summary>
+            /// Implicitly convert to DateTime
+            /// </summary>
+            /// <param name="Base">The source object to convert</param>
+            public static implicit operator DateTime(DbaDate Base)
+            {
+                return Base.GetBaseObject();
+            }
+
+            /// <summary>
+            /// Implicitly convert from DateTime
+            /// </summary>
+            /// <param name="Base">The object to convert</param>
+            public static implicit operator DbaDate(DateTime Base)
+            {
+                return new DbaDate(Base);
+            }
+
+            /// <summary>
+            /// Implicitly convert to DbaDate
+            /// </summary>
+            /// <param name="Base">The source object to convert</param>
+            public static implicit operator DbaDateTime(DbaDate Base)
+            {
+                return new DbaDateTime(Base.GetBaseObject());
+            }
+
+            /// <summary>
+            /// Implicitly convert to DbaTime
+            /// </summary>
+            /// <param name="Base">The source object to convert</param>
+            public static implicit operator DbaTime(DbaDate Base)
+            {
+                return new DbaTime(Base.GetBaseObject());
+            }
+            #endregion Implicit Conversions
+        }
+
+        /// <summary>
+        /// A dbatools-internal datetime wrapper for neater display
+        /// </summary>
+        public class DbaDateTime : DbaDateTimeBase
+        {
+            #region Constructors
+            /// <summary>
+            /// Constructs a generic timestamp object wrapper from an input timestamp object.
+            /// </summary>
+            /// <param name="Timestamp">The timestamp to wrap</param>
+            public DbaDateTime(DateTime Timestamp)
+            {
+                _timestamp = Timestamp;
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ticks"></param>
+            public DbaDateTime(long ticks)
+            {
+                _timestamp = new DateTime(ticks);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ticks"></param>
+            /// <param name="kind"></param>
+            public DbaDateTime(long ticks, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(ticks, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            public DbaDateTime(int year, int month, int day)
+            {
+                _timestamp = new DateTime(year, month, day);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="calendar"></param>
+            public DbaDateTime(int year, int month, int day, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            public DbaDateTime(int year, int month, int day, int hour, int minute, int second)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="kind"></param>
+            public DbaDateTime(int year, int month, int day, int hour, int minute, int second, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="calendar"></param>
+            public DbaDateTime(int year, int month, int day, int hour, int minute, int second, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            public DbaDateTime(int year, int month, int day, int hour, int minute, int second, int millisecond)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="kind"></param>
+            public DbaDateTime(int year, int month, int day, int hour, int minute, int second, int millisecond, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="calendar"></param>
+            public DbaDateTime(int year, int month, int day, int hour, int minute, int second, int millisecond, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="calendar"></param>
+            /// <param name="kind"></param>
+            public DbaDateTime(int year, int month, int day, int hour, int minute, int second, int millisecond, System.Globalization.Calendar calendar, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, calendar, kind);
+            }
+            #endregion Constructors
+
+            /// <summary>
+            /// Provids the default-formated string, using the defined default formatting.
+            /// </summary>
+            /// <returns>Formatted datetime-string</returns>
+            public override string ToString()
+            {
+                if (UtilityHost.DisableCustomDateTime) { return _timestamp.ToString(); }
+                return _timestamp.ToString(UtilityHost.FormatDateTime);
+            }
+
+            #region Implicit Conversions
+            /// <summary>
+            /// Implicitly convert to DateTime
+            /// </summary>
+            /// <param name="Base">The source object to convert</param>
+            public static implicit operator DateTime(DbaDateTime Base)
+            {
+                return Base.GetBaseObject();
+            }
+
+            /// <summary>
+            /// Implicitly convert from DateTime
+            /// </summary>
+            /// <param name="Base">The object to convert</param>
+            public static implicit operator DbaDateTime(DateTime Base)
+            {
+                return new DbaDateTime(Base);
+            }
+
+            /// <summary>
+            /// Implicitly convert to DbaDate
+            /// </summary>
+            /// <param name="Base">The source object to convert</param>
+            public static implicit operator DbaDate(DbaDateTime Base)
+            {
+                return new DbaDate(Base.GetBaseObject());
+            }
+
+            /// <summary>
+            /// Implicitly convert to DbaTime
+            /// </summary>
+            /// <param name="Base">The source object to convert</param>
+            public static implicit operator DbaTime(DbaDateTime Base)
+            {
+                return new DbaTime(Base.GetBaseObject());
+            }
+            #endregion Implicit Conversions
+        }
+
+        /// <summary>
+        /// A dbatools-internal datetime wrapper for neater display
+        /// </summary>
+        public class DbaTime : DbaDateTimeBase
+        {
+            #region Constructors
+            /// <summary>
+            /// Constructs a generic timestamp object wrapper from an input timestamp object.
+            /// </summary>
+            /// <param name="Timestamp">The timestamp to wrap</param>
+            public DbaTime(DateTime Timestamp)
+            {
+                _timestamp = Timestamp;
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ticks"></param>
+            public DbaTime(long ticks)
+            {
+                _timestamp = new DateTime(ticks);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ticks"></param>
+            /// <param name="kind"></param>
+            public DbaTime(long ticks, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(ticks, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            public DbaTime(int year, int month, int day)
+            {
+                _timestamp = new DateTime(year, month, day);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="calendar"></param>
+            public DbaTime(int year, int month, int day, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            public DbaTime(int year, int month, int day, int hour, int minute, int second)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="kind"></param>
+            public DbaTime(int year, int month, int day, int hour, int minute, int second, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="calendar"></param>
+            public DbaTime(int year, int month, int day, int hour, int minute, int second, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            public DbaTime(int year, int month, int day, int hour, int minute, int second, int millisecond)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="kind"></param>
+            public DbaTime(int year, int month, int day, int hour, int minute, int second, int millisecond, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="calendar"></param>
+            public DbaTime(int year, int month, int day, int hour, int minute, int second, int millisecond, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="calendar"></param>
+            /// <param name="kind"></param>
+            public DbaTime(int year, int month, int day, int hour, int minute, int second, int millisecond, System.Globalization.Calendar calendar, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, calendar, kind);
+            }
+            #endregion Constructors
+
+            /// <summary>
+            /// Provids the default-formated string, using the defined default formatting.
+            /// </summary>
+            /// <returns>Formatted datetime-string</returns>
+            public override string ToString()
+            {
+                if (UtilityHost.DisableCustomDateTime) { return _timestamp.ToString(); }
+                return _timestamp.ToString(UtilityHost.FormatTime);
+            }
+
+            #region Implicit Conversions
+            /// <summary>
+            /// Implicitly convert to DateTime
+            /// </summary>
+            /// <param name="Base">The source object to convert</param>
+            public static implicit operator DateTime(DbaTime Base)
+            {
+                return Base.GetBaseObject();
+            }
+
+            /// <summary>
+            /// Implicitly convert from DateTime
+            /// </summary>
+            /// <param name="Base">The object to convert</param>
+            public static implicit operator DbaTime(DateTime Base)
+            {
+                return new DbaTime(Base);
+            }
+
+            /// <summary>
+            /// Implicitly convert to DbaDate
+            /// </summary>
+            /// <param name="Base">The source object to convert</param>
+            public static implicit operator DbaDate(DbaTime Base)
+            {
+                return new DbaDate(Base.GetBaseObject());
+            }
+
+            /// <summary>
+            /// Implicitly convert to DbaTime
+            /// </summary>
+            /// <param name="Base">The source object to convert</param>
+            public static implicit operator DbaDateTime(DbaTime Base)
+            {
+                return new DbaDateTime(Base.GetBaseObject());
+            }
+
+            /// <summary>
+            /// Implicitly convert to string
+            /// </summary>
+            /// <param name="Base">Object to convert</param>
+            public static implicit operator string(DbaTime Base)
+            {
+                return Base.ToString();
+            }
+            #endregion Implicit Conversions
+        }
+
+        /// <summary>
+        /// A wrapper class, encapsuling a regular TimeSpan object. Used to provide custom timespan display.
+        /// </summary>
+        public class DbaTimeSpan : IComparable, IComparable<TimeSpan>, IComparable<DbaTimeSpan>, IEquatable<TimeSpan>
+        {
+            internal TimeSpan _timespan;
+
+            #region Properties
+            /// <summary>
+            /// Gets the days component of the time interval represented by the current TimeSpan structure.
+            /// </summary>
+            public int Days
+            {
+                get
+                {
+                    return _timespan.Days;
+                }
+            }
+            
+            /// <summary>
+            /// Gets the hours component of the time interval represented by the current TimeSpan structure.
+            /// </summary>
+            public int Hours
+            {
+                get
+                {
+                    return _timespan.Hours;
+                }
+            }
+
+            /// <summary>
+            /// Gets the milliseconds component of the time interval represented by the current TimeSpan structure.
+            /// </summary>
+            public int Milliseconds
+            {
+                get
+                {
+                    return _timespan.Milliseconds;
+                }
+            }
+
+            /// <summary>
+            /// Gets the minutes component of the time interval represented by the current TimeSpan structure.
+            /// </summary>
+            public int Minutes
+            {
+                get
+                {
+                    return _timespan.Minutes;
+                }
+            }
+
+            /// <summary>
+            /// Gets the seconds component of the time interval represented by the current TimeSpan structure.
+            /// </summary>
+            public int Seconds
+            {
+                get
+                {
+                    return _timespan.Seconds;
+                }
+            }
+
+            /// <summary>
+            /// Gets the number of ticks that represent the value of the current TimeSpan structure.
+            /// </summary>
+            public long Ticks
+            {
+                get
+                {
+                    return _timespan.Ticks;
+                }
+            }
+
+            /// <summary>
+            /// Gets the value of the current TimeSpan structure expressed in whole and fractional days.
+            /// </summary>
+            public double TotalDays
+            {
+                get
+                {
+                    return _timespan.TotalDays;
+                }
+            }
+
+            /// <summary>
+            /// Gets the value of the current TimeSpan structure expressed in whole and fractional hours.
+            /// </summary>
+            public double TotalHours
+            {
+                get
+                {
+                    return _timespan.TotalHours;
+                }
+            }
+
+            /// <summary>
+            /// Gets the value of the current TimeSpan structure expressed in whole and fractional milliseconds.
+            /// </summary>
+            public double TotalMilliseconds
+            {
+                get
+                {
+                    return _timespan.TotalMilliseconds;
+                }
+            }
+
+            /// <summary>
+            /// Gets the value of the current TimeSpan structure expressed in whole and fractional minutes.
+            /// </summary>
+            public double TotalMinutes
+            {
+                get
+                {
+                    return _timespan.TotalMinutes;
+                }
+            }
+
+            /// <summary>
+            /// Gets the value of the current TimeSpan structure expressed in whole and fractional seconds.
+            /// </summary>
+            public double TotalSeconds
+            {
+                get
+                {
+                    return _timespan.TotalSeconds;
+                }
+            }
+            #endregion Properties
+
+            #region Constructors
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="Timespan"></param>
+            public DbaTimeSpan(TimeSpan Timespan)
+            {
+                _timespan = Timespan;
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ticks"></param>
+            public DbaTimeSpan(long ticks)
+            {
+                _timespan = new TimeSpan(ticks);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="hours"></param>
+            /// <param name="minutes"></param>
+            /// <param name="seconds"></param>
+            public DbaTimeSpan(int hours, int minutes, int seconds)
+            {
+                _timespan = new TimeSpan(hours, minutes, seconds);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="days"></param>
+            /// <param name="hours"></param>
+            /// <param name="minutes"></param>
+            /// <param name="seconds"></param>
+            public DbaTimeSpan(int days, int hours, int minutes, int seconds)
+            {
+                _timespan = new TimeSpan(days, hours, minutes, seconds);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="days"></param>
+            /// <param name="hours"></param>
+            /// <param name="minutes"></param>
+            /// <param name="seconds"></param>
+            /// <param name="milliseconds"></param>
+            public DbaTimeSpan(int days, int hours, int minutes, int seconds, int milliseconds)
+            {
+                _timespan = new TimeSpan(days, hours, minutes, seconds, milliseconds);
+            }
+            #endregion Constructors
+
+            #region Methods
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ts"></param>
+            /// <returns></returns>
+            public TimeSpan Add(TimeSpan ts)
+            {
+                return _timespan.Add(ts);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public int CompareTo(System.Object value)
+            {
+                return _timespan.CompareTo(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public int CompareTo(TimeSpan value)
+            {
+                return _timespan.CompareTo(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public int CompareTo(DbaTimeSpan value)
+            {
+                return _timespan.CompareTo(value.GetBaseObject());
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public TimeSpan Duration()
+            {
+                return _timespan.Duration();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public override bool Equals(System.Object value)
+            {
+                return _timespan.Equals(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="obj"></param>
+            /// <returns></returns>
+            public bool Equals(TimeSpan obj)
+            {
+                return _timespan.Equals(obj);
+            }
+
+            /// <summary>
+            /// Returns the wrapped base object
+            /// </summary>
+            /// <returns>The base object</returns>
+            public TimeSpan GetBaseObject()
+            {
+                return _timespan;
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public override int GetHashCode()
+            {
+                return _timespan.GetHashCode();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public TimeSpan Negate()
+            {
+                return _timespan.Negate();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ts"></param>
+            /// <returns></returns>
+            public TimeSpan Subtract(TimeSpan ts)
+            {
+                return _timespan.Subtract(ts);
+            }
+
+            /// <summary>
+            /// Returns the default string representation of the TimeSpan object
+            /// </summary>
+            /// <returns>The string representation of the DbaTimeSpan object</returns>
+            public override string ToString()
+            {
+                if (UtilityHost.DisableCustomTimeSpan) { return _timespan.ToString(); }
+                else if (_timespan.Ticks % 10000000 == 0) { return _timespan.ToString(); }
+                else
+                {
+                    string temp = _timespan.ToString();
+
+                    if (_timespan.TotalSeconds < 10) { temp = temp.Substring(0, temp.LastIndexOf(".") + 3); }
+                    else if (_timespan.TotalSeconds < 100) { temp = temp.Substring(0, temp.LastIndexOf(".") + 2); }
+                    else { temp = temp.Substring(0, temp.LastIndexOf(".")); }
+
+                    return temp;
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="format"></param>
+            /// <returns></returns>
+            public string ToString(string format)
+            {
+                return _timespan.ToString(format);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="format"></param>
+            /// <param name="formatProvider"></param>
+            /// <returns></returns>
+            public string ToString(string format, System.IFormatProvider formatProvider)
+            {
+                return _timespan.ToString(format, formatProvider);
+            }
+            #endregion Methods
+
+            #region Implicit Operators
+            /// <summary>
+            /// Implicitly converts a DbaTimeSpan object into a TimeSpan object
+            /// </summary>
+            /// <param name="Base">The original object to revert</param>
+            public static implicit operator TimeSpan(DbaTimeSpan Base)
+            {
+                try { return Base.GetBaseObject(); }
+                catch { }
+                return new TimeSpan();
+            }
+
+            /// <summary>
+            /// Implicitly converts a TimeSpan object into a DbaTimeSpan object
+            /// </summary>
+            /// <param name="Base">The original object to wrap</param>
+            public static implicit operator DbaTimeSpan(TimeSpan Base)
+            {
+                return new DbaTimeSpan(Base);
+            }
+            #endregion Implicit Operators
+        }
 
         /// <summary>
         /// Static class that holds useful regex patterns, ready for use
@@ -1382,6 +3312,332 @@ namespace sqlcollective.dbatools
         }
 
         /// <summary>
+        /// Class that reports File size.
+        /// </summary>
+        [Serializable]
+        public class Size : IComparable<Size>, IComparable
+        {
+            /// <summary>
+            /// Number of bytes contained in whatever object uses this object as a property
+            /// </summary>
+            public long Byte
+            {
+                get
+                {
+                    return _Byte;
+                }
+                set
+                {
+                    _Byte = value;
+                }
+            }
+            private long _Byte = -1;
+
+            /// <summary>
+            /// Kilobyte representation of the bytes
+            /// </summary>
+            public double Kilobyte
+            {
+                get
+                {
+                    return ((double)_Byte / (double)1024);
+                }
+                set
+                {
+
+                }
+            }
+
+            /// <summary>
+            /// Megabyte representation of the bytes
+            /// </summary>
+            public double Megabyte
+            {
+                get
+                {
+                    return ((double)_Byte / (double)1048576);
+                }
+                set
+                {
+
+                }
+            }
+
+            /// <summary>
+            /// Gigabyte representation of the bytes
+            /// </summary>
+            public double Gigabyte
+            {
+                get
+                {
+                    return ((double)_Byte / (double)1073741824);
+                }
+                set
+                {
+
+                }
+            }
+
+            /// <summary>
+            /// Terabyte representation of the bytes
+            /// </summary>
+            public double Terabyte
+            {
+                get
+                {
+                    return ((double)_Byte / (double)1099511627776);
+                }
+                set
+                {
+
+                }
+            }
+
+            /// <summary>
+            /// Number if digits behind the dot.
+            /// </summary>
+            public int Digits
+            {
+                get
+                {
+                    return _Digits;
+                }
+                set
+                {
+                    if (value < 0) { _Digits = 0; }
+                    else { _Digits = value; }
+                }
+            }
+            private int _Digits = 2;
+
+            /// <summary>
+            /// Shows the default string representation of size
+            /// </summary>
+            /// <returns></returns>
+            public override string ToString()
+            {
+                string format = "{0:N" + _Digits + "}";
+
+                if (Terabyte > 1)
+                {
+                    return (String.Format(format, Terabyte) + " TB");
+                }
+                else if (Gigabyte > 1)
+                {
+                    return (String.Format(format, Gigabyte) + " GB");
+                }
+                else if (Megabyte > 1)
+                {
+                    return (String.Format(format, Megabyte) + " MB");
+                }
+                else if (Kilobyte > 1)
+                {
+                    return (String.Format(format, Kilobyte) + " KB");
+                }
+                else if (Byte > -1)
+                {
+                    return (String.Format(format, Byte) + " B");
+                }
+                else { return ""; }
+            }
+
+            /// <summary>
+            /// Simple equality test
+            /// </summary>
+            /// <param name="obj">The object to test it against</param>
+            /// <returns>True if equal, false elsewise</returns>
+            public override bool Equals(object obj)
+            {
+                return ((obj != null) && (obj is Size) && (this.Byte == ((Size)obj).Byte));
+            }
+
+            /// <summary>
+            /// Meaningless, but required
+            /// </summary>
+            /// <returns>Some meaningless output</returns>
+            public override int GetHashCode()
+            {
+                return this.Byte.GetHashCode();
+            }
+
+            /// <summary>
+            /// Creates an empty size.
+            /// </summary>
+            public Size()
+            {
+
+            }
+
+            /// <summary>
+            /// Creates a size with some content
+            /// </summary>
+            /// <param name="Byte">The length in bytes to set the size to</param>
+            public Size(long Byte)
+            {
+                this.Byte = Byte;
+            }
+
+            /// <summary>
+            /// Some more interface implementation. Used to sort the object
+            /// </summary>
+            /// <param name="obj">The object to compare to</param>
+            /// <returns>Something</returns>
+            public int CompareTo(Size obj)
+            {
+                if (this.Byte == obj.Byte) { return 0; }
+                if (this.Byte < obj.Byte) { return -1; }
+
+                return 1;
+            }
+
+            /// <summary>
+            /// Some more interface implementation. Used to sort the object
+            /// </summary>
+            /// <param name="obj">The object to compare to</param>
+            /// <returns>Something</returns>
+            public int CompareTo(Object obj)
+            {
+                try
+                {
+                    if (this.Byte == ((Size)obj).Byte) { return 0; }
+                    if (this.Byte < ((Size)obj).Byte) { return -1; }
+
+                    return 1;
+                }
+                catch { return 0; }
+            }
+
+            #region Operators
+            /// <summary>
+            /// Adds two sizes
+            /// </summary>
+            /// <param name="a">The first size to add</param>
+            /// <param name="b">The second size to add</param>
+            /// <returns>The sum of both sizes</returns>
+            public static Size operator +(Size a, Size b)
+            {
+                return new Size(a.Byte + b.Byte);
+            }
+
+            /// <summary>
+            /// Substracts two sizes
+            /// </summary>
+            /// <param name="a">The first size to substract</param>
+            /// <param name="b">The second size to substract</param>
+            /// <returns>The difference between both sizes</returns>
+            public static Size operator -(Size a, Size b)
+            {
+                return new Size(a.Byte - b.Byte);
+            }
+
+            /// <summary>
+            /// Implicitly converts int to size
+            /// </summary>
+            /// <param name="a">The number to convert</param>
+            public static implicit operator Size(int a)
+            {
+                return new Size(a);
+            }
+
+            /// <summary>
+            /// Implicitly converts size to int
+            /// </summary>
+            /// <param name="a">The size to convert</param>
+            public static implicit operator Int32(Size a)
+            {
+                return (Int32)a._Byte;
+            }
+
+            /// <summary>
+            /// Implicitly converts long to size
+            /// </summary>
+            /// <param name="a">The number to convert</param>
+            public static implicit operator Size(long a)
+            {
+                return new Size(a);
+            }
+
+            /// <summary>
+            /// Implicitly converts size to long
+            /// </summary>
+            /// <param name="a">The size to convert</param>
+            public static implicit operator Int64(Size a)
+            {
+                return a._Byte;
+            }
+
+            /// <summary>
+            /// Implicitly converts string to size
+            /// </summary>
+            /// <param name="a">The string to convert</param>
+            public static implicit operator Size(String a)
+            {
+                return new Size(Int64.Parse(a));
+            }
+
+            /// <summary>
+            /// Implicitly converts double to size
+            /// </summary>
+            /// <param name="a">The number to convert</param>
+            public static implicit operator Size(double a)
+            {
+                return new Size((int)a);
+            }
+
+            /// <summary>
+            /// Implicitly converts size to double
+            /// </summary>
+            /// <param name="a">The size to convert</param>
+            public static implicit operator double(Size a)
+            {
+                return a._Byte;
+            }
+            #endregion Operators
+        }
+
+        /// <summary>
+        /// Provides static resources to utility-namespaced stuff
+        /// </summary>
+        public static class UtilityHost
+        {
+            /// <summary>
+            /// Restores all DateTime objects to their default display behavior
+            /// </summary>
+            [Hidden]
+            public static bool DisableCustomDateTime = false;
+
+            /// <summary>
+            /// Restores all timespan objects to their default display behavior.
+            /// </summary>
+            [Hidden]
+            public static bool DisableCustomTimeSpan = false;
+
+            /// <summary>
+            /// Formating string for date-style datetime objects.
+            /// </summary>
+            [Hidden]
+            public static string FormatDate = "dd MMM yyyy";
+
+            /// <summary>
+            /// Formating string for datetime-style datetime objects
+            /// </summary>
+            [Hidden]
+            public static string FormatDateTime = "yyyy-MM-dd HH:mm:ss.fff";
+
+            /// <summary>
+            /// Formating string for time-style datetime objects
+            /// </summary>
+            [Hidden]
+            public static string FormatTime = "HH:mm:ss";
+
+            /// <summary>
+            /// The Version of the dbatools Library. Used to compare with import script to determine out-of-date libraries
+            /// </summary>
+            [Hidden]
+            public readonly static Version LibraryVersion = new Version(1, 0, 0, 1);
+        }
+
+        /// <summary>
         /// Provides helper methods that aid in validating stuff.
         /// </summary>
         public static class Validation
@@ -1416,11 +3672,11 @@ namespace sqlcollective.dbatools
 Dear User,
 
 in the name of the dbatools team I apologize for the inconvenience.
-Generally, when something goes wrong we try to handle it for you and interpret
-it for you in a way you can understand. Unfortunately, something went wrong with
-importing our main library, so all the systems making this possible don't work
-yet. This really shouldn't happen in any PowerShell environment imaginable, but
-... well, it hapend and you are reading this message.
+Generally, when something goes wrong we try to handle and interpret in an
+understandable manner. Unfortunately, something went awry with importing
+our main library, so all the systems making this possible would not be initialized
+yet. We have taken great pains to avoid this issue but this notification indicates
+we have failed.
 
 Please, in order to help us prevent this from happening again, visit us at:
 https://github.com/sqlcollaborative/dbatools/issues
@@ -1443,3 +3699,18 @@ aka "The guy who made most of The Library that Failed to import"
         #endregion Warning
     }
 }
+
+#region Version Warning
+$LibraryVersion = New-Object System.Version(1, 0, 0, 1)
+if ($LibraryVersion -ne ([Sqlcollective.Dbatools.Utility.UtilityHost]::LibraryVersion))
+{
+    Write-Warning @"
+A version missmatch between the dbatools library loaded and the one expected by
+this module. This usually happens when you update the dbatools module and use
+Remove-Module / Import-Module in order to load the latest version without
+starting a new PowerShell instance.
+
+Please restart the console to apply the library update, or unexpected behavior will likely occur.
+"@
+}
+#endregion Version Warning
