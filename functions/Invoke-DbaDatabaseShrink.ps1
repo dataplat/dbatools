@@ -195,6 +195,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 							$startingfrag = $null
 						}
 						
+						Write-Message -Level Verbose -Message "Starting shrink"
 						$start = Get-Date
 						$db.Shrink($PercentFreeSpace, $ShrinkMethod)
 						$db.Refresh()
