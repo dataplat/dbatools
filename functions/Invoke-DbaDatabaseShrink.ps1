@@ -187,13 +187,11 @@ Shrinks all databases on SQL2012 (not ideal for production)
 						
 						$start = Get-Date
 						$db.Shrink($PercentFreeSpace, $ShrinkMethod)
-						$db.Shrink($PercentFreeSpace, $ShrinkMethod)
-						$db.Shrink($PercentFreeSpace, $ShrinkMethod)
 						$db.Refresh()
 						$db.RecalculateSpaceUsage()
 						$end = Get-Date
 						$dbsize = $db.Size
-						Write-Message -Level Verbose -Message "Final size: $([int]$dbsize)"
+						Write-Message -Level Verbose -Message "Final size: $([int]$dbsize) MB"
 						
 						if ($db.Tables.Indexes)
 						{
