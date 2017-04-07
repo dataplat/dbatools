@@ -2,10 +2,28 @@
 {
 <#
 .SYNOPSIS
-Gets completion time information for queries
+Gets execution and estimated completion time information for queries
 	
 .DESCRIPTION
-Gets completion time information for queries
+Gets execution and estimated completion time information for queries
+
+Percent complete will show for the following commands
+	
+ALTER INDEX REORGANIZE
+AUTO_SHRINK option with ALTER DATABASE
+BACKUP DATABASE
+DBCC CHECKDB
+DBCC CHECKFILEGROUP
+DBCC CHECKTABLE
+DBCC INDEXDEFRAG
+DBCC SHRINKDATABASE
+DBCC SHRINKFILE
+RECOVERY
+RESTORE DATABASE
+ROLLBACK
+TDE ENCRYPTION
+	
+For additional information, check out https://blogs.sentryone.com/loriedwards/patience-dm-exec-requests/ and https://docs.microsoft.com/en-us/sql/relational-databases/system-dynamic-management-views/sys-dm-exec-requests-transact-sql
 	
 .PARAMETER SqlInstance
 The SQL Server that you're connecting to.
@@ -77,17 +95,27 @@ Gets estimated completion times for queries performed against the Northwind, pub
 				USER_NAME(r.user_id) as [Login],
 				Command,
 				start_time as StartTime,
-	            percent_complete as PercentComplete,
-	            CAST(((DATEDIFF(s,start_time,GetDate()))/3600) as varchar) + ' hour(s), '
-	                  + CAST((DATEDIFF(s,start_time,GetDate())%3600)/60 as varchar) + 'min, '
-	                  + CAST((DATEDIFF(s,start_time,GetDate())%60) as varchar) + ' sec' as RunningTime,
-	            CAST((estimated_completion_time/3600000) as varchar) + ' hour(s), '
-	                  + CAST((estimated_completion_time %3600000)/60000 as varchar) + 'min, '
-	                  + CAST((estimated_completion_time %60000)/1000 as varchar) + ' sec' as EstimatedTimeToGo,
-	            dateadd(second,estimated_completion_time/1000, getdate()) as EstimatedCompletionTime,
+				percent_complete as PercentComplete,
+				
+				  RIGHT('00000' + CAST(((DATEDIFF(s,start_time,GetDate()))/3600) as varchar), 
+								CASE 
+									WHEN LEN(((DATEDIFF(s,start_time,GetDate()))/3600)) < 2 THEN 2 
+									ELSE LEN(((DATEDIFF(s,start_time,GetDate()))/3600)) 
+								 END)  + ':'
+				+ RIGHT('00' + CAST((DATEDIFF(s,start_time,GetDate())%3600)/60 as varchar), 2) + ':'
+				+ RIGHT('00' + CAST((DATEDIFF(s,start_time,GetDate())%60) as varchar), 2) as RunningTime,
+				
+				  RIGHT('00000' + CAST((estimated_completion_time/3600000) as varchar), 
+						CASE 
+									WHEN LEN((estimated_completion_time/3600000)) < 2 THEN 2 
+									ELSE LEN((estimated_completion_time/3600000)) 
+						 END)  + ':'
+				+ RIGHT('00' + CAST((estimated_completion_time %3600000)/60000 as varchar), 2) + ':'
+				+ RIGHT('00' + CAST((estimated_completion_time %60000)/1000 as varchar), 2) as EstimatedTimeToGo,
+				dateadd(second,estimated_completion_time/1000, getdate()) as EstimatedCompletionTime,
 				s.Text
-				FROM sys.dm_exec_requests r
-				CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) s"
+		 	FROM sys.dm_exec_requests r
+			CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) s"
 	}
 	
 	PROCESS
@@ -118,7 +146,24 @@ Gets estimated completion times for queries performed against the Northwind, pub
 			}
 			
 			Write-Message -Level Debug -Message $sql
-			Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sql | Select-DefaultView -ExcludeProperty Text
+			#Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sql | Select-DefaultView -ExcludeProperty Text
+			foreach ($row in (Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sql))
+			{			
+				[pscustomobject]@{
+					ComputerName = $server.NetName
+					InstanceName = $server.ServiceName
+					SqlInstance = $server.DomainInstanceName
+					Database = $row.Database
+					Login = $row.Login
+					Command = $row.Command
+					PercentComplete = $row.PercentComplete
+					StartTime = $row.StartTime
+					RunningTime = $row.RunningTime
+					EstimatedTimeToGo = $row.EstimatedTimeToGo
+					EstimatedCompletionTime = $row.EstimatedCompletionTime
+					Text = $row.Text
+				} | Select-DefaultView -ExcludeProperty Text
+			}
 		}
 	}
 }
