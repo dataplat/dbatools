@@ -118,36 +118,7 @@ Gets estimated completion times for queries performed against the Northwind, pub
 			}
 			
 			Write-Message -Level Debug -Message $sql
-			#Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sql | Select-DefaultView -ExcludeProperty Text
-			foreach ($row in (Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sql))
-			{
-				<#
-				$start = Get-Date "$($row.StartTime)"
-				$timespan = New-TimeSpan -Start $start -End (Get-Date)
-				$totalsecs = [timespan]::FromSeconds($timespan.TotalSeconds)
-				$runningelapsed = "{0:HH:mm:ss}" -f ([datetime]$totalsecs.Ticks)
-				
-				$end = Get-Date "$($row.EstimatedCompletionTime)"
-				$timespan = New-TimeSpan -Start (Get-Date) -End $end
-				$totalsecs = [timespan]::fromseconds($timespan.TotalSeconds)
-				$estimated = "{0:HH:mm:ss}" -f ([datetime]$totalsecs.Ticks)
-				#>
-				
-				[pscustomobject]@{
-					ComputerName = $server.NetName
-					InstanceName = $server.ServiceName
-					SqlInstance = $server.DomainInstanceName
-					Database = $row.Database
-					Login = $row.Login
-					Command = $row.Command
-					PercentComplete = $row.PercentComplete
-					StartTime = $row.StartTime
-					RunningTime = $row.RunningTime # $runningelapsed
-					EstimatedTimeToGo = $row.EstimatedTimeToGo # $estimated
-					EstimatedCompletionTime = $row.EstimatedCompletionTime
-					Text = $row.Text
-				} | Select-DefaultView -ExcludeProperty Text
-			}
+			Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sql | Select-DefaultView -ExcludeProperty Text
 		}
 	}
 }
