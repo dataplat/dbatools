@@ -270,7 +270,9 @@ Limitations: Does not support Application Roles yet
 							}
 						}
 						
-						try { $hashedpass = $sourceserver.ConnectionContext.ExecuteScalar($sql) }
+						try { 
+							$hashedpass = $sourceserver.ConnectionContext.ExecuteScalar($sql) 
+						}
 						catch {
 							$hashedpassdt = $sourceserver.databases['master'].ExecuteWithResults($sql)
 							$hashedpass = $hashedpassdt.Tables[0].Rows[0].Item(0)
