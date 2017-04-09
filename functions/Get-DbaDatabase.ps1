@@ -1,5 +1,5 @@
 function Get-DbaDatabase {
-<#
+    <#
 .SYNOPSIS
 Gets SQL Database information for each database that is present in the target instance(s) of SQL Server.
 
@@ -47,6 +47,9 @@ Returns databases without a Log backup recorded by SQL Server. Will indicate tho
 
 .PARAMETER NoLogBackupSince
 DateTime value. Returns list of SQL Server databases that haven't had a Log backup since the passed iin DateTime
+
+.PARAMETER Switch
+Use this switch to disable any kind of verbose messages
 
 .NOTES
 Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
@@ -107,7 +110,8 @@ Returns databases on multiple instances piped into the function
         [switch]$NoFullBackup,
         [datetime]$NoFullBackupSince,
         [switch]$NoLogBackup,
-        [datetime]$NoLogBackupSince
+        [datetime]$NoLogBackupSince,
+        [switch]$Silent
     )
 
     DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
@@ -117,8 +121,7 @@ Returns databases on multiple instances piped into the function
         $exclude = $psboundparameters.Exclude
 
         if ($NoUserDb -and $NoSystemDb) {
-            Write-Warning "You cannot specify both NoUserDb and NoSystemDb"
-            continue
+            Stop-Function -Message "You cannot specify both NoUserDb and NoSystemDb" -Continue -Silent $Silent
         }
     }
 
@@ -128,8 +131,7 @@ Returns databases on multiple instances piped into the function
                 $server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
             }
             catch {
-                Write-Warning "Failed to connect to: $instance"
-                continue
+                Stop-Function -Message "Failed to connect to: $instance" -Continue -Silent $Silent
             }
 
             if ($NoUserDb) {
