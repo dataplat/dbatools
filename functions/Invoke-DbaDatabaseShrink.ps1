@@ -2,12 +2,12 @@
 {
 <#
 .SYNOPSIS
-Shrinks all files in a database
+Shrinks all files in a database. This is a command that should rarely be used.
 	
 .DESCRIPTION
 Shrinks all files in a database.
 	
-IMPORTANT NOTE: Databases should be shrunk only when completely necessary. This is a command that should rarely be used.
+IMPORTANT NOTE: Databases should be shrunk only when completely necessary.
 	
 Many awesome SQL people have written about why you should not shrink your data files, and Paul Randal's post is a great one:
 	
@@ -32,7 +32,7 @@ Shrink all databases on the connected server except databases entered through th
 Run command against all user databases	
 	
 .PARAMETER PercentFreeSpace
-Specifies how much to reduce the database in percent.
+Specifies how much to reduce the database in percent, defaults to 0.
 
 .PARAMETER ShrinkMethod
 Specifies the method that is used to shrink the database
@@ -47,7 +47,7 @@ Specifies the method that is used to shrink the database
 			Data distribution is not affected. Files are truncated to reflect allocated space, recovering free space at the end of any file.
 
 .PARAMETER StatementTimeout
-Timeout in minutes. Defaults to 8 hours. Use 0 for infinite.
+Timeout in minutes. Defaults to infinity (shrinks can take a while.)
 
 .PARAMETER WhatIf
 Shows what would happen if the command were to run
@@ -100,7 +100,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 		[int]$PercentFreeSpace = 0,
 		[ValidateSet('Default', 'EmptyFile', 'NoTruncate', 'TruncateOnly')]
 		[string]$ShrinkMethod = "Default",
-		[int]$StatementTimeout = 480,
+		[int]$StatementTimeout = 0,
 		[switch]$Silent
 	)
 	
@@ -130,6 +130,16 @@ Shrinks all databases on SQL2012 (not ideal for production)
 				AND indexstats.index_id = dbindexes.index_id
 				WHERE indexstats.database_id = DB_ID() AND indexstats.avg_fragmentation_in_percent > 0
 				ORDER BY indexstats.avg_fragmentation_in_percent desc"
+		
+		$sqltop1 = "SELECT top 1
+				indexstats.avg_fragmentation_in_percent
+				FROM sys.dm_db_index_physical_stats (DB_ID(), NULL, NULL, NULL, NULL) AS indexstats
+				INNER JOIN sys.tables dbtables on dbtables.[object_id] = indexstats.[object_id]
+				INNER JOIN sys.schemas dbschemas on dbtables.[schema_id] = dbschemas.[schema_id]
+				INNER JOIN sys.indexes AS dbindexes ON dbindexes.[object_id] = indexstats.[object_id]
+				AND indexstats.index_id = dbindexes.index_id
+				WHERE indexstats.database_id = DB_ID()
+				ORDER BY indexstats.avg_fragmentation_in_percent desc"
 	}
 	
 	PROCESS
@@ -153,10 +163,16 @@ Shrinks all databases on SQL2012 (not ideal for production)
 			}
 			
 			# changing statement timeout to $StatementTimeout
-			Write-Message -Level Verbose -Message "Changing statement timeout to $StatementTimeout minutes"
-			$server.ConnectionContext.StatementTimeout = $StatementTimeoutMinutes
+			if ($StatementTimeout -eq 0)
+			{
+				Write-Message -Level Verbose -Message "Changing statement timeout to infinity"
+			}
+			else
+			{
+				Write-Message -Level Verbose -Message "Changing statement timeout to $StatementTimeout minutes"
+			}
+			$server.ConnectionContext.StatementTimeout = $StatementTimeout
 			
-			# We have to exclude all the system databases since they cannot have the Query Store feature enabled
 			$dbs = $server.Databases | Where-Object { $_.IsSystemObject -eq $false }
 			
 			if ($databases)
@@ -199,10 +215,11 @@ Shrinks all databases on SQL2012 (not ideal for production)
 						{
 							Write-Message -Level Verbose -Message "Getting average fragmentation"
 							$startingfrag = (Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sql -Database $db.name | Select-Object -ExpandProperty avg_fragmentation_in_percent | Measure-Object -Average).Average
+							$startingtopfrag = (Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sqltop1 -Database $db.name).avg_fragmentation_in_percent
 						}
 						else
 						{
-							$startingfrag = $null
+							$startingtopfrag = $startingfrag = $null
 						}
 						
 						$start = Get-Date
@@ -229,10 +246,11 @@ Shrinks all databases on SQL2012 (not ideal for production)
 						{
 							Write-Message -Level Verbose -Message "Refreshing indexes and getting average fragmentation"
 							$endingdefrag = (Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sql -Database $db.name | Select-Object -ExpandProperty avg_fragmentation_in_percent | Measure-Object -Average).Average
+							$endingtopfrag = (Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sqltop1 -Database $db.name).avg_fragmentation_in_percent
 						}
 						else
 						{
-							$endingdefrag = $null
+							$endingtopfrag = $endingdefrag = $null
 						}
 						
 						$timespan = New-TimeSpan -Start $start -End $end
@@ -268,8 +286,10 @@ Shrinks all databases on SQL2012 (not ideal for production)
 						CurrentlyAvailableMB = [math]::Round($spaceavailableMB, 2)
 						DesiredAvailableMB = [math]::Round($desiredSpaceAvailable, 2)
 						FinalAvailableMB = [math]::Round(($db.SpaceAvailable/1024), 2)
-						StartingIndexFragmentationAvg = [math]::Round($startingfrag, 1)
-						EndingIndexFragmentationAvg = [math]::Round($endingdefrag, 1)
+						StartingAvgIndexFragmentation = [math]::Round($startingfrag, 1)
+						EndingAvgIndexFragmentation = [math]::Round($endingdefrag, 1)
+						StartingTopIndexFragmentation = [math]::Round($startingtopfrag, 1)
+						EndingTopIndexFragmentation = [math]::Round($endingtopfrag, 1)
 						Notes = $notes
 					}
 				}
