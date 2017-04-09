@@ -135,36 +135,36 @@ Returns databases on multiple instances piped into the function
             }
 
             if ($NoUserDb) {
-                $inputobject = $server.Databases | Where-Object { $_.IsSystemObject }
+                $inputobject = $server.Databases | Where-Object IsSystemObject
             }
 
             if ($NoSystemDb) {
-                $inputobject = $server.Databases | Where-Object { $_.IsSystemObject -eq $false }
+                $inputobject = $server.Databases | Where-Object IsSystemObject -eq $false
             }
 
             if ($databases) {
-                $inputobject = $server.Databases | Where-Object { $_.Name -in $databases }
+                $inputobject = $server.Databases | Where-Object Name -in $databases
             }
 
             if ($status) {
-                $inputobject = $server.Databases | Where-Object { $_.Status -eq $status }
+                $inputobject = $server.Databases | Where-Object Status -eq $status
             }
 
             if ($Owner) {
-                $inputobject = $server.Databases | Where-Object { $_.Owner -in $Owner }
+                $inputobject = $server.Databases | Where-Object Owner -in $Owner
             }
 
             switch ($Access) {
-                "ReadOnly" { $inputobject = $server.Databases | Where-Object { $_.ReadOnly } }
-                "ReadWrite" { $inputobject = $server.Databases | Where-Object { $_.ReadOnly -eq $false } }
+                "ReadOnly" { $inputobject = $server.Databases | Where-Object ReadOnly }
+                "ReadWrite" { $inputobject = $server.Databases | Where-Object ReadOnly -eq $false }
             }
 
             if ($Encrypted) {
-                $inputobject = $server.Databases | Where-Object { $_.EncryptionEnabled }
+                $inputobject = $server.Databases | Where-Object EncryptionEnabled
             }
 
             if ($RecoveryModel) {
-                $inputobject = $server.Databases | Where-Object { $_.RecoveryModel -eq $RecoveryModel }
+                $inputobject = $server.Databases | Where-Object RecoveryModel -eq $RecoveryModel
             }
 
             # I forgot the pretty way to do this
@@ -173,7 +173,7 @@ Returns databases on multiple instances piped into the function
             }
 
             if ($exclude) {
-                $inputobject = $inputobject | Where-Object {$_.Name -notin $exclude }
+                $inputobject = $inputobject | Where-Object Name -notin $exclude
             }
 
             if ($NoFullBackup -or $NoFullBackupSince) {
@@ -196,10 +196,10 @@ Returns databases on multiple instances piped into the function
             }
 
             if ($null -ne $NoFullBackupSince) {
-                $inputobject = $inputobject | Where-Object {$_.LastBackupdate -lt $NoFullBackupSince}
+                $inputobject = $inputobject | Where-Object LastBackupdate -lt $NoFullBackupSince
             }
             elseif ($null -ne $NoLogBackupSince) {
-                $inputobject = $inputobject | Where-Object {$_.LastBackupdate -lt $NoLogBackupSince}
+                $inputobject = $inputobject | Where-Object LastBackupdate -lt $NoLogBackupSince
             }
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'RecoveryModel', 'Size as SizeMB', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup'
 
