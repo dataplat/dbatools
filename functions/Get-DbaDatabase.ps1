@@ -199,7 +199,7 @@ Returns databases on multiple instances piped into the function
             elseif ($null -ne $NoLogBackupSince) {
                 $inputobject = $inputobject | Where-Object {$_.LastBackupdate -lt $NoLogBackupSince}
             }
-            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'RecoveryModel', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup'
+            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'RecoveryModel', 'Size as SizeMB', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup'
 
             if ($NoFullBackup -or $NoFullBackupSince -or $NoLogBackup -or $NoLogBackupSince) {
                 $defaults += ('Notes')
