@@ -12,9 +12,17 @@ calling GetUnderlyingObject() on the returned object.
 
 .PARAMETER ADObject
 Pass in both the domain and the login name in NETBIOSDomain\sAMAccountName format (the one everybody is accustomed to)
+You can also pass a UserPrincipalName@Domain format with the correct IdentityType.
+For any other format, please beware that the domain part must always be specified (either before the slash or after the at symbol)
 
 .PARAMETER Type
 You *should* always know what you are asking for. Please pass in Computer,Group or User to help speeding up the search
+
+.PARAMETER IdentityType
+By default objects are searched using sAMAccountName format, here you can pass different representation that need to match the passed in ADObject
+
+.PARAMETER Credential
+Use this credential to connect to the domain and search for the needed ADObject. If not passed, uses the current process' one.
 
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages
@@ -33,6 +41,11 @@ You should have received a copy of the GNU General Public License along with thi
 Get-DbaADObject -ADObject "contoso\ctrlb" -Type User
 
 Seaches in the contoso domain for a ctrlb user
+
+.EXAMPLE
+Get-DbaADObject -ADObject "ctrlb@contoso.com" -Type User -IdentityType UserPrincipalName
+
+Seaches in the contoso domain for a ctrlb user using the UserPrincipalName format
 
 .EXAMPLE
 Get-DbaADObject -ADObject "contoso\sqlcollaborative" -Type Group
@@ -55,6 +68,11 @@ Seaches in the contoso domain for a ctrlb user, suppressing all error messages a
 		[string[]]$ADObject,
 		[ValidateSet("User","Group","Computer")]
 		[string]$Type,
+
+		[ValidateSet("DistinguishedName","Guid","Name","SamAccountName","Sid","UserPrincipalName")]
+		[string]$IdentityType = "SamAccountName",
+
+		[System.Management.Automation.Credential()]$Credential,
 		[switch]$Silent
 	)
 	BEGIN {
@@ -84,12 +102,22 @@ Seaches in the contoso domain for a ctrlb user, suppressing all error messages a
 		foreach($ADObj in $ADObject) {
 			$Splitted = $ADObj.Split("\")
 			if ($Splitted.Length -ne 2) {
-				Stop-Function -Message "You need to pass ADObject in DOMAIN\object format" -Continue -Silent $Silent -Target $ADObj
+				$Splitted = $ADObj.Split("@")
+				if ($Splitted.Length -ne 2) {
+					Stop-Function -Message "You need to pass ADObject either DOMAIN\object or object@domain format" -Continue -Silent $Silent
+				} else {
+					$obj, $Domain = $AdObj, $Splitted[1]
+				}
+			} else {
+				$Domain, $obj = $Splitted
 			}
-			$Domain, $obj = $Splitted
 			try {
-				$ctx = New-Object System.DirectoryServices.AccountManagement.PrincipalContext('Domain', $Domain)
-				$found = $searchClass::FindByIdentity($ctx, 'sAMAccountName', $obj)
+				if ($Credential) {
+					$ctx = New-Object System.DirectoryServices.AccountManagement.PrincipalContext('Domain', $Domain, $Credential.UserName, $Credential.GetNetworkCredential().Password)
+				} else {
+					$ctx = New-Object System.DirectoryServices.AccountManagement.PrincipalContext('Domain', $Domain)
+				}
+				$found = $searchClass::FindByIdentity($ctx, $IdentityType, $obj)
 				$found
 			} catch {
 				Stop-Function -Message "Errors trying to connect to the domain $Domain $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_ -Target $ADObj
