@@ -126,12 +126,14 @@ Returns databases on multiple instances piped into the function
     }
 
     PROCESS {
+        if (Test-FunctionInterrupt) { return }
+
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
             }
             catch {
-                Stop-Function -Message "Failed to connect to: $instance" -Continue -Silent $Silent
+                Stop-Function -Message "Failed to connect to: $instance" -InnerErrorRecord $_ -Target $instance -Continue -Silent $Silent
             }
 
             if ($NoUserDb) {
