@@ -68,7 +68,10 @@ function Restore-DbaSystemDatabase
                 Write-Verbose "$FunctionName - Restoring msdb, setting Filter"
                 $filter += 'msdb'
             }
-            Stop-DbaService -SqlServer $server | out-null
+            if ((Get-DbaService -sqlserver $server -service SqlServer).ServiceState -eq 'Running')
+            {
+                Stop-DbaService -SqlServer $server | out-null
+            }
             Start-DbaService -SqlServer $server | out-null
             while ((Get-DbaService -sqlserver $server -service sqlserver).ServiceState -ne 'running')
             {
@@ -96,11 +99,16 @@ function Restore-DbaSystemDatabase
     finally
     {
         Write-Verbose "$FunctionName - In the Finally block"
-        Set-DbaStartupParameter -SqlServer $sqlserver -StartUpConfig $CurrentStartup 
+        if ((Get-DbaService -sqlserver $server -service SqlServer).ServiceState -ne 'Running')
+        {
+            Write-Verbose "$FunctionName - SQL Server not running, starting it up"
+            Start-DbaService -sqlserver $server -service SqlServer | out-null
+        }
         Write-Verbose "2 - $((Get-DbaService -sqlserver $server -service sqlserver).ServiceState)"
+        Set-DbaStartupParameter -SqlServer $sqlserver -StartUpConfig $CurrentStartup 
         Stop-DbaService -SqlServer $server -Service SqlServer | out-null
         Write-Verbose "3 - $((Get-DbaService -sqlserver $server -service sqlserver).ServiceState)"
-        Start-DbaService -SqlServer $server -service SqlServer
+        Start-DbaService -SqlServer $server -service SqlServer | out-null
         Write-Verbose "4 - $((Get-DbaService -sqlserver $server -service sqlserver).ServiceState)"
         if ($RestartAgent -eq $True)
         {
