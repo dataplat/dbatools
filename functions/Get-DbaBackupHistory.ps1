@@ -217,7 +217,7 @@ SELECT
     a.Duration,
     a.[Path],
     a.Type,
-    a.TotalSizeMB,
+    a.TotalSize,
     a.MediaSetId,
     a.Software
 FROM (SELECT
