@@ -331,12 +331,12 @@ Restores data and log files to alternative locations and only restores databases
 								# shouldprocess is taken care of in Start-DbccCheck
 								if ($ogdbname -eq "master")
 								{
-									$dbccresult = "DBCC CHECKTABLE skipped for restored master ($dbname) database"
+									$dbccresult = "DBCC CHECKDB skipped for restored master ($dbname) database"
 								}
 								else
 								{
 									$startDbcc = Get-Date
-									$dbccresult = Start-DbccCheck -Server $destserver -DbName $dbname -Table 3>$null
+									$dbccresult = Start-DbccCheck -Server $destserver -DbName $dbname 3>$null
 									$endDbcc = Get-Date
 									
 									$dbccts = New-TimeSpan -Start $startDbcc -End $endDbcc
