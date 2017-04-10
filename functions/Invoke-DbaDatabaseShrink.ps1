@@ -209,7 +209,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 				}
 				else
 				{
-					if ($Pscmdlet.ShouldProcess("$db on $instance", "Shrinking from $([int]$startingsize) MB to $([int]$desiredSpaceAvailable) MB"))
+					if ($Pscmdlet.ShouldProcess("$db on $instance", "Shrinking from $([int]$spaceavailableMB) MB space available to $([int]$desiredSpaceAvailable) MB space available"))
 					{
 						if ($db.Tables.Indexes.Name -and $server.VersionMajor -gt 8)
 						{
@@ -226,8 +226,10 @@ Shrinks all databases on SQL2012 (not ideal for production)
 						
 						try
 						{
+							Write-Message -Level Verbose -Message "Beginning shrink"
 							$db.Shrink($PercentFreeSpace, $ShrinkMethod)
 							$db.Refresh()
+							Write-Message -Level Verbose -Message "Recalculating space usage"
 							$db.RecalculateSpaceUsage()
 							$success = $true
 							$notes = $null
@@ -240,7 +242,10 @@ Shrinks all databases on SQL2012 (not ideal for production)
 						
 						$end = Get-Date
 						$dbsize = $db.Size
-						Write-Message -Level Verbose -Message "Final size: $([int]$dbsize) MB"
+						$newSpaceAvailableMB = $db.SpaceAvailable/1024						
+						
+						Write-Message -Level Verbose -Message "Final database size: $([int]$dbsize) MB"
+						Write-Message -Level Verbose -Message "Final space available: $([int]$newSpaceAvailableMB) MB"
 						
 						if ($db.Tables.Indexes.Name -and $server.VersionMajor -gt 8)
 						{
@@ -262,10 +267,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 				#$db.TruncateLog()
 				
 				if ($Pscmdlet.ShouldProcess("$db on $instance", "Showing results"))
-				{
-					$db.Refresh()
-					$db.RecalculateSpaceUsage()
-					
+				{					
 					if ($null -eq $notes)
 					{
 						$notes = "Database shrinks can cause massive index fragmentation and negatively impact performance. You should now run DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE"
