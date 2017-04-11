@@ -3,18 +3,24 @@
 <#
 .SYNOPSIS
 Shrinks all files in a database. This is a command that should rarely be used.
-	
-.DESCRIPTION
-Shrinks all files in a database.
-	
-IMPORTANT NOTE: Databases should be shrunk only when completely necessary.
-	
-Many awesome SQL people have written about why you should not shrink your data files, and Paul Randal's post is a great one:
-	
-	http://www.sqlskills.com/blogs/paul/why-you-should-not-shrink-your-data-files/
 
-However, there are some cases where a database will need to be shrunk. In the event that you must shrink your database, note that 
-you should run DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE after the shrink is complete.
+- Shrinks can cause severe index fragmentation (to the tune of 99%)
+- Shrinks can cause massive growth in the database's transaction log
+- Shrinks can require a lot of time and system resources to perform data movement
+
+.DESCRIPTION
+Shrinks all files in a database. Databases should be shrunk only when completely necessary.
+	
+Many awesome SQL people have written about why you should not shrink your data files. Paul Randal and Kalen Delaney wrote great posts about this topic:
+	
+	http://www.sqlskills.com/blogs/paul/why-you-should-not-shrink-your-data-files
+	http://sqlmag.com/sql-server/shrinking-data-files
+
+However, there are some cases where a database will need to be shrunk. In the event that you must shrink your database:
+	
+1. Ensure you have plenty of space for your T-Log to grow
+2. Understand that shrinks require a lot of CPU and disk resources
+3. Consider running DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE after the shrink is complete.
 	
 .PARAMETER SqlInstance
 The SQL Server that you're connecting to.
@@ -282,9 +288,9 @@ Shrinks all databases on SQL2012 (not ideal for production)
 						End = $end
 						Elapsed = $elapsed
 						Success = $success
-						CurrentlyAllocatedMB = [math]::Round($startingsize, 2)
+						StartingTotalSizeMB = [math]::Round($startingsize, 2)
 						CurrentlyUsedMB = [math]::Round($spaceused, 2)
-						FinalSizeMB = [math]::Round($db.size, 2)
+						FinalTotalSizeMB = [math]::Round($db.size, 2)
 						CurrentlyAvailableMB = [math]::Round($spaceavailableMB, 2)
 						DesiredAvailableMB = [math]::Round($desiredSpaceAvailable, 2)
 						FinalAvailableMB = [math]::Round(($db.SpaceAvailable/1024), 2)
