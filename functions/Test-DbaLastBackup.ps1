@@ -199,7 +199,7 @@ Restores data and log files to alternative locations and only restores databases
 			
 			$source = $sourceserver.DomainInstanceName
 			$destination = $destserver.DomainInstanceName
-			
+						
 			if ($datadirectory)
 			{
 				if (!(Test-SqlPath -SqlServer $destserver -Path $datadirectory))
@@ -316,11 +316,11 @@ Restores data and log files to alternative locations and only restores databases
 								$startRestore = Get-Date
 								if ($verifyonly)
 								{
-									$restoreresult = $last | Restore-DbaDatabase -SqlServer $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -VerifyOnly:$VerifyOnly
+									$restoreresult = $last | Restore-DbaDatabase -SqlServer $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -VerifyOnly:$VerifyOnly
 								}
 								else
 								{
-									$restoreresult = $last | Restore-DbaDatabase -SqlServer $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix
+									$restoreresult = $last | Restore-DbaDatabase -SqlServer $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory
 								}
 								
 								$endRestore = Get-Date
@@ -399,16 +399,16 @@ Restores data and log files to alternative locations and only restores databases
 							TestServer = $destination
 							Database = $db.name
 							FileExists = $fileexists
+							Size = [dbasize](($last.TotalSize | Measure-Object -Sum).Sum)
 							RestoreResult = $success
 							DbccResult = $dbccresult
-							SizeMB = $lastbackup.TotalSize
-							RestoreStart = $startRestore
-							RestoreEnd = $endRestore
+							RestoreStart = [dbadatetime]$startRestore
+							RestoreEnd = [dbadatetime]$endRestore
 							RestoreElapsed = $restoreElapsed
-							DbccStart = $startDbcc
-							DbccEnd = $endDbcc
+							DbccStart = [dbadatetime]$startDbcc
+							DbccEnd = [dbadatetime]$endDbcc
 							DbccElapsed = $dbccElapsed
-							BackupTaken = $last.Start
+							BackupDate = $last.Start
 							BackupFiles = $last.FullName
 						}
 					}
