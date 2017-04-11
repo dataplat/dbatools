@@ -125,7 +125,7 @@ Restores data and log files to alternative locations and only restores databases
 		[Alias("ServerInstance", "SqlServer", "Source")]
 		[object[]]$SqlInstance,
 		[object]$SqlCredential,
-		[string]$Destination = $SqlInstance,
+		[object]$Destination = $SqlInstance,
 		[object]$DestinationCredential,
 		[string]$DataDirectory,
 		[string]$LogDirectory,
@@ -401,7 +401,7 @@ Restores data and log files to alternative locations and only restores databases
 							FileExists = $fileexists
 							RestoreResult = $success
 							DbccResult = $dbccresult
-							SizeMB = ($last.TotalSize | Measure-Object -Sum).Sum
+							SizeMB = $lastbackup.TotalSize
 							RestoreStart = $startRestore
 							RestoreEnd = $endRestore
 							RestoreElapsed = $restoreElapsed
