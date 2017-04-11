@@ -14,7 +14,7 @@ The SQL Server instance.You must have sysadmin access and server version must be
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. 
 
 .PARAMETER Logins 
-Dynamic Parameter that will get a list of logins that you can grab from the server. 
+Dynamic Parameter that will get a list of logins that you can grab from the server, or you can add your own. 
 
 .NOTES 
 Original Author: Mitchell Hamann (@SirCaptainMitch)
@@ -52,7 +52,7 @@ Get-DbaLogin -SqlInstance SQl2016 -SqlCredential $sqlcred -Logins dbatoolsuser,T
 Pipeline example 
 	
 #>
-	[CmdletBinding(SupportsShouldProcess = $true)]
+	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
@@ -100,7 +100,6 @@ Pipeline example
 	
 	end
 	{
-		## Output smo login object for passing to the pipeline 
         return $results		
 	}
 }
