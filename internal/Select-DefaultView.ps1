@@ -32,6 +32,11 @@ Function Select-DefaultView
 		
 		if ($ExcludeProperty)
 		{
+			if ($InputObject.GetType().Name.ToString() -eq 'DataRow')
+			{
+				$ExcludeProperty += 'Item', 'RowError', 'RowState', 'Table', 'ItemArray', 'HasErrors'
+			}
+			
 			$properties = ($InputObject.PsObject.Members | Where-Object MemberType -ne 'Method' | Where-Object { $_.Name -notin $ExcludeProperty }).Name
 			$defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', [string[]]$properties)
 		}

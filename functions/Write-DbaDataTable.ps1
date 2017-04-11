@@ -109,6 +109,7 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[Alias("Credential")]
 		[System.Management.Automation.PSCredential]$SqlCredential,

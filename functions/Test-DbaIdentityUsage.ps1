@@ -22,6 +22,9 @@ Allows you to specify a minimum % of the seed range being utilized.  This can be
 .PARAMETER NoSystemDb
 Allows you to suppress output on system databases
 
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
+
 .NOTES 
 Author: Brandon Abshire, netnerds.net
 Tags: Identity
@@ -58,7 +61,8 @@ Check identity seeds on server sql2008 for only the TestDB database, limiting re
 		[parameter(Position = 1, Mandatory = $false)]
 		[int]$Threshold = 0,
 		[parameter(Position = 2, Mandatory = $false)]
-		[switch]$NoSystemDb
+		[switch]$NoSystemDb,
+		[switch]$Silent
 	)
 	
 	DynamicParam
@@ -146,22 +150,20 @@ Check identity seeds on server sql2008 for only the TestDB database, limiting re
 		
 		foreach ($instance in $SqlInstance)
 		{
-			Write-Verbose "Attempting to connect to $instance"
+			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+			
 			try
 			{
 				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
 			}
 			catch
 			{
-				Write-Warning "Can't connect to $instance or access denied. Skipping."
-				continue
+				Stop-Function -Message "Can't connect to $instance or access denied. Skipping." -Continue
 			}
 			
 			if ($server.versionMajor -lt 10)
 			{
-				Write-Warning "This function does not support versions lower than SQL Server 2008 (v10). Skipping server $instance."
-				
-				Continue
+				Stop-Function -Message "This function does not support versions lower than SQL Server 2008 (v10). Skipping server $instance." -Continue
 			}
 			
 			
@@ -182,15 +184,13 @@ Check identity seeds on server sql2008 for only the TestDB database, limiting re
 				$dbs = $dbs | Where-Object { $_.IsSystemObject -eq $false }
 			}
 			
-			
 			foreach ($db in $dbs)
 			{
-				Write-Verbose "Processing $db on $instance"
+				Write-Message -Level Verbose -Message "Processing $db on $instance"
 				
 				if ($db.IsAccessible -eq $false)
 				{
-					Write-Warning "The database $db is not accessible. Skipping database."
-					Continue
+					Stop-Function -Message "The database $db is not accessible. Skipping database." -Continue
 				}
 				
 				foreach ($row in $db.ExecuteWithResults($sql).Tables[0])
