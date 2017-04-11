@@ -136,7 +136,6 @@ Restores data and log files to alternative locations and only restores databases
 		[int]$MaxMB,
 		[switch]$IgnoreCopyOnly,
 		[switch]$Silent
-		
 	)
 	
 	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
@@ -287,6 +286,7 @@ Restores data and log files to alternative locations and only restores databases
 					else
 					{
 						Write-Message -Level Verbose -Message "Looking good!"
+						
 						$fileexists = $true
 						$ogdbname = $dbname
 						$restorelist = Read-DbaBackupHeader -SqlServer $destserver -Path $lastbackup[0].Path
@@ -311,7 +311,11 @@ Restores data and log files to alternative locations and only restores databases
 							
 							if ($Pscmdlet.ShouldProcess($destination, "Restoring $ogdbname as $dbname"))
 							{
+								Write-Message -Level Verbose -Message "Getting last backup history"
+								
 								$last = Get-DbaBackupHistory -SqlServer $sourceserver -Databases $ogdbname -Last -IgnoreCopyOnly:$ignorecopyonly
+								
+								Write-Message -Level Verbose -Message "Performing restore"
 								
 								$startRestore = Get-Date
 								if ($verifyonly)
@@ -351,6 +355,8 @@ Restores data and log files to alternative locations and only restores databases
 								{
 									if ($success -eq "Success")
 									{
+										Write-Message -Level Verbose -Message "Starting DBCC"
+										
 										$startDbcc = Get-Date
 										$dbccresult = Start-DbccCheck -Server $destserver -DbName $dbname 3>$null
 										$endDbcc = Get-Date
@@ -372,6 +378,8 @@ Restores data and log files to alternative locations and only restores databases
 							{
 								if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination"))
 								{
+									Write-Message -Level Verbose -Message "Dropping database"
+									
 									## Drop the database
 									try
 									{
