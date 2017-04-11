@@ -1,4 +1,4 @@
-﻿Function Set-DbaTcpPort
+Function Set-DbaTcpPort
 {
 <#
 .SYNOPSIS
@@ -18,9 +18,6 @@ Wich IPAddress should the portchange , if omitted allip (0.0.0.0) will be change
 
 .PARAMETER Port
 TCPPort that SQLService should listen on.
-	
-Remote sqlwmi is used by default. 
-
 
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -79,7 +76,8 @@ Sets the port number 1337 for ALLIP's on sqlserver SQLDB2014A and SQLDB2016B
 	}
 	PROCESS
 	{
-        $servercount = ++$i
+        
+        $servercount = $sqlserver.Count
         foreach ($servername in $SqlServer)
 		{
 			try
@@ -136,31 +134,86 @@ Sets the port number 1337 for ALLIP's on sqlserver SQLDB2014A and SQLDB2016B
 				$tcp= $instance.ServerProtocols | Where-Object { $_.DisplayName -eq 'TCP/IP' }
 				$ipaddress = $tcp.IPAddresses | where-object {$_.IPAddress -eq $ipaddress }
 				$tcpport = $ipaddress.IPAddressProperties | Where-Object { $_.Name -eq 'TcpPort' }
-                $tcpport.value = $port
-				$tcp.Alter()
+                try
+                {
+                    $tcpport.value = $port
+				    $tcp.Alter()
+                }
+                catch
+                {
+                    return $_
+                }
 				}
 				try
 				{
-				    
-                    #Clean servername from any instancename to enumerate correct wmi collection
-                    $ServernameNI = $servername.split("\")[0]
-                    write-verbose "Writing TCPPort $port for $ServernameNI\$instancename to $($server.ComputerNamePhysicalNetBIOS)..."
-                    $setip = Invoke-ManagedComputerCommand -ComputerName $ServernameNI -ScriptBlock $scriptblock -ArgumentList $ServernameNI, $instancename, $port, $ipaddress  
-                    if ($ipaddress -eq '0.0.0.0') 
+	                $ServernameNI = $servername.split("\")[0]
+                    $resolved = Resolve-DbaNetworkName -ComputerName $servernameNI -Verbose:$false
+					write-verbose "Writing TCPPort $port for $Servername to $($resolved.FQDN)..."
+                    $setport = Invoke-ManagedComputerCommand -ComputerName $resolved.FQDN -ScriptBlock $scriptblock -ArgumentList $Server.NetName, $instancename, $port, $ipaddress  
+                    if ($setport.length -eq 0)
                     {
-                        Write-Host "SQLSERVER: $ServernameNI\$instancename IPADDRESS: ALLIP's PORT: $port"
+                        if ($ipaddress -eq '0.0.0.0') 
+                        {
+                           Write-Host "SQLSERVER: $Servername IPADDRESS: ALLIP's PORT: $port"
+                        }
+                        else
+                        {
+                            Write-Host "SQLSERVER: $Servername IPADDRESS: $ipaddress PORT: $port"
+                        }
                     }
                     else
                     {
-                        Write-Host "SQLSERVER: $ServernameNI\$instancename IPADDRESS: $ipaddress PORT: $port"
+                        if ($ipaddress -eq '0.0.0.0') 
+                        {
+                           Write-Host "SQLSERVER: $Servername IPADDRESS: ALLIP's PORT: $port" -NoNewline
+                           Write-Host " FAILED!" -ForegroundColor Red 
+                        }
+                        else
+                        {
+                            Write-Host "SQLSERVER: $Servername IPADDRESS: $ipaddress PORT: $port" -NoNewline
+                            Write-Host " FAILED!" -ForegroundColor Red 
+                        }
                     }
                 }   
 				catch
 				{
-					Write-Warning "Could not write new TCPPort for $servername"
-                    Continue
+					try
+                    {
+                        write-verbose "Failed to write TCPPort $port for $Servername to $($resolved.FQDN) trying computername $($server.ComputerNamePhysicalNetBIOS)...."
+                        $setport = Invoke-ManagedComputerCommand -ComputerName $server.ComputerNamePhysicalNetBIOS -ScriptBlock $scriptblock -ArgumentList $Server.NetName, $instancename, $port, $ipaddress  
+                        if ($setport.length -eq 0)
+                        {
+                            if ($ipaddress -eq '0.0.0.0') 
+                            {
+                                Write-Host "SQLSERVER: $Servername IPADDRESS: ALLIP's PORT: $port"
+                            }
+                            else
+                            {
+                                Write-Host "SQLSERVER: $Servername IPADDRESS: $ipaddress PORT: $port"
+                            }
+                        }
+                        else
+                        {
+                            if ($ipaddress -eq '0.0.0.0') 
+                            {
+                                Write-Host "SQLSERVER: $Servername IPADDRESS: ALLIP's PORT: $port" -NoNewline
+                                Write-Host " FAILED!" -ForegroundColor Red
+                            }
+                            else
+                            {
+                                Write-Host "SQLSERVER: $Servername IPADDRESS: $ipaddress PORT: $port" -NoNewline
+                                Write-Host " FAILED!" -ForegroundColor Red
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        Write-Warning "Could not write new TCPPort for $servername"
+                        Continue
+                    }
 				}
- 		}
+                		
+ }
 	}
 	END
 	{
