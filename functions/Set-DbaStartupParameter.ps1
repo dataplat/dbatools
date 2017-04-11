@@ -130,17 +130,15 @@ After the work has been completed, we can push the original startup parameters b
     $FunctionName =(Get-PSCallstack)[0].Command
     #Get Current parameters:
     $CurrentStartup = Get-DbaStartupParameter -SqlServer $SqlServer -SqlCredential $Credential
-    #clone for safety
-
     if ('startUpconfig' -in $PsBoundParameters.keys)
     {
-        Write-Verbose "$FunctionName - Config object passed in"
+        Write-Message -Level VeryVerbose "StartupObject passed in"
         $NewStartup = $StartUpConfig
         $TraceFlagsOverride = $true
     }
     else
     {    
-        Write-Verbose "$FunctionName - Parameters passed in"
+        Write-Message -Level VeryVerbose "Parameters passed in"
         $NewStartup = $CurrentStartup.PSObject.copy()
         foreach ($param in ($PsBoundParameters.keys | ?{$_ -in ($NewStartup.PSObject.Properties.name)}))
         {
@@ -148,13 +146,10 @@ After the work has been completed, we can push the original startup parameters b
             {
                 $NewStartup.$param = $PsBoundParameters.item($param) 
             }
-
         }
-        Write-Verbose "su = $($NewStartup.SingleUser)"
     }
     if (!($CurrentStartup.SingleUser))
     {   
-        Write-Verbose "$FunctionName - Instance currently not in single user mode"    
         if ($NewStartup.Masterdata.length -gt 0)
         {
             if (Test-SqlPath -SqlServer $SqlServer -SqlCredential $Credential -Path (Split-Path $NewStartup.MasterData -Parent))
@@ -163,8 +158,7 @@ After the work has been completed, we can push the original startup parameters b
             }
             else
             {
-                Write-Warning "$FunctionName - Specified folder for Master Data file is not reachable by SQL"
-                return
+                Stop-Function "Specified folder for Master Data file is not reachable by instance $SqlServer" -silent:$true
             }
         }
         else
@@ -179,14 +173,13 @@ After the work has been completed, we can push the original startup parameters b
             }
             else
             {
-                Write-Warning "$FunctionName - Specified folder for ErrorLog  file is not reachable by SQL"
-                return
+                Stop-Function "Specified folder for ErrorLog  file is not reachable by $SqlServer" -silent:$true
             }
         }
         else
         {
-            Stop-Function -message "ErrorLog value must be provided"
-        }
+            Stop-Function -message "ErrorLog value must be provided" -silent:$true
+        }   
         if ($NewStartup.MasterLog.Length -gt 0)
         {
             if (Test-SqlPath -SqlServer $SqlServer -SqlCredential $Credential -Path (Split-Path $NewStartup.MasterLog -Parent))
@@ -195,8 +188,7 @@ After the work has been completed, we can push the original startup parameters b
             }
             else
             {
-                Write-Warning "$FunctionName - Specified folder for Master Log  file is not reachable by SQL"
-                return
+                Stop-Function "Specified folder for Master Log  file is not reachable by $SqlServer" -silent:$true
             }
         }
         else
@@ -335,19 +327,15 @@ After the work has been completed, we can push the original startup parameters b
                     $false
                 }
     }
-    Write-Debug "$FunctionName - Old ParameterString - $($CurrentStartup.ParameterString)"
-    Write-Debug "$FunctionName - New ParameterString - $ParameterString"
     if ($pscmdlet.ShouldProcess("Setting Sql Server start parameters on $SqlServer to $ParameterString")) {
         $response = Invoke-ManagedComputerCommand -ComputerName $servername -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $servername, $displayname, $ParameterString
     }  
     if ($response)
     {   
-        Write-Warning "$FunctionName - Startup parameters changed on $SqlServer `n Will only take effect after a restart"
+        Write-Message -Level Outpu "Startup parameters changed on $SqlServer, `n Will only take effect after a restart"
     }
     else
     {
-        Write-Warning "$FunctionName - Startup parameters failed to change on $SqlServer "
+        Write-Warning -Level Warning "Startup parameters failed to change on $SqlServer "
     }
-    
-
 }

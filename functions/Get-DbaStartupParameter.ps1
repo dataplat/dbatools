@@ -69,7 +69,7 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 					$servername, $instancename = ($sqlserver.name.Split('\'))
 				}
    
-				Write-Verbose "Attempting to connect to $servername"
+				Write-Message -Level Verbose "Attempting to connect to $servername"
 				
 				if ($instancename.Length -eq 0) { $instancename = "MSSQLSERVER" }
 				
@@ -92,7 +92,7 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 					
 					if ($debugflag.length -ne 0)
 					{
-						Write-Warning "$servername is using the lowercase -t trace flag. This is for internal debugging only. Please ensure this was intentional."
+						Write-Message -Level Warning "$servername is using the lowercase -t trace flag. This is for internal debugging only. Please ensure this was intentional."
 					}
 					
 					if ($traceflags.length -eq 0)
@@ -178,7 +178,7 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 			}
 			catch
 			{
-				Write-Warning "$servername`: $_ "
+				Write-Message -Level Warning "$servername`: $_ "
 			}
 		}
 	}
