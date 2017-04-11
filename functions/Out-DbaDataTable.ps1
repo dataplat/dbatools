@@ -47,7 +47,8 @@ Similar to above but $dbalist gets piped in
 	[CmdletBinding()]
 	param (
 		[Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
-		[AllowNull()][PSObject[]]$InputObject,
+		[AllowNull()]
+		[PSObject[]]$InputObject,
 		[switch]$IgnoreNull,
 		[switch]$Silent
 	)
@@ -88,7 +89,7 @@ Similar to above but $dbalist gets piped in
 		$datatable = New-Object System.Data.DataTable
 	}
 	
-	PROCESS	
+	PROCESS
 	{
 		if (!$InputObject)
 		{
@@ -97,7 +98,7 @@ Similar to above but $dbalist gets piped in
 				Stop-Function -Message "The InputObject from the pipe is null. Skipping." -Continue
 			}
 			else
-			{ 
+			{
 				$datarow = $datatable.NewRow()
 				$datatable.Rows.Add($datarow)
 				continue
@@ -123,16 +124,17 @@ Similar to above but $dbalist gets piped in
 					}
 					$datatable.Columns.Add($column)
 				}
-				if ($property.Gettype().IsArray)
+				
+				if ($property.value.length -gt 0)
 				{
-					$datarow.Item($property.Name) = $property.value | ConvertTo-XML -AS String -NoTypeInformation -Depth 1
-				}
-				else
-				{
-                    if($property.value.length -gt 0)
-					    {
-                            $datarow.Item($property.Name) = $property.value
-                        }
+					if ($property.value.ToString() -eq 'System.Object[]')
+					{
+						$datarow.Item($property.Name) = $property.value -join ", "
+					}
+					else
+					{
+						$datarow.Item($property.Name) = $property.value
+					}
 				}
 			}
 			$datatable.Rows.Add($datarow)
