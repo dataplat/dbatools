@@ -11,5 +11,5 @@ try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators
 catch { }
 try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("dbatimespan", "sqlcollective.dbatools.Utility.DbaTimeSpan") }
 catch { }
-try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("dbasize", "sqlcollective.dbatools.Utility.DbaSize") }
+try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("dbasize", "sqlcollective.dbatools.Utility.Size") }
 catch { }
