@@ -120,6 +120,10 @@ Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
 Number of I/O buffers to use to perform the operation.
 Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
 
+.PARAMETER DatabaseFilter
+A comma seperated list of databases to restore. The function will still scan all files passed in, but will then filter down to just those from the databases listed 
+in this parameter
+
 .PARAMETER Confirm
 Prompts to confirm certain actions
 	
@@ -186,6 +190,11 @@ Restore-DbaDatabase. Restore-DbaDatabase will then scan all of the files, and re
 to the latest point in time covered by their backups. All data and log files will be moved to the default SQL Sever 
 folder for those file types as defined on the target instance.
 
+.EXAMPLE
+Restore-DbaDatabase -SqlServer server1\instance1 -Path c:\backups -DestinationDataDirectory c:\DataFiles -DestinationLogDirectory c:\LogFile -DatabaseFilter Prod1, Finance
+
+Scans all the files in c:\backups and then restores just the Prod1 and Finance databases onto the SQL Server Instance server1\instance1, placing data files
+c:\DataFiles and all the log files into c:\LogFiles
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	param (
@@ -214,7 +223,8 @@ folder for those file types as defined on the target instance.
 		[switch]$TrustDbBackupHistory,
 		[int]$MaxTransferSize,
 		[int]$BlockSize,
-		[int]$BufferCount
+		[int]$BufferCount,
+		[string[]]$DatabaseFilter
 	)
 	BEGIN
 	{
@@ -352,9 +362,10 @@ folder for those file types as defined on the target instance.
 						{
 							if ($p -match '\.\w{3}\Z' )
 							{
+								Write-Verbose "$FunctionName - adding simple file"
 								if (Test-SqlPath -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential)
 								{
-									$BackupFiles += $p
+									$BackupFiles += $p | select  @{Name="FileName";Expression={"$_"}}, @{Name="FullName";Expression={"$_"}} -ExcludeProperty length
 								}
 								else
 								{
@@ -482,11 +493,21 @@ folder for those file types as defined on the target instance.
 
 		try
 		{
-			$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+			if ('master' -in $DatabaseFilter)
+			{
+				Write-Verbose "$FunctionName - Single User connection for master restores"
+				$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ApplicationName dbatoolsSystemk34i23hs3u57w
+			}
+			else
+			{
+				Write-Verbose "$FunctionName - normnal connections"
+				$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+			}
 		}
 		catch
 		{
 			Write-Warning "$FunctionName - Cannot connect to $SqlServer"
+			
 			Return
 		}
 		if ($null -ne $DatabaseName)
@@ -543,7 +564,7 @@ folder for those file types as defined on the target instance.
 		#$BackupFiles 
 		#return
 		Write-Verbose "$FunctionName - sorting uniquely"
-		$AllFilteredFiles = $BackupFiles | sort-object -property fullname -unique | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup -TrustDbBackupHistory:$TrustDbBackupHistory
+		$AllFilteredFiles = $BackupFiles | sort-object -property fullname -unique | Get-FilteredRestoreFile -SqlServer $server -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup -TrustDbBackupHistory:$TrustDbBackupHistory
 		
 		Write-Verbose "$FunctionName - $($AllFilteredFiles.count) dbs to restore"
 		
@@ -557,6 +578,32 @@ folder for those file types as defined on the target instance.
 			break
 		}
 		
+		if ($DatabaseFilter.length -gt 0) {
+			
+			$tAllFilteredFiles = @()
+			foreach ($FilteredFileSet in $AllFilteredFiles)
+			{
+				if ($FilteredFileSet.values.DatabaseName -in $DatabaseFilter)
+				{
+					Write-Verbose "$FunctionName  - adding $($FilteredFileSet.values.DatabaseName)"
+					$tAllFilteredFiles += $FilteredFileSet
+				}
+				else
+				{
+					Write-Verbose "$FunctionName  - skipping $($FilteredFileSet.values.DatabaseName)"
+				}
+			}
+			if ($tAllFilteredFiles.count -eq 0)
+			{
+				Write-Warning "No backups for requested databases provided."
+				break
+			}
+			else
+			{
+				$AllFilteredFiles = $tAllFilteredFiles
+			}
+		}
+
 		ForEach ($FilteredFileSet in $AllFilteredFiles)
 		{
 			$FilteredFiles = $FilteredFileSet.values
@@ -576,11 +623,12 @@ folder for those file types as defined on the target instance.
 				Write-Verbose "$FunctionName - Dbname set from backup = $DatabaseName"
 			}
 			
-			if ((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlServer $SqlServer -SqlCredential $SqlCredential))
+			if ((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlServer $server -SqlCredential $SqlCredential))
 			{
+				$completed = 'unsuccessfully'
 				try
 				{
-					$FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -TrustDbBackupHistory:$TrustDbBackupHistory -ReplaceDatabase:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure $FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix -MaxTransferSize $MaxTransferSize -BufferCount $BufferCount -BlockSize $BlockSize					
+					$FilteredFiles | Restore-DBFromFilteredArray -SqlServer $server -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -TrustDbBackupHistory:$TrustDbBackupHistory -ReplaceDatabase:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure $FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix -MaxTransferSize $MaxTransferSize -BufferCount $BufferCount -BlockSize $BlockSize -DatabaseFilter:$DatabaseFilter					
 					$Completed = 'successfully'
 				}
 				catch
@@ -591,11 +639,13 @@ folder for those file types as defined on the target instance.
 				}
 				Finally
 				{
-					Write-Verbose "Database $databasename restored $Completed"
+					Write-Verbose "$FunctionName = Database $databasename restored $Completed"
+					Write-verbose "$FunctionName - connection state = $($server.ConnectionContext.IsOpen)"
 				}
 			}
 			$DatabaseName = ''
-		}
+			}
+			#$server.ConnectionContext.Disconnect()
 	}
 }
 

@@ -20,6 +20,9 @@ Sql Server Instance against which the restore is going to be performed
 .PARAMETER SqlCredential
 Credential for connectin to SqlServer
 
+.PARAMETER SystemDatabaseRestore
+Switch when restoring system databases
+
 .NOTES 
 Original Author: Stuart Moore (@napalmgram), stuart-moore.com
 
@@ -45,7 +48,8 @@ Checks that the Restore chain in $FilteredFiles is compatiable with the SQL Serv
 		[object]$SqlServer,
         [parameter(Mandatory = $true)]
         [object[]]$FilteredRestoreFiles,
-        [System.Management.Automation.PSCredential]$SqlCredential
+        [System.Management.Automation.PSCredential]$SqlCredential,
+        [switch]$SystemDatabaseRestore
         
 	)
     $FunctionName =(Get-PSCallstack)[0].Command
@@ -59,21 +63,54 @@ Checks that the Restore chain in $FilteredFiles is compatiable with the SQL Serv
         break
     }
     #Can't restore backwards
-    $Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-    if ($RestoreVersion -gt $Server.VersionMajor)
+    try 
     {
-        Write-Warning "$FunctionName - Backups are from a newer version of SQL Server than $($Server.Name)"
-        return $false
-        break   
+        if ($sqlServer -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject])
+        {
+            $Newconnection  = $true
+            $Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential	
+        }
+        else
+        {
+            $server = $sqlServer
+        }
     }
+    catch 
+    {
+        Write-Warning "$FunctionName - Cannot connect to $SqlServer" 
+        break
+    } 
 
-    if (($Server.VersionMajor -gt 10 -and $RestoreVersion -lt 9)  )
+    if ($SystemDatabaseRestore)
     {
-        Write-Warning "$FunctionName - This version - $RestoreVersion - too old to restore on to $($Server.Name)"
-        return $false
-        break 
+        if ($RestoreVersion -ne $Server.VersionMajor)
+        {
+            Write-Warning "$FunctionName - For System Database restore versions must match)"
+            return $false
+            break   
+        }
     }
-    $server.ConnectionContext.Disconnect()
+    else 
+    {
+        if ($RestoreVersion -gt $Server.VersionMajor)
+        {
+            Write-Warning "$FunctionName - Backups are from a newer version of SQL Server than $($Server.Name)"
+            return $false
+            break   
+        }
+
+        if (($Server.VersionMajor -gt 10 -and $RestoreVersion -lt 9)  )
+        {
+            Write-Warning "$FunctionName - This version - $RestoreVersion - too old to restore on to $($Server.Name)"
+            return $false
+            break 
+        }
+    }
+    if ($Newconnection)
+    {
+        Write-Verbose "$FunctionName - Closing smo connection"
+        $server.ConnectionContext.Disconnect()
+    }
     return $True
 }
 

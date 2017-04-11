@@ -16,8 +16,25 @@ Internal function. Returns the default data and log paths for SQL Server. Needed
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-	
+	try 
+	{
+		if ($sqlServer -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject])
+		{
+			Write-verbose "$FunctionName - Opening SQL Server connection"
+			$NewConnection = $True
+			$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential	
+		}
+		else
+		{
+			Write-Verbose "$FunctionName - reusing SMO connection"
+			$server = $SqlServer
+		}
+	}
+	catch {
+
+		Write-Warning "$FunctionName - Cannot connect to $SqlServer" 
+		break
+	}
 	switch ($filetype) { "mdf" { $filetype = "data" } "ldf" { $filetype = "log" } }
 	
 	if ($filetype -eq "log")
