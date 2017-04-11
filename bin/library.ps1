@@ -4041,11 +4041,11 @@ namespace Sqlcollective.Dbatools
 Dear User,
 
 in the name of the dbatools team I apologize for the inconvenience.
-Generally, when something goes wrong we try to handle it for you and interpret
-it for you in a way you can understand. Unfortunately, something went wrong with
-importing our main library, so all the systems making this possible don't work
-yet. This really shouldn't happen in any PowerShell environment imaginable, but
-... well, it hapend and you are reading this message.
+Generally, when something goes wrong we try to handle and interpret in an
+understandable manner. Unfortunately, something went awry with importing
+our main library, so all the systems making this possible would not be initialized
+yet. We have taken great pains to avoid this issue but this notification indicates
+we have failed.
 
 Please, in order to help us prevent this from happening again, visit us at:
 https://github.com/sqlcollaborative/dbatools/issues
@@ -4075,16 +4075,11 @@ if ($LibraryVersion -ne ([Sqlcollective.Dbatools.Utility.UtilityHost]::LibraryVe
 {
     Write-Warning @"
 A version missmatch between the dbatools library loaded and the one expected by
-this module. This usually happens, when you update the dbatools module and use
+this module. This usually happens when you update the dbatools module and use
 Remove-Module / Import-Module in order to load the latest version without
-starting PowerShell new.
+starting a new PowerShell instance.
 
-Due to technical limitations, it is neccessary to restart the console in order
-to apply the library update. This does not necessarily mean you have to do so
-right away, however, though it is recommend to do so. Some functions may behave
-in an unexpected manner or produce quite a few errors if you don't. If that's
-cool with you, go ahead and keep this console open.
-You've been warned.
+Please restart the console to apply the library update, or unexpected behavior will likely occur.
 "@
 }
 #endregion Version Warning
