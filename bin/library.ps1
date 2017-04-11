@@ -4029,8 +4029,8 @@ namespace Sqlcollective.Dbatools
         $paramAddType = @{
             TypeDefinition = $source
             ErrorAction = 'Stop'
+            ReferencedAssemblies = ([appdomain]::CurrentDomain.GetAssemblies() | Where-Object FullName -match "Microsoft\.Management\.Infrastructure").Location
         }
-        if ($Host.Version.Major -lt 5) { $paramAddType["ReferencedAssemblies"] = ([appdomain]::CurrentDomain.GetAssemblies() | Where-Object FullName -match "Microsoft\.Management\.Infrastructure").Location }
         
         Add-Type @paramAddType
     }
