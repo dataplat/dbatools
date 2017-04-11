@@ -1,4 +1,4 @@
-﻿
+
 #region Test whether the module had already been imported
 $ImportLibrary = $true
 try
@@ -90,6 +90,8 @@ namespace Sqlcollective.Dbatools
     {
         using System.Collections.Generic;
         using System.Management.Automation;
+        using Microsoft.Management.Infrastructure;
+        using Microsoft.Management.Infrastructure.Options;
 
         /// <summary>
         /// Provides static tools for managing connections
@@ -101,10 +103,37 @@ namespace Sqlcollective.Dbatools
             /// </summary>
             public static Dictionary<string, ManagementConnection> Connections = new Dictionary<string, ManagementConnection>();
 
+            #region Configuration
             /// <summary>
             /// The time interval that must pass, before a connection using a known to not work connection protocol is reattempted
             /// </summary>
             public static TimeSpan BadConnectionTimeout = new TimeSpan(0, 15, 0);
+
+            /// <summary>
+            /// Globally disables all caching done by the Computer Management functions.
+            /// </summary>
+            public static bool DisableCache = false;
+
+            /// <summary>
+            /// Disables the caching of bad credentials. dbatools caches bad logon credentials for wmi/cim and will not reuse them.
+            /// </summary>
+            public static bool DisableBadCredentialCache = false;
+
+            /// <summary>
+            /// Disables the automatic registration of working credentials. dbatools will caches the last working credential when connecting using wmi/cim and will use those rather than using known bad credentials
+            /// </summary>
+            public static bool DisableCredentialAutoRegister = false;
+
+            /// <summary>
+            /// Enabling this will force the use of the last credentials known to work, rather than even trying explicit credentials.
+            /// </summary>
+            public static bool OverrideExplicitCredential = false;
+
+            /// <summary>
+            /// Globally disables the persistence of Cim sessions used to connect to a target system.
+            /// </summary>
+            public static bool DisableCimPersistence = false;
+            #endregion Configuration
         }
 
         /// <summary>
@@ -117,6 +146,146 @@ namespace Sqlcollective.Dbatools
             /// The computer to connect to
             /// </summary>
             public string ComputerName;
+
+            #region Configuration
+            /// <summary>
+            /// Locally disables the caching of bad credentials
+            /// </summary>
+            public bool DisableBadCredentialCache
+            {
+                get
+                {
+                    switch (_DisableBadCredentialCache)
+                    {
+                        case -1:
+                            return false;
+                        case 1:
+                            return true;
+                        default:
+                            return ConnectionHost.DisableBadCredentialCache;
+                    }
+                }
+                set
+                {
+                    if (value) { _DisableBadCredentialCache = 1; }
+                    else { _DisableBadCredentialCache = -1; }
+                }
+            }
+            private int _DisableBadCredentialCache = 0;
+
+            /// <summary>
+            /// Locally disables the caching of working credentials
+            /// </summary>
+            public bool DisableCredentialAutoRegister
+            {
+                get
+                {
+                    switch (_DisableCredentialAutoRegister)
+                    {
+                        case -1:
+                            return false;
+                        case 1:
+                            return true;
+                        default:
+                            return ConnectionHost.DisableCredentialAutoRegister;
+                    }
+                }
+                set
+                {
+                    if (value) { _DisableCredentialAutoRegister = 1; }
+                    else { _DisableCredentialAutoRegister = -1; }
+                }
+            }
+            private int _DisableCredentialAutoRegister = 0;
+
+            /// <summary>
+            /// Locally overrides explicit credentials with working ones that were cached
+            /// </summary>
+            public bool OverrideExplicitCredential
+            {
+                get
+                {
+                    switch (_OverrideExplicitCredential)
+                    {
+                        case -1:
+                            return false;
+                        case 1:
+                            return true;
+                        default:
+                            return ConnectionHost.OverrideExplicitCredential;
+                    }
+                }
+                set
+                {
+                    if (value) { _OverrideExplicitCredential = 1; }
+                    else { _OverrideExplicitCredential = -1; }
+                }
+            }
+            private int _OverrideExplicitCredential = 0;
+
+            /// <summary>
+            /// Connectiontypes that will never be used
+            /// </summary>
+            public ManagementConnectionType DisabledConnectionTypes
+            {
+                get
+                {
+                    ManagementConnectionType temp = ManagementConnectionType.None;
+                    if (CimRM == ManagementConnectionProtocolState.Disabled) { temp = temp | ManagementConnectionType.CimRM; }
+                    if (CimDCOM == ManagementConnectionProtocolState.Disabled) { temp = temp | ManagementConnectionType.CimDCOM; }
+                    if (Wmi == ManagementConnectionProtocolState.Disabled) { temp = temp | ManagementConnectionType.Wmi; }
+                    if (PowerShellRemoting == ManagementConnectionProtocolState.Disabled) { temp = temp | ManagementConnectionType.PowerShellRemoting; }
+                    return temp;
+                }
+                set
+                {
+                    if ((value & ManagementConnectionType.CimRM) != 0) { CimRM = ManagementConnectionProtocolState.Disabled; }
+                    else if ((CimRM & ManagementConnectionProtocolState.Disabled) != 0) { CimRM = ManagementConnectionProtocolState.Unknown; }
+                    if ((value & ManagementConnectionType.CimDCOM) != 0) { CimDCOM = ManagementConnectionProtocolState.Disabled; }
+                    else if ((CimDCOM & ManagementConnectionProtocolState.Disabled) != 0) { CimDCOM = ManagementConnectionProtocolState.Unknown; }
+                    if ((value & ManagementConnectionType.Wmi) != 0) { Wmi = ManagementConnectionProtocolState.Disabled; }
+                    else if ((Wmi & ManagementConnectionProtocolState.Disabled) != 0) { Wmi = ManagementConnectionProtocolState.Unknown; }
+                    if ((value & ManagementConnectionType.PowerShellRemoting) != 0) { PowerShellRemoting = ManagementConnectionProtocolState.Disabled; }
+                    else if ((PowerShellRemoting & ManagementConnectionProtocolState.Disabled) != 0) { PowerShellRemoting = ManagementConnectionProtocolState.Unknown; }
+                }
+            }
+
+            /// <summary>
+            /// Locally disables the persistence of Cim sessions used to connect to a target system.
+            /// </summary>
+            public bool DisableCimPersistence
+            {
+                get
+                {
+                    switch (_DisableCimPersistence)
+                    {
+                        case -1:
+                            return false;
+                        case 1:
+                            return true;
+                        default:
+                            return ConnectionHost.DisableCimPersistence;
+                    }
+                }
+                set
+                {
+                    if (value) { _DisableCimPersistence = 1; }
+                    else { _DisableCimPersistence = -1; }
+                }
+            }
+            private int _DisableCimPersistence = 0;
+
+            /// <summary>
+            /// Restores all deviations from public policy back to default
+            /// </summary>
+            public void RestoreDefaultConfiguration()
+            {
+                _DisableBadCredentialCache = 0;
+                _DisableCredentialAutoRegister = 0;
+                _OverrideExplicitCredential = 0;
+                _DisableCimPersistence = 0;
+            }
+            #endregion Configuration
 
             #region Connection Stats
             /// <summary>
@@ -233,14 +402,14 @@ namespace Sqlcollective.Dbatools
             public PSCredential Credentials;
 
             /// <summary>
-            /// Whether the default credentials override explicitly specified credentials
-            /// </summary>
-            public bool OverrideInputCredentials;
-
-            /// <summary>
             /// Whether the default windows credentials are known to not work against the target.
             /// </summary>
             public bool WindowsCredentialsAreBad;
+
+            /// <summary>
+            /// Whether windows credentials are known to be good. Do not build conditions on them being false, just on true.
+            /// </summary>
+            public bool UseWindowsCredentials;
 
             /// <summary>
             /// Credentials known to not work. They will not be used when specified.
@@ -256,8 +425,17 @@ namespace Sqlcollective.Dbatools
                 if (Credential == null)
                 {
                     WindowsCredentialsAreBad = true;
+                    UseWindowsCredentials = false;
                     return;
                 }
+
+                // If previously good credentials have been revoked, better remove them from the list
+                if (Credentials.UserName.ToLower() == Credential.UserName.ToLower())
+                {
+                    if (Credentials.GetNetworkCredential().Password == Credential.GetNetworkCredential().Password)
+                        Credentials = null;
+                }
+
                 foreach (PSCredential cred in KnownBadCredentials)
                 {
                     if (cred.UserName.ToLower() == Credential.UserName.ToLower())
@@ -270,15 +448,30 @@ namespace Sqlcollective.Dbatools
             }
 
             /// <summary>
+            /// Reports a credentials object as being legit.
+            /// </summary>
+            /// <param name="Credential">The functioning credential that we may want to use again</param>
+            public void AddGoodCredential(PSCredential Credential)
+            {
+                if (!DisableCredentialAutoRegister)
+                {
+                    Credentials = Credential;
+                    if (Credential == null) { UseWindowsCredentials = true; }
+                }
+            }
+
+            /// <summary>
             /// Calculates, which credentials to use. Will consider input, compare it with know not-working credentials or use the configured working credentials for that.
             /// </summary>
             /// <param name="Credential">Any credential object a user may have explicitly specified.</param>
-            /// <param name="DisableBadCredentialCache">Whether to check for bad credentials and exclude them.</param>
             /// <param name="WasBound">Whether the user of the calling function explicitly specified credentials to use.</param>
             /// <returns>The Credentials to use</returns>
-            public PSCredential GetCredential(PSCredential Credential, bool DisableBadCredentialCache, bool WasBound)
+            public PSCredential GetCredential(PSCredential Credential, bool WasBound)
             {
-                if (OverrideInputCredentials || !WasBound) { return Credentials; }
+                // If nothing was bound, return whatever is available
+                // If something was bound, however explicit override is in effect AND either we have a good credential OR know Windows Credentials are good to use, use the cached credential
+                // Without the additional logic conditions, OverrideExplicitCredential would override all input, even if we haven't found a working credential yet.
+                if ((OverrideExplicitCredential && (UseWindowsCredentials || (Credentials != null))) || !WasBound) { return Credentials; }
                 if (Credential == null) { return null; }
 
                 if (!DisableBadCredentialCache)
@@ -341,11 +534,6 @@ namespace Sqlcollective.Dbatools
             #endregion Credential Management
 
             #region Connection Types
-            /// <summary>
-            /// Connectiontypes that will never be used
-            /// </summary>
-            public ManagementConnectionType DisabledConnectionTypes = ManagementConnectionType.None;
-            
             /// <summary>
             /// Returns the next connection type to try.
             /// </summary>
@@ -453,11 +641,9 @@ namespace Sqlcollective.Dbatools
                 Connection.LastPowerShellRemoting = LastPowerShellRemoting;
 
                 Connection.Credentials = Credentials;
-                Connection.OverrideInputCredentials = OverrideInputCredentials;
+                Connection.OverrideExplicitCredential = OverrideExplicitCredential;
                 Connection.KnownBadCredentials = KnownBadCredentials;
                 Connection.WindowsCredentialsAreBad = WindowsCredentialsAreBad;
-
-                Connection.DisabledConnectionTypes = DisabledConnectionTypes;
             }
             #endregion Internals
 
@@ -479,6 +665,191 @@ namespace Sqlcollective.Dbatools
                 this.ComputerName = ComputerName.ToLower();
             }
             #endregion Constructors
+
+            #region CIM Execution
+
+            #region WinRM
+            /// <summary>
+            /// The options ot use when establishing a CIM Session
+            /// </summary>
+            public WSManSessionOptions CimWinRMOptions
+            {
+                get { return _CimWinRMOptions; }
+                set
+                {
+                    cimWinRMSession = null;
+                    _CimWinRMOptions = value;
+                }
+            }
+            private WSManSessionOptions _CimWinRMOptions;
+
+            private CimSession cimWinRMSession;
+
+            /// <summary>
+            /// Returns the default wsman options object
+            /// </summary>
+            /// <returns>Something very default-y</returns>
+            private WSManSessionOptions GetDefaultCimWsmanOptions()
+            {
+                WSManSessionOptions options = new WSManSessionOptions();
+                options.DestinationPort = 0;
+                options.MaxEnvelopeSize = 0;
+                options.CertCACheck = true;
+                options.CertCNCheck = true;
+                options.CertRevocationCheck = true;
+                options.UseSsl = false;
+                options.PacketEncoding = PacketEncoding.Utf8;
+                options.NoEncryption = false;
+                options.EncodePortInServicePrincipalName = false;
+
+                return options;
+            }
+
+            /// <summary>
+            /// Get all cim instances of the appropriate class using WinRM
+            /// </summary>
+            /// <param name="Credential">The credentiuls to use for the connection.</param>
+            /// <param name="Class">The class to query.</param>
+            /// <param name="Namespace">The namespace to look in (defaults to root\cimv2).</param>
+            /// <returns>Hopefully a mountainload of CimInstances</returns>
+            public object GetCimRMInstance(PSCredential Credential, string Class, string Namespace = @"root\cimv2")
+            {
+                WSManSessionOptions options = null;
+                if (CimWinRMOptions == null)
+                {
+                    options = GetDefaultCimWsmanOptions();
+                }
+                else { options = CimWinRMOptions; }
+                if (Credential != null) { options.AddDestinationCredentials(new CimCredential(PasswordAuthenticationMechanism.Default, Credential.GetNetworkCredential().Domain, Credential.GetNetworkCredential().UserName, Credential.Password)); }
+
+                if (cimWinRMSession == null) { cimWinRMSession = CimSession.Create(ComputerName, options); }
+                var result = cimWinRMSession.EnumerateInstances(Namespace, Class);
+                if (DisableCimPersistence)
+                {
+                    cimWinRMSession.Close();
+                    cimWinRMSession = null;
+                }
+                return result;
+            }
+
+            /// <summary>
+            /// Get all cim instances matching the query using WinRM
+            /// </summary>
+            /// <param name="Credential">The credentiuls to use for the connection.</param>
+            /// <param name="Query">The query to use requesting information.</param>
+            /// <param name="Dialect">Defaults to WQL.</param>
+            /// <param name="Namespace">The namespace to look in (defaults to root\cimv2).</param>
+            /// <returns></returns>
+            public object QueryCimRMInstance(PSCredential Credential, string Query, string Dialect = "WQL", string Namespace = @"root\cimv2")
+            {
+                WSManSessionOptions options = null;
+                if (CimWinRMOptions == null)
+                {
+                    options = GetDefaultCimWsmanOptions();
+                }
+                else { options = CimWinRMOptions; }
+                if (Credential != null) { options.AddDestinationCredentials(new CimCredential(PasswordAuthenticationMechanism.Default, Credential.GetNetworkCredential().Domain, Credential.GetNetworkCredential().UserName, Credential.Password)); }
+
+                if (cimWinRMSession == null) { cimWinRMSession = CimSession.Create(ComputerName, options); }
+
+                var result = cimWinRMSession.QueryInstances(Namespace, Dialect, Query);
+                if (DisableCimPersistence)
+                {
+                    cimWinRMSession.Close();
+                    cimWinRMSession = null;
+                }
+                return result;
+            }
+            #endregion WinRM
+
+            #region DCOM
+            /// <summary>
+            /// The options ot use when establishing a CIM Session
+            /// </summary>
+            public DComSessionOptions CimDCOMOptions
+            {
+                get { return _CimDCOMOptions; }
+                set
+                {
+                    _CimDCOMOptions = null;
+                    _CimDCOMOptions = value;
+                }
+            }
+            private DComSessionOptions _CimDCOMOptions;
+
+            private CimSession cimDCOMSession;
+
+            /// <summary>
+            /// Returns the default DCom options object
+            /// </summary>
+            /// <returns>Something very default-y</returns>
+            private DComSessionOptions GetDefaultCimDcomOptions()
+            {
+                DComSessionOptions options = new DComSessionOptions();
+                options.PacketPrivacy = true;
+                options.PacketIntegrity = true;
+                options.Impersonation = ImpersonationType.Impersonate;
+
+                return options;
+            }
+
+            /// <summary>
+            /// Get all cim instances of the appropriate class using DCOM
+            /// </summary>
+            /// <param name="Credential">The credentiuls to use for the connection.</param>
+            /// <param name="Class">The class to query</param>
+            /// <param name="Namespace">The namespace to look in (defaults to root\cimv2)</param>
+            /// <returns>Hopefully a mountainload of CimInstances</returns>
+            public object GetCimDCOMInstance(PSCredential Credential, string Class, string Namespace = @"root\cimv2")
+            {
+                DComSessionOptions options = null;
+                if (CimDCOMOptions == null)
+                {
+                    options = GetDefaultCimDcomOptions();
+                }
+                else { options = CimDCOMOptions; }
+                if (Credential != null) { options.AddDestinationCredentials(new CimCredential(PasswordAuthenticationMechanism.Default, Credential.GetNetworkCredential().Domain, Credential.GetNetworkCredential().UserName, Credential.Password)); }
+
+                if (cimDCOMSession == null) { cimDCOMSession = CimSession.Create(ComputerName, options); }
+                var result = cimDCOMSession.EnumerateInstances(Namespace, Class);
+                if (DisableCimPersistence)
+                {
+                    cimDCOMSession.Close();
+                    cimDCOMSession = null;
+                }
+                return result;
+            }
+
+            /// <summary>
+            /// Get all cim instances matching the query using DCOM
+            /// </summary>
+            /// <param name="Credential">The credentiuls to use for the connection.</param>
+            /// <param name="Query">The query to use requesting information.</param>
+            /// <param name="Dialect">Defaults to WQL.</param>
+            /// <param name="Namespace">The namespace to look in (defaults to root\cimv2).</param>
+            /// <returns></returns>
+            public object QueryDCOMInstance(PSCredential Credential, string Query, string Dialect = "WQL", string Namespace = @"root\cimv2")
+            {
+                DComSessionOptions options = null;
+                if (CimDCOMOptions == null)
+                {
+                    options = GetDefaultCimDcomOptions();
+                }
+                else { options = CimDCOMOptions; }
+                if (Credential != null) { options.AddDestinationCredentials(new CimCredential(PasswordAuthenticationMechanism.Default, Credential.GetNetworkCredential().Domain, Credential.GetNetworkCredential().UserName, Credential.Password)); }
+
+                if (cimDCOMSession == null) { cimDCOMSession = CimSession.Create(ComputerName, options); }
+                var result = cimDCOMSession.QueryInstances(Namespace, Dialect, Query);
+                if (DisableCimPersistence)
+                {
+                    cimDCOMSession.Close();
+                    cimDCOMSession = null;
+                }
+                return result;
+            }
+            #endregion DCOM
+
+            #endregion CIM Execution
 
             /// <summary>
             /// Simple string representation
@@ -1368,11 +1739,9 @@ namespace Sqlcollective.Dbatools
                             con.LastPowerShellRemoting = (DateTime)tempInput.Properties["LastPowerShellRemoting"].Value;
 
                             con.Credentials = (PSCredential)tempInput.Properties["Credentials"].Value;
-                            con.OverrideInputCredentials = (bool)tempInput.Properties["OverrideInputCredentials"].Value;
+                            con.OverrideExplicitCredential = (bool)tempInput.Properties["OverrideExplicitCredential"].Value;
                             con.KnownBadCredentials = (List<PSCredential>)tempInput.Properties["KnownBadCredentials"].Value;
                             con.WindowsCredentialsAreBad = (bool)tempInput.Properties["WindowsCredentialsAreBad"].Value;
-
-                            con.DisabledConnectionTypes = (ManagementConnectionType)tempInput.Properties["DisabledConnectionTypes"].Value;
                         }
                         catch
                         {
@@ -3603,38 +3972,32 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// Restores all DateTime objects to their default display behavior
             /// </summary>
-            [Hidden]
             public static bool DisableCustomDateTime = false;
 
             /// <summary>
             /// Restores all timespan objects to their default display behavior.
             /// </summary>
-            [Hidden]
             public static bool DisableCustomTimeSpan = false;
 
             /// <summary>
             /// Formating string for date-style datetime objects.
             /// </summary>
-            [Hidden]
             public static string FormatDate = "dd MMM yyyy";
 
             /// <summary>
             /// Formating string for datetime-style datetime objects
             /// </summary>
-            [Hidden]
             public static string FormatDateTime = "yyyy-MM-dd HH:mm:ss.fff";
 
             /// <summary>
             /// Formating string for time-style datetime objects
             /// </summary>
-            [Hidden]
             public static string FormatTime = "HH:mm:ss";
 
             /// <summary>
             /// The Version of the dbatools Library. Used to compare with import script to determine out-of-date libraries
             /// </summary>
-            [Hidden]
-            public readonly static Version LibraryVersion = new Version(1, 0, 0, 1);
+            public readonly static Version LibraryVersion = new Version(1, 0, 0, 3);
         }
 
         /// <summary>
@@ -3663,7 +4026,13 @@ namespace Sqlcollective.Dbatools
     
     try
     {
-        Add-Type $source -ErrorAction Stop
+        $paramAddType = @{
+            TypeDefinition = $source
+            ErrorAction = 'Stop'
+        }
+        if ($Host.Version.Major -lt 5) { $paramAddType["ReferencedAssemblies"] = ([appdomain]::CurrentDomain.GetAssemblies() | Where-Object FullName -match "Microsoft\.Management\.Infrastructure").Location }
+        
+        Add-Type @paramAddType
     }
     catch
     {
@@ -3672,11 +4041,11 @@ namespace Sqlcollective.Dbatools
 Dear User,
 
 in the name of the dbatools team I apologize for the inconvenience.
-Generally, when something goes wrong we try to handle and interpret in an
-understandable manner. Unfortunately, something went awry with importing
-our main library, so all the systems making this possible would not be initialized
-yet. We have taken great pains to avoid this issue but this notification indicates
-we have failed.
+Generally, when something goes wrong we try to handle it for you and interpret
+it for you in a way you can understand. Unfortunately, something went wrong with
+importing our main library, so all the systems making this possible don't work
+yet. This really shouldn't happen in any PowerShell environment imaginable, but
+... well, it hapend and you are reading this message.
 
 Please, in order to help us prevent this from happening again, visit us at:
 https://github.com/sqlcollaborative/dbatools/issues
@@ -3701,16 +4070,21 @@ aka "The guy who made most of The Library that Failed to import"
 }
 
 #region Version Warning
-$LibraryVersion = New-Object System.Version(1, 0, 0, 1)
+$LibraryVersion = New-Object System.Version(1, 0, 0, 3)
 if ($LibraryVersion -ne ([Sqlcollective.Dbatools.Utility.UtilityHost]::LibraryVersion))
 {
     Write-Warning @"
 A version missmatch between the dbatools library loaded and the one expected by
-this module. This usually happens when you update the dbatools module and use
+this module. This usually happens, when you update the dbatools module and use
 Remove-Module / Import-Module in order to load the latest version without
-starting a new PowerShell instance.
+starting PowerShell new.
 
-Please restart the console to apply the library update, or unexpected behavior will likely occur.
+Due to technical limitations, it is neccessary to restart the console in order
+to apply the library update. This does not necessarily mean you have to do so
+right away, however, though it is recommend to do so. Some functions may behave
+in an unexpected manner or produce quite a few errors if you don't. If that's
+cool with you, go ahead and keep this console open.
+You've been warned.
 "@
 }
 #endregion Version Warning
