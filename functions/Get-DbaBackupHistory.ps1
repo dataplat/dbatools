@@ -205,8 +205,15 @@ Function Get-DbaBackupHistory
                     foreach ($database in $databases)
                     {
                         Write-Message -Level Verbose -Message "Processing $database" -Target $database
-                        
-                        $sql += @"
+						if ($IgnoreCopyOnly)
+						{
+							$wherecopyonly = "and is_copy_only='0'"
+						}
+						else
+						{
+							$wherecopyonly = $null
+						}
+						$sql += @"
 SELECT
     a.BackupSetRank,
     a.Server,
@@ -259,7 +266,7 @@ INNER JOIN msdb..backupmediaset AS mediaset
   ON mediafamily.media_set_id = mediaset.media_set_id
 INNER JOIN msdb..backupset AS backupset
   ON backupset.media_set_id = mediaset.media_set_id
-WHERE backupset.database_name = '$database'
+WHERE backupset.database_name = '$database' $wherecopyonly
 AND (type = '$first'
 OR type = '$second')) AS a
 WHERE a.BackupSetRank = 1
@@ -362,9 +369,9 @@ FROM msdb..backupmediafamily mediafamily
                     }
                     
                     $sql = "$select $from $where ORDER BY backupset.backup_finish_date DESC"
-                }
-                
-                if (-not $last)
+				}
+				
+				if (-not $last)
                 {
                     Write-Message -Level Debug -Message $sql
                     Write-Message -Level SomewhatVerbose -Message "Executing sql query"
