@@ -61,6 +61,9 @@ Can disable prompt for confirmation by using -Confirm:$false
 .PARAMETER WhatIf
 Shows what would happen if the command were executed 
 
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
+
 .NOTES
 dbatools PowerShell module (https://dbatools.io)
 Copyright (C) 2016 Chrissy LeMaire
@@ -109,6 +112,7 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
 	param (
 		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[Alias("Credential")]
 		[System.Management.Automation.PSCredential]$SqlCredential,
@@ -126,7 +130,8 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 		[switch]$KeepIdentity,
 		[switch]$KeepNulls,
 		[switch]$Truncate,
-		[switch]$AutoCreateTable
+		[switch]$AutoCreateTable,
+		[switch]$Silent
 	)
 	
 	DynamicParam { if ($sqlserver) { return Get-ParamSqlDatabase -SqlServer $SqlServer -SqlCredential $SqlCredential } }
@@ -162,7 +167,7 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 		
 		if ($dotcount -lt 2 -and $database -eq $null)
 		{
-			Write-Warning "You must specify a database or fully qualififed table name"
+			Write-Message -Level Warning -Message "You must specify a database or fully qualififed table name"
 			Continue
 		}
 		
@@ -187,7 +192,7 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 		
 		if ($db -eq $null)
 		{
-			Write-Warning "$database does not exist"
+			Write-Message -Level Warning -Message "$database does not exist"
 			continue
 		}
 		
@@ -208,12 +213,12 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 			{
 				try
 				{
-					Write-Output "Truncating $fqtn"
+					Write-Message -Level Output -Message "Truncating $fqtn"
 					$null = $server.Databases[$database].ExecuteNonQuery("TRUNCATE TABLE $fqtn")
 				}
 				catch
 				{
-					Write-Warning "Could not truncate $fqtn. Table may not exist or may have key constraints."
+					Write-Message -Level Warning -Message "Could not truncate $fqtn. Table may not exist or may have key constraints."
 				}
 			}
 		}
@@ -222,7 +227,7 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 		
 		if ($InputObject -eq $null)
 		{
-			Write-Warning "Using the pipeline can be insanely (5 minutes vs 0.5 seconds) slower for larger batches and doesn't show a progress bar. Consider using -InputObject for large batches."
+			Write-Message -Once SlowDataTablePipeline -Level Warning -Message "Using the pipeline can be insanely (5 minutes vs 0.5 seconds) slower for larger batches and doesn't show a progress bar. Consider using -InputObject for large batches."
 		}
 		
 		$bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($server.ConnectionContext.ConnectionString) #, $bulkCopyOptions)
@@ -244,16 +249,14 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 	{
 		if ($InputObject -eq $null)
 		{
-			Write-Warning "Input object is null"
-			break
+			Stop-Function -Message "Input object is null"
 		}
 		
 		$validtypes = @([System.Data.DataSet], [System.Data.DataTable], [System.Data.DataRow], [System.Data.DataRow[]]) #[System.Data.Common.DbDataReader], [System.Data.IDataReader]
 		
 		if ($InputObject.GetType() -notin $validtypes)
 		{
-			Write-Warning "Data is not of the right type (DbDataReader, DataTable, DataRow, or IDataReader)."
-			break
+			Stop-Function -Message "Data is not of the right type (DbDataReader, DataTable, DataRow, or IDataReader)."
 		}
 		
 		If ($InputObject.GetType() -eq [System.Data.DataSet])
@@ -268,15 +271,13 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 		{
 			if ($AutoCreateTable -eq $false)
 			{
-				Write-Warning "$fqtn does not exist. Use -AutoCreateTable to AutoCreate."
-				break
+				Stop-Function -Message "$fqtn does not exist. Use -AutoCreateTable to AutoCreate."
 			}
 			else
 			{
 				if ($schema -notin $server.Databases[0].Schemas.Name)
 				{
-					Write-Warning "Schema does not exist"
-					break
+					Stop-Function -Message "Schema does not exist"
 				}
 				
 				# Get SQL datatypes by best guess on first data row
@@ -331,7 +332,7 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 				
 				$sql = "BEGIN CREATE TABLE $fqtn ($($sqldatatypes -join ' NULL,')) END"
 				
-				Write-Debug $sql
+				Write-Message -Level Debug -Message $sql
 				
 				if ($Pscmdlet.ShouldProcess($SqlServer, "Creating table $fqtn"))
 				{
@@ -341,8 +342,7 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 					}
 					catch
 					{
-						Write-Warning "The following query failed: $sql"
-						return
+						Stop-Function -Message "The following query failed: $sql"
 					}
 				}
 			}
