@@ -250,7 +250,8 @@
 		'Read-DbaTransactionLog',
 		'Get-DbaTable',
 		'Invoke-DbaDatabaseShrink',
-		'Get-DbaEstimatedCompletionTime'
+		'Get-DbaEstimatedCompletionTime',
+		'Get-DbaLogin'
 		#'Get-DbaLinkedServer',
 		#'Invoke-DbaLogShippingRecovery',
 	)
