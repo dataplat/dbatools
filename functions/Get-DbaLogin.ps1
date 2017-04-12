@@ -17,11 +17,11 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 Pass a single login, or a list of them. Comma delimited. 
 
 .PARAMETER NoSystemLogins
-A switch to exlude system logins from returning.
+A switch to exlude system logins from returning. (Logins with '##' in the front or the 'sa' login)
 
 .PARAMETER Detail 
-Adds several extra columns by executing a TSQL Script against the server to get more information about the specified User. 
-This includes, LastLogin, netname, servicename as computername, instancename and sqlinstance.
+Adds extra information by executing a TSQL Script against the server to get more information about the specified User. 
+Right now, this only adds LastLogin information
 
 .NOTES 
 Original Author: Mitchell Hamann (@SirCaptainMitch)
@@ -51,7 +51,11 @@ Get specific user objects from the server
 
 .EXAMPLE 
 @('sql2016', 'sql2014') |  Get-DbaLogin -SqlCredential $sqlcred 
-Using Get-DbaLogin on the pipeline, you can also specify which names you would like with -Logins.  
+Using Get-DbaLogin on the pipeline, you can also specify which names you would like with -Logins.
+
+.EXAMPLE 
+@( $LpsSql08) |  Get-DbaLogin -SqlCredential $sqlcred -detailed 
+Using Get-DbaLogin on the pipeline to get detailed information, like Last Login
 	
 #>
 	[CmdletBinding()]
@@ -74,7 +78,7 @@ Using Get-DbaLogin on the pipeline, you can also specify which names you would l
 	{
 		foreach ($Instance in $sqlInstance)
 		{ 
-			try{ 
+			try { 
 				$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
 				$serverLogins = $server.Logins
 				$masterDatabase = $server.databases["master"]
@@ -93,14 +97,14 @@ Using Get-DbaLogin on the pipeline, you can also specify which names you would l
 						{ 							
 							$lastLogin = $($masterDatabase.ExecuteWithResults($sql.replace('{0}',$login.name)).Tables).login_time
 							add-member -InputObject $login -NotePropertyName LastLogin -NotePropertyValue $lastLogin
-						} 
+						}
 
 						add-member -InputObject $login -NotePropertyName NetName -NotePropertyValue $server.NetName 
 						add-member -InputObject $login -NotePropertyName ComputerName -NotePropertyValue $server.servicename
 						add-member -InputObject $login -NotePropertyName InstanceName -NotePropertyValue $server.InstanceName 
 						add-member -InputObject $login -NotePropertyName SqlInstance -NotePropertyValue $server.Name
 
-						Select-DefaultView -InputObject $login -Property Name, LoginType, LastLogin, NetName, ComputerName, InstanceName, SqlInstance 						 
+						Select-DefaultView -InputObject $login -Property Name, LoginType, LastLogin, NetName, ComputerName, InstanceName, SqlInstance
 					}
 				}
 			} else { 
