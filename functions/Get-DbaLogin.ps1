@@ -51,7 +51,7 @@ Get specific user objects from the server
 
 .EXAMPLE 
 @('sql2016', 'sql2014') |  Get-DbaLogin -SqlCredential $sqlcred 
-Pipeline example 
+Using Get-DbaLogin on the pipeline, you can also specify which names you would like with -Logins.  
 	
 #>
 	[CmdletBinding()]
@@ -100,7 +100,7 @@ Pipeline example
 						add-member -InputObject $login -NotePropertyName InstanceName -NotePropertyValue $server.InstanceName 
 						add-member -InputObject $login -NotePropertyName SqlInstance -NotePropertyValue $server.Name
 
-						$login									
+						Select-DefaultView -InputObject $login -Property Name, LoginType, LastLogin, NetName, ComputerName, InstanceName, SqlInstance 						 
 					}
 				}
 			} else { 
@@ -119,7 +119,7 @@ Pipeline example
 						add-member -InputObject $login -NotePropertyName InstanceName -NotePropertyValue $server.InstanceName 
 						add-member -InputObject $login -NotePropertyName SqlInstance -NotePropertyValue $server.Name
 
-						$login
+						Select-DefaultView -InputObject $login -Property Name, LoginType, LastLogin, NetName, ComputerName, InstanceName, SqlInstance 
 					}
 				}
 			}
