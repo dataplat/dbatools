@@ -52,7 +52,6 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 		[switch]$Simple
 	)
 	
-	[bool]$silent = $false
 	PROCESS
 	{
 		foreach ($servername in $SqlServer)
@@ -70,7 +69,7 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 					$servername, $instancename = ($sqlserver.name.Split('\'))
 				}
    
-				Write-Message -Level Verbose -message "Attempting to connect to $servername"
+				Write-Message -Level Verbose -message "Attempting to connect to $servername" -silent $false
 				
 				if ($instancename.Length -eq 0) { $instancename = "MSSQLSERVER" }
 				
@@ -93,7 +92,7 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 					
 					if ($debugflag.length -ne 0)
 					{
-						Write-Message -Level Warning "$servername is using the lowercase -t trace flag. This is for internal debugging only. Please ensure this was intentional." -silent $silent
+			#			Write-Message -Level Warning "$servername is using the lowercase -t trace flag. This is for internal debugging only. Please ensure this was intentional." -silent $silent
 					}
 					
 					if ($traceflags.length -eq 0)
@@ -179,7 +178,8 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 			}
 			catch
 			{
-				Write-Message -Level Warning -Message "$servername`: $_ " -silent $silent
+			#	Write-Message -Level Warning -Message "$servername`: $_ " -silent $silent
+			write-warning "caught error $_"
 			}
 		}
 	}
