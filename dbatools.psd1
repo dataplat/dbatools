@@ -254,7 +254,8 @@
 		'Export-DbaJob',
 		'Export-DbaAlert',
 		'Export-DbaOperator',
-		'Export-DbaProxyAccount'
+		'Export-DbaProxyAccount',
+		'Export-DbaJobCategory'
 		#'Get-DbaLinkedServer',
 		#'Invoke-DbaLogShippingRecovery',
 	)
