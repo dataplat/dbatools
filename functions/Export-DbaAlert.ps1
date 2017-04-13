@@ -70,9 +70,9 @@
 	Exports all alerts on the SQL Server 2016 instance using a trusted connection - automatically determines filename as .\servername-alerts-date.sql
 		
 	.EXAMPLE 
-	Export-DbaAlert -SqlInstance sql2016 -Alerts syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential (Get-Credetnial sqladmin) -Path C:\temp\export.sql
+	Export-DbaAlert -SqlInstance sql2016 -Alerts 'Severity 016' -SqlCredential (Get-Credetnial sqladmin) -Path C:\temp\export.sql
 		
-	Exports only syspolicy_purge_history and 'Hourly Log Backups' to C:temp\export.sql and uses the SQL login "sqladmin"
+	Exports only 'Severity 016' to C:temp\export.sql and uses the SQL login "sqladmin"
 	
 	.EXAMPLE 
 	Export-DbaAlert -SqlInstance sql2014 -Passthru | ForEach-Object { $_.Replace('sql2014','sql2016') } | Set-Content -Path C:\temp\export.sql
