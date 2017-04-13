@@ -251,7 +251,8 @@
 		'Get-DbaTable',
 		'Invoke-DbaDatabaseShrink',
 		'Get-DbaEstimatedCompletionTime',
-		'Export-DbaJob'
+		'Export-DbaJob',
+		'Export-DbaAlert'
 		#'Get-DbaLinkedServer',
 		#'Invoke-DbaLogShippingRecovery',
 	)
