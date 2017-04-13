@@ -139,7 +139,7 @@
 				}
 			}
 			
-			$exportalerts = $server.AlertServer.Alerts
+			$exportalerts = $server.JobServer.Alerts
 			
 			if ($alerts) {
 				$exportalerts = $exportalerts | Where-Object {
