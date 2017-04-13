@@ -132,13 +132,13 @@ After the work has been completed, we can push the original startup parameters b
     $CurrentStartup = Get-DbaStartupParameter -SqlServer $SqlServer -SqlCredential $Credential
     if ('startUpconfig' -in $PsBoundParameters.keys)
     {
-        Write-Message -Level VeryVerbose "StartupObject passed in"
+        Write-Message -Level VeryVerbose -Message "StartupObject passed in" -silent:$true
         $NewStartup = $StartUpConfig
         $TraceFlagsOverride = $true
     }
     else
     {    
-        Write-Message -Level VeryVerbose "Parameters passed in"
+        Write-Message -Level VeryVerbose -Message "Parameters passed in" -silent:$true
         $NewStartup = $CurrentStartup.PSObject.copy()
         foreach ($param in ($PsBoundParameters.keys | ?{$_ -in ($NewStartup.PSObject.Properties.name)}))
         {
@@ -158,12 +158,12 @@ After the work has been completed, we can push the original startup parameters b
             }
             else
             {
-                Stop-Function "Specified folder for Master Data file is not reachable by instance $SqlServer" -silent:$true
+                Stop-Function -message "Specified folder for Master Data file is not reachable by instance $SqlServer" -silent:$true
             }
         }
         else
         {
-            Stop-Function -message -message "MasterData value must be provided" -silent:$true
+            Stop-Function -message "MasterData value must be provided" -silent:$true
         }
         if($NewStartup.ErrorLog.length -gt 0)
         {
@@ -173,7 +173,7 @@ After the work has been completed, we can push the original startup parameters b
             }
             else
             {
-                Stop-Function "Specified folder for ErrorLog  file is not reachable by $SqlServer" -silent:$true
+                Stop-Function -message "Specified folder for ErrorLog  file is not reachable by $SqlServer" -silent:$true
             }
         }
         else
@@ -188,7 +188,7 @@ After the work has been completed, we can push the original startup parameters b
             }
             else
             {
-                Stop-Function "Specified folder for Master Log  file is not reachable by $SqlServer" -silent:$true
+                Stop-Function -message "Specified folder for Master Log  file is not reachable by $SqlServer" -silent:$true
             }
         }
         else
@@ -198,7 +198,7 @@ After the work has been completed, we can push the original startup parameters b
     }
     else
     {
-        Write-Verbose "$FunctionName - Sql instance is presently configured for single user, skipping path validation" 
+        Write-Message -Level Verbose -Message "Sql instance is presently configured for single user, skipping path validation" -silent:$false
         if ($NewStartup.MasterData.Length -gt 0)
         {
             $ParameterString += "-d$($NewStartup.MasterData);"
@@ -303,7 +303,7 @@ After the work has been completed, we can push the original startup parameters b
     }
 
     $servername, $instancename = ($sqlserver.Split('\'))
-    Write-Verbose "Attempting to connect to $instancename on $servername"
+    Write-Message -Level Verbose -message  "Attempting to connect to $instancename on $servername" -silent:$false
     
     if ($instancename.Length -eq 0) { $instancename = "MSSQLSERVER" }
     
@@ -332,10 +332,10 @@ After the work has been completed, we can push the original startup parameters b
     }  
     if ($response)
     {   
-        Write-Message -Level Outpu "Startup parameters changed on $SqlServer, `n Will only take effect after a restart"
+        Write-Message -Level Output -message "Startup parameters changed on $SqlServer, `n Will only take effect after a restart" -silent:$false
     }
     else
     {
-        Write-Warning -Level Warning "Startup parameters failed to change on $SqlServer "
+        Write-Message -Level Warning -message "Startup parameters failed to change on $SqlServer " -silent:$false
     }
 }
