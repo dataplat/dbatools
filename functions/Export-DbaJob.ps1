@@ -78,7 +78,7 @@
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [object[]]$SqlInstance,
-        [object]$SqlCredential,
+		[System.Management.Automation.PSCredential]$SqlCredential,
         [string]$Path,
         [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
         [string]$Encoding = 'UTF8',
