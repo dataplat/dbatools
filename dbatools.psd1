@@ -253,7 +253,8 @@
 		'Get-DbaEstimatedCompletionTime',
 		'Export-DbaJob',
 		'Export-DbaAlert',
-		'Export-DbaOperator'
+		'Export-DbaOperator',
+		'Export-DbaProxyAccount'
 		#'Get-DbaLinkedServer',
 		#'Invoke-DbaLogShippingRecovery',
 	)
