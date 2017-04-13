@@ -87,7 +87,7 @@
         [switch]$Silent
     )
 	
-    DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
+    DynamicParam { if ($SqlInstance) { return Get-ParamSqlJobs -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
     BEGIN {
         $jobs = $psboundparameters.Jobs
