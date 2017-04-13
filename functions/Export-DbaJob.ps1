@@ -1,6 +1,5 @@
-﻿Function Export-DbaJob
-{
-<#
+﻿Function Export-DbaJob {
+    <#
 .SYNOPSIS
 Export one, many or all SQL Server Agent jobs
 
@@ -69,107 +68,90 @@ Export-DbaJob -SqlInstance sql2016 -Jobs syspolicy_purge_history, 'Hourly Log Ba
 Exports only syspolicy_purge_history and 'Hourly Log Backups'
 
 #>
-	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
-		[object]$SqlCredential,
-		[string]$Path,
-		[ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
-		[string]$Encoding = 'UTF8',
-		[switch]$Append,
-		[switch]$Passthru,
-		[switch]$Silent
-	)
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    Param (
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [object[]]$SqlInstance,
+        [object]$SqlCredential,
+        [string]$Path,
+        [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
+        [string]$Encoding = 'UTF8',
+        [switch]$Append,
+        [switch]$Passthru,
+        [switch]$Silent
+    )
 	
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
+    DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
-	BEGIN
-	{
-		$jobs = $psboundparameters.Jobs
-		$executinguser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
-		$commandname = $MyInvocation.MyCommand.Name
-		$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-	}
+    BEGIN {
+        $jobs = $psboundparameters.Jobs
+        $executinguser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+        $commandname = $MyInvocation.MyCommand.Name
+        $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+    }
 	
-	PROCESS
-	{
-		foreach ($instance in $SqlInstance)
-		{
-			try
-			{
-				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
-			}
-			catch
-			{
-				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
-			}
+    PROCESS {
+        foreach ($instance in $SqlInstance) {
+            try {
+                Write-Message -Level Verbose -Message "Connecting to $instance"
+                $server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+            }
+            catch {
+                Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
+            }
 			
-			$servername = $server.name.replace('\', '$')
+            $servername = $server.name.replace('\', '$')
 			
-			if (!$passthru)
-			{
-				if ($path)
-				{
-					$actualpath = $path
-				}
-				else
-				{
-					$actualpath = "$servername-$timenow-jobs.sql"
-				}
-			}
+            if (!$passthru) {
+                if ($path) {
+                    $actualpath = $path
+                }
+                else {
+                    $actualpath = "$servername-$timenow-jobs.sql"
+                }
+            }
 			
-			$prefix = "
+            $prefix = "
 /*			
 	Created by $executinguser using dbatools $commandname for objects on $servername at $(Get-Date)
 	See https://dbatools.io/$commandname for more information
 */"
 			
-			if (!$Append -and (Test-Path -Path $actualpath))
-			{
-				Stop-Function -Message "OutputFile $actualpath already exists and Append was not specified." -Target $actualpath -Continue
-			}
+            if (!$Append -and (Test-Path -Path $actualpath)) {
+                Stop-Function -Message "OutputFile $actualpath already exists and Append was not specified." -Target $actualpath -Continue
+            }
 			
-			$exportjobs = $server.JobServer.Jobs
+            $exportjobs = $server.JobServer.Jobs
 			
-			if ($jobs)
-			{
-				$exportjobs = $exportjobs | Where-Object { $_.Name -in $jobs }
-			}
+            if ($jobs) {
+                $exportjobs = $exportjobs | Where-Object { $_.Name -in $jobs }
+            }
 			
-			if ($passthru)
-			{
-				$prefix | Out-String
-			}
-			else
-			{
-				Write-Message -Level Output -Message "Exporting objects on $servername to $actualpath"
-				$prefix | Out-File -FilePath $actualpath -Encoding $encoding -Append
-			}
+            if ($passthru) {
+                $prefix | Out-String
+            }
+            else {
+                Write-Message -Level Output -Message "Exporting objects on $servername to $actualpath"
+                $prefix | Out-File -FilePath $actualpath -Encoding $encoding -Append
+            }
 			
-			foreach ($job in $exportjobs)
-			{
-				If ($Pscmdlet.ShouldProcess($env:computername, "Exporting $job from $server to $actualpath"))
-				{
-					Write-Message -Level Verbose -Message "Exporting $job"
+            foreach ($job in $exportjobs) {
+                If ($Pscmdlet.ShouldProcess($env:computername, "Exporting $job from $server to $actualpath")) {
+                    Write-Message -Level Verbose -Message "Exporting $job"
 					
-					if ($passthru)
-					{
-						$job.Script() | Out-String
-					}
-					else
-					{
-						$job.Script() | Out-File -FilePath $actualpath -Encoding $encoding -Append
-					}
-				}
-			}
+                    if ($passthru) {
+                        $job.Script() | Out-String
+                    }
+                    else {
+                        $job.Script() | Out-File -FilePath $actualpath -Encoding $encoding -Append
+                    }
+                }
+            }
 			
-			if (!$passthru)
-			{
-				Write-Message -Level Output -Message "Completed export for $server"
-			}
-		}
-	}
+            if (!$passthru) {
+                Write-Message -Level Output -Message "Completed export for $server"
+            }
+        }
+    }
 }
