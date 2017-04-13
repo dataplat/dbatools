@@ -46,7 +46,7 @@ Takes path, checks for validity. Scans for usual backup file
 		
 		return
 	}
-	if (Test-Path -Path $Path\Log -and -not $IgnoreLogBackup)
+	if ((Test-Path -Path $Path\Log) -and -not $IgnoreLogBackup)
 	{
 		Write-Verbose "$FunctionName - We have a LOG folder, scanning"
 		$Results += Get-ChildItem -Path $Path\LOG -filter *.trn
