@@ -66,7 +66,7 @@
 	.EXAMPLE 
 	Export-DbaAlert -SqlInstance sql2016
 
-	Exports all alerts on the SQL Server 2016 instance using a trusted connection - automatically determines filename as .\servername-date-alerts.sql
+	Exports all alerts on the SQL Server 2016 instance using a trusted connection - automatically determines filename as .\servername-alerts-date.sql
 		
 	.EXAMPLE 
 	Export-DbaAlert -SqlInstance sql2016 -Alerts syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential (Get-Credetnial sqladmin) -Path C:\temp\export.sql
@@ -123,7 +123,7 @@
 					$actualpath = $path
 				}
 				else {
-					$actualpath = "$servername-$timenow-alerts.sql"
+					$actualpath = "$servername-alerts-$timenow.sql"
 				}
 			}
 			
