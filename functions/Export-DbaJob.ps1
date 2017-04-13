@@ -74,7 +74,7 @@
 	#>
 	
     [CmdletBinding(SupportsShouldProcess = $true)]
-    Param (
+    param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [object[]]$SqlInstance,
@@ -87,16 +87,16 @@
         [switch]$Silent
     )
 	
-    DynamicParam { if ($SqlInstance) { return Get-ParamSqlJobs -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
+    dynamicparam { if ($SqlInstance) { return Get-ParamSqlJobs -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
-    BEGIN {
+    begin {
         $jobs = $psboundparameters.Jobs
         $executinguser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
         $commandname = $MyInvocation.MyCommand.Name
         $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
     }
 	
-    PROCESS {
+    process {
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance"
