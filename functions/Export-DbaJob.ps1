@@ -1,73 +1,74 @@
 ﻿Function Export-DbaJob {
     <#
-.SYNOPSIS
-Export one, many or all SQL Server Agent jobs
+	.SYNOPSIS
+	Export one, many or all SQL Server Agent jobs
 
-.DESCRIPTION
-Exports one, many or all SQL Server Agent jobs as T-SQL output
+	.DESCRIPTION
+	Exports one, many or all SQL Server Agent jobs as T-SQL output
 
-.PARAMETER SqlInstance
-The target SQL Server instance - may be either a string or an SMO Server object
+	.PARAMETER SqlInstance
+	The target SQL Server instance - may be either a string or an SMO Server object
 
-.PARAMETER SqlCredential
-Allows you to login to servers using alternative SQL or Windows credentials
+	.PARAMETER SqlCredential
+	Allows you to login to servers using alternative SQL or Windows credentials
 
-.PARAMETER Jobs
-By default, all jobs are exported. This parameters allows you to export only specific jobs
+	.PARAMETER Jobs
+	By default, all jobs are exported. This parameters allows you to export only specific jobs
+		
+	.PARAMETER Path
+	The output filename and location. If no path is specified, one will be created 
+		
+	.PARAMETER Append
+	Append contents to existing file. If append is not specified and the path exists, the export will be skipped.
+		
+	.PARAMETER Encoding
+	Specifies the file encoding. The default is UTF8.
+		
+	Valid values are:
+
+	-- ASCII: Uses the encoding for the ASCII (7-bit) character set.
+
+	-- BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.
+
+	-- Byte: Encodes a set of characters into a sequence of bytes.
+
+	-- String: Uses the encoding type for a string.
+
+	-- Unicode: Encodes in UTF-16 format using the little-endian byte order.
+
+	-- UTF7: Encodes in UTF-7 format.
+
+	-- UTF8: Encodes in UTF-8 format.
+
+	-- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.
+
+	.PARAMETER Passthru
+	Output script to console
+
+	.PARAMETER Silent 
+	Use this switch to disable any kind of verbose messages
+
+	.NOTES
+	Tags: Migration, Backup
+
+	dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+	Copyright (C) 2016 Chrissy LeMaire
+
+	.LINK
+	https://dbatools.io/Export-DbaJob
+
+	.EXAMPLE 
+	Export-DbaJob -SqlInstance sql2016
+
+	Exports all jobs on the SQL Server 2016 instance
+		
+	.EXAMPLE 
+	Export-DbaJob -SqlInstance sql2016 -Jobs syspolicy_purge_history, 'Hourly Log Backups'
+		
+	Exports only syspolicy_purge_history and 'Hourly Log Backups'
+
+	#>
 	
-.PARAMETER Path
-The output filename and location. If no path is specified, one will be created 
-	
-.PARAMETER Append
-Append contents to existing file. If append is not specified and the path exists, the export will be skipped.
-	
-.PARAMETER Encoding
-Specifies the file encoding. The default is UTF8.
-	
-Valid values are:
-
--- ASCII: Uses the encoding for the ASCII (7-bit) character set.
-
--- BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.
-
--- Byte: Encodes a set of characters into a sequence of bytes.
-
--- String: Uses the encoding type for a string.
-
--- Unicode: Encodes in UTF-16 format using the little-endian byte order.
-
--- UTF7: Encodes in UTF-7 format.
-
--- UTF8: Encodes in UTF-8 format.
-
--- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.
-
-.PARAMETER Passthru
-Output script to console
-
-.PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
-
-.NOTES
-Tags: Migration, Backup
-
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-
-.LINK
-https://dbatools.io/Export-DbaJob
-
-.EXAMPLE 
-Export-DbaJob -SqlInstance sql2016
-
-Exports all jobs on the SQL Server 2016 instance
-	
-.EXAMPLE 
-Export-DbaJob -SqlInstance sql2016 -Jobs syspolicy_purge_history, 'Hourly Log Backups'
-	
-Exports only syspolicy_purge_history and 'Hourly Log Backups'
-
-#>
     [CmdletBinding(SupportsShouldProcess = $true)]
     Param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
