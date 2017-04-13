@@ -66,7 +66,7 @@
 	.EXAMPLE 
 	Export-DbaJob -SqlInstance sql2016
 
-	Exports all jobs on the SQL Server 2016 instance using a trusted connection - automatically determines filename as .\servername-date-jobs.sql
+	Exports all jobs on the SQL Server 2016 instance using a trusted connection - automatically determines filename as .\servername-jobs-date.sql
 		
 	.EXAMPLE 
 	Export-DbaJob -SqlInstance sql2016 -Jobs syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential (Get-Credetnial sqladmin) -Path C:\temp\export.sql
@@ -119,7 +119,7 @@
                     $actualpath = $path
                 }
                 else {
-                    $actualpath = "$servername-$timenow-jobs.sql"
+                    $actualpath = "$servername-jobs-$timenow.sql"
                 }
             }
 			
