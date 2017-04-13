@@ -60,13 +60,17 @@
 	.EXAMPLE 
 	Export-DbaJob -SqlInstance sql2016
 
-	Exports all jobs on the SQL Server 2016 instance
+	Exports all jobs on the SQL Server 2016 instance using a trusted connection - automatically determines filename as .\servername-date-jobs.sql
 		
 	.EXAMPLE 
-	Export-DbaJob -SqlInstance sql2016 -Jobs syspolicy_purge_history, 'Hourly Log Backups'
+	Export-DbaJob -SqlInstance sql2016 -Jobs syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential (Get-Credetnial sqladmin) -Path C:\temp\export.sql
 		
-	Exports only syspolicy_purge_history and 'Hourly Log Backups'
-
+	Exports only syspolicy_purge_history and 'Hourly Log Backups' to C:temp\export.sql and uses the SQL login "sqladmin"
+	
+	.EXAMPLE 
+	Export-DbaJob -SqlInstance sql2014 -Passthru | ForEach-Object { $_.Replace('sql2014','sql2016') } | Set-Content -Path C:\temp\export.sql
+		
+	Exports jobs and replaces all instances of the servername "sql2014" with "sql2016" then writes to C:\temp\export.sql
 	#>
 	
     [CmdletBinding(SupportsShouldProcess = $true)]
@@ -119,11 +123,13 @@
 	See https://dbatools.io/$commandname for more information
 */"
 			
-            if (!$Append -and (Test-Path -Path $actualpath)) {
-                Stop-Function -Message "OutputFile $actualpath already exists and Append was not specified." -Target $actualpath -Continue
-            }
+			if (!$Append -and !$Passthru) {
+				if (Test-Path -Path $actualpath) {
+					Stop-Function -Message "OutputFile $actualpath already exists and Append was not specified." -Target $actualpath -Continue
+				}
+			}
 			
-            $exportjobs = $server.JobServer.Jobs
+			$exportjobs = $server.JobServer.Jobs
 			
             if ($jobs) {
                 $exportjobs = $exportjobs | Where-Object { $_.Name -in $jobs }
