@@ -1,4 +1,4 @@
-﻿Function Export-DbaAudit {
+﻿Function Export-DbaServerAudit {
     <#
 	.SYNOPSIS
 	Export one, many or all SQL Server audits
@@ -62,20 +62,20 @@
 	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 	.LINK
-	https://dbatools.io/Export-DbaAudit
+	https://dbatools.io/Export-DbaServerAudit
 
 	.EXAMPLE 
-	Export-DbaAudit -SqlInstance sql2016
+	Export-DbaServerAudit -SqlInstance sql2016
 
 	Exports all audits on the SQL Server 2016 instance using a trusted connection - automatically determines filename as .\servername-audits-date.sql
 		
 	.EXAMPLE 
-	Export-DbaAudit -SqlInstance sql2016 -Audits Audit-20160502-100608 -SqlCredential (Get-Credetnial sqladmin) -Path C:\temp\export.sql
+	Export-DbaServerAudit -SqlInstance sql2016 -Audits Audit-20160502-100608 -SqlCredential (Get-Credetnial sqladmin) -Path C:\temp\export.sql
 		
 	Exports only Audit-20160502-100608 to C:temp\export.sql and uses the SQL login "sqladmin"
 	
 	.EXAMPLE 
-	Export-DbaAudit -SqlInstance sql2014 -Passthru | ForEach-Object { $_.Replace('sql2014','sql2016') } | Set-Content -Path C:\temp\export.sql
+	Export-DbaServerAudit -SqlInstance sql2014 -Passthru | ForEach-Object { $_.Replace('sql2014','sql2016') } | Set-Content -Path C:\temp\export.sql
 		
 	Exports audits and replaces all instances of the servername "sql2014" with "sql2016" then writes to C:\temp\export.sql
 	#>
