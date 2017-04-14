@@ -251,13 +251,8 @@
 		'Get-DbaTable',
 		'Invoke-DbaDatabaseShrink',
 		'Get-DbaEstimatedCompletionTime',
-		'Export-DbaJob',
-		'Export-DbaAlert',
-		'Export-DbaOperator',
-		'Export-DbaProxyAccount',
-		'Export-DbaJobCategory',
-		'Export-DbaServerAudit',
-		'Export-DbaServerAuditSpecification'
+		'Export-DbaScript',
+		'New-DbaScriptingOption'
 		#'Get-DbaLinkedServer',
 		#'Invoke-DbaLogShippingRecovery',
 	)
