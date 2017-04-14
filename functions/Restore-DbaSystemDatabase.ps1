@@ -117,9 +117,14 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
             Set-DbaStartupParameter -SqlServer $sqlserver -SingleUser -SingleUserDetails dbatoolsSystemk34i23hs3u57w 
             Stop-DbaService -SqlServer $server | out-null
             Start-DbaService -SqlServer $server | out-null
+            if ($server.connectionContext.IsOpen -eq $false)
+            {
+                $server.connectionContext.Connect()
+            }
             Write-Message -Level Verbose -Silent:$false -Message  "Beginning Restore of Master"
             
-            $RestoreResult += Restore-DbaDatabase -SqlServer $server -Path $BackupPath -WithReplace -DatabaseFilter master -RestoreTime $RestoreTime -ReuseSourceFolderStructure -SystemRestore             if ($RestoreResult.RestoreComplete -eq $True)
+            $RestoreResult += Restore-DbaDatabase -SqlServer $server -Path $BackupPath -WithReplace -DatabaseFilter master -RestoreTime $RestoreTime -ReuseSourceFolderStructure -SystemRestore           
+            if ($RestoreResult.RestoreComplete -eq $True)
             {
                 Write-Message -Level Verbose -Silent:$false -Message "Restore of Master suceeded"   
             }
@@ -146,13 +151,17 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
             {
                 Stop-DbaService -SqlServer $server | out-null
             }
-            Start-DbaService -SqlServer $server | out-null
             while ((Get-DbaService -sqlserver $server -service sqlserver).ServiceState.value -ne 'running')
             {
-                Start-Sleep -seconds 60
+                Start-DbaService -SqlServer $server | out-null
+                Start-Sleep -seconds 65
+            }
+            if ($server.connectionContext.IsOpen -eq $false)
+            {
+                $server.connectionContext.Connect()
             }
             Write-Message -Level SomewhatVerbose -Silent:$true -Message "Starting restore of $($filter -join ',')"
-            $RestoreResults = Restore-DbaDatabase -SqlServer $server -Path $BackupPath  -WithReplace -DatabaseFilter $filter -RestoreTime $RestoreTime -ReuseSourceFolderStructure -SystemRestore -verbose
+            $RestoreResults = Restore-DbaDatabase -SqlServer $server -Path $BackupPath  -WithReplace -DatabaseFilter $filter -RestoreTime $RestoreTime -ReuseSourceFolderStructure -SystemRestore
             Foreach ($Database in $RestoreResults)
             {
                 If ($Database.RestoreComplete)

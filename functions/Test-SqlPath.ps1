@@ -93,11 +93,13 @@ Tests whether the service account running the "sqlcluster" SQL Server isntance c
 	$sql = "EXEC master.dbo.xp_fileexist '$path'"
 	try
 	{
+		#$fileexist = Invoke-SqlCmd2 -server $server -Query $sql
 		$fileexist = $server.ConnectionContext.ExecuteWithResults($sql)
 	}
 	catch
 	{
 		Write-Warning "Test-SQLPath failed: $_"
+		throw
 	}
 	if ($fileexist.tables.rows[0] -eq $true -or $fileexist.tables.rows[1] -eq $true)
 	{
