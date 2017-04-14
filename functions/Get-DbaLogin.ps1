@@ -16,8 +16,14 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 .PARAMETER Login
 Pass a single login, or a list of them. Comma delimited. 
 
-.PARAMETER NoSystemLogins
-A switch to exlude system logins from returning. (Logins with '##' in the front or the 'sa' login)
+.PARAMETER Locked 
+Filters on the SMO property to return locked Logins. 
+
+.PARAMETER Disabled 
+Filters on the SMO property to return disabled Logins. 
+
+.PARAMETER HasAccess 
+Filters on the SMO property to return Logins that has access to the instance of SQL Server. 
 
 .PARAMETER Detailed 
 Adds extra information by executing a TSQL Script against the server to get more information about the specified User. 
@@ -46,7 +52,7 @@ Get-DbaLogin -SqlInstance SQl2016 -SqlCredential $sqlcred
 Gets all the logins for a given SQL Server using a passed credential object and returns the SMO login objects 
 
 .EXAMPLE 
-Get-DbaLogin -SqlInstance SQl2016 -SqlCredential $sqlcred -Logins dbatoolsuser,TheCaptain 
+Get-DbaLogin -SqlInstance SQl2016 -SqlCredential $sqlcred -Login dbatoolsuser,TheCaptain 
 Get specific user objects from the server
 
 .EXAMPLE 
@@ -54,8 +60,20 @@ Get specific user objects from the server
 Using Get-DbaLogin on the pipeline, you can also specify which names you would like with -Logins.
 
 .EXAMPLE 
-$LpsSql08 | Get-DbaLogin -SqlCredential $sqlcred -detailed 
+'sql2016', 'sql2014' | Get-DbaLogin -SqlCredential $sqlcred -detailed 
 Using Get-DbaLogin on the pipeline to get detailed information, like Last Login
+
+.EXAMPLE 
+'sql2016', 'sql2014' | Get-DbaLogin -SqlCredential $sqlcred -Locked
+Using Get-DbaLogin on the pipeline to get all locked Logins 
+
+.EXAMPLE 
+'sql2016', 'sql2014' | Get-DbaLogin -SqlCredential $sqlcred -HasAccess
+Using Get-DbaLogin on the pipeline to get all logins that have access to that instance 
+
+.EXAMPLE 
+'sql2016', 'sql2014' | Get-DbaLogin -SqlCredential $sqlcred -Disabled
+Using Get-DbaLogin on the pipeline to get all Disabled Logins 
 	
 #>
 	[CmdletBinding()]
@@ -64,14 +82,16 @@ Using Get-DbaLogin on the pipeline to get detailed information, like Last Login
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[Object[]]$Logins,
-		[Switch]$NoSystemLogins,
-		[Switch]$Detailed
+		[Object[]]$Login,
+		[Switch]$Detailed,
+		[Switch]$HasAccess,
+		[Switch]$Locked,
+		[Switch]$Disabled 
 	)
 
 	begin
 	{        
-        $sql = "SELECT MAX(login_time) AS [login_time] FROM sys.dm_exec_sessions WHERE login_name = '{0}'"			
+        $sql = "SELECT MAX(login_time) AS [login_time] FROM sys.dm_exec_sessions WHERE login_name = '{0}'"
 	}
 	
 	process
@@ -80,56 +100,53 @@ Using Get-DbaLogin on the pipeline to get detailed information, like Last Login
 		{ 
 			try { 
 				$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
-				$serverLogins = $server.Logins
 				$masterDatabase = $server.databases["master"]
+				
+				
+				if ($Login -ne $null )
+				{ 
+					$serverLogins = $server.Logins | where-object { $Login -contains $_.name }
+				} elseif ( $HasAccess ) { 
+					$serverLogins = $server.Logins | where-object { $_.HasAccess -eq $true}
+				} elseif ( $Locked ) { 
+					$serverLogins = $server.Logins | where-object { $_.IsLocked -eq $true}
+				} elseIf ( $Disabled ) { 
+					$serverLogins = $server.Logins | where-object { $_.IsDisabled -eq $true}
+				} else {
+					$serverLogins = $server.Logins
+				}
 			} catch { 
 				Write-Warning "Can't connect to $instance or access denied. Skipping."
 				continue
-			}
-
-			if ( $Logins -ne $null ) 
-			{ 
-				foreach ( $login in $serverlogins ) 
-				{   					
-					if ( $Logins -contains $login.name ) 
-					{
-						if ($Detailed) 
-						{ 							
-							$lastLogin = $($masterDatabase.ExecuteWithResults($sql.replace('{0}',$login.name)).Tables).login_time
-							add-member -InputObject $login -NotePropertyName LastLogin -NotePropertyValue $lastLogin
-						}
-
-						add-member -InputObject $login -NotePropertyName NetName -NotePropertyValue $server.NetName 
-						add-member -InputObject $login -NotePropertyName ComputerName -NotePropertyValue $server.servicename
-						add-member -InputObject $login -NotePropertyName InstanceName -NotePropertyValue $server.InstanceName 
-						add-member -InputObject $login -NotePropertyName SqlInstance -NotePropertyValue $server.Name
-
-						Select-DefaultView -InputObject $login -Property Name, LoginType, LastLogin, NetName, ComputerName, InstanceName, SqlInstance
-					}
+			}			
+			
+			foreach ( $serverLogin in $serverlogins ) 
+			{   					
+				if ($Detailed) 
+				{ 							
+					$lastLogin = $($masterDatabase.ExecuteWithResults($sql.replace('{0}',$serverLogin.name)).Tables).login_time
+					add-member -InputObject $serverLogin -NotePropertyName LastLogin -NotePropertyValue $lastLogin
 				}
-			} else { 
-				foreach ($login in $serverLogins)
-				{
-					if (!$login.name.StartsWith("##") -and $login.name -ne 'sa')
-					{
-						if ($Detailed) 
-						{ 							
-							$lastLogin = $($masterDatabase.ExecuteWithResults($sql.replace('{0}',$login.name)).Tables).login_time
-							add-member -InputObject $login -NotePropertyName LastLogin -NotePropertyValue $lastLogin
-						}
 
-						add-member -InputObject $login -NotePropertyName NetName -NotePropertyValue $server.NetName 
-						add-member -InputObject $login -NotePropertyName ComputerName -NotePropertyValue $server.servicename
-						add-member -InputObject $login -NotePropertyName InstanceName -NotePropertyValue $server.InstanceName 
-						add-member -InputObject $login -NotePropertyName SqlInstance -NotePropertyValue $server.Name
+				add-member -InputObject $serverLogin -NotePropertyName NetName -NotePropertyValue $server.NetName 
+				add-member -InputObject $serverLogin -NotePropertyName ComputerName -NotePropertyValue $server.servicename
+				add-member -InputObject $serverLogin -NotePropertyName InstanceName -NotePropertyValue $server.InstanceName 
+				add-member -InputObject $serverLogin -NotePropertyName SqlInstance -NotePropertyValue $server.Name				
 
-						Select-DefaultView -InputObject $login -Property Name, LoginType, LastLogin, NetName, ComputerName, InstanceName, SqlInstance 
-					}
+				if ($Detailed)
+				{ 
+					Select-DefaultView -InputObject $serverLogin -Property Name, LoginType, LastLogin, NetName, ComputerName, InstanceName, SqlInstance
+				} elseif ( $HasAccess ) { 
+					Select-DefaultView -InputObject $serverLogin -Property Name, LoginType, HasAccess, NetName, ComputerName, InstanceName, SqlInstance
+				} elseif ( $Locked ) { 
+					Select-DefaultView -InputObject $serverLogin -Property Name, LoginType, IsLocked, NetName, ComputerName, InstanceName, SqlInstance
+				} elseIf ( $Disabled ) { 
+					Select-DefaultView -InputObject $serverLogin -Property Name, LoginType, IsDisabled, NetName, ComputerName, InstanceName, SqlInstance
+				} else {
+					Select-DefaultView -InputObject $serverLogin -Property Name, LoginType, NetName, ComputerName, InstanceName, SqlInstance
 				}
 			}
 		}
-
-        
 	}
 	
 }
