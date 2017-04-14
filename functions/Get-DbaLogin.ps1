@@ -5,21 +5,21 @@ Function Get-DbaLogin
 Function to get an SMO login object of the logins for a given SQL Instance. Takes a server object from the pipe 
 
 .DESCRIPTION
-The Get-DbaLogin function returns an SMO Login object for the users passed, if there are no users passed it will return all logins.  
+The Get-DbaLogin function returns an SMO Login object for the logins passed, if there are no users passed it will return all logins.  
 
 .PARAMETER SqlInstance
-The SQL Server instance.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+The SQL Server instance, or instances.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. 
 
-.PARAMETER Logins 
+.PARAMETER Login
 Pass a single login, or a list of them. Comma delimited. 
 
 .PARAMETER NoSystemLogins
 A switch to exlude system logins from returning. (Logins with '##' in the front or the 'sa' login)
 
-.PARAMETER Detail 
+.PARAMETER Detailed 
 Adds extra information by executing a TSQL Script against the server to get more information about the specified User. 
 Right now, this only adds LastLogin information
 
@@ -50,11 +50,11 @@ Get-DbaLogin -SqlInstance SQl2016 -SqlCredential $sqlcred -Logins dbatoolsuser,T
 Get specific user objects from the server
 
 .EXAMPLE 
-@('sql2016', 'sql2014') |  Get-DbaLogin -SqlCredential $sqlcred 
+'sql2016', 'sql2014' | Get-DbaLogin -SqlCredential $sqlcred 
 Using Get-DbaLogin on the pipeline, you can also specify which names you would like with -Logins.
 
 .EXAMPLE 
-@( $LpsSql08) |  Get-DbaLogin -SqlCredential $sqlcred -detailed 
+$LpsSql08 | Get-DbaLogin -SqlCredential $sqlcred -detailed 
 Using Get-DbaLogin on the pipeline to get detailed information, like Last Login
 	
 #>
