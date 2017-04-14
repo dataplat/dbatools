@@ -10,10 +10,7 @@
 	A SQL Managment Object such as the one returned from Get-DbaLogin
 		
 	.PARAMETER Path
-	The output filename and location. If no path is specified, one will be created 
-		
-	.PARAMETER Append
-	Append contents to existing file. If append is not specified and the path exists, the export will be skipped.
+	The output filename and location. If no path is specified, one will be created. If the file already exists, the output will be appended.
 		
 	.PARAMETER Encoding
 	Specifies the file encoding. The default is UTF8.
@@ -61,7 +58,7 @@
 	.EXAMPLE
 	Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript
 	
-	Exports all jobs on the SQL Server sql2016 instance using a trusted connection - automatically determines filename as .\servername-jobs-date.sql
+	Exports all jobs on the SQL Server sql2016 instance using a trusted connection - automatically determines filename as .\sql2016-Job-Export-date.sql
 	
 	.EXAMPLE 
 	Get-DbaAgentJob -SqlInstance sql2016 -Jobs syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential (Get-Credetnial sqladmin) | Export-DbaScript -Path C:\temp\export.sql
@@ -91,7 +88,6 @@
 		[string]$Path,
 		[ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
 		[string]$Encoding = 'UTF8',
-		[switch]$Append,
 		[switch]$Passthru,
 		[switch]$Silent
 	)
@@ -100,21 +96,43 @@
 		$executinguser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
 		$commandname = $MyInvocation.MyCommand.Name
 		$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+		$prefixarray = @()
 	}
 	
 	process {
 		foreach ($object in $inputobject) {
 			
+			$typename = $object.GetType().ToString()
+			
+			if ($typename.StartsWith('Microsoft.SqlServer.')) {
+				$shortype = $typename.Split(".")[-1]
+			}
+			else {
+				Stop-Function -Message "InputObject is not a SQL Management Object" -Silent $Silent -Category InvalidData -Continue -Target $object
+			}
+			
+			if ($shortype -in "LinkedServer", "Credential", "Login") {
+				Write-Message -Level Warning -Message "Support for $shortype is limited at this time. No passwords, hashed or otherwise, will be exported if they exist."
+			}
+			
+			# Just gotta add the stuff that Nic Cain added to his script
+			
+			if ($shortype -eq "Configuration") {
+				Write-Message -Level Warning -Message "Support for $shortype is limited at this time."
+			}
+			
 			# Find the server object to pass on to the function
 			$parent = $object.parent
 			
 			do {
-				$parent = $parent.parent
+				if ($parent.urn.type -ne "Server") {
+					$parent = $parent.parent
+				}
 			}
 			until (($parent.urn.type -eq "Server") -or (-not $parent))
 			
 			if (-not $parent) {
-				Stop-Function -Message "Failed to find valid server object in input: $object. Did you pass an SQL Management Object?" -Silent $Silent -Category InvalidData -Continue -Target $object
+				Stop-Function -Message "Failed to find valid SMO server object in input: $object." -Silent $Silent -Category InvalidData -Continue -Target $object
 			}
 			
 			$server = $parent
@@ -125,7 +143,7 @@
 					$actualpath = $path
 				}
 				else {
-					$actualpath = "$servername-$smoname-$timenow.sql"
+					$actualpath = "$servername-$shortype-Export-$timenow.sql"
 				}
 			}
 			
@@ -135,35 +153,39 @@
 	See https://dbatools.io/$commandname for more information
 */"
 			
-			if (!$Append -and !$Passthru) {
-				if (Test-Path -Path $actualpath) {
-					Stop-Function -Message "OutputFile $actualpath already exists and Append was not specified." -Target $actualpath -Continue
-				}
-			}
-			
 			if ($passthru) {
 				$prefix | Out-String
 			}
 			else {
-				Write-Message -Level Output -Message "Exporting objects on $servername to $actualpath"
-				$prefix | Out-File -FilePath $actualpath -Encoding $encoding -Append
+				if ($prefixarray -notcontains $actualpath) {
+					$prefix | Out-File -FilePath $actualpath -Encoding $encoding -Append
+					$prefixarray += $actualpath
+				}
 			}
 			
-			foreach ($export in $exports) {
-				If ($Pscmdlet.ShouldProcess($env:computername, "Exporting $export from $server to $actualpath")) {
-					Write-Message -Level Verbose -Message "Exporting $export"
-					
-					if ($passthru) {
-						$export.Script($ScriptingOptionsObject) | Out-String
+			If ($Pscmdlet.ShouldProcess($env:computername, "Exporting $object from $server to $actualpath")) {
+				Write-Message -Level Verbose -Message "Exporting $object"
+				
+				if ($passthru) {
+					if ($ScriptingOptionsObject) {
+						$object.Script($ScriptingOptionsObject) | Out-String
 					}
 					else {
-						$export.Script($ScriptingOptionsObject) | Out-File -FilePath $actualpath -Encoding $encoding -Append
+						$object.Script() | Out-String
+					}
+				}
+				else {
+					if ($ScriptingOptionsObject) {
+						$object.Script($ScriptingOptionsObject) | Out-File -FilePath $actualpath -Encoding $encoding -Append
+					}
+					else {
+						$object.Script() | Out-File -FilePath $actualpath -Encoding $encoding -Append
 					}
 				}
 			}
 			
 			if (!$passthru) {
-				Write-Message -Level Output -Message "Completed export for $server"
+				Write-Message -Level Output -Message "Completed export for $object on $server"
 			}
 		}
 	}
