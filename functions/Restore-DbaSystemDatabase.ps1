@@ -1,6 +1,6 @@
 function Restore-DbaSystemDatabase
 {
-    <#
+<#
 .SYNOPSIS
 Restores the SQL Server system databases (master, mode, msdb)
 .DESCRIPTION
@@ -96,11 +96,17 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
         Stop-Function -message "Cannot connect to $sqlserver, stopping" -target $SqlServer -Silent:$false
     }
     $CurrentStartup = Get-DbaStartupParameter -SqlServer $server
-    if ((Get-DbaService -sqlserver $server -service SqlAgent).ServiceState -eq 'Running')
+    if ((Get-DbaService -sqlserver $server -service SqlAgent).ServiceState.value -eq 'Running')
     {
         Write-Message -Level Verbose -Message "SQL agent running, stopping it" -Silent:$true
         $RestartAgent = $True
         Stop-DbaService -sqlserver $server -service SqlAgent | out-null
+    }
+    if ((Get-DbaService -sqlserver $server -service FullText).ServiceState.value -eq 'Running')
+    {
+        Write-Message -Level Verbose -Message "Full Test agent running, stopping it" -Silent:$true
+        $RestartFullText = $True
+        Stop-DbaService -sqlserver $server -service FullText | out-null
     }
     try
     {
@@ -113,8 +119,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
             Start-DbaService -SqlServer $server | out-null
             Write-Message -Level Verbose -Silent:$false -Message  "Beginning Restore of Master"
             
-            $RestoreResult += Restore-DbaDatabase -SqlServer $server -Path $BackupPath -WithReplace -DatabaseFilter master -RestoreTime $RestoreTime
-            if ($RestoreResult.RestoreComplete -eq $True)
+            $RestoreResult += Restore-DbaDatabase -SqlServer $server -Path $BackupPath -WithReplace -DatabaseFilter master -RestoreTime $RestoreTime -ReuseSourceFolderStructure -SystemRestore             if ($RestoreResult.RestoreComplete -eq $True)
             {
                 Write-Message -Level Verbose -Silent:$false -Message "Restore of Master suceeded"   
             }
@@ -137,17 +142,17 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                 Write-Message -Level Verbose -Silent:$false -Message "Restoring msdb, setting Filter"
                 $filter += 'msdb'
             }
-            if ((Get-DbaService -sqlserver $server -service SqlServer).ServiceState -eq 'Running')
+            if ((Get-DbaService -sqlserver $server -service SqlServer).ServiceState.value -eq 'Running')
             {
                 Stop-DbaService -SqlServer $server | out-null
             }
             Start-DbaService -SqlServer $server | out-null
-            while ((Get-DbaService -sqlserver $server -service sqlserver).ServiceState -ne 'running')
+            while ((Get-DbaService -sqlserver $server -service sqlserver).ServiceState.value -ne 'running')
             {
-                Start-Sleep -seconds 15
+                Start-Sleep -seconds 60
             }
             Write-Message -Level SomewhatVerbose -Silent:$true -Message "Starting restore of $($filter -join ',')"
-            Restore-DbaDatabase -SqlServer $server -Path $BackupPath  -WithReplace -DatabaseFilter $filter -RestoreTime $RestoreTime
+            $RestoreResults = Restore-DbaDatabase -SqlServer $server -Path $BackupPath  -WithReplace -DatabaseFilter $filter -RestoreTime $RestoreTime -ReuseSourceFolderStructure -SystemRestore -verbose
             Foreach ($Database in $RestoreResults)
             {
                 If ($Database.RestoreComplete)
@@ -167,7 +172,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
     }
     finally
     {
-        if ((Get-DbaService -sqlserver $server -service SqlServer).ServiceState -ne 'Running')
+        if ((Get-DbaService -sqlserver $server -service SqlServer).ServiceState.value -ne 'Running')
         {
             Start-DbaService -sqlserver $server -service SqlServer | out-null
         }
@@ -180,5 +185,11 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
             Write-Message -Level Verbose -Silent:$false -Message "SQL Agent was running at start, so restarting"
             Start-DbaService -sqlserver $server -service SqlAgent | out-null
         }
+        if ($RestartFullText -eq $True)
+        {
+            Write-Message -Level Verbose -Silent:$false -Message "Full Text was running at start, so restarting"
+            Start-DbaService -sqlserver $server -service FullText | out-null
+        }
+        $RestoreResult + $RestoreResults
     }
 }

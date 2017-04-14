@@ -48,41 +48,46 @@ This will attempt to stop the SQL Server service associated with the default ins
         [Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
 		[PSCredential]$Credential,
-        [ValidateSet('SqlServer','SqlAgent')]
+        [ValidateSet('SqlServer','SqlAgent','FullText')]
         [String]$Service='SqlServer'
     )
     $FunctionName =(Get-PSCallstack)[0].Command
 
-    #$servername, $instancename = ($sqlserver.Split('\'))
+    #$ServerName, $InstanceName = ($SqlServer.Split('\'))
     if ($null -eq $SqlServer.name)
     {
-        $servername, $instancename = ($sqlserver.Split('\'))
+        $ServerName, $InstanceName = ($SqlServer.Split('\'))
     }
     else
     {
-        $servername, $instancename = ($sqlserver.name.Split('\'))
+        $ServerName, $InstanceName = ($SqlServer.name.Split('\'))
     }
    
-    if ($instancename.Length -eq 0) { $instancename = "MSSQLSERVER" }
+    if ($InstanceName.Length -eq 0) { $InstanceName = "MSSqlServer" }
 
-    Write-Verbose "Attempting to stop SQL Service $instancename on $servername" 
+    Write-Verbose "Attempting to stop SQL Service $InstanceName on $ServerName" 
 
     If ($Service -eq 'SqlServer')
     {
-        $displayname = "SQL Server ($instancename)"  
+        $DisplayName = "SQL Server ($InstanceName)"  
     }
 
     If ($Service -eq 'SqlAgent')
     {
-        $displayname ="Sql Server Agent ($instancename)"
+        $DisplayName ="Sql Server Agent ($InstanceName)"
     }
-    
+
+    if($Service -eq 'FullText')
+    {
+        $DisplayName = "*Full*Text*($InstanceName)"        
+    }
+
     $Scriptblock = {
-        $servername = $args[0]
-        $displayname = $args[1]
+        $ServerName = $args[0]
+        $DisplayName = $args[1]
             
-        $wmisvc = $wmi.Services | Where-Object { $_.DisplayName -eq $displayname }
-        Write-Verbose "Attempting to Stop $displayname on $servername"
+        $wmisvc = $wmi.Services | Where-Object { $_.DisplayName -like $DisplayName }
+        Write-Verbose "Attempting to Stop $DisplayName on $ServerName"
         try{
             $timeout = new-timespan -Minutes 1
             $timer = [diagnostics.stopwatch]::StartNew()
@@ -94,13 +99,13 @@ This will attempt to stop the SQL Server service associated with the default ins
             if ($sw.elapsed -lt $timeout){
                 [PSCustomObject]@{
                     Stopped = $true
-                    Message = "Stopped $displayname on $servername successfully"
+                    Message = "Stopped $DisplayName on $ServerName successfully"
                     }           
             }
             else {
                 [PSCustomObject]@{
                     Started = $False
-                    Message = "$displayname on $servername failed to stop in a timely manner"
+                    Message = "$DisplayName on $ServerName failed to stop in a timely manner"
                     }     
             }
         }
@@ -114,6 +119,6 @@ This will attempt to stop the SQL Server service associated with the default ins
     }
  
     if ($pscmdlet.ShouldProcess("Stopping $Service on $SqlServer ")) {
-        Invoke-ManagedComputerCommand -ComputerName $servername -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $servername, $displayname
+        Invoke-ManagedComputerCommand -ComputerName $ServerName -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $ServerName, $DisplayName
     }
 }

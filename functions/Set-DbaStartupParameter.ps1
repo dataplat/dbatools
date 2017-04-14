@@ -284,9 +284,8 @@ After the work has been completed, we can push the original startup parameters b
             
             $oldflags = @($CurrentStartup.TraceFlags) -split ',' | Where-Object {$_ -ne 'None'}
             $newflags = @($TraceFlags) -split ','
-            $oldflags + $newflags
+            $newflags = $oldflags + $newflags
             $NewStartup.TraceFlags = ($oldFlags + $newflags | Sort-Object -Unique) -join ','
-            $NewStartup.traceflags
         }
         elseif ($TraceFlagsOverride )
         {

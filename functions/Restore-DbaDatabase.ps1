@@ -124,13 +124,14 @@ Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
 A comma seperated list of databases to restore. The function will still scan all files passed in, but will then filter down to just those from the databases listed 
 in this parameter
 
+.PARAMETER SystemRestore
+Switch that indicates a system db (master,model, msdb) is being restored. Restrictes some tests and process killing as these have to be restore in single user startup
+
 .PARAMETER Confirm
 Prompts to confirm certain actions
 	
 .PARAMETER WhatIf
 Shows what would happen if the command would execute, but does not actually perform the command
-
-.
 
 .NOTES
 Tags: DisasterRecovery, Backup, Restore
@@ -224,7 +225,8 @@ c:\DataFiles and all the log files into c:\LogFiles
 		[int]$MaxTransferSize,
 		[int]$BlockSize,
 		[int]$BufferCount,
-		[string[]]$DatabaseFilter
+		[string[]]$DatabaseFilter,
+		[Switch]$SystemRestore
 	)
 	BEGIN
 	{
@@ -628,7 +630,7 @@ c:\DataFiles and all the log files into c:\LogFiles
 				$completed = 'unsuccessfully'
 				try
 				{
-					$FilteredFiles | Restore-DBFromFilteredArray -SqlServer $server -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -TrustDbBackupHistory:$TrustDbBackupHistory -ReplaceDatabase:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure $FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix -MaxTransferSize $MaxTransferSize -BufferCount $BufferCount -BlockSize $BlockSize -DatabaseFilter:$DatabaseFilter					
+					$FilteredFiles | Restore-DBFromFilteredArray -SqlServer $server -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -TrustDbBackupHistory:$TrustDbBackupHistory -ReplaceDatabase:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure $FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix -MaxTransferSize $MaxTransferSize -BufferCount $BufferCount -BlockSize $BlockSize -DatabaseFilter:$DatabaseFilter -SystemRestore:$SystemRestore					
 					$Completed = 'successfully'
 				}
 				catch

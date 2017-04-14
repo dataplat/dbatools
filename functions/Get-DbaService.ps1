@@ -34,7 +34,7 @@ Will return the status of all SQL Server services running on  server1\instance
         [Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
 		[PSCredential]$Credential,
-        [ValidateSet('SqlServer','SqlAgent','All')]
+        [ValidateSet('SqlServer','SqlAgent','All','FullText','Telemetry')]
         [String]$Service='All'
     )
     $FunctionName =(Get-PSCallstack)[0].Command
@@ -60,6 +60,11 @@ Will return the status of all SQL Server services running on  server1\instance
     if ($Service -eq 'SqlAgent')
     {
         $instanceName = "Sql Server Agent ($InstanceName)"
+    }
+
+    if ($Service -eq 'FullText')
+    {
+        $instanceName = "Full*Text*($InstanceName)"
     }
 
     $Scriptblock = {

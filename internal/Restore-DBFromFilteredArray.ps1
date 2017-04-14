@@ -32,7 +32,8 @@ Function Restore-DBFromFilteredArray
 		[int]$MaxTransferSize,
 		[int]$BlockSize,
 		[int]$BufferCount,
-		[string[]]$DatabaseFilter
+		[string[]]$DatabaseFilter,
+		[Bool]$SystemRestore
 	)
     
 	Begin
@@ -92,7 +93,7 @@ Function Restore-DBFromFilteredArray
 		{
 			If ($ReplaceDatabase -eq $true)
 			{
-				if ('master' -notin $DatabaseFilter)
+				if (!($SystemRestore))
 				{	
 					if($Pscmdlet.ShouldProcess("Killing processes in $dbname on $SqlServer as it exists and WithReplace specified  `n","Cannot proceed if processes exist, ","Database Exists and WithReplace specified, need to kill processes to restore"))			
 					{

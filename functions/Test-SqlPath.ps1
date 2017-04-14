@@ -69,6 +69,7 @@ Tests whether the service account running the "sqlcluster" SQL Server isntance c
 	)
 
 	#$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+	$FunctionName =(Get-PSCallstack)[0].Command
 	try 
 	{
 		if ($sqlServer -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject])
@@ -88,9 +89,16 @@ Tests whether the service account running the "sqlcluster" SQL Server isntance c
 		Write-Warning "$FunctionName - Cannot connect to $SqlServer" 
 		break
 	}
+	Write-Verbose "$FunctionName - Path check is $path"
 	$sql = "EXEC master.dbo.xp_fileexist '$path'"
-	$fileexist = $server.ConnectionContext.ExecuteWithResults($sql)
-
+	try
+	{
+		$fileexist = $server.ConnectionContext.ExecuteWithResults($sql)
+	}
+	catch
+	{
+		Write-Warning "Test-SQLPath failed: $_"
+	}
 	if ($fileexist.tables.rows[0] -eq $true -or $fileexist.tables.rows[1] -eq $true)
 	{
 		return $true
