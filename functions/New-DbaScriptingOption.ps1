@@ -9,7 +9,7 @@
 	See https://msdn.microsoft.com/en-us/library/microsoft.sqlserver.management.smo.scriptingoptions.aspx for more information
 		
 	.NOTES
-	Tags: Migration, Backup
+	Tags: Migration, Backup, DR
 	
 	Website: https://dbatools.io
 	Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -23,8 +23,9 @@
 	$options = New-DbaScriptingOption
 	$options.Options.ScriptDrops = $false
 	$options.Options.WithDependencies = $true
+	Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -ScriptingOptionObject $options
 	
-	Get-DbaDatabase -SqlInstance sql2016 | Export-DbaScript -ScriptingOptionObject $options
+	Exports Agent Jobs with the Scripting Options ScriptDrops set to $false and WithDependencies set to true
 	
 	#>
 	New-Object Microsoft.SqlServer.Management.Smo.ScriptingOptions
