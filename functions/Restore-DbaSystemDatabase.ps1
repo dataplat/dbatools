@@ -117,6 +117,17 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
             Set-DbaStartupParameter -SqlServer $sqlserver -SingleUser -SingleUserDetails dbatoolsSystemk34i23hs3u57w 
             Stop-DbaService -SqlServer $server | out-null
             Start-DbaService -SqlServer $server | out-null
+            $StartCount = 0
+            while ((Get-DbaService -sqlserver $server -service sqlserver).ServiceState.value -ne 'running' -and $startCount -lt 5)
+            {
+                Start-DbaService -SqlServer $server | out-null
+                Start-Sleep -seconds 65
+            }
+            if ($StartCount -ge 4)
+            {
+                #Didn't start nicely, jump to finally to try to come back up sanely
+                Write-Message -Level Warning -Message "SQL Server not starting nicely, trying to fix" -Silent:$false
+            }
             if ($server.connectionContext.IsOpen -eq $false)
             {
                 $server.connectionContext.Connect()
@@ -151,10 +162,17 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
             {
                 Stop-DbaService -SqlServer $server | out-null
             }
-            while ((Get-DbaService -sqlserver $server -service sqlserver).ServiceState.value -ne 'running')
+            Start-DbaService -SqlServer $server | out-null
+            $StartCount = 0
+            while ((Get-DbaService -sqlserver $server -service sqlserver).ServiceState.value -ne 'running' -and $startCount -lt 5)
             {
                 Start-DbaService -SqlServer $server | out-null
                 Start-Sleep -seconds 65
+            }
+            if ($StartCount -ge 4)
+            {
+                #Didn't start nicely, jump to finally to try to come back up sanely
+                Write-Message -Level Warning -Message "SQL Server not starting nicely, trying to fix" -Silent:$false
             }
             if ($server.connectionContext.IsOpen -eq $false)
             {
