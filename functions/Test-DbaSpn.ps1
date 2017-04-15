@@ -1,3 +1,4 @@
+#ValidationTags#FlowControl,Pipeline#
 Function Test-DbaSpn
 {
 <#
@@ -23,11 +24,15 @@ or not.
 The server name you want to discover any SQL Server instances on. This parameter is required.
 
 .PARAMETER Credential
-The credential you want to use to connect to the remote server and active directory. This parameter is required.
+The credential you want to use to connect to the remote server and active directory.
 
 .PARAMETER Domain
 If your server resides on a different domain than what your current session is authenticated against, you can specify a domain here. This
 parameter is optional.
+
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
+
 
 .NOTES
 Tags: SQLWMI, SPN
@@ -70,9 +75,13 @@ have be a valid login with appropriate rights on the domain you specify
 		[Parameter(Mandatory = $false)]
 		[PSCredential]$Credential,
 		[Parameter(Mandatory = $false)]
-		[string]$Domain
+		[string]$Domain,
+		[switch]$Silent
 	)
-	
+	begin {
+		# spare the cmdlet to search for the same account over and over
+		$resultcache = @{}
+	}
 	process
 	{
 		foreach ($computer in $computername)
@@ -110,7 +119,7 @@ have be a valid login with appropriate rights on the domain you specify
 				}
 			}
 			
-			Write-Verbose "Resolved ComputerName to FQDN: $computer"
+			Write-Message -Message "Resolved ComputerName to FQDN: $computer" -Level Verbose
 			
 			$Scriptblock = {
 				
@@ -144,7 +153,6 @@ have be a valid login with appropriate rights on the domain you specify
 				$spns = @()
 				$servername = $args[0]
 				$hostentry = $args[1]
-				$domain = $args[2]
 				$instancecount = $wmi.ServerInstances.Count
 				Write-Verbose "Found $instancecount instances"
 				
@@ -278,67 +286,60 @@ have be a valid login with appropriate rights on the domain you specify
 				$spns
 			}
 			
-			Write-Verbose "Attempting to connect to SQL WMI on remote computer"
+			Write-Message -Message "Attempting to connect to SQL WMI on remote computer" -Level Verbose
 			if ($Credential)
 			{
 				try
 				{
-					$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $hostentry, $domain -Credential $Credential -ErrorAction Stop
+					$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $hostentry -Credential $Credential -ErrorAction Stop
 				}
 				catch
 				{
-					Write-Verbose "Couldn't connect to $ipaddr with credential. Using without credentials."
-					$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $hostentry, $domain
+					Write-Message -Message "Couldn't connect to $ipaddr with credential. Using without credentials." -Level Verbose
+					$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $hostentry
 				}
 			}
 			else
 			{
-				$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $hostentry, $domain
+				$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $hostentry
 			}
 			
 			
 			#Now query AD for each required SPN
-			ForEach ($spn in $spns)
-			{
-				$DN = "DC=" + $domain -Replace ("\.", ',DC=')
-				$LDAP = "LDAP://$DN"
-				$root = [ADSI]$LDAP
-				$ADObject = New-Object System.DirectoryServices.DirectorySearcher
-				$ADObject.SearchRoot = $root
-				
+			foreach ($spn in $spns) {
 				$serviceAccount = $spn.InstanceServiceAccount
-				
-				if ($serviceaccount -like "*\*")
-				{
-					Write-Debug "Account provided in in domain\user format. Stripping domain values."
-					$serviceaccount = ($serviceaccount.split("\"))[1]
+				# spare the cmdlet to search for the same account over and over
+				if ($spn.InstanceServiceAccount -notin $resultcache.Keys) {
+					Write-Message -Message "searching for $serviceAccount" -Level Verbose
+					try
+					{
+						$result = Get-DbaADObject -ADObject $serviceAccount -Type User -Credential $Credential -Silent
+						$resultcache[$spn.InstanceServiceAccount] = $result
+					}
+					catch
+					{
+						Write-Message -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($serviceAccount)." -Level Warning
+						continue
+					}
+				} else {
+					$result = $resultcache[$spn.InstanceServiceAccount]
 				}
-				if ($serviceaccount -like "*@*")
+				if ($result.Count -gt 0)
 				{
-					Write-Debug "Account provided in in user@domain format. Stripping domain values."
-					$serviceaccount = ($serviceaccount.split("@"))[0]
-				}
-				
-				$ADObject.Filter = $("(&(samAccountName={0}))" -f $serviceaccount)
-				
-				try
-				{
-					$results = $ADObject.FindAll()
-				}
-				catch
-				{
-					Write-Warning "AD lookup failure. This may be because the hostname ($computer) was not resolvable within the domain ($domain) or the SQL Server service account ($serviceaccount) couldn't be found in domain."
+					try {
+						$results = $result.GetUnderlyingObject()
+						if ($results.Properties.servicePrincipalName -contains $spn.RequiredSPN)
+						{
+							$spn.IsSet = $true
+						}
+					} catch {
+						Write-Message -Message "The SQL Service account ($serviceAccount) has been found, but you don't have enough permission to inspect its SPNs" -Level Warning
+						continue
+					}
+				} else {
+					Write-Message -Message "The SQL Service account ($serviceAccount) has not been found" -Level Warning
 					continue
 				}
-				
-				if ($results.Count -gt 0)
-				{
-					if ($results.Properties.serviceprincipalname -contains $spn.RequiredSPN)
-					{
-						$spn.IsSet = $true
-					}
-				}
-				
 				if (!$spn.IsSet -and $spn.TcpEnabled)
 				{
 					$spn.Error = "SPN missing"
