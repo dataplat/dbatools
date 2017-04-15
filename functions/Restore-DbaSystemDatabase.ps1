@@ -117,16 +117,18 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
             Set-DbaStartupParameter -SqlServer $sqlserver -SingleUser -SingleUserDetails dbatoolsSystemk34i23hs3u57w 
             Stop-DbaService -SqlServer $server | out-null
             Start-DbaService -SqlServer $server | out-null
+            Start-DbaService -SqlServer $server | out-null
             $StartCount = 0
-            while ((Get-DbaService -sqlserver $server -service sqlserver).ServiceState.value -ne 'running' -and $startCount -lt 5)
+            while ((Get-DbaService -sqlserver $server -service sqlserver).ServiceState.value -ne 'running')
             {
                 Start-DbaService -SqlServer $server | out-null
                 Start-Sleep -seconds 65
-            }
-            if ($StartCount -ge 4)
-            {
-                #Didn't start nicely, jump to finally to try to come back up sanely
-                Write-Message -Level Warning -Message "SQL Server not starting nicely, trying to fix" -Silent:$false
+                $StartCount++
+                if ($StartCount+-ge 4)
+                {
+                    #Didn't start nicely, jump to finally to try to come back up sanely
+                    Write-Message -Level Warning -Message "SQL Server not starting nicely, trying to fix" -Silent:$false
+                }
             }
             if ($server.connectionContext.IsOpen -eq $false)
             {
@@ -164,16 +166,18 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
             }
             Start-DbaService -SqlServer $server | out-null
             $StartCount = 0
-            while ((Get-DbaService -sqlserver $server -service sqlserver).ServiceState.value -ne 'running' -and $startCount -lt 5)
+            while ((Get-DbaService -sqlserver $server -service sqlserver).ServiceState.value -ne 'running')
             {
                 Start-DbaService -SqlServer $server | out-null
                 Start-Sleep -seconds 65
+                $StartCount++
+                if ($StartCount+-ge 4)
+                {
+                    #Didn't start nicely, jump to finally to try to come back up sanely
+                    Write-Message -Level Warning -Message "SQL Server not starting nicely, trying to fix" -Silent:$false
+                }
             }
-            if ($StartCount -ge 4)
-            {
-                #Didn't start nicely, jump to finally to try to come back up sanely
-                Write-Message -Level Warning -Message "SQL Server not starting nicely, trying to fix" -Silent:$false
-            }
+
             if ($server.connectionContext.IsOpen -eq $false)
             {
                 $server.connectionContext.Connect()
@@ -217,6 +221,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
             Write-Message -Level Verbose -Silent:$false -Message "Full Text was running at start, so restarting"
             Start-DbaService -sqlserver $server -service FullText | out-null
         }
+        $Server.ConnectionContext.Disconnect()
         $RestoreResult + $RestoreResults
     }
 }
