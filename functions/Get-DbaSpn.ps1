@@ -21,6 +21,9 @@ User credential to connect to the remote servers or active directory.
 .PARAMETER ByAccount
 Shows all SPNs registered by the specified AccountName otherwise, only results will be shown for the specified ComputerName (which is localhost by default)
 
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
+
 .NOTES
 Tags: SPN
 Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
@@ -49,15 +52,16 @@ Get-DbaSpn -ServerName SQLSERVERA,SQLSERVERB -Credential (Get-Credential)
 
 Returns a custom object with SearchTerm (ServerName) and the SPNs that were found for multiple computers
 #>
-    [cmdletbinding()]
+	[cmdletbinding()]
 	param (
-        [Parameter(Mandatory = $false,ValueFromPipeline = $true)]
-        [string[]]$ComputerName = $env:COMPUTERNAME,
-        [Parameter(Mandatory = $false)]
+		[Parameter(Mandatory = $false,ValueFromPipeline = $true)]
+		[string[]]$ComputerName = $env:COMPUTERNAME,
+		[Parameter(Mandatory = $false)]
 		[string[]]$AccountName,
 		[switch]$ByAccount,
 		[Parameter(Mandatory = $false)]
-        [PSCredential]$Credential
+		[PSCredential]$Credential,
+		[switch]$Silent
 	)
 	begin
 	{
@@ -72,7 +76,7 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 				}
 				catch
 				{
-					Write-Message -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($serviceAccount)." -Level Warning
+					Write-Message -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($Account)." -Level Warning
 					continue
 				}
 				if ($Result.Count -gt 0)
