@@ -124,7 +124,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                 Start-DbaService -SqlServer $server | out-null
                 Start-Sleep -seconds 65
                 $StartCount++
-                if ($StartCount+-ge 4)
+                if ($StartCount -ge 4)
                 {
                     #Didn't start nicely, jump to finally to try to come back up sanely
                     Write-Message -Level Warning -Message "SQL Server not starting nicely, trying to fix" -Silent:$false
@@ -171,7 +171,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                 Start-DbaService -SqlServer $server | out-null
                 Start-Sleep -seconds 65
                 $StartCount++
-                if ($StartCount+-ge 4)
+                if ($StartCount -ge 4)
                 {
                     #Didn't start nicely, jump to finally to try to come back up sanely
                     Write-Message -Level Warning -Message "SQL Server not starting nicely, trying to fix" -Silent:$false
