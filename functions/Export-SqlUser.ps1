@@ -96,7 +96,8 @@ https://dbatools.io/Export-SqlUser
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Alias("NoOverwrite")]
 		[switch]$NoClobber,
-		[switch]$Append
+		[switch]$Append,
+		[switch]$IncludeSystemDatabases = $false
 	)
 	
 	DynamicParam 
@@ -153,7 +154,7 @@ https://dbatools.io/Export-SqlUser
 
         if ($databases.Count -eq 0)
         {
-            $databases = $sourceserver.Databases | Where-Object {$exclude -notcontains $_.Name -and $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true}
+            $databases = $sourceserver.Databases | Where-Object {$exclude -notcontains $_.Name -and $_.IsSystemObject -eq $IncludeSystemDatabases -and $_.IsAccessible -eq $true}
         }
         else
         {
@@ -164,7 +165,7 @@ https://dbatools.io/Export-SqlUser
 		    }
             else
             {
-                $databases = $sourceserver.Databases | Where-Object {$exclude -notcontains $_.Name -and $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true -and ($databases -contains $_.Name)}
+                $databases = $sourceserver.Databases | Where-Object {$exclude -notcontains $_.Name -and $_.IsSystemObject -eq $IncludeSystemDatabases -and $_.IsAccessible -eq $true -and ($databases -contains $_.Name)}
             }
         }
 
@@ -250,50 +251,156 @@ https://dbatools.io/Export-SqlUser
                                 if ($DatabasePermission.PermissionState -eq "GrantWithGrant")
                                 {
                                     $WithGrant = "WITH GRANT OPTION"
+                                    $GrantDatabasePermission = 'GRANT'
                                 } 
                                 else 
                                 {
                                     $WithGrant = ""
+                                    $GrantDatabasePermission = $DatabasePermission.PermissionState.ToString().ToUpper()
                                 }
-                                $GrantDatabasePermission = $DatabasePermission.PermissionState.ToString().Replace("WithGrant", "").ToUpper()
 
-                                $outsql += "$($GrantDatabasePermission) $($DatabasePermission.PermissionType) TO [$($DatabasePermission.Grantee)] $WithGrant"
+                                $outsql += "$($GrantDatabasePermission) $($DatabasePermission.PermissionType) TO [$($DatabasePermission.Grantee)]$($WithGrant) AS [$($DatabasePermission.Grantor)];"
                             }
 
 
 	                        #Database Object Permissions
-                            foreach ($ObjectPermission in $db.EnumObjectPermissions() | Where-Object {@("sa","dbo","information_schema","sys") -notcontains $_.Grantee -and $_.Grantee -notlike "##*" -and $dbuser.Name -contains $_.Grantee})
+                            # NB: This is a bit of a mess for a couple of reasons
+                            # 1. $db.EnumObjectPermissions() doesn't enumerate all object types
+                            # 2. Some (x)Collection types can have EnumObjectPermissions() called
+                            #    on them directly (e.g. AssemblyCollection); others can't (e.g.
+                            #    ApplicationRoleCollection). Those that can't we iterate the
+                            #    collection explicitly and add each object's permission.
+
+                            $obj_perms = @()
+
+                            $obj_perms += $db.EnumObjectPermissions()
+                            foreach ($o in $db.ApplicationRoles) {
+                                $obj_perms += $o.EnumObjectPermissions()
+                            }
+                            $obj_perms += ($db.Assemblies).EnumObjectPermissions()
+                            $obj_perms += ($db.AsymmetricKeys).EnumObjectPermissions()
+                            foreach ($o in $db.Certificates) {
+                                $obj_perms += $o.EnumObjectPermissions()
+                            }
+                            foreach ($o in $db.DatabaseRoles) {
+                                $obj_perms += $o.EnumObjectPermissions()
+                            }
+                            foreach ($o in $db.FullTextCatalogs) {
+                                $obj_perms += $o.EnumObjectPermissions()
+                            }
+                            foreach ($o in $db.FullTextStopLists) {
+                                $obj_perms += $o.EnumObjectPermissions()
+                            }
+                            foreach ($o in $db.SearchPropertyLists) {
+                                $obj_perms += $o.EnumObjectPermissions()
+                            }
+                            $obj_perms += ($db.ServiceBroker.MessageTypes).EnumObjectPermissions()
+                            foreach ($o in $db.RemoteServiceBindings) {
+                                $obj_perms += $o.EnumObjectPermissions()
+                            }
+                            $obj_perms += ($db.ServiceBroker.Routes).EnumObjectPermissions()
+                            $obj_perms += ($db.ServiceBroker.ServiceContracts).EnumObjectPermissions()
+                            $obj_perms += ($db.ServiceBroker.Services).EnumObjectPermissions()
+                            $obj_perms += ($db.SymmetricKeys).EnumObjectPermissions()
+                            $obj_perms += ($db.XmlSchemaCollections).EnumObjectPermissions()
+
+                            foreach ($ObjectPermission in $obj_perms | Where-Object {@("sa","dbo","information_schema","sys") -notcontains $_.Grantee -and $_.Grantee -notlike "##*" -and $dbuser.Name -contains $_.Grantee})
                             {
                                 switch ($ObjectPermission.ObjectClass)
-				                {
-					                "Schema" 
-                                    { 
-                                        $Object = "SCHEMA::[" + $ObjectPermission.ObjectName + "]" 
+                                {
+                                    'ApplicationRole'
+                                    {
+                                        $Object = 'APPLICATION ROLE::[{0}]' -f $ObjectPermission.ObjectName
                                     }
-					    
-                                    "User" 
-                                    { 
-                                        $Object = "USER::[" + $ObjectPermission.ObjectName + "]" 
+                                    'AsymmetricKey'
+                                    {
+                                        $Object = 'ASYMMETRIC KEY::[{0}]' -f $ObjectPermission.ObjectName
                                     }
-                        
-                                    default 
-                                    { 
-                                        $Object = "[" + $ObjectPermission.ObjectSchema + "].[" + $ObjectPermission.ObjectName + "]" 
+                                    'Certificate'
+                                    {
+                                        $Object = 'CERTIFICATE::[{0}]' -f $ObjectPermission.ObjectName
                                     }
-				                }
+                                    'DatabaseRole'
+                                    {
+                                        $Object = 'ROLE::[{0}]' -f $ObjectPermission.ObjectName
+                                    }
+                                    'FullTextCatalog'
+                                    {
+                                        $Object = 'FULLTEXT CATALOG::[{0}]' -f $ObjectPermission.ObjectName
+                                    }
+                                    'FullTextStopList'
+                                    {
+                                        $Object = 'FULLTEXT STOPLIST::[{0}]' -f $ObjectPermission.ObjectName
+                                    }
+                                    'MessageType'
+                                    {
+                                        $Object = 'Message Type::[{0}]' -f $ObjectPermission.ObjectName
+                                    }
+                                    'ObjectOrColumn'
+                                    {
+                                        $Object = 'OBJECT::[{0}].[{1}]' -f $ObjectPermission.ObjectSchema, $ObjectPermission.ObjectName
+                                        if ($ObjectPermission.ColumnName -ne $null) {
+                                            $object += '([{0}])' -f $ObjectPermission.ColumnName
+                                        }
+                                    }
+                                    'RemoteServiceBinding'
+                                    {
+                                        $Object = 'REMOTE SERVICE BINDING::[{0}]' -f $ObjectPermission.ObjectName
+                                    }
+                                    'Schema'
+                                    {
+                                        $Object = 'SCHEMA::[{0}]' -f $ObjectPermission.ObjectName
+                                    }
+                                    'SearchPropertyList'
+                                    {
+                                        $Object = 'SEARCH PROPERTY LIST::[{0}]' -f $ObjectPermission.ObjectName
+                                    }
+                                    'Service'
+                                    {
+                                        $Object = 'SERVICE::[{0}]' -f $ObjectPermission.ObjectName
+                                    }
+                                    'ServiceContract'
+                                    {
+                                        $Object = 'CONTRACT::[{0}]' -f $ObjectPermission.ObjectName
+                                    }
+                                    'ServiceRoute'
+                                    {
+                                        $Object = 'ROUTE::[{0}]' -f $ObjectPermission.ObjectName
+                                    }
+                                    'SqlAssembly'
+                                    {
+                                        $Object = 'ASSEMBLY::[{0}]' -f $ObjectPermission.ObjectName
+                                    }
+                                    'SymmetricKey'
+                                    {
+                                        $Object = 'SYMMETRIC KEY::[{0}]' -f $ObjectPermission.ObjectName
+                                    }
+                                    'User'
+                                    {
+                                        $Object = 'USER::[{0}]' -f $ObjectPermission.ObjectName
+                                    }
+                                    'UserDefinedType'
+                                    {
+                                        $Object = 'TYPE::[{0}].[{1}]' -f $ObjectPermission.ObjectSchema, $ObjectPermission.ObjectName
+                                    }
+                                    'XmlNamespace'
+                                    {
+                                        $Object = 'XML SCHEMA COLLECTION::[{0}]' -f $ObjectPermission.ObjectName
+                                    }
+                                }
 
                                 if ($ObjectPermission.PermissionState -eq "GrantWithGrant")
                                 {
                                     $WithGrant = "WITH GRANT OPTION"
-                        
-                                } 
-                                else 
+                                    $GrantObjectPermission = 'GRANT'
+                                }
+                                else
                                 {
                                     $WithGrant = ""
+                                    $GrantObjectPermission = $ObjectPermission.PermissionState.ToString().ToUpper()
                                 }
-                                $GrantObjectPermission = $ObjectPermission.PermissionState.ToString().Replace("WithGrant","").ToUpper()
 
-                                $outsql += "$GrantObjectPermission $($ObjectPermission.PermissionType) ON $Object TO [$($ObjectPermission.Grantee)] $WithGrant"
+                                $outsql += "$GrantObjectPermission $($ObjectPermission.PermissionType) ON $Object TO [$($ObjectPermission.Grantee)]$($WithGrant) AS [$($ObjectPermission.Grantor)];"
                             }
 
                         }
@@ -308,7 +415,7 @@ https://dbatools.io/Export-SqlUser
                 {
                     Write-Output "No users found on database '$db'"
                 }
-                
+
                 #reset collection
                 $Users = $null
             }
