@@ -1,7 +1,22 @@
 [CmdletBinding()]
 param (
-	[string]$Path
+	[string]$Path,
+	[switch]$WhatIf = $false, 
+	[switch]$Force = $false
 )
+
+$installDir = Split-Path $MyInvocation.MyCommand.Path -Parent
+
+if(Test-Path("$installDir\.git"))
+{
+	"Installing from gitRepo"
+	Import-Module $installDir\dbatools.psd1
+
+	Add-DbaToolsToProfile -WhatIf:$WhatIf -Force:$Force -Verbose:$Verbose
+	
+	exit 0
+}
+
 
 $localpath = $localpath = (Get-Module -Name dbatools).ModuleBase
 
