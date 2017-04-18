@@ -252,7 +252,8 @@
 		'Invoke-DbaDatabaseShrink',
 		'Get-DbaEstimatedCompletionTime',
 		'Export-DbaScript',
-		'New-DbaScriptingOption'
+		'New-DbaScriptingOption',
+		'Get-DbaLogin'
 		#'Get-DbaLinkedServer',
 		#'Invoke-DbaLogShippingRecovery',
 	)
