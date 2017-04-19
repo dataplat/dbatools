@@ -150,7 +150,7 @@ Shows what would happen if the command were executed.
                             $destServer.Mail.Accounts.Refresh()
                         }
                         catch {
-                            Stop-Function -InnerErrorRecord $_ -Continue -Silent $Silent
+                            Stop-Function -Message "Issue dropping account" -Target $accountName -InnerErrorRecord $_ -Continue -Silent $Silent
                         }
                     }
                 }
@@ -164,7 +164,7 @@ Shows what would happen if the command were executed.
                         $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
                     }
                     catch {
-                        Stop-Function -InnerErrorRecord $_ -Silent $Silent
+                        Stop-Function -Message "Issue copying mail account" -Target $accountName -InnerErrorRecord $_ -Silent $Silent
                     }
                 }
             }
@@ -195,7 +195,7 @@ Shows what would happen if the command were executed.
                             $destServer.Mail.Profiles.Refresh()
                         }
                         catch {
-                            Stop-Function -InnerErrorRecord $_ -Continue -Silent $Silent
+                            Stop-Function -Message "Issue dropping profile" -Target $profileName -InnerErrorRecord $_ -Continue -Silent $Silent
                         }
                     }
                 }
@@ -210,7 +210,7 @@ Shows what would happen if the command were executed.
                         $destServer.Mail.Profiles.Refresh()
                     }
                     catch {
-                        Stop-Function -InnerErrorRecord $_ -Silent $Silent
+                        Stop-Function -Message "Issue copying mail profile" -Target $profileName -InnerErrorRecord $_ -Silent $Silent
                     }
                 }
             }
@@ -238,7 +238,7 @@ Shows what would happen if the command were executed.
                             $destServer.Mail.Accounts.mailServers[$mailServerName].Drop()
                         }
                         catch {
-                            Stop-Function -InnerErrorRecord $_ -Continue -Silent $Silent
+                            Stop-Function -Message "Issue dropping mail server" -Target $mailServerName -InnerErrorRecord $_ -Continue -Silent $Silent
                         }
                     }
                 }
@@ -252,7 +252,7 @@ Shows what would happen if the command were executed.
                         $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
                     }
                     catch {
-                        Stop-Function -InnerErrorRecord $_ -Silent $Silent
+                        Stop-Function -Message "Issue copying mail server" -Target $mailServerName -InnerErrorRecord $_ -Silent $Silent
                     }
                 }
             }
@@ -331,17 +331,20 @@ Shows what would happen if the command were executed.
         $destServer.Mail.Profiles.Refresh()
         Copy-SqlDatabasemailServer
 
-        $sourceDbMailEnabled = (Get-DbaSpConfigure -SqlServer $sourceServer | Where-Object ConfigName -eq "DatabaseMailEnabled").ConfiguredValue
+        <# ToDo: Use Get/Set-DbaSpConfigure once the dynamic parameters are replaced. #>
+
+        $sourceDbMailEnabled = ($sourceServer.Configuration.DatabaseMailEnabled).ConfigValue
         Write-Message -Level Output -Message "$sourceServer DBMail configuration value: $sourceDbMailEnabled" -Silent $Silent
         
-        $destDbMailEnaled = (Get-DbaSpConfigure -SqlServer $destServer | Where-Object ConfigName -eq "DatabaseMailEnabled").ConfiguredValue
-        Write-Message -Level Output -Message "$destServer DBMail configuration value: $destDbMailEnaled" -Silent $Silent
+        $destDbMailEnabled = ($destServer.Configuration.DatabaseMailEnabled).ConfigValue
+        Write-Message -Level Output -Message "$destServer DBMail configuration value: $destDbMailEnabled" -Silent $Silent
 
-        if ( ($sourceDbMailEnabled -eq 1) -and ($destDbMailEnaled -eq 0) ) {
+        if ( ($sourceDbMailEnabled -eq 1) -and ($destDbMailEnabled -eq 0) ) {
             if ($pscmdlet.ShouldProcess($destination, "Enabling Database Mail")) {
                 try {
                     Write-Message -Message "Enabling Database Mail on $destServer" -Level Output -Silent $Silent
-                    Set-DbaSpConfigure -SqlInstance $destServer -Value 1 -Configs "DatabaseMailEnabled"
+                    $destServer.Configuration.DatabaseMailEnabled.ConfigValue = 1
+                    $destServer.Alter()
                 }
                 catch {
                     Stop-Function -Message "Cannot enable Database Mail" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Silent $Silent
