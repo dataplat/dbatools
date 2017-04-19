@@ -100,7 +100,7 @@ Test all Linked Servers for the SQL Server instances sql2016, sql2014 and sql201
 				$connectivity = $true
 			}
 			catch {
-				$result = $_.Exception.InnerException
+				$result = $_.Exception.InnerException.InnerException.Message
 				$connectivity = $false
 			}
 			
