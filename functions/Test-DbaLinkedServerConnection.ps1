@@ -13,6 +13,9 @@ The SQL Server that you're connecting to.
 .PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user
 
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
+	
 .NOTES
 Author: Thomas LaRock ( https://thomaslarock.com )
 	
