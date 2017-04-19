@@ -273,7 +273,12 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 							$CustomFileStructure[$fg.Name] += @{ 'name' = $file.name; 'filename' = $fname }
 						}
 					}
-					$SnapDB = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Database -ArgumentList $instance, $Snapname
+                    #Use default constructor and set Parent + Credentials, in order to honor $Credential
+					$SnapDB = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Database
+                    #Server connection using credentials was created above
+                    $SnapDB.Parent = $server
+                    $SnapDB.Name = $SnapName
+
 					$SnapDB.DatabaseSnapshotBaseName = $db.Name
 					foreach ($fg in $CustomFileStructure.Keys)
 					{
