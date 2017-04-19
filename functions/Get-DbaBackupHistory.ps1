@@ -165,7 +165,7 @@ Function Get-DbaBackupHistory {
 				if ($databases -eq $null) { $databases = $server.databases.name }
 				
 				foreach ($db in $databases) {
-					$alldb = Get-DbaBackupHistory -SqlServer $server -Databases $db -raw:$Raw -IgnoreCopyOnly
+					$alldb = Get-DbaBackupHistory -SqlServer $server -Databases $db -raw:$Raw
 					$logdb = Get-DbaBackupHistory -SqlServer $server -Databases $db -raw:$Raw -LastLog
 					
 					$alldb | Where-Object { $_.FirstLsn -eq $logdb.DatabaseBackupLsn -and $_.Type -eq 'Full' }
