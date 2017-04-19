@@ -28,7 +28,7 @@ Function Get-DbaBackupHistory {
         Datetime object used to narrow the results to a date
     
     .PARAMETER Last
-        Returns last entire chain of full, diff and log backup sets
+        Returns last entire chain of full, diff and log backup sets - starting backwards from most recent log
     
     .PARAMETER LastFull
         Returns last full backup set
@@ -165,15 +165,12 @@ Function Get-DbaBackupHistory {
 				if ($databases -eq $null) { $databases = $server.databases.name }
 				
 				foreach ($db in $databases) {
+					$alldb = Get-DbaBackupHistory -SqlServer $server -Databases $db -raw:$Raw -IgnoreCopyOnly
+					$logdb = Get-DbaBackupHistory -SqlServer $server -Databases $db -raw:$Raw -LastLog
 					
-					$alldb = Get-DbaBackupHistory -SqlServer $server -Databases $db -raw:$Raw
-					$lastlog = Get-DbaBackupHistory -SqlServer $server -Databases $db -raw:$Raw -LastLog
-					
-					$full = $alldb | Where-Object { $_.LastLsn -eq $log.lastlsn -and $_.Type -eq 'Full' }
-					$diff = $alldb | Where-Object { $_.LastLsn -eq $log.lastlsn -and $_.Type -ne 'Full' -and $_.Type -ne 'Log' }
-					$log = $alldb | Where-Object { $_.LastLsn -eq $log.lastlsn -and $_.Type -eq 'Log' }
-					
-					$full; $diff; $log
+					$alldb | Where-Object { $_.FirstLsn -eq $logdb.DatabaseBackupLsn -and $_.Type -eq 'Full' }
+					$alldb | Where-Object { $_.DatabaseBackupLsn -eq $logdb.DatabaseBackupLsn -and $_.Type -ne 'Full' -and $_.Type -ne 'Log' }
+					$alldb | Where-Object { $_.DatabaseBackupLsn -eq $logdb.DatabaseBackupLsn -and $_.Type -eq 'Log' }
 				}
 				continue
 			}
