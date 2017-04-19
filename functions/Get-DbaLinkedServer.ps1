@@ -36,12 +36,10 @@ Returns all Linked Servers for the SQL Server instance DEV01
 #>
 	[CmdletBinding(DefaultParameterSetName = 'Default')]
 	param (
-		[Parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Instances")]
+		[Parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[Parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Instances")]
-		[Microsoft.SqlServer.Management.Smo.LinkedServer[]]$LinkedServerCollection,
 		[switch]$Silent
 	)
 	
@@ -77,7 +75,7 @@ Returns all Linked Servers for the SQL Server instance DEV01
 				Add-Member -InputObject $ls -MemberType NoteProperty -Name Impersonate -value $ls.LinkedServerLogins.Impersonate
 				Add-Member -InputObject $ls -MemberType NoteProperty -Name RemoteUser -value $ls.LinkedServerLogins.RemoteUser
 				
-				Select-DefaultView -InputObject $ls -Property ComputerName, SqlInstance, LinkedServerName, RemoteServer, ProductName, Impersonate, RemoteUser, Rpc, RpcOut
+				Select-DefaultView -InputObject $ls -Property ComputerName, InstanceName, SqlInstance, Name, 'DataSource as RemoteServer', ProductName, Impersonate, RemoteUser, 'DistPublisher as Publisher', Distributor, DateLastModified
             } 
         } 
     } 
