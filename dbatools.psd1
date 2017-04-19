@@ -254,7 +254,7 @@
 		'Export-DbaScript',
 		'New-DbaScriptingOption',
 		'Get-DbaLogin'
-		#'Get-DbaLinkedServer',
+		'Get-DbaLinkedServer'
 		#'Invoke-DbaLogShippingRecovery',
 	)
 	
