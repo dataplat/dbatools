@@ -48,7 +48,7 @@ Returns databases without a Log backup recorded by SQL Server. Will indicate tho
 .PARAMETER NoLogBackupSince
 DateTime value. Returns list of SQL Server databases that haven't had a Log backup since the passed iin DateTime
 
-.PARAMETER Switch
+.PARAMETER Silent
 Use this switch to disable any kind of verbose messages
 
 .NOTES
