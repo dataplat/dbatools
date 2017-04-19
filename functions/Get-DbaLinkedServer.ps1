@@ -13,6 +13,9 @@ The SQL Server that you're connecting to.
 .PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user
 
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
+
 .NOTES
 Author: Stephen Bennett ( https://sqlnotesfromtheunderground.wordpress.com/ )
 	
@@ -21,7 +24,6 @@ Copyright (C) 2016 Chrissy LeMaire
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 	
 .LINK
 https://dbatools.io/Get-DbaLinkedServer
@@ -32,45 +34,50 @@ Get-DbaLinkedServer -SqlServer DEV01
 Returns all Linked Servers for the SQL Server instance DEV01
 
 #>
-	[CmdletBinding()]
+	[CmdletBinding(DefaultParameterSetName = 'Default')]
 	param (
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[Parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Instances")]
 		[Alias("ServerInstance", "SqlServer")]
-		[string[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[object[]]$SqlInstance,
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[Parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Instances")]
+		[Microsoft.SqlServer.Management.Smo.LinkedServer[]]$LinkedServerCollection,
+		[switch]$Silent
 	)
-    process
+	
+	dynamicparam { if ($SqlInstance) { return (Get-ParamSqlLinkedServers -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential) } }
+	
+	begin {
+		$linkedservers = $psboundparameters.LinkedServers
+	}
+	
+	process
     {
         foreach ($Instance in $SqlInstance)
         {
-            try
-	        {
-	            Write-Verbose "Connecting to $Instance"
-                $server = Connect-SqlServer -SqlServer $Instance -SqlCredential $sqlcredential
-	        }
-	        catch
-	        {
-	            Write-Warning "Failed to connect to: $Instance"
-                continue
-	        }
-
-            foreach ($ls in $server.LinkedServers)
+			try {
+				Write-Message -Level Verbose -Message "Connecting to $instance"
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+			}
+			catch {
+				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
+			}
+			
+			$lservers = $server.LinkedServers
+			
+			if ($linkedservers) {
+				$lservers = $lservers | Where-Object { $_.Name -in $linkedservers }
+			}
+			
+			foreach ($ls in $lservers)
             {               
-
-                    $output = [PSCustomObject]@{
-                        ComputerName = $server.NetName
-                        SqlInstance = $server.InstanceName
-		                LinkedServerName = $ls.Name
-                        RemoteServer = $ls.DataSource
-                        ProductName = $ls.ProductName 
-                        Impersonate = $ls.LinkedServerLogins.Impersonate
-                        RemoteUser = $ls.LinkedServerLogins.remoteuser
-                        Rpc = $ls.Rpc
-                        RpcOut = $ls.RpcOut
-                        LinkedServer = $ls
-                        }
-     
-                    Select-DefaultView -InputObject $output -Property ComputerName, SqlInstance, LinkedServerName, RemoteServer, ProductName, Impersonate, RemoteUser, Rpc, RpcOut
+				Add-Member -InputObject $ls -MemberType NoteProperty -Name ComputerName -value $server.NetName
+				Add-Member -InputObject $ls -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+				Add-Member -InputObject $ls -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+				Add-Member -InputObject $ls -MemberType NoteProperty -Name Impersonate -value $ls.LinkedServerLogins.Impersonate
+				Add-Member -InputObject $ls -MemberType NoteProperty -Name RemoteUser -value $ls.LinkedServerLogins.RemoteUser
+				
+				Select-DefaultView -InputObject $ls -Property ComputerName, SqlInstance, LinkedServerName, RemoteServer, ProductName, Impersonate, RemoteUser, Rpc, RpcOut
             } 
         } 
     } 

@@ -13,6 +13,9 @@ The SQL Server that you're connecting to.
 .PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user
 
+.PARAMETER LinkedServerCollection
+Internal parameter for piping	
+
 .NOTES
 Author: Thomas LaRock ( https://thomaslarock.com )
 	
@@ -47,13 +50,42 @@ $servers | Test-DbaLinkedServerConnection -SqlCredential (Get-Credential sqladmi
 Test all Linked Servers for the SQL Server instances sql2016, sql2014 and sql2012 using SQL login credentials
 	
 #>
-	[CmdletBinding()]
+	[CmdletBinding(DefaultParameterSetName = 'Default')]
 	param (
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[Parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Instances")]
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[Parameter(Mandatory, ValueFromPipeline, ParameterSetName = "LinkedServers")]
+		[Microsoft.SqlServer.Management.Smo.LinkedServer[]]$LinkedServerCollection,
+		[switch]$Silent
 	)
+	
+	begin {
+		
+		function test-ls ($ls){	
+			try {
+				$null = $ls.TestConnection()
+				$result = "Success"
+				$connectivity = $true
+			}
+			catch {
+				$result = $_.Exception.InnerException
+				$connectivity = $false
+			}
+			
+			[PSCustomObject]@{
+				ComputerName = $ls.parent.NetName
+				InstanceName = $ls.parent.ServiceName
+				SqlInstance = $ls.parent.DomainInstanceName
+				LinkedServerName = $ls.parent.Name
+				RemoteServer = $ls.parent.DataSource
+				Connectivity = $connectivity
+				Result = $result
+			} | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
+		}
+	}
+	
 	process
 	{
 		foreach ($Instance in $SqlInstance)
@@ -69,30 +101,13 @@ Test all Linked Servers for the SQL Server instances sql2016, sql2014 and sql201
 				continue
 			}
 			
-			foreach ($ls in $server.LinkedServers)
-			{
-				try
-				{
-					$null = $ls.TestConnection()
-					$result = "Success"
-					$connectivity = $true
-				}
-				catch
-				{
-					$result = $_.Exception.InnerException
-					$connectivity = $false
-				}
-				
-				[PSCustomObject]@{
-					ComputerName = $server.NetName
-					InstanceName = $server.ServiceName
-					SqlInstance = $server.DomainInstanceName
-					LinkedServerName = $ls.Name
-					RemoteServer = $ls.DataSource
-					Connectivity = $connectivity
-					Result = $result
-				} | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
+			foreach ($ls in $server.LinkedServers){
+				test-ls $ls
 			}
+		}
+		
+		foreach ($ls in $LinkedServerCollection) {
+			test-ls $ls
 		}
 	}
 }
