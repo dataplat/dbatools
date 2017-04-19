@@ -54,19 +54,19 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 	
 	PROCESS
 	{
-		foreach ($servername in $SqlServer)
+		foreach ($server in $SqlServer)
 		{
 			$servercount++
 			try
 			{
 				#$servername, $instancename = ($sqlserver.Split('\'))
-				if ($null -eq $SqlServer.name)
+				if ($null -eq $server.name)
 				{
-					$servername, $instancename = ($sqlserver.Split('\'))
+					$servername, $instancename = ($server.Split('\'))
 				}
 				else
 				{
-					$servername, $instancename = ($sqlserver.name.Split('\'))
+					$servername, $instancename = ($server.name.Split('\'))
 				}
    
 				Write-Message -Level Verbose -message "Attempting to connect to $servername" -silent $false
@@ -178,8 +178,8 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 			}
 			catch
 			{
-			#	Write-Message -Level Warning -Message "$servername`: $_ " -silent $silent
-			write-warning "caught error $_"
+				Write-Message -Level Warning -Message "$servername`: $_ " -silent:$false
+
 			}
 		}
 	}

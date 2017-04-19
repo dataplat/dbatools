@@ -80,12 +80,12 @@ Will configure the SQL Instance server1\instance1 to startup up in Single User m
 	
 .EXAMPLE
 Set-DbaStartupParameter -SqlServer server1\instance1 -SingleUser -TraceFlags 8032,8048
-This will appened Trace Flags 8032 and 8048 to the startup paramters
+This will appened Trace Flags 8032 and 8048 to the startup parameters
 
 .EXAMPLE
 Set-DbaStartupParameter -SqlServer server1\instance1 -SingleUser -TraceFlags 8032,8048 -TraceFlagsOverride
 
-This will set Trace Flags 8032 and 8048 to the startup paramters, removing any existing Trace Flags
+This will set Trace Flags 8032 and 8048 to the startup parameters, removing any existing Trace Flags
 
 .EXAMPLE
 
@@ -106,9 +106,9 @@ After the work has been completed, we can push the original startup parameters b
 
 #>
 	[CmdletBinding(SupportsShouldProcess=$true)]
-	param ([parameter(ValueFromPipeline, Mandatory = $true)]
+	param ([parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
-		[object[]]$SqlServer,
+		[object]$SqlServer,
 		[PSCredential]$Credential,
         [string]$MasterData,
         [string]$MasterLog,
@@ -127,214 +127,216 @@ After the work has been completed, we can push the original startup parameters b
         [object]$StartUpConfig
 
 	)
-    $FunctionName =(Get-PSCallstack)[0].Command
-    #Get Current parameters:
-    $CurrentStartup = Get-DbaStartupParameter -SqlServer $SqlServer -SqlCredential $Credential
-    if ('startUpconfig' -in $PsBoundParameters.keys)
+    PROCESS
     {
-        Write-Message -Level VeryVerbose -Message "StartupObject passed in" -silent:$true
-        $NewStartup = $StartUpConfig
-        $TraceFlagsOverride = $true
-    }
-    else
-    {    
-        Write-Message -Level VeryVerbose -Message "Parameters passed in" -silent:$true
-        $NewStartup = $CurrentStartup.PSObject.copy()
-        foreach ($param in ($PsBoundParameters.keys | ?{$_ -in ($NewStartup.PSObject.Properties.name)}))
+        #Get Current parameters:
+        $CurrentStartup = Get-DbaStartupParameter -SqlServer $SqlServer -SqlCredential $Credential
+        if ('startUpconfig' -in $PsBoundParameters.keys)
         {
-            if ($PsBoundParameters.item($param) -ne $NewStartup.$param )
+            Write-Message -Level VeryVerbose -Message "StartupObject passed in" -silent:$true
+            $NewStartup = $StartUpConfig
+            $TraceFlagsOverride = $true
+        }
+        else
+        {    
+            Write-Message -Level VeryVerbose -Message "Parameters passed in" -silent:$true
+            $NewStartup = $CurrentStartup.PSObject.copy()
+            foreach ($param in ($PsBoundParameters.keys | Where-Object {$_ -in ($NewStartup.PSObject.Properties.name)}))
             {
-                $NewStartup.$param = $PsBoundParameters.item($param) 
+                if ($PsBoundParameters.item($param) -ne $NewStartup.$param )
+                {
+                    $NewStartup.$param = $PsBoundParameters.item($param) 
+                }
             }
         }
-    }
-    if (!($CurrentStartup.SingleUser))
-    {   
-        if ($NewStartup.Masterdata.length -gt 0)
+        if (!($CurrentStartup.SingleUser))
+        {   
+            if ($NewStartup.Masterdata.length -gt 0)
+            {
+                if (Test-SqlPath -SqlServer $SqlServer -SqlCredential $Credential -Path (Split-Path $NewStartup.MasterData -Parent))
+                {
+                    $ParameterString += "-d$($NewStartup.MasterData);"
+                }
+                else
+                {
+                    Stop-Function -message "Specified folder for Master Data file is not reachable by instance $SqlServer" -silent:$true
+                }
+            }
+            else
+            {
+                Stop-Function -message "MasterData value must be provided" -silent:$true
+            }
+            if($NewStartup.ErrorLog.length -gt 0)
+            {
+                if (Test-SqlPath -SqlServer $SqlServer -SqlCredential $Credential -Path (Split-Path $NewStartup.ErrorLog -Parent))
+                {
+                    $ParameterString += "-e$($NewStartup.ErrorLog);"
+                }
+                else
+                {
+                    Stop-Function -message "Specified folder for ErrorLog  file is not reachable by $SqlServer" -silent:$true
+                }
+            }
+            else
+            {
+                Stop-Function -message "ErrorLog value must be provided" -silent:$true
+            }   
+            if ($NewStartup.MasterLog.Length -gt 0)
+            {
+                if (Test-SqlPath -SqlServer $SqlServer -SqlCredential $Credential -Path (Split-Path $NewStartup.MasterLog -Parent))
+                {
+                    $ParameterString += "-l$($NewStartup.MasterLog);"
+                }
+                else
+                {
+                    Stop-Function -message "Specified folder for Master Log  file is not reachable by $SqlServer" -silent:$true
+                }
+            }
+            else
+            {
+                Stop-Function -message "MasterLog value must be provided." -silent:$true
+            }
+        }
+        else
         {
-            if (Test-SqlPath -SqlServer $SqlServer -SqlCredential $Credential -Path (Split-Path $NewStartup.MasterData -Parent))
+            Write-Message -Level Verbose -Message "Sql instance is presently configured for single user, skipping path validation" -silent:$false
+            if ($NewStartup.MasterData.Length -gt 0)
             {
                 $ParameterString += "-d$($NewStartup.MasterData);"
             }
             else
             {
-                Stop-Function -message "Specified folder for Master Data file is not reachable by instance $SqlServer" -silent:$true
+                Stop-Function -message "Must have a value for MasterData" -silent:$true
             }
-        }
-        else
-        {
-            Stop-Function -message "MasterData value must be provided" -silent:$true
-        }
-        if($NewStartup.ErrorLog.length -gt 0)
-        {
-            if (Test-SqlPath -SqlServer $SqlServer -SqlCredential $Credential -Path (Split-Path $NewStartup.ErrorLog -Parent))
+            if ($NewStartup.ErrorLog.Length -gt 0)
             {
                 $ParameterString += "-e$($NewStartup.ErrorLog);"
             }
             else
             {
-                Stop-Function -message "Specified folder for ErrorLog  file is not reachable by $SqlServer" -silent:$true
+                Stop-Function -message "Must have a value for Errorlog" -silent:$true
             }
-        }
-        else
-        {
-            Stop-Function -message "ErrorLog value must be provided" -silent:$true
-        }   
-        if ($NewStartup.MasterLog.Length -gt 0)
-        {
-            if (Test-SqlPath -SqlServer $SqlServer -SqlCredential $Credential -Path (Split-Path $NewStartup.MasterLog -Parent))
+            if ($NewStartup.MasterLog.Length -gt 0)
             {
                 $ParameterString += "-l$($NewStartup.MasterLog);"
+            } 
+            else
+            {
+                Stop-Function -message "Must have a value for MsterLog" -silent:$true
+            } 
+        }
+
+        if ($NewStartup.CommandPromptStart)
+        {
+            $ParameterString += "-c;"
+        }
+        if ($NewStartup.MinimalStart)
+        {
+            $ParameterString += "-f;"
+        }
+        if ($NewStartup.MemoryToReserve -notin ($null,0))
+        {
+            $ParameterString += "-g$($NewStartup.MemoryToReserve)"
+        }
+        if  ($NewStartup.SingleUser)
+        {
+            if ($SingleUserDetails.length -gt 0)
+            {
+                if ($SingleUserDetails -match ' ')
+                {
+                    $SingleUserDetails = """$SingleUserDetails"""
+                }
+                $ParameterString += "-m$SingleUserDetails;"
             }
             else
             {
-                Stop-Function -message "Specified folder for Master Log  file is not reachable by $SqlServer" -silent:$true
+                $ParameterString += "-m;"
             }
         }
-        else
+        if ($NewStartup.NoLoggingToWinEvents)
         {
-            Stop-Function -message "MasterLog value must be provided." -silent:$true
+            $ParameterString += "-n;"
         }
-    }
-    else
-    {
-        Write-Message -Level Verbose -Message "Sql instance is presently configured for single user, skipping path validation" -silent:$false
-        if ($NewStartup.MasterData.Length -gt 0)
+        If ($NewStartup.StartAsNamedInstance)
         {
-            $ParameterString += "-d$($NewStartup.MasterData);"
+            $ParameterString += "-s;"
         }
-        else
+        if ($NewStartup.DisableMonitoring)
         {
-            Stop-Function -message "Must have a value for MasterData" -silent:$true
+            $ParameterString += "-x;"
         }
-        if ($NewStartup.ErrorLog.Length -gt 0)
+        if ($NewStartup.IncreasedExtents)
         {
-            $ParameterString += "-e$($NewStartup.ErrorLog);"
+            $ParameterString += "-E;"
         }
-        else
+        if($NewStartup.TraceFlags -eq 'None')
         {
-            Stop-Function -message "Must have a value for Errorlog" -silent:$true
+            $NewStartup.TraceFlags = ''
         }
-        if ($NewStartup.MasterLog.Length -gt 0)
+        if($TraceFlagsOverride -and 'TraceFlags' -in $PsBoundParameters.keys)
         {
-            $ParameterString += "-l$($NewStartup.MasterLog);"
-        } 
-        else
+            $NewStartup.TraceFlags = $TraceFlags
+            $ParameterString += (($TraceFlags.split(',') | Foreach {"-T$_"}) -join ';')+";"
+        }
+        else 
         {
-            Stop-Function -message "Must have a value for MsterLog" -silent:$true
-        } 
-    }
-
-    if ($NewStartup.CommandPromptStart)
-    {
-        $ParameterString += "-c;"
-    }
-    if ($NewStartup.MinimalStart)
-    {
-        $ParameterString += "-f;"
-    }
-    if ($NewStartup.MemoryToReserve -notin ($null,0))
-    {
-        $ParameterString += "-g$($NewStartup.MemoryToReserve)"
-    }
-    if  ($NewStartup.SingleUser)
-    {
-        if ($SingleUserDetails.length -gt 0)
-        {
-            if ($SingleUserDetails -match ' ')
+            if ('TraceFlags'  -in $PsBoundParameters.keys)
             {
-                $SingleUserDetails = """$SingleUserDetails"""
+                
+                $oldflags = @($CurrentStartup.TraceFlags) -split ',' | Where-Object {$_ -ne 'None'}
+                $newflags = @($TraceFlags) -split ','
+                $newflags = $oldflags + $newflags
+                $NewStartup.TraceFlags = ($oldFlags + $newflags | Sort-Object -Unique) -join ','
             }
-            $ParameterString += "-m$SingleUserDetails;"
+            elseif ($TraceFlagsOverride )
+            {
+                $NewStartup.TraceFlags =''
+            }
+            else
+            {
+                $NewStartup.TraceFlags =  if($CurrentStartup.TraceFlags -eq 'None'){}else{$CurrentStartup.TraceFlags} 
+            }
+            If ($NewStartup.TraceFlags.Length -ne 0)
+            {
+                $ParameterString += (($NewStartup.TraceFlags.split(',') | Foreach {"-T$_"}) -join ';')+";"
+            }
         }
-        else
-        {
-            $ParameterString += "-m;"
-        }
-    }
-    if ($NewStartup.NoLoggingToWinEvents)
-    {
-        $ParameterString += "-n";
-    }
-    If ($NewStartup.StartAsNamedInstance)
-    {
-        $ParameterString += "-s;"
-    }
-    if ($NewStartup.DisableMonitoring)
-    {
-        $ParameterString += "-x;"
-    }
-    if ($NewStartup.IncreasedExtents)
-    {
-        $ParameterString += "-E;"
-    }
-    if($NewStartup.TraceFlags -eq 'None')
-    {
-        $NewStartup.TraceFlags = ''
-    }
-    if($TraceFlagsOverride -and 'TraceFlags' -in $PsBoundParameters.keys)
-    {
-        $NewStartup.TraceFlags = $TraceFlags
-        $ParameterString += (($TraceFlags.split(',') | Foreach {"-T$_"}) -join ';')+";"
-    }
-    else 
-    {
-        if ('TraceFlags'  -in $PsBoundParameters.keys)
-        {
-            
-            $oldflags = @($CurrentStartup.TraceFlags) -split ',' | Where-Object {$_ -ne 'None'}
-            $newflags = @($TraceFlags) -split ','
-            $newflags = $oldflags + $newflags
-            $NewStartup.TraceFlags = ($oldFlags + $newflags | Sort-Object -Unique) -join ','
-        }
-        elseif ($TraceFlagsOverride )
-        {
-            $NewStartup.TraceFlags =''
-        }
-        else
-        {
-            $NewStartup.TraceFlags =  if($CurrentStartup.TraceFlags -eq 'None'){}else{$CurrentStartup.TraceFlags} 
-        }
-        If ($NewStartup.TraceFlags.Length -ne 0)
-        {
-            $ParameterString += (($NewStartup.TraceFlags.split(',') | Foreach {"-T$_"}) -join ';')+";"
-        }
-    }
 
-    $servername, $instancename = ($sqlserver.Split('\'))
-    Write-Message -Level Verbose -message  "Attempting to connect to $instancename on $servername" -silent:$false
-    
-    if ($instancename.Length -eq 0) { $instancename = "MSSQLSERVER" }
-    
-    $displayname = "SQL Server ($instancename)"
-    
-    $Scriptblock = {
-                $servername = $args[0]
-                $displayname = $args[1]
-                $ParameterString = $args[2]
-					
-                $wmisvc = $wmi.Services | Where-Object { $_.DisplayName -eq $displayname }
-                $wmisvc.StartupParameters = $ParameterString
-                $wmisvc.Alter()
-                $wmisvc.Refresh()
-                if ($wmisvc.StartupParameters -eq $ParameterString)
-                {
-                    $true
-                }
-                else
-                {
-                    $false
-                }
-    }
-    if ($pscmdlet.ShouldProcess("Setting Sql Server start parameters on $SqlServer to $ParameterString")) {
-        $response = Invoke-ManagedComputerCommand -ComputerName $servername -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $servername, $displayname, $ParameterString
-    }  
-    if ($response)
-    {   
-        Write-Message -Level Output -message "Startup parameters changed on $SqlServer, `n Will only take effect after a restart" -silent:$false
-    }
-    else
-    {
-        Write-Message -Level Warning -message "Startup parameters failed to change on $SqlServer " -silent:$false
+        $servername, $instancename = ($sqlserver.Split('\'))
+        Write-Message -Level Verbose -message  "Attempting to connect to $instancename on $servername" -silent:$false
+        
+        if ($instancename.Length -eq 0) { $instancename = "MSSQLSERVER" }
+        
+        $displayname = "SQL Server ($instancename)"
+        
+        $Scriptblock = {
+                    $servername = $args[0]
+                    $displayname = $args[1]
+                    $ParameterString = $args[2]
+                        
+                    $wmisvc = $wmi.Services | Where-Object { $_.DisplayName -eq $displayname }
+                    $wmisvc.StartupParameters = $ParameterString
+                    $wmisvc.Alter()
+                    $wmisvc.Refresh()
+                    if ($wmisvc.StartupParameters -eq $ParameterString)
+                    {
+                        $true
+                    }
+                    else
+                    {
+                        $false
+                    }
+        }
+        if ($pscmdlet.ShouldProcess("Setting Sql Server start parameters on $SqlServer to $ParameterString")) {
+            $response = Invoke-ManagedComputerCommand -ComputerName $servername -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $servername, $displayname, $ParameterString
+        }  
+        if ($response)
+        {   
+            Write-Message -Level Output -message "Startup parameters changed on $SqlServer, `n Will only take effect after a restart" -silent:$false
+        }
+        else
+        {
+            Write-Message -Level Warning -message "Startup parameters failed to change on $SqlServer " -silent:$false
+        }
     }
 }
