@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.944'
+	ModuleVersion = '0.8.945'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -248,7 +248,9 @@
 		'Test-DbaLinkedServerConnection',
 		'Get-DbaDatabaseFile',
 		'Read-DbaTransactionLog',
-		'Get-DbaTable'
+		'Get-DbaTable',
+		'Invoke-DbaDatabaseShrink',
+		'Get-DbaEstimatedCompletionTime'
 		#'Get-DbaLinkedServer',
 		#'Invoke-DbaLogShippingRecovery',
 	)

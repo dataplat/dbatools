@@ -1,4 +1,4 @@
-﻿
+
 try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("DbaCmConnectionParameter", "sqlcollective.dbatools.parameter.DbaCmConnectionParameter") }
 catch { }
 try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("dbargx", "sqlcollective.dbatools.Utility.RegexHelper") }
@@ -10,4 +10,6 @@ catch { }
 try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("dbadate", "sqlcollective.dbatools.Utility.DbaDate") }
 catch { }
 try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("dbatimespan", "sqlcollective.dbatools.Utility.DbaTimeSpan") }
+catch { }
+try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("dbasize", "sqlcollective.dbatools.Utility.Size") }
 catch { }
