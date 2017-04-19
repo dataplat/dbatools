@@ -91,12 +91,10 @@ This will set Trace Flags 8032 and 8048 to the startup parameters, removing any 
 
 $StartupConfig = Get-DbaStartupParameter -SqlServer server1\instance1
 Set-DbaStartupParameter -SqlServer server1\instance1 -SingleUser -NoLoggingToWinEvents
-Stop-DbaService -SqlServer server1\instance1 -Service SqlServer
-Start-DbaService -SqlServer server1\instance1 -Service SqlServer
+#Restart your SQL instance with the tool of choice
 #Do Some work
 Set-DbaStartupParameter -SqlServer server1\instance1 -StartUpConfig $StartUpConfig
-Stop-DbaService -SqlServer server1\instance1 -Service SqlServer
-Start-DbaService -SqlServer server1\instance1 -Service SqlServer
+#Restart your SQL instance with the tool of choice and you're back to normal
 
 In this example we take a copy of the existing startup configuration of server1\instance1
 
