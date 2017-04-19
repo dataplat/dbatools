@@ -59,8 +59,17 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 			$servercount++
 			try
 			{
-				$instancename = ($servername.Split('\'))[1]
-				Write-Verbose "Attempting to connect to $servername"
+				#$servername, $instancename = ($sqlserver.Split('\'))
+				if ($null -eq $SqlServer.name)
+				{
+					$servername, $instancename = ($sqlserver.Split('\'))
+				}
+				else
+				{
+					$servername, $instancename = ($sqlserver.name.Split('\'))
+				}
+   
+				Write-Message -Level Verbose -message "Attempting to connect to $servername" -silent $false
 				
 				if ($instancename.Length -eq 0) { $instancename = "MSSQLSERVER" }
 				
@@ -83,12 +92,16 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 					
 					if ($debugflag.length -ne 0)
 					{
-						Write-Warning "$servername is using the lowercase -t trace flag. This is for internal debugging only. Please ensure this was intentional."
+			#			Write-Message -Level Warning "$servername is using the lowercase -t trace flag. This is for internal debugging only. Please ensure this was intentional." -silent $silent
 					}
 					
 					if ($traceflags.length -eq 0)
 					{
 						$traceflags = "None"
+					}
+					else
+					{
+						$traceflags = $traceflags.substring(2) 
 					}
 					
 					if ($Simple -eq $true)
@@ -133,10 +146,10 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 							$singleuserdetails = $singleuserparm.TrimStart('-m')
 							# It's possible the person specified an application name
 							# if not, just say that single user is $true
-							if ($singleuserdetails.length -eq 0)
-							{
-								$singleuser = $singleuserdetails
-							}
+						#	if ($singleuserdetails.length -ne 0)
+						#	{
+						#		$singleuser = $singleuserdetails
+						#	}
 						}
 						
 						[PSCustomObject]@{
@@ -149,6 +162,7 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 							MinimalStart = $minimalstart
 							MemoryToReserve = $memorytoreserve
 							SingleUser = $singleuser
+							SingleUserName = $singleuserdetails
 							NoLoggingToWinEvents = $noeventlogs
 							StartAsNamedInstance = $instancestart
 							DisableMonitoring = $disablemonitoring
@@ -164,7 +178,8 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 			}
 			catch
 			{
-				Write-Warning "$servername`: $_ "
+			#	Write-Message -Level Warning -Message "$servername`: $_ " -silent $silent
+			write-warning "caught error $_"
 			}
 		}
 	}
