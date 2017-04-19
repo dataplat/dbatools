@@ -54,10 +54,10 @@ Allows you to start a named instance of SQL Server
 .PARAMETER DisableMonitoring
 
 .PARAMETER IncreasedExtents
-Increases the number of extents that are allocated for each file in a filegroup. T
+Increases the number of extents that are allocated for each file in a filegroup. 
 
 .PARAMETER TraceFlagsOverride
-Overrides the default behavious and replaces any existing trace flags. If not trace flags specified will just remove existing ones
+Overrides the default behaviour and replaces any existing trace flags. If not trace flags specified will just remove existing ones
 
 .PARAMETER StartUpConfig
 Pass in a previously saved SQL Instance startUpconfig
