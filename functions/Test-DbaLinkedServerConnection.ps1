@@ -69,7 +69,6 @@ Test all Linked Servers for the SQL Server instances sql2016, sql2014 and sql201
 	}
 	
 	process {
-		
 		foreach ($Instance in $SqlInstance) {
 			
 			# This is a very ugly workaround until we finish the dbaserver custom parameter type.
