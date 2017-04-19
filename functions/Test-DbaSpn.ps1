@@ -26,10 +26,6 @@ The server name you want to discover any SQL Server instances on. This parameter
 .PARAMETER Credential
 The credential you want to use to connect to the remote server and active directory.
 
-.PARAMETER Domain
-If your server resides on a different domain than what your current session is authenticated against, you can specify a domain here. This
-parameter is optional.
-
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages
 
@@ -61,11 +57,11 @@ Connects to multiple computers (SQLSERVERA, SQLSERVERB) and queries WMI for all 
 It will then take each SPN it generates and query Active Directory to make sure the SPNs are set.
 
 .EXAMPLE
-Test-DbaSpn -ComputerName SQLSERVERC -Domain domain.something -Credential (Get-Credential)
+Test-DbaSpn -ComputerName SQLSERVERC -Credential (Get-Credential)
 
 Connects to a computer (SQLSERVERC) on a specified and queries WMI for all SQL instances and return "required" SPNs. 
 It will then take each SPN it generates and query Active Directory to make sure the SPNs are set. Note that the credential you pass must
-have be a valid login with appropriate rights on the domain you specify
+have be a valid login with appropriate rights on the domain
 
 #>
 	[cmdletbinding()]
@@ -75,7 +71,6 @@ have be a valid login with appropriate rights on the domain you specify
 		[Parameter(Mandatory = $false)]
 		[PSCredential]$Credential,
 		[Parameter(Mandatory = $false)]
-		[string]$Domain,
 		[switch]$Silent
 	)
 	begin {
@@ -97,27 +92,6 @@ have be a valid login with appropriate rights on the domain you specify
 			
 			$ipaddr = $resolved.IPAddress
 			$hostentry = $resolved.DNSHostEntry
-			
-			if (!$domain)
-			{
-				$domain = $resolved.domain
-				if ($computer -notmatch "\.")
-				{
-					$computer = $resolved.DNSHostEntry
-				}
-			}
-			else
-			{
-				if ($computer -notmatch "\.")
-				{
-					if ($computer -match "\\")
-					{
-						$computer = $computer.Split("\")[0]
-						
-					}
-					$computer = "$computer.$domain"
-				}
-			}
 			
 			Write-Message -Message "Resolved ComputerName to FQDN: $computer" -Level Verbose
 			

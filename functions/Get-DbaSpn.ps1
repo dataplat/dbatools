@@ -18,9 +18,6 @@ The accounts you want to retrieve set SPNs for.
 .PARAMETER Credential
 User credential to connect to the remote servers or active directory.
 
-.PARAMETER ByAccount
-Shows all SPNs registered by the specified AccountName otherwise, only results will be shown for the specified ComputerName (which is localhost by default)
-
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages
 
@@ -55,17 +52,16 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 	[cmdletbinding()]
 	param (
 		[Parameter(Mandatory = $false,ValueFromPipeline = $true)]
-		[string[]]$ComputerName = $env:COMPUTERNAME,
+		[string[]]$ComputerName,
 		[Parameter(Mandatory = $false)]
 		[string[]]$AccountName,
-		[switch]$ByAccount,
 		[Parameter(Mandatory = $false)]
 		[PSCredential]$Credential,
 		[switch]$Silent
 	)
 	begin
 	{
-		Function Process-Account ($AccountName, $ByAccount) {
+		Function Process-Account ($AccountName) {
 			
 			ForEach ($account in $AccountName)
 			{
@@ -119,12 +115,15 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 					}
 				}
 			}
-			continue
+		}
+		if ($ComputerName.Count -eq 0 -and $AccountName.Count -eq 0) {
+			$ComputerName = @($env:COMPUTERNAME)
 		}
 	}
 	
 	process
 	{	
+		
 		foreach ($computer in $ComputerName)
 		{
 			if ($computer)
@@ -132,7 +131,7 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 				if ($computer.EndsWith('$'))
 				{
 					Write-Message -Message "$computer is an account name. Processing as account." -Level Verbose
-					Process-Account -AccountName $computer -ByAccount:$true
+					Process-Account -AccountName $computer
 					continue
 				}
 			}
@@ -178,7 +177,7 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 		{
 			foreach ($account in $AccountName)
 			{
-				Process-Account -AccountName $account -ByAccount:$ByAccount
+				Process-Account -AccountName $account
 			}
 		}
 	}
