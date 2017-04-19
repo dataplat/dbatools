@@ -37,6 +37,7 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
         {
 
         foreach ($file in $files){
+            Write-Verbose "$FunctionName - adding $file"
             $InternalFiles += $file
         }
     }
