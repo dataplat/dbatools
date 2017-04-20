@@ -158,7 +158,7 @@ Shows what would happen if the command were executed using force.
                 Stop-Function -Message "Proxy Account(s) $($proxyNames[0]) doesn't exist on destination. Skipping job [$jobname]." -Target $jobName -Continue -Silent $Silent
             }
 
-            $operators = $job.OperatorToEmail, $job.OperatorToNedSend, $job.OperatorToPage
+            $operators = $job.OperatorToEmail, $job.OperatorToNedSend, $job.OperatorToPage | Where-Object { $_.Length -gt 0 }
             $missingOperators = $operators | Where-Object {$destServer.JobServer.Operators.Name -notcontains $_}
 
             if ($missingOperators.Count -gt 0 -and $operators.Count -gt 0) {
@@ -185,7 +185,7 @@ Shows what would happen if the command were executed using force.
 
             if ($Pscmdlet.ShouldProcess($destination, "Creating Job $jobName")) {
                 try {
-                    Write-Message -Message "Copying Job $jobName" -Level Host -Silent $Silent
+                    Write-Message -Message "Copying Job $jobName" -Level Output -Silent $Silent
                     $sql = $job.Script() | Out-String
                     $sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
                     Write-Message -Message $sql -Level Debug -Silent $Silent
@@ -198,7 +198,7 @@ Shows what would happen if the command were executed using force.
 			
             if ($DisableOnDestination) {
                 if ($Pscmdlet.ShouldProcess($destination, "Disabling $jobName")) {
-                    Write-Message -Message "Disabling $jobName on $destination" -Level Host -Silent $Silent
+                    Write-Message -Message "Disabling $jobName on $destination" -Level Output -Silent $Silent
                     $destServer.JobServer.Jobs.Refresh()
                     $destServer.JobServer.Jobs[$job.name].IsEnabled = $False
                     $destServer.JobServer.Jobs[$job.name].Alter()
@@ -207,7 +207,7 @@ Shows what would happen if the command were executed using force.
 
             if ($DisableOnSource) {
                 if ($Pscmdlet.ShouldProcess($source, "Disabling $jobName")) {
-                    Write-Message -Message "Disabling $jobName on $source" -Level Host -Silent $Silent
+                    Write-Message -Message "Disabling $jobName on $source" -Level Output -Silent $Silent
                     $job.IsEnabled = $false
                     $job.Alter()
                 }
