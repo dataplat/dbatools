@@ -54,7 +54,10 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command.
 
 .PARAMETER Force
-Drops and recreates the XXXXX if it exists
+Drops and recreates the object if it exists
+	
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
 
 .NOTES
 Tags: Migration
