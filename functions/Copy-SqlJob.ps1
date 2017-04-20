@@ -118,10 +118,8 @@ Shows what would happen if the command were executed using force.
             $jobName = $job.name
             $jobId = $job.JobId
 
-            Write-Message -Message "Working on job: $jobName" -Level Verbose -Silent $Silent
-
             if ($jobs.count -gt 0 -and $jobs -notcontains $jobName -or $exclude -contains $jobName) { continue }
-
+            Write-Message -Message "Working on job: $jobName" -Level Verbose -Silent $Silent
             $sql = "
 				SELECT sp.[name] AS MaintenancePlanName
 				FROM msdb.dbo.sysmaintplan_plans AS sp
