@@ -9,15 +9,19 @@
 	
     .PARAMETER SqlInstance
     The SQL Instance you are querying against.
+
     .PARAMETER SqlCredential
     If you want to use alternative credentials to connect to the server.
+
     .PARAMETER Detailed
     Returns additional information from the DMVs, such as:
     -- program_name running the session.
     -- login_time of the session.
+    -- SQL Command used to return the data
 	
     .PARAMETER WhatIf
 	Shows what would happen if the command were to run. No actions are actually performed.
+
 	.PARAMETER Confirm 
 	Prompts you for confirmation before executing any changing operations within the command.
 	
@@ -132,6 +136,7 @@ WHERE t.user_objects_alloc_page_count + t.user_objects_dealloc_page_count + t.in
                     LoginTime = $TempdbUsage.LoginTime
                     LastRequestStartTime = $TempdbUsage.LastRequestStartTime
                     LastRequestEndTime = $TempdbUsage.LastRequestEndTime
+                    SQLCommand = $QueryText
                 } | Select-DefaultView -ExcludeProperty OriginalLoginName,
                                                         NTDomain,
                                                         NTUserName,
@@ -139,7 +144,8 @@ WHERE t.user_objects_alloc_page_count + t.user_objects_dealloc_page_count + t.in
                                                         ProgramName,
                                                         LoginTime,
                                                         LastRequestStartTime,
-                                                        LastRequestEndTime 
+                                                        LastRequestEndTime
+                                                        SQLCommand
 		}
 	}
 }
