@@ -79,16 +79,16 @@ SELECT SERVERPROPERTY('MachineName') AS ComputerName,
        ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName, 
        SERVERPROPERTY('ServerName') AS SqlInstance, 
        t.session_id AS Spid, 
-       /*r.command*/'' AS StatementCommand, 
-       /*r.start_time*/'' AS StartTime, 
+       r.command AS StatementCommand, 
+       r.start_time AS StartTime, 
        t.user_objects_alloc_page_count * 8 AS UserObjectAllocatedSpace, 
        t.user_objects_dealloc_page_count * 8 AS UserObjectDeallocatedSpace, 
        t.internal_objects_alloc_page_count * 8 AS InternalObjectAllocatedSpace, 
        t.internal_objects_dealloc_page_count * 8 AS InternalObjectDeallocatedSpace, 
-       /*r.reads*/0 AS RequestedReads, 
-       /*r.writes*/0 AS RequestedWrites, 
-       /*r.logical_reads*/1 AS RequestedLogicalReads, 
-       /*r.cpu_time*/1 AS RequestedCPUTime, 
+       r.reads AS RequestedReads, 
+       r.writes AS RequestedWrites, 
+       r.logical_reads AS RequestedLogicalReads, 
+       r.cpu_time AS RequestedCPUTime, 
        s.is_user_process AS IsUserProcess, 
        s.[status] AS Status, 
        DB_NAME(r.database_id) AS [Database], 
@@ -103,7 +103,7 @@ SELECT SERVERPROPERTY('MachineName') AS ComputerName,
        s.last_request_end_time AS LastRequestedEndTime 
 FROM sys.dm_db_session_space_usage AS t 
 INNER JOIN sys.dm_exec_sessions AS s ON s.session_id = t.session_id 
-/*INNER JOIN sys.dm_exec_requests AS r ON r.session_id = s.session_id*/ 
+INNER JOIN sys.dm_exec_requests AS r ON r.session_id = s.session_id
 WHERE t.user_objects_alloc_page_count + t.user_objects_dealloc_page_count + t.internal_objects_alloc_page_count + t.internal_objects_dealloc_page_count > 0
 "@
 			
