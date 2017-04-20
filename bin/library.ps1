@@ -1,16 +1,13 @@
-
+﻿
 #region Test whether the module had already been imported
-$ImportLibrary = $true
-try
+if (([System.Management.Automation.PSTypeName]'SqlCollective.Dbatools.Configuration.Config').Type)
 {
-    $null = New-Object sqlcollective.dbatools.Configuration.Config
-    
     # No need to load the library again, if the module was once already imported.
     $ImportLibrary = $false
 }
-catch
+else
 {
-    
+    $ImportLibrary = $true
 }
 #endregion Test whether the module had already been imported
 
@@ -726,7 +723,8 @@ namespace Sqlcollective.Dbatools
                 var result = cimWinRMSession.EnumerateInstances(Namespace, Class);
                 if (DisableCimPersistence)
                 {
-                    cimWinRMSession.Close();
+                    try { cimWinRMSession.Close(); }
+                    catch {  }
                     cimWinRMSession = null;
                 }
                 return result;
@@ -828,7 +826,7 @@ namespace Sqlcollective.Dbatools
             /// <param name="Dialect">Defaults to WQL.</param>
             /// <param name="Namespace">The namespace to look in (defaults to root\cimv2).</param>
             /// <returns></returns>
-            public object QueryDCOMInstance(PSCredential Credential, string Query, string Dialect = "WQL", string Namespace = @"root\cimv2")
+            public object QueryCimDCOMInstance(PSCredential Credential, string Query, string Dialect = "WQL", string Namespace = @"root\cimv2")
             {
                 DComSessionOptions options = null;
                 if (CimDCOMOptions == null)
@@ -922,6 +920,7 @@ namespace Sqlcollective.Dbatools
 
     namespace Database
     {
+        using System.Numerics;
         using Utility;
 
         /// <summary>
@@ -1017,22 +1016,22 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// The first Log Sequence Number
             /// </summary>
-            public long FirstLsn;
+            public BigInteger FirstLsn;
 
             /// <summary>
             /// The Log Squence Number that marks the beginning of the backup
             /// </summary>
-            public long DatabaseBackupLsn;
+            public BigInteger DatabaseBackupLsn;
 
             /// <summary>
             /// The checkpoint's Log Sequence Number
             /// </summary>
-            public long CheckpointLsn;
+            public BigInteger CheckpointLsn;
 
             /// <summary>
             /// The last Log Sequence Number
             /// </summary>
-            public long LastLsn;
+            public BigInteger LastLsn;
 
             /// <summary>
             /// The primary version number of the Sql Server
@@ -3997,7 +3996,7 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// The Version of the dbatools Library. Used to compare with import script to determine out-of-date libraries
             /// </summary>
-            public readonly static Version LibraryVersion = new Version(1, 0, 0, 3);
+            public readonly static Version LibraryVersion = new Version(1, 0, 0, 4);
         }
 
         /// <summary>
@@ -4029,7 +4028,7 @@ namespace Sqlcollective.Dbatools
         $paramAddType = @{
             TypeDefinition = $source
             ErrorAction = 'Stop'
-            ReferencedAssemblies = ([appdomain]::CurrentDomain.GetAssemblies() | Where-Object FullName -match "Microsoft\.Management\.Infrastructure").Location
+            ReferencedAssemblies = ([appdomain]::CurrentDomain.GetAssemblies() | Where-Object FullName -match "Microsoft\.Management\.Infrastructure|System\.Numerics").Location
         }
         
         Add-Type @paramAddType
@@ -4070,7 +4069,7 @@ aka "The guy who made most of The Library that Failed to import"
 }
 
 #region Version Warning
-$LibraryVersion = New-Object System.Version(1, 0, 0, 3)
+$LibraryVersion = New-Object System.Version(1, 0, 0, 4)
 if ($LibraryVersion -ne ([Sqlcollective.Dbatools.Utility.UtilityHost]::LibraryVersion))
 {
     Write-Warning @"
