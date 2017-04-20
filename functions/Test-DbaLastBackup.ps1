@@ -57,6 +57,9 @@ Skip DBCC CHECKTABLE
 .PARAMETER NoDrop
 Do not drop newly created test database
 
+.PARAMETER CopyDestination
+Will copy the backup file to the destination default backup location.
+
 .PARAMETER MaxMB
 Do not restore databases larger than MaxMB
 
@@ -117,7 +120,12 @@ Skips the DBCC CHECKTABLE check. This can help speed up the tests but makes it l
 Test-DbaLastBackup -SqlServer sql2016 -DataDirectory E:\bigdrive -LogDirectory L:\bigdrive -MaxMB 10240
 
 Restores data and log files to alternative locations and only restores databases that are smaller than 10 GB
-	
+
+.EXAMPLE 
+Test-DbaLastBackup -SqlServer sql2014 -Destination sql2016 -CopyDestination
+
+Copies the backup files for sql2014 databases to sql2016 default backup locations and then attempts restore from there.
+
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
