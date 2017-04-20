@@ -1,6 +1,5 @@
-Function Copy-SqlJob
-{
-<#
+function Copy-SqlJob {
+    <#
 .SYNOPSIS
 Copy-SqlJob migrates jobs from one SQL Server to another.
 
@@ -47,6 +46,9 @@ Prompts you for confirmation before executing any changing operations within the
 .PARAMETER Force
 Drops and recreates the Job if it exists
 
+.PARAMETER Silent
+Replaces user friendly yellow warnings with bloody red exceptions of doom!
+
 .NOTES
 Tags: Migration
 Author: Chrissy LeMaire (@cl), netnerds.net
@@ -79,158 +81,143 @@ Copy-SqlJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
 #>
-	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-	param (
-		[parameter(Mandatory = $true)]
-		[object]$Source,
-		[parameter(Mandatory = $true)]
-		[object]$Destination,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
-		[switch]$DisableOnSource,
-		[switch]$DisableOnDestination,
-		[switch]$Force
-	)
-	DynamicParam { if ($source) { return (Get-ParamSqlJobs -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+    [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    param (
+        [parameter(Mandatory = $true)]
+        [object]$Source,
+        [parameter(Mandatory = $true)]
+        [object]$Destination,
+        [System.Management.Automation.PSCredential]$SourceSqlCredential,
+        [System.Management.Automation.PSCredential]$DestinationSqlCredential,
+        [switch]$DisableOnSource,
+        [switch]$DisableOnDestination,
+        [switch]$Force,
+        [switch]$Silent
+    )
+    DynamicParam { if ($source) { return (Get-ParamSqlJobs -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 
-	BEGIN {
-		$jobs = $psboundparameters.Jobs
-		$exclude = $psboundparameters.Exclude
+    BEGIN {
+        $jobs = $psboundparameters.Jobs
+        $exclude = $psboundparameters.Exclude
 
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+        $sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+        $destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 
-		$source = $sourceserver.DomainInstanceName
-		$destination = $destserver.DomainInstanceName
+        $source = $sourceserver.DomainInstanceName
+        $destination = $destserver.DomainInstanceName
 
-	}
-	PROCESS
-	{
+    }
+    PROCESS {
 
-		$serverjobs = $sourceserver.JobServer.Jobs
-		$destjobs = $destserver.JobServer.Jobs
+        $serverjobs = $sourceserver.JobServer.Jobs
+        $destjobs = $destserver.JobServer.Jobs
 
-		foreach ($job in $serverjobs)
-		{
-			$jobname = $job.name
-			$jobId = $job.JobId
+        foreach ($job in $serverjobs) {
+            $jobname = $job.name
+            $jobId = $job.JobId
 
-			if ($jobs.count -gt 0 -and $jobs -notcontains $jobname -or $exclude -contains $jobname) { continue }
+            Write-Message -Message "Working on job: $jobname" -Level Verbose -Silent $Silent
 
-			$sql = "
+            if ($jobs.count -gt 0 -and $jobs -notcontains $jobname -or $exclude -contains $jobname) { continue }
+
+            $sql = "
 				SELECT sp.[name] AS MaintenancePlanName
 				FROM msdb.dbo.sysmaintplan_plans AS sp
 				INNER JOIN msdb.dbo.sysmaintplan_subplans AS sps
 					ON sps.plan_id = sp.id
 				WHERE job_id = '$($jobId)'"
-			Write-Debug $sql
+            Write-Message -Message $sql -Level Debug -Silent $Silent
 
-			$MaintenancePlan = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
-			$MaintPlanName = $MaintenancePlan.MaintenancePlanName
+            $MaintenancePlan = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
+            $MaintPlanName = $MaintenancePlan.MaintenancePlanName
 
-			if ($MaintenancePlan) {
-				Write-Warning "[Job: $jobname] Associated with Maintenance Plan: $($MaintPlanName). Skipping."
-				continue
-			}
-
-			$dbnames = $job.JobSteps.Databasename | Where-Object { $_.length -gt 0 }
-			$missingdb = $dbnames | Where-Object { $destserver.Databases.Name -notcontains $_ }
-
-			if ($missingdb.count -gt 0 -and $dbnames.count -gt 0)
-			{
-				$missingdb = ($missingdb | Sort-Object | Get-Unique) -join ", "
-				Write-Warning "[Job: $jobname] Database(s) $missingdb doesn't exist on destination. Skipping."
-				continue
-			}
-
-			$missinglogin = $job.OwnerLoginName | Where-Object { $destserver.Logins.Name -notcontains $_ }
-
-			if ($missinglogin.count -gt 0)
-			{
-				$missinglogin = ($missinglogin | Sort-Object | Get-Unique) -join ", "
-				Write-Warning "[Job: $jobname] Login(s) $missinglogin doesn't exist on destination. Skipping."
-				continue
-			}
-
-			$proxynames = $job.JobSteps.ProxyName | Where-Object { $_.length -gt 0 }
-			$missingproxy = $proxynames | Where-Object { $destserver.JobServer.ProxyAccounts.Name -notcontains $_ }
-
-			if ($missingproxy.count -gt 0 -and $proxynames.count -gt 0)
-			{
-				$missingproxy = ($missingproxy | Sort-Object | Get-Unique) -join ", "
-				Write-Warning "[Job: $jobname] Proxy Account(s) $($proxynames[0]) doesn't exist on destination. Skipping."
-				continue
-			}
-
-			if ($destjobs.name -contains $job.name)
-			{
-				if ($force -eq $false)
-				{
-					Write-Warning "[Job: $jobname] Job $jobname exists at destination. Use -Force to drop and migrate."
-					continue
-				}
-				else
-				{
-					If ($Pscmdlet.ShouldProcess($destination, "Dropping job $jobname and recreating"))
-					{
-						try
-						{
-							Write-Verbose "Dropping Job $jobname"
-							$destserver.JobServer.Jobs[$job.name].Drop()
-						}
-						catch
-						{
-							Write-Exception $_
-							continue
-						}
-					}
-				}
-			}
-
-			If ($Pscmdlet.ShouldProcess($destination, "Creating Job $jobname"))
-			{
-				try
-				{
-					Write-Output "Copying Job $jobname"
-					$sql = $job.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
-					Write-Verbose $sql
-					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-				}
-				catch
-				{
-					Write-Exception $_
-					continue
-				}
-			}
-			
-			if ($DisableOnDestination)
-			{
-                If ($Pscmdlet.ShouldProcess($destination, "Disabling $jobname"))
-			    {
-					Write-Output "Disabling $jobname on $destination"
-					$destserver.JobServer.Jobs.Refresh()
-					$destserver.JobServer.Jobs[$job.name].IsEnabled = $False
-					$destserver.JobServer.Jobs[$job.name].Alter()
-				}
+            if ($MaintenancePlan) {
+                Write-Message -Message "Job is associated with Maintennace Plan: $MaintPlanName" -Level Warning -Target $jobname  -Continue -Silent $Silent
             }
 
-			if ($DisableOnSource)
-			{
-                If ($Pscmdlet.ShouldProcess($source, "Disabling $jobname"))
-			    {
-					Write-Output "Disabling $jobname on $source"
-					$job.IsEnabled = $false
-					$job.Alter()
-				}
-			}
-		}
-	}
+            $dbnames = $job.JobSteps.Databasename | Where-Object { $_.length -gt 0 }
+            $missingdb = $dbnames | Where-Object { $destserver.Databases.Name -notcontains $_ }
 
-	END
-	{
-		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Job migration finished" }
-	}
+            if ($missingdb.count -gt 0 -and $dbnames.count -gt 0) {
+                $missingdb = ($missingdb | Sort-Object | Get-Unique) -join ", "
+                Write-Message -Message "Database(s) $missingdb doesn't exist on destination. Skipping." -Level Warning -Target $jobname -Continue -Silent $Silent
+            }
+
+            $missinglogin = $job.OwnerLoginName | Where-Object { $destserver.Logins.Name -notcontains $_ }
+
+            if ($missinglogin.count -gt 0) {
+                $missinglogin = ($missinglogin | Sort-Object | Get-Unique) -join ", "
+                Write-Message -Message "Login(s) $missinglogin doesn't exist on destination. Skipping." -Level Warning -Target $jobname -Continue -Silent $Silent
+            }
+
+            $proxynames = $job.JobSteps.ProxyName | Where-Object { $_.length -gt 0 }
+            $missingproxy = $proxynames | Where-Object { $destserver.JobServer.ProxyAccounts.Name -notcontains $_ }
+
+            if ($missingproxy.count -gt 0 -and $proxynames.count -gt 0) {
+                $missingproxy = ($missingproxy | Sort-Object | Get-Unique) -join ", "
+                Write-Message -Message "Proxy Account(s) $($proxynames[0]) doesn't exist on destination. Skipping." -Level Warning -Target $jobname -Continue -Silent $Silent
+            }
+
+            $operators = $job.OperatorToEmail, $job.OperatorToNedSend, $job.OperatorToPage
+            $missingOperators = $operators | Where-Object {$destserver.JobServer.Operators.Name -notcontains $_}
+
+            if ($missingOperators.Count -gt 0 -and $operators.Count -gt 0) {
+                $missingOperator = ($operators | Sort-Object | Get-Unique) -join ", "
+                Stop-Function -Message "Operator(s) $($missingOperator) doesn't exist on destination. Skipping" -Target $jobname -Continue -Silent $Silent
+            }
+
+            if ($destjobs.name -contains $job.name) {
+                if ($force -eq $false) {
+                    Write-Message -Message "Job $jobname exists at destination. Use -Force to drop and migrate." -Level Warning -Target $jobname -Continue -Silent $Silent
+                }
+                else {
+                    If ($Pscmdlet.ShouldProcess($destination, "Dropping job $jobname and recreating")) {
+                        try {
+                            Write-Message -Message "Dropping Job $jobname" -Level Verbose
+                            $destserver.JobServer.Jobs[$job.name].Drop()
+                        }
+                        catch {
+                            Stop-Function -Message "Issue dropping job. See error log under $((Get-DbaConfig -Name dbatoolslogpath).Value) for more details." -Target $jobname -InnerErrorRecord $_ -Continue -Silent $Silent
+                        }
+                    }
+                }
+            }
+
+            If ($Pscmdlet.ShouldProcess($destination, "Creating Job $jobname")) {
+                try {
+                    Write-Message -Message "Copying Job $jobname" -Level Host -Silent $Silent
+                    $sql = $job.Script() | Out-String
+                    $sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+                    Write-Message -Message $sql -Level Debug -Silent $Silent
+                    $destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+                }
+                catch {
+                    Stop-Function -Message "Issue copying job. See error log under $((Get-DbaConfig -Name dbatoolslogpath).Value) for more details." -Target $jobname -InnerErrorRecord $_ -Continue -Silent $Silent
+                }
+            }
+			
+            if ($DisableOnDestination) {
+                If ($Pscmdlet.ShouldProcess($destination, "Disabling $jobname")) {
+                    Write-Message -Message "Disabling $jobname on $destination" -Level Host -Silent $Silent
+                    $destserver.JobServer.Jobs.Refresh()
+                    $destserver.JobServer.Jobs[$job.name].IsEnabled = $False
+                    $destserver.JobServer.Jobs[$job.name].Alter()
+                }
+            }
+
+            if ($DisableOnSource) {
+                If ($Pscmdlet.ShouldProcess($source, "Disabling $jobname")) {
+                    Write-Message -Message "Disabling $jobname on $source" -Level Host -Silent $Silent
+                    $job.IsEnabled = $false
+                    $job.Alter()
+                }
+            }
+        }
+    }
+
+    END {
+        $sourceserver.ConnectionContext.Disconnect()
+        $destserver.ConnectionContext.Disconnect()
+        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Job migration finished" }
+    }
 }
