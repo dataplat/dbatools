@@ -272,7 +272,14 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 					if($lastbackup[0].Path.StartsWith('\\') -eq $false -and $CopyDestination -eq $true) 
 					{
 						Write-Message -Level Verbose -Message "Copying backup to destination server"
-						if ((Test-SqlPath -SqlServer $destserver -path $destserver.BackupDirectory) -eq $true) 
+						if($destserver.BackupDirectory.StartsWith('\\') -eq $false)
+						{
+							Write-Message -Level Verbose -Message "Destination backup directory is not UNC and source does not match destination."
+							$fileexists = "Skipped"
+							$restoreresult = "Destination backup not on shared location."
+							$dbccresult = "Skipped"
+						}
+						elseif ((Test-SqlPath -SqlServer $destserver -path $destserver.BackupDirectory) -eq $true) 
 						{
 							if((Test-SqlPath -SqlServer $destserver -path ("{0}\{1}" -f $destserver.BackupDirectory,$Prefix)) -eq $false)
 							{
