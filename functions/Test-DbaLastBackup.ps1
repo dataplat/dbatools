@@ -60,6 +60,9 @@ Do not drop newly created test database
 .PARAMETER CopyDestination
 Will copy the backup file to the destination default backup location.
 
+.PARAMETER CopyPath
+Specify a UNC path to copy backups to. If not specified will use destination default backup location.
+
 .PARAMETER MaxMB
 Do not restore databases larger than MaxMB
 
@@ -126,6 +129,11 @@ Test-DbaLastBackup -SqlServer sql2014 -Destination sql2016 -CopyDestination
 
 Copies the backup files for sql2014 databases to sql2016 default backup locations and then attempts restore from there.
 
+.EXAMPLE 
+Test-DbaLastBackup -SqlServer sql2014 -Destination sql2016 -CopyDestination -CopyPath "\\BackupShare\TestRestore\"
+
+Copies the backup files for sql2014 databases to sql2016 default backup locations and then attempts restore from there.
+
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
@@ -142,6 +150,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 		[switch]$NoCheck,
 		[switch]$NoDrop,
 		[switch]$CopyDestination,
+		[string]$CopyPath,
 		[int]$MaxMB,
 		[switch]$IgnoreCopyOnly,
 		[switch]$Silent
@@ -207,7 +216,13 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 			
 			$source = $sourceserver.DomainInstanceName
 			$destination = $destserver.DomainInstanceName
-						
+
+			# If not CopyPath is specified, use the destination server default backup directory
+			if(!$CopyPath)
+			{
+				$copyPath = $destserver.BackupDirectory
+			}
+
 			if ($datadirectory)
 			{
 				if (!(Test-SqlPath -SqlServer $destserver -Path $datadirectory))
@@ -268,26 +283,45 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 					}
 					
 					$lastbackup = Get-DbaBackupHistory -SqlServer $sourceserver -Databases $dbname -LastFull -IgnoreCopyOnly:$ignorecopyonly
-
-					if($lastbackup[0].Path.StartsWith('\\') -eq $false -and $CopyDestination -eq $true) 
+					
+					if($lastbackup[0].Path.StartsWith('\\') -eq $false -and $CopyDestination) 
 					{
 						Write-Message -Level Verbose -Message "Copying backup to destination server"
-						if($destserver.BackupDirectory.StartsWith('\\') -eq $false)
+						if($copyPath.StartsWith('\\') -eq $false)
 						{
 							Write-Message -Level Verbose -Message "Destination backup directory is not UNC and source does not match destination."
 							$fileexists = "Skipped"
 							$restoreresult = "Destination backup not on shared location."
 							$dbccresult = "Skipped"
 						}
-						elseif ((Test-SqlPath -SqlServer $destserver -path $destserver.BackupDirectory) -eq $true) 
+						elseif ((Test-SqlPath -SqlServer $destserver -path $copyPath)) 
 						{
-							if((Test-SqlPath -SqlServer $destserver -path ("{0}\{1}" -f $destserver.BackupDirectory,$Prefix)) -eq $false)
+							if((Test-SqlPath -SqlServer $destserver -path ("{0}\{1}" -f $copyPath,$Prefix)) -eq $false)
 							{
-								New-Item -Path ("{0}\{1}" -f $destserver.BackupDirectory,$Prefix) -ItemType Directory | Out-Null
+								try 
+								{
+									New-Item -Path ("{0}\{1}" -f $copyPath,$Prefix) -ItemType Directory | Out-Null
+								}
+								catch
+								{
+									Stop-Function -Message "Failed to create BackupDirectory: $instance" -Target $instance -InnerErrorRecord $_ -Continue
+								}
+								
 							}
-							Copy-Item -Path ("\\{0}\{1}" -f $lastbackup.Computername, $lastbackup.Path.replace(':','$')) -Destination ("{0}\{1}\{2}" -f $destserver.BackupDirectory,$Prefix,$lastbackup.path.split('\')[-1])
-							$lastbackup.path = ("{0}\{1}\{2}" -f $destserver.BackupDirectory,$Prefix,$lastbackup.path.split('\')[-1])
-							$lastbackup.fullname = ("{0}\{1}\{2}" -f $destserver.BackupDirectory,$Prefix,$lastbackup.path.split('\')[-1])
+							try 
+							{
+								$sourcefile = Join-AdminUnc -servername $sourceserver.netname -filepath $lastbackup.Path 
+								$destdirectory = Join-AdminUnc -servername $destserver.netname -filepath $copyPath
+								$destfile = ("{0}\{1}\{2}" -f $destdirectory,$Prefix,$lastbackup.path.split('\')[-1])
+								Copy-Item -Path $sourcefile -Destination $destfile
+								$lastbackup.path = $destfile
+								$lastbackup.fullname = $destfile
+							}
+							catch 
+							{
+								Stop-Function -Message "Failed to copy backups to $destdirectory" -Target $instance -InnerErrorRecord $_ -Continue
+							}
+
 						}
 						else
 						{
@@ -295,7 +329,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 						}
 
 					}
-					elseif ($CopyDestination -eq $true) {
+					elseif ($CopyDestination) {
 						Write-Message -Level Verbose -Message "Ignoring CopyDestination flag, using UNC path."
 					}
 
@@ -429,14 +463,28 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 							}
 							
 							# Cleanup BackupFiles if -copyDestination and backup was moved to destination
-							if($copyDestination -eq $true -and $($lastbackup.path).startswith($($destserver.BackupDirectory)))
+							if($copyDestination -eq $true -and $($lastbackup.path).startswith($copyPath))
 							{
 								Write-Message -Level Verbose -Message "Removing backup file from $destination"
-								Remove-item $($lastbackup.fullname)
+								try 
+								{
+									Remove-item $($lastbackup.fullname)
+								}
+								catch
+								{
+									Write-Message -Level Warning -Message "Could not remove $($lastbackup.fullname)" -ErrorRecord $_ -Target $instance
+								}
 								$tempFolder = $lastbackup.fullname.Substring(0, $lastbackup.fullname.lastIndexOf('\'))
 								if((get-childitem $tempFolder).count -eq 0)
 								{
-									Remove-item -Path $tempFolder
+									try
+									{
+										Remove-item -Path $tempFolder
+									}
+									catch
+									{
+										Write-Message -Level Warning -Message "Could not remove $tempFolder" -ErrorRecord $_ -Target $instance
+									}
 								} 
 							}
 
