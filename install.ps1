@@ -5,18 +5,22 @@ param (
 )
 
 try {
-	Update-Module dbatools
+	Update-Module dbatools -Erroraction Stop
+	Write-Output "Updated using the PowerShell Gallery"
 	return
 }
 catch {
-	# K, it was installed using the web installer
+	Write-Output "dbatools was not installed by the PowerShell Gallery, continuing with web install."
 }
 
-$module = Import-Module -Name dbatools -ErrorAction SilentlyContinue
+$module = Import-Module -Name dbatools -ErrorAction SilentlyContinue -Force
 $localpath = $module.ModuleBase
 
 if ($null -eq $localpath) {
 	$localpath = "$HOME\Documents\WindowsPowerShell\Modules\dbatools"
+}
+else {
+	Write-Output "Updating current install"
 }
 
 try {
@@ -24,6 +28,7 @@ try {
 		if ($PSCommandPath.Length -gt 0) {
 			$path = Split-Path $PSCommandPath
 			if ($path -match "github") {
+				Write-Output "Looks like this isntaller is run from your GitHub Repo, defaulting to psmodulepath"
 				$path = $localpath
 			}
 		}
@@ -42,7 +47,7 @@ if (-not $path -or (Test-Path -Path "$path\.git")) {
 
 Write-Output "Installing module to $path"
 
-Remove-Module dbatools -ErrorAction SilentlyContinue
+Remove-Module -Name dbatools -ErrorAction SilentlyContinue
 
 if ($beta) {
 	$url = 'https://dbatools.io/devzip'
