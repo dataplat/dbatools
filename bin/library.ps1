@@ -1964,16 +1964,22 @@ namespace Sqlcollective.Dbatools
 
                 string tempString = Name;
 
-                // Case: Default instance
+                // Case: Default instance | Instance by port
                 if (tempString.Split('\\').Length == 1)
                 {
-                    if (Regex.IsMatch(tempString, @":\d{1,5}$") && !Regex.IsMatch(tempString, Utility.RegexHelper.IPv6) && tempString.Split(':').Length == 2)
+                    if (Regex.IsMatch(tempString, @"[:,]\d{1,5}$") && !Regex.IsMatch(tempString, Utility.RegexHelper.IPv6) && ((tempString.Split(':').Length == 2) || (tempString.Split(',').Length == 2)))
                     {
+                        char delimiter;
+                        if (Regex.IsMatch(tempString, @"[:]\d{1,5}$"))
+                            delimiter = ':';
+                        else
+                            delimiter = ',';
+
                         try
                         {
-                            Int32.TryParse(tempString.Split(':')[1], out _Port);
+                            Int32.TryParse(tempString.Split(delimiter)[1], out _Port);
                             if (_Port > 65535) { throw new PSArgumentException("Failed to parse instance name: " + tempString); }
-                            tempString = tempString.Split(':')[0];
+                            tempString = tempString.Split(delimiter)[0];
                         }
                         catch
                         {
@@ -1998,18 +2004,9 @@ namespace Sqlcollective.Dbatools
                     string tempComputerName = Name.Split('\\')[0];
                     string tempInstanceName = Name.Split('\\')[1];
 
-                    if (Regex.IsMatch(tempComputerName, @":\d{1,5}$") && !Regex.IsMatch(tempComputerName, Utility.RegexHelper.IPv6) && tempComputerName.Split(':').Length == 2)
+                    if (Regex.IsMatch(tempComputerName, @"[:,]\d{1,5}$") && !Regex.IsMatch(tempComputerName, Utility.RegexHelper.IPv6))
                     {
-                        try
-                        {
-                            Int32.TryParse(tempComputerName.Split(':')[1], out _Port);
-                            if (_Port > 65535) { throw new PSArgumentException("Failed to parse instance name: " + Name); }
-                            tempComputerName = tempComputerName.Split(':')[0];
-                        }
-                        catch
-                        {
-                            throw new PSArgumentException("Failed to parse instance name: " + Name);
-                        }
+                        throw new PSArgumentException("Both port and instancename detected! This is redundant and bad practice, specify only one: " + Name);
                     }
 
                     if (Utility.Validation.IsValidComputerTarget(tempComputerName) && Utility.Validation.IsValidInstanceName(tempInstanceName))
