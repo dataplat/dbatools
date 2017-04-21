@@ -67,6 +67,7 @@
 	
 	# Functions to export from this module
 	FunctionsToExport = @(
+		'Add-DbaToolsToProfile',
 		'Start-SqlMigration',
 		'Copy-SqlDatabase',
 		'Copy-SqlLogin',
