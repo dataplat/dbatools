@@ -282,7 +282,8 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 						Stop-Function -Message "$dbname does not exist on $source." -Continue
 					}
 					
-					$lastbackup = Get-DbaBackupHistory -SqlServer $sourceserver -Databases $dbname -LastFull -IgnoreCopyOnly:$ignorecopyonly
+					#$lastbackup = Get-DbaBackupHistory -SqlServer $sourceserver -Databases $dbname -LastFull -IgnoreCopyOnly:$ignorecopyonly
+					$lastbackup = Get-DbaBackupHistory -SqlServer $sourceserver -Databases $dbname -Last -IgnoreCopyOnly:$ignorecopyonly
 					
 					if($lastbackup[0].Path.StartsWith('\\') -eq $false -and $CopyDestination) 
 					{
@@ -306,16 +307,21 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 								{
 									Stop-Function -Message "Failed to create BackupDirectory: $instance" -Target $instance -InnerErrorRecord $_ -Continue
 								}
-								
 							}
 							try 
-							{
-								$sourcefile = Join-AdminUnc -servername $sourceserver.netname -filepath $lastbackup.Path 
-								$destdirectory = Join-AdminUnc -servername $destserver.netname -filepath $copyPath
-								$destfile = ("{0}\{1}\{2}" -f $destdirectory,$Prefix,$lastbackup.path.split('\')[-1])
-								Copy-Item -Path $sourcefile -Destination $destfile -ErrorAction Stop
-								$lastbackup.path = $destfile
-								$lastbackup.fullname = $destfile
+							{								
+								$filearray = 0
+								foreach ($file in $lastbackup)
+								{	
+									$sourcefile = Join-AdminUnc -servername $sourceserver.netname -filepath $file.Path 
+									$destdirectory = Join-AdminUnc -servername $destserver.netname -filepath $copyPath
+									$destfile = ("{0}\{1}\{2}" -f $destdirectory,$Prefix,$file.path.split('\')[-1])
+									Copy-Item -Path $sourcefile -Destination $destfile -ErrorAction Stop
+									$lastbackup[$filearray].path = $destfile
+									$lastbackup[$filearray].fullname = $destfile
+									$filearray++
+
+								}
 							}
 							catch 
 							{
@@ -333,10 +339,10 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 						Write-Message -Level Verbose -Message "Ignoring CopyDestination flag, using UNC path."
 					}
 
-					if ($null -eq $lastbackup)
+					#if ($null -eq $lastbackup)
+					if(!($lastbackup | Where-Object {$_.type -eq 'Full'}))
 					{
-						Write-Message -Level Verbose -Message "No data returned from lastbackup"
-						
+						Write-Message -Level Verbose -Message "No full backup returned from lastbackup"
 						$lastbackup = @{ Path = "Not found" }
 						$fileexists = $false
 						$restoreresult = "Skipped"
@@ -349,7 +355,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 						$restoreresult = "Restore not located on shared location"
 						$dbccresult = "Skipped"
 					}
-					elseif ((Test-SqlPath -SqlServer $destserver -Path $lastbackup[0].Path[0]) -eq $false)
+					elseif ((Test-SqlPath -SqlServer $destserver -Path $lastbackup[0].Path) -eq $false)
 					{
 						Write-Message -Level Verbose -Message "SQL Server cannot find backup"
 						$fileexists = $false
@@ -385,7 +391,6 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 							if ($Pscmdlet.ShouldProcess($destination, "Restoring $ogdbname as $dbname"))
 							{
 								Write-Message -Level Verbose -Message "Performing restore"
-								
 								$startRestore = Get-Date
 								if ($verifyonly)
 								{
@@ -462,24 +467,28 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 								}
 							}
 							
-							# Cleanup BackupFiles if -copyDestination and backup was moved to destination
-							if($copyDestination -eq $true -and $($lastbackup.path).startswith($copyPath))
+							#Cleanup BackupFiles if -copyDestination and backup was moved to destination
+							if($copyDestination -eq $true)
 							{
-								Write-Message -Level Verbose -Message "Removing backup file from $destination"
+							 	Write-Message -Level Verbose -Message "Removing backup file from $destination"
 								try 
 								{
-									Remove-item $($lastbackup.fullname) -ErrorAction Stop
+									foreach ($file in $lastbackup.fullname)
+									{
+										Write-Message -Level Verbose -Message "Removing $file"
+										Remove-item $file -ErrorAction Stop
+									}
 								}
 								catch
 								{
 									Write-Message -Level Warning -Message "Could not remove $($lastbackup.fullname)" -ErrorRecord $_ -Target $instance
 								}
-								$tempFolder = $lastbackup.fullname.Substring(0, $lastbackup.fullname.lastIndexOf('\'))
+								$tempFolder = $lastbackup.fullname.Substring(0, $lastbackup[0].fullname.lastIndexOf('\'))
 								if((get-childitem $tempFolder).count -eq 0)
 								{
 									try
 									{
-										Remove-item -Path $tempFolder -ErrorAction Stop
+									Remove-item -Path $tempFolder -ErrorAction Stop
 									}
 									catch
 									{
