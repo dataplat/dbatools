@@ -300,7 +300,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 							{
 								try 
 								{
-									New-Item -Path ("{0}\{1}" -f $copyPath,$Prefix) -ItemType Directory | Out-Null
+									$null = New-Item -Path ("{0}\{1}" -f $copyPath,$Prefix) -ItemType Directory -ErrorAction Stop
 								}
 								catch
 								{
@@ -313,7 +313,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 								$sourcefile = Join-AdminUnc -servername $sourceserver.netname -filepath $lastbackup.Path 
 								$destdirectory = Join-AdminUnc -servername $destserver.netname -filepath $copyPath
 								$destfile = ("{0}\{1}\{2}" -f $destdirectory,$Prefix,$lastbackup.path.split('\')[-1])
-								Copy-Item -Path $sourcefile -Destination $destfile
+								Copy-Item -Path $sourcefile -Destination $destfile -ErrorAction Stop
 								$lastbackup.path = $destfile
 								$lastbackup.fullname = $destfile
 							}
@@ -468,7 +468,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 								Write-Message -Level Verbose -Message "Removing backup file from $destination"
 								try 
 								{
-									Remove-item $($lastbackup.fullname)
+									Remove-item $($lastbackup.fullname) -ErrorAction Stop
 								}
 								catch
 								{
@@ -479,7 +479,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 								{
 									try
 									{
-										Remove-item -Path $tempFolder
+										Remove-item -Path $tempFolder -ErrorAction Stop
 									}
 									catch
 									{
