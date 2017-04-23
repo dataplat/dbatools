@@ -276,8 +276,6 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 									$filename = Split-Path -Path $file.FullName -Leaf
 									Write-Message -Level Verbose -Message "Processing $filename"
 									
-									$sourcefile = Join-AdminUnc -servername $sourceserver.ComputerNamePhysicalNetBIOS -filepath $file.Path
-									
 									if ($sourceserver.netname -eq $env:COMPUTERNAME) {
 										$sourcefile = Join-AdminUnc -servername $sourceserver.ComputerNamePhysicalNetBIOS -filepath $file.Path
 									}
@@ -286,21 +284,22 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 									}
 									
 									if ($destserver.ComputerNamePhysicalNetBIOS -ne $env:COMPUTERNAME) {
-										$destdirectory = Join-AdminUnc -servername $destserver.ComputerNamePhysicalNetBIOS -filepath $copyPath
+										$remotedestdirectory = Join-AdminUnc -servername $destserver.ComputerNamePhysicalNetBIOS -filepath $copyPath
 									}
 									else {
-										$destdirectory = $copyPath
+										$remotedestdirectory = $copyPath
 									}
 									
-									$destfile = "$destdirectory\$filename"
+									$remotedestfile = "$remotedestdirectory\$filename"
+									$localdestfile = "$copyPath\$filename"
 									Write-Message -Level Verbose -Message "Destination directory is $destdirectory"
-									Write-Message -Level Verbose -Message "Destination filename is $destfile"
+									Write-Message -Level Verbose -Message "Destination filename is $remotedestfile"
 									
 									try {
-										Copy-Item -Path $sourcefile -Destination $destfile -ErrorAction Stop
-										$backup.Path = $destfile
-										$backup.FullName = $destfile
-										$removearray += $destfile
+										Copy-Item -Path $sourcefile -Destination $remotedestfile -ErrorAction Stop
+										$backup.Path = $localdestfile
+										$backup.FullName = $localdestfile
+										$removearray += $remotedestfile
 									}
 									catch {
 										$backup.Path = $sourcefile
