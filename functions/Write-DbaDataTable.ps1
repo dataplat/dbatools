@@ -107,7 +107,14 @@ Write-DbaDataTable -SqlServer sql2014 -InputObject $datatable -Database mydb -Ta
 Quickly and efficiently performs a bulk insert of all the data into mydb.dbo.customers -- since Schema was not specified, dbo was used.
 	
 Per Microsoft, KeepNulls will "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
-	
+
+.EXAMPLE
+$process = Get-Process | Out-DbaDataTable
+Write-DbaDataTable -InputObject $process -SqlServer sql2014 -Database mydb -Table myprocesses -AutoCreateTable
+
+Creates a table based on the Process object with over 60 columns, converted from PowerShell data types to SQL Server data types. After the table is created a bulk insert is performed to add process information into the table.
+
+This is a good example of the type conversion in action. All process properties are converted, including special types like TimeSpan. Script properties are resolved before the type conversion starts thanks to Out-DbaDataTable.
 #>	
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
 	param (
@@ -243,7 +250,49 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 				$timetaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
 				Write-Progress -id 1 -activity "Inserting $rowcount rows" -percentcomplete $percent -status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalrows, $percent, $timetaken))
 			})
-	}
+	
+        $PStoSQLtypes = @{
+            #PS datatype      = SQL data type
+            'System.Int32'    = 'int';
+            'System.UInt32'   = 'bigint';
+            'System.Int16'    = 'smallint';
+            'System.UInt16'   = 'int';
+            'System.Int64'    = 'bigint';
+            'System.UInt64'   = 'decimal(20,0)';
+            'System.Decimal'  = 'decimal(20,5)';
+            'System.Single'   = 'bigint';
+            'System.Double'   = 'float';
+            'System.Byte'     = 'tinyint';
+            'System.SByte'    = 'smallint';
+            'System.TimeSpan' = 'nvarchar(30)';
+            'System.String'   = 'nvarchar(MAX)';
+            'System.Char'     = 'nvarchar(1)'
+            'System.DateTime' = 'datetime';
+            'System.Boolean'  = 'bit';
+            'System.Guid'     = 'uniqueidentifier';
+            'Int32'           = 'int';
+            'UInt32'          = 'bigint';
+            'Int16'           = 'smallint';
+            'UInt16'          = 'int';
+            'Int64'           = 'bigint';
+            'UInt64'          = 'decimal(20,0)';
+            'Decimal'         = 'decimal(20,5)';
+            'Single'          = 'bigint';
+            'Double'          = 'float';
+            'Byte'            = 'tinyint';
+            'SByte'           = 'smallint';
+            'TimeSpan'        = 'nvarchar(30)';
+            'String'          = 'nvarchar(MAX)';
+            'Char'            = 'nvarchar(1)'
+            'DateTime'        = 'datetime';
+            'Boolean'         = 'bit';
+            'Bool'            = 'bit';
+            'Guid'            = 'uniqueidentifier';
+            'int'             = 'int';
+            'long'            = 'bigint';
+        }
+
+    }
 	
 	PROCESS
 	{
@@ -256,7 +305,7 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 		
 		if ($InputObject.GetType() -notin $validtypes)
 		{
-			Stop-Function -Message "Data is not of the right type (DbDataReader, DataTable, DataRow, or IDataReader)."
+			Stop-Function -Message "Data is not of the right type (DbDataReader, DataTable, DataRow, or IDataReader). Tip: Try using Out-DbaDataTable to convert the object first."
 		}
 		
 		If ($InputObject.GetType() -eq [System.Data.DataSet])
@@ -309,29 +358,53 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 					
 					# also, if anyone wants to add support for using the datatable datatypes
 					# to make the table creation more accurate, please do
+                    
+                    # don't mind if I do :) /John
 					
-					if ([int64]::TryParse($columnvalue, [ref]0) -eq $true)
+                    <# Removed to make place for PS to SQL type conversion /John
+					    if ([int64]::TryParse($columnvalue, [ref]0) -eq $true)
+					    {
+						    $sqldatatype = "varchar(50)"
+					    }
+					    elseif ([double]::TryParse($columnvalue, [ref]0) -eq $true)
+					    {
+						    $sqldatatype = "varchar(50)"
+					    }
+					    elseif ([datetime]::TryParse($columnvalue, [ref]0) -eq $true)
+					    {
+						    $sqldatatype = "varchar(50)"
+					    }
+					    else
+					    {
+						    $sqldatatype = "varchar(MAX)"
+					    }
+                    #>                  
+                    
+                    # PS to SQL type conversion
+                    # If data type exists in hash table, use the corresponding SQL type
+                    # Else, fallback to nvarchar
+                    if ($PStoSQLtypes.Keys -contains $column.DataType)
 					{
-						$sqldatatype = "varchar(50)"
-					}
-					elseif ([double]::TryParse($columnvalue, [ref]0) -eq $true)
-					{
-						$sqldatatype = "varchar(50)"
-					}
-					elseif ([datetime]::TryParse($columnvalue, [ref]0) -eq $true)
-					{
-						$sqldatatype = "varchar(50)"
-					}
-					else
-					{
-						$sqldatatype = "varchar(MAX)"
-					}
+                        $sqldatatype = $PStoSQLtypes[$($column.DataType.toString())]
+					} 
+                    else
+                    {
+                        $sqldatatype = "nvarchar(MAX)"
+                    }
+                    
+                    # Debug, remove when done
+                    #Write-Verbose "Column: $sqlcolumnname"
+                    #Write-Verbose "PS datatype: $($column.DataType)"
+                    #Write-Verbose "SQL datatype: $($sqldatatype)"
 					
 					$sqldatatypes += "[$sqlcolumnname] $sqldatatype"
 				}
 				
 				$sql = "BEGIN CREATE TABLE $fqtn ($($sqldatatypes -join ' NULL,')) END"
 				
+                # Debug, remove when done
+                #Write-Verbose "SQL: $sql"
+
 				Write-Message -Level Debug -Message $sql
 				
 				if ($Pscmdlet.ShouldProcess($SqlServer, "Creating table $fqtn"))
