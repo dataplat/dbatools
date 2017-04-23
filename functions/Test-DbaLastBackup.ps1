@@ -57,6 +57,12 @@ Skip DBCC CHECKTABLE
 .PARAMETER NoDrop
 Do not drop newly created test database
 
+.PARAMETER CopyDestination
+Will copy the backup file to the destination default backup location.
+
+.PARAMETER CopyPath
+Specify a UNC path to copy backups to. If not specified will use destination default backup location.
+
 .PARAMETER MaxMB
 Do not restore databases larger than MaxMB
 
@@ -117,7 +123,17 @@ Skips the DBCC CHECKTABLE check. This can help speed up the tests but makes it l
 Test-DbaLastBackup -SqlServer sql2016 -DataDirectory E:\bigdrive -LogDirectory L:\bigdrive -MaxMB 10240
 
 Restores data and log files to alternative locations and only restores databases that are smaller than 10 GB
-	
+
+.EXAMPLE 
+Test-DbaLastBackup -SqlServer sql2014 -Destination sql2016 -CopyDestination
+
+Copies the backup files for sql2014 databases to sql2016 default backup locations and then attempts restore from there.
+
+.EXAMPLE 
+Test-DbaLastBackup -SqlServer sql2014 -Destination sql2016 -CopyDestination -CopyPath "\\BackupShare\TestRestore\"
+
+Copies the backup files for sql2014 databases to sql2016 default backup locations and then attempts restore from there.
+
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
@@ -133,6 +149,8 @@ Restores data and log files to alternative locations and only restores databases
 		[switch]$VerifyOnly,
 		[switch]$NoCheck,
 		[switch]$NoDrop,
+		[switch]$CopyDestination,
+		[string]$CopyPath,
 		[int]$MaxMB,
 		[switch]$IgnoreCopyOnly,
 		[switch]$Silent
@@ -198,7 +216,13 @@ Restores data and log files to alternative locations and only restores databases
 			
 			$source = $sourceserver.DomainInstanceName
 			$destination = $destserver.DomainInstanceName
-						
+
+			# If not CopyPath is specified, use the destination server default backup directory
+			if(!$CopyPath)
+			{
+				$copyPath = $destserver.BackupDirectory
+			}
+
 			if ($datadirectory)
 			{
 				if (!(Test-SqlPath -SqlServer $destserver -Path $datadirectory))
@@ -258,12 +282,69 @@ Restores data and log files to alternative locations and only restores databases
 						Stop-Function -Message "$dbname does not exist on $source." -Continue
 					}
 					
-					$lastbackup = Get-DbaBackupHistory -SqlServer $sourceserver -Databases $dbname -LastFull -IgnoreCopyOnly:$ignorecopyonly
-										
-					if ($null -eq $lastbackup)
+					#$lastbackup = Get-DbaBackupHistory -SqlServer $sourceserver -Databases $dbname -LastFull -IgnoreCopyOnly:$ignorecopyonly
+					$lastbackup = Get-DbaBackupHistory -SqlServer $sourceserver -Databases $dbname -Last -IgnoreCopyOnly:$ignorecopyonly
+					
+					if($lastbackup[0].Path.StartsWith('\\') -eq $false -and $CopyDestination) 
 					{
-						Write-Message -Level Verbose -Message "No data returned from lastbackup"
-						
+						Write-Message -Level Verbose -Message "Copying backup to destination server"
+						if($copyPath.StartsWith('\\') -eq $false)
+						{
+							Write-Message -Level Verbose -Message "Destination backup directory is not UNC and source does not match destination."
+							$fileexists = "Skipped"
+							$restoreresult = "Destination backup not on shared location."
+							$dbccresult = "Skipped"
+							$copyDestination = $false
+						}
+						elseif ((Test-SqlPath -SqlServer $destserver -path $copyPath)) 
+						{
+							if((Test-SqlPath -SqlServer $destserver -path ("{0}\{1}" -f $copyPath,$Prefix)) -eq $false)
+							{
+								try 
+								{
+									$null = New-Item -Path ("{0}\{1}" -f $copyPath,$Prefix) -ItemType Directory -ErrorAction Stop
+								}
+								catch
+								{
+									Stop-Function -Message "Failed to create BackupDirectory: $instance" -Target $instance -InnerErrorRecord $_ -Continue
+								}
+							}
+							try 
+							{								
+								$filearray = 0
+								foreach ($file in $lastbackup)
+								{	
+									$sourcefile = Join-AdminUnc -servername $sourceserver.netname -filepath $file.Path 
+									$destdirectory = Join-AdminUnc -servername $destserver.netname -filepath $copyPath
+									$destfile = ("{0}\{1}\{2}" -f $destdirectory,$Prefix,$file.path.split('\')[-1])
+									Copy-Item -Path $sourcefile -Destination $destfile -ErrorAction Stop
+									$lastbackup[$filearray].path = $destfile
+									$lastbackup[$filearray].fullname = $destfile
+									$filearray++
+
+								}
+							}
+							catch 
+							{
+								Stop-Function -Message "Failed to copy backups to $destdirectory" -Target $instance -InnerErrorRecord $_ -Continue
+							}
+
+						}
+						else
+						{
+							Write-Message -Level Verbose -Message "Destination server default backup location doesn't exist"
+						}
+
+					}
+					elseif ($CopyDestination) {
+						Write-Message -Level Verbose -Message "Ignoring CopyDestination flag, using UNC path."
+						$CopyDestination = $false
+					}
+					
+					#if ($null -eq $lastbackup)
+					if(!($lastbackup | Where-Object {$_.type -eq 'Full'}))
+					{
+						Write-Message -Level Verbose -Message "No full backup returned from lastbackup"
 						$lastbackup = @{ Path = "Not found" }
 						$fileexists = $false
 						$restoreresult = "Skipped"
@@ -271,12 +352,12 @@ Restores data and log files to alternative locations and only restores databases
 					}
 					elseif ($source -ne $destination -and $lastbackup[0].Path.StartsWith('\\') -eq $false)
 					{
-						Write-Message -Level Verbose -Message "Path not UNC and source does not match destination"
+						Write-Message -Level Verbose -Message "Path not UNC and source does not match destination. Use -CopyDestination to move the backup file."
 						$fileexists = "Skipped"
 						$restoreresult = "Restore not located on shared location"
 						$dbccresult = "Skipped"
 					}
-					elseif ((Test-SqlPath -SqlServer $destserver -Path $lastbackup[0].Path[0]) -eq $false)
+					elseif ((Test-SqlPath -SqlServer $destserver -Path $lastbackup[0].Path) -eq $false)
 					{
 						Write-Message -Level Verbose -Message "SQL Server cannot find backup"
 						$fileexists = $false
@@ -311,20 +392,15 @@ Restores data and log files to alternative locations and only restores databases
 							
 							if ($Pscmdlet.ShouldProcess($destination, "Restoring $ogdbname as $dbname"))
 							{
-								Write-Message -Level Verbose -Message "Getting last backup history"
-								
-								$last = Get-DbaBackupHistory -SqlServer $sourceserver -Databases $ogdbname -Last -IgnoreCopyOnly:$ignorecopyonly
-								
 								Write-Message -Level Verbose -Message "Performing restore"
-								
 								$startRestore = Get-Date
 								if ($verifyonly)
 								{
-									$restoreresult = $last | Restore-DbaDatabase -SqlServer $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -VerifyOnly:$VerifyOnly
+									$restoreresult = $lastbackup | Restore-DbaDatabase -SqlServer $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -VerifyOnly:$VerifyOnly
 								}
 								else
 								{
-									$restoreresult = $last | Restore-DbaDatabase -SqlServer $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory
+									$restoreresult = $lastbackup | Restore-DbaDatabase -SqlServer $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory
 								}
 								
 								$endRestore = Get-Date
@@ -393,7 +469,37 @@ Restores data and log files to alternative locations and only restores databases
 								}
 							}
 							
-							if ($destserver.Databases[$dbname] -ne $null -and !$NoDrop)
+							#Cleanup BackupFiles if -copyDestination and backup was moved to destination
+							if($copyDestination -eq $true)
+							{
+							 	Write-Message -Level Verbose -Message "Removing backup file from $destination"
+								try 
+								{
+									foreach ($file in $lastbackup.fullname)
+									{
+										Write-Message -Level Verbose -Message "Removing $file"
+										Remove-item $file -ErrorAction Stop
+									}
+								}
+								catch
+								{
+									Write-Message -Level Warning -Message "Could not remove $($lastbackup.fullname)" -ErrorRecord $_ -Target $instance
+								}
+								$tempFolder = $lastbackup.fullname.Substring(0, $lastbackup[0].fullname.lastIndexOf('\'))
+								if((get-childitem $tempFolder).count -eq 0)
+								{
+									try
+									{
+									Remove-item -Path $tempFolder -ErrorAction Stop
+									}
+									catch
+									{
+										Write-Message -Level Warning -Message "Could not remove $tempFolder" -ErrorRecord $_ -Target $instance
+									}
+								} 
+							}
+
+					if ($destserver.Databases[$dbname] -ne $null -and !$NoDrop)
 							{
 								Write-Message -Level Warning -Message "$dbname was not dropped"
 							}
@@ -407,7 +513,7 @@ Restores data and log files to alternative locations and only restores databases
 							TestServer = $destination
 							Database = $db.name
 							FileExists = $fileexists
-							Size = [dbasize](($last.TotalSize | Measure-Object -Sum).Sum)
+							Size = [dbasize](($lastbackup.TotalSize | Measure-Object -Sum).Sum)
 							RestoreResult = $success
 							DbccResult = $dbccresult
 							RestoreStart = [dbadatetime]$startRestore
@@ -416,8 +522,8 @@ Restores data and log files to alternative locations and only restores databases
 							DbccStart = [dbadatetime]$startDbcc
 							DbccEnd = [dbadatetime]$endDbcc
 							DbccElapsed = $dbccElapsed
-							BackupDate = $last.Start
-							BackupFiles = $last.FullName
+							BackupDate = $lastbackup.Start
+							BackupFiles = $lastbackup.FullName
 						}
 					}
 				}
