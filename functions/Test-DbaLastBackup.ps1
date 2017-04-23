@@ -135,7 +135,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer", "Source")]
 		[object[]]$SqlInstance,
@@ -155,9 +155,9 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 		[switch]$Silent
 	)
 	
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
+	dynamicparam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
-	PROCESS {
+	process {
 		foreach ($instance in $sqlinstance) {
 			$databases = $psboundparameters.Databases
 			$exclude = $psboundparameters.Exclude
@@ -255,6 +255,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 					
 					Write-Message -Level Verbose -Message "Processing $dbname"
 					
+					$copysuccess = $true
 					$db = $sourceserver.databases[$dbname]
 					
 					# The db check is needed when the number of databases exceeds 255, then it's no longer autopopulated
