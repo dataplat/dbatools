@@ -354,6 +354,7 @@ folder for those file types as defined on the target instance.
 							{
 								if (Test-SqlPath -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential)
 								{
+									$p = $p | Select-Object *, @{Name="FullName";Expression={$p}}
 									$BackupFiles += $p
 								}
 								else
@@ -376,6 +377,7 @@ folder for those file types as defined on the target instance.
 							{
 								if (Test-SqlPath -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential)
 								{
+									$p = $p | Select-Object *, @{Name="FullName";Expression={$p}}
 									$BackupFiles += $p
 								}
 								else
