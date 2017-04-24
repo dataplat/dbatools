@@ -275,13 +275,13 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 								foreach ($file in $backup) {
 									$filename = Split-Path -Path $file.FullName -Leaf
 									Write-Message -Level Verbose -Message "Processing $filename"
-									
-									if ($sourceserver.netname -eq $env:COMPUTERNAME) {
-										$sourcefile = Join-AdminUnc -servername $sourceserver.ComputerNamePhysicalNetBIOS -filepath $file.Path
-									}
-									else {
-										$sourcefile = $file.Path
-									}
+
+									#if ($destserver.netname -ne $env:COMPUTERNAME) {
+									$sourcefile = Join-AdminUnc -servername $sourceserver.ComputerNamePhysicalNetBIOS -filepath $file.Path
+									#}
+									#else {
+									#	$sourcefile = $file.Path
+									#}
 									
 									if ($destserver.ComputerNamePhysicalNetBIOS -ne $env:COMPUTERNAME) {
 										$remotedestdirectory = Join-AdminUnc -servername $destserver.ComputerNamePhysicalNetBIOS -filepath $copyPath
