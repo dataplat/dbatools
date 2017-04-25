@@ -111,7 +111,8 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 #>
 	
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
-	param ([parameter(Mandatory = $true)]
+	param (
+		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
 		[Parameter(Mandatory = $false)]
