@@ -336,7 +336,7 @@ Create a step in "Job1" with the name "Step1" where the database will the "msdb"
     }
 
     end {
-        Write-Message -Message "Creation of job step(s) completed" -Level Output 
+        Write-Message -Message "Finished creating job step(s)." -Level Output 
     }
 }
 
