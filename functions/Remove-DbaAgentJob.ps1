@@ -107,7 +107,7 @@ Removes the job from multiple servers using pipe line
                     $Job = $Server.JobServer.Jobs[$JobName] 
                 }
                 catch {
-                    Stop-Function -Message ("Something went wrong creating the job. `n$($_.Exception.Message)") -Silent $Silent -InnerErrorRecord $_ -Target $JobName
+                    Stop-Function -Message ("Something went wrong creating the job. `n$($_.Exception.Message)") -Silent $Silent -InnerErrorRecord $_ -Target $instance
                     return
                 }
 
