@@ -257,7 +257,8 @@
 		'Set-DbaStartupParameter',
 		'New-DbaAgentJob',
 		'Export-DbaScript',
-		'Get-DbaLogin'
+		'Get-DbaLogin',
+		'New-DbaScriptingOption'
 		#'Invoke-DbaLogShippingRecovery',
 	)
 	
