@@ -153,7 +153,9 @@ After the work has been completed, we can push the original startup parameters b
 		
 		#Get Current parameters:
 		$currentstartup = Get-DbaStartupParameter -SqlInstance $sqlinstance -Credential $Credential
+		$startingparamstring = $currentstartup.ParameterString
 		
+		Write-Message -Level Output -Message "Starting startup string: $startingparamstring"
 		if ('startUpconfig' -in $PsBoundParameters.keys) {
 			Write-Message -Level VeryVerbose -Message "StartupObject passed in"
 			$newstartup = $StartUpConfig
@@ -297,6 +299,11 @@ After the work has been completed, we can push the original startup parameters b
 		if ($instancename.Length -eq 0) { $instancename = "MSSQLSERVER" }
 		
 		$displayname = "SQL Server ($instancename)"
+		
+		if ($startingparamstring -eq "$ParameterString" -or "$startingparamstring;" -eq "$ParameterString") {
+			Stop-Function -Message "New parameter string would be the same as the old parameter string. Nothing to do." -Target $ParameterString
+			return
+		}
 		
 		$Scriptblock = {
 			$instance = $args[0]
