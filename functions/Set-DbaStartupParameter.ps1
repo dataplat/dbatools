@@ -87,6 +87,16 @@ Set-DbaStartupParameter -SqlServer server1\instance1 -SingleUser
 
 Will configure the SQL Instance server1\instance1 to startup up in Single User mode at next startup
 	
+.EXAMPLE 
+Set-DbaStartupParameter -SqlInstance sql2016 -IncreasedExtents
+
+Will configure the SQL Instance sql2016 to IncreasedExtents = True (-E)
+
+.EXAMPLE 
+Set-DbaStartupParameter -SqlInstance sql2016  -IncreasedExtents:$false
+
+Will configure the SQL Instance sql2016 to IncreasedExtents = False (no -E)
+
 .EXAMPLE
 Set-DbaStartupParameter -SqlServer server1\instance1 -SingleUser -TraceFlags 8032,8048
 This will appened Trace Flags 8032 and 8048 to the startup parameters
@@ -112,10 +122,10 @@ We then change the startup parameters ahead of some work
 After the work has been completed, we can push the original startup parameters back to server1\instance1 and resume normal operation
 
 #>
-	[CmdletBinding(SupportsShouldProcess = $true)]
+	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
 	param ([parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$sqlinstance,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[PSCredential]$Credential,
 		[string]$MasterData,
 		[string]$MasterLog,
@@ -135,9 +145,11 @@ After the work has been completed, we can push the original startup parameters b
 		[switch]$Silent
 		
 	)
-	PROCESS {
+	process {
+		
 		#Get Current parameters:
 		$currentstartup = Get-DbaStartupParameter -SqlInstance $sqlinstance -Credential $Credential
+		
 		if ('startUpconfig' -in $PsBoundParameters.keys) {
 			Write-Message -Level VeryVerbose -Message "StartupObject passed in"
 			$newstartup = $StartUpConfig
@@ -152,7 +164,9 @@ After the work has been completed, we can push the original startup parameters b
 				}
 			}
 		}
+		
 		if (!($currentstartup.SingleUser)) {
+			
 			if ($newstartup.Masterdata.length -gt 0) {
 				if (Test-SqlPath -SqlServer $sqlinstance -SqlCredential $Credential -Path (Split-Path $newstartup.MasterData -Parent)) {
 					$ParameterString += "-d$($newstartup.MasterData);"
@@ -164,6 +178,7 @@ After the work has been completed, we can push the original startup parameters b
 			else {
 				Stop-Function -Message "MasterData value must be provided"
 			}
+			
 			if ($newstartup.ErrorLog.length -gt 0) {
 				if (Test-SqlPath -SqlServer $sqlinstance -SqlCredential $Credential -Path (Split-Path $newstartup.ErrorLog -Parent)) {
 					$ParameterString += "-e$($newstartup.ErrorLog);"
@@ -175,6 +190,7 @@ After the work has been completed, we can push the original startup parameters b
 			else {
 				Stop-Function -Message "ErrorLog value must be provided"
 			}
+			
 			if ($newstartup.MasterLog.Length -gt 0) {
 				if (Test-SqlPath -SqlServer $sqlinstance -SqlCredential $Credential -Path (Split-Path $newstartup.MasterLog -Parent)) {
 					$ParameterString += "-l$($newstartup.MasterLog);"
@@ -188,6 +204,7 @@ After the work has been completed, we can push the original startup parameters b
 			}
 		}
 		else {
+			
 			Write-Message -Level Verbose -Message "Sql instance is presently configured for single user, skipping path validation"
 			if ($newstartup.MasterData.Length -gt 0) {
 				$ParameterString += "-d$($newstartup.MasterData);"
@@ -291,18 +308,25 @@ After the work has been completed, we can push the original startup parameters b
 				$false
 			}
 		}
+		
 		if ($pscmdlet.ShouldProcess("Setting Sql Server start parameters on $sqlinstance to $ParameterString")) {
 			try {
 				if ($credential) {
 					$response = Invoke-ManagedComputerCommand -Server $instance -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString
+					$output = Get-DbaStartupParameter -SqlInstance $sqlinstance -Credential $Credential
+					Add-Member -InputObject $output -MemberType NoteProperty -Name Notes -Value "You must restart SQL Server for changes to take effect."
+					
 				}
 				else {
 					$response = Invoke-ManagedComputerCommand -Server $instance -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString
+					$output = Get-DbaStartupParameter -SqlInstance $sqlinstance
+					Add-Member -InputObject $output	-MemberType NoteProperty -Name Notes -Value "You must restart SQL Server for changes to take effect." | select *
 				}
 				
-				Write-Message -Level Verbose -Message "Startup parameters changed on $sqlinstance. You must restart SQL Server for changes to take effect."
-				Get-DbaStartupParameter -SqlInstance $sqlinstance -Credential $Credential | Add-Member -Name Notes -Value "You must restart SQL Server for changes to take effect."
-			}
+				$output
+				
+				Write-Message -Level Output -Message "Startup parameters changed on $sqlinstance. You must restart SQL Server for changes to take effect."
+				}
 			catch {
 				Stop-Function -Message "Startup parameters failed to change on $sqlinstance. Failure reported: $_" -Target $_
 			}
