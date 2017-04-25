@@ -55,6 +55,7 @@ The ID of the step in this job to execute if the step fails and OnFailAction is 
 The name of the database in which to execute a Transact-SQL step. The default is 'master'.
 
 .PARAMETER DatabaseUserName 
+The name of the user account to use when executing a Transact-SQL step. 
 
 .PARAMETER RetryAttempts
 The number of retry attempts to use if this step fails. The default is 0.
