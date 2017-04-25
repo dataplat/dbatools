@@ -253,7 +253,6 @@
 		'Get-DbaEstimatedCompletionTime',
 		'Export-DbaScript',
 		'New-DbaScriptingOption',
-		'Get-DbaLogin'
 		'Get-DbaLinkedServer',
 		'Set-DbaStartupParameter',
 		'New-DbaAgentJob'
