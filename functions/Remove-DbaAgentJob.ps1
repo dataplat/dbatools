@@ -1,13 +1,12 @@
-function Remove-DbaAgentJob
-{
-<#
+function Remove-DbaAgentJob {
+    <#
 .SYNOPSIS 
 Remove-DbaAgentJob removes a job.
 
 .DESCRIPTION
 Remove-DbaAgentJob removes a a job in the SQL Server Agent.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER SqlCredential
@@ -40,114 +39,111 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Remove-DbaAgentJob
 
 .EXAMPLE   
-Remove-DbaAgentJob -SqlServer 'sql1' -JobName 'Job1'
+Remove-DbaAgentJob -SqlInstance 'sql1' -JobName 'Job1'
 Removes the job from the instance with the name 'Job1'
 
 .EXAMPLE   
-Remove-DbaAgentJob -SqlServer 'sql1' -JobName 'Job1' -KeepHistory
+Remove-DbaAgentJob -SqlInstance 'sql1' -JobName 'Job1' -KeepHistory
 Removes the job but keeps the history
 
 .EXAMPLE   
-Remove-DbaAgentJob -SqlServer 'sql1' -JobName 'Job1' -KeepUnusedSchedule
+Remove-DbaAgentJob -SqlInstance 'sql1' -JobName 'Job1' -KeepUnusedSchedule
 Removes the job but keeps the unused schedules
 
-#>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+.EXAMPLE   
+Remove-DbaAgentJob -SqlInstance 'sql1', 'sql2', 'sql3' -JobName 'Job1' 
+Removes the job from multiple servers
 
-    param (
-		[parameter(Mandatory = $true, ValueFromPipeline=$true)]
-		[object[]]$SqlServer,
+.EXAMPLE   
+'sql1', 'sql2', 'sql3' | Remove-DbaAgentJob -JobName 'Job1' 
+Removes the job from multiple servers using pipe line
+
+#>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+
+    param(
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [object[]]$SqlInstance,
         [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]$SqlCredential,
         [Parameter(Mandatory = $false)]
         [int]$JobID,
         [Parameter(Mandatory = $false)]
-        [ValidateScript({
-            if(($JobID -lt 1) -and ($_.Length -le 0))
-            {
-                Throw "Please enter a job id or job name."
-            }
-            else 
-            {
-                $true    
-            }
-        })]
+        [ValidateScript( {
+                if (-not($JobID) -and (-not($_))) {
+                    Throw "Please enter a job id or job name."
+                }
+                else {
+                    $true    
+                }
+            })]
         [string]$JobName,
         [switch]$KeepHistory,
         [switch]$KeepUnusedSchedule,
         [switch]$Silent
     )
 
-    PROCESS
-    {
-        # Try connecting to the instance
-        Write-Message -Message "Attempting to connect to Sql Server.." -Level 2 -Silent $Silent
-        try 
-        {
-            $Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-        }
-        catch 
-        {
-            Stop-Function -Message "Could not connect to Sql Server instance" -Silent $Silent -InnerErrorRecord $_ -Target $SqlServer 
-            return
-        }
-        
-        # Check if the job exists
-        if(($Server.JobServer.Jobs).Name -notcontains $JobName)
-        {
-            Write-Message -Message "Job '$($JobName)' doesn't exists on '$($SqlServer)'" -Warning -Silent $Silent
-        }
-        else 
-        {   
-            # Get the job
-            try 
-            {
-                $Job = $Server.JobServer.Jobs[$JobName] 
+    process {
+
+        foreach ($instance in $sqlinstance) {
+            # Try connecting to the instance
+            Write-Message -Message "Attempting to connect to Sql Server.." -Level Output -Silent $Silent
+            try {
+                $Server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
             }
-            catch 
-            {
-                Stop-Function -Message ("Something went wrong creating the job. `n$($_.Exception.Message)") -Silent $Silent -InnerErrorRecord $_ -Target $JobName
+            catch {
+                Stop-Function -Message "Could not connect to Sql Server instance" -Silent $Silent -InnerErrorRecord $_ -Target $instance 
                 return
             }
-
-            # Delete the history
-            if(-not $KeepHistory)
-            {
-                Write-Message -Message "Purging job history" -Level 5 -Silent $Silent
-                $Job.PurgeHistory()
+        
+            # Check if the job exists
+            if (($Server.JobServer.Jobs).Name -notcontains $JobName) {
+                Write-Message -Message "Job $JobName doesn't exists on $instance" -Warning -Silent $Silent
             }
+            else {   
+                # Get the job
+                try {
+                    $Job = $Server.JobServer.Jobs[$JobName] 
+                }
+                catch {
+                    Stop-Function -Message ("Something went wrong creating the job. `n$($_.Exception.Message)") -Silent $Silent -InnerErrorRecord $_ -Target $JobName
+                    return
+                }
 
-            # Execute 
-            if($PSCmdlet.ShouldProcess($SqlServer, ("Removing the job $($SqlServer)"))) 
-            {
-                try
-                {
-                    Write-Message -Message ("Removing the job") -Level 2 -Silent $Silent
+                # Delete the history
+                if (-not $KeepHistory) {
+                    Write-Message -Message "Purging job history" -Level Verbose -Silent $Silent
+                    $Job.PurgeHistory()
+                }
 
-                    if($KeepUnusedSchedule)
-                    {
-                        # Drop the job keeping the unused schedules
-                        Write-Message -Message "Removing job keeping unused schedules" -Level 5 -Silent $Silent
-                        $Job.Drop($true) 
-                    }
-                    else 
-                    {
-                        # Drop the job removing the unused schedules
-                        Write-Message -Message "Removing job removing unused schedules" -Level 5 -Silent $Silent
-                        $Job.Drop($false) 
-                    }
+                # Execute 
+                if ($PSCmdlet.ShouldProcess($instance, ("Removing the job on $instance"))) {
+                    try {
+                        Write-Message -Message ("Removing the job") -Level Output -Silent $Silent
+
+                        if ($KeepUnusedSchedule) {
+                            # Drop the job keeping the unused schedules
+                            Write-Message -Message "Removing job keeping unused schedules" -Level Verbose -Silent $Silent
+                            $Job.Drop($true) 
+                        }
+                        else {
+                            # Drop the job removing the unused schedules
+                            Write-Message -Message "Removing job removing unused schedules" -Level Verbose -Silent $Silent
+                            $Job.Drop($false) 
+                        }
                     
-                }
-                catch
-                {
-                    Write-Message -Message ("Something went wrong removing the job. `n$($_.Exception.Message)") -Level 2 -Silent $Silent 
+                    }
+                    catch {
+                        Write-Message -Message ("Something went wrong removing the job. `n$($_.Exception.Message)") -Level Output -Silent $Silent 
+                    }
                 }
             }
+
         }
     }
 
-    END
-    {
-        Write-Message -Message "Removal of jobs(s) completed" -Level 2 -Silent $Silent
+    end {
+        Write-Message -Message "Finished removing jobs(s)." -Level Output -Silent $Silent
     }
 }
