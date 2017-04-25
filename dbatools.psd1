@@ -253,9 +253,9 @@
 		'Get-DbaEstimatedCompletionTime',
 		'Export-DbaScript',
 		'New-DbaScriptingOption',
-		'Get-DbaLogin'
 		'Get-DbaLinkedServer',
-		'Set-DbaStartupParameter'
+		'Set-DbaStartupParameter',
+		'New-DbaAgentJob'
 		#'Invoke-DbaLogShippingRecovery',
 	)
 	
