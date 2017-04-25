@@ -217,14 +217,13 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
 
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
-            Write-Message -Message "Attempting to connect to Sql Server.." -Level Output
-            try {
-                $Server = Connect-SqlServer -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-            }
-            catch {
-                Stop-Function -Message "Could not connect to Sql Server instance"  -Target $instance -Continue
-                return
-            }
+			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
+			try {
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+			}
+			catch {
+				Stop-Function -Message "Could not connect to Sql Server instance" -Target $instance -Continue
+			}
 
             # Check if the job exists
             if (($Server.JobServer.Jobs).Name -notcontains $JobName) {
