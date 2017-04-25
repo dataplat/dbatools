@@ -76,8 +76,8 @@ Copyright (C) 2016 Chrissy LeMaire
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 .LINK
+
 https://dbatools.io/New-DbaAgentJobStep
 
 .EXAMPLE   
@@ -88,6 +88,13 @@ Create a step in "Job1" with the name "Step1" with the default subsystem Transac
 New-DbaAgentJobStep -SqlServer 'sql' -JobName 'Job1' -StepName 'Step1' -Database 'msdb'
 Create a step in "Job1" with the name "Step1" where the database will the "msdb"
 
+.EXAMPLE   
+New-DbaAgentJobStep -SqlServer 'sql' -JobName 'Job1' -StepName 'Step1' -Database 'msdb'
+Create a step in "Job1" with the name "Step1" where the database will the "msdb"
+
+.EXAMPLE   
+"sql1", "sql2", "sql3" | New-DbaAgentJobStep -JobName 'Job1' -StepName 'Step1' -Database 'msdb'
+Create a step in "Job1" with the name "Step1" where the database will the "msdb" for multiple servers
 #>
 
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
@@ -366,3 +373,4 @@ Create a step in "Job1" with the name "Step1" where the database will the "msdb"
         Write-Message -Message "Creation of job step(s) completed" -Level 2 -Silent $Silent
     }
 }
+
