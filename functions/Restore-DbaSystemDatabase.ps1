@@ -189,7 +189,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
     
         if ($InstanceName.Length -eq 0) { $InstanceName = "MSSqlServer" }
 
-        Write-Verbose "Attempting to stop SQL Service $InstanceName on $ServerName" 
+        Write-Verbose "Attempting to Start SQL Service $InstanceName on $ServerName" 
 
         If ($Service -eq 'SqlServer')
         {
@@ -261,7 +261,10 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
         {
             $ServerName, $InstanceName = ($SqlServer.name.Split('\'))
         }
-
+        if ($InstanceName.Length -eq 0)
+        {
+            $InstanceName = 'MSSQLSERVER'
+        }
 
         if (($PsBoundParameters.Keys | Where-Object {$_ -in ('master','msdb','model')} | measure-object).count -eq 0)
         {
@@ -284,7 +287,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
         }
         if ((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type FullText | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -eq 'Running')
         {
-            Write-Message -Level Verbose -Message "Full Test agent running, stopping it" -Silent:$true
+            Write-Message -Level Verbose -Message "Full Text agent running, stopping it" -Silent:$true
             $RestartFullText = $True
             Stop-DbaService -sqlserver $server -service FullText | out-null
         }
@@ -296,7 +299,6 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                 Write-Message -Level Verbose -Silent:$false -Message "Restoring Master, setting single user"
                 Set-DbaStartupParameter -SqlServer $sqlserver -SingleUser -SingleUserDetails dbatoolsSystemk34i23hs3u57w 
                 Stop-DbaService -SqlServer $server | out-null
-                Start-DbaService -SqlServer $server | out-null
                 Start-DbaService -SqlServer $server | out-null
                 $StartCount = 0
                 while ((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type Engine | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -ne 'running')
