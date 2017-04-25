@@ -52,7 +52,19 @@ Don't use Windows Application events log
 Allows you to start a named instance of SQL Server
 
 .PARAMETER DisableMonitoring
+Disables the following monitoring features:
 
+SQL Server performance monitor counters
+Keeping CPU time and cache-hit ratio statistics
+Collecting information for the DBCC SQLPERF command
+Collecting information for some dynamic management views
+Many extended-events event points
+
+** Warning *\* When you use the –x startup option, the information that is available for you to diagnose performance and functional problems with SQL Server is greatly reduced.
+	
+.PARAMETER SingleUserDetails
+The username for single user
+	
 .PARAMETER IncreasedExtents
 Increases the number of extents that are allocated for each file in a filegroup. 
 
@@ -327,13 +339,12 @@ After the work has been completed, we can push the original startup parameters b
 				if ($credential) {
 					$response = Invoke-ManagedComputerCommand -Server $instance -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString
 					$output = Get-DbaStartupParameter -SqlInstance $sqlinstance -Credential $Credential
-					Add-Member -InputObject $output -MemberType NoteProperty -Name Notes -Value "You must restart SQL Server for changes to take effect."
-					
+					Add-Member -InputObject $output -MemberType NoteProperty -Name StartingParameterString -Value $startingparamstring
 				}
 				else {
 					$response = Invoke-ManagedComputerCommand -Server $instance -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString
 					$output = Get-DbaStartupParameter -SqlInstance $sqlinstance
-					Add-Member -InputObject $output	-MemberType NoteProperty -Name Notes -Value "You must restart SQL Server for changes to take effect." | select *
+					Add-Member -InputObject $output -MemberType NoteProperty -Name StartingParameterString -Value $startingparamstring
 				}
 				
 				$output
