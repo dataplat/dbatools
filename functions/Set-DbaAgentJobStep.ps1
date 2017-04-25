@@ -6,7 +6,7 @@ Set-DbaAgentJobStep updates a job step.
 .DESCRIPTION
 Set-DbaAgentJobStep updates a job step in the SQL Server Agent with parameters supplied.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER SqlCredential
