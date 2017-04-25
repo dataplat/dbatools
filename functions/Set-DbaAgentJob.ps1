@@ -115,7 +115,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
 
     param(
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory = $true, ValueFromPipeline=$true)]
         [Alias("ServerInstance", "SqlServer")]
         [object[]]$SqlInstance,
         [Parameter(Mandatory = $false)]
@@ -227,7 +227,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
 
             # Check if the job exists
             if (($Server.JobServer.Jobs).Name -notcontains $JobName) {
-                Stop-Function -Message "Job $JobName doesn't exists on $SqlInstance"  -Target $instance 
+                Stop-Function -Message "Job $JobName doesn't exists on $instance"  -Target $instance 
                 return
             }
             else {
