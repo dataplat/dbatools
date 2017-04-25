@@ -87,7 +87,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
         #workarounds requested by Klaas until Fred finished his work:
         Function Stop-DbaService
         {
-                param (
+            param (
                 [Alias("ServerInstance", "SqlInstance")]
                 [object[]]$SqlServer,
                 [PSCredential]$Credential,
@@ -162,83 +162,86 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
             }
             Invoke-ManagedComputerCommand -ComputerName $ServerName -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $ServerName, $DisplayName
         }
+
         Function Start-DbaService
         {
             param (
-            [Alias("ServerInstance", "SqlInstance")]
-            [object[]]$SqlServer,
-            [PSCredential]$Credential,
-            [ValidateSet('SqlServer','SqlAgent','FullText')]
-            [String]$Service='SqlServer'
-        )
-        $FunctionName =(Get-PSCallstack)[0].Command
+                [Alias("ServerInstance", "SqlInstance")]
+                [object[]]$SqlServer,
+                [PSCredential]$Credential,
+                [ValidateSet('SqlServer','SqlAgent','FullText')]
+                [String]$Service='SqlServer'
+            )
+            $FunctionName =(Get-PSCallstack)[0].Command
 
-        #$ServerName, $InstanceName = ($SqlServer.Split('\'))
-        if ($null -eq $SqlServer.name)
-        {
-            $ServerName, $InstanceName = ($SqlServer.Split('\'))
-        }
-        else
-        {
-            $ServerName, $InstanceName = ($SqlServer.name.Split('\'))
-        }
-    
-        if ($InstanceName.Length -eq 0) { $InstanceName = "MSSqlServer" }
-
-        Write-Verbose "Attempting to Start SQL Service $InstanceName on $ServerName" 
-
-        If ($Service -eq 'SqlServer')
-        {
-            $DisplayName = "SQL Server ($InstanceName)"  
-        }
-
-        If ($Service -eq 'SqlAgent')
-        {
-            $DisplayName ="Sql Server Agent ($InstanceName)"
-        }
-
-        if($Service -eq 'FullText')
-        {
-            $DisplayName = "*Full*Text*($InstanceName)"        
-        }
-
-        $Scriptblock = {
-            $ServerName = $args[0]
-            $DisplayName = $args[1]
-                
-            $wmisvc = $wmi.Services | Where-Object { $_.DisplayName -like $DisplayName }
-            Write-Verbose "Attempting to Start $DisplayName on $ServerName"
-            try{
-                $timeout = new-timespan -Minutes 1
-                $timer = [diagnostics.stopwatch]::StartNew()
-                $wmisvc.start()
-                while ($wmisvc.ServiceState -ne "Running" -and $timer.elapsed -lt $timeout)  
-                {  
-                    $wmisvc.Refresh()  
-                }
-                if ($sw.elapsed -lt $timeout){
-                    [PSCustomObject]@{
-                        Started = $true
-                        Message = "Started $DisplayName on $ServerName successfully"
-                        }           
-                }
-                else {
-                    [PSCustomObject]@{
-                        Started = $False
-                        Message = "$DisplayName on $ServerName failed to start in a timely manner"
-                        }     
-                }
-            }
-            catch
+            #$ServerName, $InstanceName = ($SqlServer.Split('\'))
+            if ($null -eq $SqlServer.name)
             {
-                [PSCustomObject]@{
-                        Started = $false
-                        Message = $_.Exception.Message
-                    }
+                $ServerName, $InstanceName = ($SqlServer.Split('\'))
             }
+            else
+            {
+                $ServerName, $InstanceName = ($SqlServer.name.Split('\'))
+            }
+        
+            if ($InstanceName.Length -eq 0) { $InstanceName = "MSSqlServer" }
+
+            Write-Verbose "Attempting to Start SQL Service $InstanceName on $ServerName" 
+
+            If ($Service -eq 'SqlServer')
+            {
+                $DisplayName = "SQL Server ($InstanceName)"  
+            }
+
+            If ($Service -eq 'SqlAgent')
+            {
+                $DisplayName ="Sql Server Agent ($InstanceName)"
+            }
+
+            if($Service -eq 'FullText')
+            {
+                $DisplayName = "*Full*Text*($InstanceName)"        
+            }
+
+            $Scriptblock = {
+                $ServerName = $args[0]
+                $DisplayName = $args[1]
+                    
+                $wmisvc = $wmi.Services | Where-Object { $_.DisplayName -like $DisplayName }
+                Write-Verbose "Attempting to Start $DisplayName on $ServerName"
+                try{
+                    $timeout = new-timespan -Minutes 1
+                    $timer = [diagnostics.stopwatch]::StartNew()
+                    $wmisvc.start()
+                    while ($wmisvc.ServiceState -ne "Running" -and $timer.elapsed -lt $timeout)  
+                    {  
+                        $wmisvc.Refresh()  
+                    }
+                    if ($sw.elapsed -lt $timeout){
+                        [PSCustomObject]@{
+                            Started = $true
+                            Message = "Started $DisplayName on $ServerName successfully"
+                            }           
+                    }
+                    else {
+                        [PSCustomObject]@{
+                            Started = $False
+                            Message = "$DisplayName on $ServerName failed to start in a timely manner"
+                            }     
+                    }
+                }
+                catch
+                {
+                    [PSCustomObject]@{
+                            Started = $false
+                            Message = $_.Exception.Message
+                        }
+                }
+            }
+            Invoke-ManagedComputerCommand -ComputerName $ServerName -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $ServerName, $DisplayName
         }
-        Invoke-ManagedComputerCommand -ComputerName $ServerName -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $ServerName, $DisplayName
     }
+
 
     END
     {
