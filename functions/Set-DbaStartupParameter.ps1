@@ -102,7 +102,7 @@ Set-DbaStartupParameter -SqlServer server1\instance1 -SingleUser -TraceFlags 803
 This will appened Trace Flags 8032 and 8048 to the startup parameters
 
 .EXAMPLE
-Set-DbaStartupParameter -SqlServer sql2016 -SingleUser:$false -TraceFlags $null -TraceFlagsOverride
+Set-DbaStartupParameter -SqlServer sql2016 -SingleUser:$false -TraceFlagsOverride
 This will remove all trace flags and set SinguleUser to false
 	
 .EXAMPLE
