@@ -7,7 +7,7 @@ New-DbaAgentJob creates a new job
 New-DbaAgentJob makes is possible to create a job in the SQL Server Agent.
 It returns an array of the job(s) created  
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER SqlCredential
