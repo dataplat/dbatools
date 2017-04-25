@@ -102,6 +102,10 @@ Set-DbaStartupParameter -SqlServer server1\instance1 -SingleUser -TraceFlags 803
 This will appened Trace Flags 8032 and 8048 to the startup parameters
 
 .EXAMPLE
+Set-DbaStartupParameter -SqlServer sql2016 -SingleUser:$false -TraceFlags $null -TraceFlagsOverride
+This will remove all trace flags and set SinguleUser to false
+	
+.EXAMPLE
 Set-DbaStartupParameter -SqlServer server1\instance1 -SingleUser -TraceFlags 8032,8048 -TraceFlagsOverride
 
 This will set Trace Flags 8032 and 8048 to the startup parameters, removing any existing Trace Flags
@@ -130,7 +134,7 @@ After the work has been completed, we can push the original startup parameters b
 		[string]$MasterData,
 		[string]$MasterLog,
 		[string]$ErrorLog,
-		[string]$TraceFlags,
+		[string[]]$TraceFlags,
 		[switch]$CommandPromptStart,
 		[switch]$MinimalStart,
 		[int]$MemoryToReserve,
@@ -262,14 +266,16 @@ After the work has been completed, we can push the original startup parameters b
 			$newstartup.TraceFlags = ''
 		}
 		if ($TraceFlagsOverride -and 'TraceFlags' -in $PsBoundParameters.keys) {
-			$newstartup.TraceFlags = $TraceFlags
-			$ParameterString += (($TraceFlags.split(',') | ForEach-Object { "-T$_" }) -join ';') + ";"
+			if ($null -ne $TraceFlags -and '' -ne $TraceFlags) {
+				$newstartup.TraceFlags = $TraceFlags -join ','
+				$ParameterString += (($TraceFlags.split(',') | ForEach-Object { "-T$_" }) -join ';') + ";"
+			}
 		}
 		else {
 			if ('TraceFlags' -in $PsBoundParameters.keys) {
-				
+				if ($null -eq $TraceFlags) { $TraceFlags = '' }
 				$oldflags = @($currentstartup.TraceFlags) -split ',' | Where-Object { $_ -ne 'None' }
-				$newflags = @($TraceFlags) -split ','
+				$newflags = $TraceFlags
 				$newflags = $oldflags + $newflags
 				$newstartup.TraceFlags = ($oldFlags + $newflags | Sort-Object -Unique) -join ','
 			}
@@ -278,7 +284,7 @@ After the work has been completed, we can push the original startup parameters b
 			}
 			else {
 				$newstartup.TraceFlags = if ($currentstartup.TraceFlags -eq 'None') { }
-				else { $currentstartup.TraceFlags }
+				else { $currentstartup.TraceFlags -join ',' }
 			}
 			If ($newstartup.TraceFlags.Length -ne 0) {
 				$ParameterString += (($newstartup.TraceFlags.split(',') | ForEach-Object { "-T$_" }) -join ';') + ";"
