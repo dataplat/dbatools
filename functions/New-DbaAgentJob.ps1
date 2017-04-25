@@ -6,7 +6,7 @@ New-DbaAgentJob creates a new job
 
 .DESCRIPTION
 New-DbaAgentJob makes is possible to create a job in the SQL Server Agent.
-It returns an array of the job(s) created
+It returns an array of the job(s) created  
 
 .PARAMETER SqlServer
 SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -105,7 +105,6 @@ Doesn't create the job but shows what would happen.
 .EXAMPLE   
 "sql1", "sql2", "sql3" | New-DbaAgentJob -JobName 'Job1'
 Creates a job with the name "Job1" on multiple servers
-
 #>
 
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
