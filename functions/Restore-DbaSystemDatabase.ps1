@@ -296,7 +296,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                 Start-DbaService -SqlServer $server | out-null
                 Start-DbaService -SqlServer $server | out-null
                 $StartCount = 0
-                while (((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type Engine | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -ne 'running')
+                while ((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type Engine | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -ne 'running')
                 {
                     Start-DbaService -SqlServer $server | out-null
                     Start-Sleep -seconds 65
@@ -337,7 +337,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                     Write-Message -Level Verbose -Silent:$false -Message "Restoring msdb, setting Filter"
                     $filter += 'msdb'
                 }
-                if (((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type Engine | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -eq 'Running')
+                if ((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type Engine | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -eq 'Running')
                 {
                     Stop-DbaService -SqlServer $server | out-null
                 }
@@ -380,7 +380,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
         }
         finally
         {
-            if (((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type Engine | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -ne 'Running')
+            if ((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type Engine | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -ne 'Running')
             {
                 Start-DbaService -sqlserver $server -service SqlServer | out-null
             }
