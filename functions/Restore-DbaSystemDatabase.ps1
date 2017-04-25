@@ -35,6 +35,9 @@ Switch to indicate that the model database should be restored
 .PARAMETER msdb
 Switch to indicate that the msdb database should be restored
 
+.PARAMETER Silent
+Indicates if warning messages should be displayed.
+
 .NOTES
 Original Author: Stuart Moore (@napalmgram), stuart-moore.com
 
@@ -76,14 +79,15 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
         [DateTime]$RestoreTime = (Get-Date).addyears(1),
         [switch]$Master,
         [Switch]$Model,
-        [Switch]$Msdb
+        [Switch]$Msdb,
+        [Switch]$Silent
 	)
     BEGIN
     {
         #workarounds requested by Klaas until Fred finished his work:
         Function Stop-DbaService
         {
-                param ([parameter(ValueFromPipeline, Mandatory = $true)]
+                param (
                 [Alias("ServerInstance", "SqlInstance")]
                 [object[]]$SqlServer,
                 [PSCredential]$Credential,
@@ -164,7 +168,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
         }
         Function Start-DbaService
         {
-            param ([parameter(ValueFromPipeline, Mandatory = $true)]
+            param (
             [Alias("ServerInstance", "SqlInstance")]
             [object[]]$SqlServer,
             [PSCredential]$Credential,
@@ -247,7 +251,6 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
     END
     {
         $FunctionName =(Get-PSCallstack)[0].Command
-        [bool]$silent = $true
         $RestoreResult = @()
         #Needed while we don't have SqlConnection support for getservice
         if ($null -eq $SqlServer.name)
@@ -313,7 +316,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                 }
                 Write-Message -Level Verbose -Silent:$false -Message  "Beginning Restore of Master"
                 
-                $RestoreResult += Restore-DbaDatabase -SqlServer $server -Path $BackupPath -WithReplace -DatabaseFilter master -RestoreTime $RestoreTime -ReuseSourceFolderStructure -SystemRestore           
+             #   $RestoreResult += Restore-DbaDatabase -SqlServer $server -Path $BackupPath -WithReplace -DatabaseFilter master -RestoreTime $RestoreTime -ReuseSourceFolderStructure -SystemRestore           
                 if ($RestoreResult.RestoreComplete -eq $True)
                 {
                     Write-Message -Level Verbose -Silent:$false -Message "Restore of Master suceeded"   
@@ -360,7 +363,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                     $server.connectionContext.Connect()
                 }
                 Write-Message -Level SomewhatVerbose -Silent:$true -Message "Starting restore of $($filter -join ',')"
-                $RestoreResults = Restore-DbaDatabase -SqlServer $server -Path $BackupPath  -WithReplace -DatabaseFilter $filter -RestoreTime $RestoreTime -ReuseSourceFolderStructure -SystemRestore
+          #      $RestoreResults = Restore-DbaDatabase -SqlServer $server -Path $BackupPath  -WithReplace -DatabaseFilter $filter -RestoreTime $RestoreTime -ReuseSourceFolderStructure -SystemRestore
                 Foreach ($Database in $RestoreResults)
                 {
                     If ($Database.RestoreComplete)
