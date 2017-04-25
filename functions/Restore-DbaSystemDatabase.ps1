@@ -273,13 +273,13 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
             Stop-Function -message "Cannot connect to $sqlserver, stopping" -target $SqlServer -Silent:$false
         }
         $CurrentStartup = Get-DbaStartupParameter -SqlServer $server
-        if (((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type Agent | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -eq 'Running')
+        if ((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type Agent | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -eq 'Running')
         {
             Write-Message -Level Verbose -Message "SQL agent running, stopping it" -Silent:$true
             $RestartAgent = $True
             Stop-DbaService -sqlserver $server -service SqlAgent | out-null
         }
-        if (((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type FullText | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -eq 'Running')
+        if ((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type FullText | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -eq 'Running')
         {
             Write-Message -Level Verbose -Message "Full Test agent running, stopping it" -Silent:$true
             $RestartFullText = $True
@@ -343,7 +343,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                 }
                 Start-DbaService -SqlServer $server | out-null
                 $StartCount = 0
-                while (((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type Engine | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -ne 'running')
+                while ((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type Engine | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -ne 'running')
                 {
                     Start-DbaService -SqlServer $server | out-null
                     Start-Sleep -seconds 65
