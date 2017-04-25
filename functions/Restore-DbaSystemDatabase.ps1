@@ -147,7 +147,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                     }
                     else {
                         [PSCustomObject]@{
-                            Started = $False
+                            Stoped = $False
                             Message = "$DisplayName on $ServerName failed to stop in a timely manner"
                             }     
                     }
@@ -160,11 +160,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                         }
                 }
             }
-        
-            if ($pscmdlet.ShouldProcess("Stopping $Service on $SqlServer ")) {
-                Invoke-ManagedComputerCommand -ComputerName $ServerName -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $ServerName, $DisplayName
-            }
-
+            Invoke-ManagedComputerCommand -ComputerName $ServerName -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $ServerName, $DisplayName
         }
         Function Start-DbaService
         {
@@ -211,41 +207,37 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
             $DisplayName = $args[1]
                 
             $wmisvc = $wmi.Services | Where-Object { $_.DisplayName -like $DisplayName }
-            Write-Verbose "Attempting to Stop $DisplayName on $ServerName"
+            Write-Verbose "Attempting to Start $DisplayName on $ServerName"
             try{
                 $timeout = new-timespan -Minutes 1
                 $timer = [diagnostics.stopwatch]::StartNew()
-                $wmisvc.stop()
-                while ($wmisvc.ServiceState -ne "Stopped" -and $timer.elapsed -lt $timeout)  
+                $wmisvc.start()
+                while ($wmisvc.ServiceState -ne "Running" -and $timer.elapsed -lt $timeout)  
                 {  
                     $wmisvc.Refresh()  
                 }
                 if ($sw.elapsed -lt $timeout){
                     [PSCustomObject]@{
-                        Stopped = $true
-                        Message = "Stopped $DisplayName on $ServerName successfully"
+                        Started = $true
+                        Message = "Started $DisplayName on $ServerName successfully"
                         }           
                 }
                 else {
                     [PSCustomObject]@{
                         Started = $False
-                        Message = "$DisplayName on $ServerName failed to stop in a timely manner"
+                        Message = "$DisplayName on $ServerName failed to start in a timely manner"
                         }     
                 }
             }
             catch
             {
                 [PSCustomObject]@{
-                        Stopped = $false
+                        Started = $false
                         Message = $_.Exception.Message
                     }
             }
         }
-    
-        if ($pscmdlet.ShouldProcess("Stopping $Service on $SqlServer ")) {
-            Invoke-ManagedComputerCommand -ComputerName $ServerName -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $ServerName, $DisplayName
-        }
-        }
+        Invoke-ManagedComputerCommand -ComputerName $ServerName -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $ServerName, $DisplayName
     }
 
     END
