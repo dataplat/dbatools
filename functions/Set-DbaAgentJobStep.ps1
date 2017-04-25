@@ -176,14 +176,16 @@ Changes the database of the step in "Job1" with the name "Step1" to 'msdb' for m
         # Check if the job exists
         if(($Server.JobServer.Jobs).Name -notcontains $JobName)
         {
-            Write-Message -Message "Job '$($JobName)' doesn't exists on '$($SqlServer)'" -Warning -Silent $Silent
+            Stop-Function -Message "Job '$($JobName)' doesn't exists on '$($SqlServer)'" -Silent $Silent -Target $SqlServer 
+            return
         }
         else 
         {
             # Check if the job step exists
             if(($Server.JobServer.Jobs[$JobName].JobSteps).Name -notcontains $StepName)
             {
-                Write-Message -Message "Step '$($StepName)' doesn't exists on '$($SqlServer)'" -Warning -Silent $Silent
+                Stop-Function -Message "Step '$($StepName)' doesn't exists on '$($SqlServer)'" -Silent $Silent -Target $SqlServer 
+                return
             }
             else 
             {
@@ -265,7 +267,7 @@ Changes the database of the step in "Job1" with the name "Step1" to 'msdb' for m
                     }
                     else 
                     {
-                        Write-Message -Message ("The database user is not present in the database '$($DatabaseName)' on instance '$($SqlServer)'.") -Warning -Silent $Silent 
+                        Stop-Function -Message ("The database user is not present in the database '$($DatabaseName)' on instance '$($SqlServer)'.") -Silent $Silent -Target $SqlServer 
                         return
                     }
                 }
@@ -298,7 +300,7 @@ Changes the database of the step in "Job1" with the name "Step1" to 'msdb' for m
                     }
                     else 
                     {
-                        Write-Messagee -Message ("The proxy name '$($ProxyName)' doesn't exist on instance '$($SqlServer)'.") -Warning -Silent $Silent 
+                        Stop-Function -Message ("The proxy name '$($ProxyName)' doesn't exist on instance '$($SqlServer)'.") -Silent $Silent -Target $SqlServer 
                         return
                     }
                 }
