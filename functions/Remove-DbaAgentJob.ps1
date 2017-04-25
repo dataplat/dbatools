@@ -88,18 +88,18 @@ Removes the job from multiple servers using pipe line
 
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
-            Write-Message -Message "Attempting to connect to Sql Server.." -Level Output -Silent $Silent
+            Write-Message -Message "Attempting to connect to Sql Server.." -Level Output
             try {
                 $Server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
             }
             catch {
-                Stop-Function -Message "Could not connect to Sql Server instance" -Silent $Silent -InnerErrorRecord $_ -Target $instance 
+                Stop-Function -Message "Could not connect to Sql Server instance" -Target $instance 
                 return
             }
         
             # Check if the job exists
             if (($Server.JobServer.Jobs).Name -notcontains $JobName) {
-                Write-Message -Message "Job $JobName doesn't exists on $instance" -Warning -Silent $Silent
+                Write-Message -Message "Job $JobName doesn't exists on $instance" -Warning
             }
             else {   
                 # Get the job
@@ -107,35 +107,35 @@ Removes the job from multiple servers using pipe line
                     $Job = $Server.JobServer.Jobs[$JobName] 
                 }
                 catch {
-                    Stop-Function -Message ("Something went wrong creating the job. `n$($_.Exception.Message)") -Silent $Silent -InnerErrorRecord $_ -Target $instance
+                    Stop-Function -Message ("Something went wrong creating the job. `n$($_.Exception.Message)") -Target $instance
                     return
                 }
 
                 # Delete the history
                 if (-not $KeepHistory) {
-                    Write-Message -Message "Purging job history" -Level Verbose -Silent $Silent
+                    Write-Message -Message "Purging job history" -Level Verbose
                     $Job.PurgeHistory()
                 }
 
                 # Execute 
                 if ($PSCmdlet.ShouldProcess($instance, ("Removing the job on $instance"))) {
                     try {
-                        Write-Message -Message ("Removing the job") -Level Output -Silent $Silent
+                        Write-Message -Message ("Removing the job") -Level Output
 
                         if ($KeepUnusedSchedule) {
                             # Drop the job keeping the unused schedules
-                            Write-Message -Message "Removing job keeping unused schedules" -Level Verbose -Silent $Silent
+                            Write-Message -Message "Removing job keeping unused schedules" -Level Verbose
                             $Job.Drop($true) 
                         }
                         else {
                             # Drop the job removing the unused schedules
-                            Write-Message -Message "Removing job removing unused schedules" -Level Verbose -Silent $Silent
+                            Write-Message -Message "Removing job removing unused schedules" -Level Verbose
                             $Job.Drop($false) 
                         }
                     
                     }
                     catch {
-                        Write-Message -Message ("Something went wrong removing the job. `n$($_.Exception.Message)") -Level Output -Silent $Silent 
+                        Write-Message -Message ("Something went wrong removing the job. `n$($_.Exception.Message)") -Level Output 
                     }
                 }
             }
@@ -144,6 +144,6 @@ Removes the job from multiple servers using pipe line
     }
 
     end {
-        Write-Message -Message "Finished removing jobs(s)." -Level Output -Silent $Silent
+        Write-Message -Message "Finished removing jobs(s)." -Level Output
     }
 }
