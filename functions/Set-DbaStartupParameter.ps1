@@ -165,9 +165,10 @@ After the work has been completed, we can push the original startup parameters b
 		
 		#Get Current parameters:
 		$currentstartup = Get-DbaStartupParameter -SqlInstance $sqlinstance -Credential $Credential
-		$startingparamstring = $currentstartup.ParameterString
+		$originalparamstring = $currentstartup.ParameterString
 		
-		Write-Message -Level Output -Message "Starting startup string: $startingparamstring"
+		Write-Message -Level Output -Message "Original startup parameter string: $originalparamstring"
+		
 		if ('startUpconfig' -in $PsBoundParameters.keys) {
 			Write-Message -Level VeryVerbose -Message "StartupObject passed in"
 			$newstartup = $StartUpConfig
@@ -312,7 +313,7 @@ After the work has been completed, we can push the original startup parameters b
 		
 		$displayname = "SQL Server ($instancename)"
 		
-		if ($startingparamstring -eq "$ParameterString" -or "$startingparamstring;" -eq "$ParameterString") {
+		if ($originalparamstring -eq "$ParameterString" -or "$originalparamstring;" -eq "$ParameterString") {
 			Stop-Function -Message "New parameter string would be the same as the old parameter string. Nothing to do." -Target $ParameterString
 			return
 		}
@@ -339,12 +340,12 @@ After the work has been completed, we can push the original startup parameters b
 				if ($credential) {
 					$response = Invoke-ManagedComputerCommand -Server $instance -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString
 					$output = Get-DbaStartupParameter -SqlInstance $sqlinstance -Credential $Credential
-					Add-Member -InputObject $output -MemberType NoteProperty -Name StartingParameterString -Value $startingparamstring
+					Add-Member -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
 				}
 				else {
 					$response = Invoke-ManagedComputerCommand -Server $instance -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString
 					$output = Get-DbaStartupParameter -SqlInstance $sqlinstance
-					Add-Member -InputObject $output -MemberType NoteProperty -Name StartingParameterString -Value $startingparamstring
+					Add-Member -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
 				}
 				
 				$output
