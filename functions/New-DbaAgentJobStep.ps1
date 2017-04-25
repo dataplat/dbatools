@@ -116,11 +116,31 @@ Create a step in "Job1" with the name "Step1" where the database will the "msdb"
         [ValidateSet('QuitWithSuccess', 'QuitWithFailure', 'GoToNextStep', 'GoToStep')]
         [string]$OnSuccessAction = 'QuitWithSuccess',
         [Parameter(Mandatory = $false)]
+        [ValidateScript({
+            if(($OnSuccessAction -ne 'GoToStep') -and ($_ -ge 1))
+            {
+                Throw "Parameter OnSuccessStepId can only be used with OnSuccessAction 'GoToStep'."
+            }
+            else 
+            {
+                $true    
+            }
+        })]
         [int]$OnSuccessStepId = 0,
         [Parameter(Mandatory = $false)]
         [ValidateSet('QuitWithSuccess', 'QuitWithFailure', 'GoToNextStep', 'GoToStep')]
         [string]$OnFailAction = 'QuitWithFailure',
         [Parameter(Mandatory = $false)]
+        [ValidateScript({
+            if(($OnFailAction -ne 'GoToStep') -and ($_ -ge 1))
+            {
+                Throw "Parameter OnFailStepId can only be used with OnFailAction 'GoToStep'."
+            }
+            else 
+            {
+                $true    
+            }
+        })]
         [int]$OnFailStepId = 0,
         [Parameter(Mandatory = $false)]
         [string]$DatabaseName = 'master',
@@ -136,23 +156,6 @@ Create a step in "Job1" with the name "Step1" where the database will the "msdb"
         [string]$ProxyName,
         [switch]$Silent
     )
-
-    BEGIN
-    {
-        # Check the values for the success step id
-        if(($OnSuccessStepId -ge 1) -and ($OnSuccessAction -ne 'GoToStep'))
-        {
-            Stop-Function -Message "Parameter OnSuccessStepId can only be used with OnSuccessAction 4 or 'StepId'." -Silent $Silent -InnerErrorRecord $_ -Target $SqlServer 
-            return
-        }
-
-        # Check the values for the failure step id
-        if(($OnFailStepId -ge 1) -and ($OnFailAction -ne 'GoToStep'))
-        {
-            Stop-Function -Message "Parameter OnFailStepId can only be used with OnFailAction 4 or 'StepId'." -Silent $Silent -InnerErrorRecord $_ -Target $SqlServer 
-            return
-        }
-    }
 
     PROCESS
     {
