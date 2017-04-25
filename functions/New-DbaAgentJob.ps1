@@ -145,7 +145,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 		[object]$PageLevel,
 		[Parameter(Mandatory = $false)]
 		[ValidateScript({
-				if (($EmailLevel -in 1, "OnSuccess", 2, "OnFailure", 3, "Always") -and ($_.Length -ge 1)) {
+				if (($EmailLevel -in 1, "OnSuccess", 2, "OnFailure", 3, "Always") -and ($_)) {
 					$true
 				}
 				else {
@@ -155,7 +155,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 		[string]$EmailOperatorName,
 		[Parameter(Mandatory = $false)]
 		[ValidateScript({
-				if (($NetsendLevel -in 1, "OnSuccess", 2, "OnFailure", 3, "Always") -and ($_.Length -ge 1)) {
+				if (($NetsendLevel -in 1, "OnSuccess", 2, "OnFailure", 3, "Always") -and ($_)) {
 					$true
 				}
 				else {
@@ -165,7 +165,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 		[string]$NetsendOperatorName,
 		[Parameter(Mandatory = $false)]
 		[ValidateScript({
-				if (($PageLevel -in 1, "OnSuccess", 2, "OnFailure", 3, "Always") -and ($_.Length -ge 1)) {
+				if (($PageLevel -in 1, "OnSuccess", 2, "OnFailure", 3, "Always") -and ($_)) {
 					$true
 				}
 				else {
