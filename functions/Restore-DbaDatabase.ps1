@@ -367,7 +367,8 @@ c:\DataFiles and all the log files into c:\LogFiles
 								Write-Verbose "$FunctionName - adding simple file"
 								if (Test-SqlPath -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential)
 								{
-									$BackupFiles += $p | select  @{Name="FileName";Expression={"$_"}}, @{Name="FullName";Expression={"$_"}} -ExcludeProperty length
+									$p = $p | Select-Object *, @{Name="FullName";Expression={$p}}
+									$BackupFiles += $p
 								}
 								else
 								{
@@ -389,6 +390,7 @@ c:\DataFiles and all the log files into c:\LogFiles
 							{
 								if (Test-SqlPath -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential)
 								{
+									$p = $p | Select-Object *, @{Name="FullName";Expression={$p}}
 									$BackupFiles += $p
 								}
 								else
