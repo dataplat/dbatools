@@ -105,9 +105,9 @@ Set-DbaStartupParameter -SqlInstance sql2016 -IncreasedExtents
 Will configure the SQL Instance sql2016 to IncreasedExtents = True (-E)
 
 .EXAMPLE 
-Set-DbaStartupParameter -SqlInstance sql2016  -IncreasedExtents:$false
+Set-DbaStartupParameter -SqlInstance sql2016  -IncreasedExtents:$false -WhatIf
 
-Will configure the SQL Instance sql2016 to IncreasedExtents = False (no -E)
+Shows what would happen if you attempted to configure the SQL Instance sql2016 to IncreasedExtents = False (no -E)
 
 .EXAMPLE
 Set-DbaStartupParameter -SqlServer server1\instance1 -SingleUser -TraceFlags 8032,8048
