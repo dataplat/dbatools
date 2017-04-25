@@ -81,9 +81,12 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/New-DbaAgentJobStep
 
 .EXAMPLE   
-
+New-DbaAgentJobStep -SqlServer 'sql' -JobName 'Job1' -StepName 'Step1'
+Create a step in "Job1" with the name "Step1" with the default subsystem TransactSql.
 
 .EXAMPLE   
+New-DbaAgentJobStep -SqlServer 'sql' -JobName 'Job1' -StepName 'Step1' -Database 'msdb'
+Create a step in "Job1" with the name "Step1" where the database will the "msdb"
 
 #>
 
