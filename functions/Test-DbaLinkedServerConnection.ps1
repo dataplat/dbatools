@@ -13,6 +13,9 @@ The SQL Server that you're connecting to.
 .PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user
 
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
+	
 .NOTES
 Author: Thomas LaRock ( https://thomaslarock.com )
 	
@@ -46,53 +49,69 @@ $servers | Test-DbaLinkedServerConnection -SqlCredential (Get-Credential sqladmi
 
 Test all Linked Servers for the SQL Server instances sql2016, sql2014 and sql2012 using SQL login credentials
 	
+.EXAMPLE
+$servers | Get-DbaLinkedServer | Test-DbaLinkedServerConnection
+
+Test all Linked Servers for the SQL Server instances sql2016, sql2014 and sql2012
+
 #>
 	[CmdletBinding()]
 	param (
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[Parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[switch]$Silent
 	)
-	process
-	{
-		foreach ($Instance in $SqlInstance)
-		{
-			try
-			{
-				Write-Verbose "Connecting to $Instance"
-				$server = Connect-SqlServer -SqlServer $Instance -SqlCredential $sqlcredential
-			}
-			catch
-			{
-				Write-Warning "Failed to connect to: $Instance"
+	
+	begin {
+		$LinkedServerCollection = @()
+	}
+	
+	process {
+		foreach ($Instance in $SqlInstance) {
+			
+			# This is a very ugly workaround until we finish the dbaserver custom parameter type.
+			# Don't judge! ;) - Chrissy
+			if ($Instance.GetType().Name -eq 'LinkedServer') {
+				$LinkedServerCollection += $Instance
 				continue
 			}
 			
-			foreach ($ls in $server.LinkedServers)
-			{
-				try
-				{
-					$null = $ls.TestConnection()
-					$result = "Success"
-					$connectivity = $true
-				}
-				catch
-				{
-					$result = $_.Exception.InnerException
-					$connectivity = $false
-				}
-				
-				[PSCustomObject]@{
-					ComputerName = $server.NetName
-					InstanceName = $server.ServiceName
-					SqlInstance = $server.DomainInstanceName
-					LinkedServerName = $ls.Name
-					RemoteServer = $ls.DataSource
-					Connectivity = $connectivity
-					Result = $result
-				} | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
+			try {
+				Write-Message -Level Verbose -Message "Connecting to $instance"
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
 			}
+			catch {
+				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
+			}
+			
+			$LinkedServerCollection += $server.LinkedServers
+		}
+	}
+	
+	end {
+		foreach ($ls in $LinkedServerCollection) {
+			Write-Message -Level Verbose -Message "Testing linked server $($ls.name) on server $($ls.parent.name)"
+			try {
+				$null = $ls.TestConnection()
+				$result = "Success"
+				$connectivity = $true
+			}
+			catch {
+				$result = $_.Exception.InnerException.InnerException.Message
+				$connectivity = $false
+			}
+			
+			[PSCustomObject]@{
+				ComputerName = $ls.parent.NetName
+				InstanceName = $ls.parent.ServiceName
+				SqlInstance = $ls.parent.DomainInstanceName
+				LinkedServerName = $ls.Name
+				RemoteServer = $ls.DataSource
+				Connectivity = $connectivity
+				Result = $result
+			} | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
 		}
 	}
 }
