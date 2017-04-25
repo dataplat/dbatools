@@ -188,28 +188,28 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
 
     begin {
         # Check of the event log level is of type string and set the integer value
-        if ($EventLogLevel -notin 1, 2, 3) {
-            $EventLogLevel = switch ($EventLogLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } default {0} }
+        if ($EventLogLevel -notin 0, 1, 2, 3) {
+            $EventLogLevel = switch ($EventLogLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
         }
 		
         # Check of the email level is of type string and set the integer value
-        if ($EmailLevel -notin 1, 2, 3) {
-            $EmailLevel = switch ($EmailLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } default {0} }
+        if ($EmailLevel -notin 0, 1, 2, 3) {
+            $EmailLevel = switch ($EmailLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
         }
 		
         # Check of the net send level is of type string and set the integer value
-        if ($NetsendLevel -notin 1, 2, 3) {
-            $NetsendLevel = switch ($NetsendLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } default {0} }
+        if ($NetsendLevel -notin 0, 1, 2, 3) {
+            $NetsendLevel = switch ($NetsendLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
         }
 		
         # Check of the page level is of type string and set the integer value
-        if ($PageLevel -notin 1, 2, 3) {
-            $PageLevel = switch ($PageLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } default {0} }
+        if ($PageLevel -notin 0, 1, 2, 3) {
+            $PageLevel = switch ($PageLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
         }
 		
         # Check of the delete level is of type string and set the integer value
-        if ($DeleteLevel -notin 1, 2, 3) {
-            $DeleteLevel = switch ($DeleteLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } default {0} }
+        if ($DeleteLevel -notin 0, 1, 2, 3) {
+            $DeleteLevel = switch ($DeleteLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
         }
     }
 
