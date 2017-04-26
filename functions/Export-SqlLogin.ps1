@@ -17,10 +17,10 @@ The file to write to.
 
 .PARAMETER NoClobber
 Do not overwrite file
-	
+
 .PARAMETER Append
 Append to file
-	
+
 .PARAMETER Exclude
 Excludes specified logins. This list is auto-populated for tab completion.
 
@@ -35,10 +35,10 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER NoJobs
-Doesnot export the Jobs
+Does not export the Jobs
 
 .PARAMETER NoDatabases
-oes not export the databases
+Does not export the databases
 
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
@@ -149,6 +149,7 @@ https://dbatools.io/Export-SqlLogin
 		# Convert from RuntimeDefinedParameter object to regular array
 		$Logins = $psboundparameters.Logins
 		$Exclude = $psboundparameters.Exclude
+		$DatabasesFilter = $psboundparameters.Databases
 		
 		$outsql = @()
 		
@@ -347,6 +348,9 @@ CREATE LOGIN [$username] FROM WINDOWS WITH DEFAULT_DATABASE = [$defaultdb], DEFA
 				foreach ($db in $databases)
 				{
 					$dbname = $db.dbname
+					if ($DatabasesFilter.count -gt 0 -and $dbname -notin $DatabasesFilter) {
+						continue
+					}
 					$sourcedb = $sourceserver.databases[$dbname]
 					$dbusername = $db.username
 					$dblogin = $db.loginName
