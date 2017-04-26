@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.948'
+	ModuleVersion = '0.8.943'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -249,13 +249,21 @@
 		'Get-DbaDatabaseFile',
 		'Read-DbaTransactionLog',
 		'Get-DbaTable',
-		'Invoke-DbaDatabaseShrink',
-		'Get-DbaEstimatedCompletionTime',
-		'Export-DbaScript',
-		'New-DbaScriptingOption',
-		'Get-DbaLogin'
-		'Get-DbaLinkedServer',
-		'Set-DbaStartupParameter'
+		'New-DbaAgentJob',
+		'Set-DbaAgentJob',
+		'Remove-DbaAgentJob',
+		'New-DbaAgentJobStep',
+		'Set-DbaAgentJobStep',
+		'Remove-DbaAgentJobStep',
+		'New-DbaAgentSchedule',
+		'Set-DbaAgentSchedule',
+		'Remove-DbaAgentJobSchedule',
+		'Invoke-DbaLogShipping',
+		'New-DbaLogShippingPrimaryDatabase',
+		'New-DbaLogShippingPrimarySecondary',
+		'New-DbaLogShippingSecondaryPrimary',
+		'New-DbaLogShippingSecondaryDatabase'
+		#'Get-DbaLinkedServer',
 		#'Invoke-DbaLogShippingRecovery',
 	)
 	
