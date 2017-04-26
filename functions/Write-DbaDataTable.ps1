@@ -118,26 +118,46 @@ This is a good example of the type conversion in action. All process properties 
 #>	
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
 	param (
-		[Parameter(Mandatory = $true)]
+		[Parameter(Position = 0,
+                   Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
+        [ValidateNotNull()]
 		[object]$SqlServer,
+
+        [Parameter(Position = 1)]
+        [ValidateNotNull()]
 		[Alias("Credential")]
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[Parameter(ValueFromPipeline = $true)]
+        
+		[Parameter(Position = 2,
+                   Mandatory = $true,
+                   ValueFromPipeline = $true)]
 		[Alias("DataTable")]
+        [ValidateNotNull()]
 		[object]$InputObject,
-		[string]$Schema = 'dbo',
-		[Parameter(Mandatory = $true)]
+        
+        [Parameter(Position = 3,
+                   Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
 		[string]$Table,
+
+        [Parameter(Position = 4)]
+        [ValidateNotNullOrEmpty()]
+		[string]$Schema = 'dbo',
+        
+        [ValidateNotNull()]
 		[int]$BatchSize = 50000,
+
+        [ValidateNotNull()]
 		[int]$NotifyAfter = 5000,
+
+        [switch]$AutoCreateTable,
 		[switch]$NoTableLock,
 		[switch]$CheckConstraints,
 		[switch]$FireTriggers,
 		[switch]$KeepIdentity,
 		[switch]$KeepNulls,
 		[switch]$Truncate,
-		[switch]$AutoCreateTable,
 		[switch]$Silent
 	)
 	
