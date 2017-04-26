@@ -139,7 +139,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
         [string]$OwnerLoginName,
         [Parameter(Mandatory = $false)]
         [ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
-        [object]$EventLogLevel,
+        [object]$EventLogLevel = $null,
         [Parameter(Mandatory = $false)]
         [ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
         [object]$EmailLevel,
@@ -164,44 +164,41 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
 
     begin {
         # Check of the event log level is of type string and set the integer value
-        if ($EventLogLevel -notin 0, 1, 2, 3) {
+        if (($EventLogLevel -notin 0, 1, 2, 3) -and ($EventLogLevel -ne $null)) {
             $EventLogLevel = switch ($EventLogLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
         }
 		
         # Check of the email level is of type string and set the integer value
-        if ($EmailLevel -notin 0, 1, 2, 3) {
+        if (($EmailLevel -notin 0, 1, 2, 3) -and ($EmailLevel -ne $null)) {
             $EmailLevel = switch ($EmailLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
         }
 		
         # Check of the net send level is of type string and set the integer value
-        if ($NetsendLevel -notin 0, 1, 2, 3) {
+        if (($NetsendLevel -notin 0, 1, 2, 3) -and ($NetsendLevel -ne $null)) {
             $NetsendLevel = switch ($NetsendLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
         }
 		
         # Check of the page level is of type string and set the integer value
-        if ($PageLevel -notin 0, 1, 2, 3) {
+        if (($PageLevel -notin 0, 1, 2, 3) -and ($PageLevel -ne $null)) {
             $PageLevel = switch ($PageLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
         }
 		
         # Check of the delete level is of type string and set the integer value
-        if ($DeleteLevel -notin 0, 1, 2, 3) {
+        if (($DeleteLevel -notin 0, 1, 2, 3) -and ($DeleteLevel -ne $null)) {
             $DeleteLevel = switch ($DeleteLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
         }
 
         # Check the e-mail operator name
-		if (($EmailLevel -ne 0) -and (-not $EmailOperatorName)) {
 			Stop-Function -Message "Please set the e-mail operator when the e-mail level parameter is set." -Target $sqlinstance
             return
 		}
 
 		# Check the e-mail operator name
-		if (($NetsendLevel -ne 0) -and (-not $NetsendOperatorName)) {
 			Stop-Function -Message "Please set the netsend operator when the netsend level parameter is set." -Target $sqlinstance
             return
 		}
 
 		# Check the e-mail operator name
-		if (($PageLevel -ne 0) -and (-not $PageOperatorName)) {
 			Stop-Function -Message "Please set the page operator when the page level parameter is set." -Target $sqlinstance
             return
 		}
