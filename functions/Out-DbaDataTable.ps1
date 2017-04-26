@@ -55,72 +55,79 @@ Similar to above but $dbalist gets piped in
 	
 	BEGIN
 	{
-		function Get-Type
+		function ConvertType
 		{
-			param ($type)
+			param ($type, $value, $timespantype = 'TotalMilliseconds')
 			
 			$types = @(
-                'Int32',    
-                'UInt32',   
-                'Int16',    
-                'UInt16',   
-                'Int64',    
-                'UInt64',   
-                'Decimal',  
-                'Single',   
-                'Double',   
-                'Byte',     
-                'SByte',    
+                'Int32',
+                'UInt32',
+                'Int16',
+                'UInt16',
+                'Int64',
+                'UInt64',
+                'Decimal',
+                'Single',
+                'Double',
+                'Byte',
+                'SByte',
                 'Boolean',
                 'Bool',
-                'String',   
+                'String',
                 'DateTime',
                 'Guid',
                 'Char',
-                'int',  
+                'int',
                 'long',
-                'System.Int32',    
-                'System.UInt32',   
-                'System.Int16',    
-                'System.UInt16',   
-                'System.Int64',    
-                'System.UInt64',   
-                'System.Decimal',  
-                'System.Single',   
-                'System.Double',   
-                'System.Byte',     
-                'System.SByte',    
+                'System.Int32',
+                'System.UInt32',
+                'System.Int16',
+                'System.UInt16',
+                'System.Int64',
+                'System.UInt64',
+                'System.Decimal',
+                'System.Single',
+                'System.Double',
+                'System.Byte',
+                'System.SByte',
                 'System.Boolean',
-                'System.String',   
+                'System.String',
                 'System.DateTime',
                 'System.Guid',
                 'System.Char'
                 )
 
-            # some types require conversion to be stored in a database
-            $specialtypes = @{
-                'System.TimeSpan' = 'System.String'
-                'TimeSpan'        = 'System.String'
-            }
-
-            if ($specialtypes.keys -contains $type) 
+            # Special types need to be converted in some way.
+            # This attempt is to convert timespan into something that works in a table
+            # I couldn't decide on what to convert it to so the user can decide
+            # If the parameter is not used, TotalMilliseconds will be used as default
+            if ($type -in 'System.TimeSpan', 'TimeSpan') 
             {
                 # Debug, remove when done
-                #Write-Verbose "Found match: $type (special)"
-                return $specialtypes[$type]
+                Write-Verbose "Found match: $type (special)"
+                if ($timespantype -eq 'String') 
+                {
+                    # Debug, remove when done
+                    Write-Verbose "Converting TimeSpan to string"
+                    $value = $value.ToString()
+                    $type = 'System.String'
+                }
+                else 
+                {
+                    # Debug, remove when done
+                    Write-Verbose "Converting TimeSpan to $timespantype (UInt64)"
+                    $value = $value.$timespantype
+                    $type = 'System.UInt64'
+                }
             }
-            elseif ($types -contains $type)
-			{
+            elseif ($types -notcontains $type) 
+            {
                 # Debug, remove when done
-                #Write-Verbose "Found match: $type"
-				return $type
-			}
-			else
-			{
-                # Debug, remove when done
-                #Write-Warning "Did not find match: $type"
-				return 'System.String'
-			}
+                Write-Verbose "Did not find match: $type"
+                $type = 'System.String'
+            }
+            
+            return @{ type=$type; Value=$value }
 		}
 	
 		$datatable = New-Object System.Data.DataTable
@@ -157,11 +164,14 @@ Similar to above but $dbalist gets piped in
 					#{
 						if ($property.value -isnot [System.DBNull])
 						{
+                            $tempobj = @{}
                             # Check if property is a ScriptProperty, then resolve it before checking type
                             If ($property.MemberType -eq 'ScriptProperty') {
-                                $type = Get-Type ($object.($property.Name).GetType().ToString())
+                                # This need to be written better
+                                # It works, but it's ugly
+                                $type, $property.value = ConvertType -type ($object.($property.Name).GetType().ToString()) -value $property.value -timespantype TotalMilliseconds
                             } else {
-                                $type = Get-Type $property.TypeNameOfValue
+                                $type, $property.value = ConvertType -type $property.TypeNameOfValue -value $property.value -timespantype TotalMilliseconds
                             }
                             
 							$column.DataType = [System.Type]::GetType($type)
