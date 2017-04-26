@@ -84,7 +84,13 @@ Authenticates to sqlserver2014a using SQL Authentication. Exports all logins exc
 .EXAMPLE
 Export-SqlLogin -SqlServer sqlserver2014a -Login realcajun, netnerds -FilePath C:\temp\logins.sql
 
-Exports ONLY logins netnerds and realcajun fron sqlsever2014a to the file  C:\temp\logins.sql
+Exports ONLY logins netnerds and realcajun from sqlsever2014a to the file  C:\temp\logins.sql
+
+.EXAMPLE
+Export-SqlLogin -SqlServer sqlserver2014a -Login realcajun, netnerds -Databases HR, Accounting
+
+Exports ONLY logins netnerds and realcajun from sqlsever2014a with the permissions on databases HR and Accounting
+
 
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
