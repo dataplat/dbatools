@@ -122,27 +122,11 @@ Changes the database of the step in "Job1" with the name "Step1" to 'msdb' for m
         [ValidateSet('QuitWithSuccess', 'QuitWithFailure', 'GoToNextStep', 'GoToStep')]
         [string]$OnSuccessAction,
         [Parameter(Mandatory = $false)]
-        [ValidateScript( {
-                if (($OnSuccessAction -ne 'GoToStep') -and ($_ -ge 1)) {
-                    Throw "Parameter OnSuccessStepId can only be used with OnSuccessAction 'GoToStep'."
-                }
-                else {
-                    $true    
-                }
-            })]
         [int]$OnSuccessStepId,
         [Parameter(Mandatory = $false)]
         [ValidateSet('QuitWithSuccess', 'QuitWithFailure', 'GoToNextStep', 'GoToStep')]
         [string]$OnFailAction,
         [Parameter(Mandatory = $false)]
-        [ValidateScript( {
-                if (($OnFailAction -ne 'GoToStep') -and ($_ -ge 1)) {
-                    Throw "Parameter OnFailStepId can only be used with OnFailAction 'GoToStep'."
-                }
-                else {
-                    $true    
-                }
-            })]
         [int]$OnFailStepId,
         [Parameter(Mandatory = $false)]
         [string]$DatabaseName,
@@ -158,6 +142,20 @@ Changes the database of the step in "Job1" with the name "Step1" to 'msdb' for m
         [string]$ProxyName,
         [switch]$Silent
     )
+
+    begin{
+        # Check the parameter on success step id
+        if (($OnSuccessAction -ne 'GoToStep') -and ($OnSuccessStepId -ge 1)) {
+            Stop-Function -Message "Parameter OnSuccessStepId can only be used with OnSuccessAction 'GoToStep'."  -Target $instance 
+            return
+        }
+
+        # Check the parameter on success step id
+        if (($OnFailAction -ne 'GoToStep') -and ($OnFailStepId -ge 1)) {
+            Stop-Function -Message "Parameter OnFailStepId can only be used with OnFailAction 'GoToStep'."  -Target $instance 
+            return
+        }
+    }
 
     process {
         foreach ($instance in $sqlinstance) {
