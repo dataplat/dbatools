@@ -97,12 +97,15 @@ Similar to above but $dbalist gets piped in
                 'System.Char'
                 )
 
+            $special = $false
+
             # Special types need to be converted in some way.
             # This attempt is to convert timespan into something that works in a table
             # I couldn't decide on what to convert it to so the user can decide
             # If the parameter is not used, TotalMilliseconds will be used as default
             if ($type -in 'System.TimeSpan', 'TimeSpan') 
             {
+                $special = $true
                 # Debug, remove when done
                 Write-Verbose "Found match: $type (special)"
                 if ($timespantype -eq 'String') 
@@ -115,9 +118,9 @@ Similar to above but $dbalist gets piped in
                 else 
                 {
                     # Debug, remove when done
-                    Write-Verbose "Converting TimeSpan to $timespantype (UInt64)"
+                    Write-Verbose "Converting TimeSpan to $timespantype (Int64)"
                     $value = $value.$timespantype
-                    $type = 'System.UInt64'
+                    $type = 'System.Int64'
                 }
             }
             elseif ($types -notcontains $type) 
@@ -127,7 +130,7 @@ Similar to above but $dbalist gets piped in
                 $type = 'System.String'
             }
             
-            return @{ type=$type; Value=$value }
+            return @{ type=$type; Value=$value; Special=$special}
 		}
 	
 		$datatable = New-Object System.Data.DataTable
@@ -153,6 +156,8 @@ Similar to above but $dbalist gets piped in
 			$datarow = $datatable.NewRow()
 			foreach ($property in $object.PsObject.get_properties())
 			{
+                $converted = @{}
+
 				if ($datatable.Rows.Count -eq 0)
 				{
 					$column = New-Object System.Data.DataColumn
@@ -164,15 +169,17 @@ Similar to above but $dbalist gets piped in
 					#{
 						if ($property.value -isnot [System.DBNull])
 						{
-                            $tempobj = @{}
+                            
                             # Check if property is a ScriptProperty, then resolve it before checking type
                             If ($property.MemberType -eq 'ScriptProperty') {
                                 # This need to be written better
                                 # It works, but it's ugly
-                                $type, $property.value = ConvertType -type ($object.($property.Name).GetType().ToString()) -value $property.value -timespantype TotalMilliseconds
+                                $converted = ConvertType -type ($object.($property.Name).GetType().ToString()) -value $property.value -timespantype TotalMilliseconds
                             } else {
-                                $type, $property.value = ConvertType -type $property.TypeNameOfValue -value $property.value -timespantype TotalMilliseconds
+                                $converted = ConvertType -type $property.TypeNameOfValue -value $property.value -timespantype TotalMilliseconds
                             }
+
+                            $type = $converted.type
                             
 							$column.DataType = [System.Type]::GetType($type)
 						}
@@ -188,7 +195,13 @@ Similar to above but $dbalist gets piped in
 					}
 					else
 					{
-						$datarow.Item($property.Name) = $property.value
+                        if ($converted.special) {
+						    $datarow.Item($property.Name) = $converted.value
+                        }
+                        else
+                        {
+                            $datarow.Item($property.Name) = $property.value
+                        }
 					}
 				}
 			}
