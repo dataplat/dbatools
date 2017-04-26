@@ -150,34 +150,10 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
         [ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
         [object]$PageLevel,
         [Parameter(Mandatory = $false)]
-        [ValidateScript( {
-                if (($EmailLevel -in 1, "OnSuccess", 2, "OnFailure", 3, "Always") -and ($_)) {
-                    $true
-                }
-                else {
-                    Throw "Please set the e-mail operator when the e-mail level parameter is set."
-                }
-            })]
         [string]$EmailOperatorName,
         [Parameter(Mandatory = $false)]
-        [ValidateScript( {
-                if (($NetsendLevel -in 1, "OnSuccess", 2, "OnFailure", 3, "Always") -and ($_)) {
-                    $true
-                }
-                else {
-                    Throw "Please set the netsend operator when the netsend level parameter is set."
-                }
-            })]
         [string]$NetsendOperatorName,
         [Parameter(Mandatory = $false)]
-        [ValidateScript( {
-                if (($PageLevel -in 1, "OnSuccess", 2, "OnFailure", 3, "Always") -and ($_)) {
-                    $true
-                }
-                else {
-                    Throw "Please set the page operator when the page level parameter is set."
-                }
-            })]
         [string]$PageOperatorName,
         [Parameter(Mandatory = $false)]
         [ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
@@ -211,6 +187,24 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
         if ($DeleteLevel -notin 0, 1, 2, 3) {
             $DeleteLevel = switch ($DeleteLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
         }
+
+        # Check the e-mail operator name
+		if (($EmailLevel -ne 0) -and (-not $EmailOperatorName)) {
+			Stop-Function -Message "Please set the e-mail operator when the e-mail level parameter is set." -Target $sqlinstance
+            return
+		}
+
+		# Check the e-mail operator name
+		if (($NetsendLevel -ne 0) -and (-not $NetsendOperatorName)) {
+			Stop-Function -Message "Please set the netsend operator when the netsend level parameter is set." -Target $sqlinstance
+            return
+		}
+
+		# Check the e-mail operator name
+		if (($PageLevel -ne 0) -and (-not $PageOperatorName)) {
+			Stop-Function -Message "Please set the page operator when the page level parameter is set." -Target $sqlinstance
+            return
+		}
     }
 
     process {
