@@ -186,19 +186,19 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 		}
 
 		# Check the e-mail operator name
-		if (($EmailLevel -ne 0) -and (-not $EmailOperatorName)) {
+		if (($EmailLevel -ge 1) -and (-not $EmailOperatorName)) {
 			Stop-Function -Message "Please set the e-mail operator when the e-mail level parameter is set." -Target $sqlinstance
 			return
 		}
 
 		# Check the e-mail operator name
-		if (($NetsendLevel -ne 0) -and (-not $NetsendOperatorName)) {
+		if (($NetsendLevel -ge 1) -and (-not $NetsendOperatorName)) {
 			Stop-Function -Message "Please set the netsend operator when the netsend level parameter is set." -Target $sqlinstance
 			return
 		}
 
 		# Check the e-mail operator name
-		if (($PageLevel -ne 0) -and (-not $PageOperatorName)) {
+		if (($PageLevel -ge 1) -and (-not $PageOperatorName)) {
 			Stop-Function -Message "Please set the page operator when the page level parameter is set." -Target $sqlinstance
 			return
 		}
