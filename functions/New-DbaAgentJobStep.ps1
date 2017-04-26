@@ -1,5 +1,5 @@
 function New-DbaAgentJobStep {
-    <#
+<#
 .SYNOPSIS 
 New-DbaAgentJobStep creates a new job step for a job
 
@@ -127,27 +127,11 @@ Create a step in "Job1" with the name "Step1" where the database will the "msdb"
         [ValidateSet('QuitWithSuccess', 'QuitWithFailure', 'GoToNextStep', 'GoToStep')]
         [string]$OnSuccessAction = 'QuitWithSuccess',
         [Parameter(Mandatory = $false)]
-        [ValidateScript( {
-                if (($OnSuccessAction -ne 'GoToStep') -and ($_ -ge 1)) {
-                    Throw "Parameter OnSuccessStepId can only be used with OnSuccessAction 'GoToStep'."
-                }
-                else {
-                    $true    
-                }
-            })]
         [int]$OnSuccessStepId = 0,
         [Parameter(Mandatory = $false)]
         [ValidateSet('QuitWithSuccess', 'QuitWithFailure', 'GoToNextStep', 'GoToStep')]
         [string]$OnFailAction = 'QuitWithFailure',
         [Parameter(Mandatory = $false)]
-        [ValidateScript( {
-                if (($OnFailAction -ne 'GoToStep') -and ($_ -ge 1)) {
-                    Throw "Parameter OnFailStepId can only be used with OnFailAction 'GoToStep'."
-                }
-                else {
-                    $true    
-                }
-            })]
         [int]$OnFailStepId,
         [Parameter(Mandatory = $false)]
         [string]$DatabaseName,
@@ -164,7 +148,22 @@ Create a step in "Job1" with the name "Step1" where the database will the "msdb"
         [switch]$Silent
     )
 
+    begin{
+        # Check the parameter on success step id
+        if (($OnSuccessAction -ne 'GoToStep') -and ($OnSuccessStepId -ge 1)) {
+            Stop-Function -Message "Parameter OnSuccessStepId can only be used with OnSuccessAction 'GoToStep'."  -Target $instance 
+            return
+        }
+
+        # Check the parameter on success step id
+        if (($OnFailAction -ne 'GoToStep') -and ($OnFailStepId -ge 1)) {
+            Stop-Function -Message "Parameter OnFailStepId can only be used with OnFailAction 'GoToStep'."  -Target $instance 
+            return
+        }
+    }
+
     process {
+        
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
             Write-Message -Message "Attempting to connect to Sql Server.." -Level Output 
