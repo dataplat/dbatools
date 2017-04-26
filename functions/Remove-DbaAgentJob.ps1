@@ -70,19 +70,19 @@ Removes the job from multiple servers using pipe line
         [Parameter(Mandatory = $false)]
         [int]$JobID,
         [Parameter(Mandatory = $false)]
-        [ValidateScript( {
-                if (-not($JobID) -and (-not($_))) {
-                    Throw "Please enter a job id or job name."
-                }
-                else {
-                    $true    
-                }
-            })]
         [string]$JobName,
         [switch]$KeepHistory,
         [switch]$KeepUnusedSchedule,
         [switch]$Silent
     )
+
+    begin{
+        # Check if the job id or jobname are set
+        if (-not($JobID) -and (-not($JobName))) {
+            Stop-Function -Message "Please enter a job id or job name." -Target $instance 
+            return
+        }
+    }
 
     process {
 
