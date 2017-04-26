@@ -12,11 +12,14 @@ Thanks to Chad Miller, this is based on his script. https://gallery.technet.micr
 .PARAMETER InputObject
 The object to transform into a DataTable
 	
+.PARAMETER TimeSpanType
+Sets what type to convert TimeSpan into before creating the datatable. Options are Ticks, TotalDays, TotalHours, TotalMinutes, TotalSeconds, TotalMilliseconds and String.
+
 .PARAMETER IgnoreNull 
 Use this switch to ignore null rows
 
-.PARAMETER TimeSpanType
-Sets what type to convert TimeSpan into before creating the datatable. Options are Ticks, TotalDays, TotalHours, TotalMinutes, TotalSeconds, TotalMilliseconds and String.
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
 
 .NOTES
 dbatools PowerShell module (https://dbatools.io)
@@ -71,8 +74,10 @@ Creates a DataTable with the running processes and converts any TimeSpan propert
         [string]$TimeSpanType = "TotalMilliseconds",		
         
         # Ignore null rows
-        [Parameter(Position = 2)]
-		[switch]$IgnoreNull    
+		[switch]$IgnoreNull,
+        
+
+        [switch]$Silent   
 	)
 	
 	BEGIN
