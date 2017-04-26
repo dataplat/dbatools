@@ -139,7 +139,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
         [string]$OwnerLoginName,
         [Parameter(Mandatory = $false)]
         [ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
-        [object]$EventLogLevel = $null,
+        [object]$EventLogLevel,
         [Parameter(Mandatory = $false)]
         [ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
         [object]$EmailLevel,
