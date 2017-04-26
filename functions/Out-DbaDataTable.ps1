@@ -18,9 +18,6 @@ Use this switch to ignore null rows
 .PARAMETER TimeSpanType
 Sets what type to convert TimeSpan into before creating the datatable. Options are Ticks, TotalDays, TotalHours, TotalMinutes, TotalSeconds, TotalMilliseconds and String.
 
-.PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
-
 .NOTES
 dbatools PowerShell module (https://dbatools.io)
 Copyright (C) 2016 Chrissy LeMaire
@@ -54,14 +51,28 @@ Creates a DataTable with the running processes and converts any TimeSpan propert
 #>	
 	[CmdletBinding()]
 	param (
-		[Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+        # Input object to process
+		[Parameter(Position = 0,
+                   Mandatory = $true,
+                   ValueFromPipeline = $true)]
 		[AllowNull()]
 		[PSObject[]]$InputObject,
-		[switch]$IgnoreNull,
-        [ValidateSet("Ticks", "TotalDays", "TotalHours", "TotalMinutes", "TotalSeconds", "TotalMilliseconds", "String")]
-        [string]$TimeSpanType = "TotalMilliseconds",		
-        [switch]$Silent
         
+        # What to convert TimeSpan to
+        [Parameter(Position = 1)]
+        [ValidateSet("Ticks",
+                     "TotalDays",
+                     "TotalHours",
+                     "TotalMinutes",
+                     "TotalSeconds",
+                     "TotalMilliseconds",
+                     "String")]
+        [ValidateNotNullOrEmpty()]
+        [string]$TimeSpanType = "TotalMilliseconds",		
+        
+        # Ignore null rows
+        [Parameter(Position = 2)]
+		[switch]$IgnoreNull    
 	)
 	
 	BEGIN
