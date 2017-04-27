@@ -112,6 +112,7 @@ Tests all logins excluding any that are from the subdomain Domain
 			'DONT_REQUIRE_PREAUTH'                   = 4194304
 			'PASSWORD_EXPIRED'                       = 8388608
 			'TRUSTED_TO_AUTHENTICATE_FOR_DELEGATION' = 16777216
+			'NO_AUTH_DATA_REQUIRED'                  = 33554432
 			'PARTIAL_SECRETS_ACCOUNT'                = 67108864
 		}
 	}
@@ -211,7 +212,7 @@ Tests all logins excluding any that are from the subdomain Domain
 						PasswordNotRequired  = [bool]($UAC.Value -band $MappingRaw['PASSWD_NOTREQD'])
 						SmartcardLogonRequired  = [bool]($UAC.Value -band $MappingRaw['SMARTCARD_REQUIRED'])
 						TrustedForDelegation = [bool]($UAC.Value -band $MappingRaw['TRUSTED_FOR_DELEGATION'])
-						UserAccountControl = [bool]($UAC.Value)
+						UserAccountControl = $UAC.Value
 					}
 				}
 				$rtn = [PSCustomObject]@{
