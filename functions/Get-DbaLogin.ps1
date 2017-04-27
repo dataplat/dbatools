@@ -29,6 +29,7 @@ Function Get-DbaLogin {
 
 	.NOTES 
 	Original Author: Mitchell Hamann (@SirCaptainMitch)
+    Author: Klaas Vandenberghe (@powerdbaklaas)
 
 	Website: https://dbatools.io
 	Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -55,16 +56,11 @@ Function Get-DbaLogin {
 
 	.EXAMPLE 
 	'sql2016', 'sql2014' | Get-DbaLogin -SqlCredential $sqlcred -Locked
-	Using Get-DbaLogin on the pipeline to get all locked Logins 
+	Using Get-DbaLogin on the pipeline to get all locked Logins on sql2016 and sql2014 
 
 	.EXAMPLE 
-	'sql2016', 'sql2014' | Get-DbaLogin -SqlCredential $sqlcred -HasAccess
-	Using Get-DbaLogin on the pipeline to get all logins that have access to that instance 
-
-	.EXAMPLE 
-	'sql2016', 'sql2014' | Get-DbaLogin -SqlCredential $sqlcred -Disabled
-	Using Get-DbaLogin on the pipeline to get all Disabled Logins 
-	
+	'sql2016', 'sql2014' | Get-DbaLogin -SqlCredential $sqlcred -HasAccess -Disabled
+	Using Get-DbaLogin on the pipeline to get all Disabled logins that have access to sql2016 or sql2014 
 #>
 	[CmdletBinding()]
 	Param (
@@ -88,20 +84,17 @@ Function Get-DbaLogin {
 			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
 			}
-			
+			$serverLogins = $server.Logins
 			if ($Login -ne $null) {
-				$serverLogins = $server.Logins | Where-Object { $Login -contains $_.name }
+				$serverLogins = $serverLogins | Where-Object { $Login -contains $_.name }
 			}
-			elseif ($HasAccess) {
-				$serverLogins = $server.Logins | Where-Object { $_.HasAccess -eq $true }
+			if ($HasAccess) {
+				$serverLogins = $serverLogins | Where-Object { $_.HasAccess -eq $true }
 			}
-			elseif ($Locked) {
-				$serverLogins = $server.Logins | Where-Object { $_.IsLocked -eq $true }
+			if ($Locked) {
+				$serverLogins = $serverLogins | Where-Object { $_.IsLocked -eq $true }
 			}
-			elseif ($Disabled) { $serverLogins = $server.Logins | Where-Object { $_.IsDisabled -eq $true }
-			}
-			else {
-				$serverLogins = $server.Logins
+			if ($Disabled) { $serverLogins = $serverLogins | Where-Object { $_.IsDisabled -eq $true }
 			}
 			
 			foreach ($serverLogin in $serverlogins) {
@@ -114,23 +107,10 @@ Function Get-DbaLogin {
 				Add-Member -InputObject $serverLogin -MemberType NoteProperty -Name ComputerName -Value $server.NetName
 				Add-Member -InputObject $serverLogin -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
 				Add-Member -InputObject $serverLogin -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-				
-				if ($Detailed) {
-					Select-DefaultView -InputObject $serverLogin -Property ComputerName, InstanceName, SqlInstance, Name, LoginType, LastLogin
-				}
-				elseif ($HasAccess) {
-					Select-DefaultView -InputObject $serverLogin -Property ComputerName, InstanceName, SqlInstance, Name, LoginType, LastLogin, HasAccess
-				}
-				elseif ($Locked) {
-					Select-DefaultView -InputObject $serverLogin -Property ComputerName, InstanceName, SqlInstance, Name, LoginType, LastLogin, IsLocked
-				}
-				elseIf ($Disabled) {
-					Select-DefaultView -InputObject $serverLogin -Property ComputerName, InstanceName, SqlInstance, Name, LoginType, LastLogin, IsDisabled
-				}
-				else {
-					Select-DefaultView -InputObject $serverLogin -Property ComputerName, InstanceName, SqlInstance, Name, LoginType, LastLogin
-				}
-			}
-		}
-	}
-}
+
+				Select-DefaultView -InputObject $serverLogin -Property ComputerName, InstanceName, SqlInstance, Name, LoginType, LastLogin, HasAccess, IsLocked, IsDisabled
+
+			} #foreach serverlogin
+		} #foreach instance
+	} #process
+} #function
