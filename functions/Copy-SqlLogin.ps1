@@ -362,11 +362,11 @@ Limitations: Does not support Application Roles yet
 		}
 		
 		Write-Output "Attempting to connect to SQL Servers.."
-		$sourceserver = Connect-DbaSqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+		$sourceserver = Connect-SqlServer -RegularUser -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$source = $sourceserver.DomainInstanceName
 		
 		if ($Destination.length -gt 0) {
-			$destserver = Connect-DbaSqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+			$destserver = Connect-SqlServer -RegularUser -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 			$destination = $destserver.DomainInstanceName
 			
 			if ($sourceserver.versionMajor -gt 10 -and $destserver.versionMajor -lt 11) {
