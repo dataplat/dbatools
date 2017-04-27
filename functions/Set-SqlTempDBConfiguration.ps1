@@ -38,10 +38,16 @@ PSCredential object to connect under. If not specified, currend Windows login wi
 Integer of number of datafiles to create. If not specified, function will use logical cores of host.
 
 .PARAMETER DataFileSizeMB
-Total data file size in megabytes
+Total data file size in megabytes.
+
+.PARAMETER DataFileGrowthSizeMB
+Total data file growth size in megabytes.
 
 .PARAMETER LogFileSizeMB
 Log file size in megabyes. If not specified, function will use 25% of total data file size.
+
+.PARAMETER LogFileGrowthSizeMB
+Total log file growth size in megabytes.
 
 .PARAMETER DataPath 
 File path to create tempdb data files in. If not specified, current tempdb location will be used.
@@ -78,6 +84,12 @@ Creates tempdb with a number of datafiles equal to the logical cores where
 each one is equal to 125MB and a log file of 250MB
 
 .EXAMPLE
+Set-SqltempdbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -DataFileCount 8 -DataFileGrowthSizeMB 1024 -LogFileGrowthSizeMB 1024 
+
+Creates tempdb with a number of datafiles equal to the logical cores where
+each one is equal to 125MB and a log file of 250MB with growth increments of 1GB
+
+.EXAMPLE
 Set-SqltempdbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -Script
 
 Provides a SQL script output to configure tempdb according to the passed parameters
@@ -96,7 +108,9 @@ Returns PSObject representing tempdb configuration.
 		[int]$DataFileCount,
 		[Parameter(Mandatory = $true)]
 		[int]$datafilesizemb,
+		[int]$DataFileGrowthSizeMB = 512,
 		[int]$LogFileSizeMB,
+		[int]$LogFileGrowthSizeMB = 512,
 		[string]$DataPath,
 		[string]$LogPath,
 		[string]$OutFile,
@@ -134,8 +148,13 @@ Returns PSObject representing tempdb configuration.
 			Write-Verbose "Data file count set explicitly: $datafilecount"
 		}
 		
-		$dataFilesizeSingleMB = $([Math]::Floor($datafilesizemb/$datafilecount))
+		$dataFilesizeSingleMB = $([Math]::Floor($datafilesizemb/$datafilecount))		
 		Write-Verbose "Single data file size (MB): $dataFilesizeSingleMB"
+
+		if ($dataFilesizeSingleMB -le 8)
+		{
+			throw "Single tempdb filesize would be smaller than 8MB, your file size divided by your count would potentially cause issues with system tables, please choose a larger filesize or smaller number of files."
+		}
 		
 		if ($datapath)
 		{
@@ -179,30 +198,29 @@ Returns PSObject representing tempdb configuration.
 		}
 		
 		# Check current tempdb. Throw an error if current tempdb is 'larger' than config.
-		$currentfilecount = $server.Databases['tempdb'].ExecuteWithResults('SELECT count(1) as FileCount FROM sys.database_files WHERE type=0').Tables[0].FileCount
-		$toobigcount = $server.Databases['tempdb'].ExecuteWithResults("SELECT count(1) as FileCount FROM sys.database_files WHERE size/128 > $dataFilesizeSingleMB AND type = 0").Tables[0].FileCount
+		$currentfilecount = $server.Databases['tempdb'].ExecuteWithResults('SELECT count(1) as FileCount FROM sys.database_files WHERE type=0').Tables[0].FileCount		
+		$allocatedSpace = $server.Databases['tempdb'].ExecuteWithResults("SELECT COUNT (1) AS FileCount FROM sys.dm_db_file_space_usage AS db WHERE (allocated_extent_page_count) * 1.0 / 128 >= $dataFilesizeSingleMB ;").Tables[0].FileCount
 		
 		if ($currentfilecount -gt $datafilecount)
 		{
 			throw "Current tempdb not suitable to be reconfigured. The current tempdb has a greater number of files than the calculated configuration."
 		}
 		
-		if ($toobigcount -gt 0)
-		{
-			throw "Current tempdb not suitable to be reconfigured. The current tempdb is larger than the calculated configuration."
-		}
-		
-		$equalcount = $server.Databases['tempdb'].ExecuteWithResults("SELECT count(1) as FileCount FROM sys.database_files WHERE size/128 = $dataFilesizeSingleMB AND type = 0").Tables[0].FileCount
-		
-		if ($equalcount -gt 0)
-		{
-			throw "Current tempdb not suitable to be reconfigured. The current tempdb is the same size as the specified DataFileSizeMB."
+		if ($allocatedSpace -gt 0)
+		{					
+			$totalUsedSpace = $server.Databases['tempdb'].ExecuteWithResults("SELECT SUM([u].[allocated_extent_page_count])*1.0/128 [used_spaceMB] FROM [sys].[dm_db_file_space_usage] [u];").Tables[0].used_spaceMB
+			# modified from http://sqlblog.com/blogs/kevin_kline/archive/2007/10/23/tempdb-space-usage.aspx
+			$activeInTempdb = $server.Databases['tempdb'].ExecuteWithResults("SELECT COUNT(*) [running_intempdb] FROM [sys].[dm_exec_sessions] [s] INNER JOIN [sys].[dm_db_session_space_usage] [su] ON [s].[session_id]=[su].[session_id] AND [su].[database_id]=DB_ID('tempdb') INNER JOIN [sys].[dm_exec_connections] [c] ON [s].[session_id]=[c].[most_recent_session_id] LEFT OUTER JOIN [sys].[dm_exec_requests] [r] ON [r].[session_id]=[s].[session_id] LEFT OUTER JOIN( SELECT [session_id], [database_id] FROM [sys].[dm_tran_session_transactions] [t] INNER JOIN [sys].[dm_tran_database_transactions] [dt] ON [t].[transaction_id]=[dt].[transaction_id] WHERE [dt].[database_id]=DB_ID('tempdb') GROUP BY [session_id], [database_id]) [dt] ON [s].[session_id]=[dt].[session_id] LEFT OUTER JOIN [sys].[dm_exec_query_memory_grants] [mg] ON [s].[session_id]=[mg].[session_id] WHERE([r].[database_id]=DB_ID('tempdb') OR [dt].[database_id]=DB_ID('tempdb')) AND [s].[status]='running'; ").Tables[0].running_intempdb
+			# then check if there are any running transactions, if we are on a busy system this isnt going to help us much, but we can know why we cant grow at least.				
+			throw "Cannot continue due to tempdb configuration issues, there is a total of $([math]::Round($totalUsedSpace))MB space used and $activeInTempdb transactions running in tempdb, the request to shrink down to $($dataFilesizeSingleMB)MB cannot be completed. Please see https://technet.microsoft.com/en-us/library/ms176029(v=sql.105).aspx for more details." 
 		}
 		
 		Write-Verbose "tempdb configuration validated."
 		
-		$datafiles = $server.Databases['tempdb'].ExecuteWithResults("select f.Name, f.physical_name as FileName from sys.filegroups fg join sys.database_files f on fg.data_space_id = fg.data_space_id where fg.name = 'PRIMARY' and f.type_desc = 'ROWS'").Tables[0]
-		
+		$datafiles = $server.Databases['tempdb'].ExecuteWithResults("select f.Name, f.physical_name as FileName from sys.filegroups fg join sys.database_files f on fg.data_space_id = fg.data_space_id where fg.name = 'PRIMARY' and f.type_desc = 'ROWS'").Tables[0]		
+		$existingDatafilesCount = $datafiles.Rows.Count 
+		Write-Verbose "Creating $($DataFileCount - $existingDatafilesCount) new files."
+		$existingDatafilesCount = $existingDatafilesCount -1 # indexing fix
 		#Checks passed, process reconfiguration
 		for ($i = 0; $i -lt $datafilecount; $i++)
 		{
@@ -212,13 +230,13 @@ Returns PSObject representing tempdb configuration.
 				$filename = Split-Path $file.FileName -Leaf
 				$logicalname = $file.Name
 				$newpath = "$datapath\$filename"
-				$sql += "ALTER DATABASE tempdb MODIFY FILE(name=$logicalname,filename='$newpath',size=$dataFilesizeSingleMB MB,filegrowth=512MB);"
+				$sql += "ALTER DATABASE tempdb MODIFY FILE(name=$logicalname,filename='$newpath',size=$dataFilesizeSingleMB MB,filegrowth=$($DataFileGrowthSizeMB)MB);"
 			}
 			else
 			{
-				$newname = "tempdev$i.ndf"
+				$newname = "tempdev$($i+$existingDatafilesCount).ndf"
 				$newpath = "$datapath\$newname"
-				$sql += "ALTER DATABASE tempdb ADD FILE(name=tempdev$i,filename='$newpath',size=$dataFilesizeSingleMB MB,filegrowth=512MB);"
+				$sql += "ALTER DATABASE tempdb ADD FILE(name=tempdev$($i+$existingDatafilesCount),filename='$newpath',size=$dataFilesizeSingleMB MB,filegrowth=$($DataFileGrowthSizeMB)MB);"
 			}
 		}
 		
@@ -231,7 +249,7 @@ Returns PSObject representing tempdb configuration.
 		$filename = Split-Path $logfile.FileName -Leaf
 		$logicalname = $logfile.Name
 		$newpath = "$logpath\$filename"
-		$sql += "ALTER DATABASE tempdb MODIFY FILE(name=$logicalname,filename='$newpath',size=$LogFileSizeMB MB,filegrowth=512MB);"
+		$sql += "ALTER DATABASE tempdb MODIFY FILE(name=$logicalname,filename='$newpath',size=$LogFileSizeMB MB,filegrowth=$(LogFileGrowthSizeMB)MB);"
 		
 		Write-Verbose "SQL Statement to resize tempdb"
 		Write-Verbose ($sql -join "`n`n")
@@ -252,7 +270,7 @@ Returns PSObject representing tempdb configuration.
 				{
 					$server.Databases['master'].ExecuteNonQuery($sql)
 					Write-Verbose "tempdb successfully reconfigured"
-					Write-Warning "tempdb reconfigured. You must restart the SQL Service for settings to take effect."
+					Write-Warning "tempdb reconfigured. You may need to restart the  SQL Service for all settings to take effect."
 				}
 				catch
 				{
