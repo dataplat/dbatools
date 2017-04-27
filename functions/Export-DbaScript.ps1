@@ -35,6 +35,9 @@
 
 	.PARAMETER Passthru
 	Output script to console
+	
+	.PARAMETER ScriptingOptionObject 
+	An SMO Scripting Object that can be used to customize the output - see New-DbaScriptingOption
 
 	.PARAMETER WhatIf 
 	Shows what would happen if the command were to run. No actions are actually performed
