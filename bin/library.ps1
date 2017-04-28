@@ -719,8 +719,21 @@ namespace Sqlcollective.Dbatools
                 else { options = CimWinRMOptions; }
                 if (Credential != null) { options.AddDestinationCredentials(new CimCredential(PasswordAuthenticationMechanism.Default, Credential.GetNetworkCredential().Domain, Credential.GetNetworkCredential().UserName, Credential.Password)); }
 
-                if (cimWinRMSession == null) { cimWinRMSession = CimSession.Create(ComputerName, options); }
-                var result = cimWinRMSession.EnumerateInstances(Namespace, Class);
+                if (cimWinRMSession == null)
+                {
+                    try { cimWinRMSession = CimSession.Create(ComputerName, options); }
+                    catch (Exception e)
+                    {
+                        bool testBadCredential = false;
+                        try { testBadCredential = ((CimException)e.InnerException).MessageId == "HRESULT 0x8007052e"; }
+                        catch { }
+
+                        if (testBadCredential) { throw new Exception(); }
+                    }
+                }
+
+                IEnumerable<CimInstance> result = new List<CimInstance>();
+                result = cimWinRMSession.EnumerateInstances(Namespace, Class);
                 if (DisableCimPersistence)
                 {
                     try { cimWinRMSession.Close(); }
@@ -1622,6 +1635,7 @@ namespace Sqlcollective.Dbatools
         using Connection;
         using System.Collections.Generic;
         using System.Management.Automation;
+        using System.Text.RegularExpressions;
 
         /// <summary>
         /// Input converter for Computer Management Information
@@ -1754,6 +1768,344 @@ namespace Sqlcollective.Dbatools
                 }
             }
         }
+
+        /// <summary>
+        /// Input converter for instance information
+        /// </summary>
+        public class DbaInstanceParameter
+        {
+            #region Fields of contract
+            /// <summary>
+            /// Name of the computer as resolvable by DNS
+            /// </summary>
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
+            public string ComputerName
+            {
+                get { return _ComputerName; }
+            }
+
+            /// <summary>
+            /// Name of the instance on the target server
+            /// </summary>
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Optional)]
+            public string InstanceName
+            {
+                get
+                {
+                    return _InstanceName;
+                }
+            }
+
+            /// <summary>
+            /// The port over which to connect to the server. Only present if non-default
+            /// </summary>
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Optional)]
+            public int Port
+            {
+                get
+                {
+                    return _Port;
+                }
+            }
+
+            /// <summary>
+            /// Full name of the instance, including the server-name
+            /// </summary>
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
+            public string FullName
+            {
+                get
+                {
+                    string temp = _ComputerName;
+                    if (_Port > 0) { temp += (":" + _Port); }
+                    if (!String.IsNullOrEmpty(_InstanceName)) { temp += ("\\" + _InstanceName); }
+                    return temp;
+                }
+            }
+
+            /// <summary>
+            /// Full name of the instance, including the server-name, used when connecting via SMO
+            /// </summary>
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
+            public string FullSmoName
+            {
+                get
+                {
+                    string temp = _ComputerName;
+                    if (_Port > 0) { return temp + "," + _Port; }
+                    if (!String.IsNullOrEmpty(_InstanceName)) { return temp + "\\" + _InstanceName; }
+                    return temp;
+                }
+            }
+
+            /// <summary>
+            /// Name of the computer as used in an SQL Statement
+            /// </summary>
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
+            public string SqlComputerName
+            {
+                get { return "[" + _ComputerName + "]"; }
+            }
+
+            /// <summary>
+            /// Name of the instance as used in an SQL Statement
+            /// </summary>
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Optional)]
+            public string SqlInstanceName
+            {
+                get
+                {
+                    if (String.IsNullOrEmpty(_InstanceName)) { return ""; }
+                    else { return"[" + _InstanceName + "]"; }
+                }
+            }
+
+            /// <summary>
+            /// Full name of the instance, including the server-name as used in an SQL statement
+            /// </summary>
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
+            public string SqlFullName
+            {
+                get
+                {
+                    if (String.IsNullOrEmpty(_InstanceName)) { return "[" + _ComputerName + "]"; }
+                    else { return "[" + _ComputerName + "\\" + _InstanceName + "]"; }
+                }
+            }
+
+            /// <summary>
+            /// The original object passed to the parameter class.
+            /// </summary>
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
+            public object InputObject;
+            #endregion Fields of contract
+
+            private string _ComputerName;
+            private string _InstanceName;
+            private int _Port;
+
+            #region Uncontracted properties
+            /// <summary>
+            /// What kind of object was bound to the parameter class? For efficiency's purposes.
+            /// </summary>
+            public DbaInstanceInputType Type
+            {
+                get
+                {
+                    try
+                    {
+                        PSObject tempObject = new PSObject(InputObject);
+                        string typeName = tempObject.TypeNames[0].ToLower();
+
+                        switch (typeName)
+                        {
+                            case "microsoft.sqlserver.management.smo.server":
+                                return DbaInstanceInputType.Server;
+                            case "microsoft.sqlserver.management.smo.linkedserver":
+                                return DbaInstanceInputType.Linked;
+                            default:
+                                return DbaInstanceInputType.Default;
+                        }
+                    }
+                    catch { return DbaInstanceInputType.Default; }
+                }
+            }
+
+            /// <summary>
+            /// Returns, whether a live SMO object was bound for the purpose of accessing LinkedServer functionality
+            /// </summary>
+            public bool LinkedLive
+            {
+                get
+                {
+                    return (((DbaInstanceInputType.Linked | DbaInstanceInputType.Server) & Type) != 0);
+                }
+            }
+
+            /// <summary>
+            /// Returns the available Linked Server objects from live objects only
+            /// </summary>
+            public object LinkedServer
+            {
+                get
+                {
+                    switch (Type)
+                    {
+                        case DbaInstanceInputType.Linked:
+                            return InputObject;
+                        case DbaInstanceInputType.Server:
+                            PSObject tempObject = new PSObject(InputObject);
+                            return tempObject.Properties["LinkedServers"].Value;
+                        default:
+                            return null;
+                    }
+                }
+            }
+            #endregion Uncontracted properties
+
+            /// <summary>
+            /// Converts the parameter class to its full name
+            /// </summary>
+            /// <param name="Input">The parameter class object to convert</param>
+            [ParameterContract(ParameterContractType.Operator, ParameterContractBehavior.Conversion)]
+            public static implicit operator string(DbaInstanceParameter Input)
+            {
+                return Input.FullName;
+            }
+
+            #region Constructors
+            /// <summary>
+            /// Creates a DBA Instance Parameter from string
+            /// </summary>
+            /// <param name="Name">The name of the instance</param>
+            public DbaInstanceParameter(string Name)
+            {
+                InputObject = Name;
+
+                string tempString = Name;
+
+                // Case: Default instance | Instance by port
+                if (tempString.Split('\\').Length == 1)
+                {
+                    if (Regex.IsMatch(tempString, @"[:,]\d{1,5}$") && !Regex.IsMatch(tempString, Utility.RegexHelper.IPv6) && ((tempString.Split(':').Length == 2) || (tempString.Split(',').Length == 2)))
+                    {
+                        char delimiter;
+                        if (Regex.IsMatch(tempString, @"[:]\d{1,5}$"))
+                            delimiter = ':';
+                        else
+                            delimiter = ',';
+
+                        try
+                        {
+                            Int32.TryParse(tempString.Split(delimiter)[1], out _Port);
+                            if (_Port > 65535) { throw new PSArgumentException("Failed to parse instance name: " + tempString); }
+                            tempString = tempString.Split(delimiter)[0];
+                        }
+                        catch
+                        {
+                            throw new PSArgumentException("Failed to parse instance name: " + Name);
+                        }
+                    }
+
+                    if (Utility.Validation.IsValidComputerTarget(tempString))
+                    {
+                        _ComputerName = tempString;
+                    }
+
+                    else
+                    {
+                        throw new PSArgumentException("Failed to parse instance name: " + Name);
+                    }
+                }
+
+                // Case: Named instance
+                else if (Name.Split('\\').Length == 2)
+                {
+                    string tempComputerName = Name.Split('\\')[0];
+                    string tempInstanceName = Name.Split('\\')[1];
+
+                    if (Regex.IsMatch(tempComputerName, @"[:,]\d{1,5}$") && !Regex.IsMatch(tempComputerName, Utility.RegexHelper.IPv6))
+                    {
+                        throw new PSArgumentException("Both port and instancename detected! This is redundant and bad practice, specify only one: " + Name);
+                    }
+
+                    if (Utility.Validation.IsValidComputerTarget(tempComputerName) && Utility.Validation.IsValidInstanceName(tempInstanceName))
+                    {
+                        _ComputerName = tempComputerName;
+                        _InstanceName = tempInstanceName;
+                    }
+
+                    else
+                    {
+                        throw new PSArgumentException("Failed to parse instance name: " + Name);
+                    }
+                }
+
+                // Case: Bad input
+                else { throw new PSArgumentException("Failed to parse instance name: " + Name); }
+            }
+
+            /// <summary>
+            /// Creates a DBA Instance parameter from any object
+            /// </summary>
+            /// <param name="Input">Object to parse</param>
+            public DbaInstanceParameter(object Input)
+            {
+                InputObject = Input;
+                PSObject tempInput = new PSObject(Input);
+                string typeName = "";
+
+                try { typeName = tempInput.TypeNames[0].ToLower(); }
+                catch
+                {
+                    throw new PSArgumentException("Failed to interpret input as Instance: " + Input.ToString());
+                }
+
+                typeName = typeName.Replace("Deserialized.", "");
+
+                switch (typeName)
+                {
+                    case "microsoft.sqlserver.management.smo.server":
+                        try
+                        {
+                            _ComputerName = (string)tempInput.Properties["NetName"].Value;
+                            _InstanceName = (string)tempInput.Properties["InstanceName"].Value;
+                            PSObject tempObject = new PSObject(tempInput.Properties["ConnectionContext"].Value);
+
+                            string tempConnectionString = (string)tempObject.Properties["ConnectionString"].Value;
+                            tempConnectionString = tempConnectionString.Split(';')[0].Split('=')[1].Trim().Replace(" ", "");
+
+                            if (Regex.IsMatch(tempConnectionString, @",\d{1,5}$") && (tempConnectionString.Split(',').Length == 2))
+                            {
+                                try { Int32.TryParse(tempConnectionString.Split(',')[1], out _Port); }
+                                catch (Exception e)
+                                {
+                                    throw new PSArgumentException("Failed to parse port number on connection string: " + tempConnectionString, e);
+                                }
+                                if (_Port > 65535) { throw new PSArgumentException("Failed to parse port number on connection string: " + tempConnectionString); }
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            throw new PSArgumentException("Failed to interpret input as Instance: " + Input.ToString() + " : " + e.Message, e);
+                        }
+                        break;
+                    case "microsoft.sqlserver.management.smo.linkedserver":
+                        try { _ComputerName = (string)tempInput.Properties["Name"].Value; }
+                        catch (Exception e)
+                        {
+                            throw new PSArgumentException("Failed to interpret input as Instance: " + Input.ToString(), e);
+                        }
+                        break;
+                    default:
+                        throw new PSArgumentException("Failed to interpret input as Instance: " + Input.ToString());
+                }
+            }
+            #endregion Constructors
+        }
+
+        #region Auxilliary Tools
+        /// <summary>
+        /// What kind of object was bound to the parameter class?
+        /// </summary>
+        public enum DbaInstanceInputType
+        {
+            /// <summary>
+            /// Anything, really. An unspecific not reusable type was bound
+            /// </summary>
+            Default,
+
+            /// <summary>
+            /// A live smo linked server object was bound
+            /// </summary>
+            Linked,
+
+            /// <summary>
+            /// A live smo server object was bound
+            /// </summary>
+            Server,
+        }
+        #endregion Auxilliary Tools
 
         #region ParameterClass Interna
         /// <summary>
@@ -3641,7 +3993,7 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// Pattern that checks for valid hostnames within a larger text
             /// </summary>
-            public static string ExHostName = @"([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*";
+            public static string HostNameEx = @"([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*";
 
             /// <summary>
             /// Pattern that checks for a valid IPv4 address
@@ -3651,7 +4003,7 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// Pattern that checks for valid IPv4 addresses within a larger text
             /// </summary>
-            public static string ExIPv4 = @"(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}";
+            public static string IPv4Ex = @"(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}";
 
             /// <summary>
             /// Will match a valid IPv6 address
@@ -3661,7 +4013,7 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// Will match any IPv6 address within a larger text
             /// </summary>
-            public static string ExIPv6 = @"(?:^|(?<=\s))(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))(?=\s|$)";
+            public static string IPv6Ex = @"(?:^|(?<=\s))(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))(?=\s|$)";
 
             /// <summary>
             /// Will match any string that in its entirety represents a valid target for dns- or ip-based targeting. Combination of HostName, IPv4 and IPv6
@@ -3676,7 +4028,47 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// Will match any number of valid Guids in a larger text
             /// </summary>
-            public static string ExGuid = @"(\{{0,1}([0-9a-fA-F]){8}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){12}\}{0,1})";
+            public static string GuidEx = @"(\{{0,1}([0-9a-fA-F]){8}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){12}\}{0,1})";
+
+            /// <summary>
+            /// Will match a mostly valid instance name.
+            /// </summary>
+            public static string InstanceName = @"^[\p{L}&_#][\p{L}\d\$#_]{1,15}$";
+
+            /// <summary>
+            /// Will match any instance of a mostly valid instance name.
+            /// </summary>
+            public static string InstanceNameEx = @"[\p{L}&_#][\p{L}\d\$#_]{1,15}";
+
+            /// <summary>
+            /// Matches a word against the list of officially reserved keywords
+            /// </summary>
+            public static string SqlReservedKeyword = @"^ADD|ALL|ALTER|AND|ANY|AS|ASC|AUTHORIZATION|BACKUP|BEGIN|BETWEEN|BREAK|BROWSE|BULK|BY|CASCADE|CASE|CHECK|CHECKPOINT|CLOSE|CLUSTERED|COALESCE|COLLATE|COLUMN|COMMIT|COMPUTE|CONSTRAINT|CONTAINS|CONTAINSTABLE|CONTINUE|CONVERT|CREATE|CROSS|CURRENT|CURRENT_DATE|CURRENT_TIME|CURRENT_TIMESTAMP|CURRENT_USER|CURSOR|DATABASE|DBCC|DEALLOCATE|DECLARE|DEFAULT|DELETE|DENY|DESC|DISK|DISTINCT|DISTRIBUTED|DOUBLE|DROP|DUMP|ELSE|END|ERRLVL|ESCAPE|EXCEPT|EXEC|EXECUTE|EXISTS|EXIT|EXTERNAL|FETCH|FILE|FILLFACTOR|FOR|FOREIGN|FREETEXT|FREETEXTTABLE|FROM|FULL|FUNCTION|GOTO|GRANT|GROUP|HAVING|HOLDLOCK|IDENTITY|IDENTITY_INSERT|IDENTITYCOL|IF|IN|INDEX|INNER|INSERT|INTERSECT|INTO|IS|JOIN|KEY|KILL|LEFT|LIKE|LINENO|LOAD|MERGE|NATIONAL|NOCHECK|NONCLUSTERED|NOT|NULL|NULLIF|OF|OFF|OFFSETS|ON|OPEN|OPENDATASOURCE|OPENQUERY|OPENROWSET|OPENXML|OPTION|OR|ORDER|OUTER|OVER|PERCENT|PIVOT|PLAN|PRECISION|PRIMARY|PRINT|PROC|PROCEDURE|PUBLIC|RAISERROR|READ|READTEXT|RECONFIGURE|REFERENCES|REPLICATION|RESTORE|RESTRICT|RETURN|REVERT|REVOKE|RIGHT|ROLLBACK|ROWCOUNT|ROWGUIDCOL|RULE|SAVE|SCHEMA|SECURITYAUDIT|SELECT|SEMANTICKEYPHRASETABLE|SEMANTICSIMILARITYDETAILSTABLE|SEMANTICSIMILARITYTABLE|SESSION_USER|SET|SETUSER|SHUTDOWN|SOME|STATISTICS|SYSTEM_USER|TABLE|TABLESAMPLE|TEXTSIZE|THEN|TO|TOP|TRAN|TRANSACTION|TRIGGER|TRUNCATE|TRY_CONVERT|TSEQUAL|UNION|UNIQUE|UNPIVOT|UPDATE|UPDATETEXT|USE|USER|VALUES|VARYING|VIEW|WAITFOR|WHEN|WHERE|WHILE|WITH|WITHIN GROUP|WRITETEXT$";
+
+            /// <summary>
+            /// Will match any reserved keyword in a larger text
+            /// </summary>
+            public static string SqlReservedKeywordEx = @"ADD|ALL|ALTER|AND|ANY|AS|ASC|AUTHORIZATION|BACKUP|BEGIN|BETWEEN|BREAK|BROWSE|BULK|BY|CASCADE|CASE|CHECK|CHECKPOINT|CLOSE|CLUSTERED|COALESCE|COLLATE|COLUMN|COMMIT|COMPUTE|CONSTRAINT|CONTAINS|CONTAINSTABLE|CONTINUE|CONVERT|CREATE|CROSS|CURRENT|CURRENT_DATE|CURRENT_TIME|CURRENT_TIMESTAMP|CURRENT_USER|CURSOR|DATABASE|DBCC|DEALLOCATE|DECLARE|DEFAULT|DELETE|DENY|DESC|DISK|DISTINCT|DISTRIBUTED|DOUBLE|DROP|DUMP|ELSE|END|ERRLVL|ESCAPE|EXCEPT|EXEC|EXECUTE|EXISTS|EXIT|EXTERNAL|FETCH|FILE|FILLFACTOR|FOR|FOREIGN|FREETEXT|FREETEXTTABLE|FROM|FULL|FUNCTION|GOTO|GRANT|GROUP|HAVING|HOLDLOCK|IDENTITY|IDENTITY_INSERT|IDENTITYCOL|IF|IN|INDEX|INNER|INSERT|INTERSECT|INTO|IS|JOIN|KEY|KILL|LEFT|LIKE|LINENO|LOAD|MERGE|NATIONAL|NOCHECK|NONCLUSTERED|NOT|NULL|NULLIF|OF|OFF|OFFSETS|ON|OPEN|OPENDATASOURCE|OPENQUERY|OPENROWSET|OPENXML|OPTION|OR|ORDER|OUTER|OVER|PERCENT|PIVOT|PLAN|PRECISION|PRIMARY|PRINT|PROC|PROCEDURE|PUBLIC|RAISERROR|READ|READTEXT|RECONFIGURE|REFERENCES|REPLICATION|RESTORE|RESTRICT|RETURN|REVERT|REVOKE|RIGHT|ROLLBACK|ROWCOUNT|ROWGUIDCOL|RULE|SAVE|SCHEMA|SECURITYAUDIT|SELECT|SEMANTICKEYPHRASETABLE|SEMANTICSIMILARITYDETAILSTABLE|SEMANTICSIMILARITYTABLE|SESSION_USER|SET|SETUSER|SHUTDOWN|SOME|STATISTICS|SYSTEM_USER|TABLE|TABLESAMPLE|TEXTSIZE|THEN|TO|TOP|TRAN|TRANSACTION|TRIGGER|TRUNCATE|TRY_CONVERT|TSEQUAL|UNION|UNIQUE|UNPIVOT|UPDATE|UPDATETEXT|USE|USER|VALUES|VARYING|VIEW|WAITFOR|WHEN|WHERE|WHILE|WITH|WITHIN GROUP|WRITETEXT";
+
+            /// <summary>
+            /// Matches a word against the list of officially reserved keywords for odbc
+            /// </summary>
+            public static string SqlReservedKeywordOdbc = @"^ABSOLUTE|ACTION|ADA|ADD|ALL|ALLOCATE|ALTER|AND|ANY|ARE|AS|ASC|ASSERTION|AT|AUTHORIZATION|AVG|BEGIN|BETWEEN|BIT|BIT_LENGTH|BOTH|BY|CASCADE|CASCADED|CASE|CAST|CATALOG|CHAR|CHAR_LENGTH|CHARACTER|CHARACTER_LENGTH|CHECK|CLOSE|COALESCE|COLLATE|COLLATION|COLUMN|COMMIT|CONNECT|CONNECTION|CONSTRAINT|CONSTRAINTS|CONTINUE|CONVERT|CORRESPONDING|COUNT|CREATE|CROSS|CURRENT|CURRENT_DATE|CURRENT_TIME|CURRENT_TIMESTAMP|CURRENT_USER|CURSOR|DATE|DAY|DEALLOCATE|DEC|DECIMAL|DECLARE|DEFAULT|DEFERRABLE|DEFERRED|DELETE|DESC|DESCRIBE|DESCRIPTOR|DIAGNOSTICS|DISCONNECT|DISTINCT|DOMAIN|DOUBLE|DROP|ELSE|END|END-EXEC|ESCAPE|EXCEPT|EXCEPTION|EXEC|EXECUTE|EXISTS|EXTERNAL|EXTRACT|FALSE|FETCH|FIRST|FLOAT|FOR|FOREIGN|FORTRAN|FOUND|FROM|FULL|GET|GLOBAL|GO|GOTO|GRANT|GROUP|HAVING|HOUR|IDENTITY|IMMEDIATE|IN|INCLUDE|INDEX|INDICATOR|INITIALLY|INNER|INPUT|INSENSITIVE|INSERT|INT|INTEGER|INTERSECT|INTERVAL|INTO|IS|ISOLATION|JOIN|KEY|LANGUAGE|LAST|LEADING|LEFT|LEVEL|LIKE|LOCAL|LOWER|MATCH|MAX|MIN|MINUTE|MODULE|MONTH|NAMES|NATIONAL|NATURAL|NCHAR|NEXT|NO|NONE|NOT|NULL|NULLIF|NUMERIC|OCTET_LENGTH|OF|ON|ONLY|OPEN|OPTION|OR|ORDER|OUTER|OUTPUT|OVERLAPS|PAD|PARTIAL|PASCAL|POSITION|PRECISION|PREPARE|PRESERVE|PRIMARY|PRIOR|PRIVILEGES|PROCEDURE|PUBLIC|READ|REAL|REFERENCES|RELATIVE|RESTRICT|REVOKE|RIGHT|ROLLBACK|ROWS|SCHEMA|SCROLL|SECOND|SECTION|SELECT|SESSION|SESSION_USER|SET|SIZE|SMALLINT|SOME|SPACE|SQL|SQLCA|SQLCODE|SQLERROR|SQLSTATE|SQLWARNING|SUBSTRING|SUM|SYSTEM_USER|TABLE|TEMPORARY|THEN|TIME|TIMESTAMP|TIMEZONE_HOUR|TIMEZONE_MINUTE|TO|TRAILING|TRANSACTION|TRANSLATE|TRANSLATION|TRIM|TRUE|UNION|UNIQUE|UNKNOWN|UPDATE|UPPER|USAGE|USER|USING|VALUE|VALUES|VARCHAR|VARYING|VIEW|WHEN|WHENEVER|WHERE|WITH|WORK|WRITE|YEAR|ZONE$";
+
+            /// <summary>
+            /// Will match any reserved odbc-keyword in a larger text
+            /// </summary>
+            public static string SqlReservedKeywordOdbcEx = @"ABSOLUTE|ACTION|ADA|ADD|ALL|ALLOCATE|ALTER|AND|ANY|ARE|AS|ASC|ASSERTION|AT|AUTHORIZATION|AVG|BEGIN|BETWEEN|BIT|BIT_LENGTH|BOTH|BY|CASCADE|CASCADED|CASE|CAST|CATALOG|CHAR|CHAR_LENGTH|CHARACTER|CHARACTER_LENGTH|CHECK|CLOSE|COALESCE|COLLATE|COLLATION|COLUMN|COMMIT|CONNECT|CONNECTION|CONSTRAINT|CONSTRAINTS|CONTINUE|CONVERT|CORRESPONDING|COUNT|CREATE|CROSS|CURRENT|CURRENT_DATE|CURRENT_TIME|CURRENT_TIMESTAMP|CURRENT_USER|CURSOR|DATE|DAY|DEALLOCATE|DEC|DECIMAL|DECLARE|DEFAULT|DEFERRABLE|DEFERRED|DELETE|DESC|DESCRIBE|DESCRIPTOR|DIAGNOSTICS|DISCONNECT|DISTINCT|DOMAIN|DOUBLE|DROP|ELSE|END|END-EXEC|ESCAPE|EXCEPT|EXCEPTION|EXEC|EXECUTE|EXISTS|EXTERNAL|EXTRACT|FALSE|FETCH|FIRST|FLOAT|FOR|FOREIGN|FORTRAN|FOUND|FROM|FULL|GET|GLOBAL|GO|GOTO|GRANT|GROUP|HAVING|HOUR|IDENTITY|IMMEDIATE|IN|INCLUDE|INDEX|INDICATOR|INITIALLY|INNER|INPUT|INSENSITIVE|INSERT|INT|INTEGER|INTERSECT|INTERVAL|INTO|IS|ISOLATION|JOIN|KEY|LANGUAGE|LAST|LEADING|LEFT|LEVEL|LIKE|LOCAL|LOWER|MATCH|MAX|MIN|MINUTE|MODULE|MONTH|NAMES|NATIONAL|NATURAL|NCHAR|NEXT|NO|NONE|NOT|NULL|NULLIF|NUMERIC|OCTET_LENGTH|OF|ON|ONLY|OPEN|OPTION|OR|ORDER|OUTER|OUTPUT|OVERLAPS|PAD|PARTIAL|PASCAL|POSITION|PRECISION|PREPARE|PRESERVE|PRIMARY|PRIOR|PRIVILEGES|PROCEDURE|PUBLIC|READ|REAL|REFERENCES|RELATIVE|RESTRICT|REVOKE|RIGHT|ROLLBACK|ROWS|SCHEMA|SCROLL|SECOND|SECTION|SELECT|SESSION|SESSION_USER|SET|SIZE|SMALLINT|SOME|SPACE|SQL|SQLCA|SQLCODE|SQLERROR|SQLSTATE|SQLWARNING|SUBSTRING|SUM|SYSTEM_USER|TABLE|TEMPORARY|THEN|TIME|TIMESTAMP|TIMEZONE_HOUR|TIMEZONE_MINUTE|TO|TRAILING|TRANSACTION|TRANSLATE|TRANSLATION|TRIM|TRUE|UNION|UNIQUE|UNKNOWN|UPDATE|UPPER|USAGE|USER|USING|VALUE|VALUES|VARCHAR|VARYING|VIEW|WHEN|WHENEVER|WHERE|WITH|WORK|WRITE|YEAR|ZONE";
+
+            /// <summary>
+            /// Matches a word against the list of keywords that are likely to become reserved in the future
+            /// </summary>
+            public static string SqlReservedKeywordFuture = @"^ABSOLUTE|ACTION|ADMIN|AFTER|AGGREGATE|ALIAS|ALLOCATE|ARE|ARRAY|ASENSITIVE|ASSERTION|ASYMMETRIC|AT|ATOMIC|BEFORE|BINARY|BIT|BLOB|BOOLEAN|BOTH|BREADTH|CALL|CALLED|CARDINALITY|CASCADED|CAST|CATALOG|CHAR|CHARACTER|CLASS|CLOB|COLLATION|COLLECT|COMPLETION|CONDITION|CONNECT|CONNECTION|CONSTRAINTS|CONSTRUCTOR|CORR|CORRESPONDING|COVAR_POP|COVAR_SAMP|CUBE|CUME_DIST|CURRENT_CATALOG|CURRENT_DEFAULT_TRANSFORM_GROUP|CURRENT_PATH|CURRENT_ROLE|CURRENT_SCHEMA|CURRENT_TRANSFORM_GROUP_FOR_TYPE|CYCLE|DATA|DATE|DAY|DEC|DECIMAL|DEFERRABLE|DEFERRED|DEPTH|DEREF|DESCRIBE|DESCRIPTOR|DESTROY|DESTRUCTOR|DETERMINISTIC|DIAGNOSTICS|DICTIONARY|DISCONNECT|DOMAIN|DYNAMIC|EACH|ELEMENT|END-EXEC|EQUALS|EVERY|EXCEPTION|FALSE|FILTER|FIRST|FLOAT|FOUND|FREE|FULLTEXTTABLE|FUSION|GENERAL|GET|GLOBAL|GO|GROUPING|HOLD|HOST|HOUR|IGNORE|IMMEDIATE|INDICATOR|INITIALIZE|INITIALLY|INOUT|INPUT|INT|INTEGER|INTERSECTION|INTERVAL|ISOLATION|ITERATE|LANGUAGE|LARGE|LAST|LATERAL|LEADING|LESS|LEVEL|LIKE_REGEX|LIMIT|LN|LOCAL|LOCALTIME|LOCALTIMESTAMP|LOCATOR|MAP|MATCH|MEMBER|METHOD|MINUTE|MOD|MODIFIES|MODIFY|MODULE|MONTH|MULTISET|NAMES|NATURAL|NCHAR|NCLOB|NEW|NEXT|NO|NONE|NORMALIZE|NUMERIC|OBJECT|OCCURRENCES_REGEX|OLD|ONLY|OPERATION|ORDINALITY|OUT|OUTPUT|OVERLAY|PAD|PARAMETER|PARAMETERS|PARTIAL|PARTITION|PATH|PERCENT_RANK|PERCENTILE_CONT|PERCENTILE_DISC|POSITION_REGEX|POSTFIX|PREFIX|PREORDER|PREPARE|PRESERVE|PRIOR|PRIVILEGES|RANGE|READS|REAL|RECURSIVE|REF|REFERENCING|REGR_AVGX|REGR_AVGY|REGR_COUNT|REGR_INTERCEPT|REGR_R2|REGR_SLOPE|REGR_SXX|REGR_SXY|REGR_SYY|RELATIVE|RELEASE|RESULT|RETURNS|ROLE|ROLLUP|ROUTINE|ROW|ROWS|SAVEPOINT|SCOPE|SCROLL|SEARCH|SECOND|SECTION|SENSITIVE|SEQUENCE|SESSION|SETS|SIMILAR|SIZE|SMALLINT|SPACE|SPECIFIC|SPECIFICTYPE|SQL|SQLEXCEPTION|SQLSTATE|SQLWARNING|START|STATE|STATEMENT|STATIC|STDDEV_POP|STDDEV_SAMP|STRUCTURE|SUBMULTISET|SUBSTRING_REGEX|SYMMETRIC|SYSTEM|TEMPORARY|TERMINATE|THAN|TIME|TIMESTAMP|TIMEZONE_HOUR|TIMEZONE_MINUTE|TRAILING|TRANSLATE_REGEX|TRANSLATION|TREAT|TRUE|UESCAPE|UNDER|UNKNOWN|UNNEST|USAGE|USING|VALUE|VAR_POP|VAR_SAMP|VARCHAR|VARIABLE|WHENEVER|WIDTH_BUCKET|WINDOW|WITHIN|WITHOUT|WORK|WRITE|XMLAGG|XMLATTRIBUTES|XMLBINARY|XMLCAST|XMLCOMMENT|XMLCONCAT|XMLDOCUMENT|XMLELEMENT|XMLEXISTS|XMLFOREST|XMLITERATE|XMLNAMESPACES|XMLPARSE|XMLPI|XMLQUERY|XMLSERIALIZE|XMLTABLE|XMLTEXT|XMLVALIDATE|YEAR|ZONE$";
+
+            /// <summary>
+            /// Will match against the list of keywords that are likely to become reserved in the future and are used in a larger text
+            /// </summary>
+            public static string SqlReservedKeywordFutureEx = @"ABSOLUTE|ACTION|ADMIN|AFTER|AGGREGATE|ALIAS|ALLOCATE|ARE|ARRAY|ASENSITIVE|ASSERTION|ASYMMETRIC|AT|ATOMIC|BEFORE|BINARY|BIT|BLOB|BOOLEAN|BOTH|BREADTH|CALL|CALLED|CARDINALITY|CASCADED|CAST|CATALOG|CHAR|CHARACTER|CLASS|CLOB|COLLATION|COLLECT|COMPLETION|CONDITION|CONNECT|CONNECTION|CONSTRAINTS|CONSTRUCTOR|CORR|CORRESPONDING|COVAR_POP|COVAR_SAMP|CUBE|CUME_DIST|CURRENT_CATALOG|CURRENT_DEFAULT_TRANSFORM_GROUP|CURRENT_PATH|CURRENT_ROLE|CURRENT_SCHEMA|CURRENT_TRANSFORM_GROUP_FOR_TYPE|CYCLE|DATA|DATE|DAY|DEC|DECIMAL|DEFERRABLE|DEFERRED|DEPTH|DEREF|DESCRIBE|DESCRIPTOR|DESTROY|DESTRUCTOR|DETERMINISTIC|DIAGNOSTICS|DICTIONARY|DISCONNECT|DOMAIN|DYNAMIC|EACH|ELEMENT|END-EXEC|EQUALS|EVERY|EXCEPTION|FALSE|FILTER|FIRST|FLOAT|FOUND|FREE|FULLTEXTTABLE|FUSION|GENERAL|GET|GLOBAL|GO|GROUPING|HOLD|HOST|HOUR|IGNORE|IMMEDIATE|INDICATOR|INITIALIZE|INITIALLY|INOUT|INPUT|INT|INTEGER|INTERSECTION|INTERVAL|ISOLATION|ITERATE|LANGUAGE|LARGE|LAST|LATERAL|LEADING|LESS|LEVEL|LIKE_REGEX|LIMIT|LN|LOCAL|LOCALTIME|LOCALTIMESTAMP|LOCATOR|MAP|MATCH|MEMBER|METHOD|MINUTE|MOD|MODIFIES|MODIFY|MODULE|MONTH|MULTISET|NAMES|NATURAL|NCHAR|NCLOB|NEW|NEXT|NO|NONE|NORMALIZE|NUMERIC|OBJECT|OCCURRENCES_REGEX|OLD|ONLY|OPERATION|ORDINALITY|OUT|OUTPUT|OVERLAY|PAD|PARAMETER|PARAMETERS|PARTIAL|PARTITION|PATH|PERCENT_RANK|PERCENTILE_CONT|PERCENTILE_DISC|POSITION_REGEX|POSTFIX|PREFIX|PREORDER|PREPARE|PRESERVE|PRIOR|PRIVILEGES|RANGE|READS|REAL|RECURSIVE|REF|REFERENCING|REGR_AVGX|REGR_AVGY|REGR_COUNT|REGR_INTERCEPT|REGR_R2|REGR_SLOPE|REGR_SXX|REGR_SXY|REGR_SYY|RELATIVE|RELEASE|RESULT|RETURNS|ROLE|ROLLUP|ROUTINE|ROW|ROWS|SAVEPOINT|SCOPE|SCROLL|SEARCH|SECOND|SECTION|SENSITIVE|SEQUENCE|SESSION|SETS|SIMILAR|SIZE|SMALLINT|SPACE|SPECIFIC|SPECIFICTYPE|SQL|SQLEXCEPTION|SQLSTATE|SQLWARNING|START|STATE|STATEMENT|STATIC|STDDEV_POP|STDDEV_SAMP|STRUCTURE|SUBMULTISET|SUBSTRING_REGEX|SYMMETRIC|SYSTEM|TEMPORARY|TERMINATE|THAN|TIME|TIMESTAMP|TIMEZONE_HOUR|TIMEZONE_MINUTE|TRAILING|TRANSLATE_REGEX|TRANSLATION|TREAT|TRUE|UESCAPE|UNDER|UNKNOWN|UNNEST|USAGE|USING|VALUE|VAR_POP|VAR_SAMP|VARCHAR|VARIABLE|WHENEVER|WIDTH_BUCKET|WINDOW|WITHIN|WITHOUT|WORK|WRITE|XMLAGG|XMLATTRIBUTES|XMLBINARY|XMLCAST|XMLCOMMENT|XMLCONCAT|XMLDOCUMENT|XMLELEMENT|XMLEXISTS|XMLFOREST|XMLITERATE|XMLNAMESPACES|XMLPARSE|XMLPI|XMLQUERY|XMLSERIALIZE|XMLTABLE|XMLTEXT|XMLVALIDATE|YEAR|ZONE";
         }
 
         /// <summary>
@@ -3949,7 +4341,7 @@ namespace Sqlcollective.Dbatools
             /// <param name="a">The number to convert</param>
             public static implicit operator Size(double a)
             {
-                return new Size((int)a);
+                return new Size((long)a);
             }
 
             /// <summary>
@@ -3996,7 +4388,7 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// The Version of the dbatools Library. Used to compare with import script to determine out-of-date libraries
             /// </summary>
-            public readonly static Version LibraryVersion = new Version(1, 0, 0, 4);
+            public readonly static Version LibraryVersion = new Version(1, 0, 0, 5);
         }
 
         /// <summary>
@@ -4004,6 +4396,30 @@ namespace Sqlcollective.Dbatools
         /// </summary>
         public static class Validation
         {
+            /// <summary>
+            /// Tests whether a given string is a recommended instance name. Recommended names musst be legal, nbot on the ODBC list and not on the list of words likely to become reserved keywords in the future.
+            /// </summary>
+            /// <param name="InstanceName">The name to test. MAY contain server name, but will NOT test the server.</param>
+            /// <returns>Whether the name is recommended</returns>
+            public static bool IsRecommendedInstanceName(string InstanceName)
+            {
+                string temp;
+                if (InstanceName.Split('\\').Length == 1) { temp = InstanceName; }
+                else if (InstanceName.Split('\\').Length == 2) { temp = InstanceName.Split('\\')[1]; }
+                else { return false; }
+
+                if (Regex.IsMatch(temp, RegexHelper.SqlReservedKeyword, RegexOptions.IgnoreCase)) { return false; }
+                if (Regex.IsMatch(temp, RegexHelper.SqlReservedKeywordFuture, RegexOptions.IgnoreCase)) { return false; }
+                if (Regex.IsMatch(temp, RegexHelper.SqlReservedKeywordOdbc, RegexOptions.IgnoreCase)) { return false; }
+
+                if (temp.ToLower() == "default") { return false; }
+                if (temp.ToLower() == "mssqlserver") { return false; }
+
+                if (!Regex.IsMatch(temp, RegexHelper.InstanceName, RegexOptions.IgnoreCase)) { return false; }
+
+                return true;
+            }
+
             /// <summary>
             /// Tests whether a given string is a valid target for targeting as a computer. Will first convert from idn name.
             /// </summary>
@@ -4017,6 +4433,102 @@ namespace Sqlcollective.Dbatools
                 }
                 catch { return false; }
             }
+
+            /// <summary>
+            /// Tests whether a given string is a valid instance name.
+            /// </summary>
+            /// <param name="InstanceName">The name to test. MAY contain server name, but will NOT test the server.</param>
+            /// <returns>Whether the name is legal</returns>
+            public static bool IsValidInstanceName(string InstanceName)
+            {
+                string temp;
+                if (InstanceName.Split('\\').Length == 1) { temp = InstanceName; }
+                else if (InstanceName.Split('\\').Length == 2) { temp = InstanceName.Split('\\')[1]; }
+                else { return false; }
+
+                if (Regex.IsMatch(temp, RegexHelper.SqlReservedKeyword, RegexOptions.IgnoreCase)) { return false; }
+                
+                if (temp.ToLower() == "default") { return false; }
+                if (temp.ToLower() == "mssqlserver") { return false; }
+
+                if (!Regex.IsMatch(temp, RegexHelper.InstanceName, RegexOptions.IgnoreCase)) { return false; }
+
+                return true;
+            }
+        }
+    }
+
+    namespace Validation
+    {
+        /// <summary>
+        /// The results of testing linked server connectivity as seen from the server that was linked to.
+        /// </summary>
+        [Serializable]
+        public class LinkedServerResult
+        {
+            /// <summary>
+            /// The name of the server running the tests
+            /// </summary>
+            public string ComputerName;
+
+            /// <summary>
+            /// The name of the instance running the tests
+            /// </summary>
+            public string InstanceName;
+
+            /// <summary>
+            /// The full name of the instance running the tests
+            /// </summary>
+            public string SqlInstance;
+
+            /// <summary>
+            /// The name of the linked server, the connectivity with whom was tested
+            /// </summary>
+            public string LinkedServerName;
+
+            /// <summary>
+            /// The name of the remote computer running the linked server.
+            /// </summary>
+            public string RemoteServer;
+
+            /// <summary>
+            /// The test result
+            /// </summary>
+            public bool Connectivity;
+
+            /// <summary>
+            /// Text interpretation of the result. Contains error messages if the test failed.
+            /// </summary>
+            public string Result;
+
+            /// <summary>
+            /// Creates an empty object
+            /// </summary>
+            public LinkedServerResult()
+            {
+
+            }
+
+            /// <summary>
+            /// Creates a test result with prefilled values
+            /// </summary>
+            /// <param name="ComputerName">The name of the server running the tests</param>
+            /// <param name="InstanceName">The name of the instance running the tests</param>
+            /// <param name="SqlInstance">The full name of the instance running the tests</param>
+            /// <param name="LinkedServerName">The name of the linked server, the connectivity with whom was tested</param>
+            /// <param name="RemoteServer">The name of the remote computer running the linked server.</param>
+            /// <param name="Connectivity">The test result</param>
+            /// <param name="Result">Text interpretation of the result. Contains error messages if the test failed.</param>
+            public LinkedServerResult(string ComputerName, string InstanceName, string SqlInstance, string LinkedServerName, string RemoteServer, bool Connectivity, string Result)
+            {
+                this.ComputerName = ComputerName;
+                this.InstanceName = InstanceName;
+                this.SqlInstance = SqlInstance;
+                this.LinkedServerName = LinkedServerName;
+                this.RemoteServer = RemoteServer;
+                this.Connectivity = Connectivity;
+                this.Result = Result;
+            }
         }
     }
 }
@@ -4028,7 +4540,7 @@ namespace Sqlcollective.Dbatools
         $paramAddType = @{
             TypeDefinition = $source
             ErrorAction = 'Stop'
-            ReferencedAssemblies = ([appdomain]::CurrentDomain.GetAssemblies() | Where-Object FullName -match "Microsoft\.Management\.Infrastructure|System\.Numerics").Location
+            ReferencedAssemblies = ([appdomain]::CurrentDomain.GetAssemblies() | Where-Object FullName -match "^Microsoft\.Management\.Infrastructure, |^System\.Numerics, " | Where-Object Location).Location
         }
         
         Add-Type @paramAddType
@@ -4069,7 +4581,7 @@ aka "The guy who made most of The Library that Failed to import"
 }
 
 #region Version Warning
-$LibraryVersion = New-Object System.Version(1, 0, 0, 4)
+$LibraryVersion = New-Object System.Version(1, 0, 0, 5)
 if ($LibraryVersion -ne ([Sqlcollective.Dbatools.Utility.UtilityHost]::LibraryVersion))
 {
     Write-Warning @"

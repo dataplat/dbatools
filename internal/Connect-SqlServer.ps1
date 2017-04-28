@@ -7,22 +7,21 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[object]$SqlServer,
+		[DbaInstanceParameter]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$ParameterConnection,
-		[switch]$RegularUser,
-		[string]$ApplicationName = "dbatools PowerShell module - dbatools.io"
+		[switch]$RegularUser
 	)
 	
 	
-	if ($SqlServer.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
+	if ($SqlServer.InputObject.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
 	{
-		
+		$server = $SqlServer.InputObject
 		if ($ParameterConnection)
 		{
 			$paramserver = New-Object Microsoft.SqlServer.Management.Smo.Server
-			$paramserver.ConnectionContext.ApplicationName = $ApplicationName
-			$paramserver.ConnectionContext.ConnectionString = $SqlServer.ConnectionContext.ConnectionString
+			$paramserver.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
+			$paramserver.ConnectionContext.ConnectionString = $server.ConnectionContext.ConnectionString
 			
 			if ($SqlCredential.username -ne $null)
 			{
@@ -50,28 +49,17 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 			return $paramserver
 		}
 		
-		if ($SqlServer.ConnectionContext.IsOpen -eq $false)
+		if ($server.ConnectionContext.IsOpen -eq $false)
 		{
-			$SqlServer.ConnectionContext.Connect()
+            $server.ConnectionContext.Connect()
 		}
-		return $SqlServer
+		return $server
 	}
+    
+    # This seems a little complex but is required because some connections do TCP,sqlserver
+    $server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlServer.FullSmoName
+	$server.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
 	
-	# This seems a little complex but is required because some connections do TCP,sqlserver
-	[regex]$portdetection = ":\d{1,5}$"
-	if ($sqlserver.LastIndexOf(":") -ne -1)
-	{
-		$portnumber = $sqlserver.substring($sqlserver.LastIndexOf(":"))
-		if ($portnumber -match $portdetection)
-		{
-			$replacedportseparator = $portnumber -replace ":", ","
-			$sqlserver = $sqlserver -replace $portnumber, $replacedportseparator
-		}
-	}
-	
-	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlServer
-	$server.ConnectionContext.ApplicationName = $ApplicationName
-
 	<#
 	 Just realized this will not work because it's SMO ;) We will return to if this is still needed and how to handle it in 1.0.
 	
@@ -129,7 +117,7 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 		throw "Can't connect to $sqlserver`: $message "
 	}
 	
-	if ($RegularUser -eq $false)
+	if (-not $RegularUser)
 	{
 		if ($server.ConnectionContext.FixedServerRoles -notmatch "SysAdmin")
 		{
@@ -137,7 +125,7 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 		}
 	}
 	
-	if ($ParameterConnection -eq $false)
+	if (-not $ParameterConnection)
 	{
 		$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Trigger], 'IsSystemObject')
 		$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Rule], 'IsSystemObject')
