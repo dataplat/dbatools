@@ -95,7 +95,7 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
             }
             #This scans for striped full backups to build the results
             $Results += $SQLBackupdetails | where-object {$_.BackupTypeDescription -eq "Database" -and $_.BackupSetGUID -eq $FullBackup.BackupSetGUID}
-            $LogStartDate = $Fullback.StartDate
+            $LogStartDate = $Fullbackup.BackupStartDate
 
             Write-Verbose "$FunctionName - Got a Full backup, now to find diffs if they exist"
             #Get latest Differential Backup
@@ -105,12 +105,13 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
             #Scan for striped differential backups
             $Diffbackups = $SqlBackupDetails | Where-Object {$_.BackupTypeDescription -eq 'Database Differential' -and $_.FirstLSN -eq $DiffBackupsLSN -and $_.BackupsetGUID -eq $DiffBackup.BackupSetGUID}
             $TlogStartlsn = 0
+            $Tlogs = @()
             if ($null -ne $Diffbackups){
                 Write-Verbose "$FunctionName - we have at least one diff so look for tlogs after the last one"
                 #If we have a Diff backup, we only need T-log backups post that point
                 $TlogStartLSN = ($DiffBackups | select-object -Property FirstLSN -first 1).FirstLSN
                 $Results += $Diffbackups
-                $LogStartDate = $Diffbackup.StartDate
+                $LogStartDate = $Diffbackup.BackupStartDate
             }
             
             if ($FullBackup.RecoverModel -eq 'SIMPLE' -or $IgnoreLogBackup)
@@ -126,9 +127,9 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
                 $GroupedLogs = $FilteredLogs | Group-Object -Property LastLSN
                 foreach ($LogGroup in $GroupedLogs)
                 {
-                    $Tlogs += $Logroup.Group | sort-Object -Property BackupStartDate -Descending | select-object -first 1
+                    $Tlogs += $LogGroup.Group | Where-Object {$_.BackupSetGUID -eq ($LogGroup.Group | sort-Object -Property BackupStartDate -Descending | select-object -first 1).BackupSetGUID}
                 }
-                Write-Verbose "$FunctionName - Filtered $($Alltlogs.count) down to $($Tlogs.count)"
+                Write-Verbose "$FunctionName - Filtered $($Alltlogs.count) log backups down to $($Tlogs.count)"
                 $Results += $Tlogs
                 #Catch the last Tlog that covers the restore time!
                 $Tlogfinal = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.BackupStartDate -gt $RestoreTime} | Sort-Object -Property LastLSN  | Select-Object -First 1
