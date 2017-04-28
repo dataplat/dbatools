@@ -35,7 +35,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.	
 
 .LINK
-https://dbatools.io/Get-DbaAgentJob
+https://dbatools.io/ConvertFrom-DbaDiagnosticQueryCliXml
 
 .EXAMPLE  
 ConvertFrom-DbaDiagnosticQueryCliXml -InputObject c:\users\myusername\documents\myfilename.clixml -To Excel -Destination c:\users\myusername\documents\
