@@ -84,7 +84,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .LINK
 https://dbatools.io/Export-SqlUser
 #>
-	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+	[CmdletBinding(DefaultParameterSetName = "Default")]
 	[OutputType([String])]
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -117,7 +117,7 @@ https://dbatools.io/Export-SqlUser
 				throw "Parent directory $directory does not exist"
 			}
 			
-			Write-Message -Level Output -Message "--Attempting to connect to SQL Servers.."
+			Write-Message -Level Output -Message "Attempting to connect to SQL Servers.."
 		}
 		
 		$outsql = @()
@@ -352,7 +352,7 @@ https://dbatools.io/Export-SqlUser
 										
 										if ($scriptVersion -ne "Version80") {
 											$object = 'OBJECT::[{0}].[{1}]' -f $objectPermission.ObjectSchema, $objectPermission.ObjectName
-											if ($objectPermission.ColumnName -ne $null) {
+											if ($null -ne $objectPermission.ColumnName) {
 												$object += '([{0}])' -f $objectPermission.ColumnName
 											}
 										}
