@@ -444,7 +444,7 @@ https://dbatools.io/Export-SqlUser
 		$sql += "`r`nGO"
 		
 		if ($FilePath.Length -gt 0) {
-			$sql | Out-File -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+			$sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
 		}
 		else {
 			return $sql
