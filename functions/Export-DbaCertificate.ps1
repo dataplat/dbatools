@@ -49,7 +49,7 @@ File to disk, and string path.
 		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
 		[string]$Path,
-		[string]$Database,
+		[array]$Databases,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
@@ -70,50 +70,56 @@ File to disk, and string path.
 	
 	PROCESS
 		{
-			write-host 'hi there'
-			write-host ("Server: {0}" -f $server.name)
-			write-host ("Database: {0}" -f $Database)
-			write-host ("Path: {0}" -f $path)
-			write-host "-------"
 
-			# get certs thjat 
-			$certificates = $server.Databases['master'].Certificates | where-object {$_.name -notlike '##*'}
-			
-#if just one db?
+			# if the database is specified get the specific cert name
+			if($Databases) {
+				$certificates = @()
+				foreach ($database in $Databases) {
+					$certName = $server.Databases[$Database].DatabaseEncryptionKey.EncryptorName
+					$certificates += $server.Databases['master'].Certificates | where-object {$_.name -eq $certName}
+				}
+			}
+			else {
+				$certificates = $server.Databases['master'].Certificates | where-object {$_.name -notlike '##*'}
+			}
+
 #specify cert name?
-#password generator
+#password generator 
+	#- I'd always prompt the user to enter it - you can do it with Read-Host and -UseSecureString or something
+	#- or allow them to pass a credential
+#ekm provider
 
 			#Write-Message -Level Verbose -Message "Exporting Certificates"
 			Write-host "Exporting Certificates"
-			$pwd = 'asfhSAKJFkh2148325@$#@'
+			$pwd = Read-Host "Password:" #-AsSecureString
+			write-host $pwd
+			
+			$certSql = @()
 			foreach ($cert in $certificates) {
 				#Write-Message -Level Verbose -Message ("Exporting Certificate: {0}" -f $cert.name )
 				Write-Host ("Exporting Certificate: {0}" -f $cert.name )
 				$exportLocation = "$path\$($cert.name)"
 				Write-Host $exportLocation
 				$cert.export("$exportLocation.cer","$exportLocation.pvk",$pwd)
+
+				# Generate script
+				$certSql += (
+				"CREATE CERTIFICATE [{0}]  
+				FROM FILE = '{1}{2}.cer'
+				WITH PRIVATE KEY 
+				( 
+					FILE = '{1}{2}.pvk' ,
+					DECRYPTION BY PASSWORD = '{3}'
+				)
+				GO
+				" -f $cert.name, $exportLocation, $c.encryptorName ,$pwd)
 			}
-
-# SQL FILE WITH CREATE SCRIPT?
-
-
-		
-		#try { Set-Content -Path $path "EXEC sp_configure 'show advanced options' , 1;  RECONFIGURE WITH OVERRIDE" }
-		#catch { throw "Can't write to $path" }
-		
-		#$server.Configuration.ShowAdvancedOptions.ConfigValue = $true
-		#$server.Configuration.Alter($true)
-		#foreach ($sourceprop in $server.Configuration.Properties)
-		#{
-		#	$displayname = $sourceprop.DisplayName
-		#	$configvalue = $sourceprop.ConfigValue
-		#	Add-Content -Path $path "EXEC sp_configure '$displayname' , $configvalue;"
-		#}
-		#Add-Content -Path $path "EXEC sp_configure 'show advanced options' , 0;"
-		#Add-Content -Path $Path "RECONFIGURE WITH OVERRIDE"
-		#$server.Configuration.ShowAdvancedOptions.ConfigValue = $false
-		#$server.Configuration.Alter($true)
-		
+			try {
+				$certsql | Out-File "$path\CreateCertificates.sql"
+			}
+			catch {
+				throw "Can't write to $path"
+			}
 		#return $path
 	}
 	
