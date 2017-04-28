@@ -179,6 +179,8 @@ Creates a DataTable with the running processes and converts any TimeSpan propert
 		}
 	
 		$datatable = New-Object System.Data.DataTable
+        $columnTypes = @{}
+        $specialColumns = @{}
 	}
 	
 	PROCESS
@@ -198,31 +200,63 @@ Creates a DataTable with the running processes and converts any TimeSpan propert
 		}
 		foreach ($object in $InputObject)
 		{
-			$datarow = $datatable.NewRow()
+            $datarow = $datatable.NewRow()
 			foreach ($property in $object.PsObject.get_properties())
 			{
                 # the converted variable will get the result from the ConvertType function and used for type and value conversion when adding to the datatable
                 $converted = @{}
+                
+                
 
 				if ($datatable.Rows.Count -eq 0)
 				{
-					$column = New-Object System.Data.DataColumn
-					$column.ColumnName = $property.Name.ToString()
-					
-                    # There was an if statement here before which checked if the $property.value had a value which has been removed
-                    # Even if property value is $false or $null we need to check the type
-					if ($property.value -isnot [System.DBNull])
-					{
+                    if ($property.value -isnot [System.DBNull])
+				    {
                         # Check if property is a ScriptProperty, then resolve it while calling ConvertType (otherwise we dont get the proper type)
+                        Write-Verbose "Attempting to get type from property $($property.Name)"
                         If ($property.MemberType -eq 'ScriptProperty') {
+                            Write-Verbose "Converting Script Property"
+                            Write-Warning "Value: $($property.Value)"
+                            Write-Verbose "Points to: $($object.($property.Name))"
                             $converted = ConvertType -type ($object.($property.Name).GetType().ToString()) -value $property.value -timespantype $TimeSpanType
+                            if ($converted.special) {
+                                $specialColumns.Add($property.Name, $object.($property.Name).GetType().ToString())
+                            }
                         } else {
                             $converted = ConvertType -type $property.TypeNameOfValue -value $property.value -timespantype $TimeSpanType
+                            if ($converted.special) {
+                                $specialColumns.Add($property.Name, $property.TypeNameOfValue)
+                            }
                         }
-						$column.DataType = [System.Type]::GetType($converted.type)
-					}
+
+                        
+					
+				    }
+
+					$column = New-Object System.Data.DataColumn
+					$column.ColumnName = $property.Name.ToString()
+					$column.DataType = [System.Type]::GetType($converted.type)
 					$datatable.Columns.Add($column)
+                    # not sure if this is needed
+                    #$columnTypes.Add($property.Name.ToString(),[System.Type]::GetType($converted.type))
 				}
+                else
+                {
+                    if ($property.value -isnot [System.DBNull])
+				    {
+                        # Check if property is a ScriptProperty, then resolve it while calling ConvertType (otherwise we dont get the proper type)
+                        Write-Verbose "Attempting to get type from property $($property.Name)"
+                        if (!$datatable.Columns.Contains($property.Name))
+                        {
+                            Throw "Unexpected property name: $($property.Name)"
+                        }
+
+                        if ($specialColumns.Keys -contains $property.Name) {
+                            $converted = ConvertType -type $specialColumns.($property.Name) -value $property.Value -timespantype $TimeSpanType
+                        } 
+					
+				    }
+                }
 
 				if ($property.value.length -gt 0)
 				{
@@ -234,7 +268,7 @@ Creates a DataTable with the running processes and converts any TimeSpan propert
 					{
                         # If the typename was a special typename we want to use the value returned from ConvertType instead
                         # We might get error if we try to change the value for $property.value if it is read-only.
-                        if ($converted.special) 
+                        if ($converted.special)
                         {
 						    $datarow.Item($property.Name) = $converted.value
                         }
