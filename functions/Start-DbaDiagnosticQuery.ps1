@@ -1,4 +1,4 @@
-﻿function Start-DbaDiagnosticQuery
+function Start-DbaDiagnosticQuery
 {
 <#
 .SYNOPSIS 
