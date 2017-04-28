@@ -14,9 +14,6 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
 To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER JobID
-The id of the job. Can be null if the the job name is being used.
-
 .PARAMETER JobName
 The name of the job. Can be null if the the job id is being used.
 
@@ -67,77 +64,73 @@ Removes the job from multiple servers using pipe line
         [object[]]$SqlInstance,
         [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]$SqlCredential,
-        [Parameter(Mandatory = $false)]
-        [int]$JobID,
-        [Parameter(Mandatory = $false)]
-        [string]$JobName,
+        [Parameter(Mandatory = $true)]
+        [string[]]$JobName,
         [switch]$KeepHistory,
         [switch]$KeepUnusedSchedule,
         [switch]$Silent
     )
 
-    begin{
-        # Check if the job id or jobname are set
-        if (-not($JobID) -and (-not($JobName))) {
-            Stop-Function -Message "Please enter a job id or job name." -Target $instance 
-            return
-        }
-    }
-
     process {
 
         foreach ($instance in $sqlinstance) {
+
             # Try connecting to the instance
             Write-Message -Message "Attempting to connect to Sql Server.." -Level Output
             try {
                 $Server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
             }
             catch {
-                Stop-Function -Message "Could not connect to Sql Server instance" -Target $instance 
+                Stop-Function -Message "Could not connect to Sql Server instance" -Target $instance -Continue
                 return
             }
         
-            # Check if the job exists
-            if (($Server.JobServer.Jobs).Name -notcontains $JobName) {
-                Write-Message -Message "Job $JobName doesn't exists on $instance" -Warning
-            }
-            else {   
-                # Get the job
-                try {
-                    $Job = $Server.JobServer.Jobs[$JobName] 
-                }
-                catch {
-                    Stop-Function -Message ("Something went wrong creating the job. `n$($_.Exception.Message)") -Target $instance
-                    return
-                }
+            foreach ($j in $JobName) {
 
-                # Delete the history
-                if (-not $KeepHistory) {
-                    Write-Message -Message "Purging job history" -Level Verbose
-                    $Job.PurgeHistory()
+                # Check if the job exists
+                if (($Server.JobServer.Jobs).Name -notcontains $j) {
+                    Write-Message -Message "Job $j doesn't exists on $instance" -Warning
                 }
-
-                # Execute 
-                if ($PSCmdlet.ShouldProcess($instance, ("Removing the job on $instance"))) {
+                else {   
+                    # Get the job
                     try {
-                        Write-Message -Message ("Removing the job") -Level Output
-
-                        if ($KeepUnusedSchedule) {
-                            # Drop the job keeping the unused schedules
-                            Write-Message -Message "Removing job keeping unused schedules" -Level Verbose
-                            $Job.Drop($true) 
-                        }
-                        else {
-                            # Drop the job removing the unused schedules
-                            Write-Message -Message "Removing job removing unused schedules" -Level Verbose
-                            $Job.Drop($false) 
-                        }
-                    
+                        $Job = $Server.JobServer.Jobs[$j] 
                     }
                     catch {
-                        Write-Message -Message ("Something went wrong removing the job. `n$($_.Exception.Message)") -Level Output 
+                        Stop-Function -Message "Something went wrong creating the job. `n$($_.Exception.Message)" -Target $instance -Continue
+                        return
+                    }
+
+                    # Delete the history
+                    if (-not $KeepHistory) {
+                        Write-Message -Message "Purging job history" -Level Verbose
+                        $Job.PurgeHistory()
+                    }
+
+                    # Execute 
+                    if ($PSCmdlet.ShouldProcess($instance, ("Removing the job on $instance"))) {
+                        try {
+                            Write-Message -Message "Removing the job" -Level Output
+
+                            if ($KeepUnusedSchedule) {
+                                # Drop the job keeping the unused schedules
+                                Write-Message -Message "Removing job keeping unused schedules" -Level Verbose
+                                $Job.Drop($true) 
+                            }
+                            else {
+                                # Drop the job removing the unused schedules
+                                Write-Message -Message "Removing job removing unused schedules" -Level Verbose
+                                $Job.Drop($false) 
+                            }
+                    
+                        }
+                        catch {
+                            Stop-Function -Message  "Something went wrong removing the job. `n$($_.Exception.Message)" -Target $instance -Continue
+                            return
+                        }
                     }
                 }
+
             }
 
         }
