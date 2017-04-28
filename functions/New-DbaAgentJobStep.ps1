@@ -65,6 +65,12 @@ The amount of time in minutes between retry attempts. The default is 0.
 .PARAMETER OutputFileName
 The name of the file in which the output of this step is saved.
 
+.PARAMETER Flag
+Sets the flag(s) for the job step.
+
+Flag                                    Description
+----------------------------------------------------------------------------
+
 .PARAMETER ProxyName
 The name of the proxy that the job step runs as.
 
@@ -144,6 +150,9 @@ Create a step in "Job1" with the name "Step1" where the database will the "msdb"
         [Parameter(Mandatory = $false)]
         [string]$OutputFileName,
         [Parameter(Mandatory = $false)]
+        [ValidateSet('AppendAllCmdExecOutputToJobHistory', 'AppendToJobHistory', 'AppendToLogFile', 'LogToTableWithOverwrite', 'None', 'ProvideStopProcessEvent')]
+        [string[]]$Flag,
+        [Parameter(Mandatory = $false)]
         [string]$ProxyName,
         [switch]$Silent
     )
@@ -151,18 +160,20 @@ Create a step in "Job1" with the name "Step1" where the database will the "msdb"
     begin{
         # Check the parameter on success step id
         if (($OnSuccessAction -ne 'GoToStep') -and ($OnSuccessStepId -ge 1)) {
-            Stop-Function -Message "Parameter OnSuccessStepId can only be used with OnSuccessAction 'GoToStep'."  -Target $instance 
+            Stop-Function -Message "Parameter OnSuccessStepId can only be used with OnSuccessAction 'GoToStep'."  -Target $SqlInstance 
             return
         }
 
         # Check the parameter on success step id
         if (($OnFailAction -ne 'GoToStep') -and ($OnFailStepId -ge 1)) {
-            Stop-Function -Message "Parameter OnFailStepId can only be used with OnFailAction 'GoToStep'."  -Target $instance 
+            Stop-Function -Message "Parameter OnFailStepId can only be used with OnFailAction 'GoToStep'."  -Target $SqlInstance 
             return
         }
     }
 
     process {
+
+        if (Test-FunctionInterrupt) { return }
         
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
@@ -171,7 +182,7 @@ Create a step in "Job1" with the name "Step1" where the database will the "msdb"
                 $Server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
             }
             catch {
-                Stop-Function -Message "Could not connect to Sql Server instance"  -Target $instance 
+                Stop-Function -Message "Could not connect to Sql Server instance"  -Target $instance -Continue
                 return
             }
 
@@ -192,7 +203,7 @@ Create a step in "Job1" with the name "Step1" where the database will the "msdb"
                     $JobStep.Parent = $Job
                 }
                 catch {
-                    Stop-Function -Message ("Something went wrong creating the job step. `n$($_.Exception.Message)") -Target $instance
+                    Stop-Function -Message "Something went wrong creating the job step. `n$($_.Exception.Message)" -Target $instance -Continue
                     return
                 }
 
@@ -204,10 +215,9 @@ Create a step in "Job1" with the name "Step1" where the database will the "msdb"
                         $JobStep.Name = $StepName
                     }
                     else {
-                        Stop-Function -Message ("The step name $StepName already exists.") -Target $instance
+                        Stop-Function -Message "The step name $StepName already exists." -Target $instance -Continue
                         return
                     }
-                
                 }
 
                 if ($StepId) {
@@ -217,7 +227,7 @@ Create a step in "Job1" with the name "Step1" where the database will the "msdb"
                         $JobStep.ID = $StepId
                     }
                     else {
-                        Stop-Function -Message ("The step id $($StepId) already exists.") -Target $instance
+                        Stop-Function -Message "The step id $($StepId) already exists." -Target $instance -Continue
                         return
                     }
                 
@@ -238,7 +248,7 @@ Create a step in "Job1" with the name "Step1" where the database will the "msdb"
                 }
 
                 if ($CmdExecSuccessCode) {
-                    Write-Message -Message "Setting job step command exec success code to $($CmdExecSuccessCode)" -Level Verbose 
+                    Write-Message -Message "Setting job step command exec success code to $CmdExecSuccessCode" -Level Verbose 
                     $JobStep.CommandExecutionSuccessCode = $CmdExecSuccessCode
                 }
 
@@ -248,7 +258,7 @@ Create a step in "Job1" with the name "Step1" where the database will the "msdb"
                 }
 
                 if ($OnSuccessStepId) {
-                    Write-Message -Message "Setting job step success step id to $($OnSuccessStepId)" -Level Verbose 
+                    Write-Message -Message "Setting job step success step id to $OnSuccessStepId" -Level Verbose 
                     $JobStep.OnSuccessStep = $OnSuccessStepId
                 }
 
@@ -258,7 +268,7 @@ Create a step in "Job1" with the name "Step1" where the database will the "msdb"
                 }
 
                 if ($OnFailStepId) {
-                    Write-Message -Message "Setting job step fail step id to $($OnFailStepId)" -Level Verbose 
+                    Write-Message -Message "Setting job step fail step id to $OnFailStepId" -Level Verbose 
                     $JobStep.OnFailStep = $OnFailStepId
                 }
 
@@ -269,7 +279,7 @@ Create a step in "Job1" with the name "Step1" where the database will the "msdb"
                         $JobStep.DatabaseName = $DatabaseName
                     }
                     else {
-                        Stop-Function -Message ("The database is not present on instance $instance.") -Target $JobName
+                        Stop-Function -Message "The database is not present on instance $instance." -Target $JobName -Continue
                         return
                     }
                 }
@@ -282,18 +292,18 @@ Create a step in "Job1" with the name "Step1" where the database will the "msdb"
                         $JobStep.DatabaseUserName = $DatabaseUserName
                     }
                     else {
-                        Stop-Function -Message ("The database user is not present in the database $DatabaseName on instance $instance.") -Target $StepName
+                        Stop-Function -Message "The database user is not present in the database $DatabaseName on instance $instance." -Target $StepName -Continue
                         return
                     }
                 }
 
                 if ($RetryAttempts) {
-                    Write-Message -Message "Setting job step retry attempts to $($RetryAttempts)" -Level Verbose 
+                    Write-Message -Message "Setting job step retry attempts to $RetryAttempts" -Level Verbose 
                     $JobStep.RetryAttempts = $RetryAttempts
                 }
 
                 if ($RetryInterval) {
-                    Write-Message -Message "Setting job step retry interval to $($RetryInterval)" -Level Verbose 
+                    Write-Message -Message "Setting job step retry interval to $RetryInterval" -Level Verbose 
                     $JobStep.RetryInterval = $RetryInterval
                 }
 
@@ -305,13 +315,18 @@ Create a step in "Job1" with the name "Step1" where the database will the "msdb"
                 if ($ProxyName) {
                     # Check if the proxy exists
                     if (($Server.JobServer.ProxyAccounts).Name -contains $ProxyName) {
-                        Write-Message -Message "Setting job step proxy name to $($ProxyName)" -Level Verbose 
+                        Write-Message -Message "Setting job step proxy name to $ProxyName" -Level Verbose 
                         $JobStep.ProxyName = $ProxyName
                     }
                     else {
-                        Stop-Function -Message ("The proxy name $ProxyName doesn't exist on instance $instance.") -Target $StepName
+                        Stop-Function -Message "The proxy name $ProxyName doesn't exist on instance $instance." -Target $StepName -Continue
                         return
                     }
+                }
+
+                if ($Flag.Count -ge 1) {
+                    Write-Message -Message "Setting job step flag(s) name to $($Flags -join ',')" -Level Verbose 
+                    $JobStep.JobStepFlags = $Flag
                 }
                 #endregion job step options
 
@@ -325,7 +340,8 @@ Create a step in "Job1" with the name "Step1" where the database will the "msdb"
                         $Job.Alter()
                     }
                     catch {
-                        Write-Message -Message ("Something went wrong creating the job step. `n$($_.Exception.Message)") -Level Output  
+                        Stop-Function -Message  "Something went wrong creating the job step. `n$($_.Exception.Message)" -Target $instance 
+                        return
                     }
 
                 }
