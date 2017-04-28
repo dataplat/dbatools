@@ -96,8 +96,7 @@ https://dbatools.io/Export-SqlUser
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Alias("NoOverwrite")]
 		[switch]$NoClobber,
-		[switch]$Append,
-		[switch]$IncludeSystemDatabases = $false
+		[switch]$Append
 	)
 	
 	DynamicParam 
@@ -154,7 +153,7 @@ https://dbatools.io/Export-SqlUser
 
         if ($databases.Count -eq 0)
         {
-            $databases = $sourceserver.Databases | Where-Object {$exclude -notcontains $_.Name -and $_.IsSystemObject -eq $IncludeSystemDatabases -and $_.IsAccessible -eq $true}
+            $databases = $sourceserver.Databases | Where-Object {$exclude -notcontains $_.Name -and $_.IsAccessible -eq $true}
         }
         else
         {
@@ -165,7 +164,7 @@ https://dbatools.io/Export-SqlUser
 		    }
             else
             {
-                $databases = $sourceserver.Databases | Where-Object {$exclude -notcontains $_.Name -and $_.IsSystemObject -eq $IncludeSystemDatabases -and $_.IsAccessible -eq $true -and ($databases -contains $_.Name)}
+                $databases = $sourceserver.Databases | Where-Object {$exclude -notcontains $_.Name -and $_.IsAccessible -eq $true -and ($databases -contains $_.Name)}
             }
         }
 
@@ -182,8 +181,9 @@ https://dbatools.io/Export-SqlUser
                 }
                 else
                 {
-                    $scriptVersion = $versions[$DestinationVersion]
+                    $scriptVersion = $versions[$DestinationVersion]   
                 }
+                $versionNameDesc = $versionName[$scriptVersion.ToString()]
 
                 #Options
                 [Microsoft.SqlServer.Management.Smo.ScriptingOptions] $ScriptingOptions = New-Object "Microsoft.SqlServer.Management.Smo.ScriptingOptions";
@@ -250,16 +250,16 @@ https://dbatools.io/Export-SqlUser
                             {
                                 if ($DatabasePermission.PermissionState -eq "GrantWithGrant")
                                 {
-                                    $WithGrant = "WITH GRANT OPTION"
+                                    $WithGrant = " WITH GRANT OPTION"
                                     $GrantDatabasePermission = 'GRANT'
                                 } 
                                 else 
                                 {
-                                    $WithGrant = ""
+                                    $WithGrant = " "
                                     $GrantDatabasePermission = $DatabasePermission.PermissionState.ToString().ToUpper()
                                 }
 
-                                $outsql += "$($GrantDatabasePermission) $($DatabasePermission.PermissionType) TO [$($DatabasePermission.Grantee)]$($WithGrant) AS [$($DatabasePermission.Grantor)];"
+                                $outsql += "$($GrantDatabasePermission) $($DatabasePermission.PermissionType) TO [$($DatabasePermission.Grantee)]$WithGrant AS [$($DatabasePermission.Grantor)];"
                             }
 
 
@@ -270,41 +270,73 @@ https://dbatools.io/Export-SqlUser
                             #    on them directly (e.g. AssemblyCollection); others can't (e.g.
                             #    ApplicationRoleCollection). Those that can't we iterate the
                             #    collection explicitly and add each object's permission.
+                            $obj_perms = New-Object System.Collections.ArrayList
 
-                            $obj_perms = @()
+                            $null = $obj_perms.AddRange($db.EnumObjectPermissions($dbuser.Name))
 
-                            $obj_perms += $db.EnumObjectPermissions()
-                            foreach ($o in $db.ApplicationRoles) {
-                                $obj_perms += $o.EnumObjectPermissions()
+                            foreach ($obj in $db.ApplicationRoles) {
+                                $null = $obj_perms.AddRange($obj.EnumObjectPermissions($dbuser.Name))
                             }
-                            $obj_perms += ($db.Assemblies).EnumObjectPermissions()
-                            $obj_perms += ($db.AsymmetricKeys).EnumObjectPermissions()
-                            foreach ($o in $db.Certificates) {
-                                $obj_perms += $o.EnumObjectPermissions()
-                            }
-                            foreach ($o in $db.DatabaseRoles) {
-                                $obj_perms += $o.EnumObjectPermissions()
-                            }
-                            foreach ($o in $db.FullTextCatalogs) {
-                                $obj_perms += $o.EnumObjectPermissions()
-                            }
-                            foreach ($o in $db.FullTextStopLists) {
-                                $obj_perms += $o.EnumObjectPermissions()
-                            }
-                            foreach ($o in $db.SearchPropertyLists) {
-                                $obj_perms += $o.EnumObjectPermissions()
-                            }
-                            $obj_perms += ($db.ServiceBroker.MessageTypes).EnumObjectPermissions()
-                            foreach ($o in $db.RemoteServiceBindings) {
-                                $obj_perms += $o.EnumObjectPermissions()
-                            }
-                            $obj_perms += ($db.ServiceBroker.Routes).EnumObjectPermissions()
-                            $obj_perms += ($db.ServiceBroker.ServiceContracts).EnumObjectPermissions()
-                            $obj_perms += ($db.ServiceBroker.Services).EnumObjectPermissions()
-                            $obj_perms += ($db.SymmetricKeys).EnumObjectPermissions()
-                            $obj_perms += ($db.XmlSchemaCollections).EnumObjectPermissions()
 
-                            foreach ($ObjectPermission in $obj_perms | Where-Object {@("sa","dbo","information_schema","sys") -notcontains $_.Grantee -and $_.Grantee -notlike "##*" -and $dbuser.Name -contains $_.Grantee})
+                            foreach ($obj in $db.Assemblies) {
+                                $null = $obj_perms.AddRange($obj.EnumObjectPermissions($dbuser.Name))
+                            }
+                            
+                            foreach ($obj in $db.Certificates) {
+                                $null = $obj_perms.AddRange($obj.EnumObjectPermissions($dbuser.Name))
+                            }
+
+                            foreach ($obj in $db.DatabaseRoles) {
+                                $null = $obj_perms.AddRange($obj.EnumObjectPermissions($dbuser.Name))
+                            }
+
+                            foreach ($obj in $db.FullTextCatalogs) {
+                                $null = $obj_perms.AddRange($obj.EnumObjectPermissions($dbuser.Name))
+                            }
+
+                            foreach ($obj in $db.FullTextStopLists) {
+                                $null = $obj_perms.AddRange($obj.EnumObjectPermissions($dbuser.Name))
+                            }
+
+                            foreach ($obj in $db.SearchPropertyLists) {
+                                $null = $obj_perms.AddRange($obj.EnumObjectPermissions($dbuser.Name))
+                            }
+
+                            foreach ($obj in $db.ServiceBroker.MessageTypes) {
+                                $null = $obj_perms.AddRange($obj.EnumObjectPermissions($dbuser.Name))
+                            }
+
+                            foreach ($obj in $db.RemoteServiceBindings) {
+                                $null = $obj_perms.AddRange($obj.EnumObjectPermissions($dbuser.Name))
+                            }
+                            
+                            foreach ($obj in $db.ServiceBroker.Routes) {
+                                $null = $obj_perms.AddRange($obj.EnumObjectPermissions($dbuser.Name))
+                            }
+
+                            foreach ($obj in $db.ServiceBroker.ServiceContracts) {
+                                $null = $obj_perms.AddRange($obj.EnumObjectPermissions($dbuser.Name))
+                            }
+                            
+                            foreach ($obj in $db.ServiceBroker.Services) {
+                                $null = $obj_perms.AddRange($obj.EnumObjectPermissions($dbuser.Name))
+                            }
+
+                            if ($scriptVersion -ne "Version80") {
+                                foreach ($obj in $db.AsymmetricKeys) {
+                                    $null = $obj_perms.AddRange($obj.EnumObjectPermissions($dbuser.Name))
+                                }
+                            }
+
+                            foreach ($obj in $db.SymmetricKeys) {
+                                $null = $obj_perms.AddRange($obj.EnumObjectPermissions($dbuser.Name))
+                            }
+
+                            foreach ($obj in $db.XmlSchemaCollections) {
+                                $null = $obj_perms.AddRange($obj.EnumObjectPermissions($dbuser.Name))
+                            }
+
+                            foreach ($ObjectPermission in $obj_perms | Where-Object {@("sa","dbo","information_schema","sys") -notcontains $_.Grantee -and $_.Grantee -notlike "##*" -and $_.Grantee -eq $dbuser.Name})
                             {
                                 switch ($ObjectPermission.ObjectClass)
                                 {
@@ -338,9 +370,18 @@ https://dbatools.io/Export-SqlUser
                                     }
                                     'ObjectOrColumn'
                                     {
-                                        $Object = 'OBJECT::[{0}].[{1}]' -f $ObjectPermission.ObjectSchema, $ObjectPermission.ObjectName
-                                        if ($ObjectPermission.ColumnName -ne $null) {
-                                            $object += '([{0}])' -f $ObjectPermission.ColumnName
+                                        
+                                        if ($scriptVersion -ne "Version80") 
+                                        {
+                                            $Object = 'OBJECT::[{0}].[{1}]' -f $ObjectPermission.ObjectSchema, $ObjectPermission.ObjectName
+                                            if ($ObjectPermission.ColumnName -ne $null) 
+                                            {
+                                                $object += '([{0}])' -f $ObjectPermission.ColumnName
+                                            }
+                                        }
+                                        #At SQL Server 2000 OBJECT did not exists
+                                        else {
+                                            $object = '[{0}].[{1}]' -f $ObjectPermission.ObjectSchema, $ObjectPermission.ObjectName
                                         }
                                     }
                                     'RemoteServiceBinding'
@@ -391,22 +432,22 @@ https://dbatools.io/Export-SqlUser
 
                                 if ($ObjectPermission.PermissionState -eq "GrantWithGrant")
                                 {
-                                    $WithGrant = "WITH GRANT OPTION"
+                                    $WithGrant = " WITH GRANT OPTION"
                                     $GrantObjectPermission = 'GRANT'
                                 }
                                 else
                                 {
-                                    $WithGrant = ""
+                                    $WithGrant = " "
                                     $GrantObjectPermission = $ObjectPermission.PermissionState.ToString().ToUpper()
                                 }
 
-                                $outsql += "$GrantObjectPermission $($ObjectPermission.PermissionType) ON $Object TO [$($ObjectPermission.Grantee)]$($WithGrant) AS [$($ObjectPermission.Grantor)];"
+                                $outsql += "$GrantObjectPermission $($ObjectPermission.PermissionType) ON $Object TO [$($ObjectPermission.Grantee)]$WithGrant AS [$($ObjectPermission.Grantor)];"
                             }
 
                         }
                         catch
                         {
-                            Write-Warning "This user may be using functionality from $($versionName[$($db.CompatibilityLevel.ToString())]) that does not exist on the destination version ($DestinationVersion)."
+                            Write-Warning "This user may be using functionality from $($versionName[$db.CompatibilityLevel.ToString()]) that does not exist on the destination version ($versionNameDesc)."
                             Write-Exception $_
                         }
                     }
