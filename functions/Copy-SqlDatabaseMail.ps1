@@ -118,7 +118,7 @@ Shows what would happen if the command were executed.
             [cmdletbinding(SupportsShouldProcess = $true)]
             param()
 
-            Write-Message -Message "Migrating mail server configuration values" -Level Verbose -Silent $Silent
+            Write-Message -Message "Migrating mail server configuration values" -Level Verbose
             $copyMailConfigStatus = [pscustomobject]@{
                 SourceServer = $sourceServer
                 DestinationServer = $destServer
@@ -149,7 +149,7 @@ Shows what would happen if the command were executed.
             $sourceAccounts = $sourceServer.Mail.Accounts
             $destAccounts = $destServer.Mail.Accounts
 
-            Write-Message -Message "Migrating accounts" -Level Verbose -Silent $Silent
+            Write-Message -Message "Migrating accounts" -Level Verbose
             foreach ($account in $sourceAccounts) {
                 $accountName = $account.name
                 $copyMailAccountStatus = [pscustomobject]@{
@@ -272,7 +272,7 @@ Shows what would happen if the command were executed.
             $sourceMailServers = $sourceServer.Mail.Accounts.mailServers
             $destMailServers = $destServer.Mail.Accounts.mailServers
 
-            Write-Message -Message "Migrating mail servers" -Level Verbose -Silent $Silent
+            Write-Message -Message "Migrating mail servers" -Level Verbose
             foreach ($mailServer in $sourceMailServers) {
                 $mailServerName = $mailServer.name
                 $copyMailServerStatus = [pscustomobject]@{
@@ -296,7 +296,7 @@ Shows what would happen if the command were executed.
 
                     If ($pscmdlet.ShouldProcess($destination, "Dropping mail server $mailServerName and recreating")) {
                         try {
-                            Write-Message -Message "Dropping mail server $mailServerName" -Level Verbose -Silent $Silent
+                            Write-Message -Message "Dropping mail server $mailServerName" -Level Verbose
                             $destServer.Mail.Accounts.mailServers[$mailServerName].Drop()
                         }
                         catch {
@@ -309,7 +309,7 @@ Shows what would happen if the command were executed.
 
                 if ($pscmdlet.ShouldProcess($destination, "Migrating account mail server $mailServerName")) {
                     try {
-                        Write-Message -Message "Copying mail server $mailServerName" -Level Verbose -Silent $Silent
+                        Write-Message -Message "Copying mail server $mailServerName" -Level Verbose
                         $sql = $mailServer.Script() | Out-String
                         $sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
                         Write-Message -Message $sql -Level Debug
@@ -406,10 +406,10 @@ Shows what would happen if the command were executed.
         <# ToDo: Use Get/Set-DbaSpConfigure once the dynamic parameters are replaced. #>
 
         $sourceDbMailEnabled = ($sourceServer.Configuration.DatabaseMailEnabled).ConfigValue
-        Write-Message -Level Verbose -Message "$sourceServer DBMail configuration value: $sourceDbMailEnabled" -Silent $Silent
+        Write-Message -Message "$sourceServer DBMail configuration value: $sourceDbMailEnabled" -Level Verbose 
 
         $destDbMailEnabled = ($destServer.Configuration.DatabaseMailEnabled).ConfigValue
-        Write-Message -Level Verbose -Message "$destServer DBMail configuration value: $destDbMailEnabled" -Silent $Silent
+        Write-Message -Message "$destServer DBMail configuration value: $destDbMailEnabled" -Level Verbose
         $enableDBMailStatus = [pscustomobject]@{
             SourceServer = $sourceServer
             DestinationServer = $destServer
@@ -422,7 +422,7 @@ Shows what would happen if the command were executed.
         if ( ($sourceDbMailEnabled -eq 1) -and ($destDbMailEnabled -eq 0) ) {
             if ($pscmdlet.ShouldProcess($destination, "Enabling Database Mail")) {
                 try {
-                    Write-Message -Message "Enabling Database Mail on $destServer" -Level Verbose -Silent $Silent
+                    Write-Message -Message "Enabling Database Mail on $destServer" -Level Verbose
                     $destServer.Configuration.DatabaseMailEnabled.ConfigValue = 1
                     $destServer.Alter()
                     $enableDBMailStatus.Status = "Successful"
@@ -439,7 +439,7 @@ Shows what would happen if the command were executed.
         $sourceServer.ConnectionContext.Disconnect()
         $destServer.ConnectionContext.Disconnect()
         if ($pscmdlet.ShouldProcess("console", "Showing finished message")) {
-            Write-Message -Message "Mail migration finished" -Level Verbose -Silent $Silent
+            Write-Message -Message "Mail migration finished" -Level Verbose
         }
     }
 }
