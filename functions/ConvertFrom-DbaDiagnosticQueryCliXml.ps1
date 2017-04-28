@@ -11,8 +11,8 @@ ConvertFrom-DbaDiagnosticQueryCliXml can be used to convert from the default exp
 .PARAMETER InputObject
 Specifies the objects to convert
 	
-.PARAMETER To
-blah
+.PARAMETER ConvertTo
+Specifies the output type. Valid choices are Excel and Csv. Csv is the default.
 	
 .PARAMETER Destination
 Specifies the path to the output files. 
@@ -52,13 +52,14 @@ Converts the specified clixml to multiple CSV files
 	param (
 		[parameter(Mandatory = $true)]
 		[System.IO.FileInfo]$InputObject,
-		[ValidateSet("Excel", "Csv")]$To,
+		[ValidateSet("Excel", "Csv")]
+		[string]$ConvertTo="Csv",
 		[System.IO.FileInfo]$Destination = [Environment]::GetFolderPath("mydocuments"),
 		[switch]$NoProgressBar,
 		[switch]$Silent
 		)
 		
-		if ($to -eq "Excel") {
+		if ($convertto -eq "Excel") {
 			try {
 				Import-Module ImportExcel -ErrorAction Stop
 			}
@@ -75,32 +76,32 @@ Converts the specified clixml to multiple CSV files
 		$resultcounter = 0
 		$resulttotal = $clixml.count
 		
-		Write-Message -Level Output -Message "Converting $($InputObject.fullname) into $to, destination: $Destination"
+		Write-Message -Level Output -Message "Converting $($InputObject.fullname) into $convertto, destination: $Destination"
 		
 		foreach ($result in $clixml) {
 			$resultcounter += 1
-			if (!$NoProgressBar) { Write-Progress -Id 0 -Activity "Exporting clixml resultsets to $to" -Status ("Result {0} of {1}" -f $resultcounter, $resulttotal) -CurrentOperation $result.Name -PercentComplete (($resultcounter / $resulttotal) * 100) }
+			if (!$NoProgressBar) { Write-Progress -Id 0 -Activity "Exporting clixml resultsets to $convertto" -Status ("Result {0} of {1}" -f $resultcounter, $resulttotal) -CurrentOperation $result.Name -PercentComplete (($resultcounter / $resulttotal) * 100) }
 			
-			switch ($to) {
+			switch ($convertto) {
 				"Excel"
 				{
 					if ($result.dbSpecific) {
-						Write-Message -Level Verbose -Message ("Exporting clixml to {0}: {1:00} - {2} for Instance {3} ({4})" -f $to, $result.querynr, $result.Name, $sqlserver, $result.DatabaseName)
+						Write-Message -Level Verbose -Message ("Exporting clixml to {0}: {1:00} - {2} for Instance {3} ({4})" -f $convertto, $result.querynr, $result.Name, $sqlserver, $result.DatabaseName)
 						$result.result | Export-Excel -Path $Destination\SqlServerDiagnosticQueries_$($sqlserver.Replace("\", "$"))_$($result.DatabaseName).xlsx -WorkSheetname $($result.Name) -AutoSize -AutoFilter -BoldTopRow -FreezeTopRow
 					}
 					else {
-						Write-Message -Level Verbose -Message ("Exporting clixml to {0}: {1:00} - {2} for Instance {3}" -f $to, $result.querynr, $result.Name, $sqlserver)
+						Write-Message -Level Verbose -Message ("Exporting clixml to {0}: {1:00} - {2} for Instance {3}" -f $convertto, $result.querynr, $result.Name, $sqlserver)
 						$result.result | Export-Excel -Path $Destination\SqlServerDiagnosticQueries_$($sqlserver.Replace("\", "$")).xlsx -WorkSheetname $($result.Name) -AutoSize -AutoFilter -BoldTopRow -FreezeTopRow
 					}
 				}
 				"csv"
 				{
 					if ($result.dbSpecific) {
-						Write-Message -Level Verbose -Message ("Exporting clixml to {0}: {1:00} - {2} for Instance {3} ({4})" -f $to, $result.querynr, $result.Name, $sqlserver, $result.DatabaseName)
+						Write-Message -Level Verbose -Message ("Exporting clixml to {0}: {1:00} - {2} for Instance {3} ({4})" -f $convertto, $result.querynr, $result.Name, $sqlserver, $result.DatabaseName)
 						$result | Export-Csv -Path $Destination\SqlServerDiagnosticQueries_$($sqlserver.Replace("\", "$"))_$($result.DatabaseName)_$($result.QueryNr)_$($result.Name.Replace(" ", "_")).csv -NoTypeInformation
 					}
 					else {
-						Write-Message -Level Verbose -Message ("Exporting clixml to {0}: {1:00} - {2} for Instance {3}" -f $to, $result.querynr, $result.Name, $sqlserver)
+						Write-Message -Level Verbose -Message ("Exporting clixml to {0}: {1:00} - {2} for Instance {3}" -f $convertto, $result.querynr, $result.Name, $sqlserver)
 						$result | Export-Csv -Path $Destination\SqlServerDiagnosticQueries_$($sqlserver.Replace("\", "$"))_$($result.QueryNr)_$($result.Name.Replace(" ", "_")).csv -NoTypeInformation
 					}
 				}
