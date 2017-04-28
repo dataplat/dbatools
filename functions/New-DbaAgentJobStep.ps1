@@ -70,6 +70,13 @@ Sets the flag(s) for the job step.
 
 Flag                                    Description
 ----------------------------------------------------------------------------
+AppendAllCmdExecOutputToJobHistory      Job history, including command output, is appended to the job history file.
+AppendToJobHistory                      Job history is appended to the job history file.
+AppendToLogFile                         Job history is appended to the SQL Server log file.
+AppendToTableLog                        Job history is appended to a log table.
+LogToTableWithOverwrite                 Job history is written to a log table, overwriting previous contents.
+None                                    Job history is not appended to a file.
+ProvideStopProcessEvent                 Job processing is stopped.
 
 .PARAMETER ProxyName
 The name of the proxy that the job step runs as.
