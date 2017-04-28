@@ -332,7 +332,7 @@ Create a step in "Job1" with the name "Step1" where the database will the "msdb"
                 }
 
                 if ($Flag.Count -ge 1) {
-                    Write-Message -Message "Setting job step flag(s) name to $($Flags -join ',')" -Level Verbose 
+                    Write-Message -Message "Setting job step flag(s) to $($Flags -join ',')" -Level Verbose 
                     $JobStep.JobStepFlags = $Flag
                 }
                 #endregion job step options
