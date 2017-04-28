@@ -123,7 +123,7 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
 
                 Write-Verbose "$FunctionName - Got a Full/Diff backups, now find all Tlogs needed"
                 $AllTlogs = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} 
-                $Filteredlogs = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.DatabaseBackupLSN -eq $Fullbackup.CheckPointLSN -and $_.LastLSN -gt $TlogStartLSN -and $_.BackupStartDate -lt $RestoreTime -and $_.BackupStartDate -gt $LogStartDate}
+                $Filteredlogs = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.DatabaseBackupLSN -eq $Fullbackup.CheckPointLSN -and $_.LastLSN -gt $TlogStartLSN -and $_.BackupStartDate -lt $RestoreTime -and $_.BackupStartDate -ge $LogStartDate}
                 $GroupedLogs = $FilteredLogs | Group-Object -Property LastLSN
                 foreach ($LogGroup in $GroupedLogs)
                 {
