@@ -1,0 +1,305 @@
+Function Test-DbaDatabaseBestPractice
+{
+<#
+.SYNOPSIS
+Tests all databases on a SQL Server instance to see if they are following best practices.
+	
+.DESCRIPTION
+Returns Database name and $true or $false by default for one server. Returns Server name, Database name and IsBestPractice for more than one server.
+	
+Specify -Detailed for details.
+	
+References:
+https://technet.microsoft.com/en-us/library/dd758814(v=sql.100).aspx - "The performance question here is usually not one of correlation per the formula, but whether the cluster size ..has been explicitly defined at 64 KB, which is a best practice for SQL Server."
+http://tk.azurewebsites.net/2012/08/
+	
+.PARAMETER ComputerName
+The SQL Server (or server in general) that you're connecting to. The -SqlServer parameter also works.
+	
+.PARAMETER SqlCredential
+If you want to use SQL Server Authentication to connect.
+
+.PARAMETER Detailed
+Show a detailed list.
+
+.PARAMETER Databases
+Test specific databases. This parameter is auto-populated by databases on the SQL Server.
+
+.NOTES
+Original Author: Mötz Jensen (@splaxi)
+	
+dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+Copyright (C) 2016 Chrissy LeMaire
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+.LINK
+https://dbatools.io/Test-DbaDatabaseBestPractice
+
+.EXAMPLE
+Test-DbaDatabaseBestPractice -SqlServer sqlserver2014a
+
+To return true or false for any database not being compliant with the best practice
+
+.EXAMPLE
+Test-DbaDatabaseBestPractice -SqlServer sqlserver2014a -Databases db1, db2
+
+To return true or false for databases db1 and db2 not being compliant with the best practice
+
+.EXAMPLE   
+Test-DbaDatabaseBestPractice -SqlServer sqlserver2014 -Detailed
+	
+To return detailed information about databases and their best practice compliance 
+	
+#>
+	[CmdletBinding(SupportsShouldProcess = $true)]
+	Param (
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+		[string[]]$SqlServer,
+		[object]$SqlCredential,
+		[switch]$Detailed,
+		[switch]$IncludeSystemDbs #added this, saw you all talking about it
+	)
+	
+	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential } }
+	
+	BEGIN
+	{
+		$databases = $psboundparameters.Databases
+		
+		$systemdbs = @("master", "msdb", "model", "tempdb")
+		
+		Function Test-AutoClose
+		{
+			switch ($db.AutoClose)
+			{
+				$true { return $false }
+				default { return $true }
+			}
+		}
+		
+		Function Test-AutoShrink
+		{
+			switch ($db.AutoShrink)
+			{
+				$true { return $false }
+				default { return $true }
+			}
+		}
+		
+		Function Test-PageVerify
+		{
+			if ($server.versionMajor -gt 8)
+			{
+				$bestpractice = "checksum"
+			}
+			else
+			{
+				$bestpractice = "tornpage"
+			}
+    			
+            switch ($db.PageVerify)
+			{
+				$bestpractice { return $true }
+				default { return $false }
+			}
+		}
+		
+		Function Test-AutoGrowth
+		{
+			$dbfiles = @()
+			
+			$filegroups = $db.FileGroups
+			
+			foreach ($filegroup in $filegroups)
+			{
+				foreach ($file in $filegroup.Files) 
+				{
+					$bpgrowthsize = $file.Size * 0.125
+					$isbestpractice = ($file.GrowthType -eq "Percent" -and $file.Growth -ge $bpgrowthsize)
+					
+					switch ($maxsize = $file.MaxSize)
+					{
+						-1 { $maxsize = "Unlimited" }
+					}
+					
+					$dbfiles += New-Object PSObject -Property @{
+						Server = $server.name
+						Database = $db.Name
+						FileGroupName = $filegroup.name
+						FileGroupType = $filegroup.FileGroupType
+						FileSize = $file.Size
+						GrowthType = $file.GrowthType
+						GrowthSize = $file.Growth
+						MaxSize = $maxsize
+						FileType = "Data"
+						IsBestPractice = $isbestpractice
+					}
+				}
+			}
+			
+			foreach ($file in $db.LogFiles)
+			{
+				$bpgrowthsize = $file.Size * 0.125
+				$isbestpractice = ($file.GrowthType -eq "Percent" -and $file.Growth -ge $bpgrowthsize)
+				
+				if ($file.MaxSize -eq -1)
+				{
+					$maxsize = "Unlimited"
+				}
+				else
+				{
+					$maxsize = $file.MaxSize
+					$maxsize = "$maxsize KB"
+				}
+				
+				$dbfiles = New-Object PSObject -Property @{
+					Server = $server.name
+					Database = $db.Name
+					FileGroupName = $file.name
+					FileGroupType = "Not Applicable" 
+					FileSize = $file.Size
+					GrowthType = $file.GrowthType
+					GrowthSize = $file.Growth
+					MaxSize = $maxsize
+					FileType = "Log"
+					IsBestPractice = $isbestpractice
+				}
+			}
+			
+			return $dbfiles
+		}
+
+		$collection = New-Object System.Collections.ArrayList
+	}
+	
+	PROCESS
+	{
+        $processed = New-Object System.Collections.ArrayList
+
+		foreach ($server in $sqlserver) 
+		{
+            if ($server -notin $processed)
+			{
+				$null = $processed.Add($server)
+				Write-Verbose "Connecting to $server"
+			}
+			else
+			{
+				continue
+			}
+
+			Write-Verbose "Attempting to connect to $sqlserver"
+			
+			try
+			{
+				$server = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
+			}
+			catch
+			{
+				Write-Warning "Can't connect to $sqlserver or access denied. Skipping."
+				continue
+			}
+			
+            $databases = $server.Databases;
+
+			if ($databases.count -eq 0)
+			{
+				$dbs = $server.Databases | Where-Object { $databases -contains $_.Name }
+			}
+			else
+			{
+				if ($IncludeSystemDbs -eq $true)
+				{
+					$dbs = $server.Databases
+				}
+				else
+				{
+					$dbs = $server.Databases | Where-Object { $systemdbs -notcontains $_.Name }
+				}
+			}
+			
+			foreach ($db in $dbs)
+			{
+				$autogrowthbps = Test-AutoGrowth $server, $db
+				$falsecount = $autogrowthbps | Where-Object { $_.IsBestPractice -eq $false }
+				
+				if ($falsecount.count -gt 0)
+				{
+					$IsBestPracticeAutoGrowth = $false
+				}
+				else
+				{
+					$IsBestPracticeAutoGrowth = $true
+				}
+				
+				$object = New-Object PSObject -Property @{
+					Server = $sqlserver
+					Database = $db.Name
+					IsBestPracticeAutoClose = Test-AutoClose $server $db
+					IsBestPracticeAutoShrink = Test-AutoShrink $server, $db
+					IsBestPracticePageVerify = Test-PageVerify $server, $db
+					IsBestPracticeAutoGrowth = $IsBestPracticeAutoGrowth
+					AutoGrowthDetails = $autogrowthbps
+				}
+				$null = $collection.Add($object)
+			}
+		}
+	}
+	
+	END
+	{
+		if ($Detailed -eq $true)
+		{
+			return ($collection | Sort-Object Server, Database | Select-Object *)
+		}
+		else
+		{
+			$bps = 'IsBestPracticeAutoClose', 'IsBestPracticeAutoShrink', 'IsBestPracticePageVerify', 'IsBestPracticeAutoGrowth'
+			
+			$newcollection = @()
+			foreach ($server in $processed)
+			{
+				$ServerResults = $collection | Where-Object { $_.Server -eq $Server }
+				
+				$DBs = $ServerResults | Select-Object Database -Unique
+				
+				foreach ($dbInner in $DBs)
+				{
+                    $IsBestPractice = $true;
+
+                    $properties = $collection | Where-Object { $_.Database -eq $dbInner.Database };
+                    $bpsproperties = $properties | Select -Property *BestPrac* | gm -MemberType NoteProperty | % {$_.Name}
+					
+                    foreach($prop in $bpsproperties)
+                    {
+                        $localtemp = $properties."$prop";
+                        $IsBestPractice = $localtemp -and $IsBestPractice;
+                    }
+
+					$newcollection += [PSCustomObject]@{
+						Server = $server
+						Database = $dbInner.Database
+						IsBestPractice = $IsBestPractice
+					}
+				}
+			}
+			
+			$List = $newcollection | Select-Object Server -Unique
+			
+			if ($List.Server.Count -eq 1)
+			{
+				return $newcollection | Sort-Object Database, SortOrder | Select-Object Database, IsBestPractice
+			}
+			else
+			{
+				return $newcollection | Sort-Object Server, Database, SortOrder 
+			}
+		}
+	}
+}
