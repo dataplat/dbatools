@@ -138,6 +138,7 @@ Shows what would happen if the command were executed.
                 }
                 catch {
                     $copyMailConfigStatus.Status = "Failed"
+                    $copyMailConfigStatus
                     Stop-Function -Message "Unable to migrate mail configuration" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Silent $Silent
                 }
             }
@@ -167,6 +168,7 @@ Shows what would happen if the command were executed.
                 if ($destAccounts.name -contains $accountName) {
                     if ($force -eq $false) {
                         $copyMailAccountStatus.Status = "Skipped"
+                        $copyMailAccountStatus
                         Stop-Function -Message "Account $accountName exists at destination. Use -Force to drop and migrate." -Continue -Silent $Silent
                     }
 
@@ -178,6 +180,7 @@ Shows what would happen if the command were executed.
                         }
                         catch {
                             $copyMailAccountStatus.Status = "Failed"
+                            $copyMailAccountStatus
                             Stop-Function -Message "Issue dropping account" -Target $accountName -InnerErrorRecord $_ -Continue -Silent $Silent
                         }
                     }
@@ -194,6 +197,7 @@ Shows what would happen if the command were executed.
                     }
                     catch {
                         $copyMailAccountStatus.Status = "Failed"
+                        $copyMailAccountStatus
                         Stop-Function -Message "Issue copying mail account" -Target $accountName -InnerErrorRecord $_ -Silent $Silent
                     }
                 }
@@ -226,6 +230,7 @@ Shows what would happen if the command were executed.
                 if ($destProfiles.name -contains $profileName) {
                     if ($force -eq $false) {
                         $copyMailProfileStatus.Status = "Skipped"
+                        $copyMailProfileStatus
                         Stop-Function -Message "Profile $profileName exists at destination. Use -Force to drop and migrate." -Continue -Silent $Silent
                     }
 
@@ -237,6 +242,7 @@ Shows what would happen if the command were executed.
                         }
                         catch {
                             $copyMailProfileStatus.Status = "Failed"
+                            $copyMailProfileStatus
                             Stop-Function -Message "Issue dropping profile" -Target $profileName -InnerErrorRecord $_ -Continue -Silent $Silent
                         }
                     }
@@ -254,6 +260,7 @@ Shows what would happen if the command were executed.
                     }
                     catch {
                         $copyMailProfileStatus.Status = "Failed"
+                        $copyMailProfileStatus
                         Stop-Function -Message "Issue copying mail profile" -Target $profileName -InnerErrorRecord $_ -Silent $Silent
                     }
                 }
@@ -283,6 +290,7 @@ Shows what would happen if the command were executed.
                 if ($destMailServers.name -contains $mailServerName) {
                     if ($force -eq $false) {
                         $copyMailServerStatus.Status = "Skipped"
+                        $copyMailServerStatus
                         Stop-Function -Message "Mail server $mailServerName exists at destination. Use -Force to drop and migrate." -Target $mailServerName -Silent $Silent -Continue
                     }
 
@@ -293,6 +301,7 @@ Shows what would happen if the command were executed.
                         }
                         catch {
                             $copyMailServerStatus.Status = "Failed"
+                            $copyMailServerStatus
                             Stop-Function -Message "Issue dropping mail server" -Target $mailServerName -InnerErrorRecord $_ -Continue -Silent $Silent
                         }
                     }
@@ -309,6 +318,7 @@ Shows what would happen if the command were executed.
                     }
                     catch {
                         $copyMailServerStatus.Status = "Failed"
+                        $copyMailServerStatus
                         Stop-Function -Message "Issue copying mail server" -Target $mailServerName -InnerErrorRecord $_ -Silent $Silent
                     }
                 }
@@ -387,6 +397,11 @@ Shows what would happen if the command were executed.
         Copy-SqlDatabaseMailProfile
         $destServer.Mail.Profiles.Refresh()
         Copy-SqlDatabasemailServer
+        $copyMailConfigStatus
+        $copyMailAccountStatus
+        $copyMailProfileStatus
+        $copyMailServerStatus
+        $enableDBMailStatus
 
         <# ToDo: Use Get/Set-DbaSpConfigure once the dynamic parameters are replaced. #>
 
