@@ -11,7 +11,7 @@ function Was-Bound
         .PARAMETER ParameterName
             The name of the parameter that is tested for being bound.
     
-        .PARAMETER Reverse
+        .PARAMETER Not
             Rverses the result. Returns true if NOT bound and false if bound.
         
         .PARAMETER BoundParameters
@@ -34,12 +34,13 @@ function Was-Bound
         [string]
         $ParameterName,
         
+        [Alias('Reverse')]
         [switch]
-        $Reverse,
+        $Not,
         
         [object]
         $BoundParameters = (Get-PSCallStack)[0].InvocationInfo.BoundParameters
     )
     
-    return ((-not $Reverse) -eq $BoundParameters.ContainsKey($ParameterName))
+    return ((-not $Not) -eq $BoundParameters.ContainsKey($ParameterName))
 }
