@@ -10,7 +10,7 @@ Updates: http://sqlblog.com/blogs/adam_machanic/archive/tags/who+is+active/defau
 
 Also, consider donating to Adam if you find this stored procedure helpful: http://tinyurl.com/WhoIsActiveDonate
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server instance.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 .PARAMETER SqlCredential
