@@ -67,7 +67,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 
 #>
 	
-	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+	[CmdletBinding(SupportsShouldProcess)]
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
