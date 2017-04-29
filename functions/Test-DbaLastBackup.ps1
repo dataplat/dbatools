@@ -140,7 +140,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 		[Alias("ServerInstance", "SqlServer", "Source")]
 		[object[]]$SqlInstance,
 		[object]$SqlCredential,
-		[object]$Destination = $SqlInstance,
+		[object]$Destination,
 		[object]$DestinationCredential,
 		[string]$DataDirectory,
 		[string]$LogDirectory,
@@ -162,7 +162,9 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 			$databases = $psboundparameters.Databases
 			$exclude = $psboundparameters.Exclude
 			
-			if ($instance -eq $destination) {
+			if (-not $destination -or $nodestination) {
+				$nodestination = $true
+				$destination = $instance
 				$DestinationCredential = $SqlCredential
 			}
 			
