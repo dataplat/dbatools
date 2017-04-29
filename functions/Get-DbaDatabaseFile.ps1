@@ -1,5 +1,4 @@
-Function Get-DbaDatabaseFile
-{
+Function Get-DbaDatabaseFile {
     <#
     .SYNOPSIS
     Backup one or more SQL Sever databases from a SQL Server SqlInstance
@@ -23,8 +22,9 @@ Function Get-DbaDatabaseFile
 
     .PARAMETER DatabaseCollection
     Internal Variable
-
-
+	.PARAMETER Silent 
+	Use this switch to disable any kind of verbose messages
+	
     .NOTES
     Tags: 
     Original Author: Stuart Moore (@napalmgram), stuart-moore.com
@@ -63,48 +63,38 @@ Function Get-DbaDatabaseFile
 		[parameter(ParameterSetName = "Pipe", Mandatory = $true)]
 		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-        [object[]]$DatabaseCollection,
-        [string]$DataFilePath='#'
-
+		[object[]]$DatabaseCollection,
+		[string]$DataFilePath = '#',
+		[switch]$Silent
+		
 	)
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
+	dynamicparam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
-    BEGIN
-	{
-		$FunctionName = $FunctionName = (Get-PSCallstack)[0].Command
-		$output = @{}	
-		if ($SqlInstance.length -ne 0)
-		{
-			$databases = $psboundparameters.Databases
-			Write-Verbose "Connecting to $SqlInstance"
-			try
-			{
-				$Server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+	begin {
+		$databases = $psboundparameters.Databases
+	}
+	process {
+		foreach ($instance in $sqlInstance) {
+			try {
+				Write-Message -Level Verbose -Message "Connecting to $instance"
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
 			}
-			catch
-			{
-				Write-Warning "$FunctionName - Cannot connect to $SqlInstance"
-				continue
+			catch {
+				Stop-Function -Message "Failed to connect to $instance. Exception: $_" -Continue -Target $instance -InnerErrorRecord $_
 			}
 			
-			if ($databases)
-			{
+			if ($databases) {
 				$DatabaseCollection = $server.Databases | Where-Object { $_.Name -in $databases }
 			}
-			else
-			{
+			else {
 				$DatabaseCollection = $server.Databases
 			}
-        }
-    }
-
-    PROCESS
-    {
-        if ($DataFilePath -eq '#')
-        {
-            $oresults = @{}
-            Write-Verbose "$FunctionName - Databases provided"
-            $sql = "select 
+			
+			
+			if ($DataFilePath -eq '#') {
+				$oresults = @{ }
+				Write-Message -Level Verbose -Message "Databases provided"
+				$sql = "select 
                 fg.name as fgname,
                 fg.name as parent,
                 fg.data_space_id,
@@ -133,23 +123,20 @@ Function Get-DbaDatabaseFile
                 vfs.num_of_reads as 'NumberOfDiskReads',
                 vfs.num_of_bytes_read as 'BytesReadFromDisk',
                 vfs.num_of_bytes_written as 'BytesWrittenToDisk'"
-                $sqlfrom ="from sys.database_files df
+				$sqlfrom = "from sys.database_files df
                 left outer join  sys.filegroups fg on df.data_space_id=fg.data_space_id
                 inner join sys.dm_io_virtual_file_stats(db_id(),NULL) vfs on df.file_id=vfs.file_id"
-                $sql2008 = ",vs.available_bytes as 'VolumeFreeSpace'"
-                $sql2008from = "cross apply sys.dm_os_volume_stats(db_id(),df.file_id) vs"
-
-                if ($server.VersionMajor -ge 11)
-                {
-                    $sql = ($sql, $sql2008, $sqlfrom, $sql2008from) -join "`n"
-                }
-                elseif ($server.VersionMajor -ge 9)
-                {
-                    $sql = ($sql, $sqlfrom) -join "`n"
-                }
-                else
-                {
-                    $sql = "select 
+				$sql2008 = ",vs.available_bytes as 'VolumeFreeSpace'"
+				$sql2008from = "cross apply sys.dm_os_volume_stats(db_id(),df.file_id) vs"
+				
+				if ($server.VersionMajor -ge 11) {
+					$sql = ($sql, $sql2008, $sqlfrom, $sql2008from) -join "`n"
+				}
+				elseif ($server.VersionMajor -ge 9) {
+					$sql = ($sql, $sqlfrom) -join "`n"
+				}
+				else {
+					$sql = "select 
                         fg.groupname as fgname,
                         fg.groupname as parent,
                         fg.groupid as 'data_space_id',
@@ -176,67 +163,63 @@ Function Get-DbaDatabaseFile
                         case CONVERT(INT,df.status & 0x1000) / 4096 when 1 then 'True' when 0 then 'False' End as 'IsReadOnly'
                         from sysfiles df
                         left outer join  sysfilegroups fg on df.groupid=fg.groupid"
-                }
-
-            foreach ($db in $DatabaseCollection)
-            {
-                Write-Verbose "$FunctionName - Querying database $($db.name)"
-                $results = Invoke-SqlCmd2 -ServerInstance $server.name -Query $sql -Database $($db.name)
- 
-                $Grouped = $results | Group-Object -Property fgname
-                $FileGroups = @()
-                Foreach ($Name in $Grouped)
-                {
-                    $GroupName = $Name.Name
-                    if ($GroupName -eq '')
-                    {
-                        $GroupName = "LOGS"
-                    }
-
-                    $FileGroups += [PSCustomObject]@{
-                                    Name = $GroupName
-                                    ID = $Name[0].group[0].data_space_id
-                                    IsDefault = $Name.group[0].FGIsDefault
-                                    IsReadonly =  $Name.group[0].FGIsReadOnly
-                                    Size = ($Name.group.Size | Measure-Object -sum).sum
-                                    Files = $Name.group | Select-Object AvailableSpace,BytesReadFromDisk,BytesWrittenToDisk,FileName,Growth,GrowthType,ID,IsOffline,IsPrimaryFile,IsReadOnly,IsReadOnlyMedia,IsSparse,MaxSize,NumberOfDiskReads,NumberOfDiskWrites,Size,UsedSpace,VolumeFreeSpace,Name,State
-                            }
-                }
-               [PSCustomObject]@{
-                        SqlInstance = $server.name
-                        Database = $db.name
-                        FileGroups = $FileGroups
-                    }
-            }
-
-    }
-    else
-    {
-        Write-Verbose "$FunctionName - Path Fragment passed in"
-        $sql = "select db_name(database_id) as dbname, type_desc, name, physical_name from master.sys.master_files where physical_name like '%$DataFilePath%'"
-        $results = Invoke-SqlCmd2 -ServerInstance $server -Query $sql -Database Master
-        if ($null -eq $results)
-        {
-            [PSCustomObject]@{
-                                Exists = $False
-                            }
-        }
-        else
-        {
-            ForEach ($result in $results)
-            {
-                [PSCustomObject]@{
-                                Exists = $True
-                                Database = $result.dbname
-                                FileType = $result.type_desc
-                                LogicalName = $result.name
-                                PhysicalName = $result.physical_name
-                            }
-        
-            }
-
-        }
-
-    }
-}
+				}
+				
+				foreach ($db in $DatabaseCollection) {
+					Write-Message -Level Verbose -Message "Querying database $($db.name)"
+					$results = Invoke-SqlCmd2 -ServerInstance $server.name -Query $sql -Database $($db.name)
+					
+					$grouped = $results | Group-Object -Property fgname
+					$filegroups = @()
+					Foreach ($Name in $grouped) {
+						$GroupName = $Name.Name
+						if ($GroupName -eq '') {
+							$GroupName = "LOGS"
+						}
+						
+						$filegroups += [PSCustomObject]@{
+							Name = $GroupName
+							ID = $Name[0].group[0].data_space_id
+							IsDefault = $Name.group[0].FGIsDefault
+							IsReadonly = $Name.group[0].FGIsReadOnly
+							Size = ($Name.group.Size | Measure-Object -sum).sum
+							Files = $Name.group | Select-Object AvailableSpace, BytesReadFromDisk, BytesWrittenToDisk, FileName, Growth, GrowthType, ID, IsOffline, IsPrimaryFile, IsReadOnly, IsReadOnlyMedia, IsSparse, MaxSize, NumberOfDiskReads, NumberOfDiskWrites, Size, UsedSpace, VolumeFreeSpace, Name, State
+						}
+					}
+					[PSCustomObject]@{
+						ComputerName = $server.NetName
+						InstanceName = $server.ServiceName
+						SqlInstance = $server.DomainInstanceName
+						Database = $db.name
+						FileGroups = $filegroups
+					}
+				}
+			}
+			else {
+				Write-Message -Level Verbose -Message "Path Fragment passed in"
+				$sql = "select db_name(database_id) as dbname, type_desc, name, physical_name from master.sys.master_files where physical_name like '%$DataFilePath%'"
+				$results = Invoke-SqlCmd2 -ServerInstance $server -Query $sql -Database master
+				
+				if ($null -eq $results) {
+					[PSCustomObject]@{
+						Exists = $False
+					}
+				}
+				else {
+					ForEach ($result in $results) {
+						[PSCustomObject]@{
+							ComputerName = $server.NetName
+							InstanceName = $server.ServiceName
+							SqlInstance = $server.DomainInstanceName
+							Database = $result.dbname
+							Exists = $True
+							FileType = $result.type_desc
+							LogicalName = $result.name
+							PhysicalName = $result.physical_name
+						}
+					}
+				}
+			}
+		}
+	}
 }
