@@ -41,6 +41,12 @@ If Path is not specified, the "My Documents" location will be used
 		[System.IO.FileInfo]$Path = [Environment]::GetFolderPath("mydocuments"),
 		[Switch]$Silent
 	)
+	
+	if (-not (Test-Path $Path)) {
+		Stop-Function -Message "Path does not exist or access denied" -Target $path
+		return
+	}
+	
 	Add-Type -AssemblyName System.Web
 	
 	Write-Message -Level Output -Message "Downloading SQL Server Diagnostic Query scripts"
@@ -49,7 +55,14 @@ If Path is not specified, the "My Documents" location will be used
 	$glenberrysql = @()
 	
 	Write-Message -Level Output -Message "Downloading $glenberryrss"
-	$rss = Invoke-WebRequest -uri $glenberryrss -UseBasicParsing
+	
+	try {
+		$rss = Invoke-WebRequest -uri $glenberryrss -UseBasicParsing -ErrorAction Stop
+	}
+	catch {
+		Stop-Function -Message "Invoke-WebRequest failed: $_" -Target $rss -InnerErrorRecord $_
+		return
+	}
 	
 	foreach ($link in $rss.Links.outerHTML) {
 		if ($link -Match "https:\/\/dl.dropboxusercontent*(.+)\/SQL(.+)\.sql") {
@@ -91,6 +104,13 @@ If Path is not specified, the "My Documents" location will be used
 	foreach ($item in $glenberrysql | Sort-Object FileVersion -Descending | Where-Object FileVersion -eq ($glenberrysql.FileVersion | Measure-Object -Maximum).Maximum) {
 		$filename = "{0}\SQLServerDiagnosticQueries_{1}_{2}.sql" -f $Path, $item.SQLVersion, $item.FileVersion
 		Write-Message -Level Output -Message "Downloading $($item.URL) to $filename"
-		Invoke-WebRequest -Uri $item.URL -OutFile $filename
+		
+		try {
+			Invoke-WebRequest -Uri $item.URL -OutFile $filename -ErrorAction Stop
+		}
+		catch {
+			Stop-Function -Message "Invoke-WebRequest failed: $_" -Target $filename -InnerErrorRecord $_
+			return
+		}
 	}
 }
