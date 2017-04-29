@@ -258,7 +258,10 @@
 		'New-DbaAgentJob',
 		'Export-DbaScript',
 		'Get-DbaLogin',
-		'New-DbaScriptingOption'
+		'New-DbaScriptingOption',
+		'Save-DbaDiagnosticQueryScript',
+		'Invoke-DbaDiagnosticQuery',
+		'Export-DbaDiagnosticQuery'
 		#'Invoke-DbaLogShippingRecovery',
 	)
 	
