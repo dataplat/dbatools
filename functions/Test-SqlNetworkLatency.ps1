@@ -81,7 +81,7 @@ Times the execution results return of "select top 10 * from otherdb.dbo.table" 1
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
 		[object]$SqlCredential,
-		[string]$Query = "select top 100 * from information_schema.tables",
+		[string]$Query = "select top 100 * from INFORMATION_SCHEMA.TABLES",
 		[int]$Count = 3
 	)
 
