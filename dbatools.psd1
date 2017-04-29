@@ -117,7 +117,6 @@
 		'Get-DbaDiskSpace',
 		'Remove-SqlDatabaseSafely',
 		'Show-SqlDatabaseList',
-		'Show-SqlWhoIsActive',
 		'Set-SqlTempDbConfiguration',
 		'Test-SqlTempDbConfiguration',
 		'Repair-SqlOrphanUser',
@@ -284,7 +283,8 @@
 	'Test-SqlDiskAllocation',
 	'Get-DiskSpace',
 	'Get-SqlMaxMemory',
-	'Set-SqlMaxMemory'
+	'Set-SqlMaxMemory',
+	'Show-SqlWhoIsActive'
 	
 	# List of all modules packaged with this module
 	ModuleList = @()
