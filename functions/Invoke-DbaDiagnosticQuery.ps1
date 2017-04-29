@@ -190,7 +190,7 @@ Provides a gridview with all the queries to choose from and will run the selecti
 						
 						try {
 							$result = Invoke-Sqlcmd2 -ServerInstance $server -Database master -Query $scriptpart.Text -ErrorAction Stop
-							Write-Message -Level Output -Message "Gathered diagnostic query data from $($scriptpart.QueryName) on $instance"
+							Write-Message -Level Output -Message "Processed $($scriptpart.QueryName) on $instance"
 							
 							if (!$result) {
 								$result = [pscustomobject]@{
