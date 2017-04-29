@@ -74,11 +74,6 @@ Function Get-DbaDatabaseFile {
 				Stop-Function -Message "Failed to connect to $instance. Exception: $_" -Continue -Target $instance -InnerErrorRecord $_
 			}
 			
-			if ($server.versionmajor -lt 9) {
-				Stop-Function -Message "Skipping $instance - SQL Server 2000 not supported." -Target $instance
-				return
-			}
-			
 			Write-Message -Level Verbose -Message "Databases provided"
 			$sql = "select 
                 fg.name as FileGroupName,
@@ -127,8 +122,8 @@ Function Get-DbaDatabaseFile {
                         CONVERT(INT,df.status & 0x40) / 64 as Type,
                         case CONVERT(INT,df.status & 0x40) / 64 when 1 then 'LOG' else 'ROWS' end as TypeDescription,
                         df.name as LogicalName,
-                        df.filename as PhysicalName',
-                        Existing as State,
+                        df.filename as PhysicalName,
+                        'Existing' as State,
                         df.maxsize as MaxSize,
                         df.growth as Growth,
                         fileproperty(df.name, 'spaceused') as UsedSpace,
@@ -188,8 +183,8 @@ Function Get-DbaDatabaseFile {
 						ID = $result.ID
 						Type = $result.Type
 						TypeDescription = $result.TypeDescription
-						LogicalName = $result.LogicalName
-						PhysicalName = $result.PhysicalName
+						LogicalName = $result.LogicalName.Trim()
+						PhysicalName = $result.PhysicalName.Trim()
 						State = $result.State
 						MaxSize = $maxsize
 						Growth = $result.Growth
