@@ -181,8 +181,8 @@ Function Get-DbaDatabaseFile {
 						GrowthType = $result.GrowthType
 						NumberOfDiskWrites = $result.NumberOfDiskWrites
 						NumberOfDiskReads = $result.NumberOfDiskReads
-						BytesReadFromDisk = $result.BytesReadFromDisk
-						BytesWrittenToDisk = $result.BytesWrittenToDisk
+						ReadFromDisk = [dbasize]$result.BytesReadFromDisk
+						WrittenToDisk = [dbasize]$result.BytesWrittenToDisk
 						VolumeFreeSpace = $result.VolumeFreeSpace
 						FileGroupDataSpaceId = $result.FileGroupDataSpaceId
 						FileGroupType = $result.FileGroupType
