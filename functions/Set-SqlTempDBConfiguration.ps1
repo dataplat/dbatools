@@ -27,7 +27,7 @@ You should have received a copy of the GNU General Public License along with thi
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 SQLServer name or SMO object representing the SQL Server to connect to
 
 .PARAMETER SqlCredential
@@ -109,8 +109,8 @@ Returns PSObject representing tempdb configuration.
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[int]$DataFileCount,
 		[Parameter(Mandatory = $true)]
@@ -127,8 +127,8 @@ Returns PSObject representing tempdb configuration.
 	)
 	begin {
 		$sql = @()
-		Write-Message -Message "Connecting to $($SqlServer)" -Level Verbose
-		$server = Connect-SqlServer $SqlServer -SqlCredential $SqlCredential
+		Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
+		$server = Connect-SqlServer $SqlInstance -SqlCredential $SqlCredential
 		
 		if ($server.VersionMajor -lt 9) {
 			Stop-Function -Message "SQL Server 2000 is not supported"
@@ -137,17 +137,20 @@ Returns PSObject representing tempdb configuration.
 	}
 	
 	process {
+		
+		if (Test-FunctionInterrupt) { return }
+		
 		$cores = $server.Processors
 		if ($cores -gt 8) { $cores = 8 }
 		
 		#Set DataFileCount if not specified. If specified, check against best practices. 
 		if (-not $DataFileCount) {
 			$DataFileCount = $cores
-			Write-Message -Message "Data file count set to number of cores: $($DataFileCount)" -Level Verbose
+			Write-Message -Message "Data file count set to number of cores: $DataFileCount" -Level Verbose
 		}
 		else {
 			if ($DataFileCount -gt $cores) {
-				Write-Message -Message "Data File Count of $($DataFileCount) exceeds the Logical Core Count of $($cores). This is outside of best practices." -Level Warning
+				Write-Message -Message "Data File Count of $DataFileCount exceeds the Logical Core Count of $cores. This is outside of best practices." -Level Warning
 			}
 			Write-Message -Message "Data file count set explicitly: $DataFileCount" -Level Verbose
 		}
@@ -170,7 +173,7 @@ Returns PSObject representing tempdb configuration.
 		
 		if ($LogPath) {
 			if ((Test-SqlPath -SqlServer $server -Path $LogPath) -eq $false) {
-				Stop-Function -Message "$($LogPath) is an invalid path."
+				Stop-Function -Message "$LogPath is an invalid path."
 				return
 			}
 		}
@@ -178,7 +181,7 @@ Returns PSObject representing tempdb configuration.
 			$Filepath = $server.Databases['tempdb'].ExecuteWithResults('SELECT physical_name as FileName FROM sys.database_files WHERE file_id = 2').Tables.FileName
 			$LogPath = Split-Path $Filepath
 		}
-		Write-Message -Message "Using log path: $($LogPath)" -Level Verbose
+		Write-Message -Message "Using log path: $LogPath" -Level Verbose
 		
 		# Check if the file growth needs to be disabled
 		if ($DisableGrowth) {
@@ -187,30 +190,18 @@ Returns PSObject representing tempdb configuration.
 		}
 		
 		$LogSizeMBActual = if (-not $LogFileSizeMB) { $([Math]::Floor($DataFileSizeMB/4)) }
-		
-		$config = [PSCustomObject]@{
-			SqlServer = $server.Name
-			DataFileCount = $DataFileCount
-			DataFileSizeMB = $DataFileSizeMB
-			SingleDataFileSizeMB = $DataFilesizeSingleMB
-			LogSizeMB = $LogSizeMBActual
-			DataPath = $DataPath
-			LogPath = $LogPath
-			DataFileGrowthMB = $DataFileGrowthMB
-			LogFileGrowthMB = $LogFileGrowthMB
-		}
-		
-		# Check current tempdb. Throw an error if current tempdb is 'larger' than config.
+
+		# Check current tempdb. Throw an error if current tempdb is larger than config.
 		$CurrentFileCount = $server.Databases['tempdb'].ExecuteWithResults('SELECT count(1) as FileCount FROM sys.database_files WHERE type=0').Tables.FileCount
-		$TooBigCount = $server.Databases['tempdb'].ExecuteWithResults("SELECT count(1) as FileCount FROM sys.database_files WHERE size/128 > $DataFilesizeSingleMB AND type = 0").Tables.FileCount
+		$TooBigCount = $server.Databases['tempdb'].ExecuteWithResults("SELECT TOP 1 (size/128) as Size FROM sys.database_files WHERE size/128 > $DataFilesizeSingleMB AND type = 0").Tables.Size
 		
 		if ($CurrentFileCount -gt $DataFileCount) {
-			Stop-Function -Message "Current tempdb not suitable to be reconfigured. The current tempdb has a greater number of files than the calculated configuration."
+			Stop-Function -Message "Current tempdb not suitable to be reconfigured. The current tempdb has a greater number of files ($CurrentFileCount) than the calculated configuration ($DataFileCount)."
 			return
 		}
 		
-		if ($TooBigCount -gt 0) {
-			Stop-Function -Message "Current tempdb not suitable to be reconfigured. The current tempdb is larger than the calculated configuration."
+		if ($TooBigCount) {
+			Stop-Function -Message "Current tempdb not suitable to be reconfigured. The current tempdb ($TooBigCount MB) is larger than the calculated individual file configuration ($DataFilesizeSingleMB MB)."
 			return
 		}
 		
@@ -231,13 +222,13 @@ Returns PSObject representing tempdb configuration.
 			if ($File) {
 				$Filename = Split-Path $File.FileName -Leaf
 				$LogicalName = $File.Name
-				$NewPath = "$datapath\$($Filename)"
-				$sql += "ALTER DATABASE tempdb MODIFY FILE(name=$($LogicalName),filename='$($NewPath)',size=$DataFilesizeSingleMB MB,filegrowth=$($DataFileGrowthMB));"
+				$NewPath = "$datapath\$Filename"
+				$sql += "ALTER DATABASE tempdb MODIFY FILE(name=$LogicalName,filename='$NewPath',size=$DataFilesizeSingleMB MB,filegrowth=$DataFileGrowthMB);"
 			}
 			else {
-				$NewName = "tempdev$($i).ndf"
-				$NewPath = "$datapath\$($NewName)"
-				$sql += "ALTER DATABASE tempdb ADD FILE(name=tempdev$($i),filename='$($NewPath)',size=$DataFilesizeSingleMB MB,filegrowth=$($DataFileGrowthMB));"
+				$NewName = "tempdev$i.ndf"
+				$NewPath = "$datapath\$NewName"
+				$sql += "ALTER DATABASE tempdb ADD FILE(name=tempdev$i,filename='$NewPath',size=$DataFilesizeSingleMB MB,filegrowth=$DataFileGrowthMB);"
 			}
 		}
 		
@@ -249,7 +240,7 @@ Returns PSObject representing tempdb configuration.
 		$Filename = Split-Path $logfile.FileName -Leaf
 		$LogicalName = $logfile.Name
 		$NewPath = "$LogPath\$Filename"
-		$sql += "ALTER DATABASE tempdb MODIFY FILE(name=$($LogicalName),filename='$($NewPath)',size=$($LogFileSizeMB) MB,filegrowth=$($LogFileGrowthMB));"
+		$sql += "ALTER DATABASE tempdb MODIFY FILE(name=$LogicalName,filename='$NewPath',size=$LogFileSizeMB MB,filegrowth=$LogFileGrowthMB);"
 		
 		Write-Message -Message "SQL Statement to resize tempdb" -Level Verbose
 		Write-Message -Message ($sql -join "`n`n") -Level Verbose
@@ -261,11 +252,26 @@ Returns PSObject representing tempdb configuration.
 			$sql | Set-Content -Path $OutFile
 		}
 		else {
-			If ($Pscmdlet.ShouldProcess($SqlServer, "Executing query and informing that a restart is required.")) {
+			If ($Pscmdlet.ShouldProcess($SqlInstance, "Executing query and informing that a restart is required.")) {
 				try {
 					$server.Databases['master'].ExecuteNonQuery($sql)
-					Write-Message -Message "tempdb successfully reconfigured" -Level Verbose
-					Write-Message -Message "tempdb reconfigured. You must restart the SQL Service for settings to take effect." -Level Output
+					Write-Message -Level Verbose -Message "tempdb successfully reconfigured"
+					
+					[PSCustomObject]@{
+						ComputerName = $server.NetName
+						InstanceName = $server.ServiceName
+						SqlInstance = $server.DomainInstanceName
+						DataFileCount = $DataFileCount
+						DataFileSizeMB = $DataFileSizeMB
+						SingleDataFileSizeMB = $DataFilesizeSingleMB
+						LogSizeMB = $LogSizeMBActual
+						DataPath = $DataPath
+						LogPath = $LogPath
+						DataFileGrowthMB = $DataFileGrowthMB
+						LogFileGrowthMB = $LogFileGrowthMB
+					}
+					
+					Write-Message -Level Output -Message "tempdb reconfigured. You must restart the SQL Service for settings to take effect"
 				}
 				catch {
 					# write-exception writes the full exception to file
