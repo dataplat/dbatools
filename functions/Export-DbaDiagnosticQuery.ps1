@@ -50,15 +50,16 @@ Converts the specified clixml to multiple CSV files
 #>
 	[CmdletBinding()]
 	param (
-		[parameter(Mandatory = $true)]
-		[System.IO.FileInfo]$InputObject,
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[object[]]$InputObject,
 		[ValidateSet("Excel", "Csv")]
-		[string]$ConvertTo="Csv",
+		[string]$ConvertTo = "Csv",
 		[System.IO.FileInfo]$Destination = [Environment]::GetFolderPath("mydocuments"),
 		[switch]$NoProgressBar,
 		[switch]$Silent
-		)
-		
+	)
+	
+	begin {
 		if ($convertto -eq "Excel") {
 			try {
 				Import-Module ImportExcel -ErrorAction Stop
@@ -70,15 +71,19 @@ Converts the specified clixml to multiple CSV files
 				Stop-Function -Message "Exiting"
 			}
 		}
+	}
+	
+	process {
+		if (Test-FunctionInterrupt) { return }
 		
-		$sqlserver = $InputObject.BaseName.Split("_")[1]
-		$clixml = Import-CliXml $InputObject
+		$sqlserver = $InputObject.SqlInstance
+		$results = $InputObject.Result
 		$resultcounter = 0
-		$resulttotal = $clixml.count
+		$resulttotal = $results.count
 		
 		Write-Message -Level Output -Message "Converting $($InputObject.fullname) into $convertto, destination: $Destination"
 		
-		foreach ($result in $clixml) {
+		foreach ($result in $results) {
 			$resultcounter += 1
 			if (!$NoProgressBar) { Write-Progress -Id 0 -Activity "Exporting clixml resultsets to $convertto" -Status ("Result {0} of {1}" -f $resultcounter, $resulttotal) -CurrentOperation $result.Name -PercentComplete (($resultcounter / $resulttotal) * 100) }
 			
@@ -108,3 +113,4 @@ Converts the specified clixml to multiple CSV files
 			}
 		}
 	}
+}
