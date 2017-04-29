@@ -338,7 +338,7 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 				$datatable = New-Object system.Data.DataSet
 				$dataadapter = New-Object system.Data.SqlClient.SqlDataAdapter($sqlcommand)
 				$dataadapter.fill($datatable) | Out-Null
-				$datatable.Tables
+				$datatable.Tables.Rows
 			}
 			catch {
 				if ($_.Exception.InnerException -Like "*Could not find*") {
@@ -349,5 +349,8 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 				}
 			}
 		}
+	}
+	end {
+		Test-DbaDeprecation -DeprecatedOn "0.8.950" -Alias Show-SqlWhoIsActive -CustomMessage "Show-SqlWhoIsActive is no longer supported. Use Invoke-DbaWhoIsActive | Out-GridView for similar results."
 	}
 }
