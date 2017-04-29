@@ -64,6 +64,7 @@ Function Get-DbaDatabaseFile {
 		$databases = $psboundparameters.Databases
 	}
 	process {
+		
 		foreach ($instance in $sqlInstance) {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
@@ -71,6 +72,11 @@ Function Get-DbaDatabaseFile {
 			}
 			catch {
 				Stop-Function -Message "Failed to connect to $instance. Exception: $_" -Continue -Target $instance -InnerErrorRecord $_
+			}
+			
+			if ($server.versionmajor -lt 9) {
+				Stop-Function -Message "Skipping $instance - SQL Server 2000 not supported." -Target $instance
+				return
 			}
 			
 			Write-Message -Level Verbose -Message "Databases provided"
@@ -86,7 +92,6 @@ Function Get-DbaDatabaseFile {
                 df.growth as Growth,
                 fileproperty(df.name, 'spaceused') as UsedSpace,
                 df.size as Size,
-                (df.size) - fileproperty(df.name, 'spaceused') as AvailableSpace,
                 case df.state_desc when 'OFFLINE' then 'True' else 'False' End as IsOffline,
                 case df.is_read_only when 1 then 'True' when 0 then 'False' End as IsReadOnly,
                 case df.is_media_read_only when 1 then 'True' when 0 then 'False' End as IsReadOnlyMedia,
@@ -128,7 +133,6 @@ Function Get-DbaDatabaseFile {
                         df.growth as Growth,
                         fileproperty(df.name, 'spaceused') as UsedSpace,
                         df.size as Size,
-                        (df.size) - fileproperty(df.name, 'spaceused') as AvailableSpace,
                         case CONVERT(INT,df.status & 0x20000000) / 536870912 when 1 then 'True' else 'False' End as IsOffline,
                         case CONVERT(INT,df.status & 0x10) / 16 when 1 then 'True' when 0 then 'False' End as IsReadOnly,
                         case CONVERT(INT,df.status & 0x1000) / 4096 when 1 then 'True' when 0 then 'False' End as IsReadOnlyMedia,
@@ -157,6 +161,24 @@ Function Get-DbaDatabaseFile {
 				$results = Invoke-SqlCmd2 -ServerInstance $server -Query $sql -Database $db.name
 				
 				foreach ($result in $results) {
+					$size = [dbasize]($result.Size * 1024 * 1024)
+					$usedspace = [dbasize]($result.UsedSpace * 1024 * 1024)
+					$maxsize = $result.MaxSize
+					
+					if ($maxsize -gt -1) {
+						$maxsize = [dbasize]($result.MaxSize * 1024 * 1024)
+					}
+					
+					if ($result.VolumeFreeSpace) {
+						$VolumeFreeSpace = [dbasize]$result.VolumeFreeSpace
+					}
+					else {
+						$disks = Invoke-SqlCmd2 -ServerInstance $server -Query "xp_fixeddrives" -Database $db.name
+						$free = $disks | Where-Object { $_.drive -eq $result.PhysicalName.Substring(0, 1) } | Select-Object 'MB Free' -ExpandProperty 'MB Free'
+						$VolumeFreeSpace = [dbasize]($free * 1024 * 1024)
+					}
+					
+					
 					[PSCustomObject]@{
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
@@ -169,21 +191,21 @@ Function Get-DbaDatabaseFile {
 						LogicalName = $result.LogicalName
 						PhysicalName = $result.PhysicalName
 						State = $result.State
-						MaxSize = $result.MaxSize
+						MaxSize = $maxsize
 						Growth = $result.Growth
-						UsedSpace = $result.UsedSpace
-						Size = $result.Size
-						AvailableSpace = $result.AvailableSpace
+						GrowthType = $result.GrowthType
+						Size = $size
+						UsedSpace = $usedspace
+						AvailableSpace = $size-$usedspace
 						IsOffline = $result.IsOffline
 						IsReadOnly = $result.IsReadOnly
 						IsReadOnlyMedia = $result.IsReadOnlyMedia
 						IsSparse = $result.IsSparse
-						GrowthType = $result.GrowthType
 						NumberOfDiskWrites = $result.NumberOfDiskWrites
 						NumberOfDiskReads = $result.NumberOfDiskReads
 						ReadFromDisk = [dbasize]$result.BytesReadFromDisk
 						WrittenToDisk = [dbasize]$result.BytesWrittenToDisk
-						VolumeFreeSpace = $result.VolumeFreeSpace
+						VolumeFreeSpace = $VolumeFreeSpace
 						FileGroupDataSpaceId = $result.FileGroupDataSpaceId
 						FileGroupType = $result.FileGroupType
 						FileGroupTypeDescription = $result.FileGroupTypeDescription
