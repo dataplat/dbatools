@@ -67,6 +67,17 @@ Provides a gridview with all the queries to choose from and will run the selecti
 	
 	begin {
 		
+		function Invoke-DiagnosticQuerySelectionHelper {
+			Param (
+				[parameter(Mandatory = $true)]
+				$ParsedScript
+			)
+			
+			[string[]]$selection = $script | Select-Object QueryNr, QueryName, DBSpecific, Description | Out-GridView -Title "Diagnostic Query Overview" -OutputMode Multiple | Sort-Object QueryNr | Select-Object -ExpandProperty QueryName
+			
+			$selection
+		}
+		
 		Write-Message -Level Verbose -Message "Interpreting DMV Script Collections"
 		
 		$module = Get-Module -Name dbatools
@@ -114,6 +125,7 @@ Provides a gridview with all the queries to choose from and will run the selecti
 	process {
 		
 		foreach ($instance in $sqlinstance) {
+			$counter = 0
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
 				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
@@ -122,9 +134,10 @@ Provides a gridview with all the queries to choose from and will run the selecti
 				Stop-Function -Message "Failed to connect to $instance : $($_.Exception.Message)" -Continue -Target $instance -InnerErrorRecord $_
 			}
 			
-			Write-Message -Level Verbose -Message "Collecting diagnostic query Data from Server: $instance"
+			Write-Message -Level Verbose -Message "Collecting diagnostic query data from server: $instance"
 			
-			if (!$silent) { Write-Progress -Id 0 -Activity "Running Scripts on SQL Server"tatus ("Instance {0} of {1}" -f $servercounter, $sqlservers.count) -CurrentOperation $instance -PercentComplete (($servercounter / $sqlServers.count) * 100) }
+			# Need to get count of SQLs
+			# if (!$silent) { Write-Progress -Id 0 -Activity "Running Scripts on SQL Server Instance {0} of {1}" -f $servercounter, $sqlservers.count) -CurrentOperation $instance -PercentComplete (($servercounter / $sqlServers.count) * 100) }
 			
 			if ($server.VersionMinor -eq 50) {
 				$version = "2008R2"
@@ -141,14 +154,14 @@ Provides a gridview with all the queries to choose from and will run the selecti
 			}
 			
 			if (!$instanceOnly) {
-				$databases = Invoke-Sqlcmd2 -ServerInstance $instance -Database master -Query "Select Name from sys.databases where name not in ('master', 'model', 'msdb', 'tempdb')"
+				$databases = Invoke-Sqlcmd2 -ServerInstance $server -Database master -Query "Select Name from sys.databases where name not in ('master', 'model', 'msdb', 'tempdb')"
 			}
 			
 			$script = $scriptversions | Where-Object -Property Version -eq $version | Select-Object -ExpandProperty Script
 			
 			if ($null -eq $first) { $first = $true }
 			if ($useSelectionHelper -and $first) {
-				$queryName = Invoke-DbaDiagnosticQueriesSelectionHelper $script
+				$queryName = Invoke-DiagnosticQuerySelectionHelper $script
 				$first = $false
 			}
 			
@@ -166,35 +179,39 @@ Provides a gridview with all the queries to choose from and will run the selecti
 			}
 			
 			foreach ($scriptpart in $script) {
+				$counter++
 				if (($queryName.Count -ne 0) -and ($queryName -notcontains $scriptpart.QueryName)) { continue }
 				if (!$scriptpart.DatabaseSpecific -and !$databaseSpecific) {
 					if ($PSCmdlet.ShouldProcess($instance, $scriptpart.QueryName)) {
 						
 						if (!$silent) {
-							Write-Progress -Id 1 -ParentId 0 -Activity "Collecting diagnostic queries Data" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.Name -PercentComplete (($Counter / $scriptcount) * 100)
+							Write-Progress -Id 1 -ParentId 0 -Activity "Collecting diagnostic query data from $instance" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.QueryName -PercentComplete (($Counter / $scriptcount) * 100)
 						}
+						
 						try {
-							$result = Invoke-Sqlcmd2 -ServerInstance $instance -Database master -Query $($scriptpart.Text) -ErrorAction Stop
+							$result = Invoke-Sqlcmd2 -ServerInstance $server -Database master -Query $scriptpart.Text -ErrorAction Stop
+							Write-Message -Level Output -Message "Gathered diagnostic query data from $($scriptpart.QueryName) on $instance"
+							
 							if (!$result) {
 								$result = [pscustomobject]@{
-									Number = $scriptpart.Number
-									Name = $scriptpart.Name
+									Number = $scriptpart.QueryNr
+									Name = $scriptpart.QueryName
 									Message = "Empty Result for this Query"
 								}
-								Write-Message -Level Verbose -Message ("Empty result for Query {0} - {1} - {2}" -f $scriptpart.Number, $scriptpart.Name, $scriptpart.Description)
+								Write-Message -Level Verbose -Message ("Empty result for Query {0} - {1} - {2}" -f $scriptpart.QueryNr, $scriptpart.QueryName, $scriptpart.Description)
 							}
 						}
 						catch {
-							Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1}, result will not be saved' -f $instance, $scriptpart.name)
+							Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1}, result unavailable' -f $instance, $scriptpart.QueryName)
 						}
 						if ($result) {
 							
 							$clixmlresult = $result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors
 							[pscustomobject]@{
-								Number = $scriptpart.Number
+								Number = $scriptpart.QueryNr
 								Name = $scriptpart.QueryName
 								Description = $scriptpart.Description
-								DatabaseSpecific = $scriptpart.DatabaseSpecific
+								DatabaseSpecific = $scriptpart.DBSpecific
 								DatabaseName = $null
 								Result = $clixmlresult
 							}
@@ -204,31 +221,32 @@ Provides a gridview with all the queries to choose from and will run the selecti
 				elseif ($scriptpart.DatabaseSpecific -and !$instanceOnly) {
 					foreach ($database in $databases) {
 						if ($PSCmdlet.ShouldProcess(('{0} ({1})' -f $instance, $database.name), $scriptpart.QueryName)) {
-							if (!$silent) { Write-Progress -Id 0 -Activity "Running diagnostic queries on SQL Server" -Status ("Instance {0} of {1}" -f $servercounter, $sqlservers.count) -CurrentOperation $instance -PercentComplete (($servercounter / $sqlServers.count) * 100) }
-							if (!$silent) { Write-Progress -Id 1 -ParentId 0 -Activity "Collecting diagnostic query Data" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.Name -PercentComplete (($Counter / $scriptcount) * 100) }
+							#if (!$silent) { Write-Progress -Id 0 -Activity "Running diagnostic queries on SQL Server" -Status ("Instance {0} of {1}" -f $servercounter, $sqlservers.count) -CurrentOperation $instance -PercentComplete (($servercounter / $sqlServers.count) * 100) }
+							if (!$silent) { Write-Progress -Id 1 -ParentId 0 -Activity "Collecting diagnostic query data from $database on $instance" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.QueryName -PercentComplete (($Counter / $scriptcount) * 100) }
+							Write-Message -Level Output -Message "Collecting diagnostic query data from $database for $($scriptpart.QueryName) on $instance"
 							try {
-								$result = Invoke-Sqlcmd2 -ServerInstance $instance -Database $database.Name -Query $scriptpart.Text -ErrorAction Stop
+								$result = Invoke-Sqlcmd2 -ServerInstance $server -Database $database.Name -Query $scriptpart.Text -ErrorAction Stop
 								if (!$result) {
 									$result = [pscustomobject]@{
-										Number = $scriptpart.Number
-										Name = $scriptpart.Name
+										Number = $scriptpart.QueryNr
+										Name = $scriptpart.QueryName
 										Message = "Empty Result for this Query"
 									}
-									Write-Message -Level Verbose -Message ("Empty result for Query {0} - {1} - {2}" -f $scriptpart.Number, $scriptpart.Name, $scriptpart.Description)
+									Write-Message -Level Verbose -Message ("Empty result for Query {0} - {1} - {2}" -f $scriptpart.QueryNr, $scriptpart.QueryName, $scriptpart.Description)
 								}
 							}
 							catch {
-								Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1} - Database: {2}, result will not be saved' -f $instance, $scriptpart.name, $database.Name)
+								Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1} - Database: {2}, result will not be saved' -f $instance, $scriptpart.QueryName, $database.Name)
 							}
 							
 							[pscustomobject]@{
 								ComputerName = $server.NetName
 								InstanceName = $server.ServiceName
-								SqlInstance = $server.Name
-								Number = $scriptpart.Number
+								SqlInstance = $instance
+								Number = $scriptpart.QueryNr
 								Name = $scriptpart.QueryName
 								Description = $scriptpart.Description
-								DatabaseSpecific = $scriptpart.DatabaseSpecific
+								DatabaseSpecific = $scriptpart.DBSpecific
 								DatabaseName = $database.name
 								Result = $result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors
 							}
