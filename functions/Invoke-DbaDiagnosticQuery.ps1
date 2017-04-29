@@ -194,6 +194,9 @@ Provides a gridview with all the queries to choose from and will run the selecti
 							
 							if (!$result) {
 								$result = [pscustomobject]@{
+									ComputerName = $server.NetName
+									InstanceName = $server.ServiceName
+									SqlInstance = $instance
 									Number = $scriptpart.QueryNr
 									Name = $scriptpart.QueryName
 									Message = "Empty Result for this Query"
@@ -208,6 +211,9 @@ Provides a gridview with all the queries to choose from and will run the selecti
 							
 							$clixmlresult = $result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors
 							[pscustomobject]@{
+								ComputerName = $server.NetName
+								InstanceName = $server.ServiceName
+								SqlInstance = $instance
 								Number = $scriptpart.QueryNr
 								Name = $scriptpart.QueryName
 								Description = $scriptpart.Description
