@@ -5,8 +5,11 @@ Save-DbaDiagnosticQueryScript downloads the most recent version of all Glenn Ber
 
 .DESCRIPTION
 The dbatools module will have the diagnostice queries pre-installed. Use this only to update to a more recent version or specific versions.
+
 This function is mainly used by Invoke-DbaDiagnosticQuery, but can also be used independently to download the Glenn Berry DMV scripts.
+
 Use this function to pre-download the scripts from a device with an Internet connection.
+	
 The function Invoke-DbaDiagnosticQuery will try to download these scripts automatically, but it obviously needs an internet connection to do that.
 
 .PARAMETER Path
@@ -38,7 +41,7 @@ If Path is not specified, the "My Documents" location will be used
 		[System.IO.FileInfo]$Path = [Environment]::GetFolderPath("mydocuments"),
 		[Switch]$Silent
 	)
-	
+	Add-Type -AssemblyName System.Web
 	Write-Message -Level Output -Message "Downloading SQL Server Diagnostic Query scripts"
 	
 	$glenberryrss = "http://www.sqlskills.com/blogs/glenn/feed/"
