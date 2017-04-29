@@ -1,5 +1,4 @@
-Function Install-SqlWhoIsActive
-{
+Function Install-DbaWhoIsActive {
 <#
 .SYNOPSIS
 Automatically installs or updates sp_WhoIsActive by Adam Machanic.
@@ -21,12 +20,6 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER OutputDatabaseName
-Outputs just the database name instead of the success message
-
-.PARAMETER FromGet 
-Will prompt the user if they want to install this procedure on the target server if called from the Get-DbaWhoIsActive function.
-
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
@@ -45,156 +38,125 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Install-SqlWhoIsActive
+https://dbatools.io/Install-DbaWhoIsActive
 
 .EXAMPLE
-Install-SqlWhoIsActive -SqlServer sqlserver2014a -Database master
+Install-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master
 
 Installs sp_WhoIsActive to sqlserver2014a's master database. Logs in using Windows Authentication.
 	
 .EXAMPLE   
-Install-SqlWhoIsActive -SqlServer sqlserver2014a -SqlCredential $cred
+Install-DbaWhoIsActive -SqlInstance sqlserver2014a -SqlCredential $cred
 
 Pops up a dialog box asking which database on sqlserver2014a you want to install the proc to. Logs into SQL Server using SQL Authentication.
-	
 
 .EXAMPLE 
-$servers = Get-SqlRegisteredServerName sqlserver
-Install-SqlWhoIsActive -SqlServer $servers -Database master
+$instances = Get-SqlRegisteredServerName sqlserver
+Install-DbaWhoIsActive -SqlInstance $instances -Database master
 
 This command doesn't support passing both servers and default database, but you can accomplish the same thing by passing an array and specifying a database.
 
 #>
 	
-	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact='High')]
-	Param (
+	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]$SqlInstance,
 		[object]$SqlCredential,
-		[switch]$OutputDatabaseName,
-		[switch]$FromGet
+		[switch]$Silent
 	)
 	
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabase -SqlServer $sqlserver[0] -SqlCredential $SqlCredential } }
+	dynamicparam { if ($SqlInstance) { return Get-ParamSqlDatabase -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
-	BEGIN
-	{
-		Function Get-SpWhoIsActive
-		{
-			
-			$url = 'http://whoisactive.com/who_is_active_v11_17.zip'
-			$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-			$zipfile = "$temp\spwhoisactive.zip"
-			
-			try
-			{
-				Invoke-WebRequest $url -OutFile $zipfile
+	begin {
+		
+		$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
+		$sqlfile = (Get-ChildItem "$temp\who*active*.sql" | Select-Object -First 1).FullName
+		
+		if ($sqlfile.Length -eq 0) {
+			try {
+				if ($OutputDatabaseName -eq $false) {
+					Write-Message -Level Output -Message "Downloading sp_WhoIsActive zip file, unzipping and installing."
+				}
+				$url = 'http://whoisactive.com/who_is_active_v11_17.zip'
+				$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
+				$zipfile = "$temp\spwhoisactive.zip"
+				
+				try {
+					Invoke-WebRequest $url -OutFile $zipfile
+				}
+				catch {
+					#try with default proxy and usersettings
+					(New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+					Invoke-WebRequest $url -OutFile $zipfile
+				}
+				
+				# Unblock if there's a block
+				Unblock-File $zipfile -ErrorAction SilentlyContinue
+				
+				# Keep it backwards compatible
+				$shell = New-Object -ComObject Shell.Application
+				$zipPackage = $shell.NameSpace($zipfile)
+				$destinationFolder = $shell.NameSpace($temp)
+				$destinationFolder.CopyHere($zipPackage.Items())
+				
+				Remove-Item -Path $zipfile
 			}
-			catch
-			{
-				#try with default proxy and usersettings
-				(New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-				Invoke-WebRequest $url -OutFile $zipfile
+			catch {
+				Stop-Function -Message "Couldn't download sp_WhoIsActive. Please download and install manually from http://whoisactive.com/who_is_active_v11_17.zip." -InnerErrorRecord $_
+				return
 			}
-			
-			# Unblock if there's a block
-			Unblock-File $zipfile -ErrorAction SilentlyContinue
-			
-			# Keep it backwards compatible
-			$shell = New-Object -COM Shell.Application
-			$zipPackage = $shell.NameSpace($zipfile)
-			$destinationFolder = $shell.NameSpace($temp)
-			$destinationFolder.CopyHere($zipPackage.Items())
-			
-			Remove-Item -Path $zipfile
 		}
+		
+		$sqlfile = (Get-ChildItem "$temp\who*active*.sql" | Select-Object -First 1).Name
+		$sqlfile = "$temp\$sqlfile"
+		
+		$sql = [IO.File]::ReadAllText($sqlfile)
+		$sql = $sql -replace 'USE master', ''
+		$batches = $sql -split "GO\r\n"
+		
+		$Database = $psboundparameters.Database
 	}
 	
-	PROCESS
-	{
-		# Used a dynamic parameter? Convert from RuntimeDefinedParameter object to regular array
-		$Database = $psboundparameters.Database
-
-		foreach ($server in $sqlserver)
-		{
-			# please continue to use these variable names for consistency
-			$sourceserver = Connect-SqlServer -SqlServer $server -SqlCredential $SqlCredential
-			$source = $sourceserver.DomainInstanceName
+	process {
+		if (Test-FunctionInterrupt) { return }
+		
+		foreach ($instance in $SqlInstance) {
+			try {
+				Write-Message -Level Verbose -Message "Connecting to $instance"
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+			}
+			catch {
+				Stop-Function -Message "Failed to connect to $instance : $($_.Exception.Message)" -Continue -Target $instance -InnerErrorRecord $_
+			}
 			
-			if ($database.length -eq 0)
-			{
-				$database = Show-SqlDatabaseList -SqlServer $sourceserver -Title "Install sp_WhoisActive" -Header "sp_WhoIsActive not found. To deploy, select a database or hit cancel to quit." -DefaultDb "master"
+			if (-not $database) {
+				$database = Show-SqlDatabaseList -SqlServer $server -Title "Install sp_WhoisActive" -Header "sp_WhoIsActive not found. To deploy, select a database or hit cancel to quit." -DefaultDb "master"
 				
-				if ($database.length -eq 0)
-				{
-					throw "You must select a database to install the procedure"
+				if (-not $database) {
+					Stop-Function -Message "You must select a database to install the procedure" -Target $database
+					return
 				}
 				
-				if ($database -ne 'master')
-				{
-					Write-Warning "You have selected a database other than master. When you run Show-SqlWhoIsActive in the future, you must specify -Database $database"
+				if ($database -ne 'master') {
+					Write-Message -Level Warning -Message "You have selected a database other than master. When you run Show-SqlWhoIsActive in the future, you must specify -Database $database"
 				}
 			}
 			
-			$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-			$sqlfile = (Get-ChildItem "$temp\who*active*.sql" | Select-Object -First 1).FullName
-			
-			if ($sqlfile.Length -eq 0)
-			{
-				try
-				{
-					if ($OutputDatabaseName -eq $false)
-					{
-						Write-Output "Downloading sp_WhoIsActive zip file, unzipping and installing."
+			if ($PSCmdlet.ShouldProcess($instance,"Installing sp_WhoisActive to $database")) {
+				foreach ($batch in $batches) {
+					try {
+						$null = $server.databases[$database].ExecuteNonQuery($batch)
 					}
-					Get-SpWhoIsActive
-				}
-				catch
-				{
-					throw "Couldn't download sp_WhoIsActive. Please download and install manually from http://whoisactive.com/who_is_active_v11_17.zip."
-				}
-			}
-			
-			$sqlfile = (Get-ChildItem "$temp\who*active*.sql" | Select-Object -First 1).Name
-			$sqlfile = "$temp\$sqlfile"
-			
-			$sql = [IO.File]::ReadAllText($sqlfile)
-			$sql = $sql -replace 'USE master', ''
-			$batches = $sql -split "GO\r\n"
-
-			if ($PSCmdlet.ShouldProcess($SqlServer) -and $FromGet) 
-			{  
-				$ConfirmPreference = 'low'
-               	foreach ($batch in $batches)
-				{
-					try
-					{					
-						$null = $sourceserver.databases[$database].ExecuteNonQuery($batch)
+					catch {
+						Stop-Function -Message "Can't install stored procedure. $_" -InnerErrorRecord $_
+						return
 					}
-					catch
-					{
-						Write-Exception $_
-						throw "Can't install stored procedure. See exception text for details."
-					}
-				}
-
-				if ($OutputDatabaseName -eq $true)
-				{
-					return $database
-				}
-				else
-				{
-					Write-Output "Finished installing/updating sp_WhoIsActive in $database on $server"
 				}
 				
-				$sourceserver.ConnectionContext.Disconnect()
-		    } 
-            }
-	    }
-	
-	END
-	{
-		# nothin
+				Write-Message -Level Output -Message "Finished installing/updating sp_WhoIsActive in $database on $instance"
+			}
+		}
 	}
 }
