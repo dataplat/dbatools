@@ -51,7 +51,7 @@ Function Get-DbaDatabaseFile {
     #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	param (
-		[parameter(ParameterSetName = "Pipe", Mandatory = $true)]
+		[parameter(ParameterSetName = "Pipe", Mandatory, ValueFromPipeline)]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[object[]]$DatabaseCollection,
