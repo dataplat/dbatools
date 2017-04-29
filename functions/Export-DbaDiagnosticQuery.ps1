@@ -132,11 +132,11 @@ Converts output from Invoke-DbaDiagnosticQuery to Excel worksheet(s) in the Docu
 					{
 						if ($result.dbSpecific) {
 							Write-Message -Level Output -Message "Exporting $csvdbfilename"
-							$result | Export-Csv -Path $csvdbfilename -NoTypeInformation
+							$result | Export-Csv -Path $csvdbfilename -NoTypeInformation -Append
 						}
 						else {
 							Write-Message -Level Output -Message "Exporting $csvfilename"
-							$result | Export-Csv -Path $csvfilename -NoTypeInformation
+							$result | Export-Csv -Path $csvfilename -NoTypeInformation -Append
 						}
 					}
 				}
