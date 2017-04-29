@@ -1,6 +1,5 @@
 #ValidationTags#FlowControl,Pipeline#
-Function Remove-DbaSpn
-{
+Function Remove-DbaSpn {
 <#
 .SYNOPSIS
 Removes an SPN for a given service account in active directory and also removes delegation to the same SPN, if found
@@ -83,49 +82,53 @@ Removes all set SPNs for sql2005 and the relative delegations
 		[switch]$Silent
 	)
 	
-	process
-	{
+	process {
 		Write-Message -Message "Looking for account $ServiceAccount..." -Level Verbose
-		try
-		{
+		try {
 			$Result = Get-DbaADObject -ADObject $ServiceAccount -Type User -Credential $Credential -Silent
 		}
-		catch
-		{
+		catch {
 			Stop-Function -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($ServiceAccount). $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_ -Target $ServiceAccount
 		}
-		if ($Result.Count -gt 0)
-		{
+		if ($Result.Count -gt 0) {
 			try {
 				$adentry = $Result.GetUnderlyingObject()
-			} catch {
+			}
+			catch {
 				Stop-Function -Message "The SQL Service account ($ServiceAccount) has been found, but you don't have enough permission to inspect its properties $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_ -Target $ServiceAccount
 			}
-		} else {
+		}
+		else {
 			Stop-Function -Message "The SQL Service account ($ServiceAccount) has not been found" -Silent $Silent -Target $ServiceAccount
 		}
 		
 		# Cool! Remove an SPN
 		$delegate = $true
+		$spnadobject = $adentry.Properties['servicePrincipalName']
+
+		if ($spnadobject -notcontains $spn) {
+			Write-Message -Level Warning -Message "SPN $SPN not found"
+			$status = "SPN not found"
+			$set = $false
+		}
 		
-		if ($PSCmdlet.ShouldProcess("$spn", "Removing SPN for service account"))
-		{
-			try
-			{
-				$null = $adentry.Properties['servicePrincipalName'].Remove($spn)
-				$adentry.CommitChanges()
-				Write-Message -Message "Remove SPN $spn for $serviceaccount" -Level Verbose
-				$set = $false
-				$status = "Successfully removed SPN"
+		if ($PSCmdlet.ShouldProcess("$spn", "Removing SPN for service account")) {
+			try {
+				if ($spnadobject -contains $spn) {
+					$null = $spnadobject.Remove($spn)
+					$adentry.CommitChanges()
+					Write-Message -Message "Remove SPN $spn for $serviceaccount" -Level Verbose
+					$set = $false
+					$status = "Successfully removed SPN"
+				}
 			}
-			catch
-			{
-				Write-Message -Message "Could not remove SPN. $($_.Exception.Message)" -Level Warning -Silent $Silent -ErrorRecord $_ -Target $ServiceAccountWrite
-				$set = $true
-				$status = "Failed to remove SPN"
-				$delegate = $false
-			}
-			
+		catch {
+			Write-Message -Message "Could not remove SPN. $($_.Exception.Message)" -Level Warning -Silent $Silent -ErrorRecord $_ -Target $ServiceAccountWrite
+			$set = $true
+			$status = "Failed to remove SPN"
+			$delegate = $false
+		}
+		
 			[pscustomobject]@{
 				Name = $spn
 				ServiceAccount = $ServiceAccount
@@ -135,12 +138,11 @@ Removes all set SPNs for sql2005 and the relative delegations
 			}
 		}
 		# if we removed the SPN, we should clean up also the delegation
-		if ($PSCmdlet.ShouldProcess("$spn", "Removing delegation for service account for SPN"))
-		{
+		if ($PSCmdlet.ShouldProcess("$spn", "Removing delegation for service account for SPN")) {
 			# if we didn't remove the SPN we shouldn't do anything
-			if($delegate) {
+			if ($delegate) {
 				# even if we removed the SPN, delegation could have been not set at all. We should not raise an error
-				if($adentry.Properties['msDS-AllowedToDelegateTo'] -notcontains $spn) {
+				if ($adentry.Properties['msDS-AllowedToDelegateTo'] -notcontains $spn) {
 					[pscustomobject]@{
 						Name = $spn
 						ServiceAccount = $ServiceAccount
@@ -148,7 +150,8 @@ Removes all set SPNs for sql2005 and the relative delegations
 						IsSet = $false
 						Notes = "Delegation not found"
 					}
-				} else {
+				}
+				else {
 					# we indeed need the cleanup
 					try {
 						$null = $adentry.Properties['msDS-AllowedToDelegateTo'].Remove($spn)
@@ -157,8 +160,7 @@ Removes all set SPNs for sql2005 and the relative delegations
 						$set = $false
 						$status = "Successfully removed delegation"
 					}
-					catch
-					{
+					catch {
 						Write-Message -Message "Could not remove delegation. $($_.Exception.Message)" -Level Warning -Silent $Silent -ErrorRecord $_ -Target $ServiceAccount
 						$set = $true
 						$status = "Failed to remove delegation"
