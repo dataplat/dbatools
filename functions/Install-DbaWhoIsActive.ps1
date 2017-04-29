@@ -1,14 +1,16 @@
 Function Install-DbaWhoIsActive {
 <#
 .SYNOPSIS
-Automatically installs or updates sp_WhoIsActive by Adam Machanic.
+Automatically installs or updates sp_WhoisActive by Adam Machanic.
 
 .DESCRIPTION
-This command downloads, extracts and installs sp_whoisactive with Adam's permission. To read more about sp_WhoIsActive, please visit:
+This command downloads, extracts and installs sp_WhoisActive with Adam's permission. To read more about sp_WhoisActive, please visit:
 
 Updates: http://sqlblog.com/blogs/adam_machanic/archive/tags/who+is+active/default.aspx
 
 Also, consider donating to Adam if you find this stored procedure helpful: http://tinyurl.com/WhoIsActiveDonate
+	
+Note that you will be prompted a bunch of times to confirm an action. To disable this behavior, pass the -Confirm:$false parameter (see example below).
 
 .PARAMETER SqlInstance
 The SQL Server instance.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
@@ -43,12 +45,14 @@ https://dbatools.io/Install-DbaWhoIsActive
 .EXAMPLE
 Install-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master
 
-Installs sp_WhoIsActive to sqlserver2014a's master database. Logs in using Windows Authentication.
+Installs sp_WhoisActive to sqlserver2014a's master database. Logs in using Windows Authentication.
 	
 .EXAMPLE   
-Install-DbaWhoIsActive -SqlInstance sqlserver2014a -SqlCredential $cred
+Install-DbaWhoIsActive -SqlInstance sqlserver2014a -SqlCredential $cred -Confirm:$false
 
 Pops up a dialog box asking which database on sqlserver2014a you want to install the proc to. Logs into SQL Server using SQL Authentication.
+	
+Does not prompt multiple times.
 
 .EXAMPLE 
 $instances = Get-SqlRegisteredServerName sqlserver
@@ -63,7 +67,7 @@ This command doesn't support passing both servers and default database, but you 
 		[parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[object]$SqlCredential,
+		[PsCredential]$SqlCredential,
 		[switch]$Silent
 	)
 	
@@ -74,47 +78,56 @@ This command doesn't support passing both servers and default database, but you 
 		$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 		$sqlfile = (Get-ChildItem "$temp\who*active*.sql" | Select-Object -First 1).FullName
 		
-		if ($sqlfile.Length -eq 0) {
-			try {
-				if ($OutputDatabaseName -eq $false) {
-					Write-Message -Level Output -Message "Downloading sp_WhoIsActive zip file, unzipping and installing."
-				}
-				$url = 'http://whoisactive.com/who_is_active_v11_17.zip'
-				$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-				$zipfile = "$temp\spwhoisactive.zip"
-				
+		if ($sqlfile) {
+			Write-Message -Level Output -Message "Found $sqlfile"
+		}
+		else {
+			Write-Message -Level Verbose -Message "No $sqlfile found, downloading"
+			
+			if ($PSCmdlet.ShouldProcess($env:computername, "Downloading sp_WhoisActive")) {
 				try {
-					Invoke-WebRequest $url -OutFile $zipfile
+					if ($OutputDatabaseName -eq $false) {
+						Write-Message -Level Output -Message "Downloading sp_WhoisActive zip file, unzipping and installing."
+					}
+					$url = 'http://whoisactive.com/who_is_active_v11_17.zip'
+					$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
+					$zipfile = "$temp\spwhoisactive.zip"
+					
+					try {
+						Invoke-WebRequest $url -OutFile $zipfile
+					}
+					catch {
+						#try with default proxy and usersettings
+						(New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+						Invoke-WebRequest $url -OutFile $zipfile
+					}
+					
+					# Unblock if there's a block
+					Unblock-File $zipfile -ErrorAction SilentlyContinue
+					
+					# Keep it backwards compatible
+					$shell = New-Object -ComObject Shell.Application
+					$zipPackage = $shell.NameSpace($zipfile)
+					$destinationFolder = $shell.NameSpace($temp)
+					$destinationFolder.CopyHere($zipPackage.Items())
+					
+					Remove-Item -Path $zipfile
+					
+					$sqlfile = (Get-ChildItem "$temp\who*active*.sql" | Select-Object -First 1).Name
+					$sqlfile = "$temp\$sqlfile"
+					
+					Write-Message -Level Output -Message "Using $sqlfile"
+					
+					$sql = [IO.File]::ReadAllText($sqlfile)
+					$sql = $sql -replace 'USE master', ''
+					$batches = $sql -split "GO\r\n"
 				}
 				catch {
-					#try with default proxy and usersettings
-					(New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-					Invoke-WebRequest $url -OutFile $zipfile
+					Stop-Function -Message "Couldn't download sp_WhoisActive. Please download and install manually from http://whoisactive.com/who_is_active_v11_17.zip." -InnerErrorRecord $_
+					return
 				}
-				
-				# Unblock if there's a block
-				Unblock-File $zipfile -ErrorAction SilentlyContinue
-				
-				# Keep it backwards compatible
-				$shell = New-Object -ComObject Shell.Application
-				$zipPackage = $shell.NameSpace($zipfile)
-				$destinationFolder = $shell.NameSpace($temp)
-				$destinationFolder.CopyHere($zipPackage.Items())
-				
-				Remove-Item -Path $zipfile
-			}
-			catch {
-				Stop-Function -Message "Couldn't download sp_WhoIsActive. Please download and install manually from http://whoisactive.com/who_is_active_v11_17.zip." -InnerErrorRecord $_
-				return
 			}
 		}
-		
-		$sqlfile = (Get-ChildItem "$temp\who*active*.sql" | Select-Object -First 1).Name
-		$sqlfile = "$temp\$sqlfile"
-		
-		$sql = [IO.File]::ReadAllText($sqlfile)
-		$sql = $sql -replace 'USE master', ''
-		$batches = $sql -split "GO\r\n"
 		
 		$Database = $psboundparameters.Database
 	}
@@ -132,19 +145,21 @@ This command doesn't support passing both servers and default database, but you 
 			}
 			
 			if (-not $database) {
-				$database = Show-SqlDatabaseList -SqlServer $server -Title "Install sp_WhoisActive" -Header "sp_WhoIsActive not found. To deploy, select a database or hit cancel to quit." -DefaultDb "master"
-				
-				if (-not $database) {
-					Stop-Function -Message "You must select a database to install the procedure" -Target $database
-					return
-				}
-				
-				if ($database -ne 'master') {
-					Write-Message -Level Warning -Message "You have selected a database other than master. When you run Show-SqlWhoIsActive in the future, you must specify -Database $database"
+				if ($PSCmdlet.ShouldProcess($instance, "Prompting with GUI list of databases")) {
+					$database = Show-SqlDatabaseList -SqlServer $server -Title "Install sp_WhoisActive" -Header "To deploy sp_WhoisActive, select a database or hit cancel to quit." -DefaultDb "master"
+					
+					if (-not $database) {
+						Stop-Function -Message "You must select a database to install the procedure" -Target $database
+						return
+					}
+					
+					if ($database -ne 'master') {
+						Write-Message -Level Warning -Message "You have selected a database other than master. When you run Show-SqlWhoIsActive in the future, you must specify -Database $database"
+					}
 				}
 			}
 			
-			if ($PSCmdlet.ShouldProcess($instance,"Installing sp_WhoisActive to $database")) {
+			if ($PSCmdlet.ShouldProcess($instance, "Installing sp_WhoisActive")) {
 				foreach ($batch in $batches) {
 					try {
 						$null = $server.databases[$database].ExecuteNonQuery($batch)
@@ -155,7 +170,7 @@ This command doesn't support passing both servers and default database, but you 
 					}
 				}
 				
-				Write-Message -Level Output -Message "Finished installing/updating sp_WhoIsActive in $database on $instance"
+				Write-Message -Level Output -Message "Finished installing/updating sp_WhoisActive in $database on $instance"
 			}
 		}
 	}
