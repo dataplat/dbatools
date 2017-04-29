@@ -123,7 +123,6 @@
 		'Repair-SqlOrphanUser',
 		'Remove-SqlOrphanUser',
 		'Find-SqlUnusedIndex',
-		'Install-SqlWhoIsActive',
 		'Update-SqlWhoIsActive',
 		'Test-DbaDiskAllocation',
 		'Test-DbaPowerPlan',
@@ -262,7 +261,8 @@
 		'Save-DbaDiagnosticQueryScript',
 		'Invoke-DbaDiagnosticQuery',
 		'Export-DbaDiagnosticQuery',
-		'Invoke-DbaWhoisActive'
+		'Invoke-DbaWhoisActive',
+		'Install-DbaWhoIsActive'
 		#'Invoke-DbaLogShippingRecovery',
 	)
 	
@@ -279,6 +279,7 @@
 	'Copy-SqlJobServer',
 	'Restore-HallengrenBackup',
 	'Update-SqlWhoIsActive',
+	'Install-SqlWhoIsActive',
 	'Show-SqlMigrationConstraint',
 	'Test-SqlDiskAllocation',
 	'Get-DiskSpace',
