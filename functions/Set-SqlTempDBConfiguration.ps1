@@ -125,7 +125,7 @@ Returns PSObject representing tempdb configuration.
 		[switch]$DisableGrowth,
 		[switch]$Silent
 	)
-	BEGIN {
+	begin {
 		$sql = @()
 		Write-Message -Message "Connecting to $($SqlServer)" -Level Verbose
 		$server = Connect-SqlServer $SqlServer -SqlCredential $SqlCredential
@@ -136,7 +136,7 @@ Returns PSObject representing tempdb configuration.
 		}
 	}
 	
-	PROCESS {
+	process {
 		$cores = $server.Processors
 		if ($cores -gt 8) { $cores = 8 }
 		
