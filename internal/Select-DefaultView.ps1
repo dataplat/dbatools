@@ -23,7 +23,7 @@ Function Select-DefaultView
 	process
 	{
 		
-	if ($InputObject -eq $null) { return }
+		if ($InputObject -eq $null) { return }
 		
 		if ($TypeName)
 		{
@@ -32,6 +32,11 @@ Function Select-DefaultView
 		
 		if ($ExcludeProperty)
 		{
+			if ($InputObject.GetType().Name.ToString() -eq 'DataRow')
+			{
+				$ExcludeProperty += 'Item', 'RowError', 'RowState', 'Table', 'ItemArray', 'HasErrors'
+			}
+			
 			$properties = ($InputObject.PsObject.Members | Where-Object MemberType -ne 'Method' | Where-Object { $_.Name -notin $ExcludeProperty }).Name
 			$defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', [string[]]$properties)
 		}
@@ -46,7 +51,8 @@ Function Select-DefaultView
 					if ($p -like "* as *")
 					{
 						$old, $new = $p -isplit " as "
-						$inputobject | Add-Member -MemberType AliasProperty -Name $new -Value $old -Force
+						# Do not be tempted to not pipe here
+						$inputobject | Add-Member -MemberType AliasProperty -Name $new -Value $old -Force -ErrorAction SilentlyContinue
 						$newproperty += $new
 					}
 					else
@@ -61,7 +67,10 @@ Function Select-DefaultView
 		}
 		
 		$standardmembers = [System.Management.Automation.PSMemberInfo[]]@($defaultset)
-		$inputobject | Add-Member MemberSet PSStandardMembers $standardmembers -Force
+		
+		# Do not be tempted to not pipe here
+		$inputobject | Add-Member -MemberType MemberSet -Name PSStandardMembers -Value $standardmembers -Force -ErrorAction SilentlyContinue
+		
 		$inputobject
 	}
 }

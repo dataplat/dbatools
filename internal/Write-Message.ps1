@@ -40,7 +40,7 @@
             The user will always be shown this message, unless he silences the entire thing with -Silent
             
             Possible levels:
-            Critical (1), Important / Host (2), Significant (3), VeryVerbose (4), Verbose (5), SomewhatVerbose (6), System (7), Debug (8), InternalComment (9), Warning (666)
+            Critical (1), Important / Output (2), Significant (3), VeryVerbose (4), Verbose (5), SomewhatVerbose (6), System (7), Debug (8), InternalComment (9), Warning (666)
             Either one of the strings or its respective number will do as input.
         
         .PARAMETER Silent
@@ -131,8 +131,11 @@
         $Target
     )
     
-    $timestamp = Get-Date -Format "HH:mm:ss"
-    $NewMessage = "[$FunctionName][$timestamp] $Message"
+    # Since it's internal, I set it to always silent. Will show up in tests, but not bother the end users with a reminder over something they didn't do.
+    Test-DbaDeprecation -DeprecatedOn "1.0.0.0" -Parameter "Warning" -CustomMessage "The parameter -Warning has been deprecated and will be removed on release 1.0.0.0. Please use '-Level Warning' instead." -Silent $true
+    
+    $timestamp = Get-Date
+    $NewMessage = "[$FunctionName][$($timestamp.ToString("HH:mm:ss"))] $Message"
     
     #region Handle Errors
     if ($ErrorRecord)
@@ -143,7 +146,7 @@
         if ($Silent) { Write-Error -Message $record -Category $ErrorRecord.CategoryInfo.Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue }
         else { $null = Write-Error -Message $record -Category $ErrorRecord.CategoryInfo.Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue 2>&1 }
         
-        [sqlcollective.dbatools.dbaSystem.DebugHost]::WriteErrorEntry($Error[0], $FunctionName, $timestamp, $Message)
+        [sqlcollective.dbatools.dbaSystem.DebugHost]::WriteErrorEntry($ErrorRecord, $FunctionName, $timestamp, $Message)
     }
     #endregion Handle Errors
     

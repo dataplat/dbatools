@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.937'
+	ModuleVersion = '0.8.950'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -220,8 +220,6 @@
 		'Get-DbaQueryStoreConfig',
 		'Set-DbaQueryStoreConfig',
 		'Restore-DbaDatabase',
-		#'Get-DbaLinkedServer',
-		'Invoke-DbaLogShippingRecovery',
 		'Copy-DbaQueryStoreConfig',
 		'Get-DbaExecutionPlan',
 		'Export-DbaExecutionPlan',
@@ -248,7 +246,23 @@
 		'Get-DbaAgentJobOutputFile',
 		'Set-DbaAgentJobOutputFile',
 		'Test-DbaLinkedServerConnection',
-		'Get-DbaDatabaseFile'
+		'Get-DbaDatabaseFile',
+		'Read-DbaTransactionLog',
+		'Get-DbaTable',
+		'Invoke-DbaDatabaseShrink',
+		'Get-DbaEstimatedCompletionTime',
+		'Export-DbaScript',
+		'New-DbaScriptingOption',
+		'Get-DbaLinkedServer',
+		'Set-DbaStartupParameter',
+		'New-DbaAgentJob',
+		'Export-DbaScript',
+		'Get-DbaLogin',
+		'New-DbaScriptingOption',
+		'Save-DbaDiagnosticQueryScript',
+		'Invoke-DbaDiagnosticQuery',
+		'Export-DbaDiagnosticQuery'
+		#'Invoke-DbaLogShippingRecovery',
 	)
 	
 	# Cmdlets to export from this module

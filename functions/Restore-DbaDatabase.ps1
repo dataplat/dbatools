@@ -104,12 +104,29 @@ This switch can be used when piping the output of Get-DbaBackupHistory or Backup
 It allows the user to say that they trust that the output from those commands is correct, and skips the file header
 read portion of the process. This means a faster process, but at the risk of not knowing till halfway through the restore 
 that something is wrong with a file.
-	
+
+.PARAMETER XpNoRecurse
+If specified, prevents the XpDirTree process from recursing (it's default behaviour)
+
+.PARAMETER MaxTransferSize
+Parameter to set the unit of transfer. Values must be a multiple by 64kb
+
+.PARAMETER Blocksize
+Specifies the block size to use. Must be  one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb or 64kb
+Can be specified in bytes
+Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
+
+.PARAMETER BufferCount
+Number of I/O buffers to use to perform the operation.
+Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
+
 .PARAMETER Confirm
 Prompts to confirm certain actions
 	
 .PARAMETER WhatIf
 Shows what would happen if the command would execute, but does not actually perform the command
+
+.
 
 .NOTES
 Tags: DisasterRecovery, Backup, Restore
@@ -194,13 +211,23 @@ folder for those file types as defined on the target instance.
 		[switch]$ReuseSourceFolderStructure,
 		[string]$DestinationFilePrefix = '',
 		[string]$RestoredDatababaseNamePrefix,
-		[switch]$TrustDbBackupHistory
+		[switch]$TrustDbBackupHistory,
+		[int]$MaxTransferSize,
+		[int]$BlockSize,
+		[int]$BufferCount
 	)
 	BEGIN
 	{
 		#Don't like nulls
 		$islocal = $false
-		$base = $SqlServer.Split("\")[0]
+		if ($null -eq $SqlServer.name)
+		{
+			$base = $SqlServer.Split("\")[0]
+		}
+		else
+		{
+			$base = $SqlServer.name.Split("\")[0]
+		}
 		
 		if ($base -eq "." -or $base -eq "localhost" -or $base -eq $env:computername -or $base -eq "127.0.0.1")
 		{
@@ -245,6 +272,19 @@ folder for those file types as defined on the target instance.
 		{
 			$UseDestinationDefaultDirectories = $false
 		}
+		if (($MaxTransferSize%64kb) -ne 0 -or $MaxTransferSize -gt 4mb)
+		{
+			Write-Warning "$FunctionName - MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
+			break
+		}
+		if ($BlockSize)
+		{
+			if ($BlockSize -notin (0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb))
+			{
+				Write-Warning "$FunctionName - Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
+				break
+			}
+		}
 		
 	}
 	PROCESS
@@ -256,8 +296,8 @@ folder for those file types as defined on the target instance.
 				Write-Verbose "$FunctionName - Trust Database Backup History Set"
 				if ("BackupPath" -notin $f.PSobject.Properties.name)
 				{
-					$f = $f | Select-Object *, @{Name="BackupPath";Expression={$_.FullName}}
-					
+						Write-Verbose "$FunctionName - adding BackupPath - $($_.Fullname)"
+						$f = $f | Select-Object *, @{Name="BackupPath";Expression={$_.FullName}}
 				}
 				if ("DatabaseName" -notin $f.PSobject.Properties.name)
 				{
@@ -267,8 +307,9 @@ folder for those file types as defined on the target instance.
 				{
 					$f = $f | Select-Object *,  @{Name="Type";Expression={"Full"}}
 				}
-				
-				$BackupFiles += $f | Select-Object *, @{Name="ServerName";Expression={$_.SqlInstance}}, @{Name="BackupStartDate";Expression={$_.Start}}
+
+				$BackupFiles += $F | Select-Object *, @{Name="ServerName";Expression={$_.SqlInstance}}, @{Name="BackupStartDate";Expression={$_.Start}}
+				$str = ($BackUpFiles | select Fullname) -join ',' 
 			}
 			else
 			{
@@ -278,7 +319,7 @@ folder for those file types as defined on the target instance.
 					$f = $f.FullName
 				}
 				
-				if ($f.Gettype -is [string])
+				if ($f -is [string])
 				{
 					if ($f.StartsWith("\\") -eq $false -and  $islocal -ne $true)
 					{
@@ -313,6 +354,7 @@ folder for those file types as defined on the target instance.
 							{
 								if (Test-SqlPath -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential)
 								{
+									$p = $p | Select-Object *, @{Name="FullName";Expression={$p}}
 									$BackupFiles += $p
 								}
 								else
@@ -335,6 +377,7 @@ folder for those file types as defined on the target instance.
 							{
 								if (Test-SqlPath -Path $p -SqlServer $SqlServer -SqlCredential $SqlCredential)
 								{
+									$p = $p | Select-Object *, @{Name="FullName";Expression={$p}}
 									$BackupFiles += $p
 								}
 								else
@@ -439,7 +482,6 @@ folder for those file types as defined on the target instance.
 	END
 	{
 
-
 		try
 		{
 			$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
@@ -500,11 +542,17 @@ folder for those file types as defined on the target instance.
 				}
 			}
 		}
-
-		$AllFilteredFiles = $BackupFiles | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup -TrustDbBackupHistory:$TrustDbBackupHistory
+		#$BackupFiles 
+		#return
+		Write-Verbose "$FunctionName - sorting uniquely"
+		$AllFilteredFiles = $BackupFiles | sort-object -property fullname -unique | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup -TrustDbBackupHistory:$TrustDbBackupHistory
 		
 		Write-Verbose "$FunctionName - $($AllFilteredFiles.count) dbs to restore"
 		
+		#$AllFilteredFiles
+		#return
+		
+
 		if ($AllFilteredFiles.count -gt 1 -and $DatabaseName -ne '')
 		{
 			Write-Warning "$FunctionName -  DatabaseName parameter and multiple database restores is not compatible "
@@ -534,8 +582,7 @@ folder for those file types as defined on the target instance.
 			{
 				try
 				{
-					$FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -TrustDbBackupHistory:$TrustDbBackupHistory -Replace:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure $FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix
-					
+					$FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -TrustDbBackupHistory:$TrustDbBackupHistory -ReplaceDatabase:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure $FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix -MaxTransferSize $MaxTransferSize -BufferCount $BufferCount -BlockSize $BlockSize					
 					$Completed = 'successfully'
 				}
 				catch

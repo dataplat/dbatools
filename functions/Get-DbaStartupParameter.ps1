@@ -1,5 +1,4 @@
-Function Get-DbaStartupParameter
-{
+Function Get-DbaStartupParameter {
 <#
 .SYNOPSIS
 Displays values for a detailed list of SQL Server Startup Parameters.
@@ -11,7 +10,7 @@ This command relies on remote Windows Server (SQL WMI/WinRm) access. You can pas
 	
 See https://msdn.microsoft.com/en-us/library/ms190737.aspx for more information.
 	
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 
 .PARAMETER Credential
@@ -19,6 +18,9 @@ Credential object used to connect to the Windows Server as a different Windows u
 	
 .PARAMETER Simple
 Shows a simplified output including only Server, Master Data Path, Master Log path, ErrorLog, TraceFlags and ParameterString
+
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
 
 .NOTES
 Tags: WSMan, SQLWMI, Memory
@@ -45,29 +47,36 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 #>	
 	[CmdletBinding()]
 	param ([parameter(ValueFromPipeline, Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object[]]$SqlInstance,
 		[Alias("SqlCredential")]
 		[PSCredential]$Credential,
-		[switch]$Simple
+		[switch]$Simple,
+		[switch]$Silent
 	)
 	
-	PROCESS
-	{
-		foreach ($servername in $SqlServer)
-		{
-			$servercount++
-			try
-			{
-				$instancename = ($servername.Split('\'))[1]
-				Write-Verbose "Attempting to connect to $servername"
+	process {
+		foreach ($instance in $SqlInstance) {
+			try {
+				if ($null -eq $instance.name) {
+					$instance, $instancename = $instance.Split('\')
+					$oginstance = $instance
+				}
+				else {
+					$oginstance = $instance.name
+					$instance, $instancename = $instance.name.Split('\')
+				}
+				
+				$computername = (Resolve-DbaNetworkName $instance).ComputerName
+				
+				Write-Message -Level Verbose -message "Attempting to connect to $computername"
 				
 				if ($instancename.Length -eq 0) { $instancename = "MSSQLSERVER" }
 				
 				$displayname = "SQL Server ($instancename)"
 				
 				$Scriptblock = {
-					$servername = $args[0]
+					$computername = $args[0]
 					$displayname = $args[1]
 					
 					$wmisvc = $wmi.Services | Where-Object { $_.DisplayName -eq $displayname }
@@ -81,29 +90,32 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 					
 					$debugflag = $params | Where-Object { $_.StartsWith('-t') }
 					
-					if ($debugflag.length -ne 0)
-					{
-						Write-Warning "$servername is using the lowercase -t trace flag. This is for internal debugging only. Please ensure this was intentional."
+					<#
+					if ($debugflag.length -ne 0) {
+						Write-Message -Level Warning "$instance is using the lowercase -t trace flag. This is for internal debugging only. Please ensure this was intentional."
 					}
+					#>
 					
-					if ($traceflags.length -eq 0)
-					{
+					if ($traceflags.length -eq 0) {
 						$traceflags = "None"
 					}
+					else {
+						$traceflags = $traceflags.substring(2)
+					}
 					
-					if ($Simple -eq $true)
-					{
+					if ($Simple -eq $true) {
 						[PSCustomObject]@{
-							Server = $Servername
+							ComputerName = $computername
+							InstanceName = $instancename
+							SqlInstance = $oginstance
 							MasterData = $masterdata.TrimStart('-d')
 							MasterLog = $masterlog.TrimStart('-l')
 							ErrorLog = $errorlog.TrimStart('-e')
 							TraceFlags = $traceflags -join ','
 							ParameterString = $wmisvc.StartupParameters
 						}
-					}					
-					else
-					{
+					}
+					else {
 						# From https://msdn.microsoft.com/en-us/library/ms190737.aspx
 						
 						$commandpromptparm = $params | Where-Object { $_ -eq '-c' }
@@ -127,20 +139,21 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 						
 						$singleuserparm = $params | Where-Object { $_.StartsWith('-m') }
 						
-						if ($singleuserparm.length -ne 0)
-						{
+						if ($singleuserparm.length -ne 0) {
 							$singleuser = $true
 							$singleuserdetails = $singleuserparm.TrimStart('-m')
 							# It's possible the person specified an application name
 							# if not, just say that single user is $true
-							if ($singleuserdetails.length -eq 0)
-							{
-								$singleuser = $singleuserdetails
-							}
+							#	if ($singleuserdetails.length -ne 0)
+							#	{
+							#		$singleuser = $singleuserdetails
+							#	}
 						}
 						
 						[PSCustomObject]@{
-							Server = $Servername
+							ComputerName = $computername
+							InstanceName = $instancename
+							SqlInstance = $oginstance
 							MasterData = $masterdata.TrimStart('-d')
 							MasterLog = $masterlog.TrimStart('-l')
 							ErrorLog = $errorlog.TrimStart('-e')
@@ -149,6 +162,7 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 							MinimalStart = $minimalstart
 							MemoryToReserve = $memorytoreserve
 							SingleUser = $singleuser
+							SingleUserName = $singleuserdetails
 							NoLoggingToWinEvents = $noeventlogs
 							StartAsNamedInstance = $instancestart
 							DisableMonitoring = $disablemonitoring
@@ -160,11 +174,15 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 				
 				# This command is in the internal function
 				# It's sorta like Invoke-Command. 
-				Invoke-ManagedComputerCommand -ComputerName $servername -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $servername, $displayname
+				if ($credential) {
+					Invoke-ManagedComputerCommand -Server $computername -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname
+				}
+				else {
+					Invoke-ManagedComputerCommand -Server $computername -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname
+				}
 			}
-			catch
-			{
-				Write-Warning "$servername`: $_ "
+			catch {
+				Write-Message -Level Warning -Message "$instance failed with the following error: $_"
 			}
 		}
 	}

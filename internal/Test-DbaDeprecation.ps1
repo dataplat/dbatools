@@ -76,7 +76,7 @@
         [string]
         $CustomMessage,
         
-        [switch]
+        [bool]
         $Silent = $Silent
     )
     

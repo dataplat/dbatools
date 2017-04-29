@@ -88,7 +88,7 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 			}
 			catch
 			{
-				Stop-Function -Message "Failed to connect to: $instance" -Continue
+				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
 			}
 			
 			$databases = $server.Databases | Where-Object { $_.Name -in $databases }
