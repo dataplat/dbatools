@@ -98,17 +98,17 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 		$module = Get-Module -Name dbatools
 		$base = $module.ModuleBase
 		
-		if (!$path) {
-			$path = "$base\bin\diagnosticquery"
+		if (!$Path) {
+			$Path = "$base\bin\diagnosticquery"
 		}
 		
 		$scriptversions = @()
-		$scriptfiles = Get-ChildItem "$path\SQLServerDiagnosticQueries_*_*.sql"
+		$scriptfiles = Get-ChildItem "$Path\SQLServerDiagnosticQueries_*_*.sql"
 		
 		if (!$scriptfiles) {
-			Write-Message -Level Warning -Message "Diagnostic scripts not found in $path. Using the ones within the module."
+			Write-Message -Level Warning -Message "Diagnostic scripts not found in $Path. Using the ones within the module."
 			
-			$path = "$base\bin\diagnosticquery"
+			$Path = "$base\bin\diagnosticquery"
 			
 			$scriptfiles = Get-ChildItem "$base\bin\diagnosticquery\SQLServerDiagnosticQueries_*_*.sql"
 			if (!$scriptfiles) {
@@ -140,7 +140,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 	
 	process {
 		if (Test-FunctionInterrupt) { return }
-		foreach ($instance in $sqlinstance) {
+		foreach ($instance in $SqlInstance) {
 			$counter = 0
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
@@ -176,28 +176,28 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 			$parsedscript = $scriptversions | Where-Object -Property Version -eq $version | Select-Object -ExpandProperty Script
 			
 			if ($null -eq $first) { $first = $true }
-			if ($useSelectionHelper -and $first) {
-				$queryName = Invoke-DiagnosticQuerySelectionHelper $parsedscript
+			if ($UseSelectionHelper -and $first) {
+				$QueryName = Invoke-DiagnosticQuerySelectionHelper $parsedscript
 				$first = $false
 			}
 			
-			if (!$instanceonly -and !$databaseSpecific -and !$queryName) {
+			if (!$instanceonly -and !$DatabaseSpecific -and !$QueryName) {
 				$scriptcount = $parsedscript.count
 			}
 			elseif ($instanceOnly) {
 				$scriptcount = ($parsedscript | Where-Object DatabaseSpecific -eq $false).count
 			}
-			elseif ($databaseSpecific) {
+			elseif ($DatabaseSpecific) {
 				$scriptcount = ($parsedscript | Where-Object DatabaseSpecific).count
 			}
-			elseif ($queryName.Count -ne 0) {
-				$scriptcount = $queryName.Count
+			elseif ($QueryName.Count -ne 0) {
+				$scriptcount = $QueryName.Count
 			}
 			
 			foreach ($scriptpart in $parsedscript) {
 				
-				if (($queryName.Count -ne 0) -and ($queryName -notcontains $scriptpart.QueryName)) { continue }
-				if (!$scriptpart.DatabaseSpecific -and !$databaseSpecific) {
+				if (($QueryName.Count -ne 0) -and ($QueryName -notcontains $scriptpart.QueryName)) { continue }
+				if (!$scriptpart.DatabaseSpecific -and !$DatabaseSpecific) {
 					if ($PSCmdlet.ShouldProcess($instance, $scriptpart.QueryName)) {
 						$counter++
 						if (!$silent) {

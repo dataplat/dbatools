@@ -61,7 +61,7 @@ Converts output from Invoke-DbaDiagnosticQuery to Excel worksheet(s) in the Docu
 	)
 	
 	begin {
-		if ($convertto -eq "Excel") {
+		if ($ConvertTo -eq "Excel") {
 			try {
 				Import-Module ImportExcel -ErrorAction Stop
 			}
@@ -93,7 +93,7 @@ Converts output from Invoke-DbaDiagnosticQuery to Excel worksheet(s) in the Docu
 	process {
 		if (Test-FunctionInterrupt) { return }
 		
-		foreach ($row in $inputobject) {
+		foreach ($row in $InputObject) {
 			$results = $row.Result
 			$name = $row.Name
 			$sqlserver = $row.SqlInstance.Replace("\", "$")
@@ -111,12 +111,12 @@ Converts output from Invoke-DbaDiagnosticQuery to Excel worksheet(s) in the Docu
 				}
 				
 				$queryname = Remove-InvalidFileNameChars -Name $Name
-				$excelfilename = "$path\$sqlserver-DQ-$suffix.xlsx"
-				$exceldbfilename = "$path\$sqlserver-DQ-$dbname-$suffix.xlsx"
-				$csvdbname = "$path\$sqlserver-$dbname-DQ-$number-$queryname-$suffix.csv"
-				$csvfilename = "$path\$sqlserver-DQ-$number-$queryname-$suffix.csv"
+				$excelfilename = "$Path\$sqlserver-DQ-$Suffix.xlsx"
+				$exceldbfilename = "$Path\$sqlserver-DQ-$dbname-$Suffix.xlsx"
+				$csvdbname = "$Path\$sqlserver-$dbname-DQ-$number-$queryname-$Suffix.csv"
+				$csvfilename = "$Path\$sqlserver-DQ-$number-$queryname-$Suffix.csv"
 				
-				switch ($convertto) {
+				switch ($ConvertTo) {
 					"Excel"
 					{
 						if ($result.dbSpecific) {
