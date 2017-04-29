@@ -69,6 +69,12 @@ Provides a gridview with all the queries to choose from and will run the selecti
 		
 		Write-Message -Level Verbose -Message "Interpreting DMV Script Collections"
 		
+		if (!$path) {
+			$module = Get-Module -Name dbatools
+			$base = $module.ModuleBase
+			$path = "$base\bin\diagnosticquery"
+		}
+		
 		$scriptversions = @()
 		
 		$scriptfiles = Get-ChildItem "$Path\SQLServerDiagnosticQueries_*_*.sql"
