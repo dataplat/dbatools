@@ -179,14 +179,15 @@ Provides a gridview with all the queries to choose from and will run the selecti
 			}
 			
 			foreach ($scriptpart in $script) {
-				$counter++
+				
 				if (($queryName.Count -ne 0) -and ($queryName -notcontains $scriptpart.QueryName)) { continue }
 				if (!$scriptpart.DatabaseSpecific -and !$databaseSpecific) {
 					if ($PSCmdlet.ShouldProcess($instance, $scriptpart.QueryName)) {
-						
+						$counter++
 						if (!$silent) {
-							Write-Progress -Id 1 -ParentId 0 -Activity "Collecting diagnostic query data from $instance" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.QueryName -PercentComplete (($Counter / $scriptcount) * 100)
+							Write-Progress -Id 1 -ParentId 0 -Activity "Collecting diagnostic query data from $instance" -Status "Processing $counter of $scriptcount" -CurrentOperation $scriptpart.QueryName -PercentComplete (($counter / $scriptcount) * 100)
 						}
+						
 						
 						try {
 							$result = Invoke-Sqlcmd2 -ServerInstance $server -Database master -Query $scriptpart.Text -ErrorAction Stop
@@ -196,10 +197,14 @@ Provides a gridview with all the queries to choose from and will run the selecti
 								$result = [pscustomobject]@{
 									ComputerName = $server.NetName
 									InstanceName = $server.ServiceName
-									SqlInstance = $instance
+									SqlInstance = $server.DomainInstanceName
 									Number = $scriptpart.QueryNr
 									Name = $scriptpart.QueryName
-									Message = "Empty Result for this Query"
+									Description = $scriptpart.Description
+									DatabaseSpecific = $scriptpart.DBSpecific
+									DatabaseName = $null
+									Notes = "Empty Result for this Query"
+									Result = $null
 								}
 								Write-Message -Level Verbose -Message ("Empty result for Query {0} - {1} - {2}" -f $scriptpart.QueryNr, $scriptpart.QueryName, $scriptpart.Description)
 							}
@@ -209,17 +214,17 @@ Provides a gridview with all the queries to choose from and will run the selecti
 						}
 						if ($result) {
 							
-							$clixmlresult = $result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors
 							[pscustomobject]@{
 								ComputerName = $server.NetName
 								InstanceName = $server.ServiceName
-								SqlInstance = $instance
+								SqlInstance = $server.DomainInstanceName
 								Number = $scriptpart.QueryNr
 								Name = $scriptpart.QueryName
 								Description = $scriptpart.Description
 								DatabaseSpecific = $scriptpart.DBSpecific
 								DatabaseName = $null
-								Result = $clixmlresult
+								Notes = $null
+								Result = $result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors
 							}
 						}
 					}
@@ -234,9 +239,16 @@ Provides a gridview with all the queries to choose from and will run the selecti
 								$result = Invoke-Sqlcmd2 -ServerInstance $server -Database $database.Name -Query $scriptpart.Text -ErrorAction Stop
 								if (!$result) {
 									$result = [pscustomobject]@{
+										ComputerName = $server.NetName
+										InstanceName = $server.ServiceName
+										SqlInstance = $server.DomainInstanceName
 										Number = $scriptpart.QueryNr
 										Name = $scriptpart.QueryName
-										Message = "Empty Result for this Query"
+										Description = $scriptpart.Description
+										DatabaseSpecific = $scriptpart.DBSpecific
+										DatabaseName = $null
+										Notes = "Empty Result for this Query"
+										Result = $null
 									}
 									Write-Message -Level Verbose -Message ("Empty result for Query {0} - {1} - {2}" -f $scriptpart.QueryNr, $scriptpart.QueryName, $scriptpart.Description)
 								}
@@ -248,12 +260,13 @@ Provides a gridview with all the queries to choose from and will run the selecti
 							[pscustomobject]@{
 								ComputerName = $server.NetName
 								InstanceName = $server.ServiceName
-								SqlInstance = $instance
+								SqlInstance = $server.DomainInstanceName
 								Number = $scriptpart.QueryNr
 								Name = $scriptpart.QueryName
 								Description = $scriptpart.Description
 								DatabaseSpecific = $scriptpart.DBSpecific
 								DatabaseName = $database.name
+								Notes = $null
 								Result = $result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors
 							}
 						}
