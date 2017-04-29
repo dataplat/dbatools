@@ -22,13 +22,19 @@ Alternate path for the diagnostic scripts
 Provides a gridview with all the queries to choose from and will run the selection made by the user on the Sql Server instance specified. 
 	
 .PARAMETER InstanceOnly
-Should maybe be Scope with the choices Instance and Database
+Run only instance level queries
 
 .PARAMETER DatabaseSpecific
-Specifies the path to the output files. 
+Run only database level queries
 	
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages or progress bars
+	
+.PARAMETER Confirm
+Prompts to confirm certain actions
+	
+.PARAMETER WhatIf
+Shows what would happen if the command would execute, but does not actually perform the command
 
 .NOTES
 Author: André Kamman (@AndreKamman), http://clouddba.io
@@ -44,11 +50,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .LINK
 https://dbatools.io/Invoke-DbaDiagnosticQuery
 
-
 .EXAMPLE   
-Invoke-DbaDiagnosticQuery -SqlInstance sql2016 -UseSelectionHelper
+Invoke-DbaDiagnosticQuery -SqlInstance sql2016
 
 Provides a gridview with all the queries to choose from and will run the selection made by the user on the Sql Server instance specified. 
+
+.EXAMPLE   
+Invoke-DbaDiagnosticQuery -SqlInstance sql2016 -UseSelectionHelper | Export-DbaDiagnosticQuery -Path C:\temp\gboutput
+
+Provides a gridview with all the queries to choose from and will run the selection made by the user on the SQL Server instance specified. 
+	
+Then it will export the results to Export-DbaDiagnosticQuery.
 
 #>
 	

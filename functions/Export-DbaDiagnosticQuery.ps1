@@ -16,7 +16,10 @@ Specifies the output type. Valid choices are Excel and CSV. CSV is the default.
 	
 .PARAMETER Path
 Specifies the path to the output files. 
-	
+
+.PARAMETER Suffix
+Suffix for the filename. It's datetime by default.
+
 .PARAMETER Silent
 Use this switch to disable any kind of Output messages
 
