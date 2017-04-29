@@ -16,7 +16,7 @@ The object to transform into a DataTable
 Sets what type to convert TimeSpan into before creating the datatable. Options are Ticks, TotalDays, TotalHours, TotalMinutes, TotalSeconds, TotalMilliseconds and String.
 
 .PARAMETER IgnoreNull 
-Use this switch to ignore null rows
+If this switch is used, objects with null values will be ignored (empty rows will be added by default)
 
 .PARAMETER Silent 
 Use this switch to disable any kind of verbose messages
@@ -73,48 +73,30 @@ Creates a DataTable with the running processes and converts any TimeSpan propert
         [ValidateNotNullOrEmpty()]
         [string]$TimeSpanType = "TotalMilliseconds",		
         
-        # Ignore null rows
+        # If this switch is used, objects with null values will be ignored (empty rows will be added by default)
 		[switch]$IgnoreNull,
         
-
+        # Use this switch to disable any kind of verbose messages
         [switch]$Silent   
 	)
 	
-	BEGIN
+	Begin
 	{
-        # This function will check so that the type is an accepted type which could be used when inserting into a table
-        # If a type is accepted (included in the $type array) then it will be passed on, otherwise it will first change type before passing it on
-        # Special types will have both their types converted as well as the value
-        # TimeSpan is a special type and will be converted into the $timespantype (default: TotalMilliseconds) 
-        # so that the timespan can be store in a database further down the line
-		function ConvertType
-		{
+        
+		function ConvertType 
+        {
+            # This function will check so that the type is an accepted type which could be used when inserting into a table.
+            # If a type is accepted (included in the $type array) then it will be passed on, otherwise it will first change type before passing it on.
+            # Special types will have both their types converted as well as the value.
+            # TimeSpan is a special type and will be converted into the $timespantype. (default: TotalMilliseconds) 
+            # so that the timespan can be store in a database further down the line.
 			param (
                 $type,
                 $value,
                 $timespantype = 'TotalMilliseconds'
             )
-			
-			$types = @(
-                'Int32',
-                'UInt32',
-                'Int16',
-                'UInt16',
-                'Int64',
-                'UInt64',
-                'Decimal',
-                'Single',
-                'Double',
-                'Byte',
-                'SByte',
-                'Boolean',
-                'Bool',
-                'String',
-                'DateTime',
-                'Guid',
-                'Char',
-                'int',
-                'long',
+
+            $types = [System.Collections.ArrayList]@(
                 'System.Int32',
                 'System.UInt32',
                 'System.Int16',
@@ -127,50 +109,45 @@ Creates a DataTable with the running processes and converts any TimeSpan propert
                 'System.Byte',
                 'System.SByte',
                 'System.Boolean',
-                'System.String',
                 'System.DateTime',
                 'System.Guid',
                 'System.Char'
             )
 
-            # the $special variable is used to mark the return value if a conversion was made on the value itself
-            # If this is set to true the original value will later be ignored when updating the DataTable 
-            # and the value returned from this function will be used instead (cannot modify existing properties)
+            # The $special variable is used to mark the return value if a conversion was made on the value itself.
+            # If this is set to true the original value will later be ignored when updating the DataTable.
+            # And the value returned from this function will be used instead. (cannot modify existing properties)
             $special = $false
 
             # Special types need to be converted in some way.
-            # This attempt is to convert timespan into something that works in a table
-            # I couldn't decide on what to convert it to so the user can decide
-            # If the parameter is not used, TotalMilliseconds will be used as default
-            # Ticks are more accurate but I think milliseconds are more useful most of the time
-            if ($type -in 'System.TimeSpan', 'TimeSpan') 
-            {
+            # This attempt is to convert timespan into something that works in a table.
+            # I couldn't decide on what to convert it to so the user can decide.
+            # If the parameter is not used, TotalMilliseconds will be used as default.
+            # Ticks are more accurate but I think milliseconds are more useful most of the time.
+            if ($type -eq 'System.TimeSpan') {
                 $special = $true
                 # Debug, remove when done
                 Write-Verbose "Found match: $type (special)"
-                if ($timespantype -eq 'String') 
-                {
+                if ($timespantype -eq 'String') {
                     # Debug, remove when done
                     Write-Verbose "Converting TimeSpan to string"
                     $value = $value.ToString()
                     $type = 'System.String'
                 }
-                else 
-                {
+                else {
                     # Debug, remove when done
                     Write-Verbose "Converting TimeSpan to $timespantype (Int64)"
                     # Lets use Int64 for all other types than string.
-                    # We could match the type more closely with the timespantype but that can be added in the future if needed
+                    # We could match the type more closely with the timespantype but that can be added in the future if needed.
                     $value = $value.$timespantype
                     $type = 'System.Int64'
                 }
             }
-            elseif ($types -notcontains $type) 
-            {
+            elseif (!$types.Contains($type)) {
                 # Debug, remove when done
                 Write-Verbose "Did not find match: $type"
-                # All types which are not found in the array will be converted into strings
-                # In this way we dont ignore it completely and it will be clear in the end why it looks as it does
+                # All types which are not found in the array will be converted into strings.
+                # In this way we dont ignore it completely and it will be clear in the end why it looks as it does.
                 $type = 'System.String'
             }
             
@@ -179,107 +156,97 @@ Creates a DataTable with the running processes and converts any TimeSpan propert
 		}
 	
 		$datatable = New-Object System.Data.DataTable
-        $columnTypes = @{}
-        $specialColumns = @{}
+        $specialColumns = @{} # will store names of properties with special data types
+        
+        # The shouldCreateColumns variable will be set to false as soon as the column definition has been added to the data table.
+        # This is to avoid that the rare scenario when columns are not created because the first object is null, which can be accepted.
+        # This means that we cannot relly on the first object to create columns, hence this variable.
+        $ShouldCreateCollumns = $true
 	}
 	
-	PROCESS
+	Process
 	{
-		if (!$InputObject)
-		{
-			if ($IgnoreNull)
-			{
+		if (!$InputObject) {
+			if ($IgnoreNull) {
+                # If the object coming down the pipeline is null and the IgnoreNull parameter is set, ignore it.
 				Stop-Function -Message "The InputObject from the pipe is null. Skipping." -Continue
 			}
-			else
-			{
+			else {
+                # If the object coming down the pipeline is null, add an empty row and then skip to next.
 				$datarow = $datatable.NewRow()
 				$datatable.Rows.Add($datarow)
 				continue
 			}
 		}
-		foreach ($object in $InputObject)
-		{
+		foreach ($object in $InputObject) {
             $datarow = $datatable.NewRow()
-			foreach ($property in $object.PsObject.get_properties())
-			{
-                # the converted variable will get the result from the ConvertType function and used for type and value conversion when adding to the datatable
+			foreach ($property in $object.PsObject.get_properties()) {
+                # The converted variable will get the result from the ConvertType function and used for type and value conversion when adding to the datatable.
                 $converted = @{}
-                
-                
-
-				if ($datatable.Rows.Count -eq 0)
-				{
-                    if ($property.value -isnot [System.DBNull])
-				    {
-                        # Check if property is a ScriptProperty, then resolve it while calling ConvertType (otherwise we dont get the proper type)
+				if ($ShouldCreateCollumns) {
+                    # this is where the table columns are generated
+                    if ($property.value -isnot [System.DBNull]) {
+                        # Check if property is a ScriptProperty, then resolve it while calling ConvertType. (otherwise we dont get the proper type)
+                        # Debug, remove when done
                         Write-Verbose "Attempting to get type from property $($property.Name)"
                         If ($property.MemberType -eq 'ScriptProperty') {
+                            # Debug, remove when done
                             Write-Verbose "Converting Script Property"
-                            Write-Warning "Value: $($property.Value)"
+                            Write-Verbose "Value: $($property.Value)"
                             Write-Verbose "Points to: $($object.($property.Name))"
                             $converted = ConvertType -type ($object.($property.Name).GetType().ToString()) -value $property.value -timespantype $TimeSpanType
+                            # We need to check if the type returned by ConvertType is a special type.
+                            # In that case we add it to the $specialColumns variable for future reference.
                             if ($converted.special) {
                                 $specialColumns.Add($property.Name, $object.($property.Name).GetType().ToString())
                             }
                         } else {
                             $converted = ConvertType -type $property.TypeNameOfValue -value $property.value -timespantype $TimeSpanType
+                            # We need to check if the type returned by ConvertType is a special type.
+                            # In that case we add it to the $specialColumns variable for future reference.
                             if ($converted.special) {
                                 $specialColumns.Add($property.Name, $property.TypeNameOfValue)
                             }
                         }
-
-                        
-					
 				    }
-
 					$column = New-Object System.Data.DataColumn
 					$column.ColumnName = $property.Name.ToString()
 					$column.DataType = [System.Type]::GetType($converted.type)
 					$datatable.Columns.Add($column)
-                    # not sure if this is needed
-                    #$columnTypes.Add($property.Name.ToString(),[System.Type]::GetType($converted.type))
-				}
-                else
-                {
-                    if ($property.value -isnot [System.DBNull])
-				    {
-                        # Check if property is a ScriptProperty, then resolve it while calling ConvertType (otherwise we dont get the proper type)
-                        Write-Verbose "Attempting to get type from property $($property.Name)"
-                        if (!$datatable.Columns.Contains($property.Name))
-                        {
-                            Throw "Unexpected property name: $($property.Name)"
-                        }
-
+                } 
+                else {
+                    # This is where we end up if the columns has been created in the data table.
+                    # We still need to check for special columns again, to make sure that the value is converted properly.
+                    if ($property.value -isnot [System.DBNull]) {
                         if ($specialColumns.Keys -contains $property.Name) {
                             $converted = ConvertType -type $specialColumns.($property.Name) -value $property.Value -timespantype $TimeSpanType
-                        } 
-					
+                        }
 				    }
                 }
 
-				if ($property.value.length -gt 0)
-				{
-					if ($property.value.ToString() -eq 'System.Object[]')
-					{
+				if ($property.value.length -gt 0) {
+					if ($property.value.ToString() -eq 'System.Object[]') {
 						$datarow.Item($property.Name) = $property.value -join ", "
 					}
-					else
-					{
-                        # If the typename was a special typename we want to use the value returned from ConvertType instead
-                        # We might get error if we try to change the value for $property.value if it is read-only.
-                        if ($converted.special)
-                        {
+					else {
+                        # If the typename was a special typename we want to use the value returned from ConvertType instead.
+                        # We might get error if we try to change the value for $property.value if it is read-only. That's why we use $converted.value instead.
+                        if ($converted.special) {
 						    $datarow.Item($property.Name) = $converted.value
                         }
-                        else
-                        {
+                        else {
                             $datarow.Item($property.Name) = $property.value
                         }
-					}
-				}
+					}		
+                }
 			}
 			$datatable.Rows.Add($datarow)
+            # Row added.
+            # If this is the first non-null object then the columns has just been created.
+            # Set variable to false to skip creating columns from now on.
+            if ($ShouldCreateCollumns) {
+                $ShouldCreateCollumns = $false
+            }
 		}
 	}
 	
@@ -287,5 +254,4 @@ Creates a DataTable with the running processes and converts any TimeSpan propert
 	{
 		return @( ,($datatable))
 	}
-	
 }
