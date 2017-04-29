@@ -42,11 +42,13 @@ If Path is not specified, the "My Documents" location will be used
 		[Switch]$Silent
 	)
 	Add-Type -AssemblyName System.Web
+	
 	Write-Message -Level Output -Message "Downloading SQL Server Diagnostic Query scripts"
 	
 	$glenberryrss = "http://www.sqlskills.com/blogs/glenn/feed/"
 	$glenberrysql = @()
 	
+	Write-Message -Level Output -Message "Downloading $glenberryrss"
 	$rss = Invoke-WebRequest -uri $glenberryrss -UseBasicParsing
 	
 	foreach ($link in $rss.Links.outerHTML) {
@@ -88,6 +90,7 @@ If Path is not specified, the "My Documents" location will be used
 	
 	foreach ($item in $glenberrysql | Sort-Object FileVersion -Descending | Where-Object FileVersion -eq ($glenberrysql.FileVersion | Measure-Object -Maximum).Maximum) {
 		$filename = "{0}\SQLServerDiagnosticQueries_{1}_{2}.sql" -f $Path, $item.SQLVersion, $item.FileVersion
+		Write-Message -Level Output -Message "Downloading $($item.URL) to $filename"
 		Invoke-WebRequest -Uri $item.URL -OutFile $filename
 	}
 }
