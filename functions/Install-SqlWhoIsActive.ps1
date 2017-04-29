@@ -24,6 +24,9 @@ Windows Authentication will be used if SqlCredential is not specified. SQL Serve
 .PARAMETER OutputDatabaseName
 Outputs just the database name instead of the success message
 
+.PARAMETER FromGet 
+Will prompt the user if they want to install this procedure on the target server if called from the Get-DbaWhoIsActive function.
+
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
@@ -63,13 +66,14 @@ This command doesn't support passing both servers and default database, but you 
 
 #>
 	
-	[CmdletBinding()]
+	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact='High')]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
 		[object]$SqlCredential,
-		[switch]$OutputDatabaseName
+		[switch]$OutputDatabaseName,
+		[switch]$FromGet
 	)
 	
 	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabase -SqlServer $sqlserver[0] -SqlCredential $SqlCredential } }
@@ -111,7 +115,7 @@ This command doesn't support passing both servers and default database, but you 
 	{
 		# Used a dynamic parameter? Convert from RuntimeDefinedParameter object to regular array
 		$Database = $psboundparameters.Database
-		
+
 		foreach ($server in $sqlserver)
 		{
 			# please continue to use these variable names for consistency
@@ -158,33 +162,36 @@ This command doesn't support passing both servers and default database, but you 
 			$sql = [IO.File]::ReadAllText($sqlfile)
 			$sql = $sql -replace 'USE master', ''
 			$batches = $sql -split "GO\r\n"
-			
-			foreach ($batch in $batches)
-			{
-				try
+
+			if ($PSCmdlet.ShouldProcess($SqlServer) -and $FromGet) 
+			{  
+				$ConfirmPreference = 'low'
+               	foreach ($batch in $batches)
 				{
-					$null = $sourceserver.databases[$database].ExecuteNonQuery($batch)
-					
+					try
+					{					
+						$null = $sourceserver.databases[$database].ExecuteNonQuery($batch)
+					}
+					catch
+					{
+						Write-Exception $_
+						throw "Can't install stored procedure. See exception text for details."
+					}
 				}
-				catch
+
+				if ($OutputDatabaseName -eq $true)
 				{
-					Write-Exception $_
-					throw "Can't install stored procedure. See exception text for details."
+					return $database
 				}
-			}
-			
-			if ($OutputDatabaseName -eq $true)
-			{
-				return $database
-			}
-			else
-			{
-				Write-Output "Finished installing/updating sp_WhoIsActive in $database on $server"
-			}
-			
-			$sourceserver.ConnectionContext.Disconnect()
-		}
-	}
+				else
+				{
+					Write-Output "Finished installing/updating sp_WhoIsActive in $database on $server"
+				}
+				
+				$sourceserver.ConnectionContext.Disconnect()
+		    } 
+            }
+	    }
 	
 	END
 	{
