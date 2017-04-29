@@ -1,4 +1,4 @@
-Function Get-DbaWhoisActive
+Function Invoke-DbaWhoisActive
 {
 <#
 .SYNOPSIS
@@ -14,7 +14,7 @@ Updates: http://sqlblog.com/blogs/adam_machanic/archive/tags/who+is+active/defau
 
 Also, consider donating to Adam if you find this stored procedure helpful: http://tinyurl.com/WhoIsActiveDonate
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 .PARAMETER Database
@@ -182,35 +182,35 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Show-SqlWhoIsActive
+https://dbatools.io/Invoke-DbaWhoisActive
 
 .EXAMPLE
-Show-SqlWhoIsActive -SqlServer sqlserver2014a 
+Invoke-DbaWhoisActive -SqlInstance sqlserver2014a 
 
 Execute sp_whoisactive on sqlserver2014a. This command expects sp_WhoIsActive to be in the master database. Logs into the SQL Server with Windows credentials.
 	
 .EXAMPLE   
-Show-SqlWhoIsActive -SqlServer sqlserver2014a -SqlCredential $credential -Database dbatools
+Invoke-DbaWhoisActive -SqlInstance sqlserver2014a -SqlCredential $credential -Database dbatools
 
 Execute sp_whoisactive on sqlserver2014a. This command expects sp_WhoIsActive to be in the dbatools database. Logs into the SQL Server with SQL Authentication.
 
 .EXAMPLE
-Show-SqlWhoIsActive -SqlServer sqlserver2014a -GetAverageTime
+Invoke-DbaWhoisActive -SqlInstance sqlserver2014a -GetAverageTime
 
 Similar to running sp_WhoIsActive @get_avg_time
 
 .EXAMPLE
-Show-SqlWhoIsActive -SqlServer sqlserver2014a -GetOuterCommand -FindBlockLeaders
+Invoke-DbaWhoisActive -SqlInstance sqlserver2014a -GetOuterCommand -FindBlockLeaders
 
 Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 1
 	
 #>
 	
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact="High")]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias('ServerInstance', 'SqlInstance')]
-		[object]$SqlServer,
+		[Alias('ServerInstance', 'SqlServer')]
+		[object]$SqlInstance,
 		[object]$SqlCredential,
 		[Alias('As')]
 		[ValidateLength(0, 128)]
@@ -251,9 +251,9 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 		[switch]$Help
 	)
 	
-	DynamicParam { if ($SqlServer) { return (Get-ParamSqlDatabase -SqlServer $SqlServer -SqlCredential $SourceSqlCredential) } }
+	dynamicparam { if ($SqlInstance) { return (Get-ParamSqlDatabase -SqlServer $SqlInstance -SqlCredential $SourceSqlCredential) } }
 	
-	BEGIN
+	begin
 	{
 		function Get-WindowTitle
 		{
@@ -317,7 +317,7 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 			return $datatable
 		}
 		
-		$sourceserver = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
+		$sourceserver = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
 		$source = $sourceserver.DomainInstanceName
 		
 		if ($sourceserver.VersionMajor -lt 9)
