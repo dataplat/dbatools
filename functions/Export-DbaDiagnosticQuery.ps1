@@ -66,13 +66,16 @@ Converts output from Invoke-DbaDiagnosticQuery to Excel worksheet(s) in the Docu
 				Import-Module ImportExcel -ErrorAction Stop
 			}
 			catch {
-				Stop-Function -Message "Failed to load module, exporting to Excel feature is not available"
-				Stop-Function -Message "Install the module from: https://github.com/dfinke/ImportExcel"
-				Stop-Function -Message "Valid alternative conversion format is csv"
+				$message = "Failed to load module, exporting to Excel feature is not available
+							Install the module from: https://github.com/dfinke/ImportExcel
+							Valid alternative conversion format is csv"
+				Stop-Function -Message $message
+				return
 			}
 		}
 		
 		Function Remove-InvalidFileNameChars {
+			[CmdletBinding()]
 			param (
 				[Parameter(Mandatory = $true,
 						   Position = 0,
@@ -104,7 +107,7 @@ Converts output from Invoke-DbaDiagnosticQuery to Excel worksheet(s) in the Docu
 			foreach ($result in $results) {
 				
 				if ($null -eq $result) {
-					Stop-Function -Message "Result was empty for $name" -Target $row -Continue
+					Stop-Function -Message "Result was empty for $name" -Target $result -Continue
 				}
 				
 				$queryname = Remove-InvalidFileNameChars -Name $Name

@@ -20,6 +20,9 @@ Alternate path for the diagnostic scripts
 	
 .PARAMETER UseSelectionHelper
 Provides a gridview with all the queries to choose from and will run the selection made by the user on the Sql Server instance specified. 
+
+.PARAMETER QueryName
+Only run specific query
 	
 .PARAMETER InstanceOnly
 Run only instance level queries
@@ -53,7 +56,7 @@ https://dbatools.io/Invoke-DbaDiagnosticQuery
 .EXAMPLE   
 Invoke-DbaDiagnosticQuery -SqlInstance sql2016
 
-Provides a gridview with all the queries to choose from and will run the selection made by the user on the Sql Server instance specified. 
+Run the selection made by the user on the Sql Server instance specified. 
 
 .EXAMPLE   
 Invoke-DbaDiagnosticQuery -SqlInstance sql2016 -UseSelectionHelper | Export-DbaDiagnosticQuery -Path C:\temp\gboutput
@@ -80,14 +83,14 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 	begin {
 		
 		function Invoke-DiagnosticQuerySelectionHelper {
+			[CmdletBinding()]
 			Param (
 				[parameter(Mandatory = $true)]
 				$ParsedScript
 			)
 			
-			[string[]]$selection = $script | Select-Object QueryNr, QueryName, DBSpecific, Description | Out-GridView -Title "Diagnostic Query Overview" -OutputMode Multiple | Sort-Object QueryNr | Select-Object -ExpandProperty QueryName
-			
-			$selection
+			$ParsedScript | Select-Object QueryNr, QueryName, DBSpecific, Description | Out-GridView -Title "Diagnostic Query Overview" -OutputMode Multiple | Sort-Object QueryNr | Select-Object -ExpandProperty QueryName
+
 		}
 		
 		Write-Message -Level Verbose -Message "Interpreting DMV Script Collections"
@@ -110,6 +113,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 			$scriptfiles = Get-ChildItem "$base\bin\diagnosticquery\SQLServerDiagnosticQueries_*_*.sql"
 			if (!$scriptfiles) {
 				Stop-Function -Message "Unable to download scripts, do you have an internet connection? $_" -InnerErrorRecord $_
+				return
 			}
 		}
 		
@@ -123,11 +127,11 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 		
 		foreach ($file in $scriptfiles) {
 			if ($file.BaseName.Split("_")[2] -eq $currentdate) {
-				$script = Invoke-DbaDiagnosticQueryScriptParser -filename $file.fullname
+				$parsedscript = Invoke-DbaDiagnosticQueryScriptParser -filename $file.fullname
 				
 				$newscript = [pscustomobject]@{
 					Version = $file.Basename.Split("_")[1]
-					Script = $script
+					Script = $parsedscript
 				}
 				$scriptversions += $newscript
 			}
@@ -135,7 +139,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 	}
 	
 	process {
-		
+		if (Test-FunctionInterrupt) { return }
 		foreach ($instance in $sqlinstance) {
 			$counter = 0
 			try {
@@ -169,28 +173,28 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 				$databases = Invoke-Sqlcmd2 -ServerInstance $server -Database master -Query "Select Name from sys.databases where name not in ('master', 'model', 'msdb', 'tempdb')"
 			}
 			
-			$script = $scriptversions | Where-Object -Property Version -eq $version | Select-Object -ExpandProperty Script
+			$parsedscript = $scriptversions | Where-Object -Property Version -eq $version | Select-Object -ExpandProperty Script
 			
 			if ($null -eq $first) { $first = $true }
 			if ($useSelectionHelper -and $first) {
-				$queryName = Invoke-DiagnosticQuerySelectionHelper $script
+				$queryName = Invoke-DiagnosticQuerySelectionHelper $parsedscript
 				$first = $false
 			}
 			
 			if (!$instanceonly -and !$databaseSpecific -and !$queryName) {
-				$scriptcount = $script.count
+				$scriptcount = $parsedscript.count
 			}
 			elseif ($instanceOnly) {
-				$scriptcount = ($script | Where-Object DatabaseSpecific -eq $false).count
+				$scriptcount = ($parsedscript | Where-Object DatabaseSpecific -eq $false).count
 			}
 			elseif ($databaseSpecific) {
-				$scriptcount = ($script | Where-Object DatabaseSpecific).count
+				$scriptcount = ($parsedscript | Where-Object DatabaseSpecific).count
 			}
 			elseif ($queryName.Count -ne 0) {
 				$scriptcount = $queryName.Count
 			}
 			
-			foreach ($scriptpart in $script) {
+			foreach ($scriptpart in $parsedscript) {
 				
 				if (($queryName.Count -ne 0) -and ($queryName -notcontains $scriptpart.QueryName)) { continue }
 				if (!$scriptpart.DatabaseSpecific -and !$databaseSpecific) {
@@ -199,7 +203,6 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 						if (!$silent) {
 							Write-Progress -Id 1 -ParentId 0 -Activity "Collecting diagnostic query data from $instance" -Status "Processing $counter of $scriptcount" -CurrentOperation $scriptpart.QueryName -PercentComplete (($counter / $scriptcount) * 100)
 						}
-						
 						
 						try {
 							$result = Invoke-Sqlcmd2 -ServerInstance $server -Database master -Query $scriptpart.Text -ErrorAction Stop
@@ -222,7 +225,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 							}
 						}
 						catch {
-							Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1}, result unavailable' -f $instance, $scriptpart.QueryName)
+							Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1}, result unavailable' -f $instance, $scriptpart.QueryName) -Target $instance -ErrorRecord $_
 						}
 						if ($result) {
 							
@@ -262,11 +265,11 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 										Notes = "Empty Result for this Query"
 										Result = $null
 									}
-									Write-Message -Level Verbose -Message ("Empty result for Query {0} - {1} - {2}" -f $scriptpart.QueryNr, $scriptpart.QueryName, $scriptpart.Description)
+									Write-Message -Level Verbose -Message ("Empty result for Query {0} - {1} - {2}" -f $scriptpart.QueryNr, $scriptpart.QueryName, $scriptpart.Description) -Target $scriptpart -ErrorRecord $_
 								}
 							}
 							catch {
-								Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1} - Database: {2}, result will not be saved' -f $instance, $scriptpart.QueryName, $database.Name)
+								Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1} - Database: {2}, result will not be saved' -f $instance, $scriptpart.QueryName, $database.Name) -Target $database -ErrorRecord $_
 							}
 							
 							[pscustomobject]@{
