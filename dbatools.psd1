@@ -261,7 +261,8 @@
 		'New-DbaScriptingOption',
 		'Save-DbaDiagnosticQueryScript',
 		'Invoke-DbaDiagnosticQuery',
-		'Export-DbaDiagnosticQuery'
+		'Export-DbaDiagnosticQuery',
+		'Get-DbaWhoisActive'
 		#'Invoke-DbaLogShippingRecovery',
 	)
 	
