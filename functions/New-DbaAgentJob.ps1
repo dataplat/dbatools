@@ -90,7 +90,7 @@ New-DbaAgentJob -SqlInstance sql1 -JobName 'Job One' -Disabled
 Creates the job but sets it to disabled
 
 .EXAMPLE
-New-DbaAgentJob -SqlInstance sql1 -JobName 'Job One' -EventLogLevel 'OnSuccess'
+New-DbaAgentJob -SqlInstance sql1 -JobName 'Job One' -EventLogLevel OnSuccess
 Creates the job and sets the notification to write to the Windows Application event log on success
 
 .EXAMPLE
@@ -219,11 +219,11 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
             }
 			
             # Check if the job already exists
-            if (-not $Force -and (($server.JobServer.Jobs).Name -contains $JobName)) {
+            if (-not $Force -and ($server.JobServer.Jobs.Name -contains $JobName)) {
                 Stop-Function -Message "Job $jobname already exists on $instance" -Target $instance -Continue
                 return
             }
-            elseif ($Force -and (($server.JobServer.Jobs).Name -contains $JobName)) {
+            elseif ($Force -and ($server.JobServer.Jobs.Name -contains $JobName)) {
                 Write-Message -Message "Job $jobname already exists on $instance. Removing.." -Level Output
 
                 if ($PSCmdlet.ShouldProcess($instance, ("Removing the job the job $($instance)"))) {
