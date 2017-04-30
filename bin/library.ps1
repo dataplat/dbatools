@@ -2045,6 +2045,12 @@ namespace Sqlcollective.Dbatools
             {
                 InputObject = Name;
 
+                if (Name == ".")
+                {
+                    _ComputerName = Name;
+                    return;
+                }
+
                 string tempString = Name;
 
                 // Case: Default instance | Instance by port
@@ -3270,7 +3276,7 @@ namespace Sqlcollective.Dbatools
             /// <param name="Base">The object to convert</param>
             public static implicit operator DbaDate(DateTime Base)
             {
-                return new DbaDate(Base);
+                 return new DbaDate(Base);
             }
 
             /// <summary>
@@ -3291,6 +3297,21 @@ namespace Sqlcollective.Dbatools
                 return new DbaTime(Base.GetBaseObject());
             }
             #endregion Implicit Conversions
+
+            #region Statics
+            /// <summary>
+            /// Generates a DbaDate object based off DateTime object. Will be null if Base is the start value (Tickes == 0).
+            /// </summary>
+            /// <param name="Base">The Datetime to base it off</param>
+            /// <returns>The object to generate (or null)</returns>
+            public static DbaDate Generate(DateTime Base)
+            {
+                if (Base.Ticks == 0)
+                    return null;
+                else
+                    return new DbaDate(Base);
+            }
+            #endregion Statics
         }
 
         /// <summary>
@@ -3506,6 +3527,21 @@ namespace Sqlcollective.Dbatools
                 return new DbaTime(Base.GetBaseObject());
             }
             #endregion Implicit Conversions
+
+            #region Statics
+            /// <summary>
+            /// Generates a DbaDateTime object based off DateTime object. Will be null if Base is the start value (Tickes == 0).
+            /// </summary>
+            /// <param name="Base">The Datetime to base it off</param>
+            /// <returns>The object to generate (or null)</returns>
+            public static DbaDateTime Generate(DateTime Base)
+            {
+                if (Base.Ticks == 0)
+                    return null;
+                else
+                    return new DbaDateTime(Base);
+            }
+            #endregion Statics
         }
 
         /// <summary>
@@ -3730,6 +3766,21 @@ namespace Sqlcollective.Dbatools
                 return Base.ToString();
             }
             #endregion Implicit Conversions
+
+            #region Statics
+            /// <summary>
+            /// Generates a DbaDateTime object based off DateTime object. Will be null if Base is the start value (Tickes == 0).
+            /// </summary>
+            /// <param name="Base">The Datetime to base it off</param>
+            /// <returns>The object to generate (or null)</returns>
+            public static DbaTime Generate(DateTime Base)
+            {
+                if (Base.Ticks == 0)
+                    return null;
+                else
+                    return new DbaTime(Base);
+            }
+            #endregion Statics
         }
 
         /// <summary>
@@ -4308,6 +4359,8 @@ namespace Sqlcollective.Dbatools
                 {
                     return (String.Format(format, Byte) + " B");
                 }
+                else if (Byte == -1)
+                    return "Unlimited";
                 else { return ""; }
             }
 
