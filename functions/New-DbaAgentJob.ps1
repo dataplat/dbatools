@@ -226,7 +226,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
             elseif ($Force -and ($server.JobServer.Jobs.Name -contains $JobName)) {
                 Write-Message -Message "Job $jobname already exists on $instance. Removing.." -Level Output
 
-                if ($PSCmdlet.ShouldProcess($instance, ("Removing the job the job $($instance)"))) {
+                if ($PSCmdlet.ShouldProcess($instance, "Removing the job the job $($instance)")) {
                     try {
                         Remove-DbaAgentJob -SqlInstance $instance -JobName $JobName
                     }
@@ -280,12 +280,12 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 			
             if ($OwnerLoginName.Length -ge 1) {
                 # Check if the login name is present on the instance
-                if (($server.Logins).Name -contains $OwnerLoginName) {
+                if ($server.Logins.Name -contains $OwnerLoginName) {
                     Write-Message -Message "Setting job owner login name to $($OwnerLoginName)" -Level Verbose
                     $Job.OwnerLoginName = $OwnerLoginName
                 }
                 else {
-                    Stop-Function -Message "The owner '$($OwnerLoginName)' does not exist on instance $instance" -Target $JobName -Continue
+                    Stop-Function -Message "The owner $($OwnerLoginName) does not exist on instance $instance" -Target $JobName -Continue
                     return
                 }
             }
@@ -298,7 +298,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
             if ($EmailOperatorName) {
                 if ($EmailLevel -ge 1) {
                     # Check if the operator name is present
-                    if (($server.JobServer.Operators).Name -contains $EmailOperatorName) {
+                    if ($server.JobServer.Operators.Name -contains $EmailOperatorName) {
                         Write-Message -Message "Setting job e-mail level" -Level Verbose
                         $Job.EmailLevel = $EmailLevel
 						
@@ -319,7 +319,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
             if ($NetsendOperatorName) {
                 if ($NetsendLevel -ge 1) {
                     # Check if the operator name is present
-                    if (($server.JobServer.Operators).Name -contains $NetsendOperatorName) {
+                    if ($server.JobServer.Operators.Name -contains $NetsendOperatorName) {
                         Write-Message -Message "Setting job netsend level" -Level Verbose
                         $Job.NetSendLevel = $NetsendLevel
 						
@@ -339,7 +339,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
             if ($PageOperatorName) {
                 if ($PageLevel -ge 1) {
                     # Check if the operator name is present
-                    if (($server.JobServer.Operators).Name -contains $PageOperatorName) {
+                    if ($server.JobServer.Operators.Name -contains $PageOperatorName) {
                         Write-Message -Message "Setting job pager level" -Level Verbose
                         $Job.PageLevel = $PageLevel
 						
@@ -363,7 +363,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
             #endregion job options
 			
             # Execute 
-            if ($PSCmdlet.ShouldProcess($instance, ("Creating the job $($instance)"))) {
+            if ($PSCmdlet.ShouldProcess($instance, "Creating the job $($instance)")) {
                 try {
                     Write-Message -Message "Creating the job" -Level Output
 					
