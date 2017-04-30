@@ -15,6 +15,9 @@ It will run all or a selection of those scripts on one or multiple servers and r
 .PARAMETER SqlInstance
 The target SQL Server. Can be either a string or SMO server.
 	
+.PARAMETER SqlCredential
+Allows alternative Windows or SQL login credentials to be used.
+
 .PARAMETER Path
 Alternate path for the diagnostic scripts
 	
@@ -69,9 +72,10 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 	
 	[CmdletBinding(SupportsShouldProcess)]
 	param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
+		[PsCredential]$SqlCredential,
 		[System.IO.FileInfo]$Path,
 		[string[]]$QueryName,
 		[switch]$UseSelectionHelper,
