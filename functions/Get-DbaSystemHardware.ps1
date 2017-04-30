@@ -46,9 +46,9 @@ function Get-DbaSystemHardware {
 
     BEGIN {
         <# initial notes #>
-		## Main work on this will not begin until the new remote management functions are merged to development (https://github.com/sqlcollaborative/dbatools/pull/916)
+        ## Main work on this will not begin until the new remote management functions are merged to development (https://github.com/sqlcollaborative/dbatools/pull/916)
         <#
-1) win32 Clases to hit:
+1) Classes to hit:
 	- Processor
 		Name
 		Description
@@ -68,6 +68,8 @@ function Get-DbaSystemHardware {
 		SKU
 		Version
 	- NetworkAdapter (where MACAddress - to filter out non-essential devices)
+**Docs show this is depreciated, but the MSFT_Adapter class is only available on a small number of OS versions,
+at this time this class should still be available up to 2016 OS**
 		DeviceID
 		Name
 		AdapterType
