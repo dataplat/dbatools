@@ -226,7 +226,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
             elseif ($Force -and ($server.JobServer.Jobs.Name -contains $JobName)) {
                 Write-Message -Message "Job $jobname already exists on $instance. Removing.." -Level Output
 
-                if ($PSCmdlet.ShouldProcess($instance, "Removing the job the job $($instance)")) {
+                if ($PSCmdlet.ShouldProcess($instance, "Removing the job the job $instance")) {
                     try {
                         Remove-DbaAgentJob -SqlInstance $instance -JobName $JobName
                     }
@@ -281,11 +281,11 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
             if ($OwnerLoginName.Length -ge 1) {
                 # Check if the login name is present on the instance
                 if ($server.Logins.Name -contains $OwnerLoginName) {
-                    Write-Message -Message "Setting job owner login name to $($OwnerLoginName)" -Level Verbose
+                    Write-Message -Message "Setting job owner login name to $OwnerLoginName" -Level Verbose
                     $Job.OwnerLoginName = $OwnerLoginName
                 }
                 else {
-                    Stop-Function -Message "The owner $($OwnerLoginName) does not exist on instance $instance" -Target $JobName -Continue
+                    Stop-Function -Message "The owner $OwnerLoginName does not exist on instance $instance" -Target $JobName -Continue
                     return
                 }
             }
@@ -363,7 +363,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
             #endregion job options
 			
             # Execute 
-            if ($PSCmdlet.ShouldProcess($instance, "Creating the job $($instance)")) {
+            if ($PSCmdlet.ShouldProcess($instance, "Creating the job on $instance")) {
                 try {
                     Write-Message -Message "Creating the job" -Level Output
 					
