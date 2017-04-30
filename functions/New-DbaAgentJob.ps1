@@ -228,23 +228,22 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
                 $server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
             }
             catch {
-                Stop-Function -Message "Could not connect to Sql Server instance" -Target $instance -Continue
+                Stop-Function -Message "Could not connect to $instance" -Target $instance -Continue -InnerErrorRecord $_
             }
 			
             # Check if the job already exists
             if (-not $Force -and ($server.JobServer.Jobs.Name -contains $JobName)) {
                 Stop-Function -Message "Job $jobname already exists on $instance" -Target $instance -Continue
-                return
             }
             elseif ($Force -and ($server.JobServer.Jobs.Name -contains $JobName)) {
                 Write-Message -Message "Job $jobname already exists on $instance. Removing.." -Level Output
 
                 if ($PSCmdlet.ShouldProcess($instance, "Removing the job the job $instance")) {
                     try {
-                        Remove-DbaAgentJob -SqlInstance $instance -JobName $JobName
+                        Remove-DbaAgentJob -SqlInstance $instance -JobName $JobName -Silent
                     }
                     catch {
-                        Stop-Function -Message "Couldn't remove job $jobname from $instance" -Target $instance -Continue
+                        Stop-Function -Message "Couldn't remove job $jobname from $instance" -Target $instance -Continue -InnerErrorRecord $_
                     }
                 }
 				
@@ -255,7 +254,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
                 $Job = New-Object Microsoft.SqlServer.Management.Smo.Agent.Job($server.JobServer, $JobName)
             }
             catch {
-                Stop-Function -Message "Something went wrong creating the job. `n$($_.Exception.Message)" -Target $JobName -Continue
+                Stop-Function -Message "Something went wrong creating the job. `n$($_.Exception.Message)" -Target $JobName -Continue -InnerErrorRecord $_
             }
 			
             #region job options
@@ -297,7 +296,6 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
                 }
                 else {
                     Stop-Function -Message "The owner $OwnerLoginName does not exist on instance $instance" -Target $JobName -Continue
-                    return
                 }
             }
 			
@@ -380,7 +378,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
                     Write-Message -Message "Job created with UID $($Job.JobID)" -Level Verbose
                 }
                 catch {
-                    Stop-Function -Message "Something went wrong creating the job. `n$($_.Exception.Message)" -Continue 
+                    Stop-Function -Message "Something went wrong creating the job. `n$($_.Exception.Message)" -Continue -InnerErrorRecord $_
                 }
             }
 
