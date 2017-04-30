@@ -73,6 +73,16 @@ The text value van either be lowercase, uppercase or something in between as lon
 .PARAMETER Force
 The force parameter will ignore some errors in the parameters and assume defaults.
 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
+
+
 .NOTES 
 Original Author: Sander Stad (@sqlstad, sqlstad.nl)
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
