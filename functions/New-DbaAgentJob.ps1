@@ -235,7 +235,6 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
                     }
                     catch {
                         Stop-Function -Message "Couldn't remove job $jobname from $instance" -Target $instance -Continue
-                        return
                     }
                 }
 				
@@ -247,7 +246,6 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
             }
             catch {
                 Stop-Function -Message "Something went wrong creating the job. `n$($_.Exception.Message)" -Target $JobName -Continue
-                return
             }
 			
             #region job options
@@ -310,12 +308,10 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
                     }
                     else {
                         Stop-Function -Message "The e-mail operator name $EmailOperatorName does not exist on instance $instance. Exiting.." -Target $JobName -Continue
-                        return
                     }
                 }
                 else {
                     Stop-Function -Message "Invalid combination of e-mail operator name $EmailOperatorName and email level $EmailLevel. Not setting the notification." -Target $JobName  -Continue
-                    return
                 }
             }
 			
@@ -331,7 +327,6 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
                     }
                     else {
                         Stop-Function -Message "The netsend operator name $NetsendOperatorName does not exist on instance $instance. Exiting.." -Target $JobName -Continue
-                        return
                     }
                 }
                 else {
@@ -351,7 +346,6 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
                     }
                     else {
                         Stop-Function -Message "The page operator name $PageOperatorName does not exist on instance $instance. Exiting.." -Target $JobName -Continue
-                        return
                     }
                 }
                 else {
@@ -377,7 +371,6 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
                 }
                 catch {
                     Stop-Function -Message "Something went wrong creating the job. `n$($_.Exception.Message)" -Continue 
-                    return
                 }
             }
 
