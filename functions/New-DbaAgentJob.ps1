@@ -59,10 +59,10 @@ The text value van either be lowercase, uppercase or something in between as lon
 .PARAMETER EmailOperatorName
 The e-mail name of the operator to whom the e-mail is sent when EmailLevel is reached.
 
-.PARAMETER NetsendOperator
+.PARAMETER NetsendOperatorName
 The name of the operator to whom the network message is sent.
 
-.PARAMETER PageOperator
+.PARAMETER PageOperatorName
 The name of the operator to whom a page is sent.
 
 .PARAMETER DeleteLevel
