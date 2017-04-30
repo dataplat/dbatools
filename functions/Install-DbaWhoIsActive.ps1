@@ -124,18 +124,20 @@ This command doesn't support passing both servers and default database, but you 
 					
 					$sqlfile = (Get-ChildItem "$temp\who*active*.sql" | Select-Object -First 1).Name
 					$sqlfile = "$temp\$sqlfile"
-					
-					Write-Message -Level Output -Message "Using $sqlfile"
-					
-					$sql = [IO.File]::ReadAllText($sqlfile)
-					$sql = $sql -replace 'USE master', ''
-					$batches = $sql -split "GO\r\n"
 				}
 				catch {
 					Stop-Function -Message "Couldn't download sp_WhoisActive. Please download and install manually from http://whoisactive.com/who_is_active_v11_17.zip." -InnerErrorRecord $_
 					return
 				}
 			}
+		}
+		
+		if ($PSCmdlet.ShouldProcess($env:computername, "Reading SQL file into memory")) {
+			Write-Message -Level Output -Message "Using $sqlfile"
+			
+			$sql = [IO.File]::ReadAllText($sqlfile)
+			$sql = $sql -replace 'USE master', ''
+			$batches = $sql -split "GO\r\n"
 		}
 		
 		$Database = $psboundparameters.Database
