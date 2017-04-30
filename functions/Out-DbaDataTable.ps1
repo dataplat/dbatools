@@ -169,7 +169,9 @@ Creates a DataTable with the running processes and converts any TimeSpan propert
 		if (!$InputObject) {
 			if ($IgnoreNull) {
                 # If the object coming down the pipeline is null and the IgnoreNull parameter is set, ignore it.
-				Stop-Function -Message "The InputObject from the pipe is null. Skipping." -Continue
+				#Stop-Function -Message "The InputObject from the pipe is null. Skipping." -Continue
+                Write-Message -Message "The InputObject from the pipe is null. Skipping." -Silent:$Silent -Warning
+                Continue
 			}
 			else {
                 # If the object coming down the pipeline is null, add an empty row and then skip to next.
@@ -179,6 +181,20 @@ Creates a DataTable with the running processes and converts any TimeSpan propert
 			}
 		}
 		foreach ($object in $InputObject) {
+            if (!$object) {
+                if ($IgnoreNull) {
+                # If the object in the array is null and the IgnoreNull parameter is set, ignore it.
+				#Stop-Function -Message "Object in array is null. Skipping." -SilentlyContinue
+                Write-Message -Message "Object in array is null. Skipping." -Silent:$Silent -Warning
+                Continue
+			    }
+			    else {
+                    # If the object in the array is null, add an empty row and then skip to next.
+				    $datarow = $datatable.NewRow()
+				    $datatable.Rows.Add($datarow)
+				    continue
+			    }
+            }
             $datarow = $datatable.NewRow()
 			foreach ($property in $object.PsObject.get_properties()) {
                 # The converted variable will get the result from the ConvertType function and used for type and value conversion when adding to the datatable.
@@ -194,7 +210,17 @@ Creates a DataTable with the running processes and converts any TimeSpan propert
                             Write-Verbose "Converting Script Property"
                             Write-Verbose "Value: $($property.Value)"
                             Write-Verbose "Points to: $($object.($property.Name))"
-                            $converted = ConvertType -type ($object.($property.Name).GetType().ToString()) -value $property.value -timespantype $TimeSpanType
+                            try {
+                                $converted = ConvertType -type ($object.($property.Name).GetType().ToString()) -value $property.value -timespantype $TimeSpanType
+                            } catch {
+                                # Ends up here when the type is not possible to get so the call to ConvertType fails.
+                                # In that case we make a string out of it. (in this scenario its often that a script property points to a null value so we can't get the type)
+                                $converted = @{
+                                    type='System.String'
+                                    Value=$property.value
+                                    Special=$false
+                                }
+                            }
                             # We need to check if the type returned by ConvertType is a special type.
                             # In that case we add it to the $specialColumns variable for future reference.
                             if ($converted.special) {
