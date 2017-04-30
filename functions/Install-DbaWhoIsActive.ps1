@@ -22,6 +22,15 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages or progress bars
+	
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
