@@ -1,6 +1,9 @@
-﻿
+﻿<#
+Invoke-Pester .\Out-DbaDataTable.tests.ps1 -CodeCoverage @{Path = '.\..\functions\Out-DbaDataTable.ps1'}
+#>
 
 Describe "Testing data table output when using a complex object" {
+    # Prepare object for testing
     $obj = New-Object -TypeName psobject -Property @{
         guid = [system.guid]'32ccd4c4-282a-4c0d-997c-7b5deb97f9e0'
         timespan = New-TimeSpan -Start 2016-10-30 -End 2017-04-30
@@ -12,6 +15,7 @@ Describe "Testing data table output when using a complex object" {
         string = "it's a boy!"
         UInt64 = [System.UInt64]123456
     }
+    # Run the command to get output to run tests on
     $result = Out-DbaDataTable -InputObject $obj
 
     Context "Property: guid" {
@@ -123,4 +127,36 @@ Describe "Testing data table output when using a complex object" {
         }
     }
 
+}
+
+Describe "Testing input parameters" {
+    # Prepare object for testing
+    $obj = New-Object -TypeName psobject -Property @{
+        timespan = New-TimeSpan -Start 2017-01-01 -End 2017-01-02
+    }
+    
+    Context "Verifying TimeSpanType" {
+        It "Should return '1.00:00:00' when String is used" {
+            (Out-DbaDataTable -InputObject $obj -TimeSpanType String).Timespan | Should Be '1.00:00:00'
+        }
+        It "Should return 864000000000 when Ticks is used" {
+            (Out-DbaDataTable -InputObject $obj -TimeSpanType Ticks).Timespan | Should Be 864000000000
+        }
+        It "Should return 1 when TotalDays is used" {
+            (Out-DbaDataTable -InputObject $obj -TimeSpanType TotalDays).Timespan | Should Be 1
+        }
+        It "Should return 24 when TotalHours is used" {
+            (Out-DbaDataTable -InputObject $obj -TimeSpanType TotalHours).Timespan | Should Be 24
+        }
+        It "Should return 86400000 when TotalMilliseconds is used" {
+            (Out-DbaDataTable -InputObject $obj -TimeSpanType TotalMilliseconds).Timespan | Should Be 86400000
+        }
+        It "Should return 1440 when TotalMinutes is used" {
+            (Out-DbaDataTable -InputObject $obj -TimeSpanType TotalMinutes).Timespan | Should Be 1440
+        }
+        It "Should return 86400 when TotalSeconds is used" {
+            (Out-DbaDataTable -InputObject $obj -TimeSpanType TotalSeconds).Timespan | Should Be 86400
+        }
+        # add tests to verify data types depending on TimeSpanType
+    }
 }
