@@ -70,6 +70,9 @@ Specifies when to delete the job.
 Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
 The text value van either be lowercase, uppercase or something in between as long as the text is correct.
 
+.PARAMETER Force
+The force parameter will ignore some errors in the parameters and assume defaults.
+
 .NOTES 
 Original Author: Sander Stad (@sqlstad, sqlstad.nl)
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -332,7 +335,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
                     }
                 }
                 else {
-                    Write-Message -Message "Invalid combination of netsend operator name $NetsendOperatorName  and netsend level $NetsendLevel. Not setting the notification." 
+                    Write-Message -Message "Invalid combination of netsend operator name $NetsendOperatorName and netsend level $NetsendLevel. Not setting the notification." 
                 }
             }
 			
