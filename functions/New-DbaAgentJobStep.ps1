@@ -50,7 +50,7 @@ The text value van either be lowercase, uppercase or something in between as lon
 .PARAMETER OnFailStepId 
 The ID of the step in this job to execute if the step fails and OnFailAction is "GoToNextStep".
 
-.PARAMETER DatabaseName
+.PARAMETER Database
 The name of the database in which to execute a Transact-SQL step. The default is 'master'.
 
 .PARAMETER DatabaseUserName 
@@ -160,7 +160,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
         [Parameter(Mandatory = $false)]
         [int]$OnFailStepId,
         [Parameter(Mandatory = $false)]
-        [string]$DatabaseName,
+        [string]$Database,
         [Parameter(Mandatory = $false)]
         [string]$DatabaseUserName,
         [Parameter(Mandatory = $false)]
@@ -290,14 +290,14 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
                         $JobStep.OnFailStep = $OnFailStepId
                     }
 
-                    if ($DatabaseName) {
+                    if ($Database) {
                         # Check if the database is present on the server
-                        if ($Server.Databases.Name -contains $DatabaseName) {
-                            Write-Message -Message "Setting job step database name to $DatabaseName" -Level Verbose 
-                            $JobStep.DatabaseName = $DatabaseName
+                        if ($Server.Databases.Name -contains $Database) {
+                            Write-Message -Message "Setting job step database name to $Database" -Level Verbose 
+                            $JobStep.DatabaseName = $Database
                         }
                         else {
-                            Stop-Function -Message "The database is not present on instance $instance." -Target $JobName -Continue
+                            Stop-Function -Message "The database is not present on instance $instance." -Target $instance -Continue
                         }
                     }
 
@@ -309,7 +309,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
                             $JobStep.DatabaseUserName = $DatabaseUserName
                         }
                         else {
-                            Stop-Function -Message "The database user is not present in the database $DatabaseName on instance $instance." -Target $StepName -Continue
+                            Stop-Function -Message "The database user is not present in the database $DatabaseName on instance $instance." -Target $instance -Continue
                         }
                     }
 
@@ -335,7 +335,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
                             $JobStep.ProxyName = $ProxyName
                         }
                         else {
-                            Stop-Function -Message "The proxy name $ProxyName doesn't exist on instance $instance." -Target $StepName -Continue
+                            Stop-Function -Message "The proxy name $ProxyName doesn't exist on instance $instance." -Target $instance -Continue
                         }
                     }
 
