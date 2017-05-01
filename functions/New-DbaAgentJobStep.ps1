@@ -254,7 +254,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
                             $JobStep.ID = $StepId
                         }
                         else {
-                            Stop-Function -Message "The step id $StepId already exists." -Target $instance -Continue
+                            Stop-Function -Message "The step id $StepId already exists for job $j" -Target $instance -Continue
                         }
                 
                     }
