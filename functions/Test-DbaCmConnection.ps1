@@ -233,6 +233,7 @@
                 $parameters = @{
                     ScriptBlock = { Get-WmiObject -Class Win32_OperatingSystem -ErrorAction Stop }
                     ComputerName = $ComputerName
+                    ErrorAction = 'Stop'
                 }
                 if ($Credential) { $parameters["Credential"] = $Credential }
                 $os = Invoke-Command @parameters
