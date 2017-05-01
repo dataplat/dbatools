@@ -90,6 +90,9 @@ Prompts you for confirmation before executing any changing operations within the
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages
 
+.PARAMETER Force
+The force parameter will ignore some errors in the parameters and assume defaults.
+
 .NOTES 
 Original Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Agent, Job, Job Step
@@ -174,7 +177,9 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
         [string[]]$Flag,
         [Parameter(Mandatory = $false)]
         [string]$ProxyName,
-        [switch]$Silent
+        [switch]$Silent,
+        [Parameter(Mandatory = $false)]
+        [bool]$Force
     )
 
     begin {
@@ -233,6 +238,9 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
                         # Check if the step already exists
                         if ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $StepName) {
                             $JobStep.Name = $StepName
+                        }
+                        elseif ($NewName -and $Force) {
+                            Write-Message -Message "Step $StepName already exists for job. Force is used. Setting job step name to $NewName" -Level Verbose 
                         }
                         else {
                             Stop-Function -Message "The step name $StepName already exists." -Target $instance -Continue
