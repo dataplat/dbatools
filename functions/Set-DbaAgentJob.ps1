@@ -242,7 +242,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
             foreach ($j in $JobName) {
 
                 # Check if the job exists
-                if ($Server.JobServer.Jobs.Name -notcontains $JobName) {
+                if ($Server.JobServer.Jobs.Name -notcontains $j) {
                     Stop-Function -Message "Job $j doesn't exists on $instance"  -Target $instance 
                 }
                 else {
