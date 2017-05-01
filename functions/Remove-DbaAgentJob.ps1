@@ -24,35 +24,44 @@ Specifies to keep the history for the job. By default is history is deleted.
 Specifies to keep the schedules attached to this job if they are not attached to any other job. 
 By default the unused schedule is deleted.
 
+.PARAMETER WhatIf
+Shows what would happen if the command were to run. No actions are actually performed.
+
+.PARAMETER Confirm
+Prompts you for confirmation before executing any changing operations within the command.
+
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
+
 .NOTES 
 Original Author: Sander Stad (@sqlstad, sqlstad.nl)
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+Tags: Agent, Job
+	
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Remove-DbaAgentJob
 
 .EXAMPLE   
-Remove-DbaAgentJob -SqlInstance 'sql1' -JobName 'Job1'
-Removes the job from the instance with the name 'Job1'
+Remove-DbaAgentJob -SqlInstance sql1 -JobName Job1
+Removes the job from the instance with the name Job1
 
 .EXAMPLE   
-Remove-DbaAgentJob -SqlInstance 'sql1' -JobName 'Job1' -KeepHistory
+Remove-DbaAgentJob -SqlInstance sql1 -JobName Job1 -KeepHistory
 Removes the job but keeps the history
 
 .EXAMPLE   
-Remove-DbaAgentJob -SqlInstance 'sql1' -JobName 'Job1' -KeepUnusedSchedule
+Remove-DbaAgentJob -SqlInstance sql1 -JobName Job1 -KeepUnusedSchedule
 Removes the job but keeps the unused schedules
 
 .EXAMPLE   
-Remove-DbaAgentJob -SqlInstance 'sql1', 'sql2', 'sql3' -JobName 'Job1' 
+Remove-DbaAgentJob -SqlInstance sql1, sql2, sql3 -JobName Job1 
 Removes the job from multiple servers
 
 .EXAMPLE   
-'sql1', 'sql2', 'sql3' | Remove-DbaAgentJob -JobName 'Job1' 
+sql1, sql2, sql3 | Remove-DbaAgentJob -JobName Job1 
 Removes the job from multiple servers using pipe line
 
 #>
@@ -65,9 +74,13 @@ Removes the job from multiple servers using pipe line
         [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]$SqlCredential,
         [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
         [string[]]$JobName,
+        [Parameter(Mandatory = $false)]
         [switch]$KeepHistory,
+        [Parameter(Mandatory = $false)]
         [switch]$KeepUnusedSchedule,
+        [Parameter(Mandatory = $false)]
         [switch]$Silent
     )
 
@@ -76,19 +89,18 @@ Removes the job from multiple servers using pipe line
         foreach ($instance in $sqlinstance) {
 
             # Try connecting to the instance
-            Write-Message -Message "Attempting to connect to Sql Server.." -Level Output
+            Write-Message -Message "Attempting to connect to $instance" -Level Output
             try {
                 $Server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
             }
             catch {
                 Stop-Function -Message "Could not connect to Sql Server instance" -Target $instance -Continue
-                return
             }
         
             foreach ($j in $JobName) {
 
                 # Check if the job exists
-                if (($Server.JobServer.Jobs).Name -notcontains $j) {
+                if ($Server.JobServer.Jobs.Name -notcontains $j) {
                     Write-Message -Message "Job $j doesn't exists on $instance" -Warning
                 }
                 else {   
@@ -98,7 +110,6 @@ Removes the job from multiple servers using pipe line
                     }
                     catch {
                         Stop-Function -Message "Something went wrong creating the job. `n$($_.Exception.Message)" -Target $instance -Continue
-                        return
                     }
 
                     # Delete the history
@@ -108,7 +119,7 @@ Removes the job from multiple servers using pipe line
                     }
 
                     # Execute 
-                    if ($PSCmdlet.ShouldProcess($instance, ("Removing the job on $instance"))) {
+                    if ($PSCmdlet.ShouldProcess($instance, "Removing the job on $instance")) {
                         try {
                             Write-Message -Message "Removing the job" -Level Output
 
@@ -126,15 +137,13 @@ Removes the job from multiple servers using pipe line
                         }
                         catch {
                             Stop-Function -Message  "Something went wrong removing the job. `n$($_.Exception.Message)" -Target $instance -Continue
-                            return
                         }
-                    }
+                    } 
                 }
 
-            }
-
-        }
-    }
+            } # foreach object job
+        } # forech object instance
+    } # process
 
     end {
         Write-Message -Message "Finished removing jobs(s)." -Level Output
