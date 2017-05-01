@@ -243,7 +243,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
                             Write-Message -Message "Step $StepName already exists for job. Force is used. Setting job step name to $NewName" -Level Verbose 
                         }
                         else {
-                            Stop-Function -Message "The step name $StepName already exists." -Target $instance -Continue
+                            Stop-Function -Message "The step name $StepName already exists for job $j" -Target $instance -Continue
                         }
                     }
 
