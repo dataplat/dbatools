@@ -112,7 +112,7 @@
             $connection = $connectionObject.Connection
             
             # Ensure using the right credentials
-            try { $cred = $connection.GetCredential($Credential, $PSBoundParameters.ContainsKey("Credential")) }
+            try { $cred = $connection.GetCredential($Credential) }
             catch
             {
                 $message = "Bad credentials! "
@@ -158,6 +158,7 @@
                             
                             Write-Message -Level Verbose -Message "[$computer] Accessing computer using Cim over WinRM - Success!"
                             $connection.ReportSuccess('CimRM')
+                            $connection.AddGoodCredential($cred)
                             if (-not $disable_cache) { [sqlcollective.dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
                             continue main
                         }
@@ -202,6 +203,7 @@
                             
                             Write-Message -Level Verbose -Message "[$computer] Accessing computer using Cim over DCOM - Success!"
                             $connection.ReportSuccess('CimDCOM')
+                            $connection.AddGoodCredential($cred)
                             if (-not $disable_cache) { [sqlcollective.dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
                             continue main
                         }
@@ -249,6 +251,7 @@
                             
                             Write-Message -Level Verbose -Message "[$computer] Accessing computer using WMI - Success!"
                             $connection.ReportSuccess('Wmi')
+                            $connection.AddGoodCredential($cred)
                             if (-not $disable_cache) { [sqlcollective.dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
                             continue main
                         }
@@ -297,6 +300,7 @@
                             
                             Write-Message -Level Verbose -Message "[$computer] Accessing computer using PowerShell Remoting - Success!"
                             $connection.ReportSuccess('PowerShellRemoting')
+                            $connection.AddGoodCredential($cred)
                             if (-not $disable_cache) { [sqlcollective.dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
                             continue main
                         }

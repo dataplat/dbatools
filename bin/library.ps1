@@ -450,6 +450,9 @@ namespace Sqlcollective.Dbatools
             /// <param name="Credential">The bad credential that must be punished</param>
             public void AddBadCredential(PSCredential Credential)
             {
+                if (DisableBadCredentialCache)
+                    return;
+
                 if (Credential == null)
                 {
                     WindowsCredentialsAreBad = true;
@@ -458,7 +461,7 @@ namespace Sqlcollective.Dbatools
                 }
 
                 // If previously good credentials have been revoked, better remove them from the list
-                if (Credentials.UserName.ToLower() == Credential.UserName.ToLower())
+                if ((Credentials != null) && (Credentials.UserName.ToLower() == Credential.UserName.ToLower()))
                 {
                     if (Credentials.GetNetworkCredential().Password == Credential.GetNetworkCredential().Password)
                         Credentials = null;
