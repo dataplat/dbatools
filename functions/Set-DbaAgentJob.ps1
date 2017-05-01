@@ -175,7 +175,6 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
         [Parameter(Mandatory = $false)]
         [ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
         [object]$DeleteLevel,
-        [bool]$Force,
         [switch]$Silent
     )
 
