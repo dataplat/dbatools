@@ -83,7 +83,7 @@ Use this switch to disable any kind of verbose messages
 
 .NOTES 
 Original Author: Sander Stad (@sqlstad, sqlstad.nl)
-Tags: Migration, Backup
+Tags: Agent, Job
 	
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
