@@ -127,16 +127,16 @@ Creates a DataTable with the running processes and converts any TimeSpan propert
             if ($type -eq 'System.TimeSpan') {
                 $special = $true
                 # Debug, remove when done
-                Write-Verbose "Found match: $type (special)"
+                # Write-Verbose "Found match: $type (special)"
                 if ($timespantype -eq 'String') {
                     # Debug, remove when done
-                    Write-Verbose "Converting TimeSpan to string"
+                    # Write-Verbose "Converting TimeSpan to string"
                     $value = $value.ToString()
                     $type = 'System.String'
                 }
                 else {
                     # Debug, remove when done
-                    Write-Verbose "Converting TimeSpan to $timespantype (Int64)"
+                    # Write-Verbose "Converting TimeSpan to $timespantype (Int64)"
                     # Lets use Int64 for all other types than string.
                     # We could match the type more closely with the timespantype but that can be added in the future if needed.
                     $value = $value.$timespantype
@@ -145,7 +145,7 @@ Creates a DataTable with the running processes and converts any TimeSpan propert
             }
             elseif (!$types.Contains($type)) {
                 # Debug, remove when done
-                Write-Verbose "Did not find match: $type"
+                # Write-Verbose "Did not find match: $type"
                 # All types which are not found in the array will be converted into strings.
                 # In this way we dont ignore it completely and it will be clear in the end why it looks as it does.
                 $type = 'System.String'
@@ -207,9 +207,9 @@ Creates a DataTable with the running processes and converts any TimeSpan propert
                         Write-Verbose "Attempting to get type from property $($property.Name)"
                         If ($property.MemberType -eq 'ScriptProperty') {
                             # Debug, remove when done
-                            Write-Verbose "Converting Script Property"
-                            Write-Verbose "Value: $($property.Value)"
-                            Write-Verbose "Points to: $($object.($property.Name))"
+                            # Write-Verbose "Converting Script Property"
+                            # Write-Verbose "Value: $($property.Value)"
+                            # Write-Verbose "Points to: $($object.($property.Name))"
                             try {
                                 $converted = ConvertType -type ($object.($property.Name).GetType().ToString()) -value $property.value -timespantype $TimeSpanType
                             } catch {
