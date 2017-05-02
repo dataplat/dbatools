@@ -2,6 +2,18 @@
 Invoke-Pester .\Out-DbaDataTable.tests.ps1 -CodeCoverage @{Path = '.\..\functions\Out-DbaDataTable.ps1'}
 #>
 
+# to be able to get code coverage from pester
+$basepath = Split-Path $MyInvocation.MyCommand.Path -Parent
+Import-Module C:\git\dbatools -Force
+# Need to import the Out-DbaDataTable.ps1 separately to get CodeCoverage to work with Pester
+Import-Module "$basepath\..\functions\Out-DbaDataTable.ps1" -Force -ErrorAction Stop
+# Need to import Test-DbaDeprecation as well to avoid getting error during Pester tests
+Import-Module "$basepath\..\internal\Test-DbaDeprecation.ps1" -Force -ErrorAction Stop
+
+
+
+
+Import-Module C:\git\dbatools -Force
 Describe "Testing data table output when using a complex object" {
     # Prepare object for testing
     $obj = New-Object -TypeName psobject -Property @{
@@ -15,6 +27,12 @@ Describe "Testing data table output when using a complex object" {
         string = "it's a boy!"
         UInt64 = [System.UInt64]123456
     }
+
+    $innedobj = New-Object -TypeName psobject -Property @{
+        Mission = 'Keep Hank alive'
+    }
+    
+    Add-Member -InputObject $obj -MemberType NoteProperty -Name myobject -Value $innedobj
     # Run the command to get output to run tests on
     $result = Out-DbaDataTable -InputObject $obj
 
@@ -119,11 +137,24 @@ Describe "Testing data table output when using a complex object" {
         It 'Has a column called "UInt64"' {
             $result.Columns.ColumnName.Contains('UInt64') | Should Be $true 
         }
-        It 'Has a [string] data type on the column "UInt64"' {
+        It 'Has a [UInt64] data type on the column "UInt64"' {
             $result.Columns | Where-Object -Property 'ColumnName' -eq 'UInt64' | Select-Object -ExpandProperty 'DataType' | Should Be 'UInt64'
         }
         It "Has the following number: 123456" {
             $result.UInt64 | Should Be 123456
+        }
+    }
+
+    Context "Property: myobject" {
+        It 'Has a column called "myobject"' {
+            $result.Columns.ColumnName.Contains('myobject') | Should Be $true 
+        }
+        It 'Has a [string] data type on the column "myobject"' {
+            $result.Columns | Where-Object -Property 'ColumnName' -eq 'myobject' | Select-Object -ExpandProperty 'DataType' | Should Be 'String'
+        }
+        It "Has no value" {
+            # not sure if this is a feaure. Should probably be changed in the future
+            $result.myobject | Should Be ''
         }
     }
 
@@ -158,5 +189,57 @@ Describe "Testing input parameters" {
             (Out-DbaDataTable -InputObject $obj -TimeSpanType TotalSeconds).Timespan | Should Be 86400
         }
         # add tests to verify data types depending on TimeSpanType
+    }
+    
+    Context "Verifying IgnoreNull" {
+        # To be able to force null into array
+        function returnNull { return $null }
+        # Array with a null value in second position
+        $arr = @(
+            (New-Object -TypeName psobject -Property @{ Name = 'First' }),
+            (returnNull),
+            (New-Object -TypeName psobject -Property @{ Name = 'Third' })
+        )
+
+        
+        It "Returns message if Null value in pipeline when IgnoreNull is set" {
+            # This test does not work for some reason. Always passes...
+            # Could have to do with how Pester handles the pipeline. Not sure.
+            $null = returnNull | Out-DbaDataTable -IgnoreNull -WarningVariable warn -WarningAction SilentlyContinue
+            $warn.message | Should Match 'InputObject from the pipe is null' 
+        }
+        
+        It "Returns warning if Null value in array when IgnoreNull is set" {
+            $null = Out-DbaDataTable -InputObject $arr -IgnoreNull -WarningVariable warn -WarningAction SilentlyContinue
+            $warn.message | Should Match 'Object in array is null'
+        }
+
+        It "Does not create row if null is in array when IgnoreNull is set" {
+            $result = Out-DbaDataTable -InputObject $arr -IgnoreNull -WarningAction SilentlyContinue
+            $result.Name.count | Should Be 2
+        }
+
+        It "Returns empty row when null value is provided" {
+            $result = Out-DbaDataTable -InputObject $arr
+            $result.Name[0] | Should Be 'First'
+            $result.Name[1].GetType() | Should Be 'System.DBNull' 
+            $result.Name[2] | Should Be 'Third'
+        }
+    }
+
+    Context "Verifying Silent" {
+        # To be able to force null into array
+        function returnNull { return $null }
+        # Array with a null value in second position
+        $arr = @(
+            (New-Object -TypeName psobject -Property @{ Name = 'First' }),
+            (returnNull),
+            (New-Object -TypeName psobject -Property @{ Name = 'Third' })
+        )
+
+        It "Suppresses warning messages when Silent is used" {
+            $null = Out-DbaDataTable -InputObject $arr -IgnoreNull -Silent -WarningVariable warn -WarningAction SilentlyContinue
+            $warn.message -eq $null | Should Be $true
+        }
     }
 }
