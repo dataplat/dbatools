@@ -9,6 +9,8 @@ Import-Module C:\git\dbatools -Force
 Import-Module "$basepath\..\functions\Out-DbaDataTable.ps1" -Force -ErrorAction Stop
 # Need to import Test-DbaDeprecation as well to avoid getting error during Pester tests
 Import-Module "$basepath\..\internal\Test-DbaDeprecation.ps1" -Force -ErrorAction Stop
+# Need to import Write-Message as well to avoid getting error during Pester tests
+Import-Module "$basepath\..\internal\Write-Message.ps1" -Force -ErrorAction Stop
 
 
 
@@ -188,58 +190,81 @@ Describe "Testing input parameters" {
         It "Should return 86400 when TotalSeconds is used" {
             (Out-DbaDataTable -InputObject $obj -TimeSpanType TotalSeconds).Timespan | Should Be 86400
         }
-        # add tests to verify data types depending on TimeSpanType
     }
     
     Context "Verifying IgnoreNull" {
-        # To be able to force null into array
-        function returnNull { return $null }
-        # Array with a null value in second position
-        $arr = @(
-            (New-Object -TypeName psobject -Property @{ Name = 'First' }),
-            (returnNull),
-            (New-Object -TypeName psobject -Property @{ Name = 'Third' })
-        )
+        # To be able to force null
+        function returnnull {
+          	[CmdletBinding()]
+        	param ()
+            New-Object -TypeName psobject -Property @{ Name = [int]1 }
+            $null
+            New-Object -TypeName psobject -Property @{ Name = [int]3 }
+        }
 
+        function returnOnlynull {
+          	[CmdletBinding()]
+        	param ()
+            $null
+        }
         
         It "Returns message if Null value in pipeline when IgnoreNull is set" {
-            # This test does not work for some reason. Always passes...
-            # Could have to do with how Pester handles the pipeline. Not sure.
-            $null = returnNull | Out-DbaDataTable -IgnoreNull -WarningVariable warn -WarningAction SilentlyContinue
-            $warn.message | Should Match 'InputObject from the pipe is null' 
+            $null = returnnull | Out-DbaDataTable -IgnoreNull -WarningVariable warn -WarningAction SilentlyContinue
+            $warn.message | Should Match 'The InputObject from the pipe is null'
         }
         
         It "Returns warning if Null value in array when IgnoreNull is set" {
-            $null = Out-DbaDataTable -InputObject $arr -IgnoreNull -WarningVariable warn -WarningAction SilentlyContinue
+            $null = Out-DbaDataTable -InputObject (returnnull) -IgnoreNull -WarningVariable warn -WarningAction SilentlyContinue
             $warn.message | Should Match 'Object in array is null'
         }
 
         It "Does not create row if null is in array when IgnoreNull is set" {
-            $result = Out-DbaDataTable -InputObject $arr -IgnoreNull -WarningAction SilentlyContinue
-            $result.Name.count | Should Be 2
+            $result = Out-DbaDataTable -InputObject (returnnull) -IgnoreNull -WarningAction SilentlyContinue
+            $result.Rows.Count | Should Be 2
         }
 
-        It "Returns empty row when null value is provided" {
-            $result = Out-DbaDataTable -InputObject $arr
-            $result.Name[0] | Should Be 'First'
+        It "Does not create row if null is in pipeline when IgnoreNull is set" {
+            $result = returnnull | Out-DbaDataTable -IgnoreNull -WarningAction SilentlyContinue
+            $result.Rows.Count | Should Be 2
+        }
+
+        It "Returns empty row when null value is provided (without IgnoreNull)" {
+            $result = Out-DbaDataTable -InputObject (returnnull)
+            $result.Name[0] | Should Be 1
             $result.Name[1].GetType() | Should Be 'System.DBNull' 
-            $result.Name[2] | Should Be 'Third'
+            $result.Name[2] | Should Be 3
+        }
+
+        It "Returns empty row when null value is passed in pipe (without IgnoreNull)" {
+            $result = returnnull | Out-DbaDataTable
+            $result.Name[0] | Should Be 1
+            $result.Name[1].GetType() | Should Be 'System.DBNull' 
+            $result.Name[2] | Should Be 3
         }
     }
 
     Context "Verifying Silent" {
-        # To be able to force null into array
-        function returnNull { return $null }
-        # Array with a null value in second position
-        $arr = @(
-            (New-Object -TypeName psobject -Property @{ Name = 'First' }),
-            (returnNull),
-            (New-Object -TypeName psobject -Property @{ Name = 'Third' })
-        )
+        # To be able to force null
+        function returnnull {
+            New-Object -TypeName psobject -Property @{ Name = 1 }
+            $null
+            New-Object -TypeName psobject -Property @{ Name = 3 }
+        }
 
         It "Suppresses warning messages when Silent is used" {
-            $null = Out-DbaDataTable -InputObject $arr -IgnoreNull -Silent -WarningVariable warn -WarningAction SilentlyContinue
+            $null = Out-DbaDataTable -InputObject (returnnull) -IgnoreNull -Silent -WarningVariable warn -WarningAction SilentlyContinue
             $warn.message -eq $null | Should Be $true
+        }
+    }
+
+    Context "Verifying script properties returning null" {
+    
+        It "Returns string column if a script property returns null" {
+            $myobj = New-Object -TypeName psobject -Property @{Name = 'Test'}
+            $myobj | Add-Member -MemberType ScriptProperty -Name ScriptNothing -Value {$null}
+            $r = Out-DbaDataTable -InputObject $myobj
+            ($r.Columns | Where-Object ColumnName -eq ScriptNothing | select -ExpandProperty DataType).ToString() | Should Be 'System.String'
+
         }
     }
 }
