@@ -171,109 +171,114 @@ Creates a DataTable with the running processes and converts any TimeSpan propert
                 # If the object coming down the pipeline is null and the IgnoreNull parameter is set, ignore it.
 				#Stop-Function -Message "The InputObject from the pipe is null. Skipping." -Continue
                 Write-Message -Message "The InputObject from the pipe is null. Skipping." -Silent:$Silent -Warning
-                Continue
+                #Continue
 			}
 			else {
                 # If the object coming down the pipeline is null, add an empty row and then skip to next.
 				$datarow = $datatable.NewRow()
 				$datatable.Rows.Add($datarow)
-				continue
+				#continue
 			}
-		}
-		foreach ($object in $InputObject) {
+		} else {
+		    foreach ($object in $InputObject) {
             if (!$object) {
                 if ($IgnoreNull) {
                 # If the object in the array is null and the IgnoreNull parameter is set, ignore it.
 				#Stop-Function -Message "Object in array is null. Skipping." -SilentlyContinue
                 Write-Message -Message "Object in array is null. Skipping." -Silent:$Silent -Warning
-                Continue
+                #Continue
 			    }
 			    else {
                     # If the object in the array is null, add an empty row and then skip to next.
 				    $datarow = $datatable.NewRow()
 				    $datatable.Rows.Add($datarow)
-				    continue
+				    #continue
 			    }
-            }
-            $datarow = $datatable.NewRow()
-			foreach ($property in $object.PsObject.get_properties()) {
-                # The converted variable will get the result from the ConvertType function and used for type and value conversion when adding to the datatable.
-                $converted = @{}
-				if ($ShouldCreateCollumns) {
-                    # this is where the table columns are generated
-                    if ($property.value -isnot [System.DBNull]) {
-                        # Check if property is a ScriptProperty, then resolve it while calling ConvertType. (otherwise we dont get the proper type)
-                        # Debug, remove when done
-                        Write-Verbose "Attempting to get type from property $($property.Name)"
-                        If ($property.MemberType -eq 'ScriptProperty') {
+            } else {
+                $datarow = $datatable.NewRow()
+			    foreach ($property in $object.PsObject.get_properties()) {
+                    # The converted variable will get the result from the ConvertType function and used for type and value conversion when adding to the datatable.
+                    $converted = @{}
+				    if ($ShouldCreateCollumns) {
+                        # this is where the table columns are generated
+                        if ($property.value -isnot [System.DBNull]) {
+                            # Check if property is a ScriptProperty, then resolve it while calling ConvertType. (otherwise we dont get the proper type)
                             # Debug, remove when done
-                            # Write-Verbose "Converting Script Property"
-                            # Write-Verbose "Value: $($property.Value)"
-                            # Write-Verbose "Points to: $($object.($property.Name))"
-                            try {
-                                $converted = ConvertType -type ($object.($property.Name).GetType().ToString()) -value $property.value -timespantype $TimeSpanType
-                            } catch {
-                                # Ends up here when the type is not possible to get so the call to ConvertType fails.
-                                # In that case we make a string out of it. (in this scenario its often that a script property points to a null value so we can't get the type)
-                                $converted = @{
-                                    type='System.String'
-                                    Value=$property.value
-                                    Special=$false
+                            Write-Verbose "Attempting to get type from property $($property.Name)"
+                            If ($property.MemberType -eq 'ScriptProperty') {
+                                # Debug, remove when done
+                                # Write-Verbose "Converting Script Property"
+                                # Write-Verbose "Value: $($property.Value)"
+                                # Write-Verbose "Points to: $($object.($property.Name))"
+                                try {
+                                    $converted = ConvertType -type ($object.($property.Name).GetType().ToString()) -value $property.value -timespantype $TimeSpanType
+                                } catch {
+                                    # Ends up here when the type is not possible to get so the call to ConvertType fails.
+                                    # In that case we make a string out of it. (in this scenario its often that a script property points to a null value so we can't get the type)
+                                    $converted = @{
+                                        type='System.String'
+                                        Value=$property.value
+                                        Special=$false
+                                    }
+                                }
+                                # We need to check if the type returned by ConvertType is a special type.
+                                # In that case we add it to the $specialColumns variable for future reference.
+                                if ($converted.special) {
+                                    $specialColumns.Add($property.Name, $object.($property.Name).GetType().ToString())
+                                }
+                            } else {
+                                $converted = ConvertType -type $property.TypeNameOfValue -value $property.value -timespantype $TimeSpanType
+                                # We need to check if the type returned by ConvertType is a special type.
+                                # In that case we add it to the $specialColumns variable for future reference.
+                                if ($converted.special) {
+                                    $specialColumns.Add($property.Name, $property.TypeNameOfValue)
                                 }
                             }
-                            # We need to check if the type returned by ConvertType is a special type.
-                            # In that case we add it to the $specialColumns variable for future reference.
-                            if ($converted.special) {
-                                $specialColumns.Add($property.Name, $object.($property.Name).GetType().ToString())
+				        }
+					    $column = New-Object System.Data.DataColumn
+					    $column.ColumnName = $property.Name.ToString()
+					    $column.DataType = [System.Type]::GetType($converted.type)
+					    $datatable.Columns.Add($column)
+                    } 
+                    else {
+                        # This is where we end up if the columns has been created in the data table.
+                        # We still need to check for special columns again, to make sure that the value is converted properly.
+                        if ($property.value -isnot [System.DBNull]) {
+                            if ($specialColumns.Keys -contains $property.Name) {
+                                $converted = ConvertType -type $specialColumns.($property.Name) -value $property.Value -timespantype $TimeSpanType
                             }
-                        } else {
-                            $converted = ConvertType -type $property.TypeNameOfValue -value $property.value -timespantype $TimeSpanType
-                            # We need to check if the type returned by ConvertType is a special type.
-                            # In that case we add it to the $specialColumns variable for future reference.
-                            if ($converted.special) {
-                                $specialColumns.Add($property.Name, $property.TypeNameOfValue)
-                            }
-                        }
-				    }
-					$column = New-Object System.Data.DataColumn
-					$column.ColumnName = $property.Name.ToString()
-					$column.DataType = [System.Type]::GetType($converted.type)
-					$datatable.Columns.Add($column)
-                } 
-                else {
-                    # This is where we end up if the columns has been created in the data table.
-                    # We still need to check for special columns again, to make sure that the value is converted properly.
-                    if ($property.value -isnot [System.DBNull]) {
-                        if ($specialColumns.Keys -contains $property.Name) {
-                            $converted = ConvertType -type $specialColumns.($property.Name) -value $property.Value -timespantype $TimeSpanType
-                        }
-				    }
-                }
+				        }
+                    }
 
-				if ($property.value.length -gt 0) {
-					if ($property.value.ToString() -eq 'System.Object[]') {
-						$datarow.Item($property.Name) = $property.value -join ", "
-					}
-					else {
-                        # If the typename was a special typename we want to use the value returned from ConvertType instead.
-                        # We might get error if we try to change the value for $property.value if it is read-only. That's why we use $converted.value instead.
-                        if ($converted.special) {
-						    $datarow.Item($property.Name) = $converted.value
-                        }
-                        else {
-                            $datarow.Item($property.Name) = $property.value
-                        }
-					}		
+				    if ($property.value.length -gt 0) {
+					    if ($property.value.ToString() -eq 'System.Object[]') {
+						    $datarow.Item($property.Name) = $property.value -join ", "
+					    }
+					    else {
+                            # If the typename was a special typename we want to use the value returned from ConvertType instead.
+                            # We might get error if we try to change the value for $property.value if it is read-only. That's why we use $converted.value instead.
+                            if ($converted.special) {
+						        $datarow.Item($property.Name) = $converted.value
+                            }
+                            else {
+                                $datarow.Item($property.Name) = $property.value
+                            }
+					    }		
+                    }
+			    }
+
+            
+
+			    $datatable.Rows.Add($datarow)
+                # Row added.
+                # If this is the first non-null object then the columns has just been created.
+                # Set variable to false to skip creating columns from now on.
+                if ($ShouldCreateCollumns) {
+                    $ShouldCreateCollumns = $false
                 }
-			}
-			$datatable.Rows.Add($datarow)
-            # Row added.
-            # If this is the first non-null object then the columns has just been created.
-            # Set variable to false to skip creating columns from now on.
-            if ($ShouldCreateCollumns) {
-                $ShouldCreateCollumns = $false
             }
 		}
+        }
 	}
 	
 	End
