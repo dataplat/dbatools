@@ -1,4 +1,4 @@
-﻿Function Repair-DbaServerName
+Function Repair-DbaServerName
 {
 <#
 .SYNOPSIS
@@ -34,7 +34,8 @@ Prompts you for confirmation before executing any changing operations within the
 .PARAMETER AutoFix
 Automatically performs the fix
 
-.NOTES 
+.NOTES
+Tags: SPN
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -67,7 +68,7 @@ Skips some prompts/confirms but not all of them.
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
-		[string[]]$SqlServer,
+		[object[]]$SqlServer,
 		[PsCredential]$Credential,
 		[switch]$AutoFix,
 		[switch]$Force
@@ -76,13 +77,10 @@ Skips some prompts/confirms but not all of them.
 	BEGIN
 	{
 		if ($Force -eq $true) { $ConfirmPreference = "None" }
-		$collection = New-Object System.Collections.ArrayList
 	}
 	
 	PROCESS
 	{
-		$servercount++
-		
 		foreach ($servername in $SqlServer)
 		{
 			try
@@ -91,43 +89,21 @@ Skips some prompts/confirms but not all of them.
 			}
 			catch
 			{
-				if ($servercount -eq 1 -and $SqlServer.count -eq 1)
-				{
-					throw $_
-				}
-				else
-				{
-					Write-Warning "Can't connect to $servername. Moving on."
-					Continue
-				}
+				Write-Warning "Can't connect to $servername. Moving on."
+				Continue
 			}
 			
 			if ($server.isClustered)
 			{
-				if ($servercount -eq 1 -and $SqlServer.count -eq 1)
-				{
-					# If we ever decide with a -Force to support a cluster name change
-					# We would compare $server.NetName, and never ComputerNamePhysicalNetBIOS
-					throw "$servername is a cluster. Microsoft does not support renaming clusters."
-				}
-				else
-				{
-					Write-Warning "$servername is a cluster. Microsoft does not support renaming clusters."
-					Continue
-				}
+				
+				Write-Warning "$servername is a cluster. Microsoft does not support renaming clusters."
+				Continue
 			}
 			
 			if ($server.VersionMajor -eq 8)
 			{
-				if ($servercount -eq 1 -and $SqlServer.count -eq 1)
-				{
-					throw "SQL Server 2000 not supported."
-				}
-				else
-				{
-					Write-Warning "SQL Server 2000 not supported. Skipping $servername."
-					Continue
-				}
+				Write-Warning "SQL Server 2000 not supported. Skipping $servername."
+				Continue
 			}
 			
 			# Check to see if we can easily proceed
@@ -262,7 +238,7 @@ Skips some prompts/confirms but not all of them.
 			}
 			
 			if ($nametest.Warnings.length -gt 0)
-			{				
+			{
 				$reportingservice = Get-Service -ComputerName $server.ComputerNamePhysicalNetBIOS -DisplayName "SQL Server Reporting Services ($instance)" -ErrorAction SilentlyContinue
 				
 				if ($reportingservice.Status -eq "Running")
@@ -340,9 +316,5 @@ Skips some prompts/confirms but not all of them.
 				Write-Output "SQL Service restart for $serverinstancename still required"
 			}
 		}
-	}
-	END
-	{
-		# Nothing needed
 	}
 }

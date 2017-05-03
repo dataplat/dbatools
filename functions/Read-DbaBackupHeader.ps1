@@ -1,4 +1,4 @@
-﻿Function Read-DbaBackupHeader
+Function Read-DbaBackupHeader
 {
 <#
 .SYNOPSIS 
@@ -22,7 +22,8 @@ Returns fewer columns for an easy overview
 .PARAMETER FileList
 Returns detailed information about the files within the backup	
 
-.NOTES 
+.NOTES
+Tags: DisasterRecovery, Backup, Restore
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -87,11 +88,21 @@ Gets a list of all .bak files on the \\nas\sql share and reads the headers using
 	
 	BEGIN
 	{
-		Write-Verbose "Connecting to $SqlServer"
+		$LoopCnt = 1
+		$FunctionName = $FunctionName = (Get-PSCallstack)[0].Command
+
 		try
 		{
-			$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $Credential -ErrorVariable ConnectError
-			
+			if ($sqlServer -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject])
+			{
+					Write-Verbose "$FunctionName - Connecting to $SqlServer"
+					$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ErrorVariable ConnectError
+			}
+			else
+			{
+				Write-Verbose "$FunctionName - Reusing connection to $SqlServer"
+				$server = $sqlServer
+			}
 		}
 		catch
 		{
@@ -102,55 +113,113 @@ Gets a list of all .bak files on the \\nas\sql share and reads the headers using
 	
 	PROCESS
 	{
+		
+		$PathCount = $path.length
+		Write-verbose "$FunctionName - $pathcount files to scan"
 		foreach ($file in $path)
 		{
 			if ($file.FullName -ne $null) { $file = $file.FullName }
+			Write-Progress -Id 1 -Activity Updating -Status 'Progress' -CurrentOperation "Scanning Restore headers on File $LoopCnt - $file"
 			
+			Write-Verbose "$FunctionName - Scanning file $file"
 			$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
 			$device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem $file, FILE
 			$restore.Devices.Add($device)
-			
-			try
+			if (Test-SqlPath -SqlServer $server -Path $file)
 			{
-				$allfiles = $restore.ReadFileList($server)
-			}
-			catch
-			{
-				$shortname = Split-Path $file -Leaf
-				if (!(Test-SqlPath -SqlServer $server -Path $file))
+				<#	try
+					{
+						$allfiles = $restore.ReadFileList($server)
+					}
+					catch
+					{
+						$shortname = Split-Path $file -Leaf
+						if (!(Test-SqlPath -SqlServer $server -Path $file))
+						{
+							Write-Warning "File $shortname does not exist or access denied. The SQL Server service account may not have access to the source directory."
+						}
+						else
+						{
+							Write-Warning "File list for $shortname could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or tiemouts with the SQL Server, or the SQL Server service account does not have access to the source directory."
+						}
+					}
+					
+
+				}#>
+				try
 				{
-					Write-Warning "File $shortname does not exist or access denied. The SQL Server service account may not have access to the source directory."
+					$datatable = $restore.ReadBackupHeader($server)
+				}
+				catch
+				{
+					Write-Warning "$FunctionName - Problem with $file"
+					Return
+				}
+				$fl = $datatable.Columns.Add("FileList", [object])
+				#$datatable.rows[0].FileList = $allfiles.rows
+				
+				$mb = $datatable.Columns.Add("BackupSizeMB", [int])
+				$mb.Expression = "BackupSize / 1024 / 1024"
+				$gb = $datatable.Columns.Add("BackupSizeGB")
+				$gb.Expression = "BackupSizeMB / 1024"
+				
+				if ($null -eq $datatable.Columns['CompressedBackupSize'])
+				{
+					$formula = "0"
 				}
 				else
 				{
-					Write-Warning "File list for $shortname could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or tiemouts with the SQL Server, or the SQL Server service account does not have access to the source directory."
+					$formula = "CompressedBackupSize / 1024 / 1024"
 				}
 				
-				Write-Exception $_
+				$cmb = $datatable.Columns.Add("CompressedBackupSizeMB", [int])
+				$cmb.Expression = $formula
+				$cgb = $datatable.Columns.Add("CompressedBackupSizeGB")
+				$cgb.Expression = "CompressedBackupSizeMB / 1024"
+				
+				$null = $datatable.Columns.Add("SqlVersion")
+
+
+				$null = $datatable.Columns.Add("BackupPath")
+			#	$datatable.Columns["BackupPath"].DefaultValue = $Path
+				$dbversion = $datatable.Rows[0].DatabaseVersion
+				
+			#	$datatable.Rows[0].SqlVersion = (Convert-DbVersionToSqlVersion $dbversion)
+				$BackupSlot = 1
+				ForEach ($row in $DataTable)
+				{
+					$row.SqlVersion = (Convert-DbVersionToSqlVersion $dbversion)
+					$row.BackupPath = $file
+					try
+					{
+						$restore.FileNumber = $BackupSlot
+						$allfiles = $restore.ReadFileList($server)
+					}
+					catch
+					{
+						$shortname = Split-Path $file -Leaf
+						if (!(Test-SqlPath -SqlServer $server -Path $file))
+						{
+							Write-Warning "File $shortname does not exist or access denied. The SQL Server service account may not have access to the source directory."
+						}
+						else
+						{
+							Write-Warning "File list for $shortname could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or tiemouts with the SQL Server, or the SQL Server service account does not have access to the source directory."
+						}
+						
+						#Write-Exception $_
+						#return
+					}
+					$row.FileList = $allfiles
+					$BackupSlot++
+
+				}
+			}
+			else
+			{
+				Write-Warning "File $shortname does not exist or access denied. The SQL Server service account may not have access to the source directory."
 				return
 			}
-			
-			$datatable = $restore.ReadBackupHeader($server)
-			$fl = $datatable.Columns.Add("FileList", [object])
-			$datatable.rows[0].FileList = $allfiles.rows
-			
-			$mb = $datatable.Columns.Add("BackupSizeMB", [int])
-			$mb.Expression = "BackupSize / 1024 / 1024"
-			$gb = $datatable.Columns.Add("BackupSizeGB")
-			$gb.Expression = "BackupSizeMB / 1024"
-			
-			$cmb = $datatable.Columns.Add("CompressedBackupSizeMB", [int])
-			$cmb.Expression = "CompressedBackupSize / 1024 / 1024"
-			$cgb = $datatable.Columns.Add("CompressedBackupSizeGB")
-			$cgb.Expression = "CompressedBackupSizeMB / 1024"
-			
-			$null = $datatable.Columns.Add("SqlVersion")
-			$null = $datatable.Columns.Add("BackupPath")
-			$dbversion = $datatable.Rows[0].DatabaseVersion
-			
-			$datatable.Rows[0].SqlVersion = (Convert-DbVersionToSqlVersion $dbversion)
-			$datatable.Rows[0].BackupPath = $file
-			
 			if ($Simple)
 			{
 				$datatable | Select-Object DatabaseName, BackupFinishDate, RecoveryModel, BackupSizeMB, CompressedBackupSizeMB, DatabaseCreationDate, UserName, ServerName, SqlVersion, BackupPath
@@ -163,7 +232,10 @@ Gets a list of all .bak files on the \\nas\sql share and reads the headers using
 			{
 				$datatable
 			}
+			
+			Remove-Variable DataTable -ErrorAction SilentlyContinue
 		}
+	$LoopCnt++
 	}
 	
 	END

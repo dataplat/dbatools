@@ -1,4 +1,4 @@
-﻿Function Test-DbaDatabaseCompatibility
+Function Test-DbaDatabaseCompatibility
 {
 <#
 .SYNOPSIS
@@ -57,11 +57,12 @@ Returns db/server compatibility information for every database on every server l
 	
 #>
 	[CmdletBinding()]
+	[OutputType("System.Collections.ArrayList")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
-		[PsCredential]$Credential,
+		[System.Management.Automation.PSCredential]$Credential,
 		[switch]$Detailed
 	)
 	

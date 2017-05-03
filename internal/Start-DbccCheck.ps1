@@ -1,5 +1,6 @@
-﻿Function Start-DbccCheck
+Function Start-DbccCheck
 {
+	[CmdletBinding(SupportsShouldProcess = $true)]
 	param (
 		[object]$server,
 		[string]$dbname,

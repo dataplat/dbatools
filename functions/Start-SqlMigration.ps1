@@ -166,7 +166,8 @@ Appears to not be used
 .PARAMETER Confirm 
 Prompts you for confirmation before executing any changing operations within the command. 
 
-.NOTES 
+.NOTES
+Tags: Migration, DisasterRecovery, Backup, Restore
 Author: Chrissy LeMaire
 Limitations: 	Doesn't cover what it doesn't cover (certificates, etc)
 				SQL Server 2000 login migrations have some limitations (server perms aren't migrated)
