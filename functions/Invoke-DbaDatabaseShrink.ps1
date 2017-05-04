@@ -289,9 +289,9 @@ Shrinks all databases on SQL2012 (not ideal for production)
 						Elapsed = $elapsed
 						Success = $success
 						StartingTotalSizeMB = [math]::Round($startingsize, 2)
-						CurrentlyUsedMB = [math]::Round($spaceused, 2)
+						StartingUsedMB = [math]::Round($spaceused, 2)
 						FinalTotalSizeMB = [math]::Round($db.size, 2)
-						CurrentlyAvailableMB = [math]::Round($spaceavailableMB, 2)
+						StartingAvailableMB = [math]::Round($spaceavailableMB, 2)
 						DesiredAvailableMB = [math]::Round($desiredSpaceAvailable, 2)
 						FinalAvailableMB = [math]::Round(($db.SpaceAvailable/1024), 2)
 						StartingAvgIndexFragmentation = [math]::Round($startingfrag, 1)

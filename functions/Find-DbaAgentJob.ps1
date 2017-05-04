@@ -1,5 +1,4 @@
-FUNCTION Find-DbaAgentJob
-{
+FUNCTION Find-DbaAgentJob {
 <#
 .SYNOPSIS 
 Find-DbaAgentJob finds agent job/s that fit certain search filters.
@@ -7,7 +6,7 @@ Find-DbaAgentJob finds agent job/s that fit certain search filters.
 .DESCRIPTION
 This command filters SQL Agent jobs giving the DBA a list of jobs that may need attention or could possibly be options for removal.
 	
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 .PARAMETER SqlCredential
@@ -49,6 +48,9 @@ Job Names and Step Names are searched for by regex by default. Use Exact to retu
 .PARAMETER Since
 Datetime object used to narrow the results to a date
 	
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
+
 .NOTES
 Tags: DisasterRecovery, Backup
 Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
@@ -99,8 +101,8 @@ Returns all agent job(s) that are named exactly Mybackup
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[string[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer", "SqlServers")]
+		[string[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string[]]$Name,
 		[string[]]$StepName,
@@ -113,58 +115,48 @@ Returns all agent job(s) that are named exactly Mybackup
 		[string[]]$Category,
 		[string]$Owner,
 		[string[]]$Exclude,
-		[datetime]$Since
+		[datetime]$Since,
+		[switch]$Silent
 	)
-	begin
-	{
-		if ($Failed, [boolean]$Name, [boolean]$StepName, [boolean]$LastUsed.ToString(), $Disabled, $NoSchedule, $NoEmailNotification, [boolean]$Category, [boolean]$Owner, [boolean]$Exclude -notcontains $true)
-		{
-			Write-Warning "At least one search term must be specified"
-			continue
+	begin {
+		if ($Failed, [boolean]$Name, [boolean]$StepName, [boolean]$LastUsed.ToString(), $Disabled, $NoSchedule, $NoEmailNotification, [boolean]$Category, [boolean]$Owner, [boolean]$Exclude -notcontains $true) {
+			Stop-Function -Message "At least one search term must be specified"
 		}
 	}
-	PROCESS
-	{
-		foreach ($servername in $SqlServer)
-		{
-			Write-Verbose "Running Scan on: $servername"
+	
+	process {
+		if (Test-FunctionInterrupt) { return }
+		
+		foreach ($instance in $SqlInstance) {
+			Write-Message -Level Verbose -Message "Running Scan on: $instance"
 			
-			try
-			{
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $sqlcredential
+			try {
+				Write-Message -Level Verbose -Message "Connecting to $instance"
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
 			}
-			catch
-			{
-				Write-Verbose "Failed to connect to: $servername"
-				continue
+			catch {
+				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
 			}
 			
 			$jobs = $server.JobServer.jobs
 			$output = @()
 			
-			if ($Failed)
-			{
-				Write-Verbose "Checking for failed jobs"
-				$output += $jobs | Where-Object { $_.LastRunOutcome -ne "Success" }
+			if ($Failed) {
+				Write-Message -Level Verbose -Message "Checking for failed jobs"
+				$output += $jobs | Where-Object { $_.LastRunOutcome -eq "Failed" }
 			}
 			
-			if ($Name)
-			{
-				foreach ($jobname in $Name)
-				{
-					Write-Verbose "Gettin some jobs by their names"
-					if ($Exact -eq $true)
-					{
+			if ($Name) {
+				foreach ($jobname in $Name) {
+					Write-Message -Level Verbose -Message "Gettin some jobs by their names"
+					if ($Exact -eq $true) {
 						$output += $jobs | Where-Object { $_.Name -eq $name }
 					}
-					else
-					{
-						try
-						{
+					else {
+						try {
 							$output += $jobs | Where-Object { $_.Name -match $name }
 						}
-						catch
-						{
+						catch {
 							# they prolly put aterisks thinking it's a like
 							$Name = $Name -replace '\*', ''
 							$Name = $Name -replace '\%', ''
@@ -174,23 +166,17 @@ Returns all agent job(s) that are named exactly Mybackup
 				}
 			}
 			
-			if ($StepName)
-			{
-				foreach ($name in $StepName)
-				{
-					Write-Verbose "Gettin some jobs by their names"
-					if ($Exact -eq $true)
-					{
+			if ($StepName) {
+				foreach ($name in $StepName) {
+					Write-Message -Level Verbose -Message "Gettin some jobs by their names"
+					if ($Exact -eq $true) {
 						$output += $jobs | Where-Object { $_.JobSteps.Name -eq $name }
 					}
-					else
-					{
-						try
-						{
+					else {
+						try {
 							$output += $jobs | Where-Object { $_.JobSteps.Name -match $name }
 						}
-						catch
-						{
+						catch {
 							# they prolly put aterisks thinking it's a like
 							$StepName = $StepName -replace '\*', ''
 							$StepName = $StepName -replace '\%', ''
@@ -199,85 +185,65 @@ Returns all agent job(s) that are named exactly Mybackup
 					}
 				}
 			}
-
-			if ([boolean]$LastUsed.ToString() -eq $true)
-			{
+			
+			if ($LastUsed) {
 				$DaysBack = $LastUsed * -1
 				$SinceDate = (Get-date).AddDays($DaysBack)
-				Write-verbose "Finding job/s not ran in last $LastUsed days"
+				Write-Message -Level Verbose -Message "Finding job/s not ran in last $LastUsed days"
 				$output += $jobs | Where-Object { $_.LastRunDate -le $SinceDate }
 			}
 			
-			if ($Disabled -eq $true)
-			{
-				Write-Verbose "Finding job/s that are disabled"
+			if ($Disabled) {
+				Write-Message -Level Verbose -Message "Finding job/s that are disabled"
 				$output += $jobs | Where-Object { $_.IsEnabled -eq $false }
 			}
 			
-			if ($NoSchedule -eq $true)
-			{
-				Write-Verbose "Finding job/s that have no schedule defined"
+			if ($NoSchedule) {
+				Write-Message -Level Verbose -Message "Finding job/s that have no schedule defined"
 				$output += $jobs | Where-Object { $_.HasSchedule -eq $false }
 			}
-			if ($NoEmailNotification -eq $true)
-			{
-				Write-Verbose "Finding job/s that have no email operator defined"
+			if ($NoEmailNotification) {
+				Write-Message -Level Verbose -Message "Finding job/s that have no email operator defined"
 				$output += $jobs | Where-Object { $_.OperatorToEmail -eq "" }
 			}
 			
-
-			if ($Category)
-			{
-				Write-Verbose "Finding job/s that have the specified category defined"
-                $output += $jobs | Where-Object { $Category -contains $_.Category }			}
 			
-			if ($Owner)
-			{
-				Write-Verbose "Finding job/s with owner critera"
-				if ($Owner -match "-")
-				{
+			if ($Category) {
+				Write-Message -Level Verbose -Message "Finding job/s that have the specified category defined"
+				$output += $jobs | Where-Object { $Category -contains $_.Category }
+			}
+			
+			if ($Owner) {
+				Write-Message -Level Verbose -Message "Finding job/s with owner critera"
+				if ($Owner -match "-") {
 					$OwnerMatch = $Owner -replace "-", ""
-					Write-Verbose "Checking for jobs that NOT owned by: $OwnerMatch"
+					Write-Message -Level Verbose -Message "Checking for jobs that NOT owned by: $OwnerMatch"
 					$output += $server.JobServer.jobs | Where-Object { $OwnerMatch -notcontains $_.OwnerLoginName }
 				}
-				else
-				{
-					Write-Verbose "Checking for jobs that are owned by: $owner"
+				else {
+					Write-Message -Level Verbose -Message "Checking for jobs that are owned by: $owner"
 					$output += $server.JobServer.jobs | Where-Object { $Owner -contains $_.OwnerLoginName }
 				}
 			}
 			
-			if ($Exclude)
-			{
-				Write-Verbose "Excluding job/s based on Exclude"
+			if ($Exclude) {
+				Write-Message -Level Verbose -Message "Excluding job/s based on Exclude"
 				$output = $output | Where-Object { $Exclude -notcontains $_.Name }
 			}
 			
-			if ($Since)
-			{
+			if ($Since) {
 				#$Since = $Since.ToString("yyyy-MM-dd HH:mm:ss")
-				Write-Verbose "Getting only jobs whose LastRunDate is greater than or equal to $since"
+				Write-Message -Level Verbose -Message "Getting only jobs whose LastRunDate is greater than or equal to $since"
 				$output = $output | Where-Object { $_.LastRunDate -ge $since }
 			}
 			
 			$jobs = $output | Select-Object -Unique
 			
-			foreach ($job in $jobs)
-			{
-				[PSCustomObject]@{
-					ComputerName = $server.NetName
-					InstanceName = $server.ServiceName
-					SqlInstance = $server.Name
-					Name = $job.Name
-					LastRunDate = $job.LastRunDate
-					IsEnabled = $job.IsEnabled
-					CreateDate = $job.CreateDate
-					HasSchedule = $job.HasSchedule
-					OperatorToEmail = $job.OperatorToEmail
-					Category = $job.Category
-					OwnerLoginName = $job.OwnerLoginName
-					Job = $job
-				} | Select-DefaultView -ExcludeProperty Job
+			foreach ($job in $jobs) {
+				Add-Member -InputObject $job -MemberType NoteProperty ComputerName -value $server.NetName
+				Add-Member -InputObject $job -MemberType NoteProperty InstanceName -value $server.ServiceName
+				Add-Member -InputObject $job -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
+				$job | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Name, LastRunDate, LastRunOutcome, IsEnabled, CreateDate, HasSchedule, OperatorToEmail, Category, OwnerLoginName
 			}
 		}
 	}
