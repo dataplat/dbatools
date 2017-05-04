@@ -42,7 +42,8 @@ Prompts you for confirmation before executing any changing operations within the
 .PARAMETER Force
 Drops and recreates the XXXXX if it exists
 
-.NOTES 
+.NOTES
+Tags: Migration
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
@@ -97,7 +98,7 @@ Shows what would happen if the command were executed using force.
 		
 		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
 		{
-			throw "Custom Errors are only supported in SQL Server 2000 and above. Quitting."
+			throw "Custom Errors are only supported in SQL Server 2005 and above. Quitting."
 		}
 	}
 	

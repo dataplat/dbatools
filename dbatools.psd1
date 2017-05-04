@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.693'
+	ModuleVersion = '0.8.948'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -23,7 +23,7 @@
 	CompanyName = 'dbatools.io'
 	
 	# Copyright statement for this module
-	Copyright = '2016 Chrissy LeMaire'
+	Copyright = '2017 Chrissy LeMaire'
 	
 	# Description of the functionality provided by this module
 	Description = 'Provides extra functionality for SQL Server Database admins and enables SQL Server instance migrations.'
@@ -59,7 +59,8 @@
 	TypesToProcess = @()
 	
 	# Format files (xml) to be loaded when importing this module
-	FormatsToProcess = @()
+	# "xml\dbatools.Format.ps1xml"
+	FormatsToProcess = @("xml\dbatools.Format.ps1xml")
 	
 	# Modules to import as nested modules of the module specified in ModuleToProcess
 	NestedModules = @()
@@ -164,7 +165,6 @@
 		'Get-DbaMaxMemory',
 		'Set-DbaMaxMemory',
 		'Test-DbaMaxMemory',
-		'Restore-DbaBackup',
 		'Get-DbaDatabaseSnapshot',
 		'Remove-DbaDatabaseSnapshot',
 		'Get-DbaRoleMember',
@@ -177,7 +177,87 @@
 		'New-DbaDatabaseSnapshot',
 		'Restore-DbaFromDatabaseSnapshot',
 		'Get-DbaTrigger',
-		'Invoke-Sqlcmd2'
+		'Invoke-Sqlcmd2',
+		'Export-SqlUser',
+		'Get-DbaDatabaseState',
+		'Set-DbaDatabaseState',
+		'Move-DbaDatabaseFile',
+		'Get-DbaHelpIndex',
+		'Get-DbaAgentAlert',
+		'Get-DbaAgentOperator',
+		'Get-DbaPageFileSetting',
+		'Get-DbaSpConfigure',
+		'Rename-DbaLogin',
+		'Find-DbaAgentJob',
+		'Find-DbaDatabase',
+		'Get-DbaMsdtc',
+		'Get-DbaUptime',
+		'Get-DbaXEventsSession',
+		'Test-DbaOptimizeForAdHoc',
+		'Find-DbaStoredProcedure',
+		'Measure-DbaBackupThroughput',
+		'Find-DbaLoginInGroup',
+		'Get-DbaSpn',
+		'Test-DbaSpn',
+		'Set-DbaSpn',
+		'Remove-DbaSpn',
+		'Get-DbaDatabase',
+		'Find-DbaUserObject',
+		'Get-DbaSqlService',
+		'Get-DbaDependency',
+		'Clear-DbaSqlConnectionPool',
+		'Find-DbaCommand',
+		'Get-DbaConfig',
+		'Get-DbaConfigValue',
+		'Set-DbaConfig',
+		'Get-DbaClientProtocol',
+		'Backup-DbaDatabase',
+		'New-DbaSqlDirectory',
+		'Get-DbaPrivilege',
+		'Install-DbaWatchUpdate',
+		'Watch-DbaUpdate',
+		'Uninstall-DbaWatchUpdate',
+		'Get-DbaQueryStoreConfig',
+		'Set-DbaQueryStoreConfig',
+		'Restore-DbaDatabase',
+		'Copy-DbaQueryStoreConfig',
+		'Get-DbaExecutionPlan',
+		'Export-DbaExecutionPlan',
+		'Get-DbaServerProtocol',
+		'Get-DbaLocaleSetting',
+		'Get-DbaSqlBuildReference',
+		'Set-DbaSpConfigure',
+		'Test-DbaIdentityUsage',
+		'Get-DbaDatabaseAssembly',
+		'Get-DbaAgentJob',
+		'Get-DbaCustomError',
+		'Get-DbaCredential',
+		'Get-DbaBackupDevice',
+		'Get-DbaServerAuditSpecification',
+		'Get-DbaJobCategory',
+		'Get-DbaDatabaseEncryption',
+		'New-DbaSsisCatalog',
+		'Remove-DbaDatabase',
+		'Get-DbaQueryExecutionTime',
+		'Get-DbaTempdbUsage',
+		'Find-DbaDatabaseGrowthEvent',
+		'Get-DbaNetworkActivity',
+		'Get-DbaWhoisActive',
+		'Get-DbaAgentJobOutputFile',
+		'Set-DbaAgentJobOutputFile',
+		'Test-DbaLinkedServerConnection',
+		'Get-DbaDatabaseFile',
+		'Read-DbaTransactionLog',
+		'Get-DbaTable',
+		'Invoke-DbaDatabaseShrink',
+		'Get-DbaEstimatedCompletionTime',
+		'Export-DbaScript',
+		'New-DbaScriptingOption',
+		'Get-DbaLogin'
+		'Get-DbaLinkedServer',
+		'Set-DbaStartupParameter',
+		'New-DbaAgentJob'
+		#'Invoke-DbaLogShippingRecovery',
 	)
 	
 	# Cmdlets to export from this module

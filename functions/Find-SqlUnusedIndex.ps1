@@ -1,4 +1,4 @@
-﻿Function Find-SqlUnusedIndex
+Function Find-SqlUnusedIndex
 {
 <#
 .SYNOPSIS
@@ -268,8 +268,8 @@ Will find exact Unused indexes on all user databases
 
                                     $sqlDropScript += "USE [$($index.DatabaseName)]`r`n"
                                     $sqlDropScript += "GO`r`n"
-                                    $sqlDropScript += "IF EXISTS (SELECT 1 FROM sys.indexes WHERE [object_id] = OBJECT_ID('$($index.TableName)') AND name = '$($index.IndexName)')`r`n"
-                                    $sqlDropScript += "    DROP INDEX $($index.TableName).$($index.IndexName)`r`n"
+                                    $sqlDropScript += "IF EXISTS (SELECT 1 FROM sys.indexes WHERE [object_id] = OBJECT_ID('$($index.SchemaName).$($index.TableName)') AND name = '$($index.IndexName)')`r`n"
+                                    $sqlDropScript += "    DROP INDEX $($index.SchemaName).$($index.TableName).$($index.IndexName)`r`n"
                                     $sqlDropScript += "GO`r`n`r`n"
                                 }
 

@@ -53,7 +53,8 @@ $dcred = Get-Credential, this pass this $dcred to the param.
 
 Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
-.NOTES 
+.NOTES
+Tags: Migration
 Original Author: Phil Schwartz (philschwartz.me, @pschwartzzz)
 	
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -501,7 +502,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
 		if ($Pscmdlet.ShouldProcess($Destination, "Refresh folders for project deployment"))
 		{
 			try { $destinationFolders.Alter() }
-			catch { } # Sometimes it says Alter() doesn't exist ¯\_(ツ)_/¯
+			catch { } # Sometimes it says Alter() doesn't exist
 			$destinationFolders.Refresh()
 		}
 		

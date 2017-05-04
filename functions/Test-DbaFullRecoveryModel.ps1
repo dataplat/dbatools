@@ -1,4 +1,4 @@
-﻿Function Test-DbaFullRecoveryModel
+Function Test-DbaFullRecoveryModel
 {
 <#
 .SYNOPSIS
@@ -23,8 +23,9 @@ Windows Authentication will be used if SqlCredential is not specified. SQL Serve
 .PARAMETER Detailed
 Returns default information plus 'Notes' column
 
-.NOTES 
-Original Author: Cláudio Silva (@ClaudioESSilva)
+.NOTES
+Tags: DisasterRecovery, Backup
+Original Author: Claudio Silva (@ClaudioESSilva)
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -61,11 +62,12 @@ Shows all databases which actual configured recovery model is FULL and says if t
 	
 #>
 	[CmdletBinding()]
+    [OutputType("System.Collections.ArrayList")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
-        [object]$SqlCredential,
+        [System.Management.Automation.PSCredential]$SqlCredential,
         [switch]$Detailed
 	)
     DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }

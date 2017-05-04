@@ -1,4 +1,4 @@
-﻿Function Out-DbaDataTable
+Function Out-DbaDataTable
 {
 <#
 .SYNOPSIS 
@@ -12,6 +12,12 @@ Thanks to Chad Miller, this script is all him. https://gallery.technet.microsoft
 .PARAMETER InputObject
 The object to transform into a DataTable
 	
+.PARAMETER IgnoreNull 
+Use this switch to ignore null rows
+
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
+
 .NOTES
 dbatools PowerShell module (https://dbatools.io)
 Copyright (C) 2016 Chrissy LeMaire
@@ -41,7 +47,10 @@ Similar to above but $dbalist gets piped in
 	[CmdletBinding()]
 	param (
 		[Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
-		[PSObject[]]$InputObject
+		[AllowNull()]
+		[PSObject[]]$InputObject,
+		[switch]$IgnoreNull,
+		[switch]$Silent
 	)
 	
 	BEGIN
@@ -51,38 +60,87 @@ Similar to above but $dbalist gets piped in
 			param ($type)
 			
 			$types = @(
-				'System.Boolean',
-				'System.Byte[]',
-				'System.Byte',
-				'System.Char',
-				'System.Datetime',
-				'System.Decimal',
-				'System.Double',
-				'System.Guid',
-				'System.Int16',
-				'System.Int32',
-				'System.Int64',
-				'System.Single',
-				'System.UInt16',
-				'System.UInt32',
-				'System.UInt64')
-			
-			if ($types -contains $type)
+                'Int32',    
+                'UInt32',   
+                'Int16',    
+                'UInt16',   
+                'Int64',    
+                'UInt64',   
+                'Decimal',  
+                'Single',   
+                'Double',   
+                'Byte',     
+                'SByte',    
+                'Boolean',
+                'Bool',
+                'String',   
+                'DateTime',
+                'Guid',
+                'Char',
+                'int',  
+                'long',
+                'System.Int32',    
+                'System.UInt32',   
+                'System.Int16',    
+                'System.UInt16',   
+                'System.Int64',    
+                'System.UInt64',   
+                'System.Decimal',  
+                'System.Single',   
+                'System.Double',   
+                'System.Byte',     
+                'System.SByte',    
+                'System.Boolean',
+                'System.String',   
+                'System.DateTime',
+                'System.Guid',
+                'System.Char'
+                )
+
+            # some types require conversion to be stored in a database
+            $specialtypes = @{
+                'System.TimeSpan' = 'System.String'
+                'TimeSpan'        = 'System.String'
+            }
+
+            if ($specialtypes.keys -contains $type) 
+            {
+                # Debug, remove when done
+                #Write-Verbose "Found match: $type (special)"
+                return $specialtypes[$type]
+            }
+            elseif ($types -contains $type)
 			{
+                # Debug, remove when done
+                #Write-Verbose "Found match: $type"
 				return $type
 			}
 			else
 			{
+                # Debug, remove when done
+                #Write-Warning "Did not find match: $type"
 				return 'System.String'
 			}
 		}
-		
+	
 		$datatable = New-Object System.Data.DataTable
 	}
 	
 	PROCESS
-	
 	{
+		if (!$InputObject)
+		{
+			if ($IgnoreNull)
+			{
+				Stop-Function -Message "The InputObject from the pipe is null. Skipping." -Continue
+			}
+			else
+			{
+				$datarow = $datatable.NewRow()
+				$datatable.Rows.Add($datarow)
+				continue
+			}
+		}
 		foreach ($object in $InputObject)
 		{
 			$datarow = $datatable.NewRow()
@@ -93,23 +151,35 @@ Similar to above but $dbalist gets piped in
 					$column = New-Object System.Data.DataColumn
 					$column.ColumnName = $property.Name.ToString()
 					
-					if ($property.value)
-					{
+                    # Even if property value is $false or $null we need to check the type
+                    # Commenting out this if statement. Can't see the benefit after the other changes, but I could be missing something. /John
+					#if ($property.value)
+					#{
 						if ($property.value -isnot [System.DBNull])
 						{
-							$type = Get-Type $property.TypeNameOfValue
+                            # Check if property is a ScriptProperty, then resolve it before checking type
+                            If ($property.MemberType -eq 'ScriptProperty') {
+                                $type = Get-Type ($object.($property.Name).GetType().ToString())
+                            } else {
+                                $type = Get-Type $property.TypeNameOfValue
+                            }
+                            
 							$column.DataType = [System.Type]::GetType($type)
 						}
-					}
+					#}
 					$datatable.Columns.Add($column)
 				}
-				if ($property.Gettype().IsArray)
+				
+				if ($property.value.length -gt 0)
 				{
-					$datarow.Item($property.Name) = $property.value | ConvertTo-XML -AS String -NoTypeInformation -Depth 1
-				}
-				else
-				{
-					$datarow.Item($property.Name) = $property.value
+					if ($property.value.ToString() -eq 'System.Object[]')
+					{
+						$datarow.Item($property.Name) = $property.value -join ", "
+					}
+					else
+					{
+						$datarow.Item($property.Name) = $property.value
+					}
 				}
 			}
 			$datatable.Rows.Add($datarow)

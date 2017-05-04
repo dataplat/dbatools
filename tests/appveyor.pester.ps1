@@ -1,4 +1,4 @@
-﻿# This script will invoke pester tests
+# This script will invoke pester tests
 # It should invoke on PowerShell v2 and later
 # We serialize XML results and pull them in appveyor.yml
 
@@ -13,12 +13,14 @@ param([switch]$Finalize)
    
 
 #Run a test with the current version of PowerShell
+#Make things faster by removing most output
     if(-not $Finalize)
     {
         "`n`tSTATUS: Testing with PowerShell $PSVersion`n"
-    
+		
         Import-Module Pester
-        Invoke-Pester -Path "$ProjectRoot\Tests" -OutputFormat NUnitXml -OutputFile "$ProjectRoot\$TestFile" -PassThru |
+		Set-Variable ProgressPreference -Value SilentlyContinue
+        Invoke-Pester -Quiet -Path "$ProjectRoot\Tests" -OutputFormat NUnitXml -OutputFile "$ProjectRoot\$TestFile" -PassThru |
         Export-Clixml -Path "$ProjectRoot\PesterResults$PSVersion.xml"
     }
 

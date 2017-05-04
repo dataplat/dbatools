@@ -1,4 +1,4 @@
-﻿Function Get-DbaDatabaseSnapshot
+Function Get-DbaDatabaseSnapshot
 {
 <#
 .SYNOPSIS
@@ -20,6 +20,7 @@ Return information for only specific base dbs
 Return information for only specific snapshots
 
 .NOTES
+Tags: Snapshot
 Author: niphlod
 
 dbatools PowerShell module (https://dbatools.io)
@@ -115,7 +116,7 @@ Returns information for database snapshots HR_snapshot and Accounting_snapshot
 					SnapshotDb = $db
 				}
 				
-				Select-DefaultField -InputObject $object -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated
+				Select-DefaultView -InputObject $object -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated
 			}
 		}
 	}

@@ -393,6 +393,81 @@ Function Get-ParamSqlLogins
 	return $newparams
 }
 
+
+Function Get-ParamSqlLogin
+{
+<#
+ .SYNOPSIS
+ Internal function. Returns System.Management.Automation.RuntimeDefinedParameterDictionary
+ filled with login list from specified SQL Server server.
+#>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[switch]$WindowsOnly,
+		[switch]$SqlOnly
+	)
+	
+	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	catch { return }
+	
+	$loginlist = @()
+	
+	foreach ($login in $server.logins)
+	{
+		if (!$login.name.StartsWith("##"))
+		{
+			if ($WindowsOnly)
+			{
+				if ($login.LoginType -eq 'WindowsUser' -or $login.LoginType -eq 'WindowsGroup')
+				{
+					$loginlist += $login.name
+				}
+			}
+			elseif ($SqlOnly)
+			{
+				if ($login.LoginType -eq 'SqlLogin')
+				{
+					$loginlist += $login.name
+				}
+			}
+			else
+			{
+				$loginlist += $login.name
+			}
+		}
+	}
+	
+	# Reusable parameter setup
+	$newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+	$attributes = New-Object System.Management.Automation.ParameterAttribute
+	
+	# Provide backwards compatability for improperly named parameter
+	# Scratch that. I'm going with plural. Sorry, Snoves!
+	
+	$attributes.ParameterSetName = "__AllParameterSets"
+	$attributes.Mandatory = $true
+	
+	# Login list parameter setup
+	if ($loginlist) { $loginvalidationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $loginlist }
+	
+	$attributeCollection = New-Object -TypeName System.Collections.ObjectModel.Collection[System.Attribute]
+	$attributeCollection.Add($attributes)
+	if ($loginlist) { $attributeCollection.Add($loginvalidationset) }
+	
+	$Login = New-Object -TypeName System.Management.Automation.RuntimeDefinedParameter("Login", [String], $attributeCollection)
+		
+	$newparams.Add("Login", $Login)
+	
+	$server.ConnectionContext.Disconnect()
+	
+	return $newparams
+}
+
+
 Function Get-ParamSqlServerRoles
 {
 <#
@@ -1950,6 +2025,12 @@ Function Get-ParamSqlAllProcessInfo
 		{
 			"Exclude" { $items = $processes.Spid }
 			"Spid" { $items = $processes.Spid }
+			"Database" { $items = $server.Databases.Name }
+			"Login" {
+				$items = $server.Logins.Name
+				$items += ($server.EnumProcesses()).Login
+				$items = $items | Select -Unique
+			}
 			
 			Default
 			{
