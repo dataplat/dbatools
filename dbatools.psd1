@@ -258,7 +258,8 @@
 		'Set-DbaStartupParameter',
 		'New-DbaAgentJob',
 		#'Invoke-DbaLogShippingRecovery',
-		'Export-SqlCertificate'
+		'Export-DbaCertificate',
+		'Import-DbaCertificate'
 	)
 	
 	# Cmdlets to export from this module
