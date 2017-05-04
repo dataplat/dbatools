@@ -34,7 +34,7 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
 #>
 	[CmdletBinding()]
 	Param (
-		[parameter(Mandatory = $true)]
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object[]]$FilteredRestoreFiles
 	)
 
