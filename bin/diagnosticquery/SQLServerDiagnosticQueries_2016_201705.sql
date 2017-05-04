@@ -1,8 +1,8 @@
 
--- SQL Server 2017 Diagnostic Information Queries
+-- SQL Server 2016 Diagnostic Information Queries
 -- Glenn Berry 
--- April 2017
--- Last Modified: April 25, 2017
+-- May 2017
+-- Last Modified: May 1, 2017
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -34,8 +34,8 @@
 --*
 --******************************************************************************
 
--- Check the major product version to see if it is SQL Server 2017 CTP 1 or greater
-IF NOT EXISTS (SELECT * WHERE CONVERT(varchar(128), SERVERPROPERTY('ProductVersion')) LIKE '14%')
+-- Check the major product version to see if it is SQL Server 2016 CTP 2 or greater
+IF NOT EXISTS (SELECT * WHERE CONVERT(varchar(128), SERVERPROPERTY('ProductVersion')) LIKE '13%')
 	BEGIN
 		DECLARE @ProductVersion varchar(128) = CONVERT(varchar(128), SERVERPROPERTY('ProductVersion'));
 		RAISERROR ('Script does not match the ProductVersion [%s] of this instance. Many of these queries may not work on this version.' , 18 , 16 , @ProductVersion);
@@ -50,21 +50,46 @@ IF NOT EXISTS (SELECT * WHERE CONVERT(varchar(128), SERVERPROPERTY('ProductVersi
 SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version Info];
 ------
 
--- SQL Server 2017 RTM Branch Builds																		
--- Build			Description			Release Date								
--- 14.0.1.246		CTP 1.0				11/30/2016
--- 14.0.100.187		CTP 1.1				12/16/2016
--- 14.0.200.24		CTP 1.2				1/19/2017
--- 14.0.304.138		CTP 1.3				2/17/2017
--- 14.0.405.198		CTP 1.4				3/20/2017
--- 14.0.500.272		CTP 2.0				4/19/2017
-		
+-- SQL Server 2016 RTM Branch Builds								-- SQL Server 2016 SP1 Branch Builds										
+-- Build			Description			Release Date				Build			Description			Release Date				
+-- 13.0.200.172		CTP 2.0				5/26/2015
+-- 13.0.300.44		CTP 2.1				6/14/2015
+-- 13.0.407.1		CTP 2.2				7/28/2015
+-- 13.0.500.53		CTP 2.3				9/4/2015
+-- 13.0.600.65		CTP 2.4				9/30/2015
+-- 13.0.700.242		CTP 3.0				10/29/2015
+-- 13.0.900.73		CTP 3.2				12/12/2015
+-- 13.0.1000.276	CTP 3.3				1/27/2016
+-- 13.0.1100.288	RC0					3/2/2016
+-- 13.0.1200.242	RC1					3/18/2016 
+-- 13.0.1300.275	RC2					3/28/2016
+-- 13.0.1400.361	RC3					4/11/2016
+-- 13.0.1601.5		RTM					6/1/2016
+-- 13.0.1708.0		RTM-GDR				6/12/2016
+-- 13.0.2149.0		RTM CU1				7/25/2016
+-- 13.0.2164.0		RTM CU2				9/22/2016
+-- 13.0.2186.0		RTM CU3				11/16/2016	---->			13.0.4001.0		SP1 RTM				11/16/2016
+-- 13.0.2193.0		RTM CU4				1/18/2017   ---->			13.0.4411.0		SP1 CU1				 1/18/2017
+-- 13.0.2197.0		RTM CU5				3/20/2017   ---->			13.0.4422.0		SP1 CU2				 3/20/2017
 															
 
+-- How to obtain the latest Service Pack for SQL Server 2016
+-- https://support.microsoft.com/en-us/kb/3177534
 
+-- Microsoft SQL Server 2016 RTM Latest Cumulative Update 
+-- https://www.microsoft.com/en-us/download/details.aspx?id=53338
+
+-- SQL Server 2016 build versions 
+-- https://support.microsoft.com/en-us/kb/3177312
+
+-- Where to find information about the latest SQL Server builds
+-- https://support.microsoft.com/en-us/help/957826/where-to-find-information-about-the-latest-sql-server-builds
 
 -- Download SQL Server Management Studio (SSMS)
--- https://msdn.microsoft.com/en-us/library/mt238290.aspx				
+-- https://msdn.microsoft.com/en-us/library/mt238290.aspx	
+
+-- Performance and Stability Related Fixes in Post-SQL Server 2016 SP1 Builds
+-- https://www.sqlskills.com/blogs/glenn/performance-and-stability-related-fixes-in-post-sql-server-2016-sp1-builds/			
 
 -- Announcing updates to the SQL Server Incremental Servicing Model (ISM)
 -- https://blogs.msdn.microsoft.com/sqlreleaseservices/announcing-updates-to-the-sql-server-incremental-servicing-model-ism/
@@ -219,7 +244,7 @@ FROM sys.dm_os_process_memory WITH (NOLOCK) OPTION (RECOMPILE);
 -- SQL Server Services information (Query 8) (SQL Server Services Info)
 SELECT servicename, process_id, startup_type_desc, status_desc, 
 last_startup_time, service_account, is_clustered, cluster_nodename, [filename], 
-instant_file_initialization_enabled -- New for SQL Server 2016 SP1
+instant_file_initialization_enabled -- New in SQL Server 2016 SP1
 FROM sys.dm_server_services WITH (NOLOCK) OPTION (RECOMPILE);
 ------
 
@@ -249,7 +274,7 @@ ORDER BY sj.name OPTION (RECOMPILE);
 -- Look for jobs that have a notify_level_email set to 0 (meaning no e-mail is ever sent)
 --
 -- MSDN sysjobs documentation
--- http://msdn.microsoft.com/en-us/library/ms189817.aspx
+-- https://msdn.microsoft.com/en-us/library/ms189817.aspx
 
 -- SQL Server Maintenance Solution
 -- https://ola.hallengren.com/
@@ -263,22 +288,23 @@ ORDER BY name OPTION (RECOMPILE);
 ------
 
 -- Gives you some basic information about your SQL Server Agent Alerts (which are different from SQL Server Agent jobs)
--- Read more about Agent Alerts here: http://www.sqlskills.com/blogs/glenn/creating-sql-server-agent-alerts-for-critical-errors/
+-- Read more about Agent Alerts here: https://www.sqlskills.com/blogs/glenn/creating-sql-server-agent-alerts-for-critical-errors/
 
 
 
--- Host information (Query 11) (Host Info)
-SELECT host_platform, host_distribution, host_release, 
-       host_service_pack_level, host_sku, os_language_version  
-FROM sys.dm_os_host_info WITH (NOLOCK) OPTION (RECOMPILE); 
+-- Windows information (Query 11) (Windows Info)
+SELECT windows_release, windows_service_pack_level, 
+       windows_sku, os_language_version
+FROM sys.dm_os_windows_info WITH (NOLOCK) OPTION (RECOMPILE);
 ------
 
--- host_release codes (only valid for Windows)
+-- Gives you major OS version, Service Pack, Edition, and language info for the operating system
 -- 6.3 is either Windows 8.1, Windows 10 or Windows Server 2012 R2, Windows Server 2016 
 -- 6.2 is either Windows 8 or Windows Server 2012
+-- 6.1 is either Windows 7 or Windows Server 2008 R2
+-- 6.0 is either Windows Vista or Windows Server 2008
 
-
--- host_sku codes (only valid for Windows)
+-- Windows SKU codes
 -- 4 is Enterprise Edition
 -- 7 is Standard Server Edition
 -- 8 is Datacenter Server Edition
@@ -287,7 +313,7 @@ FROM sys.dm_os_host_info WITH (NOLOCK) OPTION (RECOMPILE);
 
 -- 1033 for os_language_version is US-English
 
--- SQL Server 2017 requires Windows Server 2012 or newer
+-- SQL Server 2016 requires Windows Server 2012 or newer
 
 -- Quick-Start Installation of SQL Server 2016
 -- https://msdn.microsoft.com/en-us/library/bb500433(v=sql.130).aspx
@@ -386,15 +412,15 @@ ORDER BY ag.name, ar.replica_server_name, adc.[database_name] OPTION (RECOMPILE)
 -- https://blogs.msdn.microsoft.com/bobsql/2016/09/26/sql-server-2016-it-just-runs-faster-always-on-availability-groups-turbocharged/
 
 
--- Hardware information from SQL Server 2017  (Query 17) (Hardware Info)
+-- Hardware information from SQL Server 2016  (Query 17) (Hardware Info)
 SELECT cpu_count AS [Logical CPU Count], scheduler_count, hyperthread_ratio AS [Hyperthread Ratio],
 cpu_count/hyperthread_ratio AS [Physical CPU Count], 
 physical_memory_kb/1024 AS [Physical Memory (MB)], committed_kb/1024 AS [Committed Memory (MB)],
 committed_target_kb/1024 AS [Committed Target Memory (MB)],
 max_workers_count AS [Max Workers Count], affinity_type_desc AS [Affinity Type], 
 sqlserver_start_time AS [SQL Server Start Time], virtual_machine_type_desc AS [Virtual Machine Type], 
-softnuma_configuration_desc AS [Soft NUMA Configuration], sql_memory_model_desc, 
-process_physical_affinity -- New in SQL Server 2017 CTP 1.0
+softnuma_configuration_desc AS [Soft NUMA Configuration],
+sql_memory_model_desc -- New in SQL Server 2016 SP1
 FROM sys.dm_os_sys_info WITH (NOLOCK) OPTION (RECOMPILE);
 ------
 
@@ -514,6 +540,7 @@ ORDER BY database_id OPTION (RECOMPILE);
 
 -- Ideally, this query returns no results. The table is limited to 1000 rows.
 -- If you do get results here, you should do further investigation to determine the root cause
+
 
 
 -- Get number of data files in tempdb database (Query 25) (TempDB Data Files)
@@ -672,7 +699,7 @@ db.snapshot_isolation_state_desc, db.is_read_committed_snapshot_on, db.is_auto_c
 db.target_recovery_time_in_seconds, db.is_cdc_enabled, db.is_published, db.is_distributor, db.is_encrypted,
 db.group_database_id, db.replica_id,db.is_memory_optimized_elevate_to_snapshot_on, 
 db.delayed_durability_desc, db.is_auto_create_stats_incremental_on,
-db.is_query_store_on, db.is_sync_with_backup, db.is_temporal_history_retention_enabled,
+db.is_query_store_on, db.is_sync_with_backup, 
 db.is_supplemental_logging_enabled, db.is_remote_data_archive_enabled,
 db.is_encrypted, de.encryption_state, de.percent_complete, de.key_algorithm, de.key_length      
 FROM sys.databases AS db WITH (NOLOCK)
@@ -1809,7 +1836,6 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 
 -- Microsoft IT Pro Cloud Essentials
 -- http://bit.ly/2443SAd
-
 
 
 
