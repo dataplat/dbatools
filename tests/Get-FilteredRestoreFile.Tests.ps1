@@ -18,7 +18,7 @@ Import-Module $PSScriptRoot\..\internal\$sut -Force
 
 Describe "Get-FilteredRestoreFile Unit Tests" -Tag 'Unittests'{
     Context "Empty TLog Backup Issues" {
-        $Header = ConvertFrom-Json -InputObject (Get-Content .\ObjectDefinitions\BackupRestore\RawInput\EmptyTlogData.json -raw)
+        $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\EmptyTlogData.json -raw)
         Mock Read-DbaBackupHeader {$Header}
         $Output = Get-FilteredRestoreFile -SqlServer 'TestSQL' -Files "c:\dummy.txt" 
         
@@ -36,7 +36,7 @@ Describe "Get-FilteredRestoreFile Unit Tests" -Tag 'Unittests'{
         }
     }
     Context "General Diff Restore" {
-        $Header = ConvertFrom-Json -InputObject (Get-Content .\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
+        $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
         Mock Read-DbaBackupHeader {$Header}
         $Output = Get-FilteredRestoreFile -SqlServer 'TestSQL' -Files "c:\dummy.txt" 
         
@@ -54,7 +54,7 @@ Describe "Get-FilteredRestoreFile Unit Tests" -Tag 'Unittests'{
         }
     }
     Context "Missing Diff Restore" {
-        $Header = ConvertFrom-Json -InputObject (Get-Content .\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
+        $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
         $header = $header | Where-Object {$_.BackupTypeDescription -ne 'Database Differential'}
         Mock Read-DbaBackupHeader {$Header}
         $Output = Get-FilteredRestoreFile -SqlServer 'TestSQL' -Files "c:\dummy.txt" 
