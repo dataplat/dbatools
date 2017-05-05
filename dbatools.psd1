@@ -260,7 +260,6 @@
 		'Get-DbaLogin',
 		'New-DbaScriptingOption',
 		#'Invoke-DbaLogShippingRecovery',
-		'Export-DbaCertificate'
 	)
 	
 	# Cmdlets to export from this module

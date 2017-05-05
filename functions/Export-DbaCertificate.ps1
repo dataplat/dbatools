@@ -2,10 +2,25 @@ Function Export-DbaCertificate
 {
 <#
 .SYNOPSIS
- Exports
+ Exports certificates from SQL Server using smo
 
 .DESCRIPTION
-Exports 
+Exports certificates from SQL Server using smo and outputs the .cer and .pvk files along with a .sql file to create the certificate.
+
+.PARAMETER SqlServer
+The SQL Server that you're connecting to.
+
+.PARAMETER Path
+The Path to output the files to.
+
+.PARAMETER Databases
+Exports the encryptor for specific database(s).
+
+.PARAMETER Certificates
+Exports certificate that matches the name(s).
+
+.PARAMETER Password
+Secure string used to encrypt the exported private key.
 
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -14,12 +29,6 @@ $scred = Get-Credential, this pass $scred object to the param.
 
 Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
-.PARAMETER SqlServer
-The SQL Server that you're connecting to.
-
-.PARAMETER Path
-The Path to the SQL File
-
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
 
@@ -27,19 +36,26 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .NOTES
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.	
+Original Author: Jess Pomfret (@jpomfret and/or website)
+Tags: Migration, Certificate
+
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
+Export-DbaCertificate  -SqlServer Server1 -Path \\Server1\Certificates -password (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
+Exports all the certificates on the specified SQL Server
 
+.EXAMPLE
+$password = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -force
+Export-DbaCertificate  -SqlServer Server1 -Path \\Server1\Certificates -password $password -Databases Database1
+Exports the certificate that is used as the encryptor for a specific database on the specified SQL Server
 
-.OUTPUTS
-File to disk, and string path.
+.EXAMPLE
+Export-DbaCertificate  -SqlServer Server1 -Path \\Server1\Certificates -Certificate CertTDE
+Exports the certificate named CertTDE on the specified SQL Server, not specifying the -Password will generate a prompt for user entry.
+
 
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
@@ -48,19 +64,25 @@ File to disk, and string path.
 		[ValidateNotNullOrEmpty()]
 		[Alias("ServerInstance","SqlInstance")]
 		[object]$SqlServer,
+		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string]$Path,
 		[array]$Databases,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[array]$Certificates,
+		[Security.SecureString] $Password = (Read-Host "Password" -AsSecureString),
+		[switch]$Silent	
 	)
-	
-	BEGIN
-	{
+
+	#DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $sqlinstance -SqlCredential $SqlCredential } }
+
+#NOTES
+	# Dynamic params not working
+	#password handled in write way?
+	#ekm provider
+
+	BEGIN {
 		$server = Connect-SqlServer $SqlServer $SqlCredential
-		
-		#if ($server.versionMajor -lt 9) { "Windows 2000 not supported for sp_configure export."; break }
-		
-		if ($path.length -eq 0)
-		{
+				
+		if ($path.length -eq 0) {
 			$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
 			$mydocs = [Environment]::GetFolderPath('MyDocuments')
 			$path = "$mydocs\$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
@@ -68,68 +90,68 @@ File to disk, and string path.
 	
 	}
 	
-	PROCESS
-		{
+	PROCESS {
 
-			# if the database is specified get the specific cert name
 			if($Databases) {
-				$certificates = @()
+				$certs = @()
 				foreach ($database in $Databases) {
 					$certName = $server.Databases[$Database].DatabaseEncryptionKey.EncryptorName
-					$certificates += $server.Databases['master'].Certificates | where-object {$_.name -eq $certName}
+					$certs += $server.Databases['master'].Certificates | where-object {$_.name -eq $certName}
+				}
+			} elseif($Certificates) {
+				$certs = @()
+				foreach ($Certificate in $Certificates) {
+					$certs += $server.Databases['master'].Certificates | where-object {$_.name -eq $Certificate}
+				}
+			} else {
+				$certs = $server.Databases['master'].Certificates | where-object {$_.name -notlike '##*'}
+			}
+
+			if (!$path.StartsWith('\')) {
+				Stop-Function -Message "Path should be a UNC share." -Continue
+			}
+
+			Write-Message -Level Verbose -Message "Exporting Certificates"			
+			$certSql = @()
+			foreach ($cert in $certs) {
+				$exportLocation = "$path\$($cert.name)"
+				if ($Pscmdlet.ShouldProcess("[$($cert.name)]' on $SqlServer", "Exporting Certificate")) {
+					Write-Message -Level Verbose -Message ("Exporting Certificate: {0} to {1}" -f $cert.name, $exportLocation )
+					try {
+						$cert.export("$exportLocation.cer","$exportLocation.pvk", [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))
+						
+						$certSql += (
+						"CREATE CERTIFICATE [{0}]  
+						FROM FILE = '{1}{2}.cer'
+						WITH PRIVATE KEY 
+						( 
+							FILE = '{1}{2}.pvk' ,
+							DECRYPTION BY PASSWORD = '{3}'
+						)
+						GO
+						" -f $cert.name, $exportLocation, $c.encryptorName , [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))
+
+					} catch {
+						Write-Message -Level Warning -Message $_ -ErrorRecord $_ -Target $instance
+					}
 				}
 			}
-			else {
-				$certificates = $server.Databases['master'].Certificates | where-object {$_.name -notlike '##*'}
-			}
 
-#specify cert name?
-#password generator 
-	#- I'd always prompt the user to enter it - you can do it with Read-Host and -UseSecureString or something
-	#- or allow them to pass a credential
-#ekm provider
-
-			#Write-Message -Level Verbose -Message "Exporting Certificates"
-			Write-host "Exporting Certificates"
-			$pwd = Read-Host "Password:" #-AsSecureString
-			write-host $pwd
-			
-			$certSql = @()
-			foreach ($cert in $certificates) {
-				#Write-Message -Level Verbose -Message ("Exporting Certificate: {0}" -f $cert.name )
-				Write-Host ("Exporting Certificate: {0}" -f $cert.name )
-				$exportLocation = "$path\$($cert.name)"
-				Write-Host $exportLocation
-				$cert.export("$exportLocation.cer","$exportLocation.pvk",$pwd)
-
-				# Generate script
-				$certSql += (
-				"CREATE CERTIFICATE [{0}]  
-				FROM FILE = '{1}{2}.cer'
-				WITH PRIVATE KEY 
-				( 
-					FILE = '{1}{2}.pvk' ,
-					DECRYPTION BY PASSWORD = '{3}'
-				)
-				GO
-				" -f $cert.name, $exportLocation, $c.encryptorName ,$pwd)
+			if ($Pscmdlet.ShouldProcess("$path", "Exporting SQL Script")) {
+				if($certsql) {
+					try {
+						$certsql | Out-File "$path\CreateCertificates.sql" -ErrorAction Stop
+					}
+					catch {
+						Write-Message -Level Warning -Message $_ -ErrorRecord $_ -Target $instance
+					}
+				}
+				return $path
 			}
-			try {
-				$certsql | Out-File "$path\CreateCertificates.sql"
-			}
-			catch {
-				throw "Can't write to $path"
-			}
-		#return $path
 	}
 	
-	END
-	{
+	END {
 		$server.ConnectionContext.Disconnect()
-		
-		#If ($Pscmdlet.ShouldProcess("console", "Showing finished message"))
-		#{
-		#	Write-Output "Server configuration export finished"
-		#}
+
 	}
 }
