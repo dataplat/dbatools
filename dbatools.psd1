@@ -258,7 +258,7 @@
 		'New-DbaAgentJob',
 		'Export-DbaScript',
 		'Get-DbaLogin',
-		'New-DbaScriptingOption',
+		'New-DbaScriptingOption'
 		#'Invoke-DbaLogShippingRecovery',
 	)
 	
