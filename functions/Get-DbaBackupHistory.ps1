@@ -168,10 +168,15 @@ Function Get-DbaBackupHistory {
 					$logdb = Get-DbaBackupHistory -SqlServer $server -Databases $db -raw:$Raw -LastLog
 					
 					if ($logdb) {
-						$alldb = Get-DbaBackupHistory -SqlServer $server -Databases $db -raw:$Raw
-						$alldb | Where-Object { $_.FirstLsn -eq $logdb.DatabaseBackupLsn -and $_.Type -eq 'Full' }
-						$alldb | Where-Object { $_.DatabaseBackupLsn -eq $logdb.DatabaseBackupLsn -and $_.Type -ne 'Full' -and $_.Type -ne 'Log' }
-						$alldb | Where-Object { $_.DatabaseBackupLsn -eq $logdb.DatabaseBackupLsn -and $_.Type -eq 'Log' }
+						$alldb = Get-DbaBackupHistory -SqlServer $server -Databases $db -raw:$Raw 
+						$alldb | Where-Object { $_.FirstLsn -eq $logdb.DatabaseBackupLsn -and $_.Type -eq 'Full' } 
+						$diff = $alldb | Where-Object { $_.DatabaseBackupLsn -eq $logdb.DatabaseBackupLsn -and $_.Type -ne 'Full' -and $_.Type -ne 'Log' } | Sort-Object Start -Descending | Select-Object -First 1
+						$diff
+						if($diff) {
+							$alldb | Where-Object { $_.DatabaseBackupLsn -eq $logdb.DatabaseBackupLsn -and $_.lastlsn -ge $diff.lastlsn -and $_.Type -eq 'Log'}
+						} else {
+							$alldb | Where-Object { $_.DatabaseBackupLsn -eq $logdb.DatabaseBackupLsn -and $_.Type -eq 'Log'}
+						}
 					}
 					else{
 						Get-DbaBackupHistory -SqlServer $server -Databases $db -LastFull -raw:$Raw

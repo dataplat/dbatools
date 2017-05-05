@@ -30,7 +30,7 @@ function Get-DbaLinkedServer
 	https://dbatools.io/Get-DbaLinkedServer
 
 	.EXAMPLE
-	Get-DbaLinkedServer -SqlServer DEV01
+	Get-DbaLinkedServer -SqlInstance DEV01
 
 	Returns all Linked Servers for the SQL Server instance DEV01
 

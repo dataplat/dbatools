@@ -1,11 +1,11 @@
-Function Remove-DbaSpn
-{
+#ValidationTags#FlowControl,Pipeline#
+Function Remove-DbaSpn {
 <#
 .SYNOPSIS
-Sets an SPN for a given service account in active directory, and also enables delegation to the same SPN
+Removes an SPN for a given service account in active directory and also removes delegation to the same SPN, if found
 
 .DESCRIPTION
-This function will connect to Active Directory and search for an account. If the account is found, it will attempt to remove the specified SPN. Once the SPN is removed, the function will also set delegation to that service. 
+This function will connect to Active Directory and search for an account. If the account is found, it will attempt to remove the specified SPN. Once the SPN is removed, the function will also remove delegation to that service. 
 
 In order to run this function, the credential you provide must have write access to Active Directory.
 
@@ -20,12 +20,15 @@ The account you want the SPN remove from
 .PARAMETER Credential
 The credential you want to use to connect to Active Directory to make the changes
 
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
+
 .PARAMETER Confirm
 Turns confirmations before changes on or off
-	
+
 .PARAMETER WhatIf
 Shows what would happen if the command was executed	
-	
+
 .NOTES
 Tags: SPN
 Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
@@ -42,7 +45,12 @@ https://dbatools.io/Remove-DbaSpn
 .EXAMPLE
 Remove-DbaSpn -SPN MSSQLSvc\SQLSERVERA.domain.something -ServiceAccount domain\account
 
-Connects to Active Directory and removes a provided SPN to the given account.
+Connects to Active Directory and removes a provided SPN from the given account (and also the relative delegation)
+
+.EXAMPLE
+Remove-DbaSpn -SPN MSSQLSvc\SQLSERVERA.domain.something -ServiceAccount domain\account -Silent
+
+Connects to Active Directory and removes a provided SPN from the given account, suppressing all error messages and throw exceptions that can be caught instead
 
 .EXAMPLE
 Remove-DbaSpn -SPN MSSQLSvc\SQLSERVERA.domain.something -ServiceAccount domain\account -Credential (Get-Credential)
@@ -51,8 +59,13 @@ Connects to Active Directory and removes a provided SPN to the given account. Us
 
 .EXAMPLE
 Test-DbaSpn -ComputerName sql2005 | Where { $_.isSet -eq $true } | Remove-DbaSpn -WhatIf
-	
-Connects to Active Directory and removes a provided SPN to the given account. Uses alternative account to connect to AD.
+
+Shows what would happen trying to remove all set SPNs for sql2005 and the relative delegations
+
+.EXAMPLE
+Test-DbaSpn -ComputerName sql2005 | Where { $_.isSet -eq $true } | Remove-DbaSpn
+
+Removes all set SPNs for sql2005 and the relative delegations
 
 
 #>
@@ -65,111 +78,104 @@ Connects to Active Directory and removes a provided SPN to the given account. Us
 		[Alias("InstanceServiceAccount", "AccountName")]
 		[string]$ServiceAccount,
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
-		[pscredential]$Credential
+		[pscredential]$Credential,
+		[switch]$Silent
 	)
 	
-	process
-	{
-		$OGServiceAccount = $ServiceAccount
-		if ($serviceaccount -like "*\*")
-		{
-			Write-Debug "Account provided in in domain\user format, stripping out domain info..."
-			$serviceaccount = ($serviceaccount.split("\"))[1]
+	process {
+		Write-Message -Message "Looking for account $ServiceAccount..." -Level Verbose
+		try {
+			$Result = Get-DbaADObject -ADObject $ServiceAccount -Type User -Credential $Credential -Silent
 		}
-		if ($serviceaccount -like "*@*")
-		{
-			Write-Debug "Account provided in in user@domain format, stripping out domain info..."
-			$serviceaccount = ($serviceaccount.split("@"))[0]
+		catch {
+			Stop-Function -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($ServiceAccount). $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_ -Target $ServiceAccount
 		}
-		
-		$root = ([ADSI]"LDAP://RootDSE").defaultNamingContext
-		$adsearch = New-Object System.DirectoryServices.DirectorySearcher
-		
-		if ($Credential)
-		{
-			$domain = New-Object System.DirectoryServices.DirectoryEntry -ArgumentList ("LDAP://" + $root), $($Credential.UserName), $($Credential.GetNetworkCredential().password)
+		if ($Result.Count -gt 0) {
+			try {
+				$adentry = $Result.GetUnderlyingObject()
+			}
+			catch {
+				Stop-Function -Message "The SQL Service account ($ServiceAccount) has been found, but you don't have enough permission to inspect its properties $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_ -Target $ServiceAccount
+			}
 		}
-		else
-		{
-			$domain = New-Object System.DirectoryServices.DirectoryEntry -ArgumentList ("LDAP://" + $root)
+		else {
+			Stop-Function -Message "The SQL Service account ($ServiceAccount) has not been found" -Silent $Silent -Target $ServiceAccount
 		}
 		
-		$adsearch.SearchRoot = $domain
-		$adsearch.Filter = $("(&(samAccountName={0}))" -f $serviceaccount)
-		Write-Verbose "Looking for account $serviceAccount..."
-		$result = $adsearch.FindOne()
-		
-		#did we find the server account?
-		
-		if ($result -eq $null)
-		{
-			Write-Warning "The account specified for the SPN ($serviceAccount) does not exist on the domain"
-			continue
+		# Cool! Remove an SPN
+		$delegate = $true
+		$spnadobject = $adentry.Properties['servicePrincipalName']
+
+		if ($spnadobject -notcontains $spn) {
+			Write-Message -Level Warning -Message "SPN $SPN not found"
+			$status = "SPN not found"
+			$set = $false
 		}
-		else
-		{
-			# Cool! Remove an SPN
-			
-			$adentry = $result.GetDirectoryEntry()
-			$delegate = $true
-			
-			if ($PSCmdlet.ShouldProcess("$spn", "Removing SPN for service account"))
-			{
-				try
-				{
-					$null = $adentry.Properties['serviceprincipalname'].Remove($spn)
-					Write-Verbose "Remove SPN $spn for samaccount $serviceaccount"
+		
+		if ($PSCmdlet.ShouldProcess("$spn", "Removing SPN for service account")) {
+			try {
+				if ($spnadobject -contains $spn) {
+					$null = $spnadobject.Remove($spn)
 					$adentry.CommitChanges()
+					Write-Message -Message "Remove SPN $spn for $serviceaccount" -Level Verbose
 					$set = $false
 					$status = "Successfully removed SPN"
-					$delegate = $true
 				}
-				catch
-				{
-					Write-Warning "Could not remove SPN. Error returned was: $_"
-					$set = $true
-					$status = "Failed to remove SPN"
-					$delegate = $false
+			}
+		catch {
+			Write-Message -Message "Could not remove SPN. $($_.Exception.Message)" -Level Warning -Silent $Silent -ErrorRecord $_ -Target $ServiceAccountWrite
+			$set = $true
+			$status = "Failed to remove SPN"
+			$delegate = $false
+		}
+		
+			[pscustomobject]@{
+				Name = $spn
+				ServiceAccount = $ServiceAccount
+				Property = "servicePrincipalName"
+				IsSet = $set
+				Notes = $status
+			}
+		}
+		# if we removed the SPN, we should clean up also the delegation
+		if ($PSCmdlet.ShouldProcess("$spn", "Removing delegation for service account for SPN")) {
+			# if we didn't remove the SPN we shouldn't do anything
+			if ($delegate) {
+				# even if we removed the SPN, delegation could have been not set at all. We should not raise an error
+				if ($adentry.Properties['msDS-AllowedToDelegateTo'] -notcontains $spn) {
+					[pscustomobject]@{
+						Name = $spn
+						ServiceAccount = $ServiceAccount
+						Property = "msDS-AllowedToDelegateTo"
+						IsSet = $false
+						Notes = "Delegation not found"
+					}
 				}
-				
-				[pscustomobject]@{
-					Name = $spn
-					ServiceAccount = $OGServiceAccount
-					Property = "servicePrincipalName"
-					IsSet = $set
-					Notes = $status
+				else {
+					# we indeed need the cleanup
+					try {
+						$null = $adentry.Properties['msDS-AllowedToDelegateTo'].Remove($spn)
+						$adentry.CommitChanges()
+						Write-Message -Message "Removed kerberos delegation $spn for $ServiceAccount" -Level Verbose
+						$set = $false
+						$status = "Successfully removed delegation"
+					}
+					catch {
+						Write-Message -Message "Could not remove delegation. $($_.Exception.Message)" -Level Warning -Silent $Silent -ErrorRecord $_ -Target $ServiceAccount
+						$set = $true
+						$status = "Failed to remove delegation"
+					}
+					
+					[pscustomobject]@{
+						Name = $spn
+						ServiceAccount = $ServiceAccount
+						Property = "msDS-AllowedToDelegateTo"
+						IsSet = $set
+						Notes = $status
+					}
 				}
 			}
 			
-			if (!$delegate) { continue }
-			
-			# Don't forget delegation!
-			$adentry = $result.GetDirectoryEntry()
-			if ($PSCmdlet.ShouldProcess("$spn", "Removing delegation for service account for SPN"))
-			{
-				try
-				{
-					$null = $adentry.Properties['msDS-AllowedToDelegateTo'].Remove($spn)
-					Write-Verbose "Removed kerberos delegation for $spn for samaccount $serviceaccount"
-					$adentry.CommitChanges()
-					$set = $false
-					$status = "Successfully removed delegation"
-				}
-				catch
-				{
-					Write-Warning "Could not remove delegation. Error returned was: $_"
-					$set = $true
-					$status = "Failed to remove delegation"
-				}
-				
-				[pscustomobject]@{
-					Name = $spn
-					ServiceAccount = $OGServiceAccount
-					Property = "msDS-AllowedToDelegateTo"
-					IsSet = $set
-					Notes = $status
-				}
-			}
 		}
 	}
 }

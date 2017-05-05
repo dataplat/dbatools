@@ -91,7 +91,7 @@
             if ($sub.CommandElements | Where-Object ParameterName -EQ $Parameter)
             {
                 if ($CustomMessage) { $Message = $CustomMessage }
-                else { $Message = "Using the parameter $Parameter is deprecated! This parameter will be removed in version $Version, check in the documentation what parameter to use instead" }
+                else { $Message = "Using the parameter $Parameter is deprecated! This parameter will be removed in version $DeprecatedOn, check in the documentation what parameter to use instead" }
                 
                 Write-Message -Message $Message -Level Warning -Silent $Silent -FunctionName $FunctionName -Once "Deprecated.Alias.$Alias"
             }
@@ -102,7 +102,7 @@
             if ($Alias -eq $Call.InvocationName)
             {
                 if ($CustomMessage) { $Message = $CustomMessage }
-                else { $Message = "Using the alias $Alias is deprecated! This alias will be removed in version $Version, use $FunctionName instead" }
+                else { $Message = "Using the alias $Alias is deprecated! This alias will be removed in version $DeprecatedOn, use $FunctionName instead" }
                 
                 Write-Message -Message $Message -Level Warning -Silent $Silent -FunctionName $FunctionName -Once "Deprecated.Alias.$Alias"
             }
