@@ -257,9 +257,7 @@
 		'Get-DbaLinkedServer',
 		'Set-DbaStartupParameter',
 		'New-DbaAgentJob',
-		#'Invoke-DbaLogShippingRecovery',
-		'Export-DbaCertificate',
-		'Import-DbaCertificate'
+		#'Invoke-DbaLogShippingRecovery'
 	)
 	
 	# Cmdlets to export from this module
