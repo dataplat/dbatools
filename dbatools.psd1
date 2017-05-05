@@ -256,7 +256,7 @@
 		'Get-DbaLogin'
 		'Get-DbaLinkedServer',
 		'Set-DbaStartupParameter',
-		'New-DbaAgentJob',
+		'New-DbaAgentJob'
 		#'Invoke-DbaLogShippingRecovery'
 	)
 	
