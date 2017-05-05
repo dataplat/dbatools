@@ -54,8 +54,9 @@ s
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[Alias("ServerInstance","SqlInstance")]
-		[object]$SqlServer,
-        [String]$Path,
+        [object]$SqlServer,
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[object[]]$Path,
         [System.Management.Automation.PSCredential]$SqlCredential,
 		[Array]$Certificates,
 		[Security.SecureString] $Password = (Read-Host "Password" -AsSecureString),
