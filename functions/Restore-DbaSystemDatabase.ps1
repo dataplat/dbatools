@@ -305,6 +305,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                     {
                         #Didn't start nicely, jump to finally to try to come back up sanely
                         Write-Message -Level Warning -Message "SQL Server not starting nicely, trying to fix" -Silent:$false
+                        throw
                     }
                 }
                 if ($server.connectionContext.IsOpen -eq $false)
@@ -313,7 +314,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                 }
                 Write-Message -Level Verbose -Silent:$false -Message  "Beginning Restore of Master"
                 
-             #   $RestoreResult += Restore-DbaDatabase -SqlServer $server -Path $BackupPath -WithReplace -DatabaseFilter master -RestoreTime $RestoreTime -ReuseSourceFolderStructure -SystemRestore           
+                $RestoreResult += Restore-DbaDatabase -SqlServer $server -Path $BackupPath -WithReplace -DatabaseFilter master -RestoreTime $RestoreTime -ReuseSourceFolderStructure -SystemRestore           
                 if ($RestoreResult.RestoreComplete -eq $True)
                 {
                     Write-Message -Level Verbose -Silent:$false -Message "Restore of Master suceeded"   
@@ -360,7 +361,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                     $server.connectionContext.Connect()
                 }
                 Write-Message -Level SomewhatVerbose -Silent:$true -Message "Starting restore of $($filter -join ',')"
-          #      $RestoreResults = Restore-DbaDatabase -SqlServer $server -Path $BackupPath  -WithReplace -DatabaseFilter $filter -RestoreTime $RestoreTime -ReuseSourceFolderStructure -SystemRestore
+                $RestoreResults = Restore-DbaDatabase -SqlServer $server -Path $BackupPath  -WithReplace -DatabaseFilter $filter -RestoreTime $RestoreTime -ReuseSourceFolderStructure -SystemRestore
                 Foreach ($Database in $RestoreResults)
                 {
                     If ($Database.RestoreComplete)
