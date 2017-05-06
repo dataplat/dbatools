@@ -14,11 +14,17 @@ FUNCTION Get-DbaSchemaChangeHistory {
 	.PARAMETER SqlCredential
 	SqlCredential object to connect as. If not specified, current Windows login will be used.
 
+    .PARAMETER Databases
+    Return backup information for only specific databases. These are only the databases that currently exist on the server.
+    
+    .PARAMETER Since
+    A date from which DDL changes should be returned. Default is to start at the beggining of the current trace file
+
 	.PARAMETER Silent 
 	Use this switch to disable any kind of verbose messages
 	
 	.NOTES
-	Original Author: FirstName LastName (@twitterhandle and/or website)
+	Original Author: Stuart Moore (@naplamgram - http://stuart-moore.com)
 	Tags: Migration, Backup
 	
 	Website: https://dbatools.io
@@ -26,15 +32,22 @@ FUNCTION Get-DbaSchemaChangeHistory {
 	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 	.LINK
-	https://dbatools.io/Get-DbaJobCategory
+	https://dbatools.io/Get-DbaSchemaChangeHistory
 
 	.EXAMPLE
 	Get-DbaJobCategory -SqlInstance localhost
-	Returns all SQL Agent Job Categories on the local default SQL Server instance
+    
+    Returns all DDL changes made in all databases on the SQL Server instance localhost since the system trace began
 
 	.EXAMPLE
-	Get-DbaJobCategory -SqlInstance localhost, sql2016
-	Returns all SQL Agent Job Categories for the local and sql2016 SQL Server instances
+	Get-DbaJobCategory -SqlInstance localhost -Since (Get-Date).AddDays(-7)
+
+	Returns all DDL changes made in all databases on the SQL Server instance localhost in the last 7 days
+
+	.EXAMPLE
+	Get-DbaJobCategory -SqlInstance localhost -Databases Finance, Prod -Since (Get-Date).AddDays(-7)
+
+	Returns all DDL changes made in the Prod and Finance databases on the SQL Server instance localhost in the last 7 days
 
 	#>
 	
@@ -44,13 +57,18 @@ FUNCTION Get-DbaSchemaChangeHistory {
         [Alias("ServerInstance", "SqlServer")]
         [object[]]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
+        [DbaDateTime]$Since,
         [switch]$Silent
+        
     )
 	
-	 dynamicparam { if ($SqlInstance) { Get-ParamSqlAgentCategories -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
-	
+	dynamicparam {
+		if ($sqlinstance) {
+			return Get-ParamSqlDatabases -SqlServer $sqlinstance[0] -SqlCredential $Credential
+		}
+	}
     begin {
-        $jobcategories = $psboundparameters.JobCategories
+        $databases = $psboundparameters.Databases
     }
 	
     process {
@@ -63,22 +81,42 @@ FUNCTION Get-DbaSchemaChangeHistory {
             catch {
                 Stop-Function -Message "Can't connect to $instance or access denied. Skipping." -Continue
             }
-			
-			$categories = $server.JobServer.JobCategories
-			
-            if ($jobcategories) {
-                $categories = $categories | Where-Object { $_.Name -in $jobcategories }
-            }
-			
-            foreach ($object in $categories) {
-		Write-Message -Level Verbose -Message "Processing $object"
-                Add-Member -InputObject $object -MemberType NoteProperty ComputerName -value $server.NetName
-                Add-Member -InputObject $object -MemberType NoteProperty InstanceName -value $server.ServiceName
-                Add-Member -InputObject $object -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
-				
-		# Select all of the columns you'd like to show
-                Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, ID, Name, Whatever, Whatever2
-            } #foreach object
-        } #foreach instance
-    } # process
-} #function
+            $TraceFileQuery = "select path from sys.traces where is_default = 1"
+			$TraceFile = $server.ConnectionContext.ExecuteWithResults($TraceFileQuery).Tables.Rows | Select-Object Path
+
+            if ($null -eq $databases) { $databases = $server.databases.name }
+            foreach ($database in $databases)
+            {
+                $DDLQuery = "
+                    select 
+                        tt.databasename as 'DatabaseName',
+                        starttime as 'StartTime',
+                        Sessionloginname as 'LoginName',
+                        NTusername as 'UserName',
+                        applicationname as 'ApplicationName',
+                        case eventclass
+                            When '46' Then 'Create'
+                            when '47' Then 'Drop'
+                            when '164' then 'Alter'
+                        end as 'DDLOperation',
+                        s.name+'.'+o.name as 'Object',
+                        o.type_desc as 'ObjectType'
+                        from 
+                        sys.objects o  inner join
+                        sys.schemas s on s.schema_id=o.schema_id
+                        cross apply (select * from ::fn_trace_gettable('$($TraceFile.path)',default) where ObjectID=o.object_id ) tt
+                        where tt.objecttype not in (21587)
+                        and tt.DatabaseID=db_id()
+                        and tt.EventSubClass=0"
+                if ($null -ne $since)
+                {
+                    $DDLQuery = $DDLquery +" and tt.StartTime>'$Since'"
+                }
+                $DDLQuery = $DDLQuery + " order by tt.StartTime asc"
+
+                $results = $server.databases[$database].ExecuteWithResults($DDLQuery).Tables.Rows | select *
+                $results | Select-Object *, @{Name="SqlInstance";Expression={$server}} | Select-DefaultView -Property  SqlInstance, DatabaseName,starttime, LoginName, UserName, ApplicationName, DDLOperation, Object, ObjectType
+            }	
+        }
+    }
+}
