@@ -103,6 +103,10 @@ FUNCTION Get-DbaSchemaChangeHistory {
             if ($null -eq $databases) { $databases = $server.databases.name }
             foreach ($database in $databases)
             {
+                if ($server.databases[$database].status -notlike '*normal*')
+                {
+                    Stop-Function -Message "Can't open database $database. Skipping." -Continue
+                }
                 $DDLQuery = "
                     select 
                         tt.databasename as 'DatabaseName',
@@ -133,6 +137,8 @@ FUNCTION Get-DbaSchemaChangeHistory {
                     $DDLQuery = $DDLQuery + " and o.name in ('$($object -join ''',''')') "
                 }
                 $DDLQuery = $DDLQuery + " order by tt.StartTime asc"
+                Write-Message -Level Verbose -Message "Querying Database $database on $instance"
+                Write-Message -Level Debug -Message "SQL: `n $DDLQuery"
                 $results = $server.databases[$database].ExecuteWithResults($DDLQuery).Tables.Rows | select *
                 $results | Select-Object *, @{Name="SqlInstance";Expression={$server}} | Select-DefaultView -Property  SqlInstance, DatabaseName,starttime, LoginName, UserName, ApplicationName, DDLOperation, Object, ObjectType
             }	
