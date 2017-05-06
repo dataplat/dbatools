@@ -94,7 +94,7 @@ FUNCTION Get-DbaSchemaChangeHistory {
             }
             if ($Server.Version.Major -le 8)
             {
-                Write-Message -Level Warning -Message "This command doesn't support SQL Server 2000, sorry about that" -Stop
+                Stop-Function -Message "This command doesn't support SQL Server 2000, sorry about that" 
             }
             $TraceFileQuery = "select path from sys.traces where is_default = 1"
 			$TraceFile = $server.ConnectionContext.ExecuteWithResults($TraceFileQuery).Tables.Rows | Select-Object Path
