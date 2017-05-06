@@ -20,6 +20,9 @@ FUNCTION Get-DbaSchemaChangeHistory {
     .PARAMETER Since
     A date from which DDL changes should be returned. Default is to start at the beggining of the current trace file
 
+    .PARAMETER Object
+    The name of a SQL Server object you want to look for changes on
+
 	.PARAMETER Silent 
 	Use this switch to disable any kind of verbose messages
 	
@@ -48,6 +51,11 @@ FUNCTION Get-DbaSchemaChangeHistory {
 	Get-DbaJobCategory -SqlInstance localhost -Databases Finance, Prod -Since (Get-Date).AddDays(-7)
 
 	Returns all DDL changes made in the Prod and Finance databases on the SQL Server instance localhost in the last 7 days
+	
+    .EXAMPLE
+	Get-DbaJobCategory -SqlInstance localhost -Databases Finance -Object AccountsTable -Since (Get-Date).AddDays(-7)
+
+	Returns all DDL changes made  to the AccountsTable object in the Finance database on the SQL Server instance localhost in the last 7 days
 
 	#>
 	
@@ -58,7 +66,9 @@ FUNCTION Get-DbaSchemaChangeHistory {
         [object[]]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
         [DbaDateTime]$Since,
-        [switch]$Silent
+        [switch]$Silent,
+        [string[]]$Object
+
         
     )
 	
@@ -69,7 +79,8 @@ FUNCTION Get-DbaSchemaChangeHistory {
 	}
     begin {
         $databases = $psboundparameters.Databases
-    }
+
+   }
 	
     process {
         foreach ($instance in $SqlInstance) {
@@ -110,10 +121,13 @@ FUNCTION Get-DbaSchemaChangeHistory {
                         and tt.EventSubClass=0"
                 if ($null -ne $since)
                 {
-                    $DDLQuery = $DDLquery +" and tt.StartTime>'$Since'"
+                    $DDLQuery = $DDLquery +" and tt.StartTime>'$Since' "
+                }
+                if ($null -ne $object)
+                {
+                    $DDLQuery = $DDLQuery + " and o.name in ('$($object -join ''',''')') "
                 }
                 $DDLQuery = $DDLQuery + " order by tt.StartTime asc"
-
                 $results = $server.databases[$database].ExecuteWithResults($DDLQuery).Tables.Rows | select *
                 $results | Select-Object *, @{Name="SqlInstance";Expression={$server}} | Select-DefaultView -Property  SqlInstance, DatabaseName,starttime, LoginName, UserName, ApplicationName, DDLOperation, Object, ObjectType
             }	
