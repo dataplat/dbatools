@@ -27,7 +27,7 @@ FUNCTION Get-DbaSchemaChangeHistory {
 	Use this switch to disable any kind of verbose messages
 	
 	.NOTES
-	Original Author: Stuart Moore (@naplamgram - http://stuart-moore.com)
+	Original Author: Stuart Moore (@napalmgram - http://stuart-moore.com)
 	Tags: Migration, Backup
 	
 	Website: https://dbatools.io
