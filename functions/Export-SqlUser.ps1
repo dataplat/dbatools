@@ -202,6 +202,7 @@ https://dbatools.io/Export-SqlUser
 						$users = $db.Users | Where-Object { $User -contains $_.Name -and $_.IsSystemObject -eq $false -and $_.Name -notlike "##*" }
 					}
 				}
+				# Store roles between users so if we hit the same one we dont create it again 
 				$roles = @()
 				if ($users.Count -gt 0) {
 					foreach ($dbuser in $users) {
