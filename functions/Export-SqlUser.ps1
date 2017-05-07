@@ -202,7 +202,7 @@ https://dbatools.io/Export-SqlUser
 						$users = $db.Users | Where-Object { $User -contains $_.Name -and $_.IsSystemObject -eq $false -and $_.Name -notlike "##*" }
 					}
 				}
-				
+				$roles = @()
 				if ($users.Count -gt 0) {
 					foreach ($dbuser in $users) {
 						#setting database
@@ -213,7 +213,11 @@ https://dbatools.io/Export-SqlUser
 							foreach ($rolePermission in ($db.Roles | Where-Object { $_.IsFixedRole -eq $false })) {
 								foreach ($rolePermissionScript in $rolePermission.Script($scriptingOptions)) {
 									#$roleScript = $rolePermission.Script($scriptingOptions)
-									$outsql += "$($rolePermissionScript.ToString())"
+                                    if ($rolePermission -notin $roles){
+                                        $roles += , $rolePermission
+                                        $outsql += "$($rolePermissionScript.ToString())"
+                                    }
+									
 								}
 							}
 							
