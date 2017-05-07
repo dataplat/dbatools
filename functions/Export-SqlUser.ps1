@@ -213,8 +213,8 @@ https://dbatools.io/Export-SqlUser
 							foreach ($rolePermission in ($db.Roles | Where-Object { $_.IsFixedRole -eq $false })) {
 								foreach ($rolePermissionScript in $rolePermission.Script($scriptingOptions)) {
 									#$roleScript = $rolePermission.Script($scriptingOptions)
-                                    if ($rolePermission -notin $roles){
-                                        $roles += , $rolePermission
+                                    if ($rolePermission.ToString() -notin $roles){
+                                        $roles += , $rolePermission.ToString()
                                         $outsql += "$($rolePermissionScript.ToString())"
                                     }
 									
