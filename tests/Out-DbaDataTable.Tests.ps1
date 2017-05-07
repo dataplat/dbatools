@@ -1,23 +1,5 @@
-﻿<#
-Invoke-Pester .\Out-DbaDataTable.tests.ps1 -CodeCoverage @{Path = '.\..\functions\Out-DbaDataTable.ps1'}
-#>
-
-# to be able to get code coverage from pester
-$basepath = Split-Path $MyInvocation.MyCommand.Path -Parent
-Import-Module C:\git\dbatools -Force
-# Need to import the Out-DbaDataTable.ps1 separately to get CodeCoverage to work with Pester
-Import-Module "$basepath\..\functions\Out-DbaDataTable.ps1" -Force -ErrorAction Stop
-# Need to import Test-DbaDeprecation as well to avoid getting error during Pester tests
-Import-Module "$basepath\..\internal\Test-DbaDeprecation.ps1" -Force -ErrorAction Stop
-# Need to import Write-Message as well to avoid getting error during Pester tests
-Import-Module "$basepath\..\internal\Write-Message.ps1" -Force -ErrorAction Stop
-
-
-
-
-Import-Module C:\git\dbatools -Force
+﻿
 Describe "Testing data table output when using a complex object" {
-    # Prepare object for testing
     $obj = New-Object -TypeName psobject -Property @{
         guid = [system.guid]'32ccd4c4-282a-4c0d-997c-7b5deb97f9e0'
         timespan = New-TimeSpan -Start 2016-10-30 -End 2017-04-30
@@ -35,7 +17,6 @@ Describe "Testing data table output when using a complex object" {
     }
     
     Add-Member -InputObject $obj -MemberType NoteProperty -Name myobject -Value $innedobj
-    # Run the command to get output to run tests on
     $result = Out-DbaDataTable -InputObject $obj
 
     Context "Property: guid" {
@@ -163,7 +144,6 @@ Describe "Testing data table output when using a complex object" {
 }
 
 Describe "Testing input parameters" {
-    # Prepare object for testing
     $obj = New-Object -TypeName psobject -Property @{
         timespan = New-TimeSpan -Start 2017-01-01 -End 2017-01-02
     }

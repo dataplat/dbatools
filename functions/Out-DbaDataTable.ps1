@@ -53,6 +53,7 @@ Creates a DataTable with the running processes and converts any TimeSpan propert
 
 #>	
 	[CmdletBinding()]
+    [OutputType([System.Object[]])]
 	param (
         # Input object to process
 		[Parameter(Position = 0,
@@ -189,7 +190,6 @@ Creates a DataTable with the running processes and converts any TimeSpan propert
                             # this is where the table columns are generated
                             if ($property.value -isnot [System.DBNull]) {
                                 # Check if property is a ScriptProperty, then resolve it while calling ConvertType. (otherwise we dont get the proper type)
-                                # Debug, remove when done
                                 Write-Verbose "Attempting to get type from property $($property.Name)"
                                 If ($property.MemberType -eq 'ScriptProperty') {
                                     try {
@@ -250,7 +250,6 @@ Creates a DataTable with the running processes and converts any TimeSpan propert
 			        }
 
 			        $datatable.Rows.Add($datarow)
-                    # Row added.
                     # If this is the first non-null object then the columns has just been created.
                     # Set variable to false to skip creating columns from now on.
                     if ($ShouldCreateCollumns) {

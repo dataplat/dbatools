@@ -373,33 +373,6 @@ This is a good example of the type conversion in action. All process properties 
 						$columnvalue = $InputObject.$sqlcolumnname
 					}
 					
-					# bigint, float, and datetime are more accurate, but it didn't work
-					# as often as it should have, so we'll just go for a smaller datatype
-					
-					# also, if anyone wants to add support for using the datatable datatypes
-					# to make the table creation more accurate, please do
-                    
-                    # don't mind if I do :) /John
-					
-                    <# Removed to make place for PS to SQL type conversion /John
-					    if ([int64]::TryParse($columnvalue, [ref]0) -eq $true)
-					    {
-						    $sqldatatype = "varchar(50)"
-					    }
-					    elseif ([double]::TryParse($columnvalue, [ref]0) -eq $true)
-					    {
-						    $sqldatatype = "varchar(50)"
-					    }
-					    elseif ([datetime]::TryParse($columnvalue, [ref]0) -eq $true)
-					    {
-						    $sqldatatype = "varchar(50)"
-					    }
-					    else
-					    {
-						    $sqldatatype = "varchar(MAX)"
-					    }
-                    #>                  
-                    
                     # PS to SQL type conversion
                     # If data type exists in hash table, use the corresponding SQL type
                     # Else, fallback to nvarchar
@@ -412,19 +385,11 @@ This is a good example of the type conversion in action. All process properties 
                         $sqldatatype = "nvarchar(MAX)"
                     }
                     
-                    # Debug, remove when done
-                    #Write-Verbose "Column: $sqlcolumnname"
-                    #Write-Verbose "PS datatype: $($column.DataType)"
-                    #Write-Verbose "SQL datatype: $($sqldatatype)"
-					
 					$sqldatatypes += "[$sqlcolumnname] $sqldatatype"
 				}
 				
 				$sql = "BEGIN CREATE TABLE $fqtn ($($sqldatatypes -join ' NULL,')) END"
 				
-                # Debug, remove when done
-                #Write-Verbose "SQL: $sql"
-
 				Write-Message -Level Debug -Message $sql
 				
 				if ($Pscmdlet.ShouldProcess($SqlServer, "Creating table $fqtn"))
