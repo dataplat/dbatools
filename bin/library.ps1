@@ -1785,6 +1785,24 @@ namespace Sqlcollective.Dbatools
             }
 
             /// <summary>
+            /// The target object of the first exception in the list, if any
+            /// </summary>
+            public object TargetObject
+            {
+                get
+                {
+                    if (Exceptions.Count > 0)
+                        return Exceptions[0].TargetObject;
+                    else
+                        return null;
+                }
+                set
+                {
+
+                }
+            }
+
+            /// <summary>
             /// List of Exceptions that are part of the incident (usually - but not always - only one).
             /// </summary>
             public List<DbatoolsException> Exceptions = new List<DbatoolsException>();
