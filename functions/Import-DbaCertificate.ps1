@@ -45,8 +45,8 @@ Import-DbaCertificate -SqlServer Server1 -Path \\Server1\Certificates -password 
 Imports all the certificates in the specified path.
 
 .EXAMPLE
-Import-DbaCertificate -SqlServer Server1 -Path \\Server1\Certificates -password (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
-Imports all the certificates in the specified path.
+Import-DbaCertificate -SqlServer Server1 -Path \\Server1\Certificates -Certificates "CertTDE"
+Prompts for password then imports certificate in the specified path named 'CertTDE'
 
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
