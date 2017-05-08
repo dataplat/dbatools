@@ -130,7 +130,7 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
             }
 
             foreach ($db in $dbs) {
-                Write-Message -Message "Processing destination database: $db on $destinationServer" -Verbose
+                Write-Message -Message "Processing destination database: $db on $destinationServer" -Level Verbose
 
                 if ($db.IsAccessible -eq $false) {
                     Stop-Function -Message "The database $db on server $destinationServer is not accessible. Skipping database." -Continue
