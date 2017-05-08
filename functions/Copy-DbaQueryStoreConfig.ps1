@@ -84,37 +84,35 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
 
     BEGIN {
 
-        Write-Verbose "Connecting to source: $Source"
+        Write-Message -Message "Connecting to source: $Source" -Level Verbose
         try {
             $sourceServer = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 
         }
         catch {
-            Write-Warning "Can't connect to $Source."
-            break
+            Stop-Function -Message "Can't connect to $Source." -InnerErrorRecord $_ -Target $Source
         }
 
         # Grab the Query Store configuration from the SourceDatabase through the Get-DbaQueryStoreConfig function
         $SourceQSConfig = Get-DbaQueryStoreConfig -SqlServer $sourceServer -Databases $SourceDatabase
-
     }
 
     PROCESS {
+        if (Test-FunctionInterrupt) {
+			return
+		}
         if (!$DestinationDatabase -and !$Exclude -and !$AllDatabases) {
-            Write-Warning "You must specify databases to execute against using either -DestinationDatabase, -Exclude or -AllDatabases"
-            continue
+            Stop-Function -Message "You must specify databases to execute against using either -DestinationDatabase, -Exclude or -AllDatabases" -Continue
         }
 
         foreach ($destinationServer in $Destination) {
 
-            Write-Verbose "Connecting to destination: $Destination"
+            Write-Message -Message "Connecting to destination: $Destination" -Level Verbose
             try {
                 $destServer = Connect-SqlServer -SqlServer $destinationServer -SqlCredential $DestinationSqlCredential
-
             }
             catch {
-                Write-Warning "Can't connect to $destinationServer."
-                continue
+                Stop-Function -Message "Can't connect to $destinationServer." -InnerErrorRecord $_ -Target $desitnationServer -Continue
             }
 
             # We have to exclude all the system databases since they cannot have the Query Store feature enabled
@@ -129,19 +127,17 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
             }
 
             if ($dbs.count -eq 0) {
-                Write-Warning "No matching databases found. Check the spelling and try again."
-                return
+                Stop-Function -Message "No matching databases found. Check the spelling and try again." -Continue
             }
 
             foreach ($db in $dbs) {
-                Write-Verbose "Processing destination database: $db on $destination"
+                Write-Message -Message "Processing destination database: $db on $destination" -Verbose
 
                 if ($db.IsAccessible -eq $false) {
-                    Write-Warning "The database $db on server $destination is not accessible. Skipping database."
-                    continue
+                    Stop-Function -Message "The database $db on server $destination is not accessible. Skipping database." -Continue
                 }
 
-                Write-Verbose "Executing Set-DbaQueryStoreConfig"
+                Write-Message -Message "Executing Set-DbaQueryStoreConfig" -Level Verbose
                 # Set the Query Store configuration through the Set-DbaQueryStoreConfig function
                 Set-DbaQueryStoreConfig -SqlInstance $Destination -SqlCredential $DestinationSqlCredential -Databases $($db.name) -State $SourceQSConfig.ActualState -FlushInterval $SourceQSConfig.FlushInterval -CollectionInterval $SourceQSConfig.CollectionInterval -MaxSize $SourceQSConfig.MaxSize -CaptureMode $SourceQSConfig.CaptureMode -CleanupMode $SourceQSConfig.CleanupMode -StaleQueryThreshold $SourceQSConfig.StaleQueryThreshold
             }
