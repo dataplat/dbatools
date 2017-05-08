@@ -138,7 +138,15 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
 
                 Write-Message -Message "Executing Set-DbaQueryStoreConfig" -Level Verbose
                 # Set the Query Store configuration through the Set-DbaQueryStoreConfig function
-                Set-DbaQueryStoreConfig -SqlInstance $destinationServer -SqlCredential $DestinationSqlCredential -Databases $($db.name) -State $SourceQSConfig.ActualState -FlushInterval $SourceQSConfig.FlushInterval -CollectionInterval $SourceQSConfig.CollectionInterval -MaxSize $SourceQSConfig.MaxSize -CaptureMode $SourceQSConfig.CaptureMode -CleanupMode $SourceQSConfig.CleanupMode -StaleQueryThreshold $SourceQSConfig.StaleQueryThreshold
+                Set-DbaQueryStoreConfig -SqlInstance $destinationServer -SqlCredential $DestinationSqlCredential `
+                    -Databases $($db.name) `
+                    -State $SourceQSConfig.ActualState `
+                    -FlushInterval $SourceQSConfig.FlushInterval `
+                    -CollectionInterval $SourceQSConfig.CollectionInterval `
+                    -MaxSize $SourceQSConfig.MaxSize `
+                    -CaptureMode $SourceQSConfig.CaptureMode `
+                    -CleanupMode $SourceQSConfig.CleanupMode `
+                    -StaleQueryThreshold $SourceQSConfig.StaleQueryThreshold
             }
         }
     }
