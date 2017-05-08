@@ -130,6 +130,10 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
             }
 
             foreach ($db in $dbs) {
+                # skipping the database if the source and destination are the same instance
+                if (($sourceServer.Name -eq $destinationServer) -and ($SourceDatabase -eq $db.Name)) {
+                    continue
+                }
                 Write-Message -Message "Processing destination database: $db on $destinationServer" -Level Verbose
                 $copyQueryStoreStatus = [pscustomobject]@{
                     SourceServer = $sourceServer
@@ -142,6 +146,7 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
                 }
 
                 if ($db.IsAccessible -eq $false) {
+                    $copyQueryStoreStatus.Status = "Skipped"
                     Stop-Function -Message "The database $db on server $destinationServer is not accessible. Skipping database." -Continue
                 }
 
@@ -149,7 +154,7 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
                 # Set the Query Store configuration through the Set-DbaQueryStoreConfig function
                 try {
                     $null = Set-DbaQueryStoreConfig -SqlInstance $destinationServer -SqlCredential $DestinationSqlCredential `
-                    -Databases $($db.name) `
+                    -Databases $db.name `
                     -State $SourceQSConfig.ActualState `
                     -FlushInterval $SourceQSConfig.FlushInterval `
                     -CollectionInterval $SourceQSConfig.CollectionInterval `
