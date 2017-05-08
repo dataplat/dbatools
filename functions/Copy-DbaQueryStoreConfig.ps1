@@ -69,7 +69,7 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [object[]]$Source,
+        [object]$Source,
         [System.Management.Automation.PSCredential]$SourceSqlCredential,
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object]$SourceDatabase,
