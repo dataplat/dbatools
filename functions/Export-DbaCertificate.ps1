@@ -10,6 +10,13 @@ Exports certificates from SQL Server using smo and outputs the .cer and .pvk fil
 .PARAMETER SqlServer
 The SQL Server that you're connecting to.
 
+.PARAMETER SqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+$scred = Get-Credential, this pass $scred object to the param. 
+
+Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+
 .PARAMETER Path
 The Path to output the files to.
 
@@ -22,12 +29,9 @@ Exports certificate that matches the name(s).
 .PARAMETER Password
 Secure string used to encrypt the exported private key.
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-$scred = Get-Credential, this pass $scred object to the param. 
-
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+.PARAMETER SkipSQLFile
+Does not generate a .sql file with the CREATE CERTIFICATE syntax in the path.
+Use this to avoid generating script file that contains password.
 
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
@@ -55,6 +59,10 @@ Exports the certificate that is used as the encryptor for a specific database on
 .EXAMPLE
 Export-DbaCertificate  -SqlServer Server1 -Path \\Server1\Certificates -Certificate CertTDE
 Exports the certificate named CertTDE on the specified SQL Server, not specifying the -Password will generate a prompt for user entry.
+
+.EXAMPLE
+Export-DbaCertificate  -SqlServer Server1 -Path \\Server1\Certificates -password (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!) -SkipSQLFile
+Exports all the certificates on the specified SQL Server to the path but does not generate a .sql file for CREATE CERTIFICATE statments.
 
 
 #>
