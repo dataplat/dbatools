@@ -117,7 +117,7 @@
     {
         foreach ($record in $ErrorRecord)
         {
-            $exception = New-Object System.Exception($Message, $record.Exception)
+            $exception = New-Object System.Exception($record.Exception.Message, $record.Exception)
             if ($record.CategoryInfo.Category) { $Category = $record.CategoryInfo.Category }
             $records += New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $Target)
         }
