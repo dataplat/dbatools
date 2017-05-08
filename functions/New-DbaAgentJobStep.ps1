@@ -14,7 +14,7 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
 To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER JobName
+.PARAMETER Job
 The name of the job to which to add the step.
 
 .PARAMETER StepId
@@ -53,7 +53,7 @@ The ID of the step in this job to execute if the step fails and OnFailAction is 
 .PARAMETER Database
 The name of the database in which to execute a Transact-SQL step. The default is 'master'.
 
-.PARAMETER DatabaseUserName 
+.PARAMETER DatabaseUser 
 The name of the user account to use when executing a Transact-SQL step. 
 
 .PARAMETER RetryAttempts
@@ -105,27 +105,27 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 https://dbatools.io/New-DbaAgentJobStep
 
 .EXAMPLE   
-New-DbaAgentJobStep -SqlInstance sql1 -JobName Job1 -StepName Step1
+New-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1
 Create a step in "Job1" with the name Step1 with the default subsystem TransactSql.
 
 .EXAMPLE   
-New-DbaAgentJobStep -SqlInstance sql1 -JobName Job1 -StepName Step1 -Database msdb
+New-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -Database msdb
 Create a step in "Job1" with the name Step1 where the database will the msdb
 
 .EXAMPLE   
-New-DbaAgentJobStep -SqlInstance sql1 -JobName Job1 -StepName Step1 -Database msdb
+New-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -Database msdb
 Create a step in "Job1" with the name Step1 where the database will the msdb
 
 .EXAMPLE   
-New-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -JobName Job1 -StepName Step1 -Database msdb
+New-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1 -StepName Step1 -Database msdb
 Create a step in "Job1" with the name Step1 where the database will the "msdb" for multiple servers
 
 .EXAMPLE   
-New-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -JobName Job1, Job2, 'Job Three' -StepName Step1 -Database msdb
+New-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1, Job2, 'Job Three' -StepName Step1 -Database msdb
 Create a step in "Job1" with the name Step1 where the database will the "msdb" for multiple servers for multiple jobs
 
 .EXAMPLE   
-sql1, sql2, sql3 | New-DbaAgentJobStep -JobName Job1 -StepName Step1 -Database msdb
+sql1, sql2, sql3 | New-DbaAgentJobStep -Job Job1 -StepName Step1 -Database msdb
 Create a step in "Job1" with the name Step1 where the database will the "msdb" for multiple servers using pipe line
 #>
 
@@ -139,7 +139,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
         [System.Management.Automation.PSCredential]$SqlCredential,
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string[]]$JobName,
+        [string[]]$Job,
         [Parameter(Mandatory = $false)]
         [int]$StepId,
         [Parameter(Mandatory = $true)]
@@ -165,7 +165,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
         [Parameter(Mandatory = $false)]
         [string]$Database,
         [Parameter(Mandatory = $false)]
-        [string]$DatabaseUserName,
+        [string]$DatabaseUser,
         [Parameter(Mandatory = $false)]
         [int]$RetryAttempts,
         [Parameter(Mandatory = $false)]
@@ -210,7 +210,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
                 Stop-Function -Message "Could not connect to Sql Server instance"  -Target $instance -Continue
             }
 
-            foreach ($j in $JobName) {
+            foreach ($j in $Job) {
 
                 # Check if the job exists
                 if ($Server.JobServer.Jobs.Name -notcontains $j) {
@@ -309,12 +309,12 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
                         }
                     }
 
-                    if ($DatabaseUserName -and $DatabaseName) {
+                    if ($DatabaseUser -and $DatabaseName) {
                         # Check if the username is present in the database
-                        if ($Server.Databases[$DatabaseName].Users.Name -contains $DatabaseUserName) {
+                        if ($Server.Databases[$DatabaseName].Users.Name -contains $DatabaseUser) {
                     
-                            Write-Message -Message "Setting job step database username to $DatabaseUserName" -Level Verbose 
-                            $JobStep.DatabaseUserName = $DatabaseUserName
+                            Write-Message -Message "Setting job step database username to $DatabaseUser" -Level Verbose 
+                            $JobStep.DatabaseUserName = $DatabaseUser
                         }
                         else {
                             Stop-Function -Message "The database user is not present in the database $DatabaseName on instance $instance." -Target $instance -Continue
