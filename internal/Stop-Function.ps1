@@ -89,8 +89,9 @@
         $Category = ([System.Management.Automation.ErrorCategory]::NotSpecified),
         
         [Parameter(ParameterSetName = 'Exception')]
-        [System.Management.Automation.ErrorRecord]
-        $InnerErrorRecord,
+        [Alias('InnerErrorRecord')]
+        [System.Management.Automation.ErrorRecord[]]
+        $ErrorRecord,
         
         [string]
         $FunctionName = ((Get-PSCallStack)[0].Command),
@@ -110,20 +111,33 @@
     
     $timestamp = Get-Date
     
-    $Exception = New-Object System.Exception($Message, $InnerErrorRecord.Exception)
-    if ((-not $PSBoundParameters.ContainsKey("Category")) -and ($PSBoundParameters.ContainsKey("InnerErrorRecord")) -and ($InnerErrorRecord.CategoryInfo.Category)) { $Category = $InnerErrorRecord.CategoryInfo.Category }
-    $record = New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $Target)
+    $records = @()
+    
+    if ($ErrorRecord)
+    {
+        foreach ($record in $ErrorRecord)
+        {
+            $exception = New-Object System.Exception($Message, $record.Exception)
+            if ($record.CategoryInfo.Category) { $Category = $record.CategoryInfo.Category }
+            $records += New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $Target)
+        }
+    }
+    else
+    {
+        $exception = New-Object System.Exception($Message)
+        $records += New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $Target)
+    }
     
     # Manage Debugging
-    Write-Message -Message $Message -Warning -Silent $Silent -FunctionName $FunctionName
+    Write-Message -Level Warning -Message $Message -Silent $Silent -FunctionName $FunctionName -Target $Target -ErrorRecord $records
+    [Sqlcollective.Dbatools.dbaSystem.DebugHost]::WriteErrorEntry($records, $FunctionName, $timestamp, $Message, $Host.InstanceId)
     
     #region Silent Mode
     if ($Silent)
     {
         if ($SilentlyContinue)
         {
-            Write-Error -Message $record -Category $Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue
-            [sqlcollective.dbatools.dbaSystem.DebugHost]::WriteErrorEntry($Record, $FunctionName, $timestamp, $Message)
+            foreach ($record in $records) { Write-Error -Message $record -Category $Category -TargetObject $Target -Exception $record.Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue }
             if ($ContinueLabel) { continue $ContinueLabel }
             else { Continue }
         }
@@ -144,8 +158,10 @@
     else
     {
         # This ensures that the error is stored in the $error variable AND has its Stacktrace (simply adding the record would lack the stacktrace)
-        $null = Write-Error -Message $record -Category $Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue 2>&1
-        [sqlcollective.dbatools.dbaSystem.DebugHost]::WriteErrorEntry($Record, $FunctionName, $timestamp, $Message)
+        foreach ($record in $records)
+        {
+            $null = Write-Error -Message $record -Category $Category -TargetObject $Target -Exception $record.Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue 2>&1
+        }
         
         if ($Continue)
         {
