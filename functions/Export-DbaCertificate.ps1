@@ -69,23 +69,21 @@ Exports the certificate named CertTDE on the specified SQL Server, not specifyin
 		[array]$Databases,
 		[array]$Certificates,
 		[Security.SecureString] $Password = (Read-Host "Password" -AsSecureString),
+		[switch]$SkipSQLFile = $false,
 		[switch]$Silent	
 	)
 
-	#DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $sqlinstance -SqlCredential $SqlCredential } }
-
-#NOTES
-	# Dynamic params not working
-	#password handled in write way?
-	#ekm provider
+	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $sqlinstance -SqlCredential $SqlCredential } }
 
 	BEGIN {
 		$server = Connect-SqlServer $SqlServer $SqlCredential
 				
-		if ($path.length -eq 0) {
+		if ($path.Length -eq 0) {
 			$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
 			$mydocs = [Environment]::GetFolderPath('MyDocuments')
 			$path = "$mydocs\$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
+		} elseif ($path.EndsWith('\')) {
+			$path = $path.TrimEnd('\')
 		}
 	
 	}
@@ -107,6 +105,10 @@ Exports the certificate named CertTDE on the specified SQL Server, not specifyin
 				$certs = $server.Databases['master'].Certificates | where-object {$_.name -notlike '##*'}
 			}
 
+			if(!$certs) {
+				Stop-Function -Message "No certificates found to export." -Continue
+			}
+
 			if (!$path.StartsWith('\')) {
 				Stop-Function -Message "Path should be a UNC share." -Continue
 			}
@@ -120,37 +122,36 @@ Exports the certificate named CertTDE on the specified SQL Server, not specifyin
 					try {
 						$cert.export("$exportLocation.cer","$exportLocation.pvk", [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))
 						
+						if(!$SkipSQLFile) {
 						$certSql += (
-						"CREATE CERTIFICATE [{0}]  
-						FROM FILE = '{1}{2}.cer'
-						WITH PRIVATE KEY 
-						( 
-							FILE = '{1}{2}.pvk' ,
-							DECRYPTION BY PASSWORD = '{3}'
-						)
-						GO
-						" -f $cert.name, $exportLocation, $c.encryptorName , [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))
-
+							"CREATE CERTIFICATE [{0}]  
+							FROM FILE = '{1}{2}.cer'
+							WITH PRIVATE KEY 
+							( 
+								FILE = '{1}{2}.pvk' ,
+								DECRYPTION BY PASSWORD = '{3}'
+							)
+							GO
+							" -f $cert.name, $exportLocation, $c.encryptorName , [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))
+						}
 					} catch {
 						Write-Message -Level Warning -Message $_ -ErrorRecord $_ -Target $instance
 					}
 				}
 			}
-
-			if ($Pscmdlet.ShouldProcess("$path", "Exporting SQL Script")) {
-				if($certsql) {
-					try {
-						$certsql | Out-File "$path\CreateCertificates.sql" -ErrorAction Stop
-					}
-					catch {
-						Write-Message -Level Warning -Message $_ -ErrorRecord $_ -Target $instance
+			if(!$SkipSQLFile) {
+				if ($Pscmdlet.ShouldProcess("$path", "Exporting SQL Script")) {
+					if($certsql) { 
+						try { 
+							$certsql | Out-File "$path\CreateCertificates.sql" -ErrorAction Stop
+						} catch {
+							Write-Message -Level Warning -Message $_ -ErrorRecord $_ -Target $instance
+						}
 					}
 				}
-				return $path
 			}
-	}
-	
-	END {
+			return $path
+	} END {
 		$server.ConnectionContext.Disconnect()
 
 	}
