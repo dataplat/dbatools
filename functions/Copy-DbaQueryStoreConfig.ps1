@@ -1,5 +1,5 @@
-Function Copy-DbaQueryStoreConfig {
-<#
+function Copy-DbaQueryStoreConfig {
+    <#
 .SYNOPSIS
 Copies the configuration of a Query Store enabled database and sets the copied configuration on other databases.
 	
@@ -24,11 +24,14 @@ The target server where the databases reside on which you want to enfore the cop
 .PARAMETER DestinationDatabase
 The databases that will recieve a copy of the Query Store configuration of the SourceDatabase.
 
-.PARAMETER AllDatabases
-Set copied Query Store configuration on all databases on the destination server.	
-	
 .PARAMETER Exclude
 Copy Query Store configuration for all but these specific databases.
+
+.PARAMETER AllDatabases
+Set copied Query Store configuration on all databases on the destination server.	
+
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
 
 .PARAMETER WhatIf
 Shows what would happen if the command were to run
@@ -75,7 +78,8 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
         [System.Management.Automation.PSCredential]$DestinationSqlCredential,
         [object[]]$DestinationDatabase,
         [object[]]$Exclude,
-        [switch]$AllDatabases
+        [switch]$AllDatabases,
+        [switch]$Silent
     )
 	
     BEGIN {
