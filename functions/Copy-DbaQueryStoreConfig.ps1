@@ -87,20 +87,19 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
         Write-Message -Message "Connecting to source: $Source" -Level Verbose
         try {
             $sourceServer = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-
         }
         catch {
             Stop-Function -Message "Can't connect to $Source." -InnerErrorRecord $_ -Target $Source
         }
-
-        # Grab the Query Store configuration from the SourceDatabase through the Get-DbaQueryStoreConfig function
-        $SourceQSConfig = Get-DbaQueryStoreConfig -SqlServer $sourceServer -Databases $SourceDatabase
     }
 
     PROCESS {
         if (Test-FunctionInterrupt) {
 			return
 		}
+        # Grab the Query Store configuration from the SourceDatabase through the Get-DbaQueryStoreConfig function
+        $SourceQSConfig = Get-DbaQueryStoreConfig -SqlInstance $sourceServer -Databases $SourceDatabase
+
         if (!$DestinationDatabase -and !$Exclude -and !$AllDatabases) {
             Stop-Function -Message "You must specify databases to execute against using either -DestinationDatabase, -Exclude or -AllDatabases" -Continue
         }
