@@ -21,8 +21,8 @@
 
 	.EXAMPLE
 	$options = New-DbaScriptingOption
-	$options.Options.ScriptDrops = $false
-	$options.Options.WithDependencies = $true
+	$options.ScriptDrops = $false
+	$options.WithDependencies = $true
 	Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -ScriptingOptionObject $options
 	
 	Exports Agent Jobs with the Scripting Options ScriptDrops set to $false and WithDependencies set to true
