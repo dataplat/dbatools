@@ -115,7 +115,7 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
             }
 
             # We have to exclude all the system databases since they cannot have the Query Store feature enabled
-            $dbs = Get-DbaDatabase -SqlInstance $desetServer -NoSystemDb
+            $dbs = Get-DbaDatabase -SqlInstance $destServer -NoSystemDb
 
             if ($DestinationDatabase.count -gt 0) {
                 $dbs = $dbs | Where-Object { $DestinationDatabase -contains $_.Name }
