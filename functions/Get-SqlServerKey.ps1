@@ -120,7 +120,7 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
 			if ([Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers") -eq $null)
 			{ throw "Can't load CMS assemblies. You must have SQL Server Management Studio installed to use the -SqlCms switch." }
 			
-			Write-Output "Gathering SQL Servers names from Central Management Server"
+            Write-Verbose "Gathering SQL Servers names from Central Management Server"
 			$server = Connect-SqlServer -SqlServer $SqlCms -SqlCredential $SqlCredential
 			$sqlconnection = $server.ConnectionContext.SqlConnectionObject
 			
