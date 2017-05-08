@@ -74,16 +74,23 @@ Exports all the certificates on the specified SQL Server to the path but does no
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string]$Path,
-		[array]$Databases,
-		[array]$Certificates,
+	#	[array]$Certificates,
 		[Security.SecureString] $Password = (Read-Host "Password" -AsSecureString),
 		[switch]$SkipSQLFile = $false,
 		[switch]$Silent	
 	)
 
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $sqlinstance -SqlCredential $SqlCredential } }
+	DynamicParam { 
+		if ($sqlserver) { 
+		Get-ParamSqlDatabases -SqlServer $sqlserver -SqlCredential $SqlCredential
+		#Get-ParamSqlCertificates -SqlServer $sqlserver -SqlCredential $SqlCredential
+		} 
+	}
 
 	BEGIN {
+		$databases = $psboundparameters.Databases
+		#$certificates = $psboundparameters.Certificates
+
 		$server = Connect-SqlServer $SqlServer $SqlCredential
 				
 		if ($path.Length -eq 0) {
