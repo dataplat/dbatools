@@ -177,11 +177,11 @@
     {
         foreach ($record in $ErrorRecord)
         {
-            $Exception = New-Object System.Exception($Message, $ErrorRecord.Exception)
-            $newRecord = New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $ErrorRecord.CategoryInfo.Category, $Target)
+            $Exception = New-Object System.Exception($Message, $record.Exception)
+            $newRecord = New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $record.CategoryInfo.Category, $Target)
             
-            if ($Silent) { Write-Error -Message $newRecord -Category $ErrorRecord.CategoryInfo.Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue }
-            else { $null = Write-Error -Message $newRecord -Category $ErrorRecord.CategoryInfo.Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue 2>&1 }
+            if ($Silent) { Write-Error -Message $newRecord -Category $record.CategoryInfo.Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue }
+            else { $null = Write-Error -Message $newRecord -Category $record.CategoryInfo.Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue 2>&1 }
         }
         $foo = "bar"
         [sqlcollective.dbatools.dbaSystem.DebugHost]::WriteErrorEntry($ErrorRecord, $FunctionName, $timestamp, $Message, $Host.InstanceId)
