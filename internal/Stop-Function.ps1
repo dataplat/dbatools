@@ -130,7 +130,7 @@
     
     # Manage Debugging
     Write-Message -Level Warning -Message $Message -Silent $Silent -FunctionName $FunctionName -Target $Target -ErrorRecord $records
-    [Sqlcollective.Dbatools.dbaSystem.DebugHost]::WriteErrorEntry($records, $FunctionName, $timestamp, $Message, $Host.InstanceId)
+    #[Sqlcollective.Dbatools.dbaSystem.DebugHost]::WriteErrorEntry($records, $FunctionName, $timestamp, $Message, $Host.InstanceId)
     
     #region Silent Mode
     if ($Silent)
