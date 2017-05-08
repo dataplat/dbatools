@@ -14,7 +14,7 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
 To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER JobName
+.PARAMETER Job
 The name of the job. Can be null if the the job id is being used.
 
 .PARAMETER KeepHistory
@@ -45,23 +45,23 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 https://dbatools.io/Remove-DbaAgentJob
 
 .EXAMPLE   
-Remove-DbaAgentJob -SqlInstance sql1 -JobName Job1
+Remove-DbaAgentJob -SqlInstance sql1 -Job Job1
 Removes the job from the instance with the name Job1
 
 .EXAMPLE   
-Remove-DbaAgentJob -SqlInstance sql1 -JobName Job1 -KeepHistory
+Remove-DbaAgentJob -SqlInstance sql1 -Job Job1 -KeepHistory
 Removes the job but keeps the history
 
 .EXAMPLE   
-Remove-DbaAgentJob -SqlInstance sql1 -JobName Job1 -KeepUnusedSchedule
+Remove-DbaAgentJob -SqlInstance sql1 -Job Job1 -KeepUnusedSchedule
 Removes the job but keeps the unused schedules
 
 .EXAMPLE   
-Remove-DbaAgentJob -SqlInstance sql1, sql2, sql3 -JobName Job1 
+Remove-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job Job1 
 Removes the job from multiple servers
 
 .EXAMPLE   
-sql1, sql2, sql3 | Remove-DbaAgentJob -JobName Job1 
+sql1, sql2, sql3 | Remove-DbaAgentJob -Job Job1 
 Removes the job from multiple servers using pipe line
 
 #>
@@ -75,7 +75,7 @@ Removes the job from multiple servers using pipe line
         [System.Management.Automation.PSCredential]$SqlCredential,
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string[]]$JobName,
+        [string[]]$Job,
         [Parameter(Mandatory = $false)]
         [switch]$KeepHistory,
         [Parameter(Mandatory = $false)]
@@ -97,7 +97,7 @@ Removes the job from multiple servers using pipe line
                 Stop-Function -Message "Could not connect to Sql Server instance" -Target $instance -Continue
             }
         
-            foreach ($j in $JobName) {
+            foreach ($j in $Job) {
 
                 # Check if the job exists
                 if ($Server.JobServer.Jobs.Name -notcontains $j) {
