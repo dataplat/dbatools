@@ -58,7 +58,7 @@ Prompts for password then imports certificate in the specified path named 'CertT
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object[]]$Path,
         [System.Management.Automation.PSCredential]$SqlCredential,
-		[Array]$Certificates
+		[Array]$Certificates,
 		[Security.SecureString] $Password = (Read-Host "Password" -AsSecureString),
 		[switch]$Silent	
 	)
