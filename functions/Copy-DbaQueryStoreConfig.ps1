@@ -131,6 +131,15 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
 
             foreach ($db in $dbs) {
                 Write-Message -Message "Processing destination database: $db on $destinationServer" -Level Verbose
+                $copyQueryStoreStatus = [pscustomobject]@{
+                    SourceServer = $sourceServer
+                    SourceDatabase = $SourceDatabase
+                    DestinationServer = $destinationServer
+                    DestinationDatabase = $db
+                    Name = "QueryStore Configuration"
+                    Status = $null
+                    DateTime = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+                }
 
                 if ($db.IsAccessible -eq $false) {
                     Stop-Function -Message "The database $db on server $destinationServer is not accessible. Skipping database." -Continue
@@ -138,7 +147,8 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
 
                 Write-Message -Message "Executing Set-DbaQueryStoreConfig" -Level Verbose
                 # Set the Query Store configuration through the Set-DbaQueryStoreConfig function
-                Set-DbaQueryStoreConfig -SqlInstance $destinationServer -SqlCredential $DestinationSqlCredential `
+                try {
+                    $null = Set-DbaQueryStoreConfig -SqlInstance $destinationServer -SqlCredential $DestinationSqlCredential `
                     -Databases $($db.name) `
                     -State $SourceQSConfig.ActualState `
                     -FlushInterval $SourceQSConfig.FlushInterval `
@@ -147,6 +157,13 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
                     -CaptureMode $SourceQSConfig.CaptureMode `
                     -CleanupMode $SourceQSConfig.CleanupMode `
                     -StaleQueryThreshold $SourceQSConfig.StaleQueryThreshold
+                    $copyQueryStoreStatus.Status = "Successful"
+                }
+                catch {
+                    $copyQueryStoreStatus.Status = "Failed"
+                    Stop-Function -Message "Issue setting QueryStore on $db" -Target $db -InnerErrorRecord $_ -Continue
+                }
+                    $copyQueryStoreStatus
             }
         }
     }
