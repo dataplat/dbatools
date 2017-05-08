@@ -33,7 +33,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .NOTES
-Original Author: Jess Pomfret (@jpomfret and/or website)
+Original Author: Jess Pomfret (@jpomfret)
 Tags: Migration, Certificate
 
 Website: https://dbatools.io
