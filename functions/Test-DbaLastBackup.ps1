@@ -269,7 +269,6 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 						Stop-Function -Message "$dbname does not exist on $source." -Continue
 					}
 					
-					#$lastbackup = Get-DbaBackupHistory -SqlServer $sourceserver -Databases $dbname -LastFull -IgnoreCopyOnly:$ignorecopyonly
 					$lastbackup = Get-DbaBackupHistory -SqlServer $sourceserver -Databases $dbname -Last -IgnoreCopyOnly:$ignorecopyonly
 					
 					if ($CopyFile) {
