@@ -1231,11 +1231,11 @@
     },
     {
         "CommandName":  "Out-DbaDataTable",
-        "Description":  "Creates a DataTable based on an objects properties. This allows you to easily write to SQL Server tables\n\t\nThanks to Chad Miller, this script is all him. https://gallery.technet.microsoft.com/scriptcenter/4208a159-a52e-4b99-83d4-8048468d29dd",
+        "Description":  "Creates a DataTable based on an objects properties. This allows you to easily write to SQL Server tables.\n\t\nThanks to Chad Miller, this is based on his script. https://gallery.technet.microsoft.com/scriptcenter/4208a159-a52e-4b99-83d4-8048468d29dd",
         "Synopsis":  "Creates a DataTable for an object",
         "Name":  "Out-DbaDataTable",
         "Links":  "https://dbatools.io/Out-DbaDataTable",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-Service | Out-DbaDataTable\r\n\r\nCreates a $datatable based off of the output of Get-Service\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eOut-DbaDataTable -InputObject $csv.cheesetypes\r\n\r\nCreates a DataTable from the CSV object, $csv.cheesetypes\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$dblist | Out-DbaDataTable\r\n\r\nSimilar to above but $dbalist gets piped in\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-Service | Out-DbaDataTable\r\n\r\nCreates a $datatable based off of the output of Get-Service\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eOut-DbaDataTable -InputObject $csv.cheesetypes\r\n\r\nCreates a DataTable from the CSV object, $csv.cheesetypes\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$dblist | Out-DbaDataTable\r\n\r\nSimilar to above but $dbalist gets piped in\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-Process | Out-DbaDataTable -TimeSpanType TotalSeconds\r\n\r\nCreates a DataTable with the running processes and converts any TimeSpan property to TotalSeconds.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Read-DbaBackupHeader",

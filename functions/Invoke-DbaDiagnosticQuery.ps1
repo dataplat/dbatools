@@ -74,7 +74,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
 		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
+		[object[]]$SqlInstance,
 		[PsCredential]$SqlCredential,
 		[System.IO.FileInfo]$Path,
 		[string[]]$QueryName,
