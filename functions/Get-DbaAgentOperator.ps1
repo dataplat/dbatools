@@ -40,7 +40,7 @@ FUNCTION Get-DbaAgentOperator {
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
+		[object[]]$SqlInstance,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
 		[switch]$Silent

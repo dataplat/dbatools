@@ -67,7 +67,7 @@ Authenticates with SQL Server using alternative credentials.
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
+		[object[]]$SqlInstance,
 		[Alias("Credential")]
 		[PsCredential]$SqlCredential,
 		[switch]$Silent
