@@ -53,14 +53,15 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 	
 	# This seems a little complex but is required because some connections do TCP,sqlserver
 	[regex]$portdetection = ":\d{1,5}$"
-	if ($sqlserver.LastIndexOf(":") -ne -1) {
-		$portnumber = $sqlserver.substring($sqlserver.LastIndexOf(":"))
+	if ($sqlserver.ToString().LastIndexOf(":") -ne -1) {
+		$portnumber = $sqlserver.ToString().substring($sqlserver.ToString().LastIndexOf(":"))
 		if ($portnumber -match $portdetection) {
 			$replacedportseparator = $portnumber -replace ":", ","
 			$sqlserver = $sqlserver -replace $portnumber, $replacedportseparator
 		}
 	}
 	
+	if ($null -ne $SqlServer.Name) { $SqlServer = $SqlServer.Name }
 	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlServer
 	$server.ConnectionContext.ApplicationName = $ApplicationName
 	
