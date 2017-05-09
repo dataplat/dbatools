@@ -7,12 +7,13 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[object]$SqlServer,
+		[object[]]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$ParameterConnection,
 		[switch]$RegularUser
 	)
 	
+	$SqlServer = $SqlServer[0]
 	
 	if ($SqlServer.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
 	{
