@@ -39,8 +39,8 @@ Known bug before SQL Server 2012
         https://connect.microsoft.com/SQLServer/feedback/details/357502/transaction-log-file-size-will-not-grow-exactly-4gb-when-filegrowth-4gb
 
 How it works?
-    The transaction log will growth in chunks until it reachs the desired size. 
-    Example: If you have a log file with 8192MB and you say that the target size is 81920MB (80GB) it will growth in chunks of 8192MB until reach the 81920MB. 8192 -> 16384 -> 24576 ... 73728 -> 81920
+    The transaction log will grow in chunks until it reaches the desired size. 
+    Example: If you have a log file with 8192MB and you say that the target size is 81920MB (80GB) it will grow in chunks of 8192MB until it reaches 81920MB. 8192 -> 16384 -> 24576 ... 73728 -> 81920
 
 .PARAMETER SqlServer 
     Represents the name/ip of the instance where the database(s) that you want to grow exist
@@ -109,12 +109,12 @@ https://dbatools.io/Expand-SqlTLogResponsibly
 .EXAMPLE
     Expand-SqlTLogResponsibly -SqlServer sqlcluster -Databases db1, db2 -TargetLogSizeMB 10000 -IncrementSizeMB 200
     
-	Grows the T-Log of db1 and db2 databases on sqlcluster to 1000MB. If you don't provide this parameter, the value will be calculated automatically. Otherwise, the input value will be compared with the suggested value for your target size. If these values differ, you will be prompted to confirm your choice. 
+    Grows the T-Log of db1 and db2 databases on sqlcluster to 1000MB. If you don't provide this parameter, the value will be calculated automatically. Otherwise, the input value will be compared with the suggested value for your target size. If these values differ, you will be prompted to confirm your choice. 
 
 .EXAMPLE
     Expand-SqlTLogResponsibly -SqlServer sqlcluster -Databases db1 -TargetLogSizeMB 10000 -LogFileId 9
 
-    Grows the T-Log with FielId 9 of the db1 database on sqlcluster instance to 10000MB.
+    Grows the T-Log with FileId 9 of the db1 database on sqlcluster instance to 10000MB.
 
 .EXAMPLE
     Expand-SqlTLogResponsibly -SqlServer sqlcluster -Databases (Get-Content D:\DBs.txt) -TargetLogSizeMB 50000
@@ -454,7 +454,7 @@ https://dbatools.io/Expand-SqlTLogResponsibly
 								}
 							}
 							
-							#start grow file
+							#start growing file
 							If ($Pscmdlet.ShouldProcess($($server.name), "Starting log growth. Increment chunk size: $($LogIncrementSize/1024)MB for database '$db'"))
 							{
 								Write-Output "Starting log growth. Increment chunk size: $($LogIncrementSize/1024)MB for database '$db'"
