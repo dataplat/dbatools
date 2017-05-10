@@ -1155,7 +1155,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						
 						#$restoreresult = Restore-SqlDatabase $destserver $dbname $backupfile $filestructure $numberfiles
 						
-						$restoresulttmp = $backupTmpResult | Restore-DbaDatabase -SqlServer $destserver -DatabaseName $dbname -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$norecovery	
+						$restoresulttmp = $backupTmpResult | Restore-DbaDatabase -SqlServer $destserver -DatabaseName $dbname -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$norecovery -TrustDbBackupHistory
 						$restoreresult = $RestoreResultTmp.RestoreComplete
 						if ($restoreresult -eq $true)
 						{
