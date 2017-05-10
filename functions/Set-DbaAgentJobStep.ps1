@@ -138,7 +138,7 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
         [System.Management.Automation.PSCredential]$SqlCredential,
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string[]]$Job,
+        [object[]]$Job,
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$StepName,
@@ -223,20 +223,15 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
                         Stop-Function -Message "Step $StepName doesn't exists for job $j" -Target $instance -Continue
                     }
                     else {
+                        
                         # Get the job step
                         $JobStep = $Server.JobServer.Jobs[$j].JobSteps[$StepName]
 
                         #region job step options
                         # Setting the options for the job step
-                        if ($NewName -and ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $StepName)) {
+                        if ($NewName) {
                             Write-Message -Message "Setting job step name to $NewName" -Level Verbose 
                             $JobStep.Rename($NewName)
-                        }
-                        elseif ($NewName -and $Force) {
-                            Write-Message -Message "Step $StepName already exists for job. Force is used. Setting job step name to $NewName" -Level Verbose 
-                        }
-                        else {
-                            Stop-Function -Message "Step $StepName already exists for job $j" -Target $instance -Continue
                         }
 
                         if ($Subsystem) {
