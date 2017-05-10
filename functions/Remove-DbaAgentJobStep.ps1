@@ -60,78 +60,77 @@ Remove the job step from the job on multiple servers
 sql1, sql2, sql3 | Remove-DbaAgentJobStep -Job Job1 -StepName Step1
 Remove the job step from the job on multiple servers using pipe line
 
-#>  
-
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
-
-    param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
-        [object[]]$SqlInstance,
-        [Parameter(Mandatory = $false)]
-        [System.Management.Automation.PSCredential]$SqlCredential,
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string[]]$Job,
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$StepName,
-        [Parameter(Mandatory = $false)]
-        [switch]$Silent
-    )
-
-    process {
-
-        foreach ($instance in $sqlinstance) {
-
-            # Try connecting to the instance
-            Write-Message -Message "Attempting to connect to $instance" -Level Output 
-            try {
-                $Server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
-            }
-            catch {
-                Stop-Function -Message "Could not connect to Sql Server instance" -Target $instance -Continue
-            }
-
-            foreach ($j in $Job) {
-
-                # Check if the job exists
-                if ($Server.JobServer.Jobs.Name -notcontains $j) {
-                    Write-Message -Message "Job $j doesn't exists on $instance" -Warning
-                }
-                else {
-                    # Check if the job step exists
-                    if ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $StepName) {
-                        Write-Message -Message "Step $StepName doesn't exists on $instance" -Warning
-                    }
-                    else {
-                        # Get the job step
-                        try {
-                            $JobStep = $Server.JobServer.Jobs[$j].JobSteps[$StepName]
-                        }
-                        catch {
-                            Stop-Function -Message "Something went wrong creating the job step. `n$($_.Exception.Message)" -Target $instance -Continue
-                        }
-
-                        # Execute 
-                        if ($PSCmdlet.ShouldProcess($instance, "Removing the job step for job $j")) {
-                            try {
-                                Write-Message -Message "Removing the job step" -Level Output
-
-                                $JobStep.Drop()
-                            }
-                            catch {
-                                Stop-Function -Message  "Something went wrong removing the job step. `n$($_.Exception.Message)" -Target $instance -Continue
-                            }
-                        }
-                    }
-                }
-
-            } # foreach object job
-        } # foreach object instance
-    } # process
-
-    end {
-        Write-Message -Message "Finished removing the jobs step(s)."-Level Output
-    }
+#>	
+	
+	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+	param (
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[Alias("ServerInstance", "SqlServer")]
+		[object[]]$SqlInstance,
+		[Parameter(Mandatory = $false)]
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[object[]]$Job,
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[string]$StepName,
+		[Parameter(Mandatory = $false)]
+		[switch]$Silent
+	)
+	
+	process {
+		
+		foreach ($instance in $sqlinstance) {
+			
+			# Try connecting to the instance
+			Write-Message -Message "Attempting to connect to $instance" -Level Output
+			try {
+				$Server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+			}
+			catch {
+				Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -Continue -InnerErrorRecord $_
+			}
+			
+			foreach ($j in $Job) {
+				
+				# Check if the job exists
+				if ($Server.JobServer.Jobs.Name -notcontains $j) {
+					Write-Message -Message "Job $j doesn't exists on $instance" -Level Warning
+				}
+				else {
+					# Check if the job step exists
+					if ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $StepName) {
+						Write-Message -Message "Step $StepName doesn't exist for $job on $instance" -Level Warning
+					}
+					else {
+						# Get the job step
+						try {
+							$JobStep = $Server.JobServer.Jobs[$j].JobSteps[$StepName]
+						}
+						catch {
+							Stop-Function -Message "Something went wrong creating the job step. `n$($_.Exception.Message)" -Target $JobStep -Continue -InnerErrorRecord $_
+						}
+						
+						# Execute 
+						if ($PSCmdlet.ShouldProcess($instance, "Removing the job step $StepName for job $j")) {
+							try {
+								Write-Message -Message "Removing the job step $StepName for job $j" -Level Output
+								
+								$JobStep.Drop()
+							}
+							catch {
+								Stop-Function -Message "Something went wrong removing the job step. `n$($_.Exception.Message)" -Target $JobStep -Continue -InnerErrorRecord $_
+							}
+						}
+					}
+				}
+				
+			} # foreach object job
+		} # foreach object instance
+	} # process
+	
+	end {
+		Write-Message -Message "Finished removing the jobs step(s)" -Level Output
+	}
 }
