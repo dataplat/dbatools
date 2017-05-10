@@ -21,6 +21,19 @@ The name of the job.
 .PARAMETER ScheduleName
 The name of the job schedule. 
 
+.PARAMETER WhatIf
+Shows what would happen if the command were to run. No actions are actually performed.
+
+.PARAMETER Confirm
+Prompts you for confirmation before executing any changing operations within the command.
+
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
+
+.PARAMETER Force
+The force parameter will ignore some errors in the parameters and assume defaults.
+It will also remove the any present schedules with the same name for the specific job.
+
 .NOTES 
 Original Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Agent, Job, Job Step
