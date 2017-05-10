@@ -265,7 +265,8 @@
 		'Set-DbaAgentJob',
 		'Remove-DbaAgentJob',
 		'New-DbaAgentJobStep',
-		'Set-DbaAgentJobStep'
+		'Set-DbaAgentJobStep',
+		'Remove-DbaAgentJobStep'
 		#'Invoke-DbaLogShippingRecovery',
 	)
 	
