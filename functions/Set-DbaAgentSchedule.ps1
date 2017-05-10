@@ -163,7 +163,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
         [Parameter(Mandatory = $false)]
         [switch]$Silent,
         [Parameter(Mandatory = $false)]
-        [bool]$Force
+        [switch]$Force
     )
 
     begin {
@@ -328,12 +328,12 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
                     $Server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
                 }
                 catch {
-                    Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -InnerException $_ -Continue
+                    Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -InnerErrorRecord $_ -Continue
                 }
 
                 # Check if the job exists
                 if ($Server.JobServer.Jobs.Name -notcontains $j) {
-                    Write-Message -Message "Job $j doesn't exists on $instance" -Warning
+                    Write-Message -Message "Job $j doesn't exists on $instance" -Level Warning
                 }
                 else {
                     # Check if the job schedule exists
@@ -427,7 +427,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
                         
                             }
                             catch {
-                                Stop-Function -Message "Something went wrong changing the schedule. `n$($_.Exception.Message)" -Target $instance -InnerException $_ -Continue
+                                Stop-Function -Message "Something went wrong changing the schedule. `n$($_.Exception.Message)" -Target $instance -InnerErrorRecord $_ -Continue
                                 return 
                             }
                         }
