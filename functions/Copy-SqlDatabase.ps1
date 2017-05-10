@@ -353,8 +353,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			return $filestructure
 		}
 		# Backup Restore
-		Function Backup-SqlDatabase
-		{
+		Function Backup-SqlDatabase {
 			[CmdletBinding()]
 			param (
 				[object]$server,
@@ -362,7 +361,29 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				[string]$backupfile,
 				[int]$numberfiles
 			)
-			
+			$Complete = $false
+			try{
+				Write-Output "Backing up $dbname"
+				$backup = Backup-DbaDatabase -SqlServer $server -Databases $dbname -BackupDirectory (split-patch -path $backupfile -parent) -BackupFileName (split-patch -path $backupfile -leaf) -FileCount $numberfiles
+			}
+			Catch
+			{
+				Write-Exception $_
+			}
+			Finally
+			{
+				If ($Backup.BackupComplete)
+				{
+					Write-Output "Backup succeeded" 
+					$true
+				}
+				else
+				{
+					$false
+				}
+			}
+
+		<#
 			$server.ConnectionContext.StatementTimeout = 0
 			$backup = New-Object "Microsoft.SqlServer.Management.Smo.Backup"
 			$backup.Database = $dbname
@@ -370,8 +391,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			$backup.CopyOnly = $CopyOnly
 			$val = 0
 			
-			while ($val -lt $numberfiles)
-			{
+			while ($val -lt $numberfiles) {
 				$device = New-Object "Microsoft.SqlServer.Management.Smo.BackupDeviceItem"
 				$device.DeviceType = "File"
 				$device.Name = $backupfile.Replace(".bak", "-$val.bak")
@@ -389,19 +409,18 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
 			Write-Output "Backing up $dbname"
 			
-			try
-			{
+			try {
 				$backup.SqlBackup($server)
 				Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -status "Complete" -Completed
 				Write-Output "Backup succeeded"
 				return $true
 			}
-			catch
-			{
+			catch {
 				Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
 				Write-Exception $_
 				return $false
 			}
+			#>
 		}
 		
 		Function Restore-SqlDatabase
@@ -415,6 +434,8 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				[int]$numberfiles
 			)
 			
+			#Restore-DbaDatabase -Sql
+
 			$servername = $server.name
 			$server.ConnectionContext.StatementTimeout = 0
 			$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
@@ -1121,8 +1142,10 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						$filename = "$dbname-$timenow.bak"
 						$backupfile = Join-Path $networkshare $filename
 						
-						$backupresult = Backup-SqlDatabase $sourceserver $dbname $backupfile $numberfiles
+						#$backupresult = Backup-SqlDatabase $sourceserver $dbname $backupfile $numberfiles
 						
+						$backupTmpResult = Backup-DbaDatabase -SqlServer $sourceserver -Databases $dbname -backupDirectory (Split-Path -Path $backupFile -parent) -FileCount $number files
+						$backupresult = $BackupTmpResult.BackupComplete
 						if ($backupresult -eq $false)
 						{
 							$serviceaccount = $sourceserver.ServiceAccount
@@ -1130,8 +1153,10 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 							continue
 						}
 						
-						$restoreresult = Restore-SqlDatabase $destserver $dbname $backupfile $filestructure $numberfiles
+						#$restoreresult = Restore-SqlDatabase $destserver $dbname $backupfile $filestructure $numberfiles
 						
+						$restoresulttmp = $backupTmpResult | Restore-DbaDatabase -SqlServer $destserver -DatabaseName $dbname -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$norecovery	
+						$restoreresult = $RestoreResultTmp.RestoreComplete
 						if ($restoreresult -eq $true)
 						{
 							Write-Output "Successfully restored $dbname to $destination"
