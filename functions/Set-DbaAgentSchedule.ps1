@@ -348,77 +348,77 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
                         #region job step options
                         # Setting the options for the job schedule
                         if ($NewName) {
-                            Write-Message -Message "Setting job schedule name to $NewName" -Level Verbose
+                            Write-Message -Message "Setting job schedule name to $NewName for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.Rename($NewName)
                         }
 
                         if ($Enabled) {
-                            Write-Message -Message "Setting job schedule to enabled" -Level Verbose
+                            Write-Message -Message "Setting job schedule to enabled for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.IsEnabled = $true    
                         }
 
                         if ($Disabled) {
-                            Write-Message -Message "Setting job schedule to disabled" -Level Verbose
+                            Write-Message -Message "Setting job schedule to disabled for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.IsEnabled = $false
                         }
 
                         if ($FrequencyType -ge 1) {
-                            Write-Message -Message "Setting job schedule frequency to $FrequencyType" -Level Verbose
+                            Write-Message -Message "Setting job schedule frequency to $FrequencyType for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.FrequencyTypes = $FrequencyType
                         }
 
                         if ($Interval -ge 1) {
-                            Write-Message -Message "Setting job schedule frequency interval to $Interval" -Level Verbose
+                            Write-Message -Message "Setting job schedule frequency interval to $Interval for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.FrequencyInterval = $Interval
                         }
 
                         if ($FrequencySubdayType -ge 1) {
-                            Write-Message -Message "Setting job schedule frequency subday type to $FrequencySubdayType" -Level Verbose
+                            Write-Message -Message "Setting job schedule frequency subday type to $FrequencySubdayType for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.FrequencySubDayTypes = $FrequencySubdayType
                         }
 
                         if ($FrequencySubdayInterval -ge 1) {
-                            Write-Message -Message "Setting job schedule frequency subday interval to $FrequencySubdayInterval" -Level Verbose
+                            Write-Message -Message "Setting job schedule frequency subday interval to $FrequencySubdayInterval for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.FrequencySubDayInterval = $FrequencySubdayInterval
                         }
 
                         if (($FrequencyRelativeInterval -ge 1) -and ($FrequencyType -eq 32)) {
-                            Write-Message -Message "Setting job schedule frequency relative interval to $FrequencyRelativeInterval" -Level Verbose
+                            Write-Message -Message "Setting job schedule frequency relative interval to $FrequencyRelativeInterval for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.FrequencyRelativeIntervals = $FrequencyRelativeInterval
                         }
 
                         if (($FrequencyRecurrenceFactor -ge 1) -and ($FrequencyType -in 8, 16, 32)) {
-                            Write-Message -Message "Setting job schedule frequency recurrence factor to $FrequencyRecurrenceFactor" -Level Verbose
+                            Write-Message -Message "Setting job schedule frequency recurrence factor to $FrequencyRecurrenceFactor for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.FrequencyRecurrenceFactor = $FrequencyRecurrenceFactor
                         }
 
                         if ($StartDate) {
                             $StartDate = $StartDate.Insert(6, '-').Insert(4, '-')
-                            Write-Message -Message "Setting job schedule start date to $StartDate" -Level Verbose
+                            Write-Message -Message "Setting job schedule start date to $StartDate for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.StartDate = $StartDate
                         }
 
                         if ($EndDate) {
                             $EndDate = $EndDate.Insert(6, '-').Insert(4, '-')
-                            Write-Message -Message "Setting job schedule end date to $EndDate" -Level Verbose
+                            Write-Message -Message "Setting job schedule end date to $EndDate for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.EndDate = $EndDate
                         }
 
                         if ($StartTime) {
                             $StartTime = $StartTime.Insert(4, ':').Insert(2, ':')
-                            Write-Message -Message "Setting job schedule start time to $StartTime" -Level Verbose
+                            Write-Message -Message "Setting job schedule start time to $StartTime for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.ActiveStartTimeOfDay = $StartTime
                         }
 
                         if ($EndTime) {
                             $EndTime = $EndTime.Insert(4, ':').Insert(2, ':')
-                            Write-Message -Message "Setting job schedule end time to $EndTime" -Level Verbose
+                            Write-Message -Message "Setting job schedule end time to $EndTime for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.ActiveStartTimeOfDay = $EndTime
                         }
                         #endregion job step options
 
                         # Execute the query
-                        if ($PSCmdlet.ShouldProcess($instance, "Changing the schedule $ScheduleName for job $j on $SqlServer")) {
+                        if ($PSCmdlet.ShouldProcess($instance, "Changing the schedule $ScheduleName for job $j on $instance")) {
                             try {
                                 # Excute the query and save the result
                                 Write-Message -Message "Changing the schedule $ScheduleName for job $j" -Level Output
