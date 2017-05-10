@@ -17,6 +17,9 @@ To connect as a different Windows user, run PowerShell as that user.
 .PARAMETER Job
 The name of the job. Can be null if the the job id is being used.
 
+.PARAMETER StepName
+The name of the step.
+	
 .PARAMETER KeepHistory
 Specifies to keep the history for the job. By default is history is deleted.
 
