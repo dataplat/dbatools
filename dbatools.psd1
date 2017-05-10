@@ -261,7 +261,8 @@
 		'Invoke-DbaDiagnosticQuery',
 		'Export-DbaDiagnosticQuery',
 		'Invoke-DbaWhoisActive',
-		'Install-DbaWhoIsActive'
+		'Install-DbaWhoIsActive',
+		'Set-DbaAgentJob'
 		#'Invoke-DbaLogShippingRecovery',
 	)
 	
