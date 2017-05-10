@@ -390,7 +390,7 @@ folder for those file types as defined on the target instance.
 						elseif ($MaintenanceSolutionBackup)
 						{
 							Write-Verbose "$FunctionName : Ola Style Folder"
-							$BackupFiles += Get-OlaHRestoreFile -Path $p
+							$BackupFiles += Get-OlaHRestoreFile -Path $p -IgnoreLogBackup:$IgnoreLogBackup
 						}
 						else
 						{

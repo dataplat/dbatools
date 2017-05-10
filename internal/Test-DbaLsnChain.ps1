@@ -86,7 +86,7 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
 
 
     #Check T-log LSNs form a chain.
-    $TranLogBackups = $FilteredRestoreFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.DatabaseBackupLSN -eq $FullDBAnchor.CheckPointLSN} | Sort-Object -Property LastLSN
+    $TranLogBackups = $FilteredRestoreFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.DatabaseBackupLSN -eq $FullDBAnchor.CheckPointLSN} | Sort-Object -Property LastLSN,BackupStartDate
     for ($i=0; $i -lt ($TranLogBackups.count)-1)
     {
         if ($i -eq 0)
