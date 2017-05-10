@@ -111,7 +111,7 @@ Remove the job schedule on multiple servers using pipe line
                         Write-Message -Message "Step $ScheduleName doesn't exists for job $j" -Level Warning
                     }
                     elseif (-not $Force -and ($Server.JobServer.Jobs[$j].JobSchedules[$ScheduleName].JobCount -gt 1)) {
-                        Stop-Function -Message "The schedule $ScheduleName is shared along other jobs. If removal is neccesary use -Force 1." -Target $instance -Continue
+                        Stop-Function -Message "The schedule $ScheduleName is shared among other jobs. If removal is neccesary use -Force." -Target $instance -Continue
                     }
                     else {
                         # Get the job schedule
