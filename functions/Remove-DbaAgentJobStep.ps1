@@ -96,12 +96,12 @@ Remove the job step from the job on multiple servers using pipe line
             foreach ($j in $Job) {
 
                 # Check if the job exists
-                if (($Server.JobServer.Jobs).Name -notcontains $j) {
+                if ($Server.JobServer.Jobs.Name -notcontains $j) {
                     Write-Message -Message "Job $j doesn't exists on $instance" -Warning
                 }
                 else {
                     # Check if the job step exists
-                    if (($Server.JobServer.Jobs[$j].JobSteps).Name -notcontains $StepName) {
+                    if ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $StepName) {
                         Write-Message -Message "Step $StepName doesn't exists on $instance" -Warning
                     }
                     else {
