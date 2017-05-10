@@ -54,7 +54,7 @@ File path to create tempdb data files in. If not specified, current tempdb locat
 .PARAMETER LogPath
 File path to create tempdb log file in. If not specified, current tempdb location will be used.
 
-.PARAMETER OutScript
+.PARAMETER OutputScriptOnly
 Switch to generate script for tempdb configuration.
 
 .PARAMETER OutFile
@@ -92,7 +92,7 @@ Creates tempdb with a number of datafiles equal to the logical cores where
 each one is equal to 125MB and a log file of 250MB
 
 .EXAMPLE
-Set-SqltempdbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -OutScript
+Set-SqltempdbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -OutputScriptOnly
 
 Provides a SQL script output to configure tempdb according to the passed parameters
 
@@ -102,7 +102,7 @@ Set-SqltempdbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -DisableGro
 Disables the growth for the data and log files
 
 .EXAMPLE
-Set-SqltempdbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -OutScript
+Set-SqltempdbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -OutputScriptOnly
 
 Returns PSObject representing tempdb configuration.
 #>
@@ -121,7 +121,7 @@ Returns PSObject representing tempdb configuration.
 		[string]$DataPath,
 		[string]$LogPath,
 		[string]$OutFile,
-		[switch]$OutScript,
+		[switch]$OutputScriptOnly,
 		[switch]$DisableGrowth,
 		[switch]$Silent
 	)
@@ -245,7 +245,7 @@ Returns PSObject representing tempdb configuration.
 		Write-Message -Message "SQL Statement to resize tempdb" -Level Verbose
 		Write-Message -Message ($sql -join "`n`n") -Level Verbose
 		
-		if ($OutScript) {
+		if ($OutputScriptOnly) {
 			return $sql
 		}
 		elseif ($OutFile) {
