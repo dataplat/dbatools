@@ -131,7 +131,6 @@ Tests all logins excluding any that are from the subdomain Domain
 				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance -InnerErrorRecord $_
 			}
 
-
 			# we can only validate AD logins
 			$allwindowsloginsgroups = $server.Logins | Where-Object { $_.LoginType -in ('WindowsUser', 'WindowsGroup') }
 
@@ -143,7 +142,6 @@ Tests all logins excluding any that are from the subdomain Domain
 			}
 			if ($Exclude)
 			{
-				Write-verbose "excluding something"
 				$allwindowsloginsgroups = $allwindowsloginsgroups | Where-Object { $Exclude -notcontains $_.Name }
 			}
 			switch ($FilterBy) {
@@ -166,6 +164,7 @@ Tests all logins excluding any that are from the subdomain Domain
 			}
 			foreach ($login in $windowslogins) {
 				$adlogin = $login.Name
+				$loginsid = $login.Sid -join ''
 				$domain, $username = $adlogin.Split("\")
 				if($domain.toUpper() -in $IgnoreDomainsNormalized) {
 					Write-Message -Message "Skipping Login $adlogin" -Level Verbose
@@ -177,17 +176,23 @@ Tests all logins excluding any that are from the subdomain Domain
 				{
 					$u = Get-DbaADObject -ADObject $adlogin -Type User -Silent
 					$founduser = $u.GetUnderlyingObject()
+					$foundsid = $founduser.objectSid.Value -join ''
 					if ($founduser) {
 						$exists = $true
+					}
+					if ($foundsid -ne $loginsid) {
+						Write-Message -Message "SID mismatch detected for $adlogin" -Level Warning
+						Write-Message -Message "SID mismatch detected for $adlogin (MSSQL: $loginsid, AD: $foundsid)" -Level Debug
+						$exists = $false
 					}
 				}
 				catch
 				{
 					Write-Message -Message "AD Searcher Error for $username" -Level Warning
 				}
-
+				
 				$UAC = $founduser.Properties.userAccountControl
-
+				
 				$additionalProps = @{
 					AccountNotDelegated = $null
 					AllowReversiblePasswordEncryption  = $null
@@ -245,6 +250,7 @@ Tests all logins excluding any that are from the subdomain Domain
 			foreach ($login in $windowsGroups)
 			{
 				$adlogin = $login.Name
+				$loginsid = $login.Sid
 				$domain, $groupname = $adlogin.Split("\")
 				if($domain.toUpper() -in $IgnoreDomainsNormalized) {
 					Write-Message -Message "Skipping Login $adlogin" -Level Verbose
@@ -257,6 +263,12 @@ Tests all logins excluding any that are from the subdomain Domain
 					$founduser = Get-DbaADObject -ADObject $adlogin -Type Group -Silent
 					if ($founduser) {
 						$exists = $true
+					}
+					$foundsid = $founduser.objectSid.Value -join ''
+					if ($foundsid -ne $loginsid) {
+						Write-Message -Message "SID mismatch detected for $adlogin" -Level Warning
+						Write-Message -Message "SID mismatch detected for $adlogin (MSSQL: $loginsid, AD: $foundsid)" -Level Debug
+						$exists = $false
 					}
 				}
 				else
