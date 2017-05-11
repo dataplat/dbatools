@@ -89,7 +89,7 @@ Gets the certificate for the db1 database
 					Add-Member -InputObject $cert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 					Add-Member -InputObject $cert -MemberType NoteProperty -Name Database -value $smodb.Name
 					
-					Select-DefaultView -InputObject $Certificate -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, DateLastModified, IsEncryptedByServer
+					Select-DefaultView -InputObject $cert -Property ComputerName, InstanceName, SqlInstance, Database, Name, Subject, StartDate, ActiveForServiceBrokerDialog, ExpirationDate, Issuer, LastBackupDate, Owner, PrivateKeyEncryptionType, Serial
 				}
 			}
 		}
