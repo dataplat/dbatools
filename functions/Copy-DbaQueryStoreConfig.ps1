@@ -136,10 +136,10 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
                 }
                 Write-Message -Message "Processing destination database: $db on $destinationServer" -Level Verbose
                 $copyQueryStoreStatus = [pscustomobject]@{
-                    SourceServer = $sourceServer
+                    SourceServer = $sourceServer.name
                     SourceDatabase = $SourceDatabase
                     DestinationServer = $destinationServer
-                    DestinationDatabase = $db
+                    DestinationDatabase = $db.name
                     Name = "QueryStore Configuration"
                     Status = $null
                     DateTime = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
