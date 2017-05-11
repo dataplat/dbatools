@@ -87,7 +87,8 @@ Imports all the certificates in the specified path.
 			$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $sqlcredential
 		}
 		catch {
-			Stop-Function -Message "Failed to connect to: $SqlInstance" -Continue -Target $SqlInstance -InnerErrorRecord $_
+			Stop-Function -Message "Failed to connect to: $SqlInstance" -Target $SqlInstance -InnerErrorRecord $_
+			return
 		}
 	}
 	
@@ -97,11 +98,11 @@ Imports all the certificates in the specified path.
 		foreach ($fullname in $path) {
 			
 			if (![dbavalidate]::IsLocalhost($SqlInstance) -and !$fullname.StartsWith('\')) {
-				Stop-Function -Message "Path must be a UNC share when SQLInstance is not local." -Continue
+				Stop-Function -Message "Path ($fullname) must be a UNC share when SQL instance is not local." -Continue -Target $fullname
 			}
 			
 			if (!(Test-SqlPath -SqlInstance $server -Path $fullname)) {
-				Stop-Function -Message "$SqlInstance cannot access $fullname" -Continue
+				Stop-Function -Message "$SqlInstance cannot access $fullname" -Continue -Target $fullname
 			}
 			
 			$item = Get-Item $fullname
