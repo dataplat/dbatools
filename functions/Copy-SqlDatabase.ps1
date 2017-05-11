@@ -96,6 +96,10 @@ By default, Copy-SqlDatabase backups are backed up with COPY_ONLY, which avoids 
 .PARAMETER SetSourceOffline
 Sets the Source db to offline after copy
 
+.PARAMETER Silent
+Replaces user friendly yellow warnings with bloody red exceptions of doom!
+Use this if you want the function to throw terminating errors you want to catch.
+
 .NOTES
 Tags: Migration, DisasterRecovery, Backup, Restore
 Author: Chrissy LeMaire (@cl), netnerds.net
@@ -185,7 +189,8 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		[ValidateRange(1, 64)]
 		[int]$NumberFiles = 3,
         [switch]$NoCopyOnly,
-        [switch]$SetSourceOffline
+        [switch]$SetSourceOffline,
+        [switch]$silent
 	)
 	
 	DynamicParam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential -NoSystem } }
@@ -202,7 +207,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			{
 				Write-Progress -Id 1 -Activity "Processing database file structure" -PercentComplete ($databaseProgressbar / $dbcount * 100) -Status "Processing $databaseProgressbar of $dbcount"
 				$dbname = $db.name
-				Write-Verbose $dbname
+				Write-Message -Level Verbose -Message  $dbname
 				
 				$databaseProgressbar++
 				$dbstatus = $db.status.toString()
@@ -406,7 +411,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			try
 			{
 				$sql = "ALTER DATABASE [$dbname] SET SINGLE_USER WITH ROLLBACK IMMEDIATE"
-				Write-Verbose $sql
+				Write-Message -Level Verbose -Message  $sql
 				$null = $server.ConnectionContext.ExecuteNonQuery($sql)
 				Write-Output "Successfully set $dbname to single-user from $source"
 			}
@@ -418,7 +423,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			try
 			{
 				$sql = "EXEC master.dbo.sp_detach_db N'$dbname'"
-				Write-Verbose $sql
+				Write-Message -Level Verbose -Message  $sql
 				$null = $server.ConnectionContext.ExecuteNonQuery($sql)
 				Write-Output "Successfully detached $dbname from $source"
 			}
@@ -691,7 +696,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			{
 				if (Test-Path $NetworkShare -ErrorAction Stop)
 				{
-					Write-Verbose "$networkshare share can be accessed."
+					Write-Message -Level Verbose -Message  "$networkshare share can be accessed."
 				}
 			}
 			catch
@@ -719,7 +724,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			throw "Sql Server 2000 databases cannot be migrated to Sql Server versions 2012 and above. Quitting."
 		}
 		
-		Write-Verbose "Warning if migration from 2005 to 2012 and above and attach/detach is used."
+		Write-Message -Level Verbose -Message  "Warning if migration from 2005 to 2012 and above and attach/detach is used."
 		if ($sourceserver.versionMajor -eq 9 -and $destserver.versionMajor -gt 9 -and !$BackupRestore -and !$Force -and $DetachAttach)
 		{
 			throw "Backup and restore is the safest method for migrating from Sql Server 2005 to other Sql Server versions.
@@ -811,7 +816,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			$null = $databaselist.Add($database)
 		}
 		
-		Write-Verbose "Performing count"
+		Write-Message -Level Verbose -Message  "Performing count"
 		$dbcount = $databaselist.Count
 		
 		Write-Output "Building file structure inventory for $dbcount databases"
@@ -863,7 +868,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					continue
 				}
 				
-				Write-Verbose "Checking for accessibility"
+				Write-Message -Level Verbose -Message  "Checking for accessibility"
 				if ($database.IsAccessible -eq $false)
 				{
 					Write-Warning "Skipping $dbname. Database is inaccessible."
@@ -890,7 +895,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					if (!(Test-Path $remotepath)) { throw "Cannot resolve $remotepath. `n`nYou have specified ReuseSourceFolderStructure and exact folder structure does not exist. Halting script." }
 				}
 				
-				Write-Verbose "Checking Availability Group status"
+				Write-Message -Level Verbose -Message  "Checking Availability Group status"
 				if ($database.AvailabilityGroupName.Length -gt 0 -and !$force -and $DetachAttach)
 				{
 					$agname = $database.AvailabilityGroupName
@@ -987,7 +992,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						}
 						
 						#$restoreresult = Restore-SqlDatabase $destserver $dbname $backupfile $filestructure $numberfiles
-						Write-Verbose "Resuse = $ReuseSourceFolderStructure"
+						Write-Message -Level Verbose -Message  "Resuse = $ReuseSourceFolderStructure"
 						$RestoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlServer $destserver -DatabaseName $dbname -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$norecovery -TrustDbBackupHistory
 						$restoreresult = $RestoreResultTmp.RestoreComplete
 						if ($restoreresult -eq $true)
