@@ -1164,7 +1164,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
                     If ($Pscmdlet.ShouldProcess($destination, "Setting $dbname offline on $source"))
                     {
                         Stop-DbaProcess -SqlServer $sourceserver -Databases $dbname
-                        $sourceserver.databases[$dbname].SetOffline()
+                        Set-DbaDatabaseState -SqlInstance $sourceserver -Credential $SourceSqlCredential -database $dbname -Offline
                     }
                 }
 				
