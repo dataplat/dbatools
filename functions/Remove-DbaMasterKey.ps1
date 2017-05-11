@@ -24,6 +24,9 @@ Prompts you for confirmation before executing any changing operations within the
 .PARAMETER Silent 
 Use this switch to disable any kind of verbose messages
 
+.PARAMETER MasterKeyCollection
+Internal parameter to support pipeline input
+
 .NOTES
 Tags: Certificate
 Website: https://dbatools.io
@@ -55,7 +58,7 @@ Shows what would happen if the command were executed against server1
 		[parameter(Mandatory, ParameterSetName = "instance")]
 		[string[]]$Database,
 		[parameter(ValueFromPipeline, ParameterSetName = "collection")]
-		[Microsoft.SqlServer.Management.Smo.MasterKey[]]$MasterkeyCollection,
+		[Microsoft.SqlServer.Management.Smo.MasterKey[]]$MasterKeyCollection,
 		[switch]$Silent
 	)
 	
@@ -118,7 +121,7 @@ Shows what would happen if the command were executed against server1
 			}
 		}
 		
-		foreach ($masterkey in $MasterkeyCollection) {
+		foreach ($masterkey in $MasterKeyCollection) {
 			Drop-Masterkey -masterkey $masterkey
 		}
 	}
