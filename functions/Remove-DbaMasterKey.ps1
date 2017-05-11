@@ -64,14 +64,13 @@ Shows what would happen if the command were executed against server1
 	
 	begin {
 		function drop-masterkey ($masterkey) {
-			if ($Pscmdlet.ShouldProcess($SqlInstance, "Dropping the master key for database '$db' on $instance")) {
+			$server = $masterkey.Parent.Parent
+			$instance = $server.DomainInstanceName
+			$cert = $masterkey.Name
+			$db = $masterkey.Parent.Name
+
+			if ($Pscmdlet.ShouldProcess($instance, "Dropping the master key for database '$db'")) {
 				try {
-					
-					$server = $masterkey.Parent.Parent
-					$instance = $server.DomainInstanceName
-					$cert = $masterkey.Name
-					$db = $masterkey.Parent.Name
-					
 					$masterkey.Drop()
 					Write-Message -Level Verbose -Message "Successfully removed master key from the $db database on $instance"
 					
