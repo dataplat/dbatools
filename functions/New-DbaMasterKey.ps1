@@ -73,6 +73,11 @@ Shows what would happen if the command were executed against server1
 			
 			foreach ($db in $database) {
 				$smodb = $server.Databases[$db]
+				
+				if ($null -eq $smodb) {
+					Stop-Function -Message "Database '$db' does not exist on $instance" -Target $smodb -Continue
+				}
+				
 				if ($null -ne $smodb.MasterKey) {
 					Stop-Function -Message "Master key already exists in the $db database on $instance" -Target $smodb.MasterKey -Continue
 				}
