@@ -93,6 +93,9 @@ Number of files to split the backup. Default is 3.
 .PARAMETER NoCopyOnly
 By default, Copy-SqlDatabase backups are backed up with COPY_ONLY, which avoids breaking the LSN backup chain. This parameter will set CopyOnly to $false.
 
+.PARAMETER SetSourceOffline
+Sets the Source db to offline after copy
+
 .NOTES
 Tags: Migration, DisasterRecovery, Backup, Restore
 Author: Chrissy LeMaire (@cl), netnerds.net
@@ -181,7 +184,8 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		[parameter(Position = 21, ParameterSetName = "DbBackup")]
 		[ValidateRange(1, 64)]
 		[int]$NumberFiles = 3,
-        [switch]$NoCopyOnly
+        [switch]$NoCopyOnly,
+        [switch]$SetSourceOffline
 	)
 	
 	DynamicParam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential -NoSystem } }
@@ -1154,6 +1158,15 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						}
 					}
 				}
+
+                if ($SetSourceOffline -and  $sourceserver.databases[$dbname].status -notlike '*offline*')
+                {
+                    If ($Pscmdlet.ShouldProcess($destination, "Setting $dbname offline on $source"))
+                    {
+                        Stop-DbaProcess -SqlServer $sourceserver -Databases $dbname
+                        $sourceserver.databases[$dbname].SetOffline()
+                    }
+                }
 				
 				
 				If ($Pscmdlet.ShouldProcess("console", "Showing elapsed time"))
