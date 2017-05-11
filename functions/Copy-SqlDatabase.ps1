@@ -352,177 +352,6 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			Write-Progress -id 1 -Activity "Processing database file structure" -Status "Completed" -Completed
 			return $filestructure
 		}
-		# Backup Restore
-		Function Backup-SqlDatabase {
-			[CmdletBinding()]
-			param (
-				[object]$server,
-				[string]$dbname,
-				[string]$backupfile,
-				[int]$numberfiles
-			)
-			$Complete = $false
-			try{
-				Write-Output "Backing up $dbname"
-				$backup = Backup-DbaDatabase -SqlServer $server -Databases $dbname -BackupDirectory (split-patch -path $backupfile -parent) -BackupFileName (split-patch -path $backupfile -leaf) -FileCount $numberfiles
-			}
-			Catch
-			{
-				Write-Exception $_
-			}
-			Finally
-			{
-				If ($Backup.BackupComplete)
-				{
-					Write-Output "Backup succeeded" 
-					$true
-				}
-				else
-				{
-					$false
-				}
-			}
-
-		<#
-			$server.ConnectionContext.StatementTimeout = 0
-			$backup = New-Object "Microsoft.SqlServer.Management.Smo.Backup"
-			$backup.Database = $dbname
-			$backup.Action = "Database"
-			$backup.CopyOnly = $CopyOnly
-			$val = 0
-			
-			while ($val -lt $numberfiles) {
-				$device = New-Object "Microsoft.SqlServer.Management.Smo.BackupDeviceItem"
-				$device.DeviceType = "File"
-				$device.Name = $backupfile.Replace(".bak", "-$val.bak")
-				$backup.Devices.Add($device)
-				$val++
-			}
-			
-			$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-				Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
-			}
-			$backup.add_PercentComplete($percent)
-			$backup.PercentCompleteNotification = 1
-			$backup.add_Complete($complete)
-			
-			Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-			Write-Output "Backing up $dbname"
-			
-			try {
-				$backup.SqlBackup($server)
-				Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -status "Complete" -Completed
-				Write-Output "Backup succeeded"
-				return $true
-			}
-			catch {
-				Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
-				Write-Exception $_
-				return $false
-			}
-			#>
-		}
-		
-		Function Restore-SqlDatabase
-		{
-			[CmdletBinding()]
-			param (
-				[object]$server,
-				[string]$dbname,
-				[string]$backupfile,
-				[object]$filestructure,
-				[int]$numberfiles
-			)
-			
-			#Restore-DbaDatabase -Sql
-
-			$servername = $server.name
-			$server.ConnectionContext.StatementTimeout = 0
-			$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
-			
-			if ($WithReplace -or $server.databases[$dbname] -eq $null)
-			{
-				foreach ($file in $filestructure.databases[$dbname].destination.values)
-				{
-					$movefile = New-Object "Microsoft.SqlServer.Management.Smo.RelocateFile"
-					$movefile.LogicalFileName = $file.logical
-					$movefile.PhysicalFileName = $file.physical
-					$null = $restore.RelocateFiles.Add($movefile)
-				}
-			}
-			
-			Write-Output "Restoring $dbname to $servername"
-			
-			try
-			{
-				
-				$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-					Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
-				}
-				$restore.add_PercentComplete($percent)
-				$restore.PercentCompleteNotification = 1
-				$restore.add_Complete($complete)
-				$restore.ReplaceDatabase = $true
-				$restore.Database = $dbname
-				$restore.Action = "Database"
-				$restore.NoRecovery = $NoRecovery
-				$val = 0
-				$filestodelete = @()
-				
-				while ($val -lt $numberfiles)
-				{
-					$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-					$device.devicetype = "File"
-					$device.name = $backupfile.Replace(".bak", "-$val.bak")
-					$restore.Devices.Add($device)
-					$filestodelete += $device.name
-					$val++
-				}
-				
-				Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-				$restore.sqlrestore($server)
-				Write-Progress -id 1 -activity "Restoring $dbname to $servername" -status "Complete" -Completed
-				
-				If ($NoBackupCleanup -eq $false)
-				{
-					foreach ($backupfile in $filestodelete)
-					{
-						try
-						{
-							If (Test-Path $backupfile -ErrorAction Stop)
-							{
-								Write-Verbose "Deleting $backupfile"
-								Remove-Item $backupfile -ErrorAction Stop
-							}
-						}
-						catch
-						{
-							try
-							{
-								Write-Verbose "Trying alternate SQL method to delete $backupfile"
-								$sql = "EXEC master.sys.xp_delete_file 0, '$backupfile'"
-								Write-Debug $sql
-								$null = $server.ConnectionContext.ExecuteNonQuery($sql)
-							}
-							catch
-							{
-								Write-Warning "Cannot delete backup file $backupfile"
-								
-								# Set NoBackupCleanup so that there's a warning at the end
-								$NoBackupCleanup = $true
-							}
-						}
-					}
-				}
-				return $true
-			}
-			catch
-			{
-				Write-Warning "Restore failed: $($_.Exception.InnerException.Message)"
-				Write-Exception $_
-				return $false
-			}
-		}
 		
 		# Detach Attach 
 		Function Dismount-SqlDatabase
@@ -1144,7 +973,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						
 						#$backupresult = Backup-SqlDatabase $sourceserver $dbname $backupfile $numberfiles
 						
-						$backupTmpResult = Backup-DbaDatabase -SqlServer $sourceserver -Databases $dbname -backupDirectory (Split-Path -Path $backupFile -parent) -FileCount $number files
+						$backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceserver -Databases $dbname -backupDirectory (Split-Path -Path $backupFile -parent) -FileCount $numberfiles
 						$backupresult = $BackupTmpResult.BackupComplete
 						if ($backupresult -eq $false)
 						{
@@ -1154,8 +983,8 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						}
 						
 						#$restoreresult = Restore-SqlDatabase $destserver $dbname $backupfile $filestructure $numberfiles
-						
-						$restoresulttmp = $backupTmpResult | Restore-DbaDatabase -SqlServer $destserver -DatabaseName $dbname -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$norecovery -TrustDbBackupHistory
+						Write-Verbose "Resuse = $ReuseSourceFolderStructure"
+						$RestoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlServer $destserver -DatabaseName $dbname -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$norecovery -TrustDbBackupHistory
 						$restoreresult = $RestoreResultTmp.RestoreComplete
 						if ($restoreresult -eq $true)
 						{
