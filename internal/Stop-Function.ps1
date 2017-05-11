@@ -109,8 +109,6 @@
         $ContinueLabel
     )
     
-    $timestamp = Get-Date
-    
     $records = @()
     
     if ($ErrorRecord)
