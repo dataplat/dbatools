@@ -112,34 +112,49 @@ Exports all the certificates on the specified SQL Server to the path but does no
 			}
 			
 			if ($Pscmdlet.ShouldProcess($instance, "Exporting certificate $certname from $database on $instance to $Path")) {
-				Write-Message -Level Verbose -Message ("Exporting Certificate: $certname to $fullcertname")
+				Write-Message -Level Verbose -Message "Exporting Certificate: $certname to $fullcertname"
 				try {
 					# because the password shouldn't go to memory...
-					if ($EncryptionPassword -and $DecryptionPassword) {
+					if ($DecryptionPassword) {
+						$exportpathkey = "$fullcertname.pvk"
+					}
+					else {
+						$exportpathkey = $null
+					}
+					
+					$exportpathcert = "$fullcertname.cer"
+					
+					if ($EncryptionPassword.Length -gt 0 -and $DecryptionPassword.Length -gt 0) {
+						
+						Write-Message -Level Verbose -Message "Both passwords passed in. Will export both cer and pvk."
+						
 						$cert.export(
-							"$fullcertname.cer",
-							"$fullcertname.pvk",
+							$exportpathcert,
+							$exportpathkey,
 							[System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($EncryptionPassword)),
 							[System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($DecryptionPassword))
 						)
 					}
 					elseif ($EncryptionPassword -and !$DecryptionPassword) {
 						$cert.export(
-							"$fullcertname.cer",
-							"$fullcertname.pvk",
+							$exportpathcert,
 							[System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($EncryptionPassword))
 						)
 					}
 					elseif (!$EncryptionPassword -and $DecryptionPassword) {
+						Write-Message -Level Verbose -Message "Exporting cer with no password, pvk with password."
+
 						$cert.export(
-							"$fullcertname.cer",
-							"$fullcertname.pvk",
+							$exportpathcert,
+							$exportpathkey,
 							$null,
 							[System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($DecryptionPassword))
 						)
 					}
 					else {
-						$cert.export("$fullcertname.cer", "$fullcertname.pvk", $null, $null)
+						
+						Write-Message -Level Verbose -Message "No passwords passed in. Will export just cer."
+						$cert.export($exportpathcert)
 					}
 					
 					[pscustomobject]@{
@@ -148,8 +163,8 @@ Exports all the certificates on the specified SQL Server to the path but does no
 						SqlInstance = $server.DomainInstanceName
 						Database = $database.name
 						Certificate = $certname
-						ExportPathCert = "$fullcertname.cer"
-						ExportPathKey = "$fullcertname.pvk"
+						ExportPathCert = $exportpathcert
+						ExportPathKey = $exportpathkey
 						Status = "Success"
 					}
 				}
@@ -163,8 +178,8 @@ Exports all the certificates on the specified SQL Server to the path but does no
 						SqlInstance = $server.DomainInstanceName
 						Database = $database.name
 						Certificate = $certname
-						ExportPathCert = "$fullcertname.cer"
-						ExportPathKey = "$fullcertname.pvk"
+						ExportPathCert = $exportpathcert
+						ExportPathKey = $exportpathkey
 						Status = "Failure: $exception"
 					}
 					Stop-Function -Message "$certname from $database on $instance cannot be exported." -Continue -Target $cert -InnerErrorRecord $_
