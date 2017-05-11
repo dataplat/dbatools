@@ -111,7 +111,7 @@ Exports all the certificates on the specified SQL Server to the path but does no
 				Stop-Function -Message "$SqlInstance cannot access $path" -Continue -Target $path
 			}
 			
-			if ($Pscmdlet.ShouldProcess($instance, "Exporting certificate $certname from $database on $instance")) {
+			if ($Pscmdlet.ShouldProcess($instance, "Exporting certificate $certname from $database on $instance to $Path")) {
 				Write-Message -Level Verbose -Message ("Exporting Certificate: $certname to $fullcertname")
 				try {
 					# because the password shouldn't go to memory...
@@ -146,7 +146,7 @@ Exports all the certificates on the specified SQL Server to the path but does no
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
 						SqlInstance = $server.DomainInstanceName
-						Database = $database
+						Database = $database.name
 						Certificate = $certname
 						ExportPathCert = "$fullcertname.cer"
 						ExportPathKey = "$fullcertname.pvk"
@@ -154,17 +154,20 @@ Exports all the certificates on the specified SQL Server to the path but does no
 					}
 				}
 				catch {
+					$exception = $_.Exception.InnerException.ToString() -Split "System.Data.SqlClient.SqlException: "
+					$exception = ($exception[1] -Split "at Microsoft.SqlServer.Management.Common.ConnectionManager")[0]
+					
 					[pscustomobject]@{
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
 						SqlInstance = $server.DomainInstanceName
-						Database = $database
+						Database = $database.name
 						Certificate = $certname
 						ExportPathCert = "$fullcertname.cer"
 						ExportPathKey = "$fullcertname.pvk"
-						Status = "Failure"
+						Status = "Failure: $exception"
 					}
-					Stop-Function -Message "$certname from $database on $instance cannot be exported" -Continue -Target $cert -InnerErrorRecord $_
+					Stop-Function -Message "$certname from $database on $instance cannot be exported." -Continue -Target $cert -InnerErrorRecord $_
 				}
 			}
 		}
@@ -191,7 +194,12 @@ Exports all the certificates on the specified SQL Server to the path but does no
 		}
 		
 		foreach ($cert in $CertificateCollection) {
-			export-cert $cert
+			if ($cert.Name.StartsWith("##")) {
+				Write-Message -Level Output -Message "Skipping system cert $cert"
+			}
+			else {
+				export-cert $cert
+			}
 		}
 	}
 }
