@@ -7,7 +7,7 @@ Deletes specified database master key
 Deletes specified database master key.
 
 .PARAMETER SqlInstance
-The Target SQL Server instance.
+The target SQL Server instance.
 
 .PARAMETER SqlCredential
 Allows you to login to SQL Server using alternative credentials.
