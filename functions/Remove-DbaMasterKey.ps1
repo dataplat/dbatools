@@ -71,13 +71,11 @@ Shows what would happen if the command were executed against server1
 				$smodb = $server.Databases[$db]
 								
 				if ($null -eq $smodb) {
-					Write-Message -Level Verbose -Message "Database '$db' does not exist on $instance" -Target $smodb
-					Continue
+					Stop-Function -Message "Database '$db' does not exist on $instance" -Target $smodb -Continue
 				}
 				
 				if ($null -eq $smodb.MasterKey) {
-					Write-Message -Level Verbose -Message "No master key exists in the $db database on $instance" -Target $smodb
-					Continue
+					Stop-Function -Message "No master key exists in the $db database on $instance" -Target $smodb -Continue
 				}
 				
 				if ($Pscmdlet.ShouldProcess($SqlInstance, "Dropping the master key for database '$db' on $instance")) {
