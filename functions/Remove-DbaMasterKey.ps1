@@ -4,7 +4,7 @@
 Deletes specified database master key
 
 .DESCRIPTION
-Deletes specified database master key. If no database is specified, the master key will be deleted from master.
+Deletes specified database master key.
 
 .PARAMETER SqlInstance
 The SQL Server to create the certificates on.
@@ -13,7 +13,7 @@ The SQL Server to create the certificates on.
 Allows you to login to SQL Server using alternative credentials.
 
 .PARAMETER Database
-The database where the master key will be removed. Defaults to master.
+The database where the master key will be removed.
 
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
@@ -33,12 +33,12 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 .EXAMPLE
 Remove-DbaMasterKey -SqlInstance Server1
 
-You will be prompted to securely enter your password, then a master key will be created in the master database on server1 if it does not exist.
+The master key in the master database on server1 will be removed if it exists.
 
 .EXAMPLE
 Remove-DbaMasterKey -SqlInstance Server1 -Database db1 -Confirm:$false
 
-Supresses all prompts to install but prompts to securely enter your password and creates a master key in the 'db1' database
+Supresses all prompts to remove the master key in the 'db1' database and drops the key.
 
 .EXAMPLE
 Remove-DbaMasterKey -SqlInstance Server1 -WhatIf
@@ -52,7 +52,8 @@ Shows what would happen if the command were executed against server1
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[string[]]$Database = "master",
+		[parameter(Mandatory)]
+		[string[]]$Database,
 		[switch]$Silent
 	)
 	
@@ -67,7 +68,12 @@ Shows what would happen if the command were executed against server1
 			}
 			
 			foreach ($db in $database) {
-				$smodb = $server.Databases[$database]
+				$smodb = $server.Databases[$db]
+								
+				if ($null -eq $smodb) {
+					Stop-Function -Message "Database '$db' does not exist on $instance" -Target $smodb -Continue
+				}
+				
 				if ($null -eq $smodb.MasterKey) {
 					Stop-Function -Message "No master key exists in the $db database on $instance" -Target $smodb -Continue
 				}
