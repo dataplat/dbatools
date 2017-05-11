@@ -152,9 +152,9 @@ Function Restore-DBFromFilteredArray
 			foreach ($File in ($RestorePoints.Files.filelist.PhysicalName | Sort-Object -Unique))
 			{
 				write-verbose "File = $file"
-				if ((Test-SqlPath -Path $File -SqlServer:$SqlServer -SqlCredential:$SqlCredential) -ne $true)
+				if ((Test-SqlPath -Path (Split-Path -Path $File -Parent) -SqlServer:$SqlServer -SqlCredential:$SqlCredential) -ne $true)
 					{
-					if ((New-DbaSqlDirectory -Path $File -SqlServer:$SqlServer -SqlCredential:$SqlCredential).Created -ne $true)
+					if ((New-DbaSqlDirectory -Path (Split-Path -Path $File -Parent) -SqlServer:$SqlServer -SqlCredential:$SqlCredential).Created -ne $true)
 					{
 						write-Warning  "$FunctionName - Destination File $File does not exist, and could not be created on $SqlServer"
 
@@ -162,7 +162,7 @@ Function Restore-DBFromFilteredArray
 					}
 					else
 					{
-						Write-Verbose "$FunctionName - Destination File $Fil  created on $SqlServer"
+						Write-Verbose "$FunctionName - Destination File $File  created on $SqlServer"
 					}
 				}
 				else
