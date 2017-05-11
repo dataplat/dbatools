@@ -66,10 +66,8 @@ FUNCTION Get-DbaSchemaChangeHistory {
         [object[]]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
         [DbaDateTime]$Since,
-        [switch]$Silent,
-        [string[]]$Object
-
-        
+        [string[]]$Object,
+		[switch]$Silent
     )
 	
 	dynamicparam {
@@ -77,9 +75,9 @@ FUNCTION Get-DbaSchemaChangeHistory {
 			return Get-ParamSqlDatabases -SqlServer $sqlinstance[0] -SqlCredential $Credential
 		}
 	}
-    begin {
+	
+	begin {
         $databases = $psboundparameters.Databases
-
    }
 	
     process {
@@ -94,7 +92,7 @@ FUNCTION Get-DbaSchemaChangeHistory {
             }
             if ($Server.Version.Major -le 8)
             {
-                Stop-Function -Message "This command doesn't support SQL Server 2000, sorry about that" -silent $silent
+                Stop-Function -Message "This command doesn't support SQL Server 2000, sorry about that" 
                 return
             }
             $TraceFileQuery = "select path from sys.traces where is_default = 1"
@@ -106,9 +104,11 @@ FUNCTION Get-DbaSchemaChangeHistory {
                 if ($server.databases[$database].status -notlike '*normal*')
                 {
                     Stop-Function -Message "Can't open database $database. Skipping." -Continue
-                }
-                $DDLQuery = "
-                    select 
+				}
+				
+				$sql = "select SERVERPROPERTY('MachineName') AS ComputerName, 
+						ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName, 
+						SERVERPROPERTY('ServerName') AS SqlInstance,
                         tt.databasename as 'DatabaseName',
                         starttime as 'StartTime',
                         Sessionloginname as 'LoginName',
@@ -128,19 +128,21 @@ FUNCTION Get-DbaSchemaChangeHistory {
                         where tt.objecttype not in (21587)
                         and tt.DatabaseID=db_id()
                         and tt.EventSubClass=0"
+				
                 if ($null -ne $since)
                 {
-                    $DDLQuery = $DDLquery +" and tt.StartTime>'$Since' "
+                     $sql =  $sql +" and tt.StartTime>'$Since' "
                 }
                 if ($null -ne $object)
                 {
-                    $DDLQuery = $DDLQuery + " and o.name in ('$($object -join ''',''')') "
-                }
-                $DDLQuery = $DDLQuery + " order by tt.StartTime asc"
+                     $sql =  $sql + " and o.name in ('$($object -join ''',''')') "
+				}
+				
+				$sql =  $sql + " order by tt.StartTime asc"
                 Write-Message -Level Verbose -Message "Querying Database $database on $instance"
-                Write-Message -Level Debug -Message "SQL: `n $DDLQuery"
-                $results = $server.databases[$database].ExecuteWithResults($DDLQuery).Tables.Rows | select *
-                $results | Select-Object *, @{Name="SqlInstance";Expression={$server}} | Select-DefaultView -Property  SqlInstance, DatabaseName,starttime, LoginName, UserName, ApplicationName, DDLOperation, Object, ObjectType
+				Write-Message -Level Debug -Message "SQL: $sql"
+				
+				$server.databases[$database].ExecuteWithResults($sql).Tables.Rows  | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DatabaseName,starttime, LoginName, UserName, ApplicationName, DDLOperation, Object, ObjectType
             }	
         }
     }
