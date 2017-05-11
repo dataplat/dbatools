@@ -79,7 +79,7 @@ Shows what would happen if the command were executed against server1
 				}
 				
 				if ($null -ne $smodb.MasterKey) {
-					Stop-Function -Message "Master key already exists in the $db database on $instance" -Target $smodb.MasterKey -Continue
+					Stop-Function -Message "Master key already exists in the $db database on $instance" -Target $smodb -Continue
 				}
 				
 				if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating master key for database '$db' on $instance")) {
