@@ -177,8 +177,12 @@ Function Get-DbaBackupHistory {
                     else {
                         $TLogStartLSN = $fulldb.FirstLsn
                     }
-                    $Allbackups += $Logdb = Get-DbaBackupHistory -SqlServer $server -Databases $db -raw:$raw | Where-object {$_.Type -eq 'Log' -and $_.LastLsn -gt $TLogstartLSN }
-                    $Allbackups | Sort-Object FirstLSN
+					if ($raw)
+					{$Filter = 'first_Lsn'}
+					else
+					{$Filter = 'FirstLsn'}
+                    $Allbackups += $Logdb = Get-DbaBackupHistory -SqlServer $server -Databases $db -raw:$raw | Where-object {$_.Type -eq 'Log' -and $_.$filter -gt $TLogstartLSN }
+                    $Allbackups | Sort-Object $Filter
                 }
 				continue
 			}

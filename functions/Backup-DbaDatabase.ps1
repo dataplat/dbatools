@@ -428,7 +428,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					$BackupComplete = $true
 					$Filelist = @()
 					$FileList += $server.Databases[$dbname].FileGroups.Files | Select-Object @{Name="FileType";Expression={"D"}}, @{Name="LogicalName";Expression={$_.Name}}, @{Name="PhysicalName";Expression={$_.FileName}}
-					$FileList += $server.Databases[$dbname].LofFiles | Select-Object @{Name="FileType";Expression={"L"}}, @{Name="LogicalName";Expression={$_.Name}}, @{Name="PhysicalName";Expression={$_.FileName}}
+					$FileList += $server.Databases[$dbname].LogFiles | Select-Object @{Name="FileType";Expression={"L"}}, @{Name="LogicalName";Expression={$_.Name}}, @{Name="PhysicalName";Expression={$_.FileName}}
 					$Verified = $false
 					if ($Verify)
 					{
