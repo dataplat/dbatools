@@ -1,5 +1,4 @@
-Function Export-DbaCertificate
-{
+Function Export-DbaCertificate {
 <#
 .SYNOPSIS
  Exports certificates from SQL Server using smo
@@ -7,7 +6,7 @@ Function Export-DbaCertificate
 .DESCRIPTION
 Exports certificates from SQL Server using smo and outputs the .cer and .pvk files along with a .sql file to create the certificate.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 
 .PARAMETER SqlCredential
@@ -23,15 +22,14 @@ The Path to output the files to.
 .PARAMETER Databases
 Exports the encryptor for specific database(s).
 
-.PARAMETER Certificates
+.PARAMETER Certificate
 Exports certificate that matches the name(s).
 
-.PARAMETER Password
-Secure string used to encrypt the exported private key.
+.PARAMETER EncryptionPassword 
+A string value that specifies the system path to encrypt the private key.
 
-.PARAMETER SkipSQLFile
-Does not generate a .sql file with the CREATE CERTIFICATE syntax in the path.
-Use this to avoid generating script file that contains password.
+.PARAMETER DecryptionPassword 
+A string value that specifies the system path to decrypt the private key.
 
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
@@ -42,6 +40,9 @@ Prompts you for confirmation before executing any changing operations within the
 .PARAMETER Silent 
 Use this switch to disable any kind of verbose messages
 
+.PARAMETER CertificateCollection 
+Internal parameter to support pipeline input
+
 .NOTES
 Original Author: Jess Pomfret (@jpomfret)
 Tags: Migration, Certificate
@@ -51,123 +52,143 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
-Export-DbaCertificate  -SqlInstance Server1 -Path \\Server1\Certificates -password (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
+Export-DbaCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
 Exports all the certificates on the specified SQL Server
 
 .EXAMPLE
-$password = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -force
-Export-DbaCertificate  -SqlInstance Server1 -Path \\Server1\Certificates -password $password -Databases Database1
+$EncryptionPassword = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -force
+Export-DbaCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword $EncryptionPassword -Databases Database1
 Exports the certificate that is used as the encryptor for a specific database on the specified SQL Server
 
 .EXAMPLE
-Export-DbaCertificate  -SqlInstance Server1 -Path \\Server1\Certificates -Certificate CertTDE
-Exports the certificate named CertTDE on the specified SQL Server, not specifying the -Password will generate a prompt for user entry.
+Export-DbaCertificate -SqlInstance Server1 -Path \\Server1\Certificates -Certificate CertTDE
+Exports the certificate named CertTDE on the specified SQL Server, not specifying the -EncryptionPassword will generate a prompt for user entry.
 
 .EXAMPLE
-Export-DbaCertificate  -SqlInstance Server1 -Path \\Server1\Certificates -password (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!) -SkipSQLFile
+Export-DbaCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!) -NoOutFile
 Exports all the certificates on the specified SQL Server to the path but does not generate a .sql file for CREATE CERTIFICATE statments.
 
 
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[Alias("ServerInstance","SqlInstance")]
-		[object]$SqlServer,
+		[parameter(Mandatory, ParameterSetName = "instance")]
+		[Alias("ServerInstance", "SqlServer")]
+		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[string]$Path,
-		[array]$Certificates,
-		[Security.SecureString] $Password = (Read-Host "Password" -AsSecureString),
-		[switch]$SkipSQLFile = $false,
-		[switch]$Silent	
+		[parameter(ParameterSetName = "instance")]
+		[object[]]$Certificate,
+		[parameter(ParameterSetName = "instance")]
+		[object[]]$Database,
+		[parameter(Mandatory = $false)]
+		[Security.SecureString]$EncryptionPassword = (Read-Host "EncryptionPassword " -AsSecureString),
+		[parameter(Mandatory = $false)]
+		[Security.SecureString]$DecryptionPassword = (Read-Host "DecryptionPassword " -AsSecureString),
+		[System.IO.FileInfo]$Path,
+		[string]$Suffix = "$(Get-Date -format 'yyyyMMddHHmmssms')",
+		[parameter(ValueFromPipeline, ParameterSetName = "collection")]
+		[Microsoft.SqlServer.Management.Smo.Certificate[]]$CertificateCollection,
+		[switch]$Silent
 	)
-
-	DynamicParam { 
-		if ($sqlserver) { 
-		Get-ParamSqlDatabases -SqlInstance $sqlserver -SqlCredential $SqlCredential
-		} 
-	}
-
-	BEGIN {
-		$databases = $psboundparameters.Databases
-		$server = Connect-SqlInstance $SqlServer $SqlCredential
-				
-		if ($path.Length -eq 0) {
-			$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-			$mydocs = [Environment]::GetFolderPath('MyDocuments')
-			$path = "$mydocs\$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
-		} elseif ($path.EndsWith('\')) {
-			$path = $path.TrimEnd('\')
+	
+	begin {
+		function export-cert ($cert) {
+			$certname = $cert.Name
+			$database = $cert.Parent
+			$server = $database.Parent
+			$instance = $server.Name
+			
+			if (!$psboundparameters.Path) {
+				$Path = Get-SqlDefaultPaths -SqlServer $server -filetype Data
+			}
+			
+			$fullcertname = "$path\$certname$Suffix"
+			
+			if (!(Test-SqlPath -SqlServer $server -Path $path)) {
+				Stop-Function -Message "$SqlInstance cannot access $path" -Continue -Target $path
+			}
+			
+			if ($Pscmdlet.ShouldProcess($instance, "Exporting certificate $certname from $database on $instance")) {
+				Write-Message -Level Verbose -Message ("Exporting Certificate: $certname to $fullcertname")
+				try {
+					# because the password shouldn't go to memory...
+					if ($EncryptionPassword -and $DecryptionPassword) {
+						$cert.export(
+							"$fullcertname.cer",
+							"$fullcertname.pvk",
+							[System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($EncryptionPassword)),
+							[System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($DecryptionPassword))
+						)
+					}
+					elseif ($EncryptionPassword -and !$DecryptionPassword) {
+						$cert.export(
+							"$fullcertname.cer",
+							"$fullcertname.pvk",
+							[System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($EncryptionPassword))
+						)
+					}
+					elseif (!$EncryptionPassword -and $DecryptionPassword) {
+						$cert.export(
+							"$fullcertname.cer",
+							"$fullcertname.pvk",
+							$null,
+							[System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($DecryptionPassword))
+						)
+					}
+					else {
+						$cert.export("$fullcertname.cer", "$fullcertname.pvk", $null, $null)
+					}
+					
+					[pscustomobject]@{
+						ComputerName = $server.NetName
+						InstanceName = $server.ServiceName
+						SqlInstance = $server.DomainInstanceName
+						Database = $database
+						Certificate = $certname
+						ExportPathCert = "$fullcertname.cer"
+						ExportPathKey = "$fullcertname.pvk"
+						Status = "Success"
+					}
+				}
+				catch {
+					[pscustomobject]@{
+						ComputerName = $server.NetName
+						InstanceName = $server.ServiceName
+						SqlInstance = $server.DomainInstanceName
+						Database = $database
+						Certificate = $certname
+						ExportPathCert = "$fullcertname.cer"
+						ExportPathKey = "$fullcertname.pvk"
+						Status = "Failure"
+					}
+					Stop-Function -Message "$certname from $database on $instance cannot be exported" -Continue -Target $cert -InnerErrorRecord $_
+				}
+			}
 		}
-	
 	}
 	
-	PROCESS {
-
-			if($Databases) {
-				$certs = @()
-				foreach ($database in $Databases) {
-					$certName = $server.Databases[$Database].DatabaseEncryptionKey.EncryptorName
-					$certs += $server.Databases['master'].Certificates | where-object {$_.name -eq $certName}
-				}
-			} elseif($Certificates) {
-				$certs = @()
-				foreach ($Certificate in $Certificates) {
-					$certs += $server.Databases['master'].Certificates | where-object {$_.name -eq $Certificate}
-				}
-			} else {
-				$certs = $server.Databases['master'].Certificates | where-object {$_.name -notlike '##*'}
+	process {
+		foreach ($instance in $sqlinstance) {
+			try {
+				Write-Message -Level Verbose -Message "Connecting to $instance"
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
 			}
-
-			if(!$certs) {
-				Stop-Function -Message "No certificates found to export." -Continue
+			catch {
+				Stop-Function -Message "Failed to connect to: $instance" -Target $instance -InnerErrorRecord $_
+				return
 			}
-
-			if (!$path.StartsWith('\')) {
-				Stop-Function -Message "Path should be a UNC share." -Continue
+			
+			$CertificateCollection = Get-DbaCertificate -SqlInstance $server -Certificate $Certificate -Database $database
+			
+			if (!$certs) {
+				Write-Message -Level Output -Message "No certificates found to export."
+				continue
 			}
-
-			Write-Message -Level Verbose -Message "Exporting Certificates"			
-			$certSql = @()
-			foreach ($cert in $certs) {
-				$exportLocation = "$path\$($cert.name)"
-				if ($Pscmdlet.ShouldProcess("[$($cert.name)]' on $SqlServer", "Exporting Certificate")) {
-					Write-Message -Level Verbose -Message ("Exporting Certificate: {0} to {1}" -f $cert.name, $exportLocation )
-					try {
-						$cert.export("$exportLocation.cer","$exportLocation.pvk", [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))
-						
-						if(!$SkipSQLFile) {
-						$certSql += (
-							"CREATE CERTIFICATE [{0}]  
-							FROM FILE = '{1}{2}.cer'
-							WITH PRIVATE KEY 
-							( 
-								FILE = '{1}{2}.pvk' ,
-								DECRYPTION BY PASSWORD = '{3}'
-							)
-							GO
-							" -f $cert.name, $exportLocation, $c.encryptorName , [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))
-						}
-					} catch {
-						Write-Message -Level Warning -Message $_ -ErrorRecord $_ -Target $instance
-					}
-				}
-			}
-			if(!$SkipSQLFile) {
-				if ($Pscmdlet.ShouldProcess("$path", "Exporting SQL Script")) {
-					if($certsql) { 
-						try { 
-							$certsql | Out-File "$path\CreateCertificates.sql" -ErrorAction Stop
-						} catch {
-							Write-Message -Level Warning -Message $_ -ErrorRecord $_ -Target $instance
-						}
-					}
-				}
-			}
-			return $path
-	} END {
-		$server.ConnectionContext.Disconnect()
-
+			
+		}
+		
+		foreach ($cert in $CertificateCollection) {
+			export-cert $cert
+		}
 	}
 }
