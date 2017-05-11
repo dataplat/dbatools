@@ -101,7 +101,7 @@ Shows what would happen if the command were executed against server1
 							Database = $smodb.name
 							Status = "Failure"
 						}
-						Stop-Function -Message "Failed to drop master key from $db on $instance." -Target $masterkey -InnerErrorRecord $_ -Continue
+						Stop-Function -Message "Failed to drop master key from $db on $instance." -Target $smodb -InnerErrorRecord $_ -Continue
 					}
 				}
 			}
