@@ -277,7 +277,8 @@
 		'Remove-DbaCertificate',
 		'Get-DbaCertificate',
 		'Get-DbaMasterKey',
-		'New-DbaCertificate'
+		'New-DbaCertificate',
+		'Get-DbaSchemaChangeHistory'
 	)
 	
 	# Cmdlets to export from this module
