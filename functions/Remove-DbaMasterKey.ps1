@@ -74,8 +74,7 @@ Shows what would happen if the command were executed against server1
 				
 				if ($Pscmdlet.ShouldProcess($SqlInstance, "Dropping the master key for database '$db' on $instance")) {
 					try {
-						$masterkey = New-Object Microsoft.SqlServer.Management.Smo.MasterKey $smodb
-						$masterkey.Drop()
+						$smodb.MasterKey.Drop()
 					}
 					catch {
 						Stop-Function -Message "Failed to drop master key from $db on $instance" -Target $masterkey -InnerErrorRecord $_ -Continue
