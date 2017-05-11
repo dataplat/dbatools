@@ -51,20 +51,20 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
-Export-DbaCertificate  -SqlServer Server1 -Path \\Server1\Certificates -password (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
+Export-DbaCertificate  -SqlInstance Server1 -Path \\Server1\Certificates -password (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
 Exports all the certificates on the specified SQL Server
 
 .EXAMPLE
 $password = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -force
-Export-DbaCertificate  -SqlServer Server1 -Path \\Server1\Certificates -password $password -Databases Database1
+Export-DbaCertificate  -SqlInstance Server1 -Path \\Server1\Certificates -password $password -Databases Database1
 Exports the certificate that is used as the encryptor for a specific database on the specified SQL Server
 
 .EXAMPLE
-Export-DbaCertificate  -SqlServer Server1 -Path \\Server1\Certificates -Certificate CertTDE
+Export-DbaCertificate  -SqlInstance Server1 -Path \\Server1\Certificates -Certificate CertTDE
 Exports the certificate named CertTDE on the specified SQL Server, not specifying the -Password will generate a prompt for user entry.
 
 .EXAMPLE
-Export-DbaCertificate  -SqlServer Server1 -Path \\Server1\Certificates -password (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!) -SkipSQLFile
+Export-DbaCertificate  -SqlInstance Server1 -Path \\Server1\Certificates -password (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!) -SkipSQLFile
 Exports all the certificates on the specified SQL Server to the path but does not generate a .sql file for CREATE CERTIFICATE statments.
 
 
@@ -85,13 +85,13 @@ Exports all the certificates on the specified SQL Server to the path but does no
 
 	DynamicParam { 
 		if ($sqlserver) { 
-		Get-ParamSqlDatabases -SqlServer $sqlserver -SqlCredential $SqlCredential
+		Get-ParamSqlDatabases -SqlInstance $sqlserver -SqlCredential $SqlCredential
 		} 
 	}
 
 	BEGIN {
 		$databases = $psboundparameters.Databases
-		$server = Connect-SqlServer $SqlServer $SqlCredential
+		$server = Connect-SqlInstance $SqlServer $SqlCredential
 				
 		if ($path.Length -eq 0) {
 			$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
