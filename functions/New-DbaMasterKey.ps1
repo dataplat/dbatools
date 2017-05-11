@@ -80,7 +80,7 @@ Shows what would happen if the command were executed against server1
 				if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating master key for database '$db' on $instance")) {
 					try {
 						$masterkey = New-Object Microsoft.SqlServer.Management.Smo.MasterKey $smodb
-						$masterkey.Create($Password)
+						$masterkey.Create(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password))))
 					}
 					catch {
 						Stop-Function -Message "Failed to create master key in $db on $instance" -Target $masterkey -InnerErrorRecord $_ -Continue
