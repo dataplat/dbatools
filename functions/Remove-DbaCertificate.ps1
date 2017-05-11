@@ -50,7 +50,7 @@ Shows what would happen if the command were executed against server1
 	param (
 		[parameter(Mandatory, ParameterSetName = "instance")]
 		[Alias("ServerInstance", "SqlServer")]
-		[dbainstanceparameter[]]$SqlInstance,
+		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[parameter(Mandatory, ParameterSetName = "instance")]
 		[string[]]$Database,
@@ -61,8 +61,8 @@ Shows what would happen if the command were executed against server1
 		[switch]$Silent
 	)
 	begin {
+		
 		function drop-cert ($smocert) {
-			
 			$server = $smocert.Parent.Parent
 			$instance = $server.DomainInstanceName
 			$cert = $smocert.Name
