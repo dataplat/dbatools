@@ -24,6 +24,9 @@ Prompts you for confirmation before executing any changing operations within the
 .PARAMETER Silent 
 Use this switch to disable any kind of verbose messages
 
+.PARAMETER CertificateCollection 
+Internal parameter to support pipeline input
+
 .NOTES
 Tags: Certificate
 Website: https://dbatools.io
