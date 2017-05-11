@@ -4,7 +4,7 @@ Function Export-DbaCertificate {
  Exports certificates from SQL Server using smo
 
 .DESCRIPTION
-Exports certificates from SQL Server using smo and outputs the .cer and .pvk files along with a .sql file to create the certificate.
+Exports certificates from SQL Server using smo and outputs the .cer and .pvk files
 
 .PARAMETER SqlInstance
 The SQL Server that you're connecting to.
@@ -17,7 +17,7 @@ $scred = Get-Credential, this pass $scred object to the param.
 Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
 .PARAMETER Path
-The Path to output the files to.
+The Path to output the files to. The path is relative to the SQL Server itself.
 
 .PARAMETER Database
 Exports the encryptor for specific database(s).
@@ -84,9 +84,9 @@ Exports all the certificates on the specified SQL Server to the path but does no
 		[parameter(ParameterSetName = "instance")]
 		[object[]]$Database,
 		[parameter(Mandatory = $false)]
-		[Security.SecureString]$EncryptionPassword = (Read-Host "EncryptionPassword (not required)" -AsSecureString),
+		[Security.SecureString]$EncryptionPassword = (Read-Host "EncryptionPassword (recommended, not required)" -AsSecureString),
 		[parameter(Mandatory = $false)]
-		[Security.SecureString]$DecryptionPassword = (Read-Host "DecryptionPassword (not required)" -AsSecureString),
+		[Security.SecureString]$DecryptionPassword = (Read-Host "DecryptionPassword (recommended, not required)" -AsSecureString),
 		[System.IO.FileInfo]$Path,
 		[string]$Suffix = "$(Get-Date -format 'yyyyMMddHHmmssms')",
 		[parameter(ValueFromPipeline, ParameterSetName = "collection")]
@@ -100,30 +100,32 @@ Exports all the certificates on the specified SQL Server to the path but does no
 			$database = $cert.Parent
 			$server = $database.Parent
 			$instance = $server.Name
+			$actualpath = $Path
 			
-			if (!$psboundparameters.Path) {
-				$Path = Get-SqlDefaultPaths -SqlServer $server -filetype Data
+			if ($null -eq $actualpath) {
+				$actualpath = Get-SqlDefaultPaths -SqlServer $server -filetype Data
 			}
 			
-			$fullcertname = "$path\$certname$Suffix"
+			$fullcertname = "$actualpath\$certname$Suffix"
 			
-			if (!(Test-SqlPath -SqlServer $server -Path $path)) {
-				Stop-Function -Message "$SqlInstance cannot access $path" -Continue -Target $path
+			if (!(Test-SqlPath -SqlServer $server -Path $actualpath)) {
+				Stop-Function -Message "$SqlInstance cannot access $actualpath" -Continue -Target $actualpath
 			}
 			
-			if ($Pscmdlet.ShouldProcess($instance, "Exporting certificate $certname from $database on $instance to $Path")) {
+			if ($Pscmdlet.ShouldProcess($instance, "Exporting certificate $certname from $database on $instance to $actualpath")) {
 				Write-Message -Level Verbose -Message "Exporting Certificate: $certname to $fullcertname"
 				try {
-					# because the password shouldn't go to memory...
-					if ($DecryptionPassword) {
+					
+					if ($DecryptionPassword.Length -gt 0) {
 						$exportpathkey = "$fullcertname.pvk"
 					}
 					else {
-						$exportpathkey = $null
+						$exportpathkey = "Password required to export key"
 					}
 					
 					$exportpathcert = "$fullcertname.cer"
 					
+					# because the password shouldn't go to memory...
 					if ($EncryptionPassword.Length -gt 0 -and $DecryptionPassword.Length -gt 0) {
 						
 						Write-Message -Level Verbose -Message "Both passwords passed in. Will export both cer and pvk."
@@ -135,13 +137,13 @@ Exports all the certificates on the specified SQL Server to the path but does no
 							[System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($DecryptionPassword))
 						)
 					}
-					elseif ($EncryptionPassword -and !$DecryptionPassword) {
+					elseif ($EncryptionPassword.Length -gt 0 -and $DecryptionPassword.Length -eq 0) {
 						$cert.export(
 							$exportpathcert,
 							[System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($EncryptionPassword))
 						)
 					}
-					elseif (!$EncryptionPassword -and $DecryptionPassword) {
+					elseif ($EncryptionPassword.Length -eq 0 -and $DecryptionPassword.Length -gt 0) {
 						Write-Message -Level Verbose -Message "Exporting cer with no password, pvk with password."
 
 						$cert.export(
@@ -152,7 +154,6 @@ Exports all the certificates on the specified SQL Server to the path but does no
 						)
 					}
 					else {
-						
 						Write-Message -Level Verbose -Message "No passwords passed in. Will export just cer."
 						$cert.export($exportpathcert)
 					}
@@ -200,8 +201,8 @@ Exports all the certificates on the specified SQL Server to the path but does no
 			}
 			
 			$CertificateCollection = Get-DbaCertificate -SqlInstance $server -Certificate $Certificate -Database $database
-			
-			if (!$certs) {
+			$CertificateCollection = $CertificateCollection | where Name -NotLike "##*"
+			if (!$CertificateCollection) {
 				Write-Message -Level Output -Message "No certificates found to export."
 				continue
 			}
