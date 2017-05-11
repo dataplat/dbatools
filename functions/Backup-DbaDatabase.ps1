@@ -145,7 +145,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			}
 			else
 			{
-				$DatabaseCollection = $server.Databases
+				$DatabaseCollection = $server.Databases | Where-object {$_.Name -ne 'TempDb'}
 			}
 			
 			if ($BackupDirectory.count -gt 1)
