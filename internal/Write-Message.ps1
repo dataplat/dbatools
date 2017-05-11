@@ -173,7 +173,7 @@
     if ($ErrorRecord -and ($Message -notlike "*$($ErrorRecord[0].Exception.Message)*")) { $NewMessage += " | $($ErrorRecord[0].Exception.Message)" }
     
     #region Handle Errors
-    if ($ErrorRecord -and ($FunctionName -ne "Stop-Function"))
+    if ($ErrorRecord -and ((Get-PSCallStack)[1].Command -ne "Stop-Function"))
     {
         foreach ($record in $ErrorRecord)
         {
