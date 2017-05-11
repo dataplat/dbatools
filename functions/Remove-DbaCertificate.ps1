@@ -15,6 +15,9 @@ Allows you to login to SQL Server using alternative credentials.
 .PARAMETER Database
 The database where the certificate will be removed.
 
+.PARAMETER Certificate
+The certificate that will be removed
+
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
 
