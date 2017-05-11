@@ -36,7 +36,12 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 .EXAMPLE
 New-DbaMasterKey -SqlInstance Server1
 
-You will be prompted to securely enter your password, then a master key will be created on server1 if it does not exist.
+You will be prompted to securely enter your password, then a master key will be created in the master database on server1 if it does not exist.
+
+.EXAMPLE
+New-DbaMasterKey -SqlInstance Server1 -Database db1 -Confirm:$false
+
+Supresses all prompts to install but prompts to securely enter your password and creates a master key in the 'db1' database
 
 .EXAMPLE
 New-DbaMasterKey -SqlInstance Server1 -WhatIf
@@ -44,7 +49,7 @@ New-DbaMasterKey -SqlInstance Server1 -WhatIf
 Shows what would happen if the command were executed against server1
 
 #>
-	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact="High")]
 	param (
 		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
@@ -69,10 +74,10 @@ Shows what would happen if the command were executed against server1
 			foreach ($db in $database) {
 				$smodb = $server.Databases[$database]
 				if ($null -ne $smodb.MasterKey) {
-					Stop-Function -Message "Master key already exists in the $db on $instance" -Target $smodb.MasterKey -Continue
+					Stop-Function -Message "Master key already exists in the $db database on $instance" -Target $smodb.MasterKey -Continue
 				}
 				
-				if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating master key for $db on $instance")) {
+				if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating master key for database '$db' on $instance")) {
 					try {
 						$masterkey = New-Object Microsoft.SqlServer.Management.Smo.MasterKey $smodb
 						$masterkey.Create($Password)
