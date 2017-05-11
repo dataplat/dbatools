@@ -148,7 +148,7 @@
 		# Write-Message -Message "Terminating function!" -Level 9 -Silent $Silent -FunctionName $FunctionName
         
         
-        throw $record
+        throw $records[0]
     }
     #endregion Silent Mode
     
