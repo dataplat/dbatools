@@ -88,7 +88,7 @@ Shows what would happen if the command were executed against server1
 							InstanceName = $server.ServiceName
 							SqlInstance = $server.DomainInstanceName
 							Database = $smodb.name
-							Status = "Dropped"
+							Status = "Success"
 						}
 					}
 					catch {
@@ -97,9 +97,9 @@ Shows what would happen if the command were executed against server1
 							InstanceName = $server.ServiceName
 							SqlInstance = $server.DomainInstanceName
 							Database = $smodb.name
-							Status = "Drop failed"
+							Status = "Failure"
 						}
-						Stop-Function -Message "Failed to drop master key from $db on $instance" -Target $masterkey -InnerErrorRecord $_ -Continue
+						Stop-Function -Message "Failed to drop master key from $db on $instance. Exception $($_.Exception.InnerException)" -Target $masterkey -InnerErrorRecord $_ -Continue
 					}
 				}
 			}
