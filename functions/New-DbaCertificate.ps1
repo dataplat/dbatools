@@ -29,6 +29,9 @@ Optional secure string used to create the certificate.
 	
 .PARAMETER ActiveForServiceBrokerDialog
 Optional secure string used to create the certificate.
+
+.PARAMETER Password
+Optional password - if no password is supplied, the password will be protected by the master key
 	
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
