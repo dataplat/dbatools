@@ -313,7 +313,7 @@ folder for those file types as defined on the target instance.
 					$f = $f | Select-Object *, @{Name="BackupSetGUID";Expression={$_.BackupSetupID}}
 					#This one once it's sorted:
 					#$f = $f | Select-Object *, @{Name="BackupSetGUID";Expression={$_.BackupSetID}}
-
+				}	
 				$BackupFiles += $F | Select-Object *, @{Name="ServerName";Expression={$_.SqlInstance}}, @{Name="BackupStartDate";Expression={$_.Start -as [DateTime]}}
 				$str = ($BackUpFiles | select Fullname) -join ',' 
 			}
