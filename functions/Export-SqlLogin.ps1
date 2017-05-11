@@ -103,7 +103,7 @@ https://dbatools.io/Export-SqlLogin
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter]$SqlInstance,
+		[object]$SqlInstance,
 		[Alias("OutFile", "Path", "FileName")]
 		[string]$FilePath,
 		[object]$SqlCredential,

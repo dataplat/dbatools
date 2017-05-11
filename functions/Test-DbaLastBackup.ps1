@@ -84,6 +84,9 @@ Performing the operation "Restoring model as dbatools-testrestore-model" on targ
 .PARAMETER Silent 
 Use this switch to disable any kind of verbose messages
 
+.PARAMETER IgnoreLogBackup
+This switch tells the function to ignore transaction log backups. The process will restore to the latest full or differential backup point only
+
 .NOTES
 Tags: DisasterRecovery, Backup, Restore
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -152,7 +155,8 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 		[string]$CopyPath,
 		[int]$MaxMB,
 		[switch]$IgnoreCopyOnly,
-		[switch]$Silent
+		[switch]$Silent,
+    [switch]$IgnoreLogBackup
 	)
 	
 	dynamicparam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
@@ -265,7 +269,6 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 						Stop-Function -Message "$dbname does not exist on $source." -Continue
 					}
 					
-					#$lastbackup = Get-DbaBackupHistory -SqlServer $sourceserver -Databases $dbname -LastFull -IgnoreCopyOnly:$ignorecopyonly
 					$lastbackup = Get-DbaBackupHistory -SqlServer $sourceserver -Databases $dbname -Last -IgnoreCopyOnly:$ignorecopyonly
 					
 					if ($CopyFile) {
@@ -366,10 +369,10 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 								Write-Message -Level Verbose -Message "Performing restore"
 								$startRestore = Get-Date
 								if ($verifyonly) {
-									$restoreresult = $lastbackup | Restore-DbaDatabase -SqlServer $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -VerifyOnly:$VerifyOnly
+									$restoreresult = $lastbackup | Restore-DbaDatabase -SqlServer $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -VerifyOnly:$VerifyOnly -IgnoreLogBackup:$IgnoreLogBackup 
 								}
 								else {
-									$restoreresult = $lastbackup | Restore-DbaDatabase -SqlServer $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory
+									$restoreresult = $lastbackup | Restore-DbaDatabase -SqlServer $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup 
 								}
 								
 								$endRestore = Get-Date
