@@ -46,17 +46,53 @@ Remove-DbaMasterKey -SqlInstance Server1 -WhatIf
 Shows what would happen if the command were executed against server1
 
 #>
-	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
+	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true, ConfirmImpact = "High")]
 	param (
-		[parameter(Mandatory, ValueFromPipeline)]
+		[parameter(Mandatory, ParameterSetName = "instance")]
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[parameter(Mandatory)]
+		[parameter(Mandatory, ParameterSetName = "instance")]
 		[string[]]$Database,
+		[parameter(ValueFromPipeline, ParameterSetName = "collection")]
+		[Microsoft.SqlServer.Management.Smo.MasterKey[]]$MasterkeyCollection,
 		[switch]$Silent
 	)
 	
+	begin {
+		function drop-masterkey ($masterkey) {
+			if ($Pscmdlet.ShouldProcess($SqlInstance, "Dropping the master key for database '$db' on $instance")) {
+				try {
+					
+					$server = $masterkey.Parent.Parent
+					$instance = $server.DomainInstanceName
+					$cert = $masterkey.Name
+					$db = $masterkey.Parent.Name
+					
+					$masterkey.Drop()
+					Write-Message -Level Verbose -Message "Successfully removed master key from the $db database on $instance"
+					
+					[pscustomobject]@{
+						ComputerName = $server.NetName
+						InstanceName = $server.ServiceName
+						SqlInstance = $server.DomainInstanceName
+						Database = $db.name
+						Status = "Success"
+					}
+				}
+				catch {
+					[pscustomobject]@{
+						ComputerName = $server.NetName
+						InstanceName = $server.ServiceName
+						SqlInstance = $server.DomainInstanceName
+						Database = $db.name
+						Status = "Failure"
+					}
+					Stop-Function -Message "Failed to drop master key from $db on $instance." -Target $db -InnerErrorRecord $_ -Continue
+				}
+			}
+		}
+	}
 	process {
 		foreach ($instance in $SqlInstance) {
 			try {
@@ -69,40 +105,21 @@ Shows what would happen if the command were executed against server1
 			
 			foreach ($db in $database) {
 				$smodb = $server.Databases[$db]
-								
+				$masterkey = $smodb.MasterKey
 				if ($null -eq $smodb) {
 					Stop-Function -Message "Database '$db' does not exist on $instance" -Target $smodb -Continue
 				}
 				
-				if ($null -eq $smodb.MasterKey) {
+				if ($null -eq $masterkey) {
 					Stop-Function -Message "No master key exists in the $db database on $instance" -Target $smodb -Continue
 				}
 				
-				if ($Pscmdlet.ShouldProcess($SqlInstance, "Dropping the master key for database '$db' on $instance")) {
-					try {
-						$smodb.MasterKey.Drop()
-						Write-Message -Level Verbose -Message "Successfully removed master key from the $db database on $instance"
-						
-						[pscustomobject]@{
-							ComputerName = $server.NetName
-							InstanceName = $server.ServiceName
-							SqlInstance = $server.DomainInstanceName
-							Database = $smodb.name
-							Status = "Success"
-						}
-					}
-					catch {
-						[pscustomobject]@{
-							ComputerName = $server.NetName
-							InstanceName = $server.ServiceName
-							SqlInstance = $server.DomainInstanceName
-							Database = $smodb.name
-							Status = "Failure"
-						}
-						Stop-Function -Message "Failed to drop master key from $db on $instance." -Target $smodb -InnerErrorRecord $_ -Continue
-					}
-				}
+				Drop-Masterkey -masterkey $masterkey
 			}
+		}
+		
+		foreach ($masterkey in $MasterkeyCollection) {
+			Drop-Masterkey -masterkey $masterkey
 		}
 	}
 }
