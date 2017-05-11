@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.955'
+	ModuleVersion = '0.8.956'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -261,8 +261,15 @@
 		'Invoke-DbaDiagnosticQuery',
 		'Export-DbaDiagnosticQuery',
 		'Invoke-DbaWhoisActive',
-		'Install-DbaWhoIsActive'
-		#'Invoke-DbaLogShippingRecovery',
+		'Install-DbaWhoIsActive',
+		'Set-DbaAgentJob',
+		'Remove-DbaAgentJob',
+		'New-DbaAgentJobStep',
+		'Set-DbaAgentJobStep',
+		'Remove-DbaAgentJobStep',
+		'New-DbaAgentSchedule',
+		'Set-DbaAgentSchedule',
+		'Remove-DbaAgentSchedule'
 	)
 	
 	# Cmdlets to export from this module
