@@ -19,11 +19,14 @@ Windows Authentication will be used if DestinationSqlCredential is not specified
 .PARAMETER Path
 The Path to output the files to.
 
-.PARAMETER Databases
+.PARAMETER Database
 Exports the encryptor for specific database(s).
 
 .PARAMETER Certificate
 Exports certificate that matches the name(s).
+
+.PARAMETER Suffix
+The suffix of the filename of the exported certificate
 
 .PARAMETER EncryptionPassword 
 A string value that specifies the system path to encrypt the private key.
@@ -81,9 +84,9 @@ Exports all the certificates on the specified SQL Server to the path but does no
 		[parameter(ParameterSetName = "instance")]
 		[object[]]$Database,
 		[parameter(Mandatory = $false)]
-		[Security.SecureString]$EncryptionPassword = (Read-Host "EncryptionPassword " -AsSecureString),
+		[Security.SecureString]$EncryptionPassword = (Read-Host "EncryptionPassword (not required)" -AsSecureString),
 		[parameter(Mandatory = $false)]
-		[Security.SecureString]$DecryptionPassword = (Read-Host "DecryptionPassword " -AsSecureString),
+		[Security.SecureString]$DecryptionPassword = (Read-Host "DecryptionPassword (not required)" -AsSecureString),
 		[System.IO.FileInfo]$Path,
 		[string]$Suffix = "$(Get-Date -format 'yyyyMMddHHmmssms')",
 		[parameter(ValueFromPipeline, ParameterSetName = "collection")]
