@@ -269,7 +269,9 @@
 		'Remove-DbaAgentJobStep',
 		'New-DbaAgentSchedule',
 		'Set-DbaAgentSchedule',
-		'Remove-DbaAgentSchedule'
+		'Remove-DbaAgentSchedule',
+		'Export-DbaCertificate',
+		'Import-DbaCertificate'
 	)
 	
 	# Cmdlets to export from this module
