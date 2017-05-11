@@ -271,7 +271,9 @@
 		'Set-DbaAgentSchedule',
 		'Remove-DbaAgentSchedule',
 		'Export-DbaCertificate',
-		'Import-DbaCertificate'
+		'Import-DbaCertificate',
+		'New-DbaMasterKey',
+		'Remove-DbaMasterKey'
 	)
 	
 	# Cmdlets to export from this module
