@@ -86,7 +86,7 @@ Exports all the certificates on the specified SQL Server to the path but does no
 		[parameter(Mandatory = $false)]
 		[Security.SecureString]$EncryptionPassword = (Read-Host "EncryptionPassword (recommended, not required)" -AsSecureString),
 		[parameter(Mandatory = $false)]
-		[Security.SecureString]$DecryptionPassword = (Read-Host "DecryptionPassword (recommended, not required)" -AsSecureString),
+		[Security.SecureString]$DecryptionPassword = (Read-Host "DecryptionPassword (required if encryption password is specified)" -AsSecureString),
 		[System.IO.FileInfo]$Path,
 		[string]$Suffix = "$(Get-Date -format 'yyyyMMddHHmmssms')",
 		[parameter(ValueFromPipeline, ParameterSetName = "collection")]
@@ -95,6 +95,11 @@ Exports all the certificates on the specified SQL Server to the path but does no
 	)
 	
 	begin {
+		
+		if ($EncryptionPassword.Length -eq 0 -and $DecryptionPassword.Length -gt 0) {
+			Stop-Function -Message "If you specify an dencryption password, you must also specify an encryption password" -Target $DecryptionPassword
+		}
+		
 		function export-cert ($cert) {
 			$certname = $cert.Name
 			$database = $cert.Parent
@@ -109,7 +114,7 @@ Exports all the certificates on the specified SQL Server to the path but does no
 			$fullcertname = "$actualpath\$certname$Suffix"
 			
 			if (!(Test-SqlPath -SqlServer $server -Path $actualpath)) {
-				Stop-Function -Message "$SqlInstance cannot access $actualpath" -Continue -Target $actualpath
+				Stop-Function -Message "$SqlInstance cannot access $actualpath" -Target $actualpath
 			}
 			
 			if ($Pscmdlet.ShouldProcess($instance, "Exporting certificate $certname from $database on $instance to $actualpath")) {
@@ -138,19 +143,12 @@ Exports all the certificates on the specified SQL Server to the path but does no
 						)
 					}
 					elseif ($EncryptionPassword.Length -gt 0 -and $DecryptionPassword.Length -eq 0) {
-						$cert.export(
-							$exportpathcert,
-							[System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($EncryptionPassword))
-						)
-					}
-					elseif ($EncryptionPassword.Length -eq 0 -and $DecryptionPassword.Length -gt 0) {
-						Write-Message -Level Verbose -Message "Exporting cer with no password, pvk with password."
-
+						Write-Message -Level Verbose -Message "Only encryption password passed in. Will export both cer and pvk."
+						
 						$cert.export(
 							$exportpathcert,
 							$exportpathkey,
-							$null,
-							[System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($DecryptionPassword))
+							[System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($EncryptionPassword))
 						)
 					}
 					else {
@@ -170,19 +168,24 @@ Exports all the certificates on the specified SQL Server to the path but does no
 					}
 				}
 				catch {
-					$exception = $_.Exception.InnerException.ToString() -Split "System.Data.SqlClient.SqlException: "
-					$exception = ($exception[1] -Split "at Microsoft.SqlServer.Management.Common.ConnectionManager")[0]
 					
-					[pscustomobject]@{
-						ComputerName = $server.NetName
-						InstanceName = $server.ServiceName
-						SqlInstance = $server.DomainInstanceName
-						Database = $database.name
-						Certificate = $certname
-						ExportPathCert = $exportpathcert
-						ExportPathKey = $exportpathkey
-						Status = "Failure: $exception"
+					if ($_.Exception.InnerException) {
+						$exception = $_.Exception.InnerException.ToString() -Split "System.Data.SqlClient.SqlException: "
+						$exception = ($exception[1] -Split "at Microsoft.SqlServer.Management.Common.ConnectionManager")[0]
 					}
+					else {
+						$exception = $_.Exception
+					}
+						[pscustomobject]@{
+							ComputerName = $server.NetName
+							InstanceName = $server.ServiceName
+							SqlInstance = $server.DomainInstanceName
+							Database = $database.name
+							Certificate = $certname
+							ExportPathCert = $exportpathcert
+							ExportPathKey = $exportpathkey
+							Status = "Failure: $exception"
+						}
 					Stop-Function -Message "$certname from $database on $instance cannot be exported." -Continue -Target $cert -InnerErrorRecord $_
 				}
 			}
@@ -190,6 +193,7 @@ Exports all the certificates on the specified SQL Server to the path but does no
 	}
 	
 	process {
+		if (Test-FunctionInterrupt) { return }
 		foreach ($instance in $sqlinstance) {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
