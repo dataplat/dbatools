@@ -1,19 +1,22 @@
-﻿Function Remove-DbaMasterKey {
+﻿Function Remove-DbaCertificate {
 <#
 .SYNOPSIS
-Deletes specified database master key
+Deletes specified database certificate
 
 .DESCRIPTION
-Deletes specified database master key.
+Deletes specified database certificate
 
 .PARAMETER SqlInstance
-The target SQL Server instance.
+The SQL Server to create the certificates on.
 
 .PARAMETER SqlCredential
 Allows you to login to SQL Server using alternative credentials.
 
 .PARAMETER Database
-The database where the master key will be removed.
+The database where the certificate will be removed.
+
+.PARAMETER Certificate
+The certificate that will be removed
 
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
@@ -24,7 +27,7 @@ Prompts you for confirmation before executing any changing operations within the
 .PARAMETER Silent 
 Use this switch to disable any kind of verbose messages
 
-.PARAMETER MasterKeyCollection
+.PARAMETER CertificateCollection 
 Internal parameter to support pipeline input
 
 .NOTES
@@ -34,17 +37,17 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
-Remove-DbaMasterKey -SqlInstance Server1
+Remove-DbaCertificate -SqlInstance Server1
 
-The master key in the master database on server1 will be removed if it exists.
-
-.EXAMPLE
-Remove-DbaMasterKey -SqlInstance Server1 -Database db1 -Confirm:$false
-
-Supresses all prompts to remove the master key in the 'db1' database and drops the key.
+The certificate in the master database on server1 will be removed if it exists.
 
 .EXAMPLE
-Remove-DbaMasterKey -SqlInstance Server1 -WhatIf
+Remove-DbaCertificate -SqlInstance Server1 -Database db1 -Confirm:$false
+
+Supresses all prompts to remove the certificate in the 'db1' database and drops the key.
+
+.EXAMPLE
+Remove-DbaCertificate -SqlInstance Server1 -WhatIf
 
 Shows what would happen if the command were executed against server1
 
@@ -57,28 +60,31 @@ Shows what would happen if the command were executed against server1
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[parameter(Mandatory, ParameterSetName = "instance")]
 		[string[]]$Database,
+		[parameter(Mandatory, ParameterSetName = "instance")]
+		[object[]]$Certificate,
 		[parameter(ValueFromPipeline, ParameterSetName = "collection")]
-		[Microsoft.SqlServer.Management.Smo.MasterKey[]]$MasterKeyCollection,
+		[Microsoft.SqlServer.Management.Smo.Certificate[]]$CertificateCollection,
 		[switch]$Silent
 	)
-	
 	begin {
-		function drop-masterkey ($masterkey) {
-			$server = $masterkey.Parent.Parent
+		
+		function drop-cert ($smocert) {
+			$server = $smocert.Parent.Parent
 			$instance = $server.DomainInstanceName
-			$cert = $masterkey.Name
-			$db = $masterkey.Parent.Name
-
-			if ($Pscmdlet.ShouldProcess($instance, "Dropping the master key for database '$db'")) {
+			$cert = $smocert.Name
+			$db = $smocert.Parent.Name
+			
+			if ($Pscmdlet.ShouldProcess($instance, "Dropping the certificate named $cert for database '$db' on $instance")) {
 				try {
-					$masterkey.Drop()
-					Write-Message -Level Verbose -Message "Successfully removed master key from the $db database on $instance"
+					$smocert.Drop()
+					Write-Message -Level Verbose -Message "Successfully removed certificate named $cert from the $db database on $instance"
 					
 					[pscustomobject]@{
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
-						SqlInstance = $server.DomainInstanceName
-						Database = $db.name
+						SqlInstance = $instance
+						Database = $db
+						Certificate = $cert
 						Status = "Success"
 					}
 				}
@@ -86,16 +92,18 @@ Shows what would happen if the command were executed against server1
 					[pscustomobject]@{
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
-						SqlInstance = $server.DomainInstanceName
-						Database = $db.name
+						SqlInstance = $instance
+						Database = $db
+						Certificate = $cert
 						Status = "Failure"
 					}
-					Stop-Function -Message "Failed to drop master key from $db on $instance." -Target $db -InnerErrorRecord $_ -Continue
+					Stop-Function -Message "Failed to drop certificate named $cert from $db on $instance." -Target $smocert -InnerErrorRecord $_ -Continue
 				}
 			}
 		}
 	}
 	process {
+		
 		foreach ($instance in $SqlInstance) {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
@@ -107,21 +115,25 @@ Shows what would happen if the command were executed against server1
 			
 			foreach ($db in $database) {
 				$smodb = $server.Databases[$db]
-				$masterkey = $smodb.MasterKey
+				
 				if ($null -eq $smodb) {
 					Stop-Function -Message "Database '$db' does not exist on $instance" -Target $smodb -Continue
 				}
 				
-				if ($null -eq $masterkey) {
-					Stop-Function -Message "No master key exists in the $db database on $instance" -Target $smodb -Continue
+				foreach ($cert in $certificate) {
+					$smocert = $smodb.Certificates[$cert]
+					
+					if ($null -eq $smocert) {
+						Stop-Function -Message "No certificate named $cert exists in the $db database on $instance" -Target $smodb.Certificates -Continue
+					}
+					
+					Drop-Cert -smocert $smocert
 				}
-				
-				Drop-Masterkey -masterkey $masterkey
 			}
 		}
 		
-		foreach ($masterkey in $MasterKeyCollection) {
-			Drop-Masterkey -masterkey $masterkey
+		foreach ($smocert in $CertificateCollection) {
+			Drop-Cert -smocert $smocert
 		}
 	}
 }

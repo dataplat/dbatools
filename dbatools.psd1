@@ -273,7 +273,12 @@
 		'Export-DbaCertificate',
 		'Import-DbaCertificate',
 		'New-DbaMasterKey',
-		'Remove-DbaMasterKey'
+		'Remove-DbaMasterKey',
+		'Remove-DbaCertificate',
+		'Get-DbaCertificate',
+		'Get-DbaMasterKey',
+		'New-DbaCertificate',
+		'Get-DbaSchemaChangeHistory'
 	)
 	
 	# Cmdlets to export from this module
