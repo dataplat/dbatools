@@ -37,6 +37,11 @@ Get-DbaCertificate -SqlInstance Server1 -Database db1
 
 Gets the certificate for the db1 database
 
+.EXAMPLE
+Get-DbaCertificate -SqlInstance Server1 -Database db1 -Certificate cert1
+
+Gets the cert1 certificate within the db1 database
+	
 #>
 	[CmdletBinding()]
 	param (
