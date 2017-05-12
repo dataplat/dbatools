@@ -112,6 +112,7 @@ Exports all the certificates on the specified SQL Server to the path but does no
 			}
 			
 			$fullcertname = "$actualpath\$certname$Suffix"
+			$exportpathkey = "$fullcertname.pvk"
 			
 			if (!(Test-SqlPath -SqlServer $server -Path $actualpath)) {
 				Stop-Function -Message "$SqlInstance cannot access $actualpath" -Target $actualpath
@@ -120,14 +121,7 @@ Exports all the certificates on the specified SQL Server to the path but does no
 			if ($Pscmdlet.ShouldProcess($instance, "Exporting certificate $certname from $database on $instance to $actualpath")) {
 				Write-Message -Level Verbose -Message "Exporting Certificate: $certname to $fullcertname"
 				try {
-					
-					if ($DecryptionPassword.Length -gt 0) {
-						$exportpathkey = "$fullcertname.pvk"
-					}
-					else {
-						$exportpathkey = "Password required to export key"
-					}
-					
+										
 					$exportpathcert = "$fullcertname.cer"
 					
 					# because the password shouldn't go to memory...
@@ -153,6 +147,7 @@ Exports all the certificates on the specified SQL Server to the path but does no
 					}
 					else {
 						Write-Message -Level Verbose -Message "No passwords passed in. Will export just cer."
+						$exportpathkey = "Password required to export key"
 						$cert.export($exportpathcert)
 					}
 					
