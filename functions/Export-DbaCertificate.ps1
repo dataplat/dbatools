@@ -17,7 +17,7 @@ $scred = Get-Credential, this pass $scred object to the param.
 Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
 .PARAMETER Path
-The Path to output the files to. The path is relative to the SQL Server itself.
+The Path to output the files to. The path is relative to the SQL Server itself. If no path is specified, the default data directory will be used
 
 .PARAMETER Database
 Exports the encryptor for specific database(s).
@@ -55,6 +55,10 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
+Get-DbaCertificate -SqlInstance sql2016 | Export-DbaCertificate
+Exports all certificates found on sql2016 to the default data directory. Prompts for encryption and decrecyption passwords.
+
+.EXAMPLE
 Export-DbaCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
 Exports all the certificates on the specified SQL Server
 
@@ -65,12 +69,7 @@ Exports the certificate that is used as the encryptor for a specific database on
 
 .EXAMPLE
 Export-DbaCertificate -SqlInstance Server1 -Path \\Server1\Certificates -Certificate CertTDE
-Exports the certificate named CertTDE on the specified SQL Server, not specifying the -EncryptionPassword will generate a prompt for user entry.
-
-.EXAMPLE
-Export-DbaCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!) -NoOutFile
-Exports all the certificates on the specified SQL Server to the path but does not generate a .sql file for CREATE CERTIFICATE statments.
-
+Exports all certificates named CertTDE on the specified SQL Server, not specifying the -EncryptionPassword will generate a prompt for user entry.
 
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
