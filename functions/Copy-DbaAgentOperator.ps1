@@ -1,8 +1,8 @@
-Function Copy-SqlOperator
+function Copy-DbaAgentOperator
 {
 <#
 .SYNOPSIS 
-Copy-SqlOperator migrates operators from one SQL Server to another. 
+Copy-DbaAgentOperator migrates operators from one SQL Server to another. 
 
 .DESCRIPTION
 By default, all operators are copied. The -Operators parameter is autopopulated for command-line completion and can be used to copy only specific operators.
@@ -42,7 +42,7 @@ Prompts you for confirmation before executing any changing operations within the
 Drops and recreates the Operator if it exists
 
 .NOTES
-Tags: Migration
+Tags: Migration, Agent
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
@@ -56,20 +56,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlOperator
+https://dbatools.io/Copy-DbaAgentOperator
 
 .EXAMPLE   
-Copy-SqlOperator -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaAgentOperator -Source sqlserver2014a -Destination sqlcluster
 
 Copies all operators from sqlserver2014a to sqlcluster, using Windows credentials. If operators with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-SqlOperator -Source sqlserver2014a -Destination sqlcluster -Operator PSOperator -SourceSqlCredential $cred -Force
+Copy-DbaAgentOperator -Source sqlserver2014a -Destination sqlcluster -Operator PSOperator -SourceSqlCredential $cred -Force
 
 Copies a single operator, the PSOperator operator from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an operator with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 .EXAMPLE   
-Copy-SqlOperator -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+Copy-DbaAgentOperator -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
 #>
