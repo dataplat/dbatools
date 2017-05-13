@@ -1,8 +1,8 @@
-Function Copy-SqlDatabaseAssembly
+function Copy-DbaDatabaseAssembly
 {
 <#
 .SYNOPSIS 
-Copy-SqlDatabaseAssembly migrates assemblies from one SQL Server to another. 
+Copy-DbaDatabaseAssembly migrates assemblies from one SQL Server to another. 
 
 .DESCRIPTION
 By default, all assemblies are copied. The -Assemblies parameter is autopopulated for command-line completion and can be used to copy only specific assemblies.
@@ -60,19 +60,19 @@ You should have received a copy of the GNU General Public License along with thi
 http://dbatools.io/Get-SqlDatabaseAssembly
 
 .EXAMPLE   
-Copy-SqlDatabaseAssembly -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaDatabaseAssembly -Source sqlserver2014a -Destination sqlcluster
 
 Copies all assemblies from sqlserver2014a to sqlcluster, using Windows credentials. If assemblies with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-SqlDatabaseAssembly -Source sqlserver2014a -Destination sqlcluster -Assemblies dbname.assemblyname, dbname3.anotherassembly -SourceSqlCredential $cred -Force
+Copy-DbaDatabaseAssembly -Source sqlserver2014a -Destination sqlcluster -Assemblies dbname.assemblyname, dbname3.anotherassembly -SourceSqlCredential $cred -Force
 
 Copies two assemblies, the dbname.assemblyname and dbname3.anotherassembly, from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a assembly with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 	
 In this example, anotherassembly will be copied to the dbname3 database on the server "sqlcluster".
 	
 .EXAMPLE   
-Copy-SqlThing -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+Copy-DbaThing -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
 #>
