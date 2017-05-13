@@ -405,7 +405,7 @@ Function Get-DbaBackupHistory {
 					$historyObject.Path = $group.Group.Path
 					$historyObject.TotalSize = ($group.group.TotalSize | Measure-Object -Sum).sum
 					$historyObject.Type = $group.Group[0].Type
-					$historyObject.BackupSetupId = $group.Group[0].BackupSetId
+					$historyObject.BackupSetId = $group.Group[0].BackupSetId
 					$historyObject.DeviceType = $group.Group[0].DeviceType
 					$historyObject.Software = $group.Group[0].Software
 					$historyObject.FullName = $group.Group.Path
