@@ -1,8 +1,8 @@
-Function Copy-SqlAlert
+function Copy-DbaAgentAlert
 {
 <#
 .SYNOPSIS 
-Copy-SqlAlert migrates alerts from one SQL Server to another. 
+Copy-DbaAgentAlert migrates alerts from one SQL Server to another. 
 
 .DESCRIPTION
 By default, all alerts are copied. The -Alerts parameter is autopopulated for command-line completion and can be used to copy only specific alerts.
@@ -45,7 +45,7 @@ Prompts you for confirmation before executing any changing operations within the
 Drops and recreates the Alert if it exists
 
 .NOTES
-Tags: Migration
+Tags: Migration, Agent
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
@@ -59,20 +59,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlAlert
+https://dbatools.io/Copy-DbaAgentAlert
 
 .EXAMPLE   
-Copy-SqlAlert -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster
 
 Copies all alerts from sqlserver2014a to sqlcluster, using Windows credentials. If alerts with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-SqlAlert -Source sqlserver2014a -Destination sqlcluster -Alert PSAlert -SourceSqlCredential $cred -Force
+Copy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster -Alert PSAlert -SourceSqlCredential $cred -Force
 
 Copies a single alert, the PSAlert alert from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a alert with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 .EXAMPLE   
-Copy-SqlAlert -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+Copy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
 #>
@@ -246,7 +246,7 @@ Shows what would happen if the command were executed using force.
 					if ($e -like '*The specified @operator_name (''*'') does not exist*')
 					{
 						Write-Warning "One or more operators for this alert are not configured and will not be added to this alert."
-						Write-Warning "Please run Copy-SqlOperator if you would like to move operators to destination server."
+						Write-Warning "Please run Copy-DbaAgentOperator if you would like to move operators to destination server."
 					}
 					else
 					{
