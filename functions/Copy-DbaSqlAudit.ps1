@@ -1,8 +1,8 @@
-Function Copy-SqlAudit
+function Copy-DbaSqlAudit
 {
 <#
 .SYNOPSIS 
-Copy-SqlAudit migrates server audits from one SQL Server to another. 
+Copy-DbaSqlAudit migrates server audits from one SQL Server to another. 
 
 .DESCRIPTION
 By default, all audits are copied. The -Audits parameter is autopopulated for command-line completion and can be used to copy only specific audits.
@@ -55,20 +55,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlAudit
+https://dbatools.io/Copy-DbaSqlAudit
 
 .EXAMPLE   
-Copy-SqlAudit -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaSqlAudit -Source sqlserver2014a -Destination sqlcluster
 
 Copies all server audits from sqlserver2014a to sqlcluster, using Windows credentials. If audits with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-SqlAudit -Source sqlserver2014a -Destination sqlcluster -Audit tg_noDbDrop -SourceSqlCredential $cred -Force
+Copy-DbaSqlAudit -Source sqlserver2014a -Destination sqlcluster -Audit tg_noDbDrop -SourceSqlCredential $cred -Force
 
 Copies a single audit, the tg_noDbDrop audit from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an audit with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 .EXAMPLE   
-Copy-SqlAudit -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+Copy-DbaSqlAudit -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
 #>
