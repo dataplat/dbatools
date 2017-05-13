@@ -396,7 +396,7 @@ folder for those file types as defined on the target instance.
 						elseif ($MaintenanceSolutionBackup)
 						{
 							Write-Message -Level Verbose -Message "Ola Style Folder"
-							$BackupFiles += Get-OlaHRestoreFile -Path $p -Recurse:$IgnoreLogBackup
+							$BackupFiles += Get-OlaHRestoreFile -Path $p -IgnoreLogBackup:$IgnoreLogBackup
 						}
 						else
 						{
@@ -405,7 +405,7 @@ folder for those file types as defined on the target instance.
 							$BackupFiles += Get-DirectoryRestoreFile -Path $p -Recurse:$DirectoryRecurse
 							if ((($BackupFiles.count) - $FileCheck) -eq 0)
 							{
-								$BackupFiles += Get-OlaHRestoreFile -Path $p -Recurse:$IgnoreLogBackup
+								$BackupFiles += Get-OlaHRestoreFile -Path $p -IgnoreLogBackup:$IgnoreLogBackup
 							}
 						}
 					}

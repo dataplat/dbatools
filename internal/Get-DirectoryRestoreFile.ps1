@@ -36,6 +36,6 @@ Takes path, checks for validity. Scans for usual backup file
         $Path = "$Path\*"
     }
     Write-Message -Level Verbose -Message "Scanning $path"
-    $Results = Get-ChildItem -path $Path -file  -Recurse:$recurse
+    $Results = Get-ChildItem -path $Path -Recurse:$recurse | Where-Object {$_.PsIsContainer -eq $false}
     return $Results
 }
