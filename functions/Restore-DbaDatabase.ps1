@@ -261,18 +261,18 @@ folder for those file types as defined on the target instance.
 		}
 		if ($ParamCount -gt 1)
 		{
-			Write-Warning "$FunctionName - $Paramcount You've specified incompatible Location parameters. Please only specify one of FileMapping,ReuseSourceFolderStructure or DestinationDataDirectory"
+			Stop-Function "You've specified incompatible Location parameters. Please only specify one of FileMapping,ReuseSourceFolderStructure or DestinationDataDirectory"
 			break
 		}
 		
 		if ($DestinationLogDirectory -ne '' -and $ReuseSourceFolderStructure)
 		{
-			Write-Warning  "$FunctionName - DestinationLogDirectory and UseDestinationDefaultDirectories are mutually exclusive"
+			Stop-Function -silent:$silent -message "DestinationLogDirectory and UseDestinationDefaultDirectories are mutually exclusive"
 			break
 		}
 		if ($DestinationLogDirectory -ne '' -and $DestinationDataDirectory -eq '')
 		{
-			Write-Warning  "$FunctionName - DestinationLogDirectory can only be specified with DestinationDataDirectory"
+			Stop-Function -silent:$silent -message "DestinationLogDirectory can only be specified with DestinationDataDirectory"
 			break
 		}
 		if (($null -ne $FileMapping) -or $ReuseSourceFolderStructure -or ($DestinationDataDirectory -ne ''))
@@ -281,14 +281,14 @@ folder for those file types as defined on the target instance.
 		}
 		if (($MaxTransferSize%64kb) -ne 0 -or $MaxTransferSize -gt 4mb)
 		{
-			Write-Warning "$FunctionName - MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
+			Stop-Function -silent:$silent "MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
 			break
 		}
 		if ($BlockSize)
 		{
 			if ($BlockSize -notin (0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb))
 			{
-				Write-Warning "$FunctionName - Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
+				Stop-Function -silent:$silent -message "Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
 				break
 			}
 		}
@@ -334,11 +334,11 @@ folder for those file types as defined on the target instance.
 						# We need to use Test-SqlPath and other commands instead
 						# Prevent people from trying 
 						
-						#Write-Warning "Currently, you can only use UNC paths when running this command remotely. We expect to support non-UNC paths for remote servers shortly."
+						#Stop-Function -silent:$silent -message "Currently, you can only use UNC paths when running this command remotely. We expect to support non-UNC paths for remote servers shortly."
 						#continue
 						
 						#$newpath = Join-AdminUnc $SqlServer "$path"
-						#Write-Warning "Run this command on the server itself or try $newpath."
+						#Stop-Function -silent:$silent -message "Run this command on the server itself or try $newpath."
 						if ($XpDirTree -ne $true)
 						{
 							Write-Message -Level Verbose -Message "Only XpDirTree is safe on remote server"
@@ -365,7 +365,7 @@ folder for those file types as defined on the target instance.
 								}
 								else
 								{
-									Write-Warning "$FunctionName - $p cannot be accessed by $SqlServer"
+									Stop-Function -silent:$silent -message "$p cannot be accessed by $SqlServer"
 								}
 							}
 							else
@@ -388,7 +388,7 @@ folder for those file types as defined on the target instance.
 								}
 								else
 								{
-									Write-Warning "$FunctionName - $p cannot be accessed by $SqlServer"
+									Stop-Function -silent:$silent -message "$p cannot be accessed by $SqlServer"
 									continue
 								}
 							}
@@ -431,7 +431,7 @@ folder for those file types as defined on the target instance.
 								}
 								else
 								{
-									Write-Warning "$FunctionName - $($FileTmp.FullName) cannot be access by $SqlServer" 
+									Stop-Function -silent:$silent -message "$($FileTmp.FullName) cannot be access by $SqlServer" 
 								}
 
 							}
@@ -444,7 +444,7 @@ folder for those file types as defined on the target instance.
 								#Most likely incoming from Get-DbaBackupHistory
 								if($Filetmp.Server -ne $SqlServer -and $FileTmp.FullName -notlike '\\*')
 								{
-									Write-Warning "$FunctionName - Backups from a different server and on a local drive, can't access"
+									Stop-Function -silent:$silent -message "Backups from a different server and on a local drive, can't access"
 									return
 
 								}
@@ -469,7 +469,7 @@ folder for those file types as defined on the target instance.
 									}
 									else
 									{
-										Write-Warning "$FunctionName - $($ft) cannot be accessed by $SqlServer"
+										Stop-Function -silent:$silent -message "$($ft) cannot be accessed by $SqlServer"
 									}
 								}
 
@@ -494,14 +494,14 @@ folder for those file types as defined on the target instance.
 		}
 		catch
 		{
-			Write-Warning "$FunctionName - Cannot connect to $SqlServer"
+			Stop-Function -silent:$silent -message "Cannot connect to $SqlServer"
 			Return
 		}
 		if ($null -ne $DatabaseName)
 		{
 			If (($null -ne $Server.Databases[$DatabaseName]) -and ($WithReplace -eq $false))
 			{
-				Write-Warning "$FunctionName - $DatabaseName exists on Sql Instance $SqlServer , must specify WithReplace to continue"
+				Stop-Function -silent:$silent -message "$DatabaseName exists on Sql Instance $SqlServer , must specify WithReplace to continue"
 				break
 			}
 		}
@@ -515,7 +515,7 @@ folder for those file types as defined on the target instance.
 				{
 					if ((New-DbaSqlDirectory -Path $DestinationDataDirectory -SqlServer $SqlServer -SqlCredential $SqlCredential).Created -ne $true)
 					{
-						Write-Warning "$FunctionName - DestinationDataDirectory $DestinationDataDirectory does not exist, and could not be created on $SqlServer"
+						Stop-Function -silent:$silent -message "DestinationDataDirectory $DestinationDataDirectory does not exist, and could not be created on $SqlServer"
 						break
 					}
 					else
@@ -534,7 +534,7 @@ folder for those file types as defined on the target instance.
 				{
 					if((New-DbaSqlDirectory -Path $DestinationLogDirectory -SqlServer $SqlServer -SqlCredential $SqlCredential).Created -ne $true)
 					{
-						Write-Warning "$FunctionName - DestinationLogDirectory $DestinationLogDirectory does not exist, and could not be created on $SqlServer"
+						Stop-Function -silent:$silent -message "DestinationLogDirectory $DestinationLogDirectory does not exist, and could not be created on $SqlServer"
 						break
 					}
 					else
@@ -561,7 +561,7 @@ folder for those file types as defined on the target instance.
 
 		if ($AllFilteredFiles.count -gt 1 -and $DatabaseName -ne '')
 		{
-			Write-Warning "$FunctionName -  DatabaseName parameter and multiple database restores is not compatible "
+			Stop-Function -silent:$silent -message "DatabaseName parameter and multiple database restores is not compatible "
 			break
 		}
 		
@@ -574,7 +574,7 @@ folder for those file types as defined on the target instance.
 			if (($FilteredFiles.DatabaseName | Group-Object | Measure-Object).count -gt 1)
 			{
 				$dbs = ($FilteredFiles | Select-Object -Property DatabaseName) -join (',')
-				Write-Warning "$FunctionName - We can only handle 1 Database at a time - $dbs"
+				Stop-Function -silent:$silent -message "We can only handle 1 Database at a time - $dbs"
 				break
 			}
 			
@@ -593,7 +593,7 @@ folder for those file types as defined on the target instance.
 				}
 				catch
 				{
-					Write-Exception $_
+					Stop-Function -silent:$silent -message "restore Failed $_"
 					$Completed = 'unsuccessfully'
 					return
 				}
