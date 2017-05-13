@@ -92,6 +92,7 @@ This Parameter is exclusive with DestinationDataDirectory
 
 .PARAMETER IgnoreLogBackup
 This switch tells the function to ignore transaction log backups. The process will restore to the latest full or differential backup point only
+Will also cause Ola Hallengreen style restores to skip reading any log files.
 
 .PARAMETER ReuseSourceFolderStructure
 By default, databases will be migrated to the destination Sql Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. 
@@ -119,6 +120,9 @@ Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
 .PARAMETER BufferCount
 Number of I/O buffers to use to perform the operation.
 Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
+
+.PARAMETER DirectoryRecurse
+Will recurse down a backup path
 
 .PARAMETER Confirm
 Prompts to confirm certain actions
@@ -390,16 +394,16 @@ folder for those file types as defined on the target instance.
 						elseif ($MaintenanceSolutionBackup)
 						{
 							Write-Verbose "$FunctionName : Ola Style Folder"
-							$BackupFiles += Get-OlaHRestoreFile -Path $p
+							$BackupFiles += Get-OlaHRestoreFile -Path $p -Recurse:$IgnoreLogBackup
 						}
 						else
 						{
 							Write-Verbose "$FunctionName : Standard Directory"
 							$FileCheck = $BackupFiles.count
-							$BackupFiles += Get-DirectoryRestoreFile -Path $p
+							$BackupFiles += Get-DirectoryRestoreFile -Path $p -Recurse:$DirectoryRecurse
 							if ((($BackupFiles.count) - $FileCheck) -eq 0)
 							{
-								$BackupFiles += Get-OlaHRestoreFile -Path $p
+								$BackupFiles += Get-OlaHRestoreFile -Path $p -Recurse:$IgnoreLogBackup
 							}
 						}
 					}
