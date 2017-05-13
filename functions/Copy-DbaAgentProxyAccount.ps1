@@ -1,8 +1,8 @@
-Function Copy-SqlProxyAccount
+function Copy-DbaAgentProxyAccount
 {
 <#
 .SYNOPSIS 
-Copy-SqlProxyAccount migrates proxy accounts from one SQL Server to another. 
+Copy-DbaAgentProxyAccount migrates proxy accounts from one SQL Server to another. 
 
 .DESCRIPTION
 By default, all proxy accounts are copied. The -ProxyAccounts parameter is autopopulated for command-line completion and can be used to copy only specific proxy accounts.
@@ -41,7 +41,7 @@ Prompts you for confirmation before executing any changing operations within the
 Drops and recreates the Proxy Account if it exists
 
 .NOTES
-Tags: Migration
+Tags: Migration, Agent
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
@@ -55,20 +55,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlProxyAccount
+https://dbatools.io/Copy-DbaAgentProxyAccount
 
 .EXAMPLE   
-Copy-SqlProxyAccount -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaAgentProxyAccount -Source sqlserver2014a -Destination sqlcluster
 
 Copies all proxy accounts from sqlserver2014a to sqlcluster, using Windows credentials. If proxy accounts with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-SqlProxyAccount -Source sqlserver2014a -Destination sqlcluster -ProxyAccount PSProxy -SourceSqlCredential $cred -Force
+Copy-DbaAgentProxyAccount -Source sqlserver2014a -Destination sqlcluster -ProxyAccount PSProxy -SourceSqlCredential $cred -Force
 
 Copies a single proxy account, the PSProxy proxy account from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a proxy account with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 .EXAMPLE   
-Copy-SqlProxyAccount -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+Copy-DbaAgentProxyAccount -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
 #>
