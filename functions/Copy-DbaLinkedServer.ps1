@@ -1,8 +1,8 @@
-Function Copy-SqlLinkedServer
+function Copy-DbaLinkedServer
 {
 <# 
 .SYNOPSIS 
-Copy-SqlLinkedServer migrates Linked Servers from one SQL Server to another. Linked Server logins and passwords are migrated as well.
+Copy-DbaLinkedServer migrates Linked Servers from one SQL Server to another. Linked Server logins and passwords are migrated as well.
 
 .DESCRIPTION 
 By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Linked Servers from one server to another, while maintaining username and password.
@@ -64,16 +64,16 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlLinkedServer 
+https://dbatools.io/Copy-DbaLinkedServer 
 
 .EXAMPLE   
-Copy-SqlLinkedServer -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster
 
 Description
 Copies all SQL Server Linked Servers on sqlserver2014a to sqlcluster. If Linked Server exists on destination, it will be skipped.
 
 .EXAMPLE   
-Copy-SqlLinkedServer -Source sqlserver2014a -Destination sqlcluster -LinkedServers SQL2K5,SQL2k -Force
+Copy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster -LinkedServers SQL2K5,SQL2k -Force
 
 Description
 Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped.
@@ -251,7 +251,7 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 			return $decryptedlogins
 		}
 		
-		Function Copy-SqlLinkedServers
+		Function Copy-DbaLinkedServers
 		{
 			param (
 				[string[]]$LinkedServers,
@@ -403,7 +403,7 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 		catch { throw "Can't connect to registry on $source. Quitting." }
 		
 		# Magic happens here
-		Copy-SqlLinkedServers $linkedservers -force:$force
+		Copy-DbaLinkedServers $linkedservers -force:$force
 		
 	}
 	
