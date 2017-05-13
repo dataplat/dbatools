@@ -1,4 +1,4 @@
-function Copy-SqlDatabaseMail {
+function Copy-DbaDatabaseMail {
     <#
 .SYNOPSIS
 Migrates Mail Profiles, Accounts, Mail Servers and Mail Server Configs from one SQL Server to another.
@@ -74,20 +74,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlDatabaseMail
+https://dbatools.io/Copy-DbaDatabaseMail
 
 .EXAMPLE
-Copy-SqlDatabaseMail -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaDatabaseMail -Source sqlserver2014a -Destination sqlcluster
 
 Copies all database mail objects from sqlserver2014a to sqlcluster, using Windows credentials. If database mail objects with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE
-Copy-SqlDatabaseMail -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+Copy-DbaDatabaseMail -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
 Copies all database mail objects from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
 .EXAMPLE
-Copy-SqlDatabaseMail -Source sqlserver2014a -Destination sqlcluster -WhatIf
+Copy-DbaDatabaseMail -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
 Shows what would happen if the command were executed.
 #>
@@ -114,7 +114,7 @@ Shows what would happen if the command were executed.
 	
 	begin {
 		
-		function Copy-SqlDatabaseMailConfig {
+		function Copy-DbaDatabaseMailConfig {
 			[cmdletbinding(SupportsShouldProcess = $true)]
 			param ()
 			
@@ -145,7 +145,7 @@ Shows what would happen if the command were executed.
 			$copyMailConfigStatus
 		}
 		
-		function Copy-SqlDatabaseAccount {
+		function Copy-DbaDatabaseAccount {
 			$sourceAccounts = $sourceServer.Mail.Accounts
 			$destAccounts = $destServer.Mail.Accounts
 			
@@ -205,7 +205,7 @@ Shows what would happen if the command were executed.
 			}
 		}
 		
-		function Copy-SqlDatabaseMailProfile {
+		function Copy-DbaDatabaseMailProfile {
 			
 			$sourceProfiles = $sourceServer.Mail.Profiles
 			$destProfiles = $destServer.Mail.Profiles
@@ -268,7 +268,7 @@ Shows what would happen if the command were executed.
 			}
 		}
 		
-		function Copy-SqlDatabasemailServer {
+		function Copy-DbaDatabasemailServer {
 			$sourceMailServers = $sourceServer.Mail.Accounts.mailServers
 			$destMailServers = $destServer.Mail.Accounts.mailServers
 			
@@ -344,22 +344,22 @@ Shows what would happen if the command were executed.
 			
 			switch ($type) {
 				"ConfigurationValues" {
-					Copy-SqlDatabaseMailConfig
+					Copy-DbaDatabaseMailConfig
 					$destServer.Mail.ConfigurationValues.Refresh()
 				}
 				
 				"Profiles" {
-					Copy-SqlDatabaseMailProfile
+					Copy-DbaDatabaseMailProfile
 					$destServer.Mail.Profiles.Refresh()
 				}
 				
 				"Accounts" {
-					Copy-SqlDatabaseAccount
+					Copy-DbaDatabaseAccount
 					$destServer.Mail.Accounts.Refresh()
 				}
 				
 				"mailServers" {
-					Copy-SqlDatabasemailServer
+					Copy-DbaDatabasemailServer
 				}
 			}
 			
@@ -374,29 +374,29 @@ Shows what would happen if the command were executed.
 		if (($profiles.count + $accounts.count + $mailServers.count) -gt 0) {
 			
 			if ($profiles.count -gt 0) {
-				Copy-SqlDatabaseMailProfile -Profiles $profiles
+				Copy-DbaDatabaseMailProfile -Profiles $profiles
 				$destServer.Mail.Profiles.Refresh()
 			}
 			
 			if ($accounts.count -gt 0) {
-				Copy-SqlDatabaseAccount -Accounts $accounts
+				Copy-DbaDatabaseAccount -Accounts $accounts
 				$destServer.Mail.Accounts.Refresh()
 			}
 			
 			if ($mailServers.count -gt 0) {
-				Copy-SqlDatabasemailServer -mailServers $mailServers
+				Copy-DbaDatabasemailServer -mailServers $mailServers
 			}
 			
 			return
 		}
 		
-		Copy-SqlDatabaseMailConfig
+		Copy-DbaDatabaseMailConfig
 		$destServer.Mail.ConfigurationValues.Refresh()
-		Copy-SqlDatabaseAccount
+		Copy-DbaDatabaseAccount
 		$destServer.Mail.Accounts.Refresh()
-		Copy-SqlDatabaseMailProfile
+		Copy-DbaDatabaseMailProfile
 		$destServer.Mail.Profiles.Refresh()
-		Copy-SqlDatabasemailServer
+		Copy-DbaDatabasemailServer
 		$copyMailConfigStatus
 		$copyMailAccountStatus
 		$copyMailProfileStatus
