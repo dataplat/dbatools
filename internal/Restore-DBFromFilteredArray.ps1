@@ -303,6 +303,7 @@ Function Restore-DBFromFilteredArray
 					}
 					elseif ($null -ne $StandbyDirectory)
 					{
+						Write-Verbose "$FunctionName - Setting standby on last file"
 						$Restore.StandbyFile = $StandByDirectory+"\"+$Dbname+(get-date -Format yyyMMddHHmmss)+".bak"
 					}
 				}
