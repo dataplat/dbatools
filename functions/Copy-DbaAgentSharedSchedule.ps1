@@ -1,8 +1,8 @@
-Function Copy-SqlSharedSchedule
+function Copy-DbaAgentSharedSchedule
 {
 <#
 .SYNOPSIS 
-Copy-SqlSharedSchedule migrates shared job schedules from one SQL Server to another. 
+Copy-DbaAgentSharedSchedule migrates shared job schedules from one SQL Server to another. 
 
 .DESCRIPTION
 By default, all shared job schedules are copied. The -SharedSchedules parameter is autopopulated for command-line completion and can be used to copy only specific shared job schedules.
@@ -41,7 +41,7 @@ Prompts you for confirmation before executing any changing operations within the
 Drops and recreates the schedule if it exists
 
 .NOTES
-Tags: Migration
+Tags: Migration, Agent
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
@@ -55,20 +55,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlSharedSchedule
+https://dbatools.io/Copy-DbaAgentSharedSchedule
 
 .EXAMPLE   
-Copy-SqlSharedSchedule -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaAgentSharedSchedule -Source sqlserver2014a -Destination sqlcluster
 
 Copies all shared job schedules from sqlserver2014a to sqlcluster, using Windows credentials. If shared job schedules with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-SqlSharedSchedule -Source sqlserver2014a -Destination sqlcluster -SharedSchedule Weekly -SourceSqlCredential $cred -Force
+Copy-DbaAgentSharedSchedule -Source sqlserver2014a -Destination sqlcluster -SharedSchedule Weekly -SourceSqlCredential $cred -Force
 
 Copies a single shared job schedule, the Weekly shared job schedule from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a shared job schedule with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 .EXAMPLE   
-Copy-SqlSharedSchedule -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+Copy-DbaAgentSharedSchedule -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
 #>
