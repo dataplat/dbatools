@@ -31,7 +31,9 @@ Function Restore-DBFromFilteredArray
 		[switch]$TrustDbBackupHistory,
 		[int]$MaxTransferSize,
 		[int]$BlockSize,
-		[int]$BufferCount
+		[int]$BufferCount,
+		[switch]$Silent,
+		[string]$StandbyDirectory
 	)
     
 	Begin
@@ -291,11 +293,18 @@ Function Restore-DBFromFilteredArray
 					}
 				Write-Verbose "$FunctionName - restore action = $Action"
 				$restore.Action = $Action 
-				if ($RestorePoint -eq $SortedRestorePoints[-1] -and $NoRecovery -ne $true)
+				if ($RestorePoint -eq $SortedRestorePoints[-1])
 				{
-					#Do recovery on last file
-					Write-Verbose "$FunctionName - Doing Recovery on last file"
-					$Restore.NoRecovery = $false
+					if($NoRecovery -ne $true -and $null -eq $StandbyDirectory)
+					{
+						#Do recovery on last file
+						Write-Verbose "$FunctionName - Doing Recovery on last file"
+						$Restore.NoRecovery = $false
+					}
+					elseif ($null -ne $StandbyDirectory)
+					{
+						$Restore.StandbyFile = $StandByDirectory+"\"+$Dbname+(get-date -Format yyyMMddHHmmss)+".bak"
+					}
 				}
 				else 
 				{

@@ -133,6 +133,9 @@ Shows what would happen if the command would execute, but does not actually perf
 .PARAMETER Silent
 Switch to silence messages
 
+.PARAMETER StandbyDirectory
+If specified all databases will be restore in Standby mode, with a standby file with the name format DatabaseName_YYYYMMDDhhmmss.bak in this folder
+
 .NOTES
 Tags: DisasterRecovery, Backup, Restore
 Original Author: Stuart Moore (@napalmgram), stuart-moore.com
@@ -221,7 +224,8 @@ folder for those file types as defined on the target instance.
 		[int]$BlockSize,
 		[int]$BufferCount,
 		[switch]$DirectoryRecurse,
-		[switch]$Silent
+		[switch]$Silent,
+		[string]$StandbyDirectory
 	)
 	BEGIN
 	{
@@ -290,6 +294,14 @@ folder for those file types as defined on the target instance.
 			{
 				Stop-Function -silent:$silent -message "Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
 				break
+			}
+		}
+		if ($null -ne $StandbyDirectory)
+		{
+			if (!(Test-SqlPath -Path $StandbyDirectory -SqlServer $SqlServer -SqlCredential $SqlCredential))
+			{
+				Stop-Function -Message "$SqlSever cannot see the specified Standby Directory $StandbyDirectory"
+				return
 			}
 		}
 		
@@ -588,7 +600,7 @@ folder for those file types as defined on the target instance.
 			{
 				try
 				{
-					$FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -TrustDbBackupHistory:$TrustDbBackupHistory -ReplaceDatabase:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure $FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix -MaxTransferSize $MaxTransferSize -BufferCount $BufferCount -BlockSize $BlockSize					
+					$FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -TrustDbBackupHistory:$TrustDbBackupHistory -ReplaceDatabase:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure $FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix -MaxTransferSize $MaxTransferSize -BufferCount $BufferCount -BlockSize $BlockSize -StandbyDirectory $StandbyDirectory			
 					$Completed = 'successfully'
 				}
 				catch
