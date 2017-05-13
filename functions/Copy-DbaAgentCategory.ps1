@@ -1,8 +1,8 @@
-Function Copy-SqlAgentCategory
+function Copy-DbaAgentCategory
 {
 <#
 .SYNOPSIS 
-Copy-SqlAgentCategory migrates SQL Agent categories from one SQL Server to another. This is similar to sp_add_category.
+Copy-DbaAgentCategory migrates SQL Agent categories from one SQL Server to another. This is similar to sp_add_category.
 
 https://msdn.microsoft.com/en-us/library/ms181597.aspx
 
@@ -61,7 +61,7 @@ Prompts you for confirmation before executing any changing operations within the
 Drops and recreates the XXXXX if it exists
 
 .NOTES
-Tags: Migration
+Tags: Migration, Agent
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
@@ -75,20 +75,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlAgentCategory
+https://dbatools.io/Copy-DbaAgentCategory
 
 .EXAMPLE   
-Copy-SqlAgentCategory -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster
 
 Copies all operator categories from sqlserver2014a to sqlcluster, using Windows credentials. If operator categories with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-SqlAgentCategory -Source sqlserver2014a -Destination sqlcluster -OperatorCategory PSOperator -SourceSqlCredential $cred -Force
+Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -OperatorCategory PSOperator -SourceSqlCredential $cred -Force
 
 Copies a single operator category, the PSOperator operator category from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a operator category with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 .EXAMPLE   
-Copy-SqlAgentCategory -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
 #>
@@ -110,11 +110,11 @@ Shows what would happen if the command were executed using force.
 	BEGIN
 	{
 		
-		Function Copy-SqlJobCategory
+		Function Copy-JobCategory
 		{
 			<#
 			.SYNOPSIS 
-			Copy-SqlJobCategory migrates job categories from one SQL Server to another. 
+			Copy-JobCategory migrates job categories from one SQL Server to another. 
 
 			.DESCRIPTION
 			By default, all job categories are copied. The -JobCategories parameter is autopopulated for command-line completion and can be used to copy only specific job categories.
@@ -185,11 +185,11 @@ Shows what would happen if the command were executed using force.
 			}
 		}
 		
-		Function Copy-SqlOperatorCategory
+		Function Copy-OperatorCategory
 		{
 			<#
 			.SYNOPSIS 
-			Copy-SqlOperatorCategory migrates operator categories from one SQL Server to another. 
+			Copy-OperatorCategory migrates operator categories from one SQL Server to another. 
 
 			.DESCRIPTION
 			By default, all operator categories are copied. The -OperatorCategories parameter is autopopulated for command-line completion and can be used to copy only specific operator categories.
@@ -264,11 +264,11 @@ Shows what would happen if the command were executed using force.
 			}
 		}
 		
-		Function Copy-SqlAlertCategory
+		Function Copy-AlertCategory
 		{
 			<#
 			.SYNOPSIS 
-			Copy-SqlAlertCategory migrates alert categories from one SQL Server to another. 
+			Copy-AlertCategory migrates alert categories from one SQL Server to another. 
 
 			.DESCRIPTION
 			By default, all alert categories are copied. The -AlertCategories parameter is autopopulated for command-line completion and can be used to copy only specific alert categories.
@@ -368,15 +368,15 @@ Shows what would happen if the command were executed using force.
 			switch ($CategoryType)
 			{
 				"Job" {
-					Copy-SqlJobCategory
+					Copy-JobCategory
 				}
 				
 				"Alert" {
-					Copy-SqlAlertCategory
+					Copy-AlertCategory
 				}
 				
 				"Operator" {
-					Copy-SqlOperatorCategory
+					Copy-OperatorCategory
 				}
 			}
 			
@@ -388,25 +388,25 @@ Shows what would happen if the command were executed using force.
 			
 			if ($operatorcategories.count -gt 0)
 			{
-				Copy-SqlOperatorCategory -OperatorCategories $operatorcategories 
+				Copy-OperatorCategory -OperatorCategories $operatorcategories 
 			}
 			
 			if ($alertcategories.count -gt 0)
 			{
-				Copy-SqlAlertCategory -AlertCategories $alertcategories 
+				Copy-AlertCategory -AlertCategories $alertcategories 
 			}
 			
 			if ($jobcategories.count -gt 0)
 			{
-				Copy-SqlJobCategory -JobCategories $jobcategories 
+				Copy-JobCategory -JobCategories $jobcategories 
 			}
 			
 			return
 		}
 		
-		Copy-SqlOperatorCategory 
-		Copy-SqlAlertCategory 
-		Copy-SqlJobCategory 
+		Copy-OperatorCategory 
+		Copy-AlertCategory 
+		Copy-JobCategory 
 	}
 	
 	END
