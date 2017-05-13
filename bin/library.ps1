@@ -1235,7 +1235,7 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// Where is the backup stored
             /// </summary>
-            public string Path;
+            public string[] Path;
 
             /// <summary>
             /// What is the total size of the backup
@@ -1250,7 +1250,7 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// The ID for the Backup job
             /// </summary>
-            public string BackupSetupId;
+            public string BackupSetId;
 
             /// <summary>
             /// What kind of backup-device was the backup stored to
@@ -1265,12 +1265,12 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// The full name of the backup
             /// </summary>
-            public string FullName;
+            public string[] FullName;
 
             /// <summary>
             /// The files that are part of this backup
             /// </summary>
-            public string[] FileList;
+            public Object FileList;
 
             /// <summary>
             /// The position of the backup
