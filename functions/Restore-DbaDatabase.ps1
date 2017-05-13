@@ -130,7 +130,8 @@ Prompts to confirm certain actions
 .PARAMETER WhatIf
 Shows what would happen if the command would execute, but does not actually perform the command
 
-.
+.PARAMETER Silent
+Switch to silence messages
 
 .NOTES
 Tags: DisasterRecovery, Backup, Restore
@@ -218,7 +219,9 @@ folder for those file types as defined on the target instance.
 		[switch]$TrustDbBackupHistory,
 		[int]$MaxTransferSize,
 		[int]$BlockSize,
-		[int]$BufferCount
+		[int]$BufferCount,
+		[switch]$DirectoryRecurse,
+		[switch]$Silent
 	)
 	BEGIN
 	{
@@ -297,10 +300,10 @@ folder for those file types as defined on the target instance.
 		{
 			if($TrustDbBackupHistory)
 			{
-				Write-Verbose "$FunctionName - Trust Database Backup History Set"
+				Write-Message -Level Verbose -Message "Trust Database Backup History Set"
 				if ("BackupPath" -notin $f.PSobject.Properties.name)
 				{
-						Write-Verbose "$FunctionName - adding BackupPath - $($_.Fullname)"
+						Write-Message -Level Verbose -Message "adding BackupPath - $($_.Fullname)"
 						$f = $f | Select-Object *, @{Name="BackupPath";Expression={$_.FullName}}
 				}
 				if ("DatabaseName" -notin $f.PSobject.Properties.name)
@@ -313,11 +316,10 @@ folder for those file types as defined on the target instance.
 				}
 
 				$BackupFiles += $F | Select-Object *, @{Name="ServerName";Expression={$_.SqlInstance}}, @{Name="BackupStartDate";Expression={$_.Start}}
-				$str = ($BackUpFiles | select Fullname) -join ',' 
 			}
 			else
 			{
-				Write-Verbose "$FunctionName - Unverified input, full scans"
+				Write-Message -Level Verbose -Message "Unverified input, full scans"
 				if ($f.FullName)
 				{
 					$f = $f.FullName
@@ -327,7 +329,7 @@ folder for those file types as defined on the target instance.
 				{
 					if ($f.StartsWith("\\") -eq $false -and  $islocal -ne $true)
 					{
-						Write-Verbose "$FunctionName - Working remotely, and non UNC path used. Dropping to XpDirTree, all paths evaluated at $SqlServer"
+						Write-Message -Level Verbose -Message "Working remotely, and non UNC path used. Dropping to XpDirTree, all paths evaluated at $SqlServer"
 						# Many internal functions parse using Get-ChildItem. 
 						# We need to use Test-SqlPath and other commands instead
 						# Prevent people from trying 
@@ -339,17 +341,17 @@ folder for those file types as defined on the target instance.
 						#Write-Warning "Run this command on the server itself or try $newpath."
 						if ($XpDirTree -ne $true)
 						{
-							Write-Verbose "$FunctionName - Only XpDirTree is safe on remote server"
+							Write-Message -Level Verbose -Message "Only XpDirTree is safe on remote server"
 							$XpDirTree = $true
 							$MaintenanceSolutionBackup = $false
 						}
 					}
 				}
 				
-				Write-Verbose "$FunctionName - type = $($f.gettype())"
+				Write-Message -Level Verbose -Message "type = $($f.gettype())"
 				if ($f -is [string])
 				{
-					Write-Verbose "$FunctionName : Paths passed in"
+					Write-Message -Level Verbose -Message "Paths passed in"
 					foreach ($p in $f)
 					{
 						if ($XpDirTree)
@@ -393,12 +395,12 @@ folder for those file types as defined on the target instance.
 						}
 						elseif ($MaintenanceSolutionBackup)
 						{
-							Write-Verbose "$FunctionName : Ola Style Folder"
+							Write-Message -Level Verbose -Message "Ola Style Folder"
 							$BackupFiles += Get-OlaHRestoreFile -Path $p -Recurse:$IgnoreLogBackup
 						}
 						else
 						{
-							Write-Verbose "$FunctionName : Standard Directory"
+							Write-Message -Level Verbose -Message "Standard Directory"
 							$FileCheck = $BackupFiles.count
 							$BackupFiles += Get-DirectoryRestoreFile -Path $p -Recurse:$DirectoryRecurse
 							if ((($BackupFiles.count) - $FileCheck) -eq 0)
@@ -410,13 +412,13 @@ folder for those file types as defined on the target instance.
 				}
 				elseif (($f -is [System.IO.FileInfo]) -or ($f -is [System.Object] -and $f.FullName.Length -ne 0))
 				{
-					Write-Verbose "$FunctionName : Files passed in $($Path.count)"
+					Write-Message -Level Verbose -Message "Files passed in $($Path.count)"
 					Foreach ($FileTmp in $Path)
 					{
-						Write-Verbose "$FunctionName - Type - $($FileTmp.GetType()), length =$($FileTmp.length)"
+						Write-Message -Level Verbose -Message "Type - $($FileTmp.GetType()), length =$($FileTmp.length)"
 						if($FileTmp -is [System.Io.FileInfo] -and $isLocal -eq $False )
 						{
-							Write-Verbose "$FunctionName - File object"
+							Write-Message -Level Verbose -Message "File object"
 							if ($FileTmp.PsIsContainer)
 							{
 								$BackupFiles += Get-XPDirTreeRestoreFile -Path $FileTmp.Fullname -SqlServer $SqlServer -SqlCredential $SqlCredential
@@ -436,7 +438,7 @@ folder for those file types as defined on the target instance.
 						}
 						elseif(($FileTmp -is [System.Management.Automation.PSCustomObject] )) #Dealing with Pipeline input 					
 						{
-							Write-Verbose "$FunctionName - Should be pipe input "
+							Write-Message -Level Verbose -Message "Should be pipe input "
 							if ($FileTmp.PSobject.Properties.name -match "Server")
 							{
 								#Most likely incoming from Get-DbaBackupHistory
@@ -451,16 +453,16 @@ folder for those file types as defined on the target instance.
 							{
 
 								foreach ($dir in $Filetmp.path){
-									Write-Verbose "$FunctionName - it's a folder, passing to Get-XpDirTree - $($dir)"
+									Write-Message -Level Verbose -Message "it's a folder, passing to Get-XpDirTree - $($dir)"
 									$BackupFiles += Get-XPDirTreeRestoreFile -Path $dir -SqlServer $SqlServer -SqlCredential $SqlCredential
 								}
 							}
 							elseif ([bool]($FileTmp.FullName -match '\.\w{3}\Z' ))
 							{
-								Write-Verbose "$FunctionName - it's folder"
+								Write-Message -Level Verbose -Message "it's folder"
 								ForEach ($ft in $Filetmp.FullName)
 								{			
-									Write-Verbose "$FunctionName - Piped files Test-SqlPath $($ft)"					
+									Write-Message -Level Verbose -Message "Piped files Test-SqlPath $($ft)"					
 									if (Test-SqlPath -Path $ft -SqlServer $SqlServer -SqlCredential $SqlCredential)
 									{
 										$BackupFiles += $ft
@@ -475,7 +477,7 @@ folder for those file types as defined on the target instance.
 						}
 						else
 						{	
-							Write-Verbose "$FunctionName - Dropped to Default"
+							Write-Message -Level Verbose -Message "Dropped to Default"
 							$BackupFiles += $FileTmp
 						}
 					}
@@ -506,7 +508,7 @@ folder for those file types as defined on the target instance.
 
 		if ($islocal -eq $false)
 		{
-			Write-Verbose "$FunctionName - Remote server, checking folders"
+			Write-Message -Level Verbose -Message "Remote server, checking folders"
 			if ($DestinationDataDirectory -ne '')
 			{
 				if ((Test-SqlPath -Path $DestinationDataDirectory -SqlServer $SqlServer -SqlCredential $SqlCredential) -ne $true)
@@ -518,12 +520,12 @@ folder for those file types as defined on the target instance.
 					}
 					else
 					{
-						Write-Verbose "$FunctionName - DestinationDataDirectory $DestinationDataDirectory  created on $SqlServer"
+						Write-Message -Level Verbose -Message "DestinationDataDirectory $DestinationDataDirectory  created on $SqlServer"
 					}
 				}
 				else
 				{
-					Write-Verbose "$FunctionName - DestinationDataDirectory $DestinationDataDirectory  exists on $SqlServer"	
+					Write-Message -Level Verbose -Message "DestinationDataDirectory $DestinationDataDirectory  exists on $SqlServer"	
 				}
 			}
 			if ($DestinationLogDirectory -ne '')
@@ -537,21 +539,21 @@ folder for those file types as defined on the target instance.
 					}
 					else
 					{
-						Write-Verbose "$FunctionName - DestinationLogDirectory $DestinationLogDirectory  created on $SqlServer"
+						Write-Message -Level Verbose -Message "DestinationLogDirectory $DestinationLogDirectory  created on $SqlServer"
 					}
 				}
 				else
 				{
-					Write-Verbose "$FunctionName - DestinationLogDirectory $DestinationLogDirectory  exists on $SqlServer"	
+					Write-Message -Level Verbose -Message "DestinationLogDirectory $DestinationLogDirectory  exists on $SqlServer"	
 				}
 			}
 		}
 		#$BackupFiles 
 		#return
-		Write-Verbose "$FunctionName - sorting uniquely"
+		Write-Message -Level Verbose -Message "sorting uniquely"
 		$AllFilteredFiles = $BackupFiles | sort-object -property fullname -unique | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup -TrustDbBackupHistory:$TrustDbBackupHistory
 		
-		Write-Verbose "$FunctionName - $($AllFilteredFiles.count) dbs to restore"
+		Write-Message -Level Verbose -Message "$($AllFilteredFiles.count) dbs to restore"
 		
 		#$AllFilteredFiles
 		#return
@@ -568,7 +570,7 @@ folder for those file types as defined on the target instance.
 			$FilteredFiles = $FilteredFileSet.values
 
 			
-			Write-Verbose "$FunctionName - Starting FileSet"
+			Write-Message -Level Verbose -Message "Starting FileSet"
 			if (($FilteredFiles.DatabaseName | Group-Object | Measure-Object).count -gt 1)
 			{
 				$dbs = ($FilteredFiles | Select-Object -Property DatabaseName) -join (',')
@@ -579,7 +581,7 @@ folder for those file types as defined on the target instance.
 			IF ($DatabaseName -eq '')
 			{
 				$DatabaseName = $RestoredDatababaseNamePrefix+($FilteredFiles | Select-Object -Property DatabaseName -unique).DatabaseName
-				Write-Verbose "$FunctionName - Dbname set from backup = $DatabaseName"
+				Write-Message -Level Verbose -Message "Dbname set from backup = $DatabaseName"
 			}
 			
 			if ((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlServer $SqlServer -SqlCredential $SqlCredential))
@@ -597,7 +599,7 @@ folder for those file types as defined on the target instance.
 				}
 				Finally
 				{
-					Write-Verbose "Database $databasename restored $Completed"
+					Write-Message -Level Verbose -Message "Database $databasename restored $Completed"
 				}
 			}
 			$DatabaseName = ''
