@@ -76,20 +76,14 @@ Function Connect-SqlServer
     {
         [DbaInstanceParameter]$ConvertedSqlServer = $SqlServer
     }
-    elseif ($SqlServer.GetType().FullName -eq "System.Object[]")
-    {
-        if ($SqlServer.Count -eq 1)
-        {
-            [DbaInstanceParameter]$ConvertedSqlServer = [DbaInstanceParameter]($SqlServer[0])
-        }
-        else
-        {
-            throw "Con only connect to one server at a time! # Speciefied: $($SqlServer.Count)"
-        }
-    }
     else
     {
-        [DbaInstanceParameter]$ConvertedSqlServer = [DbaInstanceParameter]$SqlServer
+		[DbaInstanceParameter]$ConvertedSqlServer = [DbaInstanceParameter]($SqlServer | Select-Object -First 1)
+		
+		if ($SqlServer.Count -gt 1)
+        {
+            Write-Message -Level Warning -Silent $true -Message "More than on server was specified when calling Connect-SqlServer from $((Get-PSCallStack)[1].Command)"
+        }
     }
     #endregion Safely convert input into instance parameters
     
