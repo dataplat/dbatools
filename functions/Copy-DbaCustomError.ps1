@@ -1,8 +1,8 @@
-Function Copy-SqlCustomError
+function Copy-DbaCustomError
 {
 <#
 .SYNOPSIS 
-Copy-SqlCustomError migrates custom errors (user defined messages) from one SQL Server to another. 
+Copy-DbaCustomError migrates custom errors (user defined messages) from one SQL Server to another. 
 
 .DESCRIPTION
 By default, all  custom errors are copied. The -CustomErrors parameter is autopopulated for command-line completion and can be used to copy only specific custom errors.
@@ -57,20 +57,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlCustomError
+https://dbatools.io/Copy-DbaCustomError
 
 .EXAMPLE   
-Copy-SqlCustomError -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster
 
 Copies all server custom errors from sqlserver2014a to sqlcluster, using Windows credentials. If custom errors with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-SqlCustomError -Source sqlserver2014a -Destination sqlcluster -Trigger 60000 -SourceSqlCredential $cred -Force
+Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -Trigger 60000 -SourceSqlCredential $cred -Force
 
 Copies a single custom error, the custom error with ID number 6000 from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a custom error with the same name exists on sqlcluster, it will be updated because -Force was used.
 
 .EXAMPLE   
-Copy-SqlCustomError -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
 #>
