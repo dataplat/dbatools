@@ -30,7 +30,7 @@ Want to join the team or just come hang out? You can find us here:
 ## Adding new commands and features
 
 * **This is how we like people to add new commands**
-<br><br>New command proposals must be approved by Chrissy LeMaire, the original creator of dbatools. This ensures the proposed command aligns with the intended spirit of the toolset. You can message Chrissy on [Slack](https://dbatools.io/slack) (@ctrlb) or post your proposal on the [Trello](https://dbatools.io/trello) Ideas list.<br><br>Check out the Ideas list on our [Trello board](https://dbatools.io/trello) to get a feel for the types of commands we like. Also take a look at [Microsoft's SqlServer Trello board](https://sqlps.io/vote) to see the commands that are more appropriate for the official SQL Server PowerShell module (and vote while you're there!)
+<br><br>New command proposals must be approved by Chrissy LeMaire, the original creator of dbatools. This ensures the proposed command aligns with the intended spirit of the toolset. You can message Chrissy on [Slack](https://dbatools.io/slack) (@cl) or post your proposal on the [Trello](https://dbatools.io/trello) Ideas list.<br><br>Check out the Ideas list on our [Trello board](https://dbatools.io/trello) to get a feel for the types of commands we like. Also take a look at [Microsoft's SqlServer Trello board](https://sqlps.io/vote) to see the commands that are more appropriate for the official SQL Server PowerShell module (and vote while you're there!)
 
 * **Here are some specifics on the coding style we prefer**
 <br><br>This will be available on the Wiki shortly. Until then, please look inside the .ps1 files or the [dbatools-templates](https://github.com/sqlcollaborative/dbatools-templates) repository.
