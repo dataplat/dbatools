@@ -1,8 +1,8 @@
-Function Copy-SqlSsisCatalog
+function Copy-DbaSsisCatalog
 {
 <#
 .SYNOPSIS 
-Copy-SqlSsisCatalog migrates Folders, SSIS projects, and environments from one SQL Server to another. 
+Copy-DbaSsisCatalog migrates Folders, SSIS projects, and environments from one SQL Server to another. 
 
 .DESCRIPTION
 By default, all folders, projects, and environments are copied. 
@@ -54,7 +54,7 @@ $dcred = Get-Credential, this pass this $dcred to the param.
 Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
 .NOTES
-Tags: Migration
+Tags: Migration, SSIS
 Original Author: Phil Schwartz (philschwartz.me, @pschwartzzz)
 	
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -64,27 +64,27 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlSsisCatalog
+https://dbatools.io/Copy-DbaSsisCatalog
 	
 .EXAMPLE   
-Copy-SqlSsisCatalog -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster
 
 Copies all folders, environments and all ssis Projects from sqlserver2014a to sqlcluster, using Windows credentials. If folders with the same name exist on the destination they will be skipped, but projects will be redeployed.
 
 .EXAMPLE   
-Copy-SqlSsisCatalog -Source sqlserver2014a -Destination sqlcluster -Project Archive_Tables -SourceSqlCredential $cred -Force
+Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster -Project Archive_Tables -SourceSqlCredential $cred -Force
 
 Copies a single Project, the Archive_Tables Project from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a
 and Windows credentials for sqlcluster. If a Project with the same name exists on sqlcluster, it will be deleted and recreated because -Force was used.
 
 .EXAMPLE   
-Copy-SqlSsisCatalog -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
 
 .EXAMPLE
 $SecurePW = Read-Host "Enter password" -AsSecureString
-Copy-SqlSsisCatalog -Source sqlserver2014a -Destination sqlcluster -CreateCatalogPassword $SecurePW
+Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster -CreateCatalogPassword $SecurePW
 
 Deploy entire SSIS catalog to an instance without a destination catalog.  Passing -CreateCatalogPassword will bypass any user prompts for creating the destination catalog.
 
