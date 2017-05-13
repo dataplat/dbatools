@@ -1,8 +1,8 @@
-Function Copy-SqlServerRole
+function Copy-DbaServerRole
 {
 <#
 .SYNOPSIS 
-Copy-SqlServerRole migrates server roles from one SQL Server to another. 
+Copy-DbaServerRole migrates server roles from one SQL Server to another. 
 
 .DESCRIPTION
 By default, all roles are copied. The -Roles parameter is autopopulated for command-line completion and can be used to copy only specific roles.
@@ -56,20 +56,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlServerRole 
+https://dbatools.io/Copy-DbaServerRole 
 
 .EXAMPLE   
-Copy-SqlServerRole -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaServerRole -Source sqlserver2014a -Destination sqlcluster
 
 Copies all server roles from sqlserver2014a to sqlcluster, using Windows credentials. If roles with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-SqlServerRole -Source sqlserver2014a -Destination sqlcluster -Role tg_noDbDrop -SourceSqlCredential $cred -Force
+Copy-DbaServerRole -Source sqlserver2014a -Destination sqlcluster -Role tg_noDbDrop -SourceSqlCredential $cred -Force
 
 Copies a single role, the tg_noDbDrop role from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a role with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 .EXAMPLE   
-Copy-SqlServerRole -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+Copy-DbaServerRole -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
 #>
