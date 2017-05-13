@@ -1,4 +1,4 @@
-Function Copy-SqlSysDbUserObjects
+function Copy-DbaSysDbUserObject
 {
 <#
 .SYNOPSIS
@@ -36,7 +36,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .EXAMPLE
-Copy-SqlSysDbUserObjects $sourceserver $destserver
+Copy-DbaSysDbUserObject $sourceserver $destserve
 	
 Copies user objects from source to destination 
 
@@ -52,7 +52,7 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Get-DetachedDbInfo
+https://dbatools.io/Copy-DbaSysDbUserObject
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
