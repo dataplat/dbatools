@@ -141,7 +141,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer", "Source")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[object]$SqlCredential,
 		[object]$Destination,
 		[object]$DestinationCredential,
