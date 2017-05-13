@@ -1,8 +1,8 @@
-Function Copy-SqlEndpoint
+function Copy-DbaEndpoint
 {
 <#
 .SYNOPSIS 
-Copy-SqlEndpoint migrates server endpoints from one SQL Server to another. 
+Copy-DbaEndpoint migrates server endpoints from one SQL Server to another. 
 
 .DESCRIPTION
 By default, all endpoints are copied. The -Endpoints parameter is autopopulated for command-line completion and can be used to copy only specific endpoints.
@@ -55,20 +55,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlEndpoint
+https://dbatools.io/Copy-DbaEndpoint
 
 .EXAMPLE   
-Copy-SqlEndpoint -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaEndpoint -Source sqlserver2014a -Destination sqlcluster
 
 Copies all server endpoints from sqlserver2014a to sqlcluster, using Windows credentials. If endpoints with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-SqlEndpoint -Source sqlserver2014a -Destination sqlcluster -Endpoint tg_noDbDrop -SourceSqlCredential $cred -Force
+Copy-DbaEndpoint -Source sqlserver2014a -Destination sqlcluster -Endpoint tg_noDbDrop -SourceSqlCredential $cred -Force
 
 Copies a single endpoint, the tg_noDbDrop endpoint from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an endpoint with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 .EXAMPLE   
-Copy-SqlEndpoint -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+Copy-DbaEndpoint -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
 #>
