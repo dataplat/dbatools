@@ -76,6 +76,18 @@ If switch enabled, the backup with be verified by running a RESTORE VERIFYONLY a
 .PARAMETER DatabaseCollection
 Internal parameter
 
+.PARAMETER AzureBaseUrl
+The URL to the basecontainer of an Azure storage account to write backups to
+
+If specified, the only other parameters than can be used are:
+NoCopyOnly, Type, CompressBackup, Checksum, Verify, AzureCredential, CreateFolder
+
+.PARAMETER AzureCredential
+The name of the credential on the SQL instance that can write to the AzureBaseUrl
+
+.PARAMETER Silent
+Switch to silence the internal messaing functions
+
 .NOTES
 Tags: DisasterRecovery, Backup, Restore
 Original Author: Stuart Moore (@napalmgram), stuart-moore.com
@@ -97,6 +109,12 @@ default backup directory
 Backup-DbaDatabase -SqlInstance sql2016 -BackupDirectory C:\temp -Databases AdventureWorks2014 -Type Full
 
 Backs up AdventureWorks2014 to sql2016's C:\temp folder 
+
+.EXAMPLE
+Backup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/ -AzureCredential dbatoolscred -Type Full -CreateFolder
+
+Performs a full backup of all databases on the slq2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the 
+sql credential dbatoolscred registered on the sql2016 instance
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	param (
@@ -117,7 +135,10 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 		[switch]$Verify,
 		[int]$MaxTransferSize,
 		[int]$BlockSize,
-		[int]$BufferCount
+		[int]$BufferCount,
+		[string]$AzureBaseUrl,
+		[string]$AzureCredential,
+		[switch]$Silent
 	)
 	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
@@ -172,6 +193,17 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					Write-Warning "$FunctionName - Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
 					break
 				}
+			}
+			if ($null -ne $AzureBaseUrl)
+			{
+				if ($null -eq $AzureCredential)
+				{
+					Stop-Function -Message "You must provide the credential name for the Azure Storage Account"
+					break
+				}
+				$AzureBaseUrl = $AzureBaseUrl.Trim("/")
+				$FileCount = 1
+				$BackupDirectory = $AzureBaseUrl
 			}
 		}
 	}
@@ -279,6 +311,10 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			
 			$backup.CopyOnly = $copyonly
 			$backup.Action = $type
+			if ($null -ne $AzureBaseUrl)
+			{
+				$backup.CredentialName = $AzureCredential
+			}
 			
 			Write-Verbose "$FunctionName - Sorting Paths"
 			
@@ -318,15 +354,23 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 				}
 	
 				$timestamp = (Get-date -Format yyyyMMddHHmm)
+				Write-verbose "Setting filename"
 				$BackupFileName = "$($dbname)_$timestamp"
-				
+				if ($null -ne $AzureBaseUrl)
+				{
+					$PathDivider =  "/"
+				}
+				else
+				{
+					$PathDivider= "\"
+				}
 				Foreach ($path in $BackupDirectory)
 				{
 					if ($CreateFolder)
 					{
-						$Path = $path + "\" + $Database.name
-						Write-Verbose "$FunctionName - Creating Folder $Path"	
-						if ((New-DbaSqlDirectory -SqlServer $server -SqlCredential $SqlCredential -Path $path).Created -eq $false)
+						$Path = $path + $PathDivider + $Database.name
+						Write-Verbose "$FunctionName - Creating Folder $Path"
+						if (((New-DbaSqlDirectory -SqlServer $server -SqlCredential $SqlCredential -Path $path).Created -eq $false) -and $null -eq $AzureBaseUrl)
 						{
 							$failreason = "Cannot create or write to folder $path"
 							$failures += $failreason
@@ -334,12 +378,12 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 						}
 						else
 						{
-							$FinalBackupPath += "$path\$BackupFileName.$suffix"
+							$FinalBackupPath += "$path$PathDivider$BackupFileName.$suffix"
 						}
 					}
 					else
 					{
-						$FinalBackupPath += "$path\$BackupFileName.$suffix"
+						$FinalBackupPath += "$path$PathDivider$BackupFileName.$suffix"
 					}
 					<#
 					The code below attempts to create the directory even when $CreateFolder -- was it supposed to be Test-SqlPath?
@@ -357,7 +401,10 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 				}
 			}
 			
-			$file = New-Object System.IO.FileInfo($FinalBackupPath[0])
+			if ($null -eq $AzureBaseUrl)
+			{
+				$file = New-Object System.IO.FileInfo($FinalBackupPath[0])
+			}
 			$suffix = $file.Extension
 			
 			if ($FileCount -gt 1 -and $FinalBackupPath.count -eq 1)
@@ -392,7 +439,14 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 				foreach ($backupfile in $FinalBackupPath)
 				{
 					$device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-					$device.DeviceType = "File"
+					if ($null -ne $AzureBaseUrl)
+					{
+						$device.DeviceType = "URL"
+					}
+					else
+					{
+						$device.DeviceType = "File"
+					}
 					$device.Name = $backupfile
 					$backup.Devices.Add($device)
 				}
