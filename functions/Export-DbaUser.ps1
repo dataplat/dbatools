@@ -1,4 +1,4 @@
-Function Export-SqlUser {
+function Export-DbaUser {
 <#
 .SYNOPSIS
 Exports users creation and its permissions to a T-SQL file or host.
@@ -43,22 +43,22 @@ Append to file
 Use this switch to disable any kind of verbose messages
 
 .EXAMPLE
-Export-SqlUser -SqlServer sql2005 -FilePath C:\temp\sql2005-users.sql
+Export-DbaUser -SqlServer sql2005 -FilePath C:\temp\sql2005-users.sql
 
 Exports SQL for the users in server "sql2005" and writes them to the file "C:\temp\sql2005-users.sql"
 
 .EXAMPLE
-Export-SqlUser -SqlServer sqlserver2014a $scred -FilePath C:\temp\users.sql -Append
+Export-DbaUser -SqlServer sqlserver2014a $scred -FilePath C:\temp\users.sql -Append
 
 Authenticates to sqlserver2014a using SQL Authentication. Exports all users to C:\temp\users.sql, and appends to the file if it exists. If not, the file will be created.
 
 .EXAMPLE
-Export-SqlUser -SqlServer sqlserver2014a -User User1, User2 -FilePath C:\temp\users.sql
+Export-DbaUser -SqlServer sqlserver2014a -User User1, User2 -FilePath C:\temp\users.sql
 
 Exports ONLY users User1 and User2 fron sqlsever2014a to the file  C:\temp\users.sql
 
 .EXAMPLE
-Export-SqlUser -SqlServer sqlserver2008 -User User1 -FilePath C:\temp\users.sql -DestinationVersion SQLServer2016
+Export-DbaUser -SqlServer sqlserver2008 -User User1 -FilePath C:\temp\users.sql -DestinationVersion SQLServer2016
 
 Exports user User1 fron sqlsever2008 to the file  C:\temp\users.sql with sintax to run on SQL Server 2016
 
@@ -82,7 +82,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 .LINK
-https://dbatools.io/Export-SqlUser
+https://dbatools.io/Export-DbaUser
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	[OutputType([String])]
