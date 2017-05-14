@@ -1,6 +1,5 @@
-function Get-DbaRegisteredServerName
-{
-<#
+function Get-DbaRegisteredServerName {
+    <#
 .SYNOPSIS
 Gets list of SQL Server names stored in SQL Server Central Management Server.
 
@@ -68,147 +67,129 @@ Get-DbaRegisteredServerName -SqlServer sqlserver2014a -Group HR, Accounting -IpA
 Gets a list of server IP addresses in the HR and Accounting groups from the Central Management Server on sqlserver2014a.
 	
 #>
-	[CmdletBinding(DefaultParameterSetName = "Default")]
-	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
-		[object]$SqlCredential,
-		[switch]$NoCmsServer,
-		[parameter(ParameterSetName = "NetBios")]
-		[switch]$NetBiosName,
-		[parameter(ParameterSetName = "IP")]
-		[switch]$IpAddr
-	)
+    [CmdletBinding(DefaultParameterSetName = "Default")]
+    Param (
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Alias("ServerInstance", "SqlInstance")]
+        [object]$SqlServer,
+        [object]$SqlCredential,
+        [switch]$NoCmsServer,
+        [parameter(ParameterSetName = "NetBios")]
+        [switch]$NetBiosName,
+        [parameter(ParameterSetName = "IP")]
+        [switch]$IpAddr
+    )
 	
-	DynamicParam { if ($sqlserver) { return Get-ParamSqlCmsGroups -SqlServer $sqlserver -SqlCredential $SqlCredential } }
+    DynamicParam { if ($sqlserver) { return Get-ParamSqlCmsGroups -SqlServer $sqlserver -SqlCredential $SqlCredential } }
 	
-	BEGIN
-	{
-		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-		$sqlconnection = $server.ConnectionContext.SqlConnectionObject
+    BEGIN {
+        $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+        $sqlconnection = $server.ConnectionContext.SqlConnectionObject
 		
-		try
-		{
-			$cmstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sqlconnection)
-		}
-		catch
-		{
-			throw "Cannot access Central Management Server"
-		}
+        try {
+            $cmstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sqlconnection)
+        }
+        catch {
+            throw "Cannot access Central Management Server"
+        }
 		
-		$groups = $psboundparameters.Group
-	}
+        $groups = $psboundparameters.Group
+    }
 	
-	PROCESS
-	{
+    PROCESS {
 		
-		# see notes at Get-ParamSqlCmsGroups
-		Function Find-CmsGroup($CmsGrp, $base = '', $stopat)
-		{
-			$results = @()
-			foreach($el in $CmsGrp) {
-				if($base -eq ''){
-					$partial = $el.name
-				} else {
-					$partial = "$base\$($el.name)"
-				}
-				if ($partial -eq $stopat) {
-					return $el
-				} else {
-					foreach($group in $el.ServerGroups) {
-						$results += Find-CmsGroup $group $partial $stopat
-					}
-				}
-			}
-			return $results
-		}
+        # see notes at Get-ParamSqlCmsGroups
+        Function Find-CmsGroup($CmsGrp, $base = '', $stopat) {
+            $results = @()
+            foreach ($el in $CmsGrp) {
+                if ($base -eq '') {
+                    $partial = $el.name
+                }
+                else {
+                    $partial = "$base\$($el.name)"
+                }
+                if ($partial -eq $stopat) {
+                    return $el
+                }
+                else {
+                    foreach ($group in $el.ServerGroups) {
+                        $results += Find-CmsGroup $group $partial $stopat
+                    }
+                }
+            }
+            return $results
+        }
 		
-		$servers = @()
-		if ($groups -ne $null)
-		{
-			foreach ($group in $groups)
-			{
-				$cms = Find-CmsGroup $cmstore.DatabaseEngineServerGroup.ServerGroups '' $group
-				$servers += ($cms.GetDescendantRegisteredServers()).servername
-			}
-		}
-		else
-		{
-			$cms = $cmstore.ServerGroups["DatabaseEngineServerGroup"]
-			$servers = ($cms.GetDescendantRegisteredServers()).servername
-		}
+        $servers = @()
+        if ($groups -ne $null) {
+            foreach ($group in $groups) {
+                $cms = Find-CmsGroup $cmstore.DatabaseEngineServerGroup.ServerGroups '' $group
+                $servers += ($cms.GetDescendantRegisteredServers()).servername
+            }
+        }
+        else {
+            $cms = $cmstore.ServerGroups["DatabaseEngineServerGroup"]
+            $servers = ($cms.GetDescendantRegisteredServers()).servername
+        }
 		
-		if ($NoCmsServer -eq $false)
-		{
-			$servers += $sqlserver
-		}
-	}
+        if ($NoCmsServer -eq $false) {
+            $servers += $sqlserver
+        }
+    }
 	
-	END
-	{
-		$server.ConnectionContext.Disconnect()
+    END {
+        $server.ConnectionContext.Disconnect()
 		
-		if ($NetBiosName -or $IpAddr)
-		{
-			$ipcollection = @()
-			$netbioscollection = @()
-			$processed = @()
+        if ($NetBiosName -or $IpAddr) {
+            $ipcollection = @()
+            $netbioscollection = @()
+            $processed = @()
 			
-			foreach ($server in $servers)
-			{
-				if ($server -match '\\')
-				{
-					$server = $server.Split('\')[0]
-				}
+            foreach ($server in $servers) {
+                if ($server -match '\\') {
+                    $server = $server.Split('\')[0]
+                }
 				
-				if ($processed -contains $server) { continue }
-				$processed += $server 
+                if ($processed -contains $server) { continue }
+                $processed += $server 
 				
-				try
-				{
-					Write-Verbose "Testing connection to $server and resolving IP address"
-					$ipaddress = ((Test-Connection $server -Count 1 -ErrorAction SilentlyContinue).Ipv4Address | Select-Object -First 1).IPAddressToString
-				}
-				catch
-				{
-					Write-Warning "Could not resolve IP address for $server"
-					continue
-				}
+                try {
+                    Write-Verbose "Testing connection to $server and resolving IP address"
+                    $ipaddress = ((Test-Connection $server -Count 1 -ErrorAction SilentlyContinue).Ipv4Address | Select-Object -First 1).IPAddressToString
+                }
+                catch {
+                    Write-Warning "Could not resolve IP address for $server"
+                    continue
+                }
 				
-				if ($ipcollection -notcontains $ipaddress) { $ipcollection += $ipaddress }
+                if ($ipcollection -notcontains $ipaddress) { $ipcollection += $ipaddress }
 				
-				if ($NetBiosName)
-				{
-					try
-					{
-						$hostname = (Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter IPEnabled=TRUE -ComputerName $ipaddress -ErrorAction SilentlyContinue).PSComputerName
-						if ($hostname -is [array]) { $hostname = $hostname[0] }
-						Write-Verbose "Hostname resolved to $hostname"
-						if ($hostname -eq $null) { $hostname = (nbtstat -A $ipaddress | Where-Object { $_ -match '\<00\>  UNIQUE' } | ForEach-Object { $_.SubString(4, 14) }).Trim() }
-					}
-					catch
-					{
-						Write-Warning "Could not resolve NetBios name for $server"
-						continue
-					}
+                if ($NetBiosName) {
+                    try {
+                        $hostname = (Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter IPEnabled=TRUE -ComputerName $ipaddress -ErrorAction SilentlyContinue).PSComputerName
+                        if ($hostname -is [array]) { $hostname = $hostname[0] }
+                        Write-Verbose "Hostname resolved to $hostname"
+                        if ($hostname -eq $null) { $hostname = (nbtstat -A $ipaddress | Where-Object { $_ -match '\<00\>  UNIQUE' } | ForEach-Object { $_.SubString(4, 14) }).Trim() }
+                    }
+                    catch {
+                        Write-Warning "Could not resolve NetBios name for $server"
+                        continue
+                    }
 					
-					if ($netbioscollection -notcontains $hostname) { $netbioscollection += $hostname }
-				}
-			}
+                    if ($netbioscollection -notcontains $hostname) { $netbioscollection += $hostname }
+                }
+            }
 			
-			if ($NetBiosName)
-			{
-				return $netbioscollection
-			}
-			else
-			{
-				return $ipcollection
-			}
-		}
-		else
-		{
-			return $servers
-		}
-	}
+            if ($NetBiosName) {
+                return $netbioscollection
+            }
+            else {
+                return $ipcollection
+            }
+        }
+        else {
+            return $servers
+        }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-SqlRegisteredServerName
+    }
 }
