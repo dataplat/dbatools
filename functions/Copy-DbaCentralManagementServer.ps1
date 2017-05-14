@@ -293,9 +293,9 @@ In the above example, top level Group1 and Group3, along with its subgroups and 
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) 
-		{ 
-			Write-Output "Central Management Server migration finished" 
-		}
+        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { 
+            Write-Output "Central Management Server migration finished" 
+        }
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlCentralManagementServer
 	}
 }
