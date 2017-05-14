@@ -1,4 +1,4 @@
-Function Export-SqlLogin {
+function Export-DbaLogin {
 <#
 .SYNOPSIS
 Exports Windows and SQL Logins to a T-SQL file. Export includes login, SID, password, default database, default language, server permissions, server roles, db permissions, db roles.
@@ -68,25 +68,25 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Export-SqlLogin
+https://dbatools.io/Export-DbaLogin
 
 .EXAMPLE
-Export-SqlLogin -SqlServer sql2005 -FilePath C:\temp\sql2005-logins.sql
+Export-DbaLogin -SqlServer sql2005 -FilePath C:\temp\sql2005-logins.sql
 
 Exports SQL for the logins in server "sql2005" and writes them to the file "C:\temp\sql2005-logins.sql"
 
 .EXAMPLE
-Export-SqlLogin -SqlServer sqlserver2014a -Exclude realcajun -SqlCredential $scred -FilePath C:\temp\logins.sql -Append
+Export-DbaLogin -SqlServer sqlserver2014a -Exclude realcajun -SqlCredential $scred -FilePath C:\temp\logins.sql -Append
 
 Authenticates to sqlserver2014a using SQL Authentication. Exports all logins except for realcajun to C:\temp\logins.sql, and appends to the file if it exists. If not, the file will be created.
 
 .EXAMPLE
-Export-SqlLogin -SqlServer sqlserver2014a -Login realcajun, netnerds -FilePath C:\temp\logins.sql
+Export-DbaLogin -SqlServer sqlserver2014a -Login realcajun, netnerds -FilePath C:\temp\logins.sql
 
 Exports ONLY logins netnerds and realcajun from sqlsever2014a to the file  C:\temp\logins.sql
 
 .EXAMPLE
-Export-SqlLogin -SqlServer sqlserver2014a -Login realcajun, netnerds -Databases HR, Accounting
+Export-DbaLogin -SqlServer sqlserver2014a -Login realcajun, netnerds -Databases HR, Accounting
 
 Exports ONLY logins netnerds and realcajun from sqlsever2014a with the permissions on databases HR and Accounting
 
@@ -95,7 +95,7 @@ Exports ONLY logins netnerds and realcajun from sqlsever2014a with the permissio
 Author: Chrissy LeMaire (@cl), netnerds.net
 
 .LINK 
-https://dbatools.io/Export-SqlLogin
+https://dbatools.io/Export-DbaLogin
 
 #>
 	
