@@ -93,9 +93,9 @@ File to disk, and string path.
 	{
 		$server.ConnectionContext.Disconnect()
 		
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message"))
-		{
-			Write-Output "Server configuration export finished"
-		}
+        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
+            Write-Output "Server configuration export finished"
+        }
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Export-SqlSpConfigure
 	}
 }
