@@ -1,4 +1,4 @@
-Function Connect-SqlServer
+﻿Function Connect-SqlServer
 {
     <#
         .SYNOPSIS
@@ -78,9 +78,9 @@ Function Connect-SqlServer
     }
     else
     {
-		[DbaInstanceParameter]$ConvertedSqlServer = [DbaInstanceParameter]($SqlServer | Select-Object -First 1)
-		
-		if ($SqlServer.Count -gt 1)
+        [DbaInstanceParameter]$ConvertedSqlServer = [DbaInstanceParameter]($SqlServer | Select-Object -First 1)
+        
+        if ($SqlServer.Count -gt 1)
         {
             Write-Message -Level Warning -Silent $true -Message "More than on server was specified when calling Connect-SqlServer from $((Get-PSCallStack)[1].Command)"
         }
@@ -127,6 +127,10 @@ Function Connect-SqlServer
         {
             $server.ConnectionContext.Connect()
         }
+        
+        # Update cache for database names
+        [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$ConvertedSqlServer.FullSmoName.ToLower()] = $server.Databases.Name
+        
         return $server
     }
     #endregion Input Object was a server object
@@ -234,6 +238,9 @@ Function Connect-SqlServer
             $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordHashAlgorithm', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
         }
     }
+    
+    # Update cache for database names
+    [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$ConvertedSqlServer.FullSmoName.ToLower()] = $server.Databases.Name
     
     return $server
     #endregion Input Object was anything else

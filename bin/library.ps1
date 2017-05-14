@@ -2916,6 +2916,55 @@ namespace Sqlcollective.Dbatools
         #endregion ParameterClass Interna
     }
 
+    namespace TabExpansion
+    {
+        using System.Collections.Concurrent;
+        using System.Collections;
+        using System.Management.Automation;
+
+        /// <summary>
+        /// Class that handles the static fields supporting the dbatools TabExpansion implementation
+        /// </summary>
+        public static class TabExpansionHost
+        {
+            /// <summary>
+            /// Field containing the scripts that were registered.
+            /// </summary>
+            public static ConcurrentDictionary<string, ScriptContainer> Scripts = new ConcurrentDictionary<string, ScriptContainer>();
+            
+            /// <summary>
+            /// The cache used by scripts utilizing TabExpansionPlusPlus in dbatools
+            /// </summary>
+            public static Hashtable Cache = new Hashtable();
+        }
+
+        /// <summary>
+        /// Regular container to store scripts in, that are used in TEPP
+        /// </summary>
+        public class ScriptContainer
+        {
+            /// <summary>
+            /// The name of the scriptblock
+            /// </summary>
+            public string Name;
+
+            /// <summary>
+            /// The scriptblock doing the logic
+            /// </summary>
+            public ScriptBlock ScriptBlock;
+
+            /// <summary>
+            /// The last time the scriptblock was called. Must be updated by the scriptblock itself
+            /// </summary>
+            public DateTime LastExecution;
+
+            /// <summary>
+            /// The time it took to run the last time
+            /// </summary>
+            public TimeSpan LastDuration;
+        }
+    }
+
     namespace Utility
     {
         using System.Management.Automation;
@@ -5154,7 +5203,7 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// The Version of the dbatools Library. Used to compare with import script to determine out-of-date libraries
             /// </summary>
-            public readonly static Version LibraryVersion = new Version(1, 0, 1, 9);
+            public readonly static Version LibraryVersion = new Version(1, 0, 1, 10);
         }
 
         /// <summary>
@@ -5355,8 +5404,8 @@ namespace Sqlcollective.Dbatools
         }
         
         Add-Type @paramAddType
-		
-		#region PowerShell TypeData
+        
+        #region PowerShell TypeData
         Update-TypeData -TypeName "SqlCollective.Dbatools.dbaSystem.DbatoolsException" -SerializationDepth 2 -ErrorAction Ignore
         Update-TypeData -TypeName "SqlCollective.Dbatools.dbaSystem.DbatoolsExceptionRecord" -SerializationDepth 2 -ErrorAction Ignore
         #endregion PowerShell TypeData
@@ -5398,7 +5447,7 @@ aka "The guy who made most of The Library that Failed to import"
 }
 
 #region Version Warning
-$LibraryVersion = New-Object System.Version(1, 0, 1, 9)
+$LibraryVersion = New-Object System.Version(1, 0, 1, 10)
 if ($LibraryVersion -ne ([Sqlcollective.Dbatools.Utility.UtilityHost]::LibraryVersion))
 {
     Write-Warning @"
