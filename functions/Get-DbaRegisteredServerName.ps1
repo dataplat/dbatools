@@ -1,4 +1,4 @@
-Function Get-SqlRegisteredServerName
+function Get-DbaRegisteredServerName
 {
 <#
 .SYNOPSIS
@@ -45,25 +45,25 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Get-SqlRegisteredServerName
+https://dbatools.io/Get-DbaRegisteredServerName
 
 .EXAMPLE 
-Get-SqlRegisteredServerName -SqlServer sqlserver2014a
+Get-DbaRegisteredServerName -SqlServer sqlserver2014a
 
 Gets a list of all server names from the Central Management Server on sqlserver2014a, using Windows Credentials
 
 .EXAMPLE 
-Get-SqlRegisteredServerName -SqlServer sqlserver2014a -SqlCredential $credential
+Get-DbaRegisteredServerName -SqlServer sqlserver2014a -SqlCredential $credential
 
 Gets a list of all server names from the Central Management Server on sqlserver2014a, using SQL Authentication
 		
 .EXAMPLE 
-Get-SqlRegisteredServerName -SqlServer sqlserver2014a -Group HR, Accounting
+Get-DbaRegisteredServerName -SqlServer sqlserver2014a -Group HR, Accounting
 	
 Gets a list of server names in the HR and Accounting groups from the Central Management Server on sqlserver2014a.
 	
 .EXAMPLE 
-Get-SqlRegisteredServerName -SqlServer sqlserver2014a -Group HR, Accounting -IpAddr
+Get-DbaRegisteredServerName -SqlServer sqlserver2014a -Group HR, Accounting -IpAddr
 	
 Gets a list of server IP addresses in the HR and Accounting groups from the Central Management Server on sqlserver2014a.
 	
