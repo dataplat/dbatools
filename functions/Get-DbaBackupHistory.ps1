@@ -164,24 +164,26 @@ Function Get-DbaBackupHistory {
 			if ($last) {
 				if ($databases -eq $null) { $databases = $server.databases.name }
 				
-				foreach ($db in $databases) {
-					$logdb = Get-DbaBackupHistory -SqlServer $server -Databases $db -raw:$Raw -LastLog
-					
-					if ($logdb) {
-						$alldb = Get-DbaBackupHistory -SqlServer $server -Databases $db -raw:$Raw 
-						$alldb | Where-Object { $_.FirstLsn -eq $logdb.DatabaseBackupLsn -and $_.Type -eq 'Full' } 
-						$diff = $alldb | Where-Object { $_.DatabaseBackupLsn -eq $logdb.DatabaseBackupLsn -and $_.Type -ne 'Full' -and $_.Type -ne 'Log' } | Sort-Object Start -Descending | Select-Object -First 1
-						$diff
-						if($diff) {
-							$alldb | Where-Object { $_.DatabaseBackupLsn -eq $logdb.DatabaseBackupLsn -and $_.lastlsn -ge $diff.lastlsn -and $_.Type -eq 'Log'}
-						} else {
-							$alldb | Where-Object { $_.DatabaseBackupLsn -eq $logdb.DatabaseBackupLsn -and $_.Type -eq 'Log'}
-						}
-					}
-					else{
-						Get-DbaBackupHistory -SqlServer $server -Databases $db -LastFull -raw:$Raw
-					}
-				}
+                foreach ($db in $databases) {
+
+
+                    #Get the full and build upwards
+					$allbackups = @()
+                    $allbackups += $Fulldb = Get-DbaBackupHistory -SqlServer $server -Databases $db -LastFull -raw:$Raw
+                    $Allbackups += $DiffDB = Get-DbaBackupHistory -SqlServer $server -Databases $db -LastDiff -raw:$Raw
+                    if ($null -ne $diffdb) {
+                        $TLogStartLSN = $diffdb.FirstLsn
+                    }
+                    else {
+                        $TLogStartLSN = $fulldb.FirstLsn
+                    }
+					if ($raw)
+					{$Filter = 'first_Lsn'}
+					else
+					{$Filter = 'FirstLsn'}
+                    $Allbackups += $Logdb = Get-DbaBackupHistory -SqlServer $server -Databases $db -raw:$raw | Where-object {$_.Type -eq 'Log' -and $_.$filter -gt $TLogstartLSN }
+                    $Allbackups | Sort-Object $Filter
+                }
 				continue
 			}
 			

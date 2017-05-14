@@ -11,5 +11,9 @@ Set-DbaConfig -Name 'message.minimuminfo' -Value 1 -Default -DisableHandler -Des
 Set-DbaConfig -Name 'message.minimumverbose' -Value 4 -Default -DisableHandler -Description "The minimum required message level where verbose information is written."
 Set-DbaConfig -Name 'message.minimumdebug' -Value 1 -Default -DisableHandler -Description "The minimum required message level where debug information is written."
 
-# Default color used by the PS3-4 "Write-Message" function in info mode
-Set-DbaConfig -Name 'message.infocolor' -Value 'Cyan' -Default -Description "The color to use when writing text to the screen on PowerShell 3 or 4."
+# Default color used by the "Write-Message" function in info mode
+Set-DbaConfig -Name 'message.infocolor' -Value 'Cyan' -Default -DisableHandler -Description "The color to use when writing text to the screen on PowerShell."
+Set-DbaConfig -Name 'message.developercolor' -Value 'Grey' -Default -DisableHandler -Description "The color to use when writing text with developer specific additional information to the screen on PowerShell."
+
+# Enable Developer mode
+Set-DbaConfig -Name 'developer.mode.enable' -Value $false -Default -DisableHandler -Description "Developermode enables advanced logging and verbosity features. There is little benefit for enabling this as a regular user. but developers can use it to more easily troubleshoot issues."

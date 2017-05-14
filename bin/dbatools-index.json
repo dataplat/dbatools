@@ -334,7 +334,7 @@
     },
     {
         "CommandName":  "Expand-SqlTLogResponsibly",
-        "Description":  "As you may already know, having a TLog file with too many VLFs can hurt your database performance in many ways.\n\nExample:\n    Too many virtual log files can cause transaction log backups to slow down and can also slow down database recovery and, in extreme cases, even affect insert/update/delete performance. \n    References:\n        http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/\n        http://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx\n        http://www.brentozar.com/blitz/high-virtual-log-file-vlf-count/\n    \n\tIn order to get rid of this fragmentation we need to grow the file taking the following into consideration:\n        - How many VLFs are created when we perform a grow operation or when an auto-grow is invoked?\n    Note: In SQL Server 2014 this algorithm has changed (http://www.sqlskills.com/blogs/paul/important-change-vlf-creation-algorithm-sql-server-2014/)\n\nAttention:\n    We are growing in MB instead of GB because of known issue prior to SQL 2012:\n        More detail here: \n            http://www.sqlskills.com/BLOGS/PAUL/post/Bug-log-file-growth-broken-for-multiples-of-4GB.aspx\n\t    and \n            http://connect.microsoft.com/SQLServer/feedback/details/481594/log-growth-not-working-properly-with-specific-growth-sizes-vlfs-also-not-created-appropriately\n\t    or \n            https://connect.microsoft.com/SQLServer/feedback/details/357502/transaction-log-file-size-will-not-grow-exactly-4gb-when-filegrowth-4gb\n\nUnderstanding related problems:\n        http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/\n        http://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx\n        http://www.brentozar.com/blitz/high-virtual-log-file-vlf-count/\n    \nKnown bug before SQL Server 2012\n        http://www.sqlskills.com/BLOGS/PAUL/post/Bug-log-file-growth-broken-for-multiples-of-4GB.aspx\n        http://connect.microsoft.com/SQLServer/feedback/details/481594/log-growth-not-working-properly-with-specific-growth-sizes-vlfs-also-not-created-appropriately\n        https://connect.microsoft.com/SQLServer/feedback/details/357502/transaction-log-file-size-will-not-grow-exactly-4gb-when-filegrowth-4gb\n\nHow it works?\n    The transaction log will growth in chunks until it reachs the desired size. \n    Example: If you have a log file with 8192MB and you say that the target size is 81920MB (80GB) it will growth in chunks of 8192MB until reach the 81920MB. 8192 -\u003e 16384 -\u003e 24576 ... 73728 -\u003e 81920",
+        "Description":  "As you may already know, having a TLog file with too many VLFs can hurt your database performance in many ways.\n\nExample:\n    Too many virtual log files can cause transaction log backups to slow down and can also slow down database recovery and, in extreme cases, even affect insert/update/delete performance. \n    References:\n        http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/\n        http://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx\n        http://www.brentozar.com/blitz/high-virtual-log-file-vlf-count/\n    \n\tIn order to get rid of this fragmentation we need to grow the file taking the following into consideration:\n        - How many VLFs are created when we perform a grow operation or when an auto-grow is invoked?\n    Note: In SQL Server 2014 this algorithm has changed (http://www.sqlskills.com/blogs/paul/important-change-vlf-creation-algorithm-sql-server-2014/)\n\nAttention:\n    We are growing in MB instead of GB because of known issue prior to SQL 2012:\n        More detail here: \n            http://www.sqlskills.com/BLOGS/PAUL/post/Bug-log-file-growth-broken-for-multiples-of-4GB.aspx\n\t    and \n            http://connect.microsoft.com/SQLServer/feedback/details/481594/log-growth-not-working-properly-with-specific-growth-sizes-vlfs-also-not-created-appropriately\n\t    or \n            https://connect.microsoft.com/SQLServer/feedback/details/357502/transaction-log-file-size-will-not-grow-exactly-4gb-when-filegrowth-4gb\n\nUnderstanding related problems:\n        http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/\n        http://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx\n        http://www.brentozar.com/blitz/high-virtual-log-file-vlf-count/\n    \nKnown bug before SQL Server 2012\n        http://www.sqlskills.com/BLOGS/PAUL/post/Bug-log-file-growth-broken-for-multiples-of-4GB.aspx\n        http://connect.microsoft.com/SQLServer/feedback/details/481594/log-growth-not-working-properly-with-specific-growth-sizes-vlfs-also-not-created-appropriately\n        https://connect.microsoft.com/SQLServer/feedback/details/357502/transaction-log-file-size-will-not-grow-exactly-4gb-when-filegrowth-4gb\n\nHow it works?\n    The transaction log will grow in chunks until it reaches the desired size. \n    Example: If you have a log file with 8192MB and you say that the target size is 81920MB (80GB) it will grow in chunks of 8192MB until it reaches 81920MB. 8192 -\u003e 16384 -\u003e 24576 ... 73728 -\u003e 81920",
         "Tags":  [
                      "Storage",
                      "Backup"
@@ -342,7 +342,7 @@
         "Synopsis":  "This command will help you to automatically grow your T-Log database file in a responsible way (preventing the generation of too many VLFs).",
         "Name":  "Expand-SqlTLogResponsibly",
         "Links":  "https://dbatools.io/Expand-SqlTLogResponsibly",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eExpand-SqlTLogResponsibly -SqlServer sqlcluster -Databases db1 -TargetLogSizeMB 50000\r\n\r\nThis is the simplest example. The increment value will be calculated and will grow the T-Log of the db1 database on \r\nsqlcluster to 50000 MB.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eExpand-SqlTLogResponsibly -SqlServer sqlcluster -Databases db1, db2 -TargetLogSizeMB 10000 -IncrementSizeMB 200\r\n\r\nGrows the T-Log of db1 and db2 databases on sqlcluster to 1000MB. If you don\u0027t provide this parameter, the value will \r\nbe calculated automatically. Otherwise, the input value will be compared with the suggested value for your target size. \r\nIf these values differ, you will be prompted to confirm your choice.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eExpand-SqlTLogResponsibly -SqlServer sqlcluster -Databases db1 -TargetLogSizeMB 10000 -LogFileId 9\r\n\r\nGrows the T-Log with FielId 9 of the db1 database on sqlcluster instance to 10000MB.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eExpand-SqlTLogResponsibly -SqlServer sqlcluster -Databases (Get-Content D:\\DBs.txt) -TargetLogSizeMB 50000\r\n\r\nGrows the T-Log of the databases specified in the file \u0027D:\\DBs.txt\u0027 on sqlcluster instance to 50000MB.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eExpand-SqlTLogResponsibly -SqlServer sqlcluster -Databases db1, db2 -TargetLogSizeMB 50000\r\n\r\nGrows the T-Log of the databases db1 and db2 on the sqlcluster instance to 50000MB.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eExpand-SqlTLogResponsibly -SqlServer sqlcluster -Databases \u0027db with space\u0027 -TargetLogSizeMB 50000 -Verbose\r\n\r\nUse -Verbose to view in detail all actions performed by this script\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003eExpand-SqlTLogResponsibly -SqlServer sqlserver -Databases db1,db2 -TargetLogSizeMB 100 -IncrementSizeMB 10 \r\n-ShrinkLogFile -ShrinkSizeMB 10 -BackupDirectory R:\\MSSQL\\Backup\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eExpand-SqlTLogResponsibly -SqlServer sqlcluster -Databases db1 -TargetLogSizeMB 50000\r\n\r\nThis is the simplest example. The increment value will be calculated and will grow the T-Log of the db1 database on \r\nsqlcluster to 50000 MB.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eExpand-SqlTLogResponsibly -SqlServer sqlcluster -Databases db1, db2 -TargetLogSizeMB 10000 -IncrementSizeMB 200\r\n\r\nGrows the T-Log of db1 and db2 databases on sqlcluster to 1000MB. If you don\u0027t provide this parameter, the value will \r\nbe calculated automatically. Otherwise, the input value will be compared with the suggested value for your target size. \r\nIf these values differ, you will be prompted to confirm your choice.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eExpand-SqlTLogResponsibly -SqlServer sqlcluster -Databases db1 -TargetLogSizeMB 10000 -LogFileId 9\r\n\r\nGrows the T-Log with FileId 9 of the db1 database on sqlcluster instance to 10000MB.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eExpand-SqlTLogResponsibly -SqlServer sqlcluster -Databases (Get-Content D:\\DBs.txt) -TargetLogSizeMB 50000\r\n\r\nGrows the T-Log of the databases specified in the file \u0027D:\\DBs.txt\u0027 on sqlcluster instance to 50000MB.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eExpand-SqlTLogResponsibly -SqlServer sqlcluster -Databases db1, db2 -TargetLogSizeMB 50000\r\n\r\nGrows the T-Log of the databases db1 and db2 on the sqlcluster instance to 50000MB.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eExpand-SqlTLogResponsibly -SqlServer sqlcluster -Databases \u0027db with space\u0027 -TargetLogSizeMB 50000 -Verbose\r\n\r\nUse -Verbose to view in detail all actions performed by this script\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003eExpand-SqlTLogResponsibly -SqlServer sqlserver -Databases db1,db2 -TargetLogSizeMB 100 -IncrementSizeMB 10 \r\n-ShrinkLogFile -ShrinkSizeMB 10 -BackupDirectory R:\\MSSQL\\Backup\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Export-DbaAvailabilityGroup",
@@ -354,6 +354,15 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaAvailabilityGroup -SqlServer sql2012\r\n\r\nExports all Availability Groups from SQL server \"sql2012\". Output scripts are written to the Documents\\SqlAgExports \r\ndirectory by default.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaAvailabilityGroup -SqlServer sql2012 -FilePath C:\\temp\\availability_group_exports\r\n\r\nExports all Availability Groups from SQL server \"sql2012\". Output scripts are written to the \r\nC:\\temp\\availability_group_exports directory.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaAvailabilityGroup -SqlServer sql2012 -FilePath \u0027C:\\dir with spaces\\availability_group_exports\u0027 \r\n-AvailabilityGroups AG1,AG2\r\n\r\nExports Availability Groups AG1 and AG2 from SQL server \"sql2012\". Output scripts are written to the C:\\dir with \r\nspaces\\availability_group_exports directory.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaAvailabilityGroup -SqlServer sql2014 -FilePath C:\\temp\\availability_group_exports -NoClobber\r\n\r\nExports all Availability Groups from SQL server \"sql2014\". Output scripts are written to the \r\nC:\\temp\\availability_group_exports directory. If the export file already exists it will not be overwritten.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Export-DbaDiagnosticQuery",
+        "Description":  "The default output format of Invoke-DbaDiagnosticQuery is a custom object. It can also output to CSV and Excel. \nHowever, CSV output can generate a lot of files and Excel output depends on the ImportExcel module by Doug Fike (https://github.com/dfinke/ImportExcel)\nExport-DbaDiagnosticQuery can be used to convert from the default export type to the other available export types.",
+        "Author":  "André Kamman (@AndreKamman), http://clouddba.io",
+        "Synopsis":  "Export-DbaDiagnosticQuery can convert ouput generated by Invoke-DbaDiagnosticQuery to CSV or Excel",
+        "Name":  "Export-DbaDiagnosticQuery",
+        "Links":  "https://dbatools.io/Export-DbaDiagnosticQuery",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance sql2016 | Export-DbaDiagnosticQuery -Path c:\\temp\r\n\r\nConverts output from Invoke-DbaDiagnosticQuery to multiple CSV files\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$output = Invoke-DbaDiagnosticQuery -SqlInstance sql2016\r\n\r\nExport-DbaDiagnosticQuery -InputObject $output -ConvertTo Excel\r\n\r\nConverts output from Invoke-DbaDiagnosticQuery to Excel worksheet(s) in the Documents folder\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Export-DbaExecutionPlan",
         "Description":  "Exports execution plans to disk. Can pipe from Export-DbaExecutionPlan :D\n\t\nThanks to \n\thttps://www.simple-talk.com/sql/t-sql-programming/dmvs-for-query-plan-metadata/\n\tand\n\thttp://www.scarydba.com/2017/02/13/export-plans-cache-sqlplan-file/\nfor the idea and query.",
         "Tags":  "Performance",
@@ -361,6 +370,19 @@
         "Name":  "Export-DbaExecutionPlan",
         "Links":  "https://dbatools.io/Export-DbaExecutionPlan",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaExecutionPlan -SqlInstance sqlserver2014a\r\n\r\nExports all execution plans for sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaExecutionPlan -SqlInstance sqlserver2014a -Databases db1, db2 -SinceLastExecution \u00277/1/2016 10:47:00\u0027\r\n\r\nExports all execution plans for databases db1 and db2 on sqlserve2014a since July 1, 2016 at 10:47 AM.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Export-DbaScript",
+        "Description":  "Exports scripts from SQL Management Objects",
+        "Tags":  [
+                     "Migration",
+                     "Backup",
+                     "Export"
+                 ],
+        "Synopsis":  "Exports scripts from SQL Management Objects (SMO)",
+        "Name":  "Export-DbaScript",
+        "Links":  "https://dbatools.io/Export-DbaScript",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript\r\n\r\nExports all jobs on the SQL Server sql2016 instance using a trusted connection - automatically determines filename as \r\n.\\sql2016-Job-Export-date.sql\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 -Jobs syspolicy_purge_history, \u0027Hourly Log Backups\u0027 -SqlCredential \r\n(Get-Credetnial sqladmin) | Export-DbaScript -Path C:\\temp\\export.sql\r\n\r\nExports only syspolicy_purge_history and \u0027Hourly Log Backups\u0027 to C:temp\\export.sql and uses the SQL login \"sqladmin\" to \r\nlogin to sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2014 | Export-DbaJob -Passthru | ForEach-Object { \r\n$_.Replace(\u0027sql2014\u0027,\u0027sql2016\u0027) } | Set-Content -Path C:\\temp\\export.sql\r\n\r\nExports jobs and replaces all instances of the servername \"sql2014\" with \"sql2016\" then writes to C:\\temp\\export.sql\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$options = New-DbaScriptingOption\r\n\r\n$options.ScriptDrops = $false\r\n$options.WithDependencies = $true\r\nGet-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -ScriptingOptionObject $options\r\n\r\nExports Agent Jobs with the Scripting Options ScriptDrops set to $false and WithDependencies set to true.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Export-SqlLogin",
@@ -372,7 +394,7 @@
                       "https://dbatools.io/Export-SqlLogin",
                       "https://dbatools.io/Export-SqlLogin"
                   ],
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eExport-SqlLogin -SqlServer sql2005 -FilePath C:\\temp\\sql2005-logins.sql\r\n\r\nExports SQL for the logins in server \"sql2005\" and writes them to the file \"C:\\temp\\sql2005-logins.sql\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eExport-SqlLogin -SqlServer sqlserver2014a -Exclude realcajun -SqlCredential $scred -FilePath C:\\temp\\logins.sql \r\n-Append\r\n\r\nAuthenticates to sqlserver2014a using SQL Authentication. Exports all logins except for realcajun to \r\nC:\\temp\\logins.sql, and appends to the file if it exists. If not, the file will be created.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eExport-SqlLogin -SqlServer sqlserver2014a -Login realcajun, netnerds -FilePath C:\\temp\\logins.sql\r\n\r\nExports ONLY logins netnerds and realcajun fron sqlsever2014a to the file  C:\\temp\\logins.sql\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eExport-SqlLogin -SqlServer sql2005 -FilePath C:\\temp\\sql2005-logins.sql\r\n\r\nExports SQL for the logins in server \"sql2005\" and writes them to the file \"C:\\temp\\sql2005-logins.sql\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eExport-SqlLogin -SqlServer sqlserver2014a -Exclude realcajun -SqlCredential $scred -FilePath C:\\temp\\logins.sql \r\n-Append\r\n\r\nAuthenticates to sqlserver2014a using SQL Authentication. Exports all logins except for realcajun to \r\nC:\\temp\\logins.sql, and appends to the file if it exists. If not, the file will be created.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eExport-SqlLogin -SqlServer sqlserver2014a -Login realcajun, netnerds -FilePath C:\\temp\\logins.sql\r\n\r\nExports ONLY logins netnerds and realcajun from sqlsever2014a to the file  C:\\temp\\logins.sql\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eExport-SqlLogin -SqlServer sqlserver2014a -Login realcajun, netnerds -Databases HR, Accounting\r\n\r\nExports ONLY logins netnerds and realcajun from sqlsever2014a with the permissions on databases HR and Accounting\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Export-SqlSpConfigure",
@@ -489,6 +511,10 @@
     {
         "CommandName":  "Get-DbaAgentAlert",
         "Description":  "This function returns SQL Agent alerts.",
+        "Tags":  [
+                     "Agent",
+                     "SMO"
+                 ],
         "Author":  "Klaas Vandenberghe ( @PowerDBAKlaas )",
         "Synopsis":  "Returns all SQL Agent alerts on a SQL Server Agent.",
         "Name":  "Get-DbaAgentAlert",
@@ -515,6 +541,10 @@
     {
         "CommandName":  "Get-DbaAgentOperator",
         "Description":  "This function returns SQL Agent operators.",
+        "Tags":  [
+                     "Agent",
+                     "SMO"
+                 ],
         "Author":  "Klaas Vandenberghe ( @PowerDBAKlaas )",
         "Synopsis":  "Returns all SQL Agent operators on a SQL Server Agent.",
         "Name":  "Get-DbaAgentOperator",
@@ -638,6 +668,16 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseEncryption -SqlInstance DEV01\r\n\r\nList all encrpytion found on the instance by database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseEncryption -SqlInstance DEV01 -Database MyDB\r\n\r\nList all encrption found in MyDB\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaDatabaseFile",
+        "Description":  "Returns detailed information about database files. Does not use SMO - SMO causes enumeration and this command avoids that.",
+        "Tags":  "Database",
+        "Author":  "Stuart Moore (@napalmgram), stuart-moore.com",
+        "Synopsis":  "Returns detailed information about database files.",
+        "Name":  "Get-DbaDatabaseFile",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseFile -SqlInstance sql2016\r\n\r\nWill return an object containing all filegroups and their contained files for every database on the sql2016 SQL Server \r\ninstance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseFile -SqlInstance sql2016 -Database Impromptu\r\n\r\nWill return an object containing all filegroups and their contained files for the Impromptu Database on the sql2016 SQL \r\nServer instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseFile -SqlInstance sql2016 -Database Impromptu, Trading\r\n\r\nWill return an object containing all filegroups and their contained files for the Impromptu and Trading databases on \r\nthe sql2016 SQL Server instance\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaDatabaseFreespace",
         "Description":  "This function returns database file space information for a SQL Instance or group of SQL \nInstances. Information is based on a query against sys.database_files and the FILEPROPERTY\nfunction to query and return information. The function can accept a single instance or\nmultiple instances. By default, only user dbs will be shown, but using the IncludeSystemDBs\nswitch will include system databases",
         "Synopsis":  "Returns database file space information for database files on a SQL instance.",
@@ -746,7 +786,7 @@
         "Synopsis":  "Get date/time for last known good DBCC CHECKDB",
         "Name":  "Get-DbaLastGoodCheckDb",
         "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLastGoodCheckDb -SqlServer ServerA\\sql987\r\n\r\nReturns a custom object with Server name, Database name, and the date the last time a good checkdb was performed\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLastGoodCheckDb -SqlServer ServerA\\sql987 -Detailed | Format-Table -AutoSize\r\n\r\nReturns a formatted table displaying Server, Database, DatabaseCreated, LastGoodCheckDb, DaysSinceDbCreated, \r\nDaysSinceLastGoodCheckDb, Status and DataPurityEnabled\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLastGoodCheckDb -SqlInstance ServerA\\sql987\r\n\r\nReturns a custom object displaying Server, Database, DatabaseCreated, LastGoodCheckDb, DaysSinceDbCreated, \r\nDaysSinceLastGoodCheckDb, Status and DataPurityEnabled\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLastGoodCheckDb -SqlInstance ServerA\\sql987 -SqlCredential (Get-Credential sqladmin) | Format-Table \r\n-AutoSize\r\n\r\nReturns a formatted table displaying Server, Database, DatabaseCreated, LastGoodCheckDb, DaysSinceDbCreated, \r\nDaysSinceLastGoodCheckDb, Status and DataPurityEnabled.\r\nAuthenticates with SQL Server using alternative credentials.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaLinkedServer",
@@ -755,7 +795,7 @@
         "Synopsis":  "Gets all linked servers and summary of information from the sql servers listed",
         "Name":  "Get-DbaLinkedServer",
         "Links":  "https://dbatools.io/Get-DbaLinkedServer",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLinkedServer -SqlServer DEV01\r\n\r\nReturns all Linked Servers for the SQL Server instance DEV01\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLinkedServer -SqlInstance DEV01\r\n\r\nReturns all Linked Servers for the SQL Server instance DEV01\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaLocaleSetting",
@@ -766,6 +806,15 @@
         "Name":  "Get-DbaLocaleSetting",
         "Links":  "https://dbatools.io/Get-DbaLocaleSetting",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLocaleSetting -ComputerName sqlserver2014a\r\n\r\nGets the Locale settings on computer sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027 | Get-DbaLocaleSetting\r\n\r\nGets the Locale settings on computers sql1, sql2 and sql3.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLocaleSetting -ComputerName sql1,sql2 | Out-Gridview\r\n\r\nGets the Locale settings on computers sql1 and sql2, and shows them in a grid view.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaLogin",
+        "Description":  "The Get-DbaLogin function returns an SMO Login object for the logins passed, if there are no users passed it will return all logins.",
+        "Author":  "Klaas Vandenberghe (@powerdbaklaas)",
+        "Synopsis":  "Function to get an SMO login object of the logins for a given SQL Instance. Takes a server object from the pipe",
+        "Name":  "Get-DbaLogin",
+        "Links":  "https://dbatools.io/Get-DbaLogin",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLogin -SqlInstance SQl2016\r\n\r\nGets all the logins for a given SQL Server using NT authentication and returns the SMO login objects\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLogin -SqlInstance SQl2016 -SqlCredential $sqlcred\r\n\r\nGets all the logins for a given SQL Server using a passed credential object and returns the SMO login objects\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLogin -SqlInstance SQl2016 -SqlCredential $sqlcred -Login dbatoolsuser,TheCaptain\r\n\r\nGet specific user objects from the server\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e\u0027sql2016\u0027, \u0027sql2014\u0027 | Get-DbaLogin -SqlCredential $sqlcred\r\n\r\nUsing Get-DbaLogin on the pipeline, you can also specify which names you would like with -Logins.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e\u0027sql2016\u0027, \u0027sql2014\u0027 | Get-DbaLogin -SqlCredential $sqlcred -Locked\r\n\r\nUsing Get-DbaLogin on the pipeline to get all locked Logins on sql2016 and sql2014\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003e\u0027sql2016\u0027, \u0027sql2014\u0027 | Get-DbaLogin -SqlCredential $sqlcred -HasAccess -Disabled\r\n\r\nUsing Get-DbaLogin on the pipeline to get all Disabled logins that have access to sql2016 or sql2014\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaMaxMemory",
@@ -1066,12 +1115,12 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaWatchUpdate\r\n\r\nAdds the scheduled task needed by Watch-DbaUpdate\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Install-SqlWhoIsActive",
-        "Description":  "This command downloads, extracts and installs sp_whoisactive with Adam\u0027s permission. To read more about sp_WhoIsActive, please visit:\n\nUpdates: http://sqlblog.com/blogs/adam_machanic/archive/tags/who+is+active/default.aspx\n\nAlso, consider donating to Adam if you find this stored procedure helpful: http://tinyurl.com/WhoIsActiveDonate",
-        "Synopsis":  "Automatically installs or updates sp_WhoIsActive by Adam Machanic.",
-        "Name":  "Install-SqlWhoIsActive",
-        "Links":  "https://dbatools.io/Install-SqlWhoIsActive",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInstall-SqlWhoIsActive -SqlServer sqlserver2014a -Database master\r\n\r\nInstalls sp_WhoIsActive to sqlserver2014a\u0027s master database. Logs in using Windows Authentication.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInstall-SqlWhoIsActive -SqlServer sqlserver2014a -SqlCredential $cred\r\n\r\nPops up a dialog box asking which database on sqlserver2014a you want to install the proc to. Logs into SQL Server \r\nusing SQL Authentication.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$servers = Get-SqlRegisteredServerName sqlserver\r\n\r\nInstall-SqlWhoIsActive -SqlServer $servers -Database master\r\n\r\nThis command doesn\u0027t support passing both servers and default database, but you can accomplish the same thing by \r\npassing an array and specifying a database.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "CommandName":  "Install-DbaWhoIsActive",
+        "Description":  "This command downloads, extracts and installs sp_WhoisActive with Adam\u0027s permission. To read more about sp_WhoisActive, please visit:\n\nUpdates: http://sqlblog.com/blogs/adam_machanic/archive/tags/who+is+active/default.aspx\n\nAlso, consider donating to Adam if you find this stored procedure helpful: http://tinyurl.com/WhoIsActiveDonate\n\t\nNote that you will be prompted a bunch of times to confirm an action. To disable this behavior, pass the -Confirm:$false parameter (see example below).",
+        "Synopsis":  "Automatically installs or updates sp_WhoisActive by Adam Machanic.",
+        "Name":  "Install-DbaWhoIsActive",
+        "Links":  "https://dbatools.io/Install-DbaWhoIsActive",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master\r\n\r\nInstalls sp_WhoisActive to sqlserver2014a\u0027s master database. Logs in using Windows Authentication.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -SqlCredential $cred -Confirm:$false\r\n\r\nPops up a dialog box asking which database on sqlserver2014a you want to install the proc to. Logs into SQL Server \r\nusing SQL Authentication.\r\n\t\r\nDoes not prompt multiple times.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$instances = Get-SqlRegisteredServerName sqlserver\r\n\r\nInstall-DbaWhoIsActive -SqlInstance $instances -Database master\r\n\r\nThis command doesn\u0027t support passing both servers and default database, but you can accomplish the same thing by \r\npassing an array and specifying a database.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Invoke-DbaDatabaseShrink",
@@ -1084,6 +1133,24 @@
         "Name":  "Invoke-DbaDatabaseShrink",
         "Links":  "https://dbatools.io/Invoke-DbaDatabaseShrink",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDatabaseShrink -SqlInstance sql2016 -Databases Northwind,pubs,Adventureworks2014\r\n\r\nShrinks Northwind, pubs and Adventureworks2014 to have as little free space as possible.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDatabaseShrink -SqlInstance sql2014 -Databases Adventureworks2014 -PercentFreeSpace 50\r\n\r\nShrinks Adventureworks2014 to have 50% free space. So let\u0027s say Adventureworks2014 was 1GB and it\u0027s using 100MB space. \r\nThe database free space would be reduced to 50MB.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDatabaseShrink -SqlInstance sql2012 -AllUserDatabase\r\n\r\nShrinks all databases on SQL2012 (not ideal for production)\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Invoke-DbaDiagnosticQuery",
+        "Description":  "This is the main function of the Sql Server Diagnostic Queries related functions in dbatools. \nThe diagnostic queries are developed and maintained by Glenn Berry and they can be found here along with a lot of documentation:\nhttp://www.sqlskills.com/blogs/glenn/category/dmv-queries/\n\nThe most recent version of the diagnostic queries are included in the dbatools module. \nBut it is possible to download a newer set or a specific version to an alternative location and parse and run those scripts.\nIt will run all or a selection of those scripts on one or multiple servers and return the result as a PowerShell Object",
+        "Author":  "André Kamman (@AndreKamman), http://clouddba.io",
+        "Synopsis":  "Invoke-DbaDiagnosticQuery runs the scripts provided by Glenn Berry\u0027s DMV scripts on specified servers.",
+        "Name":  "Invoke-DbaDiagnosticQuery",
+        "Links":  "https://dbatools.io/Invoke-DbaDiagnosticQuery",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance sql2016\r\n\r\nRun the selection made by the user on the Sql Server instance specified.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance sql2016 -UseSelectionHelper | Export-DbaDiagnosticQuery -Path \r\nC:\\temp\\gboutput\r\n\r\nProvides a gridview with all the queries to choose from and will run the selection made by the user on the SQL Server \r\ninstance specified. \r\n\t\r\nThen it will export the results to Export-DbaDiagnosticQuery.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Invoke-DbaWhoisActive",
+        "Description":  "Output results of Adam Machanic\u0027s sp_WhoIsActive\n\nThis command was built with Adam\u0027s permission. To read more about sp_WhoIsActive, please visit:\n\nUpdates: http://sqlblog.com/blogs/adam_machanic/archive/tags/who+is+active/default.aspx\n\nAlso, consider donating to Adam if you find this stored procedure helpful: http://tinyurl.com/WhoIsActiveDonate",
+        "Tags":  "Memory",
+        "Synopsis":  "Outputs results of Adam Machanic\u0027s sp_WhoIsActive DataTable",
+        "Name":  "Invoke-DbaWhoisActive",
+        "Links":  "https://dbatools.io/Invoke-DbaWhoisActive",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaWhoisActive -SqlInstance sqlserver2014a\r\n\r\nExecute sp_whoisactive on sqlserver2014a. This command expects sp_WhoIsActive to be in the master database. Logs into \r\nthe SQL Server with Windows credentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaWhoisActive -SqlInstance sqlserver2014a -SqlCredential $credential -Database dbatools\r\n\r\nExecute sp_whoisactive on sqlserver2014a. This command expects sp_WhoIsActive to be in the dbatools database. Logs into \r\nthe SQL Server with SQL Authentication.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaWhoisActive -SqlInstance sqlserver2014a -GetAverageTime\r\n\r\nSimilar to running sp_WhoIsActive @get_avg_time\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaWhoisActive -SqlInstance sqlserver2014a -GetOuterCommand -FindBlockLeaders\r\n\r\nSimilar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 1\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Invoke-Sqlcmd2",
@@ -1110,6 +1177,40 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eMeasure-DbaBackupThroughput -SqlInstance sql2016\r\n\r\nParses every backup in msdb\u0027s backuphistory for stats on all databases\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eMeasure-DbaBackupThroughput -SqlInstance sql2016 -Databases AdventureWorks2014\r\n\r\nParses every backup in msdb\u0027s backuphistory for stats on AdventureWorks2014\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eMeasure-DbaBackupThroughput -SqlInstance sql2005 -Last\r\n\r\nProcesses the last full, diff and log backups every backup for all databases on sql2005\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eMeasure-DbaBackupThroughput -SqlInstance sql2005 -Last -Type Log\r\n\r\nProcesses the last log backups every backup for all databases on sql2005\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eMeasure-DbaBackupThroughput -SqlInstance sql2016 -Since (Get-Date).AddDays(-7)\r\n\r\nGets backup calculations for the last week\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eMeasure-DbaBackupThroughput -SqlInstance sql2016 -Since (Get-Date).AddDays(-365) -Databases bigoldb\r\n\r\nGets backup calculations, limited to the last year and only the bigoldb database\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "New-DbaAgentJob",
+        "Description":  "New-DbaAgentJob makes is possible to create a job in the SQL Server Agent.\nIt returns an array of the job(s) created",
+        "Synopsis":  "New-DbaAgentJob creates a new job",
+        "Name":  "New-DbaAgentJob",
+        "Links":  "https://dbatools.io/New-DbaAgentJob",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentJob -SqlInstance sql1 -JobName \u0027Job One\u0027 -Description \u0027Just another job\u0027\r\n\r\nCreates a job with the name \"Job1\" and a small description\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentJob -SqlInstance sql1 -JobName \u0027Job One\u0027 -Disabled\r\n\r\nCreates the job but sets it to disabled\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentJob -SqlInstance sql1 -JobName \u0027Job One\u0027 -EventLogLevel OnSuccess\r\n\r\nCreates the job and sets the notification to write to the Windows Application event log on success\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentJob -SqlInstance SSTAD-PC -JobName \u0027Job One\u0027 -EmailLevel OnFailure -EmailOperatorName dba\r\n\r\nCreates the job and sets the notification to send an e-mail to the e-mail operator\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentJob -SqlInstance sql1 -JobName \u0027Job One\u0027 -Description \u0027Just another job\u0027 -Whatif\r\n\r\nDoesn\u0027t create the job but shows what would happen.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentJob -SqlInstance sql1, sql2, sql3 -JobName \u0027Job One\u0027\r\n\r\nCreates a job with the name \"Job One\" on multiple servers\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003e\"sql1\", \"sql2\", \"sql3\" | New-DbaAgentJob -JobName \u0027Job One\u0027\r\n\r\nCreates a job with the name \"Job One\" on multiple servers using the pipe line\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "New-DbaAgentJobStep",
+        "Description":  "New-DbaAgentJobStep creates a new job in the SQL Server Agent for a specific job",
+        "Tags":  [
+                     "Agent",
+                     "Job",
+                     "Job Step"
+                 ],
+        "Synopsis":  "New-DbaAgentJobStep creates a new job step for a job",
+        "Name":  "New-DbaAgentJobStep",
+        "Links":  "https://dbatools.io/New-DbaAgentJobStep",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1\r\n\r\nCreate a step in \"Job1\" with the name Step1 with the default subsystem TransactSql.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -Database msdb\r\n\r\nCreate a step in \"Job1\" with the name Step1 where the database will the msdb\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -Database msdb\r\n\r\nCreate a step in \"Job1\" with the name Step1 where the database will the msdb\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1 -StepName Step1 -Database msdb\r\n\r\nCreate a step in \"Job1\" with the name Step1 where the database will the \"msdb\" for multiple servers\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1, Job2, \u0027Job Three\u0027 -StepName Step1 -Database msdb\r\n\r\nCreate a step in \"Job1\" with the name Step1 where the database will the \"msdb\" for multiple servers for multiple jobs\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | New-DbaAgentJobStep -Job Job1 -StepName Step1 -Database msdb\r\n\r\nCreate a step in \"Job1\" with the name Step1 where the database will the \"msdb\" for multiple servers using pipe line\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "New-DbaAgentSchedule",
+        "Description":  "New-DbaAgentSchedule will help create a new schedule for a job. It does not attach the schedule to a job.",
+        "Tags":  [
+                     "Agent",
+                     "Job",
+                     "Job Step"
+                 ],
+        "Synopsis":  "New-DbaAgentSchedule creates a new schedule in the msdb database.",
+        "Name":  "New-DbaAgentSchedule",
+        "Links":  "https://dbatools.io/New-DbaAgentSchedule",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -FrequencyType Daily -FrequencyInterval 1 \r\n-Force\r\n\r\nCreates a schedule for the job with a daily frequency every day. It also assumes default values for the start date, \r\nstart time, end date and end time.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sql1 -Job Job1, Job2, Job3 -ScheduleName weekly -FrequencyType Weekly \r\n-FrequencyInterval Monday, Wednesday, Friday -Force\r\n\r\nCreates a schedule for the job with a daily frequency every day. It also assumes default values for the start date, \r\nstart time, end date and end time.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -StartDate 20170530 -StartTime 110000 \r\n-EndTime 150000 -FrequencyType Daily -FrequencyInterval 1 -Force\r\n\r\nCreate a daily schedule that starts on the May 30th on 11 AM and ends on 3 PM.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | New-DbaAgentSchedule -Job Job1 -ScheduleName daily -FrequencyType Daily -FrequencyInterval 1 \r\n-Force\r\n\r\nCreates a schedule for the job with a daily frequency every day on multiple servers\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | New-DbaAgentSchedule -Job Job1, Job2, Job3 -ScheduleName daily -FrequencyType Daily \r\n-FrequencyInterval 1 -Force\r\n\r\nCreates a schedule for the job with a daily frequency every day on multiple servers for multiple jobs using pipe line\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "New-DbaDatabaseSnapshot",
         "Description":  "Creates database snapshots without hassles",
         "Tags":  [
@@ -1122,6 +1223,19 @@
         "Name":  "New-DbaDatabaseSnapshot",
         "Links":  "https://dbatools.io/New-DbaDatabaseSnapshot",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Database HR, Accounting\r\n\r\nCreates snapshot for HR and Accounting, returning a custom object displaying Server, Database, DatabaseCreated, \r\nSnapshotOf, SizeMB, DatabaseCreated, PrimaryFilePath, Status, Notes\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Databases HR -Name _snap\r\n\r\nCreates snapshot named \"HR_snap\" for HR\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Databases HR -Name \u0027fool_{0}_snap\u0027\r\n\r\nCreates snapshot named \"fool_HR_snap\" for HR\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Databases HR, Accounting -Path F:\\snapshotpath\r\n\r\nCreates snapshots for HR and Accounting databases, storing files under the F:\\snapshotpath\\ dir\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "New-DbaScriptingOption",
+        "Description":  "Creates a new Microsoft.SqlServer.Management.Smo.ScriptingOptions object. Basically saves you the time from remembering the SMO assembly name ;)\n\nSee https://msdn.microsoft.com/en-us/library/microsoft.sqlserver.management.smo.scriptingoptions.aspx for more information",
+        "Tags":  [
+                     "Migration",
+                     "Backup",
+                     "DR"
+                 ],
+        "Synopsis":  "Creates a new Microsoft.SqlServer.Management.Smo.ScriptingOptions object",
+        "Name":  "New-DbaScriptingOption",
+        "Links":  "https://dbatools.io/New-DbaScriptingOption\nhttps://msdn.microsoft.com/en-us/library/microsoft.sqlserver.management.smo.scriptingoptions.aspx",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$options = New-DbaScriptingOption\r\n\r\n$options.ScriptDrops = $false\r\n$options.WithDependencies = $true\r\nGet-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -ScriptingOptionObject $options\r\n\r\nExports Agent Jobs with the Scripting Options ScriptDrops set to $false and WithDependencies set to true\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "New-DbaSqlDirectory",
@@ -1143,11 +1257,11 @@
     },
     {
         "CommandName":  "Out-DbaDataTable",
-        "Description":  "Creates a DataTable based on an objects properties. This allows you to easily write to SQL Server tables\n\t\nThanks to Chad Miller, this script is all him. https://gallery.technet.microsoft.com/scriptcenter/4208a159-a52e-4b99-83d4-8048468d29dd",
+        "Description":  "Creates a DataTable based on an objects properties. This allows you to easily write to SQL Server tables.\n\t\nThanks to Chad Miller, this is based on his script. https://gallery.technet.microsoft.com/scriptcenter/4208a159-a52e-4b99-83d4-8048468d29dd",
         "Synopsis":  "Creates a DataTable for an object",
         "Name":  "Out-DbaDataTable",
         "Links":  "https://dbatools.io/Out-DbaDataTable",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-Service | Out-DbaDataTable\r\n\r\nCreates a $datatable based off of the output of Get-Service\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eOut-DbaDataTable -InputObject $csv.cheesetypes\r\n\r\nCreates a DataTable from the CSV object, $csv.cheesetypes\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$dblist | Out-DbaDataTable\r\n\r\nSimilar to above but $dbalist gets piped in\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-Service | Out-DbaDataTable\r\n\r\nCreates a $datatable based off of the output of Get-Service\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eOut-DbaDataTable -InputObject $csv.cheesetypes\r\n\r\nCreates a DataTable from the CSV object, $csv.cheesetypes\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$dblist | Out-DbaDataTable\r\n\r\nSimilar to above but $dbalist gets piped in\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-Process | Out-DbaDataTable -TimeSpanType TotalSeconds\r\n\r\nCreates a DataTable with the running processes and converts any TimeSpan property to TotalSeconds.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Read-DbaBackupHeader",
@@ -1169,6 +1283,44 @@
         "Name":  "Read-DbaTransactionLog",
         "Links":  null,
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$Log = Read-DbaTransactionLog -SqlInstance sql2016 -Database MyDatabase\r\n\r\nWill read the contents of the transaction log of MyDatabase on SQL Server Instance sql2016 into the local PowerShell \r\nobject $Log\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$Log = Read-DbaTransactionLog -SqlInstance sql2016 -Database MyDatabase -IgnoreLimit\r\n\r\nWill read the contents of the transaction log of MyDatabase on SQL Server Instance sql2016 into the local PowerShell \r\nobject $Log, ignoring the recommnedation of not returning more that 0.5GB of log\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Remove-DbaAgentJob",
+        "Description":  "Remove-DbaAgentJob removes a a job in the SQL Server Agent.",
+        "Tags":  [
+                     "Agent",
+                     "Job"
+                 ],
+        "Synopsis":  "Remove-DbaAgentJob removes a job.",
+        "Name":  "Remove-DbaAgentJob",
+        "Links":  "https://dbatools.io/Remove-DbaAgentJob",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentJob -SqlInstance sql1 -Job Job1\r\n\r\nRemoves the job from the instance with the name Job1\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentJob -SqlInstance sql1 -Job Job1 -KeepHistory\r\n\r\nRemoves the job but keeps the history\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentJob -SqlInstance sql1 -Job Job1 -KeepUnusedSchedule\r\n\r\nRemoves the job but keeps the unused schedules\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job Job1\r\n\r\nRemoves the job from multiple servers\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | Remove-DbaAgentJob -Job Job1\r\n\r\nRemoves the job from multiple servers using pipe line\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Remove-DbaAgentJobStep",
+        "Description":  "Remove-DbaAgentJobStep removes a a job step in the SQL Server Agent.",
+        "Tags":  [
+                     "Agent",
+                     "Job",
+                     "Job Step"
+                 ],
+        "Synopsis":  "Remove-DbaAgentJobStep removes a job step.",
+        "Name":  "Remove-DbaAgentJobStep",
+        "Links":  "https://dbatools.io/Remove-DbaAgentJobStep",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1\r\n\r\nRemove the job step from the job\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentJobStep -SqlInstance sql1 -Job Job1, Job2, Job3 -StepName Step1\r\n\r\nRemove the job step from the job for multiple jobs\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1 -StepName Step1\r\n\r\nRemove the job step from the job on multiple servers\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | Remove-DbaAgentJobStep -Job Job1 -StepName Step1\r\n\r\nRemove the job step from the job on multiple servers using pipe line\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Remove-DbaAgentSchedule",
+        "Description":  "Remove-DbaAgentJobSchedule removes a a job in the SQL Server Agent.",
+        "Tags":  [
+                     "Agent",
+                     "Job",
+                     "Job Step"
+                 ],
+        "Synopsis":  "Remove-DbaAgentJobSchedule removes a job schedule.",
+        "Name":  "Remove-DbaAgentSchedule",
+        "Links":  "https://dbatools.io/Remove-DbaAgentJobSchedule",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName weekly\r\n\r\nRemove the job schedule weekly from the job\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName weekly -Force\r\n\r\nRemove the job schedule weekly from the job even if the schedule is being used by another job.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Job Job1, Job2, Job3 -ScheduleName \u0027daily\u0027\r\n\r\nRemove the job schedule for multiple jobs\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Job Job1, Job2, Job3 -ScheduleName \u0027daily\u0027\r\n\r\nRemove the job schedule on multiple servers for multiple jobs\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | Remove-DbaAgentSchedule -Job Job1, Job2, Job3 -ScheduleName \u0027daily\u0027\r\n\r\nRemove the job schedule on multiple servers using pipe line\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Remove-DbaBackup",
@@ -1204,13 +1356,13 @@
     },
     {
         "CommandName":  "Remove-DbaSpn",
-        "Description":  "This function will connect to Active Directory and search for an account. If the account is found, it will attempt to remove the specified SPN. Once the SPN is removed, the function will also set delegation to that service. \n\nIn order to run this function, the credential you provide must have write access to Active Directory.\n\nNote: This function supports -WhatIf",
+        "Description":  "This function will connect to Active Directory and search for an account. If the account is found, it will attempt to remove the specified SPN. Once the SPN is removed, the function will also remove delegation to that service. \n\nIn order to run this function, the credential you provide must have write access to Active Directory.\n\nNote: This function supports -WhatIf",
         "Tags":  "SPN",
         "Author":  "Drew Furgiuele (@pittfurg), http://www.port1433.com",
-        "Synopsis":  "Sets an SPN for a given service account in active directory, and also enables delegation to the same SPN",
+        "Synopsis":  "Removes an SPN for a given service account in active directory and also removes delegation to the same SPN, if found",
         "Name":  "Remove-DbaSpn",
         "Links":  "https://dbatools.io/Remove-DbaSpn",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account\r\n\r\nConnects to Active Directory and removes a provided SPN to the given account.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account -Credential \r\n(Get-Credential)\r\n\r\nConnects to Active Directory and removes a provided SPN to the given account. Uses alternative account to connect to AD.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaSpn -ComputerName sql2005 | Where { $_.isSet -eq $true } | Remove-DbaSpn -WhatIf\r\n\r\nConnects to Active Directory and removes a provided SPN to the given account. Uses alternative account to connect to AD.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account\r\n\r\nConnects to Active Directory and removes a provided SPN from the given account (and also the relative delegation)\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account -Silent\r\n\r\nConnects to Active Directory and removes a provided SPN from the given account, suppressing all error messages and \r\nthrow exceptions that can be caught instead\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account -Credential \r\n(Get-Credential)\r\n\r\nConnects to Active Directory and removes a provided SPN to the given account. Uses alternative account to connect to AD.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaSpn -ComputerName sql2005 | Where { $_.isSet -eq $true } | Remove-DbaSpn -WhatIf\r\n\r\nShows what would happen trying to remove all set SPNs for sql2005 and the relative delegations\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaSpn -ComputerName sql2005 | Where { $_.isSet -eq $true } | Remove-DbaSpn\r\n\r\nRemoves all set SPNs for sql2005 and the relative delegations\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Remove-SqlDatabaseSafely",
@@ -1321,12 +1473,59 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRestore-SqlBackupFromDirectory -SqlServer sqlcluster -Path \\\\fileserver\\share\\sqlbackups\\SQLSERVER2014A\r\n\r\nDescription\r\n\r\nAll user databases contained within \\\\fileserver\\share\\sqlbackups\\SQLSERVERA will be restored to sqlcluster, down the \r\nmost recent full/differential/logs.\r\n\r\n\r\nRequires -Version 3.0\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Save-DbaDiagnosticQueryScript",
+        "Description":  "The dbatools module will have the diagnostice queries pre-installed. Use this only to update to a more recent version or specific versions.\n\nThis function is mainly used by Invoke-DbaDiagnosticQuery, but can also be used independently to download the Glenn Berry DMV scripts.\n\nUse this function to pre-download the scripts from a device with an Internet connection.\n\t\nThe function Invoke-DbaDiagnosticQuery will try to download these scripts automatically, but it obviously needs an internet connection to do that.",
+        "Author":  "André Kamman (@AndreKamman), http://clouddba.io",
+        "Synopsis":  "Save-DbaDiagnosticQueryScript downloads the most recent version of all Glenn Berry DMV scripts",
+        "Name":  "Save-DbaDiagnosticQueryScript",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSave-DbaDiagnosticQueryScript -Path c:\\temp\r\n\r\nDownloads the most recent version of all Glenn Berry DMV scripts to the specified location.\r\nIf Path is not specified, the \"My Documents\" location will be used\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Set-DbaAgentJob",
+        "Description":  "Set-DbaAgentJob updates a job in the SQL Server Agent with parameters supplied.",
+        "Tags":  [
+                     "Agent",
+                     "Job"
+                 ],
+        "Synopsis":  "Set-DbaAgentJob updates a job.",
+        "Name":  "Set-DbaAgentJob",
+        "Links":  "https://dbatools.io/Set-DbaAgentJob",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob sql1 -Job Job1 -Disabled\r\n\r\nChanges the job to disabled\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob sql1 -Job Job1 -OwnerLogin user1\r\n\r\nChanges the owner of the job\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob -SqlInstance sql1 -Job Job1 -EventLogLevel OnSuccess\r\n\r\nChanges the job and sets the notification to write to the Windows Application event log on success\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob -SqlInstance sql1 -Job Job1 -EmailLevel OnFailure -EmailOperator dba\r\n\r\nChanges the job and sets the notification to send an e-mail to the e-mail operator\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob -SqlInstance sql1 -Job Job1, Job2, Job3 -Enabled\r\n\r\nChanges multiple jobs to enabled\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job Job1, Job2, Job3 -Enabled\r\n\r\nChanges multiple jobs to enabled on multiple servers\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob -SqlInstance sql1 -Job Job1 -Description \u0027Just another job\u0027 -Whatif\r\n\r\nDoesn\u0027t Change the job but shows what would happen.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 8 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job \u0027Job One\u0027 -Description \u0027Job One\u0027\r\n\r\nChanges a job with the name \"Job1\" on multiple servers to have another description\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 9 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | Set-DbaAgentJob -Job Job1 -Description \u0027Job One\u0027\r\n\r\nChanges a job with the name \"Job1\" on multiple servers to have another description using pipe line\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Set-DbaAgentJobOutputFile",
         "Description":  "Sets the OutPut File for a step of an agent job with the Job Names and steps provided dynamically if required",
         "Synopsis":  "Sets the OutPut File for a step of an agent job with the Job Names and steps provided dynamically",
         "Name":  "Set-DbaAgentJobOutputFile",
         "Links":  null,
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJobOutputFile -sqlserver SERVERNAME -JobName \u0027The Agent Job\u0027 -OutPutFile \r\nE:\\Logs\\AgentJobStepOutput.txt\r\n\r\nSets the Job step for The Agent job on SERVERNAME to E:\\Logs\\AgentJobStepOutput.txt\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Set-DbaAgentJobStep",
+        "Description":  "Set-DbaAgentJobStep updates a job step in the SQL Server Agent with parameters supplied.",
+        "Tags":  [
+                     "Agent",
+                     "Job",
+                     "Job Step"
+                 ],
+        "Synopsis":  "Set-DbaAgentJobStep updates a job step.",
+        "Name":  "Set-DbaAgentJobStep",
+        "Links":  "https://dbatools.io/Set-DbaAgentJobStep",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -NewName Step2\r\n\r\nChanges the name of the step in \"Job1\" with the name Step1 to Step2\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -Database msdb\r\n\r\nChanges the database of the step in \"Job1\" with the name Step1 to msdb\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJobStep -SqlInstance sql1 -Job Job1, Job2 -StepName Step1 -Database msdb\r\n\r\nChanges job steps in multiple jobs with the name Step1 to msdb\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1, Job2 -StepName Step1 -Database msdb\r\n\r\nChanges job steps in multiple jobs on multiple servers with the name Step1 to msdb\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1 -StepName Step1 -Database msdb\r\n\r\nChanges the database of the step in \"Job1\" with the name Step1 to msdb for multiple servers\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | Set-DbaAgentJobStep -Job Job1 -StepName Step1 -Database msdb\r\n\r\nChanges the database of the step in \"Job1\" with the name Step1 to msdb for multiple servers using pipe line\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Set-DbaAgentSchedule",
+        "Description":  "Set-DbaAgentSchedule will help update a schedule for a job. It does not attach the schedule to a job.",
+        "Tags":  [
+                     "Agent",
+                     "Job",
+                     "Job Step"
+                 ],
+        "Synopsis":  "Set-DbaAgentSchedule updates a schedule in the msdb database.",
+        "Name":  "Set-DbaAgentSchedule",
+        "Links":  "https://dbatools.io/Set-DbaAgentSchedule",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -Enabled\r\n\r\nChanges the schedule for Job1 with the name \u0027daily\u0027 to enabled\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -NewName weekly -FrequencyType Weekly \r\n-FrequencyInterval Monday, Wednesday, Friday\r\n\r\nChanges the schedule for Job1 with the name daily to have a new name weekly\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentSchedule -SqlInstance sql1 -Job Job1, Job2, Job3 -ScheduleName daily -StartTime \u0027230000\u0027\r\n\r\nChanges the start time of the schedule for Job1 to 11 PM for multiple jobs\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Job Job1 -ScheduleName daily -Enabled\r\n\r\nChanges the schedule for Job1 with the name daily to enabled on multiple servers\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | Set-DbaAgentSchedule -Job Job1 -ScheduleName \u0027daily\u0027 -Enabled\r\n\r\nChanges the schedule for Job1 with the name \u0027daily\u0027 to enabled on multiple servers using pipe line\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Set-DbaConfig",
@@ -1408,13 +1607,13 @@
     },
     {
         "CommandName":  "Set-DbaSpn",
-        "Description":  "This function will connect to Active Directory and search for an account. If the account is found, it will attempt to add an SPN. Once the SPN\nis added, the function will also set delegation to that service. In order to run this function, the credential you provide must have write\naccess to Active Directory.\n\nNote: This function supports -WhatIf",
+        "Description":  "This function will connect to Active Directory and search for an account. If the account is found, it will attempt to add an SPN. Once the SPN\nis added, the function will also set delegation to that service, unless -NoDelegation is specified. In order to run this function, the credential you provide must have write\naccess to Active Directory.\n\nNote: This function supports -WhatIf",
         "Tags":  "SPN",
         "Author":  "Drew Furgiuele (@pittfurg), http://www.port1433.com",
-        "Synopsis":  "Sets an SPN for a given service account in active directory, and also enables delegation to the same SPN",
+        "Synopsis":  "Sets an SPN for a given service account in active directory (and also enables delegation to the same SPN by default)",
         "Name":  "Set-DbaSpn",
         "Links":  "https://dbatools.io/Set-DbaSpn",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account\r\n\r\nConnects to Active Directory and adds a provided SPN to the given account.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account -Credential (Get-Credential)\r\n\r\nConnects to Active Directory and adds a provided SPN to the given account. Uses alternative account to connect to AD.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaSpn -ComputerName sql2016 | Where { $_.isSet -eq $false } | Set-DbaSpn -WhatIf\r\n\r\nConnects to Active Directory and adds a provided SPN to the given account. Uses alternative account to connect to AD.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account\r\n\r\nConnects to Active Directory and adds a provided SPN to the given account.\r\n\r\nSet-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account -Silent\r\n\r\nConnects to Active Directory and adds a provided SPN to the given account, suppressing all error messages and throw \r\nexceptions that can be caught instead\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account -Credential (Get-Credential)\r\n\r\nConnects to Active Directory and adds a provided SPN to the given account. Uses alternative account to connect to AD.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account -NoDelegation\r\n\r\nConnects to Active Directory and adds a provided SPN to the given account, without the delegation.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaSpn -ComputerName sql2016 | Where { $_.isSet -eq $false } | Set-DbaSpn\r\n\r\nSets all missing SPNs for sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaSpn -ComputerName sql2016 | Where { $_.isSet -eq $false } | Set-DbaSpn -WhatIf\r\n\r\nDisplays what would happen trying to set all missing SPNs for sql2016\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Set-DbaStartupParameter",
@@ -1430,7 +1629,7 @@
         "Synopsis":  "Sets tempdb data and log files according to best practices.",
         "Name":  "Set-SqlTempDbConfiguration",
         "Links":  "https://dbatools.io/Set-SqltempdbConfiguration",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-SqltempdbConfiguration -SqlServer localhost -DataFileSizeMB 1000\r\n\r\nCreates tempdb with a number of datafiles equal to the logical cores where\r\neach one is equal to 1000MB divided by number of logical cores and a log file\r\nof 250MB\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-SqltempdbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -DataFileCount 8\r\n\r\nCreates tempdb with a number of datafiles equal to the logical cores where\r\neach one is equal to 125MB and a log file of 250MB\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-SqltempdbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -Script\r\n\r\nProvides a SQL script output to configure tempdb according to the passed parameters\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eSet-SqltempdbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -Script\r\n\r\nReturns PSObject representing tempdb configuration.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-SqltempdbConfiguration -SqlServer localhost -DataFileSizeMB 1000\r\n\r\nCreates tempdb with a number of datafiles equal to the logical cores where\r\neach one is equal to 1000MB divided by number of logical cores and a log file\r\nof 250MB\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-SqltempdbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -DataFileCount 8\r\n\r\nCreates tempdb with a number of datafiles equal to the logical cores where\r\neach one is equal to 125MB and a log file of 250MB\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-SqltempdbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -OutputScriptOnly\r\n\r\nProvides a SQL script output to configure tempdb according to the passed parameters\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eSet-SqltempdbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -DisableGrowth\r\n\r\nDisables the growth for the data and log files\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eSet-SqltempdbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -OutputScriptOnly\r\n\r\nReturns PSObject representing tempdb configuration.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Show-SqlDatabaseList",
@@ -1448,15 +1647,6 @@
         "Name":  "Show-SqlServerFileSystem",
         "Links":  "https://dbatools.io/Show-SqlServerFileSystem",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eShow-SqlServerFileSystem -SqlServer sqlserver2014a\r\n\r\nShows a GUI and uses Windows Authentication to log into the SQL Server. Returns a string of the path you selected.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eShow-SqlServerFileSystem -Source sqlserver2014a -SqlCredential $cred\r\n\r\nShows a GUI and uses SQL credentials to log into the SQL Server. Returns a string of the path you selected.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Show-SqlWhoIsActive",
-        "Description":  "Output results of Adam Machanic\u0027s sp_WhoIsActive to a GridView (default) or DataTable, and installs it if necessary. \nGridView is good for analysis while DataTable is good for SqlBulkCopy uploads to keep track.\n\nThis command was built with Adam\u0027s permission. To read more about sp_WhoIsActive, please visit:\n\nUpdates: http://sqlblog.com/blogs/adam_machanic/archive/tags/who+is+active/default.aspx\n\nAlso, consider donating to Adam if you find this stored procedure helpful: http://tinyurl.com/WhoIsActiveDonate",
-        "Tags":  "Memory",
-        "Synopsis":  "Outputs results of Adam Machanic\u0027s sp_WhoIsActive to a GridView (default) or DataTable, and installs it if necessary.",
-        "Name":  "Show-SqlWhoIsActive",
-        "Links":  "https://dbatools.io/Show-SqlWhoIsActive",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eShow-SqlWhoIsActive -SqlServer sqlserver2014a\r\n\r\nExecute sp_whoisactive on sqlserver2014a. This command expects sp_WhoIsActive to be in the master database. Logs into \r\nthe SQL Server with Windows credentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eShow-SqlWhoIsActive -SqlServer sqlserver2014a -SqlCredential $credential -Database dbatools\r\n\r\nExecute sp_whoisactive on sqlserver2014a. This command expects sp_WhoIsActive to be in the dbatools database. Logs into \r\nthe SQL Server with SQL Authentication.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eShow-SqlWhoIsActive -SqlServer sqlserver2014a -GetAverageTime\r\n\r\nSimilar to running sp_WhoIsActive @get_avg_time\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eShow-SqlWhoIsActive -SqlServer sqlserver2014a -GetOuterCommand -FindBlockLeaders\r\n\r\nSimilar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 1\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Start-SqlMigration",
@@ -1697,10 +1887,14 @@
     {
         "CommandName":  "Test-SqlNetworkLatency",
         "Description":  "This function is intended to help measure SQL Server network latency by establishing a connection and making a simple query. This is a better alternative\nthan ping because it actually creates the connection to the SQL Server, and times not ony the entire routine, but also how long the actual queries take vs\nhow long it takes to get the results.\n\nServer\nCount\nTotalMs\nAvgMs\nExecuteOnlyTotalMS\nExecuteOnlyAvgMS",
+        "Tags":  [
+                     "Performance",
+                     "Network"
+                 ],
         "Synopsis":  "Tests how long a query takes to return from SQL Server",
         "Name":  "Test-SqlNetworkLatency",
         "Links":  "https://dbatools.io/Test-SqlNetworkLatency",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-SqlNetworkLatency -SqlServer sqlserver2014a, sqlcluster\r\n\r\nTimes the roundtrip return of \"SELECT TOP 100 * FROM information_schema.tables\" on sqlserver2014a and sqlcluster using \r\nWindows credentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-SqlNetworkLatency -SqlServer sqlserver2014a -SqlCredential $cred\r\n\r\nTimes the execution results return of \"SELECT TOP 100 * FROM information_schema.tables\" on sqlserver2014a using SQL \r\ncredentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-SqlNetworkLatency -SqlServer sqlserver2014a, sqlcluster, sqlserver -Query \"select top 10 * from \r\notherdb.dbo.table\" -Count 10\r\n\r\nTimes the execution results return of \"select top 10 * from otherdb.dbo.table\" 10 times on sqlserver2014a, sqlcluster, \r\nand sqlserver using Windows credentials.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-SqlNetworkLatency -SqlInstance sqlserver2014a, sqlcluster\r\n\r\nTimes the roundtrip return of \"SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES\" on sqlserver2014a and sqlcluster using \r\nWindows credentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-SqlNetworkLatency -SqlInstance sqlserver2014a -SqlCredential $cred\r\n\r\nTimes the execution results return of \"SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES\" on sqlserver2014a using SQL \r\ncredentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-SqlNetworkLatency -SqlInstance sqlserver2014a, sqlcluster, sqlserver -Query \"select top 10 * from \r\notherdb.dbo.table\" -Count 10\r\n\r\nTimes the execution results return of \"select top 10 * from otherdb.dbo.table\" 10 times on sqlserver2014a, sqlcluster, \r\nand sqlserver using Windows credentials.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Test-SqlPath",
@@ -1735,14 +1929,6 @@
         "Name":  "Update-dbatools",
         "Links":  "https://dbatools.io/Update-dbatools",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eUpdate-dbatools\r\n\r\nUpdates dbatools. Deletes current copy and replaces it with freshest copy.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Update-SqlWhoIsActive",
-        "Description":  "If -Path is not specified, this command downloads, extracts and updates sp_whoisactive with Adam\u0027s permission. \n\nTo read more about sp_WhoIsActive, please visit http://sqlblog.com/blogs/adam_machanic/archive/tags/who+is+active/default.aspx\n\nAlso, consider donating to Adam if you find this stored procedure helpful: http://tinyurl.com/WhoIsActiveDonate",
-        "Synopsis":  "Automatically updates sp_WhoIsActive by Adam Machanic.",
-        "Name":  "Update-SqlWhoIsActive",
-        "Links":  "https://dbatools.io/Update-SqlWhoIsActive",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eUpdate-SqlWhoIsActive -SqlServer sqlserver2014a -Database master\r\n\r\nUpdates sp_WhoIsActive to sqlserver2014a\u0027s master database. Logs in using Windows Authentication.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eUpdate-SqlWhoIsActive -SqlServer sqlserver2014a -SqlCredential $cred\r\n\r\nPops up a dialog box asking which database on sqlserver2014a you want to install the proc to. Logs into SQL Server \r\nusing SQL Authentication.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Watch-DbaUpdate",
@@ -1810,6 +1996,14 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaMaxMemory -SqlServer sqlcluster,sqlserver2012\r\n\r\nGet memory settings for all servers within the SQL Server Central Management Server \"sqlcluster\".\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaMaxMemory -SqlServer sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB }\r\n\r\nFind all servers in Server Central Management Server that have \u0027Max Server Memory\u0027 set to higher than the total memory \r\nof the server (think 2147483647)\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Install-SqlWhoIsActive",
+        "Description":  "This command downloads, extracts and installs sp_WhoisActive with Adam\u0027s permission. To read more about sp_WhoisActive, please visit:\n\nUpdates: http://sqlblog.com/blogs/adam_machanic/archive/tags/who+is+active/default.aspx\n\nAlso, consider donating to Adam if you find this stored procedure helpful: http://tinyurl.com/WhoIsActiveDonate\n\t\nNote that you will be prompted a bunch of times to confirm an action. To disable this behavior, pass the -Confirm:$false parameter (see example below).",
+        "Synopsis":  "Automatically installs or updates sp_WhoisActive by Adam Machanic.",
+        "Name":  "Install-DbaWhoIsActive",
+        "Links":  "https://dbatools.io/Install-DbaWhoIsActive",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master\r\n\r\nInstalls sp_WhoisActive to sqlserver2014a\u0027s master database. Logs in using Windows Authentication.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -SqlCredential $cred -Confirm:$false\r\n\r\nPops up a dialog box asking which database on sqlserver2014a you want to install the proc to. Logs into SQL Server \r\nusing SQL Authentication.\r\n\t\r\nDoes not prompt multiple times.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$instances = Get-SqlRegisteredServerName sqlserver\r\n\r\nInstall-DbaWhoIsActive -SqlInstance $instances -Database master\r\n\r\nThis command doesn\u0027t support passing both servers and default database, but you can accomplish the same thing by \r\npassing an array and specifying a database.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Reset-SqlSaPassword",
         "Description":  "This function allows administrators to regain access to local or remote SQL Servers by either resetting the sa password, adding sysadmin role to existing login,\nor adding a new login (SQL or Windows) and granting it sysadmin privileges.\n\nThis is accomplished by stopping the SQL services or SQL Clustered Resource Group, then restarting SQL via the command-line\nusing the /mReset-SqlAdmin paramter which starts the server in Single-User mode, and only allows this script to connect.\n\nOnce the service is restarted, the following tasks are performed:\n- Login is added if it doesn\u0027t exist\n- If login is a Windows User, an attempt is made to ensure it exists\n- If login is a SQL Login, password policy will be set to OFF when creating the login, and SQL Server authentication will be set to Mixed Mode.\n- Login will be enabled and unlocked\n- Login will be added to sysadmin role\n\nIf failures occur at any point, a best attempt is made to restart the SQL Server.\n\nIn order to make this script as portable as possible, System.Data.SqlClient and Get-WmiObject are used (as opposed to requiring the Failover Cluster Admin tools or SMO).\nIf using this function against a remote SQL Server, ensure WinRM is configured and accessible. If this is not possible, run the script locally.\n\nTested on Windows XP, 7, 8.1, Server 2012 and Windows Server Technical Preview 2.\nTested on SQL Server 2005 SP4 through 2016 CTP2.",
         "Tags":  "WSMan",
@@ -1847,6 +2041,15 @@
         "Name":  "Test-SqlMigrationConstraint",
         "Links":  "https://dbatools.io/Test-SqlMigrationConstraint",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-SqlMigrationConstraint -Source sqlserver2014a -Destination sqlcluster\r\n\r\nDescription\r\n\r\nAll databases will be verified for features in use that can\u0027t be supported on the destination server\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-SqlMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -SqlCredential $cred\r\n\r\nDescription\r\n\r\nAll databases will be verified for features in use that can\u0027t be supported on the destination server using SQL \r\ncredentials for sqlserver2014a\r\nand Windows credentials for sqlcluster.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-SqlMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -Databases db1\r\n\r\nOnly db1 database will be verified for features in use that can\u0027t be supported on the destination server\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Show-SqlWhoIsActive",
+        "Description":  "Output results of Adam Machanic\u0027s sp_WhoIsActive\n\nThis command was built with Adam\u0027s permission. To read more about sp_WhoIsActive, please visit:\n\nUpdates: http://sqlblog.com/blogs/adam_machanic/archive/tags/who+is+active/default.aspx\n\nAlso, consider donating to Adam if you find this stored procedure helpful: http://tinyurl.com/WhoIsActiveDonate",
+        "Tags":  "Memory",
+        "Synopsis":  "Outputs results of Adam Machanic\u0027s sp_WhoIsActive DataTable",
+        "Name":  "Invoke-DbaWhoisActive",
+        "Links":  "https://dbatools.io/Invoke-DbaWhoisActive",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaWhoisActive -SqlInstance sqlserver2014a\r\n\r\nExecute sp_whoisactive on sqlserver2014a. This command expects sp_WhoIsActive to be in the master database. Logs into \r\nthe SQL Server with Windows credentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaWhoisActive -SqlInstance sqlserver2014a -SqlCredential $credential -Database dbatools\r\n\r\nExecute sp_whoisactive on sqlserver2014a. This command expects sp_WhoIsActive to be in the dbatools database. Logs into \r\nthe SQL Server with SQL Authentication.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaWhoisActive -SqlInstance sqlserver2014a -GetAverageTime\r\n\r\nSimilar to running sp_WhoIsActive @get_avg_time\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaWhoisActive -SqlInstance sqlserver2014a -GetOuterCommand -FindBlockLeaders\r\n\r\nSimilar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 1\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Test-SqlDiskAllocation",

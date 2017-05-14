@@ -1,14 +1,13 @@
 Function Get-DbaDatabaseFile {
     <#
     .SYNOPSIS
-    Backup one or more SQL Sever databases from a SQL Server instance
+    Returns detailed information about database files. 
 
     .DESCRIPTION
-    Performs a backup of a specified type of 1 or more databases on a SQL Server Instance.
-    These backups may be Full, Differential or Transaction log backups
+    Returns detailed information about database files. Does not use SMO - SMO causes enumeration and this command avoids that.
 
     .PARAMETER SqlInstance
-    The SQL Server instance hosting the databases to be backed up
+    The target SQL Server instance(s)
 
     .PARAMETER SqlCredential
     Credentials to connect to the SQL Server instance if the calling user doesn't have permission
@@ -21,17 +20,13 @@ Function Get-DbaDatabaseFile {
 	
 	.PARAMETER Silent 
 	Use this switch to disable any kind of verbose messages
-	
-    .NOTES
-    Tags: 
-    Original Author: Stuart Moore (@napalmgram), stuart-moore.com
 
-    dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-    Copyright (C) 2016 Chrissy LeMaire
-
-    This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-    You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	.NOTES
+	Author: Stuart Moore (@napalmgram), stuart-moore.com
+	Tags: Database
+	Website: https://dbatools.io
+	Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
     .EXAMPLE 
     Get-DbaDatabaseFile -SqlInstance sql2016
@@ -52,7 +47,7 @@ Function Get-DbaDatabaseFile {
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	param (
 		[parameter(ParameterSetName = "Pipe", Mandatory, ValueFromPipeline)]
-		[DbaInstanceParameter[]]$SqlInstance,
+		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[object[]]$DatabaseCollection,
 		[switch]$Silent

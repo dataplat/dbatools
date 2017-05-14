@@ -59,7 +59,7 @@ Test all Linked Servers for the SQL Server instances sql2016, sql2014 and sql201
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter[]]
+        [object[]]
         $SqlInstance,
         
         [System.Management.Automation.PSCredential]

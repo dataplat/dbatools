@@ -75,8 +75,8 @@
 	
 	.EXAMPLE
 	$options = New-DbaScriptingOption
-	$options.Options.ScriptDrops = $false
-	$options.Options.WithDependencies = $true
+	$options.ScriptDrops = $false
+	$options.WithDependencies = $true
 	Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -ScriptingOptionObject $options
 	
 	Exports Agent Jobs with the Scripting Options ScriptDrops set to $false and WithDependencies set to true.
@@ -111,7 +111,7 @@
 				$shortype = $typename.Split(".")[-1]
 			}
 			else {
-				Stop-Function -Message "InputObject is not a SQL Management Object" -Silent $Silent -Category InvalidData -Continue -Target $object
+				Stop-Function -Message "InputObject is of type $typename which is not a SQL Management Object. Only SMO objects are supported." -Silent $Silent -Category InvalidData -Continue -Target $object
 			}
 			
 			if ($shortype -in "LinkedServer", "Credential", "Login") {
@@ -188,7 +188,7 @@
 			}
 			
 			if (!$passthru) {
-				Write-Message -Level Output -Message "Completed export for $object on $server"
+				Write-Message -Level Output -Message "Exported $object on $server to $actualpath"
 			}
 		}
 	}

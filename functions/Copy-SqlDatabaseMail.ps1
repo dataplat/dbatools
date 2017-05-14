@@ -188,7 +188,7 @@ Shows what would happen if the command were executed.
 				
 				if ($pscmdlet.ShouldProcess($destination, "Migrating account $accountName")) {
 					try {
-						Write-Message -Message "Copying mail account $accountName" -Level Verbose -Silent $Silent
+						Write-Message -Message "Copying mail account $accountName" -Level Verbose
 						$sql = $account.Script() | Out-String
 						$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
 						Write-Message -Message $sql -Level Debug

@@ -305,10 +305,16 @@ folder for those file types as defined on the target instance.
 				}
 				if ("Type" -notin $f.PSobject.Properties.name)
 				{
-					$f = $f | Select-Object *,  @{Name="Type";Expression={"Full"}}
+					#$f = $f | Select-Object *,  @{Name="Type";Expression={"Full"}}
 				}
-
-				$BackupFiles += $F | Select-Object *, @{Name="ServerName";Expression={$_.SqlInstance}}, @{Name="BackupStartDate";Expression={$_.Start}}
+				if ("BackupSetGUID" -notin $f.PSobject.Properties.name)
+				{
+					#This line until Get-DbaBackupHistory gets fixed
+					$f = $f | Select-Object *, @{Name="BackupSetGUID";Expression={$_.BackupSetupID}}
+					#This one once it's sorted:
+					#$f = $f | Select-Object *, @{Name="BackupSetGUID";Expression={$_.BackupSetID}}
+				}	
+				$BackupFiles += $F | Select-Object *, @{Name="ServerName";Expression={$_.SqlInstance}}, @{Name="BackupStartDate";Expression={$_.Start -as [DateTime]}}
 				$str = ($BackUpFiles | select Fullname) -join ',' 
 			}
 			else
