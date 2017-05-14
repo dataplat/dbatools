@@ -1,4 +1,4 @@
-Function Find-SqlUnusedIndex
+function Find-DbaUnusedIndex
 {
 <#
 .SYNOPSIS
@@ -69,30 +69,30 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Find-SqlUnusedIndex
+https://dbatools.io/Find-DbaUnusedIndex
 
 .EXAMPLE
-Find-SqlUnusedIndex -SqlServer sql2005 -FilePath C:\temp\sql2005-UnusedIndexes.sql
+Find-DbaUnusedIndex -SqlServer sql2005 -FilePath C:\temp\sql2005-UnusedIndexes.sql
 
 Exports SQL for the Unused indexes in server "sql2005" choosen on grid-view and writes them to the file "C:\temp\sql2005-UnusedIndexes.sql"
 	
 .EXAMPLE
-Find-SqlUnusedIndex -SqlServer sql2005 -FilePath C:\temp\sql2005-UnusedIndexes.sql -Append
+Find-DbaUnusedIndex -SqlServer sql2005 -FilePath C:\temp\sql2005-UnusedIndexes.sql -Append
 
 Exports SQL for the Unused indexes in server "sql2005" choosen on grid-view and writes/appends them to the file "C:\temp\sql2005-UnusedIndexes.sql"
 
 .EXAMPLE   
-Find-SqlUnusedIndex -SqlServer sqlserver2016 -SqlCredential $cred
+Find-DbaUnusedIndex -SqlServer sqlserver2016 -SqlCredential $cred
 	
 Will find exact Unused indexes on all user databases present on sqlserver2016 will be verified using SQL credentials. 
 	
 .EXAMPLE   
-Find-SqlUnusedIndex -SqlServer sqlserver2016 -Databases db1, db2
+Find-DbaUnusedIndex -SqlServer sqlserver2016 -Databases db1, db2
 
 Will find exact Unused indexes on both db1 and db2 databases
 
 .EXAMPLE   
-Find-SqlUnusedIndex -SqlServer sqlserver2016
+Find-DbaUnusedIndex -SqlServer sqlserver2016
 
 Will find exact Unused indexes on all user databases 
 	
