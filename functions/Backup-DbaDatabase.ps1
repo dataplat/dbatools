@@ -144,19 +144,18 @@ sql credential dbatoolscred registered on the sql2016 instance
 	
 	BEGIN
 	{
-		$FunctionName = $FunctionName = (Get-PSCallstack)[0].Command
 				
 		if ($SqlInstance.length -ne 0)
 		{
 			$databases = $psboundparameters.Databases
-			Write-Verbose "Connecting to $SqlInstance"
+			Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
 			try
 			{
 				$Server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
 			}
 			catch
 			{
-				Write-Warning "$FunctionName - Cannot connect to $SqlInstance"
+				Write-Message -Level Warning -Message  "Cannot connect to $SqlInstance"
 				continue
 			}
 			
@@ -171,26 +170,26 @@ sql credential dbatoolscred registered on the sql2016 instance
 			
 			if ($BackupDirectory.count -gt 1)
 			{
-				Write-Verbose "$FunctionName - Multiple Backup Directories, striping"
+				Write-Message -Level Verbose -Message "Multiple Backup Directories, striping"
 				$Filecount = $BackupDirectory.count
 			}
 			
 			if ($DatabaseCollection.count -gt 1 -and $BackupFileName -ne '')
 			{
-				Write-Warning "$FunctionName - 1 BackupFile specified, but more than 1 database." -WarningAction stop
+				Write-Message -Level Warning -Message  "1 BackupFile specified, but more than 1 database." 
 				break
 			}
 
 			if (($MaxTransferSize%64kb) -ne 0 -or $MaxTransferSize -gt 4mb)
 			{
-				Write-Warning "$FunctionName - MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
+				Write-Message -Level Warning -Message  "MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
 				break
 			}
 			if ($BlockSize)
 			{
 				if ($BlockSize -notin (0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb))
 				{
-					Write-Warning "$FunctionName - Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
+					Write-Message -Level Warning -Message  "Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
 					break
 				}
 			}
@@ -211,11 +210,11 @@ sql credential dbatoolscred registered on the sql2016 instance
 	{		
 		if (!$SqlInstance -and !$DatabaseCollection)
 		{
-			Write-Warning "You must specify a server and database or pipe some databases"
+			Write-Message -Level Warning -Message  "You must specify a server and database or pipe some databases"
 			continue
 		}
 		
-		Write-Verbose "$FunctionName - $($DatabaseCollection.count) database to backup"
+		Write-Message -Level Verbose -Message "$($DatabaseCollection.count) database to backup"
 		
 		ForEach ($Database in $databasecollection)
 		{
@@ -224,37 +223,37 @@ sql credential dbatoolscred registered on the sql2016 instance
 			
 			if ($dbname -eq "tempdb")
 			{
-				Write-Warning "Backing up tempdb not supported"
+				Write-Message -Level Warning -Message  "Backing up tempdb not supported"
 				continue
 			}
 			
 			if ('Normal' -notin ($Database.Status -split ',') )
 			{
-				Write-Warning "Database status not Normal. $dbname skipped."
+				Write-Message -Level Warning -Message  "Database status not Normal. $dbname skipped."
 				continue
 			}
 			
 			if ($Database.DatabaseSnapshotBaseName)
 			{
-				Write-Warning "Backing up snapshots not supported. $dbname skipped."
+				Write-Message -Level Warning -Message  "Backing up snapshots not supported. $dbname skipped."
 				continue
 			}
 						
 			if ($server -eq $null) { $server = $Database.Parent }
 			
-			Write-Verbose "$FunctionName - Backup up database $database"
+			Write-Message -Level Verbose -Message "Backup up database $database"
 			
 			if ($Database.RecoveryModel -eq $null)
 			{
 				$Database.RecoveryModel = $server.databases[$Database.Name].RecoveryModel
-				Write-Verbose "$dbname is in $($Database.RecoveryModel) recovery model"
+				Write-Message -Level Verbose -Message "$dbname is in $($Database.RecoveryModel) recovery model"
 			}
 			
 			if ($Database.RecoveryModel -eq 'Simple' -and $Type -eq 'Log')
 			{
 				$failreason = "$database is in simple recovery mode, cannot take log backup"
 				$failures += $failreason
-				Write-Warning "$FunctionName - $failreason"
+				Write-Message -Level Warning -Message  "$failreason"
 			}
 			
 			$lastfull = $database.LastBackupDate.Year
@@ -263,7 +262,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 			{
 				$failreason = "$database does not have an existing full backup, cannot take log or differentialbackup"
 				$failures += $failreason
-				Write-Warning "$FunctionName - $failreason"
+				Write-Message -Level Warning -Message  "$failreason"
 			}
 			
 			$copyonly = !$NoCopyOnly
@@ -277,11 +276,11 @@ sql credential dbatoolscred registered on the sql2016 instance
 			{
 				if ($server.Edition -like 'Express*' -or ($server.VersionMajor -eq 10 -and $server.VersionMinor -eq 0 -and $server.Edition -notlike '*enterprise*') -or $server.VersionMajor -lt 10)
 				{
-					Write-Warning "$FunctionName - Compression is not supported with this version/edition of Sql Server"
+					Write-Message -Level Warning -Message  "Compression is not supported with this version/edition of Sql Server"
 				}
 				else
 				{
-					Write-Verbose "$FunctionName - Compression enabled"
+					Write-Message -Level Verbose -Message "Compression enabled"
 					$backup.CompressionOption =1
 				}
 			}
@@ -293,14 +292,14 @@ sql credential dbatoolscred registered on the sql2016 instance
 
 			if ($type -in 'diff', 'differential')
 			{
-				Write-Verbose "Creating differential backup"
+				Write-Message -Level Verbose -Message "Creating differential backup"
 				$type = "Database"
 				$backup.Incremental = $true
 			}
 			
 			if ($Type -eq "Log")
 			{
-				Write-Verbose "$FunctionName - Creating log backup"
+				Write-Message -Level Verbose -Message "Creating log backup"
 				$Suffix = "trn"
 			}
 			
@@ -316,7 +315,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 				$backup.CredentialName = $AzureCredential
 			}
 			
-			Write-Verbose "$FunctionName - Sorting Paths"
+			Write-Message -Level Verbose -Message "Sorting Paths"
 			
 			#If a backupfilename has made it this far, use it
 			$FinalBackupPath = @()
@@ -333,7 +332,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 					$BackupFileName = "$BackupDirectory\$BackupFileName" # removed auto suffix
 				}
 				
-				Write-Verbose "$FunctionName - Single db and filename"
+				Write-Message -Level Verbose -Message "Single db and filename"
 				
 				if (Test-SqlPath -SqlServer $server -Path (Split-Path $BackupFileName))
 				{
@@ -343,7 +342,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 				{
 					$failreason = "SQL Server cannot write to the location $(Split-Path $BackupFileName)"
 					$failures += $failreason
-					Write-Warning "$FunctionName - $failreason"
+					Write-Message -Level Warning -Message  "$failreason"
 				}
 			}
 			else
@@ -354,7 +353,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 				}
 	
 				$timestamp = (Get-date -Format yyyyMMddHHmm)
-				Write-verbose "Setting filename"
+				Write-Message -Level Verbose -Message "Setting filename"
 				$BackupFileName = "$($dbname)_$timestamp"
 				if ($null -ne $AzureBaseUrl)
 				{
@@ -369,12 +368,12 @@ sql credential dbatoolscred registered on the sql2016 instance
 					if ($CreateFolder)
 					{
 						$Path = $path + $PathDivider + $Database.name
-						Write-Verbose "$FunctionName - Creating Folder $Path"
+						Write-Message -Level Verbose -Message "Creating Folder $Path"
 						if (((New-DbaSqlDirectory -SqlServer $server -SqlCredential $SqlCredential -Path $path).Created -eq $false) -and $null -eq $AzureBaseUrl)
 						{
 							$failreason = "Cannot create or write to folder $path"
 							$failures += $failreason
-							Write-Warning "$FunctionName - $failreason"
+							Write-Message -Level Warning -Message  "$failreason"
 						}
 						else
 						{
@@ -393,7 +392,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 						{
 							$failreason = "Cannot create or write to folder $path"
 							$failures += $failreason
-							Write-Warning "$FunctionName - $failreason"
+							Write-Message -Level Warning -Message  "$failreason"
 						}
 						$FinalBackupPath += "$path\$BackupFileName.$suffix"
 					}
@@ -409,7 +408,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 			
 			if ($FileCount -gt 1 -and $FinalBackupPath.count -eq 1)
 			{
-				Write-Verbose "$FunctionName - Striping for Filecount of $filecount"
+				Write-Message -Level Verbose -Message "Striping for Filecount of $filecount"
 				$stripes = $filecount
 				
 				for ($i= 2; $i -lt $stripes+1; $i++)
@@ -421,7 +420,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 			}
 			elseif ($FinalBackupPath.count -gt 1)
 			{
-				Write-Verbose "$FunctionName - String for Backup path count of $($FinalBackupPath.count)"
+				Write-Message -Level Verbose -Message "String for Backup path count of $($FinalBackupPath.count)"
 				$stripes = $FinalbackupPath.count
 				for ($i= 1; $i -lt $stripes+1; $i++)
 				{
@@ -451,7 +450,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 					$backup.Devices.Add($device)
 				}
 				
-				Write-Verbose "$FunctionName - Devices added"
+				Write-Message -Level Verbose -Message "Devices added"
 				$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
 					Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
 				}
@@ -515,7 +514,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 				catch
 				{
 					Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
-					Write-Exception $_
+					Stop-Function -message "Backup Failed:  $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_
 					$BackupComplete = $false
 				}
 			}
