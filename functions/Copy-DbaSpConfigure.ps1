@@ -148,10 +148,10 @@ Shows what would happen if the command were executed.
 	    $sourceserver.ConnectionContext.Disconnect()
 	    $destserver.ConnectionContext.Disconnect()
 	
-	    If ($Pscmdlet.ShouldProcess("console", "Showing finished message"))
-	    {
-		    Write-Output "Server configuration update finished"
-		}
+        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
+            Write-Output "Server configuration update finished"
+        }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlSpConfigure
 	}
 	
 }
