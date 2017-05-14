@@ -634,13 +634,13 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 		if ($sourceserver.ConnectionContext.IsOpen -eq $true) { $sourceserver.ConnectionContext.Disconnect() }
 		if ($destserver.ConnectionContext.IsOpen -eq $true) { $destserver.ConnectionContext.Disconnect() }
 		
-		If ($Pscmdlet.ShouldProcess("console", "Showing SQL Server migration finished message"))
-		{
-			Write-Output "`n`nSQL Server migration complete"
-			Write-Output "Migration started: $started"
-			Write-Output "Migration completed: $(Get-Date)"
-			Write-Output "Total Elapsed time: $totaltime"
-			Stop-Transcript
-		}
+        If ($Pscmdlet.ShouldProcess("console", "Showing SQL Server migration finished message")) {
+            Write-Output "`n`nSQL Server migration complete"
+            Write-Output "Migration started: $started"
+            Write-Output "Migration completed: $(Get-Date)"
+            Write-Output "Total Elapsed time: $totaltime"
+            Stop-Transcript
+        }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Start-SqlMigration
 	}
 }
