@@ -1,4 +1,4 @@
-Function Export-SqlSpConfigure
+function Export-DbaSpConfigure
 {
 <#
 .SYNOPSIS
@@ -36,7 +36,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.	
 
 .EXAMPLE
-Export-SqlSpConfigure $sourceserver -Path C:\temp\sp_configure.sql
+Export-DbaSpConfigure $sourceserver -Path C:\temp\sp_configure.sql
 
 Exports the SPConfigure on sourceserver to the file C:\temp\sp_configure.sql
 
