@@ -1,4 +1,4 @@
-Function Copy-SqlServerAgent
+Function Copy-DbaSqlServerAgent
 {
 <#
 .SYNOPSIS
@@ -66,20 +66,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlServerAgent
+https://dbatools.io/Copy-DbaSqlServerAgent
 
 .EXAMPLE   
-Copy-SqlServerAgent -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaSqlServerAgent -Source sqlserver2014a -Destination sqlcluster
 
 Copies all job server objects from sqlserver2014a to sqlcluster, using Windows credentials. If job objects with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-SqlServerAgent -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+Copy-DbaSqlServerrAgent -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
 Copies all job objects from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
 .EXAMPLE   
-Copy-SqlServerTrigger -Source sqlserver2014a -Destination sqlcluster -WhatIf
+Copy-DbaSqlServerAgent -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
 Shows what would happen if the command were executed.
 #>
@@ -115,18 +115,18 @@ Shows what would happen if the command were executed.
 	{
 		
 		# All of these support whatif inside of them
-		Copy-SqlAgentCategory -Source $sourceserver -Destination $destserver -Force:$force
-		Copy-SqlOperator -Source $sourceserver -Destination $destserver -Force:$force
-		Copy-SqlAlert -Source $sourceserver -Destination $destserver -Force:$force -IncludeDefaults
-		Copy-SqlProxyAccount -Source $sourceserver -Destination $destserver -Force:$force
-		Copy-SqlSharedSchedule -Source $sourceserver -Destination $destserver -Force:$force
-		Copy-SqlJob -Source $sourceserver -Destination $destserver -Force:$force -DisableOnDestination:$DisableJobsOnDestination -DisableOnSource:$DisableJobsOnSource
+		Copy-DbaAgentCategory -Source $sourceserver -Destination $destserver -Force:$force
+		Copy-DbaAgentOperator -Source $sourceserver -Destination $destserver -Force:$force
+		Copy-DbaAgentAlert -Source $sourceserver -Destination $destserver -Force:$force -IncludeDefaults
+		Copy-DbaAgentProxyAccount -Source $sourceserver -Destination $destserver -Force:$force
+		Copy-DbaAgentSharedSchedule -Source $sourceserver -Destination $destserver -Force:$force
+		Copy-DbaAgentJob -Source $sourceserver -Destination $destserver -Force:$force -DisableOnDestination:$DisableJobsOnDestination -DisableOnSource:$DisableJobsOnSource
 		
 		# To do
 		<# 
-			Copy-SqlMasterServer -Source $sourceserver -Destination $destserver -Force:$force
-			Copy-SqlTargetServer -Source $sourceserver -Destination $destserver -Force:$force
-			Copy-SqlTargetServerGroup -Source $sourceserver -Destination $destserver -Force:$force
+			Copy-DbaAgentMasterServer -Source $sourceserver -Destination $destserver -Force:$force
+			Copy-DbaAgentTargetServer -Source $sourceserver -Destination $destserver -Force:$force
+			Copy-DbaAgentTargetServerGroup -Source $sourceserver -Destination $destserver -Force:$force
 		#>
 		
 		# Here are the properties, which must be migrated seperately 
@@ -152,6 +152,7 @@ Shows what would happen if the command were executed.
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Job server migration finished" }
+        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Job server migration finished" }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlServerAgent
 	}
 }

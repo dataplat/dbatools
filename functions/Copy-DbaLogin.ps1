@@ -1,4 +1,4 @@
-Function Copy-SqlLogin
+function Copy-DbaLogin
 {
 <#
 .SYNOPSIS
@@ -82,32 +82,32 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlLogin
+https://dbatools.io/Copy-DbaLogin
 
 .EXAMPLE
-Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -Force
+Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force
 
 Copies all logins from source server to destination server. If a SQL login on source exists on the destination, the destination login will be dropped and recreated.
 
 .EXAMPLE
-Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred
+Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred
 
 Authenticates to SQL Servers using SQL Authentication.
 
 Copies all logins except for realcajun. If a login already exists on the destination, the login will not be migrated.
 
 .EXAMPLE
-Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -Logins realcajun, netnerds -force
+Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Logins realcajun, netnerds -force
 
 Copies ONLY logins netnerds and realcajun. If login realcajun or netnerds exists on the destination, they will be dropped and recreated.
 
 .EXAMPLE
-Copy-SqlLogin -Source sqlserver2014a -Destination sqlcluster -SyncOnly
+Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -SyncOnly
 
 Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. If a matching login does not exist on the destination, the login will be skipped.
 
 .EXAMPLE 
-Copy-SqlLogin -LoginRenameHashtable @{ "OldUser" ="newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred 
+Copy-DbaLogin -LoginRenameHashtable @{ "OldUser" ="newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred 
 
 Copys down OldUser and then renames it to newlogin.
 
@@ -439,16 +439,17 @@ Limitations: Does not support Application Roles yet
 	
 	END {
 		
-		If ($Pscmdlet.ShouldProcess("console", "Showing time elapsed message")) {
-			Write-Output "Login migration completed: $(Get-Date)"
-			$totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
-			$sourceserver.ConnectionContext.Disconnect()
+        If ($Pscmdlet.ShouldProcess("console", "Showing time elapsed message")) {
+            Write-Output "Login migration completed: $(Get-Date)"
+            $totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
+            $sourceserver.ConnectionContext.Disconnect()
 			
-			if ($Destination.length -gt 0) {
-				$destserver.ConnectionContext.Disconnect()
-			}
+            if ($Destination.length -gt 0) {
+                $destserver.ConnectionContext.Disconnect()
+            }
 			
-			Write-Output "Total elapsed time: $totaltime"
-		}
+            Write-Output "Total elapsed time: $totaltime"
+        }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlLogin
 	}
 }

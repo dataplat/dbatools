@@ -1,13 +1,13 @@
-Function Copy-SqlSharedSchedule
+function Copy-DbaAgentProxyAccount
 {
 <#
 .SYNOPSIS 
-Copy-SqlSharedSchedule migrates shared job schedules from one SQL Server to another. 
+Copy-DbaAgentProxyAccount migrates proxy accounts from one SQL Server to another. 
 
 .DESCRIPTION
-By default, all shared job schedules are copied. The -SharedSchedules parameter is autopopulated for command-line completion and can be used to copy only specific shared job schedules.
+By default, all proxy accounts are copied. The -ProxyAccounts parameter is autopopulated for command-line completion and can be used to copy only specific proxy accounts.
 
-If the associated credential for the account does not exist on the destination, it will be skipped. If the shared job schedule already exists on the destination, it will be skipped unless -Force is used.  
+If the associated credential for the account does not exist on the destination, it will be skipped. If the proxy account already exists on the destination, it will be skipped unless -Force is used.  
 
 .PARAMETER Source
 Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -38,10 +38,10 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .PARAMETER Force
-Drops and recreates the schedule if it exists
+Drops and recreates the Proxy Account if it exists
 
 .NOTES
-Tags: Migration
+Tags: Migration, Agent
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
@@ -55,20 +55,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlSharedSchedule
+https://dbatools.io/Copy-DbaAgentProxyAccount
 
 .EXAMPLE   
-Copy-SqlSharedSchedule -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaAgentProxyAccount -Source sqlserver2014a -Destination sqlcluster
 
-Copies all shared job schedules from sqlserver2014a to sqlcluster, using Windows credentials. If shared job schedules with the same name exist on sqlcluster, they will be skipped.
-
-.EXAMPLE   
-Copy-SqlSharedSchedule -Source sqlserver2014a -Destination sqlcluster -SharedSchedule Weekly -SourceSqlCredential $cred -Force
-
-Copies a single shared job schedule, the Weekly shared job schedule from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a shared job schedule with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+Copies all proxy accounts from sqlserver2014a to sqlcluster, using Windows credentials. If proxy accounts with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-SqlSharedSchedule -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+Copy-DbaAgentProxyAccount -Source sqlserver2014a -Destination sqlcluster -ProxyAccount PSProxy -SourceSqlCredential $cred -Force
+
+Copies a single proxy account, the PSProxy proxy account from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a proxy account with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+
+.EXAMPLE   
+Copy-DbaAgentProxyAccount -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
 #>
@@ -82,11 +82,11 @@ Shows what would happen if the command were executed using force.
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlSharedSchedules -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+	DynamicParam { if ($source) { return (Get-ParamSqlProxyAccounts -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
 	BEGIN
 	{
-		$schedules = $psboundparameters.SharedSchedules
+		$proxyaccounts = $psboundparameters.ProxyAccounts
 		
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
@@ -96,66 +96,76 @@ Shows what would happen if the command were executed using force.
 		
 		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
 		{
-			throw "Server SharedSchedules are only supported in SQL Server 2005 and above. Quitting."
+			throw "Server ProxyAccounts are only supported in SQL Server 2005 and above. Quitting."
 		}
 		
-		$serverschedules = $sourceserver.JobServer.SharedSchedules
-		$destschedules = $destserver.JobServer.SharedSchedules
+		$serverproxyaccounts = $sourceserver.JobServer.ProxyAccounts
+		$destproxyaccounts = $destserver.JobServer.ProxyAccounts
+		
 	}
 	PROCESS
 	{
-		foreach ($schedule in $serverschedules)
+		
+		foreach ($proxyaccount in $serverproxyaccounts)
 		{
-			$schedulename = $schedule.name
-			if ($schedules.length -gt 0 -and $schedules -notcontains $schedulename) { continue }
+			$proxyname = $proxyaccount.name
+			if ($proxyaccounts.length -gt 0 -and $proxyaccounts -notcontains $proxyname) { continue }
 			
-			if ($destschedules.name -contains $schedulename)
+			# Proxy accounts rely on Credential accounts 
+			$credentialName = $proxyaccount.CredentialName
+			if ($destserver.Credentials[$CredentialName] -eq $null)
+			{
+				Write-Warning "Associated credential account, $CredentialName, does not exist on $destination. Skipping migration of $proxyname."
+				continue
+			}
+			
+			if ($destproxyaccounts.name -contains $proxyname)
 			{
 				if ($force -eq $false)
 				{
-					Write-Warning "Shared job schedule $schedulename exists at destination. Use -Force to drop and migrate."
+					Write-Warning "Server proxy account $proxyname exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else
 				{
-					if ($destserver.JobServer.jobs.Jobschedules.name -contains $schedulename)
-					{ 
-						Write-Warning "Schedule $schedulename has associated jobs. Skipping."
-						continue
-					}
-					else 
+					If ($Pscmdlet.ShouldProcess($destination, "Dropping server proxy account $proxyname and recreating"))
 					{
-					
-						if ($Pscmdlet.ShouldProcess($destination, "Dropping schedule $schedulename and recreating"))
+						try
 						{
-							try
-							{
-								Write-Verbose "Dropping schedule $schedulename"
-								$destserver.JobServer.SharedSchedules[$schedulename].Drop()
-							}
-							catch 
-							{ 
-								Write-Exception $_ 
-								continue
-							}
+							Write-Verbose "Dropping server proxy account $proxyname"
+							$destserver.jobserver.proxyaccounts[$proxyname].Drop()
+						}
+						catch 
+						{ 
+							Write-Exception $_
+							continue
+							
 						}
 					}
 				}
 			}
-
-			If ($Pscmdlet.ShouldProcess($destination, "Creating schedule $schedulename"))
+	
+			If ($Pscmdlet.ShouldProcess($destination, "Creating server proxy account $proxyname"))
 			{
 				try
 				{
-					Write-Output "Copying schedule $schedulename"
-					$sql = $schedule.Script() | Out-String
+					Write-Output "Copying server proxy account $proxyname"
+					$sql = $proxyaccount.Script() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
 					Write-Verbose $sql
 					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 				}
 				catch
 				{
-					Write-Exception $_
+					$exceptionstring = $_.Exception.InnerException.ToString()
+					if ($exceptionstring -match 'subsystem') 
+					{
+						Write-Warning "One or more subsystems do not exist on the destination server. Skipping that part."
+					} 
+					else 
+					{
+						Write-Exception $_
+					}
 				}
 			}
 		}
@@ -165,6 +175,7 @@ Shows what would happen if the command were executed using force.
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Job schedule migration finished" }
+        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Server proxy account migration finished" }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlProxyAccount
 	}
 }

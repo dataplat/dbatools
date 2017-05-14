@@ -1,7 +1,7 @@
-function Copy-SqlJob {
+function Copy-DbaAgentJob {
     <#
 .SYNOPSIS
-Copy-SqlJob migrates jobs from one SQL Server to another.
+Copy-DbaAgentJob migrates jobs from one SQL Server to another.
 
 .DESCRIPTION
 By default, all jobs are copied. The -Jobs parameter is autopopulated for command-line completion and can be used to copy only specific jobs.
@@ -50,7 +50,7 @@ Drops and recreates the Job if it exists
 Replaces user friendly yellow warnings with bloody red exceptions of doom!
 
 .NOTES
-Tags: Migration
+Tags: Migration, Agent
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
@@ -64,20 +64,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlJob
+https://dbatools.io/Copy-DbaAgentJob
 
 .EXAMPLE
-Copy-SqlJob -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster
 
 Copies all jobs from sqlserver2014a to sqlcluster, using Windows credentials. If jobs with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE
-Copy-SqlJob -Source sqlserver2014a -Destination sqlcluster -Job PSJob -SourceSqlCredential $cred -Force
+Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -Job PSJob -SourceSqlCredential $cred -Force
 
 Copies a single job, the PSJob job from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a job with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 .EXAMPLE
-Copy-SqlJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
 #>
@@ -219,5 +219,6 @@ Shows what would happen if the command were executed using force.
         $sourceServer.ConnectionContext.Disconnect()
         $destServer.ConnectionContext.Disconnect()
         if ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Job migration finished" }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlAlert
     }
 }

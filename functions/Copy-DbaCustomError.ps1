@@ -1,14 +1,16 @@
-Function Copy-SqlProxyAccount
+function Copy-DbaCustomError
 {
 <#
 .SYNOPSIS 
-Copy-SqlProxyAccount migrates proxy accounts from one SQL Server to another. 
+Copy-DbaCustomError migrates custom errors (user defined messages) from one SQL Server to another. 
 
 .DESCRIPTION
-By default, all proxy accounts are copied. The -ProxyAccounts parameter is autopopulated for command-line completion and can be used to copy only specific proxy accounts.
+By default, all  custom errors are copied. The -CustomErrors parameter is autopopulated for command-line completion and can be used to copy only specific custom errors.
 
-If the associated credential for the account does not exist on the destination, it will be skipped. If the proxy account already exists on the destination, it will be skipped unless -Force is used.  
+If the custom error already exists on the destination, it will be skipped unless -Force is used. Interesting fact, if you drop the us_english version, all the other languages will be dropped for that specific ID as well.
 
+Also, the us_english version must be created first.
+	
 .PARAMETER Source
 Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
@@ -38,7 +40,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .PARAMETER Force
-Drops and recreates the Proxy Account if it exists
+Drops and recreates the XXXXX if it exists
 
 .NOTES
 Tags: Migration
@@ -55,20 +57,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlProxyAccount
+https://dbatools.io/Copy-DbaCustomError
 
 .EXAMPLE   
-Copy-SqlProxyAccount -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster
 
-Copies all proxy accounts from sqlserver2014a to sqlcluster, using Windows credentials. If proxy accounts with the same name exist on sqlcluster, they will be skipped.
-
-.EXAMPLE   
-Copy-SqlProxyAccount -Source sqlserver2014a -Destination sqlcluster -ProxyAccount PSProxy -SourceSqlCredential $cred -Force
-
-Copies a single proxy account, the PSProxy proxy account from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a proxy account with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+Copies all server custom errors from sqlserver2014a to sqlcluster, using Windows credentials. If custom errors with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-SqlProxyAccount -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -Trigger 60000 -SourceSqlCredential $cred -Force
+
+Copies a single custom error, the custom error with ID number 6000 from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a custom error with the same name exists on sqlcluster, it will be updated because -Force was used.
+
+.EXAMPLE   
+Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
 #>
@@ -82,11 +84,11 @@ Shows what would happen if the command were executed using force.
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlProxyAccounts -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+	DynamicParam { if ($source) { return (Get-ParamSqlCustomErrors -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
 	BEGIN
 	{
-		$proxyaccounts = $psboundparameters.ProxyAccounts
+		$customerrors = $psboundparameters.CustomErrors
 		
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
@@ -96,76 +98,64 @@ Shows what would happen if the command were executed using force.
 		
 		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
 		{
-			throw "Server ProxyAccounts are only supported in SQL Server 2005 and above. Quitting."
+			throw "Custom Errors are only supported in SQL Server 2005 and above. Quitting."
 		}
-		
-		$serverproxyaccounts = $sourceserver.JobServer.ProxyAccounts
-		$destproxyaccounts = $destserver.JobServer.ProxyAccounts
-		
 	}
+	
 	PROCESS
 	{
 		
-		foreach ($proxyaccount in $serverproxyaccounts)
+		
+		# Us has to go first
+		$orderedcustomerrors = @($sourceserver.UserDefinedMessages | Where-Object { $_.Language -eq "us_english" })
+		$orderedcustomerrors += $sourceserver.UserDefinedMessages | Where-Object { $_.Language -ne "us_english" }
+		$destcustomerrors = $destserver.UserDefinedMessages
+		
+		foreach ($customerror in $orderedcustomerrors)
 		{
-			$proxyname = $proxyaccount.name
-			if ($proxyaccounts.length -gt 0 -and $proxyaccounts -notcontains $proxyname) { continue }
+			$customerrorid = $customerror.ID
+			$language = $customerror.language.ToString()
 			
-			# Proxy accounts rely on Credential accounts 
-			$credentialName = $proxyaccount.CredentialName
-			if ($destserver.Credentials[$CredentialName] -eq $null)
-			{
-				Write-Warning "Associated credential account, $CredentialName, does not exist on $destination. Skipping migration of $proxyname."
-				continue
-			}
+			if ($customerrors.length -gt 0 -and $customerrors -notcontains $customerrorid) { continue }
 			
-			if ($destproxyaccounts.name -contains $proxyname)
+			if ($destcustomerrors.ID -contains $customerror.ID)
 			{
 				if ($force -eq $false)
 				{
-					Write-Warning "Server proxy account $proxyname exists at destination. Use -Force to drop and migrate."
+					Write-Warning "Custom error $customerrorid $language exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else
 				{
-					If ($Pscmdlet.ShouldProcess($destination, "Dropping server proxy account $proxyname and recreating"))
+					If ($Pscmdlet.ShouldProcess($destination, "Dropping custom error $customerrorid $language and recreating"))
 					{
 						try
 						{
-							Write-Verbose "Dropping server proxy account $proxyname"
-							$destserver.jobserver.proxyaccounts[$proxyname].Drop()
+							Write-Verbose "Dropping custom error $customerrorid (drops all languages for custom error $customerrorid)"
+							$destserver.UserDefinedMessages[$customerrorid, $language].Drop()
 						}
 						catch 
 						{ 
-							Write-Exception $_
+							Write-Exception $_ 
 							continue
-							
 						}
 					}
 				}
 			}
-	
-			If ($Pscmdlet.ShouldProcess($destination, "Creating server proxy account $proxyname"))
+			
+			If ($Pscmdlet.ShouldProcess($destination, "Creating custom error $customerrorid $language"))
 			{
 				try
 				{
-					Write-Output "Copying server proxy account $proxyname"
-					$sql = $proxyaccount.Script() | Out-String
+					Write-Output "Copying custom error $customerrorid $language"
+					$sql = $customerror.Script() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
 					Write-Verbose $sql
 					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 				}
 				catch
 				{
-					$exceptionstring = $_.Exception.InnerException.ToString()
-					if ($exceptionstring -match 'subsystem') 
-					{
-						Write-Warning "One or more subsystems do not exist on the destination server. Skipping that part."
-					} 
-					else 
-					{
-						Write-Exception $_
-					}
+					Write-Exception $_
 				}
 			}
 		}
@@ -175,6 +165,7 @@ Shows what would happen if the command were executed using force.
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Server proxy account migration finished" }
+        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Custom error migration finished" }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlCustomError
 	}
-}
+} 

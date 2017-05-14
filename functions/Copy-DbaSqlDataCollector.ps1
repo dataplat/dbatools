@@ -1,4 +1,4 @@
-Function Copy-SqlDataCollector
+Function Copy-DbaSqlDataCollector
 {
 <#
 .SYNOPSIS
@@ -60,25 +60,25 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlDataCollector
+https://dbatools.io/Copy-DbaSqlDataCollector
 
 .EXAMPLE   
-Copy-SqlDataCollector -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster
 
 Copies all Data Collector Objects and Configurations from sqlserver2014a to sqlcluster, using Windows credentials. 
 
 .EXAMPLE   
-Copy-SqlDataCollector -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
 Copies all Data Collector Objects and Configurations from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
 .EXAMPLE   
-Copy-SqlDataCollector -Source sqlserver2014a -Destination sqlcluster -WhatIf
+Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
 Shows what would happen if the command were executed.
 	
 .EXAMPLE   
-Copy-SqlDataCollector -Source sqlserver2014a -Destination sqlcluster -CollectionSets 'Server Activity', 'Table Usage Analysis' 
+Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster -CollectionSets 'Server Activity', 'Table Usage Analysis' 
 
 Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlserver2014a to sqlcluster.
 #>
@@ -224,7 +224,8 @@ Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlse
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Data Collector migration finished" }
+        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Data Collector migration finished" }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlDataCollector
 	}
 }
 

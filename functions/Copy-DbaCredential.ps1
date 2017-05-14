@@ -1,8 +1,8 @@
-Function Copy-SqlCredential
+function Copy-DbaCredential
 {
 <# 
 .SYNOPSIS 
-Copy-SqlCredential migrates SQL Server Credentials from one SQL Server to another, while maintaining Credential passwords.
+Copy-DbaCredential migrates SQL Server Credentials from one SQL Server to another, while maintaining Credential passwords.
 
 .DESCRIPTION 
 By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Credentials from one server to another, while maintaining username and password.
@@ -64,16 +64,16 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlCredential
+https://dbatools.io/Copy-DbaCredential
 
 .EXAMPLE   
-Copy-SqlCredential -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster
 
 Description
 Copies all SQL Server Credentials on sqlserver2014a to sqlcluster. If credentials exist on destination, they will be skipped.
 
 .EXAMPLE   
-Copy-SqlCredential -Source sqlserver2014a -Destination sqlcluster -Credentials "PowerShell Proxy Account" -Force
+Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster -Credentials "PowerShell Proxy Account" -Force
 
 Description
 Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped and recreated.
@@ -393,6 +393,7 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Credential migration finished" }
+        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Credential migration finished" }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlCredential
 	}
 }

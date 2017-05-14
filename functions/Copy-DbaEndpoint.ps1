@@ -1,16 +1,14 @@
-Function Copy-SqlCustomError
+function Copy-DbaEndpoint
 {
 <#
 .SYNOPSIS 
-Copy-SqlCustomError migrates custom errors (user defined messages) from one SQL Server to another. 
+Copy-DbaEndpoint migrates server endpoints from one SQL Server to another. 
 
 .DESCRIPTION
-By default, all  custom errors are copied. The -CustomErrors parameter is autopopulated for command-line completion and can be used to copy only specific custom errors.
+By default, all endpoints are copied. The -Endpoints parameter is autopopulated for command-line completion and can be used to copy only specific endpoints.
 
-If the custom error already exists on the destination, it will be skipped unless -Force is used. Interesting fact, if you drop the us_english version, all the other languages will be dropped for that specific ID as well.
+If the endpoint already exists on the destination, it will be skipped unless -Force is used. 
 
-Also, the us_english version must be created first.
-	
 .PARAMETER Source
 Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
@@ -40,7 +38,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .PARAMETER Force
-Drops and recreates the XXXXX if it exists
+Drops and recreates the endpoint if it exists
 
 .NOTES
 Tags: Migration
@@ -57,20 +55,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlCustomError
+https://dbatools.io/Copy-DbaEndpoint
 
 .EXAMPLE   
-Copy-SqlCustomError -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaEndpoint -Source sqlserver2014a -Destination sqlcluster
 
-Copies all server custom errors from sqlserver2014a to sqlcluster, using Windows credentials. If custom errors with the same name exist on sqlcluster, they will be skipped.
-
-.EXAMPLE   
-Copy-SqlCustomError -Source sqlserver2014a -Destination sqlcluster -Trigger 60000 -SourceSqlCredential $cred -Force
-
-Copies a single custom error, the custom error with ID number 6000 from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a custom error with the same name exists on sqlcluster, it will be updated because -Force was used.
+Copies all server endpoints from sqlserver2014a to sqlcluster, using Windows credentials. If endpoints with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-SqlCustomError -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+Copy-DbaEndpoint -Source sqlserver2014a -Destination sqlcluster -Endpoint tg_noDbDrop -SourceSqlCredential $cred -Force
+
+Copies a single endpoint, the tg_noDbDrop endpoint from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an endpoint with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+
+.EXAMPLE   
+Copy-DbaEndpoint -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
 #>
@@ -84,11 +82,11 @@ Shows what would happen if the command were executed using force.
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlCustomErrors -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+	DynamicParam { if ($source) { return (Get-ParamSqlServerEndpoints -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
 	BEGIN
 	{
-		$customerrors = $psboundparameters.CustomErrors
+		$endpoints = $psboundparameters.Endpoints
 		
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
@@ -98,44 +96,38 @@ Shows what would happen if the command were executed using force.
 		
 		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
 		{
-			throw "Custom Errors are only supported in SQL Server 2005 and above. Quitting."
+			throw "Server Endpoints are only supported in SQL Server 2008 and above. Quitting."
 		}
 	}
 	
 	PROCESS
 	{
+		$serverendpoints = $sourceserver.Endpoints | Where-Object { $_.IsSystemObject -eq $false }
+		$destendpoints = $destserver.Endpoints
 		
-		
-		# Us has to go first
-		$orderedcustomerrors = @($sourceserver.UserDefinedMessages | Where-Object { $_.Language -eq "us_english" })
-		$orderedcustomerrors += $sourceserver.UserDefinedMessages | Where-Object { $_.Language -ne "us_english" }
-		$destcustomerrors = $destserver.UserDefinedMessages
-		
-		foreach ($customerror in $orderedcustomerrors)
+		foreach ($endpoint in $serverendpoints)
 		{
-			$customerrorid = $customerror.ID
-			$language = $customerror.language.ToString()
+			$endpointname = $endpoint.name
 			
-			if ($customerrors.length -gt 0 -and $customerrors -notcontains $customerrorid) { continue }
+			if ($endpoints.length -gt 0 -and $endpoints -notcontains $endpointname) { continue }
 			
-			if ($destcustomerrors.ID -contains $customerror.ID)
+			if ($destendpoints.name -contains $endpointname)
 			{
 				if ($force -eq $false)
 				{
-					Write-Warning "Custom error $customerrorid $language exists at destination. Use -Force to drop and migrate."
+					Write-Warning "Server endpoint $endpointname exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else
 				{
-					If ($Pscmdlet.ShouldProcess($destination, "Dropping custom error $customerrorid $language and recreating"))
+					If ($Pscmdlet.ShouldProcess($destination, "Dropping server endpoint $endpointname and recreating"))
 					{
 						try
 						{
-							Write-Verbose "Dropping custom error $customerrorid (drops all languages for custom error $customerrorid)"
-							$destserver.UserDefinedMessages[$customerrorid, $language].Drop()
+							Write-Output "Dropping server endpoint $endpointname"
+							$destserver.endpoints[$endpointname].Drop()
 						}
-						catch 
-						{ 
+						catch { 
 							Write-Exception $_ 
 							continue
 						}
@@ -143,21 +135,19 @@ Shows what would happen if the command were executed using force.
 				}
 			}
 			
-			If ($Pscmdlet.ShouldProcess($destination, "Creating custom error $customerrorid $language"))
+			If ($Pscmdlet.ShouldProcess($destination, "Creating server endpoint $endpointname"))
 			{
 				try
 				{
-					Write-Output "Copying custom error $customerrorid $language"
-					$sql = $customerror.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
-					Write-Verbose $sql
-					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+					Write-Output "Copying server endpoint $endpointname"
+					$destserver.ConnectionContext.ExecuteNonQuery($endpoint.Script()) | Out-Null
 				}
 				catch
 				{
 					Write-Exception $_
 				}
 			}
+
 		}
 	}
 	
@@ -165,6 +155,7 @@ Shows what would happen if the command were executed using force.
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Custom error migration finished" }
+        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Server endpoint migration finished" }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlEndpoint
 	}
-} 
+}

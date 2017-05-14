@@ -1,13 +1,13 @@
-Function Copy-SqlOperator
+function Copy-DbaServerTrigger
 {
 <#
 .SYNOPSIS 
-Copy-SqlOperator migrates operators from one SQL Server to another. 
+Copy-DbaServerTrigger migrates server triggers from one SQL Server to another. 
 
 .DESCRIPTION
-By default, all operators are copied. The -Operators parameter is autopopulated for command-line completion and can be used to copy only specific operators.
+By default, all triggers are copied. The -Triggers parameter is autopopulated for command-line completion and can be used to copy only specific triggers.
 
-If the associated credentials for the operator do not exist on the destination, it will be skipped. If the operator already exists on the destination, it will be skipped unless -Force is used.  
+If the trigger already exists on the destination, it will be skipped unless -Force is used. 
 
 .PARAMETER Source
 Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -29,7 +29,6 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 $dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
 
 Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-
 To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER WhatIf 
@@ -39,7 +38,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .PARAMETER Force
-Drops and recreates the Operator if it exists
+Drops and recreates the Trigger if it exists
 
 .NOTES
 Tags: Migration
@@ -56,20 +55,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlOperator
+https://dbatools.io/Copy-DbaServerTrigger
 
 .EXAMPLE   
-Copy-SqlOperator -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster
 
-Copies all operators from sqlserver2014a to sqlcluster, using Windows credentials. If operators with the same name exist on sqlcluster, they will be skipped.
-
-.EXAMPLE   
-Copy-SqlOperator -Source sqlserver2014a -Destination sqlcluster -Operator PSOperator -SourceSqlCredential $cred -Force
-
-Copies a single operator, the PSOperator operator from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an operator with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+Copies all server triggers from sqlserver2014a to sqlcluster, using Windows credentials. If triggers with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-SqlOperator -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+Copy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster -Trigger tg_noDbDrop -SourceSqlCredential $cred -Force
+
+Copies a single trigger, the tg_noDbDrop trigger from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a trigger with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+
+.EXAMPLE   
+Copy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
 #>
@@ -83,54 +82,51 @@ Shows what would happen if the command were executed using force.
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-    DynamicParam { if ($source) { return (Get-ParamSqlOperators -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+	DynamicParam { if ($source) { return (Get-ParamSqlServerTriggers -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-    BEGIN {
-
-		$operators = $psboundparameters.Operators
-
+	BEGIN
+	{
+		$triggers = $psboundparameters.Triggers
+		
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 		
-		$serveroperators = $sourceserver.JobServer.Operators
-		$destoperators = $destserver.JobServer.Operators
+		$source = $sourceserver.DomainInstanceName
+		$destination = $destserver.DomainInstanceName
 		
-		$failsafe = $server.JobServer.AlertSystem | Select FailSafeOperator
-
-    }
-
+		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
+		{
+			throw "Server Triggers are only supported in SQL Server 2005 and above. Quitting."
+		}
+		
+		$servertriggers = $sourceserver.Triggers
+		$desttriggers = $destserver.Triggers
+		
+	}
 	PROCESS
 	{
-
-		foreach ($operator in $serveroperators)
+		foreach ($trigger in $servertriggers)
 		{
-			$operatorname = $operator.name
-			if ($operators.length -gt 0 -and $operators -notcontains $operatorname) { continue }
+			$triggername = $trigger.name
+			if ($triggers.length -gt 0 -and $triggers -notcontains $triggername) { continue }
 			
-			if ($destoperators.name -contains $operator.name)
+			if ($desttriggers.name -contains $triggername)
 			{
 				if ($force -eq $false)
 				{
-					Write-Warning "Operator $operatorname exists at destination. Use -Force to drop and migrate."
+					Write-Warning "Server trigger $triggername exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else
 				{
-					if ($failsafe.FailSafeOperator -eq $operatorname)
-					{
-						Write-Warning "$operatorname is the failsafe operator. Skipping drop."
-						continue
-					}
-					
-					If ($Pscmdlet.ShouldProcess($destination, "Dropping operator $operatorname and recreating"))
+					If ($Pscmdlet.ShouldProcess($destination, "Dropping server trigger $triggername and recreating"))
 					{
 						try
 						{
-							Write-Verbose "Dropping Operator $operatorname"
-							$destserver.jobserver.operators[$operatorname].Drop()
+							Write-Verbose "Dropping server trigger $triggername"
+							$destserver.triggers[$triggername].Drop()
 						}
-						catch 
-						{ 
+						catch { 
 							Write-Exception $_ 
 							continue
 						}
@@ -138,13 +134,16 @@ Shows what would happen if the command were executed using force.
 				}
 			}
 
-			If ($Pscmdlet.ShouldProcess($destination, "Creating Operator $operatorname"))
+			If ($Pscmdlet.ShouldProcess($destination, "Creating server trigger $triggername"))
 			{
 				try
 				{
-					Write-Output "Copying Operator $operatorname"
-					$sql = $operator.Script() | Out-String
+					Write-Output "Copying server trigger $triggername"
+					$sql = $trigger.Script() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+					$sql = $sql -replace "CREATE TRIGGER", "`nGO`nCREATE TRIGGER"
+					$sql = $sql -replace "ENABLE TRIGGER", "`nGO`nENABLE TRIGGER"
+					
 					Write-Verbose $sql
 					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 				}
@@ -160,6 +159,7 @@ Shows what would happen if the command were executed using force.
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Operator migration finished" }
+        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Server trigger migration finished" }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlServerTrigger
 	}
 }

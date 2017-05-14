@@ -1,4 +1,4 @@
-Function Copy-SqlBackupDevice
+function Copy-DbaBackupDevice
 {
 <#
 .SYNOPSIS
@@ -57,21 +57,21 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlBackupDevice
+https://dbatools.io/Copy-DbaBackupDevice
 
 .EXAMPLE   
-Copy-SqlBackupDevice -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster
 
 Copies all server backup devices from sqlserver2014a to sqlcluster, using Windows credentials. If backup devices with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-SqlBackupDevice -Source sqlserver2014a -Destination sqlcluster -BackupDevices backup01 -SourceSqlCredential $cred -Force
+Copy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster -BackupDevices backup01 -SourceSqlCredential $cred -Force
 
 Copies a single backup device, backup01, from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a
 and Windows credentials for sqlcluster. If a backup device with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 .EXAMPLE   
-Copy-SqlBackupDevice -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+Copy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
 #>
@@ -216,6 +216,7 @@ Shows what would happen if the command were executed using force.
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "backup device migration finished" }
+        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "backup device migration finished" }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlBackupDevice
 	}
 }

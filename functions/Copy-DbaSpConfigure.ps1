@@ -1,8 +1,8 @@
-Function Copy-SqlSpConfigure
+function Copy-DbaSpConfigure
 {
 <#
 .SYNOPSIS 
-Copy-SqlSpConfigure migrates configuration values from one SQL Server to another. 
+Copy-DbaSpConfigure migrates configuration values from one SQL Server to another. 
 
 .DESCRIPTION
 By default, all configuration values are copied. The -Configs parameter is autopopulated for command-line completion and can be used to copy only specific configs.
@@ -36,7 +36,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .NOTES
-Tags: Migration
+Tags: Migration, Configure
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
@@ -50,20 +50,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlSpConfigure 
+https://dbatools.io/Copy-DbaSpConfigure 
 
 .EXAMPLE   
-Copy-SqlSpConfigure -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster
 
 Copies all sp_configure settings from sqlserver2014a to sqlcluster
 
 .EXAMPLE   
-Copy-SqlSpConfigure -Source sqlserver2014a -Destination sqlcluster -Configs DefaultBackupCompression, IsSqlClrEnabled -SourceSqlCredential $cred -Force
+Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -Configs DefaultBackupCompression, IsSqlClrEnabled -SourceSqlCredential $cred -Force
 
 Updates the values for two configs, the  IsSqlClrEnabled and DefaultBackupCompression, from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
 .EXAMPLE   
-Copy-SqlSpConfigure -Source sqlserver2014a -Destination sqlcluster -WhatIf
+Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
 Shows what would happen if the command were executed.
 #>
@@ -148,10 +148,10 @@ Shows what would happen if the command were executed.
 	    $sourceserver.ConnectionContext.Disconnect()
 	    $destserver.ConnectionContext.Disconnect()
 	
-	    If ($Pscmdlet.ShouldProcess("console", "Showing finished message"))
-	    {
-		    Write-Output "Server configuration update finished"
-		}
+        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
+            Write-Output "Server configuration update finished"
+        }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlSpConfigure
 	}
 	
 }

@@ -1,13 +1,13 @@
-Function Copy-SqlEndpoint
+function Copy-DbaSqlAuditSpecification
 {
 <#
 .SYNOPSIS 
-Copy-SqlEndpoint migrates server endpoints from one SQL Server to another. 
+Copy-DbaSqlAuditSpecification migrates server audit specifications from one SQL Server to another. 
 
 .DESCRIPTION
-By default, all endpoints are copied. The -Endpoints parameter is autopopulated for command-line completion and can be used to copy only specific endpoints.
+By default, all audits are copied. The -ServerAuditSpecifications parameter is autopopulated for command-line completion and can be used to copy only specific audits.
 
-If the endpoint already exists on the destination, it will be skipped unless -Force is used. 
+If the audit specification already exists on the destination, it will be skipped unless -Force is used. 
 
 .PARAMETER Source
 Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -38,7 +38,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .PARAMETER Force
-Drops and recreates the endpoint if it exists
+Drops and recreates the Audit Specification if it exists
 
 .NOTES
 Tags: Migration
@@ -55,20 +55,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlEndpoint
+https://dbatools.io/Copy-DbaSqlAuditSpecification
 
 .EXAMPLE   
-Copy-SqlEndpoint -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaSqlAuditSpecification -Source sqlserver2014a -Destination sqlcluster
 
-Copies all server endpoints from sqlserver2014a to sqlcluster, using Windows credentials. If endpoints with the same name exist on sqlcluster, they will be skipped.
-
-.EXAMPLE   
-Copy-SqlEndpoint -Source sqlserver2014a -Destination sqlcluster -Endpoint tg_noDbDrop -SourceSqlCredential $cred -Force
-
-Copies a single endpoint, the tg_noDbDrop endpoint from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an endpoint with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+Copies all server audits from sqlserver2014a to sqlcluster, using Windows credentials. If audits with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-SqlEndpoint -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+Copy-DbaSqlAuditSpecification -Source sqlserver2014a -Destination sqlcluster -ServerAuditSpecifications tg_noDbDrop -SourceSqlCredential $cred -Force
+
+Copies a single audit, the tg_noDbDrop audit from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an audit with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+
+.EXAMPLE   
+Copy-DbaSqlAuditSpecification -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
 #>
@@ -82,11 +82,12 @@ Shows what would happen if the command were executed using force.
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlServerEndpoints -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+	DynamicParam { if ($source) { return (Get-ParamSqlServerServerAuditSpecifications -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
 	BEGIN
 	{
-		$endpoints = $psboundparameters.Endpoints
+		
+		$auditspecs = $psboundparameters.ServerAuditSpecifications
 		
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
@@ -94,38 +95,51 @@ Shows what would happen if the command were executed using force.
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
 		
-		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
+		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
+		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
+		
+		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
 		{
-			throw "Server Endpoints are only supported in SQL Server 2008 and above. Quitting."
+			throw "Server Audit Specifications are only supported in SQL Server 2008 and above. Quitting."
+			
 		}
+		
+		$serverauditspecs = $sourceserver.ServerAuditSpecifications
+		$destaudits = $destserver.ServerAuditSpecifications
+		
 	}
-	
 	PROCESS
 	{
-		$serverendpoints = $sourceserver.Endpoints | Where-Object { $_.IsSystemObject -eq $false }
-		$destendpoints = $destserver.Endpoints
 		
-		foreach ($endpoint in $serverendpoints)
+		
+		foreach ($auditspec in $serverauditspecs)
 		{
-			$endpointname = $endpoint.name
+			$auditspecname = $auditspec.name
+			if ($auditspecs.length -gt 0 -and $auditspecs -notcontains $auditspecname) { continue }
 			
-			if ($endpoints.length -gt 0 -and $endpoints -notcontains $endpointname) { continue }
+			$destserver.Audits.Refresh()
 			
-			if ($destendpoints.name -contains $endpointname)
+			if ($destserver.Audits.Name -notcontains $auditspec.AuditName)
+			{
+				Write-Warning "Audit $($auditspec.AuditName) does not exist on $Destination. Skipping $auditspecname."
+				continue
+			}
+			
+			if ($destaudits.name -contains $auditspecname)
 			{
 				if ($force -eq $false)
 				{
-					Write-Warning "Server endpoint $endpointname exists at destination. Use -Force to drop and migrate."
+					Write-Warning "Server audit $auditspecname exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else
 				{
-					If ($Pscmdlet.ShouldProcess($destination, "Dropping server endpoint $endpointname and recreating"))
+					If ($Pscmdlet.ShouldProcess($destination, "Dropping server audit $auditspecname and recreating"))
 					{
 						try
 						{
-							Write-Output "Dropping server endpoint $endpointname"
-							$destserver.endpoints[$endpointname].Drop()
+							Write-Verbose "Dropping server audit $auditspecname"
+							$destserver.ServerAuditSpecifications[$auditspecname].Drop()
 						}
 						catch { 
 							Write-Exception $_ 
@@ -135,12 +149,12 @@ Shows what would happen if the command were executed using force.
 				}
 			}
 			
-			If ($Pscmdlet.ShouldProcess($destination, "Creating server endpoint $endpointname"))
+			If ($Pscmdlet.ShouldProcess($destination, "Creating server audit $auditspecname"))
 			{
 				try
 				{
-					Write-Output "Copying server endpoint $endpointname"
-					$destserver.ConnectionContext.ExecuteNonQuery($endpoint.Script()) | Out-Null
+					Write-Output "Copying server audit $auditspecname"
+					$destserver.ConnectionContext.ExecuteNonQuery($auditspec.Script()) | Out-Null
 				}
 				catch
 				{
@@ -155,6 +169,7 @@ Shows what would happen if the command were executed using force.
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Server endpoint migration finished" }
+        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Server audit migration finished" }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlAuditSpecification
 	}
 }

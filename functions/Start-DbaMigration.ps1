@@ -1,4 +1,4 @@
-Function Start-SqlMigration
+function Start-DbaMigration
 {
 <# 
 .SYNOPSIS 
@@ -12,7 +12,7 @@ Automatically outputs a transcript to disk.
 
 .DESCRIPTION 
 
-Start-SqlMigration consolidates most of the migration tools in dbatools into one command.  This is useful when you're looking to migrate entire instances. It less flexible than using the underlying functions. Think of it as an easy button. It migrates:
+Start-DbaMigration consolidates most of the migration tools in dbatools into one command.  This is useful when you're looking to migrate entire instances. It less flexible than using the underlying functions. Think of it as an easy button. It migrates:
 
 All user databases. Use -NoDatabases to skip.
 All logins. Use -NoLogins to skip.
@@ -192,27 +192,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			
 
 .LINK 
-https://dbatools.io/Start-SqlMigration
+https://dbatools.io/Start-DbaMigration
 
 .EXAMPLE   
-Start-SqlMigration -Source sqlserver\instance -Destination sqlcluster -DetachAttach 
+Start-DbaMigration -Source sqlserver\instance -Destination sqlcluster -DetachAttach 
 
 Description
 
 All databases, logins, job objects and sp_configure options will be migrated from sqlserver\instance to sqlcluster. Databases will be migrated using the detach/copy files/attach method. Dbowner will be updated. User passwords, SIDs, database roles and server roles will be migrated along with the login.
 
 .EXAMPLE  
-Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -SourceSqlCredential $scred -ReuseSourceFolderStructure -DestinationSqlCredential $cred -Force -NetworkShare \\fileserver\share\sqlbackups\Migration -BackupRestore
+Start-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -SourceSqlCredential $scred -ReuseSourceFolderStructure -DestinationSqlCredential $cred -Force -NetworkShare \\fileserver\share\sqlbackups\Migration -BackupRestore
 
 Migrate databases uses backup/restore. Also migrate logins, database mail, credentials, SQL Agent, Central Management Server, SQL global configuration.
 
 .EXAMPLE
-Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -NoDatabases -NoLogins
+Start-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -NoDatabases -NoLogins
 
 Migrates everything but logins and databases.
 
 .EXAMPLE
-Start-SqlMigration -Verbose -Source sqlcluster -Destination sql2016 -DetachAttach -Reattach -SetSourceReadonly
+Start-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -DetachAttach -Reattach -SetSourceReadonly
 
 Migrate databases using detach/copy/attach. Reattach at source and set source databases read-only. Also migrates everything else. 
 
@@ -322,7 +322,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			Write-Output "`n`nMigrating SQL Server Configuration"
 			try
 			{
-				Copy-SqlSpConfigure -Source $sourceserver -Destination $destserver
+				Copy-DbaSpConfigure -Source $sourceserver -Destination $destserver
 			}
 			catch { Write-Error "Configuration migration reported the following error $($_.Exception.Message) " }
 		}
@@ -333,7 +333,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			Write-Output "`n`nMigrating custom errors (user defined messages)"
 			try
 			{
-				Copy-SqlCustomError -Source $sourceserver -Destination $destserver -Force:$Force
+				Copy-DbaCustomError -Source $sourceserver -Destination $destserver -Force:$Force
 			}
 			catch { Write-Error "Couldn't copy custom errors." }
 		}
@@ -349,7 +349,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating SQL credentials"
 				try
 				{
-					Copy-SqlCredential -Source $sourceserver -Destination $destserver -Force:$Force
+					Copy-DbaCredential -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch { Write-Error "Credential migration reported the following error $($_.Exception.Message) " }
 			}
@@ -366,7 +366,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating database mail"
 				try
 				{
-					Copy-SqlDatabaseMail -Source $sourceserver -Destination $destserver -Force:$Force
+					Copy-DbaDatabaseMail -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch { Write-Error "Database mail migration reported the following error $($_.Exception.Message)" }
 			}
@@ -379,7 +379,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			{
 				If ($Pscmdlet.ShouldProcess($destination, "Copying user objects."))
 				{
-					Copy-SqlSysDbUserObjects -Source $sourceserver -Destination $destserver
+					Copy-DbaSysDbUserObjects -Source $sourceserver -Destination $destserver
 				}
 				
 			}
@@ -397,7 +397,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating Central Management Server"
 				try
 				{
-					Copy-SqlCentralManagementServer -Source $sourceserver -Destination $destserver -Force:$Force
+					Copy-DbaCentralManagementServer -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch
 				{
@@ -411,7 +411,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			Write-Output "`n`nMigrating Backup Devices"
 			try
 			{
-				Copy-SqlBackupDevice -Source $sourceserver -Destination $destserver -Force:$Force
+				Copy-DbaBackupDevice -Source $sourceserver -Destination $destserver -Force:$Force
 			}
 			catch { Write-Error "Backup device migration reported the following error $($_.Exception.Message)" }
 		}
@@ -421,7 +421,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			Write-Output "`n`nMigrating linked servers"
 			try
 			{
-				Copy-SqlLinkedServer -Source $sourceserver -Destination $destserver -Force:$Force
+				Copy-DbaLinkedServer -Source $sourceserver -Destination $destserver -Force:$Force
 			}
 			catch { Write-Error "Linked server migration reported the following error $($_.Exception.Message) " }
 		}
@@ -437,7 +437,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating System Triggers"
 				try
 				{
-					Copy-SqlServerTrigger -Source $sourceserver -Destination $destserver -Force:$Force
+					Copy-DbaServerTrigger -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch { Write-Error "System Triggers migration reported the following error $($_.Exception.Message)" }
 			}
@@ -456,11 +456,11 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			{
 				if ($BackupRestore)
 				{
-					Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace
+					Copy-DbaDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace
 				}
 				else
 				{
-					Copy-SqlDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force
+					Copy-DbaDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force
 				}
 			}
 			catch { Write-Error "Database migration reported the following error $($_.Exception.Message)" }
@@ -474,11 +474,11 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			{
 				if ($NoSaRename -eq $false)
 				{
-					Copy-SqlLogin -Source $sourceserver -Destination $destserver -Force:$Force -SyncSaName
+					Copy-DbaLogin -Source $sourceserver -Destination $destserver -Force:$Force -SyncSaName
 				}
 				else
 				{
-					Copy-SqlLogin -Source $sourceserver -Destination $destserver -Force:$Force
+					Copy-DbaLogin -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 			}
 			catch { Write-Error "Login migration reported the following error $($_.Exception.Message) " }
@@ -505,7 +505,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating Data Collector collection sets"
 				try
 				{
-					Copy-SqlDataCollector -Source $sourceserver -Destination $destserver -Force:$Force
+					Copy-DbaSqlDataCollector -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch { Write-Error "Job Server migration reported the following error $($_.Exception.Message) " }
 			}
@@ -523,7 +523,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating Audits"
 				try
 				{
-					Copy-SqlAudit -Source $sourceserver -Destination $destserver -Force:$Force
+					Copy-DbaSqlAudit -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch { Write-Error "Backup device migration reported the following error $($_.Exception.Message)" }
 			}
@@ -540,7 +540,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating Server Audit Specifications"
 				try
 				{
-					Copy-SqlAuditSpecification -Source $sourceserver -Destination $destserver -Force:$Force
+					Copy-DbaSqlAuditSpecification -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch { Write-Error "Server Audit Specification migration reported the following error $($_.Exception.Message)" }
 			}
@@ -557,7 +557,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating Endpoints"
 				try
 				{
-					Copy-SqlEndpoint -Source $sourceserver -Destination $destserver -Force:$Force
+					Copy-DbaEndpoint -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch { Write-Error "Backup device migration reported the following error $($_.Exception.Message)" }
 			}
@@ -575,7 +575,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating Policy Management "
 				try
 				{
-					Copy-SqlPolicyManagement -Source $sourceserver -Destination $destserver -Force:$Force
+					Copy-DbaSqlPolicyManagement -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch { Write-Error "Policy Management migration reported the following error $($_.Exception.Message)" }
 			}
@@ -592,7 +592,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating Resource Governor"
 				try
 				{
-					Copy-SqlResourceGovernor -Source $sourceserver -Destination $destserver -Force:$Force
+					Copy-DbaResourceGovernor -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch { Write-Error "Resource Governor migration reported the following error $($_.Exception.Message)" }
 			}
@@ -609,7 +609,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating Extended Events"
 				try
 				{
-					Copy-SqlExtendedEvent -Source $sourceserver -Destination $destserver -Force:$Force
+					Copy-DbaExtendedEvent -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch { Write-Error "Extended Event migration reported the following error $($_.Exception.Message)" }
 			}
@@ -620,7 +620,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			Write-Output "`n`nMigrating job server"
 			try
 			{
-				Copy-SqlServerAgent -Source $sourceserver -Destination $destserver -DisableJobsOnDestination:$DisableJobsOnDestination -DisableJobsOnSource:$DisableJobsOnSource -Force:$Force
+				Copy-DbaSqlServerAgent -Source $sourceserver -Destination $destserver -DisableJobsOnDestination:$DisableJobsOnDestination -DisableJobsOnSource:$DisableJobsOnSource -Force:$Force
 			}
 			catch { Write-Error "Job Server migration reported the following error $($_.Exception.Message) " }
 		}
@@ -634,13 +634,13 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 		if ($sourceserver.ConnectionContext.IsOpen -eq $true) { $sourceserver.ConnectionContext.Disconnect() }
 		if ($destserver.ConnectionContext.IsOpen -eq $true) { $destserver.ConnectionContext.Disconnect() }
 		
-		If ($Pscmdlet.ShouldProcess("console", "Showing SQL Server migration finished message"))
-		{
-			Write-Output "`n`nSQL Server migration complete"
-			Write-Output "Migration started: $started"
-			Write-Output "Migration completed: $(Get-Date)"
-			Write-Output "Total Elapsed time: $totaltime"
-			Stop-Transcript
-		}
+        If ($Pscmdlet.ShouldProcess("console", "Showing SQL Server migration finished message")) {
+            Write-Output "`n`nSQL Server migration complete"
+            Write-Output "Migration started: $started"
+            Write-Output "Migration completed: $(Get-Date)"
+            Write-Output "Total Elapsed time: $totaltime"
+            Stop-Transcript
+        }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Start-SqlMigration
 	}
 }

@@ -1,4 +1,4 @@
-Function Copy-SqlExtendedEvent
+function Copy-DbaExtendedEvent
 {
 <#
 .SYNOPSIS
@@ -57,25 +57,25 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlExtendedEvent
+https://dbatools.io/Copy-DbaExtendedEvent
 
 .EXAMPLE   
-Copy-SqlExtendedEvent -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster
 
 Copies all extended event sessions from sqlserver2014a to sqlcluster, using Windows credentials. 
 
 .EXAMPLE   
-Copy-SqlExtendedEvent -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
 Copies all extended event sessions from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
 .EXAMPLE   
-Copy-SqlExtendedEvent -Source sqlserver2014a -Destination sqlcluster -WhatIf
+Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
 Shows what would happen if the command were executed.
 	
 .EXAMPLE   
-Copy-SqlExtendedEvent -Source sqlserver2014a -Destination sqlcluster -Sessions CheckQueries, MonitorUserDefinedException 
+Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -Sessions CheckQueries, MonitorUserDefinedException 
 
 Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from sqlserver2014a to sqlcluster.
 #>
@@ -187,7 +187,8 @@ Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from s
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Extended Event migration finished" }
+        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Extended Event migration finished" }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlExtendedEvent
 	}
 }
 

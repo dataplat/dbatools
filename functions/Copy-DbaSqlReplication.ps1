@@ -1,4 +1,10 @@
-<#
+function Copy-DbaSqlReplication {
+    [cmdletbinding()]
+    param(
+		[switch]$Silent
+    )
+    Stop-Function -Message "Command is still under construction"
+    <#
 #$transfer.Options.ContinueScriptingOnError
 # replace names
 # Load SMO, create server object, test connection, disconnect
@@ -86,3 +92,4 @@ foreach ($repdb in $repdbs) {
 	}
 }
 #>
+}

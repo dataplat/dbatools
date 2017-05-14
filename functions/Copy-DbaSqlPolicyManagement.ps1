@@ -1,4 +1,4 @@
-Function Copy-SqlPolicyManagement
+function Copy-DbaSqlPolicyManagement
 {
 <#
 .SYNOPSIS
@@ -57,25 +57,25 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlPolicyManagement 
+https://dbatools.io/Copy-DbaSqlPolicyManagement 
 
 .EXAMPLE   
-Copy-SqlPolicyManagement -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaSqlPolicyManagement -Source sqlserver2014a -Destination sqlcluster
 
 Copies all policies and conditions from sqlserver2014a to sqlcluster, using Windows credentials. 
 
 .EXAMPLE   
-Copy-SqlPolicyManagement -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+Copy-DbaSqlPolicyManagement -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
 Copies all policies and conditions from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
 .EXAMPLE   
-Copy-SqlPolicyManagement -Source sqlserver2014a -Destination sqlcluster -WhatIf
+Copy-DbaSqlPolicyManagement -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
 Shows what would happen if the command were executed.
 	
 .EXAMPLE   
-Copy-SqlPolicyManagement -Source sqlserver2014a -Destination sqlcluster -Policy 'xp_cmdshell must be disabled'
+Copy-DbaSqlPolicyManagement -Source sqlserver2014a -Destination sqlcluster -Policy 'xp_cmdshell must be disabled'
 
 Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sqlcluster. No conditions are migrated.
 	
@@ -257,6 +257,7 @@ Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sq
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Policy Management migration finished" }
+        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Policy Management migration finished" }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlPolicyManagement
 	}
 }

@@ -1,4 +1,4 @@
-Function Copy-SqlResourceGovernor
+function Copy-DbaResourceGovernor
 {
 <#
 .SYNOPSIS
@@ -57,20 +57,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Copy-SqlResourceGovernor
+https://dbatools.io/Copy-DbaResourceGovernor
 
 .EXAMPLE   
-Copy-SqlResourceGovernor -Source sqlserver2014a -Destination sqlcluster
+Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster
 
 Copies all extended event policies from sqlserver2014a to sqlcluster, using Windows credentials. 
 
 .EXAMPLE   
-Copy-SqlResourceGovernor -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
 Copies all extended event policies from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
 .EXAMPLE   
-Copy-SqlResourceGovernor -Source sqlserver2014a -Destination sqlcluster -WhatIf
+Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
 Shows what would happen if the command were executed.
 #>
@@ -229,10 +229,10 @@ Shows what would happen if the command were executed.
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
 		
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message"))
-		{
-			Write-Output "Resource Governor migration finished"
-		}
+        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
+            Write-Output "Resource Governor migration finished"
+        }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlResourceGovernor
 	}
 	
 }

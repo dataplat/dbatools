@@ -1,4 +1,4 @@
-Function Copy-SqlDatabase
+function Copy-DbaDatabase
 {
 <#
 .SYNOPSIS 
@@ -91,7 +91,7 @@ Takes dbobject from pipeline
 Number of files to split the backup. Default is 3.
 
 .PARAMETER NoCopyOnly
-By default, Copy-SqlDatabase backups are backed up with COPY_ONLY, which avoids breaking the LSN backup chain. This parameter will set CopyOnly to $false.
+By default, Copy-DbaDatabase backups are backed up with COPY_ONLY, which avoids breaking the LSN backup chain. This parameter will set CopyOnly to $false.
 
 .PARAMETER SetSourceOffline
 Sets the Source db to offline after copy
@@ -119,21 +119,21 @@ You should have received a copy of the GNU General Public License along with thi
 
 
 .LINK
-https://dbatools.io/Copy-SqlDatabase
+https://dbatools.io/Copy-DbaDatabase
 
 .EXAMPLE
-Copy-SqlDatabase -Source sqlserver2014a -Destination sqlserver2014b -Database TestDB -BackupRestore -NetworkShare \\fileshare\sql\migration
+Copy-DbaDatabase -Source sqlserver2014a -Destination sqlserver2014b -Database TestDB -BackupRestore -NetworkShare \\fileshare\sql\migration
 
 Migrates a single user database TestDB using Backup and restore from instance sqlserver2014a to sqlserver2014b. Backup files are stored in \\fileshare\sql\migration.
 
 .EXAMPLE   
-Copy-SqlDatabase -Source sqlserver2014a -Destination sqlcluster -DetachAttach -Reattach
+Copy-DbaDatabase -Source sqlserver2014a -Destination sqlcluster -DetachAttach -Reattach
 
 Databases will be migrated from sqlserver2014a to sqlcluster using the detach/copy files/attach method.The following will be perfomed: kick all users out of the database, detach all data/log files, move files across the network over an admin share (\\SqlSERVER\M$\MSSql...), attach file on destination server, reattach at source. If the database files (*.mdf, *.ndf, *.ldf) on *destination* exist and aren't in use, they will be overwritten.
 
 
 .EXAMPLE   
-Copy-SqlDatabase -Source sqlserver2014a -Destination sqlcluster -Exclude Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -NetworkShare \\fileshare\sql\migration
+Copy-DbaDatabase -Source sqlserver2014a -Destination sqlcluster -Exclude Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -NetworkShare \\fileshare\sql\migration
 
 Migrates all user databases except for Northwind and pubs by using backup/restore (copy-only). Backup files are stored in \\fileshare\sql\migration. If the database exists on the destination, it will be dropped prior to attach.
 
@@ -1224,6 +1224,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		}
 		
 		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
+        $destserver.ConnectionContext.Disconnect()
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlDatabase
 	}
 }
