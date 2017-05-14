@@ -40,7 +40,7 @@
     Creates a large support pack in order to help us troubleshoot stuff.
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [string]
         $Path = "$($env:USERPROFILE)\Desktop",
         
@@ -51,15 +51,14 @@
         $Silent
     )
     
-    Begin {
+    BEGIN {
         Write-Message -Level InternalComment -Message "Starting"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
         
         #region Helper functions
         function Get-ShellBuffer {
             [CmdletBinding()]
-            Param (
-            )
+            Param ()
             
             # Define limits
             $rec = New-Object System.Management.Automation.Host.Rectangle
@@ -109,7 +108,7 @@
         }
         #endregion Helper functions
     }
-    Process {
+    PROCESS {
         $filePathXml = "$($Path.Trim('\'))\dbatools_support_pack_$(Get-Date -Format "yyyy_MM_dd-HH_mm_ss").xml"
         $filePathZip = $filePathXml -replace "\.xml$", ".zip"
         
@@ -170,7 +169,7 @@ This will make it easier for us to troubleshoot and you won't be sending us the 
         
         Remove-Item -Path $filePathXml -ErrorAction Ignore
     }
-    End {
+    END {
         Write-Message -Level InternalComment -Message "Ending"
     }
 }
