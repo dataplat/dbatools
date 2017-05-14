@@ -375,11 +375,12 @@ CREATE LOGIN [$username] FROM WINDOWS WITH DEFAULT_DATABASE = [$defaultdb], DEFA
 		
 		$sql = $outsql -join "`r`nGO`r`n"
 		
-		if ($FilePath.Length -gt 0) {
-			$sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
-		}
-		else {
-			return $sql
-		}
+        if ($FilePath.Length -gt 0) {
+            $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+        }
+        else {
+            return $sql
+        }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Export-SqlLogin
 	}
 }
