@@ -439,16 +439,17 @@ Limitations: Does not support Application Roles yet
 	
 	END {
 		
-		If ($Pscmdlet.ShouldProcess("console", "Showing time elapsed message")) {
-			Write-Output "Login migration completed: $(Get-Date)"
-			$totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
-			$sourceserver.ConnectionContext.Disconnect()
+        If ($Pscmdlet.ShouldProcess("console", "Showing time elapsed message")) {
+            Write-Output "Login migration completed: $(Get-Date)"
+            $totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
+            $sourceserver.ConnectionContext.Disconnect()
 			
-			if ($Destination.length -gt 0) {
-				$destserver.ConnectionContext.Disconnect()
-			}
+            if ($Destination.length -gt 0) {
+                $destserver.ConnectionContext.Disconnect()
+            }
 			
-			Write-Output "Total elapsed time: $totaltime"
-		}
+            Write-Output "Total elapsed time: $totaltime"
+        }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlLogin
 	}
 }
