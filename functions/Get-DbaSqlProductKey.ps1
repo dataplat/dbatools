@@ -1,4 +1,4 @@
-function Get-DbaSqlServerKey
+function Get-DbaSqlProductKey
 {
 <# 
 .SYNOPSIS 
