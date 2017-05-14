@@ -660,9 +660,9 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
 	{
 		$sourceConnection.ConnectionContext.Disconnect()
 		$destinationConnection.ConnectionContext.Disconnect()
-		if ($Pscmdlet.ShouldProcess("console", "Showing finished message"))
-		{
-			Write-Output "Integration services migration finished."
-		}
+        if ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
+            Write-Output "Integration services migration finished."
+        }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlSsisCatalog
 	}
 }
