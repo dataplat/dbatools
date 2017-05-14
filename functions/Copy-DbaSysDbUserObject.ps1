@@ -1,6 +1,5 @@
-function Copy-DbaSysDbUserObject
-{
-<#
+function Copy-DbaSysDbUserObject {
+    <#
 .SYNOPSIS
 Imports *all* user objects found in source SQL Server's master, msdb and model databases to the destination.
 
@@ -18,27 +17,27 @@ Destination SQL Server. You must have sysadmin access and server version must be
 .PARAMETER SourceSqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$scred = Get-Credential, this pass $scred object to the param. 
+$scred = Get-Credential, this pass $scred object to the param.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER DestinationSqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$dcred = Get-Credential, this pass this $dcred to the param. 
+$dcred = Get-Credential, this pass this $dcred to the param.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+.PARAMETER WhatIf
+Shows what would happen if the command were to run. No actions are actually performed.
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+.PARAMETER Confirm
+Prompts you for confirmation before executing any changing operations within the command.
 
 .EXAMPLE
 Copy-DbaSysDbUserObject $sourceserver $destserve
-	
-Copies user objects from source to destination 
+
+Copies user objects from source to destination
 
 .NOTES
 Tags: Migration
@@ -55,84 +54,81 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Copy-DbaSysDbUserObject
 
 #>
-	[CmdletBinding(SupportsShouldProcess = $true)]
-	param (
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[object]$Source,
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[object]$Destination,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential
-	)
-	
-	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
-	
-	$source = $sourceserver.DomainInstanceName
-	$destination = $destserver.DomainInstanceName
-	
-	if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
-	if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
-	
-	$systemdbs = "master", "model", "msdb"
-	
-	foreach ($systemdb in $systemdbs)
-	{
-		$sysdb = $sourceserver.databases[$systemdb]
-		$transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $sysdb
-		$transfer.CopyAllObjects = $false
-		$transfer.CopyAllDatabaseTriggers = $true
-		$transfer.CopyAllDefaults = $true
-		$transfer.CopyAllRoles = $true
-		$transfer.CopyAllRules = $true
-		$transfer.CopyAllSchemas = $true
-		$transfer.CopyAllSequences = $true
-		$transfer.CopyAllSqlAssemblies = $true
-		$transfer.CopyAllSynonyms = $true
-		$transfer.CopyAllTables = $true
-		$transfer.CopyAllViews = $true
-		$transfer.CopyAllStoredProcedures = $true
-		$transfer.CopyAllUserDefinedAggregates = $true
-		$transfer.CopyAllUserDefinedDataTypes = $true
-		$transfer.CopyAllUserDefinedTableTypes = $true
-		$transfer.CopyAllUserDefinedTypes = $true
-		$transfer.CopyAllUserDefinedFunctions = $true
-		$transfer.CopyAllUsers = $true
-		$transfer.PreserveDbo = $true
-		$transfer.Options.AllowSystemObjects = $false
-		$transfer.Options.ContinueScriptingOnError = $true
-		$transfer.Options.IncludeDatabaseRoleMemberships = $true
-		$transfer.Options.Indexes = $true
-		$transfer.Options.Permissions = $true
-		$transfer.Options.WithDependencies = $false
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [object]$Source,
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [object]$Destination,
+        [System.Management.Automation.PSCredential]$SourceSqlCredential,
+        [System.Management.Automation.PSCredential]$DestinationSqlCredential
+    )
+    PROCESS {
+        $sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+        $destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+
+        $source = $sourceserver.DomainInstanceName
+        $destination = $destserver.DomainInstanceName
 		
-		Write-Output "Copying from $systemdb"
-		try
-		{
-			$sqlQueries = $transfer.scriptTransfer()
-			
-			foreach ($query in $sqlQueries)
-			{
-				Write-Verbose $query
-				if ($PSCmdlet.ShouldProcess($destserver, $query))
-				{
-					try
-					{
-						$destserver.Databases[$systemdb].ExecuteNonQuery($query)
-					}
-					catch
-					{
-						# This usually occurs if there are existing objects in destination
-					}
-				}
-			}
-		}
-		catch
-		{
-			Write-Output "Exception caught."
-		}
-	}
-	Write-Output "Migrating user objects in system databases finished"
+        if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
+        if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
+
+        $systemdbs = "master", "model", "msdb"
+
+        foreach ($systemdb in $systemdbs) {
+            $sysdb = $sourceserver.databases[$systemdb]
+            $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $sysdb
+            $transfer.CopyAllObjects = $false
+            $transfer.CopyAllDatabaseTriggers = $true
+            $transfer.CopyAllDefaults = $true
+            $transfer.CopyAllRoles = $true
+            $transfer.CopyAllRules = $true
+            $transfer.CopyAllSchemas = $true
+            $transfer.CopyAllSequences = $true
+            $transfer.CopyAllSqlAssemblies = $true
+            $transfer.CopyAllSynonyms = $true
+            $transfer.CopyAllTables = $true
+            $transfer.CopyAllViews = $true
+            $transfer.CopyAllStoredProcedures = $true
+            $transfer.CopyAllUserDefinedAggregates = $true
+            $transfer.CopyAllUserDefinedDataTypes = $true
+            $transfer.CopyAllUserDefinedTableTypes = $true
+            $transfer.CopyAllUserDefinedTypes = $true
+            $transfer.CopyAllUserDefinedFunctions = $true
+            $transfer.CopyAllUsers = $true
+            $transfer.PreserveDbo = $true
+            $transfer.Options.AllowSystemObjects = $false
+            $transfer.Options.ContinueScriptingOnError = $true
+            $transfer.Options.IncludeDatabaseRoleMemberships = $true
+            $transfer.Options.Indexes = $true
+            $transfer.Options.Permissions = $true
+            $transfer.Options.WithDependencies = $false
+
+            Write-Output "Copying from $systemdb"
+            try {
+                $sqlQueries = $transfer.scriptTransfer()
+
+                foreach ($query in $sqlQueries) {
+                    Write-Verbose $query
+                    if ($PSCmdlet.ShouldProcess($destserver, $query)) {
+                        try {
+                            $destserver.Databases[$systemdb].ExecuteNonQuery($query)
+                        }
+                        catch {
+                            # This usually occurs if there are existing objects in destination
+                        }
+                    }
+                }
+            }
+            catch {
+                Write-Output "Exception caught."
+            }
+        }
+        Write-Output "Migrating user objects in system databases finished"
+    }
+    END {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlSysDbUserObjects
+    }
 }
