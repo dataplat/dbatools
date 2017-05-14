@@ -136,6 +136,9 @@ Switch to silence messages
 .PARAMETER StandbyDirectory
 If specified all databases will be restore in Standby mode, with a standby file with the name format DatabaseName_YYYYMMDDhhmmss.bak in this folder
 
+.PARAMETER ContinueRestore
+If switch is said, restore will continue on a database that is in recover or standby modes
+
 .NOTES
 Tags: DisasterRecovery, Backup, Restore
 Original Author: Stuart Moore (@napalmgram), stuart-moore.com
