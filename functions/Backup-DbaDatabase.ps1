@@ -193,7 +193,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 					break
 				}
 			}
-			if ($null -ne $AzureBaseUrl)
+			if ('' -ne $AzureBaseUrl)
 			{
 				if ($null -eq $AzureCredential)
 				{
@@ -310,7 +310,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 			
 			$backup.CopyOnly = $copyonly
 			$backup.Action = $type
-			if ($null -ne $AzureBaseUrl)
+			if ('' -ne $AzureBaseUrl)
 			{
 				$backup.CredentialName = $AzureCredential
 			}
@@ -355,8 +355,9 @@ sql credential dbatoolscred registered on the sql2016 instance
 				$timestamp = (Get-date -Format yyyyMMddHHmm)
 				Write-Message -Level Verbose -Message "Setting filename"
 				$BackupFileName = "$($dbname)_$timestamp"
-				if ($null -ne $AzureBaseUrl)
+				if ('' -ne $AzureBaseUrl)
 				{
+					write-verbose "Azure div"
 					$PathDivider =  "/"
 				}
 				else
@@ -369,7 +370,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 					{
 						$Path = $path + $PathDivider + $Database.name
 						Write-Message -Level Verbose -Message "Creating Folder $Path"
-						if (((New-DbaSqlDirectory -SqlServer $server -SqlCredential $SqlCredential -Path $path).Created -eq $false) -and $null -eq $AzureBaseUrl)
+						if (((New-DbaSqlDirectory -SqlServer $server -SqlCredential $SqlCredential -Path $path).Created -eq $false) -and '' -eq $AzureBaseUrl)
 						{
 							$failreason = "Cannot create or write to folder $path"
 							$failures += $failreason
@@ -400,7 +401,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 				}
 			}
 			
-			if ($null -eq $AzureBaseUrl)
+			if ('' -eq $AzureBaseUrl)
 			{
 				$file = New-Object System.IO.FileInfo($FinalBackupPath[0])
 			}
@@ -438,7 +439,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 				foreach ($backupfile in $FinalBackupPath)
 				{
 					$device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-					if ($null -ne $AzureBaseUrl)
+					if ('' -ne $AzureBaseUrl)
 					{
 						$device.DeviceType = "URL"
 					}
