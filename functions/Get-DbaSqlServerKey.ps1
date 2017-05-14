@@ -1,4 +1,4 @@
-Function Get-SqlServerKey
+function Get-DbaSqlServerKey
 {
 <# 
 .SYNOPSIS 
@@ -47,18 +47,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK 
-https://dbatools.io/Get-SqlServerKey
+https://dbatools.io/Get-DbaSqlServerKey
 
 .EXAMPLE   
-Get-SqlServerKey winxp, sqlservera, sqlserver2014a, win2k8
+Get-DbaSqlServerKey winxp, sqlservera, sqlserver2014a, win2k8
 Gets SQL Server versions, editions and product keys for all instances within each server or workstation.
 
 .EXAMPLE   
-Get-SqlServerKey -SqlCms sqlserver01
+Get-DbaSqlServerKey -SqlCms sqlserver01
 Gets SQL Server versions, editions and product keys for all instances within sqlserver01's Central Management Server
 
 .EXAMPLE   
-Get-SqlServerKey -ServersFromFile C:\Scripts\servers.txt
+Get-DbaSqlServerKey -ServersFromFile C:\Scripts\servers.txt
 Gets SQL Server versions, editions and product keys for all instances listed within C:\Scripts\servers.txt
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
