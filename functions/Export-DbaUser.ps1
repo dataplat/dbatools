@@ -89,7 +89,7 @@ https://dbatools.io/Export-DbaUser
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
-        [object]$SqlInstance,
+        [DbaInstanceParameter]$SqlInstance,
         [object[]]$User,
         [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016')]
         [string]$DestinationVersion,
