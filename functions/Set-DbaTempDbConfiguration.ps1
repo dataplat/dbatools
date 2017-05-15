@@ -1,4 +1,4 @@
-function Set-SqlTempDbConfiguration {
+function Set-DbaTempDbConfiguration {
 <#
 .SYNOPSIS
 Sets tempdb data and log files according to best practices.
@@ -76,33 +76,33 @@ If true, it will write errors, if any, but not write to the screen without expli
 If false, it will print a warning if in wrning mode. It will also be willing to write a message to the screen, if the level is within the range configured for that.
 
 .LINK
-https://dbatools.io/Set-SqltempdbConfiguration
+https://dbatools.io/Set-DbaTempDbConfiguration
 
 .EXAMPLE
-Set-SqltempdbConfiguration -SqlServer localhost -DataFileSizeMB 1000
+Set-DbaTempDbConfiguration -SqlServer localhost -DataFileSizeMB 1000
 
 Creates tempdb with a number of datafiles equal to the logical cores where
 each one is equal to 1000MB divided by number of logical cores and a log file
 of 250MB
 
 .EXAMPLE
-Set-SqltempdbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -DataFileCount 8
+Set-DbaTempDbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -DataFileCount 8
 
 Creates tempdb with a number of datafiles equal to the logical cores where
 each one is equal to 125MB and a log file of 250MB
 
 .EXAMPLE
-Set-SqltempdbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -OutputScriptOnly
+Set-DbaTempDbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -OutputScriptOnly
 
 Provides a SQL script output to configure tempdb according to the passed parameters
 
 .EXAMPLE
-Set-SqltempdbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -DisableGrowth
+Set-DbaTempDbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -DisableGrowth
 
 Disables the growth for the data and log files
 
 .EXAMPLE
-Set-SqltempdbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -OutputScriptOnly
+Set-DbaTempDbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -OutputScriptOnly
 
 Returns PSObject representing tempdb configuration.
 #>
@@ -159,7 +159,7 @@ Returns PSObject representing tempdb configuration.
 		Write-Message -Message "Single data file size (MB): $DataFilesizeSingleMB" -Level Verbose
 		
 		if ($DataPath) {
-			if ((Test-SqlPath -SqlServer $server -Path $DataPath) -eq $false) {
+			if ((Test-DbaPath -SqlServer $server -Path $DataPath) -eq $false) {
 				Stop-Function -Message "$datapath is an invalid path."
 				return
 			}
@@ -172,7 +172,7 @@ Returns PSObject representing tempdb configuration.
 		Write-Message -Message "Using data path: $datapath" -Level Verbose
 		
 		if ($LogPath) {
-			if ((Test-SqlPath -SqlServer $server -Path $LogPath) -eq $false) {
+			if ((Test-DbaPath -SqlServer $server -Path $LogPath) -eq $false) {
 				Stop-Function -Message "$LogPath is an invalid path."
 				return
 			}
@@ -281,4 +281,7 @@ Returns PSObject representing tempdb configuration.
 			}
 		}
 	}
-}
+	end { 
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Set-SqlTempDbConfiguration
+	}
+	}

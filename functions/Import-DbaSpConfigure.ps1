@@ -1,4 +1,4 @@
-Function Import-SqlSpConfigure
+Function Import-DbaSpConfigure
 {
  <#
 .SYNOPSIS
@@ -50,13 +50,13 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .EXAMPLE
-Import-SqlSpConfigure sqlserver sqlcluster $SourceSqlCredential $DestinationSqlCredential
+Import-DbaSpConfigure sqlserver sqlcluster $SourceSqlCredential $DestinationSqlCredential
 
 Imports the spconfigure settings from the source server sqlserver and sets them on the sqlcluster server
 using the SQL credentials stored in the variables
 
 .EXAMPLE
-Import-SqlSpConfigure -SqlServer sqlserver -Path .\spconfig.sql -SqlCredential $SqlCredential
+Import-DbaSpConfigure -SqlServer sqlserver -Path .\spconfig.sql -SqlCredential $SqlCredential
 
 Imports the spconfigure settings from the file .\spconfig.sql and sets them on the sqlcluster server
 using the SQL credential stored in the variables
@@ -192,5 +192,7 @@ using the SQL credential stored in the variables
 		{
 			Write-Output "SQL Server configuration options migration finished"
 		}
+		
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Import-SqlSpConfigure
 	}
 }

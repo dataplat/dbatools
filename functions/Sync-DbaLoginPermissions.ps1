@@ -1,4 +1,4 @@
-Function Sync-SqlLoginPermissions
+Function Sync-DbaLoginPermissions
 {
 <#
 .SYNOPSIS
@@ -66,22 +66,22 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Sync-SqlLoginPermissions
+https://dbatools.io/Sync-DbaLoginPermissions
 
 .EXAMPLE
-Sync-SqlLoginPermissions -Source sqlserver2014a -Destination sqlcluster
+Sync-DbaLoginPermissions -Source sqlserver2014a -Destination sqlcluster
 
 Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. To copy logins and their permissions, use Copy-SqlLogin.
 
 .EXAMPLE
-Sync-SqlLoginPermissions -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred
+Sync-DbaLoginPermissions -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred
 
 Authenticates to SQL Servers using SQL Authentication.
 
 Copies all login permissions except for realcajun. If a login already exists on the destination, the permissions will not be migrated.
 
 .EXAMPLE
-Sync-SqlLoginPermissions -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds
+Sync-DbaLoginPermissions -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds
 
 Copies permissions ONLY for logins netnerds and realcajun.
 
@@ -92,7 +92,7 @@ Requires: sysadmin access on SQL Servers
 Limitations: Does not support Application Roles yet
 
 .LINK 
-https://dbatools.io/Sync-SqlLoginPermissions 
+https://dbatools.io/Sync-DbaLoginPermissions 
 
 #>
 	
@@ -601,5 +601,7 @@ https://dbatools.io/Sync-SqlLoginPermissions
 			$sourceserver.ConnectionContext.Disconnect()
 			$destserver.ConnectionContext.Disconnect()
 		}
+		
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Sync-SqlLoginPermissions
 	}
 }

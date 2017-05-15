@@ -1,4 +1,4 @@
-Function Test-SqlPath
+Function Test-DbaPath
 {
 <#
 .SYNOPSIS
@@ -44,16 +44,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Test-SqlPath
+https://dbatools.io/Test-DbaPath
 
 .EXAMPLE
-Test-SqlPath -SqlServer sqlcluster -Path L:\MSAS12.MSSQLSERVER\OLAP
+Test-DbaPath -SqlServer sqlcluster -Path L:\MSAS12.MSSQLSERVER\OLAP
 
 Tests whether the service account running the "sqlcluster" SQL Server isntance can access L:\MSAS12.MSSQLSERVER\OLAP. Logs into sqlcluster using Windows credentials. 
 
 .EXAMPLE
 $credential = Get-Credential
-Test-SqlPath -SqlServer sqlcluster -SqlCredential $credential -Path L:\MSAS12.MSSQLSERVER\OLAP
+Test-DbaPath -SqlServer sqlcluster -SqlCredential $credential -Path L:\MSAS12.MSSQLSERVER\OLAP
 
 Tests whether the service account running the "sqlcluster" SQL Server isntance can access L:\MSAS12.MSSQLSERVER\OLAP. Logs into sqlcluster using SQL authentication. 
 #>
@@ -98,7 +98,7 @@ Tests whether the service account running the "sqlcluster" SQL Server isntance c
 	}
 	catch
 	{
-		Write-Warning "Test-SQLPath failed: $_"
+		Write-Warning "Test-DbaPath failed: $_"
 		throw
 	}
 	if ($fileexist.tables.rows[0] -eq $true -or $fileexist.tables.rows[1] -eq $true)
@@ -109,4 +109,6 @@ Tests whether the service account running the "sqlcluster" SQL Server isntance c
 	{
 		return $false
 	}
+	
+	Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Test-SqlPath
 }

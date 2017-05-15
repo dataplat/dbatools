@@ -1,4 +1,4 @@
-Function Reset-SqlAdmin
+Function Reset-DbaAdmin
 {
 <# 
 .SYNOPSIS 
@@ -11,7 +11,7 @@ This function allows administrators to regain access to local or remote SQL Serv
 or adding a new login (SQL or Windows) and granting it sysadmin privileges.
 
 This is accomplished by stopping the SQL services or SQL Clustered Resource Group, then restarting SQL via the command-line
-using the /mReset-SqlAdmin paramter which starts the server in Single-User mode, and only allows this script to connect.
+using the /mReset-DbaAdmin paramter which starts the server in Single-User mode, and only allows this script to connect.
 
 Once the service is restarted, the following tasks are performed:
 - Login is added if it doesn't exist
@@ -71,15 +71,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK 
-https://dbatools.io/Reset-SqlAdmin 
+https://dbatools.io/Reset-DbaAdmin 
 
 .EXAMPLE   
-Reset-SqlAdmin -SqlServer sqlcluster
+Reset-DbaAdmin -SqlServer sqlcluster
 
 Prompts for password, then resets the "sa" account password on sqlcluster.
 
 .EXAMPLE   
-Reset-SqlAdmin -SqlServer sqlserver\sqlexpress -Login ad\administrator
+Reset-DbaAdmin -SqlServer sqlserver\sqlexpress -Login ad\administrator
 
 Prompts user to confirm that they understand the SQL Service will be restarted.
 
@@ -87,7 +87,7 @@ Adds the domain account "ad\administrator" as a sysadmin to the SQL instance.
 If the account already exists, it will be added to the sysadmin role.
 
 .EXAMPLE   
-Reset-SqlAdmin -SqlServer sqlserver\sqlexpress -Login sqladmin -Force
+Reset-DbaAdmin -SqlServer sqlserver\sqlexpress -Login sqladmin -Force
 
 Skips restart confirmation, prompts for passsword, then adds a SQL Login "sqladmin" with sysadmin privleges. 
 If the account already exists, it will be added to the sysadmin role and the password will be reset.
@@ -127,7 +127,7 @@ Internal function.
 		<#
 
 		.SYNOPSIS
-		Internal function. Executes a SQL statement against specified computer, and uses "Reset-SqlAdmin" as the
+		Internal function. Executes a SQL statement against specified computer, and uses "Reset-DbaAdmin" as the
 		Application Name.
 					
 		 #>
@@ -140,7 +140,7 @@ Internal function.
 			)
 			try
 			{
-				$connstring = "Data Source=$sqlserver;Integrated Security=True;Connect Timeout=2;Application Name=Reset-SqlAdmin"
+				$connstring = "Data Source=$sqlserver;Integrated Security=True;Connect Timeout=2;Application Name=Reset-DbaAdmin"
 				$conn = New-Object System.Data.SqlClient.SqlConnection $connstring
 				$conn.Open()
 				$cmd = New-Object system.data.sqlclient.sqlcommand($null, $conn)
@@ -165,7 +165,7 @@ Internal function.
 			$baseaddress = $sqlserver.Split("\")[0]
 
 	        # Before we continue, we need confirmation.
-	        if ($pscmdlet.ShouldProcess($baseaddress, "Reset-SqlAdmin (SQL Server instance $sqlserver will restart)"))
+	        if ($pscmdlet.ShouldProcess($baseaddress, "Reset-DbaAdmin (SQL Server instance $sqlserver will restart)"))
 	        {
 			# Get hostname
 			
@@ -349,18 +349,18 @@ Internal function.
 				}
 			}
 			
-			# /mReset-SqlAdmin Starts an instance of SQL Server in single-user mode and only allows this script to connect.
+			# /mReset-DbaAdmin Starts an instance of SQL Server in single-user mode and only allows this script to connect.
 			Write-Output "Starting SQL Service from command line"
 			try
 			{
 				if ($hostname -eq $env:COMPUTERNAME)
 				{
-					$netstart = net start ""$displayname"" /mReset-SqlAdmin 2>&1
+					$netstart = net start ""$displayname"" /mReset-DbaAdmin 2>&1
 					if ("$netstart" -notmatch "success") { throw }
 				}
 				else
 				{
-					$netstart = Invoke-Command -ErrorAction Stop -Session $session -Args $displayname -ScriptBlock { net start ""$args"" /mReset-SqlAdmin } 2>&1
+					$netstart = Invoke-Command -ErrorAction Stop -Session $session -Args $displayname -ScriptBlock { net start ""$args"" /mReset-DbaAdmin } 2>&1
 					foreach ($line in $netstart)
 					{
 						if ($line.length -gt 0) { Write-Output $line }
@@ -462,5 +462,6 @@ Internal function.
 	END
 	{
 		Write-Output "Script complete!"
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Reset-SqlAdmin
 	}
 }

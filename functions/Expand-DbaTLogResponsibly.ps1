@@ -1,4 +1,4 @@
-function Expand-SqlTLogResponsibly
+function Expand-DbaTLogResponsibly
 {
 <#
 
@@ -99,40 +99,40 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Expand-SqlTLogResponsibly
+https://dbatools.io/Expand-DbaTLogResponsibly
 	
 .EXAMPLE
-    Expand-SqlTLogResponsibly -SqlServer sqlcluster -Databases db1 -TargetLogSizeMB 50000
+    Expand-DbaTLogResponsibly -SqlServer sqlcluster -Databases db1 -TargetLogSizeMB 50000
 
     This is the simplest example. The increment value will be calculated and will grow the T-Log of the db1 database on sqlcluster to 50000 MB.
 
 .EXAMPLE
-    Expand-SqlTLogResponsibly -SqlServer sqlcluster -Databases db1, db2 -TargetLogSizeMB 10000 -IncrementSizeMB 200
+    Expand-DbaTLogResponsibly -SqlServer sqlcluster -Databases db1, db2 -TargetLogSizeMB 10000 -IncrementSizeMB 200
     
     Grows the T-Log of db1 and db2 databases on sqlcluster to 1000MB. If you don't provide this parameter, the value will be calculated automatically. Otherwise, the input value will be compared with the suggested value for your target size. If these values differ, you will be prompted to confirm your choice. 
 
 .EXAMPLE
-    Expand-SqlTLogResponsibly -SqlServer sqlcluster -Databases db1 -TargetLogSizeMB 10000 -LogFileId 9
+    Expand-DbaTLogResponsibly -SqlServer sqlcluster -Databases db1 -TargetLogSizeMB 10000 -LogFileId 9
 
     Grows the T-Log with FileId 9 of the db1 database on sqlcluster instance to 10000MB.
 
 .EXAMPLE
-    Expand-SqlTLogResponsibly -SqlServer sqlcluster -Databases (Get-Content D:\DBs.txt) -TargetLogSizeMB 50000
+    Expand-DbaTLogResponsibly -SqlServer sqlcluster -Databases (Get-Content D:\DBs.txt) -TargetLogSizeMB 50000
 
     Grows the T-Log of the databases specified in the file 'D:\DBs.txt' on sqlcluster instance to 50000MB.
 
 .EXAMPLE
-    Expand-SqlTLogResponsibly -SqlServer sqlcluster -Databases db1, db2 -TargetLogSizeMB 50000
+    Expand-DbaTLogResponsibly -SqlServer sqlcluster -Databases db1, db2 -TargetLogSizeMB 50000
 
     Grows the T-Log of the databases db1 and db2 on the sqlcluster instance to 50000MB.
 
 .EXAMPLE
-    Expand-SqlTLogResponsibly -SqlServer sqlcluster -Databases 'db with space' -TargetLogSizeMB 50000 -Verbose
+    Expand-DbaTLogResponsibly -SqlServer sqlcluster -Databases 'db with space' -TargetLogSizeMB 50000 -Verbose
 
     Use -Verbose to view in detail all actions performed by this script
 
 .EXAMPLE
-	Expand-SqlTLogResponsibly -SqlServer sqlserver -Databases db1,db2 -TargetLogSizeMB 100 -IncrementSizeMB 10 -ShrinkLogFile -ShrinkSizeMB 10 -BackupDirectory R:\MSSQL\Backup
+	Expand-DbaTLogResponsibly -SqlServer sqlserver -Databases db1,db2 -TargetLogSizeMB 100 -IncrementSizeMB 10 -ShrinkLogFile -ShrinkSizeMB 10 -BackupDirectory R:\MSSQL\Backup
     
 #>
 	[CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Default')]
@@ -191,7 +191,7 @@ https://dbatools.io/Expand-SqlTLogResponsibly
 				$backupdirectory = $server.Settings.BackupDirectory
 			}
 			
-			$pathexists = Test-SqlPath -SqlServer $server -Path $backupdirectory
+			$pathexists = Test-DbaPath -SqlServer $server -Path $backupdirectory
 			
 			if ($pathexists -eq $false)
 			{
@@ -339,7 +339,7 @@ https://dbatools.io/Expand-SqlTLogResponsibly
 								
 								if (($IncrementSizeMB % 4096) -eq 0)
 								{
-									Write-Output "Your instance version is below SQL 2012, remember the known BUG mentioned on HELP. `r`nUse Get-Help Expand-SqlTLogFileResponsibly to read help`r`nUse a different value for incremental size`r`n"
+									Write-Output "Your instance version is below SQL 2012, remember the known BUG mentioned on HELP. `r`nUse Get-Help Expand-DbaTLogFileResponsibly to read help`r`nUse a different value for incremental size`r`n"
 									return
 								}
 							}
@@ -521,5 +521,6 @@ https://dbatools.io/Expand-SqlTLogResponsibly
 	{
 		$server.ConnectionContext.Disconnect()
 		Write-Output "Process finished $((Get-Date) - ($initialTime))"
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Expand-SqlTLogResponsibly
 	}
 }
