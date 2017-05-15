@@ -62,9 +62,9 @@ Returns all SQl Agent Job for the local and sql2016 SQL Server instances
 			
 			foreach ($agentJob in $server.JobServer.Jobs)
 			{
-				Add-Member -InputObject $agentJob -MemberType NoteProperty ComputerName -value $agentJob.Parent.Parent.NetName
-				Add-Member -InputObject $agentJob -MemberType NoteProperty InstanceName -value $agentJob.Parent.Parent.ServiceName
-				Add-Member -InputObject $agentJob -MemberType NoteProperty SqlInstance -value $agentJob.Parent.Parent.DomainInstanceName
+				Add-Member -InputObject $agentJob -MemberType NoteProperty -Name ComputerName -value $agentJob.Parent.Parent.NetName
+				Add-Member -InputObject $agentJob -MemberType NoteProperty -Name InstanceName -value $agentJob.Parent.Parent.ServiceName
+				Add-Member -InputObject $agentJob -MemberType NoteProperty -Name SqlInstance -value $agentJob.Parent.Parent.DomainInstanceName
 				
 				Select-DefaultView -InputObject $agentJob -Property ComputerName, InstanceName, SqlInstance, Name, Category, OwnerLoginName, 'IsEnabled as Enabled', LastRunDate, DateCreated, HasSchedule, OperatorToEmail
 			}
