@@ -17,8 +17,8 @@ Import-Module $PSScriptRoot\..\internal\$sut -Force
 #Need to load various functions so we can mock It, breaks Appveyor otherwise
 
 . $PSScriptRoot\..\internal\Connect-SQLServer.ps1 
-. $PSScriptRoot\..\functions\Test-SQLPath.ps1 
-. $PSScriptRoot\..\internal\Invoke-SqlCmd2.ps1
+. $PSScriptRoot\..\functions\Test-DbaPath.ps1
+. $PSScriptRoot\..\functions\Invoke-DbaSqlcmd.ps1
 Describe "Get-XpDirTree Unit Tests" -Tag 'Unittests'{
     mock Connect-SqlServer {$true}
     mock Test-SqlPath {$true}
