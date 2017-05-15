@@ -99,6 +99,7 @@ Returns databases on multiple instances piped into the function
         [parameter(ParameterSetName = "Encrypted")]
         [switch]$Encrypted,
         [parameter(ParameterSetName = "Status")]
+        [ValidateSet('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')]
         [string[]]$Status,
         [parameter(ParameterSetName = "Access")]
         [ValidateSet('ReadOnly', 'ReadWrite')]
