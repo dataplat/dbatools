@@ -1,11 +1,11 @@
-FUNCTION Get-DbaServerAuditSpecification
+FUNCTION Get-DbaSqlAuditSpecification
 {
 <#
 .SYNOPSIS
 Gets SQL Security Audit Specification information for each instance(s) of SQL Server.
 
 .DESCRIPTION
- The Get-DbaServerAuditSpecification command gets SQL Security Audit Specification information for each instance(s) of SQL Server.
+ The Get-DbaSqlAuditSpecification command gets SQL Security Audit Specification information for each instance(s) of SQL Server.
 	
 .PARAMETER SqlInstance
 SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
@@ -26,14 +26,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.	
 
 .LINK
-https://dbatools.io/Get-DbaServerAuditSpecification
+https://dbatools.io/Get-DbaSqlAuditSpecification
 
 .EXAMPLE
-Get-DbaServerAuditSpecification -SqlInstance localhost
+Get-DbaSqlAuditSpecification -SqlInstance localhost
 Returns all Security Audit Specifications on the local default SQL Server instance
 
 .EXAMPLE
-Get-DbaServerAuditSpecification -SqlInstance localhost, sql2016
+Get-DbaSqlAuditSpecification -SqlInstance localhost, sql2016
 Returns all Security Audit Specifications for the local and sql2016 SQL Server instances
 
 #>
@@ -75,4 +75,5 @@ Returns all Security Audit Specifications for the local and sql2016 SQL Server i
 			}
 		}
 	}
+    END {Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaServerAuditSpecification}
 }
