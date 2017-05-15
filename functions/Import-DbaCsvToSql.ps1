@@ -1,11 +1,11 @@
-Function Import-CsvToSql
+Function Import-DbaCsvToSql
 {
 <# 
 .SYNOPSIS
 Efficiently imports very large (and small) CSV files into SQL Server using only the .NET Framework and PowerShell.
 
 .DESCRIPTION
-Import-CsvToSql takes advantage of .NET's super fast SqlBulkCopy class to import CSV files into SQL Server at up to 90,000 rows a second.
+Import-DbaCsvToSql takes advantage of .NET's super fast SqlBulkCopy class to import CSV files into SQL Server at up to 90,000 rows a second.
 	
 The entire import is contained within a transaction, so if a failure occurs or the script is aborted, no changes will persist.
 
@@ -54,7 +54,7 @@ If the automatically generated table datatypes do not work for you, please creat
 Truncate table prior to import.
 
 .PARAMETER Safe
-Optional. By default, Import-CsvToSql uses StreamReader for imports. StreamReader is super fast, but may not properly parse some files. 
+Optional. By default, Import-DbaCsvToSql uses StreamReader for imports. StreamReader is super fast, but may not properly parse some files. 
 
 Safe uses OleDb to import the records, it's slower, but more predictable when it comes to parsing CSV files. A schema.ini is automatically generated for best results. If schema.ini currently exists in the directory, it will be moved to a temporary location, then moved back.
 
@@ -112,10 +112,10 @@ Tags: Migration
 Author: Chrissy LeMaire (@cl), netnerds.net
 
 .LINK 
-https://blog.netnerds.net/2015/09/import-csvtosql-super-fast-csv-to-sql-server-import-powershell-module/
+https://blog.netnerds.net/2015/09/Import-DbaCsvtosql-super-fast-csv-to-sql-server-import-powershell-module/
 
 .EXAMPLE   
-Import-CsvToSql -Csv C:\temp\housing.csv -SqlServer sql001 -Database markets
+Import-DbaCsvToSql -Csv C:\temp\housing.csv -SqlServer sql001 -Database markets
 
 Imports the entire *comma delimited* housing.csv to the SQL "markets" database on a SQL Server named sql001.
 
@@ -124,23 +124,23 @@ Since a table name was not specified, the table name is automatically determined
 The first row is not skipped, as it does not contain column names.
 
 .EXAMPLE   
-Import-CsvToSql -Csv .\housing.csv -SqlServer sql001 -Database markets -Table housing -First 100000 -Safe -Delimiter "`t" -FirstRowColumns
+Import-DbaCsvToSql -Csv .\housing.csv -SqlServer sql001 -Database markets -Table housing -First 100000 -Safe -Delimiter "`t" -FirstRowColumns
 
 Imports the first 100,000 rows of the tab delimited housing.csv file to the "housing" table in the "markets" database on a SQL Server named sql001. Since Safe was specified, the OleDB method will be used for the bulk import. It's assumed Safe was used because the first attempt without -Safe resulted in an import error. The first row is skipped, as it contains column names.
 
 .EXAMPLE
-Import-CsvToSql -csv C:\temp\huge.txt -sqlserver sqlcluster -Database locations -Table latitudes -Delimiter "|" -Turbo
+Import-DbaCsvToSql -csv C:\temp\huge.txt -sqlserver sqlcluster -Database locations -Table latitudes -Delimiter "|" -Turbo
 
 Imports all records from the pipe delimited huge.txt file using the fastest method possible into the latitudes table within the locations database. Obtains a table lock for the duration of the bulk copy operation. This specific command has been used 
 to import over 10.5 million rows in 2 minutes.
 
 .EXAMPLE   
-Import-CsvToSql -Csv C:\temp\housing.csv, .\housing2.csv -SqlServer sql001 -Database markets -Table housing -Delimiter "`t" -query "select top 100000 column1, column3 from csv" -Truncate
+Import-DbaCsvToSql -Csv C:\temp\housing.csv, .\housing2.csv -SqlServer sql001 -Database markets -Table housing -Delimiter "`t" -query "select top 100000 column1, column3 from csv" -Truncate
 
 Truncates the "housing" table, then imports columns 1 and 3 of the first 100000 rows of the tab-delimited housing.csv in the C:\temp directory, and housing2.csv in the current directory. Since the query is executed against both files, a total of 200,000 rows will be imported.
 
 .EXAMPLE   
-Import-CsvToSql -Csv C:\temp\housing.csv -SqlServer sql001 -Database markets -Table housing -query "select address, zip from csv where state = 'Louisiana'" -FirstRowColumns -Truncate -FireTriggers
+Import-DbaCsvToSql -Csv C:\temp\housing.csv -SqlServer sql001 -Database markets -Table housing -query "select address, zip from csv where state = 'Louisiana'" -FirstRowColumns -Truncate -FireTriggers
 
 Uses the first line to determine CSV column names. Truncates the "housing" table on the SQL Server, then imports the address and zip columns from all records in the housing.csv where the state equals Louisiana.
 
@@ -812,9 +812,9 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			{
 				# While Install-Module takes care of installing modules to x86 and x64, Import-Module doesn't.
 				# Because of this, the Module must be exported, written to file, and imported in the x86 shell.
-				$definition = (Get-Command Import-CsvToSql).Definition
-				$function = "Function Import-CsvToSql { $definition }"
-				Set-Content "$env:TEMP\Import-CsvToSql.psm1" $function
+				$definition = (Get-Command Import-DbaCsvToSql).Definition
+				$function = "Function Import-DbaCsvToSql { $definition }"
+				Set-Content "$env:TEMP\Import-DbaCsvToSql.psm1" $function
 				
 				# Encode the SQL string, since some characters may mess up after being passed a second time.
 				$bytes = [System.Text.Encoding]::UTF8.GetBytes($query)
@@ -829,7 +829,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 					if ($optionValue -eq $true) { $switches += "-$option" }
 				}
 				
-				# Perform the actual switch, which removes any registered Import-CsvToSql modules
+				# Perform the actual switch, which removes any registered Import-DbaCsvToSql modules
 				# Then imports, and finally re-executes the command. 
 				$csv = $csv -join ","; $switches = $switches -join " "
 				if ($SqlCredential.count -gt 0)
@@ -837,7 +837,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 					$SqlCredentialPath = "$env:TEMP\sqlcredential.xml"
 					Export-CliXml -InputObject $SqlCredential $SqlCredentialPath
 				}
-				$command = "Import-CsvToSql -Csv $csv -SqlServer '$sqlserver'-Database '$database' -Table '$table' -Delimiter '$Delimiter' -First $First -Query '$query' -Batchsize $BatchSize -NotifyAfter $NotifyAfter $switches -shellswitch"
+				$command = "Import-DbaCsvToSql -Csv $csv -SqlServer '$sqlserver'-Database '$database' -Table '$table' -Delimiter '$Delimiter' -First $First -Query '$query' -Batchsize $BatchSize -NotifyAfter $NotifyAfter $switches -shellswitch"
 				
 				if ($SqlCredentialPath.length -gt 0) { $command += " -SqlCredentialPath $SqlCredentialPath" }
 				Write-Verbose "Switching to x86 shell, then switching back."
@@ -1462,29 +1462,26 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			}
 		}
 		
-		if ($shellswitch -eq $false -and $safe -eq $true)
-		{
-			# Delete new schema files
-			Write-Verbose "Removing automatically generated schema.ini"
-			foreach ($file in $csv)
-			{
-				$directory = Split-Path $file
-				$null = cmd /c "del $directory\schema.ini" | Out-Null
-			}
+        if ($shellswitch -eq $false -and $safe -eq $true) {
+            # Delete new schema files
+            Write-Verbose "Removing automatically generated schema.ini"
+            foreach ($file in $csv) {
+                $directory = Split-Path $file
+                $null = cmd /c "del $directory\schema.ini" | Out-Null
+            }
 			
-			# If a shell switch occured, delete the temporary module file.
-			if ((Test-Path "$env:TEMP\Import-CsvToSql.psm1") -eq $true) { cmd /c "del $env:TEMP\Import-CsvToSql.psm1" | Out-Null }
+            # If a shell switch occured, delete the temporary module file.
+            if ((Test-Path "$env:TEMP\Import-DbaCsvToSql.psm1") -eq $true) { cmd /c "del $env:TEMP\Import-DbaCsvToSql.psm1" | Out-Null }
 			
-			# Move original schema.ini's back if they existed
-			if ($movedschemainis.count -gt 0)
-			{
-				foreach ($item in $movedschemainis)
-				{
-					Write-Verbose "Moving $($item.keys) back to $($item.values)"
-					$null = cmd /c "move $($item.keys) $($item.values)"
-				}
-			}
-			Write-Output "[*] Finished at $(Get-Date)"
-		}
+            # Move original schema.ini's back if they existed
+            if ($movedschemainis.count -gt 0) {
+                foreach ($item in $movedschemainis) {
+                    Write-Verbose "Moving $($item.keys) back to $($item.values)"
+                    $null = cmd /c "move $($item.keys) $($item.values)"
+                }
+            }
+            Write-Output "[*] Finished at $(Get-Date)"
+        }
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Import-CsvToSql
 	}
 }

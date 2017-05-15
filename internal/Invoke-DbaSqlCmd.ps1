@@ -1,11 +1,11 @@
-function Invoke-Sqlcmd2
+function Invoke-DbaSqlCmd
 {
     <#
     .SYNOPSIS
         Runs a T-SQL script.
 
     .DESCRIPTION
-        Runs a T-SQL script. Invoke-Sqlcmd2 runs the whole scipt and only captures the first selected result set, such as the output of PRINT statements when -verbose parameter is specified.
+        Runs a T-SQL script. Invoke-DbaSqlCmd runs the whole scipt and only captures the first selected result set, such as the output of PRINT statements when -verbose parameter is specified.
         Paramaterized queries are supported.
 
         Help details below borrowed from Invoke-Sqlcmd
@@ -14,7 +14,7 @@ function Invoke-Sqlcmd2
         One or more ServerInstances to query. For default instances, only specify the computer name: "MyComputer". For named instances, use the format "ComputerName\InstanceName".
 
     .PARAMETER Database
-        A character string specifying the name of a database. Invoke-Sqlcmd2 connects to this database in the instance that is specified in -ServerInstance.
+        A character string specifying the name of a database. Invoke-DbaSqlCmd connects to this database in the instance that is specified in -ServerInstance.
 
         If a SQLConnection is provided, we explicitly switch to this database
 
@@ -22,7 +22,7 @@ function Invoke-Sqlcmd2
         Specifies one or more queries to be run. The queries can be Transact-SQL (? or XQuery statements, or sqlcmd commands. Multiple queries separated by a semicolon can be specified. Do not specify the sqlcmd GO separator. Escape any double quotation marks included in the string ?). Consider using bracketed identifiers such as [MyTable] instead of quoted identifiers such as "MyTable".
 
     .PARAMETER InputFile
-        Specifies a file to be used as the query input to Invoke-Sqlcmd2. The file can contain Transact-SQL statements, (? XQuery statements, and sqlcmd commands and scripting variables ?). Specify the full path to the file.
+        Specifies a file to be used as the query input to Invoke-DbaSqlCmd. The file can contain Transact-SQL statements, (? XQuery statements, and sqlcmd commands and scripting variables ?). Specify the full path to the file.
 
     .PARAMETER Credential
         Specifies A PSCredential for SQL Server Authentication connection to an instance of the Database Engine.
@@ -38,7 +38,7 @@ function Invoke-Sqlcmd2
         Specifies the number of seconds before the queries time out.
 
     .PARAMETER ConnectionTimeout
-        Specifies the number of seconds when Invoke-Sqlcmd2 times out if it cannot successfully connect to an instance of the Database Engine. The timeout value must be an integer between 0 and 65534. If 0 is specified, connection attempts do not time out.
+        Specifies the number of seconds when Invoke-DbaSqlCmd times out if it cannot successfully connect to an instance of the Database Engine. The timeout value must be an integer between 0 and 65534. If 0 is specified, connection attempts do not time out.
 
     .PARAMETER As
         Specifies output type - DataSet, DataTable, array of DataRow, PSObject or Single Value
@@ -61,7 +61,7 @@ function Invoke-Sqlcmd2
 
     .INPUTS
         None
-            You cannot pipe objects to Invoke-Sqlcmd2
+            You cannot pipe objects to Invoke-DbaSqlCmd
 
     .OUTPUTS
        As PSObject:     System.Management.Automation.PSCustomObject
@@ -71,7 +71,7 @@ function Invoke-Sqlcmd2
        As SingleValue:  Dependent on data type in first column.
 
     .EXAMPLE
-        Invoke-Sqlcmd2 -ServerInstance "MyComputer\MyInstance" -Query "SELECT login_time AS 'StartTime' FROM sysprocesses WHERE spid = 1"
+        Invoke-DbaSqlCmd -ServerInstance "MyComputer\MyInstance" -Query "SELECT login_time AS 'StartTime' FROM sysprocesses WHERE spid = 1"
 
         This example connects to a named instance of the Database Engine on a computer and runs a basic T-SQL query.
         StartTime
@@ -79,19 +79,19 @@ function Invoke-Sqlcmd2
         2010-08-12 21:21:03.593
 
     .EXAMPLE
-        Invoke-Sqlcmd2 -ServerInstance "MyComputer\MyInstance" -InputFile "C:\MyFolder\tsqlscript.sql" | Out-File -filePath "C:\MyFolder\tsqlscript.rpt"
+        Invoke-DbaSqlCmd -ServerInstance "MyComputer\MyInstance" -InputFile "C:\MyFolder\tsqlscript.sql" | Out-File -filePath "C:\MyFolder\tsqlscript.rpt"
 
         This example reads a file containing T-SQL statements, runs the file, and writes the output to another file.
 
     .EXAMPLE
-        Invoke-Sqlcmd2  -ServerInstance "MyComputer\MyInstance" -Query "PRINT 'hello world'" -Verbose
+        Invoke-DbaSqlCmd  -ServerInstance "MyComputer\MyInstance" -Query "PRINT 'hello world'" -Verbose
 
         This example uses the PowerShell -Verbose parameter to return the message output of the PRINT command.
         VERBOSE: hello world
 
     .EXAMPLE
-        Invoke-Sqlcmd2 -ServerInstance MyServer\MyInstance -Query "SELECT ServerName, VCNumCPU FROM tblServerInfo" -as PSObject | ?{$_.VCNumCPU -gt 8}
-        Invoke-Sqlcmd2 -ServerInstance MyServer\MyInstance -Query "SELECT ServerName, VCNumCPU FROM tblServerInfo" -as PSObject | ?{$_.VCNumCPU}
+        Invoke-DbaSqlCmd -ServerInstance MyServer\MyInstance -Query "SELECT ServerName, VCNumCPU FROM tblServerInfo" -as PSObject | ?{$_.VCNumCPU -gt 8}
+        Invoke-DbaSqlCmd -ServerInstance MyServer\MyInstance -Query "SELECT ServerName, VCNumCPU FROM tblServerInfo" -as PSObject | ?{$_.VCNumCPU}
 
         This example uses the PSObject output type to allow more flexibility when working with results.
 
@@ -100,7 +100,7 @@ function Invoke-Sqlcmd2
             Results would include rows where VCNumCPU has DBNull value in the second example
 
     .EXAMPLE
-        'Instance1', 'Server1/Instance1', 'Server2' | Invoke-Sqlcmd2 -query "Sp_databases" -as psobject -AppendServerInstance
+        'Instance1', 'Server1/Instance1', 'Server2' | Invoke-DbaSqlCmd -query "Sp_databases" -as psobject -AppendServerInstance
 
         This example lists databases for each instance.  It includes a column for the ServerInstance in question.
             DATABASE_NAME          DATABASE_SIZE REMARKS        ServerInstance
@@ -118,7 +118,7 @@ function Invoke-Sqlcmd2
             $Query = "SELECT ServerName, VCServerClass, VCServerContact FROM tblServerInfo WHERE VCServerContact LIKE @VCServerContact AND VCServerClass LIKE @VCServerClass"
 
         #Run the query, specifying values for SQL parameters
-            Invoke-Sqlcmd2 -ServerInstance SomeServer\NamedInstance -Database ServerDB -query $query -SqlParameters @{ VCServerContact="%cookiemonster%"; VCServerClass="Prod" }
+            Invoke-DbaSqlCmd -ServerInstance SomeServer\NamedInstance -Database ServerDB -query $query -SqlParameters @{ VCServerContact="%cookiemonster%"; VCServerClass="Prod" }
 
             ServerName    VCServerClass VCServerContact
             ----------    ------------- ---------------
@@ -127,21 +127,13 @@ function Invoke-Sqlcmd2
             SomeServer3   Prod          blah, cookiemonster
 
     .EXAMPLE
-        Invoke-Sqlcmd2 -SQLConnection $Conn -Query "SELECT login_time AS 'StartTime' FROM sysprocesses WHERE spid = 1"
+        Invoke-DbaSqlCmd -SQLConnection $Conn -Query "SELECT login_time AS 'StartTime' FROM sysprocesses WHERE spid = 1"
 
         This example uses an existing SQLConnection and runs a basic T-SQL query against it
 
         StartTime
         -----------
         2010-08-12 21:21:03.593
-
-    .NOTES
-        Changelog moved to CHANGELOG.md:
-
-        https://github.com/sqlcollaborative/Invoke-SqlCmd2/blob/master/CHANGELOG.md
-
-    .LINK
-        https://github.com/sqlcollaborative/Invoke-SqlCmd2
 
     .LINK
         https://github.com/RamblingCookieMonster/PowerShell
@@ -276,7 +268,7 @@ function Invoke-Sqlcmd2
 			$Query = [System.IO.File]::ReadAllText("$filePath")
 		}
 
-		Write-Verbose "Running Invoke-Sqlcmd2 with ParameterSet '$($PSCmdlet.ParameterSetName)'.  Performing query '$Query'"
+		Write-Verbose "Running Invoke-DbaSqlCmd with ParameterSet '$($PSCmdlet.ParameterSetName)'.  Performing query '$Query'"
 
 		If ($As -eq "PSObject")
 		{
@@ -542,4 +534,5 @@ function Invoke-Sqlcmd2
 			}
 		}
 	}
-} #Invoke-Sqlcmd2
+	END { Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alais Invoke-SqlCmd2 }
+}
