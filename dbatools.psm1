@@ -129,7 +129,7 @@ Set-Alias -Name Install-SqlWhoIsActive -Value Install-DbaWhoIsActive
 Set-Alias -Name Show-SqlWhoIsActive -Value Invoke-DbaWhoIsActive
 
 Set-Alias -Name Copy-SqlAgentCategory -Value Copy-DbaAgentCategory
-Set-Alias -Name Copy-SqlAlert -Value Copy-DbaAlert
+Set-Alias -Name Copy-SqlAlert -Value Copy-DbaAgentAlert
 Set-Alias -Name Copy-SqlAudit -Value Copy-DbaAudit
 Set-Alias -Name Copy-SqlAuditSpecification -Value Copy-DbaAuditSpecification
 Set-Alias -Name Copy-SqlBackupDevice -Value Copy-DbaBackupDevice

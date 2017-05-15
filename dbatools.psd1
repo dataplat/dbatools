@@ -93,7 +93,7 @@
 		'Copy-DbaCentralManagementServer',
 		'Copy-DbaSysDbUserObjects',
 		'Copy-DbaProxyAccount',
-		'Copy-DbaAlert',
+		'Copy-DbaAgentAlert',
 		'Import-DbaSpConfigure',
 		'Export-DbaSpConfigure'
 		'Get-DbaDetachedDatabaseInfo',
