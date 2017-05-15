@@ -1,5 +1,5 @@
 function Export-DbaUser {
-    <#
+<#
 .SYNOPSIS
 Exports users creation and its permissions to a T-SQL file or host.
 
@@ -10,7 +10,7 @@ THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
 .PARAMETER SqlInstance
 The SQL Server instance name. SQL Server 2000 and above supported.
-	
+    
 .PARAMETER SqlCredential
 Allows you to login to servers using alternative credentials
 
@@ -35,10 +35,10 @@ The file to write to.
 
 .PARAMETER NoClobber
 Do not overwrite file
-	
+    
 .PARAMETER Append
 Append to file
-	
+    
 .PARAMETER Silent 
 Use this switch to disable any kind of verbose messages
 
@@ -89,7 +89,7 @@ https://dbatools.io/Export-DbaUser
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
-        [object]$SqlInstance,
+        [DbaInstanceParameter]$SqlInstance,
         [object[]]$User,
         [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016')]
         [string]$DestinationVersion,
@@ -101,7 +101,7 @@ https://dbatools.io/Export-DbaUser
         [switch]$Append,
         [switch]$Silent
     )
-	
+    
     dynamicparam {
         if ($sqlInstance) {
             return Get-ParamSqlDatabases -SqlServer $sqlInstance -SqlCredential $sqlCredential
@@ -112,28 +112,28 @@ https://dbatools.io/Export-DbaUser
             if ($FilePath -notlike "*\*") { $FilePath = ".\$filepath" }
             $directory = Split-Path $FilePath
             $exists = Test-Path $directory
-			
+            
             if ($exists -eq $false) {
                 throw "Parent directory $directory does not exist"
             }
-			
+            
             Write-Message -Level Output -Message "Attempting to connect to SQL Servers.."
         }
-		
+        
         $outsql = @()
-		
+        
         $versions = @{
-            'SQLServer2000'        = 'Version80'
-            'SQLServer2005'        = 'Version90'
+            'SQLServer2000' = 'Version80'
+            'SQLServer2005' = 'Version90'
             'SQLServer2008/2008R2' = 'Version100'
-            'SQLServer2012'        = 'Version110'
-            'SQLServer2014'        = 'Version120'
-            'SQLServer2016'        = 'Version130'
+            'SQLServer2012' = 'Version110'
+            'SQLServer2014' = 'Version120'
+            'SQLServer2016' = 'Version130'
         }
-		
+        
         $versionName = @{
-            'Version80'  = 'SQLServer2000'
-            'Version90'  = 'SQLServer2005'
+            'Version80' = 'SQLServer2000'
+            'Version90' = 'SQLServer2005'
             'Version100' = 'SQLServer2008/2008R2'
             'Version110' = 'SQLServer2012'
             'Version120' = 'SQLServer2014'
@@ -142,10 +142,10 @@ https://dbatools.io/Export-DbaUser
         # Convert from RuntimeDefinedParameter object to regular array
         $databases = $psboundparameters.Databases
         $exclude = $psboundparameters.Exclude
-		
+        
     }
     process {
-		
+        
         try {
             Write-Message -Level Verbose -Message "Connecting to $sqlinstance"
             $server = Connect-SqlServer -SqlServer $sqlinstance -SqlCredential $sqlcredential
@@ -153,7 +153,7 @@ https://dbatools.io/Export-DbaUser
         catch {
             Stop-Function -Message "Failed to connect to $instance : $($_.Exception.Message)" -Continue -Target $instance -InnerErrorRecord $_
         }
-		
+        
         if ($databases.Count -eq 0) {
             $databases = $server.Databases | Where-Object { $exclude -notcontains $_.Name -and $_.IsAccessible -eq $true }
         }
@@ -166,9 +166,9 @@ https://dbatools.io/Export-DbaUser
                 $databases = $server.Databases | Where-Object { $exclude -notcontains $_.Name -and $_.IsAccessible -eq $true -and ($databases -contains $_.Name) }
             }
         }
-		
+        
         if (@($databases).Count -gt 0) {
-			
+            
             #Database Permissions
             foreach ($db in $databases) {
                 if ([string]::IsNullOrEmpty($destinationVersion)) {
@@ -179,7 +179,7 @@ https://dbatools.io/Export-DbaUser
                     $scriptVersion = $versions[$destinationVersion]
                 }
                 $versionNameDesc = $versionName[$scriptVersion.ToString()]
-				
+                
                 #Options
                 $scriptingOptions = New-DbaScriptingOption
                 $scriptingOptions.TargetServerVersion = [Microsoft.SqlServer.Management.Smo.SqlServerVersion]::$scriptVersion
@@ -187,9 +187,9 @@ https://dbatools.io/Export-DbaUser
                 $scriptingOptions.IncludeDatabaseRoleMemberships = $true
                 $scriptingOptions.ContinueScriptingOnError = $false
                 $scriptingOptions.IncludeDatabaseContext = $false
-				
+                
                 Write-Message -Level Output -Message "Validating users on database $db"
-				
+                
                 if ($User.Count -eq 0) {
                     $users = $db.Users | Where-Object { $_.IsSystemObject -eq $false -and $_.Name -notlike "##*" }
                 }
@@ -202,21 +202,26 @@ https://dbatools.io/Export-DbaUser
                         $users = $db.Users | Where-Object { $User -contains $_.Name -and $_.IsSystemObject -eq $false -and $_.Name -notlike "##*" }
                     }
                 }
-				
+                # Store roles between users so if we hit the same one we dont create it again 
+                $roles = @()
                 if ($users.Count -gt 0) {
                     foreach ($dbuser in $users) {
                         #setting database
                         $outsql += "USE [" + $db.Name + "]"
-						
+                        
                         try {
                             #Fixed Roles #Dependency Issue. Create Role, before add to role.
                             foreach ($rolePermission in ($db.Roles | Where-Object { $_.IsFixedRole -eq $false })) {
                                 foreach ($rolePermissionScript in $rolePermission.Script($scriptingOptions)) {
                                     #$roleScript = $rolePermission.Script($scriptingOptions)
-                                    $outsql += "$($rolePermissionScript.ToString())"
+                                    if ($rolePermission.ToString() -notin $roles){
+                                        $roles += , $rolePermission.ToString()
+                                        $outsql += "$($rolePermissionScript.ToString())"
+                                    }
+                                    
                                 }
                             }
-							
+                            
                             #Database Create User(s) and add to Role(s)
                             foreach ($dbUserPermissionScript in $dbuser.Script($scriptingOptions)) {
                                 if ($dbuserPermissionScript.Contains("sp_addrolemember")) {
@@ -227,7 +232,7 @@ https://dbatools.io/Export-DbaUser
                                 }
                                 $outsql += "$execute$($dbUserPermissionScript.ToString())"
                             }
-							
+                            
                             #Database Permissions
                             foreach ($databasePermission in $db.EnumDatabasePermissions() | Where-Object { @("sa", "dbo", "information_schema", "sys") -notcontains $_.Grantee -and $_.Grantee -notlike "##*" -and ($dbuser.Name -contains $_.Grantee) }) {
                                 if ($databasePermission.PermissionState -eq "GrantWithGrant") {
@@ -238,11 +243,11 @@ https://dbatools.io/Export-DbaUser
                                     $withGrant = " "
                                     $grantDatabasePermission = $databasePermission.PermissionState.ToString().ToUpper()
                                 }
-								
+                                
                                 $outsql += "$($grantDatabasePermission) $($databasePermission.PermissionType) TO [$($databasePermission.Grantee)]$withGrant AS [$($databasePermission.Grantor)];"
                             }
-							
-							
+                            
+                            
                             #Database Object Permissions
                             # NB: This is a bit of a mess for a couple of reasons
                             # 1. $db.EnumObjectPermissions() doesn't enumerate all object types
@@ -250,73 +255,73 @@ https://dbatools.io/Export-DbaUser
                             #    on them directly (e.g. AssemblyCollection); others can't (e.g.
                             #    ApplicationRoleCollection). Those that can't we iterate the
                             #    collection explicitly and add each object's permission.
-							
+                            
                             $perms = New-Object System.Collections.ArrayList
-							
+                            
                             $null = $perms.AddRange($db.EnumObjectPermissions($dbuser.Name))
-							
+                            
                             foreach ($item in $db.ApplicationRoles) {
                                 $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
                             }
-							
+                            
                             foreach ($item in $db.Assemblies) {
                                 $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
                             }
-							
+                            
                             foreach ($item in $db.Certificates) {
                                 $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
                             }
-							
+                            
                             foreach ($item in $db.DatabaseRoles) {
                                 $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
                             }
-							
+                            
                             foreach ($item in $db.FullTextCatalogs) {
                                 $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
                             }
-							
+                            
                             foreach ($item in $db.FullTextStopLists) {
                                 $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
                             }
-							
+                            
                             foreach ($item in $db.SearchPropertyLists) {
                                 $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
                             }
-							
+                            
                             foreach ($item in $db.ServiceBroker.MessageTypes) {
                                 $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
                             }
-							
+                            
                             foreach ($item in $db.RemoteServiceBindings) {
                                 $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
                             }
-							
+                            
                             foreach ($item in $db.ServiceBroker.Routes) {
                                 $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
                             }
-							
+                            
                             foreach ($item in $db.ServiceBroker.ServiceContracts) {
                                 $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
                             }
-							
+                            
                             foreach ($item in $db.ServiceBroker.Services) {
                                 $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
                             }
-							
+                            
                             if ($scriptVersion -ne "Version80") {
                                 foreach ($item in $db.AsymmetricKeys) {
                                     $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
                                 }
                             }
-							
+                            
                             foreach ($item in $db.SymmetricKeys) {
                                 $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
                             }
-							
+                            
                             foreach ($item in $db.XmlSchemaCollections) {
                                 $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
                             }
-							
+                            
                             foreach ($objectPermission in $perms | Where-Object { @("sa", "dbo", "information_schema", "sys") -notcontains $_.Grantee -and $_.Grantee -notlike "##*" -and $_.Grantee -eq $dbuser.Name }) {
                                 switch ($objectPermission.ObjectClass) {
                                     'ApplicationRole' {
@@ -340,8 +345,7 @@ https://dbatools.io/Export-DbaUser
                                     'MessageType' {
                                         $object = 'Message Type::[{0}]' -f $objectPermission.ObjectName
                                     }
-                                    'ObjectOrColumn' {
-										
+                                    'ObjectOrColumn' {                                        
                                         if ($scriptVersion -ne "Version80") {
                                             $object = 'OBJECT::[{0}].[{1}]' -f $objectPermission.ObjectSchema, $objectPermission.ObjectName
                                             if ($null -ne $objectPermission.ColumnName) {
@@ -387,7 +391,7 @@ https://dbatools.io/Export-DbaUser
                                         $object = 'XML SCHEMA COLLECTION::[{0}]' -f $objectPermission.ObjectName
                                     }
                                 }
-								
+                                
                                 if ($objectPermission.PermissionState -eq "GrantWithGrant") {
                                     $withGrant = " WITH GRANT OPTION"
                                     $grantObjectPermission = 'GRANT'
@@ -396,10 +400,10 @@ https://dbatools.io/Export-DbaUser
                                     $withGrant = " "
                                     $grantObjectPermission = $objectPermission.PermissionState.ToString().ToUpper()
                                 }
-								
+                                
                                 $outsql += "$grantObjectPermission $($objectPermission.PermissionType) ON $object TO [$($objectPermission.Grantee)]$withGrant AS [$($objectPermission.Grantor)];"
                             }
-							
+                            
                         }
                         catch {
                             Stop-Function -Message "This user may be using functionality from $($versionName[$db.CompatibilityLevel.ToString()]) that does not exist on the destination version ($versionNameDesc)." -Continue -InnerErrorRecord $_ -Target $db
@@ -409,7 +413,7 @@ https://dbatools.io/Export-DbaUser
                 else {
                     Write-Message -Level Output -Message "No users found on database '$db'"
                 }
-				
+                
                 #reset collection
                 $users = $null
             }
@@ -418,12 +422,12 @@ https://dbatools.io/Export-DbaUser
             Write-Message -Level Output -Message "No users found on instance '$server'"
         }
     }
-	
+    
     end {
         $sql = $outsql -join "`r`nGO`r`n"
         #add the final GO
         $sql += "`r`nGO"
-		
+        
         if ($FilePath.Length -gt 0) {
             $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
         }
