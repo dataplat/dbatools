@@ -165,7 +165,7 @@ Set-Alias -Name Find-SqlUnusedIndex -Value Find-DbaUnusedIndex
 Set-Alias -Name Get-SqlRegisteredServerName -Value Get-DbaRegisteredServerName
 Set-Alias -Name Get-SqlServerKey -Value Get-DbaServerKey
 Set-Alias -Name Import-SqlSpConfigure -Value Import-DbaSpConfigure
-Set-Alias -Name Invoke-Sqlcmd2 -Value Invoke-Dbacmd2
+Set-Alias -Name Invoke-Sqlcmd2 -Value Invoke-DbaSqlcmd
 Set-Alias -Name Remove-SqlDatabaseSafely -Value Remove-DbaDatabaseSafely
 Set-Alias -Name Remove-SqlOrphanUser -Value Remove-DbaOrphanUser
 Set-Alias -Name Repair-SqlOrphanUser -Value Repair-DbaOrphanUser

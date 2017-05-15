@@ -173,7 +173,7 @@
 		'New-DbaDatabaseSnapshot',
 		'Restore-DbaFromDatabaseSnapshot',
 		'Get-DbaTrigger',
-		'Invoke-DbaSqlCmd',
+		'Invoke-DbaSqlcmd',
 		'Export-DbaUser',
 		'Get-DbaDatabaseState',
 		'Set-DbaDatabaseState',
@@ -347,7 +347,6 @@
 	'Get-SqlRegisteredServerName',
 	'Get-SqlServerKey',
 	'Import-SqlSpConfigure',
-	'Invoke-Sqlcmd2',
 	'Remove-SqlDatabaseSafely',
 	'Remove-SqlOrphanUser',
 	'Repair-SqlOrphanUser',
@@ -363,7 +362,8 @@
 	'Test-SqlNetworkLatency',
 	'Test-SqlPath',
 	'Test-SqlTempDbConfiguration',
-	'Watch-SqlDbLogin'
+	'Watch-SqlDbLogin',
+	'Invoke-Sqlcmd2'
 	
 	# List of all modules packaged with this module
 	ModuleList = @()
