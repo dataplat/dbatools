@@ -257,7 +257,8 @@ function Invoke-DbaSqlCmd
 				   ValueFromRemainingArguments = $false)]
 		[Alias('Connection', 'Conn')]
 		[ValidateNotNullOrEmpty()]
-		[System.Data.SqlClient.SQLConnection]$SQLConnection
+		[System.Data.SqlClient.SQLConnection]$SQLConnection,
+		[Switch]$Silent
 	)
 
 	Begin
