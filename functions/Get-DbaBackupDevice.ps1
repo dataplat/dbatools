@@ -62,9 +62,9 @@ Returns all Backup Devices for the local and sql2016 SQL Server instances
 			
 			foreach ($backupDevice in $server.BackupDevices)
 			{
-				Add-Member -InputObject $backupDevice -MemberType NoteProperty ComputerName -value $backupDevice.Parent.NetName
-				Add-Member -InputObject $backupDevice -MemberType NoteProperty InstanceName -value $backupDevice.Parent.ServiceName
-				Add-Member -InputObject $backupDevice -MemberType NoteProperty SqlInstance -value $backupDevice.Parent.DomainInstanceName
+				Add-Member -InputObject $backupDevice -MemberType NoteProperty -Name ComputerName -value $backupDevice.Parent.NetName
+				Add-Member -InputObject $backupDevice -MemberType NoteProperty -Name InstanceName -value $backupDevice.Parent.ServiceName
+				Add-Member -InputObject $backupDevice -MemberType NoteProperty -Name SqlInstance -value $backupDevice.Parent.DomainInstanceName
 				
 				Select-DefaultView -InputObject $backupDevice -Property ComputerName, InstanceName, SqlInstance, Name, BackupDeviceType, PhysicalLocation, SkipTapeLabel
 			}
