@@ -1,11 +1,11 @@
-FUNCTION Get-DbaAudit
+FUNCTION Get-DbaSqlAudit
 {
 <#
 .SYNOPSIS
 Gets SQL Security Audit information for each instance(s) of SQL Server.
 
 .DESCRIPTION
- The Get-DbaAudit command gets SQL Security Audit information for each instance(s) of SQL Server.
+ The Get-DbaSqlAudit command gets SQL Security Audit information for each instance(s) of SQL Server.
 	
 .PARAMETER SqlInstance
 SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
@@ -26,14 +26,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.	
 
 .LINK
-https://dbatools.io/Get-DbaAudit
+https://dbatools.io/Get-DbaSqlAudit
 
 .EXAMPLE
-Get-DbaAudit -SqlInstance localhost
+Get-DbaSqlAudit -SqlInstance localhost
 Returns all Security Audits on the local default SQL Server instance
 
 .EXAMPLE
-Get-DbaAudit -SqlInstance localhost, sql2016
+Get-DbaSqlAudit -SqlInstance localhost, sql2016
 Returns all Security Audits for the local and sql2016 SQL Server instances
 
 #>
@@ -75,4 +75,5 @@ Returns all Security Audits for the local and sql2016 SQL Server instances
 			}
 		}
 	}
+	END { Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaSqlAudit}
 }
