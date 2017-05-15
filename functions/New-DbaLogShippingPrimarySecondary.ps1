@@ -114,7 +114,7 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
     }
     
     $Query = "SELECT primary_database FROM msdb.dbo.log_shipping_primary_databases WHERE primary_database = '$PrimaryDatabase'"
-    
+
     try{
         $Result = Invoke-SqlCmd2 -ServerInstance $SqlInstance -Credential $SqlCredential -Database 'master' -Query $Query -ErrorAction SilentlyContinue
         if($Result.Count -eq 0 -or $Result[0] -ne $PrimaryDatabase){
@@ -138,9 +138,7 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
         try
         {
             Write-Message -Message "Configuring logshipping connecting the primary database $PrimaryDatabase to secondary database $SecondaryDatabase on $SqlInstance." -Level Output
-            #$Result = 
             Invoke-SqlCmd2 -ServerInstance $SqlInstance -Credential $SqlCredential -Database 'master' -Query $Query
-            #$Result.GetErrors()
         }
         catch
         {
