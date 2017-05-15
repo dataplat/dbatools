@@ -101,7 +101,7 @@
 		'Test-DbaConnection',
 		'Import-CsvToSql',
 		'Copy-DbaAgentCategory',
-		'Update-dbatools',
+		'Update-Dbatools',
 		'Test-DbaSqlPath',
 		'Sync-DbaLoginPermissions',
 		'Export-DbaLogin',
