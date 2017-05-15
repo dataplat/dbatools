@@ -379,7 +379,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			{
 				If ($Pscmdlet.ShouldProcess($destination, "Copying user objects."))
 				{
-					Copy-DbaSysDbUserObjects -Source $sourceserver -Destination $destserver
+					Copy-DbaSysDbUserObject -Source $sourceserver -Destination $destserver
 				}
 				
 			}
