@@ -79,7 +79,7 @@ Returns database restore information for every database on every server listed i
 		[PsCredential]$Credential,
 		[datetime]$Since,
 		[switch]$Force,
-		[switch]$last
+		[switch]$Last
 	)
 	
 	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential } }
