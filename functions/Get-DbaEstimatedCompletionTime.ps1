@@ -151,8 +151,8 @@ Gets estimated completion times for queries performed against the Northwind, pub
 			}
 			
 			Write-Message -Level Debug -Message $sql
-			#Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sql | Select-DefaultView -ExcludeProperty Text
-			foreach ($row in (Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sql))
+			#Invoke-DbaSqlcmd -ServerInstance $instance -Credential $SqlCredential -Query $sql | Select-DefaultView -ExcludeProperty Text
+			foreach ($row in (Invoke-DbaSqlcmd -ServerInstance $instance -Credential $SqlCredential -Query $sql))
 			{			
 				[pscustomobject]@{
 					ComputerName = $server.NetName

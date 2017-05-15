@@ -150,7 +150,7 @@ Shows what would happen if the command were executed using force.
 				}
 			}
 			
-			if ((Test-SqlPath -SqlServer $destserver -Path $audit.Filepath) -eq $false)
+			if ((Test-DbaSqlPath -SqlServer $destserver -Path $audit.Filepath) -eq $false)
 			{
 				if ($Force -eq $false)
 				{

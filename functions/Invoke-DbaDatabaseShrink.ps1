@@ -220,8 +220,8 @@ Shrinks all databases on SQL2012 (not ideal for production)
 						if ($db.Tables.Indexes.Name -and $server.VersionMajor -gt 8)
 						{
 							Write-Message -Level Verbose -Message "Getting average fragmentation"
-							$startingfrag = (Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sql -Database $db.name -Verbose:$false | Select-Object -ExpandProperty avg_fragmentation_in_percent | Measure-Object -Average).Average
-							$startingtopfrag = (Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sqltop1 -Database $db.name -Verbose:$false).avg_fragmentation_in_percent
+							$startingfrag = (Invoke-DbaSqlcmd -ServerInstance $instance -Credential $SqlCredential -Query $sql -Database $db.name -Verbose:$false | Select-Object -ExpandProperty avg_fragmentation_in_percent | Measure-Object -Average).Average
+							$startingtopfrag = (Invoke-DbaSqlcmd -ServerInstance $instance -Credential $SqlCredential -Query $sqltop1 -Database $db.name -Verbose:$false).avg_fragmentation_in_percent
 						}
 						else
 						{
@@ -256,8 +256,8 @@ Shrinks all databases on SQL2012 (not ideal for production)
 						if ($db.Tables.Indexes.Name -and $server.VersionMajor -gt 8)
 						{
 							Write-Message -Level Verbose -Message "Refreshing indexes and getting average fragmentation"
-							$endingdefrag = (Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sql -Database $db.name -Verbose:$false | Select-Object -ExpandProperty avg_fragmentation_in_percent | Measure-Object -Average).Average
-							$endingtopfrag = (Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sqltop1 -Database $db.name -Verbose:$false).avg_fragmentation_in_percent
+							$endingdefrag = (Invoke-DbaSqlcmd -ServerInstance $instance -Credential $SqlCredential -Query $sql -Database $db.name -Verbose:$false | Select-Object -ExpandProperty avg_fragmentation_in_percent | Measure-Object -Average).Average
+							$endingtopfrag = (Invoke-DbaSqlcmd -ServerInstance $instance -Credential $SqlCredential -Query $sqltop1 -Database $db.name -Verbose:$false).avg_fragmentation_in_percent
 						}
 						else
 						{
