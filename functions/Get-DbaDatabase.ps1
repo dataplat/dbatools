@@ -100,7 +100,7 @@ Returns databases on multiple instances piped into the function
         [switch]$Encrypted,
         [parameter(ParameterSetName = "Status")]
         [ValidateSet('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')]
-        [string]$Status,
+        [string[]]$Status,
         [parameter(ParameterSetName = "Access")]
         [ValidateSet('ReadOnly', 'ReadWrite')]
         [string]$Access,
@@ -122,6 +122,18 @@ Returns databases on multiple instances piped into the function
 
         if ($NoUserDb -and $NoSystemDb) {
             Stop-Function -Message "You cannot specify both NoUserDb and NoSystemDb" -Continue -Silent $Silent
+        }
+
+        if($status.count -gt 0)
+        {
+            foreach ($state in $status)
+            {
+                if ($state -notin ('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect'))
+                {
+                    Stop-Function -Message "$state is not a valid status ('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')" -Continue -Silent $Silent
+                }
+                       
+            }
         }
     }
 
@@ -149,7 +161,12 @@ Returns databases on multiple instances piped into the function
             }
 
             if ($status) {
-                $inputobject = $server.Databases | Where-Object Status -eq $status
+                $StatusInput = @()
+                foreach ($state in $status)
+                {
+                   $StatusInput += $server.Databases | Where-Object {($_.Status -split ', ') -contains $state}
+                }
+                $inputobject = $StatusInput | Select-object -unique  
             }
 
             if ($Owner) {
@@ -218,9 +235,9 @@ Returns databases on multiple instances piped into the function
                 }
                 Add-Member -InputObject $db -MemberType NoteProperty BackupStatus -value $Notes
 
-                Add-Member -InputObject $db -MemberType NoteProperty ComputerName -value $server.NetName
-                Add-Member -InputObject $db -MemberType NoteProperty InstanceName -value $server.ServiceName
-                Add-Member -InputObject $db -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
+                Add-Member -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                Add-Member -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                 Select-DefaultView -InputObject $db -Property $defaults
 
             }

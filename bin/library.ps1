@@ -784,7 +784,7 @@ namespace Sqlcollective.Dbatools
                         try
                         {
                             string tempMessageId = ((CimException)(e.InnerException)).MessageId;
-                            if (tempMessageId ==  "HRESULT 0x8007052e")
+                            if (tempMessageId == "HRESULT 0x8007052e")
                                 testBadCredential = true;
                             else if (tempMessageId == "HRESULT 0x80070005")
                                 testBadCredential = true;
@@ -859,7 +859,7 @@ namespace Sqlcollective.Dbatools
                 if (DisableCimPersistence)
                 {
                     try { tempSession.Close(); }
-                    catch {  }
+                    catch { }
                     cimWinRMSession = null;
                 }
                 else
@@ -1220,12 +1220,12 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// When was the backup started
             /// </summary>
-            public DbaDateTime Start;
+            public DateTime Start;
 
             /// <summary>
             /// When did the backup end
             /// </summary>
-            public DbaDateTime End;
+            public DateTime End;
 
             /// <summary>
             /// What was the longest duration among the backups
@@ -1235,7 +1235,7 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// Where is the backup stored
             /// </summary>
-            public string Path;
+            public string[] Path;
 
             /// <summary>
             /// What is the total size of the backup
@@ -1250,7 +1250,7 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// The ID for the Backup job
             /// </summary>
-            public string BackupSetupId;
+            public string BackupSetId;
 
             /// <summary>
             /// What kind of backup-device was the backup stored to
@@ -1265,12 +1265,12 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// The full name of the backup
             /// </summary>
-            public string FullName;
+            public string[] FullName;
 
             /// <summary>
             /// The files that are part of this backup
             /// </summary>
-            public string[] FileList;
+            public object FileList;
 
             /// <summary>
             /// The position of the backup
@@ -1383,10 +1383,12 @@ namespace Sqlcollective.Dbatools
 
     namespace dbaSystem
     {
+        using System.Collections;
         using System.Collections.Concurrent;
+        using System.Collections.Generic;
         using System.Management.Automation;
         using System.Threading;
-        
+
         /// <summary>
         /// An error record written by dbatools
         /// </summary>
@@ -1444,6 +1446,11 @@ namespace Sqlcollective.Dbatools
             public string Message;
 
             /// <summary>
+            /// The runspace the error occured on.
+            /// </summary>
+            public Guid Runspace;
+
+            /// <summary>
             /// Create an empty record
             /// </summary>
             public DbaErrorRecord()
@@ -1471,6 +1478,368 @@ namespace Sqlcollective.Dbatools
                 InvocationInfo = Record.InvocationInfo;
                 ScriptStackTrace = Record.ScriptStackTrace;
                 TargetObject = Record.TargetObject;
+            }
+
+            /// <summary>
+            /// Create a filled out error record
+            /// </summary>
+            /// <param name="Record">The original error record</param>
+            /// <param name="FunctionName">The function that wrote the error</param>
+            /// <param name="Timestamp">When was the error generated</param>
+            /// <param name="Message">What message was passed when writing the error</param>
+            /// <param name="Runspace">The ID of the runspace writing the error. Used to separate output between different runspaces in the same process.</param>
+            public DbaErrorRecord(ErrorRecord Record, string FunctionName, DateTime Timestamp, string Message, Guid Runspace)
+            {
+                this.FunctionName = FunctionName;
+                this.Timestamp = Timestamp;
+                this.Message = Message;
+                this.Runspace = Runspace;
+
+                CategoryInfo = Record.CategoryInfo;
+                ErrorDetails = Record.ErrorDetails;
+                Exception = Record.Exception;
+                FullyQualifiedErrorId = Record.FullyQualifiedErrorId;
+                InvocationInfo = Record.InvocationInfo;
+                ScriptStackTrace = Record.ScriptStackTrace;
+                TargetObject = Record.TargetObject;
+            }
+        }
+
+        /// <summary>
+        /// Wrapper class that can emulate any exception for purpose of serialization without blowing up the storage space consumed
+        /// </summary>
+        [Serializable]
+        public class DbatoolsException
+        {
+            private Exception _Exception;
+            /// <summary>
+            /// Returns the original exception object that we interpreted. This is on purpose not a property, as we want to avoid messing with serialization size.
+            /// </summary>
+            /// <returns>The original exception that got thrown</returns>
+            public Exception GetException()
+            {
+                return _Exception;
+            }
+
+            #region Properties & Fields
+            #region Wrapper around 'official' properties
+            /// <summary>
+            /// The actual Exception Message
+            /// </summary>
+            public string Message;
+
+            /// <summary>
+            /// The original source of the Exception
+            /// </summary>
+            public string Source;
+
+            /// <summary>
+            /// Where on the callstack did the exception occur?
+            /// </summary>
+            public string StackTrace;
+
+            /// <summary>
+            /// What was the target site on the code that caused it. This property has been altered to avoid export issues, if a string representation is not sufficient, access the original exception using GetException()
+            /// </summary>
+            public string TargetSite;
+
+            /// <summary>
+            /// The HResult of the exception. Useful in debugging native code errors.
+            /// </summary>
+            public int HResult;
+
+            /// <summary>
+            /// Link to a proper help article.
+            /// </summary>
+            public string HelpLink;
+
+            /// <summary>
+            /// Additional data that has been appended
+            /// </summary>
+            public IDictionary Data;
+
+            /// <summary>
+            /// The inner exception in a chain of exceptions.
+            /// </summary>
+            public DbatoolsException InnerException;
+            #endregion Wrapper around 'official' properties
+
+            #region Custom properties for exception abstraction
+            /// <summary>
+            /// The full namespace name of the exception that has been wrapped.
+            /// </summary>
+            public string ExceptionTypeName;
+
+            /// <summary>
+            /// Contains additional properties other exceptions might contain.
+            /// </summary>
+            public Hashtable ExceptionData = new Hashtable();
+            #endregion Custom properties for exception abstraction
+
+            #region ErrorRecord Data
+            /// <summary>
+            /// The category of the error
+            /// </summary>
+            public ErrorCategoryInfo CategoryInfo;
+
+            /// <summary>
+            /// The details on the error
+            /// </summary>
+            public ErrorDetails ErrorDetails;
+
+            /// <summary>
+            /// The specific error identity, used to identify the target
+            /// </summary>
+            public string FullyQualifiedErrorId;
+
+            /// <summary>
+            /// The details of how this was called.
+            /// </summary>
+            public object InvocationInfo;
+
+            /// <summary>
+            /// The script's stacktrace
+            /// </summary>
+            public string ScriptStackTrace;
+
+            /// <summary>
+            /// The object being processed
+            /// </summary>
+            public object TargetObject;
+
+            /// <summary>
+            /// The name of the function throwing the error
+            /// </summary>
+            public string FunctionName;
+
+            /// <summary>
+            /// When was the error thrown
+            /// </summary>
+            public DateTime Timestamp;
+
+            /// <summary>
+            /// The runspace the error occured on.
+            /// </summary>
+            public Guid Runspace;
+            #endregion ErrRecord Data
+            #endregion Properties & Fields
+
+            #region Constructors
+            /// <summary>
+            /// Creates an empty exception object. Mostly for serialization support
+            /// </summary>
+            public DbatoolsException()
+            {
+
+            }
+
+            /// <summary>
+            /// Creates an exception based on an original exception object
+            /// </summary>
+            /// <param name="Except">The exception to wrap around</param>
+            public DbatoolsException(Exception Except)
+            {
+                _Exception = Except;
+
+                Message = Except.Message;
+                Source = Except.Source;
+                StackTrace = Except.StackTrace;
+                try { TargetSite = Except.TargetSite.ToString(); }
+                catch { }
+                HResult = Except.HResult;
+                HelpLink = Except.HelpLink;
+                Data = Except.Data;
+                if (Except.InnerException != null) { InnerException = new DbatoolsException(Except.InnerException); }
+
+                ExceptionTypeName = Except.GetType().FullName;
+
+                PSObject tempObject = new PSObject(Except);
+                List<string> defaultPropertyNames = new List<string>();
+                defaultPropertyNames.Add("Data");
+                defaultPropertyNames.Add("HelpLink");
+                defaultPropertyNames.Add("HResult");
+                defaultPropertyNames.Add("InnerException");
+                defaultPropertyNames.Add("Message");
+                defaultPropertyNames.Add("Source");
+                defaultPropertyNames.Add("StackTrace");
+                defaultPropertyNames.Add("TargetSite");
+
+                foreach (PSPropertyInfo member in tempObject.Properties)
+                {
+                    if (!defaultPropertyNames.Contains(member.Name))
+                        ExceptionData[member.Name] = member.Value;
+                }
+            }
+
+            /// <summary>
+            /// Creates a rich information exception object based on a full error record as recorded by PowerShell
+            /// </summary>
+            /// <param name="Record">The error record to copy from</param>
+            public DbatoolsException(ErrorRecord Record)
+                : this(Record.Exception)
+            {
+                CategoryInfo = Record.CategoryInfo;
+                ErrorDetails = Record.ErrorDetails;
+                FullyQualifiedErrorId = Record.FullyQualifiedErrorId;
+                InvocationInfo = Record.InvocationInfo;
+                ScriptStackTrace = Record.ScriptStackTrace;
+                TargetObject = Record.TargetObject;
+            }
+
+            /// <summary>
+            /// Creates a new exception object with rich meta information from the Dbatools runtime.
+            /// </summary>
+            /// <param name="Except">The exception thrown</param>
+            /// <param name="FunctionName">The name of the function in which the error occured</param>
+            /// <param name="Timestamp">When did the error occur</param>
+            /// <param name="Message">The message to add to the exception</param>
+            /// <param name="Runspace">The ID of the runspace from which the exception was thrown. Useful in multi-runspace scenarios.</param>
+            public DbatoolsException(Exception Except, string FunctionName, DateTime Timestamp, string Message, Guid Runspace)
+                : this(Except)
+            {
+                this.Runspace = Runspace;
+                this.FunctionName = FunctionName;
+                this.Timestamp = Timestamp;
+                this.Message = Message;
+            }
+
+            /// <summary>
+            /// Creates a new exception object with rich meta information from the Dbatools runtime.
+            /// </summary>
+            /// <param name="Record">The error record written</param>
+            /// <param name="FunctionName">The name of the function in which the error occured</param>
+            /// <param name="Timestamp">When did the error occur</param>
+            /// <param name="Message">The message to add to the exception</param>
+            /// <param name="Runspace">The ID of the runspace from which the exception was thrown. Useful in multi-runspace scenarios.</param>
+            public DbatoolsException(ErrorRecord Record, string FunctionName, DateTime Timestamp, string Message, Guid Runspace)
+                : this(Record)
+            {
+                this.Runspace = Runspace;
+                this.FunctionName = FunctionName;
+                this.Timestamp = Timestamp;
+                this.Message = Message;
+            }
+            #endregion Constructors
+
+            /// <summary>
+            /// Returns a string representation of the exception.
+            /// </summary>
+            /// <returns></returns>
+            public override string ToString()
+            {
+                return Message;
+            }
+        }
+
+        /// <summary>
+        /// Carrier class, designed to hold an arbitrary number of exceptions. Used for exporting to XML in nice per-incident packages.
+        /// </summary>
+        [Serializable]
+        public class DbatoolsExceptionRecord
+        {
+            /// <summary>
+            /// Runspace where shit happened.
+            /// </summary>
+            public Guid Runspace;
+
+            /// <summary>
+            /// When did things go bad?
+            /// </summary>
+            public DateTime Timestamp;
+
+            /// <summary>
+            /// Name of the function, where fail happened.
+            /// </summary>
+            public string FunctionName;
+
+            /// <summary>
+            /// The message the poor user was shown.
+            /// </summary>
+            public string Message;
+
+            /// <summary>
+            /// Displays the name of the exception, the make scanning exceptions easier.
+            /// </summary>
+            public string ExceptionType
+            {
+                get
+                {
+                    try
+                    {
+                        if (Exceptions.Count > 0)
+                        {
+                            if ((Exceptions[0].GetException().GetType().FullName == "System.Exception") && (Exceptions[0].InnerException != null))
+                                return Exceptions[0].InnerException.GetException().GetType().Name;
+
+                            return Exceptions[0].GetException().GetType().Name;
+                        }
+                    }
+                    catch { }
+
+                    return "";
+                }
+                set
+                {
+
+                }
+            }
+
+            /// <summary>
+            /// The target object of the first exception in the list, if any
+            /// </summary>
+            public object TargetObject
+            {
+                get
+                {
+                    if (Exceptions.Count > 0)
+                        return Exceptions[0].TargetObject;
+                    else
+                        return null;
+                }
+                set
+                {
+
+                }
+            }
+
+            /// <summary>
+            /// List of Exceptions that are part of the incident (usually - but not always - only one).
+            /// </summary>
+            public List<DbatoolsException> Exceptions = new List<DbatoolsException>();
+
+            /// <summary>
+            /// Creates an empty container. Ideal for the homeworker who loves doing it all himself.
+            /// </summary>
+            public DbatoolsExceptionRecord()
+            {
+
+            }
+
+            /// <summary>
+            /// Creates a container filled with the first exception.
+            /// </summary>
+            /// <param name="Exception"></param>
+            public DbatoolsExceptionRecord(DbatoolsException Exception)
+            {
+                Runspace = Exception.Runspace;
+                Timestamp = Exception.Timestamp;
+                FunctionName = Exception.FunctionName;
+                Message = Exception.Message;
+            }
+
+            /// <summary>
+            /// Creates a container filled with the meta information but untouched by exceptions
+            /// </summary>
+            /// <param name="Runspace">The runspace where it all happened</param>
+            /// <param name="Timestamp">When did it happen?</param>
+            /// <param name="FunctionName">Where did it happen?</param>
+            /// <param name="Message">What did the witness have to say?</param>
+            public DbatoolsExceptionRecord(Guid Runspace, DateTime Timestamp, string FunctionName, string Message)
+            {
+                this.Runspace = Runspace;
+                this.Timestamp = Timestamp;
+                this.FunctionName = FunctionName;
+                this.Message = Message;
             }
         }
 
@@ -1539,17 +1908,22 @@ namespace Sqlcollective.Dbatools
             /// Governs, whether a log of recent errors is kept in memory
             /// </summary>
             public static bool ErrorLogEnabled = true;
+
+            /// <summary>
+            /// Enables the developer mode. In this additional information and logs are written, in order to make it easier to troubleshoot issues.
+            /// </summary>
+            public static bool DeveloperMode = false;
             #endregion Defines
 
             #region Queues
-            private static ConcurrentQueue<DbaErrorRecord> ErrorRecords = new ConcurrentQueue<DbaErrorRecord>();
+            private static ConcurrentQueue<DbatoolsExceptionRecord> ErrorRecords = new ConcurrentQueue<DbatoolsExceptionRecord>();
 
             private static ConcurrentQueue<LogEntry> LogEntries = new ConcurrentQueue<LogEntry>();
 
             /// <summary>
             /// The outbound queue for errors. These will be processed and written to xml
             /// </summary>
-            public static ConcurrentQueue<DbaErrorRecord> OutQueueError = new ConcurrentQueue<DbaErrorRecord>();
+            public static ConcurrentQueue<DbatoolsExceptionRecord> OutQueueError = new ConcurrentQueue<DbatoolsExceptionRecord>();
 
             /// <summary>
             /// The outbound queue for logs. These will be processed and written to logfile
@@ -1562,9 +1936,9 @@ namespace Sqlcollective.Dbatools
             /// Retrieves a copy of the Error stack
             /// </summary>
             /// <returns>All errors thrown by dbatools functions</returns>
-            public static DbaErrorRecord[] GetErrors()
+            public static DbatoolsExceptionRecord[] GetErrors()
             {
-                DbaErrorRecord[] temp = new DbaErrorRecord[ErrorRecords.Count];
+                DbatoolsExceptionRecord[] temp = new DbatoolsExceptionRecord[ErrorRecords.Count];
                 ErrorRecords.CopyTo(temp, 0);
                 return temp;
             }
@@ -1587,13 +1961,19 @@ namespace Sqlcollective.Dbatools
             /// <param name="FunctionName">The name of the function writing the error</param>
             /// <param name="Timestamp">When was the error written</param>
             /// <param name="Message">What message was passed to the user</param>
-            public static void WriteErrorEntry(ErrorRecord Record, string FunctionName, DateTime Timestamp, string Message)
+            /// <param name="Runspace">The runspace the message was written from</param>
+            public static void WriteErrorEntry(ErrorRecord[] Record, string FunctionName, DateTime Timestamp, string Message, Guid Runspace)
             {
-                DbaErrorRecord temp = new DbaErrorRecord(Record, FunctionName, Timestamp, Message);
-                if (ErrorLogFileEnabled) { OutQueueError.Enqueue(temp); }
-                if (ErrorLogEnabled) { ErrorRecords.Enqueue(temp); }
+                DbatoolsExceptionRecord tempRecord = new DbatoolsExceptionRecord(Runspace, Timestamp, FunctionName, Message);
+                foreach (ErrorRecord rec in Record)
+                {
+                    tempRecord.Exceptions.Add(new DbatoolsException(rec, FunctionName, Timestamp, Message, Runspace));
+                }
 
-                DbaErrorRecord tmp;
+                if (ErrorLogFileEnabled) { OutQueueError.Enqueue(tempRecord); }
+                if (ErrorLogEnabled) { ErrorRecords.Enqueue(tempRecord); }
+
+                DbatoolsExceptionRecord tmp;
                 while ((MaxErrorCount > 0) && (ErrorRecords.Count > MaxErrorCount))
                 {
                     ErrorRecords.TryDequeue(out tmp);
@@ -1608,9 +1988,11 @@ namespace Sqlcollective.Dbatools
             /// <param name="Timestamp">When was the message generated</param>
             /// <param name="FunctionName">What function wrote the message</param>
             /// <param name="Level">At what level was the function written</param>
-            public static void WriteLogEntry(string Message, LogEntryType Type, DateTime Timestamp, string FunctionName, MessageLevel Level)
+            /// <param name="Runspace">The runspace the message is coming from</param>
+            /// <param name="TargetObject">The object associated with a given message.</param>
+            public static void WriteLogEntry(string Message, LogEntryType Type, DateTime Timestamp, string FunctionName, MessageLevel Level, Guid Runspace, object TargetObject = null)
             {
-                LogEntry temp = new LogEntry(Message, Type, Timestamp, FunctionName, Level);
+                LogEntry temp = new LogEntry(Message, Type, Timestamp, FunctionName, Level, Runspace, TargetObject);
                 if (MessageLogFileEnabled) { OutQueueLog.Enqueue(temp); }
                 if (MessageLogEnabled) { LogEntries.Enqueue(temp); }
 
@@ -1655,6 +2037,16 @@ namespace Sqlcollective.Dbatools
             public MessageLevel Level;
 
             /// <summary>
+            /// What runspace was the message written from?
+            /// </summary>
+            public Guid Runspace;
+
+            /// <summary>
+            /// The object that was the focus of this message.
+            /// </summary>
+            public object TargetObject;
+
+            /// <summary>
             /// Creates an empty log entry
             /// </summary>
             public LogEntry()
@@ -1678,6 +2070,27 @@ namespace Sqlcollective.Dbatools
                 this.FunctionName = FunctionName;
                 this.Level = Level;
             }
+
+            /// <summary>
+            /// Creates a filled out log entry
+            /// </summary>
+            /// <param name="Message">The message that was logged</param>
+            /// <param name="Type">The type(s) of message written</param>
+            /// <param name="Timestamp">When was the message logged</param>
+            /// <param name="FunctionName">What function wrote the message</param>
+            /// <param name="Level">What level was the message written at.</param>
+            /// <param name="Runspace">The ID of the runspace that wrote the message.</param>
+            /// <param name="TargetObject">The object this message was all about.</param>
+            public LogEntry(string Message, LogEntryType Type, DateTime Timestamp, string FunctionName, MessageLevel Level, Guid Runspace, object TargetObject)
+            {
+                this.Message = Message;
+                this.Type = Type;
+                this.Timestamp = Timestamp;
+                this.FunctionName = FunctionName;
+                this.Level = Level;
+                this.Runspace = Runspace;
+                this.TargetObject = TargetObject;
+            }
         }
 
         /// <summary>
@@ -1687,7 +2100,12 @@ namespace Sqlcollective.Dbatools
         public enum LogEntryType
         {
             /// <summary>
-            /// A message that was written to the current host equivalent, if available to the information stream instead
+            /// This entry wasn't written to any stream
+            /// </summary>
+            None = 0,
+
+            /// <summary>
+            /// A message that was written to the current host equivalent, if available also to the information stream
             /// </summary>
             Information = 1,
 
@@ -1816,6 +2234,15 @@ namespace Sqlcollective.Dbatools
             /// </summary>
             public static int MinimumDebug = 1;
 
+            /// <summary>
+            /// The color stuff gets written to the console in
+            /// </summary>
+            public static ConsoleColor InfoColor = ConsoleColor.Cyan;
+
+            /// <summary>
+            /// The color stuff gets written to the console in, when developer mode is enabled and the message would not have been written after all
+            /// </summary>
+            public static ConsoleColor DeveloperColor = ConsoleColor.Gray;
             #endregion Defines
         }
 
@@ -1881,6 +2308,31 @@ namespace Sqlcollective.Dbatools
         }
     }
 
+    namespace General
+    {
+        /// <summary>
+        /// What kind of mode do you want to run a command in?
+        /// This allows the user to choose how a dbatools function handles a bump in the execution where terminating directly may not be actually mandated.
+        /// </summary>
+        public enum ExecutionMode
+        {
+            /// <summary>
+            /// When encountering issues, terminate, or skip the currently processed input, rather than continue.
+            /// </summary>
+            Strict,
+
+            /// <summary>
+            /// Continue as able with a best-effort attempt. Simple verbose output should do the rest.
+            /// </summary>
+            Lazy,
+
+            /// <summary>
+            /// Continue, but provide output that can be used to identify the operations that had issues.
+            /// </summary>
+            Report
+        }
+    }
+
     namespace Parameter
     {
         using Connection;
@@ -1930,7 +2382,7 @@ namespace Sqlcollective.Dbatools
             public DbaCmConnectionParameter(string ComputerName)
             {
                 InputObject = ComputerName;
-                if (! Utility.Validation.IsValidComputerTarget(ComputerName))
+                if (!Utility.Validation.IsValidComputerTarget(ComputerName))
                 {
                     Success = false;
                     return;
@@ -2114,7 +2566,7 @@ namespace Sqlcollective.Dbatools
                 get
                 {
                     if (String.IsNullOrEmpty(_InstanceName)) { return ""; }
-                    else { return"[" + _InstanceName + "]"; }
+                    else { return "[" + _InstanceName + "]"; }
                 }
             }
 
@@ -2489,6 +2941,55 @@ namespace Sqlcollective.Dbatools
         #endregion ParameterClass Interna
     }
 
+    namespace TabExpansion
+    {
+        using System.Collections.Concurrent;
+        using System.Collections;
+        using System.Management.Automation;
+
+        /// <summary>
+        /// Class that handles the static fields supporting the dbatools TabExpansion implementation
+        /// </summary>
+        public static class TabExpansionHost
+        {
+            /// <summary>
+            /// Field containing the scripts that were registered.
+            /// </summary>
+            public static ConcurrentDictionary<string, ScriptContainer> Scripts = new ConcurrentDictionary<string, ScriptContainer>();
+            
+            /// <summary>
+            /// The cache used by scripts utilizing TabExpansionPlusPlus in dbatools
+            /// </summary>
+            public static Hashtable Cache = new Hashtable();
+        }
+
+        /// <summary>
+        /// Regular container to store scripts in, that are used in TEPP
+        /// </summary>
+        public class ScriptContainer
+        {
+            /// <summary>
+            /// The name of the scriptblock
+            /// </summary>
+            public string Name;
+
+            /// <summary>
+            /// The scriptblock doing the logic
+            /// </summary>
+            public ScriptBlock ScriptBlock;
+
+            /// <summary>
+            /// The last time the scriptblock was called. Must be updated by the scriptblock itself
+            /// </summary>
+            public DateTime LastExecution;
+
+            /// <summary>
+            /// The time it took to run the last time
+            /// </summary>
+            public TimeSpan LastDuration;
+        }
+    }
+
     namespace Utility
     {
         using System.Management.Automation;
@@ -2504,15 +3005,14 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// Adds a compareTo method to DateTime to compare with DbaDateTimeBase
             /// </summary>
-            /// <param name="obj">The extended DateTime object</param>
+            /// <param name="Base">The extended DateTime object</param>
             /// <param name="comparedTo">The DbaDateTimeBase to compare with</param>
             /// <returns></returns>
-            public static int CompareTo(PSObject obj, DbaDateTimeBase comparedTo)
+            public static int CompareTo(this DateTime Base, DbaDateTimeBase comparedTo)
             {
-                return ((DateTime)obj.BaseObject).CompareTo(comparedTo.GetBaseObject());
+                return Base.CompareTo(comparedTo);
             }
         }
-
 
         /// <summary>
         /// Base class for wrapping around a DateTime object
@@ -3453,7 +3953,7 @@ namespace Sqlcollective.Dbatools
             /// <param name="Base">The object to convert</param>
             public static implicit operator DbaDate(DateTime Base)
             {
-                 return new DbaDate(Base);
+                return new DbaDate(Base);
             }
 
             /// <summary>
@@ -3978,7 +4478,7 @@ namespace Sqlcollective.Dbatools
                     return _timespan.Days;
                 }
             }
-            
+
             /// <summary>
             /// Gets the hours component of the time interval represented by the current TimeSpan structure.
             /// </summary>
@@ -4728,7 +5228,7 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// The Version of the dbatools Library. Used to compare with import script to determine out-of-date libraries
             /// </summary>
-            public readonly static Version LibraryVersion = new Version(1, 0, 1, 6);
+            public readonly static Version LibraryVersion = new Version(1, 0, 1, 10);
         }
 
         /// <summary>
@@ -4831,7 +5331,7 @@ namespace Sqlcollective.Dbatools
                 else { return false; }
 
                 if (Regex.IsMatch(temp, RegexHelper.SqlReservedKeyword, RegexOptions.IgnoreCase)) { return false; }
-                
+
                 if (temp.ToLower() == "default") { return false; }
                 if (temp.ToLower() == "mssqlserver") { return false; }
 
@@ -4929,6 +5429,11 @@ namespace Sqlcollective.Dbatools
         }
         
         Add-Type @paramAddType
+        
+        #region PowerShell TypeData
+        Update-TypeData -TypeName "SqlCollective.Dbatools.dbaSystem.DbatoolsException" -SerializationDepth 2 -ErrorAction Ignore
+        Update-TypeData -TypeName "SqlCollective.Dbatools.dbaSystem.DbatoolsExceptionRecord" -SerializationDepth 2 -ErrorAction Ignore
+        #endregion PowerShell TypeData
     }
     catch
     {
@@ -4967,7 +5472,7 @@ aka "The guy who made most of The Library that Failed to import"
 }
 
 #region Version Warning
-$LibraryVersion = New-Object System.Version(1, 0, 1, 6)
+$LibraryVersion = New-Object System.Version(1, 0, 1, 10)
 if ($LibraryVersion -ne ([Sqlcollective.Dbatools.Utility.UtilityHost]::LibraryVersion))
 {
     Write-Warning @"

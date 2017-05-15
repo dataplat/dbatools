@@ -187,7 +187,7 @@ After the work has been completed, we can push the original startup parameters b
 		if (!($currentstartup.SingleUser)) {
 			
 			if ($newstartup.Masterdata.length -gt 0) {
-				if (Test-SqlPath -SqlServer $sqlinstance -SqlCredential $Credential -Path (Split-Path $newstartup.MasterData -Parent)) {
+				if (Test-DbaSqlPath -SqlServer $sqlinstance -SqlCredential $Credential -Path (Split-Path $newstartup.MasterData -Parent)) {
 					$ParameterString += "-d$($newstartup.MasterData);"
 				}
 				else {
@@ -199,7 +199,7 @@ After the work has been completed, we can push the original startup parameters b
 			}
 			
 			if ($newstartup.ErrorLog.length -gt 0) {
-				if (Test-SqlPath -SqlServer $sqlinstance -SqlCredential $Credential -Path (Split-Path $newstartup.ErrorLog -Parent)) {
+				if (Test-DbaSqlPath -SqlServer $sqlinstance -SqlCredential $Credential -Path (Split-Path $newstartup.ErrorLog -Parent)) {
 					$ParameterString += "-e$($newstartup.ErrorLog);"
 				}
 				else {
@@ -211,7 +211,7 @@ After the work has been completed, we can push the original startup parameters b
 			}
 			
 			if ($newstartup.MasterLog.Length -gt 0) {
-				if (Test-SqlPath -SqlServer $sqlinstance -SqlCredential $Credential -Path (Split-Path $newstartup.MasterLog -Parent)) {
+				if (Test-DbaSqlPath -SqlServer $sqlinstance -SqlCredential $Credential -Path (Split-Path $newstartup.MasterLog -Parent)) {
 					$ParameterString += "-l$($newstartup.MasterLog);"
 				}
 				else {

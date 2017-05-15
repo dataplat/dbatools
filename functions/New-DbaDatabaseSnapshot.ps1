@@ -169,7 +169,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 			#Checks for path existence
 			if ($Path.Length -gt 0)
 			{
-				if (!(Test-SqlPath -SqlServer $instance -Path $Path))
+				if (!(Test-DbaSqlPath -SqlServer $instance -Path $Path))
 				{
 					Write-Warning "'$instance' cannot access the directory '$Path'"
 					Continue

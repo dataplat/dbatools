@@ -169,7 +169,7 @@ $ScriptBlock = {
         $Value
     )
     
-    $Result = New-Object PSOBject -Property @{
+    $Result = New-Object PSObject -Property @{
         Success = $True
         Message = ""
     }
@@ -196,3 +196,79 @@ $ScriptBlock = {
 Register-DbaConfigHandler -Name 'message.minimumdebug' -ScriptBlock $ScriptBlock
 #endregion message.minimumdebug
 
+#region message.infocolor
+$ScriptBlock = {
+    Param (
+        $Value
+    )
+    
+    $Result = New-Object PSObject -Property @{
+        Success = $True
+        Message = ""
+    }
+    
+    try { [System.ConsoleColor]$number = $Value }
+    catch
+    {
+        $Result.Message = "Not a console color: $Value"
+        $Result.Success = $False
+        return $Result
+    }
+    
+    [sqlcollective.dbatools.dbaSystem.MessageHost]::InfoColor = $Value
+    
+    return $Result
+}
+Register-DbaConfigHandler -Name 'message.infocolor' -ScriptBlock $ScriptBlock
+#endregion message.infocolor
+
+#region message.developercolor
+$ScriptBlock = {
+    Param (
+        $Value
+    )
+    
+    $Result = New-Object PSObject -Property @{
+        Success = $True
+        Message = ""
+    }
+    
+    try { [System.ConsoleColor]$number = $Value }
+    catch
+    {
+        $Result.Message = "Not a console color: $Value"
+        $Result.Success = $False
+        return $Result
+    }
+    
+    [sqlcollective.dbatools.dbaSystem.MessageHost]::DeveloperColor = $Value
+    
+    return $Result
+}
+Register-DbaConfigHandler -Name 'message.developercolor' -ScriptBlock $ScriptBlock
+#endregion message.DeveloperColor
+
+#region developer.mode.enable
+$ScriptBlock = {
+    Param (
+        $Value
+    )
+    
+    $Result = New-Object PSObject -Property @{
+        Success = $True
+        Message = ""
+    }
+    
+    if ($Value.GetType().FullName -ne "System.Boolean")
+    {
+        $Result.Message = "Not a console color: $Value"
+        $Result.Success = $False
+        return $Result
+    }
+    
+    [sqlcollective.dbatools.dbaSystem.DebugHost]::DeveloperMode = $Value
+    
+    return $Result
+}
+Register-DbaConfigHandler -Name 'developer.mode.enable' -ScriptBlock $ScriptBlock
+#endregion developer.mode.enable

@@ -77,7 +77,7 @@ Shows what would happen if the command were executed against server1
 		[datetime]$StartDate = (Get-Date),
 		[datetime]$ExpirationDate = $StartDate.AddYears(5),
 		[switch]$ActiveForServiceBrokerDialog,
-		[Security.SecureString]$Password = (Read-Host "Password" -AsSecureString),
+		[Security.SecureString]$Password = (Read-Host "Password (not required)" -AsSecureString),
 		[switch]$Silent
 	)
 	
@@ -113,7 +113,7 @@ Shows what would happen if the command were executed against server1
 							$smocert.ExpirationDate = $ExpirationDate
 							$smocert.ActiveForServiceBrokerDialog = $ActiveForServiceBrokerDialog
 							
-							if ($password) {
+							if ($password.Length -gt 0) {
 								$smocert.Create(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password))))
 							}
 							else {
@@ -123,12 +123,20 @@ Shows what would happen if the command were executed against server1
 							Add-Member -InputObject $smocert -MemberType NoteProperty -Name ComputerName -value $server.NetName
 							Add-Member -InputObject $smocert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
 							Add-Member -InputObject $smocert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-							Add-Member -InputObject $smocert -MemberType NoteProperty -Name Database -value $smodb
+							Add-Member -InputObject $smocert -MemberType NoteProperty -Name Database -value $smodb.Name
 							
 							Select-DefaultView -InputObject $smocert -Property ComputerName, InstanceName, SqlInstance, Database, Name, Subject, StartDate, ActiveForServiceBrokerDialog, ExpirationDate, Issuer, LastBackupDate, Owner, PrivateKeyEncryptionType, Serial
 						}
 						catch {
-							Stop-Function -Message "Failed to create certificate in $db on $instance. Exception: $($_.Exception.InnerException)" -Target $smocert -InnerErrorRecord $_ -Continue
+							if ($_.Exception.InnerException) {
+								$exception = $_.Exception.InnerException.ToString() -Split "System.Data.SqlClient.SqlException: "
+								$exception = ($exception[1] -Split "at Microsoft.SqlServer.Management.Common.ConnectionManager")[0]
+							}
+							else {
+								$exception = $_.Exception
+							}
+							
+							Stop-Function -Message "Failed to create certificate in $db on $instance. Exception: $exception" -Target $smocert -InnerErrorRecord $_ -Continue
 						}
 					}
 				}

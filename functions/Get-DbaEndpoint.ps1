@@ -62,9 +62,9 @@ Returns all Endpoint(s) for the local and sql2016 SQL Server instances
 			
 			foreach ($endpoint in $server.Endpoints)
 			{
-				Add-Member -InputObject $endpoint -MemberType NoteProperty ComputerName -value $endpoint.Parent.NetName
-				Add-Member -InputObject $endpoint -MemberType NoteProperty InstanceName -value $endpoint.Parent.ServiceName
-				Add-Member -InputObject $endpoint -MemberType NoteProperty SqlInstance -value $endpoint.Parent.DomainInstanceName
+				Add-Member -InputObject $endpoint -MemberType NoteProperty -Name ComputerName -value $endpoint.Parent.NetName
+				Add-Member -InputObject $endpoint -MemberType NoteProperty -Name InstanceName -value $endpoint.Parent.ServiceName
+				Add-Member -InputObject $endpoint -MemberType NoteProperty -Name SqlInstance -value $endpoint.Parent.DomainInstanceName
 				
 				Select-DefaultView -InputObject $endpoint -Property ComputerName, InstanceName, SqlInstance, ID, Name, EndpointType, Owner, IsAdminEndpoint, IsSystemObject
 			}

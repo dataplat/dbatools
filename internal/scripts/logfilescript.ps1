@@ -103,7 +103,7 @@ $scriptBlock = {
             
             if ($Record)
             {
-                $Record | Export-Clixml -Path "$($root.FullName)\dbatools_$($pid)_error_$($num_Error).xml"
+                $Record | Export-Clixml -Path "$($root.FullName)\dbatools_$($pid)_error_$($num_Error).xml" -Depth 3
             }
             
             Clean-ErrorXml -Path $root
