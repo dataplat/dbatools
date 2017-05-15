@@ -534,5 +534,5 @@ function Invoke-DbaSqlCmd
 			}
 		}
 	}
-	END { Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alais Invoke-Sqlcmd2 }
+	END { Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-Sqlcmd2 }
 }
