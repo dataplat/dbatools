@@ -1,4 +1,4 @@
-Function Test-DbaPath
+Function Test-DbaSqlPath
 {
 <#
 .SYNOPSIS
@@ -44,16 +44,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Test-DbaPath
+https://dbatools.io/Test-DbaSqlPath
 
 .EXAMPLE
-Test-DbaPath -SqlServer sqlcluster -Path L:\MSAS12.MSSQLSERVER\OLAP
+Test-DbaSqlPath -SqlServer sqlcluster -Path L:\MSAS12.MSSQLSERVER\OLAP
 
 Tests whether the service account running the "sqlcluster" SQL Server isntance can access L:\MSAS12.MSSQLSERVER\OLAP. Logs into sqlcluster using Windows credentials. 
 
 .EXAMPLE
 $credential = Get-Credential
-Test-DbaPath -SqlServer sqlcluster -SqlCredential $credential -Path L:\MSAS12.MSSQLSERVER\OLAP
+Test-DbaSqlPath -SqlServer sqlcluster -SqlCredential $credential -Path L:\MSAS12.MSSQLSERVER\OLAP
 
 Tests whether the service account running the "sqlcluster" SQL Server isntance can access L:\MSAS12.MSSQLSERVER\OLAP. Logs into sqlcluster using SQL authentication. 
 #>
@@ -93,12 +93,12 @@ Tests whether the service account running the "sqlcluster" SQL Server isntance c
 	$sql = "EXEC master.dbo.xp_fileexist '$path'"
 	try
 	{
-		#$fileexist = Invoke-SqlCmd2 -server $server -Query $sql
+		#$fileexist = Invoke-DbaSqlcmd -server $server -Query $sql
 		$fileexist = $server.ConnectionContext.ExecuteWithResults($sql)
 	}
 	catch
 	{
-		Write-Warning "Test-DbaPath failed: $_"
+		Write-Warning "Test-DbaSqlPath failed: $_"
 		throw
 	}
 	if ($fileexist.tables.rows[0] -eq $true -or $fileexist.tables.rows[1] -eq $true)

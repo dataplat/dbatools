@@ -102,7 +102,7 @@
 		'Import-CsvToSql',
 		'Copy-DbaAgentCategory',
 		'Update-dbatools',
-		'Test-DbaPath',
+		'Test-DbaSqlPath',
 		'Sync-DbaLoginPermissions',
 		'Export-DbaLogin',
 		'Get-DbaServerKey',

@@ -648,12 +648,12 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		
 		if ($NetworkShare.Length -gt 0)
 		{
-			if ($(Test-SqlPath -SqlServer $sourceserver -Path $NetworkShare) -eq $false)
+			if ($(Test-DbaSqlPath -SqlServer $sourceserver -Path $NetworkShare) -eq $false)
 			{
 				Write-Message -Level Warning -Message "$Source may not be able to access $NetworkShare. Trying anyway."
 			}
 			
-			if ($(Test-SqlPath -SqlServer $destserver -Path $NetworkShare) -eq $false)
+			if ($(Test-DbaSqlPath -SqlServer $destserver -Path $NetworkShare) -eq $false)
 			{
 				Write-Message -Level Warning -Message "$Destination may not be able to access $NetworkShare. Trying anyway."
 			}

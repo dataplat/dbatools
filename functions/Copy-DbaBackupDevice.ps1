@@ -162,7 +162,7 @@ Shows what would happen if the command were executed using force.
 			
 			Write-Output "Checking if directory $destpath exists"
 			
-			if ($(Test-SqlPath -SqlServer $Destination -Path $path) -eq $false)
+			if ($(Test-DbaSqlPath -SqlServer $Destination -Path $path) -eq $false)
 			{
 				$backupdirectory = $destserver.BackupDirectory
 				$destpath = Join-AdminUnc $destnetbios $backupdirectory

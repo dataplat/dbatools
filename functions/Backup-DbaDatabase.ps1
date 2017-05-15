@@ -334,7 +334,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 				
 				Write-Message -Level Verbose -Message "Single db and filename"
 				
-				if (Test-SqlPath -SqlServer $server -Path (Split-Path $BackupFileName))
+				if (Test-DbaSqlPath -SqlServer $server -Path (Split-Path $BackupFileName))
 				{
 					$FinalBackupPath += $BackupFileName
 				}
@@ -386,7 +386,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 						$FinalBackupPath += "$path$PathDivider$BackupFileName.$suffix"
 					}
 					<#
-					The code below attempts to create the directory even when $CreateFolder -- was it supposed to be Test-SqlPath?
+					The code below attempts to create the directory even when $CreateFolder -- was it supposed to be Test-DbaSqlPath?
 					else
 					{
 						if ((New-DbaSqlDirectory -SqlServer $server -SqlCredential $SqlCredential -Path $path).Created -eq $false)

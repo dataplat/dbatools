@@ -149,7 +149,7 @@ Gets the backup header information from the SQL Server backup file stored at htt
 			}
 			$device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem $file, $DeviceType
 			$restore.Devices.Add($device)
-			if ((Test-SqlPath -SqlServer $server -Path $file) -or $DeviceType -eq 'URL')
+			if ((Test-DbaSqlPath -SqlServer $server -Path $file) -or $DeviceType -eq 'URL')
 			{
 				<#	try
 					{
@@ -158,7 +158,7 @@ Gets the backup header information from the SQL Server backup file stored at htt
 					catch
 					{
 						$shortname = Split-Path $file -Leaf
-						if (!(Test-SqlPath -SqlServer $server -Path $file))
+						if (!(Test-DbaSqlPath -SqlServer $server -Path $file))
 						{
 							Write-Warning "File $shortname does not exist or access denied. The SQL Server service account may not have access to the source directory."
 						}
@@ -230,7 +230,7 @@ Gets the backup header information from the SQL Server backup file stored at htt
 					catch
 					{
 						$shortname = Split-Path $file -Leaf
-						if (!(Test-SqlPath -SqlServer $server -Path $file))
+						if (!(Test-DbaSqlPath -SqlServer $server -Path $file))
 						{
 							Write-Message -Level Warning -Message "File $shortname does not exist or access denied. The SQL Server service account may not have access to the source directory."
 						}

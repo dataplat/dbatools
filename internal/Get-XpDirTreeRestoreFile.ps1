@@ -46,12 +46,12 @@ Takes path, checks for validity. Scans for usual backup file
         {
             $Path = $Path + "\"
         }
-        If (!(Test-SqlPath -SQLServer $server -SqlCredential $SqlCredential -path $path))
+        If (!(Test-DbaSqlPath -SQLServer $server -SqlCredential $SqlCredential -path $path))
         {
             Write-warning "$FunctionName - SQLServer $sqlserver cannot access $path"
         }
         $query = "EXEC master.sys.xp_dirtree '$Path',1,1;"
-        $queryResult = Invoke-Sqlcmd2 -ServerInstance $server -Credential $SqlCredential -Database tempdb -Query $query
+        $queryResult = Invoke-DbaSqlcmd -ServerInstance $server -Credential $SqlCredential -Database tempdb -Query $query
         #$queryresult
         $dirs = $queryResult | where-object { $_.file -eq 0 }
         $Results = @()
