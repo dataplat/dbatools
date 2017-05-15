@@ -324,37 +324,28 @@ https://dbatools.io/Export-DbaUser
                             
                             foreach ($objectPermission in $perms | Where-Object { @("sa", "dbo", "information_schema", "sys") -notcontains $_.Grantee -and $_.Grantee -notlike "##*" -and $_.Grantee -eq $dbuser.Name }) {
                                 switch ($objectPermission.ObjectClass) {
-                                    'ApplicationRole'
-                                    {
+                                    'ApplicationRole' {
                                         $object = 'APPLICATION ROLE::[{0}]' -f $objectPermission.ObjectName
                                     }
-                                    'AsymmetricKey'
-                                    {
+                                    'AsymmetricKey' {
                                         $object = 'ASYMMETRIC KEY::[{0}]' -f $objectPermission.ObjectName
                                     }
-                                    'Certificate'
-                                    {
+                                    'Certificate' {
                                         $object = 'CERTIFICATE::[{0}]' -f $objectPermission.ObjectName
                                     }
-                                    'DatabaseRole'
-                                    {
+                                    'DatabaseRole' {
                                         $object = 'ROLE::[{0}]' -f $objectPermission.ObjectName
                                     }
-                                    'FullTextCatalog'
-                                    {
+                                    'FullTextCatalog' {
                                         $object = 'FULLTEXT CATALOG::[{0}]' -f $objectPermission.ObjectName
                                     }
-                                    'FullTextStopList'
-                                    {
+                                    'FullTextStopList' {
                                         $object = 'FULLTEXT STOPLIST::[{0}]' -f $objectPermission.ObjectName
                                     }
-                                    'MessageType'
-                                    {
+                                    'MessageType' {
                                         $object = 'Message Type::[{0}]' -f $objectPermission.ObjectName
                                     }
-                                    'ObjectOrColumn'
-                                    {
-                                        
+                                    'ObjectOrColumn' {                                        
                                         if ($scriptVersion -ne "Version80") {
                                             $object = 'OBJECT::[{0}].[{1}]' -f $objectPermission.ObjectSchema, $objectPermission.ObjectName
                                             if ($null -ne $objectPermission.ColumnName) {
@@ -366,48 +357,37 @@ https://dbatools.io/Export-DbaUser
                                             $object = '[{0}].[{1}]' -f $objectPermission.ObjectSchema, $objectPermission.ObjectName
                                         }
                                     }
-                                    'RemoteServiceBinding'
-                                    {
+                                    'RemoteServiceBinding' {
                                         $object = 'REMOTE SERVICE BINDING::[{0}]' -f $objectPermission.ObjectName
                                     }
-                                    'Schema'
-                                    {
+                                    'Schema' {
                                         $object = 'SCHEMA::[{0}]' -f $objectPermission.ObjectName
                                     }
-                                    'SearchPropertyList'
-                                    {
+                                    'SearchPropertyList' {
                                         $object = 'SEARCH PROPERTY LIST::[{0}]' -f $objectPermission.ObjectName
                                     }
-                                    'Service'
-                                    {
+                                    'Service' {
                                         $object = 'SERVICE::[{0}]' -f $objectPermission.ObjectName
                                     }
-                                    'ServiceContract'
-                                    {
+                                    'ServiceContract' {
                                         $object = 'CONTRACT::[{0}]' -f $objectPermission.ObjectName
                                     }
-                                    'ServiceRoute'
-                                    {
+                                    'ServiceRoute' {
                                         $object = 'ROUTE::[{0}]' -f $objectPermission.ObjectName
                                     }
-                                    'SqlAssembly'
-                                    {
+                                    'SqlAssembly' {
                                         $object = 'ASSEMBLY::[{0}]' -f $objectPermission.ObjectName
                                     }
-                                    'SymmetricKey'
-                                    {
+                                    'SymmetricKey' {
                                         $object = 'SYMMETRIC KEY::[{0}]' -f $objectPermission.ObjectName
                                     }
-                                    'User'
-                                    {
+                                    'User' {
                                         $object = 'USER::[{0}]' -f $objectPermission.ObjectName
                                     }
-                                    'UserDefinedType'
-                                    {
+                                    'UserDefinedType' {
                                         $object = 'TYPE::[{0}].[{1}]' -f $objectPermission.ObjectSchema, $objectPermission.ObjectName
                                     }
-                                    'XmlNamespace'
-                                    {
+                                    'XmlNamespace' {
                                         $object = 'XML SCHEMA COLLECTION::[{0}]' -f $objectPermission.ObjectName
                                     }
                                 }
@@ -454,5 +434,6 @@ https://dbatools.io/Export-DbaUser
         else {
             return $sql
         }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Export-SqlUser
     }
 }
