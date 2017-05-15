@@ -27,6 +27,8 @@ Datetime object used to narrow the results to a date
 .PARAMETER Force
 Returns a ton of information about the backup history with no max rows
 
+.PARAMETER Last
+Returns the last restore action performed on each specified database
 
 .NOTES
 Tags: DisasterRecovery, Backup, Restore
