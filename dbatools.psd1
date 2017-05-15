@@ -175,7 +175,7 @@
 		'New-DbaDatabaseSnapshot',
 		'Restore-DbaFromDatabaseSnapshot',
 		'Get-DbaTrigger',
-		'Invoke-Dbacmd2',
+		'Invoke-DbaSqlCmd',
 		'Export-DbaUser',
 		'Get-DbaDatabaseState',
 		'Set-DbaDatabaseState',
