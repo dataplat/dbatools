@@ -1220,12 +1220,12 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// When was the backup started
             /// </summary>
-            public DbaDateTime Start;
+            public DateTime Start;
 
             /// <summary>
             /// When did the backup end
             /// </summary>
-            public DbaDateTime End;
+            public DateTime End;
 
             /// <summary>
             /// What was the longest duration among the backups
@@ -1235,7 +1235,7 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// Where is the backup stored
             /// </summary>
-            public string Path;
+            public string[] Path;
 
             /// <summary>
             /// What is the total size of the backup
@@ -1250,7 +1250,7 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// The ID for the Backup job
             /// </summary>
-            public string BackupSetupId;
+            public string BackupSetId;
 
             /// <summary>
             /// What kind of backup-device was the backup stored to
@@ -1265,12 +1265,12 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// The full name of the backup
             /// </summary>
-            public string FullName;
+            public string[] FullName;
 
             /// <summary>
             /// The files that are part of this backup
             /// </summary>
-            public string[] FileList;
+            public object FileList;
 
             /// <summary>
             /// The position of the backup
@@ -1676,7 +1676,7 @@ namespace Sqlcollective.Dbatools
             /// </summary>
             /// <param name="Record">The error record to copy from</param>
             public DbatoolsException(ErrorRecord Record)
-                :this(Record.Exception)
+                : this(Record.Exception)
             {
                 CategoryInfo = Record.CategoryInfo;
                 ErrorDetails = Record.ErrorDetails;
@@ -1969,7 +1969,7 @@ namespace Sqlcollective.Dbatools
                 {
                     tempRecord.Exceptions.Add(new DbatoolsException(rec, FunctionName, Timestamp, Message, Runspace));
                 }
-                
+
                 if (ErrorLogFileEnabled) { OutQueueError.Enqueue(tempRecord); }
                 if (ErrorLogEnabled) { ErrorRecords.Enqueue(tempRecord); }
 
@@ -2004,7 +2004,7 @@ namespace Sqlcollective.Dbatools
             }
             #endregion Access Queues
         }
-        
+
         /// <summary>
         /// An individual entry for the message log
         /// </summary>
@@ -2914,6 +2914,55 @@ namespace Sqlcollective.Dbatools
             Operator
         }
         #endregion ParameterClass Interna
+    }
+
+    namespace TabExpansion
+    {
+        using System.Collections.Concurrent;
+        using System.Collections;
+        using System.Management.Automation;
+
+        /// <summary>
+        /// Class that handles the static fields supporting the dbatools TabExpansion implementation
+        /// </summary>
+        public static class TabExpansionHost
+        {
+            /// <summary>
+            /// Field containing the scripts that were registered.
+            /// </summary>
+            public static ConcurrentDictionary<string, ScriptContainer> Scripts = new ConcurrentDictionary<string, ScriptContainer>();
+            
+            /// <summary>
+            /// The cache used by scripts utilizing TabExpansionPlusPlus in dbatools
+            /// </summary>
+            public static Hashtable Cache = new Hashtable();
+        }
+
+        /// <summary>
+        /// Regular container to store scripts in, that are used in TEPP
+        /// </summary>
+        public class ScriptContainer
+        {
+            /// <summary>
+            /// The name of the scriptblock
+            /// </summary>
+            public string Name;
+
+            /// <summary>
+            /// The scriptblock doing the logic
+            /// </summary>
+            public ScriptBlock ScriptBlock;
+
+            /// <summary>
+            /// The last time the scriptblock was called. Must be updated by the scriptblock itself
+            /// </summary>
+            public DateTime LastExecution;
+
+            /// <summary>
+            /// The time it took to run the last time
+            /// </summary>
+            public TimeSpan LastDuration;
+        }
     }
 
     namespace Utility
@@ -5154,7 +5203,7 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// The Version of the dbatools Library. Used to compare with import script to determine out-of-date libraries
             /// </summary>
-            public readonly static Version LibraryVersion = new Version(1, 0, 1, 8);
+            public readonly static Version LibraryVersion = new Version(1, 0, 1, 10);
         }
 
         /// <summary>
@@ -5398,7 +5447,7 @@ aka "The guy who made most of The Library that Failed to import"
 }
 
 #region Version Warning
-$LibraryVersion = New-Object System.Version(1, 0, 1, 8)
+$LibraryVersion = New-Object System.Version(1, 0, 1, 10)
 if ($LibraryVersion -ne ([Sqlcollective.Dbatools.Utility.UtilityHost]::LibraryVersion))
 {
     Write-Warning @"

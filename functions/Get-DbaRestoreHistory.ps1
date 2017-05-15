@@ -143,7 +143,11 @@ Returns database restore information for every database on every server listed i
 				     ISNULL(STUFF((SELECT ', ' + rf.destination_phys_name 
 									FROM msdb.dbo.restorefile rf
 								   WHERE rsh.restore_history_id = rf.restore_history_id
-								 FOR XML PATH('')), 1, 2, ''), '') AS [To]  
+								 FOR XML PATH('')), 1, 2, ''), '') AS [To],
+					bs.first_lsn,
+					bs.last_lsn,
+					bs.checkpoint_lsn,
+					bs.database_backup_lsn
 				  "
 				}
 				
@@ -183,7 +187,7 @@ Returns database restore information for every database on every server listed i
 				$sql = "$select $from $where"
 				Write-Debug $sql
 				
-				$server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
+				$server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-DefaultView -Exclude first_lsn,last_lsn,checkpoint_lsn,database_backup_lsn
 				
 			}
 			catch
