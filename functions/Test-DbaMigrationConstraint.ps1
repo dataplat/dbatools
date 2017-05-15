@@ -1,4 +1,4 @@
-Function Test-SqlMigrationConstraint
+Function Test-DbaMigrationConstraint
 {
 <#
 .SYNOPSIS
@@ -64,10 +64,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Test-SqlMigrationConstraint
+https://dbatools.io/Test-DbaMigrationConstraint
 
 .EXAMPLE
-Test-SqlMigrationConstraint -Source sqlserver2014a -Destination sqlcluster
+Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster
 
 Description
 
@@ -75,7 +75,7 @@ All databases will be verified for features in use that can't be supported on th
 
 
 .EXAMPLE   
-Test-SqlMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -SqlCredential $cred
+Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -SqlCredential $cred
 
 Description
 
@@ -83,7 +83,7 @@ All databases will be verified for features in use that can't be supported on th
 and Windows credentials for sqlcluster.
 
 .EXAMPLE   
-Test-SqlMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -Databases db1
+Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -Databases db1
 Only db1 database will be verified for features in use that can't be supported on the destination server
 	
 #>
@@ -306,5 +306,6 @@ Only db1 database will be verified for features in use that can't be supported o
     {
         $sourceserver.ConnectionContext.Disconnect()
         $destserver.ConnectionContext.Disconnect()
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Test-SqlMigrationConstraint
     }
 }

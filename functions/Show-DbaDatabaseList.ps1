@@ -1,4 +1,4 @@
-Function Show-SqlDatabaseList
+Function Show-DbaDatabaseList
 {
 <#
 .SYNOPSIS
@@ -44,15 +44,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Show-SqlDatabaseList
+https://dbatools.io/Show-DbaDatabaseList
 
 .EXAMPLE
-Show-SqlDatabaseList -SqlServer sqlserver2014a
+Show-DbaDatabaseList -SqlServer sqlserver2014a
 
 Shows a GUI list of databases and uses Windows Authentication to log into the SQL Server. Returns a string of the selected database.
 	
 .EXAMPLE   
-Show-SqlDatabaseList -Source sqlserver2014a -SqlCredential $cred
+Show-DbaDatabaseList -Source sqlserver2014a -SqlCredential $cred
 
 Shows a GUI list of databases and SQL credentials to log into the SQL Server. Returns a string of the selected database.
 	
@@ -206,5 +206,7 @@ Shows a GUI list of databases and SQL credentials to log into the SQL Server. Re
 		{
 			return $script:selected
 		}
+		
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Show-SqlDatabaseList
 	}
 }

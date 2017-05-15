@@ -1,4 +1,4 @@
-Function Test-SqlConnection
+Function Test-DbaConnection
 {
 <# 
 .SYNOPSIS 
@@ -19,7 +19,7 @@ Windows Authentication will be used if SqlCredential is not specified. SQL Serve
 
 
 .EXAMPLE
-Test-SqlConnection sql01
+Test-DbaConnection sql01
 
 Sample output:
 
@@ -266,4 +266,5 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	Write-Output "SQL Server Connection Information`n"
 	$serverinfo | Select-Object ServerName, BaseName, InstanceName, AuthType, ConnectingAsUser, ConnectSuccess, SqlServerVersion, AddlConnectInfo, RemoteServer, IPAddress, NetBIOSname, RemotingAccessible, Pingable, DefaultSQLPortOpen, RemotingPortOpen
 	
+	Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Test-SqlConnection
 }

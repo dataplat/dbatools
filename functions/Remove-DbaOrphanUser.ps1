@@ -1,4 +1,4 @@
-Function Remove-SqlOrphanUser
+Function Remove-DbaOrphanUser
 {
 <#
 .SYNOPSIS
@@ -8,7 +8,7 @@ Drop orphan users with no existing login to map
 An orphan user is defined by a user that does not have their matching login. (Login property = "").
 If user is the owner of the schema with the same name and if if the schema does not have any underlying objects the schema will be dropped.
 If user owns more than one schema, the owner of the schemas that does not have the same name as the user, will be changed to 'dbo'. If schemas have underlying objects, you must specify the -Force parameter so the user can be dropped.
-If exists a login to map the drop will not be performed unless you specify the -Force parameter (only when calling from Repair-SqlOrphanUser.
+If exists a login to map the drop will not be performed unless you specify the -Force parameter (only when calling from Repair-DbaOrphanUser.
 
 .PARAMETER SqlServer
 The SQL Server instance.
@@ -53,30 +53,30 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Remove-SqlOrphanUser
+https://dbatools.io/Remove-DbaOrphanUser
 
 .EXAMPLE
-Remove-SqlOrphanUser -SqlServer sql2005
+Remove-DbaOrphanUser -SqlServer sql2005
 
 Will find and drop all orphan users without matching login of all databases present on server 'sql2005'
 
 .EXAMPLE
-Remove-SqlOrphanUser -SqlServer sqlserver2014a -SqlCredential $cred
+Remove-DbaOrphanUser -SqlServer sqlserver2014a -SqlCredential $cred
 
 Will find and drop all orphan users without matching login of all databases present on server 'sqlserver2014a'. Will be verified using SQL credentials.
 
 .EXAMPLE
-Remove-SqlOrphanUser -SqlServer sqlserver2014a -Databases db1, db2 -Force
+Remove-DbaOrphanUser -SqlServer sqlserver2014a -Databases db1, db2 -Force
 
 Will find all and drop orphan users even if exists their matching login on both db1 and db2 databases
 
 .EXAMPLE
-Remove-SqlOrphanUser -SqlServer sqlserver2014a -Users OrphanUser
+Remove-DbaOrphanUser -SqlServer sqlserver2014a -Users OrphanUser
 
 Will remove from all databases the user OrphanUser only if not have their matching login
 
 .EXAMPLE
-Remove-SqlOrphanUser -SqlServer sqlserver2014a -Users OrphanUser -Force
+Remove-DbaOrphanUser -SqlServer sqlserver2014a -Users OrphanUser -Force
 
 Will remove from all databases the user OrphanUser EVEN if exists their matching login. First will change any schema that it owns to 'dbo'.
 
@@ -164,9 +164,9 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
                             }
                         }
 
-                        if ($StackSource -eq "Repair-SqlOrphanUser")
+                        if ($StackSource -eq "Repair-DbaOrphanUser")
                         {
-                            Write-Verbose "Call origin: Repair-SqlOrphanUser"
+                            Write-Verbose "Call origin: Repair-DbaOrphanUser"
                             #Will use collection from parameter ($Users)
                         }
                         else
@@ -202,9 +202,9 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 
                                 $ExistLogin = $null
 
-                                if ($StackSource -ne "Repair-SqlOrphanUser")
+                                if ($StackSource -ne "Repair-DbaOrphanUser")
                                 {
-                                    #Need to validate Existing Login because the call does not came from Repair-SqlOrphanUser
+                                    #Need to validate Existing Login because the call does not came from Repair-DbaOrphanUser
                                     $ExistLogin = $server.logins | Where-Object {$_.Isdisabled -eq $False -and
                                                                                        $_.IsSystemObject -eq $False -and
                                                                                        $_.IsLocked -eq $False -and
@@ -372,10 +372,12 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 
         $totaltime = ($start.Elapsed)
 
-        #If the call don't come from Repair-SqlOrphanUser function, show elapsed time
-		if ($StackSource -ne "Repair-SqlOrphanUser")
+        #If the call don't come from Repair-DbaOrphanUser function, show elapsed time
+		if ($StackSource -ne "Repair-DbaOrphanUser")
         {
            Write-Verbose "Total Elapsed time: $totaltime"
         }
+		
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Remove-SqlOrphanUser
 	}
 }

@@ -1,4 +1,4 @@
-Function Test-SqlNetworkLatency {
+Function Test-DbaNetworkLatency {
 <#
 	.SYNOPSIS
 	Tests how long a query takes to return from SQL Server
@@ -47,20 +47,20 @@ Function Test-SqlNetworkLatency {
 	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 	.LINK
-	https://dbatools.io/Test-SqlNetworkLatency
+	https://dbatools.io/Test-DbaNetworkLatency
 
 	.EXAMPLE
-	Test-SqlNetworkLatency -SqlInstance sqlserver2014a, sqlcluster
+	Test-DbaNetworkLatency -SqlInstance sqlserver2014a, sqlcluster
 
 	Times the roundtrip return of "SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES" on sqlserver2014a and sqlcluster using Windows credentials. 
 
 	.EXAMPLE
-	Test-SqlNetworkLatency -SqlInstance sqlserver2014a -SqlCredential $cred
+	Test-DbaNetworkLatency -SqlInstance sqlserver2014a -SqlCredential $cred
 
 	Times the execution results return of "SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES" on sqlserver2014a using SQL credentials.
 
 	.EXAMPLE
-	Test-SqlNetworkLatency -SqlInstance sqlserver2014a, sqlcluster, sqlserver -Query "select top 10 * from otherdb.dbo.table" -Count 10
+	Test-DbaNetworkLatency -SqlInstance sqlserver2014a, sqlcluster, sqlserver -Query "select top 10 * from otherdb.dbo.table" -Count 10
 
 	Times the execution results return of "select top 10 * from otherdb.dbo.table" 10 times on sqlserver2014a, sqlcluster, and sqlserver using Windows credentials. 
 
@@ -124,5 +124,9 @@ Function Test-SqlNetworkLatency {
 				Stop-Function -Message "Error occurred: $_" -InnerErrorRecord $_ -Continue
 			}
 		}
+	}
+	
+	end {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Test-SqlNetworkLatency
 	}
 }

@@ -1,4 +1,4 @@
-Function Repair-SqlOrphanUser
+Function Repair-DbaOrphanUser
 {
 <#
 .SYNOPSIS
@@ -39,32 +39,32 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .EXAMPLE
-Repair-SqlOrphanUser -SqlServer sql2005 
+Repair-DbaOrphanUser -SqlServer sql2005 
 
 Will find and repair all orphan users of all databases present on server 'sql2005'
 
 .EXAMPLE   
-Repair-SqlOrphanUser -SqlServer sqlserver2014a -SqlCredential $cred
+Repair-DbaOrphanUser -SqlServer sqlserver2014a -SqlCredential $cred
 	
 Will find and repair all orphan users of all databases present on server 'sqlserver2014a'. Will be verified using SQL credentials. 
 	
 .EXAMPLE   
-Repair-SqlOrphanUser -SqlServer sqlserver2014a -Databases db1, db2
+Repair-DbaOrphanUser -SqlServer sqlserver2014a -Databases db1, db2
 
 Will find and repair all orphan users on both db1 and db2 databases
 
 .EXAMPLE   
-Repair-SqlOrphanUser -SqlServer sqlserver2014a -Databases db1 -Users OrphanUser
+Repair-DbaOrphanUser -SqlServer sqlserver2014a -Databases db1 -Users OrphanUser
 
 Will find and repair user 'OrphanUser' on 'db1' database
 
 .EXAMPLE   
-Repair-SqlOrphanUser -SqlServer sqlserver2014a -Users OrphanUser
+Repair-DbaOrphanUser -SqlServer sqlserver2014a -Users OrphanUser
 
 Will find and repair user 'OrphanUser' on all databases
 
 .EXAMPLE   
-Repair-SqlOrphanUser -SqlServer sqlserver2014a -RemoveNotExisting
+Repair-DbaOrphanUser -SqlServer sqlserver2014a -RemoveNotExisting
 
 Will find all orphan users of all databases present on server 'sqlserver2014a'
 Will also remove all users that does not have their matching login by calling Remove-SqlOrphanUser function
@@ -89,7 +89,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Repair-SqlOrphanUser
+https://dbatools.io/Repair-DbaOrphanUser
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
@@ -248,5 +248,7 @@ https://dbatools.io/Repair-SqlOrphanUser
         
         $totaltime = ($start.Elapsed)
 		Write-Output "Total Elapsed time: $totaltime"
+		
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Repair-SqlOrphanUser
 	}
 }

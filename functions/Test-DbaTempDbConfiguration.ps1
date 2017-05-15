@@ -1,4 +1,4 @@
-Function Test-SqlTempDbConfiguration
+Function Test-DbaTempDbConfiguration
 {
 <#
 .SYNOPSIS
@@ -42,15 +42,15 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Test-SqlTempDbConfiguration
+https://dbatools.io/Test-DbaTempDbConfiguration
 
 .EXAMPLE
-Test-SqlTempDbConfiguration -SqlServer localhost
+Test-DbaTempDbConfiguration -SqlServer localhost
 
 Checks tempdb on the localhost machine.
 
 .EXAMPLE
-Test-SqlTempDbConfiguration -SqlServer localhost -Detailed
+Test-DbaTempDbConfiguration -SqlServer localhost -Detailed
 
 Checks tempdb on the localhost machine. All rest results are shown.
 
@@ -284,5 +284,7 @@ Checks tempdb on the localhost machine. All rest results are shown.
 				return $failed
 			}
 		}
+		
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Test-SqlTempDbConfiguration
 	}
 }

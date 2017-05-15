@@ -1,4 +1,4 @@
-Function Remove-SqlDatabaseSafely
+Function Remove-DbaDatabaseSafely
 {
 <#
 .SYNOPSIS
@@ -87,10 +87,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Remove-SqlDatabaseSafely
+https://dbatools.io/Remove-DbaDatabaseSafely
 
 .EXAMPLE 
-Remove-SqlDatabaseSafely -SqlServer 'Fade2Black' -Databases RideTheLightning -BackupFolder 'C:\MSSQL\Backup\Rationalised - DO NOT DELETE'
+Remove-DbaDatabaseSafely -SqlServer 'Fade2Black' -Databases RideTheLightning -BackupFolder 'C:\MSSQL\Backup\Rationalised - DO NOT DELETE'
 
 For the database RideTheLightning on the server Fade2Black Will perform a DBCC CHECKDB and if there are no errors 
 backup the database to the folder C:\MSSQL\Backup\Rationalised - DO NOT DELETE. It will then create an Agent Job to restore the database 
@@ -100,7 +100,7 @@ Any DBCC errors will be written to your documents folder
 
 .EXAMPLE 
 $Databases = 'DemoNCIndex','RemoveTestDatabase'
-Remove-SqlDatabaseSafely -SqlServer 'Fade2Black' -Databases $Databases -BackupFolder 'C:\MSSQL\Backup\Rationalised - DO NOT DELETE'
+Remove-DbaDatabaseSafely -SqlServer 'Fade2Black' -Databases $Databases -BackupFolder 'C:\MSSQL\Backup\Rationalised - DO NOT DELETE'
 
 For the databases 'DemoNCIndex','RemoveTestDatabase' on the server Fade2Black Will perform a DBCC CHECKDB and if there are no errors 
 backup the database to the folder C:\MSSQL\Backup\Rationalised - DO NOT DELETE. It will then create an Agent Job for each database 
@@ -109,7 +109,7 @@ to restore the database from that backup. It will drop the database, run the age
 Any DBCC errors will be written to your documents folder
 
 .EXAMPLE 
-Remove-SqlDatabaseSafely -SqlServer 'Fade2Black' -DestinationServer JusticeForAll -Databases RideTheLightning -BackupFolder '\\BACKUPSERVER\BACKUPSHARE\MSSQL\Rationalised - DO NOT DELETE'
+Remove-DbaDatabaseSafely -SqlServer 'Fade2Black' -DestinationServer JusticeForAll -Databases RideTheLightning -BackupFolder '\\BACKUPSERVER\BACKUPSHARE\MSSQL\Rationalised - DO NOT DELETE'
 
 For the database RideTheLightning on the server Fade2Black Will perform a DBCC CHECKDB and if there are no errors 
 backup the database to the folder \\BACKUPSERVER\BACKUPSHARE\MSSQL\Rationalised - DO NOT DELETE It will then create an Agent Job on the server 
@@ -118,7 +118,7 @@ perform a DBCC ChECK DB and then drop the database
 
 Any DBCC errors will be written to your documents folder
 .EXAMPLE 
-Remove-SqlDatabaseSafely -SqlServer IronMaiden -Databases $Databases -DestinationServer TheWildHearts -DBCCErrorFolder C:\DBCCErrors -BackupFolder z:\Backups -NoDBCCCheck -UseDefaultFilePaths -JobOwner 'THEBEARD\Rob' 
+Remove-DbaDatabaseSafely -SqlServer IronMaiden -Databases $Databases -DestinationServer TheWildHearts -DBCCErrorFolder C:\DBCCErrors -BackupFolder z:\Backups -NoDBCCCheck -UseDefaultFilePaths -JobOwner 'THEBEARD\Rob' 
 
 For the databases $Databases on the server IronMaiden Will NOT perform a DBCC CHECKDB 
 It will backup the databases to the folder Z:\Backups It will then create an Agent Job on the server with a Job Owner of THEBEARD\Rob 
@@ -129,7 +129,7 @@ a DBCC ChECK DB and then drop the database
 Any DBCC errors will be written to your documents folder
 
 .EXAMPLE 
-Remove-SqlDatabaseSafely -SqlServer IronMaiden -Databases $Databases -DestinationServer TheWildHearts -DBCCErrorFolder C:\DBCCErrors -BackupFolder z:\Backups -UseDefaultFilePaths -ContinueAfterDbccError
+Remove-DbaDatabaseSafely -SqlServer IronMaiden -Databases $Databases -DestinationServer TheWildHearts -DBCCErrorFolder C:\DBCCErrors -BackupFolder z:\Backups -UseDefaultFilePaths -ContinueAfterDbccError
 
 For the databases $Databases on the server IronMaiden will backup the databases to the folder Z:\Backups It will then create an Agent Job
 TheWildHearts to restore the database from that backup using the instance default filepaths. 
@@ -213,7 +213,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			$databases = ($sourceserver.databases | Where-Object{ $_.IsSystemObject -eq $false -and ($_.Status -match 'Offline') -eq  $false}).Name
 		}
 		
-		if (!(Test-SqlPath -SqlServer $destserver -Path $backupFolder))
+		if (!(Test-DbaPath -SqlServer $destserver -Path $backupFolder))
 		{
 			$serviceaccount = $destserver.ServiceAccount
 			throw "Can't access $backupFolder Please check if $serviceaccount has permissions"
@@ -764,5 +764,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			$Duration = $End - $start
 			Write-Output "Script Duration: $Duration"
 		}
+		
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Remove-SqlDatabaseSafely
 	}
 }
