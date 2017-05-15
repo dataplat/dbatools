@@ -141,9 +141,12 @@ Function Restore-DBFromFilteredArray
 		if ($if -ne $null){
 			$RestorePoints  += @([PSCustomObject]@{order=[Decimal]2;'Files' = $if.group})
 		}
-		foreach ($if in ($InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} | Group-Object FirstLSN))
+		($InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} | Group-Object BackupSetGuid)
+
+		foreach ($if in ($InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} | Group-Object BackupSetGuid))
  		{
-   			$RestorePoints  += [PSCustomObject]@{order=[Decimal]($if.Name); 'Files' = $if.group}
+   			#$RestorePoints  += [PSCustomObject]@{order=[Decimal]($if.Name); 'Files' = $if.group}
+			$RestorePoints += [PSCustomObject]@{order=[Decimal](($if.Group.backupstartdate | sort-object -Unique).ticks); 'Files'= $if.group}
 		}
 		$SortedRestorePoints = $RestorePoints | Sort-object -property order
 		if ($ReuseSourceFolderStructure)
@@ -152,9 +155,9 @@ Function Restore-DBFromFilteredArray
 			foreach ($File in ($RestorePoints.Files.filelist.PhysicalName | Sort-Object -Unique))
 			{
 				write-verbose "File = $file"
-				if ((Test-SqlPath -Path $File -SqlServer:$SqlServer -SqlCredential:$SqlCredential) -ne $true)
+				if ((Test-SqlPath -Path (Split-Path -Path $File -Parent) -SqlServer:$SqlServer -SqlCredential:$SqlCredential) -ne $true)
 					{
-					if ((New-DbaSqlDirectory -Path $File -SqlServer:$SqlServer -SqlCredential:$SqlCredential).Created -ne $true)
+					if ((New-DbaSqlDirectory -Path (Split-Path -Path $File -Parent) -SqlServer:$SqlServer -SqlCredential:$SqlCredential).Created -ne $true)
 					{
 						write-Warning  "$FunctionName - Destination File $File does not exist, and could not be created on $SqlServer"
 
@@ -162,7 +165,7 @@ Function Restore-DBFromFilteredArray
 					}
 					else
 					{
-						Write-Verbose "$FunctionName - Destination File $Fil  created on $SqlServer"
+						Write-Verbose "$FunctionName - Destination File $File  created on $SqlServer"
 					}
 				}
 				else

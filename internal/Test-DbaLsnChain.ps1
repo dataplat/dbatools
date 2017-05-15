@@ -34,7 +34,7 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
 #>
 	[CmdletBinding()]
 	Param (
-		[parameter(Mandatory = $true)]
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object[]]$FilteredRestoreFiles
 	)
 
@@ -86,12 +86,12 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
 
 
     #Check T-log LSNs form a chain.
-    $TranLogBackups = $FilteredRestoreFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.DatabaseBackupLSN -eq $FullDBAnchor.CheckPointLSN} | Sort-Object -Property LastLSN
+    $TranLogBackups = $FilteredRestoreFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.DatabaseBackupLSN -eq $FullDBAnchor.CheckPointLSN} | Sort-Object -Property LastLSN, FirstLsn
     for ($i=0; $i -lt ($TranLogBackups.count)-1)
     {
         if ($i -eq 0)
         {
-            if ($TranLogBackups[$i].FirstLSN -gt $TlogAnchor.LastLSN)
+            if ($TranLogBackups[$i].FirstLSN -ge $TlogAnchor.LastLSN)
             {
                 Write-Warning "$FunctionName - Break in LSN Chain between $($TlogAnchor.BackupPath) and $($TranLogBackups[($i)].BackupPath) "
                 return $false

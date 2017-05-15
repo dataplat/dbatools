@@ -27,6 +27,9 @@ Datetime object used to narrow the results to a date
 .PARAMETER Force
 Returns a ton of information about the backup history with no max rows
 
+.PARAMETER Last
+Returns the last restore action performed on each specified database
+
 .NOTES
 Tags: DisasterRecovery, Backup, Restore
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -75,7 +78,8 @@ Returns database restore information for every database on every server listed i
 		[Alias("SqlCredential")]
 		[PsCredential]$Credential,
 		[datetime]$Since,
-		[switch]$Force
+		[switch]$Force,
+		[switch]$Last
 	)
 	
 	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential } }
@@ -143,14 +147,18 @@ Returns database restore information for every database on every server listed i
 				     ISNULL(STUFF((SELECT ', ' + rf.destination_phys_name 
 									FROM msdb.dbo.restorefile rf
 								   WHERE rsh.restore_history_id = rf.restore_history_id
-								 FOR XML PATH('')), 1, 2, ''), '') AS [To]  
+								 FOR XML PATH('')), 1, 2, ''), '') AS [To],
+					bs.first_lsn,
+					bs.last_lsn,
+					bs.checkpoint_lsn,
+					bs.database_backup_lsn
 				  "
 				}
 				
 				$from = " FROM msdb.dbo.restorehistory rsh
 					INNER JOIN msdb.dbo.backupset bs ON rsh.backup_set_id = bs.backup_set_id"
 				
-				if ($exclude.length -gt 0 -or $databases.length -gt 0 -or $Since.length -gt 0)
+				if ($exclude.length -gt 0 -or $databases.length -gt 0 -or $Since.length -gt 0 -or $last)
 				{
 					$where = " WHERE "
 				}
@@ -174,17 +182,38 @@ Returns database restore information for every database on every server listed i
 					$wherearray += "rsh.restore_date >= '$since'"
 				}
 				
+
+				if ($last)
+				{
+					$wherearray += "rsh.backup_set_id in
+						(select max(backup_set_id) from msdb.dbo.restorehistory
+						group by destination_database_name
+						)"
+				}
+
 				if ($where.length -gt 0)
 				{
 					$wherearray = $wherearray -join " and "
 					$where = "$where $wherearray"
 				}
-				
+
 				$sql = "$select $from $where"
+
+
 				Write-Debug $sql
 				
-				$server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
-				
+				$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows 
+
+				if ($last)
+				{
+					$ga = $results | group-Object database
+					$tmpres = @()	
+					$ga | foreach-Object {
+						$tmpres += $_.Group | SORT-OBJECT RESTORE_DATE -Descending | SELECT * -first 1 
+					}
+					$results = $tmpres
+				}
+				$results | Select-DefaultView -Exclude first_lsn,last_lsn,checkpoint_lsn,database_backup_lsn,RowError,RowState,Table,ItemArray,HasErrors
 			}
 			catch
 			{

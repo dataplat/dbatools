@@ -1,12 +1,11 @@
-Function Copy-DbaQueryStoreConfig
-{
-<#
+function Copy-DbaQueryStoreConfig {
+    <#
 .SYNOPSIS
 Copies the configuration of a Query Store enabled database and sets the copied configuration on other databases.
-	
+
 .DESCRIPTION
 Copies the configuration of a Query Store enabled database and sets the copied configuration on other databases.
-	
+
 .PARAMETER Source
 The SQL Server that you're connecting to.
 
@@ -25,15 +24,18 @@ The target server where the databases reside on which you want to enfore the cop
 .PARAMETER DestinationDatabase
 The databases that will recieve a copy of the Query Store configuration of the SourceDatabase.
 
-.PARAMETER AllDatabases
-Set copied Query Store configuration on all databases on the destination server.	
-	
 .PARAMETER Exclude
 Copy Query Store configuration for all but these specific databases.
 
+.PARAMETER AllDatabases
+Set copied Query Store configuration on all databases on the destination server.
+
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
+
 .PARAMETER WhatIf
 Shows what would happen if the command were to run
-	
+
 .PARAMETER Confirm
 Prompts for confirmation of every step. For example:
 
@@ -62,99 +64,112 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
 Copy-DbaQueryStoreConfig -Source ServerA\SQL -SourceDatabase AdventureWorks -Destination ServerB\SQL -DestinationDatabase WorldWideTraders
 
 Copy the Query Store configuration of the AdventureWorks database in the ServerA\SQL Instance and apply it to the WorldWideTraders database in the ServerB\SQL Instance.
-	
+
 #>
-	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[object[]]$Source,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[object]$SourceDatabase,
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[object[]]$Destination,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
-		[object[]]$DestinationDatabase,
-		[object[]]$Exclude,
-		[switch]$AllDatabases
-	)
-	
-	BEGIN
-	{
-		
-		Write-Verbose "Connecting to source: $Source"
-		try
-		{
-			$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-			
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param (
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [object]$Source,
+        [System.Management.Automation.PSCredential]$SourceSqlCredential,
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [object]$SourceDatabase,
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [object[]]$Destination,
+        [System.Management.Automation.PSCredential]$DestinationSqlCredential,
+        [object[]]$DestinationDatabase,
+        [object[]]$Exclude,
+        [switch]$AllDatabases,
+        [switch]$Silent
+    )
+
+    BEGIN {
+
+        Write-Message -Message "Connecting to source: $Source" -Level Verbose
+        try {
+            $sourceServer = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+        }
+        catch {
+            Stop-Function -Message "Can't connect to $Source." -InnerErrorRecord $_ -Target $Source
+        }
+    }
+
+    PROCESS {
+        if (Test-FunctionInterrupt) {
+			return
 		}
-		catch
-		{
-			Write-Warning "Can't connect to $Source."
-			break
-		}
-		
-		# Grab the Query Store configuration from the SourceDatabase through the Get-DbaQueryStoreConfig function
-		$SourceQSConfig = Get-DbaQueryStoreConfig -SqlServer $sourceserver -Databases $SourceDatabase
-		
-	}
-	
-	PROCESS
-	{
-		if (!$DestinationDatabase -and !$exclude -and !$alldatabases)
-		{
-			Write-Warning "You must specify databases to execute against using either -DestinationDatabase, -Exclude or -AllDatabases"
-			continue
-		}
-		
-		foreach ($destinationserver in $Destination)
-		{
-			
-			Write-Verbose "Connecting to destination: $Destination"
-			try
-			{
-				$destserver = Connect-SqlServer -SqlServer $destinationserver -SqlCredential $DestinationSqlCredential
-				
-			}
-			catch
-			{
-				Write-Warning "Can't connect to $destinationserver."
-				continue
-			}
-			
-			# We have to exclude all the system databases since they cannot have the Query Store feature enabled
-			$dbs = $destserver.Databases | Where-Object { $_.IsSystemObject -eq $false }
-			
-			if ($DestinationDatabase.count -gt 0)
-			{
-				$dbs = $dbs | Where-Object { $DestinationDatabase -contains $_.Name }
-			}
-			
-			if ($Exclude.count -gt 0)
-			{
-				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
-			}
-			
-			if ($dbs.count -eq 0)
-			{
-				Write-Warning "No matching databases found. Check the spelling and try again."
-				return
-			}
-			
-			foreach ($db in $dbs)
-			{
-				Write-Verbose "Processing destination database: $db on $destination"
-				
-				if ($db.IsAccessible -eq $false)
-				{
-					Write-Warning "The database $db on server $destination is not accessible. Skipping database."
-					continue
-				}
-				
-				Write-Verbose "Executing Set-DbaQueryStoreConfig"
-				# Set the Query Store configuration through the Set-DbaQueryStoreConfig function
-				Set-DbaQueryStoreConfig -SqlInstance $Destination -SqlCredential $DestinationSqlCredential -Databases $($db.name) -State $SourceQSConfig.ActualState -FlushInterval $SourceQSConfig.FlushInterval -CollectionInterval $SourceQSConfig.CollectionInterval -MaxSize $SourceQSConfig.MaxSize -CaptureMode $SourceQSConfig.CaptureMode -CleanupMode $SourceQSConfig.CleanupMode -StaleQueryThreshold $SourceQSConfig.StaleQueryThreshold
-			}
-		}
-	}
+        # Grab the Query Store configuration from the SourceDatabase through the Get-DbaQueryStoreConfig function
+        $SourceQSConfig = Get-DbaQueryStoreConfig -SqlInstance $sourceServer -Databases $SourceDatabase
+
+        if (!$DestinationDatabase -and !$Exclude -and !$AllDatabases) {
+            Stop-Function -Message "You must specify databases to execute against using either -DestinationDatabase, -Exclude or -AllDatabases" -Continue
+        }
+
+        foreach ($destinationServer in $Destination) {
+
+            Write-Message -Message "Connecting to destination: $Destination" -Level Verbose
+            try {
+                $destServer = Connect-SqlServer -SqlServer $destinationServer -SqlCredential $DestinationSqlCredential
+            }
+            catch {
+                Stop-Function -Message "Can't connect to $destinationServer." -InnerErrorRecord $_ -Target $desitnationServer -Continue
+            }
+
+            # We have to exclude all the system databases since they cannot have the Query Store feature enabled
+            $dbs = Get-DbaDatabase -SqlInstance $destServer -NoSystemDb
+
+            if ($DestinationDatabase.count -gt 0) {
+                $dbs = $dbs | Where-Object { $DestinationDatabase -contains $_.Name }
+            }
+
+            if ($Exclude.count -gt 0) {
+                $dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
+            }
+
+            if ($dbs.count -eq 0) {
+                Stop-Function -Message "No matching databases found. Check the spelling and try again." -Continue
+            }
+
+            foreach ($db in $dbs) {
+                # skipping the database if the source and destination are the same instance
+                if (($sourceServer.Name -eq $destinationServer) -and ($SourceDatabase -eq $db.Name)) {
+                    continue
+                }
+                Write-Message -Message "Processing destination database: $db on $destinationServer" -Level Verbose
+                $copyQueryStoreStatus = [pscustomobject]@{
+                    SourceServer = $sourceServer.name
+                    SourceDatabase = $SourceDatabase
+                    DestinationServer = $destinationServer
+                    DestinationDatabase = $db.name
+                    Name = "QueryStore Configuration"
+                    Status = $null
+                    DateTime = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+                }
+
+                if ($db.IsAccessible -eq $false) {
+                    $copyQueryStoreStatus.Status = "Skipped"
+                    Stop-Function -Message "The database $db on server $destinationServer is not accessible. Skipping database." -Continue
+                }
+
+                Write-Message -Message "Executing Set-DbaQueryStoreConfig" -Level Verbose
+                # Set the Query Store configuration through the Set-DbaQueryStoreConfig function
+                try {
+                    $null = Set-DbaQueryStoreConfig -SqlInstance $destinationServer -SqlCredential $DestinationSqlCredential `
+                    -Databases $db.name `
+                    -State $SourceQSConfig.ActualState `
+                    -FlushInterval $SourceQSConfig.FlushInterval `
+                    -CollectionInterval $SourceQSConfig.CollectionInterval `
+                    -MaxSize $SourceQSConfig.MaxSize `
+                    -CaptureMode $SourceQSConfig.CaptureMode `
+                    -CleanupMode $SourceQSConfig.CleanupMode `
+                    -StaleQueryThreshold $SourceQSConfig.StaleQueryThreshold
+                    $copyQueryStoreStatus.Status = "Successful"
+                }
+                catch {
+                    $copyQueryStoreStatus.Status = "Failed"
+                    Stop-Function -Message "Issue setting QueryStore on $db" -Target $db -InnerErrorRecord $_ -Continue
+                }
+                    $copyQueryStoreStatus
+            }
+        }
+    }
 }

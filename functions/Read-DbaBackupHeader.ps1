@@ -15,12 +15,20 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 
 .PARAMETER Path
 Path to SQL Server backup file. This can be a full, differential or log backup file.
+Accepts valid filesystem paths and URLs
 	
 .PARAMETER Simple
 Returns fewer columns for an easy overview
 	
 .PARAMETER FileList
-Returns detailed information about the files within the backup	
+Returns detailed information about the files within the backup
+
+.PARAMETER AzureCredential
+Name of the SQL Server credential that should be used for Azure storage access	
+
+.PARAMETER Silent
+Switch to silence the internal messaging functions
+
 
 .NOTES
 Tags: DisasterRecovery, Backup, Restore
@@ -73,6 +81,12 @@ Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile
 Get-ChildItem \\nas\sql\*.bak | Read-DbaBackupHeader -SqlServer sql2016
 
 Gets a list of all .bak files on the \\nas\sql share and reads the headers using the server named "sql2016". This means that the server, sql2016, must have read access to the \\nas\sql share.
+
+.EXAMPLE
+Read-DbaBackupHeader -Path https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak
+ -AzureCredential AzureBackupUser
+
+Gets the backup header information from the SQL Server backup file stored at https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak on Azure
 #>
 	[CmdletBinding()]
 	Param (
@@ -83,31 +97,32 @@ Gets a list of all .bak files on the \\nas\sql share and reads the headers using
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object[]]$Path,
 		[switch]$Simple,
-		[switch]$FileList
+		[switch]$FileList,
+		[string]$AzureCredential,
+		[switch]$Silent
 	)
 	
 	BEGIN
 	{
 		$LoopCnt = 1
-		$FunctionName = $FunctionName = (Get-PSCallstack)[0].Command
-
+		
 		try
 		{
 			if ($sqlServer -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject])
 			{
-					Write-Verbose "$FunctionName - Connecting to $SqlServer"
+					Write-Message -Level Verbose -Message "Connecting to $SqlServer"
 					$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ErrorVariable ConnectError
 			}
 			else
 			{
-				Write-Verbose "$FunctionName - Reusing connection to $SqlServer"
+				Write-Message -Level Verbose -Message "Reusing connection to $SqlServer"
 				$server = $sqlServer
 			}
 		}
 		catch
 		{
-			Write-Warning $_
-			continue
+			Stop-Function -Message "Failed to connect to $SqlSever $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_
+			return
 		}
 	}
 	
@@ -115,17 +130,26 @@ Gets a list of all .bak files on the \\nas\sql share and reads the headers using
 	{
 		
 		$PathCount = $path.length
-		Write-verbose "$FunctionName - $pathcount files to scan"
+		Write-Message -Level Verbose -Message "$pathcount files to scan"
 		foreach ($file in $path)
 		{
-			if ($file.FullName -ne $null) { $file = $file.FullName }
+			if ($null -ne $file.FullName) { $file = $file.FullName }
 			Write-Progress -Id 1 -Activity Updating -Status 'Progress' -CurrentOperation "Scanning Restore headers on File $LoopCnt - $file"
 			
-			Write-Verbose "$FunctionName - Scanning file $file"
+			Write-Message -Level Verbose -Message "Scanning file $file"
 			$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
-			$device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem $file, FILE
+			if ($file -like 'http*')
+			{
+				$DeviceType ='URL'
+				$restore.CredentialName = $AzureCredential
+			}	
+			else
+			{
+				$DeviceType = 'FILE'
+			}
+			$device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem $file, $DeviceType
 			$restore.Devices.Add($device)
-			if (Test-SqlPath -SqlServer $server -Path $file)
+			if ((Test-SqlPath -SqlServer $server -Path $file) -or $DeviceType -eq 'URL')
 			{
 				<#	try
 					{
@@ -152,7 +176,15 @@ Gets a list of all .bak files on the \\nas\sql share and reads the headers using
 				}
 				catch
 				{
-					Write-Warning "$FunctionName - Problem with $file"
+					Write-Exception $_
+					if ($DeviceType -eq 'FILE')
+					{
+						Write-Message -Level Warning -Message "Problem with $file"
+					}
+					else
+					{
+						Write-Message -Level Warning -Message "Cannot reach $file, check credential name and network connectivity"
+					}
 					Return
 				}
 				$fl = $datatable.Columns.Add("FileList", [object])
@@ -200,11 +232,11 @@ Gets a list of all .bak files on the \\nas\sql share and reads the headers using
 						$shortname = Split-Path $file -Leaf
 						if (!(Test-SqlPath -SqlServer $server -Path $file))
 						{
-							Write-Warning "File $shortname does not exist or access denied. The SQL Server service account may not have access to the source directory."
+							Write-Message -Level Warning -Message "File $shortname does not exist or access denied. The SQL Server service account may not have access to the source directory."
 						}
 						else
 						{
-							Write-Warning "File list for $shortname could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or tiemouts with the SQL Server, or the SQL Server service account does not have access to the source directory."
+							Write-Message -Level Warning -Message "File list for $shortname could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or tiemouts with the SQL Server, or the SQL Server service account does not have access to the source directory."
 						}
 						
 						#Write-Exception $_
@@ -217,7 +249,7 @@ Gets a list of all .bak files on the \\nas\sql share and reads the headers using
 			}
 			else
 			{
-				Write-Warning "File $shortname does not exist or access denied. The SQL Server service account may not have access to the source directory."
+				Write-Message -Level Warning -Message "File $shortname does not exist or access denied. The SQL Server service account may not have access to the source directory."
 				return
 			}
 			if ($Simple)
