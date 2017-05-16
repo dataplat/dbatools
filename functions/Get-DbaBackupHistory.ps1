@@ -121,7 +121,7 @@ Function Get-DbaBackupHistory
         $SqlCredential,
         
         [Alias("Databases")]
-        [string[]]
+        [object[]]
         $Database,
         
         [switch]
@@ -162,8 +162,6 @@ Function Get-DbaBackupHistory
     {
         Write-Message -Level System -Message "Active Parameterset: $($PSCmdlet.ParameterSetName)"
         Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
-        
-        $Database = $psboundparameters.Databases
     }
     
     process
