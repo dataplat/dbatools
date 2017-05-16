@@ -573,7 +573,7 @@ folder for those file types as defined on the target instance.
 		#$BackupFiles 
 		#return
 		Write-Message -Level Verbose -Message "sorting uniquely"
-		$AllFilteredFiles = $BackupFiles | sort-object -property fullname -unique | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup -TrustDbBackupHistory:$TrustDbBackupHistory
+		$AllFilteredFiles = $BackupFiles | sort-object -property fullname -unique | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup -TrustDbBackupHistory:$TrustDbBackupHistory -ContinuePoints $ContinuePoints 
 		
 		Write-Message -Level Verbose -Message "$($AllFilteredFiles.count) dbs to restore"
 		

@@ -20,7 +20,9 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
         [DateTime]$RestoreTime = (Get-Date).addyears(1),
         [System.Management.Automation.PSCredential]$SqlCredential,
         [switch]$IgnoreLogBackup,
-        [switch]$TrustDbBackupHistory
+        [switch]$TrustDbBackupHistory,
+        [switch]$Continue,
+        [object]$ContinuePoints
 
 	)
     Begin
@@ -74,12 +76,18 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
         else
         {
     		Write-Verbose "$FunctionName - Read File headers (Read-DBABackupHeader)"		
-			$AllSQLBackupdetails = $InternalFiles | ForEach{if($_.fullname -ne $null){$_.Fullname}else{$_}} | Read-DBAbackupheader -sqlserver $SQLSERVER -SqlCredential $SqlCredential
+			$AllSQLBackupdetails = $InternalFiles | ForEach-Object{if($_.fullname -ne $null){$_.Fullname}else{$_}} | Read-DBAbackupheader -sqlserver $SQLSERVER -SqlCredential $SqlCredential
         }
 
 		Write-Verbose "$FunctionName - $($AllSQLBackupdetails.count) Files to filter"
         $Databases = $AllSQLBackupdetails  | Group-Object -Property Servername, DatabaseName
         Write-Verbose "$FunctionName - $(($Databases | Measure-Object).count) database to process"
+
+        if ($Continue)
+        {
+            Write-Verbose "Continue set, so filtering to these databases :$($continuePoints.Database -join ',')"
+            $Databases = $Databases | Where-Object {$_.DatabaseName -in ($continuePoints.Database)}
+        }
 		
 		foreach ($Database in $Databases){
 
@@ -87,26 +95,38 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
             Write-Verbose "$FunctionName - Find Newest Full backup - $($_.$DatabaseName)"
             $ServerName, $databaseName = $Database.Name.split(',')
             $SQLBackupdetails = $AllSQLBackupdetails | Where-Object {$_.ServerName -eq $ServerName -and $_.DatabaseName -eq $DatabaseName.trim()}
-            $Fullbackup = $SQLBackupdetails | where-object {$_.BackupTypeDescription -eq 'Database' -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1
-            if ($Fullbackup -eq $null)
+            #If we're continuing a restore, then we aren't going to be needing a full backup....
+            if (!($continue))
             {
-                Write-Warning "$FunctionName - No Full backup found to anchor the restore" 
-                break
+                $Fullbackup = $SQLBackupdetails | where-object {$_.BackupTypeDescription -eq 'Database' -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1
+                if ($Fullbackup -eq $null)
+                {
+                    Write-Warning "$FunctionName - No Full backup found to anchor the restore" 
+                    break
+                }
+                #This scans for striped full backups to build the results
+                $Results += $SQLBackupdetails | where-object {$_.BackupTypeDescription -eq "Database" -and $_.FirstLSN -eq $FullBackup.FirstLSN}
             }
-            #This scans for striped full backups to build the results
-            $Results += $SQLBackupdetails | where-object {$_.BackupTypeDescription -eq "Database" -and $_.FirstLSN -eq $FullBackup.FirstLSN}
-            
+            else
+            {
+                $lastrestore = $ContinuePoints | Where-Object {$_.Database -eq $DatabaseName}
+                $fullbackup = [PSCustomObject]@{FirstLsn = $lastrestore.database_backup_lsn}
+            }    
             Write-Verbose "$FunctionName - Got a Full backup, now to find diffs if they exist"
-            #Get latest Differential Backup
-            $DiffbackupsLSN = ($SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Database Differential' -and $_.DatabaseBackupLSN -eq $Fullbackup.FirstLsn -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1).FirstLSN
-            #Scan for striped differential backups
-            $Diffbackups = $SqlBackupDetails | Where-Object {$_.BackupTypeDescription -eq 'Database Differential' -and $_.DatabaseBackupLSN -eq $Fullbackup.FirstLsn -and $_.FirstLSN -eq $DiffBackupsLSN}
             $TlogStartlsn = 0
-            if ($null -ne $Diffbackups){
-                Write-Verbose "$FunctionName - we have at least one diff so look for tlogs after the last one"
-                #If we have a Diff backup, we only need T-log backups post that point
-                $TlogStartLSN = ($DiffBackups | select-object -Property FirstLSN -first 1).FirstLSN
-                $Results += $Diffbackups
+            #Get latest Differential Backup
+            #If we're doing a continue and the last restore wasn't a full db we can't use a diff, so skip
+            if ($null -eq $lastrestore -or $lastrestore -eq 'Database'  )
+            {
+                $DiffbackupsLSN = ($SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Database Differential' -and $_.DatabaseBackupLSN -eq $Fullbackup.FirstLsn -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1).FirstLSN
+                #Scan for striped differential backups
+                $Diffbackups = $SqlBackupDetails | Where-Object {$_.BackupTypeDescription -eq 'Database Differential' -and $_.DatabaseBackupLSN -eq $Fullbackup.FirstLsn -and $_.FirstLSN -eq $DiffBackupsLSN}
+                if ($null -ne $Diffbackups){
+                    Write-Verbose "$FunctionName - we have at least one diff so look for tlogs after the last one"
+                    #If we have a Diff backup, we only need T-log backups post that point
+                    $TlogStartLSN = ($DiffBackups | select-object -Property FirstLSN -first 1).FirstLSN
+                    $Results += $Diffbackups
+                }
             }
             
             if ($FullBackup.RecoverModel -eq 'SIMPLE' -or $IgnoreLogBackup)
