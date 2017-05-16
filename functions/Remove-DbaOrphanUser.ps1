@@ -378,6 +378,6 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
            Write-Verbose "Total Elapsed time: $totaltime"
         }
 		
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Remove-SqlOrphanUser
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$true -Alias Remove-SqlOrphanUser
 	}
 }
