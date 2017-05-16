@@ -18,7 +18,7 @@ Get certificate from specific database.
 .PARAMETER Certificate
 Get specific certificate.
 
-.PARAMETER ExcludeMSCertificates
+.PARAMETER ExcludeMSCertificate
 Excludes built in certificates that start with ##MS.
 
 .PARAMETER Silent 
@@ -46,7 +46,7 @@ Get-DbaCertificate -SqlInstance Server1 -Database db1 -Certificate cert1
 Gets the cert1 certificate within the db1 database
 	
 .EXAMPLE
-Get-DbaCertificate -SqlInstance Server1 -ExcludeMSCertificates
+Get-DbaCertificate -SqlInstance Server1 -ExcludeMSCertificate
 
 Gets all certificates except those that start with ##MS
 
@@ -59,7 +59,7 @@ Gets all certificates except those that start with ##MS
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string[]]$Database,
 		[string[]]$Certificate,
-		[switch]$ExcludeMSCertificates,
+		[switch]$ExcludeMSCertificate,
 		[switch]$Silent
 	)
 	
@@ -92,7 +92,7 @@ Gets all certificates except those that start with ##MS
 				if ($Certificate) {
 					$certs = $smodb.Certificates | Where-Object Name -in $Certificate
 				}
-				elseif ($ExcludeMSCertificates) {
+				elseif ($ExcludeMSCertificate) {
 					$certs = $smodb.Certificates | Where-Object Name -notlike '##MS*'
 				}
 				else {
