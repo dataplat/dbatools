@@ -58,15 +58,13 @@ $ScriptBlock = {
 
 Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name Database
 
-$commands = "Get-DbaBackupHistory", "Get-DbaDatabase"
+$commands = "Get-DbaBackupHistory", "Get-DbaDatabase", "Backup-DbaDatabase", "Copy-DbaDatabase", "Expand-DbaTLogResponsibly", "Test-DbaVirtualLogFile", "Test-DbaMigrationConstraint", "Test-DbaLastBackup", "Test-DbaIdentityUsage", "Test-DbaFullRecoveryModel", "Test-DbaDatabaseOwner"
 
-if ($TEPP)
-{
+if ($TEPP) {
 	TabExpansionPlusPlus\Register-ArgumentCompleter -CommandName $commands -ParameterName Database -ScriptBlock $ScriptBlock
 	TabExpansionPlusPlus\Register-ArgumentCompleter -CommandName $commands -ParameterName Exclude -ScriptBlock $ScriptBlock
 }
-else
-{
+else {
 	Register-ArgumentCompleter -CommandName $commands -ParameterName Database -ScriptBlock $ScriptBlock
 	Register-ArgumentCompleter -CommandName $commands -ParameterName Exclude -ScriptBlock $ScriptBlock
 }
