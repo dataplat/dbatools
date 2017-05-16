@@ -16,7 +16,7 @@ $ScriptBlock = {
     $start = Get-Date
     [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Scripts["database"].LastExecution = $start
     
-    $server = $fakeBoundParameter['SqlServer']
+    $server = $fakeBoundParameter['SqlInstance']
     if (-not $server) { return }
     
     try
@@ -55,13 +55,18 @@ $ScriptBlock = {
         return
     }
 }
-Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name "database"
+
+Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name Database
+
+$commands = "Get-DbaBackupHistory", "Get-DbaDatabase"
 
 if ($TEPP)
 {
-    TabExpansionPlusPlus\Register-ArgumentCompleter -CommandName "Get-DbaBackupHistory" -ParameterName "Database" -ScriptBlock $ScriptBlock
+	TabExpansionPlusPlus\Register-ArgumentCompleter -CommandName $commands -ParameterName Database -ScriptBlock $ScriptBlock
+	TabExpansionPlusPlus\Register-ArgumentCompleter -CommandName $commands -ParameterName Exclude -ScriptBlock $ScriptBlock
 }
 else
 {
-    Register-ArgumentCompleter -CommandName "Get-DbaBackupHistory" -ParameterName "Database" -ScriptBlock $ScriptBlock
+	Register-ArgumentCompleter -CommandName $commands -ParameterName Database -ScriptBlock $ScriptBlock
+	Register-ArgumentCompleter -CommandName $commands -ParameterName Exclude -ScriptBlock $ScriptBlock
 }
