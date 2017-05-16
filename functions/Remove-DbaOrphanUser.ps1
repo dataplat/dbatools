@@ -32,6 +32,10 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm 		
 Prompts you for confirmation before executing any changing operations within the command. 
 
+.PARAMETER Silent
+Replaces user friendly yellow warnings with bloody red exceptions of doom!
+Use this if you want the function to throw terminating errors you want to catch.
+	
 .NOTES
 Tags: Orphan
 Original Author: Claudio Silva (@ClaudioESSilva)
