@@ -43,14 +43,14 @@ Find all servers in Server Central Management Server that have 'Max Server Memor
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	PROCESS
+	process
 	{
 		foreach ($servername in $sqlserver)
         {	

@@ -80,7 +80,7 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 
 #>	
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true)]
 		[object]$Source,
 		[parameter(Mandatory = $true)]
@@ -91,9 +91,9 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 		
 	)
 	
-	DynamicParam { if ($source) { return (Get-ParamSqlCredentials -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+	dynamicparam { if ($source) { return (Get-ParamSqlCredentials -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	BEGIN
+	begin
 	{
 		
 		Function Get-SqlCredentials
@@ -366,7 +366,7 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 		
 	}
 	
-	PROCESS
+	process
 	{
 		Write-Output "Getting NetBios name for $source"
 		$sourcenetbios = Resolve-NetBiosName $sourceserver
@@ -389,7 +389,7 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 		
 	}
 	
-	END
+	end
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()

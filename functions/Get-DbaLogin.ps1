@@ -63,7 +63,7 @@ Function Get-DbaLogin {
 	Using Get-DbaLogin on the pipeline to get all Disabled logins that have access to sql2016 or sql2014 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,

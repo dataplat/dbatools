@@ -76,7 +76,7 @@ Sets SQL Agent Job owner to sa on all jobs where the owner does not match sa on 
 	
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
@@ -84,15 +84,15 @@ Sets SQL Agent Job owner to sa on all jobs where the owner does not match sa on 
 		[string]$TargetLogin
 	)
 	
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlJobs -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
+	dynamicparam { if ($SqlServer) { return Get-ParamSqlJobs -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
 	
-	BEGIN
+	begin
 	{
 		$jobs = $psboundparameters.Jobs
 		$exclude = $psboundparameters.Exclude
 	}
 	
-	PROCESS
+	process
 	{
 		foreach ($servername in $sqlserver)
 		{
@@ -168,7 +168,7 @@ Sets SQL Agent Job owner to sa on all jobs where the owner does not match sa on 
 		}
 	}
 	
-	END
+	end
 	{
 		if ($jobcollection.count -eq 0)
 		{

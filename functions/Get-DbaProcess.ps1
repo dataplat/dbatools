@@ -73,7 +73,7 @@ Shows information about the processes that were initiated by hosts (computers/cl
 	
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
@@ -82,9 +82,9 @@ Shows information about the processes that were initiated by hosts (computers/cl
 		[switch]$Detailed
 	)
 	
-	DynamicParam { if ($sqlserver) { Get-ParamSqlAllProcessInfo -SqlServer $sqlserver -SqlCredential $SqlCredential } }
+	dynamicparam { if ($sqlserver) { Get-ParamSqlAllProcessInfo -SqlServer $sqlserver -SqlCredential $SqlCredential } }
 	
-	BEGIN
+	begin
 	{
 		$sourceserver = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
 		$source = $sourceserver.DomainInstanceName
@@ -97,7 +97,7 @@ Shows information about the processes that were initiated by hosts (computers/cl
 		$databases = $psboundparameters.Databases
 	}
 	
-	PROCESS
+	process
 	{
 		$allsessions = @()
 		

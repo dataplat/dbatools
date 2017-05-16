@@ -190,9 +190,9 @@ Connects with ReadOnly ApplicantionIntent.
 		[string]$AppendConnectionString
 	)
 	
-	DynamicParam { if ($sqlserver) { return Get-ParamSqlDatabase -SqlServer $SqlServer -SqlCredential $Credential } }
+	dynamicparam { if ($sqlserver) { return Get-ParamSqlDatabase -SqlServer $SqlServer -SqlCredential $Credential } }
 	
-	PROCESS
+	process
 	{
 		if ($SqlServer.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
 		{

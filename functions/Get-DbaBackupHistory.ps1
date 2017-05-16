@@ -110,7 +110,7 @@ Function Get-DbaBackupHistory
         https://dbatools.io/Get-DbaBackupHistory
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
-    Param (
+    param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [object[]]
@@ -258,7 +258,7 @@ Function Get-DbaBackupHistory
 								    a.[Database],
 								    a.Username,
 								    a.Start,
-								    a.[End],
+								    a.[end],
 								    a.Duration,
 								    a.[Path],
 								    a.Type,
@@ -279,7 +279,7 @@ Function Get-DbaBackupHistory
 								  backupset.user_name AS Username,
 								  backupset.backup_start_date AS Start,
 								  backupset.server_name as [server],
-								  backupset.backup_finish_date AS [End],
+								  backupset.backup_finish_date AS [end],
 								  DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS Duration,
 								  mediafamily.physical_device_name AS Path,
 								  backupset.$backupSizeColumn AS TotalSize,
@@ -342,7 +342,7 @@ Function Get-DbaBackupHistory
 							  backupset.user_name AS Username,
 							  backupset.server_name as [server],
 							  backupset.backup_start_date AS [Start],
-							  backupset.backup_finish_date AS [End],
+							  backupset.backup_finish_date AS [end],
 							  DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS Duration,
 							  mediafamily.physical_device_name AS Path,
 							  backupset.$backupSizeColumn AS TotalSize,
@@ -451,7 +451,7 @@ Function Get-DbaBackupHistory
                     $historyObject.Database = $group.Group[0].Database
                     $historyObject.UserName = $group.Group[0].UserName
                     $historyObject.Start = ($group.Group.Start | Measure-Object -Minimum).Minimum
-                    $historyObject.End = ($group.Group.End | Measure-Object -Maximum).Maximum
+                    $historyObject.end = ($group.Group.end | Measure-Object -Maximum).Maximum
                     $historyObject.Duration = New-TimeSpan -Seconds ($group.Group.Duration | Measure-Object -Maximum).Maximum
                     $historyObject.Path = $group.Group.Path
                     $historyObject.TotalSize = ($group.group.TotalSize | Measure-Object -Sum).sum
@@ -469,7 +469,7 @@ Function Get-DbaBackupHistory
                     $historyObject.SoftwareVersionMajor = $group.Group[0].Software_Major_Version
                     $groupResults += $historyObject
                 }
-                $groupResults | Sort-Object -Property End -Descending
+                $groupResults | Sort-Object -Property end -Descending
             }
         }
     }

@@ -51,7 +51,7 @@
         $Silent
     )
     
-    BEGIN {
+    begin {
         Write-Message -Level InternalComment -Message "Starting"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
         
@@ -108,7 +108,7 @@
         }
         #endregion Helper functions
     }
-    PROCESS {
+    process {
         $filePathXml = "$($Path.Trim('\'))\dbatools_support_pack_$(Get-Date -Format "yyyy_MM_dd-HH_mm_ss").xml"
         $filePathZip = $filePathXml -replace "\.xml$", ".zip"
         
@@ -169,7 +169,7 @@ This will make it easier for us to troubleshoot and you won't be sending us the 
         
         Remove-Item -Path $filePathXml -ErrorAction Ignore
     }
-    END {
+    end {
         Write-Message -Level InternalComment -Message "Ending"
     }
 }

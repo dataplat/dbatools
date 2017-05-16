@@ -157,9 +157,9 @@ https://dbatools.io/Expand-DbaTLogResponsibly
 		[string]$BackupDirectory
 	)
 	
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SourceSqlCredential } }
+	dynamicparam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SourceSqlCredential } }
 	
-	BEGIN
+	begin
 	{
 		Write-Verbose "Set ErrorActionPreference to Inquire"
 		$ErrorActionPreference = 'Inquire'
@@ -200,7 +200,7 @@ https://dbatools.io/Expand-DbaTLogResponsibly
 		}
 	}
 	
-	PROCESS
+	process
 	{
 		
 		try
@@ -517,10 +517,10 @@ https://dbatools.io/Expand-DbaTLogResponsibly
 		}
 	}
 	
-	END
+	end
 	{
 		$server.ConnectionContext.Disconnect()
-		Write-Output "Process finished $((Get-Date) - ($initialTime))"
+		Write-Output "process finished $((Get-Date) - ($initialTime))"
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Expand-SqlTLogResponsibly
 	}
 }

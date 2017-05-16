@@ -52,7 +52,7 @@ Find-DbaUserObject -SqlInstance DEV01 -Verbose
 Shows all user owned (non-sa, non-dbo) objects and verbose output 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlInstances")]
 		[object[]]$SqlInstance,

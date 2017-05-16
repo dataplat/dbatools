@@ -29,13 +29,13 @@
     #>
     
     [CmdletBinding()]
-    Param (
+    param (
         [Parameter(ValueFromPipeline = $true, Mandatory = $true)]
         [string[]]
         $ComputerName
     )
     
-    Process
+    process
     {
         foreach ($Computer in $ComputerName)
         {

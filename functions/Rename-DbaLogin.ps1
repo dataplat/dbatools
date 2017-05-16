@@ -75,9 +75,9 @@ WhatIf Example
 		[String]$NewLogin
 	)
 	
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlLogin -SqlServer $SqlInstance -SqlCredential $SqlCredential } }
+	dynamicparam { if ($SqlInstance) { return Get-ParamSqlLogin -SqlServer $SqlInstance -SqlCredential $SqlCredential } }
 	
-	BEGIN
+	begin
 	{
 		$Login = $psboundparameters.Login
 		
@@ -89,7 +89,7 @@ WhatIf Example
 		$currentLogin = $server.Logins[$Login]
 		
 	}
-	PROCESS
+	process
 	{
 		if ($Pscmdlet.ShouldProcess($SqlInstance, "Changing Login name from  [$Login] to [$NewLogin]"))
 		{

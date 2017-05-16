@@ -71,7 +71,7 @@ function Set-DbaConfig
 	#>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
-    Param (
+    param (
         [Parameter(Mandatory = $true, Position = 0)]
         [string]
         $Name,
@@ -117,7 +117,7 @@ function Set-DbaConfig
     else { $FullName = $Name }
     #endregion Prepare Names
     
-    #region Process Configuration Event Handlers
+    #region process Configuration Event Handlers
     if (-not $DisableHandler)
     {
         if ([sqlcollective.dbatools.Configuration.Config]::ConfigHandler[$FullName])
@@ -130,9 +130,9 @@ function Set-DbaConfig
             }
         }
     }
-    #endregion Process Configuration Event Handlers
+    #endregion process Configuration Event Handlers
     
-    #region Process Record
+    #region process Record
     if (([sqlcollective.dbatools.Configuration.Config]::Cfg[$FullName]) -and (-not $Default))
     {
         if ($PSBoundParameters.ContainsKey("Hidden")) { [sqlcollective.dbatools.Configuration.Config]::Cfg[$FullName].Hidden = $Hidden }
@@ -149,5 +149,5 @@ function Set-DbaConfig
         $Config.Hidden = $Hidden
         [sqlcollective.dbatools.Configuration.Config]::Cfg[$FullName] = $Config
     }
-    #endregion Process Record
+    #endregion process Record
 }

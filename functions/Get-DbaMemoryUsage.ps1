@@ -53,7 +53,7 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("Host", "cn", "Server")]
 		[string[]]$ComputerName,
@@ -62,7 +62,7 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
 	)
 
 
-	BEGIN
+	begin
 	{
     if ($Simple)
         {
@@ -83,7 +83,7 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
 
     }
 
-	PROCESS
+	process
 	{
         foreach ($Computer in $ComputerName)
         {
@@ -225,6 +225,6 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
 			}
         }
     }
-    END
+    end
     {}
 }

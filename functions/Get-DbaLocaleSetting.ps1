@@ -44,14 +44,14 @@
 
   #>
   [CmdletBinding()]
-  Param (
+  param (
     [parameter(ValueFromPipeline)]
     [Alias("cn","host","Server")]
     [string[]]$ComputerName = $env:COMPUTERNAME,
     [PSCredential] [System.Management.Automation.CredentialAttribute()]$Credential
   )
 
-  BEGIN
+  begin
   {
     $FunctionName = (Get-PSCallstack)[0].Command
     $ComputerName = $ComputerName | ForEach-Object {$_.split("\")[0]} | Select-Object -Unique
@@ -61,7 +61,7 @@
     $Reg = 'StdRegProv'
     [UInt32]$CIMHiveCU = 2147483649
   }
-  PROCESS
+  process
   {
     foreach ($computer in $ComputerName)
     {
@@ -101,5 +101,5 @@
         Write-Warning "$FunctionName - can't connect to $computer"
       }
     } #foreach computer
-  } #PROCESS
+  } #process
 } #function

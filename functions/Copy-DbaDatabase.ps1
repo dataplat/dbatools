@@ -141,7 +141,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 
 #>	
 	[CmdletBinding(DefaultParameterSetName = "DbMigration", SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Position = 1, Mandatory = $false)]
 		[object]$Source,
 		[parameter(Position = 2, Mandatory = $true)]
@@ -193,9 +193,9 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
         [switch]$silent
 	)
 	
-	DynamicParam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential -NoSystem } }
+	dynamicparam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential -NoSystem } }
 	
-	BEGIN
+	begin
 	{
 		# Global Database Function
 		Function Get-SqlFileStructure
@@ -603,7 +603,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		
 	}
 	
-	PROCESS
+	process
 	{
 		$copyonly = !$NoCopyOnly
 		# Convert from RuntimeDefinedParameter object to regular array
@@ -1198,7 +1198,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		}
 	}
 	
-	END
+	end
 	{
 		If ($Pscmdlet.ShouldProcess("console", "Showing migration time elapsed"))
 		{

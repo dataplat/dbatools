@@ -85,9 +85,9 @@ Shows what would happen if the command were executed using force.
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlBackupDevices -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+	dynamicparam { if ($source) { return (Get-ParamSqlBackupDevices -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	BEGIN
+	begin
 	{
 		$backupdevices = $psboundparameters.BackupDevices
 		
@@ -105,7 +105,7 @@ Shows what would happen if the command were executed using force.
 		$sourcenetbios = Resolve-NetBiosName $sourceserver
 		
 	}
-	PROCESS
+	process
 	{
 		
 		foreach ($backupdevice in $serverbackupdevices)
@@ -212,7 +212,7 @@ Shows what would happen if the command were executed using force.
 		}
 	}
 	
-	END
+	end
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()

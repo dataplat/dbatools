@@ -91,9 +91,9 @@ Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sq
 		[switch]$Force
 	)
 	
-	DynamicParam { if ($source) { return (Get-ParamSqlPolicyManagement -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+	dynamicparam { if ($source) { return (Get-ParamSqlPolicyManagement -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	BEGIN
+	begin
 	{
 		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Dmf") -eq $null)
 		{
@@ -114,7 +114,7 @@ Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sq
 		}
 		
 	}
-	PROCESS
+	process
 	{
 		
 		

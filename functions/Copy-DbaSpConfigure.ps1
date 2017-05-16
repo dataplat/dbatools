@@ -77,9 +77,9 @@ Shows what would happen if the command were executed.
 	    [System.Management.Automation.PSCredential]$DestinationSqlCredential
     )
 	
-    DynamicParam { if ($source) { return (Get-ParamSqlServerConfigs -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+    dynamicparam { if ($source) { return (Get-ParamSqlServerConfigs -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-    BEGIN
+    begin
     {
 	    $configs = $psboundparameters.Configs
 		
@@ -89,7 +89,7 @@ Shows what would happen if the command were executed.
 	    $source = $sourceserver.DomainInstanceName
 	    $destination = $destserver.DomainInstanceName
     }
-    PROCESS
+    process
     {
 		
 	    $destprops = $destserver.Configuration.Properties
@@ -143,7 +143,7 @@ Shows what would happen if the command were executed.
 	    }
 
     }
-    END
+    end
     {
 	    $sourceserver.ConnectionContext.Disconnect()
 	    $destserver.ConnectionContext.Disconnect()

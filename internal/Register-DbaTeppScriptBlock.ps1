@@ -19,7 +19,7 @@
             Stores the scriptblock stored in $scriptBlock under the name "MyFirstTeppScriptBlock"
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [System.Management.Automation.ScriptBlock]
         $ScriptBlock,
         

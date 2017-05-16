@@ -54,7 +54,7 @@
             Will cause tests to fail, if it's still in the code after release 1.0.0.0.
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [Parameter(Mandatory = $true)]
         [Version]
         $DeprecatedOn,

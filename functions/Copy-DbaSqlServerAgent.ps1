@@ -98,7 +98,7 @@ Shows what would happen if the command were executed.
 		
 	)
 	
-	BEGIN  {
+	begin  {
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 		
@@ -111,7 +111,7 @@ Shows what would happen if the command were executed.
 		$sourceagent = $sourceserver.jobserver
 	}
 	
-	PROCESS
+	process
 	{
 		
 		# All of these support whatif inside of them
@@ -148,7 +148,7 @@ Shows what would happen if the command were executed.
 		}
 	}
 	
-	END
+	end
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()

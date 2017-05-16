@@ -58,7 +58,7 @@ Returns db/server compatibility information for every database on every server l
 #>
 	[CmdletBinding()]
 	[OutputType("System.Collections.ArrayList")]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
@@ -66,9 +66,9 @@ Returns db/server compatibility information for every database on every server l
 		[switch]$Detailed
 	)
 	
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential } }
+	dynamicparam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential } }
 	
-	BEGIN
+	begin
 	{
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
@@ -77,7 +77,7 @@ Returns db/server compatibility information for every database on every server l
 		$collection = New-Object System.Collections.ArrayList
 	}
 	
-	PROCESS
+	process
 	{
 		foreach ($servername in $SqlServer)
 		{
@@ -127,7 +127,7 @@ Returns db/server compatibility information for every database on every server l
 		}
 	}
 	
-	END
+	end
 	{
 		if ($Detailed -eq $true)
 		{

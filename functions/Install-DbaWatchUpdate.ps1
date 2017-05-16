@@ -26,7 +26,7 @@ Install-DbaWatchUpdate
 
 Adds the scheduled task needed by Watch-DbaUpdate
 #>
-	PROCESS
+	process
 	{
 		if (([Environment]::OSVersion).Version.Major -lt 10)
 		{
@@ -57,7 +57,7 @@ Adds the scheduled task needed by Watch-DbaUpdate
 			If (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
 			{
 				Write-Warning "Watch-DbaUpdate runs as a Scheduled Task which must be created. This will only happen once."
-				Start-Process powershell -Verb runAs -ArgumentList Install-DbaWatchUpdate -Wait
+				Start-process powershell -Verb runAs -ArgumentList Install-DbaWatchUpdate -Wait
 			}
 			
 			try

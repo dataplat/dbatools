@@ -48,7 +48,7 @@ Set-DbaTcpPort -sqlserver 'SQLDB2014A' ,'SQLDB2016B' -port 1337
 Sets the port number 1337 for ALLIP's on sqlserver SQLDB2014A and SQLDB2016B
 #>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
@@ -59,7 +59,7 @@ Sets the port number 1337 for ALLIP's on sqlserver SQLDB2014A and SQLDB2016B
 		[int]$Port,
 		[string[]]$IpAddress
 	)
-	BEGIN
+	begin
 	{
 
 		if ($ipaddress.Length -eq 0)
@@ -74,7 +74,7 @@ Sets the port number 1337 for ALLIP's on sqlserver SQLDB2014A and SQLDB2016B
             }
         }
 	}
-	PROCESS
+	process
 	{
         
         $servercount = $sqlserver.Count
@@ -215,7 +215,7 @@ Sets the port number 1337 for ALLIP's on sqlserver SQLDB2014A and SQLDB2016B
                 		
  }
 	}
-	END
+	end
 	{
 	        return 
 	}

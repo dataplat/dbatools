@@ -88,7 +88,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 		
 		function Invoke-DiagnosticQuerySelectionHelper {
 			[CmdletBinding()]
-			Param (
+			param (
 				[parameter(Mandatory = $true)]
 				$ParsedScript
 			)

@@ -65,7 +65,7 @@ Skips some prompts/confirms but not all of them.
 	
 #>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
@@ -74,12 +74,12 @@ Skips some prompts/confirms but not all of them.
 		[switch]$Force
 	)
 	
-	BEGIN
+	begin
 	{
 		if ($Force -eq $true) { $ConfirmPreference = "None" }
 	}
 	
-	PROCESS
+	process
 	{
 		foreach ($servername in $SqlServer)
 		{

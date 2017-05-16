@@ -293,11 +293,11 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
 
         # Check the end date
         if ($EndDate -and ($EndDate -notmatch $RegexDate)) {
-            Stop-Function -Message "End date $EndDate needs to be a valid date with format yyyyMMdd" -Target $SqlInstance 
+            Stop-Function -Message "end date $EndDate needs to be a valid date with format yyyyMMdd" -Target $SqlInstance 
             return
         }
         elseif ($EndDate -lt $StartDate) {
-            Stop-Function -Message "End date $EndDate cannot be before start date $StartDate" -Target $SqlInstance 
+            Stop-Function -Message "end date $EndDate cannot be before start date $StartDate" -Target $SqlInstance 
             return
         }
 
@@ -309,7 +309,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
 
         # Check the end time
         if ($EndTime -and ($EndTime -notmatch $RegexTime)) {
-            Stop-Function -Message "End time $EndTime needs to match between '000000' and '235959'" -Target $SqlInstance 
+            Stop-Function -Message "end time $EndTime needs to match between '000000' and '235959'" -Target $SqlInstance 
             return
         }
     }

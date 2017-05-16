@@ -71,7 +71,7 @@ Get-DbaAvailabilityGroup -SqlServer sqlserver2014a -AvailabilityGroup AG-a -IsPr
 Returns true/false if the server, sqlserver2014a, is the primary replica for AG-a Availability Group
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
@@ -81,15 +81,15 @@ Returns true/false if the server, sqlserver2014a, is the primary replica for AG-
 		[switch]$IsPrimary
 	)
 	
-	DynamicParam { if ($sqlserver) { return Get-ParamSqlAvailabilityGroups -SqlServer $sqlserver[0] -SqlCredential $SqlCredential } }
+	dynamicparam { if ($sqlserver) { return Get-ParamSqlAvailabilityGroups -SqlServer $sqlserver[0] -SqlCredential $SqlCredential } }
 	
-	BEGIN
+	begin
 	{
 		$agCollection = @()
 		$AvailabilityGroups = $PSBoundParameters.AvailabilityGroups
 	}
 	
-	PROCESS
+	process
 	{
 		foreach ($servername in $sqlserver)
 		{
@@ -154,7 +154,7 @@ Returns true/false if the server, sqlserver2014a, is the primary replica for AG-
 		}
 	}
 	
-	END
+	end
 	{
 		if ($AvailabilityGroups)
 		{

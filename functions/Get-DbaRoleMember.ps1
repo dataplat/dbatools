@@ -57,7 +57,7 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias('SqlServer', 'Server', 'Instance')]
 		[string[]]$SqlInstance,
@@ -66,7 +66,7 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
 		[switch]$NoFixedRole
 	)
 	
-	DynamicParam
+	dynamicparam
 	{
 		if ($SqlInstance)
 		{
@@ -74,13 +74,13 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
 		}
 	}
 	
-	BEGIN
+	begin
 	{
     $functionName = (Get-PSCallstack)[0].Command
 		$databases = $psboundparameters.Databases
 	}
 	
-	PROCESS
+	process
 	{
 		foreach ($instance in $sqlinstance)
 		{

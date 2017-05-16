@@ -79,7 +79,7 @@ Description
 Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped.
 #>	
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true)]
 		[object]$Source,
 		[parameter(Mandatory = $true)]
@@ -89,10 +89,10 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential
 	)
 	
-	DynamicParam { if ($source) { return (Get-ParamSqlLinkedServers -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+	dynamicparam { if ($source) { return (Get-ParamSqlLinkedServers -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
 	
-	BEGIN
+	begin
 	{
 		Function Get-LinkedServerLogins
 		{
@@ -365,7 +365,7 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 		
 	}
 	
-	PROCESS
+	process
 	{
 		
 		$LinkedServers = $psboundparameters.LinkedServers
@@ -407,7 +407,7 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 		
 	}
 	
-	END
+	end
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()

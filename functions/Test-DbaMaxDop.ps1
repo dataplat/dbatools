@@ -66,7 +66,7 @@ Get Max DOP setting for servers sql2016 with the recommended value. As the -Deta
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
 		[string[]]$SqlServer,
@@ -74,7 +74,7 @@ Get Max DOP setting for servers sql2016 with the recommended value. As the -Deta
 		[Switch]$Detailed
 	)
 	
-	BEGIN
+	begin
 	{
 		$notesDopLT = "Before changing MaxDop, consider that the lower value may have been intentionally set."
 		$notesDopGT = "Before changing MaxDop, consider that the higher value may have been intentionally set."
@@ -84,7 +84,7 @@ Get Max DOP setting for servers sql2016 with the recommended value. As the -Deta
 		$collection = @()
 	}
 	
-	PROCESS
+	process
 	{
 		$hasscopedconfiguration = $false
 		
@@ -239,7 +239,7 @@ Get Max DOP setting for servers sql2016 with the recommended value. As the -Deta
 			
 		}
 	}
-	END
+	end
 	{
 		if ($Detailed)
 		{

@@ -3,7 +3,7 @@
 	These are all the functions for tab completion (auto-population of params)
 	To use, place this after params in a function
 
-	DynamicParam { if ($source) { return (Get-ParamSqlXyz -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+	dynamicparam { if ($source) { return (Get-ParamSqlXyz -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 
 #>
 Function Get-ParamSqlServerConfigs

@@ -37,7 +37,7 @@ FUNCTION Get-DbaAgentOperator {
 	#>
 	
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,

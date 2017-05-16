@@ -102,7 +102,7 @@
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWriteHost", "")]
     [CmdletBinding(DefaultParameterSetName = 'Level')]
-    Param (
+    param (
         [Parameter(Mandatory = $true)]
         [string]
         $Message,

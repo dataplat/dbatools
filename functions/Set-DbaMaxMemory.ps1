@@ -70,7 +70,7 @@ Function Set-DbaMaxMemory
             https://dbatools.io/Set-DbaMaxMemory
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
-    Param (
+    param (
         [Parameter(Position = 0)]
         [Alias("ServerInstance", "SqlInstance", "SqlServers", 'ComputerName')]
         [object]
@@ -91,7 +91,7 @@ Function Set-DbaMaxMemory
         [switch]
         $Silent
     )
-    Process
+    process
     {
         if ($SqlServer.length -eq 0 -and $collection -eq $null)
         {

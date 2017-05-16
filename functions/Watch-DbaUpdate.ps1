@@ -29,7 +29,7 @@ Watch-DbaUpdate
 Watches the gallery for updates to dbatools.
 #>	
 
-	PROCESS
+	process
 	{
 		if (([Environment]::OSVersion).Version.Major -lt 10)
 		{

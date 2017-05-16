@@ -6,7 +6,7 @@ Returns SQL Server Build infos on a SQL instance
 
 .DESCRIPTION
 Returns info about the specific build of a SQL instance, including the SP, the CU and the reference KB, wherever possible.
-It also includes End Of Support dates as specified on Microsoft Lifecycle Policy
+It also includes end Of Support dates as specified on Microsoft Lifecycle Policy
 
 .PARAMETER Build
 Instead of connecting to a real instance, pass a string identifying the build to get the info back.
@@ -48,14 +48,14 @@ Integrate with other commandlets to have builds checked for all your registered 
 #>
 	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
 	[CmdletBinding()]
-	Param (
+	param (
 		[string[]]$Build,
 		[Parameter(Mandatory = $false, ValueFromPipeline = $true)]
 		[Microsoft.SqlServer.Management.Smo.Server[]]$SqlInstance,
 		[switch]$Silent
 	)
 
-	BEGIN {
+	begin {
 		function Find-DbaSqlBuildReferenceIndex {
 			[CmdletBinding()]
 			Param()
@@ -155,7 +155,7 @@ Integrate with other commandlets to have builds checked for all your registered 
 			return $Detected
 		}
 	}
-	PROCESS
+	process
 	{
 		foreach ($instance in $SqlInstance)
 		{

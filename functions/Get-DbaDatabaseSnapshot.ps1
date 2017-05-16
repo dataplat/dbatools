@@ -49,14 +49,14 @@ Returns information for database snapshots HR_snapshot and Accounting_snapshot
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[string[]]$SqlInstance,
 		[PsCredential]$Credential
 	)
 	
-	DynamicParam
+	dynamicparam
 	{
 		if ($SqlInstance)
 		{
@@ -64,14 +64,14 @@ Returns information for database snapshots HR_snapshot and Accounting_snapshot
 		}
 	}
 	
-	BEGIN
+	begin
 	{
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
 		$snapshots = $psboundparameters.Snapshots
 	}
 
-	PROCESS
+	process
 	{
 		foreach ($instance in $SqlInstance)
 		{

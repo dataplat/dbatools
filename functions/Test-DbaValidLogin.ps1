@@ -63,7 +63,7 @@ Tests all logins excluding any that are from the subdomain Domain
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
 		[string[]]$SqlServer,
@@ -75,9 +75,9 @@ Tests all logins excluding any that are from the subdomain Domain
 		[switch]$Silent
 	)
 
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlLogins -SqlServer $SqlServer[0] -SqlCredential $SqlCredential -WindowsOnly } }
+	dynamicparam { if ($SqlServer) { return Get-ParamSqlLogins -SqlServer $SqlServer[0] -SqlCredential $SqlCredential -WindowsOnly } }
 
-	BEGIN
+	begin
 	{
 		$Logins = $psboundparameters.Logins
 		$Exclude = $psboundparameters.Exclude
@@ -117,7 +117,7 @@ Tests all logins excluding any that are from the subdomain Domain
 		}
 	}
 
-	PROCESS
+	process
 	{
 		foreach ($instance in $sqlserver)
 		{

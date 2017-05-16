@@ -52,7 +52,7 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
 
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object]$SqlInstance,

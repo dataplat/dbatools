@@ -106,7 +106,7 @@ Shows what would happen if the command were executed.
         [switch]$Silent
     )
 	
-    DynamicParam {
+    dynamicparam {
         if ($source) {
             return (Get-ParamSqlDatabaseMail -SqlServer $Source -SqlCredential $SourceSqlCredential)
         }

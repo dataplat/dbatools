@@ -86,9 +86,9 @@ Shows what would happen if the command were executed using force.
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlDatabaseAssemblies -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+	dynamicparam { if ($source) { return (Get-ParamSqlDatabaseAssemblies -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	BEGIN 
+	begin 
 	{
 	
 	$assemblies = $psboundparameters.Assemblies
@@ -105,7 +105,7 @@ Shows what would happen if the command were executed using force.
 		}
 	
 	}
-	PROCESS
+	process
 	{
 		
 		$sourceassemblies = @()
@@ -204,7 +204,7 @@ Shows what would happen if the command were executed using force.
 		}
 	}
 	
-	END
+	end
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()

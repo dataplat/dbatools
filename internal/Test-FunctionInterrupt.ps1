@@ -7,7 +7,7 @@
         .DESCRIPTION
             This helper function is designed to work in tandem with Stop-Function.
             When gracefully terminating a function, there is a major issue:
-            "Return" will only stop the current one of the three blocks (Begin, Process, End).
+            "Return" will only stop the current one of the three blocks (begin, process, end).
             All other statements have side effects or produce lots of red text.
     
             So, Stop-Function writes a variable into the parent scope, that signals the function should cease.
@@ -21,7 +21,7 @@
             The calling function will stop if this function returns true.
     #>
     [CmdletBinding()]
-    Param (
+    param (
         
     )
     

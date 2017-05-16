@@ -96,7 +96,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
@@ -110,7 +110,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 		[switch]$Silent
 	)
 	
-	DynamicParam
+	dynamicparam
 	{
 		if ($SqlInstance)
 		{
@@ -121,7 +121,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 		$StatementTimeoutMinutes = $StatementTimeout * 60
 	}
 	
-	BEGIN
+	begin
 	{
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
@@ -148,7 +148,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 				ORDER BY indexstats.avg_fragmentation_in_percent desc"
 	}
 	
-	PROCESS
+	process
 	{
 		if (!$databases -and !$exclude -and !$AllUserDatabases)
 		{
@@ -264,7 +264,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 							$endingtopfrag = $endingdefrag = $null
 						}
 						
-						$timespan = New-TimeSpan -Start $start -End $end
+						$timespan = New-TimeSpan -Start $start -end $end
 						$ts = [timespan]::fromseconds($timespan.TotalSeconds)
 						$elapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)
 					}
@@ -285,7 +285,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 						SqlInstance = $server.DomainInstanceName
 						Database = $db.name
 						Start = $start
-						End = $end
+						end = $end
 						Elapsed = $elapsed
 						Success = $success
 						StartingTotalSizeMB = [math]::Round($startingsize, 2)

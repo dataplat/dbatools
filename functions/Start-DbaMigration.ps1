@@ -218,7 +218,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 
 #>	
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Position = 1, Mandatory = $true)]
 		[object]$Source,
 		[parameter(Position = 2, Mandatory = $true)]
@@ -285,7 +285,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 		[switch]$Force
 	)
 	
-	BEGIN
+	begin
 	{
 		$docs = [Environment]::GetFolderPath("mydocuments")
 		$transcript = "$docs\dbatools-startmigration-transcript.txt"
@@ -309,7 +309,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 		$destination = $destserver.DomainInstanceName
 	}
 	
-	PROCESS
+	process
 	{
 		
 		if ($BackupRestore -eq $false -and $DetachAttach -eq $false -and $NoDatabases -eq $false)
@@ -627,7 +627,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 		
 	}
 	
-	END
+	end
 	{
 		$totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
 		

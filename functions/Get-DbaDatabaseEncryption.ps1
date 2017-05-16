@@ -53,15 +53,15 @@ List all encrption found in MyDB
 		[switch]$Silent
 	)
 	
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlInstance $SqlInstance[0] -SqlCredential $SourceSqlCredential } }
+	dynamicparam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlInstance $SqlInstance[0] -SqlCredential $SourceSqlCredential } }
 	
-	BEGIN
+	begin
 	{
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
 	}
 	
-	PROCESS
+	process
 	{
 		foreach ($instance in $SqlInstance)
 		{

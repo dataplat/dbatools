@@ -54,7 +54,7 @@ File to disk, and string path.
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	BEGIN
+	begin
 	{
 		$server = Connect-SqlServer $SqlServer $SqlCredential
 		
@@ -69,7 +69,7 @@ File to disk, and string path.
 	
 	}
 	
-	PROCESS
+	process
 		{
 		try { Set-Content -Path $path "EXEC sp_configure 'show advanced options' , 1;  RECONFIGURE WITH OVERRIDE" }
 		catch { throw "Can't write to $path" }
@@ -89,7 +89,7 @@ File to disk, and string path.
 		return $path
 	}
 	
-	END
+	end
 	{
 		$server.ConnectionContext.Disconnect()
 		

@@ -83,9 +83,9 @@ Shows what would happen if the command were executed using force.
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlServerRoles -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+	dynamicparam { if ($source) { return (Get-ParamSqlServerRoles -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-BEGIN {
+begin {
 		
 		$roles = $psboundparameters.Roles
 		
@@ -98,7 +98,7 @@ BEGIN {
 		$serverroles = $sourceserver.Roles
 		$destroles = $destserver.Roles
 }
-	PROCESS
+	process
 	{
 		throw "This function is not quite ready yet."
 		
@@ -261,7 +261,7 @@ BEGIN {
 			}
 		}
 	}
-	END
+	end
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()

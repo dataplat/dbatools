@@ -87,7 +87,7 @@ Configure the Query Store settings for all user databases except the AdventureWo
 	
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
@@ -105,7 +105,7 @@ Configure the Query Store settings for all user databases except the AdventureWo
 		[int64]$StaleQueryThreshold
 	)
 	
-	DynamicParam
+	dynamicparam
 	{
 		if ($SqlInstance)
 		{
@@ -113,14 +113,14 @@ Configure the Query Store settings for all user databases except the AdventureWo
 		}
 	}
 	
-	BEGIN
+	begin
 	{
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
 	}
 	
-	PROCESS
+	process
 	{
 		if (!$databases -and !$exclude -and !$alldatabases)
 		{

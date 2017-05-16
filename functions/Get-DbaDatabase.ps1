@@ -89,7 +89,7 @@ Returns databases on multiple instances piped into the function
 
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
-    Param (
+    param (
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [Alias("ServerInstance", "SqlServer")]
         [object[]]$SqlInstance,
@@ -123,7 +123,7 @@ Returns databases on multiple instances piped into the function
         [switch]$Silent
     )
 	
-	BEGIN {
+	begin {
 		
         if ($NoUserDb -and $NoSystemDb) {
             Stop-Function -Message "You cannot specify both NoUserDb and NoSystemDb" -Continue -Silent $Silent
@@ -142,7 +142,7 @@ Returns databases on multiple instances piped into the function
         }
     }
 
-    PROCESS {
+    process {
         if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {

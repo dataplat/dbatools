@@ -55,9 +55,9 @@ Returns information on the CommandLog table in the DBA database on both instance
 		[switch]$Silent
 	)
 	
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SourceSqlCredential } }
+	dynamicparam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SourceSqlCredential } }
 	
-	BEGIN
+	begin
 	{
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
@@ -99,7 +99,7 @@ Returns information on the CommandLog table in the DBA database on both instance
         #$fqtns
 	}
 	
-	PROCESS
+	process
 	{
 		foreach ($instance in $sqlinstance)
 		{	

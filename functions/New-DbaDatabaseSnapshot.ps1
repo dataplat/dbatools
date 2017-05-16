@@ -75,7 +75,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 #>
 
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[string[]]$SqlInstance,
@@ -86,7 +86,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		[switch]$Force
 	)
 
-	DynamicParam
+	dynamicparam
 	{
 		if ($SqlInstance)
 		{
@@ -94,7 +94,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		}
 	}
 
-	BEGIN
+	begin
 	{
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
@@ -147,7 +147,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 	}
 
 
-	PROCESS
+	process
 	{
 		if ($databases.Length -eq 0 -and $AllDatabases -eq $false -and !$smodatabase)
 		{

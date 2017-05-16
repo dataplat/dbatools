@@ -53,21 +53,21 @@ Returns only the system configuration for MaxServerMemory. Configs is autopopula
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
 		[object[]]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	DynamicParam { if ($SqlServer) { return (Get-ParamSqlServerConfigs -SqlServer $SqlServer -SqlCredential $SqlCredential) } }
+	dynamicparam { if ($SqlServer) { return (Get-ParamSqlServerConfigs -SqlServer $SqlServer -SqlCredential $SqlCredential) } }
 	
-	BEGIN
+	begin
 	{
 		$configs = $psboundparameters.Configs
 	}
 	
-	PROCESS
+	process
 	{
 		FOREACH ($instance in $SqlServer)
 		{

@@ -83,7 +83,7 @@ Find-DbaCommand -Pattern snapshot -Rebuild
 Finds all commands searching the entire help for "snapshot", rebuilding the index (good for developers)
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[String]$Pattern,
 		[String[]]$Tag,
 		[String]$Author,
@@ -91,7 +91,7 @@ Finds all commands searching the entire help for "snapshot", rebuilding the inde
 		[String]$MaximumVersion,
 		[switch]$Rebuild
 	)
-	BEGIN
+	begin
 	{
 		$tagsRex = ([regex]'(?m)^[\s]{0,15}Tags:(.*)$')
 		$authorRex = ([regex]'(?m)^[\s]{0,15}Author:(.*)$')
@@ -170,7 +170,7 @@ Finds all commands searching the entire help for "snapshot", rebuilding the inde
 		
 		$moduledirectory = (Get-Module -Name dbatools).ModuleBase
 	}
-	PROCESS
+	process
 	{
 		# $idxfile = Get-DbaConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
 		$idxfile = "$moduledirectory\bin\dbatools-index.json"

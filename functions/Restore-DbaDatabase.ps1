@@ -216,7 +216,7 @@ folder for those file types as defined on the target instance.
 		[int]$BlockSize,
 		[int]$BufferCount
 	)
-	BEGIN
+	begin
 	{
 		#Don't like nulls
 		$islocal = $false
@@ -287,7 +287,7 @@ folder for those file types as defined on the target instance.
 		}
 		
 	}
-	PROCESS
+	process
 	{
 		foreach ($f in $path)
 		{
@@ -485,7 +485,7 @@ folder for those file types as defined on the target instance.
 			}
 		}
 	}
-	END
+	end
 	{
 
 		try

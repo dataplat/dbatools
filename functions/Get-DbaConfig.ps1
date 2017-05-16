@@ -35,7 +35,7 @@ function Get-DbaConfig
             Tags: Config
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [string]
         $Name = "*",
         

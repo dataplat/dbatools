@@ -53,7 +53,7 @@ Check identity seeds on server sql2008 for only the TestDB database, limiting re
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[string[]]$SqlInstance,
@@ -65,7 +65,7 @@ Check identity seeds on server sql2008 for only the TestDB database, limiting re
 		[switch]$Silent
 	)
 	
-	DynamicParam
+	dynamicparam
 	{
 		if ($SqlInstance)
 		{
@@ -73,7 +73,7 @@ Check identity seeds on server sql2008 for only the TestDB database, limiting re
 		}
 	}
 	
-	BEGIN
+	begin
 	{
 		
 		$databases = $psboundparameters.Databases
@@ -96,7 +96,7 @@ Check identity seeds on server sql2008 for only the TestDB database, limiting re
 								(
 									CONVERT(bigint, ISNULL(last_value, seed_value)) 
 									- CONVERT(bigint, seed_value) 
-									+ (CASE WHEN CONVERT(bigint, seed_value) <> 0 THEN 1 ELSE 0 END) 
+									+ (CASE WHEN CONVERT(bigint, seed_value) <> 0 THEN 1 ELSE 0 end) 
 								)
 								/
 								CONVERT(bigint, increment_value)
@@ -113,13 +113,13 @@ Check identity seeds on server sql2008 for only the TestDB database, limiting re
 							When b.name = 'smallint'  Then 32767
 							When b.name = 'int'       Then 2147483647
 							When b.name = 'bigint'    Then 9223372036854775807
-						End 
+						end 
 						-
 						-- When less than 0 the 0 counts too
 						CASE 
 							WHEN CONVERT(bigint, seed_value) <= 0 THEN 1
 							ELSE 0
-							END
+							end
 						--) 
                         / CONVERT(bigint, increment_value) 
 					AS Numeric(20, 0)) AS MaxNumberRows
@@ -145,7 +145,7 @@ Check identity seeds on server sql2008 for only the TestDB database, limiting re
 		
 	}
 	
-	PROCESS
+	process
 	{
 		
 		foreach ($instance in $SqlInstance)

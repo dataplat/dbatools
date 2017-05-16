@@ -55,7 +55,7 @@ SQL Server is required to process offilne MDF files. The abvoe example reutrns i
  #>	
 	
 	[CmdletBinding(DefaultParameterSetName = "Default")]
-	Param (
+	param (
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
@@ -65,7 +65,7 @@ SQL Server is required to process offilne MDF files. The abvoe example reutrns i
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	BEGIN
+	begin
 	{
 		Function Get-MdfFileInfo
 		{
@@ -156,7 +156,7 @@ SQL Server is required to process offilne MDF files. The abvoe example reutrns i
 		}
 	}
 	
-	PROCESS
+	process
 	{
 		
 		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
@@ -164,7 +164,7 @@ SQL Server is required to process offilne MDF files. The abvoe example reutrns i
 		
 	}
 	
-	END
+	end
 	{
 		$server.ConnectionContext.Disconnect()
 		return $mdfinfo

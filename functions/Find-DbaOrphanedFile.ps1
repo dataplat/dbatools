@@ -72,7 +72,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
@@ -84,7 +84,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 		[switch]$LocalOnly,
 		[switch]$RemoteOnly
 	)
-	BEGIN
+	begin
 	{
 		function Get-SQLDirTreeQuery
 		{
@@ -176,7 +176,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
         $FileTypeComparison = $FileType | ForEach-Object {$_.ToLower()} | Where-Object { $_ } | Sort-Object | Get-Unique
 	}
 
-	PROCESS
+	process
 	{
 		foreach ($servername in $sqlserver)
 		{
@@ -268,7 +268,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 
 		}
 	}
-	END
+	end
 	{
 		if ($result.count -eq 0)
 		{

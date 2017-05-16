@@ -38,13 +38,13 @@ Returns all Custom Error Message(s) for the local and sql2016 SQL Server instanc
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	PROCESS
+	process
 	{
 		foreach ($instance in $SqlInstance)
 		{

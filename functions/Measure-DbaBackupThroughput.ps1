@@ -92,9 +92,9 @@ Gets backup calculations, limited to the last year and only the bigoldb database
 		[string]$Type = "Full"
 	)
 	
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
+	dynamicparam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
-	BEGIN
+	begin
 	{
 		$databases = $psboundparameters.Databases
 		
@@ -138,7 +138,7 @@ Gets backup calculations, limited to the last year and only the bigoldb database
 				
 				foreach ($history in $histories)
 				{
-					$timetaken = New-TimeSpan -Start $history.Start -End $history.End
+					$timetaken = New-TimeSpan -Start $history.Start -end $history.end
 					
 					if ($timetaken.TotalMilliseconds -eq 0)
 					{
@@ -151,16 +151,16 @@ Gets backup calculations, limited to the last year and only the bigoldb database
 					
 					Add-Member -InputObject $history -MemberType Noteproperty -Name MBps -value $throughput
 					
-					$allhistory += $history | Select-Object ComputerName, InstanceName, SqlInstance, Database, MBps, TotalSizeMB, Start, End
+					$allhistory += $history | Select-Object ComputerName, InstanceName, SqlInstance, Database, MBps, TotalSizeMB, Start, end
 				}
 				
 				foreach ($db in ($allhistory | Sort-Object Database | Group-Object Database))
 				{
 					$measuremb = $db.Group.MBps | Measure-Object -Average -Minimum -Maximum
 					$measurestart = $db.Group.Start | Measure-Object -Minimum
-					$measureend = $db.Group.End | Measure-Object -Maximum
+					$measureend = $db.Group.end | Measure-Object -Maximum
 					$measuresize = $db.Group.TotalSizeMB | Measure-Object -Average
-					$avgduration = $db.Group | ForEach-Object { New-TimeSpan -Start $_.Start -End $_.End } | Measure-Object -Average TotalSeconds
+					$avgduration = $db.Group | ForEach-Object { New-TimeSpan -Start $_.Start -end $_.end } | Measure-Object -Average TotalSeconds
 					
 					$date = Get-Date
 					
@@ -171,7 +171,7 @@ Gets backup calculations, limited to the last year and only the bigoldb database
 						Database = $db.Name
 						AvgThroughputMB = [System.Math]::Round($measuremb.Average, 2)
 						AvgSizeMB = [System.Math]::Round($measuresize.Average, 2)
-						AvgDuration = New-TimeSpan -Start $date -End $date.AddSeconds($avgduration.Average)
+						AvgDuration = New-TimeSpan -Start $date -end $date.AddSeconds($avgduration.Average)
 						MinThroughputMB = [System.Math]::Round($measuremb.Minimum, 2)
 						MaxThroughputMB = [System.Math]::Round($measuremb.Maximum, 2)
 						MinBackupDate = $measurestart.Minimum

@@ -140,9 +140,9 @@ sql credential dbatoolscred registered on the sql2016 instance
 		[string]$AzureCredential,
 		[switch]$Silent
 	)
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
+	dynamicparam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
-	BEGIN
+	begin
 	{
 				
 		if ($SqlInstance.length -ne 0)
@@ -206,7 +206,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 			}
 		}
 	}
-	PROCESS
+	process
 	{		
 		if (!$SqlInstance -and !$DatabaseCollection)
 		{

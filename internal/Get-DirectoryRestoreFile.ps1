@@ -8,7 +8,7 @@ Internal Function to get SQL Server backfiles from a specified folder
 Takes path, checks for validity. Scans for usual backup file 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[string]$Path
 	)

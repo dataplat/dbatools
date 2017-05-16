@@ -97,7 +97,7 @@ https://dbatools.io/Sync-DbaLoginPermissions
 #>
 	
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object]$Source,
 		[parameter(Mandatory = $true)]
@@ -106,9 +106,9 @@ https://dbatools.io/Sync-DbaLoginPermissions
 		[object]$DestinationSqlCredential
 	)
 	
-	DynamicParam { if ($source) { return Get-ParamSqlLogins -SqlServer $source -SqlCredential $SourceSqlCredential } }
+	dynamicparam { if ($source) { return Get-ParamSqlLogins -SqlServer $source -SqlCredential $SourceSqlCredential } }
 	
-	BEGIN
+	begin
 	{
 	
 		Function Update-SqlPermissions
@@ -580,7 +580,7 @@ https://dbatools.io/Sync-DbaLoginPermissions
 	}
 	
 	
-	PROCESS
+	process
 	{
 		if ($pipelinevariable.Length -gt 0)
 		{
@@ -592,7 +592,7 @@ https://dbatools.io/Sync-DbaLoginPermissions
 	
 	}
 	
-	END
+	end
 	{
 		
 		If ($Pscmdlet.ShouldProcess("console", "Showing final message"))

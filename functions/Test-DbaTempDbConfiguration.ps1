@@ -57,7 +57,7 @@ Checks tempdb on the localhost machine. All rest results are shown.
 #>
 
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
@@ -65,13 +65,13 @@ Checks tempdb on the localhost machine. All rest results are shown.
 		[Switch]$Detailed
 	)
 
-	BEGIN
+	begin
 	{
 		$result = @()
 		
 	}
 
-	PROCESS
+	process
 	{
         foreach ($servername in $SqlServer)
 		{
@@ -266,7 +266,7 @@ Checks tempdb on the localhost machine. All rest results are shown.
         }
 	}
 
-	END
+	end
 	{
 		if($Detailed)
 		{

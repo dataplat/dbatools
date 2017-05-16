@@ -100,7 +100,7 @@ It will also remove any backup folders that no longer contain backup files.
 
 #>
     [CmdletBinding(SupportsShouldProcess=$true)]
-    Param (
+    param (
         [parameter(Mandatory = $true,HelpMessage="Full path to the root level backup folder (ex. 'C:\SQL\Backups'")]
         [Alias("BackupFolder")]
         [ValidateScript({Test-Path $_ -PathType 'Container'})]
@@ -121,7 +121,7 @@ It will also remove any backup folders that no longer contain backup files.
         [switch]$Silent
     )
 
-    BEGIN
+    begin
     {
         ### Local Functions
         function Convert-UserFriendlyRetentionToDatetime
@@ -176,9 +176,9 @@ It will also remove any backup folders that no longer contain backup files.
         }
 
     }
-    PROCESS
+    process
     {
-        # Process stuff
+        # process stuff
         Write-Message -Message "Started" -Level 3 -Silent $Silent
         Write-Message -Message "Removing backups from $Path" -Level 3 -Silent $Silent
         # Convert Retention Value to an actual DateTime

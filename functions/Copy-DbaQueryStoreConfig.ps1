@@ -82,7 +82,7 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
         [switch]$Silent
     )
 
-    BEGIN {
+    begin {
 
         Write-Message -Message "Connecting to source: $Source" -Level Verbose
         try {
@@ -93,7 +93,7 @@ Copy the Query Store configuration of the AdventureWorks database in the ServerA
         }
     }
 
-    PROCESS {
+    process {
         if (Test-FunctionInterrupt) {
 			return
 		}

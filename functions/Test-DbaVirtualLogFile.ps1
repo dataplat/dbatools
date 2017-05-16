@@ -77,15 +77,15 @@ Returns VLF counts for the db1 and db2 databases on sqlcluster.
 		[switch]$Detailed
 	)
 
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SqlCredential } }
+	dynamicparam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SqlCredential } }
 
-	BEGIN
+	begin
 	{
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
 	}
 
-	PROCESS
+	process
 	{
 		foreach ($servername in $SqlServer)
 		{

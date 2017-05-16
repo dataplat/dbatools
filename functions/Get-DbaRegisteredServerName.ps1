@@ -68,7 +68,7 @@ Gets a list of server IP addresses in the HR and Accounting groups from the Cent
 	
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
-    Param (
+    param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlInstance")]
         [object]$SqlServer,
@@ -80,9 +80,9 @@ Gets a list of server IP addresses in the HR and Accounting groups from the Cent
         [switch]$IpAddr
     )
 	
-    DynamicParam { if ($sqlserver) { return Get-ParamSqlCmsGroups -SqlServer $sqlserver -SqlCredential $SqlCredential } }
+    dynamicparam { if ($sqlserver) { return Get-ParamSqlCmsGroups -SqlServer $sqlserver -SqlCredential $SqlCredential } }
 	
-    BEGIN {
+    begin {
         $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
         $sqlconnection = $server.ConnectionContext.SqlConnectionObject
 		
@@ -96,7 +96,7 @@ Gets a list of server IP addresses in the HR and Accounting groups from the Cent
         $groups = $psboundparameters.Group
     }
 	
-    PROCESS {
+    process {
 		
         # see notes at Get-ParamSqlCmsGroups
         Function Find-CmsGroup($CmsGrp, $base = '', $stopat) {
@@ -137,7 +137,7 @@ Gets a list of server IP addresses in the HR and Accounting groups from the Cent
         }
     }
 	
-    END {
+    end {
         $server.ConnectionContext.Disconnect()
 		
         if ($NetBiosName -or $IpAddr) {

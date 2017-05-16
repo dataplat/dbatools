@@ -72,7 +72,7 @@
     The results will be reported and registered, future calls from Get-DbaWmObject will thus recognize the results and optimize the query.
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [Parameter(ValueFromPipeline = $true)]
         [Sqlcollective.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName = $env:COMPUTERNAME,
@@ -93,7 +93,7 @@
         $Silent
     )
 
-    Begin {
+    begin {
         #region Configuration Values
         $disable_cache = Get-DbaConfigValue -Name "ComputerManagement.Cache.Disable.All" -Fallback $false
         $disable_badcredentialcache = Get-DbaConfigValue -Name "ComputerManagement.Cache.Disable.BadCredentialList" -Fallback $false
@@ -102,7 +102,7 @@
         #region Helper Functions
         function Test-ConnectionCimRM {
             [CmdletBinding()]
-            Param (
+            param (
                 [Sqlcollective.Dbatools.Parameter.DbaCmConnectionParameter]
                 $ComputerName,
 
@@ -139,7 +139,7 @@
 
         function Test-ConnectionCimDCOM {
             [CmdletBinding()]
-            Param (
+            param (
                 [Sqlcollective.Dbatools.Parameter.DbaCmConnectionParameter]
                 $ComputerName,
 
@@ -176,7 +176,7 @@
 
         function Test-ConnectionWmi {
             [CmdletBinding()]
-            Param (
+            param (
                 [string]
                 $ComputerName,
 
@@ -210,7 +210,7 @@
 
         function Test-ConnectionPowerShellRemoting {
             [CmdletBinding()]
-            Param (
+            param (
                 [string]
                 $ComputerName,
 
@@ -245,7 +245,7 @@
         }
         #endregion Helper Functions
     }
-    Process {
+    process {
         foreach ($ConnectionObject in $ComputerName) {
             if (-not $ConnectionObject.Success) { Stop-Function -Message "Failed to interpret input: $($ConnectionObject.Input)" -Category InvalidArgument -Target $ConnectionObject.Input -Continue}
 
@@ -335,7 +335,7 @@
             $con
         }
     }
-    End {
+    end {
 
     }
 }

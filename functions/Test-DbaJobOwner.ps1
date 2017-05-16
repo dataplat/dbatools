@@ -64,7 +64,7 @@ that TargetLogin must be a valid security principal that exists on the target se
 #>
 	[CmdletBinding()]
 	[OutputType('System.Object[]')]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
@@ -73,9 +73,9 @@ that TargetLogin must be a valid security principal that exists on the target se
 		[Switch]$Detailed
 	)
 	
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlJobs -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
+	dynamicparam { if ($SqlServer) { return Get-ParamSqlJobs -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
 	
-	BEGIN
+	begin
 	{
 		$jobs = $psboundparameters.Jobs
 		$exclude = $psboundparameters.Exclude
@@ -85,7 +85,7 @@ that TargetLogin must be a valid security principal that exists on the target se
 	}
 	
 	
-	PROCESS
+	process
 	{
 		foreach ($servername in $sqlserver)
 		{
@@ -160,7 +160,7 @@ that TargetLogin must be a valid security principal that exists on the target se
 		}
 	}
 	
-	END
+	end
 	{
 		#return results
 		if ($Detailed)

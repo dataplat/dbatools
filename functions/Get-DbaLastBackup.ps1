@@ -54,7 +54,7 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
@@ -62,20 +62,20 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 		[switch]$Simple
 	)
 
-	DynamicParam {
+	dynamicparam {
 		if ($SqlServer) {
 			return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential
 		}
 	}
 
-	BEGIN
+	begin
 	{
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
 	}
 
-	PROCESS
+	process
 	{
 		foreach ($servername in $SqlServer)
 		{

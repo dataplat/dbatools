@@ -23,7 +23,7 @@ function Register-DbaConfigHandler
         
         .EXAMPLE
             PS C:\> $ScriptBlock = {
-                        Param (
+                        param (
                             $Value
                         )
                         
@@ -62,7 +62,7 @@ function Register-DbaConfigHandler
             - Initial Release
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [string]
         $Name,
         

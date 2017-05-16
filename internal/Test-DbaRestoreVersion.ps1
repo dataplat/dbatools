@@ -42,7 +42,7 @@ Checks that the Restore chain in $FilteredFiles is compatiable with the SQL Serv
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
         [parameter(Mandatory = $true)]
         [Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,

@@ -73,7 +73,7 @@ Gets estimated completion times for queries performed against the Northwind, pub
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
@@ -81,7 +81,7 @@ Gets estimated completion times for queries performed against the Northwind, pub
 		[switch]$Silent
 	)
 	
-	DynamicParam
+	dynamicparam
 	{
 		if ($SqlInstance)
 		{
@@ -89,7 +89,7 @@ Gets estimated completion times for queries performed against the Northwind, pub
 		}
 	}
 	
-	BEGIN
+	begin
 	{
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
@@ -106,7 +106,7 @@ Gets estimated completion times for queries performed against the Northwind, pub
 								CASE 
 									WHEN LEN(((DATEDIFF(s,start_time,GetDate()))/3600)) < 2 THEN 2 
 									ELSE LEN(((DATEDIFF(s,start_time,GetDate()))/3600)) 
-								 END)  + ':'
+								 end)  + ':'
 				+ RIGHT('00' + CAST((DATEDIFF(s,start_time,GetDate())%3600)/60 as varchar), 2) + ':'
 				+ RIGHT('00' + CAST((DATEDIFF(s,start_time,GetDate())%60) as varchar), 2) as RunningTime,
 				
@@ -114,7 +114,7 @@ Gets estimated completion times for queries performed against the Northwind, pub
 						CASE 
 									WHEN LEN((estimated_completion_time/3600000)) < 2 THEN 2 
 									ELSE LEN((estimated_completion_time/3600000)) 
-						 END)  + ':'
+						 end)  + ':'
 				+ RIGHT('00' + CAST((estimated_completion_time %3600000)/60000 as varchar), 2) + ':'
 				+ RIGHT('00' + CAST((estimated_completion_time %60000)/1000 as varchar), 2) as EstimatedTimeToGo,
 				dateadd(second,estimated_completion_time/1000, getdate()) as EstimatedCompletionTime,
@@ -123,7 +123,7 @@ Gets estimated completion times for queries performed against the Northwind, pub
 			CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) s"
 	}
 	
-	PROCESS
+	process
 	{
 		foreach ($instance in $SqlInstance)
 		{

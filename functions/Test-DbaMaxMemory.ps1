@@ -47,14 +47,14 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 #>
 
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
 		[object]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	PROCESS
+	process
 	{
 		foreach ($servername in $sqlserver)
 		{

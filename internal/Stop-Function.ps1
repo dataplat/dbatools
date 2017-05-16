@@ -75,7 +75,7 @@
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding(DefaultParameterSetName = 'Plain')]
-    Param (
+    param (
         [Parameter(Mandatory = $true)]
         [string]
         $Message,

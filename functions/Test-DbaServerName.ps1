@@ -59,7 +59,7 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 #>
 	[CmdletBinding()]
 	[OutputType([System.Collections.ArrayList])]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
@@ -68,7 +68,7 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 		[switch]$NoWarning
 	)
 
-	PROCESS
+	process
 	{
 
 		foreach ($servername in $SqlServer)

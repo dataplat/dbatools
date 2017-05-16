@@ -76,9 +76,9 @@ Returns database files and free space information for the db1 and db2 on localho
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$IncludeSystemDBs)
 	
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
+	dynamicparam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
 	
-	BEGIN
+	begin
 	{
 		$sql = "SELECT 
 				    @@SERVERNAME as SqlServer
@@ -98,44 +98,44 @@ Returns database files and free space information for the db1 and db2 on localho
 					,CASE f.max_size	WHEN (-1)
 										THEN CAST(((2147483648.) - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int))/128.0 AS FLOAT)
 										ELSE CAST((f.max_size - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int))/128.0 AS FLOAT)
-										END AS [SpaceBeforeMax]
+										end AS [SpaceBeforeMax]
 					,CASE f.growth	WHEN 0 THEN 0.00
 									ELSE	CASE f.is_percent_growth	WHEN 0
 													THEN	CASE f.max_size
 															WHEN (-1)
 															THEN CAST(((((2147483648.)-f.Size)/f.Growth)*f.Growth)/128.0 AS FLOAT)
 															ELSE CAST((((f.max_size-f.Size)/f.Growth)*f.Growth)/128.0 AS FLOAT)
-															END
+															end
 													WHEN 1
 													THEN	CASE f.max_size
 															WHEN (-1)
 															THEN CAST(CONVERT([int],f.Size*power((1)+CONVERT([float],f.Growth)/(100),CONVERT([int],log10(CONVERT([float],(2147483648.))/CONVERT([float],f.Size))/log10((1)+CONVERT([float],f.Growth)/(100)))))/128.0 AS FLOAT)
 															ELSE CAST(CONVERT([int],f.Size*power((1)+CONVERT([float],f.Growth)/(100),CONVERT([int],log10(CONVERT([float],f.Max_Size)/CONVERT([float],f.Size))/log10((1)+CONVERT([float],f.Growth)/(100)))))/128.0 AS FLOAT)
-															END
+															end
 													ELSE (0)
-													END
-									END AS [PossibleAutoGrowthMB]
+													end
+									end AS [PossibleAutoGrowthMB]
 					, CASE f.growth	WHEN 0 THEN	CASE f.max_size
 												WHEN (-1)
 												THEN CAST(((2147483648.) - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int))/128.0 AS FLOAT)
 												ELSE CAST((f.max_size - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int))/128.0 AS FLOAT)
-												END
+												end
 									ELSE CAST((f.max_size - f.size - (	CASE f.is_percent_growth
 												WHEN 0
 												THEN	CASE f.max_size
 														WHEN (-1)
 														THEN CONVERT(FLOAT,((((2147483648.)-f.Size)/f.Growth)*f.Growth))
 														ELSE CONVERT(FLOAT,(((f.max_size-f.Size)/f.Growth)*f.Growth))
-														END
+														end
 												WHEN 1
 												THEN	CASE f.max_size
 														WHEN (-1)
 														THEN CONVERT([int],f.Size*power((1)+CONVERT([float],f.Growth)/(100),CONVERT([int],log10(CONVERT([float],(2147483648.))/CONVERT([float],f.Size))/log10((1)+CONVERT([float],f.Growth)/(100)))))
 														ELSE CONVERT([int],f.Size*power((1)+CONVERT([float],f.Growth)/(100),CONVERT([int],log10(CONVERT([float],f.Max_Size)/CONVERT([float],f.Size))/log10((1)+CONVERT([float],f.Growth)/(100)))))
-														END
+														end
 														ELSE (0)
-														END ))/128.0 AS FLOAT)
-									END AS [UnusableSpaceMB]
+														end ))/128.0 AS FLOAT)
+									end AS [UnusableSpaceMB]
  
 				FROM sys.database_files AS f WITH (NOLOCK) 
 				LEFT OUTER JOIN sys.filegroups AS fg WITH (NOLOCK)
@@ -145,7 +145,7 @@ Returns database files and free space information for the db1 and db2 on localho
 		$exclude = $psboundparameters.Exclude
 	}
 	
-	PROCESS
+	process
 	{
 		foreach ($instance in $SqlServer)
 		{

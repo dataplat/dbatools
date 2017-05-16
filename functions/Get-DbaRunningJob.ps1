@@ -44,18 +44,18 @@ Returns all active jobs on multiple instances piped into the function
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
 		[string[]]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$Detailed
 	)
-	BEGIN
+	begin
 	{
 		$output = @()
 	}
-	PROCESS
+	process
 	{
 		FOREACH ($Server in $SqlServer)
 		{
@@ -94,7 +94,7 @@ Returns all active jobs on multiple instances piped into the function
 			}
 		}
 	}
-	END
+	end
 	{
 		IF ($Detailed -eq $true)
 		{

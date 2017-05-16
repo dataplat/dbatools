@@ -141,7 +141,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
@@ -169,9 +169,9 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		
 	)
 	
-	DynamicParam { if ($sqlserver) { return Get-ParamSqlDatabases -SqlServer $sqlserver -SqlCredential $SqlCredential } }
+	dynamicparam { if ($sqlserver) { return Get-ParamSqlDatabases -SqlServer $sqlserver -SqlCredential $SqlCredential } }
 	
-	BEGIN
+	begin
 	{
 		$databases = $psboundparameters.Databases
 		
@@ -430,7 +430,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		}
 		
 	}
-	PROCESS
+	process
 	{
 		Start-SqlAgent
 		
@@ -752,16 +752,16 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		}
 	}
 	
-	END
+	end
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
 		
 		if ($Pscmdlet.ShouldProcess("console", "Showing final message"))
 		{
-			$End = Get-Date
-			Write-Output "Finished at $End"
-			$Duration = $End - $start
+			$end = Get-Date
+			Write-Output "Finished at $end"
+			$Duration = $end - $start
 			Write-Output "Script Duration: $Duration"
 		}
 		

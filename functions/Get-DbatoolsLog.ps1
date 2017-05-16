@@ -39,17 +39,17 @@
         $Silent
     )
 
-    BEGIN {
+    begin {
         Write-Message -Level InternalComment -Message "Starting"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
     }
 
-    PROCESS {
+    process {
         if ($Errors) { return [Sqlcollective.Dbatools.dbaSystem.DebugHost]::GetErrors() }
         else { return [Sqlcollective.Dbatools.dbaSystem.DebugHost]::GetLog() }
     }
 
-    END {
+    end {
         Write-Message -Level InternalComment -Message "Ending"
     }
 }

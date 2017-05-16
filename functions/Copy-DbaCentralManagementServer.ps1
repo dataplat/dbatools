@@ -79,7 +79,7 @@ In the above example, top level Group1 and Group3, along with its subgroups and 
 
 #>	
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true)]
 		[object]$Source,
 		[parameter(Mandatory = $true)]
@@ -90,9 +90,9 @@ In the above example, top level Group1 and Group3, along with its subgroups and 
 		[switch]$Force
 	)
 	
-	DynamicParam { if ($Source) { return (Get-ParamSqlCmsGroups -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+	dynamicparam { if ($Source) { return (Get-ParamSqlCmsGroups -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	BEGIN
+	begin
 	{
 		Function Parse-ServerGroup($sourceGroup, $destinationgroup, $SwitchServerName)
 		{
@@ -261,7 +261,7 @@ In the above example, top level Group1 and Group3, along with its subgroups and 
 		}
 	}
 	
-	PROCESS
+	process
 	{
 		Write-Output "Connecting to Central Management Servers"
 		
@@ -289,7 +289,7 @@ In the above example, top level Group1 and Group3, along with its subgroups and 
 		}
 	}
 	
-	END
+	end
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()

@@ -88,7 +88,7 @@ Only db1 database will be verified for features in use that can't be supported o
 	
 #>
     [CmdletBinding(DefaultParameterSetName = "DbMigration", SupportsShouldProcess = $true)]
-	Param (
+	param (
             [parameter(Position = 1, Mandatory = $true, ValueFromPipeline = $True)]
 		    [object]$Source,
 		    [parameter(Position = 2, Mandatory = $true)]
@@ -98,9 +98,9 @@ Only db1 database will be verified for features in use that can't be supported o
 		    [parameter(Position = 5)]
 		    [System.Management.Automation.PSCredential]$DestinationSqlCredential
     )
-    DynamicParam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential } }
+    dynamicparam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential } }
 
-    BEGIN
+    begin
 	{
 	    <#
 			1804890536 = Enterprise
@@ -119,7 +119,7 @@ Only db1 database will be verified for features in use that can't be supported o
         $notesCanMigrate = "Database can be migrated."
         $notesCannotMigrate = "Database cannot be migrated."
     }
-    PROCESS
+    process
     {
         # Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
@@ -302,7 +302,7 @@ Only db1 database will be verified for features in use that can't be supported o
             Write-Output "There are no databases to validate."
         }
     }
-    END
+    end
     {
         $sourceserver.ConnectionContext.Disconnect()
         $destserver.ConnectionContext.Disconnect()

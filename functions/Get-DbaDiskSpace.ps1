@@ -119,7 +119,7 @@ srv0042 D:\                                                               0     
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[Parameter(Mandatory, ValueFromPipeline)]
 		[Alias('ServerInstance', 'SqlInstance', 'SqlServer')]
 		[String[]]$ComputerName,
@@ -132,7 +132,7 @@ srv0042 D:\                                                               0     
 		[Switch]$AllDrives
 	)
 	
-	BEGIN
+	begin
 	{
     $FunctionName = (Get-PSCallstack)[0].Command
 		Function Get-AllDiskSpace
@@ -312,7 +312,7 @@ srv0042 D:\                                                               0     
 		$processed = New-Object System.Collections.ArrayList
 	}
 	
-	PROCESS
+	process
 	{
 		
 		foreach ($server in $ComputerName)

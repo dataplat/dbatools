@@ -48,7 +48,7 @@ Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status,
 		[object]$ComputerName,
 		[PSCredential] [System.Management.Automation.CredentialAttribute()]$Credential
 	)
-	PROCESS
+	process
 	{
 		foreach ( $Computer in $ComputerName )
 		{
