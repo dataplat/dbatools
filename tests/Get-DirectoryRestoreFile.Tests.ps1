@@ -14,13 +14,30 @@ if($env:APPVEYOR_REPO_BRANCH -and $env:APPVEYOR_REPO_BRANCH -notlike "master")
 
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace('.Tests.', '.')
 Import-Module $PSScriptRoot\..\internal\$sut -Force
-
 Describe "Get-DirectoryRestoreFile Unit Tests" -Tag 'Unittests'{
     Context "Test Path handling" {
+         Mock Test-Path {$false}
+         Mock Write-Warning {
+            throw}
         It "Should throw on an invalid Path"{
-            Mock Test-Path {$false}
-            {Get-DirectoryRestoreFile -Path c:\temp\} | Should Throw
+           { Get-DirectoryRestoreFile -Path c:\temp\} | Should Throw
         }
+        It 'Calls Test-Path Mock Once' {
+        $assertMockParams = @{
+            'CommandName' = 'Test-Path'
+            'Times' = 1
+            'Exactly' = $true
+        }
+        Assert-MockCalled @assertMockParams 
+    }
+            It 'Calls Write-Warning Mock Once' {
+        $assertMockParams = @{
+            'CommandName' = 'Write-Warning'
+            'Times' = 1
+            'Exactly' = $true
+        }
+        Assert-MockCalled @assertMockParams 
+    }
     }
     Context "Returning Files from one folder" {
         New-item "TestDrive:\backups\" -ItemType directory
