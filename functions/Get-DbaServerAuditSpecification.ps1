@@ -76,6 +76,6 @@ Returns all Security Audit Specifications for the local and sql2016 SQL Server i
 		}
 	}
     end { 
-            Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-SqlServerAuditSpecification 
+            Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-SqlServerAuditSpecification 
 	}
 }

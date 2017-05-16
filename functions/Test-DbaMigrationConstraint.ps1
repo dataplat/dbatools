@@ -306,6 +306,6 @@ Only db1 database will be verified for features in use that can't be supported o
     {
         $sourceserver.ConnectionContext.Disconnect()
         $destserver.ConnectionContext.Disconnect()
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Test-SqlMigrationConstraint
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Test-SqlMigrationConstraint
     }
 }

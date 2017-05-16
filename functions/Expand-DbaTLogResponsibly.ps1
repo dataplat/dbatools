@@ -521,6 +521,6 @@ https://dbatools.io/Expand-DbaTLogResponsibly
 	{
 		$server.ConnectionContext.Disconnect()
 		Write-Output "Process finished $((Get-Date) - ($initialTime))"
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Expand-SqlTLogResponsibly
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Expand-SqlTLogResponsibly
 	}
 }

@@ -462,6 +462,6 @@ Internal function.
 	END
 	{
 		Write-Output "Script complete!"
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Reset-SqlAdmin
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Reset-SqlAdmin
 	}
 }

@@ -639,6 +639,6 @@ WHERE EXISTS (SELECT 1
 	END
 	{
         $server.ConnectionContext.Disconnect()
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-SqlDuplicateIndex
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-SqlDuplicateIndex
 	}
 }

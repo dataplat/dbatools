@@ -193,6 +193,6 @@ using the SQL credential stored in the variables
 			Write-Output "SQL Server configuration options migration finished"
 		}
 		
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Import-SqlSpConfigure
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Import-SqlSpConfigure
 	}
 }

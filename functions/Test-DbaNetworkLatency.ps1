@@ -127,6 +127,6 @@ Function Test-DbaNetworkLatency {
 	}
 	
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Test-SqlNetworkLatency
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Test-SqlNetworkLatency
 	}
 }

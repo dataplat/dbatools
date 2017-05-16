@@ -129,6 +129,6 @@ https://dbatools.io/Copy-DbaSysDbUserObject
         Write-Output "Migrating user objects in system databases finished"
     }
     END {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlSysDbUserObjects
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlSysDbUserObjects
     }
 }

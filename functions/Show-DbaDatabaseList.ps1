@@ -207,6 +207,6 @@ Shows a GUI list of databases and SQL credentials to log into the SQL Server. Re
 			return $script:selected
 		}
 		
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Show-SqlDatabaseList
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Show-SqlDatabaseList
 	}
 }

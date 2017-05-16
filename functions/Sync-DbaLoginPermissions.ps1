@@ -602,6 +602,6 @@ https://dbatools.io/Sync-DbaLoginPermissions
 			$destserver.ConnectionContext.Disconnect()
 		}
 		
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Sync-SqlLoginPermissions
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Sync-SqlLoginPermissions
 	}
 }

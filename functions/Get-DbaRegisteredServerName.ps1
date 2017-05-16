@@ -190,6 +190,6 @@ Gets a list of server IP addresses in the HR and Accounting groups from the Cent
         else {
             return $servers
         }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-SqlRegisteredServerName
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-SqlRegisteredServerName
     }
 }

@@ -765,6 +765,6 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			Write-Output "Script Duration: $Duration"
 		}
 		
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Remove-SqlDatabaseSafely
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Remove-SqlDatabaseSafely
 	}
 }

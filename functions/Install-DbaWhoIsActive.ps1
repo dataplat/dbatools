@@ -186,6 +186,6 @@ This command doesn't support passing both servers and default database, but you 
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Install-SqlWhoIsActive
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Install-SqlWhoIsActive
 	}
 }

@@ -221,7 +221,7 @@ In the above example, a list of servers is generated using database instance nam
 	END
 	{
 		Write-Output "Script completed"
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Watch-SqlDbLogin
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Watch-SqlDbLogin
 	}
 <#
 ---- SQL database and table ----

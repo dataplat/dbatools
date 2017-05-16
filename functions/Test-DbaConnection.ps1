@@ -266,5 +266,5 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	Write-Output "SQL Server Connection Information`n"
 	$serverinfo | Select-Object ServerName, BaseName, InstanceName, AuthType, ConnectingAsUser, ConnectSuccess, SqlServerVersion, AddlConnectInfo, RemoteServer, IPAddress, NetBIOSname, RemotingAccessible, Pingable, DefaultSQLPortOpen, RemotingPortOpen
 	
-	Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Test-SqlConnection
+	Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Test-SqlConnection
 }

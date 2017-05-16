@@ -188,7 +188,7 @@ Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from s
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Extended Event migration finished" }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlExtendedEvent
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlExtendedEvent
 	}
 }
 

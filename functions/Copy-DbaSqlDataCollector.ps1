@@ -225,7 +225,7 @@ Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlse
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Data Collector migration finished" }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlDataCollector
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlDataCollector
 	}
 }
 

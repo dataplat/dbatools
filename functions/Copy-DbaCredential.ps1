@@ -394,6 +394,6 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Credential migration finished" }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlCredential
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlCredential
 	}
 }

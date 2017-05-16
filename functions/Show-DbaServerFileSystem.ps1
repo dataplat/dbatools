@@ -221,6 +221,6 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
 			return $drive
 		}
 		
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Show-SqlServerFileSystem
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Show-SqlServerFileSystem
 	}
 }
