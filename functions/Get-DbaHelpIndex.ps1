@@ -272,7 +272,7 @@ WITH    cteStatsInfo
                                           + row_overflow_used_page_count)
                                       * 8192 ) / 1024 )
                              ELSE ( ( SUM(used_page_count) * 8192 ) / 1024 )
-                        end AS SizeKB
+                        END AS SizeKB
                FROM     sys.dm_db_partition_stats
                GROUP BY object_id ,
                         index_id
@@ -307,7 +307,7 @@ WITH    cteStatsInfo
                                   AND c.is_included_column = 0
                              THEN sc.name + ' (' + t.name + ')'
                              ELSE sc.name
-                        end AS ColumnName ,
+                        END AS ColumnName ,
                         i.filter_definition ,
                         ISNULL(dd.user_scans, 0) AS user_scans ,
                         ISNULL(dd.user_seeks, 0) AS user_seeks ,
@@ -361,7 +361,7 @@ WITH    cteStatsInfo
                                THEN ' (UNIQUE CONSTRAINT)'
                                WHEN ci.is_unique = 1 THEN ' (UNIQUE)'
                                ELSE ''
-                          end AS IndexType ,
+                          END AS IndexType ,
                         name AS IndexName ,
                         STUFF((SELECT   N', ' + ColumnName
                                FROM     cteIndex ci2
@@ -388,7 +388,7 @@ WITH    cteStatsInfo
                         ci.fill_factor ,
                         CASE WHEN ci.data_compression_desc = 'NONE' THEN ''
                              ELSE ci.data_compression_desc
-                        end AS DataCompression ,
+                        END AS DataCompression ,
                         MAX(ci.user_seeks) + MAX(ci.user_scans)
                         + MAX(ci.user_lookups) AS IndexReads ,
                         MAX(ci.user_lookups) AS IndexLookups ,
@@ -402,7 +402,7 @@ WITH    cteStatsInfo
                              WHEN LastLookup > LastScan
                                   AND LastLookup > LastSeek THEN LastLookup
                              ELSE ''
-                        end AS MostRecentlyUsed
+                        END AS MostRecentlyUsed
                FROM     cteIndex ci
                GROUP BY ci.ObjectName ,
                         ci.name ,
@@ -657,7 +657,7 @@ WITH    cteStatsInfo
                                           + row_overflow_used_page_count)
                                       * 8192 ) / 1024 )
                              ELSE ( ( SUM(used_page_count) * 8192 ) / 1024 )
-                        end AS SizeKB
+                        END AS SizeKB
                FROM     sys.dm_db_partition_stats
                GROUP BY object_id ,
                         index_id
@@ -692,7 +692,7 @@ WITH    cteStatsInfo
                                   AND c.is_included_column = 0
                              THEN sc.name + ' (' + t.name + ')'
                              ELSE sc.name
-                        end AS ColumnName ,
+                        END AS ColumnName ,
                         '' AS filter_definition ,
                         ISNULL(dd.user_scans, 0) AS user_scans ,
                         ISNULL(dd.user_seeks, 0) AS user_seeks ,
@@ -746,7 +746,7 @@ WITH    cteStatsInfo
                                THEN ' (UNIQUE CONSTRAINT)'
                                WHEN ci.is_unique = 1 THEN ' (UNIQUE)'
                                ELSE ''
-                          end AS IndexType ,
+                          END AS IndexType ,
                         name AS IndexName ,
                         STUFF((SELECT   N', ' + ColumnName
                                FROM     cteIndex ci2
@@ -773,7 +773,7 @@ WITH    cteStatsInfo
                         ci.fill_factor ,
                         CASE WHEN ci.data_compression_desc = 'NONE' THEN ''
                              ELSE ci.data_compression_desc
-                        end AS DataCompression ,
+                        END AS DataCompression ,
                         MAX(ci.user_seeks) + MAX(ci.user_scans)
                         + MAX(ci.user_lookups) AS IndexReads ,
                         MAX(ci.user_lookups) AS IndexLookups ,
@@ -787,7 +787,7 @@ WITH    cteStatsInfo
                              WHEN LastLookup > LastScan
                                   AND LastLookup > LastSeek THEN LastLookup
                              ELSE ''
-                        end AS MostRecentlyUsed
+                        END AS MostRecentlyUsed
                FROM     cteIndex ci
                GROUP BY ci.ObjectName ,
                         ci.name ,

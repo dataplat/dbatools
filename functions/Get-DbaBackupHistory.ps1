@@ -292,7 +292,7 @@ Function Get-DbaBackupHistory
 									WHEN 'P' THEN 'Partial Full'
 									WHEN 'Q' THEN 'Partial Differential'
 									ELSE NULL
-								  end AS Type,
+								  END AS Type,
 								  backupset.media_set_id AS MediaSetId,
 								  mediafamily.media_family_id as mediafamilyid,
 								  backupset.backup_set_id as backupsetid,
@@ -305,7 +305,7 @@ Function Get-DbaBackupHistory
 									WHEN 106 THEN 'Permanent Pipe Device'
 									WHEN 7 THEN 'Virtual Device'
 									ELSE 'Unknown'
-								    end AS DeviceType,
+								    END AS DeviceType,
 								  backupset.position,
 								  backupset.first_lsn,
 								  backupset.database_backup_lsn,
@@ -355,7 +355,7 @@ Function Get-DbaBackupHistory
 								WHEN 'P' THEN 'Partial Full'
 								WHEN 'Q' THEN 'Partial Differential'
 								ELSE NULL
-							  end AS Type,
+							  END AS Type,
 							  backupset.media_set_id AS MediaSetId,
 							  mediafamily.media_family_id as mediafamilyid,
 							  backupset.backup_set_id as backupsetid,
@@ -368,7 +368,7 @@ Function Get-DbaBackupHistory
 								WHEN 106 THEN 'Permanent Pipe Device'
 								WHEN 7 THEN 'Virtual Device'
 								ELSE 'Unknown'
-							  end AS DeviceType,
+							  END AS DeviceType,
 							  backupset.position,
 							  backupset.first_lsn,
 							  backupset.database_backup_lsn,

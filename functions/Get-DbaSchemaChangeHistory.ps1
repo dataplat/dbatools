@@ -118,7 +118,7 @@ FUNCTION Get-DbaSchemaChangeHistory {
                             When '46' Then 'Create'
                             when '47' Then 'Drop'
                             when '164' then 'Alter'
-                        end as 'DDLOperation',
+                        END as 'DDLOperation',
                         s.name+'.'+o.name as 'Object',
                         o.type_desc as 'ObjectType'
                         from 

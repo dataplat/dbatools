@@ -138,7 +138,7 @@ Returns database restore information for every database on every server listed i
 						 WHEN rsh.restore_type = 'V' THEN 'Verifyonly'
 						 WHEN rsh.restore_type = 'R' THEN 'Revert'
 						 ELSE rsh.restore_type
-				     end AS [RestoreType],
+				     END AS [RestoreType],
 				     rsh.restore_date AS [Date],
 				     ISNULL(STUFF((SELECT ', ' + bmf.physical_device_name 
 									FROM msdb.dbo.backupmediafamily bmf

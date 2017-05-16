@@ -101,7 +101,7 @@ Shows all databases which actual configured recovery model is FULL and says if t
 		                , CASE
 			                WHEN d.recovery_model = 1 AND drs.last_log_backup_lsn IS NOT NULL THEN 1
 			                ELSE 0
-		                   end AS IsReallyInFullRecoveryModel
+		                   END AS IsReallyInFullRecoveryModel
                   FROM sys.databases AS D
 	                INNER JOIN sys.database_recovery_status AS drs
 	                   ON D.database_id = drs.database_id

@@ -144,8 +144,8 @@ Checks tempdb on the localhost machine. All rest results are shown.
 		    Write-Verbose "TF 1118 evaluated"
 
 		    #get files and log files
-		    $datafiles = $server.Databases['tempdb'].ExecuteWithResults("SELECT physical_name as FileName, max_size as MaxSize, CASE WHEN is_percent_growth = 1 THEN 'Percent' ELSE 'KB' end as GrowthType from sys.database_files WHERE type_desc = 'ROWS'").Tables[0]
-		    $logfiles =  $server.Databases['tempdb'].ExecuteWithResults("SELECT physical_name as FileName, max_size as MaxSize, CASE WHEN is_percent_growth = 1 THEN 'Percent' ELSE 'KB' end as GrowthType from sys.database_files WHERE type_desc = 'LOG'").Tables[0]
+		    $datafiles = $server.Databases['tempdb'].ExecuteWithResults("SELECT physical_name as FileName, max_size as MaxSize, CASE WHEN is_percent_growth = 1 THEN 'Percent' ELSE 'KB' END as GrowthType from sys.database_files WHERE type_desc = 'ROWS'").Tables[0]
+		    $logfiles =  $server.Databases['tempdb'].ExecuteWithResults("SELECT physical_name as FileName, max_size as MaxSize, CASE WHEN is_percent_growth = 1 THEN 'Percent' ELSE 'KB' END as GrowthType from sys.database_files WHERE type_desc = 'LOG'").Tables[0]
 
 		    Write-Verbose "TempDB file objects gathered"
 
