@@ -137,7 +137,9 @@ Switch to silence messages
 If specified all databases will be restore in Standby mode, with a standby file with the name format DatabaseName_YYYYMMDDhhmmss.bak in this folder
 
 .PARAMETER ContinueRestore
-If switch is said, restore will continue on a database that is in recover or standby modes
+If switch is set, restore will continue on a database that is in recover or standby modes
+For best performance it is recommended that this is used with output from Get-DbaBackupHistory, 
+combined with the -TrustDBBackuphistory switch
 
 .NOTES
 Tags: DisasterRecovery, Backup, Restore
@@ -306,6 +308,11 @@ folder for those file types as defined on the target instance.
 				Stop-Function -Message "$SqlSever cannot see the specified Standby Directory $StandbyDirectory"
 				return
 			}
+		}
+		if ($Continue)
+		{
+			$RecoveringDb = Get-DbaDatabase -SqlInstance $SqlServer -SqlCredential $SqlCredential -Status Standby,Recovering
+			$ContinuePoints = Get-DbaRestoreHistory	 -SqlInstance $SqlServer -SqlCredential $SqlCredential -Databases ($recoveringDB.name) -Last
 		}
 		
 	}
