@@ -24,34 +24,15 @@ Describe "Get-XpDirTree Unit Tests" -Tag 'Unittests'{
     mock Test-SqlPath {$true}
 
     Context "Test Connection and User Rights" {
-        Mock Test-SQLPath {$false}
-        Mock Write-Warning {Throw}  ## Need to mock the warnign to stop the error in tests
-
         It "Should throw on an invalid SQL Connection" {
-            Mock Connect-SQLServer {Throw} ## Mock the Connect call to hit the catch inside the function
-            #mock Test-SQLConnection {(1..12) | %{[System.Collections.ArrayList]$t += @{ConnectSuccess = $false}}}         
-            {Get-XpDirTreeRestoreFile -path c:\dummy -sqlserver bad\bad} | Should Throw
+            #mock Test-SQLConnection {(1..12) | %{[System.Collections.ArrayList]$t += @{ConnectSuccess = $false}}}
+            Mock Connect-SQLServer {throw}
+            {Get-XpDirTreeRestoreFile -path c:\dummy -sqlserver bad\bad} | Should Throw 
         }
-        It "Should throw if SQL Server can't see the path" {   
-            $srv = New-Object Microsoft.SQLServer.Management.Smo.Server dummy    ## Mock the server object else throws on Connect and doesnt test path
-            {Get-XpDirTreeRestoreFile -path c:\dummy -sqlserver $srv} | Should Throw 
+        It "Should throw if SQL Server can't see the path" {
+            Mock Test-SQLPath {$false}
+            {Get-XpDirTreeRestoreFile -path c:\dummy -sqlserver bad\bad} | Should Throw 
         }
-        It 'Calls Connect-SQLServer Mock Once' {
-        $assertMockParams = @{
-            'CommandName' = 'Connect-SQLServer'
-            'Times' = 1
-            'Exactly' = $true
-        }
-        Assert-MockCalled @assertMockParams ## Ensure Mocks are called 
-    }
-    It 'Calls Test-SqlPath Mock Once' {
-        $assertMockParams = @{
-            'CommandName' = 'Test-SqlPath'
-            'Times' = 1
-            'Exactly' = $true
-        }
-        Assert-MockCalled @assertMockParams ## Ensure Mocks are called 
-    }
     }
     Context "Non recursive filestructure" {
         $array = (@{subdirectory='full.bak';depth=1;file=1},

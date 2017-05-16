@@ -20,7 +20,7 @@ param([switch]$Finalize)
 		
         Import-Module Pester
 		Set-Variable ProgressPreference -Value SilentlyContinue
-        Invoke-Pester -Show Failed -Path "$ProjectRoot\Tests" -OutputFormat NUnitXml -OutputFile "$ProjectRoot\$TestFile" -PassThru |
+        Invoke-Pester -Quiet -Path "$ProjectRoot\Tests" -OutputFormat NUnitXml -OutputFile "$ProjectRoot\$TestFile" -PassThru |
         Export-Clixml -Path "$ProjectRoot\PesterResults$PSVersion.xml"
     }
 
