@@ -14,6 +14,12 @@ to be executed against multiple SQL Server instances.
 .PARAMETER SqlCredential
 PSCredential object to connect as. If not specified, current Windows login will be used.
 
+.PARAMETER Database
+The database(s) to process. If unspecified, all databases will be processed.
+
+.PARAMETER Exclude
+The database(s) to exclude.
+
 .PARAMETER NoUserDb
 Returns all SQL Server System databases from the SQL Server instance(s) executed against.
 
@@ -87,7 +93,10 @@ Returns databases on multiple instances piped into the function
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [Alias("ServerInstance", "SqlServer")]
         [object[]]$SqlInstance,
-        [System.Management.Automation.PSCredential]$SqlCredential,
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$Exclude,
         [Alias("SystemDbOnly")]
         [parameter(ParameterSetName = "NoUserDb")]
         [switch]$NoUserDb,
@@ -113,13 +122,9 @@ Returns databases on multiple instances piped into the function
         [datetime]$NoLogBackupSince,
         [switch]$Silent
     )
-
-    DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
-
-    BEGIN {
-        $databases = $psboundparameters.Databases
-        $exclude = $psboundparameters.Exclude
-
+	
+	BEGIN {
+		
         if ($NoUserDb -and $NoSystemDb) {
             Stop-Function -Message "You cannot specify both NoUserDb and NoSystemDb" -Continue -Silent $Silent
         }
@@ -156,8 +161,8 @@ Returns databases on multiple instances piped into the function
                 $inputobject = $server.Databases | Where-Object IsSystemObject -eq $false
             }
 
-            if ($databases) {
-                $inputobject = $server.Databases | Where-Object Name -in $databases
+            if ($database) {
+                $inputobject = $server.Databases | Where-Object Name -in $database
             }
 
             if ($status) {
@@ -187,7 +192,7 @@ Returns databases on multiple instances piped into the function
             }
 
             # I forgot the pretty way to do this
-            if (!$NoUserDb -and !$NoSystemDb -and !$databases -and !$status -and !$Owner -and !$Access -and !$Encrypted -and !$RecoveryModel) {
+            if (!$NoUserDb -and !$NoSystemDb -and !$database -and !$status -and !$Owner -and !$Access -and !$Encrypted -and !$RecoveryModel) {
                 $inputobject = $server.Databases
             }
 
