@@ -101,7 +101,7 @@ Function Restore-DBFromFilteredArray
 					{
 						Write-Verbose "$FunctionName - Set $DbName single_user to kill processes"
 						Stop-DbaProcess -SqlServer $Server -Databases $Dbname -WarningAction Silentlycontinue
-						Invoke-SQLcmd2 -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; alter database $DbName set restricted_user; Alter database $DbName set online with rollback immediate" -database master
+						Invoke-DbaSqlcmd -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; alter database $DbName set restricted_user; Alter database $DbName set online with rollback immediate" -database master
 
 					}
 					catch
@@ -124,7 +124,7 @@ Function Restore-DBFromFilteredArray
 			Foreach ($File in $InternalFiles)
 			{
 				Write-Verbose "$FunctionName - Checking $($File.BackupPath) exists"
-				if((Test-SqlPath -SqlServer $sqlServer -SqlCredential $SqlCredential -Path $File.BackupPath) -eq $false)
+				if((Test-DbaSqlPath -SqlServer $sqlServer -SqlCredential $SqlCredential -Path $File.BackupPath) -eq $false)
 				{
 					Write-verbose "$$FunctionName - $($File.backupPath) is missing"
 					$MissingFiles += $File.BackupPath
@@ -143,9 +143,12 @@ Function Restore-DBFromFilteredArray
 		if ($if -ne $null){
 			$RestorePoints  += @([PSCustomObject]@{order=[Decimal]2;'Files' = $if.group})
 		}
-		foreach ($if in ($InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} | Group-Object FirstLSN))
+		($InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} | Group-Object BackupSetGuid)
+
+		foreach ($if in ($InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} | Group-Object BackupSetGuid))
  		{
-   			$RestorePoints  += [PSCustomObject]@{order=[Decimal]($if.Name); 'Files' = $if.group}
+   			#$RestorePoints  += [PSCustomObject]@{order=[Decimal]($if.Name); 'Files' = $if.group}
+			$RestorePoints += [PSCustomObject]@{order=[Decimal](($if.Group.backupstartdate | sort-object -Unique).ticks); 'Files'= $if.group}
 		}
 		$SortedRestorePoints = $RestorePoints | Sort-object -property order
 		if ($ReuseSourceFolderStructure)
@@ -154,7 +157,7 @@ Function Restore-DBFromFilteredArray
 			foreach ($File in ($RestorePoints.Files.filelist.PhysicalName | Sort-Object -Unique))
 			{
 				write-verbose "File = $file"
-				if ((Test-SqlPath -Path (Split-Path -Path $File -Parent) -SqlServer:$SqlServer -SqlCredential:$SqlCredential) -ne $true)
+				if ((Test-DbaSqlPath -Path (Split-Path -Path $File -Parent) -SqlServer:$SqlServer -SqlCredential:$SqlCredential) -ne $true)
 					{
 					if ((New-DbaSqlDirectory -Path (Split-Path -Path $File -Parent) -SqlServer:$SqlServer -SqlCredential:$SqlCredential).Created -ne $true)
 					{

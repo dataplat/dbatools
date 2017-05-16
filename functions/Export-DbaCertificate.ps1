@@ -113,7 +113,7 @@ Exports all certificates named CertTDE on the specified SQL Server, not specifyi
 			$fullcertname = "$actualpath\$certname$Suffix"
 			$exportpathkey = "$fullcertname.pvk"
 			
-			if (!(Test-SqlPath -SqlServer $server -Path $actualpath)) {
+			if (!(Test-DbaSqlPath -SqlServer $server -Path $actualpath)) {
 				Stop-Function -Message "$SqlInstance cannot access $actualpath" -Target $actualpath
 			}
 			

@@ -76,6 +76,18 @@ If switch enabled, the backup with be verified by running a RESTORE VERIFYONLY a
 .PARAMETER DatabaseCollection
 Internal parameter
 
+.PARAMETER AzureBaseUrl
+The URL to the basecontainer of an Azure storage account to write backups to
+
+If specified, the only other parameters than can be used are:
+NoCopyOnly, Type, CompressBackup, Checksum, Verify, AzureCredential, CreateFolder
+
+.PARAMETER AzureCredential
+The name of the credential on the SQL instance that can write to the AzureBaseUrl
+
+.PARAMETER Silent
+Switch to silence the internal messaing functions
+
 .NOTES
 Tags: DisasterRecovery, Backup, Restore
 Original Author: Stuart Moore (@napalmgram), stuart-moore.com
@@ -97,6 +109,12 @@ default backup directory
 Backup-DbaDatabase -SqlInstance sql2016 -BackupDirectory C:\temp -Databases AdventureWorks2014 -Type Full
 
 Backs up AdventureWorks2014 to sql2016's C:\temp folder 
+
+.EXAMPLE
+Backup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/ -AzureCredential dbatoolscred -Type Full -CreateFolder
+
+Performs a full backup of all databases on the slq2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the 
+sql credential dbatoolscred registered on the sql2016 instance
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	param (
@@ -117,25 +135,27 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 		[switch]$Verify,
 		[int]$MaxTransferSize,
 		[int]$BlockSize,
-		[int]$BufferCount
+		[int]$BufferCount,
+		[string]$AzureBaseUrl,
+		[string]$AzureCredential,
+		[switch]$Silent
 	)
 	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
 	BEGIN
 	{
-		$FunctionName = $FunctionName = (Get-PSCallstack)[0].Command
 				
 		if ($SqlInstance.length -ne 0)
 		{
 			$databases = $psboundparameters.Databases
-			Write-Verbose "Connecting to $SqlInstance"
+			Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
 			try
 			{
 				$Server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
 			}
 			catch
 			{
-				Write-Warning "$FunctionName - Cannot connect to $SqlInstance"
+				Write-Message -Level Warning -Message  "Cannot connect to $SqlInstance"
 				continue
 			}
 			
@@ -150,28 +170,39 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			
 			if ($BackupDirectory.count -gt 1)
 			{
-				Write-Verbose "$FunctionName - Multiple Backup Directories, striping"
+				Write-Message -Level Verbose -Message "Multiple Backup Directories, striping"
 				$Filecount = $BackupDirectory.count
 			}
 			
 			if ($DatabaseCollection.count -gt 1 -and $BackupFileName -ne '')
 			{
-				Write-Warning "$FunctionName - 1 BackupFile specified, but more than 1 database." -WarningAction stop
+				Write-Message -Level Warning -Message  "1 BackupFile specified, but more than 1 database." 
 				break
 			}
 
 			if (($MaxTransferSize%64kb) -ne 0 -or $MaxTransferSize -gt 4mb)
 			{
-				Write-Warning "$FunctionName - MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
+				Write-Message -Level Warning -Message  "MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
 				break
 			}
 			if ($BlockSize)
 			{
 				if ($BlockSize -notin (0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb))
 				{
-					Write-Warning "$FunctionName - Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
+					Write-Message -Level Warning -Message  "Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
 					break
 				}
+			}
+			if ('' -ne $AzureBaseUrl)
+			{
+				if ($null -eq $AzureCredential)
+				{
+					Stop-Function -Message "You must provide the credential name for the Azure Storage Account"
+					break
+				}
+				$AzureBaseUrl = $AzureBaseUrl.Trim("/")
+				$FileCount = 1
+				$BackupDirectory = $AzureBaseUrl
 			}
 		}
 	}
@@ -179,11 +210,11 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 	{		
 		if (!$SqlInstance -and !$DatabaseCollection)
 		{
-			Write-Warning "You must specify a server and database or pipe some databases"
+			Write-Message -Level Warning -Message  "You must specify a server and database or pipe some databases"
 			continue
 		}
 		
-		Write-Verbose "$FunctionName - $($DatabaseCollection.count) database to backup"
+		Write-Message -Level Verbose -Message "$($DatabaseCollection.count) database to backup"
 		
 		ForEach ($Database in $databasecollection)
 		{
@@ -192,37 +223,37 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			
 			if ($dbname -eq "tempdb")
 			{
-				Write-Warning "Backing up tempdb not supported"
+				Write-Message -Level Warning -Message  "Backing up tempdb not supported"
 				continue
 			}
 			
 			if ('Normal' -notin ($Database.Status -split ',') )
 			{
-				Write-Warning "Database status not Normal. $dbname skipped."
+				Write-Message -Level Warning -Message  "Database status not Normal. $dbname skipped."
 				continue
 			}
 			
 			if ($Database.DatabaseSnapshotBaseName)
 			{
-				Write-Warning "Backing up snapshots not supported. $dbname skipped."
+				Write-Message -Level Warning -Message  "Backing up snapshots not supported. $dbname skipped."
 				continue
 			}
 						
 			if ($server -eq $null) { $server = $Database.Parent }
 			
-			Write-Verbose "$FunctionName - Backup up database $database"
+			Write-Message -Level Verbose -Message "Backup up database $database"
 			
 			if ($Database.RecoveryModel -eq $null)
 			{
 				$Database.RecoveryModel = $server.databases[$Database.Name].RecoveryModel
-				Write-Verbose "$dbname is in $($Database.RecoveryModel) recovery model"
+				Write-Message -Level Verbose -Message "$dbname is in $($Database.RecoveryModel) recovery model"
 			}
 			
 			if ($Database.RecoveryModel -eq 'Simple' -and $Type -eq 'Log')
 			{
 				$failreason = "$database is in simple recovery mode, cannot take log backup"
 				$failures += $failreason
-				Write-Warning "$FunctionName - $failreason"
+				Write-Message -Level Warning -Message  "$failreason"
 			}
 			
 			$lastfull = $database.LastBackupDate.Year
@@ -231,7 +262,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			{
 				$failreason = "$database does not have an existing full backup, cannot take log or differentialbackup"
 				$failures += $failreason
-				Write-Warning "$FunctionName - $failreason"
+				Write-Message -Level Warning -Message  "$failreason"
 			}
 			
 			$copyonly = !$NoCopyOnly
@@ -245,11 +276,11 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			{
 				if ($server.Edition -like 'Express*' -or ($server.VersionMajor -eq 10 -and $server.VersionMinor -eq 0 -and $server.Edition -notlike '*enterprise*') -or $server.VersionMajor -lt 10)
 				{
-					Write-Warning "$FunctionName - Compression is not supported with this version/edition of Sql Server"
+					Write-Message -Level Warning -Message  "Compression is not supported with this version/edition of Sql Server"
 				}
 				else
 				{
-					Write-Verbose "$FunctionName - Compression enabled"
+					Write-Message -Level Verbose -Message "Compression enabled"
 					$backup.CompressionOption =1
 				}
 			}
@@ -261,14 +292,14 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 
 			if ($type -in 'diff', 'differential')
 			{
-				Write-Verbose "Creating differential backup"
+				Write-Message -Level Verbose -Message "Creating differential backup"
 				$type = "Database"
 				$backup.Incremental = $true
 			}
 			
 			if ($Type -eq "Log")
 			{
-				Write-Verbose "$FunctionName - Creating log backup"
+				Write-Message -Level Verbose -Message "Creating log backup"
 				$Suffix = "trn"
 			}
 			
@@ -279,8 +310,12 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			
 			$backup.CopyOnly = $copyonly
 			$backup.Action = $type
+			if ('' -ne $AzureBaseUrl)
+			{
+				$backup.CredentialName = $AzureCredential
+			}
 			
-			Write-Verbose "$FunctionName - Sorting Paths"
+			Write-Message -Level Verbose -Message "Sorting Paths"
 			
 			#If a backupfilename has made it this far, use it
 			$FinalBackupPath = @()
@@ -297,9 +332,9 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					$BackupFileName = "$BackupDirectory\$BackupFileName" # removed auto suffix
 				}
 				
-				Write-Verbose "$FunctionName - Single db and filename"
+				Write-Message -Level Verbose -Message "Single db and filename"
 				
-				if (Test-SqlPath -SqlServer $server -Path (Split-Path $BackupFileName))
+				if (Test-DbaSqlPath -SqlServer $server -Path (Split-Path $BackupFileName))
 				{
 					$FinalBackupPath += $BackupFileName
 				}
@@ -307,7 +342,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 				{
 					$failreason = "SQL Server cannot write to the location $(Split-Path $BackupFileName)"
 					$failures += $failreason
-					Write-Warning "$FunctionName - $failreason"
+					Write-Message -Level Warning -Message  "$failreason"
 				}
 			}
 			else
@@ -318,38 +353,47 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 				}
 	
 				$timestamp = (Get-date -Format yyyyMMddHHmm)
+				Write-Message -Level Verbose -Message "Setting filename"
 				$BackupFileName = "$($dbname)_$timestamp"
-				
+				if ('' -ne $AzureBaseUrl)
+				{
+					write-verbose "Azure div"
+					$PathDivider =  "/"
+				}
+				else
+				{
+					$PathDivider= "\"
+				}
 				Foreach ($path in $BackupDirectory)
 				{
 					if ($CreateFolder)
 					{
-						$Path = $path + "\" + $Database.name
-						Write-Verbose "$FunctionName - Creating Folder $Path"	
-						if ((New-DbaSqlDirectory -SqlServer $server -SqlCredential $SqlCredential -Path $path).Created -eq $false)
+						$Path = $path + $PathDivider + $Database.name
+						Write-Message -Level Verbose -Message "Creating Folder $Path"
+						if (((New-DbaSqlDirectory -SqlServer $server -SqlCredential $SqlCredential -Path $path).Created -eq $false) -and '' -eq $AzureBaseUrl)
 						{
 							$failreason = "Cannot create or write to folder $path"
 							$failures += $failreason
-							Write-Warning "$FunctionName - $failreason"
+							Write-Message -Level Warning -Message  "$failreason"
 						}
 						else
 						{
-							$FinalBackupPath += "$path\$BackupFileName.$suffix"
+							$FinalBackupPath += "$path$PathDivider$BackupFileName.$suffix"
 						}
 					}
 					else
 					{
-						$FinalBackupPath += "$path\$BackupFileName.$suffix"
+						$FinalBackupPath += "$path$PathDivider$BackupFileName.$suffix"
 					}
 					<#
-					The code below attempts to create the directory even when $CreateFolder -- was it supposed to be Test-SqlPath?
+					The code below attempts to create the directory even when $CreateFolder -- was it supposed to be Test-DbaSqlPath?
 					else
 					{
 						if ((New-DbaSqlDirectory -SqlServer $server -SqlCredential $SqlCredential -Path $path).Created -eq $false)
 						{
 							$failreason = "Cannot create or write to folder $path"
 							$failures += $failreason
-							Write-Warning "$FunctionName - $failreason"
+							Write-Message -Level Warning -Message  "$failreason"
 						}
 						$FinalBackupPath += "$path\$BackupFileName.$suffix"
 					}
@@ -357,12 +401,15 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 				}
 			}
 			
-			$file = New-Object System.IO.FileInfo($FinalBackupPath[0])
+			if ('' -eq $AzureBaseUrl)
+			{
+				$file = New-Object System.IO.FileInfo($FinalBackupPath[0])
+			}
 			$suffix = $file.Extension
 			
 			if ($FileCount -gt 1 -and $FinalBackupPath.count -eq 1)
 			{
-				Write-Verbose "$FunctionName - Striping for Filecount of $filecount"
+				Write-Message -Level Verbose -Message "Striping for Filecount of $filecount"
 				$stripes = $filecount
 				
 				for ($i= 2; $i -lt $stripes+1; $i++)
@@ -374,7 +421,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			}
 			elseif ($FinalBackupPath.count -gt 1)
 			{
-				Write-Verbose "$FunctionName - String for Backup path count of $($FinalBackupPath.count)"
+				Write-Message -Level Verbose -Message "String for Backup path count of $($FinalBackupPath.count)"
 				$stripes = $FinalbackupPath.count
 				for ($i= 1; $i -lt $stripes+1; $i++)
 				{
@@ -392,12 +439,19 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 				foreach ($backupfile in $FinalBackupPath)
 				{
 					$device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-					$device.DeviceType = "File"
+					if ('' -ne $AzureBaseUrl)
+					{
+						$device.DeviceType = "URL"
+					}
+					else
+					{
+						$device.DeviceType = "File"
+					}
 					$device.Name = $backupfile
 					$backup.Devices.Add($device)
 				}
 				
-				Write-Verbose "$FunctionName - Devices added"
+				Write-Message -Level Verbose -Message "Devices added"
 				$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
 					Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
 				}
@@ -461,7 +515,7 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 				catch
 				{
 					Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
-					Write-Exception $_
+					Stop-Function -message "Backup Failed:  $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_
 					$BackupComplete = $false
 				}
 			}

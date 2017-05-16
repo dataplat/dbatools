@@ -75,7 +75,7 @@ SQL Server is required to process offilne MDF files. The abvoe example reutrns i
 			$servername = $server.name
 			$serviceaccount = $server.ServiceAccount
 			
-			$exists = Test-SqlPath $server $Path
+			$exists = Test-DbaSqlPath $server $Path
 			
 			if ($exists -eq $false)
 			{

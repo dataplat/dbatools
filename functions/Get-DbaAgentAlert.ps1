@@ -69,9 +69,9 @@ FUNCTION Get-DbaAgentAlert {
 			foreach ($alert in $alerts) {
 				$lastraised = [dbadatetime]$alert.LastOccurrenceDate
 				
-				Add-Member -InputObject $alert -MemberType NoteProperty ComputerName -value $server.NetName
-				Add-Member -InputObject $alert -MemberType NoteProperty InstanceName -value $server.ServiceName
-				Add-Member -InputObject $alert -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
+				Add-Member -InputObject $alert -MemberType NoteProperty -Name ComputerName -value $server.NetName
+				Add-Member -InputObject $alert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+				Add-Member -InputObject $alert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 				Add-Member -InputObject $alert -MemberType NoteProperty Notifications -value $alert.EnumNotifications()
 				Add-Member -InputObject $alert -MemberType NoteProperty LastRaised -value $lastraised
 				
