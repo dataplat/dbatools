@@ -220,6 +220,6 @@ https://dbatools.io/Repair-DbaOrphanUser
 		$totaltime = ($start.Elapsed)
 		Write-Output "Total Elapsed time: $totaltime"
 		
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$true -Alias Repair-SqlOrphanUser
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Repair-SqlOrphanUser
 	}
 }

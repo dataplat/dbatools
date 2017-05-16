@@ -282,6 +282,6 @@ Returns PSObject representing tempdb configuration.
 		}
 	}
 	end { 
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$true -Alias Set-SqlTempDbConfiguration
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Set-SqlTempDbConfiguration
 	}
 	}
