@@ -73,7 +73,7 @@ Gets super detailed information for execution plans on only for AdventureWorks20
 	
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[string[]]$SqlInstance,
@@ -85,9 +85,9 @@ Gets super detailed information for execution plans on only for AdventureWorks20
 		[switch]$Force
 	)
 	
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
+	dynamicparam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
-	BEGIN
+	begin
 	{
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
@@ -104,7 +104,7 @@ Gets super detailed information for execution plans on only for AdventureWorks20
 		}
 	}
 	
-	PROCESS
+	process
 	{
 		foreach ($instance in $sqlinstance)
 		{

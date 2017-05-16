@@ -36,7 +36,7 @@ function Get-DbaConfigValue
 	#>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSPossibleIncorrectComparisonWithNull", "")]
     [CmdletBinding()]
-    Param (
+    param (
         [Parameter(Mandatory = $true)]
         [string]
         $Name,

@@ -53,7 +53,7 @@ Function Get-DbaSqlService
 
 #>
 [CmdletBinding()]
-Param (
+param (
   [parameter(ValueFromPipeline = $true)]
   [Alias("cn","host","Server")]
   [string[]]$ComputerName = $env:COMPUTERNAME,
@@ -61,13 +61,13 @@ Param (
   [ValidateSet("Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS")][string]$Type
 )
 
-BEGIN
+begin
   {
   $FunctionName = (Get-PSCallstack)[0].Command
   $ComputerName = $ComputerName | ForEach-Object {$_.split("\")[0]} | Select-Object -Unique
   $TypeClause = switch($Type){ "Agent" {" = 2"} "Browser" {" = 7"} "Engine" {" = 1"} "FulText" {"= 3 OR SQLServiceType = 9"} "SSAS" {" = 5"} "SSIS" {" = 4"} "SSRS" {" = 6"} default {"> 0"} }
   }
-PROCESS
+process
   {
         foreach ( $Computer in $ComputerName )
         {

@@ -44,7 +44,7 @@ function Get-DbaDependency
             https://dbatools.io/Get-DbaDependency
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [Parameter(ValueFromPipeline = $true)]
         $InputObject,
         
@@ -61,13 +61,13 @@ function Get-DbaDependency
         $Silent
     )
     
-    Begin
+    begin
     {
         #region Utility functions
         function Get-DependencyTree
         {
             [CmdletBinding()]
-            Param (
+            param (
                 $Object,
                 
                 $Server,
@@ -111,7 +111,7 @@ function Get-DbaDependency
         function Read-DependencyTree
         {
             [CmdletBinding()]
-            Param (
+            param (
                 [System.Object]
                 $InputObject,
                 
@@ -136,7 +136,7 @@ function Get-DbaDependency
         function Get-DependencyTreeNodeDetail
         {
             [CmdletBinding()]
-            Param (
+            param (
                 [Parameter(ValueFromPipeline = $true)]
                 $SmoObject,
                 
@@ -148,7 +148,7 @@ function Get-DbaDependency
                 $AllowSystemObjects
             )
             
-            Begin
+            begin
             {
                 $scripter = New-Object Microsoft.SqlServer.Management.Smo.Scripter
                 $options = New-Object Microsoft.SqlServer.Management.Smo.ScriptingOptions
@@ -196,16 +196,16 @@ function Get-DbaDependency
         function Select-DependencyPrecedence
         {
             [CmdletBinding()]
-            Param (
+            param (
                 [Parameter(ValueFromPipeline = $true)]
                 $Dependency
             )
             
-            Begin
+            begin
             {
                 $list = @()
             }
-            Process
+            process
             {
                 foreach ($dep in $Dependency)
                 {
@@ -213,14 +213,14 @@ function Get-DbaDependency
                     $list += $dep
                 }
             }
-            End
+            end
             {
                 $list | Group-Object -Property Object | ForEach-Object { $_.Group | Sort-Object -Property Tier -Descending | Select-Object -First 1 } | Sort-Object Tier
             }
         }
         #endregion Utility functions
     }
-    Process
+    process
     {
         foreach ($Item in $InputObject)
         {

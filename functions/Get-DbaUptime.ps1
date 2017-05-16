@@ -59,7 +59,7 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 	
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance", "ComputerName")]
 		[object[]]$SqlServer,
@@ -72,7 +72,7 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 		[PsCredential]$WindowsCredential
 	)
 	
-	PROCESS
+	process
 	{
 		foreach ($instance in $SqlServer)
 		{
@@ -107,7 +107,7 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 				Write-Verbose "Getting Start times for $servername"
 				#Get TempDB creation date
 				$SQLStartTime = $server.Databases["TempDB"].CreateDate
-				$SQLUptime = New-TimeSpan -Start $SQLStartTime -End (Get-Date)
+				$SQLUptime = New-TimeSpan -Start $SQLStartTime -end (Get-Date)
 				$SQLUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($SQLUptime.Days), $($SQLUptime.Hours), $($SQLUptime.Minutes), $($SQLUptime.Seconds)
 			}
 			

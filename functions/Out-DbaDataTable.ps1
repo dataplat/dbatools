@@ -47,7 +47,7 @@ $dblist | Out-DbaDataTable
 Similar to above but $dbalist gets piped in
 
 .EXAMPLE
-Get-Process | Out-DbaDataTable -TimeSpanType TotalSeconds
+Get-process | Out-DbaDataTable -TimeSpanType TotalSeconds
 
 Creates a DataTable with the running processes and converts any TimeSpan property to TotalSeconds.
 
@@ -81,7 +81,7 @@ Creates a DataTable with the running processes and converts any TimeSpan propert
         [switch]$Silent   
 	)
 	
-	Begin
+	begin
 	{
         
 		function ConvertType 
@@ -157,7 +157,7 @@ Creates a DataTable with the running processes and converts any TimeSpan propert
         $ShouldCreateCollumns = $true
 	}
 	
-	Process
+	process
 	{
 		if (!$InputObject) {
 			if ($IgnoreNull) {
@@ -260,7 +260,7 @@ Creates a DataTable with the running processes and converts any TimeSpan propert
         }
 	}
 	
-	End
+	end
 	{
 		return @( ,($datatable))
 	}

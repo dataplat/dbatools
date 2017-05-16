@@ -55,7 +55,7 @@ Sets the Power Plan to the custom power plan called "Maximum Performance". Skips
 	
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServer")]
 		[string[]]$ComputerName,
@@ -64,7 +64,7 @@ Sets the Power Plan to the custom power plan called "Maximum Performance". Skips
 		[string]$CustomPowerPlan
 	)
 	
-	BEGIN
+	begin
 	{
 		if ($CustomPowerPlan.Length -gt 0) { $PowerPlan = $CustomPowerPlan }
 		
@@ -141,7 +141,7 @@ Sets the Power Plan to the custom power plan called "Maximum Performance". Skips
 		$processed = New-Object System.Collections.ArrayList
 	}
 	
-	PROCESS
+	process
 	{
 		foreach ($server in $ComputerName)
 		{
@@ -184,7 +184,7 @@ Sets the Power Plan to the custom power plan called "Maximum Performance". Skips
 		}
 	}
 	
-	END
+	end
 	{
 		If ($Pscmdlet.ShouldProcess("console", "Showing results"))
 		{

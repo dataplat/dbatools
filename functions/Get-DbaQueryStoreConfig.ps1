@@ -48,14 +48,14 @@ Returns Query Store configuration settings for every database on the ServerA\sql
 	
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	DynamicParam
+	dynamicparam
 	{
 		if ($SqlInstance)
 		{
@@ -63,14 +63,14 @@ Returns Query Store configuration settings for every database on the ServerA\sql
 		}
 	}
 	
-	BEGIN
+	begin
 	{
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
 	}
 	
-	PROCESS
+	process
 	{
 		foreach ($instance in $SqlInstance)
 		{

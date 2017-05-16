@@ -94,13 +94,13 @@
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	DynamicParam { if ($SqlInstance) { return (Get-ParamSqlJobs -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential) } }
+	dynamicparam { if ($SqlInstance) { return (Get-ParamSqlJobs -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential) } }
 	
-	BEGIN
+	begin
 	{
 		$jobname = $psboundparameters.Jobs
 	}
-	PROCESS
+	process
 	{
 		foreach ($instance in $sqlinstance)
 		{

@@ -54,7 +54,7 @@ Remove-DbaDatabase -SqlInstance sql2016 -Databases containeddb -Confirm:$false
 Does not prompt and swiftly removes containeddb on SQL Server sql2016
 #>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
@@ -63,9 +63,9 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 		[switch]$Silent
 	)
 	
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
+	dynamicparam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
-	BEGIN
+	begin
 	{
 		$databases = $psboundparameters.Databases
 		
@@ -75,7 +75,7 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 		}
 	}
 	
-	PROCESS
+	process
 	{
 		if (Test-FunctionInterrupt) { return }
 		

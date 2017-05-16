@@ -109,10 +109,10 @@ Quickly and efficiently performs a bulk insert of all the data into mydb.dbo.cus
 Per Microsoft, KeepNulls will "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
 
 .EXAMPLE
-$process = Get-Process | Out-DbaDataTable
+$process = Get-process | Out-DbaDataTable
 Write-DbaDataTable -InputObject $process -SqlServer sql2014 -Database mydb -Table myprocesses -AutoCreateTable
 
-Creates a table based on the Process object with over 60 columns, converted from PowerShell data types to SQL Server data types. After the table is created a bulk insert is performed to add process information into the table.
+Creates a table based on the process object with over 60 columns, converted from PowerShell data types to SQL Server data types. After the table is created a bulk insert is performed to add process information into the table.
 
 This is a good example of the type conversion in action. All process properties are converted, including special types like TimeSpan. Script properties are resolved before the type conversion starts thanks to Out-DbaDataTable.
 #>	
@@ -161,9 +161,9 @@ This is a good example of the type conversion in action. All process properties 
 		[switch]$Silent
 	)
 	
-	DynamicParam { if ($sqlserver) { return Get-ParamSqlDatabase -SqlServer $SqlServer -SqlCredential $SqlCredential } }
+	dynamicparam { if ($sqlserver) { return Get-ParamSqlDatabase -SqlServer $SqlServer -SqlCredential $SqlCredential } }
 	
-	BEGIN
+	begin
 	{
 		if (!$Truncate) { $ConfirmPreference = "None" }
 		
@@ -314,7 +314,7 @@ This is a good example of the type conversion in action. All process properties 
 
     }
 	
-	PROCESS
+	process
 	{
 		if ($InputObject -eq $null)
 		{
@@ -388,7 +388,7 @@ This is a good example of the type conversion in action. All process properties 
 					$sqldatatypes += "[$sqlcolumnname] $sqldatatype"
 				}
 				
-				$sql = "BEGIN CREATE TABLE $fqtn ($($sqldatatypes -join ' NULL,')) END"
+				$sql = "begin CREATE TABLE $fqtn ($($sqldatatypes -join ' NULL,')) end"
 				
 				Write-Message -Level Debug -Message $sql
 				
@@ -415,7 +415,7 @@ This is a good example of the type conversion in action. All process properties 
 			if ($rowcount -is [int]) { Write-Progress -id 1 -activity "Inserting $rowcount rows" -status "Complete" -Completed }
 		}
 	}
-	END
+	end
 	{
 		if ($bulkcopy)
 		{

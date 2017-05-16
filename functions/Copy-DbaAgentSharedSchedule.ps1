@@ -82,9 +82,9 @@ Shows what would happen if the command were executed using force.
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlSharedSchedules -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+	dynamicparam { if ($source) { return (Get-ParamSqlSharedSchedules -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	BEGIN
+	begin
 	{
 		$schedules = $psboundparameters.SharedSchedules
 		
@@ -102,7 +102,7 @@ Shows what would happen if the command were executed using force.
 		$serverschedules = $sourceserver.JobServer.SharedSchedules
 		$destschedules = $destserver.JobServer.SharedSchedules
 	}
-	PROCESS
+	process
 	{
 		foreach ($schedule in $serverschedules)
 		{
@@ -161,7 +161,7 @@ Shows what would happen if the command were executed using force.
 		}
 	}
 	
-	END
+	end
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()

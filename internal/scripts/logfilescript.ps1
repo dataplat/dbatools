@@ -3,7 +3,7 @@ $scriptBlock = {
     function Clean-ErrorXml
     {
         [CmdletBinding()]
-        Param (
+        param (
             $Path
         )
         
@@ -25,7 +25,7 @@ $scriptBlock = {
     function Clean-MessageLog
     {
         [CmdletBinding()]
-        Param (
+        param (
             $Path
         )
         
@@ -47,7 +47,7 @@ $scriptBlock = {
     function Clean-GlobalLog
     {
         [CmdletBinding()]
-        Param (
+        param (
             $Path
         )
         
@@ -93,7 +93,7 @@ $scriptBlock = {
         if (-not ($num_Error)) { $num_Error = 0 }
         if (-not ($num_Message)) { $num_Message = 0 }
         
-        #region Process Errors
+        #region process Errors
         while ([sqlcollective.dbatools.dbaSystem.DebugHost]::OutQueueError.Count -gt 0)
         {
             $num_Error++
@@ -108,9 +108,9 @@ $scriptBlock = {
             
             Clean-ErrorXml -Path $root
         }
-        #endregion Process Errors
+        #endregion process Errors
         
-        #region Process Logs
+        #region process Logs
         while ([sqlcollective.dbatools.dbaSystem.DebugHost]::OutQueueLog.Count -gt 0)
         {
             $CurrentFile = "$($root.FullName)\dbatools_$($pid)_message_$($num_Message).log"
@@ -131,7 +131,7 @@ $scriptBlock = {
                 Add-Content -Path $CurrentFile -Value (ConvertTo-Csv -InputObject $Entry -NoTypeInformation)[1]
             }
         }
-        #endregion Process Logs
+        #endregion process Logs
         
         Clean-MessageLog -Path $root
         Clean-GlobalLog -Path $root

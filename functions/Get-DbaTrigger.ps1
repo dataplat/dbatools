@@ -49,7 +49,7 @@ Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerN
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer","instance")]
 		[string[]]$SqlInstance,
@@ -57,15 +57,15 @@ Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerN
 		[PsCredential]$Credential
 	)
 
-	DynamicParam {
+	dynamicparam {
 		if ($SqlInstance) {
 			return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $Credential
 		}
 	}
 
-	BEGIN {}
+	begin {}
 
-    PROCESS {
+    process {
         foreach ($Instance in $SqlInstance)
             {
             Write-Verbose "Connecting to $Instance"
@@ -113,5 +113,5 @@ Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerN
                 }
         }
     }
-    END {}
+    end {}
 }

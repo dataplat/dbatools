@@ -34,7 +34,7 @@ Function Restore-DBFromFilteredArray
 		[int]$BufferCount
 	)
     
-	Begin
+	begin
     {
         $FunctionName =(Get-PSCallstack)[0].Command
         Write-Verbose "$FunctionName - Starting"
@@ -66,7 +66,7 @@ Function Restore-DBFromFilteredArray
             $InternalFiles += $File
         }
     }
-    End
+    end
     {
 		try 
 		{

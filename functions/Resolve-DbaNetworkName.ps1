@@ -63,11 +63,11 @@ Function Resolve-DbaNetworkName
 		[Alias('FastParrot')]
 		[switch]$Turbo
 	)
-	BEGIN
+	begin
 	{
 		$functionName = (Get-PSCallstack)[0].Command
 	}
-	PROCESS
+	process
 	{
 		foreach ($Computer in $ComputerName)
 		{

@@ -75,7 +75,7 @@ Removes the scheduled task created by Install-DbaWatchUpdate.
 		If (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
 		{
 			Write-Warning "Removal of the scheduled task requires elevated permissions because of the way it had to be setup."
-			Start-Process powershell -Verb runAs -ArgumentList Uninstall-DbaWatchUpdate -Wait
+			Start-process powershell -Verb runAs -ArgumentList Uninstall-DbaWatchUpdate -Wait
 		}
 		else
 		{

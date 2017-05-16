@@ -94,9 +94,9 @@ Shows what would happen if the command were executed using force.
         [switch]$Force,
         [switch]$Silent
     )
-    DynamicParam { if ($source) { return (Get-ParamSqlJobs -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+    dynamicparam { if ($source) { return (Get-ParamSqlJobs -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 
-    BEGIN {
+    begin {
         $jobs = $psboundparameters.Jobs
         $exclude = $psboundparameters.Exclude
 
@@ -107,7 +107,7 @@ Shows what would happen if the command were executed using force.
         $destination = $destServer.DomainInstanceName
 
     }
-    PROCESS {
+    process {
 
         if (Test-FunctionInterrupt) { return }
 
@@ -215,7 +215,7 @@ Shows what would happen if the command were executed using force.
         }
     }
 
-    END {
+    end {
         $sourceServer.ConnectionContext.Disconnect()
         $destServer.ConnectionContext.Disconnect()
         if ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Job migration finished" }

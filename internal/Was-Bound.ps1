@@ -29,7 +29,7 @@ function Was-Bound
             Additional information about the function.
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [Parameter(Mandatory = $true, Position = 0)]
         [string]
         $ParameterName,

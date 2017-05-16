@@ -41,7 +41,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm 
 Prompts you for confirmation before executing any changing operations within the command. 
 	
-.PARAMETER Process 
+.PARAMETER process 
 This is the process object passed by Get-DbaProcess if using a pipeline
 	
 .NOTES 
@@ -89,18 +89,18 @@ Finds processes that were created with dbatools, then kills them.
 
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ParameterSetName = "Server")]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[object]$SqlCredential,
-		[parameter(ValueFromPipeline = $true, Mandatory = $true, ParameterSetName = "Process")]
-		[object[]]$Process
+		[parameter(ValueFromPipeline = $true, Mandatory = $true, ParameterSetName = "process")]
+		[object[]]$process
 	)
 	
-	DynamicParam { if ($sqlserver) { Get-ParamSqlAllProcessInfo -SqlServer $sqlserver -SqlCredential $SqlCredential } }
+	dynamicparam { if ($sqlserver) { Get-ParamSqlAllProcessInfo -SqlServer $sqlserver -SqlCredential $SqlCredential } }
 	
-	BEGIN
+	begin
 	{
 		$logins = $psboundparameters.Logins
 		$spids = $psboundparameters.Spids
@@ -110,11 +110,11 @@ Finds processes that were created with dbatools, then kills them.
 		$databases = $psboundparameters.Databases
 	}
 	
-	PROCESS
+	process
 	{
-		if ($Process)
+		if ($process)
 		{
-			foreach ($session in $Process)
+			foreach ($session in $process)
 			{
 				$sourceserver = $session.SqlServer
 				

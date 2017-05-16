@@ -14,11 +14,11 @@ https://www.petri.com/test-network-connectivity-powershell-test-connection-cmdle
     [System.Management.Automation.Credential()]$Credential = [System.Management.Automation.PSCredential]::Empty
   )
  
-  Begin {
+  begin {
     Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"  
   } #begin
  
-  Process {
+  process {
     Write-Verbose -Message "Testing $computername"
     Try {
       $r = Test-WSMan -ComputerName $Computername -Credential $Credential -Authentication Default -ErrorAction Stop
@@ -30,9 +30,9 @@ https://www.petri.com/test-network-connectivity-powershell-test-connection-cmdle
  
     }
  
-  } #Process
+  } #process
  
-  End {
+  end {
     Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
   } #end
  

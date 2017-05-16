@@ -142,13 +142,13 @@
         $Silent
     )
 
-    BEGIN {
+    begin {
         Write-Message -Level InternalComment -Message "Starting execution"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
 
         $disable_cache = Get-DbaConfigValue -Name 'ComputerManagement.Cache.Disable.All' -Fallback $false
     }
-    PROCESS {
+    process {
         foreach ($connectionObject in $ComputerName) {
             if (-not $connectionObject.Success) { Stop-Function -Message "Failed to interpret computername input: $($connectionObject.InputObject)" -Category InvalidArgument -Target $connectionObject.InputObject -Continue }
             Write-Message -Level VeryVerbose -Message "Processing computer: $($connectionObject.Connection.ComputerName)" -Target $connectionObject.Connection
@@ -177,7 +177,7 @@
             $connection
         }
     }
-    END {
+    end {
         Write-Message -Level InternalComment -Message "Stopping execution"
     }
 }

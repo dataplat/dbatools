@@ -105,9 +105,9 @@ Shows what would happen if the command were executed using force.
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlAgentCategories -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+	dynamicparam { if ($source) { return (Get-ParamSqlAgentCategories -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	BEGIN
+	begin
 	{
 		
 		Function Copy-JobCategory
@@ -125,7 +125,7 @@ Shows what would happen if the command were executed using force.
 				[string[]]$JobCategories
 			)
 			
-			PROCESS
+			process
 			{
 				
 				$serverjobcategories = $sourceserver.JobServer.JobCategories | Where-Object { $_.ID -ge 100 }
@@ -179,7 +179,7 @@ Shows what would happen if the command were executed using force.
 				}
 			}
 			
-			END
+			end
 			{
 				If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Job category migration finished" }
 			}
@@ -201,7 +201,7 @@ Shows what would happen if the command were executed using force.
 				[string[]]$OperatorCategories
 			)
 			
-			PROCESS
+			process
 			{
 				$serveroperatorcategories = $sourceserver.JobServer.OperatorCategories | Where-Object { $_.ID -ge 100 }
 				$destoperatorcategories = $destserver.JobServer.OperatorCategories | Where-Object { $_.ID -ge 100 }
@@ -258,7 +258,7 @@ Shows what would happen if the command were executed using force.
 				}
 			}
 			
-			END
+			end
 			{
 				If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Operator category migration finished" }
 			}
@@ -281,7 +281,7 @@ Shows what would happen if the command were executed using force.
 				[string[]]$AlertCategories
 			)
 			
-			PROCESS
+			process
 			{
 				if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
 				{
@@ -342,7 +342,7 @@ Shows what would happen if the command were executed using force.
 				}
 			}
 			
-			END
+			end
 			{
 				If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Alert category migration finished" }
 			}
@@ -360,7 +360,7 @@ Shows what would happen if the command were executed using force.
 		
 	}
 	
-	PROCESS
+	process
 	{
 		if ($CategoryType.count -gt 0)
 		{
@@ -409,7 +409,7 @@ Shows what would happen if the command were executed using force.
 		Copy-JobCategory 
 	}
 	
-	END
+	end
 	{
 		
 		$sourceserver.ConnectionContext.Disconnect()

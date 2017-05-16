@@ -85,9 +85,9 @@ Shows what would happen if the command were executed.
 		[switch]$Force
 	)
 	
-	DynamicParam { if ($source) { return (Get-ParamSqlResourceGovernor -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+	dynamicparam { if ($source) { return (Get-ParamSqlResourceGovernor -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	BEGIN
+	begin
 	{
 		
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
@@ -103,7 +103,7 @@ Shows what would happen if the command were executed.
 			throw "Resource Governor is only supported in SQL Server 2008 and above. Quitting."
 		}
 	}
-	PROCESS
+	process
 	{
 		
 		

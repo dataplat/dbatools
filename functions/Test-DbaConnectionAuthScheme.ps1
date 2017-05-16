@@ -62,7 +62,7 @@ Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id =
 #>
 	[CmdletBinding()]
 	[OutputType("System.Collections.ArrayList")]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
@@ -73,12 +73,12 @@ Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id =
 		[switch]$Detailed
 	)
 	
-	BEGIN
+	begin
 	{
 		$collection = New-Object System.Collections.ArrayList
 	}
 	
-	PROCESS
+	process
 	{
 		foreach ($servername in $SqlServer)
 		{
@@ -127,7 +127,7 @@ Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id =
 		}
 	}
 	
-	END
+	end
 	{
 		
 		if ($Detailed -eq $true -or ($Kerberos -eq $false -and $Ntlm -eq $false))

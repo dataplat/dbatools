@@ -82,9 +82,9 @@ Shows what would happen if the command were executed using force.
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlServerAudits -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+	dynamicparam { if ($source) { return (Get-ParamSqlServerAudits -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	BEGIN {
+	begin {
 	
 		$audits = $psboundparameters.Audits
 		
@@ -104,7 +104,7 @@ Shows what would happen if the command were executed using force.
 		$destaudits = $destserver.Audits
 	}
 	
-	PROCESS
+	process
 	{	
 		foreach ($audit in $serveraudits)
 		{
@@ -206,7 +206,7 @@ Shows what would happen if the command were executed using force.
 		}
 	}
 	
-	END
+	end
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()

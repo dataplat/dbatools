@@ -71,7 +71,7 @@ Returns database restore information for every database on every server listed i
 	
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
@@ -82,9 +82,9 @@ Returns database restore information for every database on every server listed i
 		[switch]$Last
 	)
 	
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential } }
+	dynamicparam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential } }
 	
-	BEGIN
+	begin
 	{
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
@@ -96,7 +96,7 @@ Returns database restore information for every database on every server listed i
 		}
 	}
 	
-	PROCESS
+	process
 	{
 		foreach ($instance in $SqlServer)
 		{
@@ -138,7 +138,7 @@ Returns database restore information for every database on every server listed i
 						 WHEN rsh.restore_type = 'V' THEN 'Verifyonly'
 						 WHEN rsh.restore_type = 'R' THEN 'Revert'
 						 ELSE rsh.restore_type
-				     END AS [RestoreType],
+				     end AS [RestoreType],
 				     rsh.restore_date AS [Date],
 				     ISNULL(STUFF((SELECT ', ' + bmf.physical_device_name 
 									FROM msdb.dbo.backupmediafamily bmf

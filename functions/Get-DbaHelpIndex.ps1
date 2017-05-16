@@ -94,7 +94,7 @@ Get-DbaHelpIndex -SqlServer localhost -Database MyDB -IncludeStats -FormatResult
 #>
 	
 	[CmdletBinding(SupportsShouldProcess = $false)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
@@ -104,9 +104,9 @@ Get-DbaHelpIndex -SqlServer localhost -Database MyDB -IncludeStats -FormatResult
 		[switch]$IncludeDataTypes,
 		[switch]$FormatResults
 	)
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }
+	dynamicparam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }
 	
-	BEGIN
+	begin
 	{
 		
 		#Add the table predicate to the query
@@ -235,7 +235,7 @@ INSERT  INTO @StatsInfo
                                                        [s].[stats_id]) AS [sp]
         WHERE   s.object_id = CASE WHEN @TableName IS NULL THEN s.object_id
                                    ELSE OBJECT_ID(@TableName)
-                              END;
+                              end;
 
 
 ;
@@ -272,7 +272,7 @@ WITH    cteStatsInfo
                                           + row_overflow_used_page_count)
                                       * 8192 ) / 1024 )
                              ELSE ( ( SUM(used_page_count) * 8192 ) / 1024 )
-                        END AS SizeKB
+                        end AS SizeKB
                FROM     sys.dm_db_partition_stats
                GROUP BY object_id ,
                         index_id
@@ -307,7 +307,7 @@ WITH    cteStatsInfo
                                   AND c.is_included_column = 0
                              THEN sc.name + ' (' + t.name + ')'
                              ELSE sc.name
-                        END AS ColumnName ,
+                        end AS ColumnName ,
                         i.filter_definition ,
                         ISNULL(dd.user_scans, 0) AS user_scans ,
                         ISNULL(dd.user_seeks, 0) AS user_seeks ,
@@ -348,7 +348,7 @@ WITH    cteStatsInfo
                WHERE    i.object_id = CASE WHEN @TableName IS NULL
                                            THEN i.object_id
                                            ELSE OBJECT_ID(@TableName)
-                                      END
+                                      end
              ),
         cteResults
           AS ( SELECT   ci.FullObjectName ,
@@ -361,7 +361,7 @@ WITH    cteStatsInfo
                                THEN ' (UNIQUE CONSTRAINT)'
                                WHEN ci.is_unique = 1 THEN ' (UNIQUE)'
                                ELSE ''
-                          END AS IndexType ,
+                          end AS IndexType ,
                         name AS IndexName ,
                         STUFF((SELECT   N', ' + ColumnName
                                FROM     cteIndex ci2
@@ -388,7 +388,7 @@ WITH    cteStatsInfo
                         ci.fill_factor ,
                         CASE WHEN ci.data_compression_desc = 'NONE' THEN ''
                              ELSE ci.data_compression_desc
-                        END AS DataCompression ,
+                        end AS DataCompression ,
                         MAX(ci.user_seeks) + MAX(ci.user_scans)
                         + MAX(ci.user_lookups) AS IndexReads ,
                         MAX(ci.user_lookups) AS IndexLookups ,
@@ -402,7 +402,7 @@ WITH    cteStatsInfo
                              WHEN LastLookup > LastScan
                                   AND LastLookup > LastSeek THEN LastLookup
                              ELSE ''
-                        END AS MostRecentlyUsed
+                        end AS MostRecentlyUsed
                FROM     cteIndex ci
                GROUP BY ci.ObjectName ,
                         ci.name ,
@@ -620,7 +620,7 @@ INSERT  INTO @StatsInfo
                --                                        [s].[stats_id]) AS [sp]
         WHERE   s.object_id = CASE WHEN @TableName IS NULL THEN s.object_id
                                    ELSE OBJECT_ID(@TableName)
-                              END;
+                              end;
 
 
 ;
@@ -657,7 +657,7 @@ WITH    cteStatsInfo
                                           + row_overflow_used_page_count)
                                       * 8192 ) / 1024 )
                              ELSE ( ( SUM(used_page_count) * 8192 ) / 1024 )
-                        END AS SizeKB
+                        end AS SizeKB
                FROM     sys.dm_db_partition_stats
                GROUP BY object_id ,
                         index_id
@@ -692,7 +692,7 @@ WITH    cteStatsInfo
                                   AND c.is_included_column = 0
                              THEN sc.name + ' (' + t.name + ')'
                              ELSE sc.name
-                        END AS ColumnName ,
+                        end AS ColumnName ,
                         '' AS filter_definition ,
                         ISNULL(dd.user_scans, 0) AS user_scans ,
                         ISNULL(dd.user_seeks, 0) AS user_seeks ,
@@ -733,7 +733,7 @@ WITH    cteStatsInfo
                WHERE    i.object_id = CASE WHEN @TableName IS NULL
                                            THEN i.object_id
                                            ELSE OBJECT_ID(@TableName)
-                                      END
+                                      end
              ),
         cteResults
           AS ( SELECT   ci.FullObjectName ,
@@ -746,7 +746,7 @@ WITH    cteStatsInfo
                                THEN ' (UNIQUE CONSTRAINT)'
                                WHEN ci.is_unique = 1 THEN ' (UNIQUE)'
                                ELSE ''
-                          END AS IndexType ,
+                          end AS IndexType ,
                         name AS IndexName ,
                         STUFF((SELECT   N', ' + ColumnName
                                FROM     cteIndex ci2
@@ -773,7 +773,7 @@ WITH    cteStatsInfo
                         ci.fill_factor ,
                         CASE WHEN ci.data_compression_desc = 'NONE' THEN ''
                              ELSE ci.data_compression_desc
-                        END AS DataCompression ,
+                        end AS DataCompression ,
                         MAX(ci.user_seeks) + MAX(ci.user_scans)
                         + MAX(ci.user_lookups) AS IndexReads ,
                         MAX(ci.user_lookups) AS IndexLookups ,
@@ -787,7 +787,7 @@ WITH    cteStatsInfo
                              WHEN LastLookup > LastScan
                                   AND LastLookup > LastSeek THEN LastLookup
                              ELSE ''
-                        END AS MostRecentlyUsed
+                        end AS MostRecentlyUsed
                FROM     cteIndex ci
                GROUP BY ci.ObjectName ,
                         ci.name ,
@@ -890,14 +890,14 @@ OPTION  ( RECOMPILE );
 
 /* Only update the stats data on 2005 for a single table, otherwise the run time for this is a potential problem for large table/index volumes */
 IF @TableName IS NOT NULL
-BEGIN
+begin
 
 	DECLARE @StatsInfo2005 TABLE (Name nvarchar(128), Updated DATETIME, Rows BIGINT, RowsSampled BIGINT, Steps INT, Density INT, AverageKeyLength INT, StringIndex NVARCHAR(20))
 
 	DECLARE @SqlCall NVARCHAR(2000), @RowNum INT;
 	SELECT @RowNum = min(RowNum) FROM @AllResults;
 	WHILE @RowNum IS NOT NULL
-	BEGIN
+	begin
 		SELECT @SqlCall = 'dbcc show_statistics("'+FullObjectName+'", "'+IndexName+'") with stat_header' FROM @AllResults WHERE RowNum = @RowNum;
 		INSERT INTO @StatsInfo2005 exec (@SqlCall);
 		UPDATE @AllResults
@@ -908,9 +908,9 @@ BEGIN
 			WHERE RowNum = @RowNum;
 		DELETE FROM @StatsInfo2005
 		SELECT @RowNum = min(RowNum) FROM @AllResults WHERE RowNum > @RowNum;
-	END;
+	end;
 
-END;
+end;
 
 UPDATE a
 SET a.StatsRowMods = i.rowmodctr
@@ -943,7 +943,7 @@ FROM @AllResults;
 		$server = Connect-DbaSqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 	}
 	
-	PROCESS
+	process
 	{
 
         #Need to check the version of SQL

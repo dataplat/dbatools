@@ -98,7 +98,7 @@ Will find exact Unused indexes on all user databases
 	
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
@@ -108,9 +108,9 @@ Will find exact Unused indexes on all user databases
         [switch]$NoClobber,
 		[switch]$Append
 	)
-    DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }
+    dynamicparam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }
 	
-	BEGIN
+	begin
 	{
         
         # Support Compression 2008+
@@ -167,7 +167,7 @@ Will find exact Unused indexes on all user databases
 		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 	}
 	
-	PROCESS
+	process
 	{
 
         if ($server.versionMajor -lt 9)
@@ -177,7 +177,7 @@ Will find exact Unused indexes on all user databases
 		
 		$lastrestart = $server.Databases['tempdb'].CreateDate
 		$enddate = Get-Date -Date $lastrestart
-		$diffdays = (New-TimeSpan -Start $enddate -End (Get-Date)).Days
+		$diffdays = (New-TimeSpan -Start $enddate -end (Get-Date)).Days
 		
 		if ($diffdays -le 6)
 		{
@@ -316,7 +316,7 @@ Will find exact Unused indexes on all user databases
         }
 	}
 	
-	END
+	end
 	{
         $server.ConnectionContext.Disconnect()
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-SqlUnusedIndex

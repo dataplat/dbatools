@@ -65,7 +65,7 @@ https://dbatools.io/Copy-DbaSysDbUserObject
         [System.Management.Automation.PSCredential]$SourceSqlCredential,
         [System.Management.Automation.PSCredential]$DestinationSqlCredential
     )
-    PROCESS {
+    process {
         $sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
         $destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 
@@ -128,7 +128,7 @@ https://dbatools.io/Copy-DbaSysDbUserObject
         }
         Write-Output "Migrating user objects in system databases finished"
     }
-    END {
+    end {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlSysDbUserObjects
     }
 }

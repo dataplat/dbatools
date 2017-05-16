@@ -81,7 +81,7 @@ Set recommended Max DOP setting for all databases on server sql2016.
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
 		[string[]]$SqlServer,
@@ -93,9 +93,9 @@ Set recommended Max DOP setting for all databases on server sql2016.
         [switch]$AllDatabases
 	)
 	
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
+	dynamicparam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
 	
-	BEGIN
+	begin
 	{
 		$databases = $psboundparameters.Databases
 
@@ -107,7 +107,7 @@ Set recommended Max DOP setting for all databases on server sql2016.
 		$processed = New-Object System.Collections.ArrayList
         $results = @()
 	}
-	PROCESS
+	process
 	{
         $dbscopedconfiguration = $false
 
@@ -296,7 +296,7 @@ Set recommended Max DOP setting for all databases on server sql2016.
 		}
 
 	}
-    END
+    end
     {
 		
 		if ($Pscmdlet.ShouldProcess("console", "Showing finished message"))

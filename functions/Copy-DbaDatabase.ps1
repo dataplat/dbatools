@@ -141,7 +141,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 
 #>	
 	[CmdletBinding(DefaultParameterSetName = "DbMigration", SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Position = 1, Mandatory = $false)]
 		[object]$Source,
 		[parameter(Position = 2, Mandatory = $true)]
@@ -193,9 +193,9 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
         [switch]$silent
 	)
 	
-	DynamicParam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential -NoSystem } }
+	dynamicparam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential -NoSystem } }
 	
-	BEGIN
+	begin
 	{
 		# Global Database Function
 		Function Get-SqlFileStructure
@@ -603,7 +603,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		
 	}
 	
-	PROCESS
+	process
 	{
 		$copyonly = !$NoCopyOnly
 		# Convert from RuntimeDefinedParameter object to regular array
@@ -835,7 +835,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		
 		if ($sourceserver.versionMajor -eq 8)
 		{
-			$sql = "select DB_NAME (dbid) as dbname, name, filename, CASE WHEN groupid = 0 THEN 'LOG' ELSE 'ROWS' END as filetype from sysaltfiles"
+			$sql = "select DB_NAME (dbid) as dbname, name, filename, CASE WHEN groupid = 0 THEN 'LOG' ELSE 'ROWS' end as filetype from sysaltfiles"
 		}
 		else
 		{
@@ -846,7 +846,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		
 		if ($destserver.versionMajor -eq 8)
 		{
-			$sql = "select DB_NAME (dbid) as dbname, name, filename, CASE WHEN groupid = 0 THEN 'LOG' ELSE 'ROWS' END as filetype from sysaltfiles"
+			$sql = "select DB_NAME (dbid) as dbname, name, filename, CASE WHEN groupid = 0 THEN 'LOG' ELSE 'ROWS' end as filetype from sysaltfiles"
 		}
 		else
 		{
@@ -1198,7 +1198,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		}
 	}
 	
-	END
+	end
 	{
 		If ($Pscmdlet.ShouldProcess("console", "Showing migration time elapsed"))
 		{

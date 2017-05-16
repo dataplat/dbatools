@@ -109,7 +109,7 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipelineByPropertyName, ParameterSetName = "Server")]
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
@@ -130,7 +130,7 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 		[PsCustomObject[]]$SmoDatabase
 	)
 	
-	DynamicParam
+	dynamicparam
 	{
 		if ($SqlInstance)
 		{
@@ -138,7 +138,7 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 		}
 	}
 	
-	BEGIN
+	begin
 	{
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
@@ -236,9 +236,9 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 		
 		$dbs = @()
 	}
-	PROCESS
+	process
 	{
-		# use PROCESS to gather info, and END to execute on it
+		# use process to gather info, and end to execute on it
 		if ($databases.Length -eq 0 -and $AllDatabases -eq $false -and !$smodatabase)
 		{
 			throw "You must specify a -AllDatabases or -Database to continue"
@@ -277,7 +277,7 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 		}
 	}
 	
-	END
+	end
 	{
 		if ($Detached -eq $true)
 		{

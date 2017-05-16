@@ -82,7 +82,7 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[string[]]$ADObject,
 		[ValidateSet("User","Group","Computer")]
 		[string]$Type,
@@ -94,7 +94,7 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 		[switch]$SearchAllDomains,
 		[switch]$Silent
 	)
-	BEGIN {
+	begin {
 		try {
 			Add-Type -AssemblyName System.DirectoryServices.AccountManagement
 		} catch {
@@ -133,7 +133,7 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 			}
 		}
 	}
-	PROCESS {
+	process {
 		if (Test-FunctionInterrupt) { return }
 		foreach($ADObj in $ADObject) {
 			# passing the domain as the first part before the \ wins always in defining the domain to search into

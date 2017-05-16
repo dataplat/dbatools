@@ -61,7 +61,7 @@ Get-DbaSqlServerKey -ServersFromFile C:\Scripts\servers.txt
 Gets SQL Server versions, editions and product keys for all instances listed within C:\Scripts\servers.txt
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
-    Param (
+    param (
         [parameter(Position = 0)]
         [Alias("ServerInstance", "SqlInstance")]
         [string[]]$SqlServers,
@@ -74,7 +74,7 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
         [System.Management.Automation.PSCredential]$SqlCredential
     )
 	
-    BEGIN {
+    begin {
 		
         Function Unlock-SqlServerKey {
             [CmdletBinding()]
@@ -105,7 +105,7 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
         }
     }
 	
-    PROCESS {
+    process {
 		
         if ($SqlCms) {
             if ([Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers") -eq $null)
@@ -224,7 +224,7 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
         $objectCollection | Select "SQL Instance", "SQL Version", "SQL Edition", "Product Key"
     }
 	
-    END {
+    end {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-SqlServerKey
     }
 }

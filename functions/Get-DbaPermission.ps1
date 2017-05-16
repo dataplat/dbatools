@@ -72,7 +72,7 @@ Returns a custom object with permissions for the master database
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
@@ -82,7 +82,7 @@ Returns a custom object with permissions for the master database
 		[switch]$NoSystemObjects
 	)
 	
-	DynamicParam
+	dynamicparam
 	{
 		if ($SqlServer)
 		{
@@ -90,7 +90,7 @@ Returns a custom object with permissions for the master database
 		}
 	}
 	
-	BEGIN
+	begin
 	{
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
@@ -110,7 +110,7 @@ SELECT
 	, [Securable] = CASE	WHEN class = 100 THEN @@SERVERNAME
 							WHEN class = 105 THEN OBJECT_NAME(major_id)
 							ELSE OBJECT_NAME(major_id)
-							END
+							end
 	, [Grantee] = SUSER_NAME(grantee_principal_id)
 	, [GranteeType] = pr.type_desc
 
@@ -132,7 +132,7 @@ SELECT
 	, [SecurableType] = COALESCE(O.type_desc,dp.class_desc)
     , [Securable] = CASE	WHEN class = 0 THEN DB_NAME()
 							WHEN class = 1 THEN ISNULL(s.name + '.','')+OBJECT_NAME(major_id)
-							WHEN class = 3 THEN SCHEMA_NAME(major_id) END
+							WHEN class = 3 THEN SCHEMA_NAME(major_id) end
     , [Grantee] = USER_NAME(grantee_principal_id)
 	, [GranteeType] = pr.type_desc
 
@@ -147,7 +147,7 @@ $ExcludeSystemObjectssql
 "@
 	}
 	
-	PROCESS
+	process
 	{
 		foreach ($servername in $SqlServer)
 		{
@@ -244,6 +244,6 @@ $ExcludeSystemObjectssql
 			}
 		}
 	}
-	END
+	end
 	{ }
 }

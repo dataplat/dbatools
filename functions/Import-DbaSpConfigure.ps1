@@ -79,7 +79,7 @@ using the SQL credential stored in the variables
 		[switch]$Force
 		
 	)
-	BEGIN {
+	begin {
 	
 		if ($Path.length -eq 0)
 		{
@@ -94,7 +94,7 @@ using the SQL credential stored in the variables
 		}
 	
 	}
-	PROCESS
+	process
 	{
 		
 		if ($Path.length -eq 0)
@@ -179,7 +179,7 @@ using the SQL credential stored in the variables
 			}
 		}
 	}
-	END
+	end
 	{
 		if ($Path.length -gt 0) { 
 			$server.ConnectionContext.Disconnect() 

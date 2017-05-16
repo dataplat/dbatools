@@ -58,7 +58,7 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
@@ -66,7 +66,7 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 		[System.Management.Automation.CredentialAttribute()]$Credential
 	)
 
-	DynamicParam
+	dynamicparam
 	{
 		if ($SqlInstance)
 		{
@@ -74,7 +74,7 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 		}
 	}
 
-	BEGIN
+	begin
 	{
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
@@ -116,7 +116,7 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 		}
 
 	}
-	PROCESS
+	process
 	{
 		foreach ($instance in $SqlInstance)
 		{

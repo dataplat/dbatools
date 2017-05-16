@@ -315,7 +315,7 @@ Creates a schedule for the job with a daily frequency every day on multiple serv
 		# Check the end date
 		if (-not $EndDate -and $Force) {
 			$EndDate = '99991231'
-			Write-Message -Message "End date was not set. Force is being used. Setting it to $EndDate" -Level Verbose
+			Write-Message -Message "end date was not set. Force is being used. Setting it to $EndDate" -Level Verbose
 		}
 		elseif (-not $EndDate) {
 			Stop-Function -Message "Please enter an end date or use -Force to use defaults." -Target $SqlInstance
@@ -323,11 +323,11 @@ Creates a schedule for the job with a daily frequency every day on multiple serv
 		}
 		
 		elseif ($EndDate -notmatch $RegexDate) {
-			Stop-Function -Message "End date $EndDate needs to be a valid date with format yyyyMMdd" -Target $SqlInstance
+			Stop-Function -Message "end date $EndDate needs to be a valid date with format yyyyMMdd" -Target $SqlInstance
 			return
 		}
 		elseif ($EndDate -lt $StartDate) {
-			Stop-Function -Message "End date $EndDate cannot be before start date $StartDate" -Target $SqlInstance
+			Stop-Function -Message "end date $EndDate cannot be before start date $StartDate" -Target $SqlInstance
 			return
 		}
 		
@@ -348,14 +348,14 @@ Creates a schedule for the job with a daily frequency every day on multiple serv
 		# Check the end time
 		if (-not $EndTime -and $Force) {
 			$EndTime = '235959'
-			Write-Message -Message "End time was not set. Force is being used. Setting it to $EndTime" -Level Verbose
+			Write-Message -Message "end time was not set. Force is being used. Setting it to $EndTime" -Level Verbose
 		}
 		elseif (-not $EndTime) {
 			Stop-Function -Message "Please enter an end time or use -Force to use defaults." -Target $SqlInstance
 			return
 		}
 		elseif ($EndTime -notmatch $RegexTime) {
-			Stop-Function -Message "End time $EndTime needs to match between '000000' and '235959'" -Target $SqlInstance
+			Stop-Function -Message "end time $EndTime needs to match between '000000' and '235959'" -Target $SqlInstance
 			return
 		}
 	}

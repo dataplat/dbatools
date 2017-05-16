@@ -63,7 +63,7 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[object[]]$SqlInstance,
@@ -73,7 +73,7 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 		[switch]$IncludeSystemObjects,
 		[switch]$IncludeSystemDatabases
 	)
-	DynamicParam
+	dynamicparam
 	{
 		if ($SqlInstance)
 		{

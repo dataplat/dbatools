@@ -75,7 +75,7 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[string[]]$SqlInstance,
@@ -85,7 +85,7 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 		[switch]$AllSnapshots
 	)
 	
-	DynamicParam
+	dynamicparam
 	{
 		if ($SqlInstance)
 		{
@@ -93,13 +93,13 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 		}
 	}
 	
-	BEGIN
+	begin
 	{
 		$databases = $psboundparameters.Databases
 		$snapshots = $psboundparameters.Snapshots
 	}
 	
-	PROCESS
+	process
 	{
 		if ($snapshots.count -eq 0 -and $databases.count -eq 0 -and $AllSnapshots -eq $false -and $PipelineSnapshot -eq $null)
 		{

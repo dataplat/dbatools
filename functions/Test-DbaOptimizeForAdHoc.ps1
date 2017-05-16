@@ -39,20 +39,20 @@ Get Optimize for AdHoc Workloads setting for servers sql2008 and sqlserver2012 a
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
 		[string[]]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	BEGIN
+	begin
 	{
         $notesAdHocZero = "Recommended configuration is 1"
 		$notesAsRecommended = "Configuration is as recommended"
 	}
 	
-	PROCESS
+	process
 	{
 		
 		foreach ($servername in $sqlserver)

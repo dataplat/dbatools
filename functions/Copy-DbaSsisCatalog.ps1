@@ -105,7 +105,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
 		[Switch]$Force
 	)
 	
-	BEGIN
+	begin
 	{
 		Function Get-RemoteIntegrationService
 		{
@@ -334,7 +334,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
 		$sourceFolders = $sourceCatalog.Folders
 		$destinationFolders = $destinationCatalog.Folders
 	}
-	PROCESS
+	process
 	{
 		if (!$sourceCatalog)
 		{
@@ -656,7 +656,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
 		}
 	}
 	
-	END
+	end
 	{
 		$sourceConnection.ConnectionContext.Disconnect()
 		$destinationConnection.ConnectionContext.Disconnect()

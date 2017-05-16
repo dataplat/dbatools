@@ -91,7 +91,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Repair-DbaOrphanUser
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
@@ -101,14 +101,14 @@ https://dbatools.io/Repair-DbaOrphanUser
 		[switch]$RemoveNotExisting
 	)
 	
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }
+	dynamicparam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }
 	
-	BEGIN {
+	begin {
 		Write-Output "Attempting to connect to Sql Server.."
 		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 	}
 	
-	PROCESS {
+	process {
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
 		
@@ -214,7 +214,7 @@ https://dbatools.io/Repair-DbaOrphanUser
 		}
 	}
 	
-	END {
+	end {
 		$server.ConnectionContext.Disconnect()
 		
 		$totaltime = ($start.Elapsed)

@@ -74,13 +74,13 @@ Prompts you for confirmation before executing any changing operations within the
 		[ValidateNotNullOrEmpty()]
 		[object[]]$Step)
 	
-	DynamicParam { if ($sqlinstance) { return (Get-ParamSqlJobs -SqlServer $sqlinstance[0] -SqlCredential $SourceSqlCredential) } }
+	dynamicparam { if ($sqlinstance) { return (Get-ParamSqlJobs -SqlServer $sqlinstance[0] -SqlCredential $SourceSqlCredential) } }
 	
-	BEGIN
+	begin
 	{
 		$JobName = $psboundparameters.Jobs
 	}
-	PROCESS
+	process
 	{
 		foreach ($instance in $sqlinstance)
 		{

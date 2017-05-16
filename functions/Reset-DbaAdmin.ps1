@@ -102,7 +102,7 @@ If the account already exists, it will be added to the sysadmin role and the pas
 		[switch]$Force
 	)
 	
-	BEGIN
+	begin
 	{
 		Function ConvertTo-PlainText
 		{
@@ -158,7 +158,7 @@ Internal function.
 		}
 	}
 	
-	PROCESS
+	process
 	{
 			if ($Force) { $ConfirmPreference="none" }
 			
@@ -413,14 +413,14 @@ Internal function.
 			if ($windowslogin -eq $true)
 			{
 				$sql = "IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '$login')
-					BEGIN CREATE LOGIN [$login] FROM WINDOWS END"
+					begin CREATE LOGIN [$login] FROM WINDOWS end"
 				if ($(Invoke-ResetSqlCmd -SqlServer $sqlserver -Sql $sql) -eq $false) { Write-Error "Couldn't create login." }
 			}
 			elseif ($login -ne "sa")
 			{
 				# Create new sql user
 				$sql = "IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '$login')
-					BEGIN CREATE LOGIN [$login] WITH PASSWORD = '$(ConvertTo-PlainText $Password)', CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF END"
+					begin CREATE LOGIN [$login] WITH PASSWORD = '$(ConvertTo-PlainText $Password)', CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF end"
 				if ($(Invoke-ResetSqlCmd -SqlServer $sqlserver -Sql $sql) -eq $false) { Write-Error "Couldn't create login." }
 			}
 			
@@ -459,7 +459,7 @@ Internal function.
 			else { Start-Service -InputObject $instanceservices -ErrorAction SilentlyContinue }
 		}
 	}
-	END
+	end
 	{
 		Write-Output "Script complete!"
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Reset-SqlAdmin

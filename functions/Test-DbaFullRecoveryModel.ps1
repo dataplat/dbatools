@@ -63,16 +63,16 @@ Shows all databases which actual configured recovery model is FULL and says if t
 #>
 	[CmdletBinding()]
     [OutputType("System.Collections.ArrayList")]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
         [System.Management.Automation.PSCredential]$SqlCredential,
         [switch]$Detailed
 	)
-    DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }
+    dynamicparam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }
 	
-	BEGIN
+	begin
 	{
         # Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
@@ -80,7 +80,7 @@ Shows all databases which actual configured recovery model is FULL and says if t
         $collection = New-Object System.Collections.ArrayList
 	}
 	
-	PROCESS
+	process
 	{
         foreach ($servername in $SqlServer)
 		{
@@ -101,7 +101,7 @@ Shows all databases which actual configured recovery model is FULL and says if t
 		                , CASE
 			                WHEN d.recovery_model = 1 AND drs.last_log_backup_lsn IS NOT NULL THEN 1
 			                ELSE 0
-		                   END AS IsReallyInFullRecoveryModel
+		                   end AS IsReallyInFullRecoveryModel
                   FROM sys.databases AS D
 	                INNER JOIN sys.database_recovery_status AS drs
 	                   ON D.database_id = drs.database_id
@@ -157,7 +157,7 @@ Shows all databases which actual configured recovery model is FULL and says if t
         }
 	}
 	
-	END
+	end
 	{
         if ($Detailed)
         {

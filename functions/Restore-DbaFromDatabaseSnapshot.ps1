@@ -58,7 +58,7 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[string[]]$SqlInstance,
@@ -66,7 +66,7 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 		[switch]$Force
 	)
 
-	DynamicParam
+	dynamicparam
 	{
 		if ($SqlInstance)
 		{
@@ -74,13 +74,13 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 		}
 	}
 
-	BEGIN
+	begin
 	{
 		$databases = $psboundparameters.Databases
 		$snapshots = $psboundparameters.Snapshots
 	}
 
-	PROCESS
+	process
 	{
 		if ($snapshots.count -eq 0 -and $databases.count -eq 0)
 		{

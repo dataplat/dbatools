@@ -82,7 +82,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
@@ -92,13 +92,13 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
         [switch]$Force
 	)
 
-    DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SqlCredential } }
+    dynamicparam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SqlCredential } }
 
-	BEGIN
+	begin
 	{
 	}
 
-	PROCESS
+	process
 	{
 
         foreach ($Instance in $SqlServer)
@@ -366,7 +366,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
         }
 	}
 
-	END
+	end
 	{
 		$server.ConnectionContext.Disconnect()
 

@@ -261,7 +261,7 @@ function Invoke-DbaSqlCmd
 		[Switch]$Silent
 	)
 
-	Begin
+	begin
 	{
 		if ($InputFile)
 		{
@@ -358,7 +358,7 @@ function Invoke-DbaSqlCmd
 		}
 
 	}
-	Process
+	process
 	{
 		foreach ($SQLInstance in $ServerInstance)
 		{
@@ -535,5 +535,5 @@ function Invoke-DbaSqlCmd
 			}
 		}
 	}
-	END { Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Invoke-Sqlcmd2 }
+	end { Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Invoke-Sqlcmd2 }
 }

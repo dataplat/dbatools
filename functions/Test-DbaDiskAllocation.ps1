@@ -68,7 +68,7 @@ To return true or false for ALL disks being formatted to 64k
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	[OutputType("System.Collections.ArrayList", "System.Boolean")]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServer")]
 		[string[]]$ComputerName,
@@ -78,7 +78,7 @@ To return true or false for ALL disks being formatted to 64k
 		[switch]$Silent
 	)
 	
-	BEGIN
+	begin
 	{
 		if ($Detailed)
 		{
@@ -204,7 +204,7 @@ To return true or false for ALL disks being formatted to 64k
 		}
 	}
 	
-	PROCESS
+	process
 	{
 		foreach ($computer in $ComputerName)
 		{

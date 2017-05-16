@@ -106,7 +106,7 @@ Will find exact duplicate or overlapping indexes on all user databases
 	
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
@@ -118,9 +118,9 @@ Will find exact duplicate or overlapping indexes on all user databases
 		[switch]$Append,
         [switch]$Force
 	)
-    DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }
+    dynamicparam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }
 	
-	BEGIN
+	begin
 	{
         $exactDuplicateQuery2005 = "WITH CTE_IndexCols AS
 (
@@ -133,7 +133,7 @@ Will find exact duplicate or overlapping indexes on all user databases
 			,ISNULL(STUFF((SELECT ', ' + col.NAME + ' ' + CASE 
 														WHEN idxCol.is_descending_key = 1 THEN 'DESC'
 														ELSE 'ASC'
-													END -- Include column order (ASC / DESC)
+													end -- Include column order (ASC / DESC)
 					FROM sys.index_columns idxCol 
 						INNER JOIN sys.columns col 
 						   ON idxCol.[object_id] = col.[object_id]
@@ -146,7 +146,7 @@ Will find exact duplicate or overlapping indexes on all user databases
 			,ISNULL(STUFF((SELECT ', ' + col.NAME + ' ' + CASE 
 														WHEN idxCol.is_descending_key = 1 THEN 'DESC'
 														ELSE 'ASC'
-													END -- Include column order (ASC / DESC)
+													end -- Include column order (ASC / DESC)
 					FROM sys.index_columns idxCol 
 						INNER JOIN sys.columns col 
 						   ON idxCol.[object_id] = col.[object_id]
@@ -213,7 +213,7 @@ WHERE EXISTS (SELECT 1
 			,ISNULL(STUFF((SELECT ', ' + col.NAME + ' ' + CASE 
 														WHEN idxCol.is_descending_key = 1 THEN 'DESC'
 														ELSE 'ASC'
-													END -- Include column order (ASC / DESC)
+													end -- Include column order (ASC / DESC)
 					FROM sys.index_columns idxCol 
 						INNER JOIN sys.columns col 
 						   ON idxCol.[object_id] = col.[object_id]
@@ -226,7 +226,7 @@ WHERE EXISTS (SELECT 1
 			,ISNULL(STUFF((SELECT ', ' + col.NAME + ' ' + CASE 
 														WHEN idxCol.is_descending_key = 1 THEN 'DESC'
 														ELSE 'ASC'
-													END -- Include column order (ASC / DESC)
+													end -- Include column order (ASC / DESC)
 					FROM sys.index_columns idxCol 
 						INNER JOIN sys.columns col 
 						   ON idxCol.[object_id] = col.[object_id]
@@ -296,7 +296,7 @@ WHERE EXISTS (SELECT 1
 			,ISNULL(STUFF((SELECT ', ' + col.NAME + ' ' + CASE 
 														WHEN idxCol.is_descending_key = 1 THEN 'DESC'
 														ELSE 'ASC'
-													END -- Include column order (ASC / DESC)
+													end -- Include column order (ASC / DESC)
 					FROM sys.index_columns idxCol 
 						INNER JOIN sys.columns col 
 						   ON idxCol.[object_id] = col.[object_id]
@@ -309,7 +309,7 @@ WHERE EXISTS (SELECT 1
 			,ISNULL(STUFF((SELECT ', ' + col.NAME + ' ' + CASE 
 														WHEN idxCol.is_descending_key = 1 THEN 'DESC'
 														ELSE 'ASC'
-													END -- Include column order (ASC / DESC)
+													end -- Include column order (ASC / DESC)
 					FROM sys.index_columns idxCol 
 						INNER JOIN sys.columns col 
 						   ON idxCol.[object_id] = col.[object_id]
@@ -381,7 +381,7 @@ WHERE EXISTS (SELECT 1
 			,ISNULL(STUFF((SELECT ', ' + col.NAME + ' ' + CASE 
 														WHEN idxCol.is_descending_key = 1 THEN 'DESC'
 														ELSE 'ASC'
-													END -- Include column order (ASC / DESC)
+													end -- Include column order (ASC / DESC)
 					FROM sys.index_columns idxCol 
 						INNER JOIN sys.columns col 
 						   ON idxCol.[object_id] = col.[object_id]
@@ -394,7 +394,7 @@ WHERE EXISTS (SELECT 1
 			,ISNULL(STUFF((SELECT ', ' + col.NAME + ' ' + CASE 
 														WHEN idxCol.is_descending_key = 1 THEN 'DESC'
 														ELSE 'ASC'
-													END -- Include column order (ASC / DESC)
+													end -- Include column order (ASC / DESC)
 					FROM sys.index_columns idxCol 
 						INNER JOIN sys.columns col 
 						   ON idxCol.[object_id] = col.[object_id]
@@ -476,7 +476,7 @@ WHERE EXISTS (SELECT 1
 		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 	}
 	
-	PROCESS
+	process
 	{
         if ($server.versionMajor -lt 9)
 		{
@@ -636,7 +636,7 @@ WHERE EXISTS (SELECT 1
         }
 	}
 	
-	END
+	end
 	{
         $server.ConnectionContext.Disconnect()
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-SqlDuplicateIndex

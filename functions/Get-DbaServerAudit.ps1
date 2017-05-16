@@ -38,7 +38,7 @@ Returns all Security Audits for the local and sql2016 SQL Server instances
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$Credential

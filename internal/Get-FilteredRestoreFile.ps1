@@ -12,7 +12,7 @@ Then filter for and Diff backups between the full backup and the RestorePoint
 Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object[]]$Files,
         [parameter(Mandatory = $true)]
@@ -23,7 +23,7 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
         [switch]$TrustDbBackupHistory
 
 	)
-    Begin
+    begin
     {
         $FunctionName =(Get-PSCallstack)[0].Command
         Write-Verbose "$FunctionName - Starting"
@@ -40,7 +40,7 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
             $InternalFiles += $file
         }
     }
-    End
+    end
     {
 
    

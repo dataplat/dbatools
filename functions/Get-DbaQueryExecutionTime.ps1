@@ -57,7 +57,7 @@ limiting results to queries with more than 200 total executions and an execution
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[string[]]$SqlInstance,
@@ -72,7 +72,7 @@ limiting results to queries with more than 200 total executions and an execution
 		[switch]$NoSystemDb
 	)
 	
-	DynamicParam
+	dynamicparam
 	{
 		if ($SqlInstance)
 		{
@@ -80,7 +80,7 @@ limiting results to queries with more than 200 total executions and an execution
 		}
 	}
 	
-	BEGIN
+	begin
 	{
 		
 		$databases = $psboundparameters.Databases
@@ -130,7 +130,7 @@ limiting results to queries with more than 200 total executions and an execution
 				        ((CASE qs.statement_end_offset  
 				          WHEN -1 THEN DATALENGTH(st.text)  
 				         ELSE qs.statement_end_offset  
-				         END - qs.statement_start_offset)/2) + 1) AS full_statement_text
+				         end - qs.statement_start_offset)/2) + 1) AS full_statement_text
             FROM    sys.dm_exec_query_stats qs
             CROSS APPLY sys.dm_exec_plan_attributes(qs.plan_handle) as pa
             CROSS APPLY sys.dm_exec_sql_text(qs.sql_handle) as st
@@ -184,7 +184,7 @@ limiting results to queries with more than 200 total executions and an execution
 		$sql += "`n ORDER BY AvgExec_ms DESC"
 	}
 	
-	PROCESS
+	process
 	{
 		if (!$MaxResultsPerDb -and !$MinExecs -and !$MinExecMs)
 		{

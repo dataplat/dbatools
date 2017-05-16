@@ -66,7 +66,7 @@ Exports all Availability Groups from SQL server "sql2014". Output scripts are wr
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
@@ -76,9 +76,9 @@ Exports all Availability Groups from SQL server "sql2014". Output scripts are wr
 		[switch]$NoClobber
 	)
 	
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlAvailabilityGroups -SqlServer $SqlServer -SqlCredential $SqlCredential } }
+	dynamicparam { if ($SqlServer) { return Get-ParamSqlAvailabilityGroups -SqlServer $SqlServer -SqlCredential $SqlCredential } }
 	
-	BEGIN
+	begin
 	{
 		Write-Output "Beginning Export-DbaAvailabilityGroup on $SqlServer"
 		$AvailabilityGroups = $PSBoundParameters.AvailabilityGroups
@@ -96,7 +96,7 @@ Exports all Availability Groups from SQL server "sql2014". Output scripts are wr
 		}
 	}
 	
-	PROCESS
+	process
 	{
 		# Get all of the Availability Groups and filter if required
 		$allags = $server.AvailabilityGroups
@@ -177,7 +177,7 @@ Exports all Availability Groups from SQL server "sql2014". Output scripts are wr
 		}
 	}
 	
-	END
+	end
 	{
 		$server.ConnectionContext.Disconnect()
 		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Completed Export-DbaAvailabilityGroup on $SqlServer" }

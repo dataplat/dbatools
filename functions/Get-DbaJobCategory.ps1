@@ -38,14 +38,14 @@ Returns all SQL Agent Job Categories for the local and sql2016 SQL Server instan
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	PROCESS
+	process
 	{
 		foreach ($instance in $SqlInstance)
 		{

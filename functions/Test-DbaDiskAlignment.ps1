@@ -85,7 +85,7 @@ Function Test-DbaDiskAlignment
     .LINK
         https://dbatools.io/Test-DbaDiskAlignment
 #>    
-    Param (
+    param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlInstance", "SqlServer")]
         [object[]]
@@ -106,7 +106,7 @@ Function Test-DbaDiskAlignment
         [switch]
         $Silent
     )
-    BEGIN
+    begin
     {
         Test-DbaDeprecation -DeprecatedOn "1.0.0.0" -Parameter 'Detailed' 
         
@@ -115,7 +115,7 @@ Function Test-DbaDiskAlignment
         Function Get-DiskAlignment
         {
             [CmdletBinding()]
-            Param (
+            param (
                 $CimSession,
                 
                 [string]
@@ -338,7 +338,7 @@ Function Test-DbaDiskAlignment
         }
     }
     
-    PROCESS
+    process
     {
         foreach ($computer in $ComputerName)
         {

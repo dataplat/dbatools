@@ -3,7 +3,7 @@
 	These are all the functions for tab completion (auto-population of params)
 	To use, place this after params in a function
 
-	DynamicParam { if ($source) { return (Get-ParamSqlXyz -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+	dynamicparam { if ($source) { return (Get-ParamSqlXyz -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 
 #>
 Function Get-ParamSqlServerConfigs
@@ -1953,11 +1953,11 @@ Function Get-ParamSqlDatabaseFileTypes
 	
 	if ($server.versionMajor -eq 8)
 	{
-		$sql = "select distinct CASE WHEN groupid = 1 THEN 'ROWS' WHEN groupid = 0 THEN 'LOG' END as filetype from sysaltfiles"
+		$sql = "select distinct CASE WHEN groupid = 1 THEN 'ROWS' WHEN groupid = 0 THEN 'LOG' end as filetype from sysaltfiles"
 	}
 	else
 	{
-		$sql = "SELECT distinct CASE type_desc WHEN 'ROWS' then 'DATA' ELSE type_desc END AS FileType FROM sys.master_files mf INNER JOIN sys.databases db ON db.database_id = mf.database_id"
+		$sql = "SELECT distinct CASE type_desc WHEN 'ROWS' then 'DATA' ELSE type_desc end AS FileType FROM sys.master_files mf INNER JOIN sys.databases db ON db.database_id = mf.database_id"
 	}
 	
 	$dbfiletable = $server.ConnectionContext.ExecuteWithResults($sql)

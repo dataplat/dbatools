@@ -89,7 +89,7 @@ Read-DbaBackupHeader -Path https://dbatoolsaz.blob.core.windows.net/azbackups/re
 Gets the backup header information from the SQL Server backup file stored at https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak on Azure
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
@@ -102,7 +102,7 @@ Gets the backup header information from the SQL Server backup file stored at htt
 		[switch]$Silent
 	)
 	
-	BEGIN
+	begin
 	{
 		$LoopCnt = 1
 		
@@ -126,7 +126,7 @@ Gets the backup header information from the SQL Server backup file stored at htt
 		}
 	}
 	
-	PROCESS
+	process
 	{
 		
 		$PathCount = $path.length
@@ -270,7 +270,7 @@ Gets the backup header information from the SQL Server backup file stored at htt
 	$LoopCnt++
 	}
 	
-	END
+	end
 	{
 		$server.ConnectionContext.Disconnect()
 	}

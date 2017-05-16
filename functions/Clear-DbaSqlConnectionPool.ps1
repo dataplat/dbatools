@@ -45,7 +45,7 @@ Clears all connection pools on workstation27
 #>
 	
 	[CmdletBinding()]
-	Param (
+	param (
 		[Parameter(ValueFromPipeline = $true)]
 		[Alias("cn", "host", "Server")]
 		[string[]]$ComputerName = $env:COMPUTERNAME,

@@ -87,9 +87,9 @@ Shows what would happen if the command were executed using force.
 		[switch]$IncludeDefaults,
 		[switch]$Force
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlAlerts -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+	dynamicparam { if ($source) { return (Get-ParamSqlAlerts -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	BEGIN
+	begin
 	{
 		$alerts = $psboundparameters.Alerts
 		
@@ -100,7 +100,7 @@ Shows what would happen if the command were executed using force.
 		$destination = $destserver.DomainInstanceName
 		
 	}
-	PROCESS
+	process
 	{
 		
 		$serveralerts = $sourceserver.JobServer.Alerts
@@ -258,7 +258,7 @@ Shows what would happen if the command were executed using force.
 		}
 	}
 	
-	END
+	end
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()

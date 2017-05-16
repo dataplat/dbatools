@@ -82,9 +82,9 @@ Shows what would happen if the command were executed using force.
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlProxyAccounts -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+	dynamicparam { if ($source) { return (Get-ParamSqlProxyAccounts -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 	
-	BEGIN
+	begin
 	{
 		$proxyaccounts = $psboundparameters.ProxyAccounts
 		
@@ -103,7 +103,7 @@ Shows what would happen if the command were executed using force.
 		$destproxyaccounts = $destserver.JobServer.ProxyAccounts
 		
 	}
-	PROCESS
+	process
 	{
 		
 		foreach ($proxyaccount in $serverproxyaccounts)
@@ -171,7 +171,7 @@ Shows what would happen if the command were executed using force.
 		}
 	}
 	
-	END
+	end
 	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()

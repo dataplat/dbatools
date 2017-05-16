@@ -148,7 +148,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
-	Param (
+	param (
 		[string[]]$Csv,
 		[Parameter(Mandatory = $true)]
 		[Alias("ServerInstance","SqlInstance")]
@@ -179,7 +179,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		[string]$SqlCredentialPath
 	)
 	
-	DynamicParam
+	dynamicparam
 	{
 		
 		if ($sqlserver.length -gt 0)
@@ -240,7 +240,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		}
 	}
 	
-	Begin
+	begin
 	{
 		Function Parse-OleQuery
 		{
@@ -640,7 +640,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 				$sqldatatypes += "$sqlcolumnname $sqldatatype"
 			}
 			
-			$sql = "BEGIN CREATE TABLE [$schema].[$table] ($($sqldatatypes -join ' NULL,')) END"
+			$sql = "begin CREATE TABLE [$schema].[$table] ($($sqldatatypes -join ' NULL,')) end"
 			$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 			try { $null = $sqlcmd.ExecuteNonQuery() }
 			catch
@@ -686,7 +686,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		Add-Type -ReferencedAssemblies 'System.Data.dll' -TypeDefinition $source -ErrorAction SilentlyContinue
 	}
 	
-	Process
+	process
 	{
 		# Supafast turbo mode requires a table lock, or it's just regular fast
 		if ($turbo -eq $true) { $tablelock = $true }
@@ -1040,7 +1040,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		# Time to import!
 		$elapsed = [System.Diagnostics.Stopwatch]::StartNew()
 		
-		# Process each CSV file specified
+		# process each CSV file specified
 		foreach ($file in $csv)
 		{
 			
@@ -1442,7 +1442,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		Write-Output "[*] Total Elapsed Time for bulk insert: $totaltime seconds"
 	}
 	
-	End
+	end
 	{
 		# Close everything just in case & ignore errors
 		try

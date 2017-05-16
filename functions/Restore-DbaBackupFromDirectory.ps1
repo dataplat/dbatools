@@ -77,7 +77,7 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 #>	
 	#Requires -Version 3.0
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance","SqlInstance")]
 		[string]$SqlServer,
@@ -91,7 +91,7 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 		
 	)
 	
-	DynamicParam
+	dynamicparam
 	{
 		
 		if ($Path)

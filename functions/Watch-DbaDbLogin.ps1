@@ -80,7 +80,7 @@ In the above example, a list of servers is generated using database instance nam
 
 #>	
 	[CmdletBinding(DefaultParameterSetName = "Default")]
-	Param (
+	param (
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance","SqlInstance")]
 		[string]$SqlServer,
@@ -95,9 +95,9 @@ In the above example, a list of servers is generated using database instance nam
 		[string]$ServersFromFile
 	)
 	
-	DynamicParam { if ($SqlCms) { return (Get-ParamSqlCmsGroups -SqlServer $SqlCms -SqlCredential $SqlCredential) } }
+	dynamicparam { if ($SqlCms) { return (Get-ParamSqlCmsGroups -SqlServer $SqlCms -SqlCredential $SqlCredential) } }
 	
-	PROCESS
+	process
 	{
 		
 		$SqlCmsGroups = $psboundparameters.SqlCmsGroups
@@ -172,7 +172,7 @@ In the above example, a list of servers is generated using database instance nam
 		
 <#
 
-			Process each server
+			process each server
 
 #>
 		
@@ -218,7 +218,7 @@ In the above example, a list of servers is generated using database instance nam
 		
 	}
 	
-	END
+	end
 	{
 		Write-Output "Script completed"
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Watch-SqlDbLogin

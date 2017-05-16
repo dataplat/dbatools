@@ -58,7 +58,7 @@ Shows a GUI list of databases and SQL credentials to log into the SQL Server. Re
 	
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
@@ -68,14 +68,14 @@ Shows a GUI list of databases and SQL credentials to log into the SQL Server. Re
 		[string]$DefaultDb
 	)
 	
-	BEGIN
+	begin
 	{
 		try { Add-Type -AssemblyName PresentationFramework }
 		catch { throw "Windows Presentation Framework required but not installed" }
 		
 		Function Add-TreeItem
 		{
-			Param (
+			param (
 				[string]$name,
 				[object]$parent,
 				[string]$tag
@@ -126,7 +126,7 @@ Shows a GUI list of databases and SQL credentials to log into the SQL Server. Re
 		$sourceserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SourceSqlCredential
 	}
 	
-	PROCESS
+	process
 	{
 		# Create XAML form in Visual Studio, ensuring the ListView looks chromeless 
 		[xml]$xaml = "<Window 
@@ -200,7 +200,7 @@ Shows a GUI list of databases and SQL credentials to log into the SQL Server. Re
 		$null = $window.ShowDialog()
 	}
 	
-	END
+	end
 	{
 		if ($script:selected.length -gt 0 -and $script:okay -eq $true)
 		{

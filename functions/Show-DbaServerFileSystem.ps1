@@ -58,21 +58,21 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
 	
 #>
     [CmdletBinding(SupportsShouldProcess)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
 		[object]$SqlCredential
 	)
 	
-	BEGIN
+	begin
 	{
 		try { Add-Type -AssemblyName PresentationFramework }
 		catch { throw "Windows Presentation Framework required but not installed" }
 		
 		Function Add-TreeItem
 		{
-			Param (
+			param (
 				[string]$name,
 				[object]$parent,
 				[string]$tag
@@ -116,7 +116,7 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
 		
 		Function Get-SubDirectory
 		{
-			Param (
+			param (
 				[string]$nameSpace,
 				[object]$treeviewItem
 			)
@@ -154,7 +154,7 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
 		$sourceserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SourceSqlCredential
 	}
 	
-	PROCESS
+	process
 	{		
 		# Create XAML form in Visual Studio, ensuring the ListView looks chromeless 
 		[xml]$xaml = '<Window 
@@ -212,7 +212,7 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
 		$null = $window.ShowDialog()
 	}
 	
-	END
+	end
 	{
 		
 		if ($textbox.Text.length -gt 0)

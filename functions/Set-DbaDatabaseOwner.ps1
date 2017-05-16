@@ -64,7 +64,7 @@ Set-DbaDatabaseOwner -SqlServer sqlserver -Databases db1, db2
 Sets database owner to 'sa' on the db1 and db2 databases if their current owner does not match 'sa'.
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
@@ -72,15 +72,15 @@ Sets database owner to 'sa' on the db1 and db2 databases if their current owner 
 		[string]$TargetLogin
 	)
 	
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SqlCredential } }
+	dynamicparam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SqlCredential } }
 	
-	BEGIN
+	begin
 	{
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
 	}
 	
-	PROCESS
+	process
 	{
 		foreach ($servername in $SqlServer)
 		{
@@ -168,7 +168,7 @@ Sets database owner to 'sa' on the db1 and db2 databases if their current owner 
 		}
 	}
 	
-	END
+	end
 	{
 		if ($dbs.count -eq 0)
 		{

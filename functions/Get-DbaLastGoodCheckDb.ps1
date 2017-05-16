@@ -64,7 +64,7 @@ Authenticates with SQL Server using alternative credentials.
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
@@ -73,7 +73,7 @@ Authenticates with SQL Server using alternative credentials.
 		[switch]$Silent
 	)
 	
-	DynamicParam {
+	dynamicparam {
 		if ($SqlInstance) {
 			return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential
 		}
@@ -140,8 +140,8 @@ Authenticates with SQL Server using alternative credentials.
 					$dataPurityEnabled = $true
 				}
 				
-				$daysSinceCheckDb = (New-TimeSpan -Start $lastKnownGood -End (Get-Date)).Days
-				$daysSinceDbCreated = (New-TimeSpan -Start $db.createDate -End (Get-Date)).Days
+				$daysSinceCheckDb = (New-TimeSpan -Start $lastKnownGood -end (Get-Date)).Days
+				$daysSinceDbCreated = (New-TimeSpan -Start $db.createDate -end (Get-Date)).Days
 				
 				if ($daysSinceCheckDb -lt 7) {
 					$Status = 'Ok'

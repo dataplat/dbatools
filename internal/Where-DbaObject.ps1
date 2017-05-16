@@ -49,7 +49,7 @@
             Filters out all strings that don't contain the letter "o"
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [Parameter(ValueFromPipeline = $true, Mandatory = $true)]
         [object]
         $InputObject,

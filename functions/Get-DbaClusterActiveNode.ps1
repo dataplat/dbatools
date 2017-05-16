@@ -52,7 +52,7 @@ Returns a datatable with details
 	
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[string]$SqlServer,
@@ -60,13 +60,13 @@ Returns a datatable with details
 		[switch]$Detailed
 	)
 	
-	BEGIN
+	begin
 	{
 		$server = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential -RegularUser
 		$computername = $server.ComputerNamePhysicalNetBIOS
 	}
 	
-	PROCESS
+	process
 	{
 		if ($server.IsClustered -eq $false)
 		{
@@ -95,7 +95,7 @@ Returns a datatable with details
 		}
 	}
 	
-	END
+	end
 	{
 		$server.ConnectionContext.Disconnect()
 	}

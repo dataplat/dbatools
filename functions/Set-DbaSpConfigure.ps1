@@ -60,7 +60,7 @@ Returns information on the action that would be performed. No actual change will
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer")]
 		[string[]]$SqlInstance,
@@ -71,7 +71,7 @@ Returns information on the action that would be performed. No actual change will
 		[switch]$Silent
 	)
 	
-	DynamicParam { if ($SqlInstance) { return (Get-ParamSqlServerConfigs -SqlServer $SqlInstance -SqlCredential $SqlCredential) } }
+	dynamicparam { if ($SqlInstance) { return (Get-ParamSqlServerConfigs -SqlServer $SqlInstance -SqlCredential $SqlCredential) } }
 	
 	begin
 	{

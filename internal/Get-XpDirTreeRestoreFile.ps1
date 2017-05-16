@@ -9,7 +9,7 @@ Takes path, checks for validity. Scans for usual backup file
 .PARAMETER 
 #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]$Path,
         [parameter(Mandatory = $true)]

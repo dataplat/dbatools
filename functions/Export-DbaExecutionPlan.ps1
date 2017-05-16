@@ -69,7 +69,7 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 	
 #>
 	[cmdletbinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
-	Param (
+	param (
 		[parameter(ParameterSetName = 'NotPiped', Mandatory)]
 		[Alias("ServerInstance", "SqlServer")]
 		[string[]]$SqlInstance,
@@ -87,9 +87,9 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 		[object[]]$PipedObject
 	)
 	
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
+	dynamicparam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
-	BEGIN
+	begin
 	{
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
@@ -105,7 +105,7 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 			$SinceLastExecution = $SinceLastExecution.ToString("yyyy-MM-dd HH:mm:ss")
 		}
 		
-		function Process-Object ($object)
+		function process-Object ($object)
 		{
 			$instancename = $object.SqlInstance
 			$dbname = $object.DatabaseName
@@ -156,7 +156,7 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 		}
 	}
 	
-	PROCESS
+	process
 	{
 		if (!(Test-Path $Path))
 		{
@@ -168,7 +168,7 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 			
 			foreach ($object in $pipedobject)
 			{
-				Process-Object $object
+				process-Object $object
 				return
 			}
 		}
@@ -270,7 +270,7 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 						SingleStatementPlanRaw = [xml]$row.SingleStatementPlan
 					}
 					
-					Process-Object $object
+					process-Object $object
 				}
 			}
 			catch

@@ -61,7 +61,7 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 	)
 	begin
 	{
-		Function Process-Account ($AccountName) {
+		Function process-Account ($AccountName) {
 			
 			ForEach ($account in $AccountName)
 			{
@@ -131,7 +131,7 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 				if ($computer.EndsWith('$'))
 				{
 					Write-Message -Message "$computer is an account name. Processing as account." -Level Verbose
-					Process-Account -AccountName $computer
+					process-Account -AccountName $computer
 					continue
 				}
 			}
@@ -177,7 +177,7 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 		{
 			foreach ($account in $AccountName)
 			{
-				Process-Account -AccountName $account
+				process-Account -AccountName $account
 			}
 		}
 	}

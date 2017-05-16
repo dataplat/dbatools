@@ -53,9 +53,9 @@ Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Stat
 		[PsCredential]$SqlCredential
 	)
 	
-	DynamicParam { if ($SqlInstance) { return (Get-ParamSqlExtendedEvents -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential) } }
+	dynamicparam { if ($SqlInstance) { return (Get-ParamSqlExtendedEvents -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential) } }
 	
-	BEGIN
+	begin
 	{
 		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null)
 		{
@@ -63,7 +63,7 @@ Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Stat
 		}
 		$sessions = $psboundparameters.Sessions
 	}
-	PROCESS
+	process
 	{
 		foreach ($instance in $SqlInstance)
 		{
@@ -123,5 +123,5 @@ Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Stat
 			}
 		}
 	}
-	END { }
+	end { }
 }

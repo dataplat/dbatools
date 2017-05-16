@@ -120,7 +120,7 @@ Limitations: Does not support Application Roles yet
 #>
 	
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object]$Source,
 		[parameter(Mandatory = $true)]
@@ -137,9 +137,9 @@ Limitations: Does not support Application Roles yet
 		[hashtable]$LoginRenameHashtable 
 	)
 	
-	DynamicParam { if ($source) { return Get-ParamSqlLogins -SqlServer $source -SqlCredential $SourceSqlCredential } }
+	dynamicparam { if ($source) { return Get-ParamSqlLogins -SqlServer $source -SqlCredential $SourceSqlCredential } }
 	
-	BEGIN {
+	begin {
 		
 		Function Copy-Login {
 			foreach ($sourcelogin in $sourceserver.logins) {
@@ -402,7 +402,7 @@ Limitations: Does not support Application Roles yet
 		return $serverparms
 	}
 	
-	PROCESS {
+	process {
 		if ($pipelogin.Length -gt 0) {
 			$Source = $pipelogin[0].parent.name
 			$logins = $pipelogin.name
@@ -437,7 +437,7 @@ Limitations: Does not support Application Roles yet
 		}
 	}
 	
-	END {
+	end {
 		
         If ($Pscmdlet.ShouldProcess("console", "Showing time elapsed message")) {
             Write-Output "Login migration completed: $(Get-Date)"

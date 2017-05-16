@@ -61,7 +61,7 @@ Returns an object with server name, IPAddress (just ipv4), port and static ($tru
 	
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
@@ -72,7 +72,7 @@ Returns an object with server name, IPAddress (just ipv4), port and static ($tru
 		[switch]$NoIpv6
 	)
 	
-	PROCESS
+	process
 	{
 		foreach ($servername in $SqlServer)
 		{

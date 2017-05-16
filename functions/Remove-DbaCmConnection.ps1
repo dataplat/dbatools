@@ -45,11 +45,11 @@
         $Silent
     )
 
-    BEGIN {
+    begin {
         Write-Message -Level InternalComment -Message "Starting"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
     }
-    PROCESS {
+    process {
         foreach ($connectionObject in $ComputerName) {
             if (-not $connectionObject.Success) { Stop-Function -Message "Failed to interpret computername input: $($connectionObject.InputObject)" -Category InvalidArgument -Target $connectionObject.InputObject -Continue }
             Write-Message -Level VeryVerbose -Message "Removing from connection cache: $($connectionObject.Connection.ComputerName)" -Target $connectionObject.Connection.ComputerName
@@ -62,7 +62,7 @@
             }
         }
     }
-    END {
+    end {
         Write-Message -Level InternalComment -Message "Ending"
     }
 }

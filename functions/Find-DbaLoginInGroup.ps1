@@ -53,7 +53,7 @@ Returns all active directory users within all windows AD groups that have logins
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[string[]]$SqlInstance,
@@ -142,7 +142,7 @@ Returns all active directory users within all windows AD groups that have logins
 		}
 	}
 	
-	PROCESS
+	process
 	{
 		foreach ($Instance in $SqlInstance)
 		{
