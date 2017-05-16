@@ -1,13 +1,13 @@
 ﻿Function Remove-DbaCertificate {
 <#
 .SYNOPSIS
-Deletes specified database certificate
+Deletes specified database certificate.
 
 .DESCRIPTION
-Deletes specified database certificate
+Deletes specified database certificate.
 
 .PARAMETER SqlInstance
-The SQL Server to create the certificates on.
+The target SQL Server Instance.
 
 .PARAMETER SqlCredential
 Allows you to login to SQL Server using alternative credentials.
@@ -16,7 +16,7 @@ Allows you to login to SQL Server using alternative credentials.
 The database where the certificate will be removed.
 
 .PARAMETER Certificate
-The certificate that will be removed
+The certificate that will be removed.
 
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
@@ -25,10 +25,10 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
+Use this switch to disable any kind of verbose messages.
 
 .PARAMETER CertificateCollection 
-Internal parameter to support pipeline input
+Internal parameter to support pipeline input.
 
 .NOTES
 Tags: Certificate

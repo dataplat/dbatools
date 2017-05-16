@@ -1,13 +1,13 @@
 ﻿Function New-DbaMasterKey {
 <#
 .SYNOPSIS
-Creates a new database master key
+Creates a new database master key.
 
 .DESCRIPTION
 Creates a new database master key. If no database is specified, the master key will be created in master.
 
 .PARAMETER SqlInstance
-The SQL Server to create the certificates on.
+The target SQL Server instance.
 
 .PARAMETER SqlCredential
 Allows you to login to SQL Server using alternative credentials.
@@ -25,7 +25,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
+Use this switch to disable any kind of verbose messages.
 
 .NOTES
 Tags: Certificate

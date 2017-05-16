@@ -4,10 +4,10 @@ Function Import-DbaCertificate {
 Imports certificates from .cer files using SMO.
 
 .DESCRIPTION
-Imports certificates from.cer files using SMO.
+Imports certificates from .cer files using SMO.
 
 .PARAMETER SqlInstance
-The SQL Server to create the certificates on.
+The target SQL Server Instance.
 
 .PARAMETER Path
 The Path the contains the certificate and private key files. The path can be a directory or a specific certificate.
@@ -97,6 +97,7 @@ Imports all the certificates in the specified path.
 		
 		foreach ($fullname in $path) {
 			
+			$fullname = $fullname.ExportPathCert
 			if (![dbavalidate]::IsLocalhost($SqlInstance) -and !$fullname.StartsWith('\')) {
 				Stop-Function -Message "Path ($fullname) must be a UNC share when SQL instance is not local." -Continue -Target $fullname
 			}

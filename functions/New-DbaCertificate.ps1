@@ -1,13 +1,13 @@
 ﻿Function New-DbaCertificate {
 <#
 .SYNOPSIS
-Creates a new database certificate
+Creates a new database certificate.
 
 .DESCRIPTION
 Creates a new database certificate. If no database is specified, the certificate will be created in master.
 
 .PARAMETER SqlInstance
-The SQL Server to create the certificates on.
+The target SQL Server instance.
 
 .PARAMETER SqlCredential
 Allows you to login to SQL Server using alternative credentials.
@@ -31,7 +31,7 @@ Optional secure string used to create the certificate.
 Optional secure string used to create the certificate.
 
 .PARAMETER Password
-Optional password - if no password is supplied, the password will be protected by the master key
+Optional password - if no password is supplied, the password will be protected by the master key.
 	
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
@@ -40,7 +40,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
+Use this switch to disable any kind of verbose messages.
 
 .NOTES
 Tags: Certificate

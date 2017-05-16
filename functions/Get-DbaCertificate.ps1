@@ -1,25 +1,28 @@
 ﻿Function Get-DbaCertificate {
 <#
 .SYNOPSIS
-Gets database certificates
+Gets database certificates.
 
 .DESCRIPTION
-Gets database certificates
+Gets database certificates.
 
 .PARAMETER SqlInstance
-The target SQL Server instance
+The target SQL Server instance.
 
 .PARAMETER SqlCredential
 Allows you to login to SQL Server using alternative credentials
 
 .PARAMETER Database
-Get certificate from specific database
+Get certificate from specific database.
 
 .PARAMETER Certificate
-Get specific certificate
+Get specific certificate.
+
+.PARAMETER ExcludeMSCertificates
+Excludes built in certificates that start with ##MS.
 
 .PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
+Use this switch to disable any kind of verbose messages.
 
 .NOTES
 Tags: Certificate
@@ -42,6 +45,11 @@ Get-DbaCertificate -SqlInstance Server1 -Database db1 -Certificate cert1
 
 Gets the cert1 certificate within the db1 database
 	
+.EXAMPLE
+Get-DbaCertificate -SqlInstance Server1 -ExcludeMSCertificates
+
+Gets all certificates except those that start with ##MS
+
 #>
 	[CmdletBinding()]
 	param (
@@ -51,6 +59,7 @@ Gets the cert1 certificate within the db1 database
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string[]]$Database,
 		[string[]]$Certificate,
+		[switch]$ExcludeMSCertificates,
 		[switch]$Silent
 	)
 	
@@ -75,7 +84,7 @@ Gets the cert1 certificate within the db1 database
 					continue
 				}
 				
-				if ($null -eq $smodb.Certificates) {
+				if (0 -eq $smodb.Certificates.count) {
 					Write-Message -Message "No certificate exists in the $db database on $instance" -Target $smodb -Level Verbose
 					continue
 				}
@@ -83,8 +92,11 @@ Gets the cert1 certificate within the db1 database
 				if ($Certificate) {
 					$certs = $smodb.Certificates | Where-Object Name -in $Certificate
 				}
+				elseif ($ExcludeMSCertificates) {
+					$certs = $smodb.Certificates | Where-Object Name -notlike '##MS*'
+				}
 				else {
-					$certs = $smodb.Certificates
+					$certs = $smodb.Certificates 
 				}
 				
 				foreach ($cert in $certs) {
