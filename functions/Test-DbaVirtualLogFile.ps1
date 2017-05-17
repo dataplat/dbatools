@@ -1,67 +1,67 @@
 function Test-DbaVirtualLogFile {
     <#
-.SYNOPSIS
-Returns database virtual log file information for database files on a SQL instance.
+    .SYNOPSIS
+        Returns database virtual log file information for database files on a SQL instance.
 
-.DESCRIPTION
-As you may already know, having a TLog file with too many VLFs can hurt database performance.
+    .DESCRIPTION
+        As you may already know, having a TLog file with too many VLFs can hurt database performance.
 
-Too many virtual log files can cause transaction log backups to slow down and can also slow down database recovery and, in extreme cases, even affect insert/update/delete performance.
+        Too many virtual log files can cause transaction log backups to slow down and can also slow down database recovery and, in extreme cases, even affect insert/update/delete performance.
 
-	References:
-	http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/
-	http://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx
+            References:
+            http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/
+            http://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx
 
-If you've got a high number of VLFs, you can use Expand-SqlTLogResponsibly to reduce the number.
+        If you've got a high number of VLFs, you can use Expand-SqlTLogResponsibly to reduce the number.
 
-.PARAMETER SqlServer
-SQLServer name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input.
+    .PARAMETER SqlServer
+        SQLServer name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input.
 
-.PARAMETER SqlCredential
-PSCredential object to connect under. If not specified, current Windows login will be used.
+    .PARAMETER SqlCredential
+        PSCredential object to connect under. If not specified, current Windows login will be used.
 
-.PARAMETER Database
-The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+    .PARAMETER Database
+        The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Exclude
-The database(s) to exclude - this list is autopopulated from the server
+    .PARAMETER Exclude
+        The database(s) to exclude - this list is autopopulated from the server
 
-.PARAMETER IncludeSystemDBs
-Switch parameter that when used will display system database information
+    .PARAMETER IncludeSystemDBs
+        Switch parameter that when used will display system database information
 
-.PARAMETER Detailed
-Returns all information provided by DBCC LOGINFO plus the server name and database name
+    .PARAMETER Detailed
+        Returns all information provided by DBCC LOGINFO plus the server name and database name
 
-.NOTES
-Tags: DisasterRecovery, Backup
+    .NOTES
+        Tags: DisasterRecovery, Backup
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        Website: https://dbatools.io
+        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.LINK
-https://dbatools.io/Test-DbaVirtualLogFile
+    .LINK
+        https://dbatools.io/Test-DbaVirtualLogFile
 
-.EXAMPLE
-Test-DbaVirtualLogFile -SqlServer sqlcluster
+    .EXAMPLE
+        Test-DbaVirtualLogFile -SqlServer sqlcluster
 
-Returns all user database virtual log file counts for the sqlcluster instance
+        Returns all user database virtual log file counts for the sqlcluster instance
 
-.EXAMPLE
-Test-DbaVirtualLogFile -SqlServer sqlserver | Where-Object {$_.Count -ge 50}
+    .EXAMPLE
+        Test-DbaVirtualLogFile -SqlServer sqlserver | Where-Object {$_.Count -ge 50}
 
-Returns user databases that have more than or equal to 50 VLFs
+        Returns user databases that have more than or equal to 50 VLFs
 
-.EXAMPLE
-@('sqlserver','sqlcluster') | Test-DbaVirtualLogFile
+    .EXAMPLE
+        @('sqlserver','sqlcluster') | Test-DbaVirtualLogFile
 
-Returns all VLF information for the sqlserver and sqlcluster SQL Server instances. Processes data via the pipeline.
+        Returns all VLF information for the sqlserver and sqlcluster SQL Server instances. Processes data via the pipeline.
 
-.EXAMPLE
-Test-DbaVirtualLogFile -SqlServer sqlcluster -Databases db1, db2
+    .EXAMPLE
+        Test-DbaVirtualLogFile -SqlServer sqlcluster -Databases db1, db2
 
-Returns VLF counts for the db1 and db2 databases on sqlcluster.
-#>
+        Returns VLF counts for the db1 and db2 databases on sqlcluster.
+    #>
     [CmdletBinding()]
     [OutputType([System.Collections.ArrayList])]
     param ([parameter(ValueFromPipeline, Mandatory = $true)]
