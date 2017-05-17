@@ -66,7 +66,7 @@ Returns a custom object with permissions for the master database
 	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
+		[Alias("ServerInstance", "SqlServer")]
 		[string[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
@@ -85,7 +85,7 @@ Returns a custom object with permissions for the master database
 		
 		$ServPermsql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName, 
 				       ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName, 
-				       SERVERPROPERTY('ServerName') AS SqlInstance, 
+				       SERVERPROPERTY('ServerName') AS SqlInstance 
 					    , [Database] = ''
 					    , [PermState] = state_desc
 						, [PermissionName] = permission_name
@@ -105,7 +105,7 @@ Returns a custom object with permissions for the master database
 		
 		$DBPermsql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName, 
 					ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName, 
-					SERVERPROPERTY('ServerName') AS SqlInstance, 
+					SERVERPROPERTY('ServerName') AS SqlInstance 
 					, [Database] = DB_NAME()
 					, [PermState] = state_desc
 				    , [PermissionName] = permission_name
@@ -172,3 +172,5 @@ Returns a custom object with permissions for the master database
 		}
 	}
 }
+
+Register-DbaTeppArgumentCompleter -Command Get-DbaPermission -Parameter Database, Exclude
