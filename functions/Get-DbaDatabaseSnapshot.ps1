@@ -1,3 +1,4 @@
+#ValidationTags#FlowControl#
 Function Get-DbaDatabaseSnapshot
 {
 <#
@@ -19,15 +20,17 @@ Return information for only specific base dbs
 .PARAMETER Snapshots
 Return information for only specific snapshots
 
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
+
 .NOTES
 Tags: Snapshot
 Author: niphlod
 
-dbatools PowerShell module (https://dbatools.io)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+
 
 .LINK
  https://dbatools.io/Get-DbaDatabaseSnapshot
@@ -52,8 +55,9 @@ Returns information for database snapshots HR_snapshot and Accounting_snapshot
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[string[]]$SqlInstance,
-		[PsCredential]$Credential
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PsCredential]$Credential,
+		[switch]$Silent
 	)
 	
 	DynamicParam
@@ -64,59 +68,47 @@ Returns information for database snapshots HR_snapshot and Accounting_snapshot
 		}
 	}
 	
-	BEGIN
+	begin
 	{
 		# Convert from RuntimeDefinedParameter object to regular array
 		$databases = $psboundparameters.Databases
 		$snapshots = $psboundparameters.Snapshots
 	}
 
-	PROCESS
+	process
 	{
 		foreach ($instance in $SqlInstance)
 		{
-			Write-Verbose "Connecting to $instance"
-			try
-			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
-				
-			}
-			catch
-			{
-				Write-Warning "Can't connect to $instance"
-				Continue
+			Write-Message -Level Verbose -Message "Connecting to $instance"
+			try {
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
+			} catch {
+				Stop-Function -Message "Failed to connect to: $instance" -InnerErrorRecord $_ -Target $instance -Continue -Silent $Silent
 			}
 			
 			$dbs = $server.Databases 
 
-			if ($databases.count -gt 0)
-			{
+			if ($databases.count -gt 0) {
 				$dbs = $dbs | Where-Object { $databases -contains $_.DatabaseSnapshotBaseName }
 			}
-
-			if ($snapshots.count -gt 0)
-			{
+			if ($snapshots.count -gt 0) {
 				$dbs = $dbs | Where-Object { $snapshots -contains $_.Name }
 			}
-			
-			if ($snapshots.count -eq 0 -and $databases.count -eq 0)
-			{
+			if ($snapshots.count -eq 0 -and $databases.count -eq 0) {
 				$dbs = $dbs | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
 			}
-			
-			
 			foreach ($db in $dbs)
 			{
 				$object = [PSCustomObject]@{
-					Server = $server.name
+					SqlInstance = $server.DomainInstanceName
 					Database = $db.name
 					SnapshotOf = $db.DatabaseSnapshotBaseName
-					SizeMB = [Math]::Round($db.Size,2)
-					DatabaseCreated = $db.createDate
+					SizeMB = [Math]::Round($db.Size,2) ##FIXME, should use the stats for sparse files
+					DatabaseCreated = [dbadatetime]$db.createDate
 					SnapshotDb = $db
 				}
 				
-				Select-DefaultView -InputObject $object -Property Server, Database, SnapshotOf, SizeMB, DatabaseCreated
+				Select-DefaultView -InputObject $object -Property SqlInstance, Database, SnapshotOf, SizeMB, DatabaseCreated
 			}
 		}
 	}
