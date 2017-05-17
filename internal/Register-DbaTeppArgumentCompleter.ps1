@@ -30,7 +30,7 @@
         [string]
         $Command,
         
-        [string]
+        [string[]]
         $Parameter,
         
         [string]
