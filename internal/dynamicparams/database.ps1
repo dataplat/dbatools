@@ -15,10 +15,23 @@ $ScriptBlock = {
     
     $start = Get-Date
     [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Scripts["database"].LastExecution = $start
-    
-    $server = $fakeBoundParameter['SqlInstance']
-    if (-not $server) { return }
-    
+	
+	$server = $fakeBoundParameter['SqlInstance']
+	
+	if (-not $server) {
+		$server = $fakeBoundParameter['Source']
+	}
+	
+	if (-not $server) {
+		$server = $fakeBoundParameter['SqlServer']
+	}
+	
+	if (-not $server) {
+		$server = $fakeBoundParameter['ComputerName']
+	}
+	
+	if (-not $server) { return }
+	
     try
     {
         [DbaInstanceParameter]$parServer = $server | Select-Object -First 1
