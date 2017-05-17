@@ -9,23 +9,8 @@ Instances. Information is based on a query against sys.database_files and the FI
 function to query and return information. The function can accept a single instance or
 multiple instances. By default, only user dbs will be shown, but using the IncludeSystemDBs
 switch will include system databases
-
-.NOTES 
-Original Author: Michael Fal (@Mike_Fal), http://mikefal.net
-
+	
 File free space script borrowed and modified from Glenn Berry's DMV scripts (http://www.sqlskills.com/blogs/glenn/category/dmv-queries/)
-
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .PARAMETER SqlInstance
 SqlInstance name or SMO object representing the SQL Server to connect to. This can be a
@@ -42,7 +27,13 @@ The database(s) to process - this list is autopopulated from the server. If unsp
 
 .PARAMETER Exclude
 The database(s) to exclude - this list is autopopulated from the server
-	
+
+.NOTES 
+Original Author: Michael Fal (@Mike_Fal), http://mikefal.net
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+
 .LINK
 https://dbatools.io/Get-DbaDatabaseFreespace
 

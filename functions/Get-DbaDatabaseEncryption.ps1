@@ -1,5 +1,4 @@
-function Get-DbaDatabaseEncryption
-{
+function Get-DbaDatabaseEncryption {
 <#
 .SYNOPSIS
 Returns a summary of encrption used on databases based to it.
@@ -28,13 +27,9 @@ Use this switch to disable any kind of verbose messages
 	
 .NOTES 
 Original Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.	
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Get-DbaDatabaseEncryption
@@ -58,57 +53,45 @@ List all encrption found in MyDB
 		[switch]$IncludeSystemDBs,
 		[switch]$Silent
 	)
-		
-	process
-	{
-		foreach ($instance in $SqlInstance)
-		{
+	
+	process {
+		foreach ($instance in $SqlInstance) {
 			#For each SQL Server in collection, connect and get SMO object
 			Write-Verbose "Connecting to $instance"
 			
-			try
-			{
+			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
 				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
 			}
-			catch
-			{
+			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
 			}
 			
 			#If IncludeSystemDBs is true, include systemdbs
 			#only look at online databases (Status equal normal)
-			try
-			{
-				if ($database.length -gt 0)
-				{
+			try {
+				if ($database.length -gt 0) {
 					$dbs = $server.Databases | Where-Object { $database -contains $_.Name }
 				}
-				elseif ($IncludeSystemDBs)
-				{
+				elseif ($IncludeSystemDBs) {
 					$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' }
 				}
-				else
-				{
+				else {
 					$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' -and $_.IsSystemObject -eq 0 }
 				}
 				
-				if ($exclude.length -gt 0)
-				{
+				if ($exclude.length -gt 0) {
 					$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
 				}
 			}
-			catch
-			{
+			catch {
 				Stop-Function -Message "Unable to gather dbs for $instance" -Target $instance -Continue
 			}
 			
-			foreach ($db in $dbs)
-			{
+			foreach ($db in $dbs) {
 				Write-Message -Level Verbose -Message "Processing $db"
 				
-				if ($db.EncryptionEnabled -eq $true)
-				{
+				if ($db.EncryptionEnabled -eq $true) {
 					[PSCustomObject]@{
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
@@ -126,8 +109,7 @@ List all encrption found in MyDB
 					
 				}
 				
-				foreach ($cert in $db.Certificates)
-				{
+				foreach ($cert in $db.Certificates) {
 					[PSCustomObject]@{
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
@@ -145,8 +127,7 @@ List all encrption found in MyDB
 					
 				}
 				
-				foreach ($ak in $db.AsymmetricKeys)
-				{
+				foreach ($ak in $db.AsymmetricKeys) {
 					[PSCustomObject]@{
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
@@ -163,8 +144,7 @@ List all encrption found in MyDB
 					}
 					
 				}
-				foreach ($sk in $db.SymmetricKeys)
-				{
+				foreach ($sk in $db.SymmetricKeys) {
 					[PSCustomObject]@{
 						Server = $server.name
 						Instance = $server.InstanceName
