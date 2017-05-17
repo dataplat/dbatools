@@ -99,143 +99,160 @@ It will also remove any backup folders that no longer contain backup files.
 
 
 #>
-    [CmdletBinding(SupportsShouldProcess=$true)]
-    Param (
-        [parameter(Mandatory = $true,HelpMessage="Full path to the root level backup folder (ex. 'C:\SQL\Backups'")]
-        [Alias("BackupFolder")]
-        [ValidateScript({Test-Path $_ -PathType 'Container'})]
-        [string]$Path,
+	[CmdletBinding(SupportsShouldProcess=$true)]
+	Param (
+		[parameter(Mandatory = $true,HelpMessage="Full path to the root level backup folder (ex. 'C:\SQL\Backups'")]
+		[Alias("BackupFolder")]
+		[ValidateScript({Test-Path $_ -PathType 'Container'})]
+		[string]$Path,
 
-        [parameter(Mandatory = $true,HelpMessage="Backup File extension to remove (ex. bak, trn, dif)")]
-        [string]$BackupFileExtension ,
+		[parameter(Mandatory = $true,HelpMessage="Backup File extension to remove (ex. bak, trn, dif)")]
+		[string]$BackupFileExtension ,
 
-        [parameter(Mandatory = $true,HelpMessage="Backup retention period. (ex. 24h, 7d, 4w, 6m)")]
-        [string]$RetentionPeriod ,
+		[parameter(Mandatory = $true,HelpMessage="Backup retention period. (ex. 24h, 7d, 4w, 6m)")]
+		[string]$RetentionPeriod ,
 
-        [parameter(Mandatory = $false)]
-        [switch]$CheckArchiveBit = $false ,
+		[parameter(Mandatory = $false)]
+		[switch]$CheckArchiveBit = $false ,
 
-        [parameter(Mandatory = $false)]
-        [switch]$RemoveEmptyBackupFolder = $false,
+		[parameter(Mandatory = $false)]
+		[switch]$RemoveEmptyBackupFolder = $false,
 
-        [switch]$Silent
-    )
+		[switch]$Silent
+	)
 
-    BEGIN
-    {
-        ### Local Functions
-        function Convert-UserFriendlyRetentionToDatetime
-        {
-            [cmdletbinding()]
-            param (
-                [string]$UserFriendlyRetention
-            )
+	BEGIN
+	{
+		### Local Functions
+		function Convert-UserFriendlyRetentionToDatetime
+		{
+			[cmdletbinding()]
+			param (
+				[string]$UserFriendlyRetention
+			)
 
-            <#
-            Convert a user friendly retention value into a datetime.
-            The last character of the string will indicate units (validated)
-            Valid units are: (h = hours, d = days, w = weeks, m = months)
+			<#
+			Convert a user friendly retention value into a datetime.
+			The last character of the string will indicate units (validated)
+			Valid units are: (h = hours, d = days, w = weeks, m = months)
 
-            The preceeding characters are the value and must be an integer (validated)
+			The preceeding characters are the value and must be an integer (validated)
 
-            Examples:
-                '48h' = 48 hours
-                '7d' = 7 days
-                '4w' = 4 weeks
-                '1m' = 1 month
-            #>
+			Examples:
+				'48h' = 48 hours
+				'7d' = 7 days
+				'4w' = 4 weeks
+				'1m' = 1 month
+			#>
 
-            [int]$Length = ($UserFriendlyRetention).Length
-            $Value = ($UserFriendlyRetention).Substring(0,$Length-1)
-            $Units = ($UserFriendlyRetention).Substring($Length-1,1)
+			[int]$Length = ($UserFriendlyRetention).Length
+			$Value = ($UserFriendlyRetention).Substring(0,$Length-1)
+			$Units = ($UserFriendlyRetention).Substring($Length-1,1)
 
-            # Validate that $Units is an accepted unit of measure
-            if ( $Units -notin @('h','d','w','m') ) {
-                throw "RetentionPeriod '$UserFriendlyRetention' units invalid! See Get-Help for correct formatting and examples."
-            }
+			# Validate that $Units is an accepted unit of measure
+			if ( $Units -notin @('h','d','w','m') ) {
+				throw "RetentionPeriod '$UserFriendlyRetention' units invalid! See Get-Help for correct formatting and examples."
+			}
 
-            # Validate that $Value is an INT
-            if ( ![int]::TryParse($Value,[ref]"") ) {
-                throw "RetentionPeriod '$UserFriendlyRetention' format invalid! See Get-Help for correct formatting and examples."
-            }
+			# Validate that $Value is an INT
+			if ( ![int]::TryParse($Value,[ref]"") ) {
+				throw "RetentionPeriod '$UserFriendlyRetention' format invalid! See Get-Help for correct formatting and examples."
+			}
 
-            switch ($Units)
-            {
-                'h' { $UnitString = 'Hours'; [datetime]$ReturnDatetime = (Get-Date).AddHours(-$Value)  }
-                'd' { $UnitString = 'Days';  [datetime]$ReturnDatetime = (Get-Date).AddDays(-$Value)   }
-                'w' { $UnitString = 'Weeks'; [datetime]$ReturnDatetime = (Get-Date).AddDays(-$Value*7) }
-                'm' { $UnitString = 'Months';[datetime]$ReturnDatetime = (Get-Date).AddMonths(-$Value) }
-            }
-            $ReturnDatetime
-        }
+			switch ($Units)
+			{
+				'h' { $UnitString = 'Hours'; [datetime]$ReturnDatetime = (Get-Date).AddHours(-$Value)  }
+				'd' { $UnitString = 'Days';  [datetime]$ReturnDatetime = (Get-Date).AddDays(-$Value)   }
+				'w' { $UnitString = 'Weeks'; [datetime]$ReturnDatetime = (Get-Date).AddDays(-$Value*7) }
+				'm' { $UnitString = 'Months';[datetime]$ReturnDatetime = (Get-Date).AddMonths(-$Value) }
+			}
+			$ReturnDatetime
+		}
 
-        # Validations
-        # Ensure BackupFileExtension does not begin with a .
-        if ($BackupFileExtension -match "^[.]") {
-            Write-Message -Message "Parameter -BackupFileExtension begins with a period '$BackupFileExtension'. A period is automatically prepended to -BackupFileExtension and need not be passed in." -Warning
-        }
+		# Validations
+		# Ensure BackupFileExtension does not begin with a .
+		if ($BackupFileExtension -match "^[.]") {
+			Write-Message -Level Warning -Message "Parameter -BackupFileExtension begins with a period '$BackupFileExtension'. A period is automatically prepended to -BackupFileExtension and need not be passed in."
+		}
 
-    }
-    PROCESS
-    {
-        # Process stuff
-        Write-Message -Message "Started" -Level 3 -Silent $Silent
-        Write-Message -Message "Removing backups from $Path" -Level 3 -Silent $Silent
-        # Convert Retention Value to an actual DateTime
-        try {
-            $RetentionDate = Convert-UserFriendlyRetentionToDatetime -UserFriendlyRetention $RetentionPeriod
-            Write-Message -Message "Backup Retention Date set to $RetentionDate" -Level 5 -Silent $Silent
-        } catch {
-            throw $_
-        }
+	}
+	PROCESS
+	{
+		# Process stuff
+		Write-Message -Message "Started" -Level 3 -Silent $Silent
+		Write-Message -Message "Removing backups from $Path" -Level 3 -Silent $Silent
+		# Convert Retention Value to an actual DateTime
+		try {
+			$RetentionDate = Convert-UserFriendlyRetentionToDatetime -UserFriendlyRetention $RetentionPeriod
+			Write-Message -Message "Backup Retention Date set to $RetentionDate" -Level 5 -Silent $Silent
+		} catch {
+			Stop-Function -Message "Failed to interpret retention time!" -ErrorRecord $_
+		}
 
-        # Filter out unarchived files if -CheckArchiveBit parameter is used
-        if ($CheckArchiveBit.IsPresent) {
-            Write-Message -Message "Removing only archived files" -Level 5 -Silent $Silent
-            Filter DbaArchiveBitFilter {
-                If ($_.Attributes -notmatch "Archive") {
-                    $_
-                }
-            }
-        } else {
-            Filter DbaArchiveBitFilter {
-                $_
-            }
-        }
-        # Enumeration may take a while. Without resorting to "esoteric" file listing facilities
-        # and given we need to fetch at least the LastWriteTime, let's just use "streaming" processing
-        # here to avoid issues like described in #970
-        Get-ChildItem $Path -Filter "*.$BackupFileExtension" -Recurse | `
-            Where-Object LastWriteTime -lt $RetentionDate | DbaArchiveBitFilter | Foreach-Object `
-        {
-            $file = $_
-            if ($PSCmdlet.ShouldProcess($file.Directory.FullName, "Removing backup file $($file.Name)")) {
-                try {
-                    $file
-                    $file | Remove-Item -Force
-                } catch {
-                    throw $_
-                }
-            }
-        }
-        Write-Message -Message "File Cleaning ended" -Level 3 -Silent $Silent
-        # Cleanup empty backup folders.
-        if ($RemoveEmptyBackupFolder.IsPresent) {
-            Write-Message -Message "Removing empty folders" -Level 3 -Silent $Silent
-            Get-ChildItem -Directory -Path $Path -Recurse | Foreach-Object { $_.FullName } | Sort-Object -Descending | `
-                Where-Object { @( Get-ChildItem -Force $_ ).Count -eq 0 } | Foreach-Object `
-            {
-                $FolderPath = $_
-                if ($PSCmdlet.ShouldProcess($Path, "Removing empty folder .$($FolderPath.Replace($Path, ''))")) {
-                    try {
-                        $FolderPath
-                        $FolderPath | Remove-Item
-                    } catch {
-                        throw $_
-                    }
-                }
-            }
-            Write-Message -Message "Removed empty folders" -Level 3 -Silent $Silent
-        }
-    }
+		# Filter out unarchived files if -CheckArchiveBit parameter is used
+		if ($CheckArchiveBit) {
+			Write-Message -Message "Removing only archived files" -Level 5 -Silent $Silent
+			Filter DbaArchiveBitFilter {
+				If ($_.Attributes -notmatch "Archive") {
+					$_
+				}
+			}
+		} else {
+			Filter DbaArchiveBitFilter {
+				$_
+			}
+		}
+		# Enumeration may take a while. Without resorting to "esoteric" file listing facilities
+		# and given we need to fetch at least the LastWriteTime, let's just use "streaming" processing
+		# here to avoid issues like described in #970
+		Get-ChildItem $Path -Filter "*.$BackupFileExtension" -File -Recurse -ErrorAction SilentlyContinue -ErrorVariable EnumErrors |
+			Where-Object LastWriteTime -lt $RetentionDate | DbaArchiveBitFilter |
+			Foreach-Object {
+				$file = $_
+				if ($PSCmdlet.ShouldProcess($file.Directory.FullName, "Removing backup file $($file.Name)")) {
+					try {
+						$file
+						$file | Remove-Item -Force -EA Stop
+					} catch {
+						Write-Message -Message "Failed to remove $file" -Level Warning -ErrorRecord $_
+					}
+				}
+			}
+		if ($EnumErrors) {
+			Write-Message "Errors encountered enumerating files" -Level Warning -ErrorRecord $EnumErrors
+		}
+		Write-Message -Message "File Cleaning ended" -Level 3 -Silent $Silent
+		# Cleanup empty backup folders.
+		if ($RemoveEmptyBackupFolder) {
+			Write-Message -Message "Removing empty folders" -Level 3 -Silent $Silent
+			(Get-ChildItem -Directory -Path $Path -Recurse -ErrorAction SilentlyContinue -ErrorVariable EnumErrors).FullName |
+				Sort-Object -Descending |
+					Foreach-Object {
+						$OrigPath = $_
+						try {
+							$Contents = @(Get-ChildItem -Force $OrigPath -ErrorAction Stop)
+						} catch {
+							Write-Message -Message "Can't enumerate $OrigPath" -Level Warning -ErrorRecord $_
+						}
+						if ($Contents.Count -eq 0) {
+							return $_
+						}
+					} |
+						Foreach-Object {
+							$FolderPath = $_
+							if ($PSCmdlet.ShouldProcess($Path, "Removing empty folder .$($FolderPath.Replace($Path, ''))")) {
+								try {
+									$FolderPath
+									$FolderPath | Remove-Item -ErrorAction Stop
+								} catch {
+									Write-Message -Message "Failed to remove $FolderPath" -Level Warning -ErrorRecord $_
+								}
+							}
+						}
+			if ($EnumErrors) {
+				Write-Message "Errors encountered enumerating folders" -Level Warning -ErrorRecord $EnumErrors
+			}
+			Write-Message -Message "Removed empty folders" -Level 3 -Silent $Silent
+		}
+	}
 }
