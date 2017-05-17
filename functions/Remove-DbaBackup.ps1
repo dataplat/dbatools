@@ -172,7 +172,7 @@ It will also remove any backup folders that no longer contain backup files.
 		# Validations
 		# Ensure BackupFileExtension does not begin with a .
 		if ($BackupFileExtension -match "^[.]") {
-			Write-Message -Message "Parameter -BackupFileExtension begins with a period '$BackupFileExtension'. A period is automatically prepended to -BackupFileExtension and need not be passed in." -Warning
+			Write-Message -Level Warning -Message "Parameter -BackupFileExtension begins with a period '$BackupFileExtension'. A period is automatically prepended to -BackupFileExtension and need not be passed in."
 		}
 
 	}
@@ -186,11 +186,11 @@ It will also remove any backup folders that no longer contain backup files.
 			$RetentionDate = Convert-UserFriendlyRetentionToDatetime -UserFriendlyRetention $RetentionPeriod
 			Write-Message -Message "Backup Retention Date set to $RetentionDate" -Level 5 -Silent $Silent
 		} catch {
-			throw $_
+			Stop-Function -Message "Failed to interpret retention time!" -ErrorRecord $_
 		}
 
 		# Filter out unarchived files if -CheckArchiveBit parameter is used
-		if ($CheckArchiveBit.IsPresent) {
+		if ($CheckArchiveBit) {
 			Write-Message -Message "Removing only archived files" -Level 5 -Silent $Silent
 			Filter DbaArchiveBitFilter {
 				If ($_.Attributes -notmatch "Archive") {
@@ -205,48 +205,50 @@ It will also remove any backup folders that no longer contain backup files.
 		# Enumeration may take a while. Without resorting to "esoteric" file listing facilities
 		# and given we need to fetch at least the LastWriteTime, let's just use "streaming" processing
 		# here to avoid issues like described in #970
-		Get-ChildItem $Path -Filter "*.$BackupFileExtension" -File -Recurse -ErrorAction SilentlyContinue -ErrorVariable EnumErrors | `
-			Where-Object LastWriteTime -lt $RetentionDate | DbaArchiveBitFilter | Foreach-Object `
-		{
-			$file = $_
-			if ($PSCmdlet.ShouldProcess($file.Directory.FullName, "Removing backup file $($file.Name)")) {
-				try {
-					$file
-					$file | Remove-Item -Force -EA Stop
-				} catch {
-					Write-Message -Message "Failed to remove $file" -Level Warning -ErrorRecord $_
+		Get-ChildItem $Path -Filter "*.$BackupFileExtension" -File -Recurse -ErrorAction SilentlyContinue -ErrorVariable EnumErrors |
+			Where-Object LastWriteTime -lt $RetentionDate | DbaArchiveBitFilter |
+			Foreach-Object {
+				$file = $_
+				if ($PSCmdlet.ShouldProcess($file.Directory.FullName, "Removing backup file $($file.Name)")) {
+					try {
+						$file
+						$file | Remove-Item -Force -EA Stop
+					} catch {
+						Write-Message -Message "Failed to remove $file" -Level Warning -ErrorRecord $_
+					}
 				}
 			}
-		}
 		if ($EnumErrors) {
 			Write-Message "Errors encountered enumerating files" -Level Warning -ErrorRecord $EnumErrors
 		}
 		Write-Message -Message "File Cleaning ended" -Level 3 -Silent $Silent
 		# Cleanup empty backup folders.
-		if ($RemoveEmptyBackupFolder.IsPresent) {
+		if ($RemoveEmptyBackupFolder) {
 			Write-Message -Message "Removing empty folders" -Level 3 -Silent $Silent
-			Get-ChildItem -Directory -Path $Path -Recurse -ErrorAction SilentlyContinue -ErrorVariable EnumErrors | Foreach-Object { $_.FullName } | Sort-Object -Descending | `
-				Foreach-Object {
-					$OrigPath = $_
-					try {
-						$Contents = @(Get-ChildItem -Force $OrigPath -ErrorAction Stop)
-					} catch {
-						Write-Message -Message "Can't enumerate $OrigPath" -Level Warning -ErrorRecord $_
-					}
-					if ($Contents.Count -eq 0) {
-						return $_
-					}
-				} | Foreach-Object {
-				$FolderPath = $_
-				if ($PSCmdlet.ShouldProcess($Path, "Removing empty folder .$($FolderPath.Replace($Path, ''))")) {
-					try {
-						$FolderPath
-						$FolderPath | Remove-Item -ErrorAction Stop
-					} catch {
-						Write-Message -Message "Failed to remove $FolderPath" -Level Warning -ErrorRecord $_
-					}
-				}
-			}
+			(Get-ChildItem -Directory -Path $Path -Recurse -ErrorAction SilentlyContinue -ErrorVariable EnumErrors).FullName |
+				Sort-Object -Descending |
+					Foreach-Object {
+						$OrigPath = $_
+						try {
+							$Contents = @(Get-ChildItem -Force $OrigPath -ErrorAction Stop)
+						} catch {
+							Write-Message -Message "Can't enumerate $OrigPath" -Level Warning -ErrorRecord $_
+						}
+						if ($Contents.Count -eq 0) {
+							return $_
+						}
+					} |
+						Foreach-Object {
+							$FolderPath = $_
+							if ($PSCmdlet.ShouldProcess($Path, "Removing empty folder .$($FolderPath.Replace($Path, ''))")) {
+								try {
+									$FolderPath
+									$FolderPath | Remove-Item -ErrorAction Stop
+								} catch {
+									Write-Message -Message "Failed to remove $FolderPath" -Level Warning -ErrorRecord $_
+								}
+							}
+						}
 			if ($EnumErrors) {
 				Write-Message "Errors encountered enumerating folders" -Level Warning -ErrorRecord $EnumErrors
 			}
