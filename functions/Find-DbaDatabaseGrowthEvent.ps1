@@ -143,3 +143,5 @@ Returns any database AutoGrow events in the Default Trace for every database on 
 		}
 	}
 }
+
+Register-DbaTeppArgumentCompleter -Command Find-DbaDatabaseGrowthEvent -Parameter Database, Exclude

@@ -289,3 +289,5 @@ Will find exact Unused indexes on all user databases
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-SqlUnusedIndex
 	}
 }
+
+Register-DbaTeppArgumentCompleter -Command Find-DbaUnusedIndex -Parameter Database, Exclude

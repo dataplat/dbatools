@@ -191,3 +191,5 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 		Write-Verbose "Evaluated $everyserverspcount total stored procedures"
 	}
 }
+
+Register-DbaTeppArgumentCompleter -Command Find-DbaStoredProcedure -Parameter Database, Exclude
