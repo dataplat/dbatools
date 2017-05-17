@@ -90,8 +90,8 @@ function Test-DbaVirtualLogFile {
 			#If IncludeSystemDBs is true, include systemdbs
 			#only look at online databases (Status equal normal)
 
-			if ($database.count -gt 0) {
-				$dbs = $dbs | Where-Object { $database -contains $_.Name }
+			if ($Database.count -gt 0) {
+				$dbs = $dbs | Where-Object { $Database -contains $_.Name }
 			}
 			if ($Exclude) {
 				$dbs = $dbs | Where-Object Name -notin $Exclude
