@@ -109,7 +109,6 @@ List all encrption found in MyDB
 				
 				if ($db.EncryptionEnabled -eq $true)
 				{
-					
 					[PSCustomObject]@{
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
@@ -129,7 +128,6 @@ List all encrption found in MyDB
 				
 				foreach ($cert in $db.Certificates)
 				{
-					
 					[PSCustomObject]@{
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
@@ -149,7 +147,6 @@ List all encrption found in MyDB
 				
 				foreach ($ak in $db.AsymmetricKeys)
 				{
-					
 					[PSCustomObject]@{
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
@@ -168,7 +165,6 @@ List all encrption found in MyDB
 				}
 				foreach ($sk in $db.SymmetricKeys)
 				{
-					
 					[PSCustomObject]@{
 						Server = $server.name
 						Instance = $server.InstanceName
