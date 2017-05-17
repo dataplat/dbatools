@@ -25,24 +25,21 @@ The SQL Server that you're connecting to.
 .PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user
 
-.PARAMETER Databases
-Return information for only specific databases
+.PARAMETER Database
+The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
 .PARAMETER Exclude
-Return information for all but these specific databases
+The database(s) to exclude - this list is autopopulated from the server
 	
 .PARAMETER Silent 
 Use this switch to disable any kind of verbose messages
 
 .NOTES
-Copyright (C) 2016 Jakob Bindslet (jakob@bindslet.dk)
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+Author: Jakob Bindslet (jakob@bindslet.dk)
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+	
 .LINK
 DBCC CHECKDB:
 	https://msdn.microsoft.com/en-us/library/ms176064.aspx
@@ -69,22 +66,13 @@ Authenticates with SQL Server using alternative credentials.
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
 		[Alias("Credential")]
-		[PsCredential]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$Exclude,
 		[switch]$Silent
 	)
-	
-	DynamicParam {
-		if ($SqlInstance) {
-			return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential
-		}
-	}
-	
-	begin {
-		# Convert from RuntimeDefinedParameter object to regular array
-		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
-	}
-	
 	process {
 		foreach ($instance in $SqlInstance) {
 			try {
@@ -101,11 +89,11 @@ Authenticates with SQL Server using alternative credentials.
 			
 			$dbs = $server.Databases
 			
-			if ($databases.count -gt 0) {
-				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
+			if ($database) {
+				$dbs = $dbs | Where-Object { $database -contains $_.Name }
 			}
 			
-			if ($exclude.count -gt 0) {
+			if ($exclude) {
 				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
 			}
 			
@@ -173,3 +161,4 @@ Authenticates with SQL Server using alternative credentials.
 		}
 	}
 }
+Register-DbaTeppArgumentCompleter -Command Get-DbaLastGoodCheckDb -Parameter Database, Exclude
