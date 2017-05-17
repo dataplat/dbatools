@@ -1,5 +1,4 @@
-Function Get-DbaQueryExecutionTime
-{
+Function Get-DbaQueryExecutionTime {
 <# 
 .SYNOPSIS 
 Displays Stored Procedures and Ad hoc queries with the highest execution times.  Works on SQL Server 2008 and above.
@@ -80,8 +79,7 @@ limiting results to queries with more than 200 total executions and an execution
 		[switch]$NoSystemDb
 	)
 	
-	begin
-	{		
+	begin {
 		$sql = ";With StatsCTE AS 
             (
 			    SELECT 
@@ -132,8 +130,7 @@ limiting results to queries with more than 200 total executions and an execution
 		If ($MinExecMs) { $sql += "`n AND (total_worker_time / execution_count) / 1000 >= " + $MinExecMs }
 		
 		If ($MaxResultsPerDb) { $sql += ")`n SELECT TOP " + $MaxResultsPerDb }
-		Else
-		{
+		Else {
 			$sql += ")
                         SELECT "
 		}
@@ -153,21 +150,17 @@ limiting results to queries with more than 200 total executions and an execution
 	                    full_statement_text
                     FROM StatsCTE "
 		
-		If ($MinExecs -or $MinExecMs)
-		{
+		If ($MinExecs -or $MinExecMs) {
 			$sql += "`n WHERE `n"
 			
-			If ($MinExecs)
-			{
+			If ($MinExecs) {
 				$sql += " execution_count >= " + $MinExecs
 			}
 			
-			If ($MinExecMs -gt 0 -and $MinExecs)
-			{
+			If ($MinExecMs -gt 0 -and $MinExecs) {
 				$sql += "`n AND AvgExec_ms >= " + $MinExecMs
 			}
-			elseif ($MinExecMs)
-			{
+			elseif ($MinExecMs) {
 				$sql += "`n AvgExecs_ms >= " + $MinExecMs
 			}
 		}
@@ -176,29 +169,23 @@ limiting results to queries with more than 200 total executions and an execution
 		$sql += "`n ORDER BY AvgExec_ms DESC"
 	}
 	
-	process
-	{
-		if (!$MaxResultsPerDb -and !$MinExecs -and !$MinExecMs)
-		{
+	process {
+		if (!$MaxResultsPerDb -and !$MinExecs -and !$MinExecMs) {
 			Write-Warning "Results may take time, depending on system resources and size of buffer cache."
 			Write-Warning "Consider limiting results using -MaxResultsPerDb, -MinExecs and -MinExecMs parameters."
 		}
 		
-		foreach ($instance in $SqlInstance)
-		{
+		foreach ($instance in $SqlInstance) {
 			Write-Verbose "Attempting to connect to $instance"
-			try
-			{
+			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
-			catch
-			{
+			catch {
 				Write-Warning "Can't connect to $instance or access denied. Skipping."
 				continue
 			}
 			
-			if ($server.versionMajor -lt 10)
-			{
+			if ($server.versionMajor -lt 10) {
 				Write-Warning "This function does not support versions lower than SQL Server 2008 (v10). Skipping server $instance."
 				
 				Continue
@@ -206,27 +193,22 @@ limiting results to queries with more than 200 total executions and an execution
 			
 			$dbs = $server.Databases
 			
-			if ($database)
-			{
-				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
+			if ($database) {
+				$dbs = $dbs | Where-Object { $database -contains $_.Name }
 			}
 			
-			if ($NoSystemDb)
-			{
+			if ($NoSystemDb) {
 				$dbs = $dbs | Where-Object { $_.IsSystemObject -eq $false }
 			}
 			
-			if ($exclude)
-			{
+			if ($exclude) {
 				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
 			}
 			
-			foreach ($db in $dbs)
-			{
+			foreach ($db in $dbs) {
 				Write-Verbose "Processing $db on $instance"
 				
-				if ($db.IsAccessible -eq $false)
-				{
+				if ($db.IsAccessible -eq $false) {
 					Write-Warning "The database $db is not accessible. Skipping database."
 					Continue
 				}
@@ -261,3 +243,5 @@ limiting results to queries with more than 200 total executions and an execution
 		}
 	}
 }
+
+Register-DbaTeppArgumentCompleter -Command Get-DbaQueryExecutionTime -Parameter Database, Exclude
