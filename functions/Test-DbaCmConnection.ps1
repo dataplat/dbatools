@@ -28,7 +28,7 @@
     Note that this function will ignore global configurations limiting the types of connections available and test all connections specified here instead.
 
     Available connection protocol types: "CimRM", "CimDCOM", "Wmi", "PowerShellRemoting"
-
+	
     .PARAMETER Force
     Overrides safeguards and "do you really want to do this" kinds of issues.
     - Will force a test to proceed on a known bad credential
@@ -63,13 +63,6 @@
     - It will only test Cim over DCOM and Cim over WinRM
 
     The results will be reported and registered, future calls from Get-DbaCObject will thus recognize the results and optimize the query.
-
-    .EXAMPLE
-    Test-DbaCmConnection -ComputerName sql2014 -Credential $cred -ClearCache
-
-    Performs a full-spectrum connection test against the computer sql2014 using the credentials stored in $cred.
-    Before doing so it will discard all previous results and settings.
-    The results will be reported and registered, future calls from Get-DbaWmObject will thus recognize the results and optimize the query.
     #>
     [CmdletBinding()]
     Param (
@@ -85,9 +78,6 @@
 
         [switch]
         $Force,
-
-        [sqlcollective.dbatools.Connection.ManagementConnectionType[]]
-        $DisableConnectionType,
 
         [switch]
         $Silent
