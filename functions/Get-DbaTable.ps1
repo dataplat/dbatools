@@ -72,9 +72,7 @@ Returns information on the CommandLog table in the DBA database on both instance
 	
 	begin
 	{
-        $defaultprops = @("Parent", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex", "IsFileTable", "IsMemoryOptimized", "IsPartitioned", "FullTextIndex", "ChangeTrackingEnabled")
-
-		$fqtns = @()
+       $fqtns = @()
 		
 		if ($Table)
 		{
@@ -155,6 +153,7 @@ Returns information on the CommandLog table in the DBA database on both instance
 				Write-Message -Level Verbose -Message "Processing $db"
 				
 				$d = $server.Databases[$db]
+				
 				if ($fqtns.Count -gt 0)
 				{
 					foreach ($fqtn in $fqtns)
@@ -163,7 +162,7 @@ Returns information on the CommandLog table in the DBA database on both instance
 						{
 							try
 							{
-								$db.Tables | Where-Object { $_.name -eq $tbl -and $_.Schema -eq $schema } | Select-DefaultView -Property $defaultprops
+								$tables = $db.Tables | Where-Object { $_.name -eq $tbl -and $_.Schema -eq $schema }
 							}
 							catch
 							{
@@ -174,7 +173,7 @@ Returns information on the CommandLog table in the DBA database on both instance
 						{
 							try
 							{
-								$db.Tables | Where-Object { $_.name -eq $tbl } | Select-DefaultView -Property $defaultprops
+								$tables = $db.Tables | Where-Object { $_.name -eq $tbl }
 							}
 							catch
 							{
@@ -185,10 +184,19 @@ Returns information on the CommandLog table in the DBA database on both instance
 				}
 				else
 				{
-					$db.Tables | Select-DefaultView -Property $defaultprops
+					$tables = $db.Tables
 				}
+				
+				$tables | Add-Member -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+				$tables | Add-Member -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+				$tables | Add-Member -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+				
+				$defaultprops = "ComputerName", "InstanceName", "SqlInstance","Parent as Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex", "IsFileTable", "IsMemoryOptimized", "IsPartitioned", "FullTextIndex", "ChangeTrackingEnabled"
+				
+				Select-DefaultView -InputObject $tables -Property $defaultprops
 			}
-        }
+		}
 	}
 }
+
 Register-DbaTeppArgumentCompleter -Command Get-DbaTable -Parameter Database, Exclude
