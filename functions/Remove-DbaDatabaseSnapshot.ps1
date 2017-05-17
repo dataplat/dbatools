@@ -14,17 +14,23 @@ The SQL Server that you're connecting to
 .PARAMETER Credential
 Credential object used to connect to the SQL Server as a different user
 
-.PARAMETER Snapshots
-Removes snapshot databases with this names only
+.PARAMETER Database
+The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Databases
-Removes snapshots for only specific base dbs
-
-.PARAMETER Snapshots
+.PARAMETER Exclude
+The database(s) to exclude - this list is autopopulated from the server
+	
+.PARAMETER Snapshot
 Removes specific snapshots
 
-.PARAMETER AllSnapshots
+.PARAMETER AllSnapshot
 Specifies that you want to remove all snapshots from the server
+
+.PARAMETER WhatIf
+Shows what would happen if the command were to run
+	
+.PARAMETER Confirm
+Prompts for confirmation of every step. 
 
 .PARAMETER PipelineSnapshot
 Internal parameter
@@ -44,25 +50,24 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
  https://dbatools.io/Remove-DbaDatabaseSnapshot
 
 .EXAMPLE
-Remove-DbaDatabaseSnapshot -SqlServer sqlserver2014a
+Remove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a
 
 Removes all database snapshots from sqlserver2014a
 
 .EXAMPLE
-Remove-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Snapshots HR_snap_20161201, HR_snap_20161101
+Remove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snap_20161201, HR_snap_20161101
 
 Removes database snapshots named HR_snap_20161201 and HR_snap_20161101
 
 .EXAMPLE
-Remove-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Databases HR, Accounting
+Remove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
 
 Removes all database snapshots having HR and Accounting as base dbs
 
 .EXAMPLE
-Remove-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Snapshots HR_snapshot, Accounting_snapshot
+Remove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snapshot, Accounting_snapshot
 
 Removes HR_snapshot and Accounting_snapshot
-
 
 .EXAMPLE
 Get-DbaDatabaseSnapshot -SqlServer sql2016 | Where SnapshotOf -like '*dumpsterfire*' | Remove-DbaDatabaseSnapshot
@@ -75,31 +80,23 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PsCredential]$Credential,
+		[Alias("Credential")]
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$Exclude,
+		[object[]]$Snapshot,
 		[parameter(ValueFromPipeline = $true)]
 		[object]$PipelineSnapshot,
 		[switch]$AllSnapshots,
 		[switch]$Silent
 	)
 	
-	DynamicParam
-	{
-		if ($SqlInstance)
-		{
-			Get-ParamSqlSnapshotsAndDatabases -SqlServer $SqlInstance[0] -SqlCredential $Credential
-		}
-	}
-	
-	begin
-	{
-		$databases = $psboundparameters.Databases
-		$snapshots = $psboundparameters.Snapshots
-	}
-	
 	process
 	{
-		if ($snapshots.count -eq 0 -and $databases.count -eq 0 -and $AllSnapshots -eq $false -and $null -eq $PipelineSnapshot) {
-			Stop-Function -Message "You must specify -Snapshots, -Databases or -AllSnapshots"
+		if (!$snapshot -and !$databases -and !$AllSnapshots -and $null -eq $PipelineSnapshot -and !$Exclude) {
+			Stop-Function -Message "You must specify -Snapshot, -Database, -Exclude or -AllSnapshots"
 		}
 		# handle the database object passed by the pipeline
 		if ($null -ne $PipelineSnapshot -and $PipelineSnapshot.getType().Name -eq 'pscustomobject') # do we need a specialized type back ?
@@ -135,19 +132,23 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 			
 			$dbs = $server.Databases
 			
-			if ($databases.count -gt 0) {
+			if ($database) {
 				$dbs = $dbs | Where-Object { $databases -contains $_.DatabaseSnapshotBaseName }
 			}
-			if ($snapshots.count -gt 0) {
-				$dbs = $dbs | Where-Object { $snapshots -contains $_.Name }
+			if ($snapshot) {
+				$dbs = $dbs | Where-Object { $snapshot -contains $_.Name }
 			}
-			if ($snapshots.count -eq 0 -and $databases.count -eq 0) {
+			if (!$snapshot -and !$databases) {
 				$dbs = $dbs | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
+			}
+			
+			if ($exclude) {
+				$dbs = $dbs | Where-Object Name -notin $exclude
 			}
 			
 			foreach ($db in $dbs)
 			{
-				If ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot $($db.Name)"))
+				If ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot $db"))
 				{
 					$dropped = Remove-SqlDatabase -SqlServer $server -DBName $db.Name -SqlCredential $Credential
 					if ($dropped -match "Success") {
@@ -157,6 +158,8 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 						$status = "Drop failed"
 					}
 					[PSCustomObject]@{
+						ComputerName = $server.NetName
+						InstanceName = $server.ServiceName
 						SqlInstance = $server.DomainInstanceName
 						Database = $db.Name
 						SnapshotOf = $db.DatabaseSnapshotBaseName
@@ -167,3 +170,5 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 		}
 	}
 }
+
+Register-DbaTeppArgumentCompleter -Command Remove-DbaDatabaseSnapshot -Parameter Database, Exclude
