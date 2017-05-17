@@ -11,7 +11,7 @@ Removes (drops) database snapshots from the server
 .PARAMETER SqlInstance 
 The SQL Server that you're connecting to
 
-.PARAMETER Credential
+.PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user
 
 .PARAMETER Database
