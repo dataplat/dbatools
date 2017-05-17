@@ -71,8 +71,9 @@ Returns database files and free space information for the db1 and db2 on localho
 	)
 	
 	begin {
-		$sql = "SELECT 
-				    @@SERVERNAME as SqlInstance
+		$sql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName, 
+							       ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName, 
+							       SERVERPROPERTY('ServerName') AS SqlInstance, 
 				    ,DB_NAME() as DBName
 				    ,f.name AS [FileName]
 				    ,fg.name AS [Filegroup] 
