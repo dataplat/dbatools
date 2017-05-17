@@ -1,5 +1,4 @@
-Function Find-DbaStoredProcedure
-{
+Function Find-DbaStoredProcedure {
 <#
 .SYNOPSIS
 Returns all stored procedures that contain a specific case-insensitive string or regex pattern.
@@ -13,8 +12,11 @@ SQLServer name or SMO object representing the SQL Server to connect to. This can
 .PARAMETER SqlCredential
 PSCredential object to connect as. If not specified, currend Windows login will be used.
 
-.PARAMETER Databases
-Set the specific database/s that you wish to search in.
+.PARAMETER Database
+The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+
+.PARAMETER Exclude
+The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER Pattern
 String pattern that you want to search for in the stored procedure textbody
@@ -52,12 +54,12 @@ Find-DbaStoredProcedure -SqlInstance sql2016 -Pattern '\w+@\w+\.\w+'
 Searches all databases for all stored procedures that contain a valid email pattern in the textbody
 
 .EXAMPLE
-Find-DbaStoredProcedure -SqlInstance DEV01 -Databases MyDB -Pattern 'some string' -Verbose
+Find-DbaStoredProcedure -SqlInstance DEV01 -Database MyDB -Pattern 'some string' -Verbose
 
 Searches in "mydb" database stored procedures for "some string" in the textbody
 
 .EXAMPLE
-Find-DbaStoredProcedure -SqlInstance sql2016 -Databases MyDB -Pattern RUNTIME -IncludeSystemObjects
+Find-DbaStoredProcedure -SqlInstance sql2016 -Database MyDB -Pattern RUNTIME -IncludeSystemObjects
 
 Searches in "mydb" database stored procedures for "runtime" in the textbody
 
@@ -68,89 +70,76 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$Exclude,
 		[parameter(Mandatory = $true)]
 		[string]$Pattern,
 		[switch]$IncludeSystemObjects,
 		[switch]$IncludeSystemDatabases
 	)
-	DynamicParam
-	{
-		if ($SqlInstance)
-		{
-			Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential
-		}
-	}
-	begin
-	{
-		$databases = $psboundparameters.Databases
+	
+	begin {
 		$sql = "SELECT p.name, m.definition as TextBody FROM sys.sql_modules m, sys.procedures p WHERE m.object_id = p.object_id"
 		if (!$IncludeSystemObjects) { $sql = "$sql AND p.is_ms_shipped = 0" }
 		$everyserverspcount = 0
 	}
-	process
-	{
-		foreach ($Instance in $SqlInstance)
-		{
-			try
-			{
+	process {
+		foreach ($Instance in $SqlInstance) {
+			try {
 				Write-Verbose "Connecting to $Instance"
 				$server = Connect-SqlServer -SqlServer $Instance -SqlCredential $SqlCredential
 			}
-			catch
-			{
+			catch {
 				Write-Warning "Failed to connect to: $Instance"
 				continue
 			}
 			
-			if ($server.versionMajor -lt 9)
-			{
+			if ($server.versionMajor -lt 9) {
 				Write-Warning "This command only supports SQL Server 2005 and above."
 				Continue
 			}
 			
-			if ($IncludeSystemDatabases)
-			{
+			if ($IncludeSystemDatabases) {
 				$dbs = $server.Databases | Where-Object { $_.Status -eq "normal" }
 			}
-			else
-			{
+			else {
 				$dbs = $server.Databases | Where-Object { $_.Status -eq "normal" -and $_.IsSystemObject -eq $false }
 			}
 			
-			if ($databases.count -gt 0)
-			{
-				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
+			if ($database.count -gt 0) {
+				$dbs = $dbs | Where-Object { $database -contains $_.Name }
+			}
+			
+			if ($exclude) {
+				$dbs = $dbs | Where-Object { $_.Name -notin $exclude }
 			}
 			
 			$totalcount = 0
 			$dbcount = $dbs.count
-			foreach ($db in $dbs)
-			{
+			foreach ($db in $dbs) {
 				Write-Verbose "Searching database $db"
-
+				
 				# If system objects aren't needed, find stored procedure text using SQL
 				# This prevents SMO from having to enumerate
 				
-				if (!$IncludeSystemObjects)
-				{
+				if (!$IncludeSystemObjects) {
 					Write-Debug $sql
 					$rows = $db.ExecuteWithResults($sql).Tables.Rows
 					$sproccount = 0
 					
-					foreach ($row in $rows)
-					{
+					foreach ($row in $rows) {
 						$totalcount++; $sproccount++; $everyserverspcount++
 						
 						$proc = $row.name
 						
 						Write-Debug "Looking in StoredProcedure: $proc TextBody for $pattern"
-						if ($row.TextBody -match $Pattern)
-						{
+						if ($row.TextBody -match $Pattern) {
 							$sp = $db.StoredProcedures | Where-Object name -eq $row.name
-
-                            $StoredProcedureText = $sp.TextBody.split("`n")
-                            $spTextFound = $StoredProcedureText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
-
+							
+							$StoredProcedureText = $sp.TextBody.split("`n")
+							$spTextFound = $StoredProcedureText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
+							
 							[PSCustomObject]@{
 								ComputerName = $server.NetName
 								SqlInstance = $server.ServiceName
@@ -167,22 +156,19 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 						}
 					}
 				}
-				else
-				{
+				else {
 					$storedprocedures = $db.StoredProcedures
 					
-					foreach ($sp in $storedprocedures)
-					{
-						$totalcount++; $sproccount++;  $everyserverspcount++
+					foreach ($sp in $storedprocedures) {
+						$totalcount++; $sproccount++; $everyserverspcount++
 						$proc = $sp.Name
 						
 						Write-Debug "Looking in StoredProcedure: $proc TextBody for $pattern"
-						if ($sp.TextBody -match $Pattern)
-						{
-
-                            $StoredProcedureText = $sp.TextBody.split("`n")
-                            $spTextFound = $StoredProcedureText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
-    
+						if ($sp.TextBody -match $Pattern) {
+							
+							$StoredProcedureText = $sp.TextBody.split("`n")
+							$spTextFound = $StoredProcedureText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
+							
 							[PSCustomObject]@{
 								ComputerName = $server.NetName
 								SqlInstance = $server.ServiceName
@@ -204,8 +190,7 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 			Write-Verbose "Evaluated $totalcount total stored procedures in $dbcount databases"
 		}
 	}
-	end
-	{
+	end {
 		Write-Verbose "Evaluated $everyserverspcount total stored procedures"
 	}
 }
