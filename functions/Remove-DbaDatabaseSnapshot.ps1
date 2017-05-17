@@ -15,13 +15,12 @@ The SQL Server that you're connecting to
 Credential object used to connect to the SQL Server as a different user
 
 .PARAMETER Database
-The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+Restores from the last snapshot databases with this names only
+NB: you can pass either Databases or Snapshots
 
-.PARAMETER Exclude
-The database(s) to exclude - this list is autopopulated from the server
-	
 .PARAMETER Snapshot
-Removes specific snapshots
+Restores databases from snapshots with this names only
+NB: you can pass either Databases or Snapshots
 
 .PARAMETER AllSnapshot
 Specifies that you want to remove all snapshots from the server
@@ -85,7 +84,6 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
 		[object[]]$Snapshot,
 		[parameter(ValueFromPipeline = $true)]
 		[object]$PipelineSnapshot,
@@ -142,10 +140,6 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 				$dbs = $dbs | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
 			}
 			
-			if ($exclude) {
-				$dbs = $dbs | Where-Object Name -notin $exclude
-			}
-			
 			foreach ($db in $dbs)
 			{
 				If ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot $db"))
@@ -171,4 +165,4 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Remove-DbaDatabaseSnapshot -Parameter Database, Exclude
+Register-DbaTeppArgumentCompleter -Command Remove-DbaDatabaseSnapshot -Parameter Database

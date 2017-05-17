@@ -16,13 +16,11 @@ The SQL Server that you're connecting to
 .PARAMETER Credential
 Credential object used to connect to the SQL Server as a different user
 
-.PARAMETER Databases
-Restores from the last snapshot databases with this names only
-NB: you can pass either Databases or Snapshots
+.PARAMETER Database
+Restores from the last snapshot databases with this names only. You can pass either Databases or Snapshots
 
-.PARAMETER Snapshots
-Restores databases from snapshots with this names only
-NB: you can pass either Databases or Snapshots
+.PARAMETER Snapshot
+Restores databases from snapshots with this names only. You can pass either Databases or Snapshots
 
 .PARAMETER Force
 If restoring from a snapshot involves dropping any other shapshot, you need to explicitly

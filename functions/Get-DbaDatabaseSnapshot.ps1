@@ -15,14 +15,14 @@ The SQL Server that you're connecting to.
 Credential object used to connect to the SQL Server as a different user
 
 .PARAMETER Database
-The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+Return information for only specific databases
 
 .PARAMETER Exclude
 The database(s) to exclude - this list is autopopulated from the server
-	
+
 .PARAMETER Snapshot
 Return information for only specific snapshots
-
+	
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages
 
@@ -90,6 +90,11 @@ Returns information for database snapshots HR_snapshot and Accounting_snapshot
 			if (!$snapshot -and !$database) {
 				$dbs = $dbs | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
 			}
+			
+			if ($exclude) {
+				$dbs = $dbs | Where-Object { $exclue -notcontains $_.DatabaseSnapshotBaseName }
+			}
+			
 			foreach ($db in $dbs)
 			{
 				$object = [PSCustomObject]@{
