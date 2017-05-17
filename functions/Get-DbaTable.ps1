@@ -107,7 +107,7 @@ Returns information on the CommandLog table in the DBA database on both instance
         #$fqtns
 	}
 	
-	PROCESS
+	process
 	{
 		foreach ($instance in $sqlinstance)
 		{	
