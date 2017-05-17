@@ -15,7 +15,10 @@ collection and recieve pipeline input
 PSCredential object to connect as. If not specified, currend Windows login will be used.
 
 .PARAMETER Database
-Define the database you wish to search
+The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+
+.PARAMETER Exclude
+The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER IncludeSystemDBs
 Switch parameter that when used will display system database information
@@ -49,19 +52,14 @@ List all encrption found in MyDB
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$Exclude,
 		[switch]$IncludeSystemDBs,
 		[switch]$Silent
 	)
-	
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlInstance $SqlInstance[0] -SqlCredential $SourceSqlCredential } }
-	
-	BEGIN
-	{
-		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
-	}
-	
-	PROCESS
+		
+	process
 	{
 		foreach ($instance in $SqlInstance)
 		{
@@ -82,9 +80,9 @@ List all encrption found in MyDB
 			#only look at online databases (Status equal normal)
 			try
 			{
-				if ($databases.length -gt 0)
+				if ($database.length -gt 0)
 				{
-					$dbs = $server.Databases | Where-Object { $databases -contains $_.Name }
+					$dbs = $server.Databases | Where-Object { $database -contains $_.Name }
 				}
 				elseif ($IncludeSystemDBs)
 				{
@@ -116,7 +114,7 @@ List all encrption found in MyDB
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
 						SqlInstance = $server.DomainInstanceName
-						Database = $db
+						Database = $db.Name
 						Encryption = "EncryptionEnabled (tde)"
 						Name = $null
 						LastBackup = $null
@@ -124,6 +122,7 @@ List all encrption found in MyDB
 						EncryptionAlgorithm = $null
 						KeyLength = $null
 						Owner = $null
+						Object = $null
 					}
 					
 				}
@@ -135,7 +134,7 @@ List all encrption found in MyDB
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
 						SqlInstance = $server.DomainInstanceName
-						Database = $db
+						Database = $db.Name
 						Encryption = "Certificate"
 						Name = $cert.Name
 						LastBackup = $cert.LastBackupDate
@@ -143,6 +142,7 @@ List all encrption found in MyDB
 						EncryptionAlgorithm = $null
 						KeyLength = $null
 						Owner = $cert.Owner
+						Object = $cert
 					}
 					
 				}
@@ -154,7 +154,7 @@ List all encrption found in MyDB
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
 						SqlInstance = $server.DomainInstanceName
-						Database = $db
+						Database = $db.Name
 						Encryption = "Asymentric key"
 						Name = $ak.Name
 						LastBackup = $null
@@ -162,6 +162,7 @@ List all encrption found in MyDB
 						EncryptionAlgorithm = $ak.KeyEncryptionAlgorithm
 						KeyLength = $ak.KeyLength
 						Owner = $ak.Owner
+						Object = $ak
 					}
 					
 				}
@@ -171,7 +172,7 @@ List all encrption found in MyDB
 					[PSCustomObject]@{
 						Server = $server.name
 						Instance = $server.InstanceName
-						Database = $db
+						Database = $db.Name
 						Encryption = "Symmetric key"
 						Name = $sk.Name
 						LastBackup = $null
@@ -179,9 +180,12 @@ List all encrption found in MyDB
 						EncryptionAlgorithm = $ak.EncryptionAlgorithm
 						KeyLength = $sk.KeyLength
 						Owner = $sk.Owner
+						Object = $sk
 					}
 				}
 			}
 		}
 	}
 }
+
+Register-DbaTeppArgumentCompleter -Command Get-DbaDatabaseEncryption -Parameter Database, Exclude
