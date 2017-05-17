@@ -713,7 +713,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		}
 		
 		if ((!$Database -and !$AllDatabases -and !$IncludeSupportDbs) -and ($DetachAttach -or $BackupRestore)) {
-			Stop-Function -Message "You did not select any databases to migrate. Please use -AllDatabases or -Databases or -IncludeSupportDbs"
+			Stop-Function -Message "You did not select any databases to migrate. Please use -AllDatabases or -Database or -IncludeSupportDbs"
 			return
 		}
 		
@@ -1025,7 +1025,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				
 				if ($SetSourceOffline -and $sourceserver.databases[$dbname].status -notlike '*offline*') {
 					If ($Pscmdlet.ShouldProcess($destination, "Setting $dbname offline on $source")) {
-						Stop-DbaProcess -SqlServer $sourceserver -Databases $dbname
+						Stop-DbaProcess -SqlServer $sourceserver -Database $dbname
 						Set-DbaDatabaseState -SqlInstance $sourceserver -Credential $SourceSqlCredential -database $dbname -Offline
 					}
 				}

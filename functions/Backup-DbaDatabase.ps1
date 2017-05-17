@@ -102,13 +102,13 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .EXAMPLE 
-Backup-DbaDatabase -SqlInstance Server1 -Databases HR, Finance
+Backup-DbaDatabase -SqlInstance Server1 -Database HR, Finance
 
 This will perform a full database backup on the databases HR and Finance on SQL Server Instance Server1 to Server1's 
 default backup directory 
 	
 .EXAMPLE
-Backup-DbaDatabase -SqlInstance sql2016 -BackupDirectory C:\temp -Databases AdventureWorks2014 -Type Full
+Backup-DbaDatabase -SqlInstance sql2016 -BackupDirectory C:\temp -Database AdventureWorks2014 -Type Full
 
 Backs up AdventureWorks2014 to sql2016's C:\temp folder 
 
