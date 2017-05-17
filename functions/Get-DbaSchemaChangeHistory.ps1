@@ -14,9 +14,12 @@ FUNCTION Get-DbaSchemaChangeHistory {
 	.PARAMETER SqlCredential
 	SqlCredential object to connect as. If not specified, current Windows login will be used.
 
-    .PARAMETER Databases
-    Return backup information for only specific databases. These are only the databases that currently exist on the server.
-    
+	.PARAMETER Database
+	The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+
+	.PARAMETER Exclude
+	The database(s) to exclude - this list is autopopulated from the server
+		
     .PARAMETER Since
     A date from which DDL changes should be returned. Default is to start at the beggining of the current trace file
 
@@ -48,12 +51,12 @@ FUNCTION Get-DbaSchemaChangeHistory {
 	Returns all DDL changes made in all databases on the SQL Server instance localhost in the last 7 days
 
 	.EXAMPLE
-	Get-DbaJobCategory -SqlInstance localhost -Databases Finance, Prod -Since (Get-Date).AddDays(-7)
+	Get-DbaJobCategory -SqlInstance localhost -Database Finance, Prod -Since (Get-Date).AddDays(-7)
 
 	Returns all DDL changes made in the Prod and Finance databases on the SQL Server instance localhost in the last 7 days
 	
     .EXAMPLE
-	Get-DbaJobCategory -SqlInstance localhost -Databases Finance -Object AccountsTable -Since (Get-Date).AddDays(-7)
+	Get-DbaJobCategory -SqlInstance localhost -Database Finance -Object AccountsTable -Since (Get-Date).AddDays(-7)
 
 	Returns all DDL changes made  to the AccountsTable object in the Finance database on the SQL Server instance localhost in the last 7 days
 
@@ -64,21 +67,16 @@ FUNCTION Get-DbaSchemaChangeHistory {
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [Alias("ServerInstance", "SqlServer")]
         [object[]]$SqlInstance,
-        [System.Management.Automation.PSCredential]$SqlCredential,
+		[Alias("Credential")]
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$Exclude,
         [DbaDateTime]$Since,
         [string[]]$Object,
 		[switch]$Silent
     )
-	
-	dynamicparam {
-		if ($sqlinstance) {
-			return Get-ParamSqlDatabases -SqlServer $sqlinstance[0] -SqlCredential $Credential
-		}
-	}
-	
-	begin {
-        $databases = $psboundparameters.Databases
-   }
 	
     process {
         foreach ($instance in $SqlInstance) {
@@ -97,13 +95,18 @@ FUNCTION Get-DbaSchemaChangeHistory {
             }
             $TraceFileQuery = "select path from sys.traces where is_default = 1"
 			$TraceFile = $server.ConnectionContext.ExecuteWithResults($TraceFileQuery).Tables.Rows | Select-Object Path
-
-            if ($null -eq $databases) { $databases = $server.databases.name }
-            foreach ($database in $databases)
+			
+			if ($null -eq $database) { $database = $server.databases.name }
+			
+			if ($exclude) {
+				$database = $database | Where-Object { $_ -notin $exclude }
+			}
+			
+			foreach ($db in $database)
             {
-                if ($server.databases[$database].status -notlike '*normal*')
+                if ($server.databases[$db].status -notlike '*normal*')
                 {
-                    Stop-Function -Message "Can't open database $database. Skipping." -Continue
+                    Stop-Function -Message "Can't open database $db. Skipping." -Continue
 				}
 				
 				$sql = "select SERVERPROPERTY('MachineName') AS ComputerName, 
@@ -139,11 +142,13 @@ FUNCTION Get-DbaSchemaChangeHistory {
 				}
 				
 				$sql =  $sql + " order by tt.StartTime asc"
-                Write-Message -Level Verbose -Message "Querying Database $database on $instance"
+                Write-Message -Level Verbose -Message "Querying Database $db on $instance"
 				Write-Message -Level Debug -Message "SQL: $sql"
 				
-				$server.databases[$database].ExecuteWithResults($sql).Tables.Rows  | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DatabaseName,starttime, LoginName, UserName, ApplicationName, DDLOperation, Object, ObjectType
+				$server.databases[$db].ExecuteWithResults($sql).Tables.Rows  | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DatabaseName,starttime, LoginName, UserName, ApplicationName, DDLOperation, Object, ObjectType
             }	
         }
     }
 }
+
+Register-DbaTeppArgumentCompleter -Command Get-DbaSchemaChangeHistory -Parameter Database, Exclude
