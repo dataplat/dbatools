@@ -106,9 +106,19 @@ foreach ($command in $commands)
 				# Parameter type in Help should match code
 				It "help for $commandName has correct parameter type for $parameterName" {
 					$codeType = $parameter.ParameterType.Name
-					# To avoid calling Trim method on a null object.
-					$helpType = if ($parameterHelp.parameterValue) { $parameterHelp.parameterValue.Trim() }
-					$helpType | Should be $codeType
+					
+					if ($parameter.ParameterType.IsEnum)
+					{
+						# Enumerations often have issues with the typename not being reliably available
+						$names = $parameter.ParameterType::GetNames($parameter.ParameterType)
+						$parameterHelp.parameterValueGroup.parameterValue | Should be $names
+					}
+					else
+					{
+						# To avoid calling Trim method on a null object.
+						$helpType = if ($parameterHelp.parameterValue) { $parameterHelp.parameterValue.Trim() }
+						$helpType | Should be $codeType
+					}
 				}
 			}
 			
