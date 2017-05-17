@@ -279,3 +279,5 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 		}
 	}
 }
+
+Register-DbaTeppArgumentCompleter -Command Export-DbaExecutionPlan -Parameter Database, Exclude

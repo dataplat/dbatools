@@ -477,3 +477,5 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Expand-SqlTLogResponsibly
 	}
 }
+
+Register-DbaTeppArgumentCompleter -Command Expand-DbaTLogResponsibly -Parameter Database, Exclude

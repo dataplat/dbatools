@@ -1067,3 +1067,5 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlDatabase
 	}
 }
+
+Register-DbaTeppArgumentCompleter -Command Copy-DbaDatabase -Parameter Database, Exclude
