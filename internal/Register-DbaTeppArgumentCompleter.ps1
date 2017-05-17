@@ -1,5 +1,4 @@
-﻿function Register-DbaTeppArgumentCompleter
-{
+﻿function Register-DbaTeppArgumentCompleter {
     <#
         .SYNOPSIS
             Registers a parameter for a prestored Tepp.
@@ -25,26 +24,28 @@
     
             Registers the "Database" parameter of the Get-DbaBackupHistory to receive Database-Tepp
     #>
-    [CmdletBinding()]
-    Param (
-        [string]
-        $Command,
-        
-        [string[]]
-        $Parameter,
-        
-        [string]
-        $Name = $Parameter
-    )
-    
-    $scriptBlock = [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Scripts[$Name.ToLower()].ScriptBlock
-    
-    if ($script:TEPP)
-    {
-        TabExpansionPlusPlus\Register-ArgumentCompleter -CommandName $Command -ParameterName $Parameter -ScriptBlock $scriptBlock
-    }
-    else
-    {
-        Register-ArgumentCompleter -CommandName $Command -ParameterName $Parameter -ScriptBlock $scriptBlock
-    }
+	[CmdletBinding()]
+	Param (
+		[string]$Command,
+		[string[]]$Parameter,
+		[string]$Name
+	)
+	
+	foreach ($p in $Parameter) {
+		
+		$lowername = $PSBoundParameters.Name
+		
+		if ($null -eq $lowername) {
+			$lowername = $p
+		}
+		
+		$scriptBlock = [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Scripts[$lowername.ToLower()].ScriptBlock
+		
+		if ($script:TEPP) {
+			TabExpansionPlusPlus\Register-ArgumentCompleter -CommandName $Command -ParameterName $p -ScriptBlock $scriptBlock
+		}
+		else {
+			Register-ArgumentCompleter -CommandName $Command -ParameterName $p -ScriptBlock $scriptBlock
+		}
+	}
 }
