@@ -12,8 +12,11 @@ Function Get-DbaDatabaseFile {
     .PARAMETER SqlCredential
     Credentials to connect to the SQL Server instance if the calling user doesn't have permission
 
-    .PARAMETER Database
-    Name of the Databases to be scanned for file details. If left blank, will return for all accesible databases on the specified instance
+	.PARAMETER Database
+	The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+
+	.PARAMETER Exclude
+	The database(s) to exclude - this list is autopopulated from the server
 
     .PARAMETER DatabaseCollection
     Internal Variable
@@ -49,15 +52,14 @@ Function Get-DbaDatabaseFile {
 		[parameter(ParameterSetName = "Pipe", Mandatory, ValueFromPipeline)]
 		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$Exclude,
 		[object[]]$DatabaseCollection,
 		[switch]$Silent
 		
 	)
-	dynamicparam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
-	begin {
-		$databases = $psboundparameters.Databases
-	}
 	process {
 		
 		foreach ($instance in $sqlInstance) {
@@ -138,12 +140,17 @@ Function Get-DbaDatabaseFile {
                         left outer join  sysfilegroups fg on df.groupid=fg.groupid"
 			}
 			
-			if ($databases) {
-				$DatabaseCollection = $server.Databases | Where-Object { $_.Name -in $databases }
+			if ($database) {
+				$DatabaseCollection = $server.Databases | Where-Object { $_.Name -in $database }
 			}
 			else {
 				$DatabaseCollection = $server.Databases
 			}
+			
+			if ($exclude) {
+				$DatabaseCollection = $DatabaseCollection | Where-Object Name -notin $exclude
+			}
+			
 			
 			foreach ($db in $DatabaseCollection) {
 				
@@ -207,3 +214,5 @@ Function Get-DbaDatabaseFile {
 		}
 	}
 }
+
+Register-DbaTeppArgumentCompleter -Command Get-DbaDatabaseFile -Parameter Database, Exclude
