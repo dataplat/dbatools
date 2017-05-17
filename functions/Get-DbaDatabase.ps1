@@ -59,14 +59,9 @@ Use this switch to disable any kind of verbose messages
 
 .NOTES
 Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
-
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Get-DbaDatabase
@@ -88,164 +83,162 @@ Returns only the user databases on the local default SQL Server instance
 Returns databases on multiple instances piped into the function
 
 #>
-    [CmdletBinding(DefaultParameterSetName = "Default")]
-    Param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-        [Alias("ServerInstance", "SqlServer")]
-        [object[]]$SqlInstance,
+	[CmdletBinding(DefaultParameterSetName = "Default")]
+	Param (
+		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+		[Alias("ServerInstance", "SqlServer")]
+		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$Exclude,
-        [Alias("SystemDbOnly")]
-        [parameter(ParameterSetName = "NoUserDb")]
-        [switch]$NoUserDb,
-        [Alias("UserDbOnly")]
-        [parameter(ParameterSetName = "NoSystemDb")]
-        [switch]$NoSystemDb,
-        [parameter(ParameterSetName = "DbBackuOwner")]
-        [string[]]$Owner,
-        [parameter(ParameterSetName = "Encrypted")]
-        [switch]$Encrypted,
-        [parameter(ParameterSetName = "Status")]
-        [ValidateSet('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')]
-        [string[]]$Status,
-        [parameter(ParameterSetName = "Access")]
-        [ValidateSet('ReadOnly', 'ReadWrite')]
-        [string]$Access,
-        [parameter(ParameterSetName = "RecoveryModel")]
-        [ValidateSet('Full', 'Simple', 'BulkLogged')]
-        [string]$RecoveryModel,
-        [switch]$NoFullBackup,
-        [datetime]$NoFullBackupSince,
-        [switch]$NoLogBackup,
-        [datetime]$NoLogBackupSince,
-        [switch]$Silent
-    )
+		[Alias("SystemDbOnly")]
+		[parameter(ParameterSetName = "NoUserDb")]
+		[switch]$NoUserDb,
+		[Alias("UserDbOnly")]
+		[parameter(ParameterSetName = "NoSystemDb")]
+		[switch]$NoSystemDb,
+		[parameter(ParameterSetName = "DbBackuOwner")]
+		[string[]]$Owner,
+		[parameter(ParameterSetName = "Encrypted")]
+		[switch]$Encrypted,
+		[parameter(ParameterSetName = "Status")]
+		[ValidateSet('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')]
+		[string[]]$Status,
+		[parameter(ParameterSetName = "Access")]
+		[ValidateSet('ReadOnly', 'ReadWrite')]
+		[string]$Access,
+		[parameter(ParameterSetName = "RecoveryModel")]
+		[ValidateSet('Full', 'Simple', 'BulkLogged')]
+		[string]$RecoveryModel,
+		[switch]$NoFullBackup,
+		[datetime]$NoFullBackupSince,
+		[switch]$NoLogBackup,
+		[datetime]$NoLogBackupSince,
+		[switch]$Silent
+	)
 	
 	BEGIN {
 		
-        if ($NoUserDb -and $NoSystemDb) {
-            Stop-Function -Message "You cannot specify both NoUserDb and NoSystemDb" -Continue -Silent $Silent
-        }
-
-        if($status.count -gt 0)
-        {
-            foreach ($state in $status)
-            {
-                if ($state -notin ('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect'))
-                {
-                    Stop-Function -Message "$state is not a valid status ('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')" -Continue -Silent $Silent
-                }
-                       
-            }
-        }
-    }
-
-    PROCESS {
-        if (Test-FunctionInterrupt) { return }
-
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
-            }
-            catch {
-                Stop-Function -Message "Failed to connect to: $instance" -InnerErrorRecord $_ -Target $instance -Continue -Silent $Silent
-            }
-
-            if ($NoUserDb) {
-                $inputobject = $server.Databases | Where-Object IsSystemObject
-            }
-
-            if ($NoSystemDb) {
-                $inputobject = $server.Databases | Where-Object IsSystemObject -eq $false
-            }
-
-            if ($database) {
-                $inputobject = $server.Databases | Where-Object Name -in $database
-            }
-
-            if ($status) {
-                $StatusInput = @()
-                foreach ($state in $status)
-                {
-                   $StatusInput += $server.Databases | Where-Object {($_.Status -split ', ') -contains $state}
-                }
-                $inputobject = $StatusInput | Select-object -unique  
-            }
-
-            if ($Owner) {
-                $inputobject = $server.Databases | Where-Object Owner -in $Owner
-            }
-
-            switch ($Access) {
-                "ReadOnly" { $inputobject = $server.Databases | Where-Object ReadOnly }
-                "ReadWrite" { $inputobject = $server.Databases | Where-Object ReadOnly -eq $false }
-            }
-
-            if ($Encrypted) {
-                $inputobject = $server.Databases | Where-Object EncryptionEnabled
-            }
-
-            if ($RecoveryModel) {
-                $inputobject = $server.Databases | Where-Object RecoveryModel -eq $RecoveryModel
-            }
-
-            # I forgot the pretty way to do this
-            if (!$NoUserDb -and !$NoSystemDb -and !$database -and !$status -and !$Owner -and !$Access -and !$Encrypted -and !$RecoveryModel) {
-                $inputobject = $server.Databases
-            }
-
-            if ($exclude) {
-                $inputobject = $inputobject | Where-Object Name -notin $exclude
-            }
-
-            if ($NoFullBackup -or $NoFullBackupSince) {
-                if ($NoFullBackup) {
-                    $dabs = (Get-DbaBackuphistory -SqlServer $server -LastFull -IgnoreCopyOnly).Database
-                }
-                else {
-                    $dabs = (Get-DbaBackuphistory -SqlServer $server -LastFull -IgnoreCopyOnly -Since $NoFullBackupSince).Database
-                }
-                $inputobject = $inputObject  | where-object {$_.name -notin $dabs -and $_.name -ne 'tempdb'}
-            }
-            if ($NoLogBackup -or $NoLogBackupSince) {
-                if ($NoLogBackup) {
-                    $dabs = (Get-DbaBackuphistory -SqlServer $server -LastLog -IgnoreCopyOnly).Database
-                }
-                else {
-                    $dabs = (Get-DbaBackuphistory -SqlServer $server -LastLog -IgnoreCopyOnly -Since $NoLogBackupSince).Database
-                }
-                $inputobject = $inputObject  | where-object {$_.name -notin $dabs -and $_.name -ne 'tempdb' -and $_.RecoveryModel -ne 'simple'}
-            }
-
-            if ($null -ne $NoFullBackupSince) {
-                $inputobject = $inputobject | Where-Object LastBackupdate -lt $NoFullBackupSince
-            }
-            elseif ($null -ne $NoLogBackupSince) {
-                $inputobject = $inputobject | Where-Object LastBackupdate -lt $NoLogBackupSince
-            }
-            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'RecoveryModel', 'Size as SizeMB', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup'
-
-            if ($NoFullBackup -or $NoFullBackupSince -or $NoLogBackup -or $NoLogBackupSince) {
-                $defaults += ('Notes')
-            }
-            foreach ($db in $inputobject) {
-
-                $Notes = $null
-                if ($NoFullBackup -or $NoFullBackupSince) {
-                    if	(@($db.EnumBackupSets()).count -eq @($db.EnumBackupSets() | Where-Object {$_.IsCopyOnly}).count -and (@($db.EnumBackupSets()).count -gt 0) ) {
-                        $Notes = "Only CopyOnly backups"
-                    }
-                }
-                Add-Member -InputObject $db -MemberType NoteProperty BackupStatus -value $Notes
-
-                Add-Member -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName
-                Add-Member -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                Add-Member -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                Select-DefaultView -InputObject $db -Property $defaults
-
-            }
-        }
-    }
+		if ($NoUserDb -and $NoSystemDb) {
+			Stop-Function -Message "You cannot specify both NoUserDb and NoSystemDb" -Continue -Silent $Silent
+		}
+		
+		if ($status.count -gt 0) {
+			foreach ($state in $status) {
+				if ($state -notin ('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')) {
+					Stop-Function -Message "$state is not a valid status ('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')" -Continue -Silent $Silent
+				}
+				
+			}
+		}
+	}
+	
+	PROCESS {
+		if (Test-FunctionInterrupt) { return }
+		
+		foreach ($instance in $SqlInstance) {
+			try {
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+			}
+			catch {
+				Stop-Function -Message "Failed to connect to: $instance" -ErrorRecord $_ -Target $instance -Continue -Silent $Silent
+			}
+			
+			if ($NoUserDb) {
+				$inputobject = $server.Databases | Where-Object IsSystemObject
+			}
+			
+			if ($NoSystemDb) {
+				$inputobject = $server.Databases | Where-Object IsSystemObject -eq $false
+			}
+			
+			if ($database) {
+				$inputobject = $server.Databases | Where-Object Name -in $database
+			}
+			
+			if ($status) {
+				$StatusInput = @()
+				foreach ($state in $status) {
+					$StatusInput += $server.Databases | Where-Object { ($_.Status -split ', ') -contains $state }
+				}
+				$inputobject = $StatusInput | Select-object -unique
+			}
+			
+			if ($Owner) {
+				$inputobject = $server.Databases | Where-Object Owner -in $Owner
+			}
+			
+			switch ($Access) {
+				"ReadOnly" { $inputobject = $server.Databases | Where-Object ReadOnly }
+				"ReadWrite" { $inputobject = $server.Databases | Where-Object ReadOnly -eq $false }
+			}
+			
+			if ($Encrypted) {
+				$inputobject = $server.Databases | Where-Object EncryptionEnabled
+			}
+			
+			if ($RecoveryModel) {
+				$inputobject = $server.Databases | Where-Object RecoveryModel -eq $RecoveryModel
+			}
+			
+			# I forgot the pretty way to do this
+			if (!$NoUserDb -and !$NoSystemDb -and !$database -and !$status -and !$Owner -and !$Access -and !$Encrypted -and !$RecoveryModel) {
+				$inputobject = $server.Databases
+			}
+			
+			if ($exclude) {
+				$inputobject = $inputobject | Where-Object Name -notin $exclude
+			}
+			
+			if ($NoFullBackup -or $NoFullBackupSince) {
+				if ($NoFullBackup) {
+					$dabs = (Get-DbaBackuphistory -SqlInstance $server -LastFull -IgnoreCopyOnly).Database
+				}
+				else {
+					$dabs = (Get-DbaBackuphistory -SqlInstance $server -LastFull -IgnoreCopyOnly -Since $NoFullBackupSince).Database
+				}
+				$inputobject = $inputObject | where-object { $_.name -notin $dabs -and $_.name -ne 'tempdb' }
+			}
+			if ($NoLogBackup -or $NoLogBackupSince) {
+				if ($NoLogBackup) {
+					$dabs = (Get-DbaBackuphistory -SqlInstance $server -LastLog -IgnoreCopyOnly).Database
+				}
+				else {
+					$dabs = (Get-DbaBackuphistory -SqlInstance $server -LastLog -IgnoreCopyOnly -Since $NoLogBackupSince).Database
+				}
+				$inputobject = $inputObject | where-object { $_.name -notin $dabs -and $_.name -ne 'tempdb' -and $_.RecoveryModel -ne 'simple' }
+			}
+			
+			if ($null -ne $NoFullBackupSince) {
+				$inputobject = $inputobject | Where-Object LastBackupdate -lt $NoFullBackupSince
+			}
+			elseif ($null -ne $NoLogBackupSince) {
+				$inputobject = $inputobject | Where-Object LastBackupdate -lt $NoLogBackupSince
+			}
+			$defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'RecoveryModel', 'Size as SizeMB', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup'
+			
+			if ($NoFullBackup -or $NoFullBackupSince -or $NoLogBackup -or $NoLogBackupSince) {
+				$defaults += ('Notes')
+			}
+			foreach ($db in $inputobject) {
+				
+				$Notes = $null
+				if ($NoFullBackup -or $NoFullBackupSince) {
+					if (@($db.EnumBackupSets()).count -eq @($db.EnumBackupSets() | Where-Object { $_.IsCopyOnly }).count -and (@($db.EnumBackupSets()).count -gt 0)) {
+						$Notes = "Only CopyOnly backups"
+					}
+				}
+				Add-Member -InputObject $db -MemberType NoteProperty BackupStatus -value $Notes
+				
+				Add-Member -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName
+				Add-Member -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+				Add-Member -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+				Select-DefaultView -InputObject $db -Property $defaults
+				
+			}
+		}
+	}
 }
+
+Register-DbaTeppArgumentCompleter -Command Get-DbaDatabase -Parameter Database, Exclude

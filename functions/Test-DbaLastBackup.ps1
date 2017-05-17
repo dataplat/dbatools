@@ -70,7 +70,13 @@ If set, copy only backups will not be counted as a last backup
 
 .PARAMETER Prefix
 The database is restored as "dbatools-testrestore-$databaseName" by default. You can change dbatools-testrestore to whatever you would like using this parameter.
-	
+
+.PARAMETER Database
+The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+
+.PARAMETER Exclude
+The database(s) to exclude - this list is autopopulated from the server
+
 .PARAMETER WhatIf
 Shows what would happen if the command were to run
 	
@@ -89,14 +95,10 @@ This switch tells the function to ignore transaction log backups. The process wi
 
 .NOTES
 Tags: DisasterRecovery, Backup, Restore
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Test-DbaLastBackup
@@ -142,7 +144,12 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer", "Source")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[object]$SqlCredential,
+		[Alias("Credential")]
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$Exclude,
 		[object]$Destination,
 		[object]$DestinationCredential,
 		[string]$DataDirectory,
@@ -159,12 +166,8 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
     [switch]$IgnoreLogBackup
 	)
 	
-	dynamicparam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
-	
 	process {
 		foreach ($instance in $sqlinstance) {
-			$databases = $psboundparameters.Databases
-			$exclude = $psboundparameters.Exclude
 			
 			if (-not $destination -or $nodestination) {
 				$nodestination = $true
@@ -241,16 +244,16 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 				$logdirectory = Get-SqlDefaultPaths -SqlServer $destserver -FileType ldf
 			}
 			
-			if ($databases.count -eq 0) {
-				$databases = $sourceserver.databases.Name
+			if (!$database) {
+				$database = $sourceserver.databases.Name | Where-Object Name -ne 'tempdb'
 			}
 			
-			if ($databases -or $exclude) {
-				$dblist = $databases
-				
-				if ($exclude) {
-					$dblist = $dblist | Where-Object $_ -notin $exclude
-				}
+			if ($exclude) {
+				$database = $database | Where-Object { $_ -notin $exclude }
+			}
+			
+			if ($database -or $exclude) {
+				$dblist = $database
 				
 				Write-Message -Level Verbose -Message "Getting recent backup history for $instance"
 				
@@ -315,7 +318,6 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 							$copysuccess = $false
 						}
 					}
-					
 					#if ($null -eq $lastbackup)
 					if (!$copysuccess) {
 						Write-Message -Level Verbose -Message "Failed to copy backups"
@@ -331,13 +333,13 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 						$restoreresult = "Skipped"
 						$dbccresult = "Skipped"
 					}
-					elseif ($source -ne $destination -and $lastbackup[0].Path.StartsWith('\\') -eq $false -and !$CopyFile) {
+					elseif ($source -ne $destination -and $lastbackup[0].Path[0].StartsWith('\\') -eq $false -and !$CopyFile) {
 						Write-Message -Level Verbose -Message "Path not UNC and source does not match destination. Use -CopyFile to move the backup file."
 						$fileexists = "Skipped"
 						$restoreresult = "Restore not located on shared location"
 						$dbccresult = "Skipped"
 					}
-					elseif ((Test-DbaSqlPath -SqlServer $destserver -Path $lastbackup[0].Path) -eq $false) {
+					elseif ((Test-DbaSqlPath -SqlServer $destserver -Path $lastbackup[0].Path[0]) -eq $false) {
 						Write-Message -Level Verbose -Message "SQL Server cannot find backup"
 						$fileexists = $false
 						$restoreresult = "Skipped"
@@ -348,7 +350,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 						
 						$fileexists = $true
 						$ogdbname = $dbname
-						$restorelist = Read-DbaBackupHeader -SqlServer $destserver -Path $lastbackup[0].Path
+						$restorelist = Read-DbaBackupHeader -SqlServer $destserver -Path $lastbackup[0].Path[0]
 						$mb = $restorelist.BackupSizeMB
 						
 						if ($MaxMB -gt 0 -and $MaxMB -lt $mb) {
@@ -475,3 +477,5 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 		}
 	}
 }
+
+Register-DbaTeppArgumentCompleter -Command Test-DbaLastBackup -Parameter Database, Exclude

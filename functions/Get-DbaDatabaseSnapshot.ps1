@@ -11,15 +11,18 @@ Retrieves the list of database snapshot available, along with their base (the db
 .PARAMETER SqlInstance 
 The SQL Server that you're connecting to.
 
-.PARAMETER Credential
+.PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user
 
-.PARAMETER Databases
-Return information for only specific base dbs
+.PARAMETER Database
+Return information for only specific databases
 
-.PARAMETER Snapshots
+.PARAMETER Exclude
+The database(s) to exclude - this list is autopopulated from the server
+
+.PARAMETER Snapshot
 Return information for only specific snapshots
-
+	
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages
 
@@ -36,17 +39,17 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
  https://dbatools.io/Get-DbaDatabaseSnapshot
 
 .EXAMPLE
-Get-DbaDatabaseSnapshot -SqlServer sqlserver2014a
+Get-DbaDatabaseSnapshot -SqlInstance sqlserver2014a
 
 Returns a custom object displaying Server, Database, DatabaseCreated, SnapshotOf, SizeMB, DatabaseCreated
 
 .EXAMPLE
-Get-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Databases HR, Accounting
+Get-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
 
 Returns information for database snapshots having HR and Accounting as base dbs
 
 .EXAMPLE
-Get-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Snapshots HR_snapshot, Accounting_snapshot
+Get-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snapshot, Accounting_snapshot
 
 Returns information for database snapshots HR_snapshot and Accounting_snapshot
 
@@ -56,24 +59,14 @@ Returns information for database snapshots HR_snapshot and Accounting_snapshot
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PsCredential]$Credential,
+		[Alias("Credential")]
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$Exclude,
 		[switch]$Silent
 	)
-	
-	DynamicParam
-	{
-		if ($SqlInstance)
-		{
-			Get-ParamSqlSnapshotsAndDatabases -SqlServer $SqlInstance[0] -SqlCredential $Credential
-		}
-	}
-	
-	begin
-	{
-		# Convert from RuntimeDefinedParameter object to regular array
-		$databases = $psboundparameters.Databases
-		$snapshots = $psboundparameters.Snapshots
-	}
 
 	process
 	{
@@ -88,18 +81,25 @@ Returns information for database snapshots HR_snapshot and Accounting_snapshot
 			
 			$dbs = $server.Databases 
 
-			if ($databases.count -gt 0) {
+			if ($database) {
 				$dbs = $dbs | Where-Object { $databases -contains $_.DatabaseSnapshotBaseName }
 			}
-			if ($snapshots.count -gt 0) {
-				$dbs = $dbs | Where-Object { $snapshots -contains $_.Name }
+			if ($snapshot) {
+				$dbs = $dbs | Where-Object { $snapshot -contains $_.Name }
 			}
-			if ($snapshots.count -eq 0 -and $databases.count -eq 0) {
+			if (!$snapshot -and !$database) {
 				$dbs = $dbs | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
 			}
+			
+			if ($exclude) {
+				$dbs = $dbs | Where-Object { $exclue -notcontains $_.DatabaseSnapshotBaseName }
+			}
+			
 			foreach ($db in $dbs)
 			{
 				$object = [PSCustomObject]@{
+					ComputerName = $server.NetName
+					InstanceName = $server.ServiceName
 					SqlInstance = $server.DomainInstanceName
 					Database = $db.name
 					SnapshotOf = $db.DatabaseSnapshotBaseName
@@ -108,8 +108,10 @@ Returns information for database snapshots HR_snapshot and Accounting_snapshot
 					SnapshotDb = $db
 				}
 				
-				Select-DefaultView -InputObject $object -Property SqlInstance, Database, SnapshotOf, SizeMB, DatabaseCreated
+				Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, Database, SnapshotOf, SizeMB, DatabaseCreated
 			}
 		}
 	}
 }
+
+Register-DbaTeppArgumentCompleter -Command Get-DbaDatabaseSnapshot -Parameter Database, Exclude

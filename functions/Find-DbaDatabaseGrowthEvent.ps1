@@ -12,7 +12,13 @@ The SQL Server that you're connecting to.
 
 .PARAMETER SqlCredential
 SqlCredential object used to connect to the SQL Server as a different user.
+	
+.PARAMETER Database
+The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
+.PARAMETER Exclude
+The database(s) to exclude - this list is autopopulated from the server
+	
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages
 
@@ -30,17 +36,17 @@ Query Extracted from SQL Server Management Studio (SSMS) 2016.
 https://dbatools.io/Find-DbaDatabaseGrowthEvent
 
 .EXAMPLE
-Find-DBADatabaseGrowthEvent -SqlServer localhost
+Find-DBADatabaseGrowthEvent -SqlInstance localhost
 
 Returns any database AutoGrow events in the Default Trace for every database on the localhost instance.
 
 .EXAMPLE
-Find-DBADatabaseGrowthEvent -SqlServer ServerA\SQL2016, ServerA\SQL2014
+Find-DBADatabaseGrowthEvent -SqlInstance ServerA\SQL2016, ServerA\SQL2014
 
 Returns any database AutoGrow events in the Default Traces for every database on ServerA\sql2016 & ServerA\SQL2014.
 
 .EXAMPLE
-Find-DBADatabaseGrowthEvent -SqlServer ServerA\SQL2016 | Format-Table -AutoSize -Wrap
+Find-DBADatabaseGrowthEvent -SqlInstance ServerA\SQL2016 | Format-Table -AutoSize -Wrap
 
 Returns any database AutoGrow events in the Default Trace for every database on the ServerA\SQL2016 instance in a table format.
 	
@@ -51,16 +57,14 @@ Returns any database AutoGrow events in the Default Trace for every database on 
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$Exclude,
         [switch]$Silent
 	)
-	
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
-	
+		
 	begin
 	{
-		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
-		
 		$query = "begin try  
                     if (select convert(int,value_in_use) from sys.configurations where name = 'default trace enabled' ) = 1 
                     begin 
@@ -74,8 +78,10 @@ Returns any database AutoGrow events in the Default Trace for every database on 
                     set @curr_tracefilename = reverse(@curr_tracefilename) ;
                     set @base_tracefilename = left( @curr_tracefilename,len(@curr_tracefilename) - @indx) + '\log.trc' ;  
 
-                    select SERVERPROPERTY('MachineName') AS ComputerName, SERVERPROPERTY('InstanceName') AS InstanceName, SERVERPROPERTY('ServerName') AS SqlInstance
-					,		CONVERT(INT,(dense_rank() over (order by StartTime desc))%2) as OrderRank
+                    select SERVERPROPERTY('MachineName') AS ComputerName, 
+							       ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName, 
+							       SERVERPROPERTY('ServerName') AS SqlInstance, 
+							CONVERT(INT,(dense_rank() over (order by StartTime desc))%2) as OrderRank
                     ,       convert(int, EventClass) as EventClass
                     ,       DatabaseName
                     ,       Filename
@@ -117,9 +123,9 @@ Returns any database AutoGrow events in the Default Trace for every database on 
 			
 			$dbs = $server.Databases
 
-			if ($databases)
+			if ($Database)
 			{
-                $dbs = $dbs | Where-Object Name -in $databases
+                $dbs = $dbs | Where-Object Name -in $Database
 			}
 			
 			if ($exclude)
@@ -137,3 +143,5 @@ Returns any database AutoGrow events in the Default Trace for every database on 
 		}
 	}
 }
+
+Register-DbaTeppArgumentCompleter -Command Find-DbaDatabaseGrowthEvent -Parameter Database, Exclude

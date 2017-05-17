@@ -1,5 +1,4 @@
-function Get-DbaHelpIndex
-{
+function Get-DbaHelpIndex {
 <#
 .SYNOPSIS
 Returns size, row and configuration information for indexes in databases.
@@ -31,14 +30,17 @@ The data includes:
 SQLServer name or SMO object representing the SQL Server to connect to.
 
 .PARAMETER SqlCredential
-PSCredential object to connect as. If not specified, current Windows login will be used.
+PSCredential object to connect as. if not specified, current Windows login will be used.
 
-.PARAMETER Databases
-The database(s) to be connected to for gathering the index information.
+.PARAMETER Database
+The database(s) to process - this list is autopopulated from the server. if unspecified, all databases will be processed.
+
+.PARAMETER Exclude
+The database(s) to exclude - this list is autopopulated from the server
 	
 .PARAMETER ObjectName
-The name of a table for which you want to obtain the index information. If the two part naming convention for an object is not used it will use the default schema for the executing user.
-	If not passed it will return data on all indexes in a given database.
+The name of a table for which you want to obtain the index information. if the two part naming convention for an object is not used it will use the default schema for the executing user.
+	if not passed it will return data on all indexes in a given database.
 	
 .PARAMETER IncludeStats
 This includes statistics as well as indexes in the output (statistics information such as the StatsRowMods will always be returned for indexes).
@@ -52,31 +54,27 @@ Returns the numerical data in a more user readable format (numerical separator w
 
 .NOTES 
 Original Author: Nic Cain, https://sirsql.net/
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.	
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Get-DbaHelpIndex
 
 .EXAMPLE
-Get-DbaHelpIndex -SqlServer localhost -Databases MyDB
+Get-DbaHelpIndex -SqlServer localhost -Database MyDB
 	Returns information on all indexes on the MyDB database on the localhost.
 
 .EXAMPLE
-Get-DbaHelpIndex -SqlServer localhost -Databases MyDB,MyDB2
+Get-DbaHelpIndex -SqlServer localhost -Database MyDB,MyDB2
 	Returns information on all indexes on the MyDB, MyDB2 databases
 	
 .EXAMPLE
-Get-DbaHelpIndex -SqlServer localhost -Databases MyDB -ObjectName dbo.Table1
+Get-DbaHelpIndex -SqlServer localhost -Database MyDB -ObjectName dbo.Table1
 	Returns index information on the object dbo.Table1 in the database MyDB
 	
 .EXAMPLE
-Get-DbaHelpIndex -SqlServer localhost -Databases MyDB -ObjectName dbo.Table1 -IncludeStats
+Get-DbaHelpIndex -SqlServer localhost -Database MyDB -ObjectName dbo.Table1 -IncludeStats
 	Returns information on the indexes and statistics for the table dbo.Table1 in the MyDB database
 	
 .EXAMPLE
@@ -98,49 +96,46 @@ Get-DbaHelpIndex -SqlServer localhost -Database MyDB -IncludeStats -FormatResult
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
-		[object]$SqlCredential,
+		[Alias("Credential")]
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$Exclude,
 		[string]$ObjectName,
 		[switch]$IncludeStats,
 		[switch]$IncludeDataTypes,
 		[switch]$FormatResults
 	)
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }
 	
-	BEGIN
-	{
+	begin {
 		
 		#Add the table predicate to the query
-		IF (!$ObjectName)
-		{
+		if (!$ObjectName) {
 			$TablePredicate = "DECLARE @TableName NVARCHAR(256);";
 		}
-		ELSE
-		{
+		else {
 			$TablePredicate = "DECLARE @TableName NVARCHAR(256); SET @TableName = '$ObjectName';";
 		}
 		
 		
 		#Figure out if we are including stats in the results
-		IF ($IncludeStats)
-		{
+		if ($IncludeStats) {
 			$IncludeStatsPredicate = "";
 		}
-		ELSE
-		{
+		else {
 			$IncludeStatsPredicate = "WHERE IndexType != 'STATISTICS'";
 		}
 		
 		#Data types being returns with the results?
-		IF ($IncludeDataTypes)
-		{
+		if ($IncludeDataTypes) {
 			$IncludeDataTypesPredicate = 'DECLARE @IncludeDataTypes BIT; SET @IncludeDataTypes = 1';
 		}
-		ELSE
-		{
+		else {
 			$IncludeDataTypesPredicate = 'DECLARE @IncludeDataTypes BIT; SET @IncludeDataTypes = 0';
 		}
 		
-#region SizesQuery		
+		#region SizesQuery		
 		$SizesQuery = @"
 SET NOCOUNT ON;
 SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
@@ -234,7 +229,7 @@ INSERT  INTO @StatsInfo
                 OUTER APPLY sys.dm_db_stats_properties([s].[object_id],
                                                        [s].[stats_id]) AS [sp]
         WHERE   s.object_id = CASE WHEN @TableName IS NULL THEN s.object_id
-                                   ELSE OBJECT_ID(@TableName)
+                                   else OBJECT_ID(@TableName)
                               END;
 
 
@@ -271,7 +266,7 @@ WITH    cteStatsInfo
                                           + lob_used_page_count
                                           + row_overflow_used_page_count)
                                       * 8192 ) / 1024 )
-                             ELSE ( ( SUM(used_page_count) * 8192 ) / 1024 )
+                             else ( ( SUM(used_page_count) * 8192 ) / 1024 )
                         END AS SizeKB
                FROM     sys.dm_db_partition_stats
                GROUP BY object_id ,
@@ -306,7 +301,7 @@ WITH    cteStatsInfo
                                   AND c.is_descending_key = 0
                                   AND c.is_included_column = 0
                              THEN sc.name + ' (' + t.name + ')'
-                             ELSE sc.name
+                             else sc.name
                         END AS ColumnName ,
                         i.filter_definition ,
                         ISNULL(dd.user_scans, 0) AS user_scans ,
@@ -347,7 +342,7 @@ WITH    cteStatsInfo
                                            AND i.index_id = cr.index_id
                WHERE    i.object_id = CASE WHEN @TableName IS NULL
                                            THEN i.object_id
-                                           ELSE OBJECT_ID(@TableName)
+                                           else OBJECT_ID(@TableName)
                                       END
              ),
         cteResults
@@ -360,7 +355,7 @@ WITH    cteStatsInfo
                                WHEN ci.is_unique_constraint = 1
                                THEN ' (UNIQUE CONSTRAINT)'
                                WHEN ci.is_unique = 1 THEN ' (UNIQUE)'
-                               ELSE ''
+                               else ''
                           END AS IndexType ,
                         name AS IndexName ,
                         STUFF((SELECT   N', ' + ColumnName
@@ -387,7 +382,7 @@ WITH    cteStatsInfo
                         ISNULL(filter_definition, '') AS FilterDefinition ,
                         ci.fill_factor ,
                         CASE WHEN ci.data_compression_desc = 'NONE' THEN ''
-                             ELSE ci.data_compression_desc
+                             else ci.data_compression_desc
                         END AS DataCompression ,
                         MAX(ci.user_seeks) + MAX(ci.user_scans)
                         + MAX(ci.user_lookups) AS IndexReads ,
@@ -401,7 +396,7 @@ WITH    cteStatsInfo
                                   AND LastSeek > LastLookup THEN LastSeek
                              WHEN LastLookup > LastScan
                                   AND LastLookup > LastSeek THEN LastLookup
-                             ELSE ''
+                             else ''
                         END AS MostRecentlyUsed
                FROM     cteIndex ci
                GROUP BY ci.ObjectName ,
@@ -498,8 +493,8 @@ OPTION  ( RECOMPILE );
 "@
 		#endRegion SizesQuery
 		
-
-#region sizesQuery2005
+		
+		#region sizesQuery2005
 		$SizesQuery2005 = @"
 SET NOCOUNT ON;
 SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
@@ -619,7 +614,7 @@ INSERT  INTO @StatsInfo
              --   OUTER APPLY sys.dm_db_stats_properties([s].[object_id],
                --                                        [s].[stats_id]) AS [sp]
         WHERE   s.object_id = CASE WHEN @TableName IS NULL THEN s.object_id
-                                   ELSE OBJECT_ID(@TableName)
+                                   else OBJECT_ID(@TableName)
                               END;
 
 
@@ -656,7 +651,7 @@ WITH    cteStatsInfo
                                           + lob_used_page_count
                                           + row_overflow_used_page_count)
                                       * 8192 ) / 1024 )
-                             ELSE ( ( SUM(used_page_count) * 8192 ) / 1024 )
+                             else ( ( SUM(used_page_count) * 8192 ) / 1024 )
                         END AS SizeKB
                FROM     sys.dm_db_partition_stats
                GROUP BY object_id ,
@@ -691,7 +686,7 @@ WITH    cteStatsInfo
                                   AND c.is_descending_key = 0
                                   AND c.is_included_column = 0
                              THEN sc.name + ' (' + t.name + ')'
-                             ELSE sc.name
+                             else sc.name
                         END AS ColumnName ,
                         '' AS filter_definition ,
                         ISNULL(dd.user_scans, 0) AS user_scans ,
@@ -732,7 +727,7 @@ WITH    cteStatsInfo
                                            AND i.index_id = cr.index_id
                WHERE    i.object_id = CASE WHEN @TableName IS NULL
                                            THEN i.object_id
-                                           ELSE OBJECT_ID(@TableName)
+                                           else OBJECT_ID(@TableName)
                                       END
              ),
         cteResults
@@ -745,7 +740,7 @@ WITH    cteStatsInfo
                                WHEN ci.is_unique_constraint = 1
                                THEN ' (UNIQUE CONSTRAINT)'
                                WHEN ci.is_unique = 1 THEN ' (UNIQUE)'
-                               ELSE ''
+                               else ''
                           END AS IndexType ,
                         name AS IndexName ,
                         STUFF((SELECT   N', ' + ColumnName
@@ -772,7 +767,7 @@ WITH    cteStatsInfo
                         ISNULL(filter_definition, '') AS FilterDefinition ,
                         ci.fill_factor ,
                         CASE WHEN ci.data_compression_desc = 'NONE' THEN ''
-                             ELSE ci.data_compression_desc
+                             else ci.data_compression_desc
                         END AS DataCompression ,
                         MAX(ci.user_seeks) + MAX(ci.user_scans)
                         + MAX(ci.user_lookups) AS IndexReads ,
@@ -786,7 +781,7 @@ WITH    cteStatsInfo
                                   AND LastSeek > LastLookup THEN LastSeek
                              WHEN LastLookup > LastScan
                                   AND LastLookup > LastSeek THEN LastLookup
-                             ELSE ''
+                             else ''
                         END AS MostRecentlyUsed
                FROM     cteIndex ci
                GROUP BY ci.ObjectName ,
@@ -889,7 +884,7 @@ WITH    cteStatsInfo
 OPTION  ( RECOMPILE );
 
 /* Only update the stats data on 2005 for a single table, otherwise the run time for this is a potential problem for large table/index volumes */
-IF @TableName IS NOT NULL
+if @TableName IS NOT NULL
 BEGIN
 
 	DECLARE @StatsInfo2005 TABLE (Name nvarchar(128), Updated DATETIME, Rows BIGINT, RowsSampled BIGINT, Steps INT, Density INT, AverageKeyLength INT, StringIndex NVARCHAR(20))
@@ -938,61 +933,50 @@ SELECT	FullObjectName ,
 FROM @AllResults;
 
 "@
-
-#endregion sizesQuery2005
-		$server = Connect-DbaSqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+		
+		#endregion sizesQuery2005
+		$server = Connect-DbaSqlServer -SqlServer $SqlServer -Credential $SqlCredential
 	}
 	
-	PROCESS
-	{
-
-        #Need to check the version of SQL
-        if ($server.versionMajor -ge 10)
-        {
-            $indexesQuery = $SizesQuery
-        }	
-
-        elseif ($server.Information.Version.Major -eq 9)
-        {
-            $indexesQuery = $SizesQuery2005
-        }
-
-        else 
-        {
+	PROCESS {
+		
+		#Need to check the version of SQL
+		if ($server.versionMajor -ge 10) {
+			$indexesQuery = $SizesQuery
+		}
+		
+		elseif ($server.Information.Version.Major -eq 9) {
+			$indexesQuery = $SizesQuery2005
+		}
+		
+		else {
 			Write-Warning "This function does not support versions lower than SQL Server 2005 (v9)"
 			continue
-        }
-
-		# Convert from RuntimeDefinedParameter object to regular array
-		$databases = $psboundparameters.Databases
+		}
 		
-		if ($pipedatabase.Length -gt 0)
-		{
+		if ($pipedatabase.Length -gt 0) {
 			$Source = $pipedatabase[0].parent.name
-			$databases = $pipedatabase.name
+			$database = $pipedatabase.name
 		}
 		
-		if ($databases.Count -eq 0)
-		{
-			$databases = ($server.Databases | Where-Object { $_.Status -ne "Offline" }).Name
+		if ($database.Count -eq 0) {
+			$database = ($server.Databases | Where-Object { $_.Status -ne "Offline" }).Name
 		}
 		
-		if ($databases.Count -gt 0)
-		{
-			foreach ($db in $databases)
-			{
-				try
-				{
-                    $IndexDetails = ($server.Databases[$db].ExecuteWithResults($indexesQuery)).Tables[0];
-			
-					if ($FormatResults)
-					{
-						foreach ($detail in $IndexDetails)
-						{
+		if ($exclude) {
+			$database = $database | Where-Object Name -notin $exclude
+		}
+		
+		if ($database.Count -gt 0) {
+			foreach ($db in $database) {
+				try {
+					$IndexDetails = ($server.Databases[$db].ExecuteWithResults($indexesQuery)).Tables[0];
+					
+					if ($FormatResults) {
+						foreach ($detail in $IndexDetails) {
 							$recentlyused = [datetime]$detail.MostRecentlyUsed
 							
-							if ($recentlyused.year -eq 1900)
-							{
+							if ($recentlyused.year -eq 1900) {
 								$recentlyused = $null
 							}
 							
@@ -1018,14 +1002,11 @@ FROM @AllResults;
 						}
 					}
 					
-					else
-					{
-						foreach ($detail in $IndexDetails)
-						{
+					else {
+						foreach ($detail in $IndexDetails) {
 							$recentlyused = [datetime]$detail.MostRecentlyUsed
 							
-							if ($recentlyused.year -eq 1900)
-							{
+							if ($recentlyused.year -eq 1900) {
 								$recentlyused = $null
 							}
 							
@@ -1053,8 +1034,7 @@ FROM @AllResults;
 					
 					
 				}
-				catch
-				{
+				catch {
 					Write-Warning "Cannot process $db on $server"
 				}
 			}
@@ -1063,3 +1043,5 @@ FROM @AllResults;
 	}
 	
 }
+
+Register-DbaTeppArgumentCompleter -Command Get-DbaHelpIndex -Parameter Database, Exclude
