@@ -113,7 +113,7 @@ Function Get-DbaBackupHistory
     Param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
-        [object[]]
+        [DbaInstanceParameter[]]
         $SqlInstance,
         
         [Alias("Credential")]
@@ -132,7 +132,7 @@ Function Get-DbaBackupHistory
         $Force,
         
         [Parameter(ParameterSetName = "NoLast")]
-        [DbaDateTime]
+        [DateTime]
         $Since,
         
         [Parameter(ParameterSetName = "Last")]
@@ -474,3 +474,4 @@ Function Get-DbaBackupHistory
         }
     }
 }
+Register-DbaTeppArgumentCompleter -Command Get-DbaBackupHistory -Parameter Database
