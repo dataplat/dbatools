@@ -1,5 +1,4 @@
-$null = [reflection.assembly]::LoadWithPartialName("Microsoft.SqlServer.Smo")
-$null = [reflection.assembly]::LoadWithPartialName("Microsoft.SqlServer.SqlWmiManagement")
+Import-Module dbatools
 
 $instances = "sql2016", "sql2008r2sp2"
 
