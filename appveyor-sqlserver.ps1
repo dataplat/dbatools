@@ -1,9 +1,15 @@
+Write-Verbose "Importing dbatools"
 Import-Module C:\projects\dbatools\dbatools.psd1
 
+Write-Verbose "Cloning lab"
 git clone -q --branch=master https://github.com/sqlcollaborative/appveyor-lab.git C:\projects\appveyor-lab
-mkdir C:\projects\migration
 
-New-SmbShare -Name migration -path C:\projects\migration -FullAccess 'ANONYMOUS LOGON', 'Everyone'
+Write-Verbose "Creating migration & backup directories"
+mkdir C:\projects\migration -OutVariable $null
+mkdir C:\projects\backups -OutVariable $null
+
+Write-Verbose "Creating network share workaround"
+New-SmbShare -Name migration -path C:\projects\migration -FullAccess 'ANONYMOUS LOGON', 'Everyone' | Out-Null
 
 $instances = "sql2016", "sql2008r2sp2"
 
@@ -29,5 +35,8 @@ $sql2008 = "localhost\sql2008r2sp2"
 $sql2016 = "localhost\sql2016"
 
 Get-ChildItem C:\projects\appveyor-lab\sql2008-backups | Restore-DbaDatabase -SqlServer $sql2008
-Copy-DbaDatabase -Source $sql2008 -Destination $sql2016 -BackupRestore -NetworkShare "\\$env:computername\migration"  -AllDatabases
+Copy-DbaDatabase -Source $sql2008 -Destination $sql2016 -BackupRestore -NetworkShare "\\$env:computername\migration" -AllDatabases
+$error[0] | Select-Object *
+
+Backup-DbaDatabase -SqlInstance $sql2008 -BackupDirectory C:\projects\backups
 Invoke-DbaSqlCmd -ServerInstance $sql2016 -InputFile C:\projects\appveyor-lab\sql2008-logins.sql
