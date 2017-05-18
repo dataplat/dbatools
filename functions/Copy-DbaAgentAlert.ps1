@@ -76,8 +76,10 @@ function Copy-DbaAgentAlert {
 		[object]$Source,
 		[parameter(Mandatory = $true)]
 		[object]$Destination,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SourceSqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$DestinationSqlCredential,
 		[switch]$IncludeDefaults,
 		[switch]$Force
 	)
