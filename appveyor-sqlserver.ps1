@@ -3,6 +3,8 @@ Import-Module C:\projects\dbatools\dbatools.psd1
 git clone -q --branch=master https://github.com/sqlcollaborative/appveyor-lab.git C:\projects\appveyor-lab
 mkdir C:\projects\migration
 
+New-SmbShare -Name migration -path C:\projects\migration -FullAccess 'ANONYMOUS LOGON', 'Everyone'
+
 $instances = "sql2016", "sql2008r2sp2"
 
 foreach ($instance in $instances) {
@@ -27,5 +29,5 @@ $sql2008 = "localhost\sql2008r2sp2"
 $sql2016 = "localhost\sql2016"
 
 Get-ChildItem C:\projects\appveyor-lab\sql2008-backups | Restore-DbaDatabase -SqlServer $sql2008
-Copy-DbaDatabase -Source $sql2008 -Destination $sql2016 -BackupRestore -NetworkShare \\localhost\c$\projects\migration -AllDatabases
+Copy-DbaDatabase -Source $sql2008 -Destination $sql2016 -BackupRestore -NetworkShare \\localhost\migration  -AllDatabases
 Invoke-DbaSqlCmd -ServerInstance $sql2016 -InputFile C:\projects\appveyor-lab\sql2008-logins.sql
