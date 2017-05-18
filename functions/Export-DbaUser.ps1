@@ -427,7 +427,7 @@ Exports user User1 fron sqlsever2008 to the file  C:\temp\users.sql with sintax 
             $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
         }
         else {
-            return $sql
+            $sql
         }
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Export-SqlUser
     }
