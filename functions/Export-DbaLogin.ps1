@@ -6,10 +6,15 @@ Exports Windows and SQL Logins to a T-SQL file. Export includes login, SID, pass
 .DESCRIPTION
 Exports Windows and SQL Logins to a T-SQL file. Export includes login, SID, password, default database, default language, server permissions, server roles, db permissions, db roles.
 
-THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
-
 .PARAMETER SqlInstance
 The SQL Server instance name. SQL Server 2000 and above supported.
+	
+.PARAMETER SqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+
+SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER FilePath
 The file to write to.
@@ -22,17 +27,13 @@ Append to file
 
 .PARAMETER Exclude
 Excludes specified logins. This list is auto-populated for tab completion.
-
+	
 .PARAMETER Login
 Migrates ONLY specified logins. This list is auto-populated for tab completion. Multiple logins allowed.
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
-
-SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
-
+.PARAMETER Database
+The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+	
 .PARAMETER NoJobs
 Does not export the Jobs
 
@@ -50,52 +51,32 @@ Use this switch to disable any kind of verbose messages
 	
 .NOTES 
 Author: Chrissy LeMaire (@cl), netnerds.net
-
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Export-DbaLogin
 
 .EXAMPLE
-Export-DbaLogin -SqlServer sql2005 -FilePath C:\temp\sql2005-logins.sql
+Export-DbaLogin -SqlInstance sql2005 -FilePath C:\temp\sql2005-logins.sql
 
 Exports SQL for the logins in server "sql2005" and writes them to the file "C:\temp\sql2005-logins.sql"
 
 .EXAMPLE
-Export-DbaLogin -SqlServer sqlserver2014a -Exclude realcajun -SqlCredential $scred -FilePath C:\temp\logins.sql -Append
+Export-DbaLogin -SqlInstance sqlserver2014a -Exclude realcajun -SqlCredential $scred -FilePath C:\temp\logins.sql -Append
 
 Authenticates to sqlserver2014a using SQL Authentication. Exports all logins except for realcajun to C:\temp\logins.sql, and appends to the file if it exists. If not, the file will be created.
 
 .EXAMPLE
-Export-DbaLogin -SqlServer sqlserver2014a -Login realcajun, netnerds -FilePath C:\temp\logins.sql
+Export-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -FilePath C:\temp\logins.sql
 
 Exports ONLY logins netnerds and realcajun from sqlsever2014a to the file  C:\temp\logins.sql
 
 .EXAMPLE
-Export-DbaLogin -SqlServer sqlserver2014a -Login realcajun, netnerds -Databases HR, Accounting
+Export-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Database HR, Accounting
 
 Exports ONLY logins netnerds and realcajun from sqlsever2014a with the permissions on databases HR and Accounting
-
-
-.NOTES 
-Author: Chrissy LeMaire (@cl), netnerds.net
-
-.LINK 
-https://dbatools.io/Export-DbaLogin
 
 #>
 	
@@ -106,7 +87,11 @@ https://dbatools.io/Export-DbaLogin
 		[object]$SqlInstance,
 		[Alias("OutFile", "Path", "FileName")]
 		[string]$FilePath,
-		[object]$SqlCredential,
+		[Alias("Credential")]
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
 		[Alias("NoOverwrite")]
 		[switch]$NoClobber,
 		[switch]$Append,
@@ -115,23 +100,10 @@ https://dbatools.io/Export-DbaLogin
 		[switch]$Silent
 	)
 	
-	dynamicparam {
-		if ($SqlInstance) {
-			try {
-				$dbparams = Get-ParamSqlDatabases -SqlServer $SqlInstance -SqlCredential $SqlCredential
-				$allparams = Get-ParamSqlLogins -SqlServer $SqlInstance -SqlCredential $SqlCredential
-				$null = $allparams.Add("Databases", $dbparams.Databases)
-				return $allparams
-			}
-			catch {
-				# empty 
-			}
-			
-		}
-	}
+	dynamicparam { if ($SqlInstance) { Get-ParamSqlLogins -SqlServer $SqlInstance -SqlCredential $SqlCredential } }
 	
 	begin {
-		if ($FilePath.Length -gt 0) {
+		if ($FilePath) {
 			if ($FilePath -notlike "*\*") { $FilePath = ".\$filepath" }
 			$directory = Split-Path $FilePath
 			$exists = Test-Path $directory
@@ -143,13 +115,9 @@ https://dbatools.io/Export-DbaLogin
 			Write-Message -Level Output -Message "Attempting to connect to SQL Servers.."
 		}
 		
-			
-		
 		# Convert from RuntimeDefinedParameter object to regular array
 		$Logins = $psboundparameters.Logins
 		$Exclude = $psboundparameters.Exclude
-		$databases = $psboundparameters.Databases
-		
 		$outsql = @()
 	}
 	
@@ -165,7 +133,7 @@ https://dbatools.io/Export-DbaLogin
 		
 		$source = $server.DomainInstanceName
 		
-		if ($pipelogin.Length -gt 0) {
+		if ($pipelogin) {
 			$Source = $pipelogin[0].parent.name
 			$logins = $pipelogin.name
 		}
@@ -188,7 +156,7 @@ https://dbatools.io/Export-DbaLogin
 			}
 			
 			If ($Pscmdlet.ShouldProcess("Outfile", "Adding T-SQL for login $username")) {
-				if ($FilePath.Length -gt 0) {
+				if ($FilePath) {
 					Write-Message -Level Output -Message "Exporting $username"
 				}
 				
@@ -321,7 +289,7 @@ CREATE LOGIN [$username] FROM WINDOWS WITH DEFAULT_DATABASE = [$defaultdb], DEFA
 				# Adding database mappings and securables
 				foreach ($db in $dbs) {
 					$dbname = $db.dbname
-					if ($databases.count -gt 0 -and $dbname -notin $databases) {
+					if ($database -and $dbname -notin $database) {
 						continue
 					}
 					$sourcedb = $server.databases[$dbname]
@@ -369,18 +337,20 @@ CREATE LOGIN [$username] FROM WINDOWS WITH DEFAULT_DATABASE = [$defaultdb], DEFA
 		}
 	}
 	
-	END {
+	end {
 		
 		$sql = $sql | Where-Object { $_ -notlike "CREATE USER [dbo] FOR LOGIN * WITH DEFAULT_SCHEMA=[dbo]" }
 		
 		$sql = $outsql -join "`r`nGO`r`n"
 		
-        if ($FilePath.Length -gt 0) {
+        if ($FilePath) {
             $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
         }
         else {
-            return $sql
+            $sql
         }
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Export-SqlLogin
 	}
 }
+
+Register-DbaTeppArgumentCompleter -Command Export-DbaLogin -Parameter Database

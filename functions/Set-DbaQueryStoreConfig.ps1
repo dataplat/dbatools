@@ -56,12 +56,10 @@ Performing the operation "Changing Desired State" on target "pubs on SQL2016\VNE
 .NOTES
 Author: Enrico van de Laar ( @evdlaar )
 Tags: QueryStore
-dbatools PowerShell module (https://dbatools.io)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
-
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+	
 .LINK
 https://dbatools.io/Set-QueryStoreConfig
 
@@ -91,7 +89,12 @@ Configure the Query Store settings for all user databases except the AdventureWo
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
-		[PsCredential]$SqlCredential,
+		[Alias("Credential")]
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$Exclude,
 		[switch]$AllDatabases,
 		[ValidateSet('ReadWrite', 'ReadOnly', 'Off')]
 		[string[]]$State,
@@ -105,22 +108,7 @@ Configure the Query Store settings for all user databases except the AdventureWo
 		[int64]$StaleQueryThreshold
 	)
 	
-	DynamicParam
-	{
-		if ($SqlInstance)
-		{
-			Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential
-		}
-	}
-	
-	BEGIN
-	{
-		# Convert from RuntimeDefinedParameter object to regular array
-		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
-	}
-	
-	PROCESS
+	process
 	{
 		if (!$databases -and !$exclude -and !$alldatabases)
 		{
@@ -158,12 +146,12 @@ Configure the Query Store settings for all user databases except the AdventureWo
 			# We have to exclude all the system databases since they cannot have the Query Store feature enabled
 			$dbs = $server.Databases | Where-Object { $_.IsSystemObject -eq $false }
 			
-			if ($databases.count -gt 0)
+			if ($databases)
 			{
 				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
 			}
 			
-			if ($exclude.count -gt 0)
+			if ($exclude)
 			{
 				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
 			}
@@ -260,3 +248,5 @@ Configure the Query Store settings for all user databases except the AdventureWo
 		}
 	}
 }
+
+Register-DbaTeppArgumentCompleter -Command Set-DbaQueryStoreConfig -Parameter Database, Exclude
