@@ -1,4 +1,4 @@
-Import-Module dbatools
+Import-Module C:\projects\dbatools\dbatools.psd1
 
 $instances = "sql2016", "sql2008r2sp2"
 
@@ -21,4 +21,4 @@ foreach ($instance in $instances) {
 }
 
 $a = Connect-DbaSqlServer localhost\sql2008r2sp2
-$a.databases
+$a.databases.name
