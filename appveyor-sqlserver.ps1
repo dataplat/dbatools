@@ -27,5 +27,5 @@ $sql2008 = "localhost\sql2008r2sp2"
 $sql2016 = "localhost\sql2016"
 
 Get-ChildItem C:\projects\appveyor-lab\sql2008-backups | Restore-DbaDatabase -SqlServer $sql2008
-Copy-DbaDatabase -Source $sql2008 -Destination $sql2016 -BackupRestore -NetworkShare C:\projects\migration -AllDatabases
+Copy-DbaDatabase -Source $sql2008 -Destination $sql2016 -BackupRestore -NetworkShare \\localhost\c$\projects\migration -AllDatabases
 Invoke-DbaSqlCmd -ServerInstance $sql2016 -InputFile C:\projects\appveyor-lab\sql2008-logins.sql
