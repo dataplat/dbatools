@@ -1,5 +1,7 @@
 Import-Module C:\projects\dbatools\dbatools.psd1
 
+git clone -q --branch=master https://github.com/sqlcollaborative/appveyor-lab.git C:\projects\appveyor-lab
+
 $instances = "sql2016", "sql2008r2sp2"
 
 foreach ($instance in $instances) {
