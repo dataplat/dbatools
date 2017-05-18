@@ -105,7 +105,7 @@ function Copy-DbaAgentAlert {
 					$sql = $sourceServer.JobServer.AlertSystem.Script() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$Destination'")
 					Write-Verbose $sql
-					$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 				}
 				catch {
 					Write-Exception $_
@@ -129,7 +129,7 @@ function Copy-DbaAgentAlert {
 
 						$sql = "EXEC msdb.dbo.sp_delete_alert @name = N'$($alert.name)';"
 						Write-Verbose $sql
-						$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+						$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 					}
 					catch {
 						Write-Exception $_
@@ -145,7 +145,7 @@ function Copy-DbaAgentAlert {
 					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$Destination'")
 					$sql = $sql -replace "@job_id=N'........-....-....-....-............", "@job_id=N'00000000-0000-0000-0000-000000000000"
 					Write-Verbose $sql
-					$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 				}
 				catch {
 					Write-Exception $_
@@ -169,7 +169,7 @@ function Copy-DbaAgentAlert {
 						$sql = $sql -replace '00000000-0000-0000-0000-000000000000', $newJobId
 						$sql = $sql -replace 'sp_add_alert', 'sp_update_alert'
 						Write-Verbose $sql
-						$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+						$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 					}
 					catch {
 						Write-Exception $_
