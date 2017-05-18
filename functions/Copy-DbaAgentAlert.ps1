@@ -42,7 +42,7 @@ function Copy-DbaAgentAlert {
 
 	.PARAMETER Force
 		Drops and recreates the Alert if it exists
-	
+
 	.PARAMETER Silent
 		Use this switch to disable any kind of verbose messages
 
@@ -105,7 +105,7 @@ function Copy-DbaAgentAlert {
 		$destAlerts = $destServer.JobServer.Alerts
 
 		if ($IncludeDefaults -eq $true) {
-			if ($PSCmdlet.ShouldProcess($Destination, "Copying Alert Defaults")) {
+			if ($PSCmdlet.ShouldProcess($Destination, "Creating Alert Defaults")) {
 				try {
 					Write-Message -Message "Copying Alert Defaults" -Level Output
 					$sql = $sourceServer.JobServer.AlertSystem.Script() | Out-String
@@ -115,7 +115,7 @@ function Copy-DbaAgentAlert {
 					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 				}
 				catch {
-					Write-Exception $_
+					Stop-Function -Message "Issue creating alert defaults" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
 				}
 			}
 		}
@@ -139,8 +139,7 @@ function Copy-DbaAgentAlert {
 						$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 					}
 					catch {
-						Write-Exception $_
-						continue
+						Stop-Function -Message "Issue dropping/recreating alert" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
 					}
 				}
 			}
@@ -156,7 +155,7 @@ function Copy-DbaAgentAlert {
 					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 				}
 				catch {
-					Write-Exception $_
+					Stop-Function -Message "Issue creating alert" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
 				}
 			}
 
@@ -181,7 +180,7 @@ function Copy-DbaAgentAlert {
 						$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 					}
 					catch {
-						Write-Exception $_
+						Stop-Function -Message "Issue adding alert to job" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
 					}
 				}
 			}
@@ -211,20 +210,9 @@ function Copy-DbaAgentAlert {
 					}
 				}
 				catch {
-					$e = $_.Exception
-					$line = $_.InvocationInfo.ScriptLineNumber
-					$msg = $e.Message
-
-					if ($e -like '*The specified @operator_name (''*'') does not exist*') {
-						Write-Warning "One or more operators for this alert are not configured and will not be added to this alert."
-						Write-Warning "Please run Copy-DbaAgentOperator if you would like to move operators to destination server."
-					}
-					else {
-						Write-Error "caught exception: $e at $line : $msg"
-					}
+					Stop-Function -Message "Issue moving notifications for the alert" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
 				}
 			}
-
 		}
 	}
 	end {
