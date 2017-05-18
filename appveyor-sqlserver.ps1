@@ -1,7 +1,7 @@
 $null = [reflection.assembly]::LoadWithPartialName("Microsoft.SqlServer.Smo")
 $null = [reflection.assembly]::LoadWithPartialName("Microsoft.SqlServer.SqlWmiManagement")
 
-$instances = "sql2008r2sp2", "sql2016"
+$instances = "sql2016"
 
 foreach ($instance in $instances) {
 	
