@@ -179,24 +179,25 @@ function Copy-DbaAgentAlert {
 				try {
 					# cant add them this way, we need to modify the existing one or give all options that are supported.
 					foreach ($notify in $notifications) {
-						$nm = @()
+						$notifyCollection = @()
 						if ($notify.UseNetSend -eq $true) {
 							write-verbose "Adding net send"
-							$nm += "NetSend"
+							$notifyCollection += "NetSend"
 						}
 						
 						if ($notify.UseEmail -eq $true) {
 							write-verbose "Adding email"
-							$nm += "NotifyEmail"
+							$notifyCollection += "NotifyEmail"
 						}
 						
 						if ($notify.UsePager -eq $true) {
 							write-verbose "Adding pager"
-							$nm += "Pager"
+							$notifyCollection += "Pager"
 						}
-						$nml = $nm -join ", "
+                        $notifyMethods = $notifyCollection -join ", "
 						
-						$newalert.AddNotification($notify.OperatorName, [Microsoft.SqlServer.Management.Smo.Agent.NotifyMethods]$nml) # concat the notify methods together       
+                        # concat the notify methods together
+						$newalert.AddNotification($notify.OperatorName, [Microsoft.SqlServer.Management.Smo.Agent.NotifyMethods]$notifyMethods)
 					}
 				}
 				catch {
