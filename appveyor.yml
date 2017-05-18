@@ -4,10 +4,6 @@
 skip_commits:  
   message: /updated readme.*/
 
-services:
-- mssql2016
-- mssql2008r2sp2
-
 install:
   - cinst pester
 

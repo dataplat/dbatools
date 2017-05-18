@@ -4,7 +4,7 @@ $null = [reflection.assembly]::LoadWithPartialName("Microsoft.SqlServer.SqlWmiMa
 $instances = "sql2016", "sql2008r2sp2"
 
 foreach ($instance in $instances) {
-	Stop-Service "MSSQL`$$instance"
+	Stop-Service "MSSQL`$$instance" -ErrorAction SilentlyContinue
 }
 
 foreach ($instance in $instances) {
