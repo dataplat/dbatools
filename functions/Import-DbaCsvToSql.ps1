@@ -1482,6 +1482,6 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
             }
             Write-Output "[*] Finished at $(Get-Date)"
         }
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Import-CsvToSql
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Import-CsvToSql
 	}
 }

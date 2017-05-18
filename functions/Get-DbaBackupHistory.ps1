@@ -13,7 +13,7 @@ Function Get-DbaBackupHistory
         
         Reference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html
     
-    .PARAMETER SqlServer
+    .PARAMETER SqlInstance
         The SQL Server that you're connecting to.
     
     .PARAMETER SqlCredential
@@ -55,45 +55,45 @@ Function Get-DbaBackupHistory
         Return backup information for only specific databases. These are only the databases that currently exist on the server.
     
     .EXAMPLE
-        Get-DbaBackupHistory -SqlServer sqlserver2014a
+        Get-DbaBackupHistory -SqlInstance SqlInstance2014a
         
-        Returns server name, database, username, backup type, date for all backups databases on sqlserver2014a. This may return a ton of rows; consider using filters that are included in other examples.
+        Returns server name, database, username, backup type, date for all backups databases on SqlInstance2014a. This may return a ton of rows; consider using filters that are included in other examples.
     
     .EXAMPLE
         $cred = Get-Credential sqladmin
-        Get-DbaBackupHistory -SqlServer sqlserver2014a -SqlCredential $cred
+        Get-DbaBackupHistory -SqlInstance SqlInstance2014a -SqlCredential $cred
         
         Does the same as above but logs in as SQL user "sqladmin"
     
     .EXAMPLE
-        Get-DbaBackupHistory -SqlServer sqlserver2014a -Databases db1, db2 -Since '7/1/2016 10:47:00'
+        Get-DbaBackupHistory -SqlInstance SqlInstance2014a -Databases db1, db2 -Since '7/1/2016 10:47:00'
         
         Returns backup information only for databases db1 and db2 on sqlserve2014a since July 1, 2016 at 10:47 AM.
     
     .EXAMPLE
-        Get-DbaBackupHistory -SqlServer sql2014 -Databases AdventureWorks2014, pubs -Force | Format-Table
+        Get-DbaBackupHistory -SqlInstance sql2014 -Databases AdventureWorks2014, pubs -Force | Format-Table
         
         Returns information only for AdventureWorks2014 and pubs, and makes the output pretty
     
     .EXAMPLE
-        Get-DbaBackupHistory -SqlServer sql2014 -Databases AdventureWorks2014 -Last
+        Get-DbaBackupHistory -SqlInstance sql2014 -Databases AdventureWorks2014 -Last
         
         Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014
     
     .EXAMPLE
-        Get-DbaBackupHistory -SqlServer sql2014 -Databases AdventureWorks2014 -LastFull
+        Get-DbaBackupHistory -SqlInstance sql2014 -Databases AdventureWorks2014 -LastFull
         
         Returns information about the most recent full backup for AdventureWorks2014 on sql2014
     
     .EXAMPLE
-        Get-SqlRegisteredServerName -SqlServer sql2016 | Get-DbaBackupHistory
+        Get-SqlRegisteredServerName -SqlInstance sql2016 | Get-DbaBackupHistory
         
         Returns database backup information for every database on every server listed in the Central Management Server on sql2016
     
     .EXAMPLE
-        Get-DbaBackupHistory -SqlServer sqlserver2014a, sql2016 -Force
+        Get-DbaBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force
         
-        Lots of detailed information for all databases on sqlserver2014a and sql2016.
+        Lots of detailed information for all databases on SqlInstance2014a and sql2016.
     
     .NOTES
         Tags: Storage, DisasterRecovery, Backup
@@ -112,16 +112,16 @@ Function Get-DbaBackupHistory
     [CmdletBinding(DefaultParameterSetName = "Default")]
     Param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlInstance")]
-        [object[]]
-        $SqlServer,
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]
+        $SqlInstance,
         
         [Alias("Credential")]
         [PsCredential]
         $SqlCredential,
         
         [Alias("Databases")]
-        [string[]]
+        [object[]]
         $Database,
         
         [switch]
@@ -132,7 +132,7 @@ Function Get-DbaBackupHistory
         $Force,
         
         [Parameter(ParameterSetName = "NoLast")]
-        [DbaDateTime]
+        [DateTime]
         $Since,
         
         [Parameter(ParameterSetName = "Last")]
@@ -162,23 +162,21 @@ Function Get-DbaBackupHistory
     {
         Write-Message -Level System -Message "Active Parameterset: $($PSCmdlet.ParameterSetName)"
         Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
-        
-        $Database = $psboundparameters.Databases
     }
     
     process
     {
-        foreach ($instance in $SqlServer)
+        foreach ($instance in $SqlInstance)
         {
             
             try
             {
                 Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
-                $server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch
             {
-                Stop-Function -Message "Failed to process Instance $($Instance)" -InnerErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failed to process Instance $Instance" -InnerErrorRecord $_ -Target $instance -Continue
             }
             
             if ($server.VersionMajor -lt 9)
@@ -203,17 +201,21 @@ Function Get-DbaBackupHistory
                     $allbackups = @()
                     $allbackups += $Fulldb = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastFull -raw:$Raw
                     $DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastDiff -raw:$Raw
-                    if ($DiffDb.LastLsn -lt $Fulldb.LastLsn -or $null -eq $diffdb)
+                    if ($DiffDb.LastLsn -gt $Fulldb.LastLsn -and  $DiffDb.DatabaseBackupLSN -eq $Fulldb.CheckPointLSN )
                     {
-                        $TLogStartLSN = $diffdb.FirstLsn
+                        $Allbackups += $DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastDiff -raw:$Raw
+
+                        $TLogStartLSN = ($diffdb.FirstLsn -as [bigint])
                         $Allbackups += $DiffDB
                     }
                     else
                     {
-                        $TLogStartLSN = $fulldb.FirstLsn
+                        Write-Verbose "No Diff found"
+                        [bigint]$TLogStartLSN = $fulldb.FirstLsn
                     }
-                    $Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Databases $db -raw:$raw | Where-object { $_.Type -eq 'Log' -and $_.LastLsn -gt $TLogstartLSN }
+                    $Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Databases $db -raw:$raw | Where-object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$TLogstartLSN -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$Fulldb.CheckPointLSN }
                     $Allbackups | Sort-Object FirstLsn
+                 
                 }
                 continue
             }
@@ -480,3 +482,4 @@ Function Get-DbaBackupHistory
         }
     }
 }
+Register-DbaTeppArgumentCompleter -Command Get-DbaBackupHistory -Parameter Database

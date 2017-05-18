@@ -13,6 +13,9 @@ The SQL Server that you're connecting to.
 .PARAMETER SqlCredential
 SqlCredential object used to connect to the SQL Server as a different user.
 
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
+
 .NOTES
 Author: Aaron Nelson
 Tags: AutoGrow
@@ -47,7 +50,8 @@ Returns any database AutoGrow events in the Default Trace for every database on 
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[System.Management.Automation.PSCredential]$SqlCredential,
+        [switch]$Silent
 	)
 	
 	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
@@ -80,7 +84,8 @@ Returns any database AutoGrow events in the Default Trace for every database on 
                     ,       dateadd (minute, datediff (minute, getdate(), getutcdate()), EndTime) as EndTime  -- Convert to UTC time
                     ,       (IntegerData*8.0/1024) as ChangeInSize 
                     from ::fn_trace_gettable( @base_tracefilename, default ) 
-                    where EventClass >=  92      and EventClass <=  95        and ServerName = @@servername   --and DatabaseName = @DatabaseName
+                    where EventClass >=  92      and EventClass <=  95        and ServerName = @@servername   
+                    and DatabaseName IN (_DatabaseList_)
                     order by StartTime desc ;   
                     end     else    
                     select -1 as OrderRank, 0 as EventClass, 0 DatabaseName, 0 as Filename, 0 as Duration, 0 as StartTime, 0 as EndTime,0 as ChangeInSize 
@@ -99,40 +104,36 @@ Returns any database AutoGrow events in the Default Trace for every database on 
 	{
 		foreach ($instance in $SqlInstance)
 		{
-			Write-Verbose "Connecting to $instance"
+            Write-Message -Level Verbose -Message "Connecting to $instance"
 			try
 			{
 				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
-				
 			}
 			catch
 			{
-				Write-Warning "Can't connect to $instance. Moving on."
+                Write-Message -Level Warning -Message "Can't connect to $instance. Moving on."
 				continue
 			}
 			
 			$dbs = $server.Databases
-			
+
 			if ($databases)
 			{
-				$dbs = $dbs | Where-Object { $_.Name -in $databases }
+                $dbs = $dbs | Where-Object Name -in $databases
 			}
 			
 			if ($exclude)
 			{
-				$dbs = $dbs | Where-Object { $_.Name -notin $exclude }
+                $dbs = $dbs | Where-Object Name -notin $exclude
 			}
-			
-			foreach ($db in $dbs)
-			{
-				if ($db.IsAccessible -eq $false)
-				{
-					Write-Warning "The database $db on server $instance is not accessible. Skipping database."
-					Continue
-				}
-				
-				$db.ExecuteWithResults($query).Tables | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, EventClass, DatabaseName, Filename, Duration, StartTime, EndTime, ChangeInSize
-			}
+
+            #Create dblist name in 'bd1', 'db2' format
+            $dbsList = "'$($($dbs | % {$_.Name}) -join "','")'" 
+
+            $queryToExcute = $query -replace '_DatabaseList_', $dbsList
+            Write-Message -Level Debug -Message $queryToExcute
+
+            $server.Databases["master"].ExecuteWithResults($queryToExcute).Tables | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, EventClass, DatabaseName, Filename, Duration, StartTime, EndTime, ChangeInSize
 		}
 	}
 }

@@ -296,6 +296,6 @@ In the above example, top level Group1 and Group3, along with its subgroups and 
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { 
             Write-Output "Central Management Server migration finished" 
         }
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlCentralManagementServer
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlCentralManagementServer
 	}
 }

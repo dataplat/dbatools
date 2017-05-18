@@ -219,6 +219,6 @@ Shows what would happen if the command were executed using force.
         $sourceServer.ConnectionContext.Disconnect()
         $destServer.ConnectionContext.Disconnect()
         if ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Job migration finished" }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlAlert
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlAlert
     }
 }

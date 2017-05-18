@@ -110,5 +110,5 @@ Tests whether the service account running the "sqlcluster" SQL Server isntance c
 		return $false
 	}
 	
-	Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Test-SqlPath
+	Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Test-SqlPath
 }

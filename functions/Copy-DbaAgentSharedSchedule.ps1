@@ -166,6 +166,6 @@ Shows what would happen if the command were executed using force.
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Job schedule migration finished" }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlSharedSchedule
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlSharedSchedule
 	}
 }

@@ -151,7 +151,7 @@ Shows what would happen if the command were executed.
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
             Write-Output "Server configuration update finished"
         }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlSpConfigure
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlSpConfigure
 	}
 	
 }

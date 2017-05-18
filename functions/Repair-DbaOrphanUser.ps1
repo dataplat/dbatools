@@ -12,7 +12,7 @@ If the matching login exists it must be:
     Not locked
     Have the same name that user
 
-You can drop users that does not have their matching login by especifing the parameter -RemoveNotExisting This will be made by calling Remove-SqlOrphanUser function.
+You can drop users that does not have their matching login by especifing the parameter -RemoveNotExisting This will be made by calling Remove-DbaOrphanUser function.
 
 	
 .PARAMETER SqlServer
@@ -66,7 +66,7 @@ Will find and repair user 'OrphanUser' on all databases
 Repair-DbaOrphanUser -SqlServer sqlserver2014a -RemoveNotExisting
 
 Will find all orphan users of all databases present on server 'sqlserver2014a'
-Will also remove all users that does not have their matching login by calling Remove-SqlOrphanUser function
+Will also remove all users that does not have their matching login by calling Remove-DbaOrphanUser function
 	
 .NOTES
 Tags: Orphan
@@ -192,9 +192,9 @@ https://dbatools.io/Repair-DbaOrphanUser
 						
 						#With the colelction complete invoke remove.
 						if ($RemoveNotExisting -eq $true) {
-							if ($Pscmdlet.ShouldProcess($db.Name, "Remove-SqlOrphanUser")) {
-								Write-Verbose "Calling 'Remove-SqlOrphanUser'"
-								Remove-SqlOrphanUser -SqlServer $SqlServer -SqlCredential $SqlCredential -Databases $db.Name -Users $UsersToRemove
+							if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaOrphanUser")) {
+								Write-Verbose "Calling 'Remove-DbaOrphanUser'"
+								Remove-DbaOrphanUser -SqlServer $SqlServer -SqlCredential $SqlCredential -Databases $db.Name -Users $UsersToRemove
 							}
 						}
 					}
@@ -220,6 +220,6 @@ https://dbatools.io/Repair-DbaOrphanUser
 		$totaltime = ($start.Elapsed)
 		Write-Output "Total Elapsed time: $totaltime"
 		
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Repair-SqlOrphanUser
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Repair-SqlOrphanUser
 	}
 }

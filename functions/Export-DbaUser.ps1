@@ -434,6 +434,6 @@ https://dbatools.io/Export-DbaUser
         else {
             return $sql
         }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Export-SqlUser
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Export-SqlUser
     }
 }

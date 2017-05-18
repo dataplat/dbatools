@@ -232,7 +232,7 @@ Shows what would happen if the command were executed.
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
             Write-Output "Resource Governor migration finished"
         }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlResourceGovernor
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlResourceGovernor
 	}
 	
 }

@@ -1225,6 +1225,6 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		
 		$sourceserver.ConnectionContext.Disconnect()
         $destserver.ConnectionContext.Disconnect()
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlDatabase
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlDatabase
 	}
 }

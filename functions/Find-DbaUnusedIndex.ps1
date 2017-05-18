@@ -319,6 +319,6 @@ Will find exact Unused indexes on all user databases
 	END
 	{
         $server.ConnectionContext.Disconnect()
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-SqlUnusedIndex
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-SqlUnusedIndex
 	}
 }

@@ -381,6 +381,6 @@ CREATE LOGIN [$username] FROM WINDOWS WITH DEFAULT_DATABASE = [$defaultdb], DEFA
         else {
             return $sql
         }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Export-SqlLogin
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Export-SqlLogin
 	}
 }

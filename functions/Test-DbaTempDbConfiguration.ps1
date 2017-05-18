@@ -285,6 +285,6 @@ Checks tempdb on the localhost machine. All rest results are shown.
 			}
 		}
 		
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Test-SqlTempDbConfiguration
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Test-SqlTempDbConfiguration
 	}
 }

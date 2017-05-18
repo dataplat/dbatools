@@ -72,6 +72,24 @@ foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\*.ps1"))
 	$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null)
 }
 
+#region Finally register autocompletion - 32ms
+# Test whether we have Tab Expansion Plus available (used in dynamicparams scripts ran below)
+if (Get-Command TabExpansionPlusPlus\Register-ArgumentCompleter -ErrorAction Ignore)
+{
+	$script:TEPP = $true
+}
+else
+{
+	$script:TEPP = $false
+}
+
+# dynamic params - 136ms
+foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\dynamicparams\*.ps1"))
+{
+	$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null)
+}
+#endregion Finally register autocompletion
+
 # All exported functions - 600ms
 foreach ($function in (Get-ChildItem "$PSScriptRoot\functions\*.ps1"))
 {
@@ -86,24 +104,6 @@ foreach ($function in (Get-ChildItem "$PSScriptRoot\optional\*.ps1"))
 {
 	$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null)
 }
-
-#region Finally register autocompletion - 32ms
-# Test whether we have Tab Expansion Plus available (used in dynamicparams scripts ran below)
-if (Get-Command TabExpansionPlusPlus\Register-ArgumentCompleter -ErrorAction Ignore)
-{
-	$TEPP = $true
-}
-else
-{
-	$TEPP = $false
-}
-
-# dynamic params - 136ms
-foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\dynamicparams\*.ps1"))
-{
-	$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null)
-}
-#endregion Finally register autocompletion
 
 # Load configuration system
 # Should always go next to last
@@ -163,7 +163,7 @@ Set-Alias -Name Export-SqlUser -Value Export-DbaUser
 Set-Alias -Name Find-SqlDuplicateIndex -Value Find-DbaDuplicateIndex
 Set-Alias -Name Find-SqlUnusedIndex -Value Find-DbaUnusedIndex
 Set-Alias -Name Get-SqlRegisteredServerName -Value Get-DbaRegisteredServerName
-Set-Alias -Name Get-SqlServerKey -Value Get-DbaServerKey
+Set-Alias -Name Get-SqlServerKey -Value Get-DbaSqlProductKey
 Set-Alias -Name Import-SqlSpConfigure -Value Import-DbaSpConfigure
 Set-Alias -Name Invoke-Sqlcmd2 -Value Invoke-DbaSqlcmd
 Set-Alias -Name Remove-SqlDatabaseSafely -Value Remove-DbaDatabaseSafely

@@ -450,6 +450,6 @@ Limitations: Does not support Application Roles yet
 			
             Write-Output "Total elapsed time: $totaltime"
         }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-SqlLogin
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlLogin
 	}
 }

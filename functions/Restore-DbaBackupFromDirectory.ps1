@@ -122,6 +122,6 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 	}
 	
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Restore-SqlBackupFromDirectory -CustomMessage "Restore-DbaDatabase works way better. Please use that instead."
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Restore-SqlBackupFromDirectory -CustomMessage "Restore-DbaDatabase works way better. Please use that instead."
 	}
 }

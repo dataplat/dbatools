@@ -59,6 +59,10 @@ function Invoke-DbaSqlCmd
         If specified, use an existing SQLConnection.
             We attempt to open this connection if it is closed
 
+	.PARAMETER Silent
+	Replaces user friendly yellow warnings with bloody red exceptions of doom!
+	Use this if you want the function to throw terminating errors you want to catch.
+		
     .INPUTS
         None
             You cannot pipe objects to Invoke-DbaSqlCmd
@@ -535,5 +539,5 @@ function Invoke-DbaSqlCmd
 			}
 		}
 	}
-	END { Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-Sqlcmd2 }
+	END { Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Invoke-Sqlcmd2 }
 }

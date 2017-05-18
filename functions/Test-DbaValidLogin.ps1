@@ -131,6 +131,7 @@ Tests all logins excluding any that are from the subdomain Domain
 				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance -InnerErrorRecord $_
 			}
 
+
 			# we can only validate AD logins
 			$allwindowsloginsgroups = $server.Logins | Where-Object { $_.LoginType -in ('WindowsUser', 'WindowsGroup') }
 
@@ -250,7 +251,7 @@ Tests all logins excluding any that are from the subdomain Domain
 			foreach ($login in $windowsGroups)
 			{
 				$adlogin = $login.Name
-				$loginsid = $login.Sid
+				$loginsid = $login.Sid -join ''
 				$domain, $groupname = $adlogin.Split("\")
 				if($domain.toUpper() -in $IgnoreDomainsNormalized) {
 					Write-Message -Message "Skipping Login $adlogin" -Level Verbose
@@ -260,7 +261,8 @@ Tests all logins excluding any that are from the subdomain Domain
 				$exists = $false
 				if ($true)
 				{
-					$founduser = Get-DbaADObject -ADObject $adlogin -Type Group -Silent
+					$u = Get-DbaADObject -ADObject $adlogin -Type Group -Silent
+					$founduser = $u.GetUnderlyingObject()
 					if ($founduser) {
 						$exists = $true
 					}
