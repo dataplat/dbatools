@@ -11,6 +11,8 @@ if ($env:APPVEYOR_REPO_BRANCH -and $env:APPVEYOR_REPO_BRANCH -notlike "master") 
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace('.Tests.', '.')
 $Name = $sut.Split('.')[0]
 
+. .\internal\Test-DbaLsnChain.ps1
+
 Describe 'Script Analyzer Tests' -Tag @('ScriptAnalyzer') {
     Context "Testing $Name for Standard Processing" {
         foreach ($rule in $ScriptAnalyzerRules) {
