@@ -1,11 +1,14 @@
 $null = [reflection.assembly]::LoadWithPartialName("Microsoft.SqlServer.Smo")
 $null = [reflection.assembly]::LoadWithPartialName("Microsoft.SqlServer.SqlWmiManagement")
 
-$instances = "sql2016"
+$instances = "sql2016", "sql2008r2sp2"
 
 foreach ($instance in $instances) {
-	
-	$port = switch ($instance) {
+	Stop-Service "MSSQL`$$instance"
+}
+
+foreach ($instance in $instances) {
+$port = switch ($instance) {
 		"sql2008r2sp2" { "1433" }
 		"sql2016" { "14333" }
 	}
@@ -20,8 +23,5 @@ foreach ($instance in $instances) {
 	$Tcp
 	$Tcp.Alter()
 	
-	Stop-Service SQLBrowser
-	Stop-Service "MSSQL`$$instance"
-	Start-Service SQLBrowser
 	Start-Service "MSSQL`$$instance"
 }

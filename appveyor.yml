@@ -6,7 +6,7 @@ skip_commits:
 
 services:
 - mssql2016
-- mssql2012
+- mssql2008r2sp2
 
 install:
   - cinst pester
