@@ -1,14 +1,14 @@
-Write-Verbose "Importing dbatools"
+Write-Output "Importing dbatools"
 Import-Module C:\projects\dbatools\dbatools.psd1
 
-Write-Verbose "Cloning lab"
+Write-Output "Cloning lab"
 git clone -q --branch=master https://github.com/sqlcollaborative/appveyor-lab.git C:\projects\appveyor-lab
 
-Write-Verbose "Creating migration & backup directories"
+Write-Output "Creating migration & backup directories"
 mkdir C:\projects\migration -OutVariable $null
 mkdir C:\projects\backups -OutVariable $null
 
-Write-Verbose "Creating network share workaround"
+Write-Output "Creating network share workaround"
 New-SmbShare -Name migration -path C:\projects\migration -FullAccess 'ANONYMOUS LOGON', 'Everyone' | Out-Null
 
 $instances = "sql2016", "sql2008r2sp2"
@@ -34,9 +34,14 @@ foreach ($instance in $instances) {
 $sql2008 = "localhost\sql2008r2sp2"
 $sql2016 = "localhost\sql2016"
 
+Write-Output "Beginning restore"
 Get-ChildItem C:\projects\appveyor-lab\sql2008-backups | Restore-DbaDatabase -SqlServer $sql2008
-Copy-DbaDatabase -Source $sql2008 -Destination $sql2016 -BackupRestore -NetworkShare "\\$env:computername\migration" -AllDatabases
-$error[0] | Select-Object *
 
+Write-Output "Attempting to perform migration"
+Copy-DbaDatabase -Source $sql2008 -Destination $sql2016 -BackupRestore -NetworkShare "\\$env:computername\migration" -AllDatabases
+
+Write-Output "Trying some backups"
 Backup-DbaDatabase -SqlInstance $sql2008 -BackupDirectory C:\projects\backups
+
+Write-Output "Login import"
 Invoke-DbaSqlCmd -ServerInstance $sql2016 -InputFile C:\projects\appveyor-lab\sql2008-logins.sql
