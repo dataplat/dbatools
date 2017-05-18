@@ -17,6 +17,12 @@ Allows you to login to servers using alternative credentials
 $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 
 Windows Authentication will be used if SqlCredential is not specified
+ 
+.PARAMETER Database
+The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+
+.PARAMETER Exclude
+The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER User 
 Export only the specified database user(s). If not specified will export all users from the database(s)
@@ -38,9 +44,18 @@ Do not overwrite file
     
 .PARAMETER Append
 Append to file
-    
+
 .PARAMETER Silent 
 Use this switch to disable any kind of verbose messages
+	
+.NOTES
+Original Author: Claudio Silva (@ClaudioESSilva)
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+
+.LINK
+https://dbatools.io/Export-DbaUser
 
 .EXAMPLE
 Export-DbaUser -SqlServer sql2005 -FilePath C:\temp\sql2005-users.sql
@@ -62,27 +77,6 @@ Export-DbaUser -SqlServer sqlserver2008 -User User1 -FilePath C:\temp\users.sql 
 
 Exports user User1 fron sqlsever2008 to the file  C:\temp\users.sql with sintax to run on SQL Server 2016
 
-.NOTES
-Original Author: Claudio Silva (@ClaudioESSilva)
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
-.LINK
-https://dbatools.io/Export-DbaUser
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     [OutputType([String])]
@@ -90,25 +84,25 @@ https://dbatools.io/Export-DbaUser
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
-        [object[]]$User,
-        [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016')]
-        [string]$DestinationVersion,
-        [Alias("OutFile", "Path", "FileName")]
-        [string]$FilePath,
-        [System.Management.Automation.PSCredential]$sqlCredential,
+		[Alias("Credential")]
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$Exclude,
+		[object[]]$User,
+		[ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016')]
+		[string]$DestinationVersion,
+		[Alias("OutFile", "Path", "FileName")]
+		[string]$FilePath,
         [Alias("NoOverwrite")]
         [switch]$NoClobber,
         [switch]$Append,
         [switch]$Silent
     )
     
-    dynamicparam {
-        if ($sqlInstance) {
-            return Get-ParamSqlDatabases -SqlServer $sqlInstance -SqlCredential $sqlCredential
-        }
-    }
     begin {
-        if ($FilePath.Length -gt 0) {
+        if ($FilePath) {
             if ($FilePath -notlike "*\*") { $FilePath = ".\$filepath" }
             $directory = Split-Path $FilePath
             $exists = Test-Path $directory
@@ -139,9 +133,6 @@ https://dbatools.io/Export-DbaUser
             'Version120' = 'SQLServer2014'
             'Version130' = 'SQLServer2016'
         }
-        # Convert from RuntimeDefinedParameter object to regular array
-        $databases = $psboundparameters.Databases
-        $exclude = $psboundparameters.Exclude
         
     }
     process {
@@ -154,20 +145,24 @@ https://dbatools.io/Export-DbaUser
             Stop-Function -Message "Failed to connect to $instance : $($_.Exception.Message)" -Continue -Target $instance -InnerErrorRecord $_
         }
         
-        if ($databases.Count -eq 0) {
+        if (!$database) {
             $databases = $server.Databases | Where-Object { $exclude -notcontains $_.Name -and $_.IsAccessible -eq $true }
         }
         else {
-            if ($pipedatabase.Length -gt 0) {
+            if ($pipedatabase) {
                 $source = $pipedatabase[0].parent.name
                 $databases = $pipedatabase.name
             }
             else {
-                $databases = $server.Databases | Where-Object { $exclude -notcontains $_.Name -and $_.IsAccessible -eq $true -and ($databases -contains $_.Name) }
+                $databases = $server.Databases | Where-Object { $_.IsAccessible -eq $true -and ($database -contains $_.Name) }
             }
         }
-        
-        if (@($databases).Count -gt 0) {
+		
+		if ($exclude) {
+			$databases = $databases | Where-Object Name -notin $exclude
+		}
+		
+		if (@($databases).Count -gt 0) {
             
             #Database Permissions
             foreach ($db in $databases) {
@@ -194,7 +189,7 @@ https://dbatools.io/Export-DbaUser
                     $users = $db.Users | Where-Object { $_.IsSystemObject -eq $false -and $_.Name -notlike "##*" }
                 }
                 else {
-                    if ($pipedatabase.Length -gt 0) {
+                    if ($pipedatabase) {
                         $source = $pipedatabase[3].parent.name
                         $users = $pipedatabase.name
                     }
@@ -428,7 +423,7 @@ https://dbatools.io/Export-DbaUser
         #add the final GO
         $sql += "`r`nGO"
         
-        if ($FilePath.Length -gt 0) {
+        if ($FilePath) {
             $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
         }
         else {
@@ -437,3 +432,5 @@ https://dbatools.io/Export-DbaUser
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Export-SqlUser
     }
 }
+
+Register-DbaTeppArgumentCompleter -Command Export-DbaUser -Parameter Database, Exclude
