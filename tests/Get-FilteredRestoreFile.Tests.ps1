@@ -24,7 +24,7 @@ Describe 'Script Analyzer Tests' -Tag @('ScriptAnalyzer') {
 
 
 # Test Functionality
-
+. $PSScriptRoot\..\internal\Get-FilteredRestoreFile.ps1
 . $PSScriptRoot\..\functions\Read-DbaBackupHeader.ps1
 Describe "Get-FilteredRestoreFile Unit Tests" -Tag 'Unittests'{
     Context "Empty TLog Backup Issues" {
