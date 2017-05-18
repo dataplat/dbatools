@@ -221,9 +221,6 @@ function Copy-DbaAgentAlert {
 	}
 
 	end {
-		$sourceServer.ConnectionContext.Disconnect()
-		$destServer.ConnectionContext.Disconnect()
-		If ($PSCmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Alert migration finished" }
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlAlert
 	}
 }
