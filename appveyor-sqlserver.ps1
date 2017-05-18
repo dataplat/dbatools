@@ -4,11 +4,7 @@ $null = [reflection.assembly]::LoadWithPartialName("Microsoft.SqlServer.SqlWmiMa
 $instances = "sql2016", "sql2008r2sp2"
 
 foreach ($instance in $instances) {
-	Stop-Service "MSSQL`$$instance" -ErrorAction SilentlyContinue
-}
-
-foreach ($instance in $instances) {
-$port = switch ($instance) {
+	$port = switch ($instance) {
 		"sql2008r2sp2" { "1433" }
 		"sql2016" { "14333" }
 	}
@@ -20,8 +16,10 @@ $port = switch ($instance) {
 		$ipAddress.IPAddressProperties["TcpDynamicPorts"].Value = ""
 		$ipAddress.IPAddressProperties["TcpPort"].Value = $port
 	}
-	$Tcp
 	$Tcp.Alter()
 	
 	Start-Service "MSSQL`$$instance"
 }
+
+$a = Connect-DbaSqlServer localhost\sql2008r2sp2
+$a.databases

@@ -11,10 +11,11 @@ build: false
 
 test_script:
 # Test with native PS version
-  - ps: ./appveyor-sqlserver.ps1
   - ps: Install-PackageProvider NuGet -MinimumVersion '2.8.5.201' -Force
   - ps: Import-PackageProvider NuGet -MinimumVersion '2.8.5.201' -Force
   - ps: Install-Module -Name PSScriptAnalyzer -RequiredVersion 1.6.0 -Repository PSGallery -Force
+  - ps: Install-Module -Name dbatools -Repository PSGallery -Force
+  - ps: ./appveyor-sqlserver.ps1
   # - ps: . .\Tests\appveyor.pester.ps1
 
 # Test with PS version 3  
