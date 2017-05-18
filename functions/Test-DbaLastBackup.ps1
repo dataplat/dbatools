@@ -351,7 +351,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 						
 						$fileexists = $true
 						$ogdbname = $dbname
-						$restorelist = Read-DbaBackupHeader -SqlServer $destserver -Path $lastbackup[0].Path[0]
+						$restorelist = Read-DbaBackupHeader -SqlServer $destserver -Path $lastbackup[0].Path
 						$mb = $restorelist.BackupSizeMB
 						
 						if ($MaxMB -gt 0 -and $MaxMB -lt $mb) {
