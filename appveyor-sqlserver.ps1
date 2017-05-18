@@ -4,6 +4,9 @@ Import-Module C:\projects\dbatools\dbatools.psd1
 Write-Output "Cloning lab"
 git clone -q --branch=master https://github.com/sqlcollaborative/appveyor-lab.git C:\projects\appveyor-lab
 
+Write-Output "Listing directory"
+Get-ChildItem C:\projects\appveyor-lab\sql2008-backups
+
 Write-Output "Creating migration & backup directories"
 mkdir C:\projects\migration -OutVariable $null
 mkdir C:\projects\backups -OutVariable $null
@@ -19,6 +22,7 @@ foreach ($instance in $instances) {
 		"sql2016" { "14333" }
 	}
 	
+	Write-Output "Changing the port on $instance to $port"
 	$wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer
 	$uri = "ManagedComputer[@Name='$env:COMPUTERNAME']/ ServerInstance[@Name='$instance']/ServerProtocol[@Name='Tcp']"
 	$Tcp = $wmi.GetSmoObject($uri)
@@ -28,6 +32,7 @@ foreach ($instance in $instances) {
 	}
 	$Tcp.Alter()
 	
+	Write-Output "Starting $instance"
 	Start-Service "MSSQL`$$instance"
 }
 
@@ -37,8 +42,8 @@ $sql2016 = "localhost\sql2016"
 Write-Output "Beginning restore"
 Get-ChildItem C:\projects\appveyor-lab\sql2008-backups | Restore-DbaDatabase -SqlServer $sql2008
 
-Write-Output "Attempting to perform migration"
-Copy-DbaDatabase -Source $sql2008 -Destination $sql2016 -BackupRestore -NetworkShare "\\$env:computername\migration" -AllDatabases
+Write-Output "Attempting to perform migration - will bomb, need to submit a PR to not require network share"
+Copy-DbaDatabase -Source $sql2008 -Destination $sql2016 -BackupRestore -NetworkShare "\\$env:computername\migration" -AllDatabases -Silent:$false
 
 Write-Output "Trying some backups"
 Backup-DbaDatabase -SqlInstance $sql2008 -BackupDirectory C:\projects\backups
