@@ -1,5 +1,4 @@
-Function Get-DbaDatabaseState
-{
+Function Get-DbaDatabaseState {
 <#
 .SYNOPSIS
 Gets various options for databases, hereby called "states"
@@ -19,19 +18,16 @@ The SQL Server that you're connecting to
 Credential object used to connect to the SQL Server as a different user
 
 .PARAMETER Database
-Gets options only on these databases
+The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
 .PARAMETER Exclude
-Gets options for all but these specific databases
+The database(s) to exclude - this list is autopopulated from the server
 
 .NOTES
 Author: niphlod
-
-dbatools PowerShell module (https://dbatools.io)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Get-DbaDatabaseState
@@ -62,24 +58,15 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
-		[PSCredential]
-		[System.Management.Automation.CredentialAttribute()]$Credential
+		[Alias("Credential")]
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$Exclude
 	)
-
-	DynamicParam
-	{
-		if ($SqlInstance)
-		{
-			Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $Credential -NoSystem
-		}
-	}
-
-	BEGIN
-	{
-		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
-
-
+	
+	begin {
 		$UserAccessHash = @{
 			'Single' = 'SINGLE_USER'
 			'Restricted' = 'RESTRICTED_USER'
@@ -94,9 +81,8 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 			'Normal' = 'ONLINE'
 			'EmergencyMode' = 'EMERGENCY'
 		}
-
-		function Get-DbState($db)
-		{
+		
+		function Get-DbState($db) {
 			$base = [PSCustomObject]@{
 				'Access' = ''
 				'Status' = ''
@@ -104,58 +90,51 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 			}
 			$base.RW = $ReadOnlyHash[$db.ReadOnly]
 			$base.Access = $UserAccessHash[$db.UserAccess.toString()]
-			foreach($status in $StatusHash.Keys)
-			{
-				if($db.Status -match $status)
-				{
+			foreach ($status in $StatusHash.Keys) {
+				if ($db.Status -match $status) {
 					$base.Status = $StatusHash[$status]
 					break
 				}
 			}
 			return $base
 		}
-
+		
 	}
-	PROCESS
-	{
-		foreach ($instance in $SqlInstance)
-		{
+	process {
+		foreach ($instance in $SqlInstance) {
 			Write-Verbose "Connecting to $instance"
-			try
-			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
+			try {
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
 			}
-			catch
-			{
+			catch {
 				Write-Warning "Can't connect to $instance"
 				Continue
 			}
 			$all_dbs = $server.Databases
 			$dbs = $all_dbs | Where-Object { @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name }
-
-			if ($databases.count -gt 0)
-			{
-				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
+			
+			if ($database.count -gt 0) {
+				$dbs = $dbs | Where-Object { $database -contains $_.Name }
 			}
-			if ($exclude.count -gt 0)
-			{
+			if ($exclude.count -gt 0) {
 				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
 			}
-			foreach($db in $dbs)
-			{
+			foreach ($db in $dbs) {
 				$db_status = Get-DbState $db
-
+				
 				[PSCustomObject]@{
-					SqlInstance   = $server.Name
-					InstanceName  = $server.ServiceName
-					ComputerName  = $server.NetName
-					DatabaseName  = $db.Name
-					RW            = $db_status.RW
-					Status        = $db_status.Status
-					Access        = $db_status.Access
-					Database      = $db
+					SqlInstance = $server.Name
+					InstanceName = $server.ServiceName
+					ComputerName = $server.NetName
+					DatabaseName = $db.Name
+					RW = $db_status.RW
+					Status = $db_status.Status
+					Access = $db_status.Access
+					Database = $db
 				} | Select-DefaultView -ExcludeProperty Database
 			}
 		}
 	}
 }
+
+Register-DbaTeppArgumentCompleter -Command Get-DbaDatabaseState -Parameter Database, Exclude

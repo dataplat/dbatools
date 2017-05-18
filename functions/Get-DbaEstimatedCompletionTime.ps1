@@ -1,5 +1,4 @@
-﻿Function Get-DbaEstimatedCompletionTime
-{
+﻿Function Get-DbaEstimatedCompletionTime {
 <#
 .SYNOPSIS
 Gets execution and estimated completion time information for queries
@@ -31,22 +30,20 @@ The SQL Server that you're connecting to.
 .PARAMETER SqlCredential
 SqlCredential object used to connect to the SQL Server as a different user.
 
-.PARAMETER Databases
-Get queries for specific databases.
+.PARAMETER Database
+The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
 .PARAMETER Exclude
-Get queries for all databases except databases entered through this parameter.
+The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER Silent 
 Use this switch to disable any kind of verbose messages.
 
 .NOTES
 Tags: Database
-dbatools PowerShell module (https://dbatools.io)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Get-DbaEstimatedCompletionTime
@@ -78,23 +75,13 @@ Gets estimated completion times for queries performed against the Northwind, pub
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
 		[PsCredential]$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$Exclude,
 		[switch]$Silent
 	)
 	
-	DynamicParam
-	{
-		if ($SqlInstance)
-		{
-			Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential
-		}
-	}
-	
-	BEGIN
-	{
-		# Convert from RuntimeDefinedParameter object to regular array
-		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
-		
+	begin {
 		$sql = "SELECT
 				DB_NAME(r.database_id) as [Database],
 				USER_NAME(r.user_id) as [Login],
@@ -123,37 +110,30 @@ Gets estimated completion times for queries performed against the Northwind, pub
 			CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) s"
 	}
 	
-	PROCESS
-	{
-		foreach ($instance in $SqlInstance)
-		{
+	process {
+		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Connecting to $instance"
-			try
-			{
+			try {
 				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
 				
 			}
-			catch
-			{
+			catch {
 				Stop-Function -Message "Can't connect to $instance. Moving on." -Continue
 			}
 			
-			if ($databases)
-			{
-				$includedatabases = $databases -join "','"
+			if ($database) {
+				$includedatabases = $database -join "','"
 				$sql = "$sql WHERE DB_NAME(r.database_id) in ('$includedatabases')"
 			}
 			
-			if ($exclude)
-			{
+			if ($exclude) {
 				$excludedatabases = $exclude -join "','"
 				$sql = "$sql WHERE DB_NAME(r.database_id) not in ('$excludedatabases')"
 			}
 			
 			Write-Message -Level Debug -Message $sql
 			#Invoke-DbaSqlcmd -ServerInstance $instance -Credential $SqlCredential -Query $sql | Select-DefaultView -ExcludeProperty Text
-			foreach ($row in (Invoke-DbaSqlcmd -ServerInstance $instance -Credential $SqlCredential -Query $sql))
-			{			
+			foreach ($row in (Invoke-DbaSqlcmd -ServerInstance $instance -Credential $SqlCredential -Query $sql)) {
 				[pscustomobject]@{
 					ComputerName = $server.NetName
 					InstanceName = $server.ServiceName
@@ -172,3 +152,5 @@ Gets estimated completion times for queries performed against the Northwind, pub
 		}
 	}
 }
+
+Register-DbaTeppArgumentCompleter -Command Get-DbaEstimatedCompletionTime -Parameter Database, Exclude

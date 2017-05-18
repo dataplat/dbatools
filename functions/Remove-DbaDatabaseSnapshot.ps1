@@ -1,3 +1,4 @@
+#ValidationTags#FlowControl#
 Function Remove-DbaDatabaseSnapshot
 {
 <#
@@ -10,63 +11,62 @@ Removes (drops) database snapshots from the server
 .PARAMETER SqlInstance 
 The SQL Server that you're connecting to
 
-.PARAMETER Credential
+.PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user
 
-.PARAMETER Snapshots
-Removes snapshot databases with this names only
+.PARAMETER Database
+Restores from the last snapshot databases with this names only
+NB: you can pass either Databases or Snapshots
 
-.PARAMETER Databases
-Removes snapshots for only specific base dbs
+.PARAMETER Snapshot
+Restores databases from snapshots with this names only
+NB: you can pass either Databases or Snapshots
 
-.PARAMETER Snapshots
-Removes specific snapshots
-
-.PARAMETER AllSnapshots
+.PARAMETER AllSnapshot
 Specifies that you want to remove all snapshots from the server
 
 .PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
-
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
+Shows what would happen if the command were to run
 	
+.PARAMETER Confirm
+Prompts for confirmation of every step. 
+
 .PARAMETER PipelineSnapshot
 Internal parameter
+
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
 
 .NOTES
 Tags: Snapshot
 Author: niphlod
 
-dbatools PowerShell module (https://dbatools.io)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
  https://dbatools.io/Remove-DbaDatabaseSnapshot
 
 .EXAMPLE
-Remove-DbaDatabaseSnapshot -SqlServer sqlserver2014a
+Remove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a
 
 Removes all database snapshots from sqlserver2014a
 
 .EXAMPLE
-Remove-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Snapshots HR_snap_20161201, HR_snap_20161101
+Remove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snap_20161201, HR_snap_20161101
 
 Removes database snapshots named HR_snap_20161201 and HR_snap_20161101
 
 .EXAMPLE
-Remove-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Databases HR, Accounting
+Remove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
 
 Removes all database snapshots having HR and Accounting as base dbs
 
 .EXAMPLE
-Remove-DbaDatabaseSnapshot -SqlServer sqlserver2014a -Snapshots HR_snapshot, Accounting_snapshot
+Remove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snapshot, Accounting_snapshot
 
 Removes HR_snapshot and Accounting_snapshot
-
 
 .EXAMPLE
 Get-DbaDatabaseSnapshot -SqlServer sql2016 | Where SnapshotOf -like '*dumpsterfire*' | Remove-DbaDatabaseSnapshot
@@ -78,54 +78,38 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[string[]]$SqlInstance,
-		[PsCredential]$Credential,
+		[DbaInstanceParameter[]]$SqlInstance,
+		[Alias("Credential")]
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$Snapshot,
 		[parameter(ValueFromPipeline = $true)]
 		[object]$PipelineSnapshot,
-		[switch]$AllSnapshots
+		[switch]$AllSnapshots,
+		[switch]$Silent
 	)
 	
-	DynamicParam
+	process
 	{
-		if ($SqlInstance)
-		{
-			Get-ParamSqlSnapshotsAndDatabases -SqlServer $SqlInstance[0] -SqlCredential $Credential
+		if (!$snapshot -and !$databases -and !$AllSnapshots -and $null -eq $PipelineSnapshot -and !$Exclude) {
+			Stop-Function -Message "You must specify -Snapshot, -Database, -Exclude or -AllSnapshots"
 		}
-	}
-	
-	BEGIN
-	{
-		$databases = $psboundparameters.Databases
-		$snapshots = $psboundparameters.Snapshots
-	}
-	
-	PROCESS
-	{
-		if ($snapshots.count -eq 0 -and $databases.count -eq 0 -and $AllSnapshots -eq $false -and $PipelineSnapshot -eq $null)
-		{
-			Write-Warning "You must specify -Snapshots, -Databases or -AllSnapshots"
-			return
-		}
-		
 		# handle the database object passed by the pipeline
-		if ($PipelineSnapshot.PSTypeNames -eq 'dbatools.customobject')
+		if ($null -ne $PipelineSnapshot -and $PipelineSnapshot.getType().Name -eq 'pscustomobject') # do we need a specialized type back ?
 		{
-			If ($Pscmdlet.ShouldProcess($PipelineSnapshot.SnapshotDb.Parent.name, "Remove db snapshot '$($PipelineSnapshot.SnapshotDb.Name)'"))
-			{
-				$dropped = Remove-SqlDatabase -SqlServer $PipelineSnapshot.SnapshotDb.Parent -DBName $PipelineSnapshot.SnapshotDb.Name
-				
-				if ($dropped -match "Success")
-				{
+			If ($Pscmdlet.ShouldProcess($PipelineSnapshot.SnapshotDb.Parent.DomainInstanceName, "Remove db snapshot $($PipelineSnapshot.SnapshotDb.Name)")) {
+				$dropped = Remove-SqlDatabase -SqlServer $PipelineSnapshot.SnapshotDb.Parent.DomainInstanceName -DBName $PipelineSnapshot.SnapshotDb.Name -SqlCredential $Credential
+				if ($dropped -match "Success") {
 					$status = "Dropped"
-				}
-				else
-				{
-					Write-Warning $dropped
+				} else {
+					Write-Message -Level Warning -Message $dropped
 					$status = "Drop failed"
 				}
 				
 				[PSCustomObject]@{
-					Server = $PipelineSnapshot.Server
+					SqlInstance = $PipelineSnapshot.SnapshotDb.Parent.DomainInstanceName
 					Database = $PipelineSnapshot.Database
 					SnapshotOf = $PipelineSnapshot.SnapshotOf
 					Status = $status
@@ -137,53 +121,40 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 		# if piped value either doesn't exist or is not the proper type
 		foreach ($instance in $SqlInstance)
 		{
-			Write-Verbose "Connecting to $instance"
-			try
-			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
-				
-			}
-			catch
-			{
-				Write-Warning "Can't connect to $instance"
-				Continue
+			Write-Message -Level Verbose -Message "Connecting to $instance"
+			try {
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
+			} catch {
+				Stop-Function -Message "Failed to connect to: $instance" -InnerErrorRecord $_ -Target $instance -Continue -Silent $Silent
 			}
 			
 			$dbs = $server.Databases
 			
-			if ($databases.count -gt 0)
-			{
+			if ($database) {
 				$dbs = $dbs | Where-Object { $databases -contains $_.DatabaseSnapshotBaseName }
 			}
-			
-			if ($snapshots.count -gt 0)
-			{
-				$dbs = $dbs | Where-Object { $snapshots -contains $_.Name }
+			if ($snapshot) {
+				$dbs = $dbs | Where-Object { $snapshot -contains $_.Name }
 			}
-			
-			if ($snapshots.count -eq 0 -and $databases.count -eq 0)
-			{
+			if (!$snapshot -and !$databases) {
 				$dbs = $dbs | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
 			}
 			
 			foreach ($db in $dbs)
 			{
-				If ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot $($db.Name)"))
+				If ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot $db"))
 				{
 					$dropped = Remove-SqlDatabase -SqlServer $server -DBName $db.Name -SqlCredential $Credential
-					
-					if ($dropped -match "Success")
-					{
+					if ($dropped -match "Success") {
 						$status = "Dropped"
-					}
-					else
-					{
-						Write-Warning $dropped
+					} else {
+						Write-Message -Level Warning -Message $dropped
 						$status = "Drop failed"
 					}
-					
 					[PSCustomObject]@{
-						Server = $server.name
+						ComputerName = $server.NetName
+						InstanceName = $server.ServiceName
+						SqlInstance = $server.DomainInstanceName
 						Database = $db.Name
 						SnapshotOf = $db.DatabaseSnapshotBaseName
 						Status = $status
@@ -193,3 +164,5 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 		}
 	}
 }
+
+Register-DbaTeppArgumentCompleter -Command Remove-DbaDatabaseSnapshot -Parameter Database

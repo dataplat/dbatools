@@ -18,6 +18,10 @@
     
     .PARAMETER Path
     The folder where to place the output xml in.
+	
+	.PARAMETER Variables
+	Name of additional variables to attach.
+	This allows you to add the content of variables to the support package, if you believe them to be relevant to the case.
     
     .PARAMETER Silent
     Replaces user friendly yellow warnings with bloody red exceptions of doom!

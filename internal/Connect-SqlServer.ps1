@@ -128,6 +128,12 @@
             $server.ConnectionContext.Connect()
         }
         
+        # Update cache for instance names
+        if ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $ConvertedSqlServer.FullSmoName.ToLower())
+        {
+            [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $ConvertedSqlServer.FullSmoName.ToLower()
+        }
+        
         # Update cache for database names
         [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$ConvertedSqlServer.FullSmoName.ToLower()] = $server.Databases.Name
         
@@ -237,6 +243,12 @@
             $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'ActiveConnections', 'AvailabilityDatabaseSynchronizationState', 'AvailabilityGroupName', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'ContainmentType', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
             $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordHashAlgorithm', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
         }
+    }
+    
+    # Update cache for instance names
+    if ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $ConvertedSqlServer.FullSmoName.ToLower())
+    {
+        [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $ConvertedSqlServer.FullSmoName.ToLower()
     }
     
     # Update cache for database names

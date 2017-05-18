@@ -17,8 +17,8 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER Databases
-The database name to remove or an array of database names eg $Databases = 'DB1','DB2','DB3'
+.PARAMETER Database
+The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
@@ -39,17 +39,17 @@ Copyright (C) 2016 Chrissy LeMaire
 https://dbatools.io/Remove-DbaDatabase
 
 .EXAMPLE 
-Remove-DbaDatabase -SqlInstance sql2016 -Databases containeddb
+Remove-DbaDatabase -SqlInstance sql2016 -Database containeddb
 
 Prompts then removes the database containeddb on SQL Server sql2016
 	
 .EXAMPLE 
-Remove-DbaDatabase -SqlInstance sql2016 -Databases containeddb, mydb
+Remove-DbaDatabase -SqlInstance sql2016 -Database containeddb, mydb
 	
 Prompts then removes the databases containeddb and mydb on SQL Server sql2016
 	
 .EXAMPLE 
-Remove-DbaDatabase -SqlInstance sql2016 -Databases containeddb -Confirm:$false
+Remove-DbaDatabase -SqlInstance sql2016 -Database containeddb -Confirm:$false
 
 Does not prompt and swiftly removes containeddb on SQL Server sql2016
 #>
@@ -59,26 +59,17 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
 		[parameter(Mandatory = $false)]
-		[object]$SqlCredential,
+		[Alias("Credential")]
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential,
+		[parameter(Mandatory = $true)]
+		[Alias("Databases")]
+		[object[]]$Database,
 		[switch]$Silent
 	)
 	
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
-	
-	BEGIN
+	process
 	{
-		$databases = $psboundparameters.Databases
-		
-		if (-not $databases)
-		{
-			Stop-Function -Message "You must select one or more databases to drop"
-		}
-	}
-	
-	PROCESS
-	{
-		if (Test-FunctionInterrupt) { return }
-		
 		foreach ($instance in $SqlInstance)
 		{
 			try
@@ -91,9 +82,9 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
 			}
 			
-			$databases = $server.Databases | Where-Object { $_.Name -in $databases }
+			$dbs = $server.Databases | Where-Object { $_.Name -in $database }
 			
-			foreach ($db in $databases)
+			foreach ($db in $dbs)
 			{
 				try
 				{
@@ -164,3 +155,5 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 		}
 	}
 }
+
+Register-DbaTeppArgumentCompleter -Command Remove-DbaDatabase -Parameter Database

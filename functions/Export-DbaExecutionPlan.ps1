@@ -19,11 +19,11 @@ The SQL Server that you're connecting to.
 .PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user
 
-.PARAMETER Databases
-Return restore information for only specific databases. These are only the databases that currently exist on the server.
-	
+.PARAMETER Database
+The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+
 .PARAMETER Exclude
-Return restore information for all but these specific databases
+The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER SinceCreation
 Datetime object used to narrow the results to a date
@@ -63,7 +63,7 @@ Export-DbaExecutionPlan -SqlInstance sqlserver2014a
 Exports all execution plans for sqlserver2014a.
 
 .EXAMPLE   
-Export-DbaExecutionPlan -SqlInstance sqlserver2014a -Databases db1, db2 -SinceLastExecution '7/1/2016 10:47:00'
+Export-DbaExecutionPlan -SqlInstance sqlserver2014a -Database db1, db2 -SinceLastExecution '7/1/2016 10:47:00'
 
 Exports all execution plans for databases db1 and db2 on sqlserve2014a since July 1, 2016 at 10:47 AM.
 	
@@ -76,6 +76,9 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 		[parameter(ParameterSetName = 'NotPiped')]
 		[Alias("Credential")]
 		[PsCredential]$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$Exclude,
 		[parameter(ParameterSetName = 'Piped', Mandatory)]
 		[parameter(ParameterSetName = 'NotPiped', Mandatory)]
 		[string]$Path,
@@ -87,14 +90,8 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 		[object[]]$PipedObject
 	)
 	
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
-	
-	BEGIN
-	{
-		# Convert from RuntimeDefinedParameter object to regular array
-		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
-		
+	begin
+	{	
 		if ($SinceCreation -ne $null)
 		{
 			$SinceCreation = $SinceCreation.ToString("yyyy-MM-dd HH:mm:ss")
@@ -201,16 +198,16 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 				        CROSS APPLY sys.dm_exec_query_plan(deqs.plan_handle) AS deqp
 				        CROSS APPLY sys.dm_exec_sql_text(deqs.plan_handle) AS execText"
 				
-				if ($exclude.length -gt 0 -or $databases.length -gt 0 -or $SinceCreation.length -gt 0 -or $SinceLastExecution.length -gt 0 -or $ExcludeEmptyQueryPlan -eq $true)
+				if ($exclude.length -gt 0 -or $Database.length -gt 0 -or $SinceCreation.length -gt 0 -or $SinceLastExecution.length -gt 0 -or $ExcludeEmptyQueryPlan -eq $true)
 				{
 					$where = " WHERE "
 				}
 				
 				$wherearray = @()
 				
-				if ($databases.length -gt 0)
+				if ($Database.length -gt 0)
 				{
-					$dblist = $databases -join "','"
+					$dblist = $Database -join "','"
 					$wherearray += " DB_NAME(deqp.dbid) in ('$dblist') "
 				}
 				
@@ -282,3 +279,5 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 		}
 	}
 }
+
+Register-DbaTeppArgumentCompleter -Command Export-DbaExecutionPlan -Parameter Database, Exclude

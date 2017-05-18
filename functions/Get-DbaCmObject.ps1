@@ -15,6 +15,9 @@
 
     .PARAMETER ClassName
     The name of the class to retrieve.
+	
+	.PARAMETER Query
+	The Wmi/Cim query tu run against the server.
 
     .PARAMETER ComputerName
     The computer(s) to connect to. Defaults to localhost.
@@ -31,6 +34,11 @@
     .PARAMETER Force
     Overrides some checks that might otherwise halt execution as a precaution
     - Ignores timeout on bad connections
+	
+	.PARAMETER SilentlyContinue
+	Use in conjunction with the -Silent switch.
+	By default, Get-DbaCmObject will throw a terminating exception when connecting to a target is impossible in silent mode.
+	Setting this switch will cause it write a non-terminating exception and continue with the next computer.
 
     .PARAMETER Silent
     Replaces user friendly yellow warnings with bloody red exceptions of doom!
