@@ -1,5 +1,5 @@
 function Copy-DbaAgentAlert {
-	<#
+    <#
 	.SYNOPSIS
 		Copy-DbaAgentAlert migrates alerts from one SQL Server to another.
 
@@ -42,6 +42,9 @@ function Copy-DbaAgentAlert {
 
 	.PARAMETER Force
 		Drops and recreates the Alert if it exists
+	
+	.PARAMETER Silent
+		Use this switch to disable any kind of verbose messages
 
 	.NOTES
 		Tags: Migration, Agent
@@ -70,159 +73,160 @@ function Copy-DbaAgentAlert {
 
 		Shows what would happen if the command were executed using force.
 	#>
-	[cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-	param (
-		[parameter(Mandatory = $true)]
-		[object]$Source,
-		[parameter(Mandatory = $true)]
-		[object]$Destination,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$SourceSqlCredential,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$DestinationSqlCredential,
-		[switch]$IncludeDefaults,
-		[switch]$Force
-	)
-	DynamicParam { if ($source) { return (Get-ParamSqlAlerts -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+    [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    param (
+        [parameter(Mandatory = $true)]
+        [object]$Source,
+        [parameter(Mandatory = $true)]
+        [object]$Destination,
+        [PSCredential][System.Management.Automation.CredentialAttribute()]
+        $SourceSqlCredential,
+        [PSCredential][System.Management.Automation.CredentialAttribute()]
+        $DestinationSqlCredential,
+        [switch]$IncludeDefaults,
+        [switch]$Force,
+        [switch]$Silent
+    )
+    DynamicParam { if ($source) { return (Get-ParamSqlAlerts -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 
-	begin {
-		$alerts = $psboundparameters.Alerts
+    begin {
+        $alerts = $psboundparameters.Alerts
 
-		$sourceServer = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destServer = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+        $sourceServer = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+        $destServer = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 
-		$source = $sourceServer.DomainInstanceName
-		$Destination = $destServer.DomainInstanceName
+        $source = $sourceServer.DomainInstanceName
+        $Destination = $destServer.DomainInstanceName
 
-	}
-	process {
+    }
+    process {
 
-		$serverAlerts = $sourceServer.JobServer.Alerts
-		$destAlerts = $destServer.JobServer.Alerts
+        $serverAlerts = $sourceServer.JobServer.Alerts
+        $destAlerts = $destServer.JobServer.Alerts
 
-		if ($IncludeDefaults -eq $true) {
-			if ($PSCmdlet.ShouldProcess($Destination, "Copying Alert Defaults")) {
-				try {
-					Write-Output "Copying Alert Defaults"
-					$sql = $sourceServer.JobServer.AlertSystem.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$Destination'")
-					Write-Verbose $sql
-					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
-				}
-				catch {
-					Write-Exception $_
-				}
-			}
-		}
+        if ($IncludeDefaults -eq $true) {
+            if ($PSCmdlet.ShouldProcess($Destination, "Copying Alert Defaults")) {
+                try {
+                    Write-Output "Copying Alert Defaults"
+                    $sql = $sourceServer.JobServer.AlertSystem.Script() | Out-String
+                    $sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$Destination'")
+                    Write-Verbose $sql
+                    $null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+                }
+                catch {
+                    Write-Exception $_
+                }
+            }
+        }
 
-		foreach ($alert in $serverAlerts) {
-			$alertName = $alert.name
-			if ($alerts.count -gt 0 -and $alerts -notcontains $alertName) { continue }
+        foreach ($alert in $serverAlerts) {
+            $alertName = $alert.name
+            if ($alerts.count -gt 0 -and $alerts -notcontains $alertName) { continue }
 
-			if ($destAlerts.name -contains $alert.name) {
-				if ($force -eq $false) {
-					Write-Warning "Alert $alertName exists at destination. Use -Force to drop and migrate."
-					continue
-				}
+            if ($destAlerts.name -contains $alert.name) {
+                if ($force -eq $false) {
+                    Write-Warning "Alert $alertName exists at destination. Use -Force to drop and migrate."
+                    continue
+                }
 
-				if ($PSCmdlet.ShouldProcess($Destination, "Dropping alert $alertName and recreating")) {
-					try {
-						Write-Verbose "Dropping Alert $alertName on $destServer"
+                if ($PSCmdlet.ShouldProcess($Destination, "Dropping alert $alertName and recreating")) {
+                    try {
+                        Write-Verbose "Dropping Alert $alertName on $destServer"
 
-						$sql = "EXEC msdb.dbo.sp_delete_alert @name = N'$($alert.name)';"
-						Write-Verbose $sql
-						$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
-					}
-					catch {
-						Write-Exception $_
-						continue
-					}
-				}
-			}
+                        $sql = "EXEC msdb.dbo.sp_delete_alert @name = N'$($alert.name)';"
+                        Write-Verbose $sql
+                        $null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+                    }
+                    catch {
+                        Write-Exception $_
+                        continue
+                    }
+                }
+            }
 
-			if ($PSCmdlet.ShouldProcess($Destination, "Creating Alert $alertName")) {
-				try {
-					Write-Output "Copying Alert $alertName"
-					$sql = $alert.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$Destination'")
-					$sql = $sql -replace "@job_id=N'........-....-....-....-............", "@job_id=N'00000000-0000-0000-0000-000000000000"
-					Write-Verbose $sql
-					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
-				}
-				catch {
-					Write-Exception $_
-				}
-			}
+            if ($PSCmdlet.ShouldProcess($Destination, "Creating Alert $alertName")) {
+                try {
+                    Write-Output "Copying Alert $alertName"
+                    $sql = $alert.Script() | Out-String
+                    $sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$Destination'")
+                    $sql = $sql -replace "@job_id=N'........-....-....-....-............", "@job_id=N'00000000-0000-0000-0000-000000000000"
+                    Write-Verbose $sql
+                    $null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+                }
+                catch {
+                    Write-Exception $_
+                }
+            }
 
-			$destServer.JobServer.Alerts.Refresh()
-			$destServer.JobServer.Jobs.Refresh()
+            $destServer.JobServer.Alerts.Refresh()
+            $destServer.JobServer.Jobs.Refresh()
 
-			$newAlert = $destServer.JobServer.Alerts[$alertName]
-			$notifications = $alert.EnumNotifications()
-			$jobName = $alert.JobName
+            $newAlert = $destServer.JobServer.Alerts[$alertName]
+            $notifications = $alert.EnumNotifications()
+            $jobName = $alert.JobName
 
-			# Super workaround but it works
-			if ($alert.JobId -ne '00000000-0000-0000-0000-000000000000') {
-				if ($PSCmdlet.ShouldProcess($Destination, "Adding $alertName to $jobName")) {
-					try {
-						Write-Output  "Adding $alertName to $jobName"
-						$newJob = $destServer.JobServer.Jobs[$jobName]
-						$newJobId = ($newJob.JobId) -replace " ", ""
-						$sql = $sql -replace '00000000-0000-0000-0000-000000000000', $newJobId
-						$sql = $sql -replace 'sp_add_alert', 'sp_update_alert'
-						Write-Verbose $sql
-						$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
-					}
-					catch {
-						Write-Exception $_
-					}
-				}
-			}
+            # Super workaround but it works
+            if ($alert.JobId -ne '00000000-0000-0000-0000-000000000000') {
+                if ($PSCmdlet.ShouldProcess($Destination, "Adding $alertName to $jobName")) {
+                    try {
+                        Write-Output  "Adding $alertName to $jobName"
+                        $newJob = $destServer.JobServer.Jobs[$jobName]
+                        $newJobId = ($newJob.JobId) -replace " ", ""
+                        $sql = $sql -replace '00000000-0000-0000-0000-000000000000', $newJobId
+                        $sql = $sql -replace 'sp_add_alert', 'sp_update_alert'
+                        Write-Verbose $sql
+                        $null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+                    }
+                    catch {
+                        Write-Exception $_
+                    }
+                }
+            }
 
-			if ($PSCmdlet.ShouldProcess($Destination, "Moving Notifications $alertName")) {
-				try {
-					# cant add them this way, we need to modify the existing one or give all options that are supported.
-					foreach ($notify in $notifications) {
-						$notifyCollection = @()
-						if ($notify.UseNetSend -eq $true) {
-							write-verbose "Adding net send"
-							$notifyCollection += "NetSend"
-						}
+            if ($PSCmdlet.ShouldProcess($Destination, "Moving Notifications $alertName")) {
+                try {
+                    # cant add them this way, we need to modify the existing one or give all options that are supported.
+                    foreach ($notify in $notifications) {
+                        $notifyCollection = @()
+                        if ($notify.UseNetSend -eq $true) {
+                            write-verbose "Adding net send"
+                            $notifyCollection += "NetSend"
+                        }
 
-						if ($notify.UseEmail -eq $true) {
-							write-verbose "Adding email"
-							$notifyCollection += "NotifyEmail"
-						}
+                        if ($notify.UseEmail -eq $true) {
+                            write-verbose "Adding email"
+                            $notifyCollection += "NotifyEmail"
+                        }
 
-						if ($notify.UsePager -eq $true) {
-							write-verbose "Adding pager"
-							$notifyCollection += "Pager"
-						}
-						$notifyMethods = $notifyCollection -join ", "
+                        if ($notify.UsePager -eq $true) {
+                            write-verbose "Adding pager"
+                            $notifyCollection += "Pager"
+                        }
+                        $notifyMethods = $notifyCollection -join ", "
 
-						# concat the notify methods together
-						$newAlert.AddNotification($notify.OperatorName, [Microsoft.SqlServer.Management.Smo.Agent.NotifyMethods]$notifyMethods)
-					}
-				}
-				catch {
-					$e = $_.Exception
-					$line = $_.InvocationInfo.ScriptLineNumber
-					$msg = $e.Message
+                        # concat the notify methods together
+                        $newAlert.AddNotification($notify.OperatorName, [Microsoft.SqlServer.Management.Smo.Agent.NotifyMethods]$notifyMethods)
+                    }
+                }
+                catch {
+                    $e = $_.Exception
+                    $line = $_.InvocationInfo.ScriptLineNumber
+                    $msg = $e.Message
 
-					if ($e -like '*The specified @operator_name (''*'') does not exist*') {
-						Write-Warning "One or more operators for this alert are not configured and will not be added to this alert."
-						Write-Warning "Please run Copy-DbaAgentOperator if you would like to move operators to destination server."
-					}
-					else {
-						Write-Error "caught exception: $e at $line : $msg"
-					}
-				}
-			}
+                    if ($e -like '*The specified @operator_name (''*'') does not exist*') {
+                        Write-Warning "One or more operators for this alert are not configured and will not be added to this alert."
+                        Write-Warning "Please run Copy-DbaAgentOperator if you would like to move operators to destination server."
+                    }
+                    else {
+                        Write-Error "caught exception: $e at $line : $msg"
+                    }
+                }
+            }
 
-		}
-	}
+        }
+    }
 
-	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlAlert
-	}
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlAlert
+    }
 }
