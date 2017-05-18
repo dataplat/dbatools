@@ -18,7 +18,7 @@ foreach ($instance in $instances) {
 	$Tcp.Alter()
 	
 	Start-Service "MSSQL`$$instance"
+	
+	Write-Output "Getting databases on $instance"
+	Get-DbaDatabase -SqlInstance "localhost\$instance"
 }
-
-$a = Connect-DbaSqlServer localhost\sql2008r2sp2
-$a.databases.name
