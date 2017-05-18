@@ -276,15 +276,19 @@ sql credential dbatoolscred registered on the sql2016 instance
 				Write-Message -Level Verbose -Message "Creating differential backup"
 				$type = "Database"
 				$backup.Incremental = $true
+                $outputType = 'Differential'
 			}
 			
 			if ($Type -eq "Log") {
 				Write-Message -Level Verbose -Message "Creating log backup"
 				$Suffix = "trn"
+                $OutputType = 'Log'
 			}
 			
-			if ($type -eq 'Full') {
+			if ($type -in 'Full', 'Database') {
+                Write-verbose "Setting type"
 				$type = "Database"
+                $OutputType='Full'
 			}
 			
 			$backup.CopyOnly = $copyonly
@@ -449,6 +453,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 							FullName = ($FinalBackupPath | Sort-Object -Unique)
 							FileList = $FileList
 							SoftwareVersionMajor = $server.VersionMajor
+                            Type = $outputType
 						} | Restore-DbaDatabase -SqlServer $server -SqlCredential $SqlCredential -DatabaseName DbaVerifyOnly -VerifyOnly
 						if ($verifiedResult[0] -eq "Verify successful") {
 							$failures += $verifiedResult[0]
@@ -484,6 +489,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 				FileList = $FileList
 				SoftwareVersionMajor = $server.VersionMajor
 				Verified = $Verified
+                Type = $outputType
 			} | Select-DefaultView -ExcludeProperty $OutputExclude
 			$BackupFileName = $null
 		}

@@ -17,7 +17,7 @@ Source SQL Server.You must have sysadmin access and server version must be SQL S
 Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER SourceSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:F
 
 $scred = Get-Credential, this pass $scred object to the param. 
 
@@ -901,6 +901,37 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 								continue
 							}
 						}
+                        if ($NoBackupCleanup -eq $false)
+                        {
+                            foreach ($backupfile in $backupTmpResult.BackupFiles)
+                            {
+                                try		
+                				{		
+                					If (Test-Path $backupfile -ErrorAction Stop)		
+                					{		
+                						Write-Verbose "Deleting $backupfile"		
+                						Remove-Item $backupfile -ErrorAction Stop		
+                					}		
+                				}		
+                				catch		
+                				{		
+                					try		
+                					{		
+                						Write-Verbose "Trying alternate SQL method to delete $backupfile"		
+                						$sql = "EXEC master.sys.xp_delete_file 0, '$backupfile'"		
+                						Write-Debug $sql		
+                						$null = $server.ConnectionContext.ExecuteNonQuery($sql)		
+                					}		
+                					catch		
+                					{		
+                						Write-Warning "Cannot delete backup file $backupfile"		
+                								
+                						# Set NoBackupCleanup so that there's a warning at the end		
+                						$NoBackupCleanup = $true		
+					                }		
+				                }
+                            }
+                        }
 					}
 					
 					$dbfinish = Get-Date
@@ -975,7 +1006,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 								Write-Output "Successfully updated DatabaseOwnershipChaining for $sourcedbownerchaining on $dbname on $destination"
 							}
 							catch {
-								Write-Message -Level Warning -Message "Failed to update DatabaseOwnershipChaining for $sourcedbownerchaining on $dbname on $destination" -Silent
+								Write-Message -Level Warning -Message "Failed to update DatabaseOwnershipChaining for $sourcedbownerchaining on $dbname on $destination" -Silent:$silent
 								Stop-Function -Message "Exception: $_" -Continue -Target $destination
 							}
 						}
