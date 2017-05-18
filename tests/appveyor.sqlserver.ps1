@@ -1,3 +1,7 @@
+# Imports some assemblies
+Write-Output "Importing dbatools"
+Import-Module C:\projects\dbatools\dbatools.psd1
+
 # This script spins up two local instances
 $sql2008 = "localhost\sql2008r2sp2"
 $sql2016 = "localhost\sql2016"
@@ -38,9 +42,6 @@ foreach ($instance in $instances) {
 }
 
 <#
-Write-Output "Importing dbatools"
-Import-Module C:\projects\dbatools\dbatools.psd1
-
 Write-Output "Beginning restore"
 Get-ChildItem C:\projects\appveyor-lab\sql2008-backups | Restore-DbaDatabase -SqlServer $sql2008
 
