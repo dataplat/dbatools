@@ -41,3 +41,9 @@ foreach ($instance in $instances) {
 	Write-Output "Starting $instance"
 	Start-Service "MSSQL`$$instance"
 }
+
+# Add some jobs to the sql2008r2sp2 instance (1433 = default)
+foreach ($file in (Get-ChildItem C:\github\appveyor-lab\ola\*.sql)) {
+	Write-Output "Executing ola script - $file"
+	Invoke-DbaSqlCmd -ServerInstance localhost -InputFile $file
+}
