@@ -25,3 +25,6 @@ test_script:
 environment: 
   environment: development
   version: 0.8.$(appveyor_build_number)
+
+on_finish:
+  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
