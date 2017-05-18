@@ -11,7 +11,7 @@ Describe "Restore-DbaDatabase Integration Tests" -Tags "Integrationtests" {
 		}
 	}
 
-Context "Ensuring warning is thrown if database already exists" {
+	Context "Ensuring warning is thrown if database already exists" {
 		$results = Restore-DbaDatabase -SqlServer localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak -WarningVariable warning
 		It "Should warn" {
 			$warning | Should Match "exists and will not be overwritten"
