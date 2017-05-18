@@ -8,3 +8,4 @@ dbatools-exceptions.txt
 .vscode/*
 *.psproj
 dbatools.psprojs
+tests/Restore-DbaDatabase.Tests.ps1
