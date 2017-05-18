@@ -75,14 +75,14 @@ Context "Ensuring warning is thrown if database already exists" {
 			$results.databasename.count | Should Be 31
 		}
 		It "Should return successful restore" {
-			$results.RestoreComplete | Should Be $true
+			($results.Restorecomplete -contains $false) | Should Be $false
 		}
 	}
 	
 	Context "All user databases are removed" {
 		$results = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
 		It "Should say the status was dropped" {
-			$results.Status | Should Be "Dropped"
+			$results.ForEach{ $_.Restorecomplete | Should Be "Dropped" }
 		}
 	}
 }
