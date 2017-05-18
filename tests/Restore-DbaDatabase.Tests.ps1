@@ -68,4 +68,21 @@ Context "Ensuring warning is thrown if database already exists" {
 			$results.Status | Should Be "Dropped"
 		}
 	}
+	
+	Context "Properly restores an instance using ola backups" {
+		$results = Get-ChildItem C:\github\appveyor-lab\sql2008-backups | Restore-DbaDatabase -SqlServer localhost
+		It "Restored files count should be right" {
+			$results.databasename.count | Should Be 31
+		}
+		It "Should return successful restore" {
+			$results.RestoreComplete | Should Be $true
+		}
+	}
+	
+	Context "All user databases are removed" {
+		$results = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
+		It "Should say the status was dropped" {
+			$results.Status | Should Be "Dropped"
+		}
+	}
 }
