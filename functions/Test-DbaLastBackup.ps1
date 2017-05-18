@@ -264,6 +264,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 					
 					Write-Message -Level Verbose -Message "Processing $dbname"
 					
+					$TrustBackupHistory =  $true
 					$copysuccess = $true
 					$db = $sourceserver.databases[$dbname]
 					
@@ -272,9 +273,9 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 						Stop-Function -Message "$dbname does not exist on $source." -Continue
 					}
 					
-					$lastbackup = Get-DbaBackupHistory -SqlServer $sourceserver -Databases $dbname -Last -IgnoreCopyOnly:$ignorecopyonly
-					
+					$lastbackup = Get-DbaBackupHistory -SqlServer $sourceserver -Databases $dbname -Last -IgnoreCopyOnly:$ignorecopyonly -raw
 					if ($CopyFile) {
+						$TrustBackupHistory =  $false
 						try {
 							Write-Message -Level Verbose -Message "Gathering information for file copy"
 							$removearray = @()
@@ -333,13 +334,13 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 						$restoreresult = "Skipped"
 						$dbccresult = "Skipped"
 					}
-					elseif ($source -ne $destination -and $lastbackup[0].Path[0].StartsWith('\\') -eq $false -and !$CopyFile) {
+					elseif ($source -ne $destination -and $lastbackup[0].Path.StartsWith('\\') -eq $false -and !$CopyFile) {
 						Write-Message -Level Verbose -Message "Path not UNC and source does not match destination. Use -CopyFile to move the backup file."
 						$fileexists = "Skipped"
 						$restoreresult = "Restore not located on shared location"
 						$dbccresult = "Skipped"
 					}
-					elseif ((Test-DbaSqlPath -SqlServer $destserver -Path $lastbackup[0].Path[0]) -eq $false) {
+					elseif ((Test-DbaSqlPath -SqlServer $destserver -Path $lastbackup[0].Path) -eq $false) {
 						Write-Message -Level Verbose -Message "SQL Server cannot find backup"
 						$fileexists = $false
 						$restoreresult = "Skipped"
@@ -350,7 +351,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 						
 						$fileexists = $true
 						$ogdbname = $dbname
-						$restorelist = Read-DbaBackupHeader -SqlServer $destserver -Path $lastbackup[0].Path[0]
+						$restorelist = Read-DbaBackupHeader -SqlServer $destserver -Path $lastbackup[0].Path
 						$mb = $restorelist.BackupSizeMB
 						
 						if ($MaxMB -gt 0 -and $MaxMB -lt $mb) {
@@ -371,10 +372,10 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 								Write-Message -Level Verbose -Message "Performing restore"
 								$startRestore = Get-Date
 								if ($verifyonly) {
-									$restoreresult = $lastbackup | Restore-DbaDatabase -SqlServer $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -VerifyOnly:$VerifyOnly -IgnoreLogBackup:$IgnoreLogBackup 
+									$restoreresult = $lastbackup | Restore-DbaDatabase -SqlServer $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -VerifyOnly:$VerifyOnly -IgnoreLogBackup:$IgnoreLogBackup -TrustBackupHistory:$TrustBackupHistory
 								}
 								else {
-									$restoreresult = $lastbackup | Restore-DbaDatabase -SqlServer $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup 
+									$restoreresult = $lastbackup | Restore-DbaDatabase -SqlServer $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -TrustDbBackupHistory:$TrustBackupHistory
 								}
 								
 								$endRestore = Get-Date
