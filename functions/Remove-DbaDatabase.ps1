@@ -1,5 +1,4 @@
-﻿Function Remove-DbaDatabase
-{
+﻿Function Remove-DbaDatabase {
 <#
 .SYNOPSIS
 Drops a database, hopefully even the really stuck ones.
@@ -53,45 +52,57 @@ Remove-DbaDatabase -SqlInstance sql2016 -Database containeddb -Confirm:$false
 
 Does not prompt and swiftly removes containeddb on SQL Server sql2016
 #>
-	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
+	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low', DefaultParameterSetName= "Default")]
 	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[parameter(, Mandatory, ParameterSetName = "instance")]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[parameter(Mandatory = $false)]
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
-		[parameter(Mandatory = $true)]
+		[parameter(Mandatory, ParameterSetName = "instance")]
 		[Alias("Databases")]
-		[object[]]$Database,
+		[string[]]$Database,
+		[Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "databases")]
+		[Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
 		[switch]$Silent
 	)
 	
-	process
-	{
-		foreach ($instance in $SqlInstance)
-		{
-			try
-			{
+	process {
+		
+		foreach ($instance in $SqlInstance) {
+			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
 				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
 			}
-			catch
-			{
+			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
 			}
 			
-			$dbs = $server.Databases | Where-Object { $_.Name -in $database }
-			
-			foreach ($db in $dbs)
-			{
-				try
-				{
-					if ($Pscmdlet.ShouldProcess("$db on $server", "KillDatabase"))
-					{
-						$server.KillDatabase($db.name)
-						$server.Refresh()
+			$databasecollection += $server.Databases | Where-Object { $_.Name -in $database }
+		}
+		
+		foreach ($db in $databasecollection) {
+			try {
+				$server = $db.Parent
+				if ($Pscmdlet.ShouldProcess("$db on $server", "KillDatabase")) {
+					$server.KillDatabase($db.name)
+					$server.Refresh()
+					
+					[pscustomobject]@{
+						ComputerName = $server.NetName
+						InstanceName = $server.ServiceName
+						SqlInstance = $server.DomainInstanceName
+						Database = $db.name
+						Status = "Dropped"
+					}
+				}
+			}
+			catch {
+				try {
+					if ($Pscmdlet.ShouldProcess("$db on $server", "alter db set single_user with rollback immediate then drop")) {
+						$null = $server.ConnectionContext.ExecuteNonQuery("alter database $db set single_user with rollback immediate; drop database $db")
 						
 						[pscustomobject]@{
 							ComputerName = $server.NetName
@@ -102,13 +113,11 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 						}
 					}
 				}
-				catch
-				{
-					try
-					{
-						if ($Pscmdlet.ShouldProcess("$db on $server", "alter db set single_user with rollback immediate then drop"))
-						{
-							$null = $server.ConnectionContext.ExecuteNonQuery("alter database $db set single_user with rollback immediate; drop database $db")
+				catch {
+					try {
+						if ($Pscmdlet.ShouldProcess("$db on $server", "SMO drop")) {
+							$server.databases[$dbname].Drop()
+							$server.Refresh()
 							
 							[pscustomobject]@{
 								ComputerName = $server.NetName
@@ -119,35 +128,15 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 							}
 						}
 					}
-					catch
-					{
-						try
-						{
-							if ($Pscmdlet.ShouldProcess("$db on $server", "SMO drop"))
-							{
-								$server.databases[$dbname].Drop()
-								$server.Refresh()
-								
-								[pscustomobject]@{
-									ComputerName = $server.NetName
-									InstanceName = $server.ServiceName
-									SqlInstance = $server.DomainInstanceName
-									Database = $db.name
-									Status = "Dropped"
-								}
-							}
-						}
-						catch
-						{
-							Write-Message -Level Verbose -Message "Could not drop database $db on $server"
-							
-							[pscustomobject]@{
-								ComputerName = $server.NetName
-								InstanceName = $server.ServiceName
-								SqlInstance = $server.DomainInstanceName
-								Database = $db.name
-								Status = $_
-							}
+					catch {
+						Write-Message -Level Verbose -Message "Could not drop database $db on $server"
+						
+						[pscustomobject]@{
+							ComputerName = $server.NetName
+							InstanceName = $server.ServiceName
+							SqlInstance = $server.DomainInstanceName
+							Database = $db.name
+							Status = $_
 						}
 					}
 				}

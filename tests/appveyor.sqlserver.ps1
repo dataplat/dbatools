@@ -41,17 +41,3 @@ foreach ($instance in $instances) {
 	Write-Output "Starting $instance"
 	Start-Service "MSSQL`$$instance"
 }
-
-<#
-Write-Output "Beginning restore"
-Get-ChildItem C:\projects\appveyor-lab\sql2008-backups | Restore-DbaDatabase -SqlServer $sql2008
-
-Write-Output "Attempting to perform migration - will bomb, need to submit a PR to not require network share"
-Copy-DbaDatabase -Source $sql2008 -Destination $sql2016 -BackupRestore -NetworkShare "\\$env:computername\migration" -AllDatabases -Silent:$false
-
-Write-Output "Trying some backups"
-Backup-DbaDatabase -SqlInstance $sql2008 -BackupDirectory C:\projects\backups
-
-Write-Output "Login import"
-Invoke-DbaSqlCmd -ServerInstance $sql2016 -InputFile C:\projects\appveyor-lab\sql2008-logins.sql
-#>
