@@ -174,6 +174,12 @@ function Copy-DbaAgentAlert {
 
             if ($PSCmdlet.ShouldProcess($Destination, "Creating Alert $alertName")) {
                 try {
+                    <# *****bug w/ SQL Server Event Alerts****
+						The severity and scope are unique, and can only be used once per alert. 
+						Need to validate a severity is not already in use. However this needs to match the definition of another alert. 
+						An alert set to "All Databases" and severity 1 can only exist once. If an alert is set to "model" database with
+						severity 1, this is fine.
+					#>
                     Write-Message -Message "Copying Alert $alertName" -Level Output
                     $sql = $alert.Script() | Out-String
                     $sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$Destination'")
@@ -183,11 +189,11 @@ function Copy-DbaAgentAlert {
                     $null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 
                     $copyAgentAlertStatus.Status = "Successful"
-					$copyAgentAlertStatus
+                    $copyAgentAlertStatus
                 }
                 catch {
                     $copyAgentAlertStatus.Status = "Failed"
-					$copyAgentAlertStatus
+                    $copyAgentAlertStatus
                     Stop-Function -Message "Issue creating alert" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
                 }
 			}
