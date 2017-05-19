@@ -1,6 +1,4 @@
-﻿#Thank you Warren http://ramblingcookiemonster.github.io/Testing-DSC-with-Pester-and-AppVeyor/
-
-Describe "Get-DbaLogin Integration Tests" -Tags "Integrationtests" {
+﻿Describe "Get-DbaLogin Integration Tests" -Tags "Integrationtests" {
 
     Context "Does sql instance have a SA account" {
         $results = Get-DbaLogin -SqlInstance localhost -Login sa 

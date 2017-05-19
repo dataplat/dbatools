@@ -1,6 +1,4 @@
-﻿#Thank you Warren http://ramblingcookiemonster.github.io/Testing-DSC-with-Pester-and-AppVeyor/
-
-Describe "Restore-DbaDatabase Integration Tests" -Tags "Integrationtests" {
+﻿Describe "Restore-DbaDatabase Integration Tests" -Tags "Integrationtests" {
 	Context "Properly restores a database on the local drive using Path" {
 		$results = Restore-DbaDatabase -SqlServer localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak
 		It "Should Return the proper backup file location" {
