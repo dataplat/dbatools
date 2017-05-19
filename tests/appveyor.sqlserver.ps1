@@ -1,6 +1,11 @@
 # Imports some assemblies
 Write-Output "Importing dbatools"
-Import-Module C:\projects\dbatools\dbatools.psd1
+try {
+	Import-Module C:\github\dbatools\dbatools.psd1 -ErrorAction Stop
+}
+catch {
+	Import-Module C:\projects\dbatools\dbatools.psd1
+}
 
 # This script spins up two local instances
 $sql2008 = "localhost\sql2008r2sp2"
@@ -8,17 +13,11 @@ $sql2016 = "localhost\sql2016"
 
 Write-Output "Creating migration & backup directories"
 New-Item -Path C:\github -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
-New-Item -Path C:\projects\migration -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
-New-Item -Path C:\projects\backups -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
+New-Item -Path C:\temp\migration -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
+New-Item -Path C:\temp\backups -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
 
 Write-Output "Cloning lab materials"
 git clone -q --branch=master https://github.com/sqlcollaborative/appveyor-lab.git C:\github\appveyor-lab
-
-# Write-Output "Listing directory"
-# Get-ChildItem C:\github\appveyor-lab\sql2008-backups
-
-# Write-Output "Creating network share workaround"
-# New-SmbShare -Name migration -path C:\projects\migration -FullAccess 'ANONYMOUS LOGON', 'Everyone' | Out-Null
 
 Write-Output "Setting sql2016 Agent to Automatic"
 Set-Service -Name 'SQLAgent$sql2016' -StartupType Automatic
@@ -49,6 +48,12 @@ foreach ($instance in $instances) {
 		Start-Service 'SQLAgent$sql2016'
 	}
 }
+
+do {
+	Write-Warning "Waiting for SQL Agent to start"
+	Start-Sleep 1
+}
+while ((Get-Service 'SQLAgent$sql2016').Status -ne 'Running' -or $i++ -gt 10)
 
 # Add some jobs to the sql2008r2sp2 instance (1433 = default)
 foreach ($file in (Get-ChildItem C:\github\appveyor-lab\ola\*.sql)) {
