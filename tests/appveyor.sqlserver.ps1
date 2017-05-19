@@ -44,7 +44,7 @@ foreach ($instance in $instances) {
 	}
 }
 
-# Agent sometimes takes a moment to start
+# Agent sometimes takes a moment to start 
 do {
 	Write-Warning "Waiting for SQL Agent to start"
 	Start-Sleep 1
