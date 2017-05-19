@@ -115,7 +115,7 @@ Function Restore-DBFromFilteredArray
 			}
 
 		}
-		write-verbose "debug here"
+
 		$MissingFiles = @()
 		if ($TrustDbBackupHistory)
 		{
