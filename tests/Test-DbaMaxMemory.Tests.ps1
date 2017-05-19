@@ -1,4 +1,4 @@
-Describe $name {
+Describe 'Test-DbaMaxMemory' {
     InModuleScope dbatools {
         Context 'Validate input arguments' {
             It 'No "SQL Server" Windows service is running on the host' {
