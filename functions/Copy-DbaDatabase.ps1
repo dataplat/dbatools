@@ -892,6 +892,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						Write-Message -Level Verbose -Message "Resuse = $ReuseSourceFolderStructure"
 						$RestoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlServer $destserver -DatabaseName $dbname -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$norecovery -TrustDbBackupHistory -WithReplace:$WithReplace
 						$restoreresult = $RestoreResultTmp.RestoreComplete
+						$RestoreResultTmp	
 						if ($restoreresult -eq $true) {
 							Write-Output "Successfully restored $dbname to $destination"
 						}
