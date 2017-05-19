@@ -115,6 +115,7 @@ Function Restore-DBFromFilteredArray
 			}
 
 		}
+		write-verbose "debug here"
 		$MissingFiles = @()
 		if ($TrustDbBackupHistory)
 		{
@@ -141,7 +142,6 @@ Function Restore-DBFromFilteredArray
 		if ($if -ne $null){
 			$RestorePoints  += @([PSCustomObject]@{order=[Decimal]2;'Files' = $if.group})
 		}
-		($InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} | Group-Object BackupSetGuid)
 
 		foreach ($if in ($InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} | Group-Object BackupSetGuid))
  		{
