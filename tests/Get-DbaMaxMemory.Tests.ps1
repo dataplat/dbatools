@@ -1,4 +1,4 @@
-Describe $name {
+Describe 'Get-DbaMaxMemory' {
     InModuleScope dbatools {
         Context 'Validate input arguments' {
             It 'SqlServer parameter is empty' {
