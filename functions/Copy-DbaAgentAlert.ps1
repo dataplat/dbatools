@@ -1,268 +1,286 @@
-function Copy-DbaAgentAlert
-{
-<#
-.SYNOPSIS 
-Copy-DbaAgentAlert migrates alerts from one SQL Server to another. 
+function Copy-DbaAgentAlert {
+	<#
+	.SYNOPSIS
+		Copy-DbaAgentAlert migrates alerts from one SQL Server to another.
 
-.DESCRIPTION
-By default, all alerts are copied. The -Alerts parameter is autopopulated for command-line completion and can be used to copy only specific alerts.
+	.DESCRIPTION
+		By default, all alerts are copied. The -Alerts parameter is autopopulated for command-line completion and can be used to copy only specific alerts.
 
-If the alert already exists on the destination, it will be skipped unless -Force is used.  
+		If the alert already exists on the destination, it will be skipped unless -Force is used.
 
-.PARAMETER Source
-Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+	.PARAMETER Source
+		Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-.PARAMETER Destination
-Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+	.PARAMETER Destination
+		Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-.PARAMETER SourceSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+	.PARAMETER SourceSqlCredential
+		Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
+		$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-To connect as a different Windows user, run PowerShell as that user.
+		Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+		To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER DestinationSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+	.PARAMETER DestinationSqlCredential
+		Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
+		$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+		Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-To connect as a different Windows user, run PowerShell as that user.
+		To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER IncludeDefaults
-Copy SQL Agent defaults such as FailSafeEmailAddress, ForwardingServer, and PagerSubjectTemplate.
+	.PARAMETER IncludeDefaults
+		Copy SQL Agent defaults such as FailSafeEmailAddress, ForwardingServer, and PagerSubjectTemplate.
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+	.PARAMETER WhatIf
+		Shows what would happen if the command were to run. No actions are actually performed.
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+	.PARAMETER Confirm
+		Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER Force
-Drops and recreates the Alert if it exists
+	.PARAMETER Force
+		Drops and recreates the Alert if it exists
 
-.NOTES
-Tags: Migration, Agent
-Author: Chrissy LeMaire (@cl), netnerds.net
-Requires: sysadmin access on SQL Servers
+	.PARAMETER Silent
+		Use this switch to disable any kind of verbose messages
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+	.NOTES
+		Tags: Migration, Agent
+		Author: Chrissy LeMaire (@cl), netnerds.net
+		Requires: sysadmin access on SQL Servers
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+		Website: https://dbatools.io
+		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+	.LINK
+		https://dbatools.io/Copy-DbaAgentAlert
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	.EXAMPLE
+		Copy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster
 
-.LINK
-https://dbatools.io/Copy-DbaAgentAlert
+		Copies all alerts from sqlserver2014a to sqlcluster, using Windows credentials. If alerts with the same name exist on sqlcluster, they will be skipped.
 
-.EXAMPLE   
-Copy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster
+	.EXAMPLE
+		Copy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster -Alert PSAlert -SourceSqlCredential $cred -Force
 
-Copies all alerts from sqlserver2014a to sqlcluster, using Windows credentials. If alerts with the same name exist on sqlcluster, they will be skipped.
+		Copies a single alert, the PSAlert alert from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a alert with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
-.EXAMPLE   
-Copy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster -Alert PSAlert -SourceSqlCredential $cred -Force
+	.EXAMPLE
+		Copy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
-Copies a single alert, the PSAlert alert from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a alert with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
-
-.EXAMPLE   
-Copy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
-
-Shows what would happen if the command were executed using force.
-#>
-	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+		Shows what would happen if the command were executed using force.
+	#>
+	[cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
 		[object]$Source,
 		[parameter(Mandatory = $true)]
 		[object]$Destination,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SourceSqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$DestinationSqlCredential,
 		[switch]$IncludeDefaults,
-		[switch]$Force
+		[switch]$Force,
+		[switch]$Silent
 	)
 	DynamicParam { if ($source) { return (Get-ParamSqlAlerts -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
-	
-	BEGIN
-	{
+
+	begin {
 		$alerts = $psboundparameters.Alerts
-		
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
-		
-		$source = $sourceserver.DomainInstanceName
-		$destination = $destserver.DomainInstanceName
-		
+
+		$sourceServer = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+		$destServer = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+
+		$source = $sourceServer.DomainInstanceName
+		$Destination = $destServer.DomainInstanceName
+
 	}
-	PROCESS
-	{
+	process {
+
+		$serverAlerts = $sourceServer.JobServer.Alerts
+		$destAlerts = $destServer.JobServer.Alerts
 		
-		$serveralerts = $sourceserver.JobServer.Alerts
-		$destalerts = $destserver.JobServer.Alerts
-		
-		if ($IncludeDefaults -eq $true)
-		{
-			If ($Pscmdlet.ShouldProcess($destination, "Copying Alert Defaults"))
-			{
-				try
-				{
-					Write-Output "Copying Alert Defaults"
-					$sql = $sourceserver.JobServer.AlertSystem.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
-					Write-Verbose $sql
-					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+		if ($IncludeDefaults -eq $true) {
+            if ($PSCmdlet.ShouldProcess($Destination, "Creating Alert Defaults")) {
+                $copyAgentAlertStatus = [pscustomobject]@{
+                    SourceServer      = $sourceServer.Name
+                    DestinationServer = $destServer.Name
+                    Name              = "Alert Defaults"
+                    Type              = "Alert Defaults"
+                    Status            = $null
+                    DateTime          = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+                }
+				try {
+					Write-Message -Message "Creating Alert Defaults" -Level Output
+					$sql = $sourceServer.JobServer.AlertSystem.Script() | Out-String
+					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$Destination'")
+
+					Write-Message -Message $sql -Level Debug
+					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+					
+					$copyAgentAlertStatus.Status = "Successful"
 				}
-				catch
-				{
-					Write-Exception $_
+				catch {
+                    $copyAgentAlertStatus.Status = "Failed"
+					$copyAgentAlertStatus
+					Stop-Function -Message "Issue creating alert defaults" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
 				}
+				$copyAgentAlertStatus
 			}
 		}
-		
-		foreach ($alert in $serveralerts)
-		{
-			$alertname = $alert.name
-			if ($alerts.count -gt 0 -and $alerts -notcontains $alertname) { continue }
-			
-			if ($destalerts.name -contains $alert.name)
-			{
-				if ($force -eq $false)
-				{
-					Write-Warning "Alert $alertname exists at destination. Use -Force to drop and migrate."
+
+		foreach ($alert in $serverAlerts) {
+			$alertName = $alert.name
+            $copyAgentAlertStatus = [pscustomobject]@{
+                SourceServer      = $sourceServer.Name
+                DestinationServer = $destServer.Name
+                Name              = $alertName
+                Type              = "Agent Alert"
+                Status            = $null
+                DateTime          = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+            }
+
+			if ($alerts.count -gt 0 -and $alerts -notcontains $alertName) { 
+				continue 
+			}
+
+			if ($destAlerts.name -contains $alert.name) {
+                if ($force -eq $false) {					
+                    $copyAgentAlertStatus.Status = "Skipped"
+					$copyAgentAlertStatus
+					Write-Message -Message "Alert $alertName exists at destination. Use -Force to drop and migrate." -Level Warning
 					continue
 				}
-				
-				If ($Pscmdlet.ShouldProcess($destination, "Dropping alert $alertname and recreating"))
-				{
-					try
-					{
-						Write-Verbose "Dropping Alert $alertname on $destserver"
-						#$destserver.JobServer.Alerts[$alertname].Drop()
-						
-						$sql = "EXEC msdb.dbo.sp_delete_alert @name = N'$($alert.name)';"
-						Write-Verbose $sql
-						$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-					}
-					catch
-					{
-						Write-Exception $_
-						continue
-					}
+
+				if ($PSCmdlet.ShouldProcess($Destination, "Dropping alert $alertName and recreating")) {
+                    try {
+                        Write-Message -Message "Dropping Alert $alertName on $destServer" -Level Verbose
+
+                        $sql = "EXEC msdb.dbo.sp_delete_alert @name = N'$($alert.name)';"
+                        Write-Message -Message $sql -Level Debug
+                        $null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+                    }
+                    catch {
+                        $copyAgentAlertStatus.Status = "Failed"
+						$copyAgentAlertStatus
+                        Stop-Function -Message "Issue dropping/recreating alert" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
+                    }
 				}
 			}
-			# job is created here.
-			If ($Pscmdlet.ShouldProcess($destination, "Creating Alert $alertname"))
-			{
-				try
-				{
-					Write-Output "Copying Alert $alertname"
-					$sql = $alert.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
-					$alertsql = $sql -replace "@job_id=N'........-....-....-....-............", "@job_id=N'00000000-0000-0000-0000-000000000000"
-					Write-Verbose $sql
-					$destserver.ConnectionContext.ExecuteNonQuery($alertsql) | Out-Null
-				}
-				catch
-				{
-					Write-Exception $_
-				}
+
+            if ($PSCmdlet.ShouldProcess($Destination, "Creating Alert $alertName")) {
+                try {
+                    <# *****bug w/ SQL Server Event Alerts****
+						The severity and scope are unique, and can only be used once per alert. 
+						Need to validate a severity is not already in use. However this needs to match the definition of another alert. 
+						An alert set to "All Databases" and severity 1 can only exist once. If an alert is set to "model" database with
+						severity 1, this is fine.
+					#>
+                    Write-Message -Message "Copying Alert $alertName" -Level Output
+                    $sql = $alert.Script() | Out-String
+                    $sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$Destination'")
+                    $sql = $sql -replace "@job_id=N'........-....-....-....-............", "@job_id=N'00000000-0000-0000-0000-000000000000"
+
+                    Write-Message -Message $sql -Level Debug
+                    $null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+
+                    $copyAgentAlertStatus.Status = "Successful"
+                    $copyAgentAlertStatus
+                }
+                catch {
+                    $copyAgentAlertStatus.Status = "Failed"
+                    $copyAgentAlertStatus
+                    Stop-Function -Message "Issue creating alert" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
+                }
 			}
-			
-			$destserver.JobServer.Alerts.Refresh()
-			$destserver.JobServer.Jobs.Refresh()
-			
-			# Super workaround but it works
-			if ($alert.JobId -ne '00000000-0000-0000-0000-000000000000')
-			{
-				
-				If ($Pscmdlet.ShouldProcess($destination, "Adding $alertname to $jobname"))
-				{
-					try
-					{
-						Write-Output  "Adding $alertname to $jobname"
-						$newjob = $destserver.JobServer.Jobs[$jobname]
-						$newjobid = ($newjob.JobId) -replace " ", ""
-						$alertsql = $alertsql -replace '00000000-0000-0000-0000-000000000000', $newjobid
-						$alertsql = $alertsql -replace 'sp_add_alert', 'sp_update_alert'
-						Write-Verbose $sql
-						$destserver.ConnectionContext.ExecuteNonQuery($alertsql) | Out-Null
-					}
-					catch
-					{
-						Write-Exception $_
-					}
-				}
-			}
-			
-			
-			$newalert = $destserver.JobServer.Alerts[$alertname]
+
+			$destServer.JobServer.Alerts.Refresh()
+			$destServer.JobServer.Jobs.Refresh()
+
+			$newAlert = $destServer.JobServer.Alerts[$alertName]
 			$notifications = $alert.EnumNotifications()
-			$newnotifications = $newalert.EnumNotifications()
-			$job = $alert.JobId
-			$jobname = $alert.JobName
-			
-			If ($Pscmdlet.ShouldProcess($destination, "Moving Notifications $alertname"))
-			{
-				try
-				{
-					foreach ($notify in $notifications)
-					# cant add them this way, we need to modify the existing one or give all options that are supported.
-					{
-						$nm = @()
-						if ($notify.UseNetSend -eq $true)
-						{
-							write-verbose "Adding net send"
-							$nm += "NetSend"
-						}
+			$jobName = $alert.JobName
+
+            # JobId = 00000000-0000-0000-0000-000 means the Alertdoes not execute/is attached to a SQL Agent Job.
+            if ($alert.JobId -ne '00000000-0000-0000-0000-000000000000') {
+                $copyAgentAlertStatus = [pscustomobject]@{
+                    SourceServer      = $sourceServer.Name
+                    DestinationServer = $destServer.Name
+                    Name              = $alertName
+                    Type              = "Attach to Job"
+                    Status            = $null
+                    DateTime          = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+                }
+				if ($PSCmdlet.ShouldProcess($Destination, "Adding $alertName to $jobName")) {
+                    try {
+						<# THERE needs to be validation within this block to see if the $jobName actually exists on the source server. #>
+                        Write-Message -Message "Adding $alertName to $jobName" -Level Output
+                        $newJob = $destServer.JobServer.Jobs[$jobName]
+                        $newJobId = ($newJob.JobId) -replace " ", ""
+                        $sql = $sql -replace '00000000-0000-0000-0000-000000000000', $newJobId
+                        $sql = $sql -replace 'sp_add_alert', 'sp_update_alert'
+
+                        Write-Message -Message $sql -Level Debug
+                        $null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 						
-						if ($notify.UseEmail -eq $true)
-						{
-							write-verbose "Adding email"
-							$nm += "NotifyEmail"
-						}
-						
-						if ($notify.UsePager -eq $true)
-						{
-							write-verbose "Adding pager"
-							$nm += "Pager"
-						}
-						$nml = $nm -join ", "
-						
-						$newalert.AddNotification($notify.OperatorName, [Microsoft.SqlServer.Management.Smo.Agent.NotifyMethods]$nml) # concat the notify methods together       
-					}
-				}
-				catch
-				{
-					$e = $_.Exception
-					$line = $_.InvocationInfo.ScriptLineNumber
-					$msg = $e.Message
-					
-					if ($e -like '*The specified @operator_name (''*'') does not exist*')
-					{
-						Write-Warning "One or more operators for this alert are not configured and will not be added to this alert."
-						Write-Warning "Please run Copy-DbaAgentOperator if you would like to move operators to destination server."
-					}
-					else
-					{
-						Write-Error "caught exception: $e at $line : $msg"
-					}
+                        $copyAgentAlertStatus.Status = "Successful"
+                        $copyAgentAlertStatus
+                    }
+                    catch {
+                        $copyAgentAlertStatus.Status = "Failed"
+                        $copyAgentAlertStatus
+                        Stop-Function -Message "Issue adding alert to job" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
+                    }
 				}
 			}
-			
+
+            if ($PSCmdlet.ShouldProcess($Destination, "Moving Notifications $alertName")) {
+                try {
+                    $copyAgentAlertStatus = [pscustomobject]@{
+                        SourceServer      = $sourceServer.Name
+                        DestinationServer = $destServer.Name
+                        Name              = $alertName
+                        Type              = "Notifications"
+                        Status            = $null
+                        DateTime          = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+                    }
+                    # cant add them this way, we need to modify the existing one or give all options that are supported.
+                    foreach ($notify in $notifications) {
+                        $notifyCollection = @()
+                        if ($notify.UseNetSend -eq $true) {
+                            Write-Message -Message "Adding net send" -Level Verbose
+                            $notifyCollection += "NetSend"
+                        }
+
+                        if ($notify.UseEmail -eq $true) {
+                            Write-Message -Message "Adding email" -Level Output
+                            $notifyCollection += "NotifyEmail"
+                        }
+
+                        if ($notify.UsePager -eq $true) {
+                            Write-Message -Message "Adding pager" -Level Output
+                            $notifyCollection += "Pager"
+                        }
+
+                        $notifyMethods = $notifyCollection -join ", "
+                        $newAlert.AddNotification($notify.OperatorName, [Microsoft.SqlServer.Management.Smo.Agent.NotifyMethods]$notifyMethods)
+                    }
+                    $copyAgentAlertStatus.Status = "Successful"
+                    $copyAgentAlertStatus
+                }
+                catch {
+                    $copyAgentAlertStatus.Status = "Failed"
+                    $copyAgentAlertStatus
+                    Stop-Function -Message "Issue moving notifications for the alert" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
+                }
+            }
 		}
 	}
-	
-	END
-	{
-		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
-        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Alert migration finished" }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlAlert
+	end {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlAlert
 	}
 }
