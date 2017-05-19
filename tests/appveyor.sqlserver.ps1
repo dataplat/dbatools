@@ -34,7 +34,7 @@ foreach ($instance in $instances) {
 		$ipAddress.IPAddressProperties["TcpPort"].Value = $port
 	}
 	$Tcp.Alter()
-	
+	 
 	Write-Output "Starting $instance"
 	Start-Service "MSSQL`$$instance"
 	
