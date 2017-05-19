@@ -21,8 +21,8 @@ before_test:
 
 test_script:
   # "Installing nuget and PSScriptAnalyzer"
-  #- ps: Install-PackageProvider NuGet -MinimumVersion '2.8.5.201' -Force | Out-Null
-  #- ps: Import-PackageProvider NuGet -MinimumVersion '2.8.5.201' -Force | Out-Null
+  - ps: Install-PackageProvider NuGet -MinimumVersion '2.8.5.201' -Force | Out-Null
+  - ps: Import-PackageProvider NuGet -MinimumVersion '2.8.5.201' -Force | Out-Null
   - ps: Install-Module -Name PSScriptAnalyzer -RequiredVersion 1.6.0 -Repository PSGallery -Force | Out-Null
   
   # "Test with native PS version"
