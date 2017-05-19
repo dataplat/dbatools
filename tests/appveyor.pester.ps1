@@ -44,7 +44,7 @@ $ScriptAnalyzerRules = Get-ScriptAnalyzerRule
 #Run a test with the current version of PowerShell
 #Make things faster by removing most output
 if (-not $Finalize) {
-	Write-Output "Testing with PowerShell $PSVersion`n"
+	Write-Output "Testing with PowerShell $PSVersion"
 	Import-Module Pester
 	Set-Variable ProgressPreference -Value SilentlyContinue
 	Invoke-Pester -Quiet -Script "$ProjectRoot\Tests" -OutputFormat NUnitXml -OutputFile "$ProjectRoot\$TestFile" -PassThru |

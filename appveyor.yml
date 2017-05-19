@@ -28,8 +28,8 @@ test_script:
   # "Test with native PS version"
   - ps: .\Tests\appveyor.pester.ps1
   
-  # "Test with PS version 3"
-  - ps: powershell.exe -version 3.0 -executionpolicy bypass -noprofile -file .\Tests\appveyor.pester.ps1
+  # "Test with PS version 3" - Removed because it's not a true test. Even PS4+ .Where() works
+  # - ps: powershell.exe -version 3.0 -executionpolicy bypass -noprofile -file .\Tests\appveyor.pester.ps1
 
   # "Collecting and uploading results"
   - ps: .\Tests\appveyor.pester.ps1 -Finalize
