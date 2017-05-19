@@ -1,4 +1,6 @@
-# See http://www.appveyor.com/docs/appveyor-yml for many more options
+﻿# See http://www.appveyor.com/docs/appveyor-yml for many more options
+
+build: false
 
 # Set build info
 environment: 
