@@ -1,11 +1,6 @@
 # Imports some assemblies
 Write-Output "Importing dbatools"
-try {
-	Import-Module C:\github\dbatools\dbatools.psd1 -ErrorAction Stop
-}
-catch {
-	Import-Module C:\projects\dbatools\dbatools.psd1
-}
+Import-Module C:\github\dbatools\dbatools.psd1
 
 # This script spins up two local instances
 $sql2008 = "localhost\sql2008r2sp2"
@@ -49,6 +44,7 @@ foreach ($instance in $instances) {
 	}
 }
 
+# Agent sometimes takes a moment to start
 do {
 	Write-Warning "Waiting for SQL Agent to start"
 	Start-Sleep 1
@@ -56,7 +52,12 @@ do {
 while ((Get-Service 'SQLAgent$sql2016').Status -ne 'Running' -or $i++ -gt 10)
 
 # Add some jobs to the sql2008r2sp2 instance (1433 = default)
-foreach ($file in (Get-ChildItem C:\github\appveyor-lab\ola\*.sql)) {
-	Write-Output "Executing ola scripts - $file"
+foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2008-startup\*.sql -Recurse)) {
+	Write-Output "Executing startup script against SQL Server 2008 R2 - $file"
+	Invoke-DbaSqlCmd -ServerInstance localhost -InputFile $file
+}
+
+foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2016-startup\*.sql -Recurse)) {
+	Write-Output "Executing startup script against SQL Server 2016 - $file"
 	Invoke-DbaSqlCmd -ServerInstance localhost\sql2016 -InputFile $file
 }
