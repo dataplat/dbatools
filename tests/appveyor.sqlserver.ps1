@@ -49,15 +49,15 @@ do {
 	Write-Warning "Waiting for SQL Agent to start"
 	Start-Sleep 1
 }
-while ((Get-Service 'SQLAgent$sql2016').Status -ne 'Running' -or $i++ -gt 10)
+while ((Get-Service 'SQLAgent$sql2016').Status -ne 'Running' -and $i++ -lt 10)
 
+Write-Output "Executing startup scripts for SQL Server 2008"
 # Add some jobs to the sql2008r2sp2 instance (1433 = default)
 foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2008-startup\*.sql -Recurse -ErrorAction SilentlyContinue)) {
-	Write-Output "Executing startup script - $file"
 	Invoke-DbaSqlCmd -ServerInstance localhost -InputFile $file
 }
 
+Write-Output "Executing startup scripts for SQL Server 2016"
 foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2016-startup\*.sql -Recurse -ErrorAction SilentlyContinue)) {
-	Write-Output "Executing startup script - $file"
 	Invoke-DbaSqlCmd -ServerInstance localhost\sql2016 -InputFile $file
 }
