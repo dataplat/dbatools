@@ -51,6 +51,8 @@ if (-not $Finalize) {
 	Export-Clixml -Path "$ProjectRoot\PesterResults$PSVersion.xml"
 }
 else {
+	# Unsure why we're uploading so I removed it for now
+	<#
 	#If finalize is specified, check for failures and  show status
 	$allfiles = Get-ChildItem -Path $ProjectRoot\*Results*.xml | Select-Object -ExpandProperty FullName
 	Write-Output "Finalizing results and collating the following files:"
@@ -65,7 +67,9 @@ else {
 		Write-Output "Uploading files: $Address $Source"
 		
 		(New-Object System.Net.WebClient).UploadFile($Address, $Source)
+		
 	}
+	#>
 	
 	#What failed?
 	$results = @(Get-ChildItem -Path "$ProjectRoot\PesterResults*.xml" | Import-Clixml)
