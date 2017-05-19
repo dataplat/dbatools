@@ -4,7 +4,7 @@ build: false
 
 # Set build info
 environment: 
-  environment: development
+  #environment: development
   version: 0.8.$(appveyor_build_number)
   
 # Install prereqs
