@@ -1,6 +1,4 @@
-﻿#Thank you Warren http://ramblingcookiemonster.github.io/Testing-DSC-with-Pester-and-AppVeyor/
-
-Describe "Get-DbaDatabase Integration Tests" -Tags "Integrationtests" {
+﻿Describe "Get-DbaDatabase Integration Tests" -Tags "Integrationtests" {
 
     Context "Count system databases on localhost" {
         $results = Get-DbaDatabase -SqlInstance localhost -NoUserDb 

@@ -1,6 +1,4 @@
-﻿#Thank you Warren http://ramblingcookiemonster.github.io/Testing-DSC-with-Pester-and-AppVeyor/
-
-Describe "Backup-DbaDatabase Integration Tests" -Tags "Integrationtests" {
+﻿Describe "Backup-DbaDatabase Integration Tests" -Tags "Integrationtests" {
 	Context "Properly restores a database on the local drive using Path" {
 		$results = Backup-DbaDatabase -SqlInstance localhost -BackupDirectory C:\temp\backups
 		It "Should return a database name, specifically master" {
