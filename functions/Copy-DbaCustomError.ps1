@@ -86,10 +86,8 @@ Shows what would happen if the command were executed using force.
 	)
 
 	
-	BEGIN
-	{
-		$customerrors = $psboundparameters.CustomErrors
-		
+	begin {
+
 		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
@@ -102,10 +100,8 @@ Shows what would happen if the command were executed using force.
 		}
 	}
 	
-	PROCESS
-	{
-		
-		
+	process {
+
 		# Us has to go first
 		$orderedcustomerrors = @($sourceserver.UserDefinedMessages | Where-Object { $_.Language -eq "us_english" })
 		$orderedcustomerrors += $sourceserver.UserDefinedMessages | Where-Object { $_.Language -ne "us_english" }
@@ -161,11 +157,10 @@ Shows what would happen if the command were executed using force.
 		}
 	}
 	
-	END
-	{
+	end {
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
-        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Custom error migration finished" }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlCustomError
+		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Custom error migration finished" }
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlCustomError
 	}
 } 

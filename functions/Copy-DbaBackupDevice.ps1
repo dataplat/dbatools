@@ -87,10 +87,8 @@ Shows what would happen if the command were executed using force.
 	)
 
 	
-	BEGIN
-	{
-		$backupdevices = $psboundparameters.BackupDevices
-		
+	begin {
+
 		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
@@ -105,9 +103,8 @@ Shows what would happen if the command were executed using force.
 		$sourcenetbios = Resolve-NetBiosName $sourceserver
 		
 	}
-	PROCESS
-	{
-		
+	process	{
+	
 		foreach ($backupdevice in $serverbackupdevices)
 		{
 			$devicename = $backupdevice.name
@@ -212,8 +209,7 @@ Shows what would happen if the command were executed using force.
 		}
 	}
 	
-	END
-	{
+	end	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "backup device migration finished" }

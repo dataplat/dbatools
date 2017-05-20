@@ -216,7 +216,6 @@ Connects with ReadOnly ApplicantionIntent.
 		{
 			
 			$server.ConnectionContext.ApplicationName = $clientname
-			$database = $psboundparameters.Database
 			
 			if ($AccessToken) { $server.ConnectionContext.AccessToken = $AccessToken }
 			if ($ApplicationIntent) { $server.ConnectionContext.ApplicationIntent = $ApplicationIntent }

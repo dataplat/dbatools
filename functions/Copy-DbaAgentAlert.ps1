@@ -90,8 +90,6 @@ function Copy-DbaAgentAlert {
 
 
 	begin {
-		$alerts = $psboundparameters.Alerts
-
 		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
 		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 

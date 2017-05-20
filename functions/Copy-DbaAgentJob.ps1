@@ -96,9 +96,7 @@ Shows what would happen if the command were executed using force.
     )
 
 
-    BEGIN {
-        $jobs = $psboundparameters.Jobs
-        $exclude = $psboundparameters.Exclude
+    begin {
 
         $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
@@ -107,7 +105,7 @@ Shows what would happen if the command were executed using force.
         $destination = $destServer.DomainInstanceName
 
     }
-    PROCESS {
+    process {
 
         if (Test-FunctionInterrupt) { return }
 
@@ -215,7 +213,7 @@ Shows what would happen if the command were executed using force.
         }
     }
 
-    END {
+    end {
         $sourceServer.ConnectionContext.Disconnect()
         $destServer.ConnectionContext.Disconnect()
         if ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Job migration finished" }
