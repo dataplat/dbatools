@@ -79,7 +79,7 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance","SqlServer")]
 		[string]$SqlInstance,
 		[parameter(Mandatory = $true)]
 		[string]$Path,

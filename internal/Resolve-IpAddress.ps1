@@ -4,7 +4,7 @@ Function Resolve-IpAddress
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance","ComputerName","SqlInstance")]
+		[Alias("ServerInstance", "SqlInstance","ComputerName","SqlServer")]
 		[object]$Server
 	)
 	

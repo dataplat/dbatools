@@ -320,7 +320,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			
 			param (
 				[Parameter(Mandatory = $true)]
-				[Alias('ServerInstance', 'SqlInstance')]
+				[Alias('ServerInstance', 'SqlInstance', 'SqlServer')]
 				[object]$server,
 				[Parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]

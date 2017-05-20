@@ -72,7 +72,7 @@ using the SQL credential stored in the variables
 		[object]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance","SqlServer")]
 		[object]$SqlInstance,
 		[string]$Path,
 		[System.Management.Automation.PSCredential]$SqlCredential,

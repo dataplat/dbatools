@@ -82,7 +82,7 @@ In the above example, a list of servers is generated using database instance nam
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	Param (
 		[parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
+		[Alias("ServerInstance","SqlServer")]
 		[string]$SqlInstance,
 		[string]$Database = "DatabaseLogins",
 		[string]$Table = "DbLogins",
