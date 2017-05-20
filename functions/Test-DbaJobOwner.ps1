@@ -67,7 +67,7 @@ that TargetLogin must be a valid security principal that exists on the target se
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string]$TargetLogin,
 		[Switch]$Detailed

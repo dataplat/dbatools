@@ -83,7 +83,7 @@ In the above example, a list of servers is generated using database instance nam
 	Param (
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance","SqlServer")]
-		[string]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[string]$Database = "DatabaseLogins",
 		[string]$Table = "DbLogins",
 		[System.Management.Automation.PSCredential]$SqlCredential,

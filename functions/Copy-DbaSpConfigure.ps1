@@ -70,9 +70,9 @@ Shows what would happen if the command were executed.
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
 	    [parameter(Mandatory = $true)]
-	    [object]$Source,
+	    [DbaInstanceParameter]$Source,
 	    [parameter(Mandatory = $true)]
-	    [object]$Destination,
+	    [DbaInstanceParameter]$Destination,
 	    [System.Management.Automation.PSCredential]$SourceSqlCredential,
 	    [System.Management.Automation.PSCredential]$DestinationSqlCredential
     )

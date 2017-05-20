@@ -122,7 +122,7 @@ This is a good example of the type conversion in action. All process properties 
                    Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
         [ValidateNotNull()]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 
         [Parameter(Position = 1)]
         [ValidateNotNull()]

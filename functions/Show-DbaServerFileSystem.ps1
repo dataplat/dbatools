@@ -61,7 +61,7 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[object]$SqlCredential
 	)
 	

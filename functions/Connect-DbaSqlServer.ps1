@@ -160,7 +160,7 @@ Connects with ReadOnly ApplicantionIntent.
 	param (
 		[Parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[Alias("SqlCredential")]
 		[System.Management.Automation.PSCredential]$Credential,
 		[string]$AccessToken,

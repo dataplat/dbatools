@@ -58,7 +58,7 @@ function Test-DbaDatabaseOwner {
 	Param (
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
 		[Alias("Databases")]

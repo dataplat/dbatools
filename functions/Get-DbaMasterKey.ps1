@@ -45,7 +45,7 @@ Gets the master key for the db1 database
 	param (
 		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string[]]$Database,
 		[switch]$Silent

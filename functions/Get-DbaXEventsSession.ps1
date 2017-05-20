@@ -49,7 +49,7 @@ Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Stat
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[string[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[PsCredential]$SqlCredential
 	)
 	

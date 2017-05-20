@@ -79,7 +79,7 @@ Sets SQL Agent Job owner to sa on all jobs where the owner does not match sa on 
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[object]$SqlCredential,
 		[string]$TargetLogin
 	)

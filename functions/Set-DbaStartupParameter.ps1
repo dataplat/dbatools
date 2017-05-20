@@ -141,7 +141,7 @@ After the work has been completed, we can push the original startup parameters b
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
 	param ([parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[PSCredential]$Credential,
 		[string]$MasterData,
 		[string]$MasterLog,

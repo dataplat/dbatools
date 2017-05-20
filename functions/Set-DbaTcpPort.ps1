@@ -56,7 +56,7 @@ Sets the port number 1337 for ALLIP's on SqlInstance SQLDB2014A and SQLDB2016B
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[string[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("SqlCredential")]
 		[PsCredential]$Credential,
 		[parameter(Mandatory = $true)]

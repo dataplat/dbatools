@@ -220,9 +220,9 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Position = 1, Mandatory = $true)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[parameter(Position = 2, Mandatory = $true)]
-		[object]$Destination,
+		[DbaInstanceParameter]$Destination,
 		[parameter(Position = 3, Mandatory = $true, ParameterSetName = "DbAttachDetach")]
 		[switch]$DetachAttach,
 		[parameter(Position = 4, ParameterSetName = "DbAttachDetach")]

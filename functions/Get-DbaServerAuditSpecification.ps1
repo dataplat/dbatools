@@ -40,7 +40,7 @@ Returns all Security Audit Specifications for the local and sql2016 SQL Server i
 	[CmdletBinding()]
 	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	

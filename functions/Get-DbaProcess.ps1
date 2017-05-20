@@ -76,7 +76,7 @@ Shows information about the processes that were initiated by hosts (computers/cl
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[object]$SqlCredential,
 		[switch]$NoSystemSpids,
 		[switch]$Detailed

@@ -65,7 +65,7 @@ Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id =
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[string[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential", "Cred")]
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$Kerberos,

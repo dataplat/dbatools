@@ -82,9 +82,9 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[parameter(Mandatory = $true)]
-		[object]$Destination,
+		[DbaInstanceParameter]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
@@ -112,7 +112,7 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 	#>
 			[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 			param (
-				[object]$SqlInstance,
+				[DbaInstanceParameter]$SqlInstance,
 				[System.Management.Automation.PSCredential]$SqlCredential
 			)
 			

@@ -66,7 +66,7 @@ FUNCTION Get-DbaSchemaChangeHistory {
     param (
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [Alias("ServerInstance", "SqlServer")]
-        [object[]]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,

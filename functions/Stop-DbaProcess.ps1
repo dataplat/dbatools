@@ -92,7 +92,7 @@ Finds processes that were created with dbatools, then kills them.
 	Param (
 		[parameter(Mandatory = $true, ParameterSetName = "Server")]
 		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[object]$SqlCredential,
 		[parameter(ValueFromPipeline = $true, Mandatory = $true, ParameterSetName = "Process")]
 		[object[]]$Process

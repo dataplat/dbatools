@@ -70,7 +70,7 @@ Function Test-DbaNetworkLatency {
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[PsCredential]$SqlCredential,
 		[string]$Query = "select top 100 * from INFORMATION_SCHEMA.TABLES",
 		[int]$Count = 3,

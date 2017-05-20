@@ -67,12 +67,12 @@ function Copy-DbaQueryStoreConfig {
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object]$SourceDatabase,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[object[]]$Destination,
+		[DbaInstanceParameter[]]$Destination,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[object[]]$DestinationDatabase,
 		[object[]]$Exclude,

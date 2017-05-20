@@ -134,7 +134,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
-        [object[]]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]$SqlCredential,
         [Parameter(Mandatory = $true)]

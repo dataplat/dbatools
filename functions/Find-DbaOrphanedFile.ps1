@@ -75,7 +75,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[parameter(Mandatory = $false)]
 		[object]$SqlCredential,
 		[parameter(Mandatory = $false)]

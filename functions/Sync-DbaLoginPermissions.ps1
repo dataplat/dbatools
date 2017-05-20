@@ -99,9 +99,9 @@ https://dbatools.io/Sync-DbaLoginPermissions
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[parameter(Mandatory = $true)]
-		[object]$Destination,
+		[DbaInstanceParameter]$Destination,
 		[object]$SourceSqlCredential,
 		[object]$DestinationSqlCredential
 	)

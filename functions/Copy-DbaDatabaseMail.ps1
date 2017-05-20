@@ -92,9 +92,9 @@ function Copy-DbaDatabaseMail {
     [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory = $true)]
-        [object]$Source,
+        [DbaInstanceParameter]$Source,
         [parameter(Mandatory = $true)]
-        [object]$Destination,
+        [DbaInstanceParameter]$Destination,
         [Parameter(ParameterSetName = 'SpecifcTypes')]
         [ValidateSet('ConfigurationValues', 'Profiles', 'Accounts', 'mailServers')]
         [string[]]$Type,

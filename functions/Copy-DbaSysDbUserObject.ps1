@@ -58,10 +58,10 @@ https://dbatools.io/Copy-DbaSysDbUserObject
     param (
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [object]$Source,
+        [DbaInstanceParameter]$Source,
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [object]$Destination,
+        [DbaInstanceParameter]$Destination,
         [System.Management.Automation.PSCredential]$SourceSqlCredential,
         [System.Management.Automation.PSCredential]$DestinationSqlCredential
     )

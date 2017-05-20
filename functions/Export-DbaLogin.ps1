@@ -84,7 +84,7 @@ Exports ONLY logins netnerds and realcajun from sqlsever2014a with the permissio
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[Alias("OutFile", "Path", "FileName")]
 		[string]$FilePath,
 		[Alias("Credential")]
