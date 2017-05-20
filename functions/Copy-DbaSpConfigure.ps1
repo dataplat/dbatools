@@ -5,7 +5,7 @@ function Copy-DbaSpConfigure
 Copy-DbaSpConfigure migrates configuration values from one SQL Server to another. 
 
 .DESCRIPTION
-By default, all configuration values are copied. The -Configs parameter is autopopulated for command-line completion and can be used to copy only specific configs.
+By default, all configuration values are copied. The -Config parameter is autopopulated for command-line completion and can be used to copy only specific configs.
 
 .PARAMETER Source
 Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -58,7 +58,7 @@ Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster
 Copies all sp_configure settings from sqlserver2014a to sqlcluster
 
 .EXAMPLE   
-Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -Configs DefaultBackupCompression, IsSqlClrEnabled -SourceSqlCredential $cred -Force
+Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -Config DefaultBackupCompression, IsSqlClrEnabled -SourceSqlCredential $cred -Force
 
 Updates the values for two configs, the  IsSqlClrEnabled and DefaultBackupCompression, from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 

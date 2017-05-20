@@ -588,7 +588,7 @@ https://dbatools.io/Sync-DbaLoginPermissions
 			$logins = $pipelinevariable.name
 		}
 
-		Sync-Only -sourceserver $sourceserver -destserver $destserver -Logins $Logins -Exclude $Exclude
+		Sync-Only -sourceserver $sourceserver -destserver $destserver -Login $Logins -Exclude $Exclude
 	
 	}
 	

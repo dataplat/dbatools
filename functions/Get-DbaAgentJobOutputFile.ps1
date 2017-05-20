@@ -21,7 +21,7 @@
     The Agent Job Name to provide Output File Path for. Also available dynamically. If ommitted all Agent Jobs will be used
 
 .EXAMPLE
-   Get-DbaAgentJobOutputFile -SqlInstance SERVERNAME -Jobs 'The Agent Job' 
+   Get-DbaAgentJobOutputFile -SqlInstance SERVERNAME -Job 'The Agent Job' 
 
    This will return the paths to the output files for each of the job step of the The Agent Job Job 
    on the SERVERNAME instance  
@@ -33,14 +33,14 @@
    on the SERVERNAME instance   
 
 .EXAMPLE
-   Get-DbaAgentJobOutputFile -SqlInstance SERVERNAME,SERVERNAME2 -Jobs 'The Agent Job'
+   Get-DbaAgentJobOutputFile -SqlInstance SERVERNAME,SERVERNAME2 -Job 'The Agent Job'
 
    This will return the paths to the output files for each of the job step of the The Agent Job Job 
    on the SERVERNAME instance and SERVERNAME2
 
 .EXAMPLE
    $Servers = 'SERVER','SERVER\INSTANCE1'
-   Get-DbaAgentJobOutputFile -SqlInstance $Servers -Jobs 'The Agent Job' -OpenFile 
+   Get-DbaAgentJobOutputFile -SqlInstance $Servers -Job 'The Agent Job' -OpenFile 
 
    This will return the paths to the output files for each of the job step of the The Agent Job Job 
    on the SERVER instance and the SERVER\INSTANCE1 and open the files if they are available

@@ -48,12 +48,12 @@ Repair-DbaOrphanUser -SqlInstance sqlserver2014a -SqlCredential $cred
 Will find and repair all orphan users of all databases present on server 'sqlserver2014a'. Will be verified using SQL credentials. 
 	
 .EXAMPLE   
-Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Databases db1, db2
+Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1, db2
 
 Will find and repair all orphan users on both db1 and db2 databases
 
 .EXAMPLE   
-Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Databases db1 -Users OrphanUser
+Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1 -Users OrphanUser
 
 Will find and repair user 'OrphanUser' on 'db1' database
 
@@ -194,7 +194,7 @@ https://dbatools.io/Repair-DbaOrphanUser
 						if ($RemoveNotExisting -eq $true) {
 							if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaOrphanUser")) {
 								Write-Verbose "Calling 'Remove-DbaOrphanUser'"
-								Remove-DbaOrphanUser -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Databases $db.Name -Users $UsersToRemove
+								Remove-DbaOrphanUser -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $db.Name -Users $UsersToRemove
 							}
 						}
 					}

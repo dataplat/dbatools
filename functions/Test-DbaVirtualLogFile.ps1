@@ -58,7 +58,7 @@ function Test-DbaVirtualLogFile {
 		Returns all VLF information for the sqlserver and sqlcluster SQL Server instances. Processes data via the pipeline.
 
 	.EXAMPLE
-		Test-DbaVirtualLogFile -SqlInstance sqlcluster -Databases db1, db2
+		Test-DbaVirtualLogFile -SqlInstance sqlcluster -Database db1, db2
 
 		Returns VLF counts for the db1 and db2 databases on sqlcluster.
 	#>

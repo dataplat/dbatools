@@ -66,22 +66,22 @@ Function Get-DbaBackupHistory
         Does the same as above but logs in as SQL user "sqladmin"
     
     .EXAMPLE
-        Get-DbaBackupHistory -SqlInstance SqlInstance2014a -Databases db1, db2 -Since '7/1/2016 10:47:00'
+        Get-DbaBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since '7/1/2016 10:47:00'
         
         Returns backup information only for databases db1 and db2 on sqlserve2014a since July 1, 2016 at 10:47 AM.
     
     .EXAMPLE
-        Get-DbaBackupHistory -SqlInstance sql2014 -Databases AdventureWorks2014, pubs -Force | Format-Table
+        Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table
         
         Returns information only for AdventureWorks2014 and pubs, and makes the output pretty
     
     .EXAMPLE
-        Get-DbaBackupHistory -SqlInstance sql2014 -Databases AdventureWorks2014 -Last
+        Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last
         
         Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014
     
     .EXAMPLE
-        Get-DbaBackupHistory -SqlInstance sql2014 -Databases AdventureWorks2014 -LastFull
+        Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull
         
         Returns information about the most recent full backup for AdventureWorks2014 on sql2014
     
@@ -214,7 +214,7 @@ Function Get-DbaBackupHistory
                     { $Filter = 'first_Lsn' }
                     else
                     { $Filter = 'FirstLsn' }
-                    $Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Databases $db -raw:$raw | Where-object { $_.Type -eq 'Log' -and $_.$filter -gt $TLogstartLSN }
+                    $Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Database $db -raw:$raw | Where-object { $_.Type -eq 'Log' -and $_.$filter -gt $TLogstartLSN }
                     $Allbackups | Sort-Object $Filter
                 }
                 continue

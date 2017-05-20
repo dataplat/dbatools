@@ -96,7 +96,7 @@ function Copy-DbaQueryStoreConfig {
 			return
 		}
 		# Grab the Query Store configuration from the SourceDatabase through the Get-DbaQueryStoreConfig function
-		$SourceQSConfig = Get-DbaQueryStoreConfig -SqlInstance $sourceServer -Databases $SourceDatabase
+		$SourceQSConfig = Get-DbaQueryStoreConfig -SqlInstance $sourceServer -Database $SourceDatabase
 
 		if (!$DestinationDatabase -and !$Exclude -and !$AllDatabases) {
 			Stop-Function -Message "You must specify databases to execute against using either -DestinationDatabase, -Exclude or -AllDatabases" -Continue
@@ -152,7 +152,7 @@ function Copy-DbaQueryStoreConfig {
 				# Set the Query Store configuration through the Set-DbaQueryStoreConfig function
 				try {
 					$null = Set-DbaQueryStoreConfig -SqlInstance $destinationServer -SqlCredential $DestinationSqlCredential `
-					-Databases $db.name `
+					-Database $db.name `
 					-State $SourceQSConfig.ActualState `
 					-FlushInterval $SourceQSConfig.FlushInterval `
 					-CollectionInterval $SourceQSConfig.CollectionInterval `

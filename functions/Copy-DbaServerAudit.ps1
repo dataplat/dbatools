@@ -5,7 +5,7 @@ function Copy-DbaServerAudit
 Copy-DbaServerAudit migrates server audits from one SQL Server to another. 
 
 .DESCRIPTION
-By default, all audits are copied. The -Audits parameter is autopopulated for command-line completion and can be used to copy only specific audits.
+By default, all audits are copied. The -Audit parameter is autopopulated for command-line completion and can be used to copy only specific audits.
 
 If the audit already exists on the destination, it will be skipped unless -Force is used. 
 

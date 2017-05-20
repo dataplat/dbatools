@@ -7,7 +7,7 @@ Migrates user SQL Data Collector collection sets. SQL Data Collector configurati
 .DESCRIPTION
 By default, all data collector objects are migrated. If the object already exists on the destination, it will be skipped unless -Force is used. 
 	
-The -CollectionSets parameter is autopopulated for command-line completion and can be used to copy only specific objects.
+The -CollectionSet parameter is autopopulated for command-line completion and can be used to copy only specific objects.
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
@@ -78,7 +78,7 @@ Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster -WhatIf
 Shows what would happen if the command were executed.
 	
 .EXAMPLE   
-Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster -CollectionSets 'Server Activity', 'Table Usage Analysis' 
+Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster -CollectionSet 'Server Activity', 'Table Usage Analysis' 
 
 Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlserver2014a to sqlcluster.
 #>

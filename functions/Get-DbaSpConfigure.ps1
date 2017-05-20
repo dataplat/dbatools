@@ -47,7 +47,7 @@ Get-DbaSpConfigure -SqlInstance localhost
 Returns server level configuration data on the localhost (ServerName, ConfigName, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue)
 
 .EXAMPLE
-Get-DbaSpConfigure -SqlInstance sql2012 -Configs MaxServerMemory
+Get-DbaSpConfigure -SqlInstance sql2012 -Config MaxServerMemory
 
 Returns only the system configuration for MaxServerMemory. Configs is autopopulated for tabbing convenience. 
 

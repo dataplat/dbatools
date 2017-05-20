@@ -5,7 +5,7 @@ function Copy-DbaServerTrigger
 Copy-DbaServerTrigger migrates server triggers from one SQL Server to another. 
 
 .DESCRIPTION
-By default, all triggers are copied. The -Triggers parameter is autopopulated for command-line completion and can be used to copy only specific triggers.
+By default, all triggers are copied. The -ServerTriggers parameter is autopopulated for command-line completion and can be used to copy only specific triggers.
 
 If the trigger already exists on the destination, it will be skipped unless -Force is used. 
 
@@ -63,7 +63,7 @@ Copy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster
 Copies all server triggers from sqlserver2014a to sqlcluster, using Windows credentials. If triggers with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster -Trigger tg_noDbDrop -SourceSqlCredential $cred -Force
+Copy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster -ServerTrigger tg_noDbDrop -SourceSqlCredential $cred -Force
 
 Copies a single trigger, the tg_noDbDrop trigger from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a trigger with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 

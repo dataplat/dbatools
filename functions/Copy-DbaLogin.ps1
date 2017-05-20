@@ -97,7 +97,7 @@ Authenticates to SQL Servers using SQL Authentication.
 Copies all logins except for realcajun. If a login already exists on the destination, the login will not be migrated.
 
 .EXAMPLE
-Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Logins realcajun, netnerds -force
+Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds -force
 
 Copies ONLY logins netnerds and realcajun. If login realcajun or netnerds exists on the destination, they will be dropped and recreated.
 
@@ -422,7 +422,7 @@ Limitations: Does not support Application Roles yet
 			Write-Output "Attempting Login Migration"
 		}
 		
-		Copy-Login -sourceserver $sourceserver -destserver $destserver -Logins $Logins -Exclude $Exclude -Force $force
+		Copy-Login -sourceserver $sourceserver -destserver $destserver -Login $Logins -Exclude $Exclude -Force $force
 		
 		$sa = $sourceserver.Logins | Where-Object { $_.id -eq 1 }
 		$destsa = $destserver.Logins | Where-Object { $_.id -eq 1 }
