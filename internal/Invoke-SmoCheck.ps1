@@ -14,7 +14,7 @@ Checks for PowerShell SMO version vs SQL Server's SMO version.
 	if ($script:smocheck -ne $true)
 	{
 		$script:smocheck = $true
-		$smo = (([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlInstance.SMO,*" }).FullName -Split ", ")[1]
+		$smo = (([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }).FullName -Split ", ")[1]
 		$smo = ([version]$smo.TrimStart("Version=")).Major
 		$serverversion = $SqlInstance.version.major
 		
