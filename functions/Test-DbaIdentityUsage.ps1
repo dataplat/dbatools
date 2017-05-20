@@ -202,5 +202,4 @@ function Test-DbaIdentityUsage {
 		}
 	}
 }
-#TEPP Implementation
-Register-DbaTeppArgumentCompleter -Command Test-DbaIdentityUsage -Parameter Database, Exclude
+

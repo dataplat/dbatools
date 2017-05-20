@@ -244,4 +244,3 @@ limiting results to queries with more than 200 total executions and an execution
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaQueryExecutionTime -Parameter Database, Exclude

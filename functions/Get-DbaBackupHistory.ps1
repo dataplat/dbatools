@@ -474,4 +474,3 @@ Function Get-DbaBackupHistory
         }
     }
 }
-Register-DbaTeppArgumentCompleter -Command Get-DbaBackupHistory -Parameter Database

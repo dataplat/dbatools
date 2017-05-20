@@ -190,4 +190,3 @@ Gets backup calculations, limited to the last year and only the bigoldb database
 		}
 	}
 }
-Register-DbaTeppArgumentCompleter -Command Measure-DbaBackupThroughput -Parameter Database, Exclude

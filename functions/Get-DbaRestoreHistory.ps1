@@ -217,4 +217,3 @@ Returns database restore information for every database on every server listed i
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaRestoreHistory -Parameter Database, Exclude

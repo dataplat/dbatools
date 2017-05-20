@@ -353,4 +353,3 @@ CREATE LOGIN [$username] FROM WINDOWS WITH DEFAULT_DATABASE = [$defaultdb], DEFA
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Export-DbaLogin -Parameter Database

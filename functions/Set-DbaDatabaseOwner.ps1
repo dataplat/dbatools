@@ -156,4 +156,3 @@ Sets database owner to 'sa' on the db1 and db2 databases if their current owner 
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Set-DbaDatabaseOwner -Parameter Database, Exclude

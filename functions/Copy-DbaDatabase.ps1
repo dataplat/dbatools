@@ -1105,4 +1105,3 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Copy-DbaDatabase -Parameter Database, Exclude

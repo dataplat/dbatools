@@ -262,4 +262,3 @@ Set recommended Max DOP setting for all databases on server sql2016.
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Set-DbaMaxDop -Parameter Database

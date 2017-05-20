@@ -237,4 +237,3 @@ Returns database files and free space information for the db1 and db2 on localho
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaDatabaseFreespace -Parameter Database, Exclude

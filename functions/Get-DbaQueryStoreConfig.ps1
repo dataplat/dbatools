@@ -122,4 +122,3 @@ Returns Query Store configuration settings for every database on the ServerA\sql
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaQueryStoreConfig -Parameter Database, Exclude

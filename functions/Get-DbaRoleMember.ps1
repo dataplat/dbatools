@@ -149,4 +149,3 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
 		}
 	}
 }
-Register-DbaTeppArgumentCompleter -Command Get-DbaRoleMember -Parameter Database, Exclude

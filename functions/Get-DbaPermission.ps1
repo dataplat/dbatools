@@ -173,4 +173,3 @@ Returns a custom object with permissions for the master database
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaPermission -Parameter Database, Exclude

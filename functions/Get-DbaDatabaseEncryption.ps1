@@ -164,4 +164,3 @@ List all encrption found in MyDB
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaDatabaseEncryption -Parameter Database, Exclude

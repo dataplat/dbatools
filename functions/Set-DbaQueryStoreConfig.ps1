@@ -249,4 +249,3 @@ Configure the Query Store settings for all user databases except the AdventureWo
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Set-DbaQueryStoreConfig -Parameter Database, Exclude

@@ -153,4 +153,3 @@ Gets estimated completion times for queries performed against the Northwind, pub
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaEstimatedCompletionTime -Parameter Database, Exclude

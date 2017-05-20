@@ -433,4 +433,3 @@ Exports user User1 fron sqlsever2008 to the file  C:\temp\users.sql with sintax 
     }
 }
 
-Register-DbaTeppArgumentCompleter -Command Export-DbaUser -Parameter Database, Exclude

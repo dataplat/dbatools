@@ -112,4 +112,3 @@ Function Test-DbaSqlPath {
     Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Test-SqlPath
 }
 
-Register-DbaTeppArgumentCompleter -Command Test-DbaSqlPath -Parameter SqlInstance

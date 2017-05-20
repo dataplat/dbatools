@@ -161,4 +161,3 @@ Authenticates with SQL Server using alternative credentials.
 		}
 	}
 }
-Register-DbaTeppArgumentCompleter -Command Get-DbaLastGoodCheckDb -Parameter Database, Exclude

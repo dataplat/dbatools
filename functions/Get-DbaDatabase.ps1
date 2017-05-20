@@ -241,4 +241,3 @@ Returns databases on multiple instances piped into the function
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaDatabase -Parameter Database, Exclude

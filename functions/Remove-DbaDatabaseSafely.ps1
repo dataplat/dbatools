@@ -679,4 +679,3 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Remove-SqlDatabaseSafely
 	}
 }
-Register-DbaTeppArgumentCompleter -Command Remove-DbaDatabaseSafely -Parameter Database
