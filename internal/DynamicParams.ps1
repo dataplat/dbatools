@@ -6,7 +6,7 @@
 	DynamicParam { if ($source) { return (Get-ParamSqlXyz -SqlInstance $Source -SqlCredential $SourceSqlCredential) } }
 
 #>
-Function Get-ParamSqlInstanceConfigs
+Function Get-ParamSqlServerConfigs
 {
 <#
  .SYNOPSIS
