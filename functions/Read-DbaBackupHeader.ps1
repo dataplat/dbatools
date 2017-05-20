@@ -252,3 +252,5 @@ Gets the backup header information from the SQL Server backup file stored at htt
         $LoopCnt++
     }
 }
+
+Register-DbaTeppArgumentCompleter -Command Read-DbaBackupHeader -Parameter SqlInstance
