@@ -7,7 +7,7 @@ $sql2008 = "localhost\sql2008r2sp2"
 $sql2016 = "localhost\sql2016"
 
 Write-Output "Creating migration & backup directories"
-New-Item -Path C:\github -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
+New-Item -Path C:\temp -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
 New-Item -Path C:\temp\migration -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
 New-Item -Path C:\temp\backups -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
 
