@@ -7,7 +7,7 @@ Migrates SQL Extended Event Sessions except the two default sessions, AlwaysOn_h
 .DESCRIPTION
 By default, all non-system extended events are migrated. If the event already exists on the destination, it will be skipped unless -Force is used. 
 	
-The -Sessions parameter is autopopulated for command-line completion and can be used to copy only specific objects.
+The -Session parameter is autopopulated for command-line completion and can be used to copy only specific objects.
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
@@ -75,7 +75,7 @@ Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -WhatIf
 Shows what would happen if the command were executed.
 	
 .EXAMPLE   
-Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -Sessions CheckQueries, MonitorUserDefinedException 
+Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -Session CheckQueries, MonitorUserDefinedException 
 
 Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from sqlserver2014a to sqlcluster.
 #>

@@ -124,7 +124,7 @@ that TargetLogin must be a valid security principal that exists on the target se
 				throw "$TargetLogin is a Windows Group and can not be a job owner."
 			}
 			
-			#Get database list. If value for -Jobs is passed, massage to make it a string array.
+			#Get database list. If value for -Job is passed, massage to make it a string array.
 			#Otherwise, use all jobs on the instance where owner not equal to -TargetLogin
 			Write-Verbose "Gathering jobs to Check"
 			

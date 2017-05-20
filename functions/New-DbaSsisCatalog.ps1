@@ -98,7 +98,7 @@ Prompts for username/password - while only password is used, the username must b
 			
 			if (!$clrenabled.RunningValue)
 			{
-				Stop-Function -Message 'CLR Integration must be enabled.  You can enable it by running Set-DbaSpConfigure -SqlInstance sql2012 -Configs IsSqlClrEnabled -Value $true' -Continue -Target $instance
+				Stop-Function -Message 'CLR Integration must be enabled.  You can enable it by running Set-DbaSpConfigure -SqlInstance sql2012 -Config IsSqlClrEnabled -Value $true' -Continue -Target $instance
 			}
 			
 			$ssis = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $server

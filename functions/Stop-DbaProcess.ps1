@@ -58,7 +58,7 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Stop-DbaProcess
 
 .EXAMPLE
-Stop-DbaProcess -SqlInstance sqlserver2014a -Logins base\ctrlb, sa
+Stop-DbaProcess -SqlInstance sqlserver2014a -Login base\ctrlb, sa
 
 Finds all processes for base\ctrlb and sa on sqlserver2014a, then kills them. Uses Windows Authentication to login to sqlserver2014a.
 
@@ -78,7 +78,7 @@ Stop-DbaProcess -SqlInstance sqlserver2014a -Hosts workstationx, server100
 Finds processes that were initiated by hosts (computers/clients) workstationx and server 1000, then kills them.
 
 .EXAMPLE   
-Stop-DbaProcess -SqlInstance sqlserver2014  -Databases tempdb -WhatIf
+Stop-DbaProcess -SqlInstance sqlserver2014  -Database tempdb -WhatIf
 	
 Shows what would happen if the command were executed.
 	

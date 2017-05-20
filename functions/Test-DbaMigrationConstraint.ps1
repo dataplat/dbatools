@@ -18,7 +18,7 @@ function Test-DbaMigrationConstraint {
 
 		Take into account the new features introduced on SQL Server 2016 SP1 for all versions. More information at https://blogs.msdn.microsoft.com/sqlreleaseservices/sql-server-2016-service-pack-1-sp1-released/
 
-		The -Databases parameter is autopopulated for command-line completion.
+		The -Database parameter is autopopulated for command-line completion.
 
 	.PARAMETER Source
 		Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -79,7 +79,7 @@ function Test-DbaMigrationConstraint {
 		and Windows credentials for sqlcluster.
 
 	.EXAMPLE
-		Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -Databases db1
+		Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -Database db1
 		Only db1 database will be verified for features in use that can't be supported on the destination server
 	#>
 	[CmdletBinding(DefaultParameterSetName = "DbMigration")]

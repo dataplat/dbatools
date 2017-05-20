@@ -52,7 +52,7 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Get-DbaProcess
 
 .EXAMPLE
-Get-DbaProcess -SqlInstance sqlserver2014a -Logins base\ctrlb, sa
+Get-DbaProcess -SqlInstance sqlserver2014a -Login base\ctrlb, sa
 
 Shows information about the processes for base\ctrlb and sa on sqlserver2014a. Uses Windows Authentication to login to sqlserver2014a.
 
