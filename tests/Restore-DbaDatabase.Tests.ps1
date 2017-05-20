@@ -43,7 +43,7 @@
 		}
 	}
 	
-	Context "Properly restores an instance using ola backups" {
+	Context "Properly restores an instance using ola-style backups" {
 		$results = Get-ChildItem C:\github\appveyor-lab\sql2008-backups | Restore-DbaDatabase -SqlServer localhost
 		It "Restored files count should be right" {
 			$results.databasename.count | Should Be 31
