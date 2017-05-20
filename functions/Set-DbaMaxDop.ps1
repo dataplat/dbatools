@@ -108,10 +108,10 @@ Set recommended Max DOP setting for all databases on server sql2016.
 		}
 		
 		if ($collection -eq $null) {
-			$collection = Test-DbaMaxDop -SqlServer $SqlServer -SqlCredential $SqlCredential -Verbose:$false
+			$collection = Test-DbaMaxDop -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Verbose:$false
 		}
 		elseif ($collection.Instance -eq $null) {
-			$collection = Test-DbaMaxDop -SqlServer $SqlServer -SqlCredential $SqlCredential -Verbose:$false
+			$collection = Test-DbaMaxDop -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Verbose:$false
 		}
 		
 		$collection | Add-Member -NotePropertyName OldInstanceMaxDopValue -NotePropertyValue 0

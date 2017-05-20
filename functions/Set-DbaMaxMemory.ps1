@@ -106,7 +106,7 @@ Function Set-DbaMaxMemory
         
         if ($Collection -eq $null)
         {
-            $Collection = Test-DbaMaxMemory -SqlServer $SqlServer -SqlCredential $SqlCredential
+            $Collection = Test-DbaMaxMemory -SqlInstance $sqlinstance -SqlCredential $SqlCredential
         }
         
         # We ignore errors, because this will error if we pass the same collection items twice.

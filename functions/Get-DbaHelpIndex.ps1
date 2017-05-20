@@ -935,7 +935,7 @@ FROM @AllResults;
 "@
 		
 		#endregion sizesQuery2005
-		$server = Connect-DbaSqlServer -SqlServer $SqlServer -Credential $SqlCredential
+		$server = Connect-DbaSqlServer -SqlInstance $sqlinstance -Credential $SqlCredential
 	}
 	
 	PROCESS {

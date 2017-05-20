@@ -386,14 +386,14 @@ Internal function.
 			Write-Output "Reconnecting to SQL instance"
 			try
 			{
-				Invoke-ResetSqlCmd -SqlServer $SqlServer -Sql "SELECT 1" | Out-Null
+				Invoke-ResetSqlCmd -SqlInstance $sqlinstance -Sql "SELECT 1" | Out-Null
 			}
 			catch
 			{
 				try
 				{
 					Start-Sleep 3
-					Invoke-ResetSqlCmd -SqlServer $SqlServer -Sql "SELECT 1" | Out-Null
+					Invoke-ResetSqlCmd -SqlInstance $sqlinstance -Sql "SELECT 1" | Out-Null
 				}
 				catch
 				{
@@ -414,14 +414,14 @@ Internal function.
 			{
 				$sql = "IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '$login')
 					BEGIN CREATE LOGIN [$login] FROM WINDOWS END"
-				if ($(Invoke-ResetSqlCmd -SqlServer $SqlServer -Sql $sql) -eq $false) { Write-Error "Couldn't create login." }
+				if ($(Invoke-ResetSqlCmd -SqlInstance $sqlinstance -Sql $sql) -eq $false) { Write-Error "Couldn't create login." }
 			}
 			elseif ($login -ne "sa")
 			{
 				# Create new sql user
 				$sql = "IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '$login')
 					BEGIN CREATE LOGIN [$login] WITH PASSWORD = '$(ConvertTo-PlainText $Password)', CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF END"
-				if ($(Invoke-ResetSqlCmd -SqlServer $SqlServer -Sql $sql) -eq $false) { Write-Error "Couldn't create login." }
+				if ($(Invoke-ResetSqlCmd -SqlInstance $sqlinstance -Sql $sql) -eq $false) { Write-Error "Couldn't create login." }
 			}
 			
 			# If $login is a SQL Login, Mixed mode authentication is required.
@@ -430,22 +430,22 @@ Internal function.
 				Write-Output "Enabling mixed mode authentication"
 				Write-Output "Ensuring account is unlocked"
 				$sql = "EXEC xp_instance_regwrite N'HKEY_LOCAL_MACHINE', N'Software\Microsoft\MSSQLServer\MSSQLServer', N'LoginMode', REG_DWORD, 2"
-				if ($(Invoke-ResetSqlCmd -SqlServer $SqlServer -Sql $sql) -eq $false) { Write-Error "Couldn't set to Mixed Mode." }
+				if ($(Invoke-ResetSqlCmd -SqlInstance $sqlinstance -Sql $sql) -eq $false) { Write-Error "Couldn't set to Mixed Mode." }
 				
 				$sql = "ALTER LOGIN [$login] WITH CHECK_POLICY = OFF
 					ALTER LOGIN [$login] WITH PASSWORD = '$(ConvertTo-PlainText $Password)' UNLOCK"
-				if ($(Invoke-ResetSqlCmd -SqlServer $SqlServer -Sql $sql) -eq $false) { Write-Error "Couldn't unlock account." }
+				if ($(Invoke-ResetSqlCmd -SqlInstance $sqlinstance -Sql $sql) -eq $false) { Write-Error "Couldn't unlock account." }
 			}
 			
 			Write-Output "Ensuring login is enabled"
 			$sql = "ALTER LOGIN [$login] ENABLE"
-			if ($(Invoke-ResetSqlCmd -SqlServer $SqlServer -Sql $sql) -eq $false) { Write-Error "Couldn't enable login." }
+			if ($(Invoke-ResetSqlCmd -SqlInstance $sqlinstance -Sql $sql) -eq $false) { Write-Error "Couldn't enable login." }
 			
 			if ($login -ne "sa")
 			{
 				Write-Output "Ensuring login exists within sysadmin role"
 				$sql = "EXEC sp_addsrvrolemember '$login', 'sysadmin'"
-				if ($(Invoke-ResetSqlCmd -SqlServer $SqlServer -Sql $sql) -eq $false) { Write-Error "Couldn't add to syadmin role." }
+				if ($(Invoke-ResetSqlCmd -SqlInstance $sqlinstance -Sql $sql) -eq $false) { Write-Error "Couldn't add to syadmin role." }
 			}
 			
 			Write-Output "Finished with login tasks"

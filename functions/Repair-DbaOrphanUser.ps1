@@ -194,7 +194,7 @@ https://dbatools.io/Repair-DbaOrphanUser
 						if ($RemoveNotExisting -eq $true) {
 							if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaOrphanUser")) {
 								Write-Verbose "Calling 'Remove-DbaOrphanUser'"
-								Remove-DbaOrphanUser -SqlServer $SqlServer -SqlCredential $SqlCredential -Databases $db.Name -Users $UsersToRemove
+								Remove-DbaOrphanUser -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Databases $db.Name -Users $UsersToRemove
 							}
 						}
 					}

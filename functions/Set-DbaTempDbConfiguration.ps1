@@ -128,7 +128,7 @@ Returns PSObject representing tempdb configuration.
 	begin {
 		$sql = @()
 		Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
-		$server = Connect-SqlServer $SqlServer -SqlCredential $SqlCredential
+		$server = Connect-SqlInstance $sqlinstance -SqlCredential $SqlCredential
 		
 		if ($server.VersionMajor -lt 9) {
 			Stop-Function -Message "SQL Server 2000 is not supported"

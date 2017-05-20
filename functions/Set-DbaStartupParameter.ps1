@@ -164,7 +164,7 @@ After the work has been completed, we can push the original startup parameters b
 	process {
 		
 		#Get Current parameters:
-		$currentstartup = Get-DbaStartupParameter -SqlServer $SqlServer -Credential $Credential
+		$currentstartup = Get-DbaStartupParameter -SqlInstance $sqlinstance -Credential $Credential
 		$originalparamstring = $currentstartup.ParameterString
 		
 		Write-Message -Level Output -Message "Original startup parameter string: $originalparamstring"
@@ -187,7 +187,7 @@ After the work has been completed, we can push the original startup parameters b
 		if (!($currentstartup.SingleUser)) {
 			
 			if ($newstartup.Masterdata.length -gt 0) {
-				if (Test-DbaSqlPath -SqlServer $SqlServer -SqlCredential $Credential -Path (Split-Path $newstartup.MasterData -Parent)) {
+				if (Test-DbaSqlPath -SqlInstance $sqlinstance -SqlCredential $Credential -Path (Split-Path $newstartup.MasterData -Parent)) {
 					$ParameterString += "-d$($newstartup.MasterData);"
 				}
 				else {
@@ -199,7 +199,7 @@ After the work has been completed, we can push the original startup parameters b
 			}
 			
 			if ($newstartup.ErrorLog.length -gt 0) {
-				if (Test-DbaSqlPath -SqlServer $SqlServer -SqlCredential $Credential -Path (Split-Path $newstartup.ErrorLog -Parent)) {
+				if (Test-DbaSqlPath -SqlInstance $sqlinstance -SqlCredential $Credential -Path (Split-Path $newstartup.ErrorLog -Parent)) {
 					$ParameterString += "-e$($newstartup.ErrorLog);"
 				}
 				else {
@@ -211,7 +211,7 @@ After the work has been completed, we can push the original startup parameters b
 			}
 			
 			if ($newstartup.MasterLog.Length -gt 0) {
-				if (Test-DbaSqlPath -SqlServer $SqlServer -SqlCredential $Credential -Path (Split-Path $newstartup.MasterLog -Parent)) {
+				if (Test-DbaSqlPath -SqlInstance $sqlinstance -SqlCredential $Credential -Path (Split-Path $newstartup.MasterLog -Parent)) {
 					$ParameterString += "-l$($newstartup.MasterLog);"
 				}
 				else {
@@ -339,12 +339,12 @@ After the work has been completed, we can push the original startup parameters b
 			try {
 				if ($credential) {
 					$response = Invoke-ManagedComputerCommand -Server $instance -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString
-					$output = Get-DbaStartupParameter -SqlServer $SqlServer -Credential $Credential
+					$output = Get-DbaStartupParameter -SqlInstance $sqlinstance -Credential $Credential
 					Add-Member -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
 				}
 				else {
 					$response = Invoke-ManagedComputerCommand -Server $instance -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString
-					$output = Get-DbaStartupParameter -SqlServer $SqlServer
+					$output = Get-DbaStartupParameter -SqlInstance $sqlinstance
 					Add-Member -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
 				}
 				

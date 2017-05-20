@@ -73,7 +73,7 @@ If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\
 	
 	$Path = $Path.Replace("'", "''")
 	
-	$exists = Test-DbaSqlPath -SqlServer $SqlServer -SqlCredential $SqlCredential -Path $Path
+	$exists = Test-DbaSqlPath -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Path $Path
 	
 	if ($exists)
 	{
