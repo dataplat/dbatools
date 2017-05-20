@@ -106,7 +106,7 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 
 			#>	
 			param (
-				[object]$SqlInstance
+				[DbaInstanceParameter]$SqlInstance
 			)
 			
 			$server = $SqlInstance
