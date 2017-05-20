@@ -13,7 +13,7 @@ If the automatically determiend new name matches the old name, the command will 
 	
 https://www.mssqltips.com/sqlservertip/2525/steps-to-change-the-server-name-for-a-sql-server-machine/
 	
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 
 .PARAMETER Credential
@@ -49,17 +49,17 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Repair-DbaServerName
 
 .EXAMPLE
-Repair-DbaServerName -SqlServer sql2014
+Repair-DbaServerName -SqlInstance sql2014
 
 Checks to see if the server is updatable, prompts galore, changes name.
 
 .EXAMPLE
-Repair-DbaServerName -SqlServer sql2014 -AutoFix
+Repair-DbaServerName -SqlInstance sql2014 -AutoFix
 
 Even more prompts/confirms, but removes Replication or breaks mirroring if necessary.
 
 .EXAMPLE   
-Repair-DbaServerName -SqlServer sql2014 -AutoFix -Force
+Repair-DbaServerName -SqlInstance sql2014 -AutoFix -Force
 	
 Skips some prompts/confirms but not all of them.
 	
@@ -67,8 +67,8 @@ Skips some prompts/confirms but not all of them.
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object[]]$SqlInstance,
 		[PsCredential]$Credential,
 		[switch]$AutoFix,
 		[switch]$Force
@@ -81,11 +81,11 @@ Skips some prompts/confirms but not all of them.
 	
 	PROCESS
 	{
-		foreach ($servername in $SqlServer)
+		foreach ($servername in $SqlInstance)
 		{
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
+				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $Credential
 			}
 			catch
 			{
@@ -111,7 +111,7 @@ Skips some prompts/confirms but not all of them.
 			
 			$nametest = Test-DbaServerName $servername -Detailed -NoWarning
 			$serverinstancename = $nametest.ServerInstanceName
-			$sqlservername = $nametest.SqlServerName
+			$SqlInstancename = $nametest.SqlServerName
 			
 			if ($nametest.RenameRequired -eq $false)
 			{
@@ -251,9 +251,9 @@ Skips some prompts/confirms but not all of them.
 				}
 			}
 			
-			if ($Pscmdlet.ShouldProcess($server.name, "Performing sp_dropserver to remove the old server name, $sqlservername, then sp_addserver to add $serverinstancename"))
+			if ($Pscmdlet.ShouldProcess($server.name, "Performing sp_dropserver to remove the old server name, $SqlInstancename, then sp_addserver to add $serverinstancename"))
 			{
-				$sql = "sp_dropserver '$sqlservername'"
+				$sql = "sp_dropserver '$SqlInstancename'"
 				Write-Debug $sql
 				try
 				{
@@ -308,7 +308,7 @@ Skips some prompts/confirms but not all of them.
 			
 			if ($renamed -eq $true)
 			{
-				Write-Output "`n$servername successfully renamed from $sqlservername to $serverinstancename"
+				Write-Output "`n$servername successfully renamed from $SqlInstancename to $serverinstancename"
 			}
 			
 			if ($needsrestart -eq $true)

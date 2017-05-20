@@ -75,7 +75,7 @@ WhatIf Example
 		[String]$NewLogin
 	)
 	
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlLogin -SqlServer $SqlInstance -SqlCredential $SqlCredential } }
+
 	
 	BEGIN
 	{
@@ -83,7 +83,7 @@ WhatIf Example
 		
 		if (!$Login) { throw "You must specify a login" }
 		
-		$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 		$Databases = $server.Databases
 		
 		$currentLogin = $server.Logins[$Login]

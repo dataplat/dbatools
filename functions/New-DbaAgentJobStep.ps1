@@ -204,7 +204,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
             # Try connecting to the instance
             Write-Message -Message "Attempting to connect to $instance" -Level Output 
             try {
-                $Server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+                $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
                 Stop-Function -Message "Could not connect to Sql Server instance"  -Target $instance -Continue

@@ -78,7 +78,7 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
 		foreach ($instance in $sqlinstance) {
 			Write-Verbose "Connecting to $Instance"
 			try {
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Write-Warning "Failed to connect to $instance"

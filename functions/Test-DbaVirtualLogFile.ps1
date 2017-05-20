@@ -14,7 +14,7 @@ function Test-DbaVirtualLogFile {
 
 		If you've got a high number of VLFs, you can use Expand-SqlTLogResponsibly to reduce the number.
 
-	.PARAMETER SqlServer
+	.PARAMETER SqlInstance
 		SQLServer name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input.
 
 	.PARAMETER SqlCredential
@@ -43,12 +43,12 @@ function Test-DbaVirtualLogFile {
 		https://dbatools.io/Test-DbaVirtualLogFile
 
 	.EXAMPLE
-		Test-DbaVirtualLogFile -SqlServer sqlcluster
+		Test-DbaVirtualLogFile -SqlInstance sqlcluster
 
 		Returns all user database virtual log file counts for the sqlcluster instance
 
 	.EXAMPLE
-		Test-DbaVirtualLogFile -SqlServer sqlserver | Where-Object {$_.Count -ge 50}
+		Test-DbaVirtualLogFile -SqlInstance sqlserver | Where-Object {$_.Count -ge 50}
 
 		Returns user databases that have more than or equal to 50 VLFs
 
@@ -58,15 +58,15 @@ function Test-DbaVirtualLogFile {
 		Returns all VLF information for the sqlserver and sqlcluster SQL Server instances. Processes data via the pipeline.
 
 	.EXAMPLE
-		Test-DbaVirtualLogFile -SqlServer sqlcluster -Databases db1, db2
+		Test-DbaVirtualLogFile -SqlInstance sqlcluster -Databases db1, db2
 
 		Returns VLF counts for the db1 and db2 databases on sqlcluster.
 	#>
 	[CmdletBinding()]
 	[OutputType([System.Collections.ArrayList])]
 	param ([parameter(ValueFromPipeline, Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
@@ -76,10 +76,10 @@ function Test-DbaVirtualLogFile {
 	)
 
 	PROCESS {
-		foreach ($servername in $SqlServer) {
+		foreach ($servername in $SqlInstance) {
 			Write-Verbose "Connecting to $servername"
 			try {
-				$server = Connect-SqlServer $servername -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance $servername -SqlCredential $SqlCredential
 			}
 			catch {
 				Write-Warning "Can't connect to $instance, skipping..."

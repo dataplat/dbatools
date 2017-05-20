@@ -6,7 +6,7 @@ Gets list of SQL Server names stored in SQL Server Central Management Server.
 .DESCRIPTION
 Returns a simple array of server names. Be aware of the dynamic parameter 'Group', which can be used to limit results to one or more groups you have created on the CMS. See get-help for examples.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server instance. 
 
 .PARAMETER SqlCredential
@@ -47,22 +47,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Get-DbaRegisteredServerName
 
 .EXAMPLE 
-Get-DbaRegisteredServerName -SqlServer sqlserver2014a
+Get-DbaRegisteredServerName -SqlInstance sqlserver2014a
 
 Gets a list of all server names from the Central Management Server on sqlserver2014a, using Windows Credentials
 
 .EXAMPLE 
-Get-DbaRegisteredServerName -SqlServer sqlserver2014a -SqlCredential $credential
+Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -SqlCredential $credential
 
 Gets a list of all server names from the Central Management Server on sqlserver2014a, using SQL Authentication
 		
 .EXAMPLE 
-Get-DbaRegisteredServerName -SqlServer sqlserver2014a -Group HR, Accounting
+Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -Group HR, Accounting
 	
 Gets a list of server names in the HR and Accounting groups from the Central Management Server on sqlserver2014a.
 	
 .EXAMPLE 
-Get-DbaRegisteredServerName -SqlServer sqlserver2014a -Group HR, Accounting -IpAddr
+Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -Group HR, Accounting -IpAddr
 	
 Gets a list of server IP addresses in the HR and Accounting groups from the Central Management Server on sqlserver2014a.
 	
@@ -70,8 +70,8 @@ Gets a list of server IP addresses in the HR and Accounting groups from the Cent
     [CmdletBinding(DefaultParameterSetName = "Default")]
     Param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlInstance")]
-        [object]$SqlServer,
+        [Alias("ServerInstance", "SqlServer")]
+        [object]$SqlInstance,
         [object]$SqlCredential,
         [switch]$NoCmsServer,
         [parameter(ParameterSetName = "NetBios")]
@@ -80,10 +80,10 @@ Gets a list of server IP addresses in the HR and Accounting groups from the Cent
         [switch]$IpAddr
     )
 	
-    DynamicParam { if ($sqlserver) { return Get-ParamSqlCmsGroups -SqlServer $sqlserver -SqlCredential $SqlCredential } }
+
 	
     BEGIN {
-        $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+        $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         $sqlconnection = $server.ConnectionContext.SqlConnectionObject
 		
         try {
@@ -133,7 +133,7 @@ Gets a list of server IP addresses in the HR and Accounting groups from the Cent
         }
 		
         if ($NoCmsServer -eq $false) {
-            $servers += $sqlserver
+            $servers += $SqlInstance
         }
     }
 	

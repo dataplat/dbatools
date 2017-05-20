@@ -44,7 +44,7 @@ function Get-DbaLinkedServer
 		[switch]$Silent
 	)
 	
-	dynamicparam { if ($SqlInstance) { return (Get-ParamSqlLinkedServers -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential) } }
+
 	
 	begin {
 		$linkedservers = $psboundparameters.LinkedServers
@@ -56,7 +56,7 @@ function Get-DbaLinkedServer
         {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance

@@ -94,7 +94,7 @@ Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlse
 		[switch]$Force
 	)
 	
-	DynamicParam { if ($source) { return (Get-ParamSqlDataCollectionSets -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+
 	
 	BEGIN
 	{
@@ -103,8 +103,8 @@ Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlse
 			throw "SMO version is too old. To migrate collection sets, you must have SQL Server Management Studio 2008 R2 or higher installed."
 		}
 		
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName

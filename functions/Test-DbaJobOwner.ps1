@@ -28,7 +28,7 @@ You should have received a copy of the GNU General Public License along with thi
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 SQLServer name or SMO object representing the SQL Server to connect to. This can be a
 collection and recieve pipeline input
 
@@ -52,12 +52,12 @@ Provides Detailed information
 https://dbatools.io/Test-DbaJobOwner
 
 .EXAMPLE
-Test-DbaJobOwner -SqlServer localhost
+Test-DbaJobOwner -SqlInstance localhost
 
 Returns all databases where the owner does not match 'sa'.
 
 .EXAMPLE
-Test-DbaJobOwner -SqlServer localhost -TargetLogin DOMAIN\account
+Test-DbaJobOwner -SqlInstance localhost -TargetLogin DOMAIN\account
 
 Returns all databases where the owner does not match DOMAIN\account. Note
 that TargetLogin must be a valid security principal that exists on the target server.
@@ -66,14 +66,14 @@ that TargetLogin must be a valid security principal that exists on the target se
 	[OutputType('System.Object[]')]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string]$TargetLogin,
 		[Switch]$Detailed
 	)
 	
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlJobs -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
+
 	
 	BEGIN
 	{
@@ -87,11 +87,11 @@ that TargetLogin must be a valid security principal that exists on the target se
 	
 	PROCESS
 	{
-		foreach ($servername in $sqlserver)
+		foreach ($servername in $SqlInstance)
 		{
 			#connect to the instance
 			Write-Verbose "Connecting to $servername"
-			$server = Connect-SqlServer $servername -SqlCredential $SqlCredential
+			$server = Connect-SqlInstance $servername -SqlCredential $SqlCredential
 			
 			# dynamic sa name for orgs who have changed their sa name
 			if ($psboundparameters.TargetLogin.length -eq 0)
@@ -108,7 +108,7 @@ that TargetLogin must be a valid security principal that exists on the target se
 			#Validate login
 			if (($server.Logins.Name) -notcontains $TargetLogin)
 			{
-				if ($sqlserver.count -eq 1)
+				if ($SqlInstance.count -eq 1)
 				{
 					throw "Invalid login: $TargetLogin"
 				}

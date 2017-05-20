@@ -7,7 +7,7 @@ Returns the active node of a SQL Cluster
 .DESCRIPTION
 Returns a string of the current owner. If -Detailed is specified, a datatable of details will be returned.
 	
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Cluster
 
 .PARAMETER SqlCredential
@@ -41,12 +41,12 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Get-DbaClusterActiveNode
 
 .EXAMPLE
-Get-DbaClusterActiveNode -SqlServer sqlcluster
+Get-DbaClusterActiveNode -SqlInstance sqlcluster
 
 Returns a simple string with the ComputerNamePhysicalNetBIOS property
 
 .EXAMPLE
-Get-DbaClusterActiveNode -SqlServer sqlcluster -Detailed
+Get-DbaClusterActiveNode -SqlInstance sqlcluster -Detailed
 
 Returns a datatable with details
 	
@@ -54,15 +54,15 @@ Returns a datatable with details
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[string]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[string]$SqlInstance,
 		[object]$SqlCredential,
 		[switch]$Detailed
 	)
 	
 	BEGIN
 	{
-		$server = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential -RegularUser
+		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -RegularUser
 		$computername = $server.ComputerNamePhysicalNetBIOS
 	}
 	

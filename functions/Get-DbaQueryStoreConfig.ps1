@@ -65,7 +65,7 @@ Returns Query Store configuration settings for every database on the ServerA\sql
 			Write-Verbose "Connecting to $instance"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 				
 			}
 			catch

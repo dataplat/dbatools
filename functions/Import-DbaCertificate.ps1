@@ -84,7 +84,7 @@ Imports all the certificates in the specified path.
 		
 		try {
 			Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
-			$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $sqlcredential
+			$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
 		}
 		catch {
 			Stop-Function -Message "Failed to connect to: $SqlInstance" -Target $SqlInstance -InnerErrorRecord $_

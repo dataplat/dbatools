@@ -28,7 +28,7 @@ You should have received a copy of the GNU General Public License along with thi
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 SQLServer name or SMO object representing the SQL Server to connect to. This can be a
 collection and recieve pipeline input
 
@@ -54,18 +54,18 @@ Prompts you for confirmation before executing any changing operations within the
 https://dbatools.io/Set-DbaJobOwner
 
 .EXAMPLE
-Set-DbaJobOwner -SqlServer localhost
+Set-DbaJobOwner -SqlInstance localhost
 
 Sets SQL Agent Job owner to sa on all jobs where the owner does not match sa.
 
 .EXAMPLE
-Set-DbaJobOwner -SqlServer localhost -TargetLogin DOMAIN\account
+Set-DbaJobOwner -SqlInstance localhost -TargetLogin DOMAIN\account
 
 Sets SQL Agent Job owner to sa on all jobs where the owner does not match 'DOMAIN\account'. Note
 that TargetLogin must be a valid security principal that exists on the target server.
 
 .EXAMPLE
-Set-DbaJobOwner -SqlServer localhost -Job job1, job2
+Set-DbaJobOwner -SqlInstance localhost -Job job1, job2
 
 Sets SQL Agent Job owner to 'sa' on the job1 and job2 jobs if their current owner does not match 'sa'.
 
@@ -78,13 +78,13 @@ Sets SQL Agent Job owner to sa on all jobs where the owner does not match sa on 
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object[]]$SqlInstance,
 		[object]$SqlCredential,
 		[string]$TargetLogin
 	)
 	
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlJobs -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
+
 	
 	BEGIN
 	{
@@ -94,11 +94,11 @@ Sets SQL Agent Job owner to sa on all jobs where the owner does not match sa on 
 	
 	PROCESS
 	{
-		foreach ($servername in $sqlserver)
+		foreach ($servername in $SqlInstance)
 		{
 			#connect to the instance
 			Write-Verbose "Connecting to $servername"
-			$server = Connect-SqlServer $servername -SqlCredential $SqlCredential
+			$server = Connect-SqlInstance $servername -SqlCredential $SqlCredential
 			
 			# dynamic sa name for orgs who have changed their sa name
 			if ($psboundparameters.TargetLogin.length -eq 0)
@@ -109,7 +109,7 @@ Sets SQL Agent Job owner to sa on all jobs where the owner does not match sa on 
 			#Validate login
 			if (($server.Logins.Name) -notcontains $TargetLogin)
 			{
-				if ($sqlserver.count -eq 1)
+				if ($SqlInstance.count -eq 1)
 				{
 					throw "Invalid login: $TargetLogin"
 				}

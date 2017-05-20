@@ -80,7 +80,7 @@ This command doesn't support passing both servers and default database, but you 
 		[switch]$Silent
 	)
 	
-	dynamicparam { if ($SqlInstance) { return Get-ParamSqlDatabase -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
+
 	
 	begin {
 		
@@ -149,7 +149,7 @@ This command doesn't support passing both servers and default database, but you 
 		foreach ($instance in $SqlInstance) {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Stop-Function -Message "Failed to connect to $instance : $($_.Exception.Message)" -Continue -Target $instance -InnerErrorRecord $_
@@ -157,7 +157,7 @@ This command doesn't support passing both servers and default database, but you 
 			
 			if (-not $database) {
 				if ($PSCmdlet.ShouldProcess($instance, "Prompting with GUI list of databases")) {
-					$database = Show-SqlDatabaseList -SqlServer $server -Title "Install sp_WhoisActive" -Header "To deploy sp_WhoisActive, select a database or hit cancel to quit." -DefaultDb "master"
+					$database = Show-SqlDatabaseList -SqlInstance $server -Title "Install sp_WhoisActive" -Header "To deploy sp_WhoisActive, select a database or hit cancel to quit." -DefaultDb "master"
 					
 					if (-not $database) {
 						Stop-Function -Message "You must select a database to install the procedure" -Target $database

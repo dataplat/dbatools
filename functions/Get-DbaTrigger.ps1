@@ -67,7 +67,7 @@ Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerN
 		foreach ($Instance in $SqlInstance) {
 			Write-Verbose "Connecting to $Instance"
 			try {
-				$server = Connect-SqlServer -SqlServer $Instance -SqlCredential $SqlCredential -Erroraction SilentlyContinue
+				$server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $SqlCredential -Erroraction SilentlyContinue
 			}
 			catch {
 				Write-Warning "Can't connect to $Instance"

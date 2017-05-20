@@ -116,8 +116,8 @@ function Test-DbaMigrationConstraint {
 	PROCESS {
 
 		Write-Output "Attempting to connect to Sql Servers.."
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
 		if ($Database -eq 0) {
 			$Database = $sourceserver.Databases | Where-Object isSystemObject -eq 0 | Select-Object Name, Status

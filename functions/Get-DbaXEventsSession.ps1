@@ -31,12 +31,12 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Get-DbaXEventsSession
 
 .EXAMPLE
-Get-DbaXEventsSession -SqlServer ServerA\sql987
+Get-DbaXEventsSession -SqlInstance ServerA\sql987
 
 Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Status and other properties.
 
 .EXAMPLE
-Get-DbaXEventsSession -SqlServer ServerA\sql987 | Format-Table ComputerName, SQLInstance, Session, Status -AutoSize
+Get-DbaXEventsSession -SqlInstance ServerA\sql987 | Format-Table ComputerName, SQLInstance, Session, Status -AutoSize
 
 Returns a formatted table displaying ComputerName, SQLInstance, Session, and Status.
 
@@ -53,7 +53,7 @@ Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Stat
 		[PsCredential]$SqlCredential
 	)
 	
-	DynamicParam { if ($SqlInstance) { return (Get-ParamSqlExtendedEvents -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential) } }
+
 	
 	BEGIN
 	{
@@ -70,7 +70,7 @@ Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Stat
 			Write-Verbose "Connecting to $instance."
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential -ErrorAction SilentlyContinue
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential -ErrorAction SilentlyContinue
 				Write-Verbose "SQL Instance $instance is version $($server.versionmajor)."
 			}
 			catch

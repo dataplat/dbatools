@@ -46,7 +46,7 @@ Function Get-DbaTempdbUsage {
 	process {
 		foreach ($instance in $SqlInstance) {
 			try {
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $Instance

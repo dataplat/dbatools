@@ -84,7 +84,7 @@ function Copy-DbaQueryStoreConfig {
 
 		Write-Message -Message "Connecting to source: $Source" -Level Verbose
 		try {
-			$sourceServer = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+			$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
 		}
 		catch {
 			Stop-Function -Message "Can't connect to $Source." -InnerErrorRecord $_ -Target $Source
@@ -106,7 +106,7 @@ function Copy-DbaQueryStoreConfig {
 
 			Write-Message -Message "Connecting to destination: $Destination" -Level Verbose
 			try {
-				$destServer = Connect-SqlServer -SqlServer $destinationServer -SqlCredential $DestinationSqlCredential
+				$destServer = Connect-SqlInstance -SqlInstance $destinationServer -SqlCredential $DestinationSqlCredential
 			}
 			catch {
 				Stop-Function -Message "Can't connect to $destinationServer." -InnerErrorRecord $_ -Target $desitnationServer -Continue

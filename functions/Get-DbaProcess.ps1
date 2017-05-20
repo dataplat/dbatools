@@ -7,29 +7,29 @@ This command displays SQL Server processes.
 .DESCRIPTION
 This command displays processes associated with a spid, login, host, program or database.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server instance.
 
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. 
 
 .PARAMETER Spids
-This parameter is auto-populated from -SqlServer. You can specify one or more Spids (including blocking spids) to be displayed.
+This parameter is auto-populated from -SqlInstance. You can specify one or more Spids (including blocking spids) to be displayed.
 
 .PARAMETER Logins
-This parameter is auto-populated from-SqlServer and allows only login names that have active processes. You can specify one or more logins whose processes will be displayed.
+This parameter is auto-populated from-SqlInstance and allows only login names that have active processes. You can specify one or more logins whose processes will be displayed.
 
 .PARAMETER Hosts
-This parameter is auto-populated from -SqlServer and allows only host names that have active processes. You can specify one or more Hosts whose processes will be displayed.
+This parameter is auto-populated from -SqlInstance and allows only host names that have active processes. You can specify one or more Hosts whose processes will be displayed.
 
 .PARAMETER Programs
-This parameter is auto-populated from -SqlServer and allows only program names that have active processes. You can specify one or more Programs whose processes will be displayed.
+This parameter is auto-populated from -SqlInstance and allows only program names that have active processes. You can specify one or more Programs whose processes will be displayed.
 
 .PARAMETER Databases
-This parameter is auto-populated from -SqlServer and allows only database names that have active processes. You can specify one or more Databases whose processes will be displayed.
+This parameter is auto-populated from -SqlInstance and allows only database names that have active processes. You can specify one or more Databases whose processes will be displayed.
 
 .PARAMETER Exclude
-This parameter is auto-populated from -SqlServer. You can specify one or more Spids to exclude from being displayed (goes well with Logins).
+This parameter is auto-populated from -SqlInstance. You can specify one or more Spids to exclude from being displayed (goes well with Logins).
 
 Exclude is the last filter to run, so even if a Spid matches, for example, Hosts, if it's listed in Exclude it wil be excluded.
 	
@@ -52,22 +52,22 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Get-DbaProcess
 
 .EXAMPLE
-Get-DbaProcess -SqlServer sqlserver2014a -Logins base\ctrlb, sa
+Get-DbaProcess -SqlInstance sqlserver2014a -Logins base\ctrlb, sa
 
 Shows information about the processes for base\ctrlb and sa on sqlserver2014a. Uses Windows Authentication to login to sqlserver2014a.
 
 .EXAMPLE   
-Get-DbaProcess -SqlServer sqlserver2014a -SqlCredential $credential -Spids 56, 77
+Get-DbaProcess -SqlInstance sqlserver2014a -SqlCredential $credential -Spids 56, 77
 	
 Shows information about the processes for spid 56 and 57. Uses alternative (SQL or Windows) credentials to login to sqlserver2014a.
 
 .EXAMPLE   
-Get-DbaProcess -SqlServer sqlserver2014a -Programs 'Microsoft SQL Server Management Studio'
+Get-DbaProcess -SqlInstance sqlserver2014a -Programs 'Microsoft SQL Server Management Studio'
 	
 Shows information about the processes that were created in Microsoft SQL Server Management Studio.
 
 .EXAMPLE   
-Get-DbaProcess -SqlServer sqlserver2014a -Hosts workstationx, server100
+Get-DbaProcess -SqlInstance sqlserver2014a -Hosts workstationx, server100
 	
 Shows information about the processes that were initiated by hosts (computers/clients) workstationx and server 1000.
 	
@@ -75,18 +75,18 @@ Shows information about the processes that were initiated by hosts (computers/cl
 	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[object]$SqlCredential,
 		[switch]$NoSystemSpids,
 		[switch]$Detailed
 	)
 	
-	DynamicParam { if ($sqlserver) { Get-ParamSqlAllProcessInfo -SqlServer $sqlserver -SqlCredential $SqlCredential } }
+
 	
 	BEGIN
 	{
-		$sourceserver = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
+		$sourceserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 		$source = $sourceserver.DomainInstanceName
 		
 		$logins = $psboundparameters.Logins

@@ -96,7 +96,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 		foreach ($Instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Attempting to connect to $Instance"
 			try {
-				$server = Connect-SqlServer -SqlServer $Instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $SqlCredential
 			}
 			catch {
 				Write-Message -Level Warning -Message "Can't connect to $Instance or access denied. Skipping."
@@ -133,7 +133,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 					try {
 						#if SQL 2012 or higher only validate databases with ContainmentType = NONE
 						if ($server.versionMajor -gt 10) {
-							if ($db.ContainmentType -ne [Microsoft.SqlInstance.Management.Smo.ContainmentType]::None) {
+							if ($db.ContainmentType -ne [Microsoft.SqlServer.Management.Smo.ContainmentType]::None) {
 								Write-Message -Level Warnig -Message "Database '$db' is a contained database. Contained databases can't have orphaned users. Skipping validation."
 								Continue
 							}
@@ -148,7 +148,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 							
 							if ($User.Count -eq 0) {
 								#the third validation will remove from list sql users without login. The rule here is Sid with length higher than 16
-								$User = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlInstance.Management.Smo.LoginType]::SqlLogin) -eq $false) }
+								$User = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false) }
 							}
 							else {
 								if ($pipedatabase) {
@@ -157,7 +157,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 								}
 								else {
 									#the fourth validation will remove from list sql users without login. The rule here is Sid with length higher than 16
-									$User = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($User -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlInstance.Management.Smo.LoginType]::SqlLogin) -eq $false) }
+									$User = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($User -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false) }
 								}
 							}
 						}

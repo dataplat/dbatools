@@ -29,7 +29,7 @@ Tested on Windows XP, 7, 8.1, Server 2012 and Windows Server Technical Preview 2
 Tested on SQL Server 2005 SP4 through 2016 CTP2.
 
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server instance. SQL Server must be 2005 and above, and can be a clustered or stand-alone instance.
 
 .PARAMETER Login
@@ -52,7 +52,7 @@ Prompts you for confirmation before executing any changing operations within the
 Tags: WSMan
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: Admin access to server (not SQL Services), 
-Remoting must be enabled and accessible if $sqlserver is not local
+Remoting must be enabled and accessible if $SqlInstance is not local
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
@@ -74,12 +74,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Reset-DbaAdmin 
 
 .EXAMPLE   
-Reset-DbaAdmin -SqlServer sqlcluster
+Reset-DbaAdmin -SqlInstance sqlcluster
 
 Prompts for password, then resets the "sa" account password on sqlcluster.
 
 .EXAMPLE   
-Reset-DbaAdmin -SqlServer sqlserver\sqlexpress -Login ad\administrator
+Reset-DbaAdmin -SqlInstance sqlserver\sqlexpress -Login ad\administrator
 
 Prompts user to confirm that they understand the SQL Service will be restarted.
 
@@ -87,7 +87,7 @@ Adds the domain account "ad\administrator" as a sysadmin to the SQL instance.
 If the account already exists, it will be added to the sysadmin role.
 
 .EXAMPLE   
-Reset-DbaAdmin -SqlServer sqlserver\sqlexpress -Login sqladmin -Force
+Reset-DbaAdmin -SqlInstance sqlserver\sqlexpress -Login sqladmin -Force
 
 Skips restart confirmation, prompts for passsword, then adds a SQL Login "sqladmin" with sysadmin privleges. 
 If the account already exists, it will be added to the sysadmin role and the password will be reset.
@@ -96,8 +96,8 @@ If the account already exists, it will be added to the sysadmin role and the pas
 	[CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact="High")]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
-		[string]$SqlServer,
+		[Alias("ServerInstance","SqlServer")]
+		[string]$SqlInstance,
 		[string]$Login = "sa",
 		[switch]$Force
 	)
@@ -134,13 +134,13 @@ Internal function.
 			[CmdletBinding()]
 			param (
 				[Parameter(Mandatory = $true)]
-				[Alias("ServerInstance","SqlInstance")]
-				[string]$sqlserver,
+				[Alias("ServerInstance","SqlServer")]
+				[string]$SqlInstance,
 				[string]$sql
 			)
 			try
 			{
-				$connstring = "Data Source=$sqlserver;Integrated Security=True;Connect Timeout=2;Application Name=Reset-DbaAdmin"
+				$connstring = "Data Source=$SqlInstance;Integrated Security=True;Connect Timeout=2;Application Name=Reset-DbaAdmin"
 				$conn = New-Object System.Data.SqlClient.SqlConnection $connstring
 				$conn.Open()
 				$cmd = New-Object system.data.sqlclient.sqlcommand($null, $conn)
@@ -162,10 +162,10 @@ Internal function.
 	{
 			if ($Force) { $ConfirmPreference="none" }
 			
-			$baseaddress = $sqlserver.Split("\")[0]
+			$baseaddress = $SqlInstance.Split("\")[0]
 
 	        # Before we continue, we need confirmation.
-	        if ($pscmdlet.ShouldProcess($baseaddress, "Reset-DbaAdmin (SQL Server instance $sqlserver will restart)"))
+	        if ($pscmdlet.ShouldProcess($baseaddress, "Reset-DbaAdmin (SQL Server instance $SqlInstance will restart)"))
 	        {
 			# Get hostname
 			
@@ -274,7 +274,7 @@ Internal function.
 			}
 			
 			# Get instance and service display name, then get services
-			$instance = ($sqlserver.split("\"))[1]
+			$instance = ($SqlInstance.split("\"))[1]
 			if ($instance -eq $null) { $instance = "MSSQLSERVER" }
 			$displayName = "SQL Server ($instance)"
 			
@@ -386,14 +386,14 @@ Internal function.
 			Write-Output "Reconnecting to SQL instance"
 			try
 			{
-				Invoke-ResetSqlCmd -SqlServer $sqlserver -Sql "SELECT 1" | Out-Null
+				Invoke-ResetSqlCmd -SqlInstance $sqlinstance -Sql "SELECT 1" | Out-Null
 			}
 			catch
 			{
 				try
 				{
 					Start-Sleep 3
-					Invoke-ResetSqlCmd -SqlServer $sqlserver -Sql "SELECT 1" | Out-Null
+					Invoke-ResetSqlCmd -SqlInstance $sqlinstance -Sql "SELECT 1" | Out-Null
 				}
 				catch
 				{
@@ -414,14 +414,14 @@ Internal function.
 			{
 				$sql = "IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '$login')
 					BEGIN CREATE LOGIN [$login] FROM WINDOWS END"
-				if ($(Invoke-ResetSqlCmd -SqlServer $sqlserver -Sql $sql) -eq $false) { Write-Error "Couldn't create login." }
+				if ($(Invoke-ResetSqlCmd -SqlInstance $sqlinstance -Sql $sql) -eq $false) { Write-Error "Couldn't create login." }
 			}
 			elseif ($login -ne "sa")
 			{
 				# Create new sql user
 				$sql = "IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '$login')
 					BEGIN CREATE LOGIN [$login] WITH PASSWORD = '$(ConvertTo-PlainText $Password)', CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF END"
-				if ($(Invoke-ResetSqlCmd -SqlServer $sqlserver -Sql $sql) -eq $false) { Write-Error "Couldn't create login." }
+				if ($(Invoke-ResetSqlCmd -SqlInstance $sqlinstance -Sql $sql) -eq $false) { Write-Error "Couldn't create login." }
 			}
 			
 			# If $login is a SQL Login, Mixed mode authentication is required.
@@ -430,22 +430,22 @@ Internal function.
 				Write-Output "Enabling mixed mode authentication"
 				Write-Output "Ensuring account is unlocked"
 				$sql = "EXEC xp_instance_regwrite N'HKEY_LOCAL_MACHINE', N'Software\Microsoft\MSSQLServer\MSSQLServer', N'LoginMode', REG_DWORD, 2"
-				if ($(Invoke-ResetSqlCmd -SqlServer $sqlserver -Sql $sql) -eq $false) { Write-Error "Couldn't set to Mixed Mode." }
+				if ($(Invoke-ResetSqlCmd -SqlInstance $sqlinstance -Sql $sql) -eq $false) { Write-Error "Couldn't set to Mixed Mode." }
 				
 				$sql = "ALTER LOGIN [$login] WITH CHECK_POLICY = OFF
 					ALTER LOGIN [$login] WITH PASSWORD = '$(ConvertTo-PlainText $Password)' UNLOCK"
-				if ($(Invoke-ResetSqlCmd -SqlServer $sqlserver -Sql $sql) -eq $false) { Write-Error "Couldn't unlock account." }
+				if ($(Invoke-ResetSqlCmd -SqlInstance $sqlinstance -Sql $sql) -eq $false) { Write-Error "Couldn't unlock account." }
 			}
 			
 			Write-Output "Ensuring login is enabled"
 			$sql = "ALTER LOGIN [$login] ENABLE"
-			if ($(Invoke-ResetSqlCmd -SqlServer $sqlserver -Sql $sql) -eq $false) { Write-Error "Couldn't enable login." }
+			if ($(Invoke-ResetSqlCmd -SqlInstance $sqlinstance -Sql $sql) -eq $false) { Write-Error "Couldn't enable login." }
 			
 			if ($login -ne "sa")
 			{
 				Write-Output "Ensuring login exists within sysadmin role"
 				$sql = "EXEC sp_addsrvrolemember '$login', 'sysadmin'"
-				if ($(Invoke-ResetSqlCmd -SqlServer $sqlserver -Sql $sql) -eq $false) { Write-Error "Couldn't add to syadmin role." }
+				if ($(Invoke-ResetSqlCmd -SqlInstance $sqlinstance -Sql $sql) -eq $false) { Write-Error "Couldn't add to syadmin role." }
 			}
 			
 			Write-Output "Finished with login tasks"

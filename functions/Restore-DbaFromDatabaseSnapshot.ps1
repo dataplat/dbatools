@@ -46,12 +46,12 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
  https://dbatools.io/Restore-DbaFromDatabaseSnapshot
 
 .EXAMPLE
-Restore-DbaFromDatabaseSnapshot -SqlServer sqlserver2014a -Database HR, Accounting
+Restore-DbaFromDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
 
 Restores HR and Accounting databases using the latest snapshot available
 
 .EXAMPLE
-Restore-DbaFromDatabaseSnapshot -SqlServer sqlserver2014a -Snapshot HR_snap_20161201, Accounting_snap_20161101
+Restore-DbaFromDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snap_20161201, Accounting_snap_20161101
 
 Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_20161101
 
@@ -184,7 +184,7 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 					If ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot $drop")) {
 						# SKIP IT IF IT'S THE SAME NAME
 						if ($drop -ne $($op['from'])) {
-							$dropped = Remove-SqlDatabase -SqlServer $server -DBName $drop -SqlCredential $Credential
+							$dropped = Remove-SqlDatabase -SqlInstance $server -DBName $drop -SqlCredential $Credential
 							if ($dropped -notmatch "Success") {
 								Write-Message -Level Warning -Message $dropped
 								$operror = $true

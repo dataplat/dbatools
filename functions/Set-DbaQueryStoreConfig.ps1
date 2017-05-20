@@ -127,7 +127,7 @@ Configure the Query Store settings for all user databases except the AdventureWo
 			Write-Verbose "Connecting to $instance"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 				
 			}
 			catch

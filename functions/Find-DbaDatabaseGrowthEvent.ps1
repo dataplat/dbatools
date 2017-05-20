@@ -113,7 +113,7 @@ Returns any database AutoGrow events in the Default Trace for every database on 
             Write-Message -Level Verbose -Message "Connecting to $instance"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch
 			{

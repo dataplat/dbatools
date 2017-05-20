@@ -26,7 +26,7 @@ Output:
     IsDisabled
     IsFiltered (When 2008+)
 	
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server instance.
 
 .PARAMETER SqlCredential
@@ -80,27 +80,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Find-DbaDuplicateIndex
 
 .EXAMPLE
-Find-DbaDuplicateIndex -SqlServer sql2005 -FilePath C:\temp\sql2005-DuplicateIndexes.sql
+Find-DbaDuplicateIndex -SqlInstance sql2005 -FilePath C:\temp\sql2005-DuplicateIndexes.sql
 
 Exports SQL for the duplicate indexes in server "sql2005" choosen on grid-view and writes them to the file "C:\temp\sql2005-DuplicateIndexes.sql"
 
 .EXAMPLE
-Find-DbaDuplicateIndex -SqlServer sql2005 -FilePath C:\temp\sql2005-DuplicateIndexes.sql -Append
+Find-DbaDuplicateIndex -SqlInstance sql2005 -FilePath C:\temp\sql2005-DuplicateIndexes.sql -Append
 
 Exports SQL for the duplicate indexes in server "sql2005" choosen on grid-view and writes/appends them to the file "C:\temp\sql2005-DuplicateIndexes.sql"
 	
 .EXAMPLE   
-Find-DbaDuplicateIndex -SqlServer sqlserver2014a -SqlCredential $cred
+Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -SqlCredential $cred
 	
 Will find exact duplicate indexes on all user databases present on sqlserver2014a will be verified using SQL credentials. 
 	
 .EXAMPLE   
-Find-DbaDuplicateIndex -SqlServer sqlserver2014a -Databases db1, db2
+Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -Databases db1, db2
 
 Will find exact duplicate indexes on both db1 and db2 databases
 
 .EXAMPLE   
-Find-DbaDuplicateIndex -SqlServer sqlserver2014a -IncludeOverlapping
+Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -IncludeOverlapping
 
 Will find exact duplicate or overlapping indexes on all user databases 
 	
@@ -108,8 +108,8 @@ Will find exact duplicate or overlapping indexes on all user databases
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object[]]$SqlInstance,
         [object]$SqlCredential,
         [switch]$IncludeOverlapping,
         [Alias("OutFile", "Path")]
@@ -118,7 +118,7 @@ Will find exact duplicate or overlapping indexes on all user databases
 		[switch]$Append,
         [switch]$Force
 	)
-    DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }
+
 	
 	BEGIN
 	{
@@ -473,7 +473,7 @@ WHERE EXISTS (SELECT 1
 		}
 
         Write-Output "Attempting to connect to Sql Server.."
-		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	}
 	
 	PROCESS

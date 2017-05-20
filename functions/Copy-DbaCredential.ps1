@@ -91,7 +91,7 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 		
 	)
 	
-	DynamicParam { if ($source) { return (Get-ParamSqlCredentials -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+
 	
 	BEGIN
 	{
@@ -112,11 +112,11 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 	#>
 			[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 			param (
-				[object]$SqlServer,
+				[object]$SqlInstance,
 				[System.Management.Automation.PSCredential]$SqlCredential
 			)
 			
-			$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+			$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 			$sourcename = $server.name
 			
 			# Query Service Master Key from the database - remove padding from the key
@@ -345,8 +345,8 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 		
 		$credentials = $psboundparameters.credentials
 		
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
@@ -361,8 +361,8 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 			throw "Credentials are only supported in SQL Server 2005 and above. Quitting."
 		}
 		
-		Invoke-SmoCheck -SqlServer $sourceserver
-		Invoke-SmoCheck -SqlServer $destserver
+		Invoke-SmoCheck -SqlInstance $sourceserver
+		Invoke-SmoCheck -SqlInstance $destserver
 		
 	}
 	

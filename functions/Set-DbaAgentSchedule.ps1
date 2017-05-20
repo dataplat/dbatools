@@ -325,7 +325,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
                 # Try connecting to the instance
                 Write-Message -Message "Attempting to connect to $instance" -Level Output
                 try {
-                    $Server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+                    $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 }
                 catch {
                     Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -InnerErrorRecord $_ -Continue

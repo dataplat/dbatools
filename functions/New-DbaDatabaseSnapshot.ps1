@@ -148,7 +148,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 			}
 			#Checks for path existence
 			if ($Path.Length -gt 0) {
-				if (!(Test-DbaSqlPath -SqlServer $instance -Path $Path)) {
+				if (!(Test-DbaSqlPath -SqlInstance $instance -Path $Path)) {
 					Stop-Function -Message "$instance cannot access the directory $Path" -ErrorRecord $_ -Target $instance -Continue -Silent $Silent
 				}
 			}

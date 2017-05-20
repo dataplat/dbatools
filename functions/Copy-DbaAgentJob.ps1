@@ -94,14 +94,14 @@ Shows what would happen if the command were executed using force.
         [switch]$Force,
         [switch]$Silent
     )
-    DynamicParam { if ($source) { return (Get-ParamSqlJobs -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+
 
     BEGIN {
         $jobs = $psboundparameters.Jobs
         $exclude = $psboundparameters.Exclude
 
-        $sourceServer = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-        $destServer = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+        $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+        $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
         $source = $sourceServer.DomainInstanceName
         $destination = $destServer.DomainInstanceName

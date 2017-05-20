@@ -58,22 +58,22 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 https://dbatools.io/Export-DbaUser
 
 .EXAMPLE
-Export-DbaUser -SqlServer sql2005 -FilePath C:\temp\sql2005-users.sql
+Export-DbaUser -SqlInstance sql2005 -FilePath C:\temp\sql2005-users.sql
 
 Exports SQL for the users in server "sql2005" and writes them to the file "C:\temp\sql2005-users.sql"
 
 .EXAMPLE
-Export-DbaUser -SqlServer sqlserver2014a $scred -FilePath C:\temp\users.sql -Append
+Export-DbaUser -SqlInstance sqlserver2014a $scred -FilePath C:\temp\users.sql -Append
 
 Authenticates to sqlserver2014a using SQL Authentication. Exports all users to C:\temp\users.sql, and appends to the file if it exists. If not, the file will be created.
 
 .EXAMPLE
-Export-DbaUser -SqlServer sqlserver2014a -User User1, User2 -FilePath C:\temp\users.sql
+Export-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -FilePath C:\temp\users.sql
 
 Exports ONLY users User1 and User2 fron sqlsever2014a to the file  C:\temp\users.sql
 
 .EXAMPLE
-Export-DbaUser -SqlServer sqlserver2008 -User User1 -FilePath C:\temp\users.sql -DestinationVersion SQLServer2016
+Export-DbaUser -SqlInstance sqlserver2008 -User User1 -FilePath C:\temp\users.sql -DestinationVersion SQLServer2016
 
 Exports user User1 fron sqlsever2008 to the file  C:\temp\users.sql with sintax to run on SQL Server 2016
 
@@ -139,7 +139,7 @@ Exports user User1 fron sqlsever2008 to the file  C:\temp\users.sql with sintax 
         
         try {
             Write-Message -Level Verbose -Message "Connecting to $sqlinstance"
-            $server = Connect-SqlServer -SqlServer $sqlinstance -SqlCredential $sqlcredential
+            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
         }
         catch {
             Stop-Function -Message "Failed to connect to $instance : $($_.Exception.Message)" -Continue -Target $instance -InnerErrorRecord $_

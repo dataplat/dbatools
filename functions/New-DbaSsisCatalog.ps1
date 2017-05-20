@@ -44,7 +44,7 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/New-DbaSsisCatalog
 
 .EXAMPLE   
-New-DbaSsisCatalog -SqlServer DEV01 -SsisCredential (Get-Credential)
+New-DbaSsisCatalog -SqlInstance DEV01 -SsisCredential (Get-Credential)
 
 Prompts for username/password - while only password is used, the username must be filled out nevertheless. Then creates the SSIS Catalog on server DEV01 with the specified password. 
 
@@ -70,7 +70,7 @@ Prompts for username/password - while only password is used, the username must b
 			try
 			{
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch
 			{
@@ -94,7 +94,7 @@ Prompts for username/password - while only password is used, the username must b
 			}
 			
 			#if SQL 2012 or higher only validate databases with ContainmentType = NONE
-			$clrenabled = Get-DbaSpConfigure -SqlServer $server | Where-Object ConfigName -eq IsSqlClrEnabled
+			$clrenabled = Get-DbaSpConfigure -SqlInstance $server | Where-Object ConfigName -eq IsSqlClrEnabled
 			
 			if (!$clrenabled.RunningValue)
 			{

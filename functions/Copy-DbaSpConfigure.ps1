@@ -77,14 +77,14 @@ Shows what would happen if the command were executed.
 	    [System.Management.Automation.PSCredential]$DestinationSqlCredential
     )
 	
-    DynamicParam { if ($source) { return (Get-ParamSqlServerConfigs -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+
 	
     BEGIN
     {
 	    $configs = $psboundparameters.Configs
 		
-	    $sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-	    $destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+	    $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+	    $destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
 	    $source = $sourceserver.DomainInstanceName
 	    $destination = $destserver.DomainInstanceName

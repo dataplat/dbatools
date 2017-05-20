@@ -34,13 +34,13 @@ You should have received a copy of the GNU General Public License along with thi
  https://dbatools.io/Get-DbaStartupParameter
 
 .EXAMPLE
-Get-DbaStartupParameter -SqlServer sql2014
+Get-DbaStartupParameter -SqlInstance sql2014
 
 Logs into SQL WMI as the current user then displays the values for numerous startup parameters.
 
 .EXAMPLE
 $wincred = Get-Credential ad\sqladmin
-Get-DbaStartupParameter -SqlServer sql2014 -Credential $wincred -Simple
+Get-DbaStartupParameter -SqlInstance sql2014 -Credential $wincred -Simple
 
 Logs in to WMI using the ad\sqladmin credential and gathers simplified information about the SQL Server Startup Parameters.
 	

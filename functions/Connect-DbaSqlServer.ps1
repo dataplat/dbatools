@@ -17,7 +17,7 @@ and https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection
 
 To execute SQL commands, you can use $server.ConnectionContext.ExecuteReader($sql) or $server.Databases['master'].ExecuteNonQuery($sql)
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 
 .PARAMETER Credential
@@ -27,7 +27,7 @@ Credential object used to connect to the SQL Server as a different user be it Wi
 Gets or sets the access token for the connection.
 	
 .PARAMETER AppendConnectionString	
-Appends to the current connection string. Note that you cannot pass authenitcation information using this method. Use -SqlServer and, optionaly, -SqlCredential to set authentication information.
+Appends to the current connection string. Note that you cannot pass authenitcation information using this method. Use -SqlInstance and, optionaly, -SqlCredential to set authentication information.
 
 .PARAMETER ApplicationIntent	
 Declares the application workload type when connecting to a server. Possible values are ReadOnly and ReadWrite. 
@@ -119,34 +119,34 @@ You should have received a copy of the GNU General Public License along with thi
  https://dbatools.io/Connect-DbaSqlServer
 
 .EXAMPLE
-Connect-DbaSqlServer -SqlServer sql2014
+Connect-DbaSqlServer -SqlInstance sql2014
 
 Creates an SMO Server object that connects using Windows Authentication
 
 .EXAMPLE
 $wincred = Get-Credential ad\sqladmin
-Connect-DbaSqlServer -SqlServer sql2014 -Credential $wincred
+Connect-DbaSqlServer -SqlInstance sql2014 -Credential $wincred
 
 Creates an SMO Server object that connects using alternative Windows credentials
 
 .EXAMPLE
 $sqlcred = Get-Credential sqladmin
-$server = Connect-DbaSqlServer -SqlServer sql2014 -Credential $sqlcred
+$server = Connect-DbaSqlServer -SqlInstance sql2014 -Credential $sqlcred
 
 Login to sql2014 as SQL login sqladmin.
 
 .EXAMPLE
-$server = Connect-DbaSqlServer -SqlServer sql2014 -ClientName "mah connection"
+$server = Connect-DbaSqlServer -SqlInstance sql2014 -ClientName "mah connection"
 
 Creates an SMO Server object that connects using Windows Authentication and uses the client name "mah connection". So when you open up profiler or use extended events, you can search for "mah connection".
 
 .EXAMPLE
-$server = Connect-DbaSqlServer -SqlServer sql2014 -AppendConnectionString "Packet Size=4096;AttachDbFilename=C:\MyFolder\MyDataFile.mdf;User Instance=true;"
+$server = Connect-DbaSqlServer -SqlInstance sql2014 -AppendConnectionString "Packet Size=4096;AttachDbFilename=C:\MyFolder\MyDataFile.mdf;User Instance=true;"
 
 Creates an SMO Server object that connects to sql2014 using Windows Authentication, then it sets the packet size (this can also be done via -PacketSize) and other connection attributes.
 
 .EXAMPLE
-$server = Connect-DbaSqlServer -SqlServer sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover
+$server = Connect-DbaSqlServer -SqlInstance sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover
 
 Creates an SMO Server object that connects using Windows Authentication that uses TCPIP and has MultiSubnetFailover enabled.
 
@@ -159,8 +159,8 @@ Connects with ReadOnly ApplicantionIntent.
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[Alias("SqlCredential")]
 		[System.Management.Automation.PSCredential]$Credential,
 		[string]$AccessToken,
@@ -190,21 +190,21 @@ Connects with ReadOnly ApplicantionIntent.
 		[string]$AppendConnectionString
 	)
 	
-	DynamicParam { if ($sqlserver) { return Get-ParamSqlDatabase -SqlServer $SqlServer -SqlCredential $Credential } }
+
 	
 	PROCESS
 	{
-		if ($SqlServer.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
+		if ($SqlInstance.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
 		{
 			
-			if ($SqlServer.ConnectionContext.IsOpen -eq $false)
+			if ($SqlInstance.ConnectionContext.IsOpen -eq $false)
 			{
-				$SqlServer.ConnectionContext.Connect()
+				$SqlInstance.ConnectionContext.Connect()
 			}
-			return $SqlServer
+			return $SqlInstance
 		}
 		
-		$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlServer
+		$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlInstance
 		
 		if ($AppendConnectionString)
 		{
@@ -280,7 +280,7 @@ Connects with ReadOnly ApplicantionIntent.
 				$message = ($message -Split '-->')[0]
 				$message = ($message -Split 'at System.Data.SqlClient')[0]
 				$message = ($message -Split 'at System.Data.ProviderBase')[0]
-				throw "Can't connect to $sqlserver`: $message "
+				throw "Can't connect to $SqlInstance`: $message "
 			}
 			
 		}

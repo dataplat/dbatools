@@ -11,7 +11,7 @@ are logging into your SQL instance.
 
 Running this script every 5 minutes for a week should give you a sufficient idea about database and login usage.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server that stores the Watch database
 
 .PARAMETER SqlCms
@@ -64,17 +64,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Watch-DbaDbLogin
 
 .EXAMPLE   
-Watch-DbaDbLogin -SqlServer sqlserver -SqlCms SqlCms1
+Watch-DbaDbLogin -SqlInstance sqlserver -SqlCms SqlCms1
 
 In the above example, a list of servers is generated using all database instances within the Central Management Server "SqlCms1". Using this list, the script then enumerates all the processes and gathers login information, and saves it to the table "Dblogins" within the "DatabaseLogins" database on the SQL Server "sqlserver".
 
 .EXAMPLE   
-Watch-DbaDbLogin -SqlServer sqlcluster -Database CentralAudit -ServersFromFile .\sqlservers.txt
+Watch-DbaDbLogin -SqlInstance sqlcluster -Database CentralAudit -ServersFromFile .\sqlservers.txt
 
 In the above example, a list of servers is gathered from the file sqlservers.txt in the current directory. Using this list, the script then enumerates all the processes and gathers login information, and saves it to the table "Dblogins" within the "CentralAudit" database on the SQL Server "sqlcluster".
 
 .EXAMPLE   
-Watch-DbaDbLogin -SqlServer sqlserver -SqlCms SqlCms1 -SqlCmsGroups SQL2014Clusters -SqlCredential $cred
+Watch-DbaDbLogin -SqlInstance sqlserver -SqlCms SqlCms1 -SqlCmsGroups SQL2014Clusters -SqlCredential $cred
 
 In the above example, a list of servers is generated using database instance names within the "SQL2014Clusters" group on the Central Management Server "SqlCms1". Using this list, the script then enumerates all the processes and gathers login information, and saves it to the table "Dblogins" within the "DatabaseLogins" database on "sqlserver".
 
@@ -82,8 +82,8 @@ In the above example, a list of servers is generated using database instance nam
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	Param (
 		[parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
-		[string]$SqlServer,
+		[Alias("ServerInstance","SqlServer")]
+		[string]$SqlInstance,
 		[string]$Database = "DatabaseLogins",
 		[string]$Table = "DbLogins",
 		[System.Management.Automation.PSCredential]$SqlCredential,
@@ -95,7 +95,7 @@ In the above example, a list of servers is generated using database instance nam
 		[string]$ServersFromFile
 	)
 	
-	DynamicParam { if ($SqlCms) { return (Get-ParamSqlCmsGroups -SqlServer $SqlCms -SqlCredential $SqlCredential) } }
+
 	
 	PROCESS
 	{
@@ -117,9 +117,9 @@ In the above example, a list of servers is generated using database instance nam
 		{
 			$username = $sqlcredential.Username
 			$password = $SqlCredential.GetNetworkCredential().Password
-			$connectionstring = "Data Source=$SqlServer;Initial Catalog=$Database;User Id=$username;Password=$password;"
+			$connectionstring = "Data Source=$SqlInstance;Initial Catalog=$Database;User Id=$username;Password=$password;"
 		}
-		else { $connectionstring = "Data Source=$SqlServer;Integrated Security=true;Initial Catalog=$Database;" }
+		else { $connectionstring = "Data Source=$SqlInstance;Integrated Security=true;Initial Catalog=$Database;" }
 		
 		
 		$bulkcopy = New-Object ("Data.SqlClient.Sqlbulkcopy") $connectionstring
@@ -179,7 +179,7 @@ In the above example, a list of servers is generated using database instance nam
 		foreach ($servername in $servers)
 		{
 			Write-Output "Attempting to connect to $servername"
-			try { $server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential }
+			try { $server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential }
 			catch { Write-Error "Can't connect to $servername. Skipping."; continue }
 			
 			if (!(Test-SqlSa $server)) { Write-Warning "Not a sysadmin on $servername, resultset would be underwhelming. Skipping."; continue }
@@ -200,7 +200,7 @@ In the above example, a list of servers is generated using database instance nam
 		
 <#
 
-			Write to $Table in $Database on $SqlServer
+			Write to $Table in $Database on $SqlInstance
 
 #>
 		
@@ -212,9 +212,9 @@ In the above example, a list of servers is generated using database instance nam
 				Write-Warning "Nothing done."
 			}
 			$bulkcopy.Close()
-			Write-Output "Updated $Table in $Database on $SqlServer with $($datatable.rows.count) rows."
+			Write-Output "Updated $Table in $Database on $SqlInstance with $($datatable.rows.count) rows."
 		}
-		catch { Write-Error "Could not update $Table in $Database on $SqlServer. Do the database and table exist and do you have access?" }
+		catch { Write-Error "Could not update $Table in $Database on $SqlInstance. Do the database and table exist and do you have access?" }
 		
 	}
 	
