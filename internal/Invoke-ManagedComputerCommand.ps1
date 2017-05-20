@@ -42,7 +42,7 @@ Internal command
 		$ipaddr = $args[$args.GetUpperBound(0)]
 		
 		# Just in case we go remote, ensure the assembly is loaded
-		[void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SqlWmiManagement')
+		[void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlInstance.SqlWmiManagement')
 		
 		$wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $ipaddr
 		$null = $wmi.Initialize()

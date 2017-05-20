@@ -13,8 +13,8 @@ Takes path, checks for validity. Scans for usual backup file
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]$Path,
         [parameter(Mandatory = $true)]
-        [Alias("ServerInstance", "SqlInstance")]
-        [object]$SqlServer,
+        [Alias("ServerInstance", "SqlServer")]
+        [object]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential
     )
        
@@ -24,21 +24,21 @@ Takes path, checks for validity. Scans for usual backup file
         Write-Verbose "$FunctionName - Checking Path"
 		try 
 		{
-			if ($sqlServer -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject])
+			if ($SqlInstance -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject])
 			{
 				Write-verbose "$FunctionName - Opening SQL Server connection"
 				$NewConnection = $True
-				$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential	
+				$Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential	
 			}
 			else
 			{
 				Write-Verbose "$FunctionName - reusing SMO connection"
-				$server = $SqlServer
+				$server = $SqlInstance
 			}
 		}
 		catch {
 
-			Write-Warning "$FunctionName - Cannot connect to $SqlServer" 
+			Write-Warning "$FunctionName - Cannot connect to $SqlInstance" 
 			break
 		}
 
@@ -46,9 +46,9 @@ Takes path, checks for validity. Scans for usual backup file
         {
             $Path = $Path + "\"
         }
-        If (!(Test-DbaSqlPath -SQLServer $server -SqlCredential $SqlCredential -path $path))
+        If (!(Test-DbaSqlPath -SqlInstance $server -SqlCredential $SqlCredential -path $path))
         {
-            Write-warning "$FunctionName - SQLServer $sqlserver cannot access $path"
+            Write-warning "$FunctionName - SqlInstance $SqlInstance cannot access $path"
         }
         $query = "EXEC master.sys.xp_dirtree '$Path',1,1;"
         $queryResult = Invoke-DbaSqlcmd -ServerInstance $server -Credential $SqlCredential -Database tempdb -Query $query
@@ -61,7 +61,7 @@ Takes path, checks for validity. Scans for usual backup file
         {
             $fullpath = "$path$($d.Subdirectory)"
             Write-Verbose "Enumerating subdirectory '$fullpath'"
-            $Results += Get-XpDirTreeRestoreFile -path $fullpath -SqlServer $SqlServer -SqlCredential $SqlCredential
+            $Results += Get-XpDirTreeRestoreFile -path $fullpath -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
         return $Results
     

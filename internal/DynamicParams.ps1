@@ -3,10 +3,10 @@
 	These are all the functions for tab completion (auto-population of params)
 	To use, place this after params in a function
 
-	DynamicParam { if ($source) { return (Get-ParamSqlXyz -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+	DynamicParam { if ($source) { return (Get-ParamSqlXyz -SqlInstance $Source -SqlCredential $SourceSqlCredential) } }
 
 #>
-Function Get-ParamSqlServerConfigs
+Function Get-ParamSqlInstanceConfigs
 {
 <#
  .SYNOPSIS
@@ -16,12 +16,12 @@ Function Get-ParamSqlServerConfigs
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -63,14 +63,14 @@ filled with database list from specified SQL Server server.
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$NoSystem,
 		[switch]$DbsWithSnapshotsOnly
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	$SupportDbs = "ReportServer", "ReportServerTempDb", "distribution"
@@ -162,13 +162,13 @@ filled with database list from specified SQL Server server.
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$DbsWithSnapshotsOnly
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -226,12 +226,12 @@ filled with snapshot list from specified SQL Server server.
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -306,14 +306,14 @@ Function Get-ParamSqlLogins
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$WindowsOnly,
 		[switch]$SqlOnly
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	
@@ -404,14 +404,14 @@ Function Get-ParamSqlLogin
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$WindowsOnly,
 		[switch]$SqlOnly
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	$loginlist = @()
@@ -468,7 +468,7 @@ Function Get-ParamSqlLogin
 }
 
 
-Function Get-ParamSqlServerRoles
+Function Get-ParamSqlInstanceRoles
 {
 <#
  .SYNOPSIS
@@ -478,12 +478,12 @@ Function Get-ParamSqlServerRoles
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -525,12 +525,12 @@ Function Get-ParamSqlProcessHosts
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -567,12 +567,12 @@ Function Get-ParamSqlProcessPrograms
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -609,12 +609,12 @@ Function Get-ParamSqlSpids
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -653,12 +653,12 @@ filled with SQL Credentials from specified SQL Server server name.
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -689,7 +689,7 @@ filled with SQL Credentials from specified SQL Server server name.
 	return $newparams
 }
 
-Function Get-ParamSqlServerAudits
+Function Get-ParamSqlInstanceAudits
 {
 <#
  .SYNOPSIS
@@ -699,12 +699,12 @@ Function Get-ParamSqlServerAudits
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -735,7 +735,7 @@ Function Get-ParamSqlServerAudits
 	return $newparams
 }
 
-Function Get-ParamSqlServerServerAuditSpecifications
+Function Get-ParamSqlInstanceServerAuditSpecifications
 {
 <#
  .SYNOPSIS
@@ -745,12 +745,12 @@ Function Get-ParamSqlServerServerAuditSpecifications
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -791,12 +791,12 @@ Function Get-ParamSqlBackupDevices
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -826,7 +826,7 @@ Function Get-ParamSqlBackupDevices
 	return $newparams
 }
 
-Function Get-ParamSqlServerEndpoints
+Function Get-ParamSqlInstanceEndpoints
 {
 <#
  .SYNOPSIS
@@ -836,12 +836,12 @@ Function Get-ParamSqlServerEndpoints
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -883,12 +883,12 @@ filled with Linked Servers from specified server name.
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -933,15 +933,15 @@ Function Get-ParamSqlPolicyManagement
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
-	if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Dmf") -eq $null)
+	if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlInstance.Dmf") -eq $null)
 	{
 		return
 	}
@@ -988,12 +988,12 @@ Function Get-ParamSqlResourceGovernor
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	$pools = $server.ResourceGovernor.ResourcePools | Where-Object { $_.Name -notin "internal", "default" }
@@ -1026,8 +1026,8 @@ Function Get-ParamSqlExtendedEvents
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
@@ -1036,7 +1036,7 @@ Function Get-ParamSqlExtendedEvents
 		return
 	}
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	$sqlconn = $server.ConnectionContext.SqlConnectionObject
@@ -1080,12 +1080,12 @@ Function Get-ParamSqlDatabaseMail
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	$objects = "ConfigurationValues", "Profiles", "Accounts", "MailServers"
@@ -1125,12 +1125,12 @@ Function Get-ParamSqlJobServer
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	$jobobjects = "ProxyAccounts", "JobSchedule", "SharedSchedules", "AlertSystem", "JobCategories", "OperatorCategories"
@@ -1170,8 +1170,8 @@ filled with server groups from specified SQL Server Central Management server na
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 		
 	)
@@ -1181,7 +1181,7 @@ filled with server groups from specified SQL Server Central Management server na
 		return
 	}
 	
-	try { $SqlCms = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $SqlCms = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	$sqlconnection = $SqlCms.ConnectionContext.SqlConnectionObject
@@ -1247,7 +1247,7 @@ filled with server groups from specified SQL Server Central Management server na
 	else { return }
 }
 
-Function Get-ParamSqlServerTriggers
+Function Get-ParamSqlInstanceTriggers
 {
 <#
  .SYNOPSIS
@@ -1257,12 +1257,12 @@ Function Get-ParamSqlServerTriggers
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -1304,12 +1304,12 @@ Function Get-ParamSqlCustomErrors
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -1353,12 +1353,12 @@ Function Get-ParamSqlDatabaseAssemblies
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	######### Assemblies
@@ -1415,12 +1415,12 @@ Function Get-ParamSqlDataCollectionSets
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.Collector") -eq $null)
@@ -1473,12 +1473,12 @@ Function Get-ParamSqlAlerts
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -1516,12 +1516,12 @@ Function Get-ParamSqlOperators
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -1558,12 +1558,12 @@ Function Get-ParamSqlOperatorCategories
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -1601,12 +1601,12 @@ Function Get-ParamSqlProxyAccounts
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -1645,12 +1645,12 @@ Function Get-ParamSqlSharedSchedules
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -1687,12 +1687,12 @@ Function Get-ParamSqlJobCategories
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -1729,12 +1729,12 @@ Function Get-ParamSqlAlertCategories
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -1771,12 +1771,12 @@ Function Get-ParamSqlTargetServers
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -1813,12 +1813,12 @@ Function Get-ParamSqlTargetServerGroups
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -1855,12 +1855,12 @@ Function Get-ParamSqlJobs
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -1899,12 +1899,12 @@ Function Get-ParamSqlAgentCategories
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	$jobobjects = "JobCategories", "OperatorCategories", "AlertCategories"
@@ -1941,12 +1941,12 @@ Function Get-ParamSqlDatabaseFileTypes
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	# Populate arrays
@@ -2000,12 +2000,12 @@ Function Get-ParamSqlAllProcessInfo
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	$processinfo = "Logins", "Spids", "Exclude", "Hosts", "Programs", "Databases"
@@ -2062,12 +2062,12 @@ Function Get-ParamSqlMaintenancePlans
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	$sql = "SELECT sp.[name] AS MaintenancePlans FROM msdb.dbo.sysmaintplan_plans AS sp"
@@ -2107,12 +2107,12 @@ Function Get-ParamSqlAvailabilityGroups
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ParameterConnection }
+	try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection }
 	catch { return }
 	
 	$list = @()

@@ -11,7 +11,7 @@
             - Smo Server objects
             - Smo Linked Server objects
         
-        .PARAMETER SqlServer
+        .PARAMETER SqlInstance
             The SQL Server instance to restore to.
 
         .PARAMETER SqlCredential
@@ -25,7 +25,7 @@
             By default, the assumption is that SA is required.
         
         .EXAMPLE
-            Connect-SqlServer -SqlServer sql2014
+            Connect-SqlInstance -SqlInstance sql2014
     
             Connect to the Server sql2014 with native credentials.
     #>
@@ -33,8 +33,8 @@
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[Object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[Object]$SqlInstance,
 		[object]$SqlCredential,
 		[switch]$ParameterConnection,
 		[switch]$RegularUser
@@ -63,21 +63,21 @@
     
     Note: Multiple servers in one call were never supported, those old functions were liable to break anyway and should be fixed soonest.
     #>
-	if ($SqlServer.GetType() -eq [SqlCollective.Dbatools.Parameter.DbaInstanceParameter]) {
-		[DbaInstanceParameter]$ConvertedSqlServer = $SqlServer
+	if ($SqlInstance.GetType() -eq [SqlCollective.Dbatools.Parameter.DbaInstanceParameter]) {
+		[DbaInstanceParameter]$ConvertedSqlInstance = $SqlInstance
 	}
 	else {
-		[DbaInstanceParameter]$ConvertedSqlServer = [DbaInstanceParameter]($SqlServer | Select-Object -First 1)
+		[DbaInstanceParameter]$ConvertedSqlInstance = [DbaInstanceParameter]($SqlInstance | Select-Object -First 1)
 		
-		if ($SqlServer.Count -gt 1) {
-			Write-Message -Level Warning -Silent $true -Message "More than on server was specified when calling Connect-SqlServer from $((Get-PSCallStack)[1].Command)"
+		if ($SqlInstance.Count -gt 1) {
+			Write-Message -Level Warning -Silent $true -Message "More than on server was specified when calling Connect-SqlInstance from $((Get-PSCallStack)[1].Command)"
 		}
 	}
 	#endregion Safely convert input into instance parameters
 	
 	#region Input Object was a server object
-	if ($ConvertedSqlServer.InputObject.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
-		$server = $ConvertedSqlServer.InputObject
+	if ($ConvertedSqlInstance.InputObject.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
+		$server = $ConvertedSqlInstance.InputObject
 		if ($ParameterConnection) {
 			$paramserver = New-Object Microsoft.SqlServer.Management.Smo.Server
 			$paramserver.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
@@ -111,15 +111,15 @@
 		}
 		
 		# Update cache for database names
-		[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$ConvertedSqlServer.FullSmoName.ToLower()] = $server.Databases.Name
+		[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.Databases.Name
 		
 		return $server
 	}
 	#endregion Input Object was a server object
 	
 	#region Input Object was anything else
-	# This seems a little complex but is required because some connections do TCP,sqlserver
-	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $ConvertedSqlServer.FullSmoName
+	# This seems a little complex but is required because some connections do TCP,SqlInstance
+	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $ConvertedSqlInstance.FullSmoName
 	$server.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
 	
 	<#
@@ -169,12 +169,12 @@
 		$message = ($message -Split '-->')[0]
 		$message = ($message -Split 'at System.Data.SqlClient')[0]
 		$message = ($message -Split 'at System.Data.ProviderBase')[0]
-		throw "Can't connect to $ConvertedSqlServer`: $message "
+		throw "Can't connect to $ConvertedSqlInstance`: $message "
 	}
 	
 	if (-not $RegularUser) {
 		if ($server.ConnectionContext.FixedServerRoles -notmatch "SysAdmin") {
-			throw "Not a sysadmin on $ConvertedSqlServer. Quitting."
+			throw "Not a sysadmin on $ConvertedSqlInstance. Quitting."
 		}
 	}
 	
@@ -209,7 +209,7 @@
 	}
 	
 	# Update cache for database names
-	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$ConvertedSqlServer.FullSmoName.ToLower()] = $server.Databases.Name
+	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.Databases.Name
 	
 	return $server
 	#endregion Input Object was anything else
