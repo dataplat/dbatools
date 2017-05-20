@@ -31,7 +31,7 @@
     Will prevent the caching of credentials if set to true.
 
     .PARAMETER DisableCimPersistence
-    Will prevent Cim-Session to be reused.
+    Will prevent Cim-Sessions to be reused.
 
     .PARAMETER DisableCredentialAutoRegister
     Will prevent working credentials from being automatically cached

@@ -42,7 +42,7 @@ Adds the scheduled task needed by Watch-DbaUpdate
 				$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date -RepetitionInterval (New-TimeSpan -Hours 1)
 				$principal = New-ScheduledTaskPrincipal -LogonType S4U -UserId (whoami)
 				$settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([timespan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd
-				$task = Register-ScheduledTask -Principal $principal -TaskName 'dbatools version check' -Action $action -ServerTrigger $trigger -Settings $settings -ErrorAction Stop
+				$task = Register-ScheduledTask -Principal $principal -TaskName 'dbatools version check' -Action $action -Trigger $trigger -Settings $settings -ErrorAction Stop
 			}
 			catch
 			{
