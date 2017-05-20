@@ -332,4 +332,3 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Remove-SqlOrphanUser
 	}
 }
-Register-DbaTeppArgumentCompleter -Command Remove-DbaOrphanUser -Parameter Database

@@ -272,5 +272,4 @@ function Test-DbaMigrationConstraint {
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Test-SqlMigrationConstraint
 	}
 }
-#TEPP implementation
-Register-DbaTeppArgumentCompleter -Command Test-DbaMigrationConstraint -Parameter Database, Exclude
+

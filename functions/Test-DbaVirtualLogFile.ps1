@@ -145,5 +145,4 @@ function Test-DbaVirtualLogFile {
 		}
 	}
 }
-#TEPP implementation
-Register-DbaTeppArgumentCompleter -Command Test-DbaVirtualLogFile -Parameter Database, Exclude
+

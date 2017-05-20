@@ -143,4 +143,3 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaLastBackup -Parameter Database, Exclude

@@ -144,5 +144,3 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 		}
 	}
 }
-
-Register-DbaTeppArgumentCompleter -Command Remove-DbaDatabase -Parameter Database

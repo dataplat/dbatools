@@ -136,4 +136,4 @@ function Test-DbaDatabaseOwner {
 		}
 	}
 }
-Register-DbaTeppArgumentCompleter -Command Test-DbaDatabaseOwner -Parameter Database, Exclude, TargetLogin
+

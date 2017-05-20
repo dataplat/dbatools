@@ -120,4 +120,3 @@ Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerN
 		}
 	}
 }
-Register-DbaTeppArgumentCompleter -Command Get-DbaTrigger -Parameter Database, Exclude

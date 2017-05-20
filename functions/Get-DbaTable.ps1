@@ -199,4 +199,3 @@ Returns information on the CommandLog table in the DBA database on both instance
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaTable -Parameter Database, Exclude

@@ -459,4 +459,3 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 		}
 	}
 }
-Register-DbaTeppArgumentCompleter -Command Set-DbaDatabaseState -Parameter Database

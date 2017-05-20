@@ -149,4 +149,4 @@ function Test-DbaFullRecoveryModel {
 		}
 	}
 }
-Register-DbaTeppArgumentCompleter -Command Test-DbaFullRecoveryModel -Parameter Database, Exclude
+

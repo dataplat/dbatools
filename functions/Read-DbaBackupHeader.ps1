@@ -253,4 +253,3 @@ Gets the backup header information from the SQL Server backup file stored at htt
     }
 }
 
-Register-DbaTeppArgumentCompleter -Command Read-DbaBackupHeader -Parameter SqlInstance

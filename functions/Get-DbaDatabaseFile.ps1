@@ -215,4 +215,3 @@ Function Get-DbaDatabaseFile {
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaDatabaseFile -Parameter Database, Exclude

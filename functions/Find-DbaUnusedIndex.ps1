@@ -290,4 +290,3 @@ Will find exact Unused indexes on all user databases
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Find-DbaUnusedIndex -Parameter Database, Exclude

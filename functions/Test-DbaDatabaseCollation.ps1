@@ -124,4 +124,4 @@ function Test-DbaDatabaseCollation {
 		}
 	}
 }
-Register-DbaTeppArgumentCompleter -Command Test-DbaDatabaseCollation -Parameter Database, Exclude
+

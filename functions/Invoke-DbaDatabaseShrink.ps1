@@ -296,4 +296,3 @@ Shrinks all databases on SQL2012 (not ideal for production)
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Invoke-DbaDatabaseShrink -Parameter Database, Exclude

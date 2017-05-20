@@ -331,4 +331,3 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command New-DbaDatabaseSnapshot -Parameter Database, Exclude

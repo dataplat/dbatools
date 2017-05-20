@@ -255,4 +255,3 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Restore-DbaDatabaseSnapshot -Parameter Database

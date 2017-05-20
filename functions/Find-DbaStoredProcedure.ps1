@@ -192,4 +192,3 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Find-DbaStoredProcedure -Parameter Database, Exclude

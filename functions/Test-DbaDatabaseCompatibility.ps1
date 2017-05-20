@@ -125,4 +125,4 @@ function Test-DbaDatabaseCompatibility {
 		}
 	}
 }
-Register-DbaTeppArgumentCompleter -Command Test-DbaDatabaseCompatibility -Parameter Database, Exclude
+

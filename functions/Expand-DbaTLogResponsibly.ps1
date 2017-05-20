@@ -478,4 +478,3 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Expand-DbaTLogResponsibly -Parameter Database, Exclude

@@ -151,4 +151,3 @@ FUNCTION Get-DbaSchemaChangeHistory {
     }
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaSchemaChangeHistory -Parameter Database, Exclude

@@ -165,4 +165,3 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Remove-DbaDatabaseSnapshot -Parameter Database

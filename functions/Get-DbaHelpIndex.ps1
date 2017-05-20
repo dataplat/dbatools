@@ -1044,4 +1044,3 @@ FROM @AllResults;
 	
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaHelpIndex -Parameter Database, Exclude

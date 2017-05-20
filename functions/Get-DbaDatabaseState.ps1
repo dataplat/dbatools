@@ -137,4 +137,3 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaDatabaseState -Parameter Database, Exclude

@@ -231,6 +231,5 @@
     }
 }
 
-Register-DbaTeppArgumentCompleter -Command Remove-DbaMasterKey -Parameter Database
-Register-DbaTeppArgumentCompleter -Command Remove-DbaMasterKey -Parameter Exclude -Name Database
-Register-DbaTeppArgumentCompleter -Command Remove-DbaMasterKey -Parameter SqlInstance -Name SqlInstance
+
+

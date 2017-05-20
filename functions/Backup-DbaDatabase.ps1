@@ -496,4 +496,3 @@ sql credential dbatoolscred registered on the sql2016 instance
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Backup-DbaDatabase -Parameter Database, Exclude
