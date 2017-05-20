@@ -61,7 +61,7 @@ Returns all active jobs on multiple instances piped into the function
 		{
 			TRY
 			{
-				$server = Connect-SqlServer -SqlServer $server -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $server -SqlCredential $sqlcredential
 			}
 			CATCH
 			{

@@ -84,7 +84,7 @@ Function Test-DbaSqlPath {
     )
     
     try {
-        $server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+        $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     }
     catch {
         Stop-Function -Message "Failed to connect to $SqlInstance" -Silent $Silent -ErrorRecord $_

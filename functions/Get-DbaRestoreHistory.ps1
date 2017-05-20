@@ -95,7 +95,7 @@ Returns database restore information for every database on every server listed i
 		{
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 				
 				if ($server.VersionMajor -lt 9)
 				{

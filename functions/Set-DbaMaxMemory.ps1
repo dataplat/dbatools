@@ -125,7 +125,7 @@ Function Set-DbaMaxMemory
             
             try
             {
-                $server = Connect-SqlServer -SqlServer $row.server -SqlCredential $SqlCredential -ErrorAction Stop
+                $server = Connect-SqlInstance -SqlInstance $row.server -SqlCredential $SqlCredential -ErrorAction Stop
             }
             catch
             {

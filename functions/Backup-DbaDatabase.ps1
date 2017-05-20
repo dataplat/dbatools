@@ -151,7 +151,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 		if ($SqlInstance.length -ne 0) {
 			Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
 			try {
-				$Server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+				$Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 			}
 			catch {
 				Write-Message -Level Warning -Message "Cannot connect to $SqlInstance"

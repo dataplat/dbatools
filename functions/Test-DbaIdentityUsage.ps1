@@ -144,7 +144,7 @@ function Test-DbaIdentityUsage {
 			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 			
 			try {
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
 				Stop-Function -Message "Can't connect to $instance or access denied. Skipping." -Continue

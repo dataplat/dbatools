@@ -60,7 +60,7 @@ Get Optimize for AdHoc Workloads setting for servers sql2008 and sqlserver2012 a
 			Write-Verbose "Attempting to connect to $servername"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
 			}
 			catch
 			{

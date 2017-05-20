@@ -86,7 +86,7 @@ Prompts you for confirmation before executing any changing operations within the
 		{
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch
 			{

@@ -204,7 +204,7 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
 			# Try connecting to the instance
 			Write-Message -Message "Attempting to connect to $instance" -Level Output
 			try {
-				$Server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
 				Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -Continue

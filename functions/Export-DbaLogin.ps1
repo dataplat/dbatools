@@ -123,7 +123,7 @@ Exports ONLY logins netnerds and realcajun from sqlsever2014a with the permissio
 		
 		try {
 			Write-Message -Level Verbose -Message "Connecting to $sqlinstance"
-			$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $sqlcredential
+			$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
 		}
 		catch {
 			Stop-Function -Message "Failed to connect to $instance : $($_.Exception.Message)" -Continue -Target $instance -InnerErrorRecord $_

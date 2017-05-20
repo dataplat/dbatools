@@ -74,7 +74,7 @@ Shows all user owned (non-sa, non-dbo) objects and verbose output
 			try
 			{
 				Write-Verbose "Connecting to $Instance"
-				$server = Connect-SqlServer -SqlServer $Instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $sqlcredential
 			}
 			catch
 			{

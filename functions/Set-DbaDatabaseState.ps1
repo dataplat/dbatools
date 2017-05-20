@@ -225,7 +225,7 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 			foreach ($instance in $SqlInstance) {
 				Write-Verbose "Connecting to $instance"
 				try {
-					$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+					$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 				}
 				catch {
 					Write-Warning "Can't connect to $instance"

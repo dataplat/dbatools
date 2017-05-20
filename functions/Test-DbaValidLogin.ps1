@@ -123,7 +123,7 @@ Tests all logins excluding any that are from the subdomain Domain
 		{
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 				Write-Message -Message "Connected to: $instance" -Level Verbose
 			}
 			catch

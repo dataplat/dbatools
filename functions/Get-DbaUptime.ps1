@@ -95,7 +95,7 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 				Write-Verbose "Connecting to $servername"
 				try
 				{
-					$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential -ErrorVariable ConnectError
+					$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential -ErrorVariable ConnectError
 					
 				}
 				catch

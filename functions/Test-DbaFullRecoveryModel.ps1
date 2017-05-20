@@ -75,7 +75,7 @@ function Test-DbaFullRecoveryModel {
 	process {
 		foreach ($servername in $SqlInstance) {
 			try {
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
 
 				if ($server.versionMajor -lt 9) {
 					Write-Warning "This function does not support versions lower than SQL Server 2005 (v9). Skipping server '$servername'."

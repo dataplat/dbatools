@@ -91,7 +91,7 @@ Returns information on the action that would be performed. No actual change will
 		{
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch
 			{

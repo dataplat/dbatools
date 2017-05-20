@@ -490,7 +490,7 @@ folder for those file types as defined on the target instance.
 
 		try
 		{
-			$Server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+			$Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 		}
 		catch
 		{

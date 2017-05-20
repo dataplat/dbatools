@@ -86,7 +86,7 @@ Shows information about the processes that were initiated by hosts (computers/cl
 	
 	BEGIN
 	{
-		$sourceserver = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+		$sourceserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 		$source = $sourceserver.DomainInstanceName
 		
 		$logins = $psboundparameters.Logins

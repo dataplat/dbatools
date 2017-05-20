@@ -183,7 +183,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 			# Reset all the arrays
 			$dirtreefiles = $valid = $paths = $matching = @()
 
-			$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
+			$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
 
 			# Get the default data and log directories from the instance
 			Write-Debug "Adding paths"

@@ -83,7 +83,7 @@ Gets a list of server IP addresses in the HR and Accounting groups from the Cent
 
 	
     BEGIN {
-        $server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+        $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         $sqlconnection = $server.ConnectionContext.SqlConnectionObject
 		
         try {

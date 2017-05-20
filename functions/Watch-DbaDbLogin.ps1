@@ -179,7 +179,7 @@ In the above example, a list of servers is generated using database instance nam
 		foreach ($servername in $servers)
 		{
 			Write-Output "Attempting to connect to $servername"
-			try { $server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential }
+			try { $server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential }
 			catch { Write-Error "Can't connect to $servername. Skipping."; continue }
 			
 			if (!(Test-SqlSa $server)) { Write-Warning "Not a sysadmin on $servername, resultset would be underwhelming. Skipping."; continue }

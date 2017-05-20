@@ -226,11 +226,11 @@ Function Test-DbaDiskAlignment
                             {
                                 if ($SqlCredential -ne $null)
                                 {
-                                    $smoserver = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+                                    $smoserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
                                 }
                                 else
                                 {
-                                    $smoserver = Connect-SqlServer -SqlServer $SqlInstance # win auth
+                                    $smoserver = Connect-SqlInstance -SqlInstance $SqlInstance # win auth
                                 }
                                 $sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
                                 Write-Message -Level Verbose -Message "Query is: $sql" -FunctionName $FunctionName

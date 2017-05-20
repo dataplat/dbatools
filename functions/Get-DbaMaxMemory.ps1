@@ -57,7 +57,7 @@ Find all servers in Server Central Management Server that have 'Max Server Memor
 			Write-Verbose "Attempting to connect to $servername"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
 			}
 			catch
 			{

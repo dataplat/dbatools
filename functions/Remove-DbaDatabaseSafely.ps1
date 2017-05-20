@@ -171,7 +171,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			throw "You must specify at least one database. Use -Database or -AllDatabases."
 		}
 		
-		$sourceserver = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $sqlCredential -ParameterConnection
+		$sourceserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlCredential -ParameterConnection
 		
 		if (-not $destination) {
 			$destination = $sqlinstance
@@ -180,7 +180,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		
 		if ($sqlinstance -ne $destination) {
 			
-			$destserver = Connect-SqlServer -SqlServer $destination -SqlCredential $DestinationCredential
+			$destserver = Connect-SqlInstance -SqlInstance $destination -SqlCredential $DestinationCredential
 			
 			$sourcenb = $sourceserver.ComputerNamePhysicalNetBIOS
 			$destnb = $sourceserver.ComputerNamePhysicalNetBIOS
@@ -335,7 +335,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				[switch]$TSql = $false
 			)
 			
-			$server = Connect-SqlServer -SqlServer $server -SqlCredential $sqlCredential
+			$server = Connect-SqlInstance -SqlInstance $server -SqlCredential $sqlCredential
 			$servername = $server.name
 			$server.ConnectionContext.StatementTimeout = 0
 			$restore = New-Object 'Microsoft.SqlServer.Management.Smo.Restore'

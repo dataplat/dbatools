@@ -140,7 +140,7 @@ Returns database files and free space information for the db1 and db2 on localho
 			try {
 				#For each SQL Server in collection, connect and get SMO object
 				Write-Verbose "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
 				Write-Warning "Can't connect to $instance. Moving on."

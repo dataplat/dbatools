@@ -96,7 +96,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 		foreach ($Instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Attempting to connect to $Instance"
 			try {
-				$server = Connect-SqlServer -SqlServer $Instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $SqlCredential
 			}
 			catch {
 				Write-Message -Level Warning -Message "Can't connect to $Instance or access denied. Skipping."

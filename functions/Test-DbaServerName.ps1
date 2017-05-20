@@ -75,7 +75,7 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 		{
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
+				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $Credential
 			}
 			catch
 			{

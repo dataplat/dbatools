@@ -85,7 +85,7 @@ Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id =
 			try
 			{
 				Write-Verbose "Connecting to $servername"
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
 				
 				if ($server.versionMajor -lt 9)
 				{

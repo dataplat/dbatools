@@ -110,7 +110,7 @@ Gets super detailed information for execution plans on only for AdventureWorks20
 		{
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
 				
 				if ($server.VersionMajor -lt 9)
 				{

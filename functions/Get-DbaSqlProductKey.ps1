@@ -112,7 +112,7 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
             { throw "Can't load CMS assemblies. You must have SQL Server Management Studio installed to use the -SqlCms switch." }
 			
             Write-Verbose "Gathering SQL Servers names from Central Management Server"
-            $server = Connect-SqlServer -SqlServer $SqlCms -SqlCredential $SqlCredential
+            $server = Connect-SqlInstance -SqlInstance $SqlCms -SqlCredential $SqlCredential
             $sqlconnection = $server.ConnectionContext.SqlConnectionObject
 			
             try { $cmstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sqlconnection) }
@@ -175,7 +175,7 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
                 }
 				
                 Write-Verbose "Attempting to connect to $SqlInstance"
-                try { $server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential }
+                try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential }
                 catch { Write-Warning "Can't connect to $SqlInstance or access denied. Skipping."; continue }
 				
                 $servicePack = $server.ProductLevel

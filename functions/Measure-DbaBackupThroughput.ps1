@@ -112,7 +112,7 @@ Gets backup calculations, limited to the last year and only the bigoldb database
 			try
 			{
 				Write-Verbose "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch
 			{

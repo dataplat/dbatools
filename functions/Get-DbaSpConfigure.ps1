@@ -73,7 +73,7 @@ Returns only the system configuration for MaxServerMemory. Configs is autopopula
 		{
 			TRY
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			CATCH
 			{

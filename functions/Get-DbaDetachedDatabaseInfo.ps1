@@ -159,7 +159,7 @@ SQL Server is required to process offilne MDF files. The abvoe example reutrns i
 	PROCESS
 	{
 		
-		$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 		$mdfinfo = Get-MdfFileInfo $server $path
 		
 	}

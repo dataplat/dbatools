@@ -70,7 +70,7 @@ Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Stat
 			Write-Verbose "Connecting to $instance."
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential -ErrorAction SilentlyContinue
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential -ErrorAction SilentlyContinue
 				Write-Verbose "SQL Instance $instance is version $($server.versionmajor)."
 			}
 			catch

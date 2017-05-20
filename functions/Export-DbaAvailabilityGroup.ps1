@@ -87,7 +87,7 @@ Exports all Availability Groups from SQL server "sql2014". Output scripts are wr
 		
 		try
 		{
-			$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+			$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 		}
 		catch
 		{

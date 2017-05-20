@@ -289,8 +289,8 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
 		
 		$ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
 		
-		$sourceConnection = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destinationConnection = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		$sourceConnection = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destinationConnection = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
 		if ($sourceConnection.versionMajor -lt 11 -or $destinationConnection.versionMajor -lt 11)
 		{

@@ -71,7 +71,7 @@ function Test-DbaDatabaseCompatibility {
 		foreach ($servername in $SqlInstance) {
 			Write-Verbose "Connecting to $servername"
 			try {
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
+				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $Credential
 			}
 			catch {
 				if ($SqlInstance.count -eq 1) {

@@ -556,8 +556,8 @@ https://dbatools.io/Sync-DbaLoginPermissions
 		if ($source -eq $destination) { throw "Source and Destination SQL Servers are the same. Quitting." }
 		
 		Write-Output "Attempting to connect to SQL Servers.."
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName

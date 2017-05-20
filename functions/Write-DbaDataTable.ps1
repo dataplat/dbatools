@@ -213,7 +213,7 @@ This is a good example of the type conversion in action. All process properties 
 		
 		$fqtn = "[$database].[$Schema].[$table]"
 		
-		$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 		
 		$db = $server.Databases | Where-Object { $_.Name -eq $database }
 		

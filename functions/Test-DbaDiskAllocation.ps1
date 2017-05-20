@@ -147,7 +147,7 @@ To return true or false for ALL disks being formatted to 64k
 							Write-Message -Level Verbose -Message "Connecting to SQL instance ($SqlInstance)"
 							try
 							{
-								$smoserver = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+								$smoserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 								$sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
 								$sqlcount = $smoserver.Databases['master'].ExecuteWithResults($sql).Tables[0].Count
 								if ($sqlcount -gt 0)

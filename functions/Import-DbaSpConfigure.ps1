@@ -83,13 +83,13 @@ using the SQL credential stored in the variables
 	
 		if ($Path.length -eq 0)
 		{
-			$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-			$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+			$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+			$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 			
 			$source = $sourceserver.DomainInstanceName
 			$destination = $destserver.DomainInstanceName
 		} else {
-			$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+			$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 			if ((Test-Path $Path) -eq $false) { throw "File Not Found" }
 		}
 	

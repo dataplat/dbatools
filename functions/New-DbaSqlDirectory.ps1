@@ -69,7 +69,7 @@ If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+	$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	
 	$Path = $Path.Replace("'", "''")
 	

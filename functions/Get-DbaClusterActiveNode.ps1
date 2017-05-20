@@ -62,7 +62,7 @@ Returns a datatable with details
 	
 	BEGIN
 	{
-		$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential -RegularUser
+		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -RegularUser
 		$computername = $server.ComputerNamePhysicalNetBIOS
 	}
 	

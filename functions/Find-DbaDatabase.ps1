@@ -74,7 +74,7 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 			try
 			{
 				Write-Verbose "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch
 			{

@@ -67,7 +67,7 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 		foreach ($instance in $SqlInstance) {
 			Write-Verbose "Connecting to $instance"
 			try {
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Write-Warning "Can't connect to $instance"

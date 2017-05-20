@@ -71,7 +71,7 @@ function Test-DbaDatabaseCollation {
 	process {
 		foreach ($servername in $SqlInstance) {
 			try {
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
+				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $Credential
 			}
 			catch {
 				if ($SqlInstance.count -eq 1) {

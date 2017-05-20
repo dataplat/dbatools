@@ -177,7 +177,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 			
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$sourceserver = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlCredential
+				$sourceserver = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlCredential
 			}
 			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -Target $instance -Continue
@@ -185,7 +185,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 			
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$destserver = Connect-SqlServer -SqlServer $destination -SqlCredential $DestinationCredential
+				$destserver = Connect-SqlInstance -SqlInstance $destination -SqlCredential $DestinationCredential
 			}
 			catch {
 				Stop-Function -Message "Failed to connect to: $destination" -Target $destination -Continue
@@ -391,7 +391,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 								}
 							}
 							
-							$destserver = Connect-SqlServer -SqlServer $destination -SqlCredential $DestinationCredential
+							$destserver = Connect-SqlInstance -SqlInstance $destination -SqlCredential $DestinationCredential
 							
 							if (!$NoCheck -and !$VerifyOnly) {
 								# shouldprocess is taken care of in Start-DbccCheck

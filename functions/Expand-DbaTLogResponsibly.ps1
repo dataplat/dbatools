@@ -178,7 +178,7 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
 		#Set base information
 		Write-Verbose "Initialize the instance '$SqlInstance'"
 		
-		$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 		
 		if ($ShrinkLogFile -eq $true) {
 			if ($BackupDirectory.length -eq 0) {

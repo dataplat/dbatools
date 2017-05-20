@@ -94,7 +94,7 @@ Returns true/false if the server, sqlserver2014a, is the primary replica for AG-
 		foreach ($servername in $SqlInstance)
 		{
 			$agReplicas = @()
-			$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
+			$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
 			
 			$version = $server.VersionMajor
 			if ($version -lt 11) 

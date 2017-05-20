@@ -93,7 +93,7 @@ Get Max DOP setting for servers sql2016 with the recommended value. As the -Deta
 			Write-Verbose "Attempting to connect to $servername"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
 			}
 			catch
 			{

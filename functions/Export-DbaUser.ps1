@@ -139,7 +139,7 @@ Exports user User1 fron sqlsever2008 to the file  C:\temp\users.sql with sintax 
         
         try {
             Write-Message -Level Verbose -Message "Connecting to $sqlinstance"
-            $server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $sqlcredential
+            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
         }
         catch {
             Stop-Function -Message "Failed to connect to $instance : $($_.Exception.Message)" -Continue -Target $instance -InnerErrorRecord $_

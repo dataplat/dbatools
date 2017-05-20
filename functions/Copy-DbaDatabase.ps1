@@ -567,8 +567,8 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		}
 		
 		Write-Output "Attempting to connect to Sql Servers.."
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
 		if ($DetachAttach) {
 			if ($sourceserver.netname -eq $env:COMPUTERNAME -or $destserver.netname -eq $env:COMPUTERNAME) {

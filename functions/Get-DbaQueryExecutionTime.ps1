@@ -178,7 +178,7 @@ limiting results to queries with more than 200 total executions and an execution
 		foreach ($instance in $SqlInstance) {
 			Write-Verbose "Attempting to connect to $instance"
 			try {
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
 				Write-Warning "Can't connect to $instance or access denied. Skipping."

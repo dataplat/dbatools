@@ -123,7 +123,7 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 		{
 			Write-Message -Level Verbose -Message "Connecting to $instance"
 			try {
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
 			} catch {
 				Stop-Function -Message "Failed to connect to: $instance" -InnerErrorRecord $_ -Target $instance -Continue -Silent $Silent
 			}

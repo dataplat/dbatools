@@ -85,7 +85,7 @@ Skips some prompts/confirms but not all of them.
 		{
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
+				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $Credential
 			}
 			catch
 			{

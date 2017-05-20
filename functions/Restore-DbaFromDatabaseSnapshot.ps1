@@ -78,7 +78,7 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Connecting to $instance"
 			try {
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
 			}
 			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -ErrorRecord $_ -Target $instance -Continue -Silent $Silent
@@ -233,7 +233,7 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 				}
 				# Comparing sizes before and after, need to reconnect to see if size
 				# changed
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
 				foreach ($log in $server.Databases[$op['to']].LogFiles) {
 					$matching = $orig_logproperties | Where-Object ID -eq $log.ID
 					if ($matching.Size -ne $orig_logproperties.Size) {

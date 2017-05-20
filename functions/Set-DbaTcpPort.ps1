@@ -85,7 +85,7 @@ Sets the port number 1337 for ALLIP's on SqlInstance SQLDB2014A and SQLDB2016B
 			
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -Target $instance -ErrorRecord $_ -Continue

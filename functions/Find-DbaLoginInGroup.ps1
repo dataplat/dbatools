@@ -149,7 +149,7 @@ Returns all active directory users within all windows AD groups that have logins
 			try
 			{
 				Write-Verbose "Connecting to $Instance"
-				$server = Connect-SqlServer -SqlServer $Instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $sqlcredential
 			}
 			catch
 			{

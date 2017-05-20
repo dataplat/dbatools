@@ -473,7 +473,7 @@ WHERE EXISTS (SELECT 1
 		}
 
         Write-Output "Attempting to connect to Sql Server.."
-		$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	}
 	
 	PROCESS

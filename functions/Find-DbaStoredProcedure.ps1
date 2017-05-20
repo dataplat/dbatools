@@ -85,7 +85,7 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 		foreach ($Instance in $SqlInstance) {
 			try {
 				Write-Verbose "Connecting to $Instance"
-				$server = Connect-SqlServer -SqlServer $Instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $SqlCredential
 			}
 			catch {
 				Write-Warning "Failed to connect to: $Instance"

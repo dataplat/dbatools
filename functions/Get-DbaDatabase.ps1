@@ -139,7 +139,7 @@ Returns databases on multiple instances piped into the function
 		
 		foreach ($instance in $SqlInstance) {
 			try {
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -ErrorRecord $_ -Target $instance -Continue -Silent $Silent

@@ -157,7 +157,7 @@ Finds processes that were created with dbatools, then kills them.
 			return
 		}
 		
-		$sourceserver = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+		$sourceserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 		
 		if ($logins.count -eq 0 -and $spids.count -eq 0 -and $hosts.count -eq 0 -and $programs.count -eq 0 -and $databases.count -eq 0)
 		{

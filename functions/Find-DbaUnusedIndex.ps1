@@ -156,7 +156,7 @@ Will find exact Unused indexes on all user databases
 		}
 		
 		Write-Output "Attempting to connect to Sql Server.."
-		$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	}
 	
 	process {

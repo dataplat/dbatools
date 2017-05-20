@@ -129,7 +129,7 @@ Returns a custom object with permissions for the master database
 		foreach ($instance in $SqlInstance) {
 			Write-Verbose "Connecting to $instance"
 			try {
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Write-Warning "Can't connect to $instance"

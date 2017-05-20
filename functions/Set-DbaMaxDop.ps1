@@ -129,7 +129,7 @@ Set recommended Max DOP setting for all databases on server sql2016.
 			
 			Write-Verbose "Attempting to connect to $servername"
 			try {
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
 			}
 			catch {
 				Write-Warning "Can't connect to $server or access denied. Skipping."

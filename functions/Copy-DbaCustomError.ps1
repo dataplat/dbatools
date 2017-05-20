@@ -90,8 +90,8 @@ Shows what would happen if the command were executed using force.
 	{
 		$customerrors = $psboundparameters.CustomErrors
 		
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName

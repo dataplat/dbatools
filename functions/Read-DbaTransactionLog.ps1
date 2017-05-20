@@ -65,7 +65,7 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
 
 		try
 		{
-			$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+			$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 		}
 		catch
 		{

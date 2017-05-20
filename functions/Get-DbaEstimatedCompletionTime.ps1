@@ -114,7 +114,7 @@ Gets estimated completion times for queries performed against the Northwind, pub
 		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Connecting to $instance"
 			try {
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 				
 			}
 			catch {

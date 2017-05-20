@@ -244,7 +244,7 @@ srv0042 D:\                                                               0     
 							try
 							{
 								Write-Verbose "$FunctionName - Checking disk $diskname on $SqlInstance"
-								$smoserver = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+								$smoserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 								$sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
 								$sqlcount = $smoserver.Databases['master'].ExecuteWithResults($sql).Tables[0].Count
 								if ($sqlcount -gt 0)

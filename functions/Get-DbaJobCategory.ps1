@@ -52,7 +52,7 @@ Returns all SQL Agent Job Categories for the local and sql2016 SQL Server instan
 			Write-Verbose "Attempting to connect to $instance"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch
 			{

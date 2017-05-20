@@ -375,8 +375,8 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 			Write-Warning "You are using SQL credentials and this script requires Windows admin access to the source server. Trying anyway."
 		}
 		
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
 		$source = $sourceserver.name
 		$destination = $destserver.name
