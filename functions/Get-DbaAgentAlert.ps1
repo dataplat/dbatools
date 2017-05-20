@@ -39,7 +39,7 @@ FUNCTION Get-DbaAgentAlert {
 	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "Instance", "SqlServer")]
-		[string[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
 		[switch]$Silent

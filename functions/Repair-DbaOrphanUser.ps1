@@ -94,7 +94,7 @@ https://dbatools.io/Repair-DbaOrphanUser
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[object]$SqlCredential,
 		[parameter(Mandatory = $false, ValueFromPipeline = $true)]
 		[object[]]$Users,

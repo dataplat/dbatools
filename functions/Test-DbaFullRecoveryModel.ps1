@@ -59,7 +59,7 @@ function Test-DbaFullRecoveryModel {
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$Exclude,

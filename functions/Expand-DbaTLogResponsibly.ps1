@@ -138,7 +138,7 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
 	param (
 		[parameter(Position = 1, Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[parameter(Position = 3)]
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Alias("Databases")]

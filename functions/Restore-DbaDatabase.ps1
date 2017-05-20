@@ -193,7 +193,7 @@ folder for those file types as defined on the target instance.
 		[object[]]$Path,
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string]$DatabaseName,
 		[String]$DestinationDataDirectory,

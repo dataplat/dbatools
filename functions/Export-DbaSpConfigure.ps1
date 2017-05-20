@@ -49,7 +49,7 @@ File to disk, and string path.
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[Alias("ServerInstance","SqlServer")]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[string]$Path,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)

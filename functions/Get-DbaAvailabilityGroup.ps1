@@ -74,7 +74,7 @@ Returns true/false if the server, sqlserver2014a, is the primary replica for AG-
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[object]$SqlCredential,
 		[switch]$Simple,
 		[switch]$Detailed,

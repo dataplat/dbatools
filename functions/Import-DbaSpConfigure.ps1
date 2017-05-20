@@ -68,12 +68,12 @@ using the SQL credential stored in the variables
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
-		[object]$Source,
-		[object]$Destination,
+		[DbaInstanceParameter]$Source,
+		[DbaInstanceParameter]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[Alias("ServerInstance","SqlServer")]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[string]$Path,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$Force

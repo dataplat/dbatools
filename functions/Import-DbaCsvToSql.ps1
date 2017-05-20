@@ -152,7 +152,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		[string[]]$Csv,
 		[Parameter(Mandatory = $true)]
 		[Alias("ServerInstance","SqlServer")]
-		[string]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[object]$SqlCredential,
 		[string]$Table,
         [string]$Schema = "dbo",
@@ -322,7 +322,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			param (
 				[Parameter(Mandatory = $true)]
 				[Alias("ServerInstance","SqlServer")]
-				[string]$SqlInstance,
+				[DbaInstanceParameter]$SqlInstance,
 				[object]$SqlCredential
 			)
 			$testconn = New-Object System.Data.SqlClient.SqlConnection
@@ -368,7 +368,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			param (
 				[Parameter(Mandatory = $true)]
 				[Alias("ServerInstance","SqlServer")]
-				[string]$SqlInstance,
+				[DbaInstanceParameter]$SqlInstance,
 				[object]$SqlCredential
 			)
 			$paramconn = New-Object System.Data.SqlClient.SqlConnection
@@ -413,7 +413,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			param (
 				[Parameter(Mandatory = $true)]
 				[Alias("ServerInstance","SqlServer")]
-				[string]$SqlInstance,
+				[DbaInstanceParameter]$SqlInstance,
 				[string]$Database,
 				[object]$SqlCredential
 			)

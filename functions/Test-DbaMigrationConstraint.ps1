@@ -85,9 +85,9 @@ function Test-DbaMigrationConstraint {
 	[CmdletBinding(DefaultParameterSetName = "DbMigration")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $True)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[parameter(Mandatory = $true)]
-		[object]$Destination,
+		[DbaInstanceParameter]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,

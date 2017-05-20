@@ -75,7 +75,7 @@ This command doesn't support passing both servers and default database, but you 
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[PsCredential]$SqlCredential,
 		[switch]$Silent
 	)

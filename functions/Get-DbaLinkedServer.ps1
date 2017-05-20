@@ -39,7 +39,7 @@ function Get-DbaLinkedServer
 	param (
 		[Parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$Silent
 	)

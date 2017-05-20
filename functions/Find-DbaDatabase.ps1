@@ -57,7 +57,7 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 	param (
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[string[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[ValidateSet('Name', 'ServiceBrokerGuid', 'Owner')]

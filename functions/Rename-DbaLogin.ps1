@@ -69,7 +69,7 @@ WhatIf Example
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[parameter(Mandatory = $true)]
 		[String]$NewLogin

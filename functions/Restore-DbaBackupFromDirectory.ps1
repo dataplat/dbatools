@@ -80,7 +80,7 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 	Param (
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance","SqlServer")]
-		[string]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[parameter(Mandatory = $true)]
 		[string]$Path,
 		[switch]$NoRecovery,

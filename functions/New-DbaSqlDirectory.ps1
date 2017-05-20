@@ -63,7 +63,7 @@ If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\
 	param (
 		[Parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[Parameter(Mandatory = $true)]
 		[string]$Path,
 		[System.Management.Automation.PSCredential]$SqlCredential

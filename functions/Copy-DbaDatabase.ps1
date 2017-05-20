@@ -142,9 +142,9 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 	[CmdletBinding(DefaultParameterSetName = "DbMigration", SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Position = 1, Mandatory = $false)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[parameter(Position = 2, Mandatory = $true)]
-		[object]$Destination,
+		[DbaInstanceParameter]$Destination,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$Exclude,

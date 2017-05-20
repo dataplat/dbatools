@@ -76,7 +76,7 @@ Gets super detailed information for execution plans on only for AdventureWorks20
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[string[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PsCredential]$SqlCredential,
 		[datetime]$SinceCreation,

@@ -69,7 +69,7 @@ Exports all Availability Groups from SQL server "sql2014". Output scripts are wr
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Alias("OutputLocation", "Path")]
 		[string]$FilePath = "$([Environment]::GetFolderPath("MyDocuments"))\SqlAgExport",

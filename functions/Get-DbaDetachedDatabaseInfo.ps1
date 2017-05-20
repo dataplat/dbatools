@@ -58,7 +58,7 @@ SQL Server is required to process offilne MDF files. The abvoe example reutrns i
 	Param (
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[parameter(Mandatory = $true)]
 		[Alias("Mdf")]
 		[string]$Path,

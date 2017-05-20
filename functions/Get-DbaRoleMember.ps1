@@ -62,7 +62,7 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
 	Param (
 		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias('SqlServer', 'ServerInstance')]
-		[string[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,

@@ -86,7 +86,7 @@
 		[ValidateNotNull()]
 		[ValidateNotNullOrEmpty()]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Parameter(Mandatory = $false, HelpMessage = 'SQL Credential',
 				   ValueFromPipelineByPropertyName = $true,
 				   ValueFromRemainingArguments = $false,

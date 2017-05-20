@@ -48,7 +48,7 @@ Logs in to WMI using the ad\sqladmin credential and gathers simplified informati
 	[CmdletBinding()]
 	param ([parameter(ValueFromPipeline, Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("SqlCredential")]
 		[PSCredential]$Credential,
 		[switch]$Simple,

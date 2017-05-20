@@ -55,7 +55,7 @@ Returns a datatable with details
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[string]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[object]$SqlCredential,
 		[switch]$Detailed
 	)

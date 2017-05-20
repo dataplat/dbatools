@@ -121,7 +121,7 @@ Creates a schedule for the job with a daily frequency every day on multiple serv
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
-        [object[]]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]$SqlCredential,
         [Parameter(Mandatory = $true)]

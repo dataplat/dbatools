@@ -212,7 +212,7 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias('ServerInstance', 'SqlServer')]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[PsCredential]$SqlCredential,
 		[Alias('As')]
 		[ValidateLength(0, 128)]

@@ -56,7 +56,7 @@ Shows what would happen if the command were executed against server1
 	param (
 		[parameter(Mandatory, ParameterSetName = "instance")]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[parameter(Mandatory, ParameterSetName = "instance")]
 		[string[]]$Database,

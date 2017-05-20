@@ -108,7 +108,7 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipelineByPropertyName, ParameterSetName = "Server")]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,

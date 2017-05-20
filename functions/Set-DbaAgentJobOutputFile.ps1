@@ -54,7 +54,7 @@ Prompts you for confirmation before executing any changing operations within the
 		[ValidateNotNull()]
 		[ValidateNotNullOrEmpty()]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Parameter(Mandatory = $false, HelpMessage = 'SQL Credential',
 				   ValueFromPipeline = $true,
 				   ValueFromPipelineByPropertyName = $true,

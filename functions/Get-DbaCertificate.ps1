@@ -47,7 +47,7 @@ Gets the cert1 certificate within the db1 database
 	param (
 		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string[]]$Database,
 		[string[]]$Certificate,

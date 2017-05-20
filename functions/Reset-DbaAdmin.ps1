@@ -97,7 +97,7 @@ If the account already exists, it will be added to the sysadmin role and the pas
 	param (
 		[Parameter(Mandatory = $true)]
 		[Alias("ServerInstance","SqlServer")]
-		[string]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[string]$Login = "sa",
 		[switch]$Force
 	)
@@ -135,7 +135,7 @@ Internal function.
 			param (
 				[Parameter(Mandatory = $true)]
 				[Alias("ServerInstance","SqlServer")]
-				[string]$SqlInstance,
+				[DbaInstanceParameter]$SqlInstance,
 				[string]$sql
 			)
 			try

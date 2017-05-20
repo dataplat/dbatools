@@ -73,7 +73,7 @@ Gets estimated completion times for queries performed against the Northwind, pub
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[PsCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
