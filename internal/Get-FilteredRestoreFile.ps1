@@ -182,5 +182,3 @@ function Get-FilteredRestoreFile {
         Write-Message -Level InternalComment -Message 'Stopping'
     }
 }
-
-Register-DbaTeppArgumentCompleter -Command Get-FilteredRestoreFile -Parameter SqlInstance
