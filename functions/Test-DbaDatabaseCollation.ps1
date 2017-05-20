@@ -6,7 +6,7 @@ function Test-DbaDatabaseCollation {
 	.DESCRIPTION
 		Compares Database Collations to Server Collation
 
-	.PARAMETER SqlServer
+	.PARAMETER SqlInstance
 		The SQL Server that you're connecting to.
 
 	.PARAMETER Credential
@@ -30,22 +30,22 @@ function Test-DbaDatabaseCollation {
 		https://dbatools.io/Test-DbaDatabaseCollation
 
 	.EXAMPLE
-		Test-DbaDatabaseCollation -SqlServer sqlserver2014a
+		Test-DbaDatabaseCollation -SqlInstance sqlserver2014a
 
 		Returns server name, databse name and true/false if the collations match for all databases on sqlserver2014a
 
 	.EXAMPLE
-		Test-DbaDatabaseCollation -SqlServer sqlserver2014a -Database db1, db2
+		Test-DbaDatabaseCollation -SqlInstance sqlserver2014a -Database db1, db2
 
 		Returns server name, databse name and true/false if the collations match for the db1 and db2 databases on sqlserver2014a
 
 	.EXAMPLE
-		Test-DbaDatabaseCollation -SqlServer sqlserver2014a, sql2016 -Detailed -Exclude db1
+		Test-DbaDatabaseCollation -SqlInstance sqlserver2014a, sql2016 -Detailed -Exclude db1
 
 		Lots of detailed information for database and server collations for all databases except db1 on sqlserver2014a and sql2016
 
 	.EXAMPLE
-		Get-SqlRegisteredServerName -SqlServer sql2016 | Test-DbaDatabaseCollation
+		Get-SqlRegisteredServerName -SqlInstance sql2016 | Test-DbaDatabaseCollation
 
 		Returns db/server collation information for every database on every server listed in the Central Management Server on sql2016
 	#>
@@ -53,8 +53,8 @@ function Test-DbaDatabaseCollation {
 	[OutputType("System.Collections.ArrayList")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[string[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[string[]]$SqlInstance,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$Credential,
 		[Alias("Databases")]
@@ -69,12 +69,12 @@ function Test-DbaDatabaseCollation {
 	}
 
 	process {
-		foreach ($servername in $SqlServer) {
+		foreach ($servername in $SqlInstance) {
 			try {
 				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
 			}
 			catch {
-				if ($SqlServer.count -eq 1) {
+				if ($SqlInstance.count -eq 1) {
 					throw $_
 				}
 				else {
@@ -112,7 +112,7 @@ function Test-DbaDatabaseCollation {
 		}
 
 		if ($Database.count -eq 1) {
-			if ($sqlserver.count -eq 1) {
+			if ($SqlInstance.count -eq 1) {
 				return $collection.IsEqual
 			}
 			else {

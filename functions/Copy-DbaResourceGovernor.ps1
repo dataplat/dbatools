@@ -85,7 +85,7 @@ Shows what would happen if the command were executed.
 		[switch]$Force
 	)
 	
-	DynamicParam { if ($source) { return (Get-ParamSqlResourceGovernor -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+
 	
 	BEGIN
 	{

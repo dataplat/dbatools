@@ -100,8 +100,6 @@ Exports ONLY logins netnerds and realcajun from sqlsever2014a with the permissio
 		[switch]$Silent
 	)
 	
-	dynamicparam { if ($SqlInstance) { Get-ParamSqlLogins -SqlServer $SqlInstance -SqlCredential $SqlCredential } }
-	
 	begin {
 		if ($FilePath) {
 			if ($FilePath -notlike "*\*") { $FilePath = ".\$filepath" }
@@ -125,7 +123,7 @@ Exports ONLY logins netnerds and realcajun from sqlsever2014a with the permissio
 		
 		try {
 			Write-Message -Level Verbose -Message "Connecting to $sqlinstance"
-			$server = Connect-SqlServer -SqlServer $sqlinstance -SqlCredential $sqlcredential
+			$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $sqlcredential
 		}
 		catch {
 			Stop-Function -Message "Failed to connect to $instance : $($_.Exception.Message)" -Continue -Target $instance -InnerErrorRecord $_

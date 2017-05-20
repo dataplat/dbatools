@@ -254,7 +254,7 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 		[switch]$Silent
 	)
 	
-	dynamicparam { if ($SqlInstance) { return (Get-ParamSqlDatabase -SqlServer $SqlInstance[0] -SqlCredential $SourceSqlCredential) } }
+
 	
 	begin {
 		$database = $psboundparameters.Database

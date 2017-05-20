@@ -171,7 +171,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			throw "You must specify at least one database. Use -Database or -AllDatabases."
 		}
 		
-		$sourceserver = Connect-SqlServer -SqlServer $sqlinstance -SqlCredential $sqlCredential -ParameterConnection
+		$sourceserver = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $sqlCredential -ParameterConnection
 		
 		if (-not $destination) {
 			$destination = $sqlinstance
@@ -204,7 +204,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			$database = ($sourceserver.databases | Where-Object{ $_.IsSystemObject -eq $false -and ($_.Status -match 'Offline') -eq $false }).Name
 		}
 		
-		if (!(Test-DbaPath -SqlServer $destserver -Path $backupFolder)) {
+		if (!(Test-DbaPath -SqlInstance $destserver -Path $backupFolder)) {
 			$serviceaccount = $destserver.ServiceAccount
 			throw "Can't access $backupFolder Please check if $serviceaccount has permissions"
 		}
@@ -601,7 +601,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				## Drop the database
 				try {
 					# Remove-SqlDatabase is a function in SharedFunctions.ps1 that tries 3 different ways to drop a database
-					Remove-SqlDatabase -SqlServer $sourceserver -DbName $dbname
+					Remove-SqlDatabase -SqlInstance $sourceserver -DbName $dbname
 					Write-Output "Dropped $dbname Database  on $source prior to running the Agent Job"
 				}
 				catch {
@@ -655,7 +655,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination")) {
 				## Drop the database
 				try {
-					$null = Remove-SqlDatabase -SqlServer $sourceserver -DbName $dbname
+					$null = Remove-SqlDatabase -SqlInstance $sourceserver -DbName $dbname
 					Write-Output "Dropped $dbname Database on $destination"
 				}
 				catch {

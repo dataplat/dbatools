@@ -66,35 +66,35 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Find-DbaAgentJob
 
 .EXAMPLE
-Find-DbaAgentJob -SQLServer Dev01 -Name backup 
+Find-DbaAgentJob -SqlInstance Dev01 -Name backup 
 Returns all agent job(s) that have backup in the name
 	
 .EXAMPLE
-Find-DbaAgentJob -SQLServer Dev01 -LastUsed 10 
+Find-DbaAgentJob -SqlInstance Dev01 -LastUsed 10 
 Returns all agent job(s) that have not ran in 10 days
 
 .EXAMPLE 
-Find-DbaAgentJob -SQLServer Dev01 -Disabled -NoEmailNotification -NoSchedule
+Find-DbaAgentJob -SqlInstance Dev01 -Disabled -NoEmailNotification -NoSchedule
 Returns all agent job(s) that are either disabled, have no email notification or dont have a schedule. returned with detail
 
 .EXAMPLE
-Find-DbaAgentJob -SQLServer Dev01 -LastUsed 10 -Exclude "Yearly - RollUp Workload", "SMS - Notification" 
+Find-DbaAgentJob -SqlInstance Dev01 -LastUsed 10 -Exclude "Yearly - RollUp Workload", "SMS - Notification" 
 Returns all agent jobs that havent ran in the last 10 ignoring jobs "Yearly - RollUp Workload" and "SMS - Notification" 
 
 .EXAMPLE 
-Find-DbaAgentJob -SqlServer Dev01 -Category "REPL-Distribution", "REPL-Snapshot" -Detailed | Format-Table -AutoSize -Wrap 
+Find-DbaAgentJob -SqlInstance Dev01 -Category "REPL-Distribution", "REPL-Snapshot" -Detailed | Format-Table -AutoSize -Wrap 
 Returns all job/s on Dev01 that are in either category "REPL-Distribution" or "REPL-Snapshot" with detailed output
 
 .EXAMPLE
-Find-DbaAgentJob -SQLServer Dev01, Dev02 -Failed -Since '7/1/2016 10:47:00'
+Find-DbaAgentJob -SqlInstance Dev01, Dev02 -Failed -Since '7/1/2016 10:47:00'
 Returns all agent job(s) that have failed since July of 2016 (and still have history in msdb)
 	
 .EXAMPLE 
-Get-SqlRegisteredServerName -SqlServer CMSServer -Group Production | Find-DbaAgentJob -Disabled -NoSchedule -Detailed | Format-Table -AutoSize -Wrap
+Get-SqlRegisteredServerName -SqlInstance CMSServer -Group Production | Find-DbaAgentJob -Disabled -NoSchedule -Detailed | Format-Table -AutoSize -Wrap
 Queries CMS server to return all SQL instances in the Production folder and then list out all agent jobs that have either been disabled or have no schedule. 
 
 .EXAMPLE
-Find-DbaAgentJob -SQLServer Dev01, Dev02 -Name Mybackup -Exact 
+Find-DbaAgentJob -SqlInstance Dev01, Dev02 -Name Mybackup -Exact 
 Returns all agent job(s) that are named exactly Mybackup
 	
 #>

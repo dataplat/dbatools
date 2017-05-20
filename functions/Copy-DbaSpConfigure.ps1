@@ -77,7 +77,7 @@ Shows what would happen if the command were executed.
 	    [System.Management.Automation.PSCredential]$DestinationSqlCredential
     )
 	
-    DynamicParam { if ($source) { return (Get-ParamSqlServerConfigs -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+
 	
     BEGIN
     {

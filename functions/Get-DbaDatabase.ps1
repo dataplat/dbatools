@@ -67,15 +67,15 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 https://dbatools.io/Get-DbaDatabase
 
 .EXAMPLE
-Get-DbaDatabase -SqlServer localhost
+Get-DbaDatabase -SqlInstance localhost
 Returns all databases on the local default SQL Server instance
 
 .EXAMPLE
-Get-DbaDatabase -SqlServer localhost -NoUserDb
+Get-DbaDatabase -SqlInstance localhost -NoUserDb
 Returns only the system databases on the local default SQL Server instance
 
 .EXAMPLE
-Get-DbaDatabase -SqlServer localhost -NoSystemDb
+Get-DbaDatabase -SqlInstance localhost -NoSystemDb
 Returns only the user databases on the local default SQL Server instance
 
 .EXAMPLE

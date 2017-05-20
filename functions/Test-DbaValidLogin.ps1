@@ -8,7 +8,7 @@ Test-DbaValidLogin finds any logins on SQL instance that are AD logins with eith
 The purpose of this function is to find SQL Server logins that are used by active directory users that are either disabled or removed from the domain. It allows you to
 keep your logins accurate and up to date by removing accounts that are no longer needed.
 
-.PARAMETER SQLServer
+.PARAMETER SqlInstance
 SQL instance to check. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER SqlCredential
@@ -47,17 +47,17 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Test-DbaValidLogin
 
 .EXAMPLE
-Test-DbaValidLogin -SqlServer Dev01
+Test-DbaValidLogin -SqlInstance Dev01
 
 Tests all logins in the domain ran from (check $env:domain) that are either disabled or do not exist
 
 .EXAMPLE
-Test-DbaValidLogin -SqlServer Dev01 -FilterBy GroupsOnly -Detailed
+Test-DbaValidLogin -SqlInstance Dev01 -FilterBy GroupsOnly -Detailed
 
 Tests all Active directory groups that have logins on Dev01 returning a detailed view.
 
 .EXAMPLE
-Test-DbaValidLogin -SqlServer Dev01 -ExcludeDomains subdomain
+Test-DbaValidLogin -SqlInstance Dev01 -ExcludeDomains subdomain
 
 Tests all logins excluding any that are from the subdomain Domain
 
@@ -65,8 +65,8 @@ Tests all logins excluding any that are from the subdomain Domain
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[string[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer", "SqlServers")]
+		[string[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[ValidateSet("LoginsOnly", "GroupsOnly")]
 		[string]$FilterBy = "None",
@@ -75,7 +75,7 @@ Tests all logins excluding any that are from the subdomain Domain
 		[switch]$Silent
 	)
 
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlLogins -SqlServer $SqlServer[0] -SqlCredential $SqlCredential -WindowsOnly } }
+
 
 	BEGIN
 	{
@@ -119,7 +119,7 @@ Tests all logins excluding any that are from the subdomain Domain
 
 	PROCESS
 	{
-		foreach ($instance in $sqlserver)
+		foreach ($instance in $SqlInstance)
 		{
 			try
 			{

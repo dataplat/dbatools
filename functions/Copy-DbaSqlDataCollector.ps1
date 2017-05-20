@@ -94,7 +94,7 @@ Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlse
 		[switch]$Force
 	)
 	
-	DynamicParam { if ($source) { return (Get-ParamSqlDataCollectionSets -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+
 	
 	BEGIN
 	{

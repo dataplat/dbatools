@@ -24,14 +24,14 @@ Optional. This parameter specifies whether the first row contains column names. 
 .PARAMETER Delimiter
 Optional. If you do not pass a Delimiter, then a comma will be used. Valid Delimiters include: tab "`t", pipe "|", semicolon ";", and space " ".
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 Required. The destination SQL Server.
 
 .PARAMETER SqlCredential
 Connect to SQL Server using specified SQL Login credentials.
 
 .PARAMETER Database
-Required. The name of the database where the CSV will be imported into. This parameter is autopopulated using the -SqlServer and -SqlCredential (optional) parameters. 
+Required. The name of the database where the CSV will be imported into. This parameter is autopopulated using the -SqlInstance and -SqlCredential (optional) parameters. 
 
 .PARAMETER Schema
 The schema in which the SQL table or view where CSV will be imported into resides.
@@ -115,7 +115,7 @@ Author: Chrissy LeMaire (@cl), netnerds.net
 https://blog.netnerds.net/2015/09/Import-DbaCsvtosql-super-fast-csv-to-sql-server-import-powershell-module/
 
 .EXAMPLE   
-Import-DbaCsvToSql -Csv C:\temp\housing.csv -SqlServer sql001 -Database markets
+Import-DbaCsvToSql -Csv C:\temp\housing.csv -SqlInstance sql001 -Database markets
 
 Imports the entire *comma delimited* housing.csv to the SQL "markets" database on a SQL Server named sql001.
 
@@ -124,23 +124,23 @@ Since a table name was not specified, the table name is automatically determined
 The first row is not skipped, as it does not contain column names.
 
 .EXAMPLE   
-Import-DbaCsvToSql -Csv .\housing.csv -SqlServer sql001 -Database markets -Table housing -First 100000 -Safe -Delimiter "`t" -FirstRowColumns
+Import-DbaCsvToSql -Csv .\housing.csv -SqlInstance sql001 -Database markets -Table housing -First 100000 -Safe -Delimiter "`t" -FirstRowColumns
 
 Imports the first 100,000 rows of the tab delimited housing.csv file to the "housing" table in the "markets" database on a SQL Server named sql001. Since Safe was specified, the OleDB method will be used for the bulk import. It's assumed Safe was used because the first attempt without -Safe resulted in an import error. The first row is skipped, as it contains column names.
 
 .EXAMPLE
-Import-DbaCsvToSql -csv C:\temp\huge.txt -sqlserver sqlcluster -Database locations -Table latitudes -Delimiter "|" -Turbo
+Import-DbaCsvToSql -csv C:\temp\huge.txt -SqlInstance sqlcluster -Database locations -Table latitudes -Delimiter "|" -Turbo
 
 Imports all records from the pipe delimited huge.txt file using the fastest method possible into the latitudes table within the locations database. Obtains a table lock for the duration of the bulk copy operation. This specific command has been used 
 to import over 10.5 million rows in 2 minutes.
 
 .EXAMPLE   
-Import-DbaCsvToSql -Csv C:\temp\housing.csv, .\housing2.csv -SqlServer sql001 -Database markets -Table housing -Delimiter "`t" -query "select top 100000 column1, column3 from csv" -Truncate
+Import-DbaCsvToSql -Csv C:\temp\housing.csv, .\housing2.csv -SqlInstance sql001 -Database markets -Table housing -Delimiter "`t" -query "select top 100000 column1, column3 from csv" -Truncate
 
 Truncates the "housing" table, then imports columns 1 and 3 of the first 100000 rows of the tab-delimited housing.csv in the C:\temp directory, and housing2.csv in the current directory. Since the query is executed against both files, a total of 200,000 rows will be imported.
 
 .EXAMPLE   
-Import-DbaCsvToSql -Csv C:\temp\housing.csv -SqlServer sql001 -Database markets -Table housing -query "select address, zip from csv where state = 'Louisiana'" -FirstRowColumns -Truncate -FireTriggers
+Import-DbaCsvToSql -Csv C:\temp\housing.csv -SqlInstance sql001 -Database markets -Table housing -query "select address, zip from csv where state = 'Louisiana'" -FirstRowColumns -Truncate -FireTriggers
 
 Uses the first line to determine CSV column names. Truncates the "housing" table on the SQL Server, then imports the address and zip columns from all records in the housing.csv where the state equals Louisiana.
 
@@ -152,7 +152,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		[string[]]$Csv,
 		[Parameter(Mandatory = $true)]
 		[Alias("ServerInstance","SqlInstance")]
-		[string]$SqlServer,
+		[string]$SqlInstance,
 		[object]$SqlCredential,
 		[string]$Table,
         [string]$Schema = "dbo",
@@ -182,7 +182,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 	DynamicParam
 	{
 		
-		if ($sqlserver.length -gt 0)
+		if ($SqlInstance.length -gt 0)
 		{
 			# Auto populate database list from specified sqlserver
 			$paramconn = New-Object System.Data.SqlClient.SqlConnection
@@ -194,11 +194,11 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			
 			if ($SqlCredential.count -eq 0 -or $SqlCredential -eq $null)
 			{
-				$paramconn.ConnectionString = "Data Source=$sqlserver;Integrated Security=True;"
+				$paramconn.ConnectionString = "Data Source=$SqlInstance;Integrated Security=True;"
 			}
 			else
 			{
-				$paramconn.ConnectionString = "Data Source=$sqlserver;User Id=$($SqlCredential.UserName); Password=$($SqlCredential.GetNetworkCredential().Password);"
+				$paramconn.ConnectionString = "Data Source=$SqlInstance;User Id=$($SqlCredential.UserName); Password=$($SqlCredential.GetNetworkCredential().Password);"
 			}
 			
 			try
@@ -313,7 +313,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 
 		.EXAMPLE
 		$SqlCredential = Get-Credential
-		Get-SqlDatabases -SqlServer sqlservera -SqlCredential $SqlCredential
+		Get-SqlDatabases -SqlInstance sqlservera -SqlCredential $SqlCredential
 		
 		.OUTPUT
 		Array of user databases
@@ -322,17 +322,17 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			param (
 				[Parameter(Mandatory = $true)]
 				[Alias("ServerInstance","SqlInstance")]
-				[string]$SqlServer,
+				[string]$SqlInstance,
 				[object]$SqlCredential
 			)
 			$testconn = New-Object System.Data.SqlClient.SqlConnection
 			if ($SqlCredential.count -eq 0)
 			{
-				$testconn.ConnectionString = "Data Source=$sqlserver;Integrated Security=True;Connection Timeout=3"
+				$testconn.ConnectionString = "Data Source=$SqlInstance;Integrated Security=True;Connection Timeout=3"
 			}
 			else
 			{
-				$testconn.ConnectionString = "Data Source=$sqlserver;User Id=$($SqlCredential.UserName); Password=$($SqlCredential.GetNetworkCredential().Password);Connection Timeout=3"
+				$testconn.ConnectionString = "Data Source=$SqlInstance;User Id=$($SqlCredential.UserName); Password=$($SqlCredential.GetNetworkCredential().Password);Connection Timeout=3"
 			}
 			try
 			{
@@ -345,7 +345,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			{
 				$message = $_.Exception.Message.ToString()
 				Write-Verbose $message
-				if ($message -match "A network") { $message = "Can't connect to $sqlserver." }
+				if ($message -match "A network") { $message = "Can't connect to $SqlInstance." }
 				elseif ($message -match "Login failed for user") { $message = "Login failed for $username." }
 				return $message
 			}
@@ -359,7 +359,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 
 		.EXAMPLE
 		$SqlCredential = Get-Credential
-		Get-SqlDatabases -SqlServer sqlservera -SqlCredential $SqlCredential
+		Get-SqlDatabases -SqlInstance sqlservera -SqlCredential $SqlCredential
 		
 		.OUTPUT
 		Array of user databases
@@ -368,17 +368,17 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			param (
 				[Parameter(Mandatory = $true)]
 				[Alias("ServerInstance","SqlInstance")]
-				[string]$SqlServer,
+				[string]$SqlInstance,
 				[object]$SqlCredential
 			)
 			$paramconn = New-Object System.Data.SqlClient.SqlConnection
 			if ($SqlCredential.count -eq 0)
 			{
-				$paramconn.ConnectionString = "Data Source=$sqlserver;Integrated Security=True;Connection Timeout=3"
+				$paramconn.ConnectionString = "Data Source=$SqlInstance;Integrated Security=True;Connection Timeout=3"
 			}
 			else
 			{
-				$paramconn.ConnectionString = "Data Source=$sqlserver;User Id=$($SqlCredential.UserName); Password=$($SqlCredential.GetNetworkCredential().Password);Connection Timeout=3"
+				$paramconn.ConnectionString = "Data Source=$SqlInstance;User Id=$($SqlCredential.UserName); Password=$($SqlCredential.GetNetworkCredential().Password);Connection Timeout=3"
 			}
 			try
 			{
@@ -393,7 +393,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 				$null = $paramconn.Dispose()
 				return $databaselist
 			}
-			catch { throw "Cannot access $sqlserver" }
+			catch { throw "Cannot access $SqlInstance" }
 		}
 		
 		Function Get-SqlTables
@@ -404,7 +404,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 
 		.EXAMPLE
 		$SqlCredential = Get-Credential
-		Get-SqlTables -SqlServer sqlservera -Database mydb -SqlCredential $SqlCredential
+		Get-SqlTables -SqlInstance sqlservera -Database mydb -SqlCredential $SqlCredential
 		
 		.OUTPUT
 		Array of tables
@@ -413,19 +413,19 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			param (
 				[Parameter(Mandatory = $true)]
 				[Alias("ServerInstance","SqlInstance")]
-				[string]$SqlServer,
+				[string]$SqlInstance,
 				[string]$Database,
 				[object]$SqlCredential
 			)
 			$tableconn = New-Object System.Data.SqlClient.SqlConnection
 			if ($SqlCredential.count -eq 0)
 			{
-				$tableconn.ConnectionString = "Data Source=$sqlserver;Integrated Security=True;Connection Timeout=3"
+				$tableconn.ConnectionString = "Data Source=$SqlInstance;Integrated Security=True;Connection Timeout=3"
 			}
 			else
 			{
 				$username = ($SqlCredential.UserName).TrimStart("\")
-				$tableconn.ConnectionString = "Data Source=$sqlserver;User Id=$username; Password=$($SqlCredential.GetNetworkCredential().Password);Connection Timeout=3"
+				$tableconn.ConnectionString = "Data Source=$SqlInstance;User Id=$username; Password=$($SqlCredential.GetNetworkCredential().Password);Connection Timeout=3"
 			}
 			try
 			{
@@ -749,12 +749,12 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			$sqlcheckconn = New-Object System.Data.SqlClient.SqlConnection
 			if ($SqlCredential.count -eq 0 -or $SqlCredential -eq $null)
 			{
-				$sqlcheckconn.ConnectionString = "Data Source=$sqlserver;Integrated Security=True;Connection Timeout=3; Initial Catalog=master"
+				$sqlcheckconn.ConnectionString = "Data Source=$SqlInstance;Integrated Security=True;Connection Timeout=3; Initial Catalog=master"
 			}
 			else
 			{
 				$username = ($SqlCredential.UserName).TrimStart("\")
-				$sqlcheckconn.ConnectionString = "Data Source=$sqlserver;User Id=$username; Password=$($SqlCredential.GetNetworkCredential().Password);Connection Timeout=3; Initial Catalog=master"
+				$sqlcheckconn.ConnectionString = "Data Source=$SqlInstance;User Id=$username; Password=$($SqlCredential.GetNetworkCredential().Password);Connection Timeout=3; Initial Catalog=master"
 			}
 			
 			try { $sqlcheckconn.Open() }
@@ -764,7 +764,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			$sql = "select count(*) from master.dbo.sysdatabases where name = '$database'"
 			$sqlcheckcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlcheckconn)
 			$dbexists = $sqlcheckcmd.ExecuteScalar()
-			if ($dbexists -eq $false) { throw "Database does not exist on $sqlserver" }
+			if ($dbexists -eq $false) { throw "Database does not exist on $SqlInstance" }
 			
 			# Change database after the fact, because if db doesn't exist, the login would fail.	
 			$sqlcheckconn.ChangeDatabase($database)
@@ -837,7 +837,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 					$SqlCredentialPath = "$env:TEMP\sqlcredential.xml"
 					Export-CliXml -InputObject $SqlCredential $SqlCredentialPath
 				}
-				$command = "Import-DbaCsvToSql -Csv $csv -SqlServer '$sqlserver'-Database '$database' -Table '$table' -Delimiter '$Delimiter' -First $First -Query '$query' -Batchsize $BatchSize -NotifyAfter $NotifyAfter $switches -shellswitch"
+				$command = "Import-DbaCsvToSql -Csv $csv -SqlInstance '$SqlInstance'-Database '$database' -Table '$table' -Delimiter '$Delimiter' -First $First -Query '$query' -Batchsize $BatchSize -NotifyAfter $NotifyAfter $switches -shellswitch"
 				
 				if ($SqlCredentialPath.length -gt 0) { $command += " -SqlCredentialPath $SqlCredentialPath" }
 				Write-Verbose "Switching to x86 shell, then switching back."
@@ -956,19 +956,19 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		if ($sqlcredential.count -gt 0) { $username = "SQL login $($SqlCredential.UserName)" }
 		else { $username = "Windows login $(whoami)" }
 		# Open Connection to SQL Server
-		Write-Output "[*] Logging into $sqlserver as $username"
+		Write-Output "[*] Logging into $SqlInstance as $username"
 		$sqlconn = New-Object System.Data.SqlClient.SqlConnection
 		if ($SqlCredential.count -eq 0)
 		{
-			$sqlconn.ConnectionString = "Data Source=$sqlserver;Integrated Security=True;Connection Timeout=3; Initial Catalog=master"
+			$sqlconn.ConnectionString = "Data Source=$SqlInstance;Integrated Security=True;Connection Timeout=3; Initial Catalog=master"
 		}
 		else
 		{
-			$sqlconn.ConnectionString = "Data Source=$sqlserver;User Id=$($SqlCredential.UserName); Password=$($SqlCredential.GetNetworkCredential().Password);Connection Timeout=3; Initial Catalog=master"
+			$sqlconn.ConnectionString = "Data Source=$SqlInstance;User Id=$($SqlCredential.UserName); Password=$($SqlCredential.GetNetworkCredential().Password);Connection Timeout=3; Initial Catalog=master"
 		}
 		
 		try { $sqlconn.Open() }
-		catch { throw "Could not open SQL Server connection. Is $sqlserver online?" }
+		catch { throw "Could not open SQL Server connection. Is $SqlInstance online?" }
 		
 		# Everything will be contained within 1 transaction, even creating a new table if required
 		# and truncating the table, if specified.
@@ -978,7 +978,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		$sql = "select count(*) from master.dbo.sysdatabases where name = '$database'"
 		$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 		$dbexists = $sqlcmd.ExecuteScalar()
-		if ($dbexists -eq $false) { throw "Database does not exist on $sqlserver" }
+		if ($dbexists -eq $false) { throw "Database does not exist on $SqlInstance" }
 		Write-Output "[*] Database exists"
 		
 		$sqlconn.ChangeDatabase($database)

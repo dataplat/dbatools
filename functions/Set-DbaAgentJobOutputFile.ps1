@@ -28,7 +28,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 	
 .EXAMPLE
-   Set-DbaAgentJobOutputFile -sqlserver SERVERNAME -JobName 'The Agent Job' -OutPutFile E:\Logs\AgentJobStepOutput.txt
+   Set-DbaAgentJobOutputFile -SqlInstance SERVERNAME -JobName 'The Agent Job' -OutPutFile E:\Logs\AgentJobStepOutput.txt
 
    Sets the Job step for The Agent job on SERVERNAME to E:\Logs\AgentJobStepOutput.txt
 .NOTES
@@ -74,7 +74,7 @@ Prompts you for confirmation before executing any changing operations within the
 		[ValidateNotNullOrEmpty()]
 		[object[]]$Step)
 	
-	DynamicParam { if ($sqlinstance) { return (Get-ParamSqlJobs -SqlServer $sqlinstance[0] -SqlCredential $SourceSqlCredential) } }
+
 	
 	BEGIN
 	{

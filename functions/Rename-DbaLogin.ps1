@@ -75,7 +75,7 @@ WhatIf Example
 		[String]$NewLogin
 	)
 	
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlLogin -SqlServer $SqlInstance -SqlCredential $SqlCredential } }
+
 	
 	BEGIN
 	{

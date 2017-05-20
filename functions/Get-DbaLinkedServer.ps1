@@ -44,7 +44,7 @@ function Get-DbaLinkedServer
 		[switch]$Silent
 	)
 	
-	dynamicparam { if ($SqlInstance) { return (Get-ParamSqlLinkedServers -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential) } }
+
 	
 	begin {
 		$linkedservers = $psboundparameters.LinkedServers

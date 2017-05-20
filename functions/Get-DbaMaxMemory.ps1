@@ -7,7 +7,7 @@ Gets the 'Max Server Memory' configuration setting and the memory of the server.
 .DESCRIPTION 
 This command retrieves the SQL Server 'Max Server Memory' configuration setting as well as the total  physical installed on the server.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 Allows you to specify a comma separated list of servers to query.
 
 .PARAMETER SqlCredential
@@ -32,12 +32,12 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Get-DbaMaxMemory
 
 .EXAMPLE   
-Get-DbaMaxMemory -SqlServer sqlcluster,sqlserver2012
+Get-DbaMaxMemory -SqlInstance sqlcluster,sqlserver2012
 
 Get memory settings for all servers within the SQL Server Central Management Server "sqlcluster".
 
 .EXAMPLE 
-Get-DbaMaxMemory -SqlServer sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB }
+Get-DbaMaxMemory -SqlInstance sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB }
 
 Find all servers in Server Central Management Server that have 'Max Server Memory' set to higher than the total memory of the server (think 2147483647)
 
@@ -45,14 +45,14 @@ Find all servers in Server Central Management Server that have 'Max Server Memor
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer", "SqlServers")]
+		[object]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
 	PROCESS
 	{
-		foreach ($servername in $sqlserver)
+		foreach ($servername in $SqlInstance)
         {	
 			Write-Verbose "Attempting to connect to $servername"
 			try

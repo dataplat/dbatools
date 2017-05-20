@@ -141,14 +141,14 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Connecting to $instance"
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
 			}
 			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -ErrorRecord $_ -Target $instance -Continue -Silent $Silent
 			}
 			#Checks for path existence
 			if ($Path.Length -gt 0) {
-				if (!(Test-DbaSqlPath -SqlServer $instance -Path $Path)) {
+				if (!(Test-DbaSqlPath -SqlInstance $instance -Path $Path)) {
 					Stop-Function -Message "$instance cannot access the directory $Path" -ErrorRecord $_ -Target $instance -Continue -Silent $Silent
 				}
 			}

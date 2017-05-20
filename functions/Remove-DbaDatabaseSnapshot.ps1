@@ -69,7 +69,7 @@ Remove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snapshot, Ac
 Removes HR_snapshot and Accounting_snapshot
 
 .EXAMPLE
-Get-DbaDatabaseSnapshot -SqlServer sql2016 | Where SnapshotOf -like '*dumpsterfire*' | Remove-DbaDatabaseSnapshot
+Get-DbaDatabaseSnapshot -SqlInstance sql2016 | Where SnapshotOf -like '*dumpsterfire*' | Remove-DbaDatabaseSnapshot
 
 Removes all snapshots associated with databases that have dumpsterfire in the name
 
@@ -100,7 +100,7 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 		if ($null -ne $PipelineSnapshot -and $PipelineSnapshot.getType().Name -eq 'pscustomobject') # do we need a specialized type back ?
 		{
 			If ($Pscmdlet.ShouldProcess($PipelineSnapshot.SnapshotDb.Parent.DomainInstanceName, "Remove db snapshot $($PipelineSnapshot.SnapshotDb.Name)")) {
-				$dropped = Remove-SqlDatabase -SqlServer $PipelineSnapshot.SnapshotDb.Parent.DomainInstanceName -DBName $PipelineSnapshot.SnapshotDb.Name -SqlCredential $Credential
+				$dropped = Remove-SqlDatabase -SqlInstance $PipelineSnapshot.SnapshotDb.Parent.DomainInstanceName -DBName $PipelineSnapshot.SnapshotDb.Name -SqlCredential $Credential
 				if ($dropped -match "Success") {
 					$status = "Dropped"
 				} else {
@@ -123,7 +123,7 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 		{
 			Write-Message -Level Verbose -Message "Connecting to $instance"
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
 			} catch {
 				Stop-Function -Message "Failed to connect to: $instance" -InnerErrorRecord $_ -Target $instance -Continue -Silent $Silent
 			}
@@ -144,7 +144,7 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 			{
 				If ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot $db"))
 				{
-					$dropped = Remove-SqlDatabase -SqlServer $server -DBName $db.Name -SqlCredential $Credential
+					$dropped = Remove-SqlDatabase -SqlInstance $server -DBName $db.Name -SqlCredential $Credential
 					if ($dropped -match "Success") {
 						$status = "Dropped"
 					} else {

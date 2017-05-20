@@ -89,7 +89,7 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential
 	)
 	
-	DynamicParam { if ($source) { return (Get-ParamSqlLinkedServers -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+
 	
 	
 	BEGIN
@@ -106,10 +106,10 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 
 			#>	
 			param (
-				[object]$SqlServer
+				[object]$SqlInstance
 			)
 			
-			$server = $SqlServer
+			$server = $SqlInstance
 			$sourcename = $server.name
 			
 			# Query Service Master Key from the database - remove padding from the key
@@ -381,11 +381,11 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 		$source = $sourceserver.name
 		$destination = $destserver.name
 		
-		Invoke-SmoCheck -SqlServer $sourceserver
-		Invoke-SmoCheck -SqlServer $destserver
+		Invoke-SmoCheck -SqlInstance $sourceserver
+		Invoke-SmoCheck -SqlInstance $destserver
 		
-		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
-		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
+		if (!(Test-SqlSa -SqlInstance $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
+		if (!(Test-SqlSa -SqlInstance $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 		
 		Write-Output "Getting NetBios name for $source"
 		$sourcenetbios = Resolve-NetBiosName $sourceserver

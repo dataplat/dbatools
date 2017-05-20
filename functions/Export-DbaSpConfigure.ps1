@@ -14,7 +14,7 @@ $scred = Get-Credential, this pass $scred object to the param.
 
 Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 
 .PARAMETER Path
@@ -49,7 +49,7 @@ File to disk, and string path.
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[Alias("ServerInstance","SqlInstance")]
-		[object]$SqlServer,
+		[object]$SqlInstance,
 		[string]$Path,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)

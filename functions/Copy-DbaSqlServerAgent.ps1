@@ -102,8 +102,8 @@ Shows what would happen if the command were executed.
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 		
-		Invoke-SmoCheck -SqlServer $sourceserver
-		Invoke-SmoCheck -SqlServer $destserver
+		Invoke-SmoCheck -SqlInstance $sourceserver
+		Invoke-SmoCheck -SqlInstance $destserver
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName

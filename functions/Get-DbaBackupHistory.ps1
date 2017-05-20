@@ -172,7 +172,7 @@ Function Get-DbaBackupHistory
             try
             {
                 Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
             }
             catch
             {

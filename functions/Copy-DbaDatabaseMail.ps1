@@ -104,12 +104,6 @@ function Copy-DbaDatabaseMail {
         [switch]$Silent
     )
 
-    DynamicParam {
-        if ($source) {
-            return (Get-ParamSqlDatabaseMail -SqlServer $Source -SqlCredential $SourceSqlCredential)
-        }
-    }
-
     begin {
 
         function Copy-DbaDatabaseMailConfig {

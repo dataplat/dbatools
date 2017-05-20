@@ -6,7 +6,7 @@ function Test-DbaDatabaseCompatibility {
 	.DESCRIPTION
 		Compares Database Compatibility level to Server Compatibility
 
-	.PARAMETER SqlServer
+	.PARAMETER SqlInstance
 		The SQL Server that you're connecting to.
 
 	.PARAMETER Credential
@@ -30,22 +30,22 @@ function Test-DbaDatabaseCompatibility {
 		https://dbatools.io/Test-DbaDatabaseCompatibility
 
 	.EXAMPLE
-		Test-DbaDatabaseCompatibility -SqlServer sqlserver2014a
+		Test-DbaDatabaseCompatibility -SqlInstance sqlserver2014a
 
 		Returns server name, databse name and true/false if the compatibility level match for all databases on sqlserver2014a
 
 	.EXAMPLE
-		Test-DbaDatabaseCompatibility -SqlServer sqlserver2014a -Database db1, db2
+		Test-DbaDatabaseCompatibility -SqlInstance sqlserver2014a -Database db1, db2
 
 		Returns server name, databse name and true/false if the compatibility level match for the db1 and db2 databases on sqlserver2014a
 
 	.EXAMPLE
-		Test-DbaDatabaseCompatibility -SqlServer sqlserver2014a, sql2016 -Detailed -Exclude db1
+		Test-DbaDatabaseCompatibility -SqlInstance sqlserver2014a, sql2016 -Detailed -Exclude db1
 
 		Lots of detailed information for database and server compatibility level for all databases except db1 on sqlserver2014a and sql2016
 
 	.EXAMPLE
-		Get-SqlRegisteredServerName -SqlServer sql2014 | Test-DbaDatabaseCompatibility
+		Get-SqlRegisteredServerName -SqlInstance sql2014 | Test-DbaDatabaseCompatibility
 
 		Returns db/server compatibility information for every database on every server listed in the Central Management Server on sql2016
 	#>
@@ -53,8 +53,8 @@ function Test-DbaDatabaseCompatibility {
 	[OutputType("System.Collections.ArrayList")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[string[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[string[]]$SqlInstance,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$Credential,
 		[Alias("Databases")]
@@ -68,13 +68,13 @@ function Test-DbaDatabaseCompatibility {
 	}
 
 	process {
-		foreach ($servername in $SqlServer) {
+		foreach ($servername in $SqlInstance) {
 			Write-Verbose "Connecting to $servername"
 			try {
 				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
 			}
 			catch {
-				if ($SqlServer.count -eq 1) {
+				if ($SqlInstance.count -eq 1) {
 					throw $_
 				}
 				else {
@@ -113,7 +113,7 @@ function Test-DbaDatabaseCompatibility {
 		}
 
 		if ($Database.count -eq 1) {
-			if ($sqlserver.count -eq 1) {
+			if ($SqlInstance.count -eq 1) {
 				return $collection.IsEqual
 			}
 			else {

@@ -9,7 +9,7 @@ By default, this command returns just the TCP port used by the specified SQL Ser
 	
 If -Detailed is specified, server name, IPAddress (ipv4 and ipv6), port number and if the port assignment is static. 
 	
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 
 .PARAMETER Credential
@@ -38,24 +38,24 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Get-DbaTcpPort
 
 .EXAMPLE
-Get-DbaTcpPort -SqlServer sqlserver2014a
+Get-DbaTcpPort -SqlInstance sqlserver2014a
 
 Returns just the port number for the default instance on sqlserver2014a
 
 .EXAMPLE
-Get-DbaTcpPort -SqlServer winserver\sqlexpress, sql2016
+Get-DbaTcpPort -SqlInstance winserver\sqlexpress, sql2016
 
 Returns an object with server name and port number for the sqlexpress on winserver and the default instance on sql2016
 	
 .EXAMPLE   
-Get-DbaTcpPort -SqlServer sqlserver2014a, sql2016 -Detailed
+Get-DbaTcpPort -SqlInstance sqlserver2014a, sql2016 -Detailed
 
 Returns an object with server name, IPAddress (ipv4 and ipv6), port and static ($true/$false) for sqlserver2014a and sql2016
 	
 Remote sqlwmi is used by default. If this doesn't work, then remoting is used. If neither work, it defaults to T-SQL which can provide only the port.
 
 .EXAMPLE   
-Get-SqlRegisteredServerName -SqlServer sql2014 | Get-DbaTcpPort -NoIpV6 -Detailed -Verbose
+Get-SqlRegisteredServerName -SqlInstance sql2014 | Get-DbaTcpPort -NoIpV6 -Detailed -Verbose
 
 Returns an object with server name, IPAddress (just ipv4), port and static ($true/$false) for every server listed in the Central Management Server on sql2014
 	
@@ -63,8 +63,8 @@ Returns an object with server name, IPAddress (just ipv4), port and static ($tru
 	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[string[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[string[]]$SqlInstance,
 		[Alias("SqlCredential")]
 		[PsCredential]$Credential,
 		[switch]$Detailed,
@@ -74,7 +74,7 @@ Returns an object with server name, IPAddress (just ipv4), port and static ($tru
 	
 	PROCESS
 	{
-		foreach ($servername in $SqlServer)
+		foreach ($servername in $SqlInstance)
 		{
 			if ($detailed -eq $true)
 			{

@@ -85,7 +85,7 @@ Shows what would happen if the command were executed using force.
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlBackupDevices -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+
 	
 	BEGIN
 	{
@@ -162,7 +162,7 @@ Shows what would happen if the command were executed using force.
 			
 			Write-Output "Checking if directory $destpath exists"
 			
-			if ($(Test-DbaSqlPath -SqlServer $Destination -Path $path) -eq $false)
+			if ($(Test-DbaSqlPath -SqlInstance $Destination -Path $path) -eq $false)
 			{
 				$backupdirectory = $destserver.BackupDirectory
 				$destpath = Join-AdminUnc $destnetbios $backupdirectory

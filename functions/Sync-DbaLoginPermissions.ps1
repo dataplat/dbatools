@@ -106,7 +106,7 @@ https://dbatools.io/Sync-DbaLoginPermissions
 		[object]$DestinationSqlCredential
 	)
 	
-	DynamicParam { if ($source) { return Get-ParamSqlLogins -SqlServer $source -SqlCredential $SourceSqlCredential } }
+
 	
 	BEGIN
 	{

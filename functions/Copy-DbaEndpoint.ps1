@@ -82,7 +82,7 @@ Shows what would happen if the command were executed using force.
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlServerEndpoints -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+
 	
 	BEGIN
 	{

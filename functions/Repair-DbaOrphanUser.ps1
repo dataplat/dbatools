@@ -15,7 +15,7 @@ If the matching login exists it must be:
 You can drop users that does not have their matching login by especifing the parameter -RemoveNotExisting This will be made by calling Remove-DbaOrphanUser function.
 
 	
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server instance.
 
 .PARAMETER SqlCredential
@@ -38,32 +38,32 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .EXAMPLE
-Repair-DbaOrphanUser -SqlServer sql2005 
+Repair-DbaOrphanUser -SqlInstance sql2005 
 
 Will find and repair all orphan users of all databases present on server 'sql2005'
 
 .EXAMPLE   
-Repair-DbaOrphanUser -SqlServer sqlserver2014a -SqlCredential $cred
+Repair-DbaOrphanUser -SqlInstance sqlserver2014a -SqlCredential $cred
 	
 Will find and repair all orphan users of all databases present on server 'sqlserver2014a'. Will be verified using SQL credentials. 
 	
 .EXAMPLE   
-Repair-DbaOrphanUser -SqlServer sqlserver2014a -Databases db1, db2
+Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Databases db1, db2
 
 Will find and repair all orphan users on both db1 and db2 databases
 
 .EXAMPLE   
-Repair-DbaOrphanUser -SqlServer sqlserver2014a -Databases db1 -Users OrphanUser
+Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Databases db1 -Users OrphanUser
 
 Will find and repair user 'OrphanUser' on 'db1' database
 
 .EXAMPLE   
-Repair-DbaOrphanUser -SqlServer sqlserver2014a -Users OrphanUser
+Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Users OrphanUser
 
 Will find and repair user 'OrphanUser' on all databases
 
 .EXAMPLE   
-Repair-DbaOrphanUser -SqlServer sqlserver2014a -RemoveNotExisting
+Repair-DbaOrphanUser -SqlInstance sqlserver2014a -RemoveNotExisting
 
 Will find all orphan users of all databases present on server 'sqlserver2014a'
 Will also remove all users that does not have their matching login by calling Remove-DbaOrphanUser function
@@ -93,19 +93,19 @@ https://dbatools.io/Repair-DbaOrphanUser
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object[]]$SqlInstance,
 		[object]$SqlCredential,
 		[parameter(Mandatory = $false, ValueFromPipeline = $true)]
 		[object[]]$Users,
 		[switch]$RemoveNotExisting
 	)
 	
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }
+
 	
 	BEGIN {
 		Write-Output "Attempting to connect to Sql Server.."
-		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+		$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
 	}
 	
 	PROCESS {

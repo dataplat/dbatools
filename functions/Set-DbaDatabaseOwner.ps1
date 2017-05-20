@@ -57,7 +57,7 @@ Sets database owner to 'sa' on the db1 and db2 databases if their current owner 
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
+		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
@@ -74,7 +74,7 @@ Sets database owner to 'sa' on the db1 and db2 databases if their current owner 
 			
 			#connect to the instance
 			Write-Verbose "Connecting to $instance"
-			$server = Connect-SqlServer $instance -SqlCredential $SqlCredential
+			$server = Connect-SqlInstance $instance -SqlCredential $SqlCredential
 			
 			# dynamic sa name for orgs who have changed their sa name
 			if ($psboundparameters.TargetLogin.length -eq 0)

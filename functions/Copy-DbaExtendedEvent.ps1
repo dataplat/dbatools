@@ -90,7 +90,7 @@ Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from s
 		[switch]$Force
 	)
 	
-	DynamicParam { if ($source) { return (Get-ParamSqlExtendedEvents -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+
 	
 	BEGIN
 	{

@@ -313,7 +313,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 				
 				Write-Message -Level Verbose -Message "Single db and filename"
 				
-				if (Test-DbaSqlPath -SqlServer $server -Path (Split-Path $BackupFileName)) {
+				if (Test-DbaSqlPath -SqlInstance $server -Path (Split-Path $BackupFileName)) {
 					$FinalBackupPath += $BackupFileName
 				}
 				else {
@@ -341,7 +341,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 					if ($CreateFolder) {
 						$Path = $path + $PathDivider + $Database.name
 						Write-Message -Level Verbose -Message "Creating Folder $Path"
-						if (((New-DbaSqlDirectory -SqlServer $server -SqlCredential $SqlCredential -Path $path).Created -eq $false) -and '' -eq $AzureBaseUrl) {
+						if (((New-DbaSqlDirectory -SqlInstance $server -SqlCredential $SqlCredential -Path $path).Created -eq $false) -and '' -eq $AzureBaseUrl) {
 							$failreason = "Cannot create or write to folder $path"
 							$failures += $failreason
 							Write-Message -Level Warning -Message "$failreason"
@@ -357,7 +357,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 					The code below attempts to create the directory even when $CreateFolder -- was it supposed to be Test-DbaSqlPath?
 					else
 					{
-						if ((New-DbaSqlDirectory -SqlServer $server -SqlCredential $SqlCredential -Path $path).Created -eq $false)
+						if ((New-DbaSqlDirectory -SqlInstance $server -SqlCredential $SqlCredential -Path $path).Created -eq $false)
 						{
 							$failreason = "Cannot create or write to folder $path"
 							$failures += $failreason
@@ -454,7 +454,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 							FileList = $FileList
 							SoftwareVersionMajor = $server.VersionMajor
                             Type = $outputType
-						} | Restore-DbaDatabase -SqlServer $server -SqlCredential $SqlCredential -DatabaseName DbaVerifyOnly -VerifyOnly
+						} | Restore-DbaDatabase -SqlInstance $server -SqlCredential $SqlCredential -DatabaseName DbaVerifyOnly -VerifyOnly
 						if ($verifiedResult[0] -eq "Verify successful") {
 							$failures += $verifiedResult[0]
 							$Verified = $true

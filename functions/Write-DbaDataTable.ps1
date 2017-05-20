@@ -7,7 +7,7 @@ Writes data to a SQL Server Table
 .DESCRIPTION
 Writes a .NET DataTable to a SQL Server table using SQL Bulk Copy
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 
 .PARAMETER SqlCredential
@@ -76,33 +76,33 @@ You should have received a copy of the GNU General Public License along with thi
 
 .EXAMPLE
 $datatable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
-Write-DbaDataTable -SqlServer sql2014 -InputObject $datatable -Table mydb.dbo.customers
+Write-DbaDataTable -SqlInstance sql2014 -InputObject $datatable -Table mydb.dbo.customers
 
 Quickly and efficiently performs a bulk insert of all the data in customers.csv into database: mydb, schema: dbo, table: customers
 Shows progress as rows are inserted. If table does not exist, import is halted.
 	
 .EXAMPLE
 $datatable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
-$datatable | Write-DbaDataTable -SqlServer sql2014 -Table mydb.dbo.customers
+$datatable | Write-DbaDataTable -SqlInstance sql2014 -Table mydb.dbo.customers
 
 Performs row by row insert. Super slow. No progress bar. Don't do this. Use -InputObject instead.
 	
 .EXAMPLE
 $datatable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
-Write-DbaDataTable -SqlServer sql2014 -InputObject $datatable -Table mydb.dbo.customers -AutoCreateTable
+Write-DbaDataTable -SqlInstance sql2014 -InputObject $datatable -Table mydb.dbo.customers -AutoCreateTable
 
 Quickly and efficiently performs a bulk insert of all the data. If mydb.dbo.customers does not exist, it will be created with inefficient but forgiving datatypes.
 	
 .EXAMPLE
 $datatable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
-Write-DbaDataTable -SqlServer sql2014 -InputObject $datatable -Table mydb.dbo.customers -Truncate
+Write-DbaDataTable -SqlInstance sql2014 -InputObject $datatable -Table mydb.dbo.customers -Truncate
 
 Quickly and efficiently performs a bulk insert of all the data. Prompts to confirm that truncating mydb.dbo.customers prior to import is desired.
 Prompts again to perform the import. Answer A for Yes to All.
 		
 .EXAMPLE
 $datatable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
-Write-DbaDataTable -SqlServer sql2014 -InputObject $datatable -Database mydb -Table customers -KeepNulls
+Write-DbaDataTable -SqlInstance sql2014 -InputObject $datatable -Database mydb -Table customers -KeepNulls
 
 Quickly and efficiently performs a bulk insert of all the data into mydb.dbo.customers -- since Schema was not specified, dbo was used.
 	
@@ -110,7 +110,7 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 
 .EXAMPLE
 $process = Get-Process | Out-DbaDataTable
-Write-DbaDataTable -InputObject $process -SqlServer sql2014 -Database mydb -Table myprocesses -AutoCreateTable
+Write-DbaDataTable -InputObject $process -SqlInstance sql2014 -Database mydb -Table myprocesses -AutoCreateTable
 
 Creates a table based on the Process object with over 60 columns, converted from PowerShell data types to SQL Server data types. After the table is created a bulk insert is performed to add process information into the table.
 
@@ -120,9 +120,9 @@ This is a good example of the type conversion in action. All process properties 
 	param (
 		[Parameter(Position = 0,
                    Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
+		[Alias("ServerInstance", "SqlServer")]
         [ValidateNotNull()]
-		[object]$SqlServer,
+		[object]$SqlInstance,
 
         [Parameter(Position = 1)]
         [ValidateNotNull()]
@@ -161,7 +161,7 @@ This is a good example of the type conversion in action. All process properties 
 		[switch]$Silent
 	)
 	
-	DynamicParam { if ($sqlserver) { return Get-ParamSqlDatabase -SqlServer $SqlServer -SqlCredential $SqlCredential } }
+
 	
 	BEGIN
 	{
@@ -213,7 +213,7 @@ This is a good example of the type conversion in action. All process properties 
 		
 		$fqtn = "[$database].[$Schema].[$table]"
 		
-		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+		$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
 		
 		$db = $server.Databases | Where-Object { $_.Name -eq $database }
 		
@@ -236,7 +236,7 @@ This is a good example of the type conversion in action. All process properties 
 		
 		if ($truncate -eq $true)
 		{
-			if ($Pscmdlet.ShouldProcess($SqlServer, "Truncating $fqtn"))
+			if ($Pscmdlet.ShouldProcess($SqlInstance, "Truncating $fqtn"))
 			{
 				try
 				{
@@ -392,7 +392,7 @@ This is a good example of the type conversion in action. All process properties 
 				
 				Write-Message -Level Debug -Message $sql
 				
-				if ($Pscmdlet.ShouldProcess($SqlServer, "Creating table $fqtn"))
+				if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating table $fqtn"))
 				{
 					try
 					{
@@ -409,7 +409,7 @@ This is a good example of the type conversion in action. All process properties 
 		$rowcount = $InputObject.Rows.count
 		if ($rowcount -eq 0) { $rowcount = 1 }
 		
-		if ($Pscmdlet.ShouldProcess($SqlServer, "Writing $rowcount rows to $fqtn"))
+		if ($Pscmdlet.ShouldProcess($SqlInstance, "Writing $rowcount rows to $fqtn"))
 		{
 			$bulkCopy.WriteToServer($InputObject)
 			if ($rowcount -is [int]) { Write-Progress -id 1 -activity "Inserting $rowcount rows" -status "Complete" -Completed }

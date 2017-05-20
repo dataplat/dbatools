@@ -87,7 +87,7 @@ function Copy-DbaAgentAlert {
 		[switch]$Force,
 		[switch]$Silent
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlAlerts -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+
 
 	begin {
 		$alerts = $psboundparameters.Alerts

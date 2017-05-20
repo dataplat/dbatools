@@ -7,7 +7,7 @@ Outputs information of the Availabilty Group(s) found on the server.
 .DESCRIPTION
 By default outputs a small set of information around the Availability Group found on the server.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2012 or higher.
 
 .PARAMETER SqlCredential
@@ -51,37 +51,37 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Get-DbaAvailabilityGroup
 
 .EXAMPLE
-Get-DbaAvailabilityGroup -SqlServer sqlserver2014a
+Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a
 Returns basic information on all the Availability Group(s) found on sqlserver2014a
 
 .EXAMPLE   
-Get-DbaAvailabilityGroup -SqlServer sqlserver2014a -Simple
+Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -Simple
 Show only server name, availability groups and role
 
 .EXAMPLE   
-Get-DbaAvailabilityGroup -SqlServer sqlserver2014a -Detailed
+Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -Detailed
 Returns basic information plus additional info on each replica for all Availability Group(s) on sqlserver2014a
 
 .EXAMPLE   
-Get-DbaAvailabilityGroup -SqlServer sqlserver2014a -AvailabilityGroup AG-a
+Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a
 Shows basic information on the Availability Group AG-a on sqlserver2014a
 	
 .EXAMPLE   
-Get-DbaAvailabilityGroup -SqlServer sqlserver2014a -AvailabilityGroup AG-a -IsPrimary
+Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a -IsPrimary
 Returns true/false if the server, sqlserver2014a, is the primary replica for AG-a Availability Group
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object[]]$SqlInstance,
 		[object]$SqlCredential,
 		[switch]$Simple,
 		[switch]$Detailed,
 		[switch]$IsPrimary
 	)
 	
-	DynamicParam { if ($sqlserver) { return Get-ParamSqlAvailabilityGroups -SqlServer $sqlserver[0] -SqlCredential $SqlCredential } }
+
 	
 	BEGIN
 	{
@@ -91,7 +91,7 @@ Returns true/false if the server, sqlserver2014a, is the primary replica for AG-
 	
 	PROCESS
 	{
-		foreach ($servername in $sqlserver)
+		foreach ($servername in $SqlInstance)
 		{
 			$agReplicas = @()
 			$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
@@ -163,7 +163,7 @@ Returns true/false if the server, sqlserver2014a, is the primary replica for AG-
 		
 		if ($IsPrimary)
 		{
-			return ($agCollection | Where-Object { $_.ReplicaName -in $sqlserver -and $_.Role -ne 'Unknown' } | Select-Object ReplicaName, AvailabilityGroup, @{ Name="IsPrimary"; Expression={ $_.Role -eq "Primary" } } )
+			return ($agCollection | Where-Object { $_.ReplicaName -in $SqlInstance -and $_.Role -ne 'Unknown' } | Select-Object ReplicaName, AvailabilityGroup, @{ Name="IsPrimary"; Expression={ $_.Role -eq "Primary" } } )
 		}
 		
 		if ($Simple)

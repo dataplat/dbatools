@@ -90,7 +90,7 @@ In the above example, top level Group1 and Group3, along with its subgroups and 
 		[switch]$Force
 	)
 	
-	DynamicParam { if ($Source) { return (Get-ParamSqlCmsGroups -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+
 	
 	BEGIN
 	{

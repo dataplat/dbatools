@@ -34,7 +34,7 @@ $dcred = Get-Credential, this pass this $dcred to the param.
 
 Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 
 .PARAMETER Path
@@ -56,7 +56,7 @@ Imports the spconfigure settings from the source server sqlserver and sets them 
 using the SQL credentials stored in the variables
 
 .EXAMPLE
-Import-DbaSpConfigure -SqlServer sqlserver -Path .\spconfig.sql -SqlCredential $SqlCredential
+Import-DbaSpConfigure -SqlInstance sqlserver -Path .\spconfig.sql -SqlCredential $SqlCredential
 
 Imports the spconfigure settings from the file .\spconfig.sql and sets them on the sqlcluster server
 using the SQL credential stored in the variables
@@ -73,7 +73,7 @@ using the SQL credential stored in the variables
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[Alias("ServerInstance","SqlInstance")]
-		[object]$SqlServer,
+		[object]$SqlInstance,
 		[string]$Path,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$Force
@@ -89,7 +89,7 @@ using the SQL credential stored in the variables
 			$source = $sourceserver.DomainInstanceName
 			$destination = $destserver.DomainInstanceName
 		} else {
-			$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+			$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
 			if ((Test-Path $Path) -eq $false) { throw "File Not Found" }
 		}
 	

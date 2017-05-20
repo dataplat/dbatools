@@ -8,7 +8,7 @@ Returns all server level system configuration (sys.configuration/sp_configure) i
 This function returns server level system configuration (sys.configuration/sp_configure) information. The information is gathered through SMO Configuration.Properties.
 The data includes the default value for each configuration, for quick identification of values that may have been changed.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 SQLServer name or SMO object representing the SQL Server to connect to. This can be a
 collection and recieve pipeline input
 
@@ -35,7 +35,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Get-DbaSpConfigure
 
 .EXAMPLE
-Get-DbaSpConfigure -SqlServer localhost
+Get-DbaSpConfigure -SqlInstance localhost
 Returns server level configuration data on the localhost (ServerName, ConfigName, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue)
 
 .EXAMPLE
@@ -43,11 +43,11 @@ Returns server level configuration data on the localhost (ServerName, ConfigName
 Returns system configuration information on multiple instances piped into the function
 
 .EXAMPLE
-Get-DbaSpConfigure -SqlServer localhost
+Get-DbaSpConfigure -SqlInstance localhost
 Returns server level configuration data on the localhost (ServerName, ConfigName, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue)
 
 .EXAMPLE
-Get-DbaSpConfigure -SqlServer sql2012 -Configs MaxServerMemory
+Get-DbaSpConfigure -SqlInstance sql2012 -Configs MaxServerMemory
 
 Returns only the system configuration for MaxServerMemory. Configs is autopopulated for tabbing convenience. 
 
@@ -55,12 +55,12 @@ Returns only the system configuration for MaxServerMemory. Configs is autopopula
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[object[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer", "SqlServers")]
+		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	DynamicParam { if ($SqlServer) { return (Get-ParamSqlServerConfigs -SqlServer $SqlServer -SqlCredential $SqlCredential) } }
+
 	
 	BEGIN
 	{
@@ -69,7 +69,7 @@ Returns only the system configuration for MaxServerMemory. Configs is autopopula
 	
 	PROCESS
 	{
-		FOREACH ($instance in $SqlServer)
+		FOREACH ($instance in $SqlInstance)
 		{
 			TRY
 			{

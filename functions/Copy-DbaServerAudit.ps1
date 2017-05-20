@@ -82,7 +82,7 @@ Shows what would happen if the command were executed using force.
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlServerAudits -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+
 	
 	BEGIN {
 	
@@ -150,7 +150,7 @@ Shows what would happen if the command were executed using force.
 				}
 			}
 			
-			if ((Test-DbaSqlPath -SqlServer $destserver -Path $audit.Filepath) -eq $false)
+			if ((Test-DbaSqlPath -SqlInstance $destserver -Path $audit.Filepath) -eq $false)
 			{
 				if ($Force -eq $false)
 				{

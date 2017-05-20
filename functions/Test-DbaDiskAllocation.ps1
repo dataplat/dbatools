@@ -14,7 +14,7 @@ https://technet.microsoft.com/en-us/library/dd758814(v=sql.100).aspx - "The perf
 http://tk.azurewebsites.net/2012/08/
 	
 .PARAMETER ComputerName
-The SQL Server (or server in general) that you're connecting to. The -SqlServer parameter also works.
+The SQL Server (or server in general) that you're connecting to. The -SqlInstance parameter also works.
 
 .PARAMETER NoSqlCheck
 Check to skip the check for SQL Data or Log files existing on the disk. 
@@ -70,7 +70,7 @@ To return true or false for ALL disks being formatted to 64k
 	[OutputType("System.Collections.ArrayList", "System.Boolean")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServer")]
+		[Alias("ServerInstance", "SqlServer", "SqlServer")]
 		[string[]]$ComputerName,
 		[switch]$NoSqlCheck,
 		[object]$SqlCredential,
@@ -90,7 +90,7 @@ To return true or false for ALL disks being formatted to 64k
 		Function Get-AllDiskAllocation
 		{
 			$alldisks = @()
-			$sqlservers = @()
+			$SqlInstances = @()
 			
 			try
 			{
@@ -120,14 +120,14 @@ To return true or false for ALL disks being formatted to 64k
 					
 					if ($instance -eq 'MSSQLSERVER')
 					{
-						$sqlservers += $ipaddr
+						$SqlInstances += $ipaddr
 					}
 					else
 					{
-						$sqlservers += "$ipaddr\$instance"
+						$SqlInstances += "$ipaddr\$instance"
 					}
 				}
-				$sqlcount = $sqlservers.Count
+				$sqlcount = $SqlInstances.Count
 				
 				Write-Message -Level Verbose -Message "$sqlcount instance(s) found"
 			}
@@ -142,12 +142,12 @@ To return true or false for ALL disks being formatted to 64k
 					{
 						$sqldisk = $false
 						
-						foreach ($sqlserver in $sqlservers)
+						foreach ($SqlInstance in $SqlInstances)
 						{
-							Write-Message -Level Verbose -Message "Connecting to SQL instance ($sqlserver)"
+							Write-Message -Level Verbose -Message "Connecting to SQL instance ($SqlInstance)"
 							try
 							{
-								$smoserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+								$smoserver = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
 								$sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
 								$sqlcount = $smoserver.Databases['master'].ExecuteWithResults($sql).Tables[0].Count
 								if ($sqlcount -gt 0)
@@ -158,7 +158,7 @@ To return true or false for ALL disks being formatted to 64k
 							}
 							catch
 							{
-								Stop-Function -Message "Can't connect to $computer ($sqlserver)"
+								Stop-Function -Message "Can't connect to $computer ($SqlInstance)"
 								continue
 							}
 						}

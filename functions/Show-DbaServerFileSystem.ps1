@@ -9,7 +9,7 @@ Similar to the remote file system popup you see when browsing a remote SQL Serve
 
 Show-DbaServerFileSystem uses SQL Management Objects to browse the directories and what you see is limited to the permissions of the account running the command.
 	
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server instance.
 	
 .PARAMETER SqlCredential
@@ -47,7 +47,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Show-DbaServerFileSystem
 
 .EXAMPLE
-Show-DbaServerFileSystem -SqlServer sqlserver2014a
+Show-DbaServerFileSystem -SqlInstance sqlserver2014a
 
 Shows a GUI and uses Windows Authentication to log into the SQL Server. Returns a string of the path you selected.
 	
@@ -60,8 +60,8 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
     [CmdletBinding(SupportsShouldProcess)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[object]$SqlCredential
 	)
 	
@@ -151,7 +151,7 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
 		$foldericon = Convert-b64toimg "iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAACxEAAAsRAX9kX5EAAAAYdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuNWWFMmUAAAU0SURBVEhLtZXpU5NXFIf9q/qto9bRuhc3xqUiUK3KoLYq6ihu1VIU1DpjRZ3BHVR8i6hUkDUJASNL2EJIWLKvBLJAAmHRpwfb6ai10Q/2w29u3pP3/p57zrn3vnOA/13/CkwMlzLuv0rMfYaoM59R+1ki1lwiFtHgGcIDuYT6fiZoPsWI6SSBnmyGeo4yZDxN2KEQHXr54H3Pdx5mNe6/QnzkGtMxNVNjeqK+AkLWQ/iMWdg7sxnz3uZ1vIrJSBnx0O9MhBQmggqxkRJC9hsEzFc+Dol5cpkcFaNXHbyasTMVNzARqWXEeZv+lh+xG/OIRWrgtU5ebxG1yu9meb+JEct57C+2fwLEe04g95mOPxJV8JphCcPUuBOHfg/6qm/pa8klNvyA6fFqZqbqZaxiZqKWQF8uVm3qp0LuMTNZyfREuUx+JuEo8agLe1smHTXpGLXSB3O+lKqMV5N1UtZypqJ/SCwHS2P6J0Iis5BqgTyR3tyVcIj4mAtL807aq1IxqLJwdR6TJhfL/xUCK3kjn/Ekg9rvPg6JevL/hlQJ5KmU4qGEg9IXCwNN22ir3ES3ap9AjjLqvU48/FBgN0SFeAzZDDSk3nnf852HWY25zxKPFEut/4JMRmcX5mM8bKJPm0bLs/V01e/B2X6IsPMyscAtRt2XRZdwdx1kQPsJ5Rp1nRGIZCKQqZhs09FiCTuJhQyYNFtoLl9HZ20mjtb9BK0XJJsrhG3nZJvn4Wr/AUfbEc+I/fFsI//xfAcwq4gjR0pTxPRkhQAeMh66zavpHkYDWoz1m3j5ZDWd1duxN+9muO80IVuejCcImI7h0W/F2boLtyFfrBJAwtZTjAdvMTn+VFZ/j7HADSbGahh2FGGoWYeuLImOynRsL3bg7zksgGP4DPvwdu2W52wp4wH6NJvFKgEkaP2J6LA0dKxMxruM+q9LFnfxmH+hu3oVTY+S0FekyFbdhrdzr1wnWXg6MnC1phBwVuOxqelvSBOrBJCRgWOM+a9JmUqI+AoJea4SlMY6pamdlStoVJbTVr6BQemPq22ngDJwNm/B3rSKgFuPzz0gmXwEEug7TMTzm5TpDkHXZYbtFxm2XsTenkX7s2VoS76m9cla+lUbcbxMlQxmAclYNEsIuzSE3N0CSRWrBBC/6RBB50XC3kICtl/xD+bh78/DIveWvnwJDQ8W0iJ96atNxtYoIN0GrA1JWOoX4Ler8Dq7MKu3iFUCiK/ngKw8Xy7EAnwDZ6UXOXjkGh/QZdL2dDHq+1/RXLoSc80aMV+LTbsKm3opHvU8buoqKdC1YFKliFUCiKdrr6w8B7/lAu7eUzi7j+PoPCIH8XtaHi9CXTyPZmUJpqqVDKq/wapZgUO9mKB2LqmlVSQ9bKG3fqNYJYA4O3bhMZ2QDHJxdGVj0x/E2rafXnW6QBaiKZ7LS2URpucrGFQtF8hyHJqlDGkXcLz0OnuVUno/loldvwO37He3MQebXB3W1n1yMe7BKBNnIeqiL9GVLHwDsaiWYdMsw6pehl1A7bXraK7birlhh1glgLi6T2Br24tZmyqr34BJvZn+xu1y2r+l9fF86m5+gbZ4PsbnazDXJ9OvXv9mNNUl45LSDck3x91bKFYJIF7TJWVQl6mYNGn6fl0WpoYMeupSaK9Yje7RcjmMqbSWZ9gNz9crxvotSq86TTHWpiiGmk2KUZWuOAyXlBG3Snnb8x3A2wp6m3b6rE+wtp+nq2oDL0oX01CaQndjAVZjbdGH5vyXPhj83Ppg8POKOX8Cx4yjZbQFLr4AAAAASUVORK5CYII="
 		$dbatoolsicon = Convert-b64toimg "iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAYdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuNWWFMmUAAAO9SURBVEhL3VVdTFNXHO9MzPTF+OzDeBixFdTMINIWsAUK3AIVkFvAIQVFRLYZKR8Wi1IEKV9DYB8PGFAyEx8QScySabYY5+I2JvK18iWISKGk0JGhLzA3+e2c29uHtpcvH/0lv9yennN+v3vO/3fOFb2fCAg4vXWPNOmMRJ745TtTSskqeElviGXJ0XtkWvjJkyGLPoFAVQZoe/NkX/n6Mh/ysu4Qy7WZdJAutxRW6zT6LcNQaE4LiGgREH4cibpCMNqzCIk9hbScEoSSZ0zKOa7fRxG/k5d1h8ukvO4a5ubmMT1jw5E0vZcBZWzqOTS3dcB8tRXZeRX4/v5DZH5uIu0Wrn8NEzaNDjgYoUPd120oMjViX2iql8H6ZFd8DzE7eFl3iOWpuyQydlh44kbJroilSd8RuQ+cqh7wC9Z+JJaxY8KTN0gp+5Yk9DaREzYhb5FOBwZFZ6LlZifKa5ux//AxYTHCvSEp8A9O5n77B6dwqXS119guZ+GrGq9jfn4eM7ZZxB/PdxN2UfOpHq3kRWq/uoE8Yx3u/fQLzhSYUdN0g+tfN126z0oxNj6BJz0Dq0b4E2UawuJzuPhKyZmKYr/AocgMrk37VzWRBLGRdE/psuXqk9wkT/GNUCJLWqS3By/rDh9FxjaSrnahiZ7cq8wCUzKImLIJqC+Ngbk4gmjjIKKKB6Aq7l+OLBmfVF0YnlQZR1p4eSd2y5IiyEr+oyJ0CwIi0gUNKAOPmnG04Q0utf+DHweWkFjjQOyVWajLpsCUPkeUcRgqAzE09Dfz8k64aqI9YcDziUk87bMgOCZL0CQ0ux2J9UtIbXyFwall/PD0NeLKrU6DkhGymj8RXtRDjU7x8k64TKpJQmi6bLOzSEgv8DYhNWMujiK+9jU0VQs4Vm/H2MwSOh4vcP+rii2cQVh+F+IqbRJe3glyReuoSFBUJtpu3eWulv2h3ueE1iOu0g5N9QL3jLk8jerbdrz59y1yGoYQUdSLsII/CLscIsD9UPrLUz4myXhBhWjCPMVdPBBnhMbsIAZzSDDbcOvRIhyLy6i4+Qyq82QFxECR9xjK/K5OXtodNHo+CsW2tagunbxADbK+sXP16Bv/G7lNQ8hpHEX21UGoDb/j8NmfoSzoNvCymwdTPvMotsKGB32LaL1H0mS0oOHOFLpH/0L3iAOF3/YSk4dgTBMh/JTNgdVbtzNl1il12UuSpHE+SRayTb0IL3yCMP2vUJKtUuh/szNNK8Jfxw3BZNpiMoGjiKPJm54Ffw8gEv0PQRYX7wDAUKEAAAAASUVORK5CYII="
 		
-		$sourceserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SourceSqlCredential
+		$sourceserver = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SourceSqlCredential
 	}
 	
 	PROCESS
@@ -221,6 +221,6 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
 			return $drive
 		}
 		
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Show-SqlServerFileSystem
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Show-SqlInstanceFileSystem
 	}
 }

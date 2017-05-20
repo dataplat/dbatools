@@ -91,7 +91,7 @@ Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sq
 		[switch]$Force
 	)
 	
-	DynamicParam { if ($source) { return (Get-ParamSqlPolicyManagement -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+
 	
 	BEGIN
 	{

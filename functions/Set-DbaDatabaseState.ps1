@@ -265,7 +265,7 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 			
 			if (!$Force) {
 				if ($ReadOnly, $Offline, $Emergency, $SingleUser, $RestrictedUser, $Detached -contains $true) {
-					if (Get-DbaProcess -SqlServer $server -SqlCredential $SqlCredential -Databases $db.name) {
+					if (Get-DbaProcess -SqlInstance $server -SqlCredential $SqlCredential -Databases $db.name) {
 						Write-Warning "Users are currently connected to the database $db and Force was not specified. Skipping."
 						continue
 					}
