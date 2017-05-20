@@ -64,7 +64,7 @@ Exports all the certificates on the specified SQL Server
 
 .EXAMPLE
 $EncryptionPassword = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -force
-Export-DbaCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword $EncryptionPassword -Databases Database1
+Export-DbaCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword $EncryptionPassword -Database Database1
 Exports the certificate that is used as the encryptor for a specific database on the specified SQL Server
 
 .EXAMPLE

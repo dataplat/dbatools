@@ -65,7 +65,7 @@ Copy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster
 Copies all server backup devices from sqlserver2014a to sqlcluster, using Windows credentials. If backup devices with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster -BackupDevices backup01 -SourceSqlCredential $cred -Force
+Copy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster -BackupDevice backup01 -SourceSqlCredential $cred -Force
 
 Copies a single backup device, backup01, from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a
 and Windows credentials for sqlcluster. If a backup device with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.

@@ -4,7 +4,7 @@ function Copy-DbaAgentJob {
 Copy-DbaAgentJob migrates jobs from one SQL Server to another.
 
 .DESCRIPTION
-By default, all jobs are copied. The -Jobs parameter is autopopulated for command-line completion and can be used to copy only specific jobs.
+By default, all jobs are copied. The -Job parameter is autopopulated for command-line completion and can be used to copy only specific jobs.
 
 If the job already exists on the destination, it will be skipped unless -Force is used.
 

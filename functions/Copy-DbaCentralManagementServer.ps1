@@ -15,7 +15,7 @@ The SQL Server Central Management Server you are migrating to.
 
 .PARAMETER CMSGroups
 This is an auto-populated array that contains your Central Management Server top-level groups on $Source. You can specify one, many or none.
-If -CMSGroups is not specified, the Copy-DbaCentralManagementServer script will migrate all groups in your Central Management Server. Note this variable is only populated by top level groups.
+If -ServerGroup is not specified, the Copy-DbaCentralManagementServer script will migrate all groups in your Central Management Server. Note this variable is only populated by top level groups.
 
 .PARAMETER SwitchServerName
 Central Management Server does not allow you to add a shared registered server with the same name as the Configuration Server. If you wish to change all migrating instance names of $Destination to $Source, use this switch.
@@ -68,12 +68,12 @@ Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster
 In the above example, all groups, subgroups, and server instances are copied from sqlserver's Central Management Server to sqlcluster's Central Management Server.
 
 .EXAMPLE   
-Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -CMSGroups Group1,Group3
+Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -ServerGroup Group1,Group3
 
 In the above example, top level Group1 and Group3, along with its subgroups and server instances are copied from sqlserver to sqlcluster.
 
 .EXAMPLE   
-Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -CMSGroups Group1,Group3 -SwitchServerName -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential
+Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -ServerGroup Group1,Group3 -SwitchServerName -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential
 
 In the above example, top level Group1 and Group3, along with its subgroups and server instances are copied from sqlserver to sqlcluster. When adding sql instances to sqlcluster, if the server name of the migrating instance is "sqlcluster", it will be switched to "sqlserver". If SwitchServerName is not specified, "sqlcluster" will be skipped.
 

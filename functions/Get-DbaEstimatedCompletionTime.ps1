@@ -64,7 +64,7 @@ Get-DbaEstimatedCompletionTime -SqlInstance sql2016 | Where-Object { $_.Text -ma
 Gets results for commands whose queries only match specific text (match is like LIKE but way more powerful)
 
 .EXAMPLE
-Get-DbaEstimatedCompletionTime -SqlInstance sql2016 -Databases Northwind,pubs,Adventureworks2014
+Get-DbaEstimatedCompletionTime -SqlInstance sql2016 -Database Northwind,pubs,Adventureworks2014
 
 Gets estimated completion times for queries performed against the Northwind, pubs, and Adventureworks2014 databases
 

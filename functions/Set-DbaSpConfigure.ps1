@@ -46,15 +46,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Set-DbaSpConfigure
 
 .EXAMPLE
-Set-DbaSpConfigure -SqlInstance localhost -configs ScanForStartupProcedures -value 1
+Set-DbaSpConfigure -SqlInstance localhost -Config ScanForStartupProcedures -value 1
 Adjusts the Scan for startup stored procedures configuration value to 1 and notifies the user that this requires a SQL restart to take effect
 
 .EXAMPLE
-Set-DbaSpConfigure -SqlInstance localhost -configs XPCmdShellEnabled -value 1
+Set-DbaSpConfigure -SqlInstance localhost -Config XPCmdShellEnabled -value 1
 Adjusts the xp_cmdshell configuation value to 1.
 
 .EXAMPLE
-Set-DbaSpConfigure -SqlInstance localhost -configs XPCmdShellEnabled -value 1 -WhatIf
+Set-DbaSpConfigure -SqlInstance localhost -Config XPCmdShellEnabled -value 1 -WhatIf
 Returns information on the action that would be performed. No actual change will be made.
 
 

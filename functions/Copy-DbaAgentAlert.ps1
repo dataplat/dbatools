@@ -4,7 +4,7 @@ function Copy-DbaAgentAlert {
 		Copy-DbaAgentAlert migrates alerts from one SQL Server to another.
 
 	.DESCRIPTION
-		By default, all alerts are copied. The -Alerts parameter is autopopulated for command-line completion and can be used to copy only specific alerts.
+		By default, all alerts are copied. The -Alert parameter is autopopulated for command-line completion and can be used to copy only specific alerts.
 
 		If the alert already exists on the destination, it will be skipped unless -Force is used.
 

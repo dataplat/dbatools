@@ -95,7 +95,7 @@ Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -SqlCredential $cred
 Will find exact duplicate indexes on all user databases present on sqlserver2014a will be verified using SQL credentials. 
 	
 .EXAMPLE   
-Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -Databases db1, db2
+Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -Database db1, db2
 
 Will find exact duplicate indexes on both db1 and db2 databases
 

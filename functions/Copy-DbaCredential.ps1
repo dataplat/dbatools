@@ -73,7 +73,7 @@ Description
 Copies all SQL Server Credentials on sqlserver2014a to sqlcluster. If credentials exist on destination, they will be skipped.
 
 .EXAMPLE   
-Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster -Credentials "PowerShell Proxy Account" -Force
+Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster -Credential "PowerShell Proxy Account" -Force
 
 Description
 Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped and recreated.
