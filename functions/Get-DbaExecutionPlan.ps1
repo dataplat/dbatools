@@ -1,6 +1,5 @@
-Function Get-DbaExecutionPlan
-{
-<#
+Function Get-DbaExecutionPlan {
+	<#
 .SYNOPSIS
 Gets execution plans and metadata
 	
@@ -84,46 +83,32 @@ Gets super detailed information for execution plans on only for AdventureWorks20
 		[switch]$ExcludeEmptyQueryPlan,
 		[switch]$Force
 	)
-	
 
-	
-	BEGIN
-	{
-		# Convert from RuntimeDefinedParameter object to regular array
-		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
-		
-		if ($SinceCreation -ne $null)
-		{
+	begin {
+				
+		if ($SinceCreation -ne $null) {
 			$SinceCreation = $SinceCreation.ToString("yyyy-MM-dd HH:mm:ss")
 		}
 		
-		if ($SinceLastExecution -ne $null)
-		{
+		if ($SinceLastExecution -ne $null) {
 			$SinceLastExecution = $SinceLastExecution.ToString("yyyy-MM-dd HH:mm:ss")
 		}
 	}
-	
-	PROCESS
-	{
-		foreach ($instance in $sqlinstance)
-		{
-			try
-			{
+	process {
+
+		foreach ($instance in $sqlinstance) {
+			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
 				
-				if ($server.VersionMajor -lt 9)
-				{
+				if ($server.VersionMajor -lt 9) {
 					Write-Warning "SQL Server 2000 not supported"
 					continue
 				}
 				
-				if ($force -eq $true)
-				{
+				if ($force -eq $true) {
 					$select = "SELECT * "
 				}
-				else
-				{
+				else {
 					$select = "SELECT DB_NAME(deqp.dbid) as DatabaseName, OBJECT_NAME(deqp.objectid) as ObjectName, 
 					detqp.query_plan AS SingleStatementPlan, 
 					deqp.query_plan AS BatchQueryPlan,
@@ -135,50 +120,43 @@ Gets super detailed information for execution plans on only for AdventureWorks20
 				}
 				
 				$from = " FROM sys.dm_exec_query_stats deqs
-				        CROSS APPLY sys.dm_exec_text_query_plan(deqs.plan_handle,
+						CROSS APPLY sys.dm_exec_text_query_plan(deqs.plan_handle,
 							deqs.statement_start_offset,
 							deqs.statement_end_offset) AS detqp
-				        CROSS APPLY sys.dm_exec_query_plan(deqs.plan_handle) AS deqp
-				        CROSS APPLY sys.dm_exec_sql_text(deqs.plan_handle) AS execText"
+						CROSS APPLY sys.dm_exec_query_plan(deqs.plan_handle) AS deqp
+						CROSS APPLY sys.dm_exec_sql_text(deqs.plan_handle) AS execText"
 				
-				if ($exclude.length -gt 0 -or $databases.length -gt 0 -or $SinceCreation.length -gt 0 -or $SinceLastExecution.length -gt 0 -or $ExcludeEmptyQueryPlan -eq $true)
-				{
+				if ($exclude.length -gt 0 -or $databases.length -gt 0 -or $SinceCreation.length -gt 0 -or $SinceLastExecution.length -gt 0 -or $ExcludeEmptyQueryPlan -eq $true) {
 					$where = " WHERE "
 				}
 				
 				$wherearray = @()
 				
-				if ($databases.length -gt 0)
-				{
+				if ($databases.length -gt 0) {
 					$dblist = $databases -join "','"
 					$wherearray += " DB_NAME(deqp.dbid) in ('$dblist') "
 				}
 				
-				if ($SinceCreation -ne $null)
-				{
+				if ($SinceCreation -ne $null) {
 					Write-Verbose "Adding creation time"
 					$wherearray += " creation_time >= '$SinceCreation' "
 				}
 				
-				if ($SinceLastExecution -ne $null)
-				{
+				if ($SinceLastExecution -ne $null) {
 					Write-Verbose "Adding last exectuion time"
 					$wherearray += " last_execution_time >= '$SinceLastExecution' "
 				}
 				
-				if ($exclude.length -gt 0)
-				{
+				if ($exclude.length -gt 0) {
 					$dblist = $exclude -join "','"
 					$wherearray += " DB_NAME(deqp.dbid) not in ('$dblist') "
 				}
 				
-				if ($ExcludeEmptyQueryPlan)
-				{
+				if ($ExcludeEmptyQueryPlan) {
 					$wherearray += " detqp.query_plan is not null"
 				}
 				
-				if ($where.length -gt 0)
-				{
+				if ($where.length -gt 0) {
 					$wherearray = $wherearray -join " and "
 					$where = "$where $wherearray"
 				}
@@ -186,56 +164,53 @@ Gets super detailed information for execution plans on only for AdventureWorks20
 				$sql = "$select $from $where"
 				Write-Debug $sql
 				
-				if ($Force -eq $true)
-				{
+				if ($Force -eq $true) {
 					$server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
 				}
 				
 				$datatable = $server.ConnectionContext.ExecuteWithResults($sql).Tables
 				
-				foreach ($row in ($datatable.Rows))
-				{
+				foreach ($row in ($datatable.Rows)) {
 					$simple = ([xml]$row.SingleStatementPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtSimple
 					$sqlhandle = "0x"; $row.sqlhandle | ForEach-Object { $sqlhandle += ("{0:X}" -f $_).PadLeft(2, "0") }
 					$planhandle = "0x"; $row.planhandle | ForEach-Object { $planhandle += ("{0:X}" -f $_).PadLeft(2, "0") }
 					
 					[pscustomobject]@{
-						ComputerName = $server.NetName
-						InstanceName = $server.ServiceName
-						SqlInstance = $server.DomainInstanceName
-						DatabaseName = $row.DatabaseName
-						ObjectName = $row.ObjectName
-						QueryPosition = $row.QueryPosition
-						SqlHandle = $SqlHandle
-						PlanHandle = $PlanHandle
-						CreationTime = $row.CreationTime
-						LastExecutionTime = $row.LastExecutionTime
-						StatementCondition = ([xml]$row.SingleStatementPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtCond
-						StatementSimple = $simple
-						StatementId = $simple.StatementId
-						StatementCompId = $simple.StatementCompId
-						StatementType = $simple.StatementType
-						RetrievedFromCache = $simple.RetrievedFromCache
-						StatementSubTreeCost = $simple.StatementSubTreeCost
-						StatementEstRows = $simple.StatementEstRows
-						SecurityPolicyApplied = $simple.SecurityPolicyApplied
-						StatementOptmLevel = $simple.StatementOptmLevel
-						QueryHash = $simple.QueryHash
-						QueryPlanHash = $simple.QueryPlanHash
-						StatementOptmEarlyAbortReason = $simple.StatementOptmEarlyAbortReason
+						ComputerName                      = $server.NetName
+						InstanceName                      = $server.ServiceName
+						SqlInstance                       = $server.DomainInstanceName
+						DatabaseName                      = $row.DatabaseName
+						ObjectName                        = $row.ObjectName
+						QueryPosition                     = $row.QueryPosition
+						SqlHandle                         = $SqlHandle
+						PlanHandle                        = $PlanHandle
+						CreationTime                      = $row.CreationTime
+						LastExecutionTime                 = $row.LastExecutionTime
+						StatementCondition                = ([xml]$row.SingleStatementPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtCond
+						StatementSimple                   = $simple
+						StatementId                       = $simple.StatementId
+						StatementCompId                   = $simple.StatementCompId
+						StatementType                     = $simple.StatementType
+						RetrievedFromCache                = $simple.RetrievedFromCache
+						StatementSubTreeCost              = $simple.StatementSubTreeCost
+						StatementEstRows                  = $simple.StatementEstRows
+						SecurityPolicyApplied             = $simple.SecurityPolicyApplied
+						StatementOptmLevel                = $simple.StatementOptmLevel
+						QueryHash                         = $simple.QueryHash
+						QueryPlanHash                     = $simple.QueryPlanHash
+						StatementOptmEarlyAbortReason     = $simple.StatementOptmEarlyAbortReason
 						CardinalityEstimationModelVersion = $simple.CardinalityEstimationModelVersion
-						ParameterizedText = $simple.ParameterizedText
-						StatementSetOptions = $simple.StatementSetOptions
-						QueryPlan = $simple.QueryPlan
-						BatchConditionXml = ([xml]$row.BatchQueryPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtCond
-						BatchSimpleXml = ([xml]$row.BatchQueryPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtSimple
-						BatchQueryPlanRaw = [xml]$row.BatchQueryPlan
-						SingleStatementPlanRaw = [xml]$row.SingleStatementPlan
+						ParameterizedText                 = $simple.ParameterizedText
+						StatementSetOptions               = $simple.StatementSetOptions
+						QueryPlan                         = $simple.QueryPlan
+						BatchConditionXml                 = ([xml]$row.BatchQueryPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtCond
+						BatchSimpleXml                    = ([xml]$row.BatchQueryPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtSimple
+						BatchQueryPlanRaw                 = [xml]$row.BatchQueryPlan
+						SingleStatementPlanRaw            = [xml]$row.SingleStatementPlan
 					} | Select-DefaultView -ExcludeProperty BatchQueryPlan, SingleStatementPlan, BatchConditionXmlRaw, BatchQueryPlanRaw, SingleStatementPlanRaw
 				}
 			}
-			catch
-			{
+			catch {
 				# Will fix this tomorrow, Fred ;)
 				Write-Warning $_.Exception
 			}
