@@ -1,5 +1,6 @@
-Function Read-DbaBackupHeader
-{
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+
+Function Read-DbaBackupHeader {
 <#
 .SYNOPSIS 
 Reads and displays detailed information about a SQL Server backup
@@ -88,69 +89,65 @@ Read-DbaBackupHeader -Path https://dbatoolsaz.blob.core.windows.net/azbackups/re
 
 Gets the backup header information from the SQL Server backup file stored at https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak on Azure
 #>
-	[CmdletBinding()]
-	Param (
-		[parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
-		[object]$SqlCredential,
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[object[]]$Path,
-		[switch]$Simple,
-		[switch]$FileList,
-		[string]$AzureCredential,
-		[switch]$Silent
-	)
-	
-	BEGIN
-	{
-		$LoopCnt = 1
-		
-		try
-		{
-			if ($sqlServer -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject])
-			{
-					Write-Message -Level Verbose -Message "Connecting to $SqlServer"
-					$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ErrorVariable ConnectError
-			}
-			else
-			{
-				Write-Message -Level Verbose -Message "Reusing connection to $SqlServer"
-				$server = $sqlServer
-			}
-		}
-		catch
-		{
-			Stop-Function -Message "Failed to connect to $SqlSever $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_
-			return
-		}
-	}
-	
-	PROCESS
-	{
-		
-		$PathCount = $path.length
-		Write-Message -Level Verbose -Message "$pathcount files to scan"
-		foreach ($file in $path)
-		{
-			if ($null -ne $file.FullName) { $file = $file.FullName }
-			Write-Progress -Id 1 -Activity Updating -Status 'Progress' -CurrentOperation "Scanning Restore headers on File $LoopCnt - $file"
-			
-			Write-Message -Level Verbose -Message "Scanning file $file"
-			$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
-			if ($file -like 'http*')
-			{
-				$DeviceType ='URL'
-				$restore.CredentialName = $AzureCredential
-			}	
-			else
-			{
-				$DeviceType = 'FILE'
-			}
-			$device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem $file, $DeviceType
-			$restore.Devices.Add($device)
-			if ((Test-DbaSqlPath -SqlServer $server -Path $file) -or $DeviceType -eq 'URL')
-			{
+    [CmdletBinding()]
+    Param (
+        [parameter(Mandatory = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter]
+        $SqlInstance,
+        
+        [PsCredential]
+        $SqlCredential,
+        
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [object[]]
+        $Path,
+        
+        [switch]
+        $Simple,
+        
+        [switch]
+        $FileList,
+        
+        [string]
+        $AzureCredential,
+        
+        [switch]
+        $Silent
+    )
+    
+    begin {
+        $LoopCnt = 1
+        
+        try {
+            $server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+        }
+        catch {
+            Stop-Function -Message "Failed to connect to $SqlInstance" -Silent $Silent -ErrorRecord $_
+            return
+        }
+    }
+    
+    process {
+        if (Test-FunctionInterrupt) { return }
+        $PathCount = $path.length
+        Write-Message -Level Verbose -Message "$pathcount files to scan"
+        foreach ($file in $path) {
+            if ($null -ne $file.FullName) { $file = $file.FullName }
+            Write-Progress -Id 1 -Activity Updating -Status 'Progress' -CurrentOperation "Scanning Restore headers on File $LoopCnt - $file"
+            
+            Write-Message -Level Verbose -Message "Scanning file $file"
+            $restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
+            if ($file -like 'http*') {
+                $DeviceType = 'URL'
+                $restore.CredentialName = $AzureCredential
+            }
+            else {
+                $DeviceType = 'FILE'
+            }
+            $device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem $file, $DeviceType
+            $restore.Devices.Add($device)
+            if ((Test-DbaSqlPath -SqlServer $server -Path $file) -or $DeviceType -eq 'URL') {
 				<#	try
 					{
 						$allfiles = $restore.ReadFileList($server)
@@ -170,108 +167,90 @@ Gets the backup header information from the SQL Server backup file stored at htt
 					
 
 				}#>
-				try
-				{
-					$datatable = $restore.ReadBackupHeader($server)
-				}
-				catch
-				{
-					Write-Exception $_
-					if ($DeviceType -eq 'FILE')
-					{
-						Write-Message -Level Warning -Message "Problem with $file"
-					}
-					else
-					{
-						Write-Message -Level Warning -Message "Cannot reach $file, check credential name and network connectivity"
-					}
-					Return
-				}
-				$fl = $datatable.Columns.Add("FileList", [object])
-				#$datatable.rows[0].FileList = $allfiles.rows
-				
-				$mb = $datatable.Columns.Add("BackupSizeMB", [int])
-				$mb.Expression = "BackupSize / 1024 / 1024"
-				$gb = $datatable.Columns.Add("BackupSizeGB")
-				$gb.Expression = "BackupSizeMB / 1024"
-				
-				if ($null -eq $datatable.Columns['CompressedBackupSize'])
-				{
-					$formula = "0"
-				}
-				else
-				{
-					$formula = "CompressedBackupSize / 1024 / 1024"
-				}
-				
-				$cmb = $datatable.Columns.Add("CompressedBackupSizeMB", [int])
-				$cmb.Expression = $formula
-				$cgb = $datatable.Columns.Add("CompressedBackupSizeGB")
-				$cgb.Expression = "CompressedBackupSizeMB / 1024"
-				
-				$null = $datatable.Columns.Add("SqlVersion")
-
-
-				$null = $datatable.Columns.Add("BackupPath")
-			#	$datatable.Columns["BackupPath"].DefaultValue = $Path
-				$dbversion = $datatable.Rows[0].DatabaseVersion
-				
-			#	$datatable.Rows[0].SqlVersion = (Convert-DbVersionToSqlVersion $dbversion)
-				$BackupSlot = 1
-				ForEach ($row in $DataTable)
-				{
-					$row.SqlVersion = (Convert-DbVersionToSqlVersion $dbversion)
-					$row.BackupPath = $file
-					try
-					{
-						$restore.FileNumber = $BackupSlot
-						$allfiles = $restore.ReadFileList($server)
-					}
-					catch
-					{
-						$shortname = Split-Path $file -Leaf
-						if (!(Test-DbaSqlPath -SqlServer $server -Path $file))
-						{
-							Write-Message -Level Warning -Message "File $shortname does not exist or access denied. The SQL Server service account may not have access to the source directory."
-						}
-						else
-						{
-							Write-Message -Level Warning -Message "File list for $shortname could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or tiemouts with the SQL Server, or the SQL Server service account does not have access to the source directory."
-						}
-						
-						#Write-Exception $_
-						#return
-					}
-					$row.FileList = $allfiles
-					$BackupSlot++
-
-				}
-			}
-			else
-			{
-				Write-Message -Level Warning -Message "File $shortname does not exist or access denied. The SQL Server service account may not have access to the source directory."
-				return
-			}
-			if ($Simple)
-			{
-				$datatable | Select-Object DatabaseName, BackupFinishDate, RecoveryModel, BackupSizeMB, CompressedBackupSizeMB, DatabaseCreationDate, UserName, ServerName, SqlVersion, BackupPath
-			}
-			elseif ($filelist)
-			{
-				$datatable.filelist
-			}
-			else
-			{
-				$datatable
-			}
-			
-			Remove-Variable DataTable -ErrorAction SilentlyContinue
-		}
-	$LoopCnt++
-	}
-	
-	END
-	{
-		$server.ConnectionContext.Disconnect()
-	}
+                try {
+                    $datatable = $restore.ReadBackupHeader($server)
+                }
+                catch {
+                    Write-Exception $_
+                    if ($DeviceType -eq 'FILE') {
+                        Write-Message -Level Warning -Message "Problem with $file"
+                    }
+                    else {
+                        Write-Message -Level Warning -Message "Cannot reach $file, check credential name and network connectivity"
+                    }
+                    Return
+                }
+                $fl = $datatable.Columns.Add("FileList", [object])
+                #$datatable.rows[0].FileList = $allfiles.rows
+                
+                $mb = $datatable.Columns.Add("BackupSizeMB", [int])
+                $mb.Expression = "BackupSize / 1024 / 1024"
+                $gb = $datatable.Columns.Add("BackupSizeGB")
+                $gb.Expression = "BackupSizeMB / 1024"
+                
+                if ($null -eq $datatable.Columns['CompressedBackupSize']) {
+                    $formula = "0"
+                }
+                else {
+                    $formula = "CompressedBackupSize / 1024 / 1024"
+                }
+                
+                $cmb = $datatable.Columns.Add("CompressedBackupSizeMB", [int])
+                $cmb.Expression = $formula
+                $cgb = $datatable.Columns.Add("CompressedBackupSizeGB")
+                $cgb.Expression = "CompressedBackupSizeMB / 1024"
+                
+                $null = $datatable.Columns.Add("SqlVersion")
+                
+                
+                $null = $datatable.Columns.Add("BackupPath")
+                #	$datatable.Columns["BackupPath"].DefaultValue = $Path
+                $dbversion = $datatable.Rows[0].DatabaseVersion
+                
+                #	$datatable.Rows[0].SqlVersion = (Convert-DbVersionToSqlVersion $dbversion)
+                $BackupSlot = 1
+                ForEach ($row in $DataTable) {
+                    $row.SqlVersion = (Convert-DbVersionToSqlVersion $dbversion)
+                    $row.BackupPath = $file
+                    try {
+                        $restore.FileNumber = $BackupSlot
+                        $allfiles = $restore.ReadFileList($server)
+                    }
+                    catch {
+                        $shortname = Split-Path $file -Leaf
+                        if (!(Test-DbaSqlPath -SqlServer $server -Path $file)) {
+                            Write-Message -Level Warning -Message "File $shortname does not exist or access denied. The SQL Server service account may not have access to the source directory."
+                        }
+                        else {
+                            Write-Message -Level Warning -Message "File list for $shortname could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or tiemouts with the SQL Server, or the SQL Server service account does not have access to the source directory."
+                        }
+                        
+                        #Write-Exception $_
+                        #return
+                    }
+                    $row.FileList = $allfiles
+                    $BackupSlot++
+                    
+                }
+            }
+            else {
+                Write-Message -Level Warning -Message "File $shortname does not exist or access denied. The SQL Server service account may not have access to the source directory."
+                return
+            }
+            if ($Simple) {
+                $datatable | Select-Object DatabaseName, BackupFinishDate, RecoveryModel, BackupSizeMB, CompressedBackupSizeMB, DatabaseCreationDate, UserName, ServerName, SqlVersion, BackupPath
+            }
+            elseif ($FileList) {
+                $datatable.filelist
+            }
+            else {
+                $datatable
+            }
+            
+            Remove-Variable DataTable -ErrorAction SilentlyContinue
+        }
+        $LoopCnt++
+    }
 }
+
+Register-DbaTeppArgumentCompleter -Command Read-DbaBackupHeader -Parameter SqlInstance
