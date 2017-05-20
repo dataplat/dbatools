@@ -107,7 +107,7 @@ Sets the port number 1337 for ALLIP's on SqlInstance SQLDB2014A and SQLDB2016B
 				$wmiinstancename = $args[1]
 				$port = $args[2]
 				$ipaddress = $args[3]
-				$wmi = New-Object Microsoft.SqlInstance.Management.Smo.Wmi.ManagedComputer $instance
+				$wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $instance
 				$wmiinstance = $wmi.ServerInstances | Where-Object { $_.Name -eq $wmiinstancename }
 				$tcp = $wmiinstance.ServerProtocols | Where-Object { $_.DisplayName -eq 'TCP/IP' }
 				$ipaddress = $tcp.IPAddresses | where-object { $_.IPAddress -eq $ipaddress }

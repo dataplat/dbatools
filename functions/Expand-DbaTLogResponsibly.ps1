@@ -323,7 +323,7 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
 							# Shrink Log File to desired size before re-growth to desired size (You need to remove as many VLF's as possible to ensure proper growth)
 							$ShrinkSizeMB = $ShrinkSize/1024
 							if ($ShrinkLogFile -eq $true) {
-								if ($server.Databases[$db].RecoveryModel -eq [Microsoft.SqlInstance.Management.Smo.RecoveryModel]::Simple) {
+								if ($server.Databases[$db].RecoveryModel -eq [Microsoft.SqlServer.Management.Smo.RecoveryModel]::Simple) {
 									Write-Warning "Database '$db' is in Simple RecoveryModel which does not allow log backups. Do not specify -ShrinkLogFile and -ShrinkSizeMB parameters."
 									Continue
 								}
@@ -353,8 +353,8 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
 										Do {
 											try {
 												$percent = $null
-												$backup = New-Object Microsoft.SqlInstance.Management.Smo.Backup
-												$backup.Action = [Microsoft.SqlInstance.Management.Smo.BackupActionType]::Log
+												$backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
+												$backup.Action = [Microsoft.SqlServer.Management.Smo.BackupActionType]::Log
 												$backup.BackupSetDescription = "Transaction Log backup of " + $db
 												$backup.BackupSetName = $db + " Backup"
 												$backup.Database = $db
@@ -367,7 +367,7 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
 												else {
 													$backup.CompressionOption = 0
 												}
-												$percnt = [Microsoft.SqlInstance.Management.Smo.PercentCompleteEventHandler] {
+												$percnt = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
 													Write-Progress -id 2 -ParentId 1 -activity "Backing up $db to $server" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
 												}
 												$backup.add_PercentComplete($percent)
@@ -376,7 +376,7 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
 												Write-Progress -id 2 -ParentId 1 -activity "Backing up $db to $server" -percentcomplete 0 -Status ([System.String]::Format("Progress: {0} %", 0))
 												$backup.SqlBackup($server)
 												Write-Progress -id 2 -ParentId 1 -activity "Backing up $db to $server" -status "Complete" -Completed
-												$logfile.Shrink($ShrinkSizeMB, [Microsoft.SqlInstance.Management.SMO.ShrinkMethod]::TruncateOnly)
+												$logfile.Shrink($ShrinkSizeMB, [Microsoft.SqlServer.Management.SMO.ShrinkMethod]::TruncateOnly)
 												$logfile.Refresh()
 											}
 											catch {
