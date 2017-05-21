@@ -178,7 +178,7 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
 		[Parameter(Mandatory = $false)]
 		[switch]$Silent,
 		[Parameter(Mandatory = $false)]
-		[bool]$Force
+		[switch]$Force
 	)
 	
 	begin {
