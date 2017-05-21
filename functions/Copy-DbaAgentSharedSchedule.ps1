@@ -84,10 +84,8 @@ Shows what would happen if the command were executed using force.
 	)
 
 	
-	BEGIN
-	{
-		$schedules = $psboundparameters.SharedSchedules
-		
+	begin {
+
 		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
@@ -102,8 +100,7 @@ Shows what would happen if the command were executed using force.
 		$serverschedules = $sourceserver.JobServer.SharedSchedules
 		$destschedules = $destserver.JobServer.SharedSchedules
 	}
-	PROCESS
-	{
+	process {
 		foreach ($schedule in $serverschedules)
 		{
 			$schedulename = $schedule.name
@@ -161,8 +158,7 @@ Shows what would happen if the command were executed using force.
 		}
 	}
 	
-	END
-	{
+	end {
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Job schedule migration finished" }

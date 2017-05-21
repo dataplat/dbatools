@@ -5,23 +5,23 @@ Find orphan users with existing login and remap.
 
 .DESCRIPTION
 An orphan user is defined by a user that does not have their matching login. (Login property = "")
-	
+
 If the matching login exists it must be:
-    Enabled
-    Not a system object
-    Not locked
-    Have the same name that user
+	Enabled
+	Not a system object
+	Not locked
+	Have the same name that user
 
 You can drop users that does not have their matching login by especifing the parameter -RemoveNotExisting This will be made by calling Remove-DbaOrphanUser function.
 
-	
+
 .PARAMETER SqlInstance
 The SQL Server instance.
 
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
@@ -31,43 +31,43 @@ List of users to repair
 .PARAMETER RemoveNotExisting
 If passed, all users that not have their matching login will be dropped from database
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+.PARAMETER WhatIf
+Shows what would happen if the command were to run. No actions are actually performed.
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+.PARAMETER Confirm
+Prompts you for confirmation before executing any changing operations within the command.
 
 .EXAMPLE
-Repair-DbaOrphanUser -SqlInstance sql2005 
+Repair-DbaOrphanUser -SqlInstance sql2005
 
 Will find and repair all orphan users of all databases present on server 'sql2005'
 
-.EXAMPLE   
+.EXAMPLE
 Repair-DbaOrphanUser -SqlInstance sqlserver2014a -SqlCredential $cred
-	
-Will find and repair all orphan users of all databases present on server 'sqlserver2014a'. Will be verified using SQL credentials. 
-	
-.EXAMPLE   
+
+Will find and repair all orphan users of all databases present on server 'sqlserver2014a'. Will be verified using SQL credentials.
+
+.EXAMPLE
 Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1, db2
 
 Will find and repair all orphan users on both db1 and db2 databases
 
-.EXAMPLE   
+.EXAMPLE
 Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1 -Users OrphanUser
 
 Will find and repair user 'OrphanUser' on 'db1' database
 
-.EXAMPLE   
+.EXAMPLE
 Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Users OrphanUser
 
 Will find and repair user 'OrphanUser' on all databases
 
-.EXAMPLE   
+.EXAMPLE
 Repair-DbaOrphanUser -SqlInstance sqlserver2014a -RemoveNotExisting
 
 Will find all orphan users of all databases present on server 'sqlserver2014a'
 Will also remove all users that does not have their matching login by calling Remove-DbaOrphanUser function
-	
+
 .NOTES
 Tags: Orphan
 Original Author: Claudio Silva (@ClaudioESSilva)
@@ -100,35 +100,31 @@ https://dbatools.io/Repair-DbaOrphanUser
 		[object[]]$Users,
 		[switch]$RemoveNotExisting
 	)
-	
 
-	
-	BEGIN {
+	begin {
 		Write-Output "Attempting to connect to Sql Server.."
 		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	}
-	
-	PROCESS {
-		# Convert from RuntimeDefinedParameter object to regular array
-		$databases = $psboundparameters.Databases
-		
-		if ($databases.Count -eq 0) {
-			$databases = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true }
+
+	process {
+
+		if ($Database.Count -eq 0) {
+			$Database = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true }
 		}
 		else {
 			if ($pipedatabase.Length -gt 0) {
 				$Source = $pipedatabase[0].parent.name
-				$databases = $pipedatabase.name
+				$Database = $pipedatabase.name
 			}
 			else {
-				$databases = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true -and ($databases -contains $_.Name) }
+				$Database = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true -and ($Database -contains $_.Name) }
 			}
 		}
-		
-		if ($databases.Count -gt 0) {
+
+		if ($Database.Count -gt 0) {
 			$start = [System.Diagnostics.Stopwatch]::StartNew()
-			
-			foreach ($db in $databases) {
+
+			foreach ($db in $Database) {
 				try {
 					#if SQL 2012 or higher only validate databases with ContainmentType = NONE
 					if ($server.versionMajor -gt 10) {
@@ -137,9 +133,9 @@ https://dbatools.io/Repair-DbaOrphanUser
 							Continue
 						}
 					}
-					
+
 					Write-Output "Validating users on database '$db'"
-					
+
 					if ($Users.Count -eq 0) {
 						#the third validation will remove from list sql users without login. The rule here is Sid with length higher than 16
 						$Users = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false }
@@ -154,7 +150,7 @@ https://dbatools.io/Repair-DbaOrphanUser
 							$Users = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($Users -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false) }
 						}
 					}
-					
+
 					if ($Users.Count -gt 0) {
 						Write-Verbose "Orphan users found"
 						$UsersToRemove = @()
@@ -165,7 +161,7 @@ https://dbatools.io/Repair-DbaOrphanUser
 								$_.IsLocked -eq $False -and
 								$_.Name -eq $User.Name
 							}
-							
+
 							if ($ExistLogin) {
 								if ($server.versionMajor -gt 8) {
 									$query = "ALTER USER " + $User + " WITH LOGIN = " + $User
@@ -173,7 +169,7 @@ https://dbatools.io/Repair-DbaOrphanUser
 								else {
 									$query = "exec sp_change_users_login 'update_one', '$User'"
 								}
-								
+
 								if ($Pscmdlet.ShouldProcess($db.Name, "Mapping user '$($User.Name)'")) {
 									$server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
 									Write-Output "`r`nUser '$($User.Name)' mapped with their login"
@@ -189,7 +185,7 @@ https://dbatools.io/Repair-DbaOrphanUser
 								}
 							}
 						}
-						
+
 						#With the colelction complete invoke remove.
 						if ($RemoveNotExisting -eq $true) {
 							if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaOrphanUser")) {
@@ -213,13 +209,11 @@ https://dbatools.io/Repair-DbaOrphanUser
 			Write-Output "There are no databases to analyse."
 		}
 	}
-	
-	END {
-		$server.ConnectionContext.Disconnect()
-		
+	end {
+
 		$totaltime = ($start.Elapsed)
 		Write-Output "Total Elapsed time: $totaltime"
-		
+
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Repair-SqlOrphanUser
 	}
 }

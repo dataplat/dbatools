@@ -1,5 +1,4 @@
-Function Copy-DbaSqlDataCollector
-{
+function Copy-DbaSqlDataCollector {
 <#
 .SYNOPSIS
 Migrates user SQL Data Collector collection sets. SQL Data Collector configuration is on the agenda, but it's hard.
@@ -93,11 +92,9 @@ Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlse
 		[switch]$NoServerReconfig,
 		[switch]$Force
 	)
-	
 
-	
-	BEGIN
-	{
+	begin {
+
 		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.Collector") -eq $null)
 		{
 			throw "SMO version is too old. To migrate collection sets, you must have SQL Server Management Studio 2008 R2 or higher installed."
@@ -109,17 +106,14 @@ Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlse
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
 		
-		# New name?
-		$collectionSets = $psboundparameters.CollectionSets
-		
 		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
 		{
 			throw "Collection Sets are only supported in SQL Server 2008 and above. Quitting."
 		}
 		
 	}
-	process
-	{
+	process {
+
 		if ($NoServerReconfig -eq $false) 
 		{
 			Write-Warning "Server reconfiguration not yet supported. Only Collection Set migration will be migrated at this time."
@@ -161,7 +155,7 @@ Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlse
 		}
 		
 		$storeCollectionSets = $sourceStore.CollectionSets | Where-Object { $_.isSystem -eq $false }
-		if ($collectionSets.length -gt 0) { $storeCollectionSets = $storeCollectionSets | Where-Object { $collectionSets -contains $_.Name } }
+		if ($CollectionSet.length -gt 0) { $storeCollectionSets = $storeCollectionSets | Where-Object { $CollectionSet -contains $_.Name } }
 		
 		Write-Output "Migrating collection sets"
 		foreach ($set in $storeCollectionSets)
@@ -219,13 +213,8 @@ Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlse
 			}
 		}
 	}
-	
-	end
-	{
-		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
-        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Data Collector migration finished" }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlDataCollector
+	end {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlDataCollector
 	}
 }
 

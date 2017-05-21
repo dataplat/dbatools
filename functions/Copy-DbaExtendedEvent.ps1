@@ -89,12 +89,8 @@ Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from s
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	
+	begin {
 
-	
-	BEGIN
-	{
-		
 		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null)
 		{
 			throw "SMO version is too old. To migrate Extended Events, you must have SQL Server Management Studio 2008 R2 or higher installed."
@@ -105,16 +101,13 @@ Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from s
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
-		$sessions = $psboundparameters.Sessions
-		
-		
+
 		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
 		{
 			throw "Extended Events are only supported in SQL Server 2008 and above. Quitting."
 		}
 	}
-	process
-	{
+	process {
 		
 		$sourceSqlConn = $sourceserver.ConnectionContext.SqlConnectionObject
 		$sourceSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sourceSqlConn
@@ -182,13 +175,8 @@ Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from s
 			}
 		}
 	}
-	
-	end
-	{
-		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
-        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Extended Event migration finished" }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlExtendedEvent
+	end {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlExtendedEvent
 	}
 }
 

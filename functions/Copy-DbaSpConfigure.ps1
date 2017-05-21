@@ -1,6 +1,5 @@
-function Copy-DbaSpConfigure
-{
-<#
+function Copy-DbaSpConfigure {
+	<#
 .SYNOPSIS 
 Copy-DbaSpConfigure migrates configuration values from one SQL Server to another. 
 
@@ -67,91 +66,74 @@ Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
 Shows what would happen if the command were executed.
 #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-    param (
-	    [parameter(Mandatory = $true)]
-	    [DbaInstanceParameter]$Source,
-	    [parameter(Mandatory = $true)]
-	    [DbaInstanceParameter]$Destination,
-	    [System.Management.Automation.PSCredential]$SourceSqlCredential,
-	    [System.Management.Automation.PSCredential]$DestinationSqlCredential
-    )
+	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+	param (
+		[parameter(Mandatory = $true)]
+		[DbaInstanceParameter]$Source,
+		[parameter(Mandatory = $true)]
+		[DbaInstanceParameter]$Destination,
+		[System.Management.Automation.PSCredential]$SourceSqlCredential,
+		[System.Management.Automation.PSCredential]$DestinationSqlCredential
+	)
 	
 
 	
-    BEGIN
-    {
-	    $configs = $psboundparameters.Configs
+	begin {
+
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
-	    $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-	    $destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+		$source = $sourceserver.DomainInstanceName
+		$destination = $destserver.DomainInstanceName
+	}
+	process {
+
+		$destprops = $destserver.Configuration.Properties
 		
-	    $source = $sourceserver.DomainInstanceName
-	    $destination = $destserver.DomainInstanceName
-    }
-    PROCESS
-    {
+		# crude but i suck with properties
+		$lookups = $sourceserver.Configuration.PsObject.Properties.Name | Where-Object { $_ -notin "Parent", "Properties" }
 		
-	    $destprops = $destserver.Configuration.Properties
-		
-	    # crude but i suck with properties
-	    $lookups = $sourceserver.Configuration.PsObject.Properties.Name | Where-Object { $_ -notin "Parent", "Properties" }
-		
-	    $proplookup = @()
-	    foreach ($lookup in $lookups)
-	    {
-		    $proplookup += [PSCustomObject]@{
-			    ShortName = $lookup
+		$proplookup = @()
+		foreach ($lookup in $lookups) {
+			$proplookup += [PSCustomObject]@{
+				ShortName   = $lookup
 				DisplayName = $sourceserver.Configuration.$lookup.Displayname
-				IsDynamic = $sourceserver.Configuration.$lookup.IsDynamic
-		    }
-	    }
+				IsDynamic   = $sourceserver.Configuration.$lookup.IsDynamic
+			}
+		}
 		
-	    foreach ($sourceprop in $sourceserver.Configuration.Properties)
-	    {
-		    $displayname = $sourceprop.DisplayName
-		    $lookup = $proplookup | Where-Object { $_.DisplayName -eq $displayname }
+		foreach ($sourceprop in $sourceserver.Configuration.Properties) {
+			$displayname = $sourceprop.DisplayName
+			$lookup = $proplookup | Where-Object { $_.DisplayName -eq $displayname }
 			
-		    if ($configs.length -gt 0 -and $configs -notcontains $lookup.ShortName) { continue }
+			if ($configs.length -gt 0 -and $configs -notcontains $lookup.ShortName) { continue }
 			
-		    $destprop = $destprops | Where-Object{ $_.Displayname -eq $displayname }
-		    if ($destprop -eq $null)
-		    {
-			    Write-Warning "Configuration option '$displayname' does not exist on the destination instance."
-			    continue
-		    }
+			$destprop = $destprops | Where-Object { $_.Displayname -eq $displayname }
+			if ($destprop -eq $null) {
+				Write-Warning "Configuration option '$displayname' does not exist on the destination instance."
+				continue
+			}
 			
-		    If ($Pscmdlet.ShouldProcess($destination, "Updating $displayname"))
-		    {
-			    try
-			    {
-				    $destOldPropValue = $destprop.configvalue
-				    $destprop.configvalue = $sourceprop.configvalue
-				    $destserver.Configuration.Alter()
+			If ($Pscmdlet.ShouldProcess($destination, "Updating $displayname")) {
+				try {
+					$destOldPropValue = $destprop.configvalue
+					$destprop.configvalue = $sourceprop.configvalue
+					$destserver.Configuration.Alter()
 					Write-Output "Updated $($destprop.displayname) from $destOldPropValue to $($sourceprop.configvalue)"
-					if ($lookup.IsDynamic -eq $false)
-					{
+					if ($lookup.IsDynamic -eq $false) {
 						Write-Warning "Configuration option '$displayname' requires restart."	
 					}
 				}
-				catch
-				{
+				catch {
 					Write-Error "Could not $($destprop.displayname) to $($sourceprop.configvalue). Feature may not be supported."
 				}
 			}
 		  
-	    }
+		}
 
-    }
-    END
-    {
-	    $sourceserver.ConnectionContext.Disconnect()
-	    $destserver.ConnectionContext.Disconnect()
-	
-        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
-            Write-Output "Server configuration update finished"
-        }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlSpConfigure
+	}
+	end {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlSpConfigure
 	}
 	
 }

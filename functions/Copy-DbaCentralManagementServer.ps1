@@ -92,10 +92,8 @@ In the above example, top level Group1 and Group3, along with its subgroups and 
 	
 
 	
-	BEGIN
-	{
-		Function Parse-ServerGroup($sourceGroup, $destinationgroup, $SwitchServerName)
-		{
+	begin {
+		function Parse-ServerGroup($sourceGroup, $destinationgroup, $SwitchServerName) {
 			if ($destinationgroup.name -eq "DatabaseEngineServerGroup" -and $sourceGroup.name -ne "DatabaseEngineServerGroup")
 			{
 				$currentservergroup = $destinationgroup
@@ -246,9 +244,7 @@ In the above example, top level Group1 and Group3, along with its subgroups and 
 				Parse-ServerGroup -sourceGroup $fromsubgroup -destinationgroup $tosubgroup -SwitchServerName $SwitchServerName
 			}
 		}
-		
-		$SqlCmsGroups = $psboundparameters.SqlCmsGroups
-		
+
 		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
@@ -261,8 +257,7 @@ In the above example, top level Group1 and Group3, along with its subgroups and 
 		}
 	}
 	
-	PROCESS
-	{
+	process {
 		Write-Output "Connecting to Central Management Servers"
 		
 		try
@@ -289,8 +284,7 @@ In the above example, top level Group1 and Group3, along with its subgroups and 
 		}
 	}
 	
-	END
-	{
+	end {
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { 

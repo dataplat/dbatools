@@ -101,6 +101,7 @@ Exports ONLY logins netnerds and realcajun from sqlsever2014a with the permissio
 	)
 	
 	begin {
+
 		if ($FilePath) {
 			if ($FilePath -notlike "*\*") { $FilePath = ".\$filepath" }
 			$directory = Split-Path $FilePath
@@ -112,13 +113,9 @@ Exports ONLY logins netnerds and realcajun from sqlsever2014a with the permissio
 			
 			Write-Message -Level Output -Message "Attempting to connect to SQL Servers.."
 		}
-		
-		# Convert from RuntimeDefinedParameter object to regular array
-		$Logins = $psboundparameters.Logins
-		$Exclude = $psboundparameters.Exclude
+
 		$outsql = @()
 	}
-	
 	process {
 		
 		try {
@@ -334,20 +331,18 @@ CREATE LOGIN [$username] FROM WINDOWS WITH DEFAULT_DATABASE = [$defaultdb], DEFA
 			}
 		}
 	}
-	
 	end {
-		
 		$sql = $sql | Where-Object { $_ -notlike "CREATE USER [dbo] FOR LOGIN * WITH DEFAULT_SCHEMA=[dbo]" }
 		
 		$sql = $outsql -join "`r`nGO`r`n"
 		
-        if ($FilePath) {
-            $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
-        }
-        else {
-            $sql
-        }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Export-SqlLogin
+		if ($FilePath) {
+			$sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+		}
+		else {
+			$sql
+		}
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Export-SqlLogin
 	}
 }
 

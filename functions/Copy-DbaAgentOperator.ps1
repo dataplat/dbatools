@@ -85,9 +85,7 @@ Shows what would happen if the command were executed using force.
 	)
 
 	
-    BEGIN {
-
-		$operators = $psboundparameters.Operators
+    begin {
 
 		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
@@ -99,8 +97,7 @@ Shows what would happen if the command were executed using force.
 
     }
 
-	PROCESS
-	{
+	process	{
 
 		foreach ($operator in $serveroperators)
 		{
@@ -156,8 +153,7 @@ Shows what would happen if the command were executed using force.
 		}
 	}
 	
-	END
-	{
+	end {
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Operator migration finished" }

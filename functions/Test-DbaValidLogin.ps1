@@ -75,13 +75,7 @@ Tests all logins excluding any that are from the subdomain Domain
 		[switch]$Silent
 	)
 
-
-
-	BEGIN
-	{
-		$Logins = $psboundparameters.Logins
-		$Exclude = $psboundparameters.Exclude
-
+	begin {
 		if($IgnoreDomains) {
 			$IgnoreDomainsNormalized = $IgnoreDomains.toUpper()
 			Write-Message -Message ("Excluding logins for domains " + ($IgnoreDomains -join ',')) -Level Verbose
@@ -116,9 +110,7 @@ Tests all logins excluding any that are from the subdomain Domain
 			'PARTIAL_SECRETS_ACCOUNT'                = 67108864
 		}
 	}
-
-	PROCESS
-	{
+	process {
 		foreach ($instance in $SqlInstance)
 		{
 			try

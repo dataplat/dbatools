@@ -83,17 +83,8 @@ Sets SQL Agent Job owner to sa on all jobs where the owner does not match sa on 
 		[object]$SqlCredential,
 		[string]$TargetLogin
 	)
-	
 
-	
-	BEGIN
-	{
-		$jobs = $psboundparameters.Jobs
-		$exclude = $psboundparameters.Exclude
-	}
-	
-	PROCESS
-	{
+	process {
 		foreach ($servername in $SqlInstance)
 		{
 			#connect to the instance
@@ -101,7 +92,7 @@ Sets SQL Agent Job owner to sa on all jobs where the owner does not match sa on 
 			$server = Connect-SqlInstance $servername -SqlCredential $SqlCredential
 			
 			# dynamic sa name for orgs who have changed their sa name
-			if ($psboundparameters.TargetLogin.length -eq 0)
+			if (!$TargetLogin)
 			{
 				$TargetLogin = ($server.logins | Where-Object { $_.id -eq 1 }).Name
 			}
@@ -129,9 +120,9 @@ Sets SQL Agent Job owner to sa on all jobs where the owner does not match sa on 
 			#Otherwise, use all jobs on the instance where owner not equal to -TargetLogin
 			Write-Verbose "Gathering jobs to update"
 			
-			if ($Jobs.Length -gt 0)
+			if ($Job.Length -gt 0)
 			{
-				$jobcollection = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -ne $TargetLogin -and $jobs -contains $_.Name }
+				$jobcollection = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -ne $TargetLogin -and $Job -contains $_.Name }
 			}
 			else
 			{

@@ -1,6 +1,5 @@
-function Export-DbaAvailabilityGroup
-{
-<#
+function Export-DbaAvailabilityGroup {
+	<#
 .SYNOPSIS
 Exports SQL Server Availability Groups to a T-SQL file. 
 
@@ -75,73 +74,58 @@ Exports all Availability Groups from SQL server "sql2014". Output scripts are wr
 		[string]$FilePath = "$([Environment]::GetFolderPath("MyDocuments"))\SqlAgExport",
 		[switch]$NoClobber
 	)
-	
 
-	
-	BEGIN
-	{
+	begin {
+
 		Write-Output "Beginning Export-DbaAvailabilityGroup on $SqlInstance"
-		$AvailabilityGroups = $PSBoundParameters.AvailabilityGroups
-		
 		Write-Verbose "Connecting to SqlServer $SqlInstance"
 		
-		try
-		{
+		try {
 			$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 		}
-		catch
-		{
+		catch {
 			Write-Warning "Can't connect to $SqlInstance. Moving on."
 			Continue
 		}
 	}
-	
-	PROCESS
-	{
+	process {
+
 		# Get all of the Availability Groups and filter if required
 		$allags = $server.AvailabilityGroups
 		
-		if ($AvailabilityGroups)
-		{
+		if ($AvailabilityGroups) {
 			Write-Verbose 'Filtering AvailabilityGroups'
 			$allags = $allags | Where-Object { $_.name -in $AvailabilityGroups }
 		}
 		
-		if ($allags.count -gt 0)
-		{
+		if ($allags.count -gt 0) {
 			
 			# Set and create the OutputLocation if it doesn't exist
 			$sqlinst = $SqlInstance.Replace('\', '$')
 			$OutputLocation = "$FilePath\$sqlinst"
 			
-			if (!(Test-Path $OutputLocation -PathType Container))
-			{
+			if (!(Test-Path $OutputLocation -PathType Container)) {
 				New-Item -Path $OutputLocation -ItemType Directory -Force | Out-Null
 			}
 			
 			# Script each Availability Group
-			foreach ($ag in $allags)
-			{
+			foreach ($ag in $allags) {
 				$agname = $ag.Name
 				
 				# Set the outfile name
-				if ($AppendDateToOutputFilename.IsPresent)
-				{
+				if ($AppendDateToOutputFilename.IsPresent) {
 					$formatteddate = (Get-Date -Format 'yyyyMMdd_hhmm')
 					$outfile = "$OutputLocation\${AGname}_${formatteddate}.sql"
 				}
-				else
-				{
+				else {
 					$outfile = "$OutputLocation\$agname.sql"
 				}
 				
 				# Check NoClobber and script out the AG
-				if ($NoClobber.IsPresent -and (Test-Path -Path $outfile -PathType Leaf))
-				{
+				if ($NoClobber.IsPresent -and (Test-Path -Path $outfile -PathType Leaf)) {
 					Write-Warning "OutputFile $outfile already exists. Skipping due to -NoClobber parameter"
 				}
-				else
-				{
+				else {
 					Write-output "Scripting Availability Group [$agname] on $SqlInstance to $outfile"
 					
 					# Create comment block header for AG script
@@ -171,15 +155,10 @@ Exports all Availability Groups from SQL server "sql2014". Output scripts are wr
 				}
 			}
 		}
-		else
-		{
+		else {
 			Write-Output "No Availability Groups detected on $SqlInstance"
 		}
 	}
-	
-	END
-	{
-		$server.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Completed Export-DbaAvailabilityGroup on $SqlInstance" }
+	end {
 	}
 }

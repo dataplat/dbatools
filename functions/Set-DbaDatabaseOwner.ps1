@@ -71,13 +71,12 @@ Sets database owner to 'sa' on the db1 and db2 databases if their current owner 
 	{
 		foreach ($instance in $SqlInstance)
 		{
-			
 			#connect to the instance
 			Write-Verbose "Connecting to $instance"
 			$server = Connect-SqlInstance $instance -SqlCredential $SqlCredential
 			
 			# dynamic sa name for orgs who have changed their sa name
-			if ($psboundparameters.TargetLogin.length -eq 0)
+			if (!$TargetLogin)
 			{
 				$TargetLogin = ($server.logins | Where-Object { $_.id -eq 1 }).Name
 			}

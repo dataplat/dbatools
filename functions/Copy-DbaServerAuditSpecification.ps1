@@ -83,12 +83,8 @@ Shows what would happen if the command were executed using force.
 		[switch]$Force
 	)
 
-	
-	BEGIN
-	{
-		
-		$auditspecs = $psboundparameters.ServerAuditSpecifications
-		
+	begin {
+
 		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
@@ -108,10 +104,8 @@ Shows what would happen if the command were executed using force.
 		$destaudits = $destserver.ServerAuditSpecifications
 		
 	}
-	PROCESS
-	{
-		
-		
+	process {
+
 		foreach ($auditspec in $serverauditspecs)
 		{
 			$auditspecname = $auditspec.name
@@ -164,12 +158,7 @@ Shows what would happen if the command were executed using force.
 
 		}
 	}
-	
-	END
-	{
-		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
-        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Server audit migration finished" }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlAuditSpecification
+	end {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlAuditSpecification
 	}
 }

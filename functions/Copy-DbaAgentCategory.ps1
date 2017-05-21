@@ -348,10 +348,6 @@ Shows what would happen if the command were executed using force.
 			}
 		}
 		
-		$operatorcategories = $psboundparameters.OperatorCategories
-		$alertcategories = $psboundparameters.AlertCategories
-		$jobcategories = $psboundparameters.JobCategories
-		
 		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
