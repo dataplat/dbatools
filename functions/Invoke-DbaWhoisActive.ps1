@@ -253,11 +253,8 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 		[switch]$Help,
 		[switch]$Silent
 	)
-	
 
-	
 	begin {
-		$database = $psboundparameters.Database
 		$passedparams = $psboundparameters.Keys | Where-Object { 'Silent','SqlServer', 'SqlCredential', 'OutputAs', 'ServerInstance', 'SqlInstance', 'Database' -notcontains $_ }
 		$localparams = $psboundparameters
 	}

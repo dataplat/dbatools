@@ -79,10 +79,8 @@ Gets a list of server IP addresses in the HR and Accounting groups from the Cent
         [parameter(ParameterSetName = "IP")]
         [switch]$IpAddr
     )
-	
 
-	
-    BEGIN {
+    begin {
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         $sqlconnection = $server.ConnectionContext.SqlConnectionObject
 		
@@ -92,12 +90,10 @@ Gets a list of server IP addresses in the HR and Accounting groups from the Cent
         catch {
             throw "Cannot access Central Management Server"
         }
-		
-        $groups = $psboundparameters.Group
     }
-	
-    PROCESS {
-		
+
+    process {
+
         # see notes at Get-ParamSqlCmsGroups
         Function Find-CmsGroup($CmsGrp, $base = '', $stopat) {
             $results = @()
@@ -136,10 +132,7 @@ Gets a list of server IP addresses in the HR and Accounting groups from the Cent
             $servers += $SqlInstance
         }
     }
-	
-    END {
-        $server.ConnectionContext.Disconnect()
-		
+    end {
         if ($NetBiosName -or $IpAddr) {
             $ipcollection = @()
             $netbioscollection = @()

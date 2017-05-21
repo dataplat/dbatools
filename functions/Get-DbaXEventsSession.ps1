@@ -52,19 +52,14 @@ Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Stat
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PsCredential]$SqlCredential
 	)
-	
 
-	
-	BEGIN
-	{
+	begin {
 		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null)
 		{
 			throw "SMO version is too old. To collect Extended Events, you must have SQL Server Management Studio 2012 or higher installed."
 		}
-		$sessions = $psboundparameters.Sessions
 	}
-	PROCESS
-	{
+	process {
 		foreach ($instance in $SqlInstance)
 		{
 			Write-Verbose "Connecting to $instance."
@@ -92,9 +87,9 @@ Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Stat
 				
 				$xesessions = $XEStore.sessions
 				
-				if ($sessions)
+				if ($Session)
 				{
-					$xesessions = $xesessions | Where-Object { $_.Name -in $sessions }
+					$xesessions = $xesessions | Where-Object { $_.Name -in $Session }
 				}
 				
 				try
@@ -123,5 +118,4 @@ Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Stat
 			}
 		}
 	}
-	END { }
 }

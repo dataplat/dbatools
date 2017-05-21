@@ -75,11 +75,7 @@ WhatIf Example
 		[String]$NewLogin
 	)
 	
-
-	
-	BEGIN
-	{
-		$Login = $psboundparameters.Login
+	begin {
 		
 		if (!$Login) { throw "You must specify a login" }
 		
@@ -89,8 +85,7 @@ WhatIf Example
 		$currentLogin = $server.Logins[$Login]
 		
 	}
-	PROCESS
-	{
+	process {
 		if ($Pscmdlet.ShouldProcess($SqlInstance, "Changing Login name from  [$Login] to [$NewLogin]"))
 		{
 			try
