@@ -1,101 +1,76 @@
-Function Sync-DbaLoginPermissions
-{
-<#
-.SYNOPSIS
-Copies SQL login permission from one server to another.
+function Sync-DbaLoginPermissions {
+	<#
+		.SYNOPSIS
+			Copies SQL login permission from one server to another.
 
-.DESCRIPTION
-Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins. If a matching login does not exist on the destination, the login will be skipped. 
-Credential removal not currently supported for Syncs. TODO: Application role sync
+		.DESCRIPTION
+			Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins. If a matching login does not exist on the destination, the login will be skipped. 
+			Credential removal not currently supported for Syncs. TODO: Application role sync
 
-THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
+		.PARAMETER Source
+			Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-.PARAMETER Source
-Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+		.PARAMETER Destination
+			Destination SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-.PARAMETER Destination
-Destination SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+		.PARAMETER SourceSqlCredential
+			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-.PARAMETER SourceSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
 
-$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+			To connect as a different Windows user, run PowerShell as that user.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-To connect as a different Windows user, run PowerShell as that user.
+		.PARAMETER DestinationSqlCredential
+			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-.PARAMETER DestinationSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
 
-$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+			To connect as a different Windows user, run PowerShell as that user.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-To connect as a different Windows user, run PowerShell as that user.
+		.PARAMETER Exclude
+			Excludes specified logins. This list is auto-populated for tab completion.
 
-.PARAMETER Exclude
-Excludes specified logins. This list is auto-populated for tab completion.
+		.PARAMETER Login
+			Migrates ONLY specified logins. This list is auto-populated for tab completion. Multiple logins allowed.
 
-.PARAMETER Login
-Migrates ONLY specified logins. This list is auto-populated for tab completion. Multiple logins allowed.
+		.PARAMETER WhatIf 
+			Shows what would happen if the command were to run. No actions are actually performed. 
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+		.PARAMETER Confirm 
+			Prompts you for confirmation before executing any changing operations within the command. 
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+		.NOTES
+			Tags: Migration
+			Author: Chrissy LeMaire (@cl), netnerds.net
+			Requires: sysadmin access on SQL Servers
+			Limitations: Does not support Application Roles yet
 
-.NOTES
-Tags: Migration
-Author: Chrissy LeMaire (@cl), netnerds.net
-Requires: sysadmin access on SQL Servers
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+		.LINK 
+			https://dbatools.io/Sync-DbaLoginPermissions 
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+		.EXAMPLE
+			Sync-DbaLoginPermissions -Source sqlserver2014a -Destination sqlcluster
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+			Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. To copy logins and their permissions, use Copy-SqlLogin.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		.EXAMPLE
+			Sync-DbaLoginPermissions -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred
 
-.LINK
-https://dbatools.io/Sync-DbaLoginPermissions
+			Authenticates to SQL Servers using SQL Authentication.
 
-.EXAMPLE
-Sync-DbaLoginPermissions -Source sqlserver2014a -Destination sqlcluster
+			Copies all login permissions except for realcajun. If a login already exists on the destination, the permissions will not be migrated.
 
-Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. To copy logins and their permissions, use Copy-SqlLogin.
+		.EXAMPLE
+			Sync-DbaLoginPermissions -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds
 
-.EXAMPLE
-Sync-DbaLoginPermissions -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred
-
-Authenticates to SQL Servers using SQL Authentication.
-
-Copies all login permissions except for realcajun. If a login already exists on the destination, the permissions will not be migrated.
-
-.EXAMPLE
-Sync-DbaLoginPermissions -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds
-
-Copies permissions ONLY for logins netnerds and realcajun.
-
-.NOTES
-Tags: Migration
-Author: Chrissy LeMaire (@cl), netnerds.net
-Requires: sysadmin access on SQL Servers
-Limitations: Does not support Application Roles yet
-
-.LINK 
-https://dbatools.io/Sync-DbaLoginPermissions 
-
-#>
-	
+			Copies permissions ONLY for logins netnerds and realcajun.
+	#>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -105,14 +80,10 @@ https://dbatools.io/Sync-DbaLoginPermissions
 		[object]$SourceSqlCredential,
 		[object]$DestinationSqlCredential
 	)
-	
 
+	begin {
 	
-	BEGIN
-	{
-	
-		Function Update-SqlPermissions
-		{
+		function Update-SqlPermissions {
 			[CmdletBinding()]
 			param (
 				[Parameter(Mandatory = $true)]
@@ -507,35 +478,14 @@ https://dbatools.io/Sync-DbaLoginPermissions
 			}
 		}
 		
-		Function Sync-Only
-		{
+		function Sync-Only {
 			[CmdletBinding()]
 			param (
 				[Parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
 				[object]$sourceserver,
 				[object]$destserver,
-				[array]$Logins,
-				[array]$Exclude
-			)
-			
-			$source = $sourceserver.DomainInstanceName; $destination = $destserver.DomainInstanceName
-			
-			try
-			{
-				$sa = ($destserver.logins | Where-Object { $_.id -eq 1 }).Name
-			}
-			catch
-			{
-				$sa = "sa"
-			}
-			
-			foreach ($sourcelogin in $sourceserver.logins)
-			{
-				
-				$username = $sourcelogin.name
-				$currentlogin = $sourceserver.ConnectionContext.truelogin
-				if ($Logins -ne $null -and $Logins -notcontains $username) { continue }
+				[array]$Login -notcontains $username) { continue }
 				if ($exclude -contains $username -or $username.StartsWith("##") -or $username -eq $sa) { continue }
 				
 				if ($currentlogin -eq $username)
@@ -563,14 +513,10 @@ https://dbatools.io/Sync-DbaLoginPermissions
 		$destination = $destserver.DomainInstanceName
 		
 		if ($sourceserver.versionMajor -lt 8 -or $destserver.versionMajor -lt 8) { throw "SQL Server 7 and below not supported. Quitting." }
-		
-		# Convert from RuntimeDefinedParameter object to regular array
-		$Logins = $psboundparameters.Logins
-		$Exclude = $psboundparameters.Exclude
-		
-		if ($Logins.length -eq 0)
+
+		if ($Login)
 		{
-			$Logins = $sourceserver.logins.name
+			$Login = $sourceserver.logins.name
 		}
 		
 		If ($Pscmdlet.ShouldProcess("console", "Showing sync start message"))
@@ -580,21 +526,18 @@ https://dbatools.io/Sync-DbaLoginPermissions
 	}
 	
 	
-	PROCESS
-	{
+	process {
 		if ($pipelinevariable.Length -gt 0)
 		{
-			$Source = $pipelinevariable[0].parent.name
-			$logins = $pipelinevariable.name
+			$Login = $pipelinevariable.name
 		}
 
-		Sync-Only -sourceserver $sourceserver -destserver $destserver -Login $Logins -Exclude $Exclude
+		Sync-Only -sourceserver $sourceserver -destserver $destserver -Login $Login -Exclude $Exclude
 	
 	}
 	
-	END
-	{
-		
+	end {
+
 		If ($Pscmdlet.ShouldProcess("console", "Showing final message"))
 		{
 			Write-Output "Permission sync complete."

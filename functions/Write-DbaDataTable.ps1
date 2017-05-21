@@ -160,11 +160,8 @@ This is a good example of the type conversion in action. All process properties 
 		[switch]$Truncate,
 		[switch]$Silent
 	)
-	
 
-	
-	BEGIN
-	{
+	begin {
 		if (!$Truncate) { $ConfirmPreference = "None" }
 		
 		# Getting the total rows copied is a challenge. Use SqlBulkCopyExtension.
@@ -189,7 +186,6 @@ This is a good example of the type conversion in action. All process properties 
 		
 		Add-Type -ReferencedAssemblies 'System.Data.dll' -TypeDefinition $source -ErrorAction SilentlyContinue
 		
-		$database = $psboundparameters.Database
 		$dotcount = ([regex]::Matches($table, "\.")).count
 		
 		if ($dotcount -lt 2 -and $database -eq $null)
@@ -313,9 +309,7 @@ This is a good example of the type conversion in action. All process properties 
         }
 
     }
-	
-	PROCESS
-	{
+	process {
 		if ($InputObject -eq $null)
 		{
 			Stop-Function -Message "Input object is null"
@@ -415,8 +409,7 @@ This is a good example of the type conversion in action. All process properties 
 			if ($rowcount -is [int]) { Write-Progress -id 1 -activity "Inserting $rowcount rows" -status "Complete" -Completed }
 		}
 	}
-	END
-	{
+	end {
 		if ($bulkcopy)
 		{
 			$bulkcopy.Close()
