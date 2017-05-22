@@ -70,4 +70,4 @@ $ScriptBlock = {
 }
 
 Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name Database
-Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name Exclude
+Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name ExcludeDatabase
