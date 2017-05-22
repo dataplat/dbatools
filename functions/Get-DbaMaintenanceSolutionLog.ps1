@@ -130,14 +130,17 @@ foreach ( $instance in $sqlinstance )
                     }
                 }
             if ( $line -match "^Outcome: ") { $IndObj['outcome'] = $line.Split(': ')[-1] }
+            if ( $durationIndicator -eq $true )
+                {
+                $IndObj['Endtime'] = $line -replace ('Date and Time: ','')
+                $durationIndicator = $false
+                }
             if ( $line -match "^Duration: ")
                 {
+                $durationIndicator = $true
                 $IndObj['Duration'] = $line.Split(': ')[-3..-1] -join ':'
-                $line.readcount
-                $text[$line.readcount]
-                $IndObj['Endtime'] = $text[$line.ReadCount] -replace ('Date and Time: ','')
-                [PSCustomObject]$IndObj
                 }
+            [PSCustomObject]$IndObj
             } #foreach Line
             $text.close()
         } #foreach file
