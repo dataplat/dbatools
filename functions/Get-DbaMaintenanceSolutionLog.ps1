@@ -86,7 +86,6 @@ foreach ( $instance in $sqlinstance )
         Continue
         }
     Write-Verbose "Log directory on $ComputerName is $LogDir"
-    #$Logfiles = Invoke-Command -ComputerName $ComputerName -ScriptBlock { Get-ChildItem $($args[0]) -Filter IndexOptimize_* | select -ExpandProperty fullName } -ArgumentList $LogDir
     $Logfiles = Get-ChildItem $LogDir -Filter IndexOptimize_* | select -ExpandProperty fullName
     if ( ! $Logfiles.count -ge 1 )
         {
@@ -96,10 +95,8 @@ foreach ( $instance in $sqlinstance )
     foreach ( $File in $Logfiles )
         {
         Write-Verbose "Reading $file"
-        # match \S means: get only the lines that contain at least one non-space character
-        $text = Invoke-Command -ComputerName $ComputerName -ScriptBlock { $(Get-Content $($args[0]))} -ArgumentList $File
-        foreach ($line in $text)
-            {
+        $text = New-Object System.IO.StreamReader -Arg "$File"
+        while ($line = $text.ReadLine()) {
             if ( $line -match "^DATABASE: " )
                 {
                 $DBobj = @{}
@@ -142,12 +139,8 @@ foreach ( $instance in $sqlinstance )
                 [PSCustomObject]$IndObj
                 }
             } #foreach Line
+            $text.close()
         } #foreach file
     } #foreach instance
 } #PROCESS
 } #function
-
-
-# Get-DBAMaintenanceSolutionIndexOptimizeLog -sqlinstance 'sqlprod04' | ogv
-
-#'sqlprod01','fake' | Get-DBAMaintenanceSolutionIndexOptimizeLog -Verbose
