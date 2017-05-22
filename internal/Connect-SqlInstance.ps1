@@ -134,9 +134,11 @@
             [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $ConvertedSqlInstance.FullSmoName.ToLower()
         }
         
-        # Update cache for database names
-        [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.Databases.Name
-        
+        # Update cache for tepp names
+		[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.Databases.Name
+		[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.Logins.Name
+		[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["job"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.JobServer.Jobs.Name
+		
         return $server
     }
     #endregion Input Object was a server object
@@ -251,9 +253,10 @@
         [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $ConvertedSqlInstance.FullSmoName.ToLower()
     }
     
-    # Update cache for database names
-    [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.Databases.Name
-    
+    # Update cache for tepp names
+	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.Databases.Name
+	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.Logins.Name
+	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["job"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.JobServer.Jobs.Name
     return $server
     #endregion Input Object was anything else
 }

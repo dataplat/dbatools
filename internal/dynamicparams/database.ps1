@@ -23,10 +23,6 @@ $ScriptBlock = {
 	}
 	
 	if (-not $server) {
-		$server = $fakeBoundParameter['SqlInstance']
-	}
-	
-	if (-not $server) {
 		$server = $fakeBoundParameter['ComputerName']
 	}
 	
@@ -70,4 +66,3 @@ $ScriptBlock = {
 }
 
 Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name Database
-Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name Exclude
