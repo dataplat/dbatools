@@ -79,14 +79,15 @@ foreach ( $instance in $sqlinstance )
 		Write-Warning "Can't connect to $instance"
 		Continue
 	}
-    $LogDir = $server.errorlogpath
+    $LogDir = $server.errorlogpath -replace '^(.):',"\\$ComputerName\`$1$"
     if ( !$LogDir )
         {
         Write-Warning "No log directory returned from $instance"
         Continue
         }
     Write-Verbose "Log directory on $ComputerName is $LogDir"
-    $Logfiles = Invoke-Command -ComputerName $ComputerName -ScriptBlock { Get-ChildItem $($args[0]) -Filter IndexOptimize_* | select -ExpandProperty fullName } -ArgumentList $LogDir
+    #$Logfiles = Invoke-Command -ComputerName $ComputerName -ScriptBlock { Get-ChildItem $($args[0]) -Filter IndexOptimize_* | select -ExpandProperty fullName } -ArgumentList $LogDir
+    $Logfiles = Get-ChildItem $LogDir -Filter IndexOptimize_* | select -ExpandProperty fullName
     if ( ! $Logfiles.count -ge 1 )
         {
         Write-Warning "No log files returned from $ComputerName"
