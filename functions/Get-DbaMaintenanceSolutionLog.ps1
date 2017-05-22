@@ -100,6 +100,9 @@ foreach ( $instance in $sqlinstance )
             if ( $line -match "^DATABASE: " )
                 {
                 $DBobj = @{}
+                $DBobj['ComputerName'] = $server.NetName
+                $DBobj['InstanceName'] = $server.ServiceName
+                $DBobj['SqlInstance'] = $server.Name
                 $DBobj['Database'] = $line.Split(': ')[-1]
                 Write-Verbose "Index Optimizations on Database $($DBobj.Database) on $ComputerName"
                 }
