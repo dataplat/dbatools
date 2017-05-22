@@ -4,7 +4,7 @@
     Returns log entries for dbatools
 
     .DESCRIPTION
-    Returns log entries for dbatools. Handy when debugging or devveloping for it. Also used when preparing a support package.
+    Returns log entries for dbatools. Handy when debugging or developing for it. Also used when preparing a support package.
 
     .PARAMETER Errors
     Instead of log entries, the error entries will be retrieved
