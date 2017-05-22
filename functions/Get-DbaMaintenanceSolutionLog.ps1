@@ -71,7 +71,7 @@ foreach ( $instance in $sqlinstance )
     {
     $LogDir = $Logfiles = $null
     $ComputerName = $instance.Split('\')[0]
-    Write-Verbose "Connecting to $instance"
+    Write-Message -Level Verbose -Message "Connecting to $instance"
 	try {
 		$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
 	}
@@ -82,19 +82,19 @@ foreach ( $instance in $sqlinstance )
     $LogDir = $server.errorlogpath -replace '^(.):',"\\$ComputerName\`$1$"
     if ( !$LogDir )
         {
-        Write-Warning "No log directory returned from $instance"
+        Write-Message -Level Warning -Message "No log directory returned from $instance"
         Continue
         }
-    Write-Verbose "Log directory on $ComputerName is $LogDir"
+    Write-Message -Level Verbose -Message "Log directory on $ComputerName is $LogDir"
     $Logfiles = Get-ChildItem $LogDir -Filter IndexOptimize_* | select -ExpandProperty fullName
     if ( ! $Logfiles.count -ge 1 )
         {
-        Write-Warning "No log files returned from $ComputerName"
+        Write-Message -Level Warning -Message "No log files returned from $ComputerName"
         Continue
         }
     foreach ( $File in $Logfiles )
         {
-        Write-Verbose "Reading $file"
+        Write-Message -Level Verbose -Message "Reading $file"
         $text = New-Object System.IO.StreamReader -Arg "$File"
         while ($line = $text.ReadLine()) {
             if ( $line -match "^DATABASE: " )
@@ -104,7 +104,7 @@ foreach ( $instance in $sqlinstance )
                 $DBobj['InstanceName'] = $server.ServiceName
                 $DBobj['SqlInstance'] = $server.Name
                 $DBobj['Database'] = $line.Split(': ')[-1]
-                Write-Verbose "Index Optimizations on Database $($DBobj.Database) on $ComputerName"
+                Write-Message -Level Verbose -Message "Index Optimizations on Database $($DBobj.Database) on $ComputerName"
                 }
             if ( $line -match '^Status | ^Standby | ^Updateability | ^Useraccess | ^Isaccessible | ^RecoveryModel' )
                 {
@@ -120,7 +120,7 @@ foreach ( $instance in $sqlinstance )
                 $IndObj['Table'] = $line.split('[,]')[7]
                 $IndObj['action'] = (($line.split('[,]')[8]).split('()')[0]).split(' ')[1]
                 $IndObj['options'] = ($line.split('[,]')[8]).split('()')[1]
-                Write-Verbose "Index $($IndObj.Index) on Table $($IndObj.Table) in Database $($IndObj.Database) on $ComputerName"
+                Write-Message -Level Verbose -Message "Index $($IndObj.Index) on Table $($IndObj.Table) in Database $($IndObj.Database) on $ComputerName"
                 }
             if ( $line -match "^Comment: ")
                 {
