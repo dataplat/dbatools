@@ -43,17 +43,12 @@ Gets the outcome of the IndexOptimize job on sql instance sqlserver2014a
 .EXAMPLE 
 Get-DBAMaintenanceSolutionIndexOptimizeLog -SqlInstance sqlserver2014a -SqlCredential $credential
 
-Gets a list of all server names from the Central Management Server on sqlserver2014a, using SQL Authentication
+Gets the outcome of the IndexOptimize job on sqlserver2014a, using SQL Authentication
 		
 .EXAMPLE 
-Get-DBAMaintenanceSolutionIndexOptimizeLog -SqlInstance sqlserver2014a -Group HR, Accounting
+'sqlserver2014a', 'sqlserver2020test' | Get-DBAMaintenanceSolutionIndexOptimizeLog
 	
-Gets a list of server names in the HR and Accounting groups from the Central Management Server on sqlserver2014a.
-	
-.EXAMPLE 
-Get-DBAMaintenanceSolutionIndexOptimizeLog -SqlInstance sqlserver2014a -Group HR, Accounting -IpAddr
-	
-Gets a list of server IP addresses in the HR and Accounting groups from the Central Management Server on sqlserver2014a.
+Gets the outcome of the IndexOptimize job on sqlserver2014a and sqlserver2020test.
 	
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
@@ -76,7 +71,7 @@ foreach ( $instance in $sqlinstance )
 		$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
 	}
 	catch {
-		Write-Warning "Can't connect to $instance"
+		Stop-Function -Message "Can't connect to $instance"
 		Continue
 	}
     $LogDir = $server.errorlogpath -replace '^(.):',"\\$ComputerName\`$1$"
