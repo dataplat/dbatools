@@ -117,10 +117,7 @@ Function Install-DbaWhoIsActive {
                     catch {
                         #try with default proxy and usersettings
                         (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                        try { Invoke-WebRequest $url -OutFile $zipfile -ErrorAction Stop }
-                        catch {
-                            Stop-Function -Message "Couldn't download sp_WhoisActive. Please download and install manually from http://whoisactive.com/who_is_active_v11_17.zip." -ErrorRecord $_ -Target $url
-                        }
+                        Invoke-WebRequest $url -OutFile $zipfile -ErrorAction Stop
                     }
                     
                     # Unblock if there's a block
