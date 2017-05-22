@@ -80,20 +80,20 @@ Gets the outcome of the IndexOptimize job on sqlserver2014a and sqlserver2020tes
 				$text = New-Object System.IO.StreamReader -ArgumentList "$File"
 				while ($line = $text.ReadLine()) {
 					if ($line -match "^DATABASE: ") {
-						$database = @{ }
-						$database['ComputerName'] = $server.NetName
-						$database['InstanceName'] = $server.ServiceName
-						$database['SqlInstance'] = $server.Name
-						$database['Database'] = $line.Split(': ')[-1]
-						Write-Message -Level Verbose -Message "Index Optimizations on Database $($database.Database) on $computername"
+						$db = @{ }
+						$db['ComputerName'] = $server.NetName
+						$db['InstanceName'] = $server.ServiceName
+						$db['SqlInstance'] = $server.Name
+						$db['Database'] = $line.Split(': ')[-1]
+						Write-Message -Level Verbose -Message "Index Optimizations on Database $($db.Database) on $computername"
 					}
 					if ($line -match '^Status | ^Standby | ^Updateability | ^Useraccess | ^Isaccessible | ^RecoveryModel') {
 						$dbkey = $line.Split(': ')[0]
 						$dbvalue = $line.Split(': ')[-1]
-						$database[$dbkey] = $dbvalue
+						$db[$dbkey] = $dbvalue
 					}
 					if ($line -match "^Command: ALTER INDEX") {
-						$index = $database.Clone()
+						$index = $db.Clone()
 						$index['Index'] = $line.split('[,]')[1]
 						$index['Schema'] = $line.split('[,]')[5]
 						$index['Table'] = $line.split('[,]')[7]
