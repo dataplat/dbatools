@@ -56,12 +56,8 @@ You will be prompted to securely enter your password, then a certificate will be
 .EXAMPLE
 New-DbaCertificate -SqlInstance Server1 -Database db1 -Confirm:$false
 
-Supresses all prompts to install but prompts to securely enter your password and creates a certificate in the 'db1' database
+Suppresses all prompts to install but prompts to securely enter your password and creates a certificate in the 'db1' database
 
-.EXAMPLE
-New-DbaCertificate -SqlInstance Server1 -WhatIf
-
-Shows what would happen if the command were executed against server1
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
