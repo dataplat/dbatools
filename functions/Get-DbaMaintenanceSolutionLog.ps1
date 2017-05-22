@@ -17,7 +17,7 @@ Windows Authentication will be used if SqlCredential is not specified. SQL Serve
 .NOTES 
 Author: Klaas Vandenberghe ( @powerdbaklaas )
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+Copyright (C) 2017 Chrissy LeMaire
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -134,13 +134,13 @@ foreach ( $instance in $sqlinstance )
                 {
                 $IndObj['Endtime'] = $line -replace ('Date and Time: ','')
                 $durationIndicator = $false
+                [PSCustomObject]$IndObj
                 }
             if ( $line -match "^Duration: ")
                 {
                 $durationIndicator = $true
                 $IndObj['Duration'] = $line.Split(': ')[-3..-1] -join ':'
                 }
-            [PSCustomObject]$IndObj
             } #foreach Line
             $text.close()
         } #foreach file
