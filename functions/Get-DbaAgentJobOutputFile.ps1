@@ -75,61 +75,62 @@
 	param
 	(
 		[Parameter(Mandatory = $true, HelpMessage = 'The SQL Server Instance',
-			ValueFromPipeline = $true,
-			ValueFromPipelineByPropertyName = $true,
-			ValueFromRemainingArguments = $false,
-			Position = 0)]
+				   ValueFromPipeline = $true,
+				   ValueFromPipelineByPropertyName = $true,
+				   ValueFromRemainingArguments = $false,
+				   Position = 0)]
 		[ValidateNotNull()]
 		[ValidateNotNullOrEmpty()]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Parameter(Mandatory = $false, HelpMessage = 'SQL Credential',
-			ValueFromPipelineByPropertyName = $true,
-			ValueFromRemainingArguments = $false,
-			Position = 1)]
+				   ValueFromPipelineByPropertyName = $true,
+				   ValueFromRemainingArguments = $false,
+				   Position = 1)]
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
-
-	foreach ($instance in $sqlinstance) {
-		try {
-			$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-		}
-		catch {
-			Write-Warning "Failed to connect to: $instance"
-			continue
-		}
-			
-		$jobs = $Server.JobServer.Jobs
-			
-		if ($JobName) {
-			$jobs = @()
-				
-			foreach ($name in $jobname) {
-				$jobs += $server.JobServer.Jobs[$name]
+	
+	process {
+		foreach ($instance in $sqlinstance) {
+			try {
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
-		}
-		else {
-			$jobs = $server.JobServer.Jobs
-		}
+			catch {
+				Write-Warning "Failed to connect to: $instance"
+				continue
+			}
 			
-		foreach ($Job in $Jobs) {
-			foreach ($Step in $Job.JobSteps) {
-				if ($Step.OutputFileName) {
-					[pscustomobject]@{
-						ComputerName         = $server.NetName
-						InstanceName         = $server.ServiceName
-						SqlInstance          = $server.DomainInstanceName
-						Job                  = $Job.Name
-						JobStep              = $step.Name
-						OutputFileName       = $Step.OutputFileName
-						RemoteOutputFileName = Join-AdminUNC $Server.ComputerNamePhysicalNetBIOS $Step.OutputFileName
-					}
+			$jobs = $Server.JobServer.Jobs
+			
+			if ($JobName) {
+				$jobs = @()
+				
+				foreach ($name in $jobname) {
+					$jobs += $server.JobServer.Jobs[$name]
 				}
-				else {
-					Write-Verbose "$step for $job has no output file"
+			}
+			else {
+				$jobs = $server.JobServer.Jobs
+			}
+			
+			foreach ($Job in $Jobs) {
+				foreach ($Step in $Job.JobSteps) {
+					if ($Step.OutputFileName) {
+						[pscustomobject]@{
+							ComputerName = $server.NetName
+							InstanceName = $server.ServiceName
+							SqlInstance = $server.DomainInstanceName
+							Job = $Job.Name
+							JobStep = $step.Name
+							OutputFileName = $Step.OutputFileName
+							RemoteOutputFileName = Join-AdminUNC $Server.ComputerNamePhysicalNetBIOS $Step.OutputFileName
+						}
+					}
+					else {
+						Write-Verbose "$step for $job has no output file"
+					}
 				}
 			}
 		}
 	}
-}
 }
