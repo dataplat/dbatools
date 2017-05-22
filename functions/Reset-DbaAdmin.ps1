@@ -274,7 +274,7 @@ Internal function.
 			}
 			
 			# Get instance and service display name, then get services
-			$instance = ($SqlInstance.split("\"))[1]
+			$instance = ($SqlInstance.ToString().Split("\"))[1]
 			if ($instance -eq $null) { $instance = "MSSQLSERVER" }
 			$displayName = "SQL Server ($instance)"
 			
