@@ -60,7 +60,10 @@ Gets a list of server IP addresses in the HR and Accounting groups from the Cent
 param(
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[string[]]$SqlInstance
+		[string[]]$SqlInstance,
+		[Alias("Credential")]
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential
 )
 
 PROCESS {
@@ -69,7 +72,14 @@ foreach ( $instance in $sqlinstance )
     $LogDir = $Logfiles = $null
     $ComputerName = $instance.Split('\')[0]
     Write-Verbose "Connecting to $instance"
-    $LogDir = [string]( Invoke-SqlCmd2 -ServerInstance $instance -Query "SELECT REPLACE(CAST(SERVERPROPERTY('ErrorLogFileName') AS varchar(255)),'\ERRORLOG','') AS Dir" ).Dir
+	try {
+		$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+	}
+	catch {
+		Write-Warning "Can't connect to $instance"
+		Continue
+	}
+    $LogDir = $server.errorlogpath
     if ( !$LogDir )
         {
         Write-Warning "No log directory returned from $instance"
@@ -139,4 +149,4 @@ foreach ( $instance in $sqlinstance )
 
 # Get-DBAMaintenanceSolutionIndexOptimizeLog -sqlinstance 'sqlprod04' | ogv
 
-'sqlprod01','fake' | Get-DBAMaintenanceSolutionIndexOptimizeLog -Verbose
+#'sqlprod01','fake' | Get-DBAMaintenanceSolutionIndexOptimizeLog -Verbose
