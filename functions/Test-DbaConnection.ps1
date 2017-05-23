@@ -7,7 +7,7 @@ Exported function. Tests a the connection to a single instance and shows the out
 .DESCRIPTION
 Tests a the connection to a single instance and shows the output.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server Instance to test connection against
 
 .PARAMETER SqlCredential 
@@ -71,8 +71,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
@@ -89,27 +89,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	$localinfo.RunAsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
 	
 	# SQL Server
-	if ($SqlServer.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) { $SqlServer = $SqlServer.Name.ToString() }
+	if ($SqlInstance.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) { $SqlInstance = $SqlInstance.Name.ToString() }
 	
 	$serverinfo = @{ } | Select-Object ServerName, BaseName, InstanceName, AuthType, ConnectingAsUser, ConnectSuccess, SqlServerVersion, AddlConnectInfo, RemoteServer, IPAddress, NetBIOSname, RemotingAccessible, Pingable, DefaultSQLPortOpen, RemotingPortOpen
 	
-	$serverinfo.ServerName = $sqlserver
+	$serverinfo.ServerName = $SqlInstance
 	
 	[regex]$portdetection = ":\d{1,5}$"
-	if ($sqlserver.LastIndexOf(":") -ne -1)
+	if ($SqlInstance.LastIndexOf(":") -ne -1)
 	{
-		$portnumber = $sqlserver.substring($sqlserver.LastIndexOf(":"))
+		$portnumber = $SqlInstance.substring($SqlInstance.LastIndexOf(":"))
 		if ($portnumber -match $portdetection)
 		{
 			$replacedportseparator = $portnumber -replace ":", ","
-			$sqlserver = $sqlserver -replace $portnumber, $replacedportseparator
+			$SqlInstance = $SqlInstance -replace $portnumber, $replacedportseparator
 		}
 	}
 	
 	Write-Output "Determining SQL Server base address"
-	$baseaddress = $sqlserver.Split(",")[0]
+	$baseaddress = $SqlInstance.Split(",")[0]
 	$baseaddress = $baseaddress.Split("\")[0]
-	try { $instance = $sqlserver.Split("\")[1] }
+	try { $instance = $SqlInstance.Split("\")[1] }
 	catch { $instance = "(Default)" }
 	if ([string]::IsNullOrEmpty($instance)) { $instance = "(Default)" }
 	
@@ -197,7 +197,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	}
 	else { $serverinfo.DefaultSQLPortOpen = "N/A" }
 	
-	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlServer
+	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlInstance
 	
 	try
 	{
@@ -239,7 +239,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	$serverinfo.AuthType = $authtype
 	
 	
-	Write-Output "Attempting to connect to $SqlServer as $username "
+	Write-Output "Attempting to connect to $SqlInstance as $username "
 	try
 	{
 		$server.ConnectionContext.ConnectTimeout = 10

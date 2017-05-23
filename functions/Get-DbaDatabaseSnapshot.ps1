@@ -114,4 +114,3 @@ Returns information for database snapshots HR_snapshot and Accounting_snapshot
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaDatabaseSnapshot -Parameter Database, Exclude

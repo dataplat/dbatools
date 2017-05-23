@@ -5,7 +5,7 @@ function Copy-DbaCustomError
 Copy-DbaCustomError migrates custom errors (user defined messages) from one SQL Server to another. 
 
 .DESCRIPTION
-By default, all  custom errors are copied. The -CustomErrors parameter is autopopulated for command-line completion and can be used to copy only specific custom errors.
+By default, all  custom errors are copied. The -CustomError parameter is autopopulated for command-line completion and can be used to copy only specific custom errors.
 
 If the custom error already exists on the destination, it will be skipped unless -Force is used. Interesting fact, if you drop the us_english version, all the other languages will be dropped for that specific ID as well.
 
@@ -65,7 +65,7 @@ Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster
 Copies all server custom errors from sqlserver2014a to sqlcluster, using Windows credentials. If custom errors with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -Trigger 60000 -SourceSqlCredential $cred -Force
+Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -ServerTrigger 60000 -SourceSqlCredential $cred -Force
 
 Copies a single custom error, the custom error with ID number 6000 from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a custom error with the same name exists on sqlcluster, it will be updated because -Force was used.
 
@@ -77,21 +77,19 @@ Shows what would happen if the command were executed using force.
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[parameter(Mandatory = $true)]
-		[object]$Destination,
+		[DbaInstanceParameter]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlCustomErrors -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+
 	
-	BEGIN
-	{
-		$customerrors = $psboundparameters.CustomErrors
-		
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+	begin {
+
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
@@ -102,10 +100,8 @@ Shows what would happen if the command were executed using force.
 		}
 	}
 	
-	PROCESS
-	{
-		
-		
+	process {
+
 		# Us has to go first
 		$orderedcustomerrors = @($sourceserver.UserDefinedMessages | Where-Object { $_.Language -eq "us_english" })
 		$orderedcustomerrors += $sourceserver.UserDefinedMessages | Where-Object { $_.Language -ne "us_english" }
@@ -161,11 +157,10 @@ Shows what would happen if the command were executed using force.
 		}
 	}
 	
-	END
-	{
+	end {
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
-        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Custom error migration finished" }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlCustomError
+		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Custom error migration finished" }
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlCustomError
 	}
 } 

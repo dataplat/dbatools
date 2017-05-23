@@ -8,7 +8,7 @@ Retrieves and compares the date/time for the last known backups, as well as the 
 
 Default output includes columns Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 
 .PARAMETER Credential
@@ -53,7 +53,7 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
@@ -67,7 +67,7 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 		foreach ($instance in $SqlInstance) {
 			Write-Verbose "Connecting to $instance"
 			try {
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Write-Warning "Can't connect to $instance"
@@ -143,4 +143,3 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaLastBackup -Parameter Database, Exclude

@@ -76,21 +76,19 @@ Shows what would happen if the command were executed using force.
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[parameter(Mandatory = $true)]
-		[object]$Destination,
+		[DbaInstanceParameter]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-    DynamicParam { if ($source) { return (Get-ParamSqlOperators -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+
 	
-    BEGIN {
+    begin {
 
-		$operators = $psboundparameters.Operators
-
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
 		$serveroperators = $sourceserver.JobServer.Operators
 		$destoperators = $destserver.JobServer.Operators
@@ -99,8 +97,7 @@ Shows what would happen if the command were executed using force.
 
     }
 
-	PROCESS
-	{
+	process	{
 
 		foreach ($operator in $serveroperators)
 		{
@@ -156,8 +153,7 @@ Shows what would happen if the command were executed using force.
 		}
 	}
 	
-	END
-	{
+	end {
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Operator migration finished" }

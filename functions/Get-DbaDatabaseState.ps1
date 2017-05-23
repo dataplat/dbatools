@@ -57,7 +57,7 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
@@ -104,7 +104,7 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 		foreach ($instance in $SqlInstance) {
 			Write-Verbose "Connecting to $instance"
 			try {
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Write-Warning "Can't connect to $instance"
@@ -137,4 +137,3 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaDatabaseState -Parameter Database, Exclude

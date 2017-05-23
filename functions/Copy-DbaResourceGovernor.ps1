@@ -1,6 +1,5 @@
-function Copy-DbaResourceGovernor
-{
-<#
+function Copy-DbaResourceGovernor {
+	<#
 .SYNOPSIS
 Migrates Resource Pools
 
@@ -77,101 +76,78 @@ Shows what would happen if the command were executed.
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[parameter(Mandatory = $true)]
-		[object]$Destination,
+		[DbaInstanceParameter]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	
-	DynamicParam { if ($source) { return (Get-ParamSqlResourceGovernor -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
-	
-	BEGIN
-	{
-		
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+
+	begin {
+
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
-		
-		$respools = $psboundparameters.ResourcePools
-		
-		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
-		{
+
+		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
 			throw "Resource Governor is only supported in SQL Server 2008 and above. Quitting."
 		}
 	}
-	PROCESS
-	{
-		
-		
-		if ($Pscmdlet.ShouldProcess($destination, "Updating Resource Governor settings"))
-		{
-			if ($destserver.Edition -notmatch 'Enterprise' -and $destserver.Edition -notmatch 'Datacenter' -and $destserver.Edition -notmatch 'Developer')
-			{
+	process {
+
+		if ($Pscmdlet.ShouldProcess($destination, "Updating Resource Governor settings")) {
+			if ($destserver.Edition -notmatch 'Enterprise' -and $destserver.Edition -notmatch 'Datacenter' -and $destserver.Edition -notmatch 'Developer') {
 				Write-Warning "The resource governor is not available in this edition of SQL Server. You can manipulate resource governor metadata but you will not be able to apply resource governor configuration. Only Enterprise edition of SQL Server supports resource governor."
 			}
-			else
-			{
-				try
-				{
+			else {
+				try {
 					$sql = $sourceserver.resourceGovernor.Script() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
 					Write-Verbose $sql
 					Write-Output "Updating Resource Governor settings"
 					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
 				}
-				catch
-				{
+				catch {
 					Write-Exception $_
 				}
 			}
 		}
 		
 		# Pools
-		if ($respools.length -gt 0)
-		{
+		if ($respools.length -gt 0) {
 			$pools = $sourceserver.ResourceGovernor.ResourcePools | Where-Object { $respools -contains $_.Name }
 		}
-		else
-		{
+		else {
 			$pools = $sourceserver.ResourceGovernor.ResourcePools | Where-Object { $_.Name -notin "internal", "default" }
 		}
 		
 		Write-Output "Migrating pools"
-		foreach ($pool in $pools)
-		{
+		foreach ($pool in $pools) {
 			$poolName = $pool.name
-			if ($destserver.ResourceGovernor.ResourcePools[$poolName] -ne $null)
-			{
-				if ($force -eq $false)
-				{
+			if ($destserver.ResourceGovernor.ResourcePools[$poolName] -ne $null) {
+				if ($force -eq $false) {
 					Write-Warning "Pool '$poolName' was skipped because it already exists on $destination"
 					Write-Warning "Use -Force to drop and recreate"
 					continue
 				}
-				else
-				{
-					if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $poolName"))
-					{
+				else {
+					if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $poolName")) {
 						Write-Verbose "Pool '$poolName' exists on $destination"
 						Write-Verbose "Force specified. Dropping $poolName."
 						
-						try
-						{
+						try {
 							$destpool = $destserver.ResourceGovernor.ResourcePools[$poolName]
 							$workloadgroups = $destpool.WorkloadGroups
-							foreach ($workloadgroup in $workloadgroups)
-							{
+							foreach ($workloadgroup in $workloadgroups) {
 								$workloadgroup.Drop()
 							}
 							$destpool.Drop()
 							$destserver.ResourceGovernor.Alter()
 						}
-						catch
-						{
+						catch {
 							Write-Exception "Unable to drop: $_  Moving on."
 							continue
 						}
@@ -179,10 +155,8 @@ Shows what would happen if the command were executed.
 				}
 			}
 			
-			if ($Pscmdlet.ShouldProcess($destination, "Migrating pool $poolName"))
-			{
-				try
-				{
+			if ($Pscmdlet.ShouldProcess($destination, "Migrating pool $poolName")) {
+				try {
 					$sql = $pool.Script() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
 					Write-Verbose $sql
@@ -190,8 +164,7 @@ Shows what would happen if the command were executed.
 					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
 					
 					$workloadgroups = $pool.WorkloadGroups
-					foreach ($workloadgroup in $workloadgroups)
-					{
+					foreach ($workloadgroup in $workloadgroups) {
 						$workgroupname = $workloadgroup.name
 						$sql = $workloadgroup.script() | Out-String
 						$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
@@ -201,21 +174,17 @@ Shows what would happen if the command were executed.
 					}
 					
 				}
-				catch
-				{
+				catch {
 					Write-Exception $_
 				}
 			}
 		}
 		
-		if ($Pscmdlet.ShouldProcess($destination, "Reconfiguring"))
-		{
-			if ($destserver.Edition -notmatch 'Enterprise' -and $destserver.Edition -notmatch 'Datacenter' -and $destserver.Edition -notmatch 'Developer')
-			{
+		if ($Pscmdlet.ShouldProcess($destination, "Reconfiguring")) {
+			if ($destserver.Edition -notmatch 'Enterprise' -and $destserver.Edition -notmatch 'Datacenter' -and $destserver.Edition -notmatch 'Developer') {
 				Write-Warning "The resource governor is not available in this edition of SQL Server. You can manipulate resource governor metadata but you will not be able to apply resource governor configuration. Only Enterprise edition of SQL Server supports resource governor."
 			}
-			else
-			{
+			else {
 				Write-Output "Reconfiguring Resource Governor"
 				$sql = "ALTER RESOURCE GOVERNOR RECONFIGURE"
 				$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
@@ -223,16 +192,7 @@ Shows what would happen if the command were executed.
 		}
 		
 	}
-	
-	end
-	{
-		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
-		
-        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
-            Write-Output "Resource Governor migration finished"
-        }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlResourceGovernor
+	end {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlResourceGovernor
 	}
-	
 }

@@ -79,30 +79,30 @@ If false, it will print a warning if in wrning mode. It will also be willing to 
 https://dbatools.io/Set-DbaTempDbConfiguration
 
 .EXAMPLE
-Set-DbaTempDbConfiguration -SqlServer localhost -DataFileSizeMB 1000
+Set-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000
 
 Creates tempdb with a number of datafiles equal to the logical cores where
 each one is equal to 1000MB divided by number of logical cores and a log file
 of 250MB
 
 .EXAMPLE
-Set-DbaTempDbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -DataFileCount 8
+Set-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000 -DataFileCount 8
 
 Creates tempdb with a number of datafiles equal to the logical cores where
 each one is equal to 125MB and a log file of 250MB
 
 .EXAMPLE
-Set-DbaTempDbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -OutputScriptOnly
+Set-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000 -OutputScriptOnly
 
 Provides a SQL script output to configure tempdb according to the passed parameters
 
 .EXAMPLE
-Set-DbaTempDbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -DisableGrowth
+Set-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000 -DisableGrowth
 
 Disables the growth for the data and log files
 
 .EXAMPLE
-Set-DbaTempDbConfiguration -SqlServer localhost -DataFileSizeMB 1000 -OutputScriptOnly
+Set-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000 -OutputScriptOnly
 
 Returns PSObject representing tempdb configuration.
 #>
@@ -110,7 +110,7 @@ Returns PSObject representing tempdb configuration.
 	param (
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[int]$DataFileCount,
 		[Parameter(Mandatory = $true)]
@@ -128,7 +128,7 @@ Returns PSObject representing tempdb configuration.
 	begin {
 		$sql = @()
 		Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
-		$server = Connect-SqlServer $SqlInstance -SqlCredential $SqlCredential
+		$server = Connect-SqlInstance $sqlinstance -SqlCredential $SqlCredential
 		
 		if ($server.VersionMajor -lt 9) {
 			Stop-Function -Message "SQL Server 2000 is not supported"
@@ -159,7 +159,7 @@ Returns PSObject representing tempdb configuration.
 		Write-Message -Message "Single data file size (MB): $DataFilesizeSingleMB" -Level Verbose
 		
 		if ($DataPath) {
-			if ((Test-DbaPath -SqlServer $server -Path $DataPath) -eq $false) {
+			if ((Test-DbaPath -SqlInstance $server -Path $DataPath) -eq $false) {
 				Stop-Function -Message "$datapath is an invalid path."
 				return
 			}
@@ -172,7 +172,7 @@ Returns PSObject representing tempdb configuration.
 		Write-Message -Message "Using data path: $datapath" -Level Verbose
 		
 		if ($LogPath) {
-			if ((Test-DbaPath -SqlServer $server -Path $LogPath) -eq $false) {
+			if ((Test-DbaPath -SqlInstance $server -Path $LogPath) -eq $false) {
 				Stop-Function -Message "$LogPath is an invalid path."
 				return
 			}

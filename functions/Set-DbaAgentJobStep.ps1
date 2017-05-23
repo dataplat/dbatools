@@ -132,7 +132,7 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Parameter(Mandatory = $false)]
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Parameter(Mandatory = $true)]
@@ -178,7 +178,7 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
 		[Parameter(Mandatory = $false)]
 		[switch]$Silent,
 		[Parameter(Mandatory = $false)]
-		[bool]$Force
+		[switch]$Force
 	)
 	
 	begin {
@@ -204,7 +204,7 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
 			# Try connecting to the instance
 			Write-Message -Message "Attempting to connect to $instance" -Level Output
 			try {
-				$Server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
 				Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -Continue

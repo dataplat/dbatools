@@ -55,7 +55,7 @@ Returns any database AutoGrow events in the Default Trace for every database on 
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
@@ -113,7 +113,7 @@ Returns any database AutoGrow events in the Default Trace for every database on 
             Write-Message -Level Verbose -Message "Connecting to $instance"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch
 			{
@@ -144,4 +144,3 @@ Returns any database AutoGrow events in the Default Trace for every database on 
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Find-DbaDatabaseGrowthEvent -Parameter Database, Exclude

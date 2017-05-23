@@ -62,7 +62,7 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
 	Param (
 		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias('SqlServer', 'ServerInstance')]
-		[string[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
@@ -78,7 +78,7 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
 		foreach ($instance in $sqlinstance) {
 			Write-Verbose "Connecting to $Instance"
 			try {
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Write-Warning "Failed to connect to $instance"
@@ -149,4 +149,3 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
 		}
 	}
 }
-Register-DbaTeppArgumentCompleter -Command Get-DbaRoleMember -Parameter Database, Exclude

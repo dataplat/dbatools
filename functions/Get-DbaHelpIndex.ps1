@@ -26,7 +26,7 @@ The data includes:
 	- HistogramSteps: the number of steps in the statistics histogram (not included in SQL Server 2005 unless ObjectName is specified)
 	- StatsLastUpdated: when the statistics were last rebuilt (not included in SQL Server 2005 unless ObjectName is specified)
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 SQLServer name or SMO object representing the SQL Server to connect to.
 
 .PARAMETER SqlCredential
@@ -62,31 +62,31 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 https://dbatools.io/Get-DbaHelpIndex
 
 .EXAMPLE
-Get-DbaHelpIndex -SqlServer localhost -Database MyDB
+Get-DbaHelpIndex -SqlInstance localhost -Database MyDB
 	Returns information on all indexes on the MyDB database on the localhost.
 
 .EXAMPLE
-Get-DbaHelpIndex -SqlServer localhost -Database MyDB,MyDB2
+Get-DbaHelpIndex -SqlInstance localhost -Database MyDB,MyDB2
 	Returns information on all indexes on the MyDB, MyDB2 databases
 	
 .EXAMPLE
-Get-DbaHelpIndex -SqlServer localhost -Database MyDB -ObjectName dbo.Table1
+Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1
 	Returns index information on the object dbo.Table1 in the database MyDB
 	
 .EXAMPLE
-Get-DbaHelpIndex -SqlServer localhost -Database MyDB -ObjectName dbo.Table1 -IncludeStats
+Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1 -IncludeStats
 	Returns information on the indexes and statistics for the table dbo.Table1 in the MyDB database
 	
 .EXAMPLE
-Get-DbaHelpIndex -SqlServer localhost -Database MyDB -ObjectName dbo.Table1 -IncludeDataTypes
+Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1 -IncludeDataTypes
 	Returns the index information for the table dbo.Table1 in the MyDB database, and includes the data types for the key and include columns
 	
 .EXAMPLE
-Get-DbaHelpIndex -SqlServer localhost -Database MyDB -ObjectName dbo.Table1 -FormatResults
+Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1 -FormatResults
 	Returns the index information for the table dbo.Table1 in the MyDB database, and returns the numerical data with separators to make it more readable (ie 1234 becomes 1,234)
 	
 .EXAMPLE
-Get-DbaHelpIndex -SqlServer localhost -Database MyDB -IncludeStats -FormatResults
+Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -IncludeStats -FormatResults
 	Returns the index information for all index in the MyDB database, as well as statistics, and formats the numerical data to be more redable	
 	
 #>
@@ -94,8 +94,8 @@ Get-DbaHelpIndex -SqlServer localhost -Database MyDB -IncludeStats -FormatResult
 	[CmdletBinding(SupportsShouldProcess = $false)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
@@ -935,7 +935,7 @@ FROM @AllResults;
 "@
 		
 		#endregion sizesQuery2005
-		$server = Connect-DbaSqlServer -SqlServer $SqlServer -Credential $SqlCredential
+		$server = Connect-DbaSqlServer -SqlInstance $sqlinstance -Credential $SqlCredential
 	}
 	
 	PROCESS {
@@ -1044,4 +1044,3 @@ FROM @AllResults;
 	
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaHelpIndex -Parameter Database, Exclude

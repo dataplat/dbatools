@@ -137,7 +137,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
@@ -171,7 +171,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			throw "You must specify at least one database. Use -Database or -AllDatabases."
 		}
 		
-		$sourceserver = Connect-SqlServer -SqlServer $sqlinstance -SqlCredential $sqlCredential -ParameterConnection
+		$sourceserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlCredential -ParameterConnection
 		
 		if (-not $destination) {
 			$destination = $sqlinstance
@@ -180,7 +180,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		
 		if ($sqlinstance -ne $destination) {
 			
-			$destserver = Connect-SqlServer -SqlServer $destination -SqlCredential $DestinationCredential
+			$destserver = Connect-SqlInstance -SqlInstance $destination -SqlCredential $DestinationCredential
 			
 			$sourcenb = $sourceserver.ComputerNamePhysicalNetBIOS
 			$destnb = $sourceserver.ComputerNamePhysicalNetBIOS
@@ -204,7 +204,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			$database = ($sourceserver.databases | Where-Object{ $_.IsSystemObject -eq $false -and ($_.Status -match 'Offline') -eq $false }).Name
 		}
 		
-		if (!(Test-DbaPath -SqlServer $destserver -Path $backupFolder)) {
+		if (!(Test-DbaPath -SqlInstance $destserver -Path $backupFolder)) {
 			$serviceaccount = $destserver.ServiceAccount
 			throw "Can't access $backupFolder Please check if $serviceaccount has permissions"
 		}
@@ -320,7 +320,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			
 			param (
 				[Parameter(Mandatory = $true)]
-				[Alias('ServerInstance', 'SqlInstance')]
+				[Alias('ServerInstance', 'SqlInstance', 'SqlServer')]
 				[object]$server,
 				[Parameter(Mandatory = $true)]
 				[ValidateNotNullOrEmpty()]
@@ -335,7 +335,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				[switch]$TSql = $false
 			)
 			
-			$server = Connect-SqlServer -SqlServer $server -SqlCredential $sqlCredential
+			$server = Connect-SqlInstance -SqlInstance $server -SqlCredential $sqlCredential
 			$servername = $server.name
 			$server.ConnectionContext.StatementTimeout = 0
 			$restore = New-Object 'Microsoft.SqlServer.Management.Smo.Restore'
@@ -601,7 +601,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				## Drop the database
 				try {
 					# Remove-SqlDatabase is a function in SharedFunctions.ps1 that tries 3 different ways to drop a database
-					Remove-SqlDatabase -SqlServer $sourceserver -DbName $dbname
+					Remove-SqlDatabase -SqlInstance $sourceserver -DbName $dbname
 					Write-Output "Dropped $dbname Database  on $source prior to running the Agent Job"
 				}
 				catch {
@@ -655,7 +655,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination")) {
 				## Drop the database
 				try {
-					$null = Remove-SqlDatabase -SqlServer $sourceserver -DbName $dbname
+					$null = Remove-SqlDatabase -SqlInstance $sourceserver -DbName $dbname
 					Write-Output "Dropped $dbname Database on $destination"
 				}
 				catch {
@@ -679,4 +679,3 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Remove-SqlDatabaseSafely
 	}
 }
-Register-DbaTeppArgumentCompleter -Command Remove-DbaDatabaseSafely -Parameter Database

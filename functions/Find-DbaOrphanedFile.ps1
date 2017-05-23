@@ -11,7 +11,7 @@ By default, it looks for orphaned .mdf, .ldf and .ndf files in the root\data dir
 	
 You can specify additional filetypes using the -FileType parameter, and additional paths to search using the -Path parameter.
 	
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 .PARAMETER SqlCredential
@@ -46,27 +46,27 @@ Thanks to Paul Randal's notes on FILESTREAM which can be found at http://www.sql
 https://dbatools.io/Find-DbaOrphanedFile
 
 .EXAMPLE
-Find-DbaOrphanedFile -SqlServer sqlserver2014a
+Find-DbaOrphanedFile -SqlInstance sqlserver2014a
 Logs into the SQL Server "sqlserver2014a" using Windows credentials and searches for orphaned files. Returns server name, local filename, and unc path to file.
 
 .EXAMPLE   
-Find-DbaOrphanedFile -SqlServer sqlserver2014a -SqlCredential $cred
+Find-DbaOrphanedFile -SqlInstance sqlserver2014a -SqlCredential $cred
 Logs into the SQL Server "sqlserver2014a" using alternative credentials and searches for orphaned files. Returns server name, local filename, and unc path to file.
 
 .EXAMPLE   
-Find-DbaOrphanedFile -SqlServer sql2014 -Path 'E:\Dir1', 'E:\Dir2'
+Find-DbaOrphanedFile -SqlInstance sql2014 -Path 'E:\Dir1', 'E:\Dir2'
 Finds the orphaned files in "E:\Dir1" and "E:Dir2" in addition to the default directories.
 	
 .EXAMPLE   
-Find-DbaOrphanedFile -SqlServer sql2014 -LocalOnly
+Find-DbaOrphanedFile -SqlInstance sql2014 -LocalOnly
 Returns only the local filepath. Using LocalOnly with multiple servers is not recommended since it does not return the associated server name.
 
 .EXAMPLE   
-Find-DbaOrphanedFile -SqlServer sql2014 -RemoteOnly
+Find-DbaOrphanedFile -SqlInstance sql2014 -RemoteOnly
 Returns only the remote filepath. Using LocalOnly with multiple servers is not recommended since it does not return the associated server name.
 	
 .EXAMPLE   
-Find-DbaOrphanedFile -SqlServer sql2014, sql2016 -FileType fsf, mld
+Find-DbaOrphanedFile -SqlInstance sql2014, sql2016 -FileType fsf, mld
 Finds the orphaned ending with ".fsf" and ".mld" in addition to the default filetypes ".mdf", ".ldf", ".ndf" for both the servers sql2014 and sql2016.
 	
 
@@ -74,8 +74,8 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter]$SqlInstance,
 		[parameter(Mandatory = $false)]
 		[object]$SqlCredential,
 		[parameter(Mandatory = $false)]
@@ -178,12 +178,12 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 
 	PROCESS
 	{
-		foreach ($servername in $sqlserver)
+		foreach ($servername in $SqlInstance)
 		{
 			# Reset all the arrays
 			$dirtreefiles = $valid = $paths = $matching = @()
 
-			$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
+			$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
 
 			# Get the default data and log directories from the instance
 			Write-Debug "Adding paths"

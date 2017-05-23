@@ -55,7 +55,7 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
 	Param (
 		[parameter(Position = 0, Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[parameter(Mandatory = $true)]
 		[string]$Database,
@@ -65,7 +65,7 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
 
 		try
 		{
-			$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+			$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 		}
 		catch
 		{

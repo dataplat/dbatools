@@ -84,7 +84,7 @@ Exports ONLY logins netnerds and realcajun from sqlsever2014a with the permissio
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[Alias("OutFile", "Path", "FileName")]
 		[string]$FilePath,
 		[Alias("Credential")]
@@ -100,9 +100,8 @@ Exports ONLY logins netnerds and realcajun from sqlsever2014a with the permissio
 		[switch]$Silent
 	)
 	
-	dynamicparam { if ($SqlInstance) { Get-ParamSqlLogins -SqlServer $SqlInstance -SqlCredential $SqlCredential } }
-	
 	begin {
+
 		if ($FilePath) {
 			if ($FilePath -notlike "*\*") { $FilePath = ".\$filepath" }
 			$directory = Split-Path $FilePath
@@ -114,18 +113,14 @@ Exports ONLY logins netnerds and realcajun from sqlsever2014a with the permissio
 			
 			Write-Message -Level Output -Message "Attempting to connect to SQL Servers.."
 		}
-		
-		# Convert from RuntimeDefinedParameter object to regular array
-		$Logins = $psboundparameters.Logins
-		$Exclude = $psboundparameters.Exclude
+
 		$outsql = @()
 	}
-	
 	process {
 		
 		try {
 			Write-Message -Level Verbose -Message "Connecting to $sqlinstance"
-			$server = Connect-SqlServer -SqlServer $sqlinstance -SqlCredential $sqlcredential
+			$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
 		}
 		catch {
 			Stop-Function -Message "Failed to connect to $instance : $($_.Exception.Message)" -Continue -Target $instance -InnerErrorRecord $_
@@ -336,21 +331,18 @@ CREATE LOGIN [$username] FROM WINDOWS WITH DEFAULT_DATABASE = [$defaultdb], DEFA
 			}
 		}
 	}
-	
 	end {
-		
 		$sql = $sql | Where-Object { $_ -notlike "CREATE USER [dbo] FOR LOGIN * WITH DEFAULT_SCHEMA=[dbo]" }
 		
 		$sql = $outsql -join "`r`nGO`r`n"
 		
-        if ($FilePath) {
-            $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
-        }
-        else {
-            $sql
-        }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Export-SqlLogin
+		if ($FilePath) {
+			$sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+		}
+		else {
+			$sql
+		}
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Export-SqlLogin
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Export-DbaLogin -Parameter Database

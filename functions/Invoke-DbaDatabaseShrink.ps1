@@ -97,7 +97,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
@@ -150,7 +150,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 			Write-Message -Level Verbose -Message "Connecting to $instance"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 				
 			}
 			catch
@@ -296,4 +296,3 @@ Shrinks all databases on SQL2012 (not ideal for production)
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Invoke-DbaDatabaseShrink -Parameter Database, Exclude

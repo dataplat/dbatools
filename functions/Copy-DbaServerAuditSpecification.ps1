@@ -5,7 +5,7 @@ function Copy-DbaServerAuditSpecification
 Copy-DbaServerAuditSpecification migrates server audit specifications from one SQL Server to another. 
 
 .DESCRIPTION
-By default, all audits are copied. The -ServerAuditSpecifications parameter is autopopulated for command-line completion and can be used to copy only specific audits.
+By default, all audits are copied. The -ServerAuditSpecification parameter is autopopulated for command-line completion and can be used to copy only specific audits.
 
 If the audit specification already exists on the destination, it will be skipped unless -Force is used. 
 
@@ -63,7 +63,7 @@ Copy-DbaServerAuditSpecification -Source sqlserver2014a -Destination sqlcluster
 Copies all server audits from sqlserver2014a to sqlcluster, using Windows credentials. If audits with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-DbaServerAuditSpecification -Source sqlserver2014a -Destination sqlcluster -ServerAuditSpecifications tg_noDbDrop -SourceSqlCredential $cred -Force
+Copy-DbaServerAuditSpecification -Source sqlserver2014a -Destination sqlcluster -ServerAuditSpecification tg_noDbDrop -SourceSqlCredential $cred -Force
 
 Copies a single audit, the tg_noDbDrop audit from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an audit with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
@@ -75,28 +75,24 @@ Shows what would happen if the command were executed using force.
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[parameter(Mandatory = $true)]
-		[object]$Destination,
+		[DbaInstanceParameter]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlServerServerAuditSpecifications -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
-	
-	BEGIN
-	{
-		
-		$auditspecs = $psboundparameters.ServerAuditSpecifications
-		
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+
+	begin {
+
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
 		
-		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
-		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
+		if (!(Test-SqlSa -SqlInstance $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
+		if (!(Test-SqlSa -SqlInstance $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 		
 		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
 		{
@@ -108,10 +104,8 @@ Shows what would happen if the command were executed using force.
 		$destaudits = $destserver.ServerAuditSpecifications
 		
 	}
-	PROCESS
-	{
-		
-		
+	process {
+
 		foreach ($auditspec in $serverauditspecs)
 		{
 			$auditspecname = $auditspec.name
@@ -164,12 +158,7 @@ Shows what would happen if the command were executed using force.
 
 		}
 	}
-	
-	END
-	{
-		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
-        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Server audit migration finished" }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlAuditSpecification
+	end {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlAuditSpecification
 	}
 }

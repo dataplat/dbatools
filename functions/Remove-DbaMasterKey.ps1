@@ -149,7 +149,7 @@
             try
             {
                 Write-Message -Level Verbose -Message "Connecting to $instance"
-                $server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch
             {
@@ -231,6 +231,5 @@
     }
 }
 
-Register-DbaTeppArgumentCompleter -Command Remove-DbaMasterKey -Parameter Database
-Register-DbaTeppArgumentCompleter -Command Remove-DbaMasterKey -Parameter Exclude -Name Database
-Register-DbaTeppArgumentCompleter -Command Remove-DbaMasterKey -Parameter SqlInstance -Name SqlInstance
+
+

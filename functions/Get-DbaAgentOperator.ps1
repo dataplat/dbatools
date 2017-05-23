@@ -40,7 +40,7 @@ FUNCTION Get-DbaAgentOperator {
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
 		[switch]$Silent
@@ -49,7 +49,7 @@ FUNCTION Get-DbaAgentOperator {
 		foreach ($instance in $SqlInstance) {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Stop-Function -Message "Failed to connect to $instance : $($_.Exception.Message)" -Continue -Target $instance -InnerErrorRecord $_

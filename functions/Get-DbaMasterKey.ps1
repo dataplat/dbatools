@@ -45,7 +45,7 @@ Gets the master key for the db1 database
 	param (
 		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string[]]$Database,
 		[switch]$Silent
@@ -55,7 +55,7 @@ Gets the master key for the db1 database
 		foreach ($instance in $SqlInstance) {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -Target $instance -InnerErrorRecord $_ -Continue

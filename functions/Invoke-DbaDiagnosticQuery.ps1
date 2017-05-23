@@ -74,7 +74,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[PsCredential]$SqlCredential,
 		[System.IO.FileInfo]$Path,
 		[string[]]$QueryName,
@@ -148,7 +148,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 			$counter = 0
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Stop-Function -Message "Failed to connect to $instance : $($_.Exception.Message)" -Continue -Target $instance -InnerErrorRecord $_
@@ -157,7 +157,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 			Write-Message -Level Verbose -Message "Collecting diagnostic query data from server: $instance"
 			
 			# Need to get count of SQLs
-			# if (!$silent) { Write-Progress -Id 0 -Activity "Running Scripts on SQL Server Instance {0} of {1}" -f $servercounter, $sqlservers.count) -CurrentOperation $instance -PercentComplete (($servercounter / $sqlServers.count) * 100) }
+			# if (!$silent) { Write-Progress -Id 0 -Activity "Running Scripts on SQL Server Instance {0} of {1}" -f $servercounter, $SqlInstances.count) -CurrentOperation $instance -PercentComplete (($servercounter / $SqlInstances.count) * 100) }
 			
 			if ($server.VersionMinor -eq 50) {
 				$version = "2008R2"
@@ -251,7 +251,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 				elseif ($scriptpart.DatabaseSpecific -and !$instanceOnly) {
 					foreach ($database in $databases) {
 						if ($PSCmdlet.ShouldProcess(('{0} ({1})' -f $instance, $database.name), $scriptpart.QueryName)) {
-							#if (!$silent) { Write-Progress -Id 0 -Activity "Running diagnostic queries on SQL Server" -Status ("Instance {0} of {1}" -f $servercounter, $sqlservers.count) -CurrentOperation $instance -PercentComplete (($servercounter / $sqlServers.count) * 100) }
+							#if (!$silent) { Write-Progress -Id 0 -Activity "Running diagnostic queries on SQL Server" -Status ("Instance {0} of {1}" -f $servercounter, $SqlInstances.count) -CurrentOperation $instance -PercentComplete (($servercounter / $SqlInstances.count) * 100) }
 							if (!$silent) { Write-Progress -Id 1 -ParentId 0 -Activity "Collecting diagnostic query data from $database on $instance" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.QueryName -PercentComplete (($Counter / $scriptcount) * 100) }
 							Write-Message -Level Output -Message "Collecting diagnostic query data from $database for $($scriptpart.QueryName) on $instance"
 							try {

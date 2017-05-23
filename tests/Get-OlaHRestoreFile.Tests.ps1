@@ -1,22 +1,5 @@
-#Thank you Warren http://ramblingcookiemonster.github.io/Testing-DSC-with-Pester-and-AppVeyor/
-
-if(-not $PSScriptRoot)
-{
-    $PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
-}
-$Verbose = @{}
-if($env:APPVEYOR_REPO_BRANCH -and $env:APPVEYOR_REPO_BRANCH -notlike "master")
-{
-    $Verbose.add("Verbose",$True)
-}
-
-
-
-$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace('.Tests.', '.')
-Import-Module $PSScriptRoot\..\internal\$sut -Force
-
 Describe "Get-OlaHRestoreFile Unit Tests" -Tag 'Unittests'{
-	#Mock Test-Path {$true}
+    #Mock Test-Path {$true}
 	<#
     Context "Test Path handling" {
         It "Should throw on an invalid Path"{
@@ -45,10 +28,10 @@ Describe "Get-OlaHRestoreFile Unit Tests" -Tag 'Unittests'{
             $results.count | Should be 1
         }
         It "Should return TestDrive:\OlaH\Full\full.bak"{
-            $results.Fullname  | Should beLike '*\OlaH\Full\full.bak'
+            $results.Fullname | Should beLike '*\OlaH\Full\full.bak'
         }
     }
-    Context "With Log Files" {  
+    Context "With Log Files" {
         New-item "TestDrive:\OlaH\" -ItemType directory
         New-item "TestDrive:\OlaH\Full\" -ItemType directory
         New-item "TestDrive:\OlaH\Full\full.bak" -ItemType File
@@ -63,13 +46,13 @@ Describe "Get-OlaHRestoreFile Unit Tests" -Tag 'Unittests'{
             $results2.count | should be 3
         }
         It "Should contain 1 Full backup" {
-            ($results2 | Where-Object {$_.Fullname -like '*\OlaH\Full\*.bak'}).count | Should be 1
-        }    
+            ($results2 | Where-Object { $_.Fullname -like '*\OlaH\Full\*.bak' }).count | Should be 1
+        }
         It "Shoud contain 2 log backups" {
-            ($results2 | Where-Object {$_.Fullname -like '*\OlaH\Log\*.trn'}).count | Should be 2
-        }   
+            ($results2 | Where-Object { $_.Fullname -like '*\OlaH\Log\*.trn' }).count | Should be 2
+        }
     }
-    Context "With Diff Files" {  
+    Context "With Diff Files" {
         New-item "TestDrive:\OlaH\" -ItemType directory
         New-item "TestDrive:\OlaH\Full\" -ItemType directory
         New-item "TestDrive:\OlaH\Full\full.bak" -ItemType File
@@ -87,10 +70,10 @@ Describe "Get-OlaHRestoreFile Unit Tests" -Tag 'Unittests'{
             $results3.count | should be 5
         }
         It "Should contain 1 Full backup" {
-            ($results3 | Where-Object {$_.Fullname -like '*\OlaH\Full\*.bak'}).count | Should be 1
-        }    
+            ($results3 | Where-Object { $_.Fullname -like '*\OlaH\Full\*.bak' }).count | Should be 1
+        }
         It "Shoud contain 2 log backups" {
-            ($results3 | Where-Object {$_.Fullname -like '*\OlaH\Log\Log*.trn'}).count | Should be 2
+            ($results3 | Where-Object { $_.Fullname -like '*\OlaH\Log\Log*.trn' }).count | Should be 2
         }
         It "Should contain 2 Diff backups" {
             ($results3 | Where-Object {$_.Fullname -like '*\OlaH\Diff\Diff*.bak'}).count | Should be 2

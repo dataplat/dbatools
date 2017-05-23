@@ -95,7 +95,7 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .EXAMPLE 
-Set-DbaStartupParameter -SqlServer server1\instance1 -SingleUser
+Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser
 
 Will configure the SQL Instance server1\instance1 to startup up in Single User mode at next startup
 	
@@ -110,25 +110,25 @@ Set-DbaStartupParameter -SqlInstance sql2016  -IncreasedExtents:$false -WhatIf
 Shows what would happen if you attempted to configure the SQL Instance sql2016 to IncreasedExtents = False (no -E)
 
 .EXAMPLE
-Set-DbaStartupParameter -SqlServer server1\instance1 -SingleUser -TraceFlags 8032,8048
+Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser -TraceFlags 8032,8048
 This will appened Trace Flags 8032 and 8048 to the startup parameters
 
 .EXAMPLE
-Set-DbaStartupParameter -SqlServer sql2016 -SingleUser:$false -TraceFlagsOverride
+Set-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagsOverride
 This will remove all trace flags and set SinguleUser to false
 	
 .EXAMPLE
-Set-DbaStartupParameter -SqlServer server1\instance1 -SingleUser -TraceFlags 8032,8048 -TraceFlagsOverride
+Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser -TraceFlags 8032,8048 -TraceFlagsOverride
 
 This will set Trace Flags 8032 and 8048 to the startup parameters, removing any existing Trace Flags
 
 .EXAMPLE
 
-$StartupConfig = Get-DbaStartupParameter -SqlServer server1\instance1
-Set-DbaStartupParameter -SqlServer server1\instance1 -SingleUser -NoLoggingToWinEvents
+$StartupConfig = Get-DbaStartupParameter -SqlInstance server1\instance1
+Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser -NoLoggingToWinEvents
 #Restart your SQL instance with the tool of choice
 #Do Some work
-Set-DbaStartupParameter -SqlServer server1\instance1 -StartUpConfig $StartUpConfig
+Set-DbaStartupParameter -SqlInstance server1\instance1 -StartUpConfig $StartUpConfig
 #Restart your SQL instance with the tool of choice and you're back to normal
 
 In this example we take a copy of the existing startup configuration of server1\instance1
@@ -141,7 +141,7 @@ After the work has been completed, we can push the original startup parameters b
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
 	param ([parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[PSCredential]$Credential,
 		[string]$MasterData,
 		[string]$MasterLog,
@@ -187,7 +187,7 @@ After the work has been completed, we can push the original startup parameters b
 		if (!($currentstartup.SingleUser)) {
 			
 			if ($newstartup.Masterdata.length -gt 0) {
-				if (Test-DbaSqlPath -SqlServer $sqlinstance -SqlCredential $Credential -Path (Split-Path $newstartup.MasterData -Parent)) {
+				if (Test-DbaSqlPath -SqlInstance $sqlinstance -SqlCredential $Credential -Path (Split-Path $newstartup.MasterData -Parent)) {
 					$ParameterString += "-d$($newstartup.MasterData);"
 				}
 				else {
@@ -199,7 +199,7 @@ After the work has been completed, we can push the original startup parameters b
 			}
 			
 			if ($newstartup.ErrorLog.length -gt 0) {
-				if (Test-DbaSqlPath -SqlServer $sqlinstance -SqlCredential $Credential -Path (Split-Path $newstartup.ErrorLog -Parent)) {
+				if (Test-DbaSqlPath -SqlInstance $sqlinstance -SqlCredential $Credential -Path (Split-Path $newstartup.ErrorLog -Parent)) {
 					$ParameterString += "-e$($newstartup.ErrorLog);"
 				}
 				else {
@@ -211,7 +211,7 @@ After the work has been completed, we can push the original startup parameters b
 			}
 			
 			if ($newstartup.MasterLog.Length -gt 0) {
-				if (Test-DbaSqlPath -SqlServer $sqlinstance -SqlCredential $Credential -Path (Split-Path $newstartup.MasterLog -Parent)) {
+				if (Test-DbaSqlPath -SqlInstance $sqlinstance -SqlCredential $Credential -Path (Split-Path $newstartup.MasterLog -Parent)) {
 					$ParameterString += "-l$($newstartup.MasterLog);"
 				}
 				else {

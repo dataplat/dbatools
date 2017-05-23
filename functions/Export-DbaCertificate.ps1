@@ -64,7 +64,7 @@ Exports all the certificates on the specified SQL Server
 
 .EXAMPLE
 $EncryptionPassword = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -force
-Export-DbaCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword $EncryptionPassword -Databases Database1
+Export-DbaCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword $EncryptionPassword -Database Database1
 Exports the certificate that is used as the encryptor for a specific database on the specified SQL Server
 
 .EXAMPLE
@@ -76,7 +76,7 @@ Exports all certificates named CertTDE on the specified SQL Server, not specifyi
 	param (
 		[parameter(Mandatory, ParameterSetName = "instance")]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[parameter(ParameterSetName = "instance")]
 		[object[]]$Certificate,
@@ -107,13 +107,13 @@ Exports all certificates named CertTDE on the specified SQL Server, not specifyi
 			$actualpath = $Path
 			
 			if ($null -eq $actualpath) {
-				$actualpath = Get-SqlDefaultPaths -SqlServer $server -filetype Data
+				$actualpath = Get-SqlDefaultPaths -SqlInstance $server -filetype Data
 			}
 			
 			$fullcertname = "$actualpath\$certname$Suffix"
 			$exportpathkey = "$fullcertname.pvk"
 			
-			if (!(Test-DbaSqlPath -SqlServer $server -Path $actualpath)) {
+			if (!(Test-DbaSqlPath -SqlInstance $server -Path $actualpath)) {
 				Stop-Function -Message "$SqlInstance cannot access $actualpath" -Target $actualpath
 			}
 			
@@ -191,7 +191,7 @@ Exports all certificates named CertTDE on the specified SQL Server, not specifyi
 		foreach ($instance in $sqlinstance) {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -Target $instance -InnerErrorRecord $_

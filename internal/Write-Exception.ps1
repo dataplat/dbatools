@@ -3,6 +3,14 @@ Function Write-Exception
 <#
 .SYNOPSIS
 Internal function. Writes exception to disk (my docs\dbatools-exceptions.txt) for later analysis.
+
+.PARAMETER e
+Exception
+
+.EXAMPLE
+Write-Exception $_
+Writes inner exception to disk
+
 #>
 	[CmdletBinding()]
 	param (

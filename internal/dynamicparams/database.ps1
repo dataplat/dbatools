@@ -23,10 +23,6 @@ $ScriptBlock = {
 	}
 	
 	if (-not $server) {
-		$server = $fakeBoundParameter['SqlServer']
-	}
-	
-	if (-not $server) {
 		$server = $fakeBoundParameter['ComputerName']
 	}
 	
@@ -54,7 +50,7 @@ $ScriptBlock = {
     
     try
     {
-        $serverObject = Connect-SqlServer -SqlServer $parServer -SqlCredential $fakeBoundParameter['SqlCredential'] -ErrorAction Stop
+        $serverObject = Connect-SqlInstance -SqlInstance $parServer -SqlCredential $fakeBoundParameter['SqlCredential'] -ErrorAction Stop
         foreach ($name in ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$parServer.FullSmoName.ToLower()] | Where-DbaObject -Like "$wordToComplete*"))
         {
             New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
@@ -70,4 +66,3 @@ $ScriptBlock = {
 }
 
 Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name Database
-Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name Exclude
