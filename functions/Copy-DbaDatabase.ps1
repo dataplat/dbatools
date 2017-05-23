@@ -549,8 +549,6 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 	}
 	
 	process {
-		$copyonly = !$NoCopyOnly
-		
 		if (($AllDatabases -or $IncludeSupportDbs -or $Database) -and !$DetachAttach -and !$BackupRestore) {
 			throw "You must specify -DetachAttach or -BackupRestore when migrating databases."
 		}
@@ -887,7 +885,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						
 						#$backupresult = Backup-SqlDatabase $sourceserver $dbname $backupfile $numberfiles
 						
-						$backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceserver -Database $dbname -backupDirectory (Split-Path -Path $backupFile -parent) -FileCount $numberfiles
+						$backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceserver -Database $dbname -backupDirectory (Split-Path -Path $backupFile -parent) -FileCount $numberfiles -NoCopyOnly:$NoCopyOnly
 						$backupresult = $BackupTmpResult.BackupComplete
 						if ($backupresult -eq $false) {
 							$serviceaccount = $sourceserver.ServiceAccount
