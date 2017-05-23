@@ -219,11 +219,7 @@ function Copy-DbaLogin {
 							Write-Message -Level Output -Message "Successfully dropped $userName on $destination"
 						}
 						catch {
-							$ex = $_.Exception.Message
-							if ($ex -ne $null) { $ex.trim() }
-							Write-Error "Could not drop $userName`: $ex"
-							Write-Exception $_
-							continue
+							Stop-Function -Message "Could not drop $userName" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
 						}
 					}
 				}
@@ -305,9 +301,7 @@ function Copy-DbaLogin {
 								Write-Message -Level Output -Message "Successfully added $userName to $destination"
 							}
 							catch {
-								Write-Message -Level Warning -Message "Failed to add $userName to $destination`: $_"
-								Write-Exception $_
-								continue
+								Stop-Function -Message "Failed to add $userName to $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
 							}
 						}
 					}
@@ -325,9 +319,7 @@ function Copy-DbaLogin {
 							Write-Message -Level Output -Message "Successfully added $userName to $destination"
 						}
 						catch {
-							Write-Message -Level Warning -Message "Failed to add $userName to $destination"
-							Write-Exception $_
-							continue
+							Stop-Function -Message "Failed to add $userName to $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer (or whatever applicable) -Continue
 						}
 					}
 					# This script does not currently support certificate mapped or asymmetric key users.
@@ -341,17 +333,15 @@ function Copy-DbaLogin {
 							$destLogin.Disable()
 						}
 						catch {
-							Write-Message -Level Warning -Message "$userName disabled on source, but could not be disabled on destination.";
-							Write-Exception $_
+							Stop-Function -Message "$userName disabled on source, could not be disabled on $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer (or whatever applicable)
 						}
 					}
 					if ($sourceLogin.DenyWindowsLogin) {
-						try { 
-							$destLogin.DenyWindowsLogin = $true 
+						try {
+							$destLogin.DenyWindowsLogin = $true
 						}
-						catch { 
-							Write-Message -Level Warning -Message "$userName denied login on source, but could not be denied login on destination."; 
-							Write-Exception $_ 
+						catch {
+							Stop-Function -Message "$userName denied login on source, could not be denied login on $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer (or whatever applicable)
 						}
 					}
 				}
@@ -366,7 +356,7 @@ function Copy-DbaLogin {
 						try {
 							Rename-DbaLogin -SqlInstance $destServer -Login $userName -NewLogin $NewLogin
 						} catch {
-							Write-Exception $_
+							Stop-Function -Message "Issue renaming $userName to $NewLogin" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
 						}
 					}
 				}
@@ -381,12 +371,14 @@ function Copy-DbaLogin {
 			$destServer = Connect-SqlInstance -RegularUser -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 			$Destination = $destServer.DomainInstanceName
 
-			if ($sourceServer.VersionMajor -gt 10 -and $destServer.VersionMajor -lt 11) {
-				throw "SQL login migration from SQL Server version $($sourceServer.VersionMajor) to $($destServer.VersionMajor) not supported. Halting."
+			$sourceVersionMajor = $sourceServer.VersionMajor
+			$destVersionMajor = $destServer.VersionMajor
+			if ($sourceVersionMajor -gt 10 -and $destVersionMajor -lt 11) {
+				Stop-Function -Message "Login migration from version $sourceVersionMajor to $destVersionMajor is not supported." -Category InvalidOperation -InnerErrorRecord $_ -Target $sourceServer
 			}
 
-			if ($sourceServer.versionMajor -lt 8 -or $destServer.versionMajor -lt 8) {
-				throw "SQL Server 7 and below not supported. Quitting."
+			if ($sourceVersionMajor -lt 8 -or $destVersionMajor -lt 8) {
+				Stop-Function -Message "SQL Server 7 and below are not supported." -Category InvalidOperation -InnerErrorRecord $_ -Target $sourceServer
 			}
 		}
 
