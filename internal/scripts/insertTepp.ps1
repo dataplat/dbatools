@@ -21,4 +21,10 @@ foreach ($function in $functions) {
 	if ($function.Parameters.Keys -contains "ExcludeLogin") {
 		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeLogin -Name Login
 	}
+	if ($function.Parameters.Keys -contains "Operator") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter Operator -Name Operator
+	}
+	if ($function.Parameters.Keys -contains "ExcludeOperator") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeOperator -Name Operator
+	}
 }
