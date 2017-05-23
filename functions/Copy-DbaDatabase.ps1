@@ -570,6 +570,13 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
+		$destVersionLower = $destserver.VersionMajor -lt $sourceserver.VersionMajor
+		$destVersionMinorLow = ($destserver.VersionMajor -eq 10 -and $sourceserver.VersionMajor -eq 10) -and ($destserver.VersionMinor -lt $sourceserver.VersionMinor)
+		if ($destVersionLower -or $destVersionMinorLow) {
+			Stop-Function -Message "Error: copy database cannot be made from newer $($sourceserver.VersionString) to older $($destserver.VersionString) SQL Server version"
+			return
+		}
+
 		if ($DetachAttach) {
 			if ($sourceserver.netname -eq $env:COMPUTERNAME -or $destserver.netname -eq $env:COMPUTERNAME) {
 				If (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
