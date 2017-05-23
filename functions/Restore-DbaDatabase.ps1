@@ -252,15 +252,15 @@ function Restore-DbaDatabase {
 		}
 		if ('' -ne $StandbyDirectory)
 		{
-			if (!(Test-SqlPath -Path $StandbyDirectory -SqlServer $SqlServer -SqlCredential $SqlCredential))
+			if (!(Test-DbaSqlPath -Path $StandbyDirectory -SqlInstance $SqlInstance -SqlCredential $SqlCredential))
 			{
-				Stop-Function -Message "$SqlSever cannot see the specified Standby Directory $StandbyDirectory"
+				Stop-Function -Message "$SqlSever cannot see the specified Standby Directory $StandbyDirectory" -Target $SqlInstance
 				return
 			}
 		}
 		if ($Continue)
 		{
-			$ContinuePoints = Get-RestoreContinuableDatabase -SqlInstance $SqlServer -SqlCredential $SqlCredential 
+			$ContinuePoints = Get-RestoreContinuableDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential 
 			#$ContinuePoints
 		}
 		
@@ -479,7 +479,7 @@ function Restore-DbaDatabase {
 		#$BackupFiles 
 		#return
 		Write-Message -Level Verbose -Message "sorting uniquely"
-		$AllFilteredFiles = $backupFiles | sort-object -property fullname -unique | Get-FilteredRestoreFile -SqlInstance $SqlInstance -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup -TrustDbBackupHistory:$TrustDbBackupHistory -Silent:$Silent
+		$AllFilteredFiles = $backupFiles | sort-object -property fullname -unique | Get-FilteredRestoreFile -SqlInstance $SqlInstance -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup -TrustDbBackupHistory:$TrustDbBackupHistory -Silent:$Silent -continue:$continue -ContinuePoints:$ContinuePoints -DatabaseName $DatabaseName
 		
 		Write-Message -Level Verbose -Message "$($AllFilteredFiles.count) dbs to restore"
 		
@@ -508,9 +508,9 @@ function Restore-DbaDatabase {
 				Write-Message -Level Verbose -Message "Dbname set from backup = $DatabaseName"
 			}
 			
-			if ((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlInstance $SqlInstance -SqlCredential $SqlCredential)) {
+			if (((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles) -or $continue) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlInstance $SqlInstance -SqlCredential $SqlCredential)) {
 				try {
-					$FilteredFiles | Restore-DBFromFilteredArray -SqlInstance $SqlInstance -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -TrustDbBackupHistory:$TrustDbBackupHistory -ReplaceDatabase:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure $FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$useDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix -MaxTransferSize $MaxTransferSize -BufferCount $BufferCount -BlockSize $BlockSize
+					$FilteredFiles | Restore-DBFromFilteredArray -SqlInstance $SqlInstance -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -TrustDbBackupHistory:$TrustDbBackupHistory -ReplaceDatabase:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure $FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$useDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix -MaxTransferSize $MaxTransferSize -BufferCount $BufferCount -BlockSize $BlockSize -StandbyDirectory $StandbyDirectory -continue:$continue 
 					$Completed = 'successfully'
 				}
 				catch {

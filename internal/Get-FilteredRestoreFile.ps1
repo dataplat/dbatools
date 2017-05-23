@@ -34,6 +34,15 @@ function Get-FilteredRestoreFile {
             Replaces user friendly yellow warnings with bloody red exceptions of doom!
             Use this if you want the function to throw terminating errors you want to catch.
         
+        .PARAMETER Continue
+            Continues restoring a database from a point in time
+
+        .PARAMETER ContinuePoints
+            The points to continue the restore from
+
+        .PARAMETER DatabaseName
+            Used when a restore is being continued with a name change
+        
         .EXAMPLE
             Get-FilteredRestoreFile -Files $Files -SqlInstance $SqlInstance
     
@@ -123,7 +132,7 @@ function Get-FilteredRestoreFile {
         }
         else {
     		Write-Message -Level Verbose -Message "Read File headers (Read-DBABackupHeader)"		
-			$AllSQLBackupdetails = $InternalFiles | ForEach-Object{if($_.fullname -ne $null){$_.Fullname}else{$_}} | Read-DBAbackupheader -sqlserver $SQLSERVER -SqlCredential $SqlCredential
+			$AllSQLBackupdetails = $InternalFiles | ForEach-Object{if($_.fullname -ne $null){$_.Fullname}else{$_}} | Read-DBAbackupheader -sqlinstance $sqlinstance -SqlCredential $SqlCredential
         }
 
 		Write-Message -Level Verbose -Message "$($AllSQLBackupdetails.count) Files to filter"
@@ -155,9 +164,8 @@ function Get-FilteredRestoreFile {
             Write-Message -Level VeryVerbose -Message "Find Newest Full backup - $($_.DatabaseName)"
 
             $ServerName, $databaseName = $Database.Name.split(',').trim()
-            if ($null -ne $dbrec) {
-            $DatabaseName = $dbrec
-            }
+
+            Write-verbose "dbname = $databasename"
             $SQLBackupdetails = $AllSQLBackupdetails | Where-Object {$_.ServerName -eq $ServerName -and $_.DatabaseName -eq $DatabaseName.trim()}
             #If we're continuing a restore, then we aren't going to be needing a full backup....
             $TlogStartlsn = 0
@@ -171,8 +179,14 @@ function Get-FilteredRestoreFile {
                 $Results += $SQLBackupdetails | where-object {$_.BackupTypeDescription -eq "Database" -and $_.FirstLSN -eq $FullBackup.FirstLSN}
             }
             else {
-                Write-Message -LevelVeryVerbose -Message "Continuing restore, setting fake fullbackup"
-                $Fullbackup = $ContinuePoints| Where-Object {$_.Database -eq $DatabaseName}
+                Write-Message -Level VeryVerbose -Message "Continuing restore, setting fake fullbackup"
+                if ($null -ne $dbrec) {
+                     $dbfilter = $dbrec
+                 }
+                 else {
+                     $dbfilter= $DatabaseName
+                 }
+                $Fullbackup = $ContinuePoints | Where-Object {$_.Database -eq $dbfilter}
                 $TLogStartLsn = $Fullbackup.redo_start_lsn
                 
             }    
@@ -196,6 +210,8 @@ function Get-FilteredRestoreFile {
                 Write-Message -Level Verbose -Message "Database in simple mode or IgnoreLogBackup is true, skipping Transaction logs" -Target $database
             }
             else {
+                write-verbose " frfID - $($Fullbackup.FirstRecoveryForkID)"
+                write-verbose "tstart - $TlogStartLSN"
  
                 Write-Message -Level Verbose -Message "Got a Full/Diff backups, now find all Tlogs needed"
                 $AllTlogs = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} 
