@@ -158,12 +158,12 @@ Function Get-DbaDatabaseFile {
 				$results = Invoke-DbaSqlcmd -ServerInstance $server -Query $sql -Database $db.name
 				
 				foreach ($result in $results) {
-					$size = [dbasize]($result.Size * 1024 * 1024)
-					$usedspace = [dbasize]($result.UsedSpace * 1024 * 1024)
+					$size = [dbasize]($result.Size * 8096)
+					$usedspace = [dbasize]($result.UsedSpace * 8096)
 					$maxsize = $result.MaxSize
 					
 					if ($maxsize -gt -1) {
-						$maxsize = [dbasize]($result.MaxSize * 1024 * 1024)
+						$maxsize = [dbasize]($result.MaxSize * 8096)
 					}
 					
 					if ($result.VolumeFreeSpace) {
