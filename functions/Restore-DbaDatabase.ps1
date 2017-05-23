@@ -111,8 +111,17 @@ function Restore-DbaDatabase {
     
     .PARAMETER XpNoRecurse
         If specified, prevents the XpDirTree process from recursing (its default behaviour)
+
+	.PARAMETER DirectoryRecurse
+		If specified the specified directory will be recursed into
+	
+	.PARAMETER	Continue
+		If specified we will to attempt to recover more transaction log backups onto  database(s) in Recovering or Standby states
+
+	.PARAMETER StandbyDirectory
+		If a directory is specified the database(s) will be restored into a standby state, with the standby file placed into this directory (which must exist, and be writable by the target Sql Server instance)
     
-    .PARAMETER Confirm
+	.PARAMETER Confirm
         Prompts to confirm certain actions
     
     .PARAMETER WhatIf
@@ -162,6 +171,36 @@ function Restore-DbaDatabase {
         Restore-DbaDatabase. Restore-DbaDatabase will then scan all of the files, and restore all of the databases included
         to the latest point in time covered by their backups. All data and log files will be moved to the default SQL Sever
         folder for those file types as defined on the target instance.
+
+	.EXAMPLE
+		$files = Get-ChildItem C:\dbatools\db1
+
+		#Restore database to a point in time
+		$files | Restore-DbaDatabase -SqlServer server\instance1 `
+					-DestinationFilePrefix prefix -DatabaseName Restored  `
+					-RestoreTime (get-date "14:58:30 22/05/2017") `
+					-NoRecovery -WithReplace -StandbyDirectory C:\dbatools\standby 
+
+		#It's in standby so we can peek at it
+		Invoke-DbaSqlCmd -ServerInstance server\instance1 -Query "select top 1 * from Restored.dbo.steps order by dt desc"
+
+		#Not quite there so let's roll on a bit:
+		$files | Restore-DbaDatabase -SqlServer server\instance1 `
+					-DestinationFilePrefix prefix -DatabaseName Restored `
+					-continue -WithReplace -RestoreTime (get-date "15:09:30 22/05/2017") `
+					-StandbyDirectory C:\dbatools\standby
+
+		Invoke-DbaSqlCmd -ServerInstance server\instance1 -Query "select top 1 * from restored.dbo.steps order by dt desc"
+
+		Restore-DbaDatabase -SqlServer server\instance1 `
+					-DestinationFilePrefix prefix -DatabaseName Restored `
+					-continue -WithReplace 
+		
+		In this example we step through the backup files held in c:\dbatools\db1 folder.
+		First we restore the database to a point in time in standby mode. This means we can check some details in the databases
+		We then roll it on a further 9 minutes to perform some more checks
+		And finally we continue by rolling it all the way forward to the latest point in the backup.
+		At each step, only the log files needed to roll the database forward are restored.
     
     .NOTES
         Tags: DisasterRecovery, Backup, Restore
