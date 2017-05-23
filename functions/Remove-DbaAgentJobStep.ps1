@@ -4,7 +4,7 @@ function Remove-DbaAgentJobStep {
 Remove-DbaAgentJobStep removes a job step.
 
 .DESCRIPTION
-Remove-DbaAgentJobStep removes a a job step in the SQL Server Agent.
+Remove-DbaAgentJobStep removes a job step in the SQL Server Agent.
 
 .PARAMETER SqlInstance
 SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -61,7 +61,7 @@ Remove the job step from the job on multiple servers
 
 .EXAMPLE   
 sql1, sql2, sql3 | Remove-DbaAgentJobStep -Job Job1 -StepName Step1
-Remove the job step from the job on multiple servers using pipe line
+Remove the job step from the job on multiple servers using pipeline
 
 #>	
 	

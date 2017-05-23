@@ -4,7 +4,7 @@ function Get-DbaSqlProductKey {
 Gets SQL Server Product Keys from local on destination SQL Servers. Works with SQL Server 2005-2014
 
 .DESCRIPTION 
-Using a string of servers, a text file, or Central Management Server to provide a list of servers, this script will go to each server and get the product key for all installed instances. Clustered instances are supported as well. Requires regular user access to the SQL instances, SMO installed locally, Remote Registry enabled and acessible by the account running the script.
+Using a string of servers, a text file, or Central Management Server to provide a list of servers, this script will go to each server and get the product key for all installed instances. Clustered instances are supported as well. Requires regular user access to the SQL instances, SMO installed locally, Remote Registry enabled and accessible by the account running the script.
 
 Uses key decoder by Jakob Bindslet (http://goo.gl/1jiwcB)
 

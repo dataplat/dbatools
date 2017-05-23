@@ -113,7 +113,7 @@ Creates a schedule for the job with a daily frequency every day on multiple serv
 
 .EXAMPLE   
 sql1, sql2, sql3 | New-DbaAgentSchedule -Job Job1, Job2, Job3 -ScheduleName daily -FrequencyType Daily -FrequencyInterval 1 -Force 1
-Creates a schedule for the job with a daily frequency every day on multiple servers for multiple jobs using pipe line
+Creates a schedule for the job with a daily frequency every day on multiple servers for multiple jobs using pipeline
 
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]

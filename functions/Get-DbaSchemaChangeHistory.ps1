@@ -41,22 +41,22 @@ FUNCTION Get-DbaSchemaChangeHistory {
 	https://dbatools.io/Get-DbaSchemaChangeHistory
 
 	.EXAMPLE
-	Get-DbaJobCategory -SqlInstance localhost
+	Get-DbaSchemaChangeHistory -SqlInstance localhost
     
     Returns all DDL changes made in all databases on the SQL Server instance localhost since the system trace began
 
 	.EXAMPLE
-	Get-DbaJobCategory -SqlInstance localhost -Since (Get-Date).AddDays(-7)
+	Get-DbaSchemaChangeHistory -SqlInstance localhost -Since (Get-Date).AddDays(-7)
 
 	Returns all DDL changes made in all databases on the SQL Server instance localhost in the last 7 days
 
 	.EXAMPLE
-	Get-DbaJobCategory -SqlInstance localhost -Database Finance, Prod -Since (Get-Date).AddDays(-7)
+	Get-DbaSchemaChangeHistory -SqlInstance localhost -Database Finance, Prod -Since (Get-Date).AddDays(-7)
 
 	Returns all DDL changes made in the Prod and Finance databases on the SQL Server instance localhost in the last 7 days
 	
     .EXAMPLE
-	Get-DbaJobCategory -SqlInstance localhost -Database Finance -Object AccountsTable -Since (Get-Date).AddDays(-7)
+	Get-DbaSchemaChangeHistory -SqlInstance localhost -Database Finance -Object AccountsTable -Since (Get-Date).AddDays(-7)
 
 	Returns all DDL changes made  to the AccountsTable object in the Finance database on the SQL Server instance localhost in the last 7 days
 

@@ -56,7 +56,7 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
 Get-DbaCertificate -SqlInstance sql2016 | Export-DbaCertificate
-Exports all certificates found on sql2016 to the default data directory. Prompts for encryption and decrecyption passwords.
+Exports all certificates found on sql2016 to the default data directory. Prompts for encryption and decryption  passwords.
 
 .EXAMPLE
 Export-DbaCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)

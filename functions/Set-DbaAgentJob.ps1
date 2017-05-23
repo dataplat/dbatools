@@ -126,7 +126,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
 
 .EXAMPLE   
 sql1, sql2, sql3 | Set-DbaAgentJob -Job Job1 -Description 'Job One'
-Changes a job with the name "Job1" on multiple servers to have another description using pipe line
+Changes a job with the name "Job1" on multiple servers to have another description using pipeline
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
