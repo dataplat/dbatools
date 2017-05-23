@@ -136,7 +136,7 @@ Switch to silence messages
 .PARAMETER StandbyDirectory
 If specified all databases will be restore in Standby mode, with a standby file with the name format DatabaseName_YYYYMMDDhhmmss.bak in this folder
 
-.PARAMETER ContinueRestore
+.PARAMETER Continue
 If switch is set, restore will continue on a database that is in recover or standby modes
 For best performance it is recommended that this is used with output from Get-DbaBackupHistory, 
 combined with the -TrustDBBackuphistory switch
@@ -230,7 +230,8 @@ folder for those file types as defined on the target instance.
 		[int]$BufferCount,
 		[switch]$DirectoryRecurse,
 		[switch]$Silent,
-		[string]$StandbyDirectory
+		[string]$StandbyDirectory,
+		[switch]$continue
 	)
 	BEGIN
 	{
@@ -301,7 +302,7 @@ folder for those file types as defined on the target instance.
 				break
 			}
 		}
-		if ($null -ne $StandbyDirectory)
+		if ('' -ne $StandbyDirectory)
 		{
 			if (!(Test-SqlPath -Path $StandbyDirectory -SqlServer $SqlServer -SqlCredential $SqlCredential))
 			{
@@ -311,8 +312,8 @@ folder for those file types as defined on the target instance.
 		}
 		if ($Continue)
 		{
-			$RecoveringDb = Get-DbaDatabase -SqlInstance $SqlServer -SqlCredential $SqlCredential -Status Standby,Recovering
-			$ContinuePoints = Get-DbaRestoreHistory	 -SqlInstance $SqlServer -SqlCredential $SqlCredential -Databases ($recoveringDB.name) -Last
+			$ContinuePoints = Get-RestoreContinuableDatabase -SqlInstance $SqlServer -SqlCredential $SqlCredential 
+			#$ContinuePoints
 		}
 		
 	}
@@ -582,7 +583,7 @@ folder for those file types as defined on the target instance.
 		#$BackupFiles 
 		#return
 		Write-Message -Level Verbose -Message "sorting uniquely"
-		$AllFilteredFiles = $BackupFiles | sort-object -property fullname -unique | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup -TrustDbBackupHistory:$TrustDbBackupHistory -ContinuePoints $ContinuePoints 
+		$AllFilteredFiles = $BackupFiles | sort-object -property fullname -unique | Get-FilteredRestoreFile -SqlServer $SqlServer -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup -TrustDbBackupHistory:$TrustDbBackupHistory -ContinuePoints $ContinuePoints -Continue:$continue -DatabaseName $DatabaseName
 		
 		Write-Message -Level Verbose -Message "$($AllFilteredFiles.count) dbs to restore"
 		
@@ -596,6 +597,8 @@ folder for those file types as defined on the target instance.
 			break
 		}
 		
+		#$AllFilteredFiles 
+		#return
 		ForEach ($FilteredFileSet in $AllFilteredFiles)
 		{
 			$FilteredFiles = $FilteredFileSet.values
@@ -615,11 +618,11 @@ folder for those file types as defined on the target instance.
 				Write-Message -Level Verbose -Message "Dbname set from backup = $DatabaseName"
 			}
 			
-			if ((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlServer $SqlServer -SqlCredential $SqlCredential))
+			if (((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles -continue:$continue) -or ($continue)) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlServer $SqlServer -SqlCredential $SqlCredential))
 			{
 				try
 				{
-					$FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -TrustDbBackupHistory:$TrustDbBackupHistory -ReplaceDatabase:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure $FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix -MaxTransferSize $MaxTransferSize -BufferCount $BufferCount -BlockSize $BlockSize -StandbyDirectory $StandbyDirectory			
+					$FilteredFiles | Restore-DBFromFilteredArray -SqlServer $SqlServer -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -TrustDbBackupHistory:$TrustDbBackupHistory -ReplaceDatabase:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure $FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$UseDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix -MaxTransferSize $MaxTransferSize -BufferCount $BufferCount -BlockSize $BlockSize -StandbyDirectory $StandbyDirectory -continue:$continue			
 					$Completed = 'successfully'
 				}
 				catch

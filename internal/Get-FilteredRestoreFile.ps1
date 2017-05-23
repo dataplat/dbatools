@@ -22,7 +22,8 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
         [switch]$IgnoreLogBackup,
         [switch]$TrustDbBackupHistory,
         [switch]$Continue,
-        [object]$ContinuePoints
+        [object]$ContinuePoints,
+        [string]$DatabaseName
 
 	)
     Begin
@@ -85,17 +86,41 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
 
         if ($Continue)
         {
-            Write-Verbose "Continue set, so filtering to these databases :$($continuePoints.Database -join ',')"
-            $Databases = $Databases | Where-Object {$_.DatabaseName -in ($continuePoints.Database)}
-        }
+            IF ($DatabaseName -ne '')
+            {
+                if (($Databases | Measure-Object).count -gt 1)
+                {
+                    Write-Warning "More than 1 db restore for 1 db - exiting"
+                    return
+                }else{
+                    $dbrec = $DatabaseName
+                }
+                
+            }
+            else
+            {
+                Write-Verbose "Continue set, so filtering to these databases :$($continuePoints.Database -join ',')"
+                #$ignore = $Databases | Where-Object {$_.DatabaseName -notin ($continuePoints.Database)} | select-Object DatabaseName
+                #Write-Verbose "Ignoring these: $($ignore -join ',')"
+                $Databases = $Databases | Where-Object {(($_.Name -split ',')[1]).trim() -in ($continuePoints.Database)}
+                Write-verbose "$databases"
+            }
+        } 
 		
 		foreach ($Database in $Databases){
 
             $Results = @()
-            Write-Verbose "$FunctionName - Find Newest Full backup - $($_.$DatabaseName)"
-            $ServerName, $databaseName = $Database.Name.split(',')
+            Write-Verbose "$FunctionName - Find Newest Full backup - $($_.DatabaseName)"
+
+                $ServerName, $databaseName = $Database.Name.split(',').trim()
+               # $databasename = 'restoretimeclean'
+               if ($null -ne $dbrec)
+               {
+                $DatabaseName = $dbrec
+               }
             $SQLBackupdetails = $AllSQLBackupdetails | Where-Object {$_.ServerName -eq $ServerName -and $_.DatabaseName -eq $DatabaseName.trim()}
             #If we're continuing a restore, then we aren't going to be needing a full backup....
+            $TlogStartlsn = 0
             if (!($continue))
             {
                 $Fullbackup = $SQLBackupdetails | where-object {$_.BackupTypeDescription -eq 'Database' -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1
@@ -109,11 +134,13 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
             }
             else
             {
-                $lastrestore = $ContinuePoints | Where-Object {$_.Database -eq $DatabaseName}
-                $fullbackup = [PSCustomObject]@{FirstLsn = $lastrestore.database_backup_lsn}
+                Write-Verbose "Continueing"
+                $Fullbackup = $ContinuePoints| Where-Object {$_.Database -eq $DatabaseName}
+                $TLogStartLsn = $Fullbackup.redo_start_lsn
+                
             }    
             Write-Verbose "$FunctionName - Got a Full backup, now to find diffs if they exist"
-            $TlogStartlsn = 0
+            
             #Get latest Differential Backup
             #If we're doing a continue and the last restore wasn't a full db we can't use a diff, so skip
             if ($null -eq $lastrestore -or $lastrestore -eq 'Database'  )
@@ -135,11 +162,18 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
             }
             else
             {
-
+ 
+                write-verbose " frfID - $($Fullbackup.FirstRecoveryForkID)"
+                write-verbose "tstart - $TlogStartLSN"
                 Write-Verbose "$FunctionName - Got a Full/Diff backups, now find all Tlogs needed"
                 $AllTlogs = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} 
-                $Filteredlogs = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.DatabaseBackupLSN -eq $Fullbackup.CheckPointLSN -and $_.LastLSN -gt $TlogStartLSN -and $_.BackupStartDate -lt $RestoreTime -and $_.BackupStartDate -ge $LogStartDate}
+                $Filteredlogs = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.FirstRecoveryForkID -eq $Fullbackup.FirstRecoveryForkID -and $_.LastLSN -gt $TlogStartLSN -and $_.BackupStartDate -lt $RestoreTime}
+                # -and $_.BackupStartDate -ge $LogStartDate
                 $GroupedLogs = $FilteredLogs | Group-Object -Property LastLSN, FirstLSN
+                
+                #$AllTlogs
+                #return
+                $Tlogs = @()
                 foreach ($LogGroup in $GroupedLogs)
                 {
                     $Tlogs += $LogGroup.Group | Where-Object {$_.BackupSetGUID -eq ($LogGroup.Group | sort-Object -Property BackupStartDate -Descending | select-object -first 1).BackupSetGUID}
