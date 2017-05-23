@@ -28,6 +28,9 @@ $dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential 
 Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
 To connect as a different Windows user, run PowerShell as that user.
 
+.PARAMETER Config 
+Copy only specific configs. This will be autopopulated shortly.
+
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
 
@@ -73,7 +76,8 @@ Shows what would happen if the command were executed.
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential
+		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+        [string[]]$Config
 	)
 	
 
@@ -106,7 +110,7 @@ Shows what would happen if the command were executed.
 			$displayname = $sourceprop.DisplayName
 			$lookup = $proplookup | Where-Object { $_.DisplayName -eq $displayname }
 			
-			if ($configs.length -gt 0 -and $configs -notcontains $lookup.ShortName) { continue }
+			if ($config.length -gt 0 -and $config -notcontains $lookup.ShortName) { continue }
 			
 			$destprop = $destprops | Where-Object { $_.Displayname -eq $displayname }
 			if ($destprop -eq $null) {
