@@ -87,6 +87,10 @@ foreach ( $instance in $sqlinstance )
         Write-Message -Level Warning -Message "No log files returned from $ComputerName"
         Continue
         }
+    $Instobj = @{}
+    $Instobj['ComputerName'] = $server.NetName
+    $Instobj['InstanceName'] = $server.ServiceName
+    $Instobj['SqlInstance'] = $server.Name
     foreach ( $File in $Logfiles )
         {
         Write-Message -Level Verbose -Message "Reading $file"
@@ -94,7 +98,7 @@ foreach ( $instance in $sqlinstance )
         while ($line = $text.ReadLine()) {
             if ( $line -match "^DATABASE: " )
                 {
-                $DBobj = @{}
+                $DBobj = $Instobj.Clone()
                 $DBobj['ComputerName'] = $server.NetName
                 $DBobj['InstanceName'] = $server.ServiceName
                 $DBobj['SqlInstance'] = $server.Name
