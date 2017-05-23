@@ -39,9 +39,19 @@ function Get-DbaAgentOperator {
 			Returns any SQL Agent operators on serverA and serverB\instanceB
 
 		.EXAMPLE
-			'serverA','serverB\instanceB' | Get-DbaAgentOperator
+			'ServerA','ServerB\instanceB' | Get-DbaAgentOperator
 
 			Returns all SQL Agent operators  on serverA and serverB\instanceB
+		
+		.EXAMPLE
+			Get-DbaAgentOperator -SqlInstance ServerA -Operator Dba1,Dba2
+
+			Returns only the SQL Agent Operators Dba1 and Dba2 on ServerA.
+
+		.EXAMPLE
+			Get-DbaAgentOperator -SqlInstance ServerA,ServerB -ExcludeOperator Dba3
+
+			Returns all the SQL Agent operators on ServerA and ServerB, except the Dba3 operator.
 	#>
     [CmdletBinding()]
     Param (
