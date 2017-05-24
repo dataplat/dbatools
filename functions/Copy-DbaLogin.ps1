@@ -290,7 +290,7 @@ function Copy-DbaLogin {
 						}
 						catch {
 							try {
-								$sid = "0x"; $sourceLogin.sid | % { $sid += ("{0:X}" -f $_).PadLeft(2, "0") }
+								$sid = "0x"; $sourceLogin.sid | ForEach-Object { $sid += ("{0:X}" -f $_).PadLeft(2, "0") }
 								$sql = "CREATE LOGIN [$userName] WITH PASSWORD = $hashedPass HASHED, SID = $sid,
 												DEFAULT_DATABASE = [$defaultDb], CHECK_POLICY = $checkpolicy,
 												CHECK_EXPIRATION = $checkexpiration, DEFAULT_LANGUAGE = [$($sourceLogin.Language)]"
