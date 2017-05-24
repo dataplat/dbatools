@@ -58,7 +58,8 @@ param(
 		[string[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$SqlCredential
+		$SqlCredential,
+		[switch]$Silent
 )
 
 PROCESS {
@@ -112,11 +113,6 @@ foreach ( $instance in $sqlinstance )
             if ( $line -match '^Command: ALTER INDEX \[(?<index>[^\]]+)\] ON \[(?<database>[^\]]+)\]\.\[(?<schema>[^]]+)\]\.\[(?<table>[^\]]+)\] (?<action>[^\ ]+) WITH \((?<options>[^\)]+)')
                 {
                 $IndObj = $DBobj.Clone()
-                #$IndObj['Index'] = $line.split('[,]')[1]
-                #$IndObj['Schema'] = $line.split('[,]')[5]
-                #$IndObj['Table'] = $line.split('[,]')[7]
-                #$IndObj['action'] = (($line.split('[,]')[8]).split('()')[0]).split(' ')[1]
-                #$IndObj['options'] = ($line.split('[,]')[8]).split('()')[1]
                 $IndObj['Index'] = $Matches.index
                 $IndObj['Schema'] = $Matches.Schema
                 $IndObj['Table'] = $Matches.Table
