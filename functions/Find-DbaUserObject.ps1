@@ -265,7 +265,7 @@ Shows all user owned (non-sa, non-dbo) objects and verbose output
 
 			
 			## Loop internal database
-			foreach ($db in $server.Databases | Where-Object { $_.Status -eq "Normal" })
+			foreach ($db in $server.Databases | Where-Object { $_.IsAccessible -eq $true })
 			{
 				Write-Verbose "Gather user owned object in database: $db"
 				##schemas
