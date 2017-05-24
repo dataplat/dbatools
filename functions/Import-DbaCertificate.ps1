@@ -52,7 +52,7 @@ Imports all the certificates in the specified path.
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object[]]$Path,
@@ -84,7 +84,7 @@ Imports all the certificates in the specified path.
 		
 		try {
 			Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
-			$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $sqlcredential
+			$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
 		}
 		catch {
 			Stop-Function -Message "Failed to connect to: $SqlInstance" -Target $SqlInstance -InnerErrorRecord $_

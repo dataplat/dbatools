@@ -50,7 +50,7 @@ Function Get-DbaDatabaseFile {
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	param (
 		[parameter(ParameterSetName = "Pipe", Mandatory, ValueFromPipeline)]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
@@ -65,7 +65,7 @@ Function Get-DbaDatabaseFile {
 		foreach ($instance in $sqlInstance) {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Stop-Function -Message "Failed to connect to $instance. Exception: $_" -Continue -Target $instance -InnerErrorRecord $_
@@ -215,4 +215,3 @@ Function Get-DbaDatabaseFile {
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaDatabaseFile -Parameter Database, Exclude

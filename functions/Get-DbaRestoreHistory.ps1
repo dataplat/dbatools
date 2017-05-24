@@ -69,7 +69,7 @@ Returns database restore information for every database on every server listed i
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[string[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
@@ -217,4 +217,3 @@ Returns database restore information for every database on every server listed i
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaRestoreHistory -Parameter Database, Exclude

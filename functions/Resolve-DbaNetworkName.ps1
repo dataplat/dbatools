@@ -41,16 +41,16 @@ Function Resolve-DbaNetworkName
       Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for ServerA
 	
       .EXAMPLE
-      Resolve-DbaNetworkName -SqlServer sql2016\sqlexpress
+      Resolve-DbaNetworkName -SqlInstance sql2016\sqlexpress
 
       Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for the SQL instance sql2016\sqlexpress
 	
       .EXAMPLE
-      Resolve-DbaNetworkName -SqlServer sql2016\sqlexpress, sql2014
+      Resolve-DbaNetworkName -SqlInstance sql2016\sqlexpress, sql2014
 
       Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for the SQL instance sql2016\sqlexpress and sql2014
 
-      Get-SqlRegisteredServerName -SqlServer sql2014 | Resolve-DbaNetworkName
+      Get-SqlRegisteredServerName -SqlInstance sql2014 | Resolve-DbaNetworkName
 	
       Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-SqlRegisteredServerName
   #>

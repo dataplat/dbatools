@@ -54,7 +54,7 @@ Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerN
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer", "instance")]
-		[string[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
@@ -67,7 +67,7 @@ Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerN
 		foreach ($Instance in $SqlInstance) {
 			Write-Verbose "Connecting to $Instance"
 			try {
-				$server = Connect-SqlServer -SqlServer $Instance -SqlCredential $SqlCredential -Erroraction SilentlyContinue
+				$server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $SqlCredential -Erroraction SilentlyContinue
 			}
 			catch {
 				Write-Warning "Can't connect to $Instance"
@@ -120,4 +120,3 @@ Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerN
 		}
 	}
 }
-Register-DbaTeppArgumentCompleter -Command Get-DbaTrigger -Parameter Database, Exclude

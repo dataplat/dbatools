@@ -40,7 +40,7 @@ Returns all Security Audit Specifications for the local and sql2016 SQL Server i
 	[CmdletBinding()]
 	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
@@ -51,7 +51,7 @@ Returns all Security Audit Specifications for the local and sql2016 SQL Server i
 			Write-Verbose "Attempting to connect to $instance"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch
 			{

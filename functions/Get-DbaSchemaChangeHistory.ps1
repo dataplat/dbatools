@@ -66,7 +66,7 @@ FUNCTION Get-DbaSchemaChangeHistory {
     param (
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [Alias("ServerInstance", "SqlServer")]
-        [object[]]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
@@ -83,7 +83,7 @@ FUNCTION Get-DbaSchemaChangeHistory {
             Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 			
             try {
-                $server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
                 Stop-Function -Message "Can't connect to $instance or access denied. Skipping." -Continue
@@ -151,4 +151,3 @@ FUNCTION Get-DbaSchemaChangeHistory {
     }
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaSchemaChangeHistory -Parameter Database, Exclude

@@ -65,7 +65,7 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
@@ -85,7 +85,7 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 		foreach ($Instance in $SqlInstance) {
 			try {
 				Write-Verbose "Connecting to $Instance"
-				$server = Connect-SqlServer -SqlServer $Instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $SqlCredential
 			}
 			catch {
 				Write-Warning "Failed to connect to: $Instance"
@@ -192,4 +192,3 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Find-DbaStoredProcedure -Parameter Database, Exclude

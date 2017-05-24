@@ -8,8 +8,8 @@ Function Restore-DBFromFilteredArray
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	param (
         [parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[string]$DbName,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object[]]$Files,
@@ -70,11 +70,11 @@ Function Restore-DBFromFilteredArray
     {
 		try 
 		{
-			$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential	
+			$Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential	
 		}
 		catch {
 
-			Write-Warning "$FunctionName - Cannot connect to $SqlServer" 
+			Write-Warning "$FunctionName - Cannot connect to $SqlInstance" 
 			break
 		}
 		
@@ -93,14 +93,14 @@ Function Restore-DBFromFilteredArray
 		{
 			If ($ReplaceDatabase -eq $true)
 			{	
-				if($Pscmdlet.ShouldProcess("Killing processes in $dbname on $SqlServer as it exists and WithReplace specified  `n","Cannot proceed if processes exist, ","Database Exists and WithReplace specified, need to kill processes to restore"))			
+				if($Pscmdlet.ShouldProcess("Killing processes in $dbname on $SqlInstance as it exists and WithReplace specified  `n","Cannot proceed if processes exist, ","Database Exists and WithReplace specified, need to kill processes to restore"))			
 				{
 					try
 					{
 						Write-Verbose "$FunctionName - Set $DbName single_user to kill processes"
-						Stop-DbaProcess -SqlServer $Server -Databases $Dbname -WarningAction Silentlycontinue
-						Invoke-DbaSqlcmd -ServerInstance:$SqlServer -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; alter database $DbName set restricted_user; Alter database $DbName set online with rollback immediate" -database master
-
+						Stop-DbaProcess -SqlInstance $Server -Database $Dbname -WarningAction Silentlycontinue
+						Invoke-DbaSqlcmd -ServerInstance:$SqlInstance -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; alter database $DbName set restricted_user; Alter database $DbName set online with rollback immediate" -database master
+						$server.ConnectionContext.Connect()
 					}
 					catch
 					{
@@ -115,6 +115,7 @@ Function Restore-DBFromFilteredArray
 			}
 
 		}
+
 		$MissingFiles = @()
 		if ($TrustDbBackupHistory)
 		{
@@ -122,7 +123,7 @@ Function Restore-DBFromFilteredArray
 			Foreach ($File in $InternalFiles)
 			{
 				Write-Verbose "$FunctionName - Checking $($File.BackupPath) exists"
-				if((Test-DbaSqlPath -SqlServer $sqlServer -SqlCredential $SqlCredential -Path $File.BackupPath) -eq $false)
+				if((Test-DbaSqlPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Path $File.BackupPath) -eq $false)
 				{
 					Write-verbose "$$FunctionName - $($File.backupPath) is missing"
 					$MissingFiles += $File.BackupPath
@@ -141,7 +142,6 @@ Function Restore-DBFromFilteredArray
 		if ($if -ne $null){
 			$RestorePoints  += @([PSCustomObject]@{order=[Decimal]2;'Files' = $if.group})
 		}
-		($InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} | Group-Object BackupSetGuid)
 
 		foreach ($if in ($InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} | Group-Object BackupSetGuid))
  		{
@@ -155,22 +155,22 @@ Function Restore-DBFromFilteredArray
 			foreach ($File in ($RestorePoints.Files.filelist.PhysicalName | Sort-Object -Unique))
 			{
 				write-verbose "File = $file"
-				if ((Test-DbaSqlPath -Path (Split-Path -Path $File -Parent) -SqlServer:$SqlServer -SqlCredential:$SqlCredential) -ne $true)
+				if ((Test-DbaSqlPath -Path (Split-Path -Path $File -Parent) -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential) -ne $true)
 					{
-					if ((New-DbaSqlDirectory -Path (Split-Path -Path $File -Parent) -SqlServer:$SqlServer -SqlCredential:$SqlCredential).Created -ne $true)
+					if ((New-DbaSqlDirectory -Path (Split-Path -Path $File -Parent) -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential).Created -ne $true)
 					{
-						write-Warning  "$FunctionName - Destination File $File does not exist, and could not be created on $SqlServer"
+						write-Warning  "$FunctionName - Destination File $File does not exist, and could not be created on $SqlInstance"
 
 						return
 					}
 					else
 					{
-						Write-Verbose "$FunctionName - Destination File $File  created on $SqlServer"
+						Write-Verbose "$FunctionName - Destination File $File  created on $SqlInstance"
 					}
 				}
 				else
 				{
-					Write-Verbose "$FunctionName - Destination File $File  exists on $SqlServer"	
+					Write-Verbose "$FunctionName - Destination File $File  exists on $SqlInstance"	
 				}
 			}
 		}
@@ -315,8 +315,8 @@ Function Restore-DBFromFilteredArray
 					$Restore.Devices.Add($device)
 				}
 				Write-Verbose "$FunctionName - Performing restore action"
-		$ConfirmMessage = "`n Restore Database $DbName on $SqlServer `n from files: $RestoreFileNames `n with these file moves: `n $LogicalFileMovesString `n $ConfirmPointInTime `n"
-		If ($Pscmdlet.ShouldProcess("$DBName on $SqlServer `n `n",$ConfirmMessage))
+		$ConfirmMessage = "`n Restore Database $DbName on $SqlInstance `n from files: $RestoreFileNames `n with these file moves: `n $LogicalFileMovesString `n $ConfirmPointInTime `n"
+		If ($Pscmdlet.ShouldProcess("$DBName on $SqlInstance `n `n",$ConfirmMessage))
 		{
 			try
 			{
@@ -374,7 +374,7 @@ Function Restore-DBFromFilteredArray
 				if (!$ScriptOnly)
 				{
 					[PSCustomObject]@{
-						SqlInstance = $SqlServer
+						SqlInstance = $SqlInstance
 						DatabaseName = $DatabaseName
 						DatabaseOwner = $server.ConnectionContext.TrueLogin
 						NoRecovery = $restore.NoRecovery

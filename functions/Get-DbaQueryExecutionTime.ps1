@@ -62,7 +62,7 @@ limiting results to queries with more than 200 total executions and an execution
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
-		[string[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
@@ -244,4 +244,3 @@ limiting results to queries with more than 200 total executions and an execution
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaQueryExecutionTime -Parameter Database, Exclude

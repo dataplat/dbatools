@@ -42,22 +42,22 @@ function Test-DbaIdentityUsage {
 		https://dbatools.io/Test-DbaIdentityUsage
 
 	.EXAMPLE   
-		Test-DbaIdentityUsage -SqlServer sql2008, sqlserver2012
+		Test-DbaIdentityUsage -SqlInstance sql2008, sqlserver2012
 		Check identity seeds for servers sql2008 and sqlserver2012.
 
 	.EXAMPLE   
-		Test-DbaIdentityUsage -SqlServer sql2008 -Database TestDB
+		Test-DbaIdentityUsage -SqlInstance sql2008 -Database TestDB
 		Check identity seeds on server sql2008 for only the TestDB database
 
 	.EXAMPLE   
-		Test-DbaIdentityUsage -SqlServer sql2008 -Database TestDB -Threshold 20
+		Test-DbaIdentityUsage -SqlInstance sql2008 -Database TestDB -Threshold 20
 		Check identity seeds on server sql2008 for only the TestDB database, limiting results to 20% utilization of seed range or higher
 	#>
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
-		[string[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
 		[Alias("Databases")]
@@ -144,7 +144,7 @@ function Test-DbaIdentityUsage {
 			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 			
 			try {
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
 				Stop-Function -Message "Can't connect to $instance or access denied. Skipping." -Continue
@@ -202,5 +202,4 @@ function Test-DbaIdentityUsage {
 		}
 	}
 }
-#TEPP Implementation
-Register-DbaTeppArgumentCompleter -Command Test-DbaIdentityUsage -Parameter Database, Exclude
+

@@ -79,7 +79,7 @@ Set recommended Max DOP setting for all databases on server sql2016.
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer")]
-		[string[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
@@ -108,10 +108,10 @@ Set recommended Max DOP setting for all databases on server sql2016.
 		}
 		
 		if ($collection -eq $null) {
-			$collection = Test-DbaMaxDop -SqlServer $SqlInstance -SqlCredential $SqlCredential -Verbose:$false
+			$collection = Test-DbaMaxDop -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Verbose:$false
 		}
 		elseif ($collection.Instance -eq $null) {
-			$collection = Test-DbaMaxDop -SqlServer $SqlInstance -SqlCredential $SqlCredential -Verbose:$false
+			$collection = Test-DbaMaxDop -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Verbose:$false
 		}
 		
 		$collection | Add-Member -NotePropertyName OldInstanceMaxDopValue -NotePropertyValue 0
@@ -262,4 +262,3 @@ Set recommended Max DOP setting for all databases on server sql2016.
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Set-DbaMaxDop -Parameter Database

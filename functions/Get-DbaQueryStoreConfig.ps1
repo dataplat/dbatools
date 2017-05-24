@@ -49,7 +49,7 @@ Returns Query Store configuration settings for every database on the ServerA\sql
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
@@ -65,7 +65,7 @@ Returns Query Store configuration settings for every database on the ServerA\sql
 			Write-Verbose "Connecting to $instance"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 				
 			}
 			catch
@@ -122,4 +122,3 @@ Returns Query Store configuration settings for every database on the ServerA\sql
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaQueryStoreConfig -Parameter Database, Exclude

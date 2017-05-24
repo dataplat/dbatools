@@ -11,7 +11,7 @@ This script gathers the following information from detached database files: data
 
 MDF files are most easily read by using a SQL Server to interpret them. Because of this, you must specify a SQL Server and the path must be relative to the SQL Server.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 An online SQL Server is required to parse the information within the detached database file. Note that this script will not attach the file, it will simply use SQL Server to read its contents.
  
 .PARAMETER Path 
@@ -49,7 +49,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Get-DbaDetachedDatabaseInfo
  
 .EXAMPLE    
-Get-DbaDetachedDatabaseInfo -SqlServer sql2016 -Path M:\Archive\mydb.mdf
+Get-DbaDetachedDatabaseInfo -SqlInstance sql2016 -Path M:\Archive\mydb.mdf
 	
 SQL Server is required to process offilne MDF files. The abvoe example reutrns information about the detached database file, M:\Archive\mydb.mdf. This path is relative to the SQL Server "sql2016".
  #>	
@@ -57,8 +57,8 @@ SQL Server is required to process offilne MDF files. The abvoe example reutrns i
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	Param (
 		[parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter]$SqlInstance,
 		[parameter(Mandatory = $true)]
 		[Alias("Mdf")]
 		[string]$Path,
@@ -159,7 +159,7 @@ SQL Server is required to process offilne MDF files. The abvoe example reutrns i
 	PROCESS
 	{
 		
-		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 		$mdfinfo = Get-MdfFileInfo $server $path
 		
 	}

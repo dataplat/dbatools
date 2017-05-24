@@ -74,7 +74,7 @@ Set-DbaQueryStoreConfig -SqlInstance ServerA\SQL -FlushInterval 600
 Only configure the FlushInterval setting for all Query Store databases in the ServerA\SQL Instance.
 
 .EXAMPLE
-Set-DbaQueryStoreConfig -SqlInstance ServerA\SQL -Databases AdventureWorks -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode all -CleanupMode Auto -StaleQueryThreshold 100
+Set-DbaQueryStoreConfig -SqlInstance ServerA\SQL -Database AdventureWorks -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode all -CleanupMode Auto -StaleQueryThreshold 100
 
 Configure the Query Store settings for the AdventureWorks database in the ServerA\SQL Instance.
 
@@ -88,7 +88,7 @@ Configure the Query Store settings for all user databases except the AdventureWo
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
@@ -127,7 +127,7 @@ Configure the Query Store settings for all user databases except the AdventureWo
 			Write-Verbose "Connecting to $instance"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 				
 			}
 			catch
@@ -242,11 +242,10 @@ Configure the Query Store settings for all user databases except the AdventureWo
 				if ($Pscmdlet.ShouldProcess("$db on $instance", "Getting results from Get-DbaQueryStoreConfig"))
 				{
 					# Display resulting changes
-					Get-DbaQueryStoreConfig -SqlInstance $server -Databases $db.name -Verbose:$false
+					Get-DbaQueryStoreConfig -SqlInstance $server -Database $db.name -Verbose:$false
 				}
 			}
 		}
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Set-DbaQueryStoreConfig -Parameter Database, Exclude

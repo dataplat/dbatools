@@ -1,5 +1,4 @@
-Function Copy-DbaSqlDataCollector
-{
+function Copy-DbaSqlDataCollector {
 <#
 .SYNOPSIS
 Migrates user SQL Data Collector collection sets. SQL Data Collector configuration is on the agenda, but it's hard.
@@ -7,7 +6,7 @@ Migrates user SQL Data Collector collection sets. SQL Data Collector configurati
 .DESCRIPTION
 By default, all data collector objects are migrated. If the object already exists on the destination, it will be skipped unless -Force is used. 
 	
-The -CollectionSets parameter is autopopulated for command-line completion and can be used to copy only specific objects.
+The -CollectionSet parameter is autopopulated for command-line completion and can be used to copy only specific objects.
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
@@ -78,39 +77,34 @@ Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster -WhatIf
 Shows what would happen if the command were executed.
 	
 .EXAMPLE   
-Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster -CollectionSets 'Server Activity', 'Table Usage Analysis' 
+Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster -CollectionSet 'Server Activity', 'Table Usage Analysis' 
 
 Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlserver2014a to sqlcluster.
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[parameter(Mandatory = $true)]
-		[object]$Destination,
+		[DbaInstanceParameter]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$NoServerReconfig,
 		[switch]$Force
 	)
-	
-	DynamicParam { if ($source) { return (Get-ParamSqlDataCollectionSets -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
-	
-	BEGIN
-	{
+
+	begin {
+
 		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.Collector") -eq $null)
 		{
 			throw "SMO version is too old. To migrate collection sets, you must have SQL Server Management Studio 2008 R2 or higher installed."
 		}
 		
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
-		
-		# New name?
-		$collectionSets = $psboundparameters.CollectionSets
 		
 		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
 		{
@@ -118,8 +112,8 @@ Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlse
 		}
 		
 	}
-	process
-	{
+	process {
+
 		if ($NoServerReconfig -eq $false) 
 		{
 			Write-Warning "Server reconfiguration not yet supported. Only Collection Set migration will be migrated at this time."
@@ -161,7 +155,7 @@ Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlse
 		}
 		
 		$storeCollectionSets = $sourceStore.CollectionSets | Where-Object { $_.isSystem -eq $false }
-		if ($collectionSets.length -gt 0) { $storeCollectionSets = $storeCollectionSets | Where-Object { $collectionSets -contains $_.Name } }
+		if ($CollectionSet.length -gt 0) { $storeCollectionSets = $storeCollectionSets | Where-Object { $CollectionSet -contains $_.Name } }
 		
 		Write-Output "Migrating collection sets"
 		foreach ($set in $storeCollectionSets)
@@ -219,13 +213,8 @@ Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlse
 			}
 		}
 	}
-	
-	end
-	{
-		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
-        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Data Collector migration finished" }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlDataCollector
+	end {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlDataCollector
 	}
 }
 

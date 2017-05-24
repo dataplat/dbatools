@@ -64,7 +64,7 @@ Get-DbaEstimatedCompletionTime -SqlInstance sql2016 | Where-Object { $_.Text -ma
 Gets results for commands whose queries only match specific text (match is like LIKE but way more powerful)
 
 .EXAMPLE
-Get-DbaEstimatedCompletionTime -SqlInstance sql2016 -Databases Northwind,pubs,Adventureworks2014
+Get-DbaEstimatedCompletionTime -SqlInstance sql2016 -Database Northwind,pubs,Adventureworks2014
 
 Gets estimated completion times for queries performed against the Northwind, pubs, and Adventureworks2014 databases
 
@@ -73,7 +73,7 @@ Gets estimated completion times for queries performed against the Northwind, pub
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[PsCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
@@ -114,7 +114,7 @@ Gets estimated completion times for queries performed against the Northwind, pub
 		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Connecting to $instance"
 			try {
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 				
 			}
 			catch {
@@ -153,4 +153,3 @@ Gets estimated completion times for queries performed against the Northwind, pub
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaEstimatedCompletionTime -Parameter Database, Exclude

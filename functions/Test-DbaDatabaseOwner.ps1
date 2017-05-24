@@ -19,7 +19,7 @@ function Test-DbaDatabaseOwner {
 		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-	.PARAMETER SqlServer
+	.PARAMETER SqlInstance
 		SQLServer name or SMO object representing the SQL Server to connect to. This can be a
 		collection and recieve pipeline input
 
@@ -43,12 +43,12 @@ function Test-DbaDatabaseOwner {
 		https://dbatools.io/Test-DbaDatabaseOwner
 
 	.EXAMPLE
-		Test-DbaDatabaseOwner -SqlServer localhost
+		Test-DbaDatabaseOwner -SqlInstance localhost
 
 		Returns all databases where the owner does not match 'sa'.
 
 	.EXAMPLE
-		Test-DbaDatabaseOwner -SqlServer localhost -TargetLogin 'DOMAIN\account'
+		Test-DbaDatabaseOwner -SqlInstance localhost -TargetLogin 'DOMAIN\account'
 
 		Returns all databases where the owner does not match 'DOMAIN\account'. Note
 		that TargetLogin must be a valid security principal that exists on the target server.
@@ -57,8 +57,8 @@ function Test-DbaDatabaseOwner {
 	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
 		[Alias("Databases")]
@@ -74,9 +74,9 @@ function Test-DbaDatabaseOwner {
 	}
 
 	process {
-		foreach ($servername in $sqlserver) {
+		foreach ($servername in $SqlInstance) {
 			Write-Verbose "Connecting to $servername"
-			$server = Connect-SqlServer $servername -SqlCredential $SqlCredential
+			$server = Connect-SqlInstance $servername -SqlCredential $SqlCredential
 
 			# dynamic sa name for orgs who have changed their sa name
 			if ($TargetLogin.length -eq 0) {
@@ -85,7 +85,7 @@ function Test-DbaDatabaseOwner {
 			
 			#Validate login
 			if (($server.Logins.Name) -notcontains $TargetLogin) {
-				if ($sqlserver.count -eq 1) {
+				if ($SqlInstance.count -eq 1) {
 					throw "Invalid login: $TargetLogin"
 					return $null
 				}
@@ -136,4 +136,4 @@ function Test-DbaDatabaseOwner {
 		}
 	}
 }
-Register-DbaTeppArgumentCompleter -Command Test-DbaDatabaseOwner -Parameter Database, Exclude, TargetLogin
+

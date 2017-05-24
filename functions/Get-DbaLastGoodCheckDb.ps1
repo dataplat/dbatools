@@ -64,7 +64,7 @@ Authenticates with SQL Server using alternative credentials.
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
@@ -77,7 +77,7 @@ Authenticates with SQL Server using alternative credentials.
 		foreach ($instance in $SqlInstance) {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
@@ -161,4 +161,3 @@ Authenticates with SQL Server using alternative credentials.
 		}
 	}
 }
-Register-DbaTeppArgumentCompleter -Command Get-DbaLastGoodCheckDb -Parameter Database, Exclude

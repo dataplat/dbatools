@@ -58,7 +58,7 @@ Returns information on the CommandLog table in the DBA database on both instance
 	[CmdletBinding()]
 	param ([parameter(ValueFromPipeline, Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
@@ -114,7 +114,7 @@ Returns information on the CommandLog table in the DBA database on both instance
 			try
 			{
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch
 			{
@@ -199,4 +199,3 @@ Returns information on the CommandLog table in the DBA database on both instance
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaTable -Parameter Database, Exclude

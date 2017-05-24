@@ -1,30 +1,5 @@
-#Thank you Warren http://ramblingcookiemonster.github.io/Testing-DSC-with-Pester-and-AppVeyor/
-
-if (-not $PSScriptRoot) {
-    $PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
-}
-$Verbose = @{ }
-if ($env:APPVEYOR_REPO_BRANCH -and $env:APPVEYOR_REPO_BRANCH -notlike "master") {
-    $Verbose.add("Verbose", $True)
-}
-
-$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace('.Tests.', '.')
-$Name = $sut.Split('.')[0]
-
-Describe 'Script Analyzer Tests' -Tag @('ScriptAnalyzer') {
-    Context "Testing $Name for Standard Processing" {
-        foreach ($rule in $ScriptAnalyzerRules) {
-            $i = $ScriptAnalyzerRules.IndexOf($rule)
-            It "passes the PSScriptAnalyzer Rule number $i - $rule  " {
-                (Invoke-ScriptAnalyzer -Path "$PSScriptRoot\..\internal\$sut" -IncludeRule $rule.RuleName).Count | Should Be 0
-            }
-        }
-    }
-}
-
-
-# Test Functionality
-
+. .\internal\Get-FilteredRestoreFile.ps1
+. .\functions\Read-DbaBackupHeader.ps1
 Describe "Test-DbaLsnChain Unit Tests" -Tag 'Unittests'{
     Context "General Diff restore" {
         $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)

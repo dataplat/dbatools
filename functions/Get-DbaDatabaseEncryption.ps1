@@ -45,7 +45,7 @@ List all encrption found in MyDB
 	[CmdletBinding()]
 	param ([parameter(ValueFromPipeline, Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
@@ -61,7 +61,7 @@ List all encrption found in MyDB
 			
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
@@ -164,4 +164,3 @@ List all encrption found in MyDB
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaDatabaseEncryption -Parameter Database, Exclude

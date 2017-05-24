@@ -142,9 +142,9 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 	[CmdletBinding(DefaultParameterSetName = "DbMigration", SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Position = 1, Mandatory = $false)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[parameter(Position = 2, Mandatory = $true)]
-		[object]$Destination,
+		[DbaInstanceParameter]$Destination,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$Exclude,
@@ -567,8 +567,8 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		}
 		
 		Write-Output "Attempting to connect to Sql Servers.."
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
 		if ($DetachAttach) {
 			if ($sourceserver.netname -eq $env:COMPUTERNAME -or $destserver.netname -eq $env:COMPUTERNAME) {
@@ -582,11 +582,11 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		$destination = $destserver.DomainInstanceName
 		
 		if ($NetworkShare.Length -gt 0) {
-			if ($(Test-DbaSqlPath -SqlServer $sourceserver -Path $NetworkShare) -eq $false) {
+			if ($(Test-DbaSqlPath -SqlInstance $sourceserver -Path $NetworkShare) -eq $false) {
 				Write-Message -Level Warning -Message "$Source may not be able to access $NetworkShare. Trying anyway."
 			}
 			
-			if ($(Test-DbaSqlPath -SqlServer $destserver -Path $NetworkShare) -eq $false) {
+			if ($(Test-DbaSqlPath -SqlInstance $destserver -Path $NetworkShare) -eq $false) {
 				Write-Message -Level Warning -Message "$Destination may not be able to access $NetworkShare. Trying anyway."
 			}
 			
@@ -611,8 +611,8 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		$destnetbios = Resolve-NetBiosName $destserver
 		
 		Write-Output "Performing SMO version check"
-		Invoke-SmoCheck -SqlServer $sourceserver
-		Invoke-SmoCheck -SqlServer $destserver
+		Invoke-SmoCheck -SqlInstance $sourceserver
+		Invoke-SmoCheck -SqlInstance $destserver
 		
 		Write-Output "Checking to ensure the source isn't the same as the destination"
 		if ($source -eq $destination) {
@@ -842,6 +842,11 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						}
 					}
 				}
+
+				if ($force)
+				{
+					$WithReplace = $true
+				}
 				
 				If ($Pscmdlet.ShouldProcess("console", "Showing start time")) {
 					Write-Output "Started: $dbstart"
@@ -885,8 +890,9 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						
 						#$restoreresult = Restore-SqlDatabase $destserver $dbname $backupfile $filestructure $numberfiles
 						Write-Message -Level Verbose -Message "Resuse = $ReuseSourceFolderStructure"
-						$RestoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlServer $destserver -DatabaseName $dbname -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$norecovery -TrustDbBackupHistory
+						$RestoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destserver -DatabaseName $dbname -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$norecovery -TrustDbBackupHistory -WithReplace:$WithReplace
 						$restoreresult = $RestoreResultTmp.RestoreComplete
+						$RestoreResultTmp	
 						if ($restoreresult -eq $true) {
 							Write-Output "Successfully restored $dbname to $destination"
 						}
@@ -952,7 +958,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					$dbowner = $sourceserver.databases[$dbname].owner
 					
 					if ($dbowner -eq $null) {
-						$dbowner = Get-SaLoginName -SqlServer $destserver
+						$dbowner = Get-SaLoginName -SqlInstance $destserver
 					}
 					
 					If ($Pscmdlet.ShouldProcess($destination, "Detach $dbname from $source and attach, then update dbowner")) {
@@ -1056,7 +1062,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				
 				if ($SetSourceOffline -and $sourceserver.databases[$dbname].status -notlike '*offline*') {
 					If ($Pscmdlet.ShouldProcess($destination, "Setting $dbname offline on $source")) {
-						Stop-DbaProcess -SqlServer $sourceserver -Database $dbname
+						Stop-DbaProcess -SqlInstance $sourceserver -Database $dbname
 						Set-DbaDatabaseState -SqlInstance $sourceserver -Credential $SourceSqlCredential -database $dbname -Offline
 					}
 				}
@@ -1099,4 +1105,3 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Copy-DbaDatabase -Parameter Database, Exclude

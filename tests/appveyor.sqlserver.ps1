@@ -1,19 +1,21 @@
+# Imports some assemblies
+Write-Output "Importing dbatools"
+Import-Module C:\github\dbatools\dbatools.psd1
+
 # This script spins up two local instances
 $sql2008 = "localhost\sql2008r2sp2"
 $sql2016 = "localhost\sql2016"
 
-Write-Output "Cloning lab"
-git clone -q --branch=master https://github.com/sqlcollaborative/appveyor-lab.git C:\projects\appveyor-lab
-
-Write-Output "Listing directory"
-Get-ChildItem C:\projects\appveyor-lab\sql2008-backups
-
 Write-Output "Creating migration & backup directories"
-New-Item -Path C:\projects\migration -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
-New-Item -Path C:\projects\backups -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
+New-Item -Path C:\temp -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
+New-Item -Path C:\temp\migration -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
+New-Item -Path C:\temp\backups -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
 
-# Write-Output "Creating network share workaround"
-# New-SmbShare -Name migration -path C:\projects\migration -FullAccess 'ANONYMOUS LOGON', 'Everyone' | Out-Null
+Write-Output "Cloning lab materials"
+git clone -q --branch=master https://github.com/sqlcollaborative/appveyor-lab.git C:\github\appveyor-lab
+
+Write-Output "Setting sql2016 Agent to Automatic"
+Set-Service -Name 'SQLAgent$sql2016' -StartupType Automatic
 
 $instances = "sql2016", "sql2008r2sp2"
 
@@ -32,24 +34,30 @@ foreach ($instance in $instances) {
 		$ipAddress.IPAddressProperties["TcpPort"].Value = $port
 	}
 	$Tcp.Alter()
-	
+	 
 	Write-Output "Starting $instance"
 	Start-Service "MSSQL`$$instance"
+	
+	if ($instance -eq "sql2016") {
+		Write-Output "Starting Agent for $instance"
+		Start-Service 'SQLAgent$sql2016'
+	}
 }
 
-<#
-Write-Output "Importing dbatools"
-Import-Module C:\projects\dbatools\dbatools.psd1
+# Agent sometimes takes a moment to start 
+do {
+	Write-Warning "Waiting for SQL Agent to start"
+	Start-Sleep 1
+}
+while ((Get-Service 'SQLAgent$sql2016').Status -ne 'Running' -and $i++ -lt 10)
 
-Write-Output "Beginning restore"
-Get-ChildItem C:\projects\appveyor-lab\sql2008-backups | Restore-DbaDatabase -SqlServer $sql2008
+Write-Output "Executing startup scripts for SQL Server 2008"
+# Add some jobs to the sql2008r2sp2 instance (1433 = default)
+foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2008-startup\*.sql -Recurse -ErrorAction SilentlyContinue)) {
+	Invoke-DbaSqlCmd -ServerInstance localhost -InputFile $file
+}
 
-Write-Output "Attempting to perform migration - will bomb, need to submit a PR to not require network share"
-Copy-DbaDatabase -Source $sql2008 -Destination $sql2016 -BackupRestore -NetworkShare "\\$env:computername\migration" -AllDatabases -Silent:$false
-
-Write-Output "Trying some backups"
-Backup-DbaDatabase -SqlInstance $sql2008 -BackupDirectory C:\projects\backups
-
-Write-Output "Login import"
-Invoke-DbaSqlCmd -ServerInstance $sql2016 -InputFile C:\projects\appveyor-lab\sql2008-logins.sql
-#>
+Write-Output "Executing startup scripts for SQL Server 2016"
+foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2016-startup\*.sql -Recurse -ErrorAction SilentlyContinue)) {
+	Invoke-DbaSqlCmd -ServerInstance localhost\sql2016 -InputFile $file
+}
