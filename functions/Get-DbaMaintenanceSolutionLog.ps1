@@ -56,7 +56,7 @@ Gets the outcome of the IndexOptimize job on sqlserver2014a and sqlserver2020tes
 	process {
 		foreach ($instance in $sqlinstance) {
 			$logdir = $logfiles = $null
-			$computername = $instance.Split('\')[0]
+			$computername = $instance.ComputerName
 			Write-Message -Level Verbose -Message "Connecting to $instance"
 			
 			try {
