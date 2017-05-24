@@ -96,13 +96,11 @@ foreach ( $instance in $sqlinstance )
         Write-Message -Level Verbose -Message "Reading $file"
         $text = New-Object System.IO.StreamReader -Arg "$File"
         while ($line = $text.ReadLine()) {
-            if ( $line -match "^DATABASE: " )
+            if ( $line -match '^Database: \[(?<database>[^\]]+)' )
                 {
                 $DBobj = $Instobj.Clone()
-                $DBobj['ComputerName'] = $server.NetName
-                $DBobj['InstanceName'] = $server.ServiceName
-                $DBobj['SqlInstance'] = $server.Name
-                $DBobj['Database'] = $line.Split(': ')[-1]
+                # $DBobj['Database'] = $line.Split(': ')[-1]
+                $DBobj['Database'] = $Matches.database 
                 Write-Message -Level Verbose -Message "Index Optimizations on Database $($DBobj.Database) on $ComputerName"
                 }
             if ( $line -match '^Status | ^Standby | ^Updateability | ^Useraccess | ^Isaccessible | ^RecoveryModel' )
@@ -111,14 +109,19 @@ foreach ( $instance in $sqlinstance )
                 $dbvalue = $line.Split(': ')[-1]
                 $DBobj[$dbkey] = $dbvalue
                 }
-            if ( $line -match "^Command: ALTER INDEX")
+            if ( $line -match '^Command: ALTER INDEX \[(?<index>[^\]]+)\] ON \[(?<database>[^\]]+)\]\.\[(?<schema>[^]]+)\]\.\[(?<table>[^\]]+)\] (?<action>[^\ ]+) WITH \((?<options>[^\)]+)')
                 {
                 $IndObj = $DBobj.Clone()
-                $IndObj['Index'] = $line.split('[,]')[1]
-                $IndObj['Schema'] = $line.split('[,]')[5]
-                $IndObj['Table'] = $line.split('[,]')[7]
-                $IndObj['action'] = (($line.split('[,]')[8]).split('()')[0]).split(' ')[1]
-                $IndObj['options'] = ($line.split('[,]')[8]).split('()')[1]
+                #$IndObj['Index'] = $line.split('[,]')[1]
+                #$IndObj['Schema'] = $line.split('[,]')[5]
+                #$IndObj['Table'] = $line.split('[,]')[7]
+                #$IndObj['action'] = (($line.split('[,]')[8]).split('()')[0]).split(' ')[1]
+                #$IndObj['options'] = ($line.split('[,]')[8]).split('()')[1]
+                $IndObj['Index'] = $Matches.index
+                $IndObj['Schema'] = $Matches.Schema
+                $IndObj['Table'] = $Matches.Table
+                $IndObj['action'] = $Matches.action
+                $IndObj['options'] = $Matches.options
                 Write-Message -Level Verbose -Message "Index $($IndObj.Index) on Table $($IndObj.Table) in Database $($IndObj.Database) on $ComputerName"
                 }
             if ( $line -match "^Comment: ")
