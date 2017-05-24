@@ -18,7 +18,7 @@ The SQL Server that you're connecting to.
 .PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user
 
-.PARAMETER Databases
+.PARAMETER Database
 Return restore information for only specific databases. These are only the databases that currently exist on the server.
 	
 .PARAMETER Exclude
@@ -78,6 +78,7 @@ Gets super detailed information for execution plans on only for AdventureWorks20
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PsCredential]$SqlCredential,
+        [string[]]$Database,
 		[datetime]$SinceCreation,
 		[datetime]$SinceLastExecution,
 		[switch]$ExcludeEmptyQueryPlan,
@@ -126,14 +127,14 @@ Gets super detailed information for execution plans on only for AdventureWorks20
 						CROSS APPLY sys.dm_exec_query_plan(deqs.plan_handle) AS deqp
 						CROSS APPLY sys.dm_exec_sql_text(deqs.plan_handle) AS execText"
 				
-				if ($exclude.length -gt 0 -or $databases.length -gt 0 -or $SinceCreation.length -gt 0 -or $SinceLastExecution.length -gt 0 -or $ExcludeEmptyQueryPlan -eq $true) {
+				if ($exclude.length -gt 0 -or $database.length -gt 0 -or $SinceCreation.length -gt 0 -or $SinceLastExecution.length -gt 0 -or $ExcludeEmptyQueryPlan -eq $true) {
 					$where = " WHERE "
 				}
 				
 				$wherearray = @()
 				
-				if ($databases.length -gt 0) {
-					$dblist = $databases -join "','"
+				if ($database.length -gt 0) {
+					$dblist = $database -join "','"
 					$wherearray += " DB_NAME(deqp.dbid) in ('$dblist') "
 				}
 				
