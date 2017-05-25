@@ -17,9 +17,13 @@ Param (
     $SkipHelpTest
 )
 $ModuleBase = Split-Path -Path $PSScriptRoot -Parent
+if (Get-Module dbatools) { Remove-Module dbatools }
 Write-Host "Importing: $ModuleBase\dbatools.psm1"
 Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking
 $ScriptAnalyzerRules = Get-ScriptAnalyzerRule
+
+. $PSScriptRoot\..\internal\Write-Message.ps1
+. $PSScriptRoot\..\internal\Stop-Function.ps1
 
 if ($Path)
 {

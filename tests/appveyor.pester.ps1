@@ -41,6 +41,9 @@ Set-Location $ProjectRoot
 Import-Module "$ProjectRoot\dbatools.psm1" -DisableNameChecking
 $ScriptAnalyzerRules = Get-ScriptAnalyzerRule
 
+. $ProjectRoot\internal\Write-Message.ps1
+. $ProjectRoot\internal\Stop-Function.ps1
+
 #Run a test with the current version of PowerShell
 #Make things faster by removing most output
 if (-not $Finalize) {
