@@ -13,7 +13,7 @@ The SQL Server that you're connecting to.
 .PARAMETER SqlCredential
 SqlCredential object used to connect to the SQL Server as a different user.
 
-.PARAMETER Databases
+.PARAMETER Database
 Set Query Store configuration for specific databases.
 
 .PARAMETER Exclude
