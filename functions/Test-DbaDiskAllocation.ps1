@@ -70,8 +70,8 @@ To return true or false for ALL disks being formatted to 64k
 	[OutputType("System.Collections.ArrayList", "System.Boolean")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlServer", "SqlServer")]
-		[string[]]$ComputerName,
+		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
+		[object[]]$ComputerName,
 		[switch]$NoSqlCheck,
 		[object]$SqlCredential,
 		[switch]$Detailed,

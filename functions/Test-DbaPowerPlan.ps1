@@ -61,7 +61,7 @@ To return detailed information Power Plans
 #>
 	param (
 		[parameter(ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlServer", "SqlServer")]
+		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
 		[string[]]$ComputerName = $env:COMPUTERNAME,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
 		[string]$CustomPowerPlan,

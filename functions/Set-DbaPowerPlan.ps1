@@ -57,8 +57,8 @@ Sets the Power Plan to the custom power plan called "Maximum Performance". Skips
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlServer", "SqlServer")]
-		[string[]]$ComputerName,
+		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
+		[object[]]$ComputerName,
 		[ValidateSet('High Performance', 'Balanced', 'Power saver')]
 		[string]$PowerPlan = 'High Performance',
 		[string]$CustomPowerPlan
