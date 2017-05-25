@@ -11,6 +11,34 @@ Which ships with PowerShell Version 5 but will run under v3.
     
     function Expand-Archive
     {
+        <#
+            .SYNOPSIS
+                Extracts files from a specified archive (zipped) file.
+            
+            .DESCRIPTION
+                The Expand-Archive cmdlet extracts files from a specified zipped archive file to a specified destination folder. An archive file allows multiple files to be packaged, and optionally compressed, into a single zipped file for easier distribution and storage.
+            
+            .PARAMETER Path
+                Specifies the path to the archive file.
+            
+            .PARAMETER LiteralPath
+                Specifies the path to an archive file. Unlike the Path parameter, the value of LiteralPath is used exactly as it is typed. Wildcard characters are not supported. If the path includes escape characters, enclose each escape character in single quotation marks, to instruct Windows PowerShell not to interpret any characters as escape sequences.
+            
+            .PARAMETER DestinationPath
+                Specifies the path to the folder in which you want the command to save extracted files. Enter the path to a folder, but do not specify a file name or file name extension. This parameter is required.
+            
+            .PARAMETER Force
+                Forces the command to run without asking for user confirmation.
+        
+            .PARAMETER Confirm
+                Prompts you for confirmation before running the cmdlet.
+        
+            .PARAMETER WhatIf
+                Shows what would happen if the cmdlet runs. The cmdlet is not run.
+            
+            .EXAMPLE
+                PS C:\> Expand-Archive
+        #>
         [CmdletBinding(
                        DefaultParameterSetName = "Path",
                        SupportsShouldProcess = $true,
