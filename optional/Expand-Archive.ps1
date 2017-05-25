@@ -37,7 +37,18 @@ Which ships with PowerShell Version 5 but will run under v3.
                 Shows what would happen if the cmdlet runs. The cmdlet is not run.
             
             .EXAMPLE
-                PS C:\> Expand-Archive
+                Example 1: Extract the contents of an archive
+
+                PS C:\>Expand-Archive -LiteralPath C:\Archives\Draft.Zip -DestinationPath C:\Reference
+
+                This command extracts the contents of an existing archive file, Draft.zip, into the folder specified by the DestinationPath parameter, C:\Reference.
+        
+            .EXAMPLE
+                Example 2: Extract the contents of an archive in the current folder
+
+                PS C:\>Expand-Archive -Path Draft.Zip -DestinationPath C:\Reference
+
+                This command extracts the contents of an existing archive file in the current folder, Draft.zip, into the folder specified by the DestinationPath parameter, C:\Reference.
         #>
         [CmdletBinding(
                        DefaultParameterSetName = "Path",
