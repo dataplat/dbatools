@@ -246,7 +246,7 @@ function Restore-DbaDatabase {
 		[switch]$DirectoryRecurse,
 		[switch]$Silent,
 		[string]$StandbyDirectory,
-		[switch]$continue
+		[switch]$Continue
 	)
 	begin {
 		Write-Message -Level InternalComment -Message "Starting"
@@ -350,15 +350,7 @@ function Restore-DbaDatabase {
 				if ($f -is [string]) {
 					if ($f.StartsWith("\\") -eq $false -and $isLocal -ne $true) {
 						Write-Message -Level Verbose -Message "Working remotely, and non UNC path used. Dropping to XpDirTree, all paths evaluated at $SqlInstance"
-						# Many internal functions parse using Get-ChildItem. 
-						# We need to use Test-DbaSqlPath and other commands instead
-						# Prevent people from trying 
-						
-						#Stop-Function -silent:$silent -message "Currently, you can only use UNC paths when running this command remotely. We expect to support non-UNC paths for remote servers shortly."
-						#continue
-						
-						#$newpath = Join-AdminUnc $SqlInstance "$path"
-						#Write-Warning "Run this command on the server itself or try $newpath."
+
 						if ($XpDirTree -ne $true) {
 							Write-Message -Level Verbose -Message "Only XpDirTree is safe on remote server"
 							$XpDirTree = $true
@@ -518,7 +510,7 @@ function Restore-DbaDatabase {
 		#$BackupFiles 
 		#return
 		Write-Message -Level Verbose -Message "sorting uniquely"
-		$AllFilteredFiles = $backupFiles | sort-object -property fullname -unique | Get-FilteredRestoreFile -SqlInstance $SqlInstance -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup -TrustDbBackupHistory:$TrustDbBackupHistory -Silent:$Silent -continue:$continue -ContinuePoints:$ContinuePoints -DatabaseName $DatabaseName
+		$AllFilteredFiles = $backupFiles | sort-object -property fullname -unique | Get-FilteredRestoreFile -SqlInstance $SqlInstance -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup -TrustDbBackupHistory:$TrustDbBackupHistory -continue:$continue -ContinuePoints:$ContinuePoints -DatabaseName $DatabaseName
 		
 		Write-Message -Level Verbose -Message "$($AllFilteredFiles.count) dbs to restore"
 		
@@ -538,7 +530,7 @@ function Restore-DbaDatabase {
 			Write-Message -Level Verbose -Message "Starting FileSet"
 			if (($FilteredFiles.DatabaseName | Group-Object | Measure-Object).count -gt 1) {
 				$dbs = ($FilteredFiles | Select-Object -Property DatabaseName) -join (',')
-				Stop-Function -silent:$silent -message "We can only handle 1 Database at a time - $dbs"
+				Stop-Function  -message "We can only handle 1 Database at a time - $dbs"
 				break
 			}
 			
