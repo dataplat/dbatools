@@ -85,6 +85,11 @@ foreach ($command in $commands) {
                         $names = $parameter.ParameterType::GetNames($parameter.ParameterType)
                         $parameterHelp.parameterValueGroup.parameterValue | Should be $names
                     }
+					elseif (($null -ne $parameter.ParameterType) -and ($parameter.ParameterType.BaseType.FullName -eq "System.Array") -and ($parameter.ParameterType.DeclaredMembers[0].ReturnType.IsEnum)) {
+						# Enumerations often have issues with the typename not being reliably available
+                        $names = [Enum]::GetNames($parameter.ParameterType.DeclaredMembers[0].ReturnType)
+                        $parameterHelp.parameterValueGroup.parameterValue | Should be $names
+					}
                     else {
                         # To avoid calling Trim method on a null object.
                         $helpType = if ($parameterHelp.parameterValue) { $parameterHelp.parameterValue.Trim() }
