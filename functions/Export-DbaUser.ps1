@@ -112,7 +112,8 @@ function Export-DbaUser {
 			$exists = Test-Path $directory
 
 			if ($exists -eq $false) {
-				throw "Parent directory $directory does not exist"
+				Stop-Function -Message "Parent directory $directory does not exist"
+				return
 			}
 
 			Write-Message -Level Output -Message "Attempting to connect to SQL Servers.."
@@ -424,6 +425,8 @@ function Export-DbaUser {
 	}
 
 	end {
+		if (Test-FunctionInterrupt) { return }
+
 		$sql = $outsql -join "`r`nGO`r`n"
 		#add the final GO
 		$sql += "`r`nGO"
