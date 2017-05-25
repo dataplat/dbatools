@@ -137,7 +137,9 @@ function Find-DbaUnusedIndex {
 			$exists = Test-Path $directory
 
 			if ($exists -eq $false) {
-				throw "Parent directory $directory does not exist"
+				#throw "Parent directory $directory does not exist"
+				Stop-Function -Message "Parent directory $directory does not exist."
+				return
 			}
 		}
 
@@ -148,7 +150,8 @@ function Find-DbaUnusedIndex {
 		if (Test-FunctionInterrupt) { return }
 
 		if ($server.VersionMajor -lt 9) {
-			Write-Message -Level Critical "This function does not support versions lower than SQL Server 2005 (v9)"
+			Stop-Function -Message "This function does not support versions lower than SQL Server 2005 (v9)"
+			return
 		}
 
 		$lastRestart = $server.Databases['tempdb'].CreateDate
@@ -156,7 +159,8 @@ function Find-DbaUnusedIndex {
 		$diffDays = (New-TimeSpan -Start $endDate -End (Get-Date)).Days
 
 		if ($diffDays -le 6) {
-			Write-Message -Level Warning -Message "The SQL Service was restarted on $lastRestart, which is not long enough for a solid evaluation."
+			Stop-Function -Message "The SQL Service was restarted on $lastRestart, which is not long enough for a solid evaluation."
+			return
 		}
 
 		<#
@@ -169,7 +173,8 @@ function Find-DbaUnusedIndex {
 			($server.VersionMajor -eq 11 -and $server.BuildNumber -lt 6537) `
 				-or ($server.VersionMajor -eq 12 -and $server.BuildNumber -lt 5000)
 		) {
-			Write-Message -Level Critical -Message "This SQL version has a known issue. Rebuilding an index clears any existing row entry from sys.dm_db_index_usage_stats for that index.`r`nPlease refer to connect item: https://connect.microsoft.com/sqlserver/feedback/details/739566/rebuilding-an-index-clears-stats-from-sys-dm-db-index-usage-stats"
+			Stop-Function -Message "This SQL version has a known issue. Rebuilding an index clears any existing row entry from sys.dm_db_index_usage_stats for that index.`r`nPlease refer to connect item: https://connect.microsoft.com/sqlserver/feedback/details/739566/rebuilding-an-index-clears-stats-from-sys-dm-db-index-usage-stats"
+			return
 		}
 
 		if ($diffDays -le 33) {
@@ -273,6 +278,7 @@ function Find-DbaUnusedIndex {
 		}
 	}
 	end {
+		if (Test-FunctionInterrupt) { return }
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-SqlUnusedIndex
 	}
 }
