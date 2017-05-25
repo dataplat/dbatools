@@ -137,7 +137,6 @@ function Find-DbaUnusedIndex {
 			$exists = Test-Path $directory
 
 			if ($exists -eq $false) {
-				#throw "Parent directory $directory does not exist"
 				Stop-Function -Message "Parent directory $directory does not exist."
 				return
 			}
