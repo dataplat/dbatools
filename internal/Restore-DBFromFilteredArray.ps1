@@ -31,7 +31,10 @@ Function Restore-DBFromFilteredArray
 		[switch]$TrustDbBackupHistory,
 		[int]$MaxTransferSize,
 		[int]$BlockSize,
-		[int]$BufferCount
+		[int]$BufferCount,
+		[switch]$Silent,
+		[string]$StandbyDirectory,
+		[switch]$Continue
 	)
     
 	Begin
@@ -143,6 +146,7 @@ Function Restore-DBFromFilteredArray
 			$RestorePoints  += @([PSCustomObject]@{order=[Decimal]2;'Files' = $if.group})
 		}
 
+
 		foreach ($if in ($InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} | Group-Object BackupSetGuid))
  		{
    			#$RestorePoints  += [PSCustomObject]@{order=[Decimal]($if.Name); 'Files' = $if.group}
@@ -177,6 +181,13 @@ Function Restore-DBFromFilteredArray
 		$RestoreCount=0
 		$RPCount = if($SortedRestorePoints.count -gt 0){$SortedRestorePoints.count}else{1}
 		Write-Verbose "RPcount = $rpcount"
+		if ($continue)
+		{
+			Write-Verbose "continuing in restore script = $ScriptOnly"
+			$SortedRestorePoints = $SortedRestorePoints | Where-Object {$_.order -ne 1}
+		}
+		#$SortedRestorePoints
+		#return
 		foreach ($RestorePoint in $SortedRestorePoints)
 		{
 			$RestoreCount++
@@ -294,11 +305,19 @@ Function Restore-DBFromFilteredArray
 					}
 				Write-Verbose "$FunctionName - restore action = $Action"
 				$restore.Action = $Action 
-				if ($RestorePoint -eq $SortedRestorePoints[-1] -and $NoRecovery -ne $true)
+				if ($RestorePoint -eq $SortedRestorePoints[-1])
 				{
-					#Do recovery on last file
-					Write-Verbose "$FunctionName - Doing Recovery on last file"
-					$Restore.NoRecovery = $false
+					if($NoRecovery -ne $true -and '' -eq $StandbyDirectory)
+					{
+						#Do recovery on last file
+						Write-Verbose "$FunctionName - Doing Recovery on last file"
+						$Restore.NoRecovery = $false
+					}
+					elseif ('' -ne $StandbyDirectory)
+					{
+						Write-Verbose "$FunctionName - Setting standby on last file"
+						$Restore.StandbyFile = $StandByDirectory+"\"+$Dbname+(get-date -Format yyyMMddHHmmss)+".bak"
+					}
 				}
 				else 
 				{
@@ -371,7 +390,7 @@ Function Restore-DBFromFilteredArray
 					$RestoreDirectory = ((Split-Path $Restore.RelocateFiles.PhysicalFileName) | sort-Object -unique) -join ','
 					$RestoredFile = (Split-Path $Restore.RelocateFiles.PhysicalFileName -Leaf) -join ','
 				}
-				if (!$ScriptOnly)
+				if ($ScriptOnly -eq $false)
 				{
 					[PSCustomObject]@{
 						SqlInstance = $SqlInstance

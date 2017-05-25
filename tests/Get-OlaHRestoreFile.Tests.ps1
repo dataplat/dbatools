@@ -75,8 +75,35 @@ Describe "Get-OlaHRestoreFile Unit Tests" -Tag 'Unittests'{
         It "Shoud contain 2 log backups" {
             ($results3 | Where-Object { $_.Fullname -like '*\OlaH\Log\Log*.trn' }).count | Should be 2
         }
-        It "Shoud contain 2 Diff backups" {
-            ($results3 | Where-Object { $_.Fullname -like '*\OlaH\Diff\Diff*.bak' }).count | Should be 2
+        It "Should contain 2 Diff backups" {
+            ($results3 | Where-Object {$_.Fullname -like '*\OlaH\Diff\Diff*.bak'}).count | Should be 2
+        }
+    }
+    Context "With Diff Files and IgnoreLogBackup" {  
+        New-item "TestDrive:\OlaH\" -ItemType directory
+        New-item "TestDrive:\OlaH\Full\" -ItemType directory
+        New-item "TestDrive:\OlaH\Full\full.bak" -ItemType File
+        New-item "TestDrive:\OlaH\Log\" -ItemType directory
+        New-item "TestDrive:\OlaH\Log\log1.trn" -ItemType File
+        New-item "TestDrive:\OlaH\Log\log2.trn" -ItemType File
+        New-item "TestDrive:\OlaH\Diff\" -ItemType directory
+        New-item "TestDrive:\OlaH\Diff\Diff1.bak" -ItemType File
+        New-item "TestDrive:\OlaH\Diff\Diff2.bak" -ItemType File
+        $results4 = Get-OlaHRestoreFile -Path TestDrive:\OlaH\ -IgnoreLogBackup
+        It "Should an array of System.IO.FileSystemInfo" {
+            $results4[1] | Should BeOfType System.IO.FileSystemInfo
+        }
+        It "Should return 3 files" {
+            $results4.count | should be 3
+        }
+        It "Should contain 1 Full backup" {
+            ($results4 | Where-Object {$_.Fullname -like '*\OlaH\Full\*.bak'}).count | Should be 1
+        }    
+        It "Shoud contain 0 log backups" {
+            ($results4 | Where-Object {$_.Fullname -like '*\OlaH\Log\Log*.trn'}).count | Should be 0
+        }
+        It "Should contain 2 Diff backups" {
+            ($results4 | Where-Object {$_.Fullname -like '*\OlaH\Diff\Diff*.bak'}).count | Should be 2
         }
     }
 }

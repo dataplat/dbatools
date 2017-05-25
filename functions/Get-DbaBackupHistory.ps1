@@ -197,25 +197,26 @@ Function Get-DbaBackupHistory
                 foreach ($db in $Database)
                 {
                     
-                    
                     #Get the full and build upwards
                     $allbackups = @()
                     $allbackups += $Fulldb = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastFull -raw:$Raw
-                    $Allbackups += $DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastDiff -raw:$Raw
-                    if ($null -ne $diffdb)
+                    $DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastDiff -raw:$Raw
+                    if ($DiffDb.LastLsn -gt $Fulldb.LastLsn -and  $DiffDb.DatabaseBackupLSN -eq $Fulldb.CheckPointLSN )
                     {
-                        $TLogStartLSN = $diffdb.FirstLsn
+                        $Allbackups += $DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastDiff -raw:$Raw
+
+                        $TLogStartLSN = ($diffdb.FirstLsn -as [bigint])
+                        $Allbackups += $DiffDB
                     }
                     else
                     {
-                        $TLogStartLSN = $fulldb.FirstLsn
+                        Write-Verbose "No Diff found"
+                        [bigint]$TLogStartLSN = $fulldb.FirstLsn
                     }
-                    if ($raw)
-                    { $Filter = 'first_Lsn' }
-                    else
-                    { $Filter = 'FirstLsn' }
-                    $Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Database $db -raw:$raw | Where-object { $_.Type -eq 'Log' -and $_.$filter -gt $TLogstartLSN }
-                    $Allbackups | Sort-Object $Filter
+                    $Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Databases $db -raw:$raw | Where-object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$TLogstartLSN -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$Fulldb.CheckPointLSN }
+                    $Allbackups | Sort-Object FirstLsn
+                 
+
                 }
                 continue
             }
@@ -271,6 +272,10 @@ Function Get-DbaBackupHistory
  									a.database_backup_lsn,
  									a.checkpoint_lsn,
  									a.last_lsn,
+                                    a.first_lsn as 'FirstLSN',
+ 									a.database_backup_lsn as 'DatabaseBackupLsn',
+ 									a.checkpoint_lsn as 'CheckpointLsn',
+ 									a.last_lsn as 'Lastlsn',
  									a.software_major_version,
 								    a.DeviceType
 								FROM (SELECT
@@ -374,6 +379,10 @@ Function Get-DbaBackupHistory
 							  backupset.database_backup_lsn,
 							  backupset.checkpoint_lsn,
 							  backupset.last_lsn,
+                              backupset.first_lsn as 'FirstLSN',
+                              backupset.database_backup_lsn as 'DatabaseBackupLsn',
+                              backupset.checkpoint_lsn as 'CheckpointLsn',
+                              backupset.last_lsn as 'Lastlsn',
 							  backupset.software_major_version,
 							  mediaset.software_name AS Software"
                 }

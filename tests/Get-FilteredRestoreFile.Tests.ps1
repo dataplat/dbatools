@@ -4,7 +4,7 @@ Describe "Get-FilteredRestoreFile Unit Tests" -Tag 'Unittests'{
     Context "Empty TLog Backup Issues" {
         $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\EmptyTlogData.json -raw)
         Mock Read-DbaBackupHeader { $Header }
-        $Output = Get-FilteredRestoreFile -SqlServer 'TestSQL' -Files "c:\dummy.txt"
+        $Output = Get-FilteredRestoreFile -SqlServer TestSQL -Files "c:\dummy.txt" -silent:$true
         
         It "Should return an array of 3 items" {
             $Output[0].values.count | Should be 3
