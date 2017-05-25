@@ -93,7 +93,7 @@ foreach ($command in $commands) {
                     else {
                         # To avoid calling Trim method on a null object.
                         $helpType = if ($parameterHelp.parameterValue) { $parameterHelp.parameterValue.Trim() }
-                        $helpType | Should be $codeType
+                        $helpType | Should be $codeType 
                     }
                 }
             }
