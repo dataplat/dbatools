@@ -147,16 +147,16 @@ function Find-DbaUnusedIndex {
 	process {
 		if (Test-FunctionInterrupt) { return }
 
-		if ($server.versionMajor -lt 9) {
+		if ($server.VersionMajor -lt 9) {
 			Write-Message -Level Critical "This function does not support versions lower than SQL Server 2005 (v9)"
 		}
 
-		$lastrestart = $server.Databases['tempdb'].CreateDate
-		$enddate = Get-Date -Date $lastrestart
-		$diffdays = (New-TimeSpan -Start $enddate -End (Get-Date)).Days
+		$lastRestart = $server.Databases['tempdb'].CreateDate
+		$endDate = Get-Date -Date $lastRestart
+		$diffDays = (New-TimeSpan -Start $endDate -End (Get-Date)).Days
 
-		if ($diffdays -le 6) {
-			Write-Message -Level Warning -Message "The SQL Service was restarted on $lastrestart, which is not long enough for a solid evaluation."
+		if ($diffDays -le 6) {
+			Write-Message -Level Warning -Message "The SQL Service was restarted on $lastRestart, which is not long enough for a solid evaluation."
 		}
 
 		<#
@@ -172,8 +172,8 @@ function Find-DbaUnusedIndex {
 			Write-Message -Level Critical -Message "This SQL version has a known issue. Rebuilding an index clears any existing row entry from sys.dm_db_index_usage_stats for that index.`r`nPlease refer to connect item: https://connect.microsoft.com/sqlserver/feedback/details/739566/rebuilding-an-index-clears-stats-from-sys-dm-db-index-usage-stats"
 		}
 
-		if ($diffdays -le 33) {
-			Write-Message -Level Warning -Message "The SQL Service was restarted on $lastrestart, which may not be long enough for a solid evaluation."
+		if ($diffDays -le 33) {
+			Write-Message -Level Warning -Message "The SQL Service was restarted on $lastRestart, which may not be long enough for a solid evaluation."
 		}
 
 		if ($pipedatabase.Length -gt 0) {
@@ -196,19 +196,19 @@ function Find-DbaUnusedIndex {
 
 					$sql = $unusedQuery
 
-					$UnusedIndex = $server.Databases[$db].ExecuteWithResults($sql)
+					$unusedIndex = $server.Databases[$db].ExecuteWithResults($sql)
 
 					$scriptGenerated = $false
 
-					if ($UnusedIndex.Tables[0].Rows.Count -gt 0) {
-						$indexesToDrop = $UnusedIndex.Tables[0] | Out-GridView -Title "Unused Indexes on $($db) database - Choose indexes to generate DROP script" -PassThru
+					if ($unusedIndex.Tables[0].Rows.Count -gt 0) {
+						$indexesToDrop = $unusedIndex.Tables[0] | Out-GridView -Title "Unused Indexes on $($db) database - Choose indexes to generate DROP script" -PassThru
 
 						#When only 1 line selected, the count does not work
 						if ($indexesToDrop.Count -gt 0 -or !([string]::IsNullOrEmpty($indexesToDrop))) {
 							#reset to #Yes
 							$result = 0
 
-							if ($UnusedIndex.Tables[0].Rows.Count -eq $indexesToDrop.Count) {
+							if ($unusedIndex.Tables[0].Rows.Count -eq $indexesToDrop.Count) {
 								$title = "Indexes to drop on databases '$db':"
 								$message = "You will generate drop statements to all indexes.`r`nPerhaps you want to keep at least one.`r`nDo you wish to generate the script anyway? (Y/N)"
 								$yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Will continue"
