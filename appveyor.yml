@@ -8,14 +8,15 @@ environment:
   version: 0.8.$(appveyor_build_number)
   
 # Install prereqs
-install:
-  - cinst pester
+# install:
+# - cinst pester
 
 # Set alternative clone folder
 clone_folder: c:\github\dbatools
 
-# Setup SQL Server
 before_test:
+   # "Get Pester manually"
+  - ps: Install-Module -Name Pester -Repository PSGallery -Force | Out-Null
   # "Setting up the local SQL Server environments"
   - ps: .\Tests\appveyor.sqlserver.ps1
 
