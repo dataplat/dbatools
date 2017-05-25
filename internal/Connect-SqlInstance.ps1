@@ -1,4 +1,4 @@
-﻿Function Connect-SqlInstance
+﻿function Connect-SqlInstance
 {
     <#
         .SYNOPSIS
@@ -138,6 +138,7 @@
 		[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.Databases.Name
 		[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.Logins.Name
 		[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["job"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.JobServer.Jobs.Name
+        [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["operator"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.JobServer.Operators.Name
 		
         return $server
     }
@@ -257,6 +258,7 @@
 	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.Databases.Name
 	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.Logins.Name
 	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["job"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.JobServer.Jobs.Name
+    [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["operator"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.JobServer.Operators.Name
     return $server
     #endregion Input Object was anything else
 }
