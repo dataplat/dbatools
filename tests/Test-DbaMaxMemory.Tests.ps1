@@ -1,19 +1,19 @@
-Describe 'Test-DbaMaxMemory' {
+Describe 'Test-DbaMaxMemory Unit Tests' -Tag 'Unittests' {
     InModuleScope dbatools {
         Context 'Validate input arguments' {
             It 'No "SQL Server" Windows service is running on the host' {
                 Mock Get-Service { throw ParameterArgumentValidationError }
-                { Test-DbaMaxMemory -SqlServer '' -WarningAction Stop 3> $null } | Should Throw
+                { Test-DbaMaxMemory -SqlInstance 'localhost' -$Silent } | Should Throw
             }
             
-            It 'SqlServer parameter is empty' {
+            It 'SqlInstance parameter is empty throws an exception' {
                 Mock Get-DbaMaxMemory -MockWith { return $null }
-                Test-DbaMaxMemory -SqlServer '' 3> $null | Should be $null
+                { Test-DbaMaxMemory -SqlInstance '' } | Should Throw
             }
             
-            It 'SqlServer parameter host cannot be found' {
+            It 'SqlInstance parameter host cannot be found' {
                 Mock Get-DbaMaxMemory -MockWith { return $null }
-                Test-DbaMaxMemory -SqlServer 'ABC' 3> $null | Should be $null
+                Test-DbaMaxMemory -SqlInstance 'ABC' 3> $null | Should be $null
             }
             
         }
@@ -31,7 +31,7 @@ Describe 'Test-DbaMaxMemory' {
             It 'Connect to SQL Server' {
                 Mock Get-DbaMaxMemory -MockWith { }
                 
-                $result = Test-DbaMaxMemory -SqlServer 'ABC'
+                $result = Test-DbaMaxMemory -SqlInstance 'ABC'
                 
                 Assert-MockCalled Resolve-SqlIpAddress -Scope It -Times 1
                 Assert-MockCalled Get-Service -Scope It -Times 1
@@ -43,7 +43,7 @@ Describe 'Test-DbaMaxMemory' {
                     return @{ SqlMaxMB = 2147483647 }
                 }
                 
-                (Test-DbaMaxMemory -SqlServer 'ABC').SqlMaxMB | Should be 2147483647
+                (Test-DbaMaxMemory -SqlInstance 'ABC').SqlMaxMB | Should be 2147483647
             }
             
             It 'Calculate recommended memory - Single instance, Total 4GB, Expected 2GB, Reserved 2GB (.5x Memory)' {
@@ -51,7 +51,7 @@ Describe 'Test-DbaMaxMemory' {
                     return @{ TotalMB = 4096 }
                 }
                 
-                $result = Test-DbaMaxMemory -SqlServer 'ABC'
+                $result = Test-DbaMaxMemory -SqlInstance 'ABC'
                 $result.InstanceCount | Should Be 1
                 $result.RecommendedMB | Should Be 2048
             }
@@ -61,7 +61,7 @@ Describe 'Test-DbaMaxMemory' {
                     return @{ TotalMB = 6144 }
                 }
                 
-                $result = Test-DbaMaxMemory -SqlServer 'ABC'
+                $result = Test-DbaMaxMemory -SqlInstance 'ABC'
                 $result.InstanceCount | Should Be 1
                 $result.RecommendedMB | Should Be 3072
             }
@@ -71,7 +71,7 @@ Describe 'Test-DbaMaxMemory' {
                     return @{ TotalMB = 8192 }
                 }
                 
-                $result = Test-DbaMaxMemory -SqlServer 'ABC'
+                $result = Test-DbaMaxMemory -SqlInstance 'ABC'
                 $result.InstanceCount | Should Be 1
                 $result.RecommendedMB | Should Be 5120
             }
@@ -81,7 +81,7 @@ Describe 'Test-DbaMaxMemory' {
                     return @{ TotalMB = 16384 }
                 }
                 
-                $result = Test-DbaMaxMemory -SqlServer 'ABC'
+                $result = Test-DbaMaxMemory -SqlInstance 'ABC'
                 $result.InstanceCount | Should Be 1
                 $result.RecommendedMB | Should Be 11264
             }
@@ -91,7 +91,7 @@ Describe 'Test-DbaMaxMemory' {
                     return @{ TotalMB = 18432 }
                 }
                 
-                $result = Test-DbaMaxMemory -SqlServer 'ABC'
+                $result = Test-DbaMaxMemory -SqlInstance 'ABC'
                 $result.InstanceCount | Should Be 1
                 $result.RecommendedMB | Should Be 13312
             }
@@ -101,7 +101,7 @@ Describe 'Test-DbaMaxMemory' {
                     return @{ TotalMB = 32768 }
                 }
                 
-                $result = Test-DbaMaxMemory -SqlServer 'ABC'
+                $result = Test-DbaMaxMemory -SqlInstance 'ABC'
                 $result.InstanceCount | Should Be 1
                 $result.RecommendedMB | Should Be 25600
             }

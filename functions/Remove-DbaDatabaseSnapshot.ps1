@@ -22,7 +22,7 @@ NB: you can pass either Databases or Snapshots
 Restores databases from snapshots with this names only
 NB: you can pass either Databases or Snapshots
 
-.PARAMETER AllSnapshot
+.PARAMETER AllSnapshots
 Specifies that you want to remove all snapshots from the server
 
 .PARAMETER WhatIf

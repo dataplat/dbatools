@@ -120,6 +120,10 @@ function Restore-DbaDatabase {
 
 	.PARAMETER StandbyDirectory
 		If a directory is specified the database(s) will be restored into a standby state, with the standby file placed into this directory (which must exist, and be writable by the target Sql Server instance)
+		
+	.PARAMETER Silent
+        Replaces user friendly yellow warnings with bloody red exceptions of doom!
+        Use this if you want the function to throw terminating errors you want to catch.
     
 	.PARAMETER Confirm
         Prompts to confirm certain actions

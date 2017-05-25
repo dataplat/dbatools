@@ -37,9 +37,13 @@ param (
 )
 
 # Move to the project root
-Set-Location $ProjectRoot
-Import-Module "$ProjectRoot\dbatools.psm1" -DisableNameChecking
+Set-Location $ModuleBase
+Remove-Module dbatools -ErrorAction Ignore
+Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking
 $ScriptAnalyzerRules = Get-ScriptAnalyzerRule
+
+. $ModuleBase\internal\Write-Message.ps1
+. $ModuleBase\internal\Stop-Function.ps1
 
 #Run a test with the current version of PowerShell
 #Make things faster by removing most output
@@ -47,19 +51,18 @@ if (-not $Finalize) {
 	Write-Output "Testing with PowerShell $PSVersion"
 	Import-Module Pester
 	Set-Variable ProgressPreference -Value SilentlyContinue
-	Invoke-Pester -Quiet -Script "$ProjectRoot\Tests" -OutputFormat NUnitXml -OutputFile "$ProjectRoot\$TestFile" -PassThru |
-	Export-Clixml -Path "$ProjectRoot\PesterResults$PSVersion.xml"
+	Invoke-Pester -Show None -Script "$ModuleBase\Tests" -OutputFormat NUnitXml -OutputFile "$ModuleBase\$TestFile" -PassThru | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion.xml"
 }
 else {
 	# Unsure why we're uploading so I removed it for now
 	<#
 	#If finalize is specified, check for failures and  show status
-	$allfiles = Get-ChildItem -Path $ProjectRoot\*Results*.xml | Select-Object -ExpandProperty FullName
+	$allfiles = Get-ChildItem -Path $ModuleBase\*Results*.xml | Select-Object -ExpandProperty FullName
 	Write-Output "Finalizing results and collating the following files:"
 	Write-Output ($allfiles | Out-String)
 	
 	#Upload results for test page
-	Get-ChildItem -Path "$ProjectRoot\TestResultsPS*.xml" | Foreach-Object {
+	Get-ChildItem -Path "$ModuleBase\TestResultsPS*.xml" | Foreach-Object {
 		
 		$Address = "https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)"
 		$Source = $_.FullName
@@ -72,7 +75,7 @@ else {
 	#>
 	
 	#What failed?
-	$results = @(Get-ChildItem -Path "$ProjectRoot\PesterResults*.xml" | Import-Clixml)
+	$results = @(Get-ChildItem -Path "$ModuleBase\PesterResults*.xml" | Import-Clixml)
 	$failedcount = $results | Select-Object -ExpandProperty FailedCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
 	
 	if ($failedcount -gt 0) {

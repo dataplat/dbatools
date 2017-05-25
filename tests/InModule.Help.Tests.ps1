@@ -14,8 +14,8 @@
 if ($SkipHelpTest) { return }
 . "$ModuleBase\tests\InModule.Help.Exceptions.ps1"
 
-
-$commands = Get-Command -Module (Get-Module dbatools) -CommandType Cmdlet, Function, Workflow # Not alias
+$excludedNames = (Get-ChildItem "$ModuleBase\internal" | Where-Object Name -like "*.ps1" ).BaseName
+$commands = Get-Command -Module (Get-Module dbatools) -CommandType Cmdlet, Function, Workflow | Where-Object Name -notin $excludedNames
 
 
 ## When testing help, remember that help is cached at the beginning of each session.

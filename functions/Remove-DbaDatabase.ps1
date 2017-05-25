@@ -19,6 +19,9 @@ Windows Authentication will be used if SqlCredential is not specified. SQL Serve
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
+.PARAMETER DatabaseCollection
+A collection of databases (such as returned by Get-DbaDatabase), to be removed.
+
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
 

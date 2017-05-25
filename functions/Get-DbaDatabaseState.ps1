@@ -14,7 +14,7 @@ Returns an object with SqlInstance, Database, RW, Status, Access
 .PARAMETER SqlInstance
 The SQL Server that you're connecting to
 
-.PARAMETER Credential
+.PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user
 
 .PARAMETER Database
