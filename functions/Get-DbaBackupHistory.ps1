@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 Function Get-DbaBackupHistory
 {
@@ -199,11 +199,11 @@ Function Get-DbaBackupHistory
                     
                     #Get the full and build upwards
                     $allbackups = @()
-                    $allbackups += $Fulldb = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastFull -raw:$Raw
-                    $DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastDiff -raw:$Raw
+                    $allbackups += $Fulldb = Get-DbaBackupHistory -SqlInstance $server -SqlCredential $SqlCredential -Database $db -LastFull -raw:$Raw
+                    $DiffDB = Get-DbaBackupHistory -SqlInstance $server -SqlCredential $SqlCredential -Database $db -LastDiff -raw:$Raw
                     if ($DiffDb.LastLsn -gt $Fulldb.LastLsn -and  $DiffDb.DatabaseBackupLSN -eq $Fulldb.CheckPointLSN )
                     {
-                        $Allbackups += $DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastDiff -raw:$Raw
+                        $Allbackups += $DiffDB = Get-DbaBackupHistory -SqlInstance $server -SqlCredential $SqlCredential -Database $db -LastDiff -raw:$Raw
 
                         $TLogStartLSN = ($diffdb.FirstLsn -as [bigint])
                         $Allbackups += $DiffDB
@@ -213,7 +213,7 @@ Function Get-DbaBackupHistory
                         Write-Verbose "No Diff found"
                         [bigint]$TLogStartLSN = $fulldb.FirstLsn
                     }
-                    $Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Databases $db -raw:$raw | Where-object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$TLogstartLSN -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$Fulldb.CheckPointLSN }
+                    $Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -SqlCredential $SqlCredential -Databases $db -raw:$raw | Where-object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$TLogstartLSN -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$Fulldb.CheckPointLSN }
                     $Allbackups | Sort-Object FirstLsn
                  
 
