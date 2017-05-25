@@ -38,6 +38,7 @@ param (
 
 # Move to the project root
 Set-Location $ModuleBase
+Remove-Module dbatools -ErrorAction Ignore
 Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking
 $ScriptAnalyzerRules = Get-ScriptAnalyzerRule
 
@@ -50,7 +51,7 @@ if (-not $Finalize) {
 	Write-Output "Testing with PowerShell $PSVersion"
 	Import-Module Pester
 	Set-Variable ProgressPreference -Value SilentlyContinue
-	Invoke-Pester -Script "$ModuleBase\Tests" #-OutputFormat NUnitXml -OutputFile "$ModuleBase\$TestFile" -PassThru | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion.xml"
+	Invoke-Pester -Script "$ModuleBase\Tests" -OutputFormat NUnitXml -OutputFile "$ModuleBase\$TestFile" -PassThru | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion.xml"
 }
 else {
 	# Unsure why we're uploading so I removed it for now
