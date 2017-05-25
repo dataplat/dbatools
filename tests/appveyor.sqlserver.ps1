@@ -36,11 +36,11 @@ foreach ($instance in $instances) {
 	$Tcp.Alter()
 	 
 	Write-Output "Starting $instance"
-	Start-Service "MSSQL`$$instance"
+	Restart-Service "MSSQL`$$instance"
 	
 	if ($instance -eq "sql2016") {
 		Write-Output "Starting Agent for $instance"
-		Start-Service 'SQLAgent$sql2016'
+		Restart-Service 'SQLAgent$sql2016'
 	}
 }
 
