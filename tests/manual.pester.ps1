@@ -12,6 +12,9 @@
 Param (
     [string[]]
     $Path,
+	
+	[switch]
+	$TestIntegration,
     
     [switch]
     $SkipHelpTest
@@ -26,15 +29,21 @@ $ScriptAnalyzerRules = Get-ScriptAnalyzerRule
 . $PSScriptRoot\..\internal\Write-Message.ps1
 . $PSScriptRoot\..\internal\Stop-Function.ps1
 
+$testInt = $false
+if ($config_TestIntegration) { $testInt = $true }
+if ($TestIntegration) { $testInt = $true }
+
 if ($Path)
 {
     foreach ($item in $Path)
     {
-        Invoke-Pester $item -ExcludeTag "Integrationtests"
+		if ($testInt) { Invoke-Pester $item }
+        else { Invoke-Pester $item -ExcludeTag "Integrationtests" }
     }
 }
 
 else
 {
-    Invoke-Pester -ExcludeTag "Integrationtests"
+    if ($testInt) { Invoke-Pester }
+	else { Invoke-Pester -ExcludeTag "Integrationtests" }
 }
