@@ -18,6 +18,7 @@ Param (
 )
 $ModuleBase = Split-Path -Path $PSScriptRoot -Parent
 if (Get-Module dbatools) { Remove-Module dbatools }
+
 Write-Host "Importing: $ModuleBase\dbatools.psm1"
 Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking
 $ScriptAnalyzerRules = Get-ScriptAnalyzerRule
