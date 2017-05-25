@@ -30,11 +30,11 @@ if ($Path)
 {
     foreach ($item in $Path)
     {
-        Invoke-Pester $item
+        Invoke-Pester $item -ExcludeTag "Integrationtests"
     }
 }
 
 else
 {
-    Invoke-Pester
+    Invoke-Pester -ExcludeTag "Integrationtests"
 }

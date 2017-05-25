@@ -1,7 +1,7 @@
 ﻿. $PSScriptRoot\..\internal\Stop-Function.ps1
 
 ## needs some proper tests for the function here
-Describe "$Name Tests" -Tag 'Unittests' {
+Describe "Stop-Function Unit-Tests" -Tag 'Unittests' {
     Context "Testing non-silent: Explicit call" {
         try
         {

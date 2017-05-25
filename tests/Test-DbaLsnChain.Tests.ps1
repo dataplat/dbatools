@@ -1,6 +1,6 @@
-. .\internal\Get-FilteredRestoreFile.ps1
-. .\functions\Read-DbaBackupHeader.ps1
-Describe "Test-DbaLsnChain Unit Tests" -Tag 'Unittests'{
+. "$PSScriptRoot\..\internal\Get-FilteredRestoreFile.ps1"
+. "$PSScriptRoot\..\functions\Read-DbaBackupHeader.ps1"
+Describe "Test-DbaLsnChain Unit Tests" -Tag 'Unittests' {
     Context "General Diff restore" {
         $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
         Mock Read-DbaBackupHeader { $Header }
@@ -26,7 +26,7 @@ Describe "Test-DbaLsnChain Unit Tests" -Tag 'Unittests'{
             $FilteredFiles[4].FirstLsn = 2
             $FilteredFiles[4].LastLsn = 1
             $Output = $FilteredFiles | Test-DbaLsnChain
-            $Output | Should be False
+            $Output | Should be $False
         }
     }
 }
