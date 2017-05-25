@@ -4,7 +4,7 @@ function Remove-DbaAgentJob {
 Remove-DbaAgentJob removes a job.
 
 .DESCRIPTION
-Remove-DbaAgentJob removes a a job in the SQL Server Agent.
+Remove-DbaAgentJob removes a job in the SQL Server Agent.
 
 .PARAMETER SqlInstance
 SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -62,7 +62,7 @@ Removes the job from multiple servers
 
 .EXAMPLE   
 sql1, sql2, sql3 | Remove-DbaAgentJob -Job Job1 
-Removes the job from multiple servers using pipe line
+Removes the job from multiple servers using pipeline
 
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]

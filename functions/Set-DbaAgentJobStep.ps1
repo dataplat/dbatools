@@ -125,7 +125,7 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
 
 .EXAMPLE   
 sql1, sql2, sql3 | Set-DbaAgentJobStep -Job Job1 -StepName Step1 -Database msdb
-Changes the database of the step in "Job1" with the name Step1 to msdb for multiple servers using pipe line
+Changes the database of the step in "Job1" with the name Step1 to msdb for multiple servers using pipeline
 
 #>	
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]

@@ -41,12 +41,8 @@ You will be prompted to securely enter your password, then a master key will be 
 .EXAMPLE
 New-DbaMasterKey -SqlInstance Server1 -Database db1 -Confirm:$false
 
-Supresses all prompts to install but prompts to securely enter your password and creates a master key in the 'db1' database
+Suppresses all prompts to install but prompts to securely enter your password and creates a master key in the 'db1' database
 
-.EXAMPLE
-New-DbaMasterKey -SqlInstance Server1 -WhatIf
-
-Shows what would happen if the command were executed against server1
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact="High")]
