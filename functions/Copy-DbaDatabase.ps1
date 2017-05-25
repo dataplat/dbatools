@@ -549,8 +549,6 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 	}
 	
 	process {
-		$copyonly = !$NoCopyOnly
-		
 		if (($AllDatabases -or $IncludeSupportDbs -or $Database) -and !$DetachAttach -and !$BackupRestore) {
 			throw "You must specify -DetachAttach or -BackupRestore when migrating databases."
 		}
@@ -570,6 +568,13 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
+		$destVersionLower = $destserver.VersionMajor -lt $sourceserver.VersionMajor
+		$destVersionMinorLow = ($destserver.VersionMajor -eq 10 -and $sourceserver.VersionMajor -eq 10) -and ($destserver.VersionMinor -lt $sourceserver.VersionMinor)
+		if ($destVersionLower -or $destVersionMinorLow) {
+			Stop-Function -Message "Error: copy database cannot be made from newer $($sourceserver.VersionString) to older $($destserver.VersionString) SQL Server version"
+			return
+		}
+
 		if ($DetachAttach) {
 			if ($sourceserver.netname -eq $env:COMPUTERNAME -or $destserver.netname -eq $env:COMPUTERNAME) {
 				If (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
@@ -880,7 +885,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						
 						#$backupresult = Backup-SqlDatabase $sourceserver $dbname $backupfile $numberfiles
 						
-						$backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceserver -Database $dbname -backupDirectory (Split-Path -Path $backupFile -parent) -FileCount $numberfiles
+						$backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceserver -Database $dbname -backupDirectory (Split-Path -Path $backupFile -parent) -FileCount $numberfiles -NoCopyOnly:$NoCopyOnly
 						$backupresult = $BackupTmpResult.BackupComplete
 						if ($backupresult -eq $false) {
 							$serviceaccount = $sourceserver.ServiceAccount
