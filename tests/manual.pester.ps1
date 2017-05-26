@@ -13,6 +13,10 @@ Param (
     [string[]]
     $Path,
 	
+	[ValidateSet('None', 'Default', 'Passed', 'Failed', 'Pending', 'Skipped', 'Inconclusive', 'Describe', 'Context', 'Summary', 'Header', 'All', 'Fails')]
+	[string]
+	$Show = "All",
+	
 	[switch]
 	$TestIntegration,
     
@@ -38,12 +42,12 @@ if ($Path)
     foreach ($item in $Path)
     {
 		if ($testInt) { Invoke-Pester $item }
-        else { Invoke-Pester $item -ExcludeTag "Integrationtests" }
+        else { Invoke-Pester $item -ExcludeTag "Integrationtests" -Show $Show }
     }
 }
 
 else
 {
     if ($testInt) { Invoke-Pester }
-	else { Invoke-Pester -ExcludeTag "Integrationtests" }
+	else { Invoke-Pester -ExcludeTag "Integrationtests" -Show $Show }
 }

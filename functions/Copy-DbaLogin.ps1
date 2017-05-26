@@ -35,7 +35,7 @@ function Copy-DbaLogin {
 		.PARAMETER Login
 			The login(s) to process - this list is autopopulated from the server. If unspecified, all logins will be processed.
 
-		.PARAMETER Exclude
+		.PARAMETER ExcludeLogin
 			The login(s) to exclude - this list is autopopulated from the server
 
 		.PARAMETER SyncOnly
