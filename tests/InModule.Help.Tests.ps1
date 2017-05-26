@@ -75,12 +75,14 @@ foreach ($command in $commands) {
                     $codeMandatory = $parameter.IsMandatory.toString()
                     $parameterHelp.Required | Should Be $codeMandatory
                 }
+				
+				if ($HelpTestSkipParameterType[$commandName] -contains $parameterName) { continue }
                 
                 # Parameter type in Help should match code
                 It "help for $commandName has correct parameter type for $parameterName" {
                     $codeType = $parameter.ParameterType.Name
                     
-                    if ($parameter.ParameterType.IsEnum) {
+					if ($parameter.ParameterType.IsEnum) {
                         # Enumerations often have issues with the typename not being reliably available
                         $names = $parameter.ParameterType::GetNames($parameter.ParameterType)
                         $parameterHelp.parameterValueGroup.parameterValue | Should be $names
