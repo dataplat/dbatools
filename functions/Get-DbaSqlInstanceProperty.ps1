@@ -39,15 +39,15 @@ Returns SQL Instance properties on sql2 and sql4
 
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$Silent
 	)
-
-	PROCESS {		
+	
+	process {
 		foreach ($instance in $SqlInstance) {
 			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
@@ -55,14 +55,13 @@ Returns SQL Instance properties on sql2 and sql4
 			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -ErrorRecord $_ -Target $instance -Continue -Silent $Silent
 			}
-            $props = $server.properties
-            foreach ( $prop in $props )
-            {
-            	Add-Member -InputObject $prop -MemberType NoteProperty -Name ComputerName -value $server.NetName
-				Add-Member -InputObject $prop -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-				Add-Member -InputObject $prop -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, Name, Value
-            } #foreach property
-		} #foreach instance
-	} #process
-} #function
+			$props = $server.properties
+			foreach ($prop in $props) {
+				Add-Member -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+				Add-Member -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+				Add-Member -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+				Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, Name, Value
+			}
+		}
+	}
+}
