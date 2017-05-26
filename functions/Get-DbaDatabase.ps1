@@ -141,7 +141,6 @@ function Get-DbaDatabase {
 				if ($state -notin ('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')) {
 					Stop-Function -Message "$state is not a valid status ('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')" -Continue -Silent $Silent
 				}
-
 			}
 		}
 	}
@@ -227,7 +226,7 @@ function Get-DbaDatabase {
 			elseif ($null -ne $NoLogBackupSince) {
 				$inputobject = $inputobject | Where-Object LastBackupdate -lt $NoLogBackupSince
 			}
-			$defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'RecoveryModel', 'Size as SizeMB', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup'
+			$defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel', 'Size as SizeMB', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup'
 
 			if ($NoFullBackup -or $NoFullBackupSince -or $NoLogBackup -or $NoLogBackupSince) {
 				$defaults += ('Notes')
