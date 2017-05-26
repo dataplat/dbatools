@@ -85,7 +85,7 @@ foreach ($command in $commands) {
                         $names = $parameter.ParameterType::GetNames($parameter.ParameterType)
                         $parameterHelp.parameterValueGroup.parameterValue | Should be $names
                     }
-					elseif (($null -ne $parameter.ParameterType) -and ($parameter.ParameterType.BaseType.FullName -eq "System.Array") -and ($parameter.ParameterType.DeclaredMembers[0].ReturnType.IsEnum)) {
+					elseif ($parameter.ParameterType.FullName -in $HelpTestEnumeratedArrays) {
 						# Enumerations often have issues with the typename not being reliably available
                         $names = [Enum]::GetNames($parameter.ParameterType.DeclaredMembers[0].ReturnType)
                         $parameterHelp.parameterValueGroup.parameterValue | Should be $names
