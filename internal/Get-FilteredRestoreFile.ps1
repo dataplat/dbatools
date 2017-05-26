@@ -171,6 +171,7 @@ function Get-FilteredRestoreFile {
             $TlogStartlsn = 0
             if (!($continue)) {
                 $Fullbackup = $SQLBackupdetails | where-object {$_.BackupTypeDescription -eq 'Database' -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1
+                $TlogStartlsn = $Fullbackup.FirstLSN
                 if ($Fullbackup -eq $null) {
                     Stop-Function -Message "No Full backup found to anchor the restore" -Continue -Target $database
                     break
