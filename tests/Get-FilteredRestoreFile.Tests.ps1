@@ -1,5 +1,3 @@
-. $PSScriptRoot\..\internal\Get-FilteredRestoreFile.ps1
-. $PSScriptRoot\..\functions\Read-DbaBackupHeader.ps1
 Describe "Get-FilteredRestoreFile Unit Tests" -Tag 'Unittests'{
     Context "Empty TLog Backup Issues" {
         $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\EmptyTlogData.json -raw)
