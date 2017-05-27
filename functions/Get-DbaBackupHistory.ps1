@@ -1,7 +1,7 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Get-DbaBackupHistory {
-    <#
+	<#
 	.SYNOPSIS
 		Returns backup history details for databases on a SQL Server
 	
@@ -108,138 +108,138 @@ function Get-DbaBackupHistory {
 	.LINK
 		https://dbatools.io/Get-DbaBackupHistory
 #>
-    [CmdletBinding(DefaultParameterSetName = "Default")]
-    Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter[]]
-        $SqlInstance,
+	[CmdletBinding(DefaultParameterSetName = "Default")]
+	Param (
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]
+		$SqlInstance,
 		
-        [Alias("Credential")]
-        [PsCredential]
-        $SqlCredential,
+		[Alias("Credential")]
+		[PsCredential]
+		$SqlCredential,
 		
-        [Alias("Databases")]
-        [object[]]
-        $Database,
+		[Alias("Databases")]
+		[object[]]
+		$Database,
 		
-        [object[]]
+		[object[]]
 		$ExcludeDatabase,
 		
-        [switch]
-        $IgnoreCopyOnly,
+		[switch]
+		$IgnoreCopyOnly,
 		
-        [Parameter(ParameterSetName = "NoLast")]
-        [switch]
-        $Force,
+		[Parameter(ParameterSetName = "NoLast")]
+		[switch]
+		$Force,
 		
-        [Parameter(ParameterSetName = "NoLast")]
-        [DateTime]
-        $Since,
+		[Parameter(ParameterSetName = "NoLast")]
+		[DateTime]
+		$Since,
 		
-        [Parameter(ParameterSetName = "Last")]
-        [switch]
-        $Last,
+		[Parameter(ParameterSetName = "Last")]
+		[switch]
+		$Last,
 		
-        [Parameter(ParameterSetName = "Last")]
-        [switch]
-        $LastFull,
+		[Parameter(ParameterSetName = "Last")]
+		[switch]
+		$LastFull,
 		
-        [Parameter(ParameterSetName = "Last")]
-        [switch]
-        $LastDiff,
+		[Parameter(ParameterSetName = "Last")]
+		[switch]
+		$LastDiff,
 		
-        [Parameter(ParameterSetName = "Last")]
-        [switch]
-        $LastLog,
+		[Parameter(ParameterSetName = "Last")]
+		[switch]
+		$LastLog,
 		
-        [switch]
-        $Raw,
+		[switch]
+		$Raw,
 		
-        [switch]
-        $Silent
-    )
+		[switch]
+		$Silent
+	)
 	
-    begin {
-        Write-Message -Level System -Message "Active Parameterset: $($PSCmdlet.ParameterSetName)"
-        Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
-    }
+	begin {
+		Write-Message -Level System -Message "Active Parameterset: $($PSCmdlet.ParameterSetName)"
+		Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
+	}
 	
-    process {
-        foreach ($instance in $SqlInstance) {
+	process {
+		foreach ($instance in $SqlInstance) {
 			
-            try {
-                Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failed to process Instance $Instance" -InnerErrorRecord $_ -Target $instance -Continue
-            }
+			try {
+				Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+			}
+			catch {
+				Stop-Function -Message "Failed to process Instance $Instance" -InnerErrorRecord $_ -Target $instance -Continue
+			}
 			
-            if ($server.VersionMajor -lt 9) {
-                Stop-Function -Message "SQL Server 2000 not supported" -Category LimitsExceeded -Target $instance -Continue
-            }
-            $backupSizeColumn = 'backup_size'
-            if ($server.VersionMajor -ge 10) {
-                # 2008 introduced compressed_backup_size
-                $backupSizeColumn = 'compressed_backup_size'
-            }
+			if ($server.VersionMajor -lt 9) {
+				Stop-Function -Message "SQL Server 2000 not supported" -Category LimitsExceeded -Target $instance -Continue
+			}
+			$backupSizeColumn = 'backup_size'
+			if ($server.VersionMajor -ge 10) {
+				# 2008 introduced compressed_backup_size
+				$backupSizeColumn = 'compressed_backup_size'
+			}
 			
-            $databases = $server.Databases
-            if ($Database) {
-                $databases = $databases | Where-Object Name -In $Database
-            }
-            if ($ExcludeDatabase) {
+			$databases = $server.Databases
+			if ($Database) {
+				$databases = $databases | Where-Object Name -In $Database
+			}
+			if ($ExcludeDatabase) {
 				$databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
 			}
-            if ($last) {
-                
-                foreach ($db in $databases.Name) {
+			if ($last) {
+				
+				foreach ($db in $databases.Name) {
 					
-                    #Get the full and build upwards
-                    $allbackups = @()
-                    $allbackups += $Fulldb = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastFull -raw:$Raw
-                    $DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastDiff -raw:$Raw
-                    if ($DiffDb.LastLsn -gt $Fulldb.LastLsn -and  $DiffDb.DatabaseBackupLSN -eq $Fulldb.CheckPointLSN ) {
-                        $Allbackups += $DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastDiff -raw:$Raw
+					#Get the full and build upwards
+					$allbackups = @()
+					$allbackups += $Fulldb = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastFull -raw:$Raw
+					$DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastDiff -raw:$Raw
+					if ($DiffDb.LastLsn -gt $Fulldb.LastLsn -and  $DiffDb.DatabaseBackupLSN -eq $Fulldb.CheckPointLSN ) {
+						$Allbackups += $DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastDiff -raw:$Raw
 
-                        $TLogStartLSN = ($diffdb.FirstLsn -as [bigint])
-                        $Allbackups += $DiffDB
-                    }
-                    else {
-                        Write-Verbose "No Diff found"
-                        [bigint]$TLogStartLSN = $fulldb.FirstLsn
-                    }
-                    $Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Databases $db -raw:$raw | Where-object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$TLogstartLSN -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$Fulldb.CheckPointLSN }
-                    $Allbackups | Sort-Object FirstLsn
+						$TLogStartLSN = ($diffdb.FirstLsn -as [bigint])
+						$Allbackups += $DiffDB
+					}
+					else {
+						Write-Verbose "No Diff found"
+						[bigint]$TLogStartLSN = $fulldb.FirstLsn
+					}
+					$Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Databases $db -raw:$raw | Where-object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$TLogstartLSN -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$Fulldb.CheckPointLSN }
+					$Allbackups | Sort-Object FirstLsn
 				 
 
-                }
-                continue
-            }
+				}
+				continue
+			}
 			
-            if ($LastFull -or $LastDiff -or $LastLog) {
-                $sql = @()
+			if ($LastFull -or $LastDiff -or $LastLog) {
+				$sql = @()
 
-                if ($LastFull) {
-                    $first = 'D'; $second = 'P'
-                }
-                if ($LastDiff) {
-                    $first = 'I'; $second = 'Q'
-                }
-                if ($LastLog) {
-                    $first = 'L'; $second = 'L'
-                }
+				if ($LastFull) {
+					$first = 'D'; $second = 'P'
+				}
+				if ($LastDiff) {
+					$first = 'I'; $second = 'Q'
+				}
+				if ($LastLog) {
+					$first = 'L'; $second = 'L'
+				}
 				
-                $Database = $Database | Select-Object -Unique
+				$Database = $Database | Select-Object -Unique
 				
-                foreach ($db in $database) {
-                    Write-Message -Level Verbose -Message "Processing $db" -Target $db
+				foreach ($db in $database) {
+					Write-Message -Level Verbose -Message "Processing $db" -Target $db
 					
-                    $wherecopyonly = $null
-                    if ($IgnoreCopyOnly) { $wherecopyonly = "and is_copy_only='0'" }
+					$wherecopyonly = $null
+					if ($IgnoreCopyOnly) { $wherecopyonly = "and is_copy_only='0'" }
 					
-                    $sql += "
+					$sql += "
 								SELECT
 									a.BackupSetRank,
 									a.Server,
@@ -316,16 +316,16 @@ function Get-DbaBackupHistory {
 								WHERE a.BackupSetRank = 1
 								ORDER BY a.Type;
 								"
-                }
+				}
 				
-                $sql = $sql -join "; "
-            }
-            else {
-                if ($Force -eq $true) {
-                    $select = "SELECT * "
-                }
-                else {
-                    $select = "
+				$sql = $sql -join "; "
+			}
+			else {
+				if ($Force -eq $true) {
+					$select = "SELECT * "
+				}
+				else {
+					$select = "
 							SELECT
 							  backupset.database_name AS [Database],
 							  backupset.user_name AS Username,
@@ -369,92 +369,92 @@ function Get-DbaBackupHistory {
 							  backupset.last_lsn as 'Lastlsn',
 							  backupset.software_major_version,
 							  mediaset.software_name AS Software"
-                }
+				}
 				
-                $from = " FROM msdb..backupmediafamily mediafamily
+				$from = " FROM msdb..backupmediafamily mediafamily
 							 INNER JOIN msdb..backupmediaset mediaset ON mediafamily.media_set_id = mediaset.media_set_id
 							 INNER JOIN msdb..backupset backupset ON backupset.media_set_id = mediaset.media_set_id"
 				
-                if ($Database -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $IgnoreCopyOnly) {
-                    $where = " WHERE "
-                }
+				if ($Database -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $IgnoreCopyOnly) {
+					$where = " WHERE "
+				}
 				
-                $wherearray = @()
+				$wherearray = @()
 				
-                if ($Database.length -gt 0) {
-                    $dblist = $Database -join "','"
-                    $wherearray += "database_name in ('$dblist')"
-                }
+				if ($Database.length -gt 0) {
+					$dblist = $Database -join "','"
+					$wherearray += "database_name in ('$dblist')"
+				}
 				
-                if ($Last -or $LastFull -or $LastLog -or $LastDiff) {
-                    $tempwhere = $wherearray -join " and "
-                    $wherearray += "type = 'Full' and mediaset.media_set_id = (select top 1 mediaset.media_set_id $from $tempwhere order by backupset.backup_finish_date DESC)"
-                }
+				if ($Last -or $LastFull -or $LastLog -or $LastDiff) {
+					$tempwhere = $wherearray -join " and "
+					$wherearray += "type = 'Full' and mediaset.media_set_id = (select top 1 mediaset.media_set_id $from $tempwhere order by backupset.backup_finish_date DESC)"
+				}
 				
-                if ($Since -ne $null) {
-                    $wherearray += "backupset.backup_finish_date >= '$($Since.ToString("yyyy-MM-dd HH:mm:ss"))'"
-                }
+				if ($Since -ne $null) {
+					$wherearray += "backupset.backup_finish_date >= '$($Since.ToString("yyyy-MM-dd HH:mm:ss"))'"
+				}
 				
-                if ($IgnoreCopyOnly) {
-                    $wherearray += "is_copy_only='0'"
-                }
+				if ($IgnoreCopyOnly) {
+					$wherearray += "is_copy_only='0'"
+				}
 				
-                if ($where.length -gt 0) {
-                    $wherearray = $wherearray -join " and "
-                    $where = "$where $wherearray"
-                }
+				if ($where.length -gt 0) {
+					$wherearray = $wherearray -join " and "
+					$where = "$where $wherearray"
+				}
 				
-                $sql = "$select $from $where ORDER BY backupset.backup_finish_date DESC"
-            }
+				$sql = "$select $from $where ORDER BY backupset.backup_finish_date DESC"
+			}
 			
-            Write-Message -Level Debug -Message $sql
-            Write-Message -Level SomewhatVerbose -Message "Executing sql query"
-            $results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
+			Write-Message -Level Debug -Message $sql
+			Write-Message -Level SomewhatVerbose -Message "Executing sql query"
+			$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
 			
-            if ($raw) {
-                Write-Message -Level SomewhatVerbose -Message "Processing as Raw Ouput"
-                $results | Select-Object *, @{ Name = "FullName"; Expression = { $_.Path } }
-                Write-Message -Level SomewhatVerbose -Message "$($results.Count) result sets found"
-            }
-            else {
-                Write-Message -Level SomewhatVerbose -Message "Processing as Grouped output"
-                $GroupedResults = $results | Group-Object -Property backupsetid
-                Write-Message -Level SomewhatVerbose -Message "$($GroupedResults.Count) result-groups found"
-                $groupResults = @()
-                foreach ($group in $GroupedResults) {
+			if ($raw) {
+				Write-Message -Level SomewhatVerbose -Message "Processing as Raw Ouput"
+				$results | Select-Object *, @{ Name = "FullName"; Expression = { $_.Path } }
+				Write-Message -Level SomewhatVerbose -Message "$($results.Count) result sets found"
+			}
+			else {
+				Write-Message -Level SomewhatVerbose -Message "Processing as Grouped output"
+				$GroupedResults = $results | Group-Object -Property backupsetid
+				Write-Message -Level SomewhatVerbose -Message "$($GroupedResults.Count) result-groups found"
+				$groupResults = @()
+				foreach ($group in $GroupedResults) {
 					
-                    $fileSql = "select file_type as FileType, logical_name as LogicalName, physical_name as PhysicalName
+					$fileSql = "select file_type as FileType, logical_name as LogicalName, physical_name as PhysicalName
 								from msdb.dbo.backupfile where backup_set_id='$($Group.group[0].BackupSetID)'"
 					
-                    Write-Message -Level Debug -Message "FileSQL: $fileSql"
+					Write-Message -Level Debug -Message "FileSQL: $fileSql"
 					
-                    $historyObject = New-Object sqlcollective.dbatools.Database.BackupHistory
-                    $historyObject.ComputerName = $server.NetName
-                    $historyObject.InstanceName = $server.ServiceName
-                    $historyObject.SqlInstance = $server.DomainInstanceName
-                    $historyObject.Database = $group.Group[0].Database
-                    $historyObject.UserName = $group.Group[0].UserName
-                    $historyObject.Start = ($group.Group.Start | Measure-Object -Minimum).Minimum
-                    $historyObject.End = ($group.Group.End | Measure-Object -Maximum).Maximum
-                    $historyObject.Duration = New-TimeSpan -Seconds ($group.Group.Duration | Measure-Object -Maximum).Maximum
-                    $historyObject.Path = $group.Group.Path
-                    $historyObject.TotalSize = ($group.group.TotalSize | Measure-Object -Sum).sum
-                    $historyObject.Type = $group.Group[0].Type
-                    $historyObject.BackupSetId = $group.Group[0].BackupSetId
-                    $historyObject.DeviceType = $group.Group[0].DeviceType
-                    $historyObject.Software = $group.Group[0].Software
-                    $historyObject.FullName = $group.Group.Path
-                    $historyObject.FileList = $server.ConnectionContext.ExecuteWithResults($fileSql).Tables.Rows
-                    $historyObject.Position = $group.Group[0].Position
-                    $historyObject.FirstLsn = $group.Group[0].First_LSN
-                    $historyObject.DatabaseBackupLsn = $group.Group[0].database_backup_lsn
-                    $historyObject.CheckpointLsn = $group.Group[0].checkpoint_lsn
-                    $historyObject.LastLsn = $group.Group[0].Last_Lsn
-                    $historyObject.SoftwareVersionMajor = $group.Group[0].Software_Major_Version
-                    $groupResults += $historyObject
-                }
-                $groupResults | Sort-Object -Property End -Descending
-            }
-        }
-    }
+					$historyObject = New-Object sqlcollective.dbatools.Database.BackupHistory
+					$historyObject.ComputerName = $server.NetName
+					$historyObject.InstanceName = $server.ServiceName
+					$historyObject.SqlInstance = $server.DomainInstanceName
+					$historyObject.Database = $group.Group[0].Database
+					$historyObject.UserName = $group.Group[0].UserName
+					$historyObject.Start = ($group.Group.Start | Measure-Object -Minimum).Minimum
+					$historyObject.End = ($group.Group.End | Measure-Object -Maximum).Maximum
+					$historyObject.Duration = New-TimeSpan -Seconds ($group.Group.Duration | Measure-Object -Maximum).Maximum
+					$historyObject.Path = $group.Group.Path
+					$historyObject.TotalSize = ($group.group.TotalSize | Measure-Object -Sum).sum
+					$historyObject.Type = $group.Group[0].Type
+					$historyObject.BackupSetId = $group.Group[0].BackupSetId
+					$historyObject.DeviceType = $group.Group[0].DeviceType
+					$historyObject.Software = $group.Group[0].Software
+					$historyObject.FullName = $group.Group.Path
+					$historyObject.FileList = $server.ConnectionContext.ExecuteWithResults($fileSql).Tables.Rows
+					$historyObject.Position = $group.Group[0].Position
+					$historyObject.FirstLsn = $group.Group[0].First_LSN
+					$historyObject.DatabaseBackupLsn = $group.Group[0].database_backup_lsn
+					$historyObject.CheckpointLsn = $group.Group[0].checkpoint_lsn
+					$historyObject.LastLsn = $group.Group[0].Last_Lsn
+					$historyObject.SoftwareVersionMajor = $group.Group[0].Software_Major_Version
+					$groupResults += $historyObject
+				}
+				$groupResults | Sort-Object -Property End -Descending
+			}
+		}
+	}
 }
