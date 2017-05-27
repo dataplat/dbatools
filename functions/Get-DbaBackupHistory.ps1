@@ -22,7 +22,7 @@ function Get-DbaBackupHistory {
 		The database(s) to process.
 		If unspecified, all databases will be scanned for backup history.
 	
-	.PARAMETER ExcudeDatabase
+	.PARAMETER ExcludeDatabase
 		The database(s) to not process.
 	
 	.PARAMETER IgnoreCopyOnly
