@@ -1,14 +1,13 @@
 #ValidationTags#FlowControl#
-Function Get-DbaDatabaseSnapshot
-{
-<#
+function Get-DbaDatabaseSnapshot {
+	<#
 .SYNOPSIS
 Get database snapshots with details
 
 .DESCRIPTION
 Retrieves the list of database snapshot available, along with their base (the db they are the snapshot of) and creation time
 
-.PARAMETER SqlInstance 
+.PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 
 .PARAMETER SqlCredential
@@ -22,7 +21,7 @@ The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER Snapshot
 Return information for only specific snapshots
-	
+
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages
 
@@ -64,50 +63,52 @@ Returns information for database snapshots HR_snapshot and Accounting_snapshot
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
+		[object[]]$Snapshot,
+		[object[]]$ExcludeSnapshot,
 		[switch]$Silent
 	)
 
-	process
-	{
-		foreach ($instance in $SqlInstance)
-		{
+	process {
+		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Connecting to $instance"
 			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
-			} catch {
+			}
+			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -InnerErrorRecord $_ -Target $instance -Continue -Silent $Silent
 			}
-			
-			$dbs = $server.Databases 
 
-			if ($database) {
-				$dbs = $dbs | Where-Object { $databases -contains $_.DatabaseSnapshotBaseName }
+			$dbs = $server.Databases
+
+			if ($Database) {
+				$dbs = $dbs | Where-Object { $Database -contains $_.DatabaseSnapshotBaseName }
 			}
-			if ($snapshot) {
-				$dbs = $dbs | Where-Object { $snapshot -contains $_.Name }
+			if ($ExcludeDatabase) {
+				$dbs = $dbs | Where-Object { $ExcludeDatabase -notcontains $_.DatabaseSnapshotBaseName}
 			}
-			if (!$snapshot -and !$database) {
+			if ($Snapshot) {
+				$dbs = $dbs | Where-Object { $Snapshot -contains $_.Name }
+			}
+			if (!$Snapshot -and !$Database) {
 				$dbs = $dbs | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
 			}
-			
-			if ($exclude) {
-				$dbs = $dbs | Where-Object { $exclue -notcontains $_.DatabaseSnapshotBaseName }
+			if ($ExcludeSnapshot) {
+				$dbs = $dbs | Where-Object { $ExcludeSnapshot -notcontains $_.DatabaseSnapshotBaseName }
 			}
-			
-			foreach ($db in $dbs)
-			{
+
+			foreach ($db in $dbs) {
 				$object = [PSCustomObject]@{
-					ComputerName = $server.NetName
-					InstanceName = $server.ServiceName
-					SqlInstance = $server.DomainInstanceName
-					Database = $db.name
-					SnapshotOf = $db.DatabaseSnapshotBaseName
-					SizeMB = [Math]::Round($db.Size,2) ##FIXME, should use the stats for sparse files
+					ComputerName    = $server.NetName
+					InstanceName    = $server.ServiceName
+					SqlInstance     = $server.DomainInstanceName
+					Database        = $db.name
+					SnapshotOf      = $db.DatabaseSnapshotBaseName
+					SizeMB          = [Math]::Round($db.Size, 2) ##FIXME, should use the stats for sparse files
 					DatabaseCreated = [dbadatetime]$db.createDate
-					SnapshotDb = $db
+					SnapshotDb      = $db
 				}
-				
+
 				Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, Database, SnapshotOf, SizeMB, DatabaseCreated
 			}
 		}
