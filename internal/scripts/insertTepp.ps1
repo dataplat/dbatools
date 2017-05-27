@@ -1,4 +1,6 @@
 ﻿$functions = Get-ChildItem function:\*-Dba*
+
+#region Automatic TEPP by parameter name
 foreach ($function in $functions) {
     if ($function.Parameters.Keys -contains "SqlInstance") {
         Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter SqlInstance -Name SqlInstance
@@ -28,3 +30,8 @@ foreach ($function in $functions) {
 		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeOperator -Name Operator
 	}
 }
+#endregion Automatic TEPP by parameter name
+
+#region Explicit TEPP
+Register-DbaTeppArgumentCompleter -Command "Find-DbaCommand" -Parameter Tag -Name tag
+#endregion Explicit TEPP
