@@ -135,7 +135,7 @@ function Copy-DbaAgentOperator {
 				try {
 					Write-Message -Mesage "Copying Operator $operatorName" -Level Output
 					$sql = $sOperator.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Message -Message $sql -Level Debug
 					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 				}
