@@ -1,8 +1,7 @@
 Describe "Get-DirectoryRestoreFile Unit Tests" -Tag 'Unittests'{
     Context "Test Path handling" {
         It "Should throw on an invalid Path" {
-            Mock Test-Path { $false }
-            { Get-DirectoryRestoreFile -Path c:\temp\ -Silent -ErrorAction Stop } | Should Throw
+            { Get-DirectoryRestoreFile -Path TestDrive:\foo\bar\does\not\exist\ -Silent } | Should Throw
         }
     }
     Context "Returning Files from one folder" {
