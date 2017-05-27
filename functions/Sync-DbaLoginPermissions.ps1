@@ -353,7 +353,7 @@ https://dbatools.io/Sync-SqlLoginPermissions
 					if ($destdb.users[$dbusername] -eq $null) {
 						If ($Pscmdlet.ShouldProcess($destination, "Adding $dbusername to $dbname")) {
 							$sql = $sourceserver.databases[$dbname].users[$dbusername].script() | Out-String
-							$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+							$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 							try {
 								$destdb.ExecuteNonQuery($sql)
 								Write-Output "Added user $dbusername (login: $dblogin) to $dbname"

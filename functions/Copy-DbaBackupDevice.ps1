@@ -138,7 +138,7 @@ Shows what would happen if the command were executed using force.
 				try
 				{
 					$sql = $backupdevice.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 				}
 				catch { 
 					Write-Exception $_
@@ -174,7 +174,7 @@ Shows what would happen if the command were executed using force.
 					{
 						Write-Output "Updating $devicename to use $backupdirectory"
 						$sql = $sql -replace $path, $backupdirectory
-						$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+						$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					}
 					catch { 
 						Write-Exception $_
