@@ -59,7 +59,7 @@ Specifies the network location for the backup files. The Sql Service service acc
 .PARAMETER Database
 Migrates ONLY specified databases. This list is auto-populated for tab completion. Multiple databases are allowed.
 
-.PARAMETER Exclude
+.PARAMETER ExcludeDatabase
 Excludes specified databases when performing -AllDatabases migrations. This list is auto-populated for tab completion.
 
 .PARAMETER SetSourceReadOnly
@@ -132,7 +132,7 @@ Databases will be migrated from sqlserver2014a to sqlcluster using the detach/co
 
 
 .EXAMPLE   
-Copy-DbaDatabase -Source sqlserver2014a -Destination sqlcluster -Exclude Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -NetworkShare \\fileshare\sql\migration
+Copy-DbaDatabase -Source sqlserver2014a -Destination sqlcluster -ExcludeDatabase Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -NetworkShare \\fileshare\sql\migration
 
 Migrates all user databases except for Northwind and pubs by using backup/restore (copy-only). Backup files are stored in \\fileshare\sql\migration. If the database exists on the destination, it will be dropped prior to attach.
 

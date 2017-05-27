@@ -16,7 +16,7 @@ Credentials to connect to the SQL Server instance if the calling user doesn't ha
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Exclude
+.PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER BackupFileName

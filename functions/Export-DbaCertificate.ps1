@@ -22,6 +22,9 @@ The Path to output the files to. The path is relative to the SQL Server itself. 
 .PARAMETER Database
 Exports the encryptor for specific database(s).
 
+.PARAMETER ExcludeDatabase
+Database(s) to skip when exporting encryptors.
+
 .PARAMETER Certificate
 Exports certificate that matches the name(s).
 
