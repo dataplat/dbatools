@@ -15,6 +15,9 @@ Allows you to login to SQL Server using alternative credentials
 .PARAMETER Database
 Get certificate from specific database
 
+.PARAMETER ExcludeDatabase
+Database(s) to ignore when retrieving certificates.
+
 .PARAMETER Certificate
 Get specific certificate
 
