@@ -42,9 +42,6 @@ Remove-Module dbatools -ErrorAction Ignore
 Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking
 $ScriptAnalyzerRules = Get-ScriptAnalyzerRule
 
-. $ModuleBase\internal\Write-Message.ps1
-. $ModuleBase\internal\Stop-Function.ps1
-
 #Run a test with the current version of PowerShell
 #Make things faster by removing most output
 if (-not $Finalize) {
