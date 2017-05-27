@@ -107,7 +107,7 @@ Returns Query Store configuration settings for every database on the ServerA\sql
 				
 				[pscustomobject]@{
 					Instance = $instance
-					Database = $db
+					Database = $db.Name
 					ActualState = $db.QueryStoreOptions.ActualState
 					FlushInterval = $db.QueryStoreOptions.DataFlushIntervalInSeconds
 					CollectionInterval = $db.QueryStoreOptions.StatisticsCollectionIntervalInMinutes
