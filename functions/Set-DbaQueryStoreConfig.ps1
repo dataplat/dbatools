@@ -1,5 +1,5 @@
 function Set-DbaQueryStoreConfig {
-	<#
+    <#
 		.SYNOPSIS
 			Configure Query Store settings for a specific or multiple databases.
 
@@ -52,6 +52,9 @@ function Set-DbaQueryStoreConfig {
 			Performing the operation "Changing Desired State" on target "pubs on SQL2016\VNEXT".
 			[Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is "Y"):
 
+		.PARAMETER Silent
+			Use this switch to disable any kind of verbose messages
+
 		.NOTES
 			Tags: QueryStore
 			Original Author: Enrico van de Laar ( @evdlaar )
@@ -83,137 +86,135 @@ function Set-DbaQueryStoreConfig {
 
 			Configure the Query Store settings for all user databases except the AdventureWorks database in the ServerA\SQL Instance.
 	#>
-	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$SqlCredential,
-		[Alias("Databases")]
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    Param (
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [Alias("Credential")]
+        [PSCredential][System.Management.Automation.CredentialAttribute()]
+        $SqlCredential,
+        [Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$ExcludeDatabase,
-		[switch]$AllDatabases,
-		[ValidateSet('ReadWrite', 'ReadOnly', 'Off')]
-		[string[]]$State,
-		[int64]$FlushInterval,
-		[int64]$CollectionInterval,
-		[int64]$MaxSize,
-		[ValidateSet('Auto', 'All')]
-		[string[]]$CaptureMode,
-		[ValidateSet('Auto', 'Off')]
-		[string[]]$CleanupMode,
-		[int64]$StaleQueryThreshold
-	)
+        [object[]]$ExcludeDatabase,
+        [switch]$AllDatabases,
+        [ValidateSet('ReadWrite', 'ReadOnly', 'Off')]
+        [string[]]$State,
+        [int64]$FlushInterval,
+        [int64]$CollectionInterval,
+        [int64]$MaxSize,
+        [ValidateSet('Auto', 'All')]
+        [string[]]$CaptureMode,
+        [ValidateSet('Auto', 'Off')]
+        [string[]]$CleanupMode,
+        [int64]$StaleQueryThreshold,
+		[switch]$Silent
+    )
 
-	process {
-		if (!$Database -and !$ExcludeDatabase -and !$AllDatabases) {
-			Write-Warning "You must specify a database(s) to execute against using either -Database, -ExcludeDatabase or -AllDatabases"
-			continue
-		}
+    process {
+        if (!$Database -and !$ExcludeDatabase -and !$AllDatabases) {
+            Stop-Function -Message "You must specify a database(s) to execute against using either -Database, -ExcludeDatabase or -AllDatabases"
+            return
+        }
 
-		if (!$State -and !$FlushInterval -and !$CollectionInterval -and !$MaxSize -and !$CaptureMode -and !$CleanupMode -and !$StaleQueryThreshold) {
-			Write-Warning "You must specify something to change."
-			return
-		}
+        if (!$State -and !$FlushInterval -and !$CollectionInterval -and !$MaxSize -and !$CaptureMode -and !$CleanupMode -and !$StaleQueryThreshold) {
+            Stop-Function -Message "You must specify something to change."
+            return
+        }
 
-		foreach ($instance in $SqlInstance) {
-			Write-Verbose "Connecting to $instance"
-			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+        foreach ($instance in $SqlInstance) {
+            Write-Message -Level Verbose -Message "Connecting to $instance"
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 
-			}
-			catch {
-				Write-Warning "Can't connect to $instance. Moving on."
-				continue
-			}
+            }
+            catch {
+                Stop-Function -Message "Can't connect to $instance. Moving on." -Category InvalidOperation -InnerErrorRecord $_ -Target $instance -Continue
+            }
 
-			if ($server.VersionMajor -lt 13) {
+            if ($server.VersionMajor -lt 13) {
+                Stop-Function -Message "The SQL Server Instance ($instance) has a lower SQL Server version than SQL Server 2016. Skipping server."
+                continue
+            }
 
-				Write-Warning "The SQL Server Instance ($instance) has a lower SQL Server version than SQL Server 2016. Skipping server."
-				continue
-			}
+            # We have to exclude all the system databases since they cannot have the Query Store feature enabled
+            $dbs = Get-DbaDatabase -SqlInstance $instance -NoSystemDb
 
-			# We have to exclude all the system databases since they cannot have the Query Store feature enabled
-			$dbs = Get-DbaDatabase -SqlInstance $instance -NoSystemDb
+            if ($Database) {
+                $dbs = $dbs | Where-Object Name -In $Database
+            }
 
-			if ($Database) {
-				$dbs = $dbs | Where-Object Name -In $Database
-			}
+            if ($ExcludeDatabase) {
+                $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabas
+            }
 
-			if ($ExcludeDatabase) {
-				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabas
-			}
+            foreach ($db in $dbs) {
+                Write-Message -Level Verbose -Message "Processing $db on $instance"
 
-			foreach ($db in $dbs) {
-				Write-Verbose "Processing $db on $instance"
+                if ($db.IsAccessible -eq $false) {
+                    Write-Message -Level Warning -Message "The database $db on server $instance is not accessible. Skipping database."
+                    Continue
+                }
 
-				if ($db.IsAccessible -eq $false) {
-					Write-Warning "The database $db on server $instance is not accessible. Skipping database."
-					Continue
-				}
+                if ($State) {
+                    if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing DesiredState to $state")) {
+                        $db.QueryStoreOptions.DesiredState = $State
+                    }
+                }
 
-				if ($State) {
-					if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing DesiredState to $state")) {
-						$db.QueryStoreOptions.DesiredState = $State
-					}
-				}
+                if ($FlushInterval) {
+                    if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing DataFlushIntervalInSeconds to $FlushInterval")) {
+                        $db.QueryStoreOptions.DataFlushIntervalInSeconds = $FlushInterval
+                    }
+                }
 
-				if ($FlushInterval) {
-					if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing DataFlushIntervalInSeconds to $FlushInterval")) {
-						$db.QueryStoreOptions.DataFlushIntervalInSeconds = $FlushInterval
-					}
-				}
+                if ($CollectionInterval) {
+                    if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing StatisticsCollectionIntervalInMinutes to $CollectionInterval")) {
+                        $db.QueryStoreOptions.StatisticsCollectionIntervalInMinutes = $CollectionInterval
+                    }
+                }
 
-				if ($CollectionInterval) {
-					if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing StatisticsCollectionIntervalInMinutes to $CollectionInterval")) {
-						$db.QueryStoreOptions.StatisticsCollectionIntervalInMinutes = $CollectionInterval
-					}
-				}
+                if ($MaxSize) {
+                    if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing MaxStorageSizeInMB to $MaxSize")) {
+                        $db.QueryStoreOptions.MaxStorageSizeInMB = $MaxSize
+                    }
+                }
 
-				if ($MaxSize) {
-					if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing MaxStorageSizeInMB to $MaxSize")) {
-						$db.QueryStoreOptions.MaxStorageSizeInMB = $MaxSize
-					}
-				}
+                if ($CaptureMode) {
+                    if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing QueryCaptureMode to $CaptureMode")) {
+                        $db.QueryStoreOptions.QueryCaptureMode = $CaptureMode
+                    }
+                }
 
-				if ($CaptureMode) {
-					if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing QueryCaptureMode to $CaptureMode")) {
-						$db.QueryStoreOptions.QueryCaptureMode = $CaptureMode
-					}
-				}
-
-				if ($CleanupMode) {
-					if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing SizeBasedCleanupMode to $CleanupMode")) {
-						$db.QueryStoreOptions.SizeBasedCleanupMode = $CleanupMode
-					}
-				}
+                if ($CleanupMode) {
+                    if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing SizeBasedCleanupMode to $CleanupMode")) {
+                        $db.QueryStoreOptions.SizeBasedCleanupMode = $CleanupMode
+                    }
+                }
 
 				if ($StaleQueryThreshold) {
-					if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing StaleQueryThresholdInDays to $StaleQueryThreshold")) {
-						$db.QueryStoreOptions.StaleQueryThresholdInDays = $StaleQueryThreshold
-					}
-				}
+                    if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing StaleQueryThresholdInDays to $StaleQueryThreshold")) {
+                        $db.QueryStoreOptions.StaleQueryThresholdInDays = $StaleQueryThreshold
+                    }
+                }
 
-				# Alter the Query Store Configuration
-				if ($Pscmdlet.ShouldProcess("$db on $instance", "Altering Query Store configuration on database")) {
-					try {
-						$db.QueryStoreOptions.Alter()
-						$db.Refresh()
-					}
-					catch {
-						Write-Warning "Could not modify configuration. Error was: $_"
-						continue
-					}
-				}
+                # Alter the Query Store Configuration
+                if ($Pscmdlet.ShouldProcess("$db on $instance", "Altering Query Store configuration on database")) {
+                    try {
+                        $db.QueryStoreOptions.Alter()
+                        $db.Refresh()
+                    }
+                    catch {
+                        Stop-Function -Message "Could not modify configuration." -Category InvalidOperation -InnerErrorRecord $_ -Target $db -Continue
+                    }
+                }
 
-				if ($Pscmdlet.ShouldProcess("$db on $instance", "Getting results from Get-DbaQueryStoreConfig")) {
-					# Display resulting changes
-					Get-DbaQueryStoreConfig -SqlInstance $server -Database $db.name -Verbose:$false
-				}
-			}
-		}
-	}
+                if ($Pscmdlet.ShouldProcess("$db on $instance", "Getting results from Get-DbaQueryStoreConfig")) {
+                    # Display resulting changes
+                    Get-DbaQueryStoreConfig -SqlInstance $server -Database $db.name -Verbose:$false
+                }
+            }
+        }
+    }
 }
 
