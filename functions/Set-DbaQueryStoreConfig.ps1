@@ -93,7 +93,7 @@ function Set-DbaQueryStoreConfig {
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[switch]$AllDatabases,
 		[ValidateSet('ReadWrite', 'ReadOnly', 'Off')]
 		[string[]]$State,
@@ -108,8 +108,8 @@ function Set-DbaQueryStoreConfig {
 	)
 
 	process {
-		if (!$databases -and !$exclude -and !$alldatabases) {
-			Write-Warning "You must specify databases to execute against using either -Databases, -Exclude or -AllDatabases"
+		if (!$Database -and !$ExcludeDatabase -and !$AllDatabases) {
+			Write-Warning "You must specify a database(s) to execute against using either -Database, -ExcludeDatabase or -AllDatabases"
 			continue
 		}
 
@@ -136,16 +136,15 @@ function Set-DbaQueryStoreConfig {
 			}
 
 			# We have to exclude all the system databases since they cannot have the Query Store feature enabled
-			$dbs = $server.Databases | Where-Object { $_.IsSystemObject -eq $false }
+			$dbs = Get-DbaDatabase -SqlInstance $instance -NoSystemDb
 
-			if ($databases) {
-				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
+			if ($Database) {
+				$dbs = $dbs | Where-Object Name -In $Database
 			}
 
-			if ($exclude) {
-				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
+			if ($ExcludeDatabase) {
+				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabas
 			}
-
 
 			foreach ($db in $dbs) {
 				Write-Verbose "Processing $db on $instance"
@@ -208,7 +207,6 @@ function Set-DbaQueryStoreConfig {
 						continue
 					}
 				}
-
 
 				if ($Pscmdlet.ShouldProcess("$db on $instance", "Getting results from Get-DbaQueryStoreConfig")) {
 					# Display resulting changes
