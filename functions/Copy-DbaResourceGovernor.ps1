@@ -105,7 +105,7 @@ Shows what would happen if the command were executed.
 			else {
 				try {
 					$sql = $sourceserver.resourceGovernor.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Verbose $sql
 					Write-Output "Updating Resource Governor settings"
 					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
@@ -158,7 +158,7 @@ Shows what would happen if the command were executed.
 			if ($Pscmdlet.ShouldProcess($destination, "Migrating pool $poolName")) {
 				try {
 					$sql = $pool.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Verbose $sql
 					Write-Output "Copying pool $poolName"
 					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
@@ -167,7 +167,7 @@ Shows what would happen if the command were executed.
 					foreach ($workloadgroup in $workloadgroups) {
 						$workgroupname = $workloadgroup.name
 						$sql = $workloadgroup.script() | Out-String
-						$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+						$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 						Write-Verbose $sql
 						Write-Output "Copying $workgroupname"
 						$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
