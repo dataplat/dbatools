@@ -320,7 +320,7 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 					try
 					{
 						$sql = $linkedserver.Script() | Out-String
-						$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+						$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 						Write-Verbose $sql
 						
 						[void]$destserver.ConnectionContext.ExecuteNonQuery($sql)

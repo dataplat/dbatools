@@ -146,7 +146,7 @@ Shows what would happen if the command were executed using force.
 				{
 					Write-Output "Copying schedule $schedulename"
 					$sql = $schedule.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Verbose $sql
 					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 				}

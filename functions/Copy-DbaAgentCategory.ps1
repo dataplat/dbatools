@@ -167,7 +167,7 @@ Shows what would happen if the command were executed using force.
 						{
 							Write-Output "Copying Job category $categoryname"
 							$sql = $jobcategory.Script() | Out-String
-							$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+							$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 							Write-Verbose $sql
 							$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 						}
@@ -229,7 +229,7 @@ Shows what would happen if the command were executed using force.
 									$destserver.jobserver.operatorcategories[$categoryname].Drop()
 									Write-Output "Copying Operator category $categoryname"
 									$sql = $operatorcategory.Script() | Out-String
-									$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+									$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 									Write-Verbose $sql
 									$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 								}
@@ -245,7 +245,7 @@ Shows what would happen if the command were executed using force.
 							{
 								Write-Output "Copying Operator category $categoryname"
 								$sql = $operatorcategory.Script() | Out-String
-								$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+								$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 								Write-Verbose $sql
 								$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 							}
@@ -313,7 +313,7 @@ Shows what would happen if the command were executed using force.
 									$destserver.jobserver.alertcategories[$categoryname].Drop()
 									Write-Output "Copying Alert category $categoryname"
 									$sql = $alertcategory.Script() | Out-String
-									$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+									$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 									Write-Verbose $sql
 									$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 								}
@@ -329,7 +329,7 @@ Shows what would happen if the command were executed using force.
 							{
 								Write-Output "Copying Alert category $categoryname"
 								$sql = $alertcategory.Script() | Out-String
-								$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+								$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 								Write-Verbose $sql
 								$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 							}

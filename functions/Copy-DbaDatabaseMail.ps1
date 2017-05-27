@@ -122,7 +122,7 @@ function Copy-DbaDatabaseMail {
 			if ($pscmdlet.ShouldProcess($destination, "Migrating all mail server configuration values")) {
 				try {
 					$sql = $mail.ConfigurationValues.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Message -Message $sql -Level Debug
 					$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 					$mail.ConfigurationValues.Refresh()
@@ -183,7 +183,7 @@ function Copy-DbaDatabaseMail {
 					try {
 						Write-Message -Message "Copying mail account $accountName" -Level Verbose
 						$sql = $account.Script() | Out-String
-						$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+						$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 						Write-Message -Message $sql -Level Debug
 						$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 						$copyMailAccountStatus.Status = "Successful"
@@ -246,7 +246,7 @@ function Copy-DbaDatabaseMail {
 					try {
 						Write-Message -Message "Copying mail profile $profileName" -Level Verbose
 						$sql = $profile.Script() | Out-String
-						$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+						$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 						Write-Message -Message $sql -Level Debug
 						$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 						$destServer.Mail.Profiles.Refresh()
@@ -306,7 +306,7 @@ function Copy-DbaDatabaseMail {
 					try {
 						Write-Message -Message "Copying mail server $mailServerName" -Level Verbose
 						$sql = $mailServer.Script() | Out-String
-						$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+						$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 						Write-Message -Message $sql -Level Debug
 						$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 						$copyMailServerStatus.Status = "Successful"

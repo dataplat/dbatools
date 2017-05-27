@@ -115,7 +115,7 @@ function Copy-DbaAgentAlert {
 				try {
 					Write-Message -Message "Creating Alert Defaults" -Level Output
 					$sql = $sourceServer.JobServer.AlertSystem.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$Destination'")
+					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$Destination'"
 
 					Write-Message -Message $sql -Level Debug
 					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
@@ -180,7 +180,7 @@ function Copy-DbaAgentAlert {
 					#>
                     Write-Message -Message "Copying Alert $alertName" -Level Output
                     $sql = $alert.Script() | Out-String
-                    $sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$Destination'")
+                    $sql = $sql -replace [Regex]::Escape("'$source'"), "'$Destination'"
                     $sql = $sql -replace "@job_id=N'........-....-....-....-............", "@job_id=N'00000000-0000-0000-0000-000000000000"
 
                     Write-Message -Message $sql -Level Debug

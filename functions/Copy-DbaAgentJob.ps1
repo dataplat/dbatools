@@ -185,7 +185,7 @@ Shows what would happen if the command were executed using force.
                 try {
                     Write-Message -Message "Copying Job $jobName" -Level Output -Silent $Silent
                     $sql = $job.Script() | Out-String
-                    $sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+                    $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
                     Write-Message -Message $sql -Level Debug -Silent $Silent
                     $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
                 }
