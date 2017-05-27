@@ -136,7 +136,7 @@ Shows what would happen if the command were executed.
 			{
 				Write-Output "Copying SQL Agent Properties"
 				$sql = $sourceagent.Script() | Out-String
-				$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+				$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 				$sql = $sql -replace [Regex]::Escape("@errorlog_file="), [Regex]::Escape("--@errorlog_file=")
 				Write-Verbose $sql
 				$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
