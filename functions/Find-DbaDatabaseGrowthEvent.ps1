@@ -1,4 +1,4 @@
-Function Find-DbaDatabaseGrowthEvent
+function Find-DbaDatabaseGrowthEvent
 {
 <#
 .SYNOPSIS
@@ -59,65 +59,65 @@ Returns any database AutoGrow events in the Default Trace for every database on 
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
-        [switch]$Silent
+		[object[]]$ExcludeDatabase,
+		[switch]$Silent
 	)
 		
 	begin
 	{
 		$query = "begin try  
-                    if (select convert(int,value_in_use) from sys.configurations where name = 'default trace enabled' ) = 1 
-                    begin 
-                    declare @curr_tracefilename varchar(500) ; 
-                    declare @base_tracefilename varchar(500) ; 
-                    declare @indx int ;
+					if (select convert(int,value_in_use) from sys.configurations where name = 'default trace enabled' ) = 1 
+					begin 
+					declare @curr_tracefilename varchar(500) ; 
+					declare @base_tracefilename varchar(500) ; 
+					declare @indx int ;
 
-                    select @curr_tracefilename = path from sys.traces where is_default = 1 ; 
-                    set @curr_tracefilename = reverse(@curr_tracefilename);
-                    select @indx  = patindex('%\%', @curr_tracefilename) ;
-                    set @curr_tracefilename = reverse(@curr_tracefilename) ;
-                    set @base_tracefilename = left( @curr_tracefilename,len(@curr_tracefilename) - @indx) + '\log.trc' ;  
+					select @curr_tracefilename = path from sys.traces where is_default = 1 ; 
+					set @curr_tracefilename = reverse(@curr_tracefilename);
+					select @indx  = patindex('%\%', @curr_tracefilename) ;
+					set @curr_tracefilename = reverse(@curr_tracefilename) ;
+					set @base_tracefilename = left( @curr_tracefilename,len(@curr_tracefilename) - @indx) + '\log.trc' ;  
 
-                    select SERVERPROPERTY('MachineName') AS ComputerName, 
-							       ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName, 
-							       SERVERPROPERTY('ServerName') AS SqlInstance, 
+					select SERVERPROPERTY('MachineName') AS ComputerName, 
+								   ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName, 
+								   SERVERPROPERTY('ServerName') AS SqlInstance, 
 							CONVERT(INT,(dense_rank() over (order by StartTime desc))%2) as OrderRank
-                    ,       convert(int, EventClass) as EventClass
-                    ,       DatabaseName
-                    ,       Filename
-                    ,       CONVERT(INT,(Duration/1000)) as Duration
-                    ,       dateadd (minute, datediff (minute, getdate(), getutcdate()), StartTime) as StartTime  -- Convert to UTC time
-                    ,       dateadd (minute, datediff (minute, getdate(), getutcdate()), EndTime) as EndTime  -- Convert to UTC time
-                    ,       (IntegerData*8.0/1024) as ChangeInSize 
-                    from ::fn_trace_gettable( @base_tracefilename, default ) 
-                    where EventClass >=  92      and EventClass <=  95        and ServerName = @@servername   
-                    and DatabaseName IN (_DatabaseList_)
-                    order by StartTime desc ;   
-                    end     else    
-                    select -1 as OrderRank, 0 as EventClass, 0 DatabaseName, 0 as Filename, 0 as Duration, 0 as StartTime, 0 as EndTime,0 as ChangeInSize 
-                    end try 
-                    begin catch 
-                    select -100 as OrderRank
-                    ,       ERROR_NUMBER() as EventClass
-                    ,       ERROR_SEVERITY() DatabaseName
-                    ,       ERROR_STATE() as Filename
-                    ,       ERROR_MESSAGE() as Duration
-                    ,       1 as StartTime, 1 as EndTime,1 as ChangeInSize 
-                    end catch"
+					,       convert(int, EventClass) as EventClass
+					,       DatabaseName
+					,       Filename
+					,       CONVERT(INT,(Duration/1000)) as Duration
+					,       dateadd (minute, datediff (minute, getdate(), getutcdate()), StartTime) as StartTime  -- Convert to UTC time
+					,       dateadd (minute, datediff (minute, getdate(), getutcdate()), EndTime) as EndTime  -- Convert to UTC time
+					,       (IntegerData*8.0/1024) as ChangeInSize 
+					from ::fn_trace_gettable( @base_tracefilename, default ) 
+					where EventClass >=  92      and EventClass <=  95        and ServerName = @@servername   
+					and DatabaseName IN (_DatabaseList_)
+					order by StartTime desc ;   
+					end     else    
+					select -1 as OrderRank, 0 as EventClass, 0 DatabaseName, 0 as Filename, 0 as Duration, 0 as StartTime, 0 as EndTime,0 as ChangeInSize 
+					end try 
+					begin catch 
+					select -100 as OrderRank
+					,       ERROR_NUMBER() as EventClass
+					,       ERROR_SEVERITY() DatabaseName
+					,       ERROR_STATE() as Filename
+					,       ERROR_MESSAGE() as Duration
+					,       1 as StartTime, 1 as EndTime,1 as ChangeInSize 
+					end catch"
 	}
 	
 	process
 	{
 		foreach ($instance in $SqlInstance)
 		{
-            Write-Message -Level Verbose -Message "Connecting to $instance"
+			Write-Message -Level Verbose -Message "Connecting to $instance"
 			try
 			{
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch
 			{
-                Write-Message -Level Warning -Message "Can't connect to $instance. Moving on."
+				Write-Message -Level Warning -Message "Can't connect to $instance. Moving on."
 				continue
 			}
 			
@@ -125,21 +125,21 @@ Returns any database AutoGrow events in the Default Trace for every database on 
 
 			if ($Database)
 			{
-                $dbs = $dbs | Where-Object Name -in $Database
+				$dbs = $dbs | Where-Object Name -in $Database
 			}
 			
-			if ($exclude)
+			if ($ExcludeDatabase)
 			{
-                $dbs = $dbs | Where-Object Name -notin $exclude
+				$dbs = $dbs | Where-Object Name -notin $ExcludeDatabase
 			}
 
-            #Create dblist name in 'bd1', 'db2' format
-            $dbsList = "'$($($dbs | % {$_.Name}) -join "','")'" 
+			#Create dblist name in 'bd1', 'db2' format
+			$dbsList = "'$($($dbs | % {$_.Name}) -join "','")'" 
 
-            $queryToExcute = $query -replace '_DatabaseList_', $dbsList
-            Write-Message -Level Debug -Message $queryToExcute
+			$queryToExcute = $query -replace '_DatabaseList_', $dbsList
+			Write-Message -Level Debug -Message $queryToExcute
 
-            $server.Databases["master"].ExecuteWithResults($queryToExcute).Tables | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, EventClass, DatabaseName, Filename, Duration, StartTime, EndTime, ChangeInSize
+			$server.Databases["master"].ExecuteWithResults($queryToExcute).Tables | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, EventClass, DatabaseName, Filename, Duration, StartTime, EndTime, ChangeInSize
 		}
 	}
 }
