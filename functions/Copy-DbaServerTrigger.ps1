@@ -137,7 +137,7 @@ Shows what would happen if the command were executed using force.
 				{
 					Write-Output "Copying server trigger $triggername"
 					$sql = $trigger.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					$sql = $sql -replace "CREATE TRIGGER", "`nGO`nCREATE TRIGGER"
 					$sql = $sql -replace "ENABLE TRIGGER", "`nGO`nENABLE TRIGGER"
 					
