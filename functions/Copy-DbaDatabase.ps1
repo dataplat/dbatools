@@ -147,7 +147,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		[DbaInstanceParameter]$Destination,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[Alias("All")]
 		[parameter(Position = 4, ParameterSetName = "DbBackup")]
 		[parameter(Position = 4, ParameterSetName = "DbAttachDetach")]
@@ -712,7 +712,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			}
 		}
 		
-		if (($Database -or $Exclude -or $IncludeSupportDbs) -and (!$DetachAttach -and !$BackupRestore)) {
+		if (($Database -or $ExcludeDatabase -or $IncludeSupportDbs) -and (!$DetachAttach -and !$BackupRestore)) {
 			Stop-Function -Message "You did not select a migration method. Please use -BackupRestore or -DetachAttach"
 			return
 		}
@@ -771,7 +771,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		
 		$alldbelapsed = [System.Diagnostics.Stopwatch]::StartNew()
 		
-		if ($AllDatabases -or $Exclude.length -gt 0 -or $IncludeSupportDbs -or $Database.length -gt 0) {
+		if ($AllDatabases -or $ExcludeDatabase.length -gt 0 -or $IncludeSupportDbs -or $Database.length -gt 0) {
 			foreach ($smodb in $databaselist) {
 				$dbelapsed = [System.Diagnostics.Stopwatch]::StartNew()
 				$dbname = $smodb.name
@@ -780,7 +780,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				Write-Output "`n######### Database: $dbname #########"
 				$dbstart = Get-Date
 				
-				if ($exclude -contains $dbname) {
+				if ($ExcludeDatabase -contains $dbname) {
 					Write-Output "$dbname excluded. Skipping."
 					continue
 				}
