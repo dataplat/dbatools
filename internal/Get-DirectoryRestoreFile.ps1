@@ -17,7 +17,8 @@ Takes path, checks for validity. Scans for usual backup file
     Write-Message -Level Verbose -Message "Starting"
     Write-Message -Level Verbose -Message "Checking Path"
     if ((Test-Path $Path) -ne $true) {
-        Write-Message -Level Verbose -Message "$Path is not reachable" -WarningAction stop
+        Stop-Function -Message "$Path is not reachable"
+		return
     }
     #Path needs to end \* to use includes, which is faster than Where-Object
     $PathCheckArray = $path.ToCharArray()
