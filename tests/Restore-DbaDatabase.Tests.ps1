@@ -1,6 +1,6 @@
 ﻿Describe "Restore-DbaDatabase Integration Tests" -Tags "Integrationtests" {
 	Context "Properly restores a database on the local drive using Path" {
-		$results = Restore-DbaDatabase -SqlServer localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak -WithReplace
+		$results = Restore-DbaDatabase -SqlServer localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak
 		It "Should Return the proper backup file location" {
 			$results.BackupFile | Should Be "C:\github\appveyor-lab\singlerestore\singlerestore.bak"
 		}
