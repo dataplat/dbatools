@@ -1,4 +1,4 @@
-Function Backup-DbaDatabase {
+function Backup-DbaDatabase {
 <#
 .SYNOPSIS
 Backup one or more SQL Sever databases from a SQL Server SqlInstance
@@ -125,7 +125,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[string[]]$BackupDirectory,
 		[string]$BackupFileName,
 		[switch]$NoCopyOnly,
@@ -165,8 +165,8 @@ sql credential dbatoolscred registered on the sql2016 instance
 				$DatabaseCollection = $server.Databases | Where-object { $_.Name -ne 'TempDb' }
 			}
 			
-			if ($exclude) {
-				$DatabaseCollection = $DatabaseCollection | Where-Object Name -notin $exclude
+			if ($ExcludeDatabase) {
+				$DatabaseCollection = $DatabaseCollection | Where-Object Name -notin $ExcludeDatabase
 			}
 			
 			if ($BackupDirectory.count -gt 1) {
