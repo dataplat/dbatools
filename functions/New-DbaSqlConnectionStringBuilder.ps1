@@ -1,4 +1,4 @@
-Function Get-DbaSqlConnectionStringBuilder
+Function New-DbaSqlConnectionStringBuilder
 {
 <#
 .SYNOPSIS
@@ -34,13 +34,12 @@ Returns an empty ConnectionStringBuilder
 Returns a connection string builder that can be used to connect to the local sql server instance on the default port.
 
 #>
-	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
 	[CmdletBinding()]
 	Param (
 		[Parameter(Mandatory = $false, ValueFromPipeline = $true)]
-        [string[]]$Connectiontring = $null
+        [string[]]$ConnectionString = $null
 	)
     process {
-        New-Object Data.SqlClient.SqlConnectionStringBuilder $Connectiontring
+		New-Object Data.SqlClient.SqlConnectionStringBuilder $ConnectionString
     }
 }
