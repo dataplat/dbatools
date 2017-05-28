@@ -1,4 +1,4 @@
-Function Backup-DbaDatabase {
+function Backup-DbaDatabase {
 <#
 .SYNOPSIS
 Backup one or more SQL Sever databases from a SQL Server SqlInstance
@@ -16,7 +16,7 @@ Credentials to connect to the SQL Server instance if the calling user doesn't ha
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Exclude
+.PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER BackupFileName
@@ -125,7 +125,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[string[]]$BackupDirectory,
 		[string]$BackupFileName,
 		[switch]$NoCopyOnly,
@@ -165,8 +165,8 @@ sql credential dbatoolscred registered on the sql2016 instance
 				$DatabaseCollection = $server.Databases | Where-object { $_.Name -ne 'TempDb' }
 			}
 			
-			if ($exclude) {
-				$DatabaseCollection = $DatabaseCollection | Where-Object Name -notin $exclude
+			if ($ExcludeDatabase) {
+				$DatabaseCollection = $DatabaseCollection | Where-Object Name -notin $ExcludeDatabase
 			}
 			
 			if ($BackupDirectory.count -gt 1) {
@@ -228,11 +228,11 @@ sql credential dbatoolscred registered on the sql2016 instance
 				continue
 			}
 			
-			if ($server -eq $null) { $server = $Database.Parent }
+			if ($null -eq $server) { $server = $Database.Parent }
 			
 			Write-Message -Level Verbose -Message "Backup up database $database"
 			
-			if ($Database.RecoveryModel -eq $null) {
+			if ($null -eq $Database.RecoveryModel) {
 				$Database.RecoveryModel = $server.databases[$Database.Name].RecoveryModel
 				Write-Message -Level Verbose -Message "$dbname is in $($Database.RecoveryModel) recovery model"
 			}
@@ -253,7 +253,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 			
 			$copyonly = !$NoCopyOnly
 			
-			$server.ConnectionContext.StatementTimeout = $val = 0
+			$server.ConnectionContext.StatementTimeout  = 0
 			$backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
 			$backup.Database = $Database.Name
 			$Suffix = "bak"

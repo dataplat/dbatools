@@ -1,4 +1,4 @@
-Function Find-DbaStoredProcedure {
+function Find-DbaStoredProcedure {
 <#
 .SYNOPSIS
 Returns all stored procedures that contain a specific case-insensitive string or regex pattern.
@@ -15,7 +15,7 @@ PSCredential object to connect as. If not specified, currend Windows login will 
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Exclude
+.PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER Pattern
@@ -69,7 +69,7 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[parameter(Mandatory = $true)]
 		[string]$Pattern,
 		[switch]$IncludeSystemObjects,
@@ -104,12 +104,12 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 				$dbs = $server.Databases | Where-Object { $_.Status -eq "normal" -and $_.IsSystemObject -eq $false }
 			}
 			
-			if ($database.count -gt 0) {
-				$dbs = $dbs | Where-Object { $database -contains $_.Name }
+			if ($Database) {
+				$dbs = $dbs | Where-Object Name -In $Database
 			}
 			
-			if ($exclude) {
-				$dbs = $dbs | Where-Object { $_.Name -notin $exclude }
+			if ($ExcludeDatabase) {
+				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
 			}
 			
 			$totalcount = 0

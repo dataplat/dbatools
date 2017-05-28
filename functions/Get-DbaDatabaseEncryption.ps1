@@ -16,7 +16,7 @@ PSCredential object to connect as. If not specified, currend Windows login will 
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Exclude
+.PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER IncludeSystemDBs
@@ -49,7 +49,7 @@ List all encrption found in MyDB
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[switch]$IncludeSystemDBs,
 		[switch]$Silent
 	)
@@ -70,8 +70,8 @@ List all encrption found in MyDB
 			#If IncludeSystemDBs is true, include systemdbs
 			#only look at online databases (Status equal normal)
 			try {
-				if ($database.length -gt 0) {
-					$dbs = $server.Databases | Where-Object { $database -contains $_.Name }
+				if ($Database) {
+					$dbs = $server.Databases | Where-Object Name -In $Database
 				}
 				elseif ($IncludeSystemDBs) {
 					$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' }
@@ -80,8 +80,8 @@ List all encrption found in MyDB
 					$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' -and $_.IsSystemObject -eq 0 }
 				}
 				
-				if ($exclude.length -gt 0) {
-					$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
+				if ($ExcludeDatabase) {
+					$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
 				}
 			}
 			catch {

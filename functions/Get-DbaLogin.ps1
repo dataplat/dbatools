@@ -104,7 +104,7 @@ function Get-DbaLogin {
 			$serverLogins = $server.Logins
 
 			if ($Login) {
-				$serverLogins = $serverLogins | Where-Object $Login -contains Name
+				$serverLogins = $serverLogins | Where-Object Name -in $Login
 			}
 
 			if ($ExcludeLogin) {

@@ -1,4 +1,4 @@
-﻿Function Get-DbaEstimatedCompletionTime {
+﻿function Get-DbaEstimatedCompletionTime {
 <#
 .SYNOPSIS
 Gets execution and estimated completion time information for queries
@@ -33,7 +33,7 @@ SqlCredential object used to connect to the SQL Server as a different user.
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Exclude
+.PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER Silent 
@@ -77,7 +77,7 @@ Gets estimated completion times for queries performed against the Northwind, pub
 		[PsCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[switch]$Silent
 	)
 	
@@ -121,13 +121,13 @@ Gets estimated completion times for queries performed against the Northwind, pub
 				Stop-Function -Message "Can't connect to $instance. Moving on." -Continue
 			}
 			
-			if ($database) {
-				$includedatabases = $database -join "','"
+			if ($Database) {
+				$includedatabases = $Database -join "','"
 				$sql = "$sql WHERE DB_NAME(r.database_id) in ('$includedatabases')"
 			}
 			
-			if ($exclude) {
-				$excludedatabases = $exclude -join "','"
+			if ($ExcludeDatabase) {
+				$excludedatabases = $ExcludeDatabase -join "','"
 				$sql = "$sql WHERE DB_NAME(r.database_id) not in ('$excludedatabases')"
 			}
 			
