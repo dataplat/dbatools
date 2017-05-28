@@ -22,6 +22,9 @@ function Get-DbaBackupHistory {
 		The database(s) to process.
 		If unspecified, all databases will be scanned for backup history.
 	
+	.PARAMETER ExcludeDatabase
+		The database(s) to not process.
+	
 	.PARAMETER IgnoreCopyOnly
 		If set, Get-DbaBackupHistory will ignore CopyOnly backups
 	
@@ -49,9 +52,6 @@ function Get-DbaBackupHistory {
 	.PARAMETER Silent
 		Replaces user friendly yellow warnings with bloody red exceptions of doom!
 		Use this if you want the function to throw terminating errors you want to catch.
-	
-	.PARAMETER Databases
-		Return backup information for only specific databases. These are only the databases that currently exist on the server.
 	
 	.EXAMPLE
 		Get-DbaBackupHistory -SqlInstance SqlInstance2014a
