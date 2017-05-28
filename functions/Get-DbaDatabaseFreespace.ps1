@@ -72,10 +72,10 @@
 		$SqlCredential,
 		
 		[Alias("Databases")]
-		[string[]]
+		[object[]]
 		$Database,
 		
-		[string[]]
+		[object[]]
 		$ExcludeDatabase,
 		
 		[switch]

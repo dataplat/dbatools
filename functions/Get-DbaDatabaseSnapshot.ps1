@@ -1,6 +1,6 @@
 #ValidationTags#FlowControl#
 function Get-DbaDatabaseSnapshot {
-	<#
+    <#
 .SYNOPSIS
 Get database snapshots with details
 
@@ -16,11 +16,14 @@ Credential object used to connect to the SQL Server as a different user
 .PARAMETER Database
 Return information for only specific databases
 
-.PARAMETER Exclude
+.PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER Snapshot
 Return information for only specific snapshots
+
+.PARAMETER ExcludeSnapshot
+The snapshot(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages
@@ -53,65 +56,65 @@ Get-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snapshot, Accou
 Returns information for database snapshots HR_snapshot and Accounting_snapshot
 
 #>
-	[CmdletBinding()]
-	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$SqlCredential,
-		[Alias("Databases")]
-		[object[]]$Database,
-		[object[]]$ExcludeDatabase,
-		[object[]]$Snapshot,
-		[object[]]$ExcludeSnapshot,
-		[switch]$Silent
-	)
+    [CmdletBinding()]
+    Param (
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [Alias("Credential")]
+        [PSCredential][System.Management.Automation.CredentialAttribute()]
+        $SqlCredential,
+        [Alias("Databases")]
+        [object[]]$Database,
+        [object[]]$ExcludeDatabase,
+        [object[]]$Snapshot,
+        [object[]]$ExcludeSnapshot,
+        [switch]$Silent
+    )
 
-	process {
-		foreach ($instance in $SqlInstance) {
-			Write-Message -Level Verbose -Message "Connecting to $instance"
-			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
-			}
-			catch {
-				Stop-Function -Message "Failed to connect to: $instance" -InnerErrorRecord $_ -Target $instance -Continue -Silent $Silent
-			}
+    process {
+        foreach ($instance in $SqlInstance) {
+            Write-Message -Level Verbose -Message "Connecting to $instance"
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
+            }
+            catch {
+                Stop-Function -Message "Failed to connect to: $instance" -InnerErrorRecord $_ -Target $instance -Continue -Silent $Silent
+            }
 
-			$dbs = $server.Databases
+            $dbs = $server.Databases
 
-			if ($Database) {
-				$dbs = $dbs | Where-Object { $Database -contains $_.DatabaseSnapshotBaseName }
-			}
-			if ($ExcludeDatabase) {
-				$dbs = $dbs | Where-Object { $ExcludeDatabase -notcontains $_.DatabaseSnapshotBaseName}
-			}
-			if ($Snapshot) {
-				$dbs = $dbs | Where-Object { $Snapshot -contains $_.Name }
-			}
-			if (!$Snapshot -and !$Database) {
-				$dbs = $dbs | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
-			}
-			if ($ExcludeSnapshot) {
-				$dbs = $dbs | Where-Object { $ExcludeSnapshot -notcontains $_.DatabaseSnapshotBaseName }
-			}
+            if ($Database) {
+                $dbs = $dbs | Where-Object { $Database -contains $_.DatabaseSnapshotBaseName }
+            }
+            if ($ExcludeDatabase) {
+                $dbs = $dbs | Where-Object { $ExcludeDatabase -notcontains $_.DatabaseSnapshotBaseName}
+            }
+            if ($Snapshot) {
+                $dbs = $dbs | Where-Object { $Snapshot -contains $_.Name }
+            }
+            if (!$Snapshot -and !$Database) {
+                $dbs = $dbs | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
+            }
+            if ($ExcludeSnapshot) {
+                $dbs = $dbs | Where-Object { $ExcludeSnapshot -notcontains $_.DatabaseSnapshotBaseName }
+            }
 
-			foreach ($db in $dbs) {
-				$object = [PSCustomObject]@{
-					ComputerName    = $server.NetName
-					InstanceName    = $server.ServiceName
-					SqlInstance     = $server.DomainInstanceName
-					Database        = $db.name
-					SnapshotOf      = $db.DatabaseSnapshotBaseName
-					SizeMB          = [Math]::Round($db.Size, 2) ##FIXME, should use the stats for sparse files
-					DatabaseCreated = [dbadatetime]$db.createDate
-					SnapshotDb      = $db
-				}
+            foreach ($db in $dbs) {
+                $object = [PSCustomObject]@{
+                    ComputerName    = $server.NetName
+                    InstanceName    = $server.ServiceName
+                    SqlInstance     = $server.DomainInstanceName
+                    Database        = $db.name
+                    SnapshotOf      = $db.DatabaseSnapshotBaseName
+                    SizeMB          = [Math]::Round($db.Size, 2) ##FIXME, should use the stats for sparse files
+                    DatabaseCreated = [dbadatetime]$db.createDate
+                    SnapshotDb      = $db
+                }
 
-				Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, Database, SnapshotOf, SizeMB, DatabaseCreated
-			}
-		}
-	}
+                Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, Database, SnapshotOf, SizeMB, DatabaseCreated
+            }
+        }
+    }
 }
 
