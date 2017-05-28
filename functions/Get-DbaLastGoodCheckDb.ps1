@@ -1,5 +1,5 @@
-Function Get-DbaLastGoodCheckDb {
-<#
+function Get-DbaLastGoodCheckDb {
+	<#
 .SYNOPSIS
 Get date/time for last known good DBCC CHECKDB
 
@@ -28,18 +28,20 @@ Credential object used to connect to the SQL Server as a different user
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Exclude
+.PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is autopopulated from the server
-	
-.PARAMETER Silent 
+
+.PARAMETER Silent
 Use this switch to disable any kind of verbose messages
 
 .NOTES
+Tags: CHECKDB, Database
 Author: Jakob Bindslet (jakob@bindslet.dk)
+
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-	
+
 .LINK
 DBCC CHECKDB:
 	https://msdn.microsoft.com/en-us/library/ms176064.aspx
@@ -61,7 +63,7 @@ Authenticates with SQL Server using alternative credentials.
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
@@ -70,7 +72,7 @@ Authenticates with SQL Server using alternative credentials.
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[switch]$Silent
 	)
 	process {
@@ -82,55 +84,53 @@ Authenticates with SQL Server using alternative credentials.
 			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
 			}
-			
+
 			if ($server.versionMajor -lt 9) {
 				Stop-Function -Message "Get-DbaLastGoodCheckDb is only supported on SQL Server 2005 and above. Skipping Instance." -Continue -Target $instance
 			}
-			
+
 			$dbs = $server.Databases
-			
-			if ($database) {
-				$dbs = $dbs | Where-Object { $database -contains $_.Name }
+
+			if ($Database) {
+				$dbs = $dbs | Where-Object Name -In $Database
 			}
-			
-			if ($exclude) {
-				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
+
+			if ($ExcludeDatabase) {
+				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
 			}
-			
-			# $dbs = $dbs | Where-Object {$_.IsAccessible}
-			
+
 			foreach ($db in $dbs) {
-				Write-Message -Level Verbose -Message "Processing $($db.name) on $instances"
-				
+				Write-Message -Level Verbose -Message "Processing $db on $instances"
+
 				if ($db.IsAccessible -eq $false) {
-					Stop-Function "The database $($db.name) is not accessible. Skipping database." -Continue -Target $db
+					Stop-Function "The database $db is not accessible. Skipping database." -Continue -Target $db
 				}
-				
+
 				$sql = "DBCC DBINFO ([$($db.name)]) WITH TABLERESULTS"
 				Write-Message -Level Debug -Message "T-SQL: $sql"
-				
+
 				$resultTable = $db.ExecuteWithResults($sql).Tables[0]
 				[datetime[]]$lastKnownGoodArray = $resultTable | Where-Object Field -eq 'dbi_dbccLastKnownGood' | Select-Object -ExpandProperty Value
-				
+
 				## look for databases with two or more occurrences of the field dbi_dbccLastKnownGood
 				if ($lastKnownGoodArray.count -ge 2) {
-					Write-Message -Level Verbose -Message "The database $($db.name) has $($lastKnownGoodArray.count) dbi_dbccLastKnownGood fields. This script will only use the newest!"
+					Write-Message -Level Verbose -Message "The database $db has $($lastKnownGoodArray.count) dbi_dbccLastKnownGood fields. This script will only use the newest!"
 				}
 				[datetime]$lastKnownGood = $lastKnownGoodArray | Sort-Object -Descending | Select-Object -First 1
-				
+
 				[int]$createVersion = ($resultTable | Where-Object Field -eq 'dbi_createVersion').Value
 				[int]$dbccFlags = ($resultTable | Where-Object Field -eq 'dbi_dbccFlags').Value
-				
+
 				if (($createVersion -lt 611) -and ($dbccFlags -eq 0)) {
 					$dataPurityEnabled = $false
 				}
 				else {
 					$dataPurityEnabled = $true
 				}
-				
+
 				$daysSinceCheckDb = (New-TimeSpan -Start $lastKnownGood -End (Get-Date)).Days
 				$daysSinceDbCreated = (New-TimeSpan -Start $db.createDate -End (Get-Date)).Days
-				
+
 				if ($daysSinceCheckDb -lt 7) {
 					$Status = 'Ok'
 				}
@@ -140,22 +140,22 @@ Authenticates with SQL Server using alternative credentials.
 				else {
 					$Status = 'CheckDB should be performed'
 				}
-				
+
 				if ($lastKnownGood -eq '1/1/1900 12:00:00 AM') { Remove-Variable -Name lastKnownGood, daysSinceCheckDb }
-				
+
 				[PSCustomObject]@{
-					ComputerName = $server.NetName
-					InstanceName = $server.ServiceName
-					SqlInstance = $server.DomainInstanceName
-					Database = $db.name
-					DatabaseCreated = $db.createDate
-					LastGoodCheckDb = $lastKnownGood
-					DaysSinceDbCreated = $daysSinceDbCreated
+					ComputerName             = $server.NetName
+					InstanceName             = $server.ServiceName
+					SqlInstance              = $server.DomainInstanceName
+					Database                 = $db.name
+					DatabaseCreated          = $db.createDate
+					LastGoodCheckDb          = $lastKnownGood
+					DaysSinceDbCreated       = $daysSinceDbCreated
 					DaysSinceLastGoodCheckDb = $daysSinceCheckDb
-					Status = $status
-					DataPurityEnabled = $dataPurityEnabled
-					CreateVersion = $createVersion
-					DbccFlags = $dbccFlags
+					Status                   = $status
+					DataPurityEnabled        = $dataPurityEnabled
+					CreateVersion            = $createVersion
+					DbccFlags                = $dbccFlags
 				}
 			}
 		}

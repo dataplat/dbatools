@@ -1,12 +1,11 @@
-Function Get-DbaQueryStoreConfig
-{
+function Get-DbaQueryStoreConfig {
 <#
 .SYNOPSIS
 Get the Query Store configuration for Query Store enabled databases.
-	
+
 .DESCRIPTION
 Retrieves and returns the Query Store configuration for every database that has the Query Store feature enabled.
-	
+
 .PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 
@@ -16,12 +15,13 @@ SqlCredential object used to connect to the SQL Server as a different user.
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Exclude
+.PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is autopopulated from the server
 
 .NOTES
-Author: Enrico van de Laar ( @evdlaar )
 Tags: QueryStore
+Author: Enrico van de Laar ( @evdlaar )
+
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -43,10 +43,10 @@ Returns the Query Store configuration for all databases on ServerA\sql where the
 Get-DbaQueryStoreConfig -SqlInstance localhost | format-table -AutoSize -Wrap
 
 Returns Query Store configuration settings for every database on the ServerA\sql instance inside a table format.
-	
+
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
@@ -55,9 +55,8 @@ Returns Query Store configuration settings for every database on the ServerA\sql
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude
+		[object[]]$ExcludeDatabase
 	)
-	
 	process
 	{
 		foreach ($instance in $SqlInstance)
@@ -66,45 +65,42 @@ Returns Query Store configuration settings for every database on the ServerA\sql
 			try
 			{
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-				
 			}
 			catch
 			{
 				Write-Warning "Can't connect to $instance. Moving on."
 				continue
 			}
-			
+
 			if ($server.VersionMajor -lt 13)
 			{
 				Write-Warning "The SQL Server Instance ($instance) has a lower SQL Server version than SQL Server 2016. Skipping server."
 				continue
 			}
-			
-			
+
 			# We have to exclude all the system databases since they cannot have the Query Store feature enabled
-			$dbs = $server.Databases | Where-Object { $_.IsSystemObject -eq $false }
-			
-			if ($database)
+			$dbs = Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -NoSystemDb
+
+			if ($Database)
 			{
-				$dbs = $dbs | Where-Object { $database -contains $_.Name }
+				$dbs = $dbs | Where-Object Name -In $Database
 			}
-			
-			if ($exclude)
+
+			if ($ExcludeDatabase)
 			{
-				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
+				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
 			}
-			
-			
+
 			foreach ($db in $dbs)
 			{
 				Write-Verbose "Processing $db on $instance"
-				
+
 				if ($db.IsAccessible -eq $false)
 				{
 					Write-Warning "The database $db on server $instance is not accessible. Skipping database."
 					Continue
 				}
-				
+
 				[pscustomobject]@{
 					Instance = $instance
 					Database = $db.Name
@@ -121,4 +117,3 @@ Returns Query Store configuration settings for every database on the ServerA\sql
 		}
 	}
 }
-
