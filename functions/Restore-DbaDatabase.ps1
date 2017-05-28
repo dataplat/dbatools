@@ -89,7 +89,7 @@ function Restore-DbaDatabase {
         
         This will apply to all file move options, except for FileMapping
     
-    .PARAMETER DestinationFilePrefix
+    .PARAMETER DestinationFileSuffix
         This value will be suffixed to ALL restored files (log and data). This is just a simple string suffix. If you want to perform more complex rename operations then please use the FileMapping parameter
         
         This will apply to all file move options, except for FileMapping
