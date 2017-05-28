@@ -1,4 +1,4 @@
-﻿Function Get-DbaEstimatedCompletionTime {
+﻿function Get-DbaEstimatedCompletionTime {
 <#
 .SYNOPSIS
 Gets execution and estimated completion time information for queries
@@ -33,7 +33,7 @@ SqlCredential object used to connect to the SQL Server as a different user.
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Exclude
+.PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER Silent 
