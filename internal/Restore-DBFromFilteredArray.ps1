@@ -44,9 +44,7 @@ Function Restore-DBFromFilteredArray
 
 
 
-        $Results = @()
         $InternalFiles = @()
-		$Output = @()
 		if (($MaxTransferSize%64kb) -ne 0 -or $MaxTransferSize -gt 4mb)
 		{
 			Write-Warning "$FunctionName - MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
@@ -142,7 +140,7 @@ Function Restore-DBFromFilteredArray
         $if = $InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Database'} | Group-Object FirstLSN
 		$RestorePoints  += @([PSCustomObject]@{order=[Decimal]1;'Files' = $if.group})
         $if = $InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Database Differential'}| Group-Object FirstLSN
-		if ($if -ne $null){
+		if ($null -ne $if){
 			$RestorePoints  += @([PSCustomObject]@{order=[Decimal]2;'Files' = $if.group})
 		}
 
@@ -201,7 +199,7 @@ Function Restore-DBFromFilteredArray
 			{
 				$Restore.RelocateFiles.Clear()
 			}
-				if ($DestinationDataDirectory -ne '' -and $FileStructure -eq $NUll)
+				if ($DestinationDataDirectory -ne '' -and $null -eq $FileStructure)
 				{
 					if ($DestinationDataDirectory[-1] -eq '\')
 					{
@@ -230,7 +228,7 @@ Function Restore-DBFromFilteredArray
                     }
 
 				} 
-                elseif ($DestinationDataDirectory -eq '' -and $FileStructure -ne $NUll)
+                elseif ($DestinationDataDirectory -eq '' -and $null -ne $FileStructure)
 				{
 
 					foreach ($key in $FileStructure.keys)
@@ -243,7 +241,7 @@ Function Restore-DBFromFilteredArray
 						$LogicalFileMoves += "Relocating $($MoveFile.LogicalFileName) to $($MoveFile.PhysicalFileName)"
 					}	
 				} 
-                elseif ($DestinationDataDirectory -ne '' -and $FileStructure -ne $NUll)
+                elseif ($DestinationDataDirectory -ne '' -and $null -ne $FileStructure)
 				{
 					Write-Warning "$FunctionName - Conflicting options only one of FileStructure or DestinationDataDirectory allowed"
                     break
