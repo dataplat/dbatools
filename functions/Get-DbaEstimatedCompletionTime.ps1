@@ -77,7 +77,7 @@ Gets estimated completion times for queries performed against the Northwind, pub
 		[PsCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[switch]$Silent
 	)
 	
@@ -121,13 +121,13 @@ Gets estimated completion times for queries performed against the Northwind, pub
 				Stop-Function -Message "Can't connect to $instance. Moving on." -Continue
 			}
 			
-			if ($database) {
-				$includedatabases = $database -join "','"
+			if ($Database) {
+				$includedatabases = $Database -join "','"
 				$sql = "$sql WHERE DB_NAME(r.database_id) in ('$includedatabases')"
 			}
 			
-			if ($exclude) {
-				$excludedatabases = $exclude -join "','"
+			if ($ExcludeDatabase) {
+				$excludedatabases = $ExcludeDatabase -join "','"
 				$sql = "$sql WHERE DB_NAME(r.database_id) not in ('$excludedatabases')"
 			}
 			
