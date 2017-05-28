@@ -40,7 +40,7 @@ Function Restore-DBFromFilteredArray
 	Begin
     {
         $FunctionName =(Get-PSCallstack)[0].Command
-        Write-Verbose "$FunctionName - Starting"
+        Write-Message -Level Verbose -Message "Starting"
 
 
 
@@ -100,14 +100,14 @@ Function Restore-DBFromFilteredArray
 				{
 					try
 					{
-						Write-Verbose "$FunctionName - Set $DbName single_user to kill processes"
+						Write-Message -Level Verbose -Message "Set $DbName single_user to kill processes"
 						Stop-DbaProcess -SqlInstance $Server -Database $Dbname -WarningAction Silentlycontinue
 						Invoke-DbaSqlcmd -ServerInstance:$SqlInstance -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; alter database $DbName set restricted_user; Alter database $DbName set online with rollback immediate" -database master
 						$server.ConnectionContext.Connect()
 					}
 					catch
 					{
-						Write-Verbose "$FunctionName - No processes to kill in $DbName"
+						Write-Message -Level Verbose -Message "No processes to kill in $DbName"
 					}
 				} 
 			}
@@ -122,10 +122,10 @@ Function Restore-DBFromFilteredArray
 		$MissingFiles = @()
 		if ($TrustDbBackupHistory)
 		{
-			Write-Verbose "$FunctionName - Trusted File checks"
+			Write-Message -Level Verbose -Message "Trusted File checks"
 			Foreach ($File in $InternalFiles)
 			{
-				Write-Verbose "$FunctionName - Checking $($File.BackupPath) exists"
+				Write-Message -Level Verbose -Message "Checking $($File.BackupPath) exists"
 				if((Test-DbaSqlPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Path $File.BackupPath) -eq $false)
 				{
 					Write-verbose "$$FunctionName - $($File.backupPath) is missing"
@@ -155,7 +155,7 @@ Function Restore-DBFromFilteredArray
 		$SortedRestorePoints = $RestorePoints | Sort-object -property order
 		if ($ReuseSourceFolderStructure)
 		{
-			Write-Verbose "$functionName - Checking for folders for Reusing old structure"
+			Write-Message -Level Verbose -Message "Checking for folders for Reusing old structure"
 			foreach ($File in ($RestorePoints.Files.filelist.PhysicalName | Sort-Object -Unique))
 			{
 				write-verbose "File = $file"
@@ -169,12 +169,12 @@ Function Restore-DBFromFilteredArray
 					}
 					else
 					{
-						Write-Verbose "$FunctionName - Destination File $File  created on $SqlInstance"
+						Write-Message -Level Verbose -Message "Destination File $File  created on $SqlInstance"
 					}
 				}
 				else
 				{
-					Write-Verbose "$FunctionName - Destination File $File  exists on $SqlInstance"	
+					Write-Message -Level Verbose -Message "Destination File $File  exists on $SqlInstance"	
 				}
 			}
 		}
@@ -194,7 +194,7 @@ Function Restore-DBFromFilteredArray
 			Write-Progress -id 1 -Activity "Restoring" -Status "Restoring File" -CurrentOperation "$RestoreCount of $RpCount for database $Dbname"
 			$RestoreFiles = $RestorePoint.files
 			$RestoreFileNames = $RestoreFiles.BackupPath -join '`n ,'
-			Write-verbose "$FunctionName - Restoring $Dbname backup starting at order $($RestorePoint.order) - LSN $($RestoreFiles[0].FirstLSN) in $($RestoreFiles[0].BackupPath)"
+			Write-Message -Level Verbose -Message "Restoring $Dbname backup starting at order $($RestorePoint.order) - LSN $($RestoreFiles[0].FirstLSN) in $($RestoreFiles[0].BackupPath)"
 			$LogicalFileMoves = @()
 
 			if ($Restore.RelocateFiles.count -gt 0)
@@ -213,7 +213,7 @@ Function Restore-DBFromFilteredArray
 					}
 					foreach ($File in $RestoreFiles.Filelist)
 			        {
-						Write-Verbose "$FunctionName - Moving $($File.PhysicalName)"
+						Write-Message -Level Verbose -Message "Moving $($File.PhysicalName)"
                         $MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
                         $MoveFile.LogicalFileName = $File.LogicalName
                         if ($File.Type -eq 'L' -and $DestinationLogDirectory -ne '')
@@ -223,7 +223,7 @@ Function Restore-DBFromFilteredArray
                         else 
 						{
                             $MoveFile.PhysicalFileName = $DestinationDataDirectory + '\' + $DestinationFilePrefix + (split-path $file.PhysicalName -leaf)	
-							Write-verbose "$FunctionName - Moving $($file.PhysicalName) to $($MoveFile.PhysicalFileName) "
+							Write-Message -Level Verbose -Message "Moving $($file.PhysicalName) to $($MoveFile.PhysicalFileName) "
                         }
                         $LogicalFileMoves += "Relocating $($MoveFile.LogicalFileName) to $($MoveFile.PhysicalFileName)"
 						$null = $Restore.RelocateFiles.Add($MoveFile)
@@ -249,7 +249,7 @@ Function Restore-DBFromFilteredArray
                     break
 				} 
 				$LogicalFileMovesString = $LogicalFileMoves -join ", `n"
-				Write-Verbose "$FunctionName - $LogicalFileMovesString"
+				Write-Message -Level Verbose -Message "$LogicalFileMovesString"
 
 				if ($MaxTransferSize)
 				{
@@ -264,7 +264,7 @@ Function Restore-DBFromFilteredArray
 					$restore.Blocksize = $BlockSize
 				}
 
-				Write-Verbose "$FunctionName - Beginning Restore of $Dbname"
+				Write-Message -Level Verbose -Message "Beginning Restore of $Dbname"
 				$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
 					Write-Progress -id 2 -activity "Restoring $dbname to $servername" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
 				}
@@ -275,18 +275,18 @@ Function Restore-DBFromFilteredArray
 				if ($RestoreTime -gt (Get-Date))
 				{
 						$restore.ToPointInTime = $null
-						Write-Verbose "$FunctionName - restoring $DbName to latest point in time"
+						Write-Message -Level Verbose -Message "restoring $DbName to latest point in time"
 
 				}
 				elseif ($RestoreFiles[0].RecoveryModel -ne 'Simple')
 				{
 					$Restore.ToPointInTime = $RestoreTime
-					Write-Verbose "$FunctionName - restoring to $RestoreTime"
+					Write-Message -Level Verbose -Message "restoring to $RestoreTime"
 					
 				} 
 				else 
 				{
-					Write-Verbose "$FunctionName - Restoring a Simple mode db, no restoretime"	
+					Write-Message -Level Verbose -Message "Restoring a Simple mode db, no restoretime"	
 				}
 				if ($DbName -ne '')
 				{
@@ -303,37 +303,37 @@ Function Restore-DBFromFilteredArray
 						'5' {'Database'}
 						Default {'Unknown'}
 					}
-				Write-Verbose "$FunctionName - restore action = $Action"
+				Write-Message -Level Verbose -Message "restore action = $Action"
 				$restore.Action = $Action 
 				if ($RestorePoint -eq $SortedRestorePoints[-1])
 				{
 					if($NoRecovery -ne $true -and '' -eq $StandbyDirectory)
 					{
 						#Do recovery on last file
-						Write-Verbose "$FunctionName - Doing Recovery on last file"
+						Write-Message -Level Verbose -Message "Doing Recovery on last file"
 						$Restore.NoRecovery = $false
 					}
 					elseif ('' -ne $StandbyDirectory)
 					{
-						Write-Verbose "$FunctionName - Setting standby on last file"
+						Write-Message -Level Verbose -Message "Setting standby on last file"
 						$Restore.StandbyFile = $StandByDirectory+"\"+$Dbname+(get-date -Format yyyMMddHHmmss)+".bak"
 					}
 				}
 				else 
 				{
-					Write-Verbose "$FunctionName - More files to restore, NoRecovery set"
+					Write-Message -Level Verbose -Message "More files to restore, NoRecovery set"
 					$Restore.NoRecovery = $true
 				}
 				Foreach ($RestoreFile in $RestoreFiles)
 				{
-					Write-Verbose "$FunctionName - Adding device"
+					Write-Message -Level Verbose -Message "Adding device"
 					$Device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
 					$Device.Name = $RestoreFile.BackupPath
 					$Device.devicetype = "File"
 					$Restore.FileNumber = $RestoreFile.Position
 					$Restore.Devices.Add($device)
 				}
-				Write-Verbose "$FunctionName - Performing restore action"
+				Write-Message -Level Verbose -Message "Performing restore action"
 		$ConfirmMessage = "`n Restore Database $DbName on $SqlInstance `n from files: $RestoreFileNames `n with these file moves: `n $LogicalFileMovesString `n $ConfirmPointInTime `n"
 		If ($Pscmdlet.ShouldProcess("$DBName on $SqlInstance `n `n",$ConfirmMessage))
 		{
@@ -371,7 +371,7 @@ Function Restore-DBFromFilteredArray
 			}
 			catch
 			{
-				write-verbose "$FunctionName - Failed, Closing Server connection"
+				Write-Message -Level Verbose -Message "Failed, Closing Server connection"
 				$RestoreComplete = $False
 				$ExitError = $_.Exception.InnerException
 				Write-Warning "$FunctionName - $ExitError" -WarningAction stop
@@ -423,7 +423,7 @@ Function Restore-DBFromFilteredArray
 					$device = $restore.devices[0]
 					$null = $restore.devices.remove($Device)
 				}
-				write-verbose "$FunctionName - Succeeded, Closing Server connection"
+				Write-Message -Level Verbose -Message "Succeeded, Closing Server connection"
 				$server.ConnectionContext.Disconnect()
 			}
 		}	
