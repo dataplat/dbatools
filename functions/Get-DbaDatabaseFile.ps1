@@ -148,7 +148,7 @@ function Get-DbaDatabaseFile {
 			}
 			
 			if ($ExcludeDatabase) {
-				$DatabaseCollection = $DatabaseCollection | Where-Object Name -NotIn $exclude
+				$DatabaseCollection = $DatabaseCollection | Where-Object Name -NotIn $ExcludeDatabase
 			}
 			
 			foreach ($db in $DatabaseCollection) {

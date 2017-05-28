@@ -113,11 +113,11 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 			$all_dbs = $server.Databases
 			$dbs = $all_dbs | Where-Object { @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name }
 			
-			if ($database.count -gt 0) {
-				$dbs = $dbs | Where-Object { $database -contains $_.Name }
+			if ($Database) {
+				$dbs = $dbs | Where-Object Name -In $Database
 			}
-			if ($exclude.count -gt 0) {
-				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
+			if ($ExcludeDatabase) {
+				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
 			}
 			foreach ($db in $dbs) {
 				$db_status = Get-DbState $db
