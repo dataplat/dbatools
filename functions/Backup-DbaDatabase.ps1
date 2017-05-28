@@ -228,11 +228,11 @@ sql credential dbatoolscred registered on the sql2016 instance
 				continue
 			}
 			
-			if ($server -eq $null) { $server = $Database.Parent }
+			if ($null -eq $server) { $server = $Database.Parent }
 			
 			Write-Message -Level Verbose -Message "Backup up database $database"
 			
-			if ($Database.RecoveryModel -eq $null) {
+			if ($null -eq $Database.RecoveryModel) {
 				$Database.RecoveryModel = $server.databases[$Database.Name].RecoveryModel
 				Write-Message -Level Verbose -Message "$dbname is in $($Database.RecoveryModel) recovery model"
 			}
@@ -253,7 +253,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 			
 			$copyonly = !$NoCopyOnly
 			
-			$server.ConnectionContext.StatementTimeout = $val = 0
+			$server.ConnectionContext.StatementTimeout  = 0
 			$backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
 			$backup.Database = $Database.Name
 			$Suffix = "bak"
