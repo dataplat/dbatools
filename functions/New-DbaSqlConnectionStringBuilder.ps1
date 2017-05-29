@@ -1,5 +1,4 @@
-Function New-DbaSqlConnectionStringBuilder
-{
+Function New-DbaSqlConnectionStringBuilder {
 <#
 .SYNOPSIS
 Returns a System.Data.SqlClient.SqlConnectionStringBuilder with the string specified
@@ -21,25 +20,27 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Get-DbaSqlConnectionStringBuilder
+https://dbatools.io/New-DbaSqlConnectionStringBuilder
 
 .EXAMPLE
-Get-DbaSqlConnectionStringBuilder
+New-DbaSqlConnectionStringBuilder
 
 Returns an empty ConnectionStringBuilder
 
 .EXAMPLE
-"Data Source=localhost,1433;Initial Catalog=AlwaysEncryptedSample;UID=sa;PWD=alwaysB3Encrypt1ng;Application Name=Always Encrypted Sample MVC App;Column Encryption Setting=enabled" | Get-DbaSqlConnectionStringBuilder 
+"Data Source=localhost,1433;Initial Catalog=AlwaysEncryptedSample;UID=sa;PWD=alwaysB3Encrypt1ng;Application Name=Always Encrypted Sample MVC App;Column Encryption Setting=enabled" | New-DbaSqlConnectionStringBuilder 
 
 Returns a connection string builder that can be used to connect to the local sql server instance on the default port.
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[Parameter(Mandatory = $false, ValueFromPipeline = $true)]
-        [string[]]$ConnectionString = $null
+		[string[]]$ConnectionString = $null
 	)
-    process {
-		New-Object Data.SqlClient.SqlConnectionStringBuilder $ConnectionString
-    }
+	process {
+		foreach ($cs in $ConnectionString) {
+			New-Object Data.SqlClient.SqlConnectionStringBuilder $cs
+		}
+	}
 }
