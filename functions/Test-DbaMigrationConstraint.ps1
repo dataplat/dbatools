@@ -18,7 +18,7 @@ function Test-DbaMigrationConstraint {
 
 		Take into account the new features introduced on SQL Server 2016 SP1 for all versions. More information at https://blogs.msdn.microsoft.com/sqlreleaseservices/sql-server-2016-service-pack-1-sp1-released/
 
-		The -Databases parameter is autopopulated for command-line completion.
+		The -Database parameter is autopopulated for command-line completion.
 
 	.PARAMETER Source
 		Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -79,15 +79,15 @@ function Test-DbaMigrationConstraint {
 		and Windows credentials for sqlcluster.
 
 	.EXAMPLE
-		Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -Databases db1
+		Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -Database db1
 		Only db1 database will be verified for features in use that can't be supported on the destination server
 	#>
 	[CmdletBinding(DefaultParameterSetName = "DbMigration")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $True)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[parameter(Mandatory = $true)]
-		[object]$Destination,
+		[DbaInstanceParameter]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
@@ -116,8 +116,8 @@ function Test-DbaMigrationConstraint {
 	PROCESS {
 
 		Write-Output "Attempting to connect to Sql Servers.."
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
 		if ($Database -eq 0) {
 			$Database = $sourceserver.Databases | Where-Object isSystemObject -eq 0 | Select-Object Name, Status
@@ -272,5 +272,4 @@ function Test-DbaMigrationConstraint {
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Test-SqlMigrationConstraint
 	}
 }
-#TEPP implementation
-Register-DbaTeppArgumentCompleter -Command Test-DbaMigrationConstraint -Parameter Database, Exclude
+

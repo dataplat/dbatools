@@ -113,10 +113,6 @@ New-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -Database msdb
 Create a step in "Job1" with the name Step1 where the database will the msdb
 
 .EXAMPLE   
-New-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -Database msdb
-Create a step in "Job1" with the name Step1 where the database will the msdb
-
-.EXAMPLE   
 New-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1 -StepName Step1 -Database msdb
 Create a step in "Job1" with the name Step1 where the database will the "msdb" for multiple servers
 
@@ -126,7 +122,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 
 .EXAMPLE   
 sql1, sql2, sql3 | New-DbaAgentJobStep -Job Job1 -StepName Step1 -Database msdb
-Create a step in "Job1" with the name Step1 where the database will the "msdb" for multiple servers using pipe line
+Create a step in "Job1" with the name Step1 where the database will the "msdb" for multiple servers using pipeline
 #>
 
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
@@ -134,7 +130,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
-        [object[]]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]$SqlCredential,
         [Parameter(Mandatory = $true)]
@@ -204,7 +200,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
             # Try connecting to the instance
             Write-Message -Message "Attempting to connect to $instance" -Level Output 
             try {
-                $Server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+                $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
                 Stop-Function -Message "Could not connect to Sql Server instance"  -Target $instance -Continue

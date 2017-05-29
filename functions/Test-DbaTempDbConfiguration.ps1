@@ -15,7 +15,7 @@ File MaxSize Set(optional) - Do any files have a max size value? Max size could 
 Other rules can be added at a future date. Only results that don't match best practices will be displayed. To display all results,
 use the -Detailed switch.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server instance.You must have sysadmin access and server version must be SQL Server version 2005 or higher.
 
 .PARAMETER SqlCredential
@@ -45,12 +45,12 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Test-DbaTempDbConfiguration
 
 .EXAMPLE
-Test-DbaTempDbConfiguration -SqlServer localhost
+Test-DbaTempDbConfiguration -SqlInstance localhost
 
 Checks tempdb on the localhost machine.
 
 .EXAMPLE
-Test-DbaTempDbConfiguration -SqlServer localhost -Detailed
+Test-DbaTempDbConfiguration -SqlInstance localhost -Detailed
 
 Checks tempdb on the localhost machine. All rest results are shown.
 
@@ -59,8 +59,8 @@ Checks tempdb on the localhost machine. All rest results are shown.
 	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Switch]$Detailed
 	)
@@ -73,10 +73,10 @@ Checks tempdb on the localhost machine. All rest results are shown.
 
 	PROCESS
 	{
-        foreach ($servername in $SqlServer)
+        foreach ($servername in $SqlInstance)
 		{
             Write-Verbose "Connecting to $servername"
-		    $server = Connect-SqlServer $servername -SqlCredential $SqlCredential
+		    $server = Connect-SqlInstance $servername -SqlCredential $SqlCredential
 
             if ($server.versionMajor -lt 9)
 		    {

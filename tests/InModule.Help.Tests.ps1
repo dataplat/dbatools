@@ -14,8 +14,8 @@
 if ($SkipHelpTest) { return }
 . "$ModuleBase\tests\InModule.Help.Exceptions.ps1"
 
-
-$commands = Get-Command -Module (Get-Module dbatools) -CommandType Cmdlet, Function, Workflow # Not alias
+$excludedNames = (Get-ChildItem "$ModuleBase\internal" | Where-Object Name -like "*.ps1" ).BaseName
+$commands = Get-Command -Module (Get-Module dbatools) -CommandType Cmdlet, Function, Workflow | Where-Object Name -notin $excludedNames
 
 
 ## When testing help, remember that help is cached at the beginning of each session.
@@ -75,20 +75,27 @@ foreach ($command in $commands) {
                     $codeMandatory = $parameter.IsMandatory.toString()
                     $parameterHelp.Required | Should Be $codeMandatory
                 }
+				
+				if ($HelpTestSkipParameterType[$commandName] -contains $parameterName) { continue }
                 
                 # Parameter type in Help should match code
                 It "help for $commandName has correct parameter type for $parameterName" {
                     $codeType = $parameter.ParameterType.Name
                     
-                    if ($parameter.ParameterType.IsEnum) {
+					if ($parameter.ParameterType.IsEnum) {
                         # Enumerations often have issues with the typename not being reliably available
                         $names = $parameter.ParameterType::GetNames($parameter.ParameterType)
                         $parameterHelp.parameterValueGroup.parameterValue | Should be $names
                     }
+					elseif ($parameter.ParameterType.FullName -in $HelpTestEnumeratedArrays) {
+						# Enumerations often have issues with the typename not being reliably available
+                        $names = [Enum]::GetNames($parameter.ParameterType.DeclaredMembers[0].ReturnType)
+                        $parameterHelp.parameterValueGroup.parameterValue | Should be $names
+					}
                     else {
                         # To avoid calling Trim method on a null object.
                         $helpType = if ($parameterHelp.parameterValue) { $parameterHelp.parameterValue.Trim() }
-                        $helpType | Should be $codeType
+                        $helpType | Should be $codeType 
                     }
                 }
             }

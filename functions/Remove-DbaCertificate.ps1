@@ -44,19 +44,15 @@ The certificate in the master database on server1 will be removed if it exists.
 .EXAMPLE
 Remove-DbaCertificate -SqlInstance Server1 -Database db1 -Confirm:$false
 
-Supresses all prompts to remove the certificate in the 'db1' database and drops the key.
+Suppresses all prompts to remove the certificate in the 'db1' database and drops the key.
 
-.EXAMPLE
-Remove-DbaCertificate -SqlInstance Server1 -WhatIf
-
-Shows what would happen if the command were executed against server1
 
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true, ConfirmImpact = "High")]
 	param (
 		[parameter(Mandatory, ParameterSetName = "instance")]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[parameter(Mandatory, ParameterSetName = "instance")]
 		[string[]]$Database,
@@ -107,7 +103,7 @@ Shows what would happen if the command were executed against server1
 		foreach ($instance in $SqlInstance) {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -Target $instance -InnerErrorRecord $_ -Continue

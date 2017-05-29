@@ -108,7 +108,7 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipelineByPropertyName, ParameterSetName = "Server")]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
@@ -225,7 +225,7 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 			foreach ($instance in $SqlInstance) {
 				Write-Verbose "Connecting to $instance"
 				try {
-					$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+					$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 				}
 				catch {
 					Write-Warning "Can't connect to $instance"
@@ -265,7 +265,7 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 			
 			if (!$Force) {
 				if ($ReadOnly, $Offline, $Emergency, $SingleUser, $RestrictedUser, $Detached -contains $true) {
-					if (Get-DbaProcess -SqlServer $server -SqlCredential $SqlCredential -Databases $db.name) {
+					if (Get-DbaProcess -SqlInstance $server -SqlCredential $SqlCredential -Database $db.name) {
 						Write-Warning "Users are currently connected to the database $db and Force was not specified. Skipping."
 						continue
 					}
@@ -459,4 +459,3 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 		}
 	}
 }
-Register-DbaTeppArgumentCompleter -Command Set-DbaDatabaseState -Parameter Database

@@ -1,4 +1,4 @@
-﻿Function Get-DbaEstimatedCompletionTime {
+﻿function Get-DbaEstimatedCompletionTime {
 <#
 .SYNOPSIS
 Gets execution and estimated completion time information for queries
@@ -33,7 +33,7 @@ SqlCredential object used to connect to the SQL Server as a different user.
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Exclude
+.PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER Silent 
@@ -64,7 +64,7 @@ Get-DbaEstimatedCompletionTime -SqlInstance sql2016 | Where-Object { $_.Text -ma
 Gets results for commands whose queries only match specific text (match is like LIKE but way more powerful)
 
 .EXAMPLE
-Get-DbaEstimatedCompletionTime -SqlInstance sql2016 -Databases Northwind,pubs,Adventureworks2014
+Get-DbaEstimatedCompletionTime -SqlInstance sql2016 -Database Northwind,pubs,Adventureworks2014
 
 Gets estimated completion times for queries performed against the Northwind, pubs, and Adventureworks2014 databases
 
@@ -73,11 +73,11 @@ Gets estimated completion times for queries performed against the Northwind, pub
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[PsCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[switch]$Silent
 	)
 	
@@ -114,20 +114,20 @@ Gets estimated completion times for queries performed against the Northwind, pub
 		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Connecting to $instance"
 			try {
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 				
 			}
 			catch {
 				Stop-Function -Message "Can't connect to $instance. Moving on." -Continue
 			}
 			
-			if ($database) {
-				$includedatabases = $database -join "','"
+			if ($Database) {
+				$includedatabases = $Database -join "','"
 				$sql = "$sql WHERE DB_NAME(r.database_id) in ('$includedatabases')"
 			}
 			
-			if ($exclude) {
-				$excludedatabases = $exclude -join "','"
+			if ($ExcludeDatabase) {
+				$excludedatabases = $ExcludeDatabase -join "','"
 				$sql = "$sql WHERE DB_NAME(r.database_id) not in ('$excludedatabases')"
 			}
 			
@@ -153,4 +153,3 @@ Gets estimated completion times for queries performed against the Northwind, pub
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaEstimatedCompletionTime -Parameter Database, Exclude

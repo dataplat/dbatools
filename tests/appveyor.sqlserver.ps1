@@ -1,18 +1,13 @@
 # Imports some assemblies
 Write-Output "Importing dbatools"
-try {
-	Import-Module C:\github\dbatools\dbatools.psd1 -ErrorAction Stop
-}
-catch {
-	Import-Module C:\projects\dbatools\dbatools.psd1
-}
+Import-Module C:\github\dbatools\dbatools.psd1
 
 # This script spins up two local instances
 $sql2008 = "localhost\sql2008r2sp2"
 $sql2016 = "localhost\sql2016"
 
 Write-Output "Creating migration & backup directories"
-New-Item -Path C:\github -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
+New-Item -Path C:\temp -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
 New-Item -Path C:\temp\migration -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
 New-Item -Path C:\temp\backups -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
 
@@ -39,24 +34,30 @@ foreach ($instance in $instances) {
 		$ipAddress.IPAddressProperties["TcpPort"].Value = $port
 	}
 	$Tcp.Alter()
-	
+	 
 	Write-Output "Starting $instance"
-	Start-Service "MSSQL`$$instance"
+	Restart-Service "MSSQL`$$instance"
 	
 	if ($instance -eq "sql2016") {
 		Write-Output "Starting Agent for $instance"
-		Start-Service 'SQLAgent$sql2016'
+		Restart-Service 'SQLAgent$sql2016'
 	}
 }
 
+# Agent sometimes takes a moment to start 
 do {
 	Write-Warning "Waiting for SQL Agent to start"
 	Start-Sleep 1
 }
-while ((Get-Service 'SQLAgent$sql2016').Status -ne 'Running' -or $i++ -gt 10)
+while ((Get-Service 'SQLAgent$sql2016').Status -ne 'Running' -and $i++ -lt 10)
 
+Write-Output "Executing startup scripts for SQL Server 2008"
 # Add some jobs to the sql2008r2sp2 instance (1433 = default)
-foreach ($file in (Get-ChildItem C:\github\appveyor-lab\ola\*.sql)) {
-	Write-Output "Executing ola scripts - $file"
+foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2008-startup\*.sql -Recurse -ErrorAction SilentlyContinue)) {
+	Invoke-DbaSqlCmd -ServerInstance localhost -InputFile $file
+}
+
+Write-Output "Executing startup scripts for SQL Server 2016"
+foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2016-startup\*.sql -Recurse -ErrorAction SilentlyContinue)) {
 	Invoke-DbaSqlCmd -ServerInstance localhost\sql2016 -InputFile $file
 }

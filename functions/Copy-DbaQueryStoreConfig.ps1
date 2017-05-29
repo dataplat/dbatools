@@ -67,12 +67,12 @@ function Copy-DbaQueryStoreConfig {
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object]$SourceDatabase,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[object[]]$Destination,
+		[DbaInstanceParameter[]]$Destination,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[object[]]$DestinationDatabase,
 		[object[]]$Exclude,
@@ -84,7 +84,7 @@ function Copy-DbaQueryStoreConfig {
 
 		Write-Message -Message "Connecting to source: $Source" -Level Verbose
 		try {
-			$sourceServer = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+			$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
 		}
 		catch {
 			Stop-Function -Message "Can't connect to $Source." -InnerErrorRecord $_ -Target $Source
@@ -96,7 +96,7 @@ function Copy-DbaQueryStoreConfig {
 			return
 		}
 		# Grab the Query Store configuration from the SourceDatabase through the Get-DbaQueryStoreConfig function
-		$SourceQSConfig = Get-DbaQueryStoreConfig -SqlInstance $sourceServer -Databases $SourceDatabase
+		$SourceQSConfig = Get-DbaQueryStoreConfig -SqlInstance $sourceServer -Database $SourceDatabase
 
 		if (!$DestinationDatabase -and !$Exclude -and !$AllDatabases) {
 			Stop-Function -Message "You must specify databases to execute against using either -DestinationDatabase, -Exclude or -AllDatabases" -Continue
@@ -106,7 +106,7 @@ function Copy-DbaQueryStoreConfig {
 
 			Write-Message -Message "Connecting to destination: $Destination" -Level Verbose
 			try {
-				$destServer = Connect-SqlServer -SqlServer $destinationServer -SqlCredential $DestinationSqlCredential
+				$destServer = Connect-SqlInstance -SqlInstance $destinationServer -SqlCredential $DestinationSqlCredential
 			}
 			catch {
 				Stop-Function -Message "Can't connect to $destinationServer." -InnerErrorRecord $_ -Target $desitnationServer -Continue
@@ -152,7 +152,7 @@ function Copy-DbaQueryStoreConfig {
 				# Set the Query Store configuration through the Set-DbaQueryStoreConfig function
 				try {
 					$null = Set-DbaQueryStoreConfig -SqlInstance $destinationServer -SqlCredential $DestinationSqlCredential `
-					-Databases $db.name `
+					-Database $db.name `
 					-State $SourceQSConfig.ActualState `
 					-FlushInterval $SourceQSConfig.FlushInterval `
 					-CollectionInterval $SourceQSConfig.CollectionInterval `

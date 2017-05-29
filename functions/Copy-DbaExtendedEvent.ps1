@@ -7,7 +7,7 @@ Migrates SQL Extended Event Sessions except the two default sessions, AlwaysOn_h
 .DESCRIPTION
 By default, all non-system extended events are migrated. If the event already exists on the destination, it will be skipped unless -Force is used. 
 	
-The -Sessions parameter is autopopulated for command-line completion and can be used to copy only specific objects.
+The -Session parameter is autopopulated for command-line completion and can be used to copy only specific objects.
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
@@ -75,46 +75,39 @@ Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -WhatIf
 Shows what would happen if the command were executed.
 	
 .EXAMPLE   
-Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -Sessions CheckQueries, MonitorUserDefinedException 
+Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -Session CheckQueries, MonitorUserDefinedException 
 
 Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from sqlserver2014a to sqlcluster.
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[parameter(Mandatory = $true)]
-		[object]$Destination,
+		[DbaInstanceParameter]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	
-	DynamicParam { if ($source) { return (Get-ParamSqlExtendedEvents -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
-	
-	BEGIN
-	{
-		
+	begin {
+
 		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null)
 		{
 			throw "SMO version is too old. To migrate Extended Events, you must have SQL Server Management Studio 2008 R2 or higher installed."
 		}
 		
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
-		$sessions = $psboundparameters.Sessions
-		
-		
+
 		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
 		{
 			throw "Extended Events are only supported in SQL Server 2008 and above. Quitting."
 		}
 	}
-	process
-	{
+	process {
 		
 		$sourceSqlConn = $sourceserver.ConnectionContext.SqlConnectionObject
 		$sourceSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sourceSqlConn
@@ -164,7 +157,7 @@ Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from s
 				try
 				{
 					$sql = $session.ScriptCreate().GetScript() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Verbose $sql
 					Write-Output "Migrating session $sessionName"
 					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
@@ -182,13 +175,8 @@ Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from s
 			}
 		}
 	}
-	
-	end
-	{
-		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
-        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Extended Event migration finished" }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlExtendedEvent
+	end {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlExtendedEvent
 	}
 }
 

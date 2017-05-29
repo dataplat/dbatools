@@ -49,12 +49,8 @@
     .EXAMPLE
         Remove-DbaMasterKey -SqlInstance Server1 -Database db1 -Confirm:$false
         
-        Supresses all prompts to remove the master key in the 'db1' database and drops the key.
+        Suppresses all prompts to remove the master key in the 'db1' database and drops the key.
     
-    .EXAMPLE
-        Remove-DbaMasterKey -SqlInstance Server1 -WhatIf
-        
-        Shows what would happen if the command were executed against server1
     
     .NOTES
         Tags: Certificate
@@ -149,7 +145,7 @@
             try
             {
                 Write-Message -Level Verbose -Message "Connecting to $instance"
-                $server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch
             {
@@ -231,6 +227,5 @@
     }
 }
 
-Register-DbaTeppArgumentCompleter -Command Remove-DbaMasterKey -Parameter Database
-Register-DbaTeppArgumentCompleter -Command Remove-DbaMasterKey -Parameter Exclude -Name Database
-Register-DbaTeppArgumentCompleter -Command Remove-DbaMasterKey -Parameter SqlInstance -Name SqlInstance
+
+

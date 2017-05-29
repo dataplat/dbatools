@@ -4,7 +4,7 @@ function Copy-DbaAgentAlert {
 		Copy-DbaAgentAlert migrates alerts from one SQL Server to another.
 
 	.DESCRIPTION
-		By default, all alerts are copied. The -Alerts parameter is autopopulated for command-line completion and can be used to copy only specific alerts.
+		By default, all alerts are copied. The -Alert parameter is autopopulated for command-line completion and can be used to copy only specific alerts.
 
 		If the alert already exists on the destination, it will be skipped unless -Force is used.
 
@@ -76,9 +76,9 @@ function Copy-DbaAgentAlert {
 	[cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[parameter(Mandatory = $true)]
-		[object]$Destination,
+		[DbaInstanceParameter]$Destination,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SourceSqlCredential,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
@@ -87,13 +87,11 @@ function Copy-DbaAgentAlert {
 		[switch]$Force,
 		[switch]$Silent
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlAlerts -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+
 
 	begin {
-		$alerts = $psboundparameters.Alerts
-
-		$sourceServer = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destServer = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
 		$source = $sourceServer.DomainInstanceName
 		$Destination = $destServer.DomainInstanceName
@@ -117,7 +115,7 @@ function Copy-DbaAgentAlert {
 				try {
 					Write-Message -Message "Creating Alert Defaults" -Level Output
 					$sql = $sourceServer.JobServer.AlertSystem.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$Destination'")
+					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$Destination'"
 
 					Write-Message -Message $sql -Level Debug
 					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
@@ -182,7 +180,7 @@ function Copy-DbaAgentAlert {
 					#>
                     Write-Message -Message "Copying Alert $alertName" -Level Output
                     $sql = $alert.Script() | Out-String
-                    $sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$Destination'")
+                    $sql = $sql -replace [Regex]::Escape("'$source'"), "'$Destination'"
                     $sql = $sql -replace "@job_id=N'........-....-....-....-............", "@job_id=N'00000000-0000-0000-0000-000000000000"
 
                     Write-Message -Message $sql -Level Debug

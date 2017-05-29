@@ -5,7 +5,7 @@ function Copy-DbaServerTrigger
 Copy-DbaServerTrigger migrates server triggers from one SQL Server to another. 
 
 .DESCRIPTION
-By default, all triggers are copied. The -Triggers parameter is autopopulated for command-line completion and can be used to copy only specific triggers.
+By default, all triggers are copied. The -ServerTriggers parameter is autopopulated for command-line completion and can be used to copy only specific triggers.
 
 If the trigger already exists on the destination, it will be skipped unless -Force is used. 
 
@@ -63,7 +63,7 @@ Copy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster
 Copies all server triggers from sqlserver2014a to sqlcluster, using Windows credentials. If triggers with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster -Trigger tg_noDbDrop -SourceSqlCredential $cred -Force
+Copy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster -ServerTrigger tg_noDbDrop -SourceSqlCredential $cred -Force
 
 Copies a single trigger, the tg_noDbDrop trigger from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a trigger with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
@@ -75,21 +75,18 @@ Shows what would happen if the command were executed using force.
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[parameter(Mandatory = $true)]
-		[object]$Destination,
+		[DbaInstanceParameter]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlServerTriggers -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
-	
-	BEGIN
-	{
-		$triggers = $psboundparameters.Triggers
-		
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+
+	begin {
+
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
@@ -103,8 +100,8 @@ Shows what would happen if the command were executed using force.
 		$desttriggers = $destserver.Triggers
 		
 	}
-	PROCESS
-	{
+	process {
+
 		foreach ($trigger in $servertriggers)
 		{
 			$triggername = $trigger.name
@@ -140,7 +137,7 @@ Shows what would happen if the command were executed using force.
 				{
 					Write-Output "Copying server trigger $triggername"
 					$sql = $trigger.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					$sql = $sql -replace "CREATE TRIGGER", "`nGO`nCREATE TRIGGER"
 					$sql = $sql -replace "ENABLE TRIGGER", "`nGO`nENABLE TRIGGER"
 					
@@ -154,12 +151,7 @@ Shows what would happen if the command were executed using force.
 			}
 		}
 	}
-	
-	END
-	{
-		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
-        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Server trigger migration finished" }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlServerTrigger
+	end {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlServerTrigger
 	}
 }

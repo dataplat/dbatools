@@ -83,41 +83,34 @@ Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sq
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[parameter(Mandatory = $true)]
-		[object]$Destination,
+		[DbaInstanceParameter]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	
-	DynamicParam { if ($source) { return (Get-ParamSqlPolicyManagement -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
-	
-	BEGIN
-	{
+
+	begin {
 		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Dmf") -eq $null)
 		{
 			throw "SMO version is too old. To migrate Policies, you must have SQL Server Management Studio 2008 R2 or higher installed."
 		}
 		
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
-		$policies = $psboundparameters.policies
-		$conditions = $psboundparameters.conditions
-		
+
 		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
 		{
 			throw "Policy Management is only supported in SQL Server 2008 and above. Quitting."
 		}
 		
 	}
-	PROCESS
-	{
-		
-		
+	process {
+
 		$sourceSqlConn = $sourceserver.ConnectionContext.SqlConnectionObject
 		$sourceSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sourceSqlConn
 		$sourceStore = New-Object  Microsoft.SqlServer.Management.DMF.PolicyStore $sourceSqlStoreConnection
@@ -129,11 +122,11 @@ Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sq
 		$storepolicies = $sourceStore.policies | Where-Object { $_.IsSystemObject -eq $false }
 		$storeconditions = $sourceStore.conditions | Where-Object { $_.IsSystemObject -eq $false }
 		
-		if ($policies.length -gt 0) { $storepolicies = $storepolicies | Where-Object { $policies -contains $_.Name } }
-		if ($conditions.length -gt 0) { $storeconditions = $storeconditions | Where-Object { $conditions -contains $_.Name } }
+		if ($Policy.length -gt 0) { $storepolicies = $storepolicies | Where-Object { $Policy -contains $_.Name } }
+		if ($Condition.length -gt 0) { $storeconditions = $storeconditions | Where-Object { $Condition -contains $_.Name } }
 		
-		if ($policies.length -gt 0 -and $conditions.length -eq 0) { $storeconditions = $null }
-		if ($conditions.length -gt 0 -and $policies.length -eq 0) { $storepolicies = $null }
+		if ($Policy.length -gt 0 -and $Condition.length -eq 0) { $storeconditions = $null }
+		if ($Condition.length -gt 0 -and $Policy.length -eq 0) { $storepolicies = $null }
 		
 		<# 
 						Conditions
@@ -182,7 +175,7 @@ Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sq
 				try
 				{
 					$sql = $condition.ScriptCreate().GetScript() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Verbose $sql
 					Write-Output "Copying condition $conditionName"
 					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
@@ -239,7 +232,7 @@ Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sq
 					$deststore.conditions.Refresh()
 					$deststore.policies.Refresh()
 					$sql = $policy.ScriptCreateWithDependencies().GetScript() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Verbose $sql
 					Write-Output "Copying policy $policyName"
 					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
@@ -252,12 +245,7 @@ Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sq
 			}
 		}
 	}
-	
-	end
-	{
-		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
-        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Policy Management migration finished" }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlPolicyManagement
+	end {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlPolicyManagement
 	}
 }

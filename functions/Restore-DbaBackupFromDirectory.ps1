@@ -8,7 +8,7 @@ Restores SQL Server databases from the backup directory structure created by Ola
 Many SQL Server database administrators use Ola Hallengren's SQL Server Maintenance Solution which can be found at http://ola.hallengren.com
 Hallengren uses a predictable backup structure which made it relatively easy to create a script that can restore an entire SQL Server database instance, down to the master database (next version), to a new server. This script is intended to be used in the event that the originating SQL Server becomes unavailable, thus rendering my other SQL restore script (http://goo.gl/QmfQ6s) ineffective.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 Required. The SQL Server to which you will be restoring the databases.
 
 .PARAMETER Path
@@ -24,7 +24,7 @@ Migrates ONLY specified databases. This list is auto-populated for tab completio
 Excludes specified databases from migration. This list is auto-populated for tab completion.
 
 .PARAMETER Force
-Will overwrite any existing databases on $SqlServer. 
+Will overwrite any existing databases on $SqlInstance. 
 
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -68,7 +68,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Restore-SqlBackupFromDirectory
 
 .EXAMPLE   
-Restore-SqlBackupFromDirectory -SqlServer sqlcluster -Path \\fileserver\share\sqlbackups\SQLSERVER2014A
+Restore-SqlBackupFromDirectory -SqlInstance sqlcluster -Path \\fileserver\share\sqlbackups\SQLSERVER2014A
 
 Description
 
@@ -79,8 +79,8 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlInstance")]
-		[string]$SqlServer,
+		[Alias("ServerInstance","SqlServer")]
+		[DbaInstanceParameter]$SqlInstance,
 		[parameter(Mandatory = $true)]
 		[string]$Path,
 		[switch]$NoRecovery,

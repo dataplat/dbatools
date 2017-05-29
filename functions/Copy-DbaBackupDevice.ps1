@@ -65,7 +65,7 @@ Copy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster
 Copies all server backup devices from sqlserver2014a to sqlcluster, using Windows credentials. If backup devices with the same name exist on sqlcluster, they will be skipped.
 
 .EXAMPLE   
-Copy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster -BackupDevices backup01 -SourceSqlCredential $cred -Force
+Copy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster -BackupDevice backup01 -SourceSqlCredential $cred -Force
 
 Copies a single backup device, backup01, from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a
 and Windows credentials for sqlcluster. If a backup device with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
@@ -78,21 +78,19 @@ Shows what would happen if the command were executed using force.
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[parameter(Mandatory = $true)]
-		[object]$Destination,
+		[DbaInstanceParameter]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlBackupDevices -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+
 	
-	BEGIN
-	{
-		$backupdevices = $psboundparameters.BackupDevices
-		
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+	begin {
+
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
@@ -105,9 +103,8 @@ Shows what would happen if the command were executed using force.
 		$sourcenetbios = Resolve-NetBiosName $sourceserver
 		
 	}
-	PROCESS
-	{
-		
+	process	{
+	
 		foreach ($backupdevice in $serverbackupdevices)
 		{
 			$devicename = $backupdevice.name
@@ -141,7 +138,7 @@ Shows what would happen if the command were executed using force.
 				try
 				{
 					$sql = $backupdevice.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 				}
 				catch { 
 					Write-Exception $_
@@ -162,7 +159,7 @@ Shows what would happen if the command were executed using force.
 			
 			Write-Output "Checking if directory $destpath exists"
 			
-			if ($(Test-DbaSqlPath -SqlServer $Destination -Path $path) -eq $false)
+			if ($(Test-DbaSqlPath -SqlInstance $Destination -Path $path) -eq $false)
 			{
 				$backupdirectory = $destserver.BackupDirectory
 				$destpath = Join-AdminUnc $destnetbios $backupdirectory
@@ -177,7 +174,7 @@ Shows what would happen if the command were executed using force.
 					{
 						Write-Output "Updating $devicename to use $backupdirectory"
 						$sql = $sql -replace $path, $backupdirectory
-						$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+						$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					}
 					catch { 
 						Write-Exception $_
@@ -212,8 +209,7 @@ Shows what would happen if the command were executed using force.
 		}
 	}
 	
-	END
-	{
+	end	{
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "backup device migration finished" }

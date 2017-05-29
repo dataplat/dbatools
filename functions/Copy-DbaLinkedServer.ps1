@@ -73,7 +73,7 @@ Description
 Copies all SQL Server Linked Servers on sqlserver2014a to sqlcluster. If Linked Server exists on destination, it will be skipped.
 
 .EXAMPLE   
-Copy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster -LinkedServers SQL2K5,SQL2k -Force
+Copy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster -LinkedServer SQL2K5,SQL2k -Force
 
 Description
 Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped.
@@ -81,35 +81,28 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[parameter(Mandatory = $true)]
-		[object]$Destination,
+		[DbaInstanceParameter]$Destination,
 		[switch]$Force,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential
 	)
-	
-	DynamicParam { if ($source) { return (Get-ParamSqlLinkedServers -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
-	
-	
-	BEGIN
-	{
-		Function Get-LinkedServerLogins
-		{
+	begin {
+		function Get-LinkedServerLogins {
 			<# 
 			.SYNOPSIS
-			Internal function. 
-				 
-			This function is heavily based on Antti Rantasaari's script at http://goo.gl/wpqSib
-			Antti Rantasaari 2014, NetSPI
-			License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
-
+				Internal function. 
+					
+				This function is heavily based on Antti Rantasaari's script at http://goo.gl/wpqSib
+				Antti Rantasaari 2014, NetSPI
+				License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
 			#>	
 			param (
-				[object]$SqlServer
+				[DbaInstanceParameter]$SqlInstance
 			)
 			
-			$server = $SqlServer
+			$server = $SqlInstance
 			$sourcename = $server.name
 			
 			# Query Service Master Key from the database - remove padding from the key
@@ -184,10 +177,18 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 				
 				$connstring = "Server=ADMIN:$sourcename;Trusted_Connection=True"
 			}
-			
-			$sql = "SELECT sysservers.srvname,syslnklgns.name,substring(syslnklgns.pwdhash,5,$ivlen) iv,substring(syslnklgns.pwdhash,$($ivlen + 5),
-	len(syslnklgns.pwdhash)-$($ivlen + 4)) pass FROM master.sys.syslnklgns inner join master.sys.sysservers on syslnklgns.srvid=sysservers.srvid WHERE len(pwdhash)>0"
-			
+
+			$sql = "
+				SELECT sysservers.srvname,
+					syslnklgns.name,
+					substring(syslnklgns.pwdhash,5,$ivlen) iv,
+					substring(syslnklgns.pwdhash,$($ivlen + 5),
+					len(syslnklgns.pwdhash)-$($ivlen + 4)) pass
+				FROM master.sys.syslnklgns 
+					inner join master.sys.sysservers 
+					on syslnklgns.srvid=sysservers.srvid 
+				WHERE len(pwdhash) > 0"
+
 			# Get entropy from the registry
 			try
 			{
@@ -251,8 +252,7 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 			return $decryptedlogins
 		}
 		
-		Function Copy-DbaLinkedServers
-		{
+		function Copy-DbaLinkedServers {
 			param (
 				[string[]]$LinkedServers,
 				[bool]$force
@@ -320,7 +320,7 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 					try
 					{
 						$sql = $linkedserver.Script() | Out-String
-						$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+						$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 						Write-Verbose $sql
 						
 						[void]$destserver.ConnectionContext.ExecuteNonQuery($sql)
@@ -362,30 +362,25 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 				}
 			}
 		}
-		
 	}
-	
-	PROCESS
-	{
-		
-		$LinkedServers = $psboundparameters.LinkedServers
-		
+	process {
+
 		if ($SourceSqlCredential.username -ne $null)
 		{
 			Write-Warning "You are using SQL credentials and this script requires Windows admin access to the source server. Trying anyway."
 		}
 		
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
 		$source = $sourceserver.name
 		$destination = $destserver.name
 		
-		Invoke-SmoCheck -SqlServer $sourceserver
-		Invoke-SmoCheck -SqlServer $destserver
+		Invoke-SmoCheck -SqlInstance $sourceserver
+		Invoke-SmoCheck -SqlInstance $destserver
 		
-		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
-		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
+		if (!(Test-SqlSa -SqlInstance $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
+		if (!(Test-SqlSa -SqlInstance $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 		
 		Write-Output "Getting NetBios name for $source"
 		$sourcenetbios = Resolve-NetBiosName $sourceserver
@@ -406,12 +401,7 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 		Copy-DbaLinkedServers $linkedservers -force:$force
 		
 	}
-	
-	END
-	{
-		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
-        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Linked Server migration finished" }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlLinkedServer
+	end {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlLinkedServer
 	}
 }

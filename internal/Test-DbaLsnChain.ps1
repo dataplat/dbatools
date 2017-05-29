@@ -35,11 +35,16 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
 	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [object[]]$FilteredRestoreFiles
+        [object[]]$FilteredRestoreFiles,
+        [switch]$Continue
 	)
 
     #Need to anchor  with full backup:
     $FunctionName =(Get-PSCallstack)[0].Command
+    if ($continue)
+    {
+        return $true
+    }
     Write-Verbose "$FunctionName - Testing LSN Chain"
     $FullDBAnchor = $FilteredRestoreFiles | Where-Object {$_.BackupTypeDescription -eq 'Database'}
     if (($FullDBAnchor | Group-Object -Property FirstLSN | Measure-Object).count -ne 1)

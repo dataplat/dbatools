@@ -14,7 +14,7 @@ $scred = Get-Credential, this pass $scred object to the param.
 
 Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 
 .PARAMETER Path
@@ -48,15 +48,15 @@ File to disk, and string path.
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
-		[Alias("ServerInstance","SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance","SqlServer")]
+		[DbaInstanceParameter]$SqlInstance,
 		[string]$Path,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
 	BEGIN
 	{
-		$server = Connect-SqlServer $SqlServer $SqlCredential
+		$server = Connect-SqlInstance $sqlinstance $SqlCredential
 		
 		if ($server.versionMajor -lt 9) { "Windows 2000 not supported for sp_configure export."; break }
 		

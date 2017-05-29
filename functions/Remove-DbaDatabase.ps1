@@ -19,6 +19,9 @@ Windows Authentication will be used if SqlCredential is not specified. SQL Serve
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
+.PARAMETER DatabaseCollection
+A collection of databases (such as returned by Get-DbaDatabase), to be removed.
+
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
 
@@ -74,7 +77,7 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 		foreach ($instance in $SqlInstance) {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
@@ -144,5 +147,3 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 		}
 	}
 }
-
-Register-DbaTeppArgumentCompleter -Command Remove-DbaDatabase -Parameter Database

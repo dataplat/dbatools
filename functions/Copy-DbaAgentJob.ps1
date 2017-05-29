@@ -4,7 +4,7 @@ function Copy-DbaAgentJob {
 Copy-DbaAgentJob migrates jobs from one SQL Server to another.
 
 .DESCRIPTION
-By default, all jobs are copied. The -Jobs parameter is autopopulated for command-line completion and can be used to copy only specific jobs.
+By default, all jobs are copied. The -Job parameter is autopopulated for command-line completion and can be used to copy only specific jobs.
 
 If the job already exists on the destination, it will be skipped unless -Force is used.
 
@@ -84,9 +84,9 @@ Shows what would happen if the command were executed using force.
     [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory = $true)]
-        [object]$Source,
+        [DbaInstanceParameter]$Source,
         [parameter(Mandatory = $true)]
-        [object]$Destination,
+        [DbaInstanceParameter]$Destination,
         [System.Management.Automation.PSCredential]$SourceSqlCredential,
         [System.Management.Automation.PSCredential]$DestinationSqlCredential,
         [switch]$DisableOnSource,
@@ -94,20 +94,18 @@ Shows what would happen if the command were executed using force.
         [switch]$Force,
         [switch]$Silent
     )
-    DynamicParam { if ($source) { return (Get-ParamSqlJobs -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
 
-    BEGIN {
-        $jobs = $psboundparameters.Jobs
-        $exclude = $psboundparameters.Exclude
 
-        $sourceServer = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-        $destServer = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+    begin {
+
+        $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+        $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
         $source = $sourceServer.DomainInstanceName
         $destination = $destServer.DomainInstanceName
 
     }
-    PROCESS {
+    process {
 
         if (Test-FunctionInterrupt) { return }
 
@@ -187,7 +185,7 @@ Shows what would happen if the command were executed using force.
                 try {
                     Write-Message -Message "Copying Job $jobName" -Level Output -Silent $Silent
                     $sql = $job.Script() | Out-String
-                    $sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+                    $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
                     Write-Message -Message $sql -Level Debug -Silent $Silent
                     $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
                 }
@@ -215,7 +213,7 @@ Shows what would happen if the command were executed using force.
         }
     }
 
-    END {
+    end {
         $sourceServer.ConnectionContext.Disconnect()
         $destServer.ConnectionContext.Disconnect()
         if ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Job migration finished" }

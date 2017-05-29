@@ -94,5 +94,4 @@
     }
 }
 
-if ($TEPP) { TabExpansionPlusPlus\Register-ArgumentCompleter -CommandName "Find-DbaCommand" -ParameterName "Tag" -ScriptBlock $ScriptBlock }
-else { Register-ArgumentCompleter -CommandName "Find-DbaCommand" -ParameterName "Tag" -ScriptBlock $ScriptBlock }
+Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name "tag"

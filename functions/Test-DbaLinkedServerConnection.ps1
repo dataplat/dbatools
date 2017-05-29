@@ -84,7 +84,7 @@ Test all Linked Servers for the SQL Server instances sql2016, sql2014 and sql201
                 try
                 {
                     Write-Message -Level Verbose -Message "Connecting to $instance"
-                    $server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
                     $LinkedServerCollection = $server.LinkedServers
                 }
                 catch

@@ -58,22 +58,22 @@ https://dbatools.io/Copy-DbaSysDbUserObject
     param (
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [object]$Source,
+        [DbaInstanceParameter]$Source,
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [object]$Destination,
+        [DbaInstanceParameter]$Destination,
         [System.Management.Automation.PSCredential]$SourceSqlCredential,
         [System.Management.Automation.PSCredential]$DestinationSqlCredential
     )
     PROCESS {
-        $sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-        $destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+        $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+        $destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
         $source = $sourceserver.DomainInstanceName
         $destination = $destserver.DomainInstanceName
 		
-        if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
-        if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
+        if (!(Test-SqlSa -SqlInstance $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
+        if (!(Test-SqlSa -SqlInstance $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 
         $systemdbs = "master", "model", "msdb"
 

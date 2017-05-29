@@ -84,7 +84,7 @@ Function Test-DbaSqlPath {
     )
     
     try {
-        $server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+        $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     }
     catch {
         Stop-Function -Message "Failed to connect to $SqlInstance" -Silent $Silent -ErrorRecord $_
@@ -112,4 +112,3 @@ Function Test-DbaSqlPath {
     Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Test-SqlPath
 }
 
-Register-DbaTeppArgumentCompleter -Command Test-DbaSqlPath -Parameter SqlInstance

@@ -75,21 +75,19 @@ Shows what would happen if the command were executed using force.
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[parameter(Mandatory = $true)]
-		[object]$Destination,
+		[DbaInstanceParameter]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlSharedSchedules -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
+
 	
-	BEGIN
-	{
-		$schedules = $psboundparameters.SharedSchedules
-		
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+	begin {
+
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
@@ -102,8 +100,7 @@ Shows what would happen if the command were executed using force.
 		$serverschedules = $sourceserver.JobServer.SharedSchedules
 		$destschedules = $destserver.JobServer.SharedSchedules
 	}
-	PROCESS
-	{
+	process {
 		foreach ($schedule in $serverschedules)
 		{
 			$schedulename = $schedule.name
@@ -149,7 +146,7 @@ Shows what would happen if the command were executed using force.
 				{
 					Write-Output "Copying schedule $schedulename"
 					$sql = $schedule.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Verbose $sql
 					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 				}
@@ -161,8 +158,7 @@ Shows what would happen if the command were executed using force.
 		}
 	}
 	
-	END
-	{
+	end {
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Job schedule migration finished" }

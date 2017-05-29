@@ -1,5 +1,5 @@
-﻿Function Get-DbaCertificate {
-<#
+﻿function Get-DbaCertificate {
+	<#
 .SYNOPSIS
 Gets database certificates
 
@@ -14,6 +14,9 @@ Allows you to login to SQL Server using alternative credentials
 
 .PARAMETER Database
 Get certificate from specific database
+
+.PARAMETER ExcludeDatabase
+Database(s) to ignore when retrieving certificates.
 
 .PARAMETER Certificate
 Get specific certificate
@@ -47,10 +50,11 @@ Gets the cert1 certificate within the db1 database
 	param (
 		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[string[]]$Database,
-		[string[]]$Certificate,
+		[object[]]$Database,
+		[object[]]$ExcludeDatabase,
+		[object[]]$Certificate,
 		[switch]$Silent
 	)
 	
@@ -58,17 +62,27 @@ Gets the cert1 certificate within the db1 database
 		foreach ($instance in $SqlInstance) {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -Target $instance -InnerErrorRecord $_ -Continue
 			}
 			
-			if (!$Database) { $Database = $server.Databases.Name }
+			$databases = Get-DbaDatabase -SqlInstance $server
+			if ($Database) { 
+				$databases = $databases | Where-Object Name -In $Database
+			}
+			if ($ExcludeDatabase) {
+				$databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
+			}
 			
-			foreach ($db in $database) {
-				
-				$smodb = $server.Databases[$db]
+			foreach ($db in $databases) {
+				if (!$db.IsAccessible) {
+					Write-Message -Level Warning -Message "$db is not accessible, skipping"
+					continue
+				}
+				$dbName = $db.Name
+				$smodb = $server.Databases[$dbName]
 				
 				if ($null -eq $smodb) {
 					Write-Message -Message "Database '$db' does not exist on $instance" -Target $smodb -Level Verbose
@@ -80,11 +94,9 @@ Gets the cert1 certificate within the db1 database
 					continue
 				}
 				
+				$certs = $smodb.Certificates
 				if ($Certificate) {
-					$certs = $smodb.Certificates | Where-Object Name -in $Certificate
-				}
-				else {
-					$certs = $smodb.Certificates
+					$certs = $certs | Where-Object Name -in $Certificate
 				}
 				
 				foreach ($cert in $certs) {

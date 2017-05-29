@@ -87,9 +87,9 @@ Shows what would happen if the command were executed.
 	[cmdletbinding(SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[parameter(Mandatory = $true)]
-		[object]$Destination,
+		[DbaInstanceParameter]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[Switch]$DisableJobsOnDestination,
@@ -99,11 +99,11 @@ Shows what would happen if the command were executed.
 	)
 	
 	BEGIN  {
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
-		Invoke-SmoCheck -SqlServer $sourceserver
-		Invoke-SmoCheck -SqlServer $destserver
+		Invoke-SmoCheck -SqlInstance $sourceserver
+		Invoke-SmoCheck -SqlInstance $destserver
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
@@ -136,7 +136,7 @@ Shows what would happen if the command were executed.
 			{
 				Write-Output "Copying SQL Agent Properties"
 				$sql = $sourceagent.Script() | Out-String
-				$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+				$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 				$sql = $sql -replace [Regex]::Escape("@errorlog_file="), [Regex]::Escape("--@errorlog_file=")
 				Write-Verbose $sql
 				$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null

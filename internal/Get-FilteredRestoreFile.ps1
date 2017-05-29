@@ -34,6 +34,15 @@ function Get-FilteredRestoreFile {
             Replaces user friendly yellow warnings with bloody red exceptions of doom!
             Use this if you want the function to throw terminating errors you want to catch.
         
+        .PARAMETER Continue
+            Continues restoring a database from a point in time
+
+        .PARAMETER ContinuePoints
+            The points to continue the restore from
+
+        .PARAMETER DatabaseName
+            Used when a restore is being continued with a name change
+        
         .EXAMPLE
             Get-FilteredRestoreFile -Files $Files -SqlInstance $SqlInstance
     
@@ -50,6 +59,8 @@ function Get-FilteredRestoreFile {
         
         [Alias('SqlServer')]
         [parameter(Mandatory = $true)]
+
+
         [DbaInstanceParameter]
         $SqlInstance,
         
@@ -66,7 +77,16 @@ function Get-FilteredRestoreFile {
         $TrustDbBackupHistory,
         
         [switch]
-        $Silent
+        $Silent,
+
+        [switch]
+        $Continue,
+
+        [object]
+        $ContinuePoints,
+
+        [string]
+        $DatabaseName
     )
     begin {
         Write-Message -Level InternalComment -Message 'Starting'
@@ -111,58 +131,97 @@ function Get-FilteredRestoreFile {
             $allSqlBackupDetails += $internalFiles | Where-Object { $_.Type -eq 'Differential' } | select-object *, @{ Name = "BackupTypeDescription"; Expression = { "Database Differential" } }, @{ Name = "BackupType"; Expression = { "5" } }
         }
         else {
-            Write-Message -Level Verbose -Message "Reading file headers using Read-DbaBackupHeader"
-            $allSqlBackupDetails = $internalFiles | ForEach-Object {
-                if ($_.fullname -ne $null) { $_.Fullname }
-                else { $_ }
-            } | Read-DbaBackupHeader @sqlInstanceParameterSplat
+    		Write-Message -Level Verbose -Message "Read File headers (Read-DBABackupHeader)"		
+			$AllSQLBackupdetails = $InternalFiles | ForEach-Object{if($_.fullname -ne $null){$_.Fullname}else{$_}} | Read-DBAbackupheader -sqlinstance $sqlinstance -SqlCredential $SqlCredential
         }
-        
-        Write-Message -Level Verbose -Message "$($allSqlBackupDetails.count) Files to filter"
-        $databases = $allSqlBackupDetails | Group-Object -Property Servername, DatabaseName
-        Write-Message -Level Verbose -Message "$(($databases | Measure-Object).count) database to process"
-        
-        foreach ($database in $databases) {
-            $fullBackup = $null
-            $results = @()
-            $serverName, $databaseName = $database.Name.split(',')
-            Write-Message -Level VeryVerbose -Message "Find latest full backup for $serverName : $databaseName" -Target $database
-            $sqlBackupdetails = $allSqlBackupDetails | Where-Object { $_.ServerName -eq $serverName -and $_.DatabaseName -eq $databaseName.trim() }
-            $fullBackup = $sqlBackupdetails | where-object { $_.BackupTypeDescription -eq 'Database' -and $_.BackupStartDate -lt $RestoreTime } | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1
-            if (-not $fullBackup) {
-                Stop-Function -Message "No Full backup found to anchor the restore for $serverName : $databaseName" -Continue -Target $database
+
+		Write-Message -Level Verbose -Message "$($AllSQLBackupdetails.count) Files to filter"
+        $Databases = $AllSQLBackupdetails  | Group-Object -Property Servername, DatabaseName
+        Write-Message -Level Verbose -Message "$(($Databases | Measure-Object).count) database to process"
+
+        if ($Continue) {
+            IF ($DatabaseName -ne '') {
+                if (($Databases | Measure-Object).count -gt 1) {
+                    Stop-Function -Message "More than 1 db restore for 1 db - exiting"
+                    return
+                } else {
+                    $dbrec = $DatabaseName
+                }
+                
             }
-            #This scans for striped full backups to build the results
-            $results += $sqlBackupdetails | where-object { $_.BackupTypeDescription -eq "Database" -and $_.BackupSetGUID -eq $fullBackup.BackupSetGUID }
-            $logStartDate = $fullBackup.BackupStartDate
+            else {
+                Write-Message -Level Verbose -Message "Continue set, so filtering to these databases :$($continuePoints.Database -join ',')"
+                #$ignore = $Databases | Where-Object {$_.DatabaseName -notin ($continuePoints.Database)} | select-Object DatabaseName
+                #Write-Verbose "Ignoring these: $($ignore -join ',')"
+                $Databases = $Databases | Where-Object {(($_.Name -split ',')[1]).trim() -in ($continuePoints.Database)}
+                
+            }
+        } 
+		
+		foreach ($Database in $Databases) {
+
+            $Results = @()
+            Write-Message -Level VeryVerbose -Message "Find Newest Full backup - $($_.DatabaseName)"
+
+            $ServerName, $databaseName = $Database.Name.split(',').trim()
+
+            Write-verbose "dbname = $databasename"
+            $SQLBackupdetails = $AllSQLBackupdetails | Where-Object {$_.ServerName -eq $ServerName -and $_.DatabaseName -eq $DatabaseName.trim()}
+            #If we're continuing a restore, then we aren't going to be needing a full backup....
+            $TlogStartlsn = 0
+            if (!($continue)) {
+                $Fullbackup = $SQLBackupdetails | where-object {$_.BackupTypeDescription -eq 'Database' -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1
+                $TlogStartlsn = $Fullbackup.FirstLSN
+                if ($Fullbackup -eq $null) {
+                    Stop-Function -Message "No Full backup found to anchor the restore" -Continue -Target $database
+                    break
+                }
+                #This scans for striped full backups to build the results
+                $Results += $SQLBackupdetails | where-object {$_.BackupTypeDescription -eq "Database" -and $_.FirstLSN -eq $FullBackup.FirstLSN}
+            }
+            else {
+                Write-Message -Level VeryVerbose -Message "Continuing restore, setting fake fullbackup"
+                if ($null -ne $dbrec) {
+                     $dbfilter = $dbrec
+                 }
+                 else {
+                     $dbfilter= $DatabaseName
+                 }
+                $Fullbackup = $ContinuePoints | Where-Object {$_.Database -eq $dbfilter}
+                $TLogStartLsn = $Fullbackup.redo_start_lsn
+                
+            }    
+           Write-Message -Level Verbose -Message "Got a Full backup, now to find diffs if they exist"
             
-            Write-Message -Level Verbose -Message "Got a full backup, now to find diffs if they exist" -Target $database
             #Get latest Differential Backup
-            $diffbackupsLSN = ($sqlBackupdetails | Where-Object { $_.BackupTypeDescription -eq 'Database Differential' -and $_.DatabaseBackupLSN -eq $fullBackup.CheckpointLSN -and $_.BackupStartDate -gt $fullBackup.BackupStartDate -and $_.BackupStartDate -lt $RestoreTime } | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1).FirstLSN
-            $diffBackup = ($sqlBackupdetails | Where-Object { $_.BackupTypeDescription -eq 'Database Differential' -and $_.DatabaseBackupLSN -eq $fullBackup.CheckpointLSN -and $_.BackupStartDate -gt $fullBackup.BackupStartDate -and $_.BackupStartDate -lt $RestoreTime } | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1)
-            
-            #Scan for striped differential backups
-            $diffbackups = $sqlBackupdetails | Where-Object { $_.BackupTypeDescription -eq 'Database Differential' -and $_.FirstLSN -eq $diffbackupsLSN -and $_.BackupsetGUID -eq $diffBackup.BackupSetGUID }
-            $tLogStartlsn = 0
-            $tLogs = @()
-            if ($null -ne $diffbackups) {
-                Write-Message -Level Verbose -Message "We have at least one diff so look for tlogs after the last one" -Target $database
-                #If we have a Diff backup, we only need T-log backups post that point
-                $tLogStartlsn = ($diffbackups | select-object -Property FirstLSN -first 1).FirstLSN
-                $results += $diffbackups
-                $logStartDate = $diffBackup.BackupStartDate
+            #If we're doing a continue and the last restore wasn't a full db we can't use a diff, so skip
+            if ($null -eq $lastrestore -or $lastrestore -eq 'Database'  ) {
+                $DiffbackupsLSN = ($SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Database Differential' -and $_.DatabaseBackupLSN -eq $Fullbackup.FirstLsn -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1).FirstLSN
+                #Scan for striped differential backups
+                $Diffbackups = $SqlBackupDetails | Where-Object {$_.BackupTypeDescription -eq 'Database Differential' -and $_.DatabaseBackupLSN -eq $Fullbackup.FirstLsn -and $_.FirstLSN -eq $DiffBackupsLSN}
+                if ($null -ne $Diffbackups) {
+                    Write-Message -Level Verbose -Message "we have at least one diff so look for tlogs after the last one"
+                    #If we have a Diff backup, we only need T-log backups post that point
+                    $TlogStartLSN = ($DiffBackups | select-object -Property FirstLSN -first 1).FirstLSN
+                    $Results += $Diffbackups
+                }
             }
             
             if ($fullBackup.RecoverModel -eq 'SIMPLE' -or $IgnoreLogBackup) {
                 Write-Message -Level Verbose -Message "Database in simple mode or IgnoreLogBackup is true, skipping Transaction logs" -Target $database
             }
             else {
-                Write-Message -Level Verbose -Message "Got a Full/Diff backups, now find all Tlogs needed" -Target $database
-                $allTlogs = $sqlBackupdetails | Where-Object BackupTypeDescription -eq 'Transaction Log'
-                $filteredLogs = $sqlBackupdetails | Where-Object { $_.BackupTypeDescription -eq 'Transaction Log' -and $_.DatabaseBackupLSN -eq $fullBackup.CheckPointLSN -and $_.LastLSN -gt $tLogStartlsn -and $_.BackupStartDate -lt $RestoreTime -and $_.BackupStartDate -ge $logStartDate }
-                $groupedLogs = $filteredLogs | Group-Object -Property LastLSN, FirstLSN
-                foreach ($logGroup in $groupedLogs) {
-                    $tLogs += $logGroup.Group | Where-Object { $_.BackupSetGUID -eq ($logGroup.Group | sort-Object -Property BackupStartDate -Descending | select-object -first 1).BackupSetGUID }
+                write-verbose " frfID - $($Fullbackup.FirstRecoveryForkID)"
+                write-verbose "tstart - $TlogStartLSN"
+ 
+                Write-Message -Level Verbose -Message "Got a Full/Diff backups, now find all Tlogs needed"
+                $AllTlogs = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} 
+                $Filteredlogs = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.FirstRecoveryForkID -eq $Fullbackup.FirstRecoveryForkID -and $_.LastLSN -gt $TlogStartLSN -and $_.BackupStartDate -lt $RestoreTime}
+                # -and $_.BackupStartDate -ge $LogStartDate
+                $GroupedLogs = $FilteredLogs | Group-Object -Property LastLSN, FirstLSN
+                $Tlogs = @()
+                foreach ($LogGroup in $GroupedLogs) {
+                    $Tlogs += $LogGroup.Group | Where-Object {$_.BackupSetGUID -eq ($LogGroup.Group | sort-Object -Property BackupStartDate -Descending | select-object -first 1).BackupSetGUID}
                 }
                 Write-Message -Level SomewhatVerbose -Message "Filtered $($allTlogs.count) log backups down to $($tLogs.count)" -Target $database
                 $results += $tLogs
@@ -182,5 +241,3 @@ function Get-FilteredRestoreFile {
         Write-Message -Level InternalComment -Message 'Stopping'
     }
 }
-
-Register-DbaTeppArgumentCompleter -Command Get-FilteredRestoreFile -Parameter SqlInstance

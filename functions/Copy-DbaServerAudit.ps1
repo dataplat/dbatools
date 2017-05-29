@@ -5,7 +5,7 @@ function Copy-DbaServerAudit
 Copy-DbaServerAudit migrates server audits from one SQL Server to another. 
 
 .DESCRIPTION
-By default, all audits are copied. The -Audits parameter is autopopulated for command-line completion and can be used to copy only specific audits.
+By default, all audits are copied. The -Audit parameter is autopopulated for command-line completion and can be used to copy only specific audits.
 
 If the audit already exists on the destination, it will be skipped unless -Force is used. 
 
@@ -75,21 +75,18 @@ Shows what would happen if the command were executed using force.
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[parameter(Mandatory = $true)]
-		[object]$Destination,
+		[DbaInstanceParameter]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 	)
-	DynamicParam { if ($source) { return (Get-ParamSqlServerAudits -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
-	
-	BEGIN {
-	
-		$audits = $psboundparameters.Audits
-		
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+
+	begin {
+
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
@@ -103,9 +100,7 @@ Shows what would happen if the command were executed using force.
 		$serveraudits = $sourceserver.Audits
 		$destaudits = $destserver.Audits
 	}
-	
-	PROCESS
-	{	
+	process {
 		foreach ($audit in $serveraudits)
 		{
 			$auditname = $audit.name
@@ -115,7 +110,7 @@ Shows what would happen if the command were executed using force.
 			}
 			
 			$sql = $audit.Script() | Out-String
-			$sql = $sql -replace [Regex]::Escape("'$source'"), [Regex]::Escape("'$destination'")
+			$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 			
 			if ($destaudits.name -contains $auditname)
 			{
@@ -150,7 +145,7 @@ Shows what would happen if the command were executed using force.
 				}
 			}
 			
-			if ((Test-DbaSqlPath -SqlServer $destserver -Path $audit.Filepath) -eq $false)
+			if ((Test-DbaSqlPath -SqlInstance $destserver -Path $audit.Filepath) -eq $false)
 			{
 				if ($Force -eq $false)
 				{
@@ -205,12 +200,7 @@ Shows what would happen if the command were executed using force.
 			}
 		}
 	}
-	
-	END
-	{
-		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
-        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Server audit migration finished" }
+	end {
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlAudit
 	}
 }

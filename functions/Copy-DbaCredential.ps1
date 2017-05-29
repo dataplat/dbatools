@@ -73,7 +73,7 @@ Description
 Copies all SQL Server Credentials on sqlserver2014a to sqlcluster. If credentials exist on destination, they will be skipped.
 
 .EXAMPLE   
-Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster -Credentials "PowerShell Proxy Account" -Force
+Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster -Credential "PowerShell Proxy Account" -Force
 
 Description
 Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped and recreated.
@@ -82,41 +82,36 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true)]
-		[object]$Source,
+		[DbaInstanceParameter]$Source,
 		[parameter(Mandatory = $true)]
-		[object]$Destination,
+		[DbaInstanceParameter]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
 		[switch]$Force
 		
 	)
-	
-	DynamicParam { if ($source) { return (Get-ParamSqlCredentials -SqlServer $Source -SqlCredential $SourceSqlCredential) } }
-	
-	BEGIN
-	{
+
+	begin {
 		
-		Function Get-SqlCredentials
-		{
-	<#
-		.SYNOPSIS
-		Gets Credential Logins
-		 
-		This function is heavily based on Antti Rantasaari's script at http://goo.gl/omEOrW
-		Antti Rantasaari 2014, NetSPI
-		License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
-		
-		.OUTPUT
-		System.Data.DataTable
-	
-	#>
+		function Get-SqlCredentials {
+			<#
+				.SYNOPSIS
+					Gets Credential Logins
+					
+					This function is heavily based on Antti Rantasaari's script at http://goo.gl/omEOrW
+					Antti Rantasaari 2014, NetSPI
+					License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
+					
+				.OUTPUT
+					System.Data.DataTable			
+			#>
 			[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 			param (
-				[object]$SqlServer,
+				[DbaInstanceParameter]$SqlInstance,
 				[System.Management.Automation.PSCredential]$SqlCredential
 			)
 			
-			$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+			$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 			$sourcename = $server.name
 			
 			# Query Service Master Key from the database - remove padding from the key
@@ -268,16 +263,14 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 			return $decryptedlogins
 		}
 		
-		Function Copy-Credential
-		{
-	<#
-		.SYNOPSIS
-		Copies Credentials from one server to another using a combination of SMO's .Script() and manual password updates.
-		
-		.OUTPUT
-		System.Data.DataTable
-	
-	#>
+		function Copy-Credential {
+			<#
+				.SYNOPSIS
+					Copies Credentials from one server to another using a combination of SMO's .Script() and manual password updates.
+				
+				.OUTPUT
+					System.Data.DataTable			
+			#>
 			param (
 				[string[]]$credentials,
 				[bool]$force
@@ -343,10 +336,8 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 			}
 		}
 		
-		$credentials = $psboundparameters.credentials
-		
-		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
@@ -361,13 +352,12 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 			throw "Credentials are only supported in SQL Server 2005 and above. Quitting."
 		}
 		
-		Invoke-SmoCheck -SqlServer $sourceserver
-		Invoke-SmoCheck -SqlServer $destserver
+		Invoke-SmoCheck -SqlInstance $sourceserver
+		Invoke-SmoCheck -SqlInstance $destserver
 		
 	}
 	
-	PROCESS
-	{
+	process {
 		Write-Output "Getting NetBios name for $source"
 		$sourcenetbios = Resolve-NetBiosName $sourceserver
 		
@@ -389,8 +379,7 @@ Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver 
 		
 	}
 	
-	END
-	{
+	end {
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Credential migration finished" }

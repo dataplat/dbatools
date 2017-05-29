@@ -57,8 +57,8 @@ Sets database owner to 'sa' on the db1 and db2 databases if their current owner 
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object[]]$SqlInstance,
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
@@ -71,13 +71,12 @@ Sets database owner to 'sa' on the db1 and db2 databases if their current owner 
 	{
 		foreach ($instance in $SqlInstance)
 		{
-			
 			#connect to the instance
 			Write-Verbose "Connecting to $instance"
-			$server = Connect-SqlServer $instance -SqlCredential $SqlCredential
+			$server = Connect-SqlInstance $instance -SqlCredential $SqlCredential
 			
 			# dynamic sa name for orgs who have changed their sa name
-			if ($psboundparameters.TargetLogin.length -eq 0)
+			if (!$TargetLogin)
 			{
 				$TargetLogin = ($server.logins | Where-Object { $_.id -eq 1 }).Name
 			}
@@ -156,4 +155,3 @@ Sets database owner to 'sa' on the db1 and db2 databases if their current owner 
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Set-DbaDatabaseOwner -Parameter Database, Exclude

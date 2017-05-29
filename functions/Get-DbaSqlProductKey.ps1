@@ -4,11 +4,11 @@ function Get-DbaSqlProductKey {
 Gets SQL Server Product Keys from local on destination SQL Servers. Works with SQL Server 2005-2014
 
 .DESCRIPTION 
-Using a string of servers, a text file, or Central Management Server to provide a list of servers, this script will go to each server and get the product key for all installed instances. Clustered instances are supported as well. Requires regular user access to the SQL instances, SMO installed locally, Remote Registry enabled and acessible by the account running the script.
+Using a string of servers, a text file, or Central Management Server to provide a list of servers, this script will go to each server and get the product key for all installed instances. Clustered instances are supported as well. Requires regular user access to the SQL instances, SMO installed locally, Remote Registry enabled and accessible by the account running the script.
 
 Uses key decoder by Jakob Bindslet (http://goo.gl/1jiwcB)
 
-.PARAMETER SqlServers
+.PARAMETER SqlInstances
 A comma separated list of servers. This can be the NetBIOS name, IP, or SQL instance name
 
 .PARAMETER SqlCms
@@ -63,8 +63,8 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
     [CmdletBinding(DefaultParameterSetName = "Default")]
     Param (
         [parameter(Position = 0)]
-        [Alias("ServerInstance", "SqlInstance")]
-        [string[]]$SqlServers,
+        [Alias("ServerInstance", "SqlServer")]
+        [string[]]$SqlInstances,
         # Central Management Server
 
         [string]$SqlCms,
@@ -76,7 +76,7 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
 	
     BEGIN {
 		
-        Function Unlock-SqlServerKey {
+        Function Unlock-SqlInstanceKey {
             [CmdletBinding()]
             param (
                 [Parameter(Mandatory = $true)]
@@ -112,31 +112,31 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
             { throw "Can't load CMS assemblies. You must have SQL Server Management Studio installed to use the -SqlCms switch." }
 			
             Write-Verbose "Gathering SQL Servers names from Central Management Server"
-            $server = Connect-SqlServer -SqlServer $SqlCms -SqlCredential $SqlCredential
+            $server = Connect-SqlInstance -SqlInstance $SqlCms -SqlCredential $SqlCredential
             $sqlconnection = $server.ConnectionContext.SqlConnectionObject
 			
             try { $cmstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sqlconnection) }
             catch { throw "Cannot access Central Management Server" }
             $dbstore = $cmstore.DatabaseEngineServerGroup
-            $SqlServers = $dbstore.GetDescendantRegisteredServers().servername
+            $SqlInstances = $dbstore.GetDescendantRegisteredServers().servername
             # Add the CM server itself, which can't be stored in the CM server.
             $servers += $SqlCms
             $basenames = @()
-            foreach ($server in $SqlServers) { $basenames += $server.Split("\")[0] }
-            $SqlServers = $basenames | Get-Unique
+            foreach ($server in $SqlInstances) { $basenames += $server.Split("\")[0] }
+            $SqlInstances = $basenames | Get-Unique
         }
 		
         If ($ServersFromFile) {
             if ((Test-Path $ServersFromFile) -eq $false) { throw "Could not find file: $ServersFromFile" }
-            $SqlServers = Get-Content $ServersFromFile
+            $SqlInstances = Get-Content $ServersFromFile
         }
 		
-        if ([string]::IsNullOrEmpty($SqlServers)) { $SqlServers = $env:computername }
+        if ([string]::IsNullOrEmpty($SqlInstances)) { $SqlInstances = $env:computername }
 		
         $basepath = "SOFTWARE\Microsoft\Microsoft SQL Server"
         # Loop through each server
         $objectCollection = @()
-        foreach ($servername in $SqlServers) {
+        foreach ($servername in $SqlInstances) {
             $servername = $servername.Split("\")[0]
 			
             if ($servername -eq "." -or $servername -eq "localhost" -or $servername -eq $env:computername) {
@@ -159,8 +159,8 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
             if ($instances -eq $null) { Write-Warning "No instances found on $servername. Skipping."; continue }
             # Get Product Keys for all instances on the server.
             foreach ($instance in $instances.GetValueNames()) {
-                if ($instance -eq "MSSQLSERVER") { $sqlserver = $servername }
-                else { $sqlserver = "$servername\$instance" }
+                if ($instance -eq "MSSQLSERVER") { $SqlInstance = $servername }
+                else { $SqlInstance = "$servername\$instance" }
 				
                 $subkeys = $reg.OpenSubKey("$basepath", $false)
                 $instancekey = $subkeys.GetSubKeynames() | Where-Object { $_ -like "*.$instance" }
@@ -170,13 +170,13 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
                 $cluster = $reg.OpenSubKey("$basepath\$instancekey\Cluster", $false)
                 if ($cluster -ne $null) {
                     $clustername = $cluster.GetValue("ClusterName")
-                    if ($instance -eq "MSSQLSERVER") { $sqlserver = $clustername }
-                    else { $sqlserver = "$clustername\$instance" }
+                    if ($instance -eq "MSSQLSERVER") { $SqlInstance = $clustername }
+                    else { $SqlInstance = "$clustername\$instance" }
                 }
 				
-                Write-Verbose "Attempting to connect to $sqlserver"
-                try { $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential }
-                catch { Write-Warning "Can't connect to $sqlserver or access denied. Skipping."; continue }
+                Write-Verbose "Attempting to connect to $SqlInstance"
+                try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential }
+                catch { Write-Warning "Can't connect to $SqlInstance or access denied. Skipping."; continue }
 				
                 $servicePack = $server.ProductLevel
                 Write-Debug "$servername $instance version is $($server.VersionMajor)"
@@ -205,14 +205,14 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
                         $binarykey = $($reg.OpenSubKey($subkey)).GetValue($binaryvalue)
                     }
                     catch { $sqlkey = "Could not connect." }
-                    try { $sqlkey = Unlock-SqlServerKey $binarykey $server.VersionMajor }
+                    try { $sqlkey = Unlock-SqlInstanceKey $binarykey $server.VersionMajor }
                     catch { }
                 }
                 else { $sqlkey = "SQL Server Express Edition" }
                 $server.ConnectionContext.Disconnect()
 				
                 $object = New-Object PSObject -Property @{
-                    "SQL Instance" = $sqlserver
+                    "SQL Instance" = $SqlInstance
                     "SQL Version"  = $sqlversion
                     "SQL Edition"  = $server.Edition
                     "Product Key"  = $sqlkey

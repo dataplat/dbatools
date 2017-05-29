@@ -1,5 +1,4 @@
-Function Export-DbaExecutionPlan
-{
+function Export-DbaExecutionPlan {
 <#
 .SYNOPSIS
 Exports execution plans to disk. 
@@ -22,7 +21,7 @@ Credential object used to connect to the SQL Server as a different user
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Exclude
+.PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER SinceCreation
@@ -72,13 +71,13 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 	Param (
 		[parameter(ParameterSetName = 'NotPiped', Mandatory)]
 		[Alias("ServerInstance", "SqlServer")]
-		[string[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[parameter(ParameterSetName = 'NotPiped')]
 		[Alias("Credential")]
 		[PsCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[parameter(ParameterSetName = 'Piped', Mandatory)]
 		[parameter(ParameterSetName = 'NotPiped', Mandatory)]
 		[string]$Path,
@@ -174,7 +173,7 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 		{
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
 				
 				if ($server.VersionMajor -lt 9)
 				{
@@ -198,14 +197,14 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 				        CROSS APPLY sys.dm_exec_query_plan(deqs.plan_handle) AS deqp
 				        CROSS APPLY sys.dm_exec_sql_text(deqs.plan_handle) AS execText"
 				
-				if ($exclude.length -gt 0 -or $Database.length -gt 0 -or $SinceCreation.length -gt 0 -or $SinceLastExecution.length -gt 0 -or $ExcludeEmptyQueryPlan -eq $true)
+				if ($ExcludeDatabase -or $Database -or $SinceCreation.length -gt 0 -or $SinceLastExecution.length -gt 0 -or $ExcludeEmptyQueryPlan -eq $true)
 				{
 					$where = " WHERE "
 				}
 				
 				$wherearray = @()
 				
-				if ($Database.length -gt 0)
+				if ($Database -gt 0)
 				{
 					$dblist = $Database -join "','"
 					$wherearray += " DB_NAME(deqp.dbid) in ('$dblist') "
@@ -223,9 +222,9 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 					$wherearray += " last_execution_time >= '$SinceLastExecution' "
 				}
 				
-				if ($exclude.length -gt 0)
+				if ($ExcludeDatabase)
 				{
-					$dblist = $exclude -join "','"
+					$dblist = $ExcludeDatabase -join "','"
 					$wherearray += " DB_NAME(deqp.dbid) not in ('$dblist') "
 				}
 				
@@ -280,4 +279,3 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Export-DbaExecutionPlan -Parameter Database, Exclude

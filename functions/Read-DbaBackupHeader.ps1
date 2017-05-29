@@ -8,7 +8,7 @@ Reads and displays detailed information about a SQL Server backup
 .DESCRIPTION
 Reads full, differential and transaction log backups. An online SQL Server is required to parse the backup files and the path specified must be relative to that SQL Server.
 	
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server instance. 
 
 .PARAMETER SqlCredential
@@ -46,40 +46,40 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Read-DbaBackupHeader
 
 .EXAMPLE
-Read-DbaBackupHeader -SqlServer sql2016 -Path S:\backups\mydb\mydb.bak
+Read-DbaBackupHeader -SqlInstance sql2016 -Path S:\backups\mydb\mydb.bak
 
 Logs into sql2016 using Windows authentication and reads the local file on sql2016, S:\backups\mydb\mydb.bak.
 	
 If you are running this command on a workstation and connecting remotely, remember that sql2016 cannot access files on your own workstation.
 
 .EXAMPLE
-Read-DbaBackupHeader -SqlServer sql2016 -Path \\nas\sql\backups\mydb\mydb.bak, \\nas\sql\backups\otherdb\otherdb.bak
+Read-DbaBackupHeader -SqlInstance sql2016 -Path \\nas\sql\backups\mydb\mydb.bak, \\nas\sql\backups\otherdb\otherdb.bak
 
 Logs into sql2016 and reads two backup files - mydb.bak and otherdb.bak. The SQL Server service account must have rights to read this file.
 	
 .EXAMPLE
-Read-DbaBackupHeader -SqlServer . -Path C:\temp\myfile.bak -Simple
+Read-DbaBackupHeader -SqlInstance . -Path C:\temp\myfile.bak -Simple
 	
 Logs into the local workstation (or computer) and shows simplified output about C:\temp\myfile.bak. The SQL Server service account must have rights to read this file.
 
 .EXAMPLE
-$backupinfo = Read-DbaBackupHeader -SqlServer . -Path C:\temp\myfile.bak
+$backupinfo = Read-DbaBackupHeader -SqlInstance . -Path C:\temp\myfile.bak
 $backupinfo.FileList
 	
 Displays detailed information about each of the datafiles contained in the backupset.
 
 .EXAMPLE
-Read-DbaBackupHeader -SqlServer . -Path C:\temp\myfile.bak -FileList
+Read-DbaBackupHeader -SqlInstance . -Path C:\temp\myfile.bak -FileList
 	
 Also returns detailed information about each of the datafiles contained in the backupset.
 
 .EXAMPLE
-"C:\temp\myfile.bak", "\backupserver\backups\myotherfile.bak" | Read-DbaBackupHeader -SqlServer sql2016
+"C:\temp\myfile.bak", "\backupserver\backups\myotherfile.bak" | Read-DbaBackupHeader -SqlInstance sql2016
 
-Similar to running Read-DbaBackupHeader -SqlServer sql2016 -Path "C:\temp\myfile.bak", "\backupserver\backups\myotherfile.bak"
+Similar to running Read-DbaBackupHeader -SqlInstance sql2016 -Path "C:\temp\myfile.bak", "\backupserver\backups\myotherfile.bak"
 	
 .EXAMPLE
-Get-ChildItem \\nas\sql\*.bak | Read-DbaBackupHeader -SqlServer sql2016
+Get-ChildItem \\nas\sql\*.bak | Read-DbaBackupHeader -SqlInstance sql2016
 
 Gets a list of all .bak files on the \\nas\sql share and reads the headers using the server named "sql2016". This means that the server, sql2016, must have read access to the \\nas\sql share.
 
@@ -120,7 +120,7 @@ Gets the backup header information from the SQL Server backup file stored at htt
         $LoopCnt = 1
         
         try {
-            $server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
         catch {
             Stop-Function -Message "Failed to connect to $SqlInstance" -Silent $Silent -ErrorRecord $_
@@ -147,7 +147,7 @@ Gets the backup header information from the SQL Server backup file stored at htt
             }
             $device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem $file, $DeviceType
             $restore.Devices.Add($device)
-            if ((Test-DbaSqlPath -SqlServer $server -Path $file) -or $DeviceType -eq 'URL') {
+            if ((Test-DbaSqlPath -SqlInstance $server -Path $file) -or $DeviceType -eq 'URL') {
 				<#	try
 					{
 						$allfiles = $restore.ReadFileList($server)
@@ -155,7 +155,7 @@ Gets the backup header information from the SQL Server backup file stored at htt
 					catch
 					{
 						$shortname = Split-Path $file -Leaf
-						if (!(Test-DbaSqlPath -SqlServer $server -Path $file))
+						if (!(Test-DbaSqlPath -SqlInstance $server -Path $file))
 						{
 							Write-Warning "File $shortname does not exist or access denied. The SQL Server service account may not have access to the source directory."
 						}
@@ -218,7 +218,7 @@ Gets the backup header information from the SQL Server backup file stored at htt
                     }
                     catch {
                         $shortname = Split-Path $file -Leaf
-                        if (!(Test-DbaSqlPath -SqlServer $server -Path $file)) {
+                        if (!(Test-DbaSqlPath -SqlInstance $server -Path $file)) {
                             Write-Message -Level Warning -Message "File $shortname does not exist or access denied. The SQL Server service account may not have access to the source directory."
                         }
                         else {
@@ -253,4 +253,3 @@ Gets the backup header information from the SQL Server backup file stored at htt
     }
 }
 
-Register-DbaTeppArgumentCompleter -Command Read-DbaBackupHeader -Parameter SqlInstance

@@ -41,22 +41,22 @@ FUNCTION Get-DbaSchemaChangeHistory {
 	https://dbatools.io/Get-DbaSchemaChangeHistory
 
 	.EXAMPLE
-	Get-DbaJobCategory -SqlInstance localhost
+	Get-DbaSchemaChangeHistory -SqlInstance localhost
     
     Returns all DDL changes made in all databases on the SQL Server instance localhost since the system trace began
 
 	.EXAMPLE
-	Get-DbaJobCategory -SqlInstance localhost -Since (Get-Date).AddDays(-7)
+	Get-DbaSchemaChangeHistory -SqlInstance localhost -Since (Get-Date).AddDays(-7)
 
 	Returns all DDL changes made in all databases on the SQL Server instance localhost in the last 7 days
 
 	.EXAMPLE
-	Get-DbaJobCategory -SqlInstance localhost -Database Finance, Prod -Since (Get-Date).AddDays(-7)
+	Get-DbaSchemaChangeHistory -SqlInstance localhost -Database Finance, Prod -Since (Get-Date).AddDays(-7)
 
 	Returns all DDL changes made in the Prod and Finance databases on the SQL Server instance localhost in the last 7 days
 	
     .EXAMPLE
-	Get-DbaJobCategory -SqlInstance localhost -Database Finance -Object AccountsTable -Since (Get-Date).AddDays(-7)
+	Get-DbaSchemaChangeHistory -SqlInstance localhost -Database Finance -Object AccountsTable -Since (Get-Date).AddDays(-7)
 
 	Returns all DDL changes made  to the AccountsTable object in the Finance database on the SQL Server instance localhost in the last 7 days
 
@@ -66,7 +66,7 @@ FUNCTION Get-DbaSchemaChangeHistory {
     param (
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [Alias("ServerInstance", "SqlServer")]
-        [object[]]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
@@ -83,7 +83,7 @@ FUNCTION Get-DbaSchemaChangeHistory {
             Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 			
             try {
-                $server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
                 Stop-Function -Message "Can't connect to $instance or access denied. Skipping." -Continue
@@ -151,4 +151,3 @@ FUNCTION Get-DbaSchemaChangeHistory {
     }
 }
 
-Register-DbaTeppArgumentCompleter -Command Get-DbaSchemaChangeHistory -Parameter Database, Exclude

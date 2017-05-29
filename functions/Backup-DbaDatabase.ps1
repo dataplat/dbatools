@@ -1,4 +1,4 @@
-Function Backup-DbaDatabase {
+function Backup-DbaDatabase {
 <#
 .SYNOPSIS
 Backup one or more SQL Sever databases from a SQL Server SqlInstance
@@ -16,7 +16,7 @@ Credentials to connect to the SQL Server instance if the calling user doesn't ha
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Exclude
+.PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER BackupFileName
@@ -121,11 +121,11 @@ sql credential dbatoolscred registered on the sql2016 instance
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	param (
 		[parameter(ParameterSetName = "Pipe", Mandatory = $true)]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[string[]]$BackupDirectory,
 		[string]$BackupFileName,
 		[switch]$NoCopyOnly,
@@ -151,7 +151,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 		if ($SqlInstance.length -ne 0) {
 			Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
 			try {
-				$Server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+				$Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 			}
 			catch {
 				Write-Message -Level Warning -Message "Cannot connect to $SqlInstance"
@@ -165,8 +165,8 @@ sql credential dbatoolscred registered on the sql2016 instance
 				$DatabaseCollection = $server.Databases | Where-object { $_.Name -ne 'TempDb' }
 			}
 			
-			if ($exclude) {
-				$DatabaseCollection = $DatabaseCollection | Where-Object Name -notin $exclude
+			if ($ExcludeDatabase) {
+				$DatabaseCollection = $DatabaseCollection | Where-Object Name -notin $ExcludeDatabase
 			}
 			
 			if ($BackupDirectory.count -gt 1) {
@@ -228,11 +228,11 @@ sql credential dbatoolscred registered on the sql2016 instance
 				continue
 			}
 			
-			if ($server -eq $null) { $server = $Database.Parent }
+			if ($null -eq $server) { $server = $Database.Parent }
 			
 			Write-Message -Level Verbose -Message "Backup up database $database"
 			
-			if ($Database.RecoveryModel -eq $null) {
+			if ($null -eq $Database.RecoveryModel) {
 				$Database.RecoveryModel = $server.databases[$Database.Name].RecoveryModel
 				Write-Message -Level Verbose -Message "$dbname is in $($Database.RecoveryModel) recovery model"
 			}
@@ -253,7 +253,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 			
 			$copyonly = !$NoCopyOnly
 			
-			$server.ConnectionContext.StatementTimeout = $val = 0
+			$server.ConnectionContext.StatementTimeout  = 0
 			$backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
 			$backup.Database = $Database.Name
 			$Suffix = "bak"
@@ -313,7 +313,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 				
 				Write-Message -Level Verbose -Message "Single db and filename"
 				
-				if (Test-DbaSqlPath -SqlServer $server -Path (Split-Path $BackupFileName)) {
+				if (Test-DbaSqlPath -SqlInstance $server -Path (Split-Path $BackupFileName)) {
 					$FinalBackupPath += $BackupFileName
 				}
 				else {
@@ -341,7 +341,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 					if ($CreateFolder) {
 						$Path = $path + $PathDivider + $Database.name
 						Write-Message -Level Verbose -Message "Creating Folder $Path"
-						if (((New-DbaSqlDirectory -SqlServer $server -SqlCredential $SqlCredential -Path $path).Created -eq $false) -and '' -eq $AzureBaseUrl) {
+						if (((New-DbaSqlDirectory -SqlInstance $server -SqlCredential $SqlCredential -Path $path).Created -eq $false) -and '' -eq $AzureBaseUrl) {
 							$failreason = "Cannot create or write to folder $path"
 							$failures += $failreason
 							Write-Message -Level Warning -Message "$failreason"
@@ -357,7 +357,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 					The code below attempts to create the directory even when $CreateFolder -- was it supposed to be Test-DbaSqlPath?
 					else
 					{
-						if ((New-DbaSqlDirectory -SqlServer $server -SqlCredential $SqlCredential -Path $path).Created -eq $false)
+						if ((New-DbaSqlDirectory -SqlInstance $server -SqlCredential $SqlCredential -Path $path).Created -eq $false)
 						{
 							$failreason = "Cannot create or write to folder $path"
 							$failures += $failreason
@@ -454,7 +454,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 							FileList = $FileList
 							SoftwareVersionMajor = $server.VersionMajor
                             Type = $outputType
-						} | Restore-DbaDatabase -SqlServer $server -SqlCredential $SqlCredential -DatabaseName DbaVerifyOnly -VerifyOnly
+						} | Restore-DbaDatabase -SqlInstance $server -SqlCredential $SqlCredential -DatabaseName DbaVerifyOnly -VerifyOnly
 						if ($verifiedResult[0] -eq "Verify successful") {
 							$failures += $verifiedResult[0]
 							$Verified = $true
@@ -496,4 +496,3 @@ sql credential dbatoolscred registered on the sql2016 instance
 	}
 }
 
-Register-DbaTeppArgumentCompleter -Command Backup-DbaDatabase -Parameter Database, Exclude

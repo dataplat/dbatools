@@ -41,19 +41,15 @@ You will be prompted to securely enter your password, then a master key will be 
 .EXAMPLE
 New-DbaMasterKey -SqlInstance Server1 -Database db1 -Confirm:$false
 
-Supresses all prompts to install but prompts to securely enter your password and creates a master key in the 'db1' database
+Suppresses all prompts to install but prompts to securely enter your password and creates a master key in the 'db1' database
 
-.EXAMPLE
-New-DbaMasterKey -SqlInstance Server1 -WhatIf
-
-Shows what would happen if the command were executed against server1
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact="High")]
 	param (
 		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string[]]$Database = "master",
 		[parameter(Mandatory)]
@@ -65,7 +61,7 @@ Shows what would happen if the command were executed against server1
 		foreach ($instance in $SqlInstance) {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -Target $instance -InnerErrorRecord $_ -Continue

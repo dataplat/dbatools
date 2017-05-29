@@ -9,7 +9,7 @@ function Test-DbaFullRecoveryModel {
 
 		Inspired by Paul Randal's post (http://www.sqlskills.com/blogs/paul/new-script-is-that-database-really-in-the-full-recovery-mode/)
 
-	.PARAMETER SqlServer
+	.PARAMETER SqlInstance
 		The SQL Server instance.
 
 	.PARAMETER SqlCredential
@@ -40,17 +40,17 @@ function Test-DbaFullRecoveryModel {
 		https://dbatools.io/Test-DbaFullRecoveryModel
 
 	.EXAMPLE
-		Test-DbaFullRecoveryModel -SqlServer sql2005
+		Test-DbaFullRecoveryModel -SqlInstance sql2005
 
 		Shows all databases which actual configured recovery model is FULL and says if they are really in FULL recovery model or not
 
 	.EXAMPLE
-		Test-DbaFullRecoveryModel -SqlServer . | Where-Object {$_.ActualRecoveryModel -ne "FULL"}
+		Test-DbaFullRecoveryModel -SqlInstance . | Where-Object {$_.ActualRecoveryModel -ne "FULL"}
 
 		Only shows the databases that are in 'pseudo-simple' mode.
 
 	.EXAMPLE
-		Test-DbaFullRecoveryModel -SqlServer sql2008 | Sort-Object Server, ActualRecoveryModel -Descending
+		Test-DbaFullRecoveryModel -SqlInstance sql2008 | Sort-Object Server, ActualRecoveryModel -Descending
 
 		Shows all databases which actual configured recovery model is FULL and says if they are really in FULL recovery model or not. Will show in first place the ones that are in 'pseudo-simple' mode.
 	#>
@@ -58,8 +58,8 @@ function Test-DbaFullRecoveryModel {
 	[OutputType("System.Collections.ArrayList")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$Exclude,
@@ -73,9 +73,9 @@ function Test-DbaFullRecoveryModel {
 	}
 
 	process {
-		foreach ($servername in $SqlServer) {
+		foreach ($servername in $SqlInstance) {
 			try {
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
 
 				if ($server.versionMajor -lt 9) {
 					Write-Warning "This function does not support versions lower than SQL Server 2005 (v9). Skipping server '$servername'."
@@ -149,4 +149,4 @@ function Test-DbaFullRecoveryModel {
 		}
 	}
 }
-Register-DbaTeppArgumentCompleter -Command Test-DbaFullRecoveryModel -Parameter Database, Exclude
+
