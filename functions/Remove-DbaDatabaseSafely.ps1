@@ -204,7 +204,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			$database = ($sourceserver.databases | Where-Object{ $_.IsSystemObject -eq $false -and ($_.Status -match 'Offline') -eq $false }).Name
 		}
 		
-		if (!(Test-DbaPath -SqlInstance $destserver -Path $backupFolder)) {
+		if (!(Test-DbaSqlPath -SqlInstance $destserver -Path $backupFolder)) {
 			$serviceaccount = $destserver.ServiceAccount
 			throw "Can't access $backupFolder Please check if $serviceaccount has permissions"
 		}
