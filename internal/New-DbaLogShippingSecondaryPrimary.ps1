@@ -94,7 +94,6 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
 		[Alias("ServerInstance", "SqlServer")]
 		[object]$SqlInstance,
 
-        [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]
         $SqlCredential,
 
@@ -109,13 +108,10 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
         [ValidateNotNullOrEmpty()]
         [string]$CopyJob,
 
-        [Parameter(Mandatory = $false)]
         [int]$FileRetentionPeriod = 14420,
 
-        [Parameter(Mandatory = $false)]
         [string]$MonitorServer,
 
-        [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]
         $MonitorCredential,
 
@@ -123,13 +119,10 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
         [ValidateSet(0, "sqlserver", 1, "windows")]
         [object]$MonitorServerSecurityMode = 1,
 
-        [Parameter(Mandatory = $false)]
         [object]$PrimaryServer,
 
-        [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]$PrimarySqlCredential,
-        [Parameter(Mandatory = $false)]
-        [string]$PrimaryDatabase,
+        [object]$PrimaryDatabase,
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
