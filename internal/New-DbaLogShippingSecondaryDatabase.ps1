@@ -102,23 +102,17 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
         [Alias("ServerInstance", "SqlServer")]
         [object[]]$SqlInstance,
 
-        [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]
         $SqlCredential,
 
-        [Parameter(Mandatory = $false)]
         [int]$BufferCount = -1,
         
-        [Parameter(Mandatory = $false)]
         [int]$BlockSize = -1,
 
-        [Parameter(Mandatory = $false)]
         [switch]$DisconnectUsers,
 
-        [Parameter(Mandatory = $false)]
         [int]$HistoryRetention = 14420,
 
-        [Parameter(Mandatory = $false)]
         [int]$MaxTransferSize,
 
         [Parameter(Mandatory = $true)]
@@ -127,15 +121,12 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]$PrimaryDatabase,
+        [object]$PrimaryDatabase,
 
-        [Parameter(Mandatory = $false)]
         [int]$RestoreAll = 1,
 
-        [Parameter(Mandatory = $false)]
         [int]$RestoreDelay = 0,
 
-        [Parameter(Mandatory = $false)]
         [ValidateSet(0, 'NoRecovery', 1, 'Standby')]
         [object]$RestoreMode = 0,
 
@@ -145,12 +136,10 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]$SecondaryDatabase,
+        [object]$SecondaryDatabase,
 
-        [Parameter(Mandatory = $false)]
         [int]$ThresholdAlert = 14420,
 
-        [Parameter(Mandatory = $false)]
         [switch]$ThresholdAlertEnabled,
 
         [switch]$Silent,
