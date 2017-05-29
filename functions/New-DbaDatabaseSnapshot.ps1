@@ -1,5 +1,5 @@
 #ValidationTags#FlowControl#
-Function New-DbaDatabaseSnapshot {
+function New-DbaDatabaseSnapshot {
 <#
 .SYNOPSIS
 Creates database snapshots
@@ -19,7 +19,7 @@ Creates snapshot for all eligible databases
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Exclude
+.PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER WhatIf
@@ -46,7 +46,7 @@ For details, check https://msdn.microsoft.com/en-us/library/bb895334.aspx
 Use this switch to disable any kind of verbose messages
 
 .NOTES
-Tags: DisasterRecovery, Snapshot, Restore
+Tags: DisasterRecovery, Snapshot, Restore, Databases
 Author: niphlod
 
 Website: https://dbatools.io
@@ -88,7 +88,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[switch]$AllDatabases,
 		[string]$Name,
 		[string]$Path,
@@ -134,7 +134,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		}
 	}
 	process {
-		if (!$database -and $AllDatabases -eq $false -and !$smodatabase) {
+		if (!$Database -and $AllDatabases -eq $false -and !$smodatabase) {
 			throw "You must specify a -AllDatabases or -Database to continue"
 		}
 		
@@ -157,12 +157,12 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 				$dbs = $server.Databases
 			}
 			
-			if ($database) {
-				$dbs = $server.Databases | Where-Object { $database -contains $_.Name }
+			if ($Database) {
+				$dbs = $server.Databases | Where-Object { $Database -contains $_.Name }
 			}
 			
-			if ($exclude) {
-				$dbs = $server.Databases | Where-Object { $exclude -notcontains $_.Name }
+			if ($ExcludeDatabase) {
+				$dbs = $server.Databases | Where-Object { $ExcludeDatabase -notcontains $_.Name }
 			}
 			
 			$sourcedbs = @()
