@@ -135,7 +135,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
         [System.Management.Automation.PSCredential]$SqlCredential,
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string[]]$Job,
+        [object[]]$Job,
         [Parameter(Mandatory = $false)]
         [int]$StepId,
         [Parameter(Mandatory = $true)]
@@ -203,7 +203,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
                 $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
-                Stop-Function -Message "Could not connect to Sql Server instance"  -Target $instance -Continue
+                Stop-Function -Message "Could not connect to Sql Server instance $instance"  -Target $instance -Continue
             }
 
             foreach ($j in $Job) {
@@ -356,7 +356,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
                     
                             # Create the job step 
                             $JobStep.Create()
-                            $Job.Alter()
+                            $smoJob.Alter()
                         }
                         catch {
                             Stop-Function -Message  "Something went wrong creating the job step. `n$($_.Exception.Message)" -Target $instance -Continue 
