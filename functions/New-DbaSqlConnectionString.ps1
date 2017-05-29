@@ -1,7 +1,7 @@
 ﻿Function New-DbaSqlConnectionString {
 <#
 .SYNOPSIS
-Builds or extracts a SQL Server Connection String
+Builds or extracts a SQL Server Connection String 
 
 .DESCRIPTION
 Builds or extracts a SQL Server Connection String
