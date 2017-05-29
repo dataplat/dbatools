@@ -287,7 +287,10 @@
 		'Remove-DbaMasterKey',
 		'Set-DbaCmConnection',
 		'Set-DbaTcpPort',
-		'Test-DbaCmConnection'
+		'Test-DbaCmConnection',
+		'New-DbaSqlConnectionStringBuilder',
+		'Get-DbaSqlInstanceProperty',
+		'Get-DbaSqlInstanceUserOption'
 	)
 	
 	# Cmdlets to export from this module
