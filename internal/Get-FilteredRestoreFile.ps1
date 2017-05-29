@@ -86,7 +86,10 @@ function Get-FilteredRestoreFile {
         $ContinuePoints,
 
         [string]
-        $DatabaseName
+        $DatabaseName,
+
+        [string]
+        $AzureCredential
     )
     begin {
         Write-Message -Level InternalComment -Message 'Starting'
@@ -132,7 +135,7 @@ function Get-FilteredRestoreFile {
         }
         else {
     		Write-Message -Level Verbose -Message "Read File headers (Read-DBABackupHeader)"		
-			$AllSQLBackupdetails = $InternalFiles | ForEach-Object{if($_.fullname -ne $null){$_.Fullname}else{$_}} | Read-DBAbackupheader -sqlinstance $sqlinstance -SqlCredential $SqlCredential
+			$AllSQLBackupdetails = $InternalFiles | ForEach-Object{if($_.fullname -ne $null){$_.Fullname}else{$_}} | Read-DBAbackupheader -sqlinstance $sqlinstance -SqlCredential $SqlCredential -AzureCredential $AzureCredential
         }
 
 		Write-Message -Level Verbose -Message "$($AllSQLBackupdetails.count) Files to filter"
