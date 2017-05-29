@@ -290,7 +290,8 @@
 		'Test-DbaCmConnection',
 		'New-DbaSqlConnectionStringBuilder',
 		'Get-DbaSqlInstanceProperty',
-		'Get-DbaSqlInstanceUserOption'
+		'Get-DbaSqlInstanceUserOption',
+		'New-DbaSqlConnectionString'
 	)
 	
 	# Cmdlets to export from this module
