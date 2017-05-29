@@ -1,5 +1,5 @@
 Function Get-DbaRoleMember {
-<#
+	<#
 .SYNOPSIS
 Get members of all roles on a Sql instance.
 
@@ -21,7 +21,7 @@ SQL Server does not accept Windows credentials being passed as credentials. To c
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Exclude
+.PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER IncludeServerLevel
@@ -34,7 +34,9 @@ Excludes all members of fixed roles.
 Credential object used to connect to the SQL Server as a different user.
 
 .NOTES
+Tags: Roles, Databases
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -68,7 +70,7 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[switch]$IncludeServerLevel,
 		[switch]$NoFixedRole
 	)
@@ -100,9 +102,9 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
 					ForEach ($irmem in $irmembers) {
 						[PSCustomObject]@{
 							SQLInstance = $instance
-							Database = $null
-							Role = $instrole.name
-							Member = $irmem.tostring()
+							Database    = $null
+							Role        = $instrole.name
+							Member      = $irmem.tostring()
 						}
 					}
 				}
@@ -110,12 +112,12 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
 			
 			$dbs = $server.Databases
 			
-			if ($database) {
-				$dbs = $dbs | Where-Object { $database -contains $_.Name }
+			if ($Database) {
+				$dbs = $dbs | Where-Object Name -In $Database
 			}
 			
-			if ($exclude) {
-				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
+			if ($Exclude) {
+				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
 			}
 			
 			foreach ($db in $dbs) {
@@ -139,9 +141,9 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
 					ForEach ($dbmem in $dbmembers) {
 						[PSCustomObject]@{
 							SqlInstance = $instance
-							Database = $db.name
-							Role = $dbrole.name
-							Member = $dbmem.tostring()
+							Database    = $db.name
+							Role        = $dbrole.name
+							Member      = $dbmem.tostring()
 						}
 					}
 				}
