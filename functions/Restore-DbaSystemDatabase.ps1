@@ -263,26 +263,27 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
 
         if (($PsBoundParameters.Keys | Where-Object {$_ -in ('master','msdb','model')} | measure-object).count -eq 0)
         {
-            Stop-Function -Message "Must provide at least one of master, msdb or model switches" -Silent:$false
+            Stop-Function -Message "Must provide at least one of master, msdb or model switches" 
         }
         try
         {
-            $server = connect-SqlServer -SqlServer $SqlServer -applicationName dbatoolsSystemk34i23hs3u57w
+            $server = connect-SqlInstance -SqlInstance $SqlServer -applicationName dbatoolsSystemk34i23hs3u57w
         }
         catch
         {
-            Stop-Function -message "Cannot connect to $sqlserver, stopping" -target $SqlServer -Silent:$false
+            Stop-Function -message "Cannot connect to $sqlserver, stopping" -target $SqlServer 
+            return
         }
-        $CurrentStartup = Get-DbaStartupParameter -SqlInstance $server
+        $CurrentStartup = Get-DbaStartupParameter -SqlInstance $SqlServer
         if ((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type Agent | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -eq 'Running')
         {
-            Write-Message -Level Verbose -Message "SQL agent running, stopping it" -Silent:$true
+            Write-Message -Level Verbose -Message "SQL agent running, stopping it" 
             $RestartAgent = $True
             Stop-DbaService -sqlserver $server -service SqlAgent | out-null
         }
         if ((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type FullText | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -eq 'Running')
         {
-            Write-Message -Level Verbose -Message "Full Text agent running, stopping it" -Silent:$true
+            Write-Message -Level Verbose -Message "Full Text agent running, stopping it" 
             $RestartFullText = $True
             Stop-DbaService -sqlserver $server -service FullText | out-null
         }
@@ -291,8 +292,8 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
             if ('Master' -in $PsBoundParameters.keys)
             {
             
-                Write-Message -Level Verbose -Silent:$false -Message "Restoring Master, setting single user"
-                Set-DbaStartupParameter -SqlServer $sqlserver -SingleUser -SingleUserDetails dbatoolsSystemk34i23hs3u57w 
+                Write-Message -Level Verbose -Message "Restoring Master, setting single user"
+                Set-DbaStartupParameter -SqlInstance $server -SingleUser -SingleUserDetails dbatoolsSystemk34i23hs3u57w | out-null
                 Stop-DbaService -SqlServer $server | out-null
                 Start-DbaService -SqlServer $server | out-null
                 $StartCount = 0
@@ -304,7 +305,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                     if ($StartCount -ge 4)
                     {
                         #Didn't start nicely, jump to finally to try to come back up sanely
-                        Write-Message -Level Warning -Message "SQL Server not starting nicely, trying to fix" -Silent:$false
+                        Write-Message -Level Warning -Message "SQL Server not starting nicely, trying to fix" -
                         throw
                     }
                 }
@@ -312,30 +313,30 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                 {
                     $server.connectionContext.Connect()
                 }
-                Write-Message -Level Verbose -Silent:$false -Message  "Beginning Restore of Master"
+                Write-Message -Level Verbose  -Message  "Beginning Restore of Master"
                 
-                $RestoreResult += Restore-DbaDatabase -SqlServer $server -Path $BackupPath -WithReplace -DatabaseFilter master -RestoreTime $RestoreTime -ReuseSourceFolderStructure -SystemRestore           
+                $RestoreResult += Restore-DbaDatabase -SqlInstance $server -Path $BackupPath -WithReplace -DatabaseFilter master -RestoreTime $RestoreTime -ReuseSourceFolderStructure -SystemRestore           
                 if ($RestoreResult.RestoreComplete -eq $True)
                 {
-                    Write-Message -Level Verbose -Silent:$false -Message "Restore of Master suceeded"   
+                    Write-Message -Level Verbose  -Message "Restore of Master suceeded"   
                 }
                 else
                 {
-                    Write-Message -Level Verbose -Silent:$false -Message "Restore of Master failed"   
+                    Write-Message -Level Verbose  -Message "Restore of Master failed"   
                 }
             }
             if ('model' -in $PsBoundParameters.keys -or 'msdb' -in $PsBoundParameters.keys)
             {
-                Set-DbaStartupParameter -SqlServer $sqlserver -SingleUser:$false | out-null
+                Set-DbaStartupParameter -SqlInstance $server -SingleUser:$false | out-null
                 $filter = @()
                 if ('model' -in $PsBoundParameters.keys)
                 {
-                    Write-Message -Level Verbose -Silent:$false -Message "Restoring Model, setting filter"
+                    Write-Message -Level Verbose  -Message "Restoring Model, setting filter"
                     $filter += 'model'
                 }
                 if ('msdb' -in $PsBoundParameters.keys)
                 {
-                    Write-Message -Level Verbose -Silent:$false -Message "Restoring msdb, setting Filter"
+                    Write-Message -Level Verbose  -Message "Restoring msdb, setting Filter"
                     $filter += 'msdb'
                 }
                 if ((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type Engine | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -eq 'Running')
@@ -352,7 +353,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                     if ($StartCount -ge 4)
                     {
                         #Didn't start nicely, jump to finally to try to come back up sanely
-                        Write-Message -Level Warning -Message "SQL Server not starting nicely, trying to fix" -Silent:$false
+                        Write-Message -Level Warning -Message "SQL Server not starting nicely, trying to fix" 
                     }
                 }
 
@@ -360,24 +361,24 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                 {
                     $server.connectionContext.Connect()
                 }
-                Write-Message -Level SomewhatVerbose -Silent:$true -Message "Starting restore of $($filter -join ',')"
-                $RestoreResults = Restore-DbaDatabase -SqlServer $server -Path $BackupPath  -WithReplace -DatabaseFilter $filter -RestoreTime $RestoreTime -ReuseSourceFolderStructure -SystemRestore
+                Write-Message -Level SomewhatVerbose  -Message "Starting restore of $($filter -join ',')"
+                $RestoreResults = Restore-DbaDatabase -SqlInstance $server -Path $BackupPath  -WithReplace -DatabaseFilter $filter -RestoreTime $RestoreTime -ReuseSourceFolderStructure -SystemRestore
                 Foreach ($Database in $RestoreResults)
                 {
                     If ($Database.RestoreComplete)
                     {
-                        Write-Message -Level Verbose -Silent:$false -Message "Database $($Database.Databasename) restore suceeded"
+                        Write-Message -Level Verbose  -Message "Database $($Database.Databasename) restore suceeded"
                     }
                     else
                     {
-                        Write-Message -Level Verbose -Silent:$false -Message "Database $($Database.Databasename) restore failed"
+                        Write-Message -Level Verbose  -Message "Database $($Database.Databasename) restore failed"
                     }
                 }
             }
         }
         catch
         {
-            Write-Message -Level Warning -Silent:$false -Message "An error has occured: $($error[0].Exception.Message)"
+            Write-Message -Level Warning  -Message "An error has occured: $($error[0].Exception.Message)"
         }
         finally
         {
@@ -385,18 +386,18 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
             {
                 Start-DbaService -sqlserver $server -service SqlServer | out-null
             }
-            Write-Message -Level Verbose -Silent:$false -Message "Resetting Startup Parameters"
-            Set-DbaStartupParameter -SqlServer $sqlserver -StartUpConfig $CurrentStartup 
+            Write-Message -Level Verbose  -Message "Resetting Startup Parameters"
+            Set-DbaStartupParameter -SqlInstance $server -StartUpConfig $CurrentStartup | out-null
             Stop-DbaService -SqlServer $server -Service SqlServer | out-null
             Start-DbaService -SqlServer $server -service SqlServer | out-null
             if ($RestartAgent -eq $True)
             {
-                Write-Message -Level Verbose -Silent:$false -Message "SQL Agent was running at start, so restarting"
+                Write-Message -Level Verbose  -Message "SQL Agent was running at start, so restarting"
                 Start-DbaService -sqlserver $server -service SqlAgent | out-null
             }
             if ($RestartFullText -eq $True)
             {
-                Write-Message -Level Verbose -Silent:$false -Message "Full Text was running at start, so restarting"
+                Write-Message -Level Verbose  -Message "Full Text was running at start, so restarting"
                 Start-DbaService -sqlserver $server -service FullText | out-null
             }
             $Server.ConnectionContext.Disconnect()

@@ -517,12 +517,12 @@ function Restore-DbaDatabase {
 			if ('master' -in $DatabaseFilter)
 			{
 				Write-Verbose "$FunctionName - Single User connection for master restores"
-				$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ApplicationName dbatoolsSystemk34i23hs3u57w
+				$Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ApplicationName dbatoolsSystemk34i23hs3u57w
 			}
 			else
 			{
 				Write-Verbose "$FunctionName - normnal connections"
-				$Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+				$Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 			}
 		}
 		catch
