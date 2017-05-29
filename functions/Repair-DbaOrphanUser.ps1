@@ -25,6 +25,9 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
+.PARAMETER Database
+The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+
 .PARAMETER Users
 List of users to repair
 
@@ -96,6 +99,8 @@ https://dbatools.io/Repair-DbaOrphanUser
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[object]$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
 		[parameter(Mandatory = $false, ValueFromPipeline = $true)]
 		[object[]]$Users,
 		[switch]$RemoveNotExisting
