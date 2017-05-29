@@ -35,6 +35,9 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
+.PARAMETER Database
+The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+
 .PARAMETER IncludeOverlapping
 Allows to see indexes partial duplicate. 
 Example: If first key column is the same but one index has included columns and the other not, this will be shown.
@@ -109,7 +112,9 @@ Will find exact duplicate or overlapping indexes on all user databases
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[object]$SqlCredential,
+		[System.Management.Automation.PSCredential]$SqlCredential,
+        [Alias("Databases")]
+		[object[]]$Database,
 		[switch]$IncludeOverlapping,
 		[Alias("OutFile", "Path")]
 		[string]$FilePath,
@@ -503,17 +508,17 @@ Will find exact duplicate or overlapping indexes on all user databases
 		if ($pipedatabase.Length -gt 0)
 		{
 			$Source = $pipedatabase[0].parent.name
-			$databases = $pipedatabase.name
+			$database = $pipedatabase.name
 		}
 
-		if ($databases.Count -eq 0)
+		if ($database.Count -eq 0)
 		{
-			$databases = ($server.Databases | Where-Object {$_.isSystemObject -eq 0 -and $_.Status -ne "Offline"}).Name
+			$database = ($server.Databases | Where-Object {$_.isSystemObject -eq 0 -and $_.Status -ne "Offline"}).Name
 		}
 
-		if ($databases.Count -gt 0)
+		if ($database.Count -gt 0)
 		{
-			foreach ($db in $databases)
+			foreach ($db in $database)
 			{
 				try
 				{
