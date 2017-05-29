@@ -17,7 +17,7 @@ if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\"))
 
 #>
 
-$smoversions = "14.0.0.0", "13.0.0.0", "12.0.0.0", "11.0.0.0", "10.0.0.0", "9.0.242.0", "9.0.0.0"
+$smoversions = "13.0.0.0", "12.0.0.0", "11.0.0.0", "10.0.0.0", "14.0.0.0", "9.0.242.0", "9.0.0.0"
 
 foreach ($smoversion in $smoversions)
 {
@@ -48,7 +48,7 @@ foreach ($assembly in $assemblies)
 	}
 	catch
 	{
-		# Don't care
+		Write-Verbose "$assembly not loaded for version $smoversion"
 	}
 }
 
@@ -130,7 +130,6 @@ Set-Alias -Name Get-SqlMaxMemory -Value Get-DbaMaxMemory
 Set-Alias -Name Set-SqlMaxMemory -Value Set-DbaMaxMemory
 Set-Alias -Name Install-SqlWhoIsActive -Value Install-DbaWhoIsActive
 Set-Alias -Name Show-SqlWhoIsActive -Value Invoke-DbaWhoIsActive
-
 Set-Alias -Name Copy-SqlAgentCategory -Value Copy-DbaAgentCategory
 Set-Alias -Name Copy-SqlAlert -Value Copy-DbaAgentAlert
 Set-Alias -Name Copy-SqlAudit -Value Copy-DbaAudit
