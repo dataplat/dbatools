@@ -10,6 +10,24 @@ Creates a System.Data.SqlClient.SqlConnectionStringBuilder from a connection str
 .PARAMETER ConnectionString
 A Connection String
 
+.PARAMETER ApplicationName
+The application name to tell SQL Server the connection is associated with.
+
+.PARAMETER DataSource
+The Sql Server to connect to.
+
+.PARAMETER InitialCatalog
+The initial database on the server to connect to.
+
+.PARAMETER IntegratedSecurity
+Set to true to use windows authentication.
+
+.PARAMETER SqlUser
+Sql User Name to connect with.
+
+.PARAMETER Password
+Password to use to connect withy.
+
 .NOTES
 Author: zippy1981
 Tags: SqlBuild
@@ -37,9 +55,45 @@ Returns a connection string builder that can be used to connect to the local sql
 	[CmdletBinding()]
 	Param (
 		[Parameter(Mandatory = $false, ValueFromPipeline = $true)]
-        [string[]]$ConnectionString = $null
+        [string[]]$ConnectionString = "",
+		[Parameter(Mandatory = $false)]
+		[string]$ApplicationName = "dbatools Powershell Module",
+		[Parameter(Mandatory = $false)]
+		[string]$DataSource = $null,
+		[Parameter(Mandatory = $false)]
+		[string]$InitialCatalog = $null,
+		[Parameter(Mandatory = $false)]
+		[Nullable[bool]]$IntegratedSecurity = $null,
+		[Parameter(Mandatory = $false)]
+		[string]$SqlUser = $null,
+		# No point in securestring here, the memory is never stored securely in memory.
+		[Parameter(Mandatory = $false)]
+		[string]$Password = $null
 	)
     process {
-		New-Object Data.SqlClient.SqlConnectionStringBuilder $ConnectionString
+		foreach ($string in $ConnectionString) {
+			$builder = New-Object Data.SqlClient.SqlConnectionStringBuilder $ConnectionString
+			if ($builder.ApplicationName -eq ".Net SqlClient Data Provider") {
+				$builder['Application Name'] = $ApplicationName
+			}
+			if ($DataSource -ne $null) {
+				$builder['Data Source'] = $DataSource
+			}
+			if ($InitialCatalog -ne $null) {
+				$builder['Initial Catalog'] = $InitialCatalog
+			}
+			if ($IntegratedSecurity -ne $null) {
+				$builder['Integrated Security'] = $IntegratedSecurity
+			}
+			<#
+			if ($SqlUser -ne $null) {
+				$builder['User ID'] = $SqlUser
+			}
+			if ($Password -ne $null) {
+				$builder['Password'] = $Password
+			}
+			#>
+			$builder
+		}
     }
 }
