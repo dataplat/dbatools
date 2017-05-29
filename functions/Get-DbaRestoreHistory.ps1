@@ -18,7 +18,7 @@ Credential object used to connect to the SQL Server as a different user
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Exclude
+.PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER Since
@@ -75,7 +75,7 @@ Returns database restore information for every database on every server listed i
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[datetime]$Since,
 		[switch]$Force,
 		[switch]$Last
@@ -116,13 +116,13 @@ Returns database restore information for every database on every server listed i
 				else
 				{
 					$select = "SELECT 
-				    '$computername' AS [ComputerName],
+					'$computername' AS [ComputerName],
 					'$instancename' AS [InstanceName],
 					'$servername' AS [SqlInstance],
-				     rsh.destination_database_name AS [Database],
-				     --rsh.restore_history_id as RestoreHistoryID,
-				     rsh.user_name AS [Username],
-				     CASE 
+					 rsh.destination_database_name AS [Database],
+					 --rsh.restore_history_id as RestoreHistoryID,
+					 rsh.user_name AS [Username],
+					 CASE 
 						 WHEN rsh.restore_type = 'D' THEN 'Database'
 						 WHEN rsh.restore_type = 'F' THEN 'File'
 						 WHEN rsh.restore_type = 'G' THEN 'Filegroup'
@@ -131,13 +131,13 @@ Returns database restore information for every database on every server listed i
 						 WHEN rsh.restore_type = 'V' THEN 'Verifyonly'
 						 WHEN rsh.restore_type = 'R' THEN 'Revert'
 						 ELSE rsh.restore_type
-				     END AS [RestoreType],
-				     rsh.restore_date AS [Date],
-				     ISNULL(STUFF((SELECT ', ' + bmf.physical_device_name 
+					 END AS [RestoreType],
+					 rsh.restore_date AS [Date],
+					 ISNULL(STUFF((SELECT ', ' + bmf.physical_device_name 
 									FROM msdb.dbo.backupmediafamily bmf
 								   WHERE bmf.media_set_id = bs.media_set_id
 								 FOR XML PATH('')), 1, 2, ''), '') AS [From],
-				     ISNULL(STUFF((SELECT ', ' + rf.destination_phys_name 
+					 ISNULL(STUFF((SELECT ', ' + rf.destination_phys_name 
 									FROM msdb.dbo.restorefile rf
 								   WHERE rsh.restore_history_id = rf.restore_history_id
 								 FOR XML PATH('')), 1, 2, ''), '') AS [To],
@@ -151,22 +151,22 @@ Returns database restore information for every database on every server listed i
 				$from = " FROM msdb.dbo.restorehistory rsh
 					INNER JOIN msdb.dbo.backupset bs ON rsh.backup_set_id = bs.backup_set_id"
 				
-				if ($exclude -or $database -or $Since -or $last)
+				if ($ExcludeDatabase -or $Database -or $Since -or $last)
 				{
 					$where = " WHERE "
 				}
 				
 				$wherearray = @()
 				
-				if ($exclude)
+				if ($ExcludeDatabase)
 				{
-					$dblist = $exclude -join "','"
+					$dblist = $ExcludeDatabase -join "','"
 					$wherearray += " destination_database_name not in ('$dblist')"
 				}
 				
-				if ($database)
+				if ($Database)
 				{
-					$dblist = $database -join "','"
+					$dblist = $Database -join "','"
 					$wherearray += "destination_database_name in ('$dblist')"
 				}
 				
