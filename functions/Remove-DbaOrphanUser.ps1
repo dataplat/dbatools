@@ -1,5 +1,5 @@
-Function Remove-DbaOrphanUser {
-<#
+function Remove-DbaOrphanUser {
+	<#
 .SYNOPSIS
 Drop orphan users with no existing login to map
 
@@ -22,6 +22,9 @@ Windows Authentication will be used if SqlCredential is not specified. SQL Serve
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
+.PARAMETER ExcludeDatabase
+The database(s) to exclude - this list is auto populated from the server
+
 .PARAMETER User
 List of users to remove
 
@@ -30,18 +33,19 @@ If exists any schema which owner is the User, this will force the change of the 
 If exists a login to map the drop will not be performed unless you specify this parameter.
 
 .PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed. 			
+Shows what would happen if the command were to run. No actions are actually performed.
 
-.PARAMETER Confirm 		
-Prompts you for confirmation before executing any changing operations within the command. 
+.PARAMETER Confirm
+Prompts you for confirmation before executing any changing operations within the command.
 
 .PARAMETER Silent
 Replaces user friendly yellow warnings with bloody red exceptions of doom!
 Use this if you want the function to throw terminating errors you want to catch.
-	
+
 .NOTES
-Tags: Orphan
+Tags: Orphan, Databases
 Author: Claudio Silva (@ClaudioESSilva)
+
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -62,7 +66,12 @@ Will find and drop all orphan users without matching login of all databases pres
 .EXAMPLE
 Remove-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1, db2 -Force
 
-Will find all and drop orphan users even if exists their matching login on both db1 and db2 databases
+Will find all and drop orphan users even if exists their matching login on both db1 and db2 databases.
+
+.EXAMPLE
+Remove-DbaOrphanUser -SqlInstance sqlserver2014a -ExcludeDatabase db1, db2 -Force
+
+Will finall all and drop orphan users even if exist their matching login from all databases except db1 and db2.
 
 .EXAMPLE
 Remove-DbaOrphanUser -SqlInstance sqlserver2014a -User OrphanUser
@@ -85,14 +94,15 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
+		[object[]]$ExcludeDatabase,
 		[parameter(Mandatory = $false, ValueFromPipeline = $true)]
 		[object[]]$User,
 		[switch]$Force,
 		[switch]$Silent
 	)
-	
+
 	process {
-		
+
 		foreach ($Instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Attempting to connect to $Instance"
 			try {
@@ -102,21 +112,24 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 				Write-Message -Level Warning -Message "Can't connect to $Instance or access denied. Skipping."
 				continue
 			}
-			
-			if (!$database) {
-				$database = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true }
+
+			if (!$Database) {
+				$databases = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true }
 			}
 			else {
 				if ($pipedatabase) {
 					$Source = $pipedatabase[0].parent.name
-					$database = $pipedatabase.name
+					$databases = $pipedatabase.name
 				}
 				else {
-					$database = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true -and ($database -contains $_.Name) }
+					$databases = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true -and ($Database -contains $_.Name) }
 				}
 			}
 			
-			
+			if ($ExcludeDatabase) {
+				$databases = $server.Databases | Where-Object {$_.Name -notin $ExcludeDatabase -and $_.IsAccessible -eq $true -and $_.IsSystemObject -eq $false }
+			}
+
 			$CallStack = Get-PSCallStack | Select-Object -Property *
 			if ($CallStack.Count -eq 1) {
 				$StackSource = $CallStack[0].Command
@@ -125,11 +138,11 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 				#-2 because index base is 0 and we want the one before the last (the last is the actual command)
 				$StackSource = $CallStack[($CallStack.Count - 2)].Command
 			}
-			
-			if ($database) {
+
+			if ($databases) {
 				$start = [System.Diagnostics.Stopwatch]::StartNew()
-				
-				foreach ($db in $database) {
+
+				foreach ($db in $databases) {
 					try {
 						#if SQL 2012 or higher only validate databases with ContainmentType = NONE
 						if ($server.versionMajor -gt 10) {
@@ -138,14 +151,14 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 								Continue
 							}
 						}
-						
+
 						if ($StackSource -eq "Repair-DbaOrphanUser") {
 							Write-Message -Level Verbose -Message "Call origin: Repair-DbaOrphanUser"
 							#Will use collection from parameter ($User)
 						}
 						else {
 							Write-Message -Level Verbose -Message "Validating users on database $db"
-							
+
 							if ($User.Count -eq 0) {
 								#the third validation will remove from list sql users without login. The rule here is Sid with length higher than 16
 								$User = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false) }
@@ -161,14 +174,14 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 								}
 							}
 						}
-						
+
 						if ($User.Count -gt 0) {
 							Write-Message -Level Verbose -Message "Orphan users found"
 							foreach ($dbuser in $User) {
 								$SkipUser = $false
-								
+
 								$ExistLogin = $null
-								
+
 								if ($StackSource -ne "Repair-DbaOrphanUser") {
 									#Need to validate Existing Login because the call does not came from Repair-DbaOrphanUser
 									$ExistLogin = $server.logins | Where-Object {
@@ -178,49 +191,49 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 										$_.Name -eq $dbuser.Name
 									}
 								}
-								
+
 								#Schemas only appears on SQL Server 2005 (v9.0)
 								if ($server.versionMajor -gt 8) {
-									
+
 									#Validate if user owns any schema
 									$Schemas = @()
-									
+
 									$Schemas = $db.Schemas | Where-Object Owner -eq $dbuser.Name
-									
+
 									if (@($Schemas).Count -gt 0) {
 										Write-Message -Level Verbose -Message "User $dbuser owns one or more schemas."
-										
+
 										$AlterSchemaOwner = ""
 										$DropSchema = ""
-										
-										foreach ($sch in $Schemas) {
-                                            <#
-                                                On sql server 2008 or lower the EnumObjects method does not accept empty parameter.
-                                                0x1FFFFFFF is the way we can say we want everything known by those versions
 
-                                                When it is an higer version we can use empty to get all
-                                            #>
+										foreach ($sch in $Schemas) {
+											<#
+												On sql server 2008 or lower the EnumObjects method does not accept empty parameter.
+												0x1FFFFFFF is the way we can say we want everything known by those versions
+
+												When it is an higer version we can use empty to get all
+											#>
 											if ($server.versionMajor -lt 11) {
 												$NumberObjects = ($db.EnumObjects(0x1FFFFFFF) | Where-Object { $_.Schema -eq $sch.Name } | Measure-Object).Count
 											}
 											else {
 												$NumberObjects = ($db.EnumObjects() | Where-Object { $_.Schema -eq $sch.Name } | Measure-Object).Count
 											}
-											
+
 											if ($NumberObjects -gt 0) {
 												if ($Force) {
 													Write-Message -Level Verbose -Message "Parameter -Force was used! The schema '$($sch.Name)' have $NumberObjects underlying objects. We will change schema owner to 'dbo' and drop the user."
-													
+
 													if ($Pscmdlet.ShouldProcess($db.Name, "Changing schema '$($sch.Name)' owner to 'dbo'. -Force used.")) {
 														$AlterSchemaOwner += "ALTER AUTHORIZATION ON SCHEMA::[$($sch.Name)] TO [dbo]`r`n"
-														
+
 														[pscustomobject]@{
-															Instance = $server.Name
-															Database = $db.Name
-															SchemaName = $sch.Name
-															Action = "ALTER OWNER"
+															Instance          = $server.Name
+															Database          = $db.Name
+															SchemaName        = $sch.Name
+															Action            = "ALTER OWNER"
 															SchemaOwnerBefore = $sch.Owner
-															SchemaOwnerAfter = "dbo"
+															SchemaOwnerAfter  = "dbo"
 														}
 													}
 												}
@@ -233,52 +246,52 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 											else {
 												if ($sch.Name -eq $dbuser.Name) {
 													Write-Message -Level Verbose -Message "The schema '$($sch.Name)' have the same name as user $dbuser. Schema will be dropped."
-													
+
 													if ($Pscmdlet.ShouldProcess($db.Name, "Dropping schema '$($sch.Name)'.")) {
 														$DropSchema += "DROP SCHEMA [$($sch.Name)]"
-														
+
 														[pscustomobject]@{
-															Instance = $server.Name
-															Database = $db.Name
-															SchemaName = $sch.Name
-															Action = "DROP"
+															Instance          = $server.Name
+															Database          = $db.Name
+															SchemaName        = $sch.Name
+															Action            = "DROP"
 															SchemaOwnerBefore = $sch.Owner
-															SchemaOwnerAfter = "N/A"
+															SchemaOwnerAfter  = "N/A"
 														}
 													}
 												}
 												else {
 													Write-Message -Level Warning -Message "Schema '$($sch.Name)' does not have any underlying object. Ownership will be changed to 'dbo' so the user can be dropped. Remember to re-check permissions on this schema!"
-													
+
 													if ($Pscmdlet.ShouldProcess($db.Name, "Changing schema '$($sch.Name)' owner to 'dbo'.")) {
 														$AlterSchemaOwner += "ALTER AUTHORIZATION ON SCHEMA::[$($sch.Name)] TO [dbo]`r`n"
-														
+
 														[pscustomobject]@{
-															Instance = $server.Name
-															Database = $db.Name
-															SchemaName = $sch.Name
-															Action = "ALTER OWNER"
+															Instance          = $server.Name
+															Database          = $db.Name
+															SchemaName        = $sch.Name
+															Action            = "ALTER OWNER"
 															SchemaOwnerBefore = $sch.Owner
-															SchemaOwnerAfter = "dbo"
+															SchemaOwnerAfter  = "dbo"
 														}
 													}
 												}
 											}
 										}
-										
+
 									}
 									else {
 										Write-Message -Level Verbose -Message "User $dbuser does not own any schema. Will be dropped."
 									}
-									
+
 									$query = "$AlterSchemaOwner `r`n$DropSchema `r`nDROP USER " + $dbuser
-									
+
 									Write-Message -Level Debug -Message $query
 								}
 								else {
 									$query = "EXEC master.dbo.sp_droplogin @loginame = N'$($dbuser.name)'"
 								}
-								
+
 								if ($ExistLogin) {
 									if (-not $SkipUser) {
 										if ($Force) {
@@ -319,16 +332,15 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
 			}
 		}
 	}
-	
-	END {
-		
+	end {
+
 		$totaltime = $start.Elapsed
-		
+
 		#If the call don't come from Repair-DbaOrphanUser function, show elapsed time
 		if ($StackSource -ne "Repair-DbaOrphanUser") {
 			Write-Message -Level Verbose -Message "Total Elapsed time: $totaltime"
 		}
-		
+
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Remove-SqlOrphanUser
 	}
 }
