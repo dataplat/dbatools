@@ -1,290 +1,342 @@
 function Invoke-DbaLogShipping {
-    <#
-.SYNOPSIS 
-Invoke-DbaLogShipping sets up log shipping for one or more databases
-
-.DESCRIPTION
-Invoke-DbaLogShipping helps to easily set up log shipping for one or more databases.
-
-.PARAMETER SourceSqlInstance
-Source SQL Server instance which contains the databases to be log shipped. 
-You must have sysadmin access and server version must be SQL Server version 2000 or greater.
-
-.PARAMETER DestinationSqlInstance
-Destination SQL Server instance which contains the databases to be log shipped. 
-You must have sysadmin access and server version must be SQL Server version 2000 or greater.
-
-.PARAMETER SourceSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
-To connect as a different Windows user, run PowerShell as that user.
-
-.PARAMETER DestinationSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
-To connect as a different Windows user, run PowerShell as that user.
-
-.PARAMETER Database
-Database to set up log shipping for.
-
-.PARAMETER Backupath
-Is the location of the last full backup. If this is not set in combination with parameter UseExistingFullBackup
-then the last full backup will be retrieved from the source server.
-
-.PARAMETER BackupNetworkPath
-The backup unc path to place the backup files. This is the root directory.
-A directory with the name of the database will be created in this path.
-
-.PARAMETER BackupLocalPath
-If the backup path is locally for the source server you can also set this value.
-
-.PARAMETER BackupJob
-Name of the backup that will be created in the SQL Server agent.
-The parameter works as a prefix where the name of the database will be added to the backup job name.
-The default is "LSBackup_[databasename]"
-
-.PARAMETER BackupRetention
-The backup retention period in minutes. Default is 4320 / 72 hours
-
-.PARAMETER BackupScheduleName
-Name of the backup schedule created for the backup job.
-The parameter works as a prefix where the name of the database will be added to the backup job schedule name.
-Default is "LSBackupSchedule_[databasename]"
-
-.PARAMETER BackupScheduleFrequencyType
-A value indicating when a job is to be executed.
-Allowed values are 4, "Daily", 64, "AgentStart", 128, "IdleComputer"
-
-.PARAMETER BackupScheduleFrequencySubdayType
-Specifies the units for the subday FrequencyInterval.
-Allowed values are 2, "Seconds", 4, "Minutes", 8 or "Hours"
-
-.PARAMETER BackupScheduleFrequencySubdayInterval
-The number of subday type periods to occur between each execution of the backup job.
-
-.PARAMETER BackupFrequencyRelativeInterval
-A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
-
-.PARAMETER BackupFrequencyRecurrenceFactor
-The number of weeks or months between the scheduled execution of a job. FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative". 
-
-.PARAMETER BackupScheduleStartDate
-The date on which execution of a job can begin.
-
-.PARAMETER BackupScheduleEndDate
-The date on which execution of a job can stop.
-
-.PARAMETER BackupScheduleStartTime
-The time on any day to begin execution of a job. Format HHMMSS / 24 hour clock.
-Example: '010000' for 01:00:00 AM. 
-Example: '140000' for 02:00:00 PM.
-
-.PARAMETER BackupScheduleEndTime
-The time on any day to end execution of a job. Format HHMMSS / 24 hour clock.
-Example: '010000' for 01:00:00 AM. 
-Example: '140000' for 02:00:00 PM.
-
-.PARAMETER BackupThreshold
-Is the length of time, in minutes, after the last backup before a threshold alert error is raised.
-The default is 60.
-
-.PARAMETER CompressBackup
-Do the backups need to be compressed. By default the backupss are not compressed.
-
-.PARAMETER CopyDestinationFolder
-The path to copy the transaction log backup files to. This is the root directory.
-A directory with the name of the database will be created in this path.
-
-.PARAMETER CopyJob
-Name of the copy job that will be created in the SQL Server agent.
-The parameter works as a prefix where the name of the database will be added to the copy job name.
-The default is "LSBackup_[databasename]"
-
-.PARAMETER CopyRetention
-The copy retention period in minutes. Default is 4320 / 72 hours
-
-.PARAMETER CopyScheduleName
-Name of the backup schedule created for the copy job.
-The parameter works as a prefix where the name of the database will be added to the copy job schedule name.
-Default is "LSCopy_[DestinationServerName]_[DatabaseName]"
-
-.PARAMETER CopyScheduleFrequencyType
-A value indicating when a job is to be executed.
-Allowed values are 4, "Daily", 64, "AgentStart", 128, "IdleComputer"
-
-.PARAMETER CopyScheduleFrequencySubdayType
-Specifies the units for the subday FrequencyInterval.
-Allowed values are 2, "Seconds", 4, "Minutes", 8 or "Hours"
-
-.PARAMETER CopyScheduleFrequencySubdayInterval
-The number of subday type periods to occur between each execution of the copy job.
-
-.PARAMETER CopyFrequencyRelativeInterval
-A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
-
-.PARAMETER CopyFrequencyRecurrenceFactor
-The number of weeks or months between the scheduled execution of a job. FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative". 
-
-.PARAMETER CopyScheduleStartDate
-The date on which execution of a job can begin.
-
-.PARAMETER CopyScheduleEndDate
-The date on which execution of a job can stop.
-
-.PARAMETER CopyScheduleStartTime
-The time on any day to begin execution of a job. Format HHMMSS / 24 hour clock.
-Example: '010000' for 01:00:00 AM. 
-Example: '140000' for 02:00:00 PM.
-
-.PARAMETER CopyScheduleEndTime
-The time on any day to end execution of a job. Format HHMMSS / 24 hour clock.
-Example: '010000' for 01:00:00 AM. 
-Example: '140000' for 02:00:00 PM.
-
-.PARAMETER DisconnectUsers
-If this parameter is set in combinations of standby the users will be disconnected during restore.
-
-.PARAMETER GenerateFullBackup
-If the database is not initialized on the secondary instance it can be done by creating a new full backup and
-restore it for you.
-
-.PARAMETER HistoryRetention
-Is the length of time in minutes in which the history is retained.
-The default value is 14420
-
-.PARAMETER PrimaryMonitorServer
-Is the name of the monitor server for the primary server.
-The default is the name of the primary sql server.
-
-.PARAMETER PrimaryMonitorCredential
-Allows you to login to enter a secure credential. Only needs to be used when the PrimaryMonitorServerSecurityMode is 0 or "sqlserver" 
-To use: $scred = Get-Credential, then pass $scred object to the -PrimaryMonitorCredential parameter. 
-
-.PARAMETER PrimaryMonitorServerSecurityMode
-The security mode used to connect to the monitor server for the primary server. Allowed values are 0, "sqlserver", 1, "windows"
-The default is 1 or Windows.
-
-.PARAMETER PrimaryThresholdAlertEnabled
-Enables the Threshold alert for the primary database
-
-.PARAMETER RestoreDataFolder
-Folder to be used to restore the database data files. Only used when parameter GenerateFullBackup or UseExistingFullBackup are set.
-If the parameter is not set the default data folder of the secondary instance will be used including the name of the database.
-If the folder is set but doesn't exist the default data folder of the secondary instance will be used including the name of the database.
-
-.PARAMETER RestoreLogFolder
-Folder to be used to restore the database log files. Only used when parameter GenerateFullBackup or UseExistingFullBackup are set.
-If the parameter is not set the default transaction log folder of the secondary instance will be used.
-If the folder is set but doesn't exist the default transaction log folder of the secondary instance will be used.
-
-.PARAMETER RestoreJob
-Name of the restore job that will be created in the SQL Server agent.
-The parameter works as a prefix where the name of the database will be added to the restore job name.
-The default is "LSRestore_[databasename]"
-
-.PARAMETER RestoreScheduleName
-Name of the backup schedule created for the restore job.
-The parameter works as a prefix where the name of the database will be added to the restore job schedule name.
-Default is "LSRestore_[DestinationServerName]_[DatabaseName]"
-
-.PARAMETER RestoreScheduleFrequencyType
-A value indicating when a job is to be executed.
-Allowed values are 4, "Daily", 64, "AgentStart", 128, "IdleComputer"
-
-.PARAMETER RestoreScheduleFrequencySubdayType
-Specifies the units for the subday FrequencyInterval.
-Allowed values are 2, "Seconds", 4, "Minutes", 8 or "Hours"
-
-.PARAMETER RestoreScheduleFrequencySubdayInterval
-The number of subday type periods to occur between each execution of the restore job.
-
-.PARAMETER RestoreFrequencyRelativeInterval
-A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
-
-.PARAMETER RestoreFrequencyRecurrenceFactor
-The number of weeks or months between the scheduled execution of a job. FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative". 
-
-.PARAMETER RestoreScheduleStartDate
-The date on which execution of a job can begin.
-
-.PARAMETER RestoreScheduleEndDate
-The date on which execution of a job can stop.
-
-.PARAMETER RestoreScheduleStartTime
-The time on any day to begin execution of a job. Format HHMMSS / 24 hour clock.
-Example: '010000' for 01:00:00 AM. 
-Example: '140000' for 02:00:00 PM.
-
-.PARAMETER RestoreScheduleEndTime
-The time on any day to end execution of a job. Format HHMMSS / 24 hour clock.
-Example: '010000' for 01:00:00 AM. 
-Example: '140000' for 02:00:00 PM.
-
-.PARAMETER RestoreThreshold
-The number of minutes allowed to elapse between restore operations before an alert is generated. 
-The default value = 0
-
-.PARAMETER RestoreAlertThreshold
-The amount of minutes after which an alert will be raised is no restore has taken place.
-The default is 45 minutes.
-
-.PARAMETER NoRecovery
-If this parameter is set the database will be in recoery mode. The database will not be readable.
-This setting is default.
-
-.PARAMETER Standby
-If this parameter is set the database will be set to standby mode making the database readable.
-If not set the database will be in recovery mode.
-
-.PARAMETER SecondaryDatabaseSuffix
-The secondary database can be renamed to include a suffix.
-
-.PARAMETER SecondaryMonitorServer
-Is the name of the monitor server for the secondary server.
-The default is the name of the secondary sql server.
-
-.PARAMETER SecondaryMonitorCredential
-Allows you to login to enter a secure credential. Only needs to be used when the SecondaryMonitorServerSecurityMode is 0 or "sqlserver" 
-To use: $scred = Get-Credential, then pass $scred object to the -SecondaryMonitorCredential parameter. 
-
-.PARAMETER SecondaryMonitorServerSecurityMode
-The security mode used to connect to the monitor server for the secondary server. Allowed values are 0, "sqlserver", 1, "windows"
-The default is 1 or Windows.
-
-.PARAMETER SecondaryThresholdAlertEnabled
-ENables the Threshold alert for the secondary database
-
-.PARAMETER UseExistingFullBackup
-If the database is not initialized on the secondary instance it can be done by selecting an existing full backup 
-and restore it for you.
-
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
-
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
-
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
-.PARAMETER Force
-The force parameter will ignore some errors in the parameters and assume defaults.
-It will also remove the any present schedules with the same name for the specific job.
-
-.NOTES 
-Original Author: Sander Stad (@sqlstad, sqlstad.nl)
-Tags: Log shippin, disaster recovery
-	
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-
-.LINK
-https://dbatools.io/Invoke-DbaLogShipping
-
-.EXAMPLE   
-Invoke-DbaLogShipping -SourceSqlServer sql1 -DestinationSqlServer sql2 -Database db1 -BackupNetworkPath "\\sql1\logshipping" -BackupLocalPath "D:\Data\logshipping" -BackupScheduleFrequencyType "daily" -BackupScheduleFrequencyInterval 1 -CompressBackup -CopyScheduleFrequencyType daily -CopyScheduleFrequencyInterval 1 -GenerateFullBackup -RestoreScheduleFrequencyType daily -RestoreScheduleFrequencyInterval 1 -SecondaryDatabaseSuffix "DR" -CopyDestinationFolder "\\sql2\logshippingdest" -Force
-
+<#
+    .SYNOPSIS
+        Invoke-DbaLogShipping sets up log shipping for one or more databases
+    
+    .DESCRIPTION
+        Invoke-DbaLogShipping helps to easily set up log shipping for one or more databases.
+    
+    .PARAMETER SourceSqlInstance
+        Source SQL Server instance which contains the databases to be log shipped.
+        You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+    
+    .PARAMETER DestinationSqlInstance
+        Destination SQL Server instance which contains the databases to be log shipped.
+        You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+    
+    .PARAMETER SourceSqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+        To connect as a different Windows user, run PowerShell as that user.
+    
+    .PARAMETER SourceCredential
+        A description of the SourceCredential parameter.
+    
+    .PARAMETER DestinationSqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+        To connect as a different Windows user, run PowerShell as that user.
+    
+    .PARAMETER DestinationCredential
+        A description of the DestinationCredential parameter.
+    
+    .PARAMETER Database
+        Database to set up log shipping for.
+    
+    .PARAMETER BackupNetworkPath
+        The backup unc path to place the backup files. This is the root directory.
+        A directory with the name of the database will be created in this path.
+    
+    .PARAMETER BackupLocalPath
+        If the backup path is locally for the source server you can also set this value.
+    
+    .PARAMETER BackupJob
+        Name of the backup that will be created in the SQL Server agent.
+        The parameter works as a prefix where the name of the database will be added to the backup job name.
+        The default is "LSBackup_[databasename]"
+    
+    .PARAMETER BackupRetention
+        The backup retention period in minutes. Default is 4320 / 72 hours
+    
+    .PARAMETER BackupScheduleName
+        Name of the backup schedule created for the backup job.
+        The parameter works as a prefix where the name of the database will be added to the backup job schedule name.
+        Default is "LSBackupSchedule_[databasename]"
+    
+    .PARAMETER BackupScheduleDisabled
+        A description of the BackupScheduleDisabled parameter.
+    
+    .PARAMETER BackupScheduleFrequencyType
+        A value indicating when a job is to be executed.
+        Allowed values are 4, "Daily", 64, "AgentStart", 128, "IdleComputer"
+    
+    .PARAMETER BackupScheduleFrequencyInterval
+        A description of the BackupScheduleFrequencyInterval parameter.
+    
+    .PARAMETER BackupScheduleFrequencySubdayType
+        Specifies the units for the subday FrequencyInterval.
+        Allowed values are 2, "Seconds", 4, "Minutes", 8 or "Hours"
+    
+    .PARAMETER BackupScheduleFrequencySubdayInterval
+        The number of subday type periods to occur between each execution of the backup job.
+    
+    .PARAMETER BackupScheduleFrequencyRelativeInterval
+        A description of the BackupScheduleFrequencyRelativeInterval parameter.
+    
+    .PARAMETER BackupScheduleFrequencyRecurrenceFactor
+        A description of the BackupScheduleFrequencyRecurrenceFactor parameter.
+    
+    .PARAMETER BackupScheduleStartDate
+        The date on which execution of a job can begin.
+    
+    .PARAMETER BackupScheduleEndDate
+        The date on which execution of a job can stop.
+    
+    .PARAMETER BackupScheduleStartTime
+        The time on any day to begin execution of a job. Format HHMMSS / 24 hour clock.
+        Example: '010000' for 01:00:00 AM.
+        Example: '140000' for 02:00:00 PM.
+    
+    .PARAMETER BackupScheduleEndTime
+        The time on any day to end execution of a job. Format HHMMSS / 24 hour clock.
+        Example: '010000' for 01:00:00 AM.
+        Example: '140000' for 02:00:00 PM.
+    
+    .PARAMETER BackupThreshold
+        Is the length of time, in minutes, after the last backup before a threshold alert error is raised.
+        The default is 60.
+    
+    .PARAMETER CompressBackup
+        Do the backups need to be compressed. By default the backupss are not compressed.
+    
+    .PARAMETER CopyDestinationFolder
+        The path to copy the transaction log backup files to. This is the root directory.
+        A directory with the name of the database will be created in this path.
+    
+    .PARAMETER CopyJob
+        Name of the copy job that will be created in the SQL Server agent.
+        The parameter works as a prefix where the name of the database will be added to the copy job name.
+        The default is "LSBackup_[databasename]"
+    
+    .PARAMETER CopyRetention
+        The copy retention period in minutes. Default is 4320 / 72 hours
+    
+    .PARAMETER CopyScheduleName
+        Name of the backup schedule created for the copy job.
+        The parameter works as a prefix where the name of the database will be added to the copy job schedule name.
+        Default is "LSCopy_[DestinationServerName]_[DatabaseName]"
+    
+    .PARAMETER CopyScheduleDisabled
+        A description of the CopyScheduleDisabled parameter.
+    
+    .PARAMETER CopyScheduleFrequencyType
+        A value indicating when a job is to be executed.
+        Allowed values are 4, "Daily", 64, "AgentStart", 128, "IdleComputer"
+    
+    .PARAMETER CopyScheduleFrequencyInterval
+        A description of the CopyScheduleFrequencyInterval parameter.
+    
+    .PARAMETER CopyScheduleFrequencySubdayType
+        Specifies the units for the subday FrequencyInterval.
+        Allowed values are 2, "Seconds", 4, "Minutes", 8 or "Hours"
+    
+    .PARAMETER CopyScheduleFrequencySubdayInterval
+        The number of subday type periods to occur between each execution of the copy job.
+    
+    .PARAMETER CopyScheduleFrequencyRelativeInterval
+        A description of the CopyScheduleFrequencyRelativeInterval parameter.
+    
+    .PARAMETER CopyScheduleFrequencyRecurrenceFactor
+        A description of the CopyScheduleFrequencyRecurrenceFactor parameter.
+    
+    .PARAMETER CopyScheduleStartDate
+        The date on which execution of a job can begin.
+    
+    .PARAMETER CopyScheduleEndDate
+        The date on which execution of a job can stop.
+    
+    .PARAMETER CopyScheduleStartTime
+        The time on any day to begin execution of a job. Format HHMMSS / 24 hour clock.
+        Example: '010000' for 01:00:00 AM.
+        Example: '140000' for 02:00:00 PM.
+    
+    .PARAMETER CopyScheduleEndTime
+        The time on any day to end execution of a job. Format HHMMSS / 24 hour clock.
+        Example: '010000' for 01:00:00 AM.
+        Example: '140000' for 02:00:00 PM.
+    
+    .PARAMETER DisconnectUsers
+        If this parameter is set in combinations of standby the users will be disconnected during restore.
+    
+    .PARAMETER FullBackupPath
+        A description of the FullBackupPath parameter.
+    
+    .PARAMETER GenerateFullBackup
+        If the database is not initialized on the secondary instance it can be done by creating a new full backup and
+        restore it for you.
+    
+    .PARAMETER HistoryRetention
+        Is the length of time in minutes in which the history is retained.
+        The default value is 14420
+    
+    .PARAMETER NoRecovery
+        If this parameter is set the database will be in recoery mode. The database will not be readable.
+        This setting is default.
+    
+    .PARAMETER PrimaryMonitorServer
+        Is the name of the monitor server for the primary server.
+        The default is the name of the primary sql server.
+    
+    .PARAMETER PrimaryMonitorCredential
+        Allows you to login to enter a secure credential. Only needs to be used when the PrimaryMonitorServerSecurityMode is 0 or "sqlserver"
+        To use: $scred = Get-Credential, then pass $scred object to the -PrimaryMonitorCredential parameter.
+    
+    .PARAMETER PrimaryMonitorServerSecurityMode
+        The security mode used to connect to the monitor server for the primary server. Allowed values are 0, "sqlserver", 1, "windows"
+        The default is 1 or Windows.
+    
+    .PARAMETER PrimaryThresholdAlertEnabled
+        Enables the Threshold alert for the primary database
+    
+    .PARAMETER SecondaryDatabaseSuffix
+        The secondary database can be renamed to include a suffix.
+    
+    .PARAMETER SecondaryMonitorServer
+        Is the name of the monitor server for the secondary server.
+        The default is the name of the secondary sql server.
+    
+    .PARAMETER SecondaryMonitorCredential
+        Allows you to login to enter a secure credential. Only needs to be used when the SecondaryMonitorServerSecurityMode is 0 or "sqlserver"
+        To use: $scred = Get-Credential, then pass $scred object to the -SecondaryMonitorCredential parameter.
+    
+    .PARAMETER SecondaryMonitorServerSecurityMode
+        The security mode used to connect to the monitor server for the secondary server. Allowed values are 0, "sqlserver", 1, "windows"
+        The default is 1 or Windows.
+    
+    .PARAMETER SecondaryThresholdAlertEnabled
+        ENables the Threshold alert for the secondary database
+    
+    .PARAMETER Standby
+        If this parameter is set the database will be set to standby mode making the database readable.
+        If not set the database will be in recovery mode.
+    
+    .PARAMETER RestoreDataFolder
+        Folder to be used to restore the database data files. Only used when parameter GenerateFullBackup or UseExistingFullBackup are set.
+        If the parameter is not set the default data folder of the secondary instance will be used including the name of the database.
+        If the folder is set but doesn't exist the default data folder of the secondary instance will be used including the name of the database.
+    
+    .PARAMETER RestoreLogFolder
+        Folder to be used to restore the database log files. Only used when parameter GenerateFullBackup or UseExistingFullBackup are set.
+        If the parameter is not set the default transaction log folder of the secondary instance will be used.
+        If the folder is set but doesn't exist the default transaction log folder of the secondary instance will be used.
+    
+    .PARAMETER RestoreDelay
+        A description of the RestoreDelay parameter.
+    
+    .PARAMETER RestoreAlertThreshold
+        The amount of minutes after which an alert will be raised is no restore has taken place.
+        The default is 45 minutes.
+    
+    .PARAMETER RestoreJob
+        Name of the restore job that will be created in the SQL Server agent.
+        The parameter works as a prefix where the name of the database will be added to the restore job name.
+        The default is "LSRestore_[databasename]"
+    
+    .PARAMETER RestoreRetention
+        A description of the RestoreRetention parameter.
+    
+    .PARAMETER RestoreScheduleName
+        Name of the backup schedule created for the restore job.
+        The parameter works as a prefix where the name of the database will be added to the restore job schedule name.
+        Default is "LSRestore_[DestinationServerName]_[DatabaseName]"
+    
+    .PARAMETER RestoreScheduleDisabled
+        A description of the RestoreScheduleDisabled parameter.
+    
+    .PARAMETER RestoreScheduleFrequencyType
+        A value indicating when a job is to be executed.
+        Allowed values are 4, "Daily", 64, "AgentStart", 128, "IdleComputer"
+    
+    .PARAMETER RestoreScheduleFrequencyInterval
+        A description of the RestoreScheduleFrequencyInterval parameter.
+    
+    .PARAMETER RestoreScheduleFrequencySubdayType
+        Specifies the units for the subday FrequencyInterval.
+        Allowed values are 2, "Seconds", 4, "Minutes", 8 or "Hours"
+    
+    .PARAMETER RestoreScheduleFrequencySubdayInterval
+        The number of subday type periods to occur between each execution of the restore job.
+    
+    .PARAMETER RestoreScheduleFrequencyRelativeInterval
+        A description of the RestoreScheduleFrequencyRelativeInterval parameter.
+    
+    .PARAMETER RestoreScheduleFrequencyRecurrenceFactor
+        A description of the RestoreScheduleFrequencyRecurrenceFactor parameter.
+    
+    .PARAMETER RestoreScheduleStartDate
+        The date on which execution of a job can begin.
+    
+    .PARAMETER RestoreScheduleEndDate
+        The date on which execution of a job can stop.
+    
+    .PARAMETER RestoreScheduleStartTime
+        The time on any day to begin execution of a job. Format HHMMSS / 24 hour clock.
+        Example: '010000' for 01:00:00 AM.
+        Example: '140000' for 02:00:00 PM.
+    
+    .PARAMETER RestoreScheduleEndTime
+        The time on any day to end execution of a job. Format HHMMSS / 24 hour clock.
+        Example: '010000' for 01:00:00 AM.
+        Example: '140000' for 02:00:00 PM.
+    
+    .PARAMETER RestoreThreshold
+        The number of minutes allowed to elapse between restore operations before an alert is generated.
+        The default value = 0
+    
+    .PARAMETER UseExistingFullBackup
+        If the database is not initialized on the secondary instance it can be done by selecting an existing full backup
+        and restore it for you.
+    
+    .PARAMETER Force
+        The force parameter will ignore some errors in the parameters and assume defaults.
+        It will also remove the any present schedules with the same name for the specific job.
+    
+    .PARAMETER Silent
+        Use this switch to disable any kind of verbose messages
+    
+    .PARAMETER Backupath
+        Is the location of the last full backup. If this is not set in combination with parameter UseExistingFullBackup
+        then the last full backup will be retrieved from the source server.
+    
+    .PARAMETER BackupFrequencyRelativeInterval
+        A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
+    
+    .PARAMETER BackupFrequencyRecurrenceFactor
+        The number of weeks or months between the scheduled execution of a job. FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative".
+    
+    .PARAMETER CopyFrequencyRelativeInterval
+        A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
+    
+    .PARAMETER CopyFrequencyRecurrenceFactor
+        The number of weeks or months between the scheduled execution of a job. FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative".
+    
+    .PARAMETER RestoreFrequencyRelativeInterval
+        A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
+    
+    .PARAMETER RestoreFrequencyRecurrenceFactor
+        The number of weeks or months between the scheduled execution of a job. FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative".
+    
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+    
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+    
+    .EXAMPLE
+        Invoke-DbaLogShipping -SourceSqlServer sql1 -DestinationSqlServer sql2 -Database db1 -BackupNetworkPath "\\sql1\logshipping" -BackupLocalPath "D:\Data\logshipping" -BackupScheduleFrequencyType "daily" -BackupScheduleFrequencyInterval 1 -CompressBackup -CopyScheduleFrequencyType daily -CopyScheduleFrequencyInterval 1 -GenerateFullBackup -RestoreScheduleFrequencyType daily -RestoreScheduleFrequencyInterval 1 -SecondaryDatabaseSuffix "DR" -CopyDestinationFolder "\\sql2\logshippingdest" -Force
+    
+        Does stuff <insert better explanation here>
+    
+    .NOTES
+        Original Author: Sander Stad (@sqlstad, sqlstad.nl)
+        Tags: Log shippin, disaster recovery
+        
+        Website: https://dbatools.io
+        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    
+    .LINK
+        https://dbatools.io/Invoke-DbaLogShipping
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 
