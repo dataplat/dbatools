@@ -18,8 +18,7 @@ before_test:
    # "Get Pester manually"
   - ps: Install-Module -Name Pester -Repository PSGallery -Force | Out-Null
   # "Setting up the local SQL Server environments"
-  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
-  - ps: .\Tests\appveyor.sqlserver.ps1
+ - ps: .\Tests\appveyor.sqlserver.ps1
 
 test_script:
   # "Installing nuget and PSScriptAnalyzer"
