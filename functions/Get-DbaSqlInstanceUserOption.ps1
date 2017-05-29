@@ -60,7 +60,7 @@ Returns SQL Instance user options on sql2 and sql4
 				Add-Member -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
 				Add-Member -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
 				Add-Member -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-				Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, Name, Value
+				Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, SqlInstance, Name, Value
 			}
 		}
 	}
