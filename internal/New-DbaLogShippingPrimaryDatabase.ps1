@@ -1,5 +1,5 @@
 function New-DbaLogShippingPrimaryDatabase {
-<#
+    <#
 .SYNOPSIS 
 New-DbaLogShippingPrimaryDatabase add the primary database to log shipping
 
@@ -36,9 +36,6 @@ Is the network path to the backup directory on the primary server.
 .PARAMETER BackupThreshold
 Is the length of time, in minutes, after the last backup before a threshold_alert error is raised.
 The default is 60.
-
-.PARAMETER CompressBackup
-Compress backup
 
 .PARAMETER HistoryRetention
 Is the length of time in minutes in which the history will be retained.
@@ -86,134 +83,146 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 https://dbatools.io/New-DbaLogShippingPrimaryDatabase
 
 .EXAMPLE   
-New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirectory D:\data\logshipping -BackupJob LSBackup_DB1 -BackupRetention 4320 -BackupShare "\\sql1\logshipping" -BackupThreshold 60 -BackupCompression -HistoryRetention 14420 -MonitorServer 'sql1' -ThresholdAlertEnabled 1 
+New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirectory D:\data\logshipping -BackupJob LSBackup_DB1 -BackupRetention 4320 -BackupShare "\\sql1\logshipping" -BackupThreshold 60 -CompressBackup -HistoryRetention 14420 -MonitorServer sql1 -ThresholdAlertEnabled
 
 #>
-	
-	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
-	param (
-		[parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
-		[Parameter(Mandatory = $false)]
-		[System.Management.Automation.PSCredential]$SqlCredential,
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[string]$Database,
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[string]$BackupDirectory,
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[string]$BackupJob,
-		[Parameter(Mandatory = $true)]
-		[int]$BackupRetention,
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[string]$BackupShare,
-		[Parameter(Mandatory = $false)]
-		[int]$BackupThreshold = 60,
-		[Parameter(Mandatory = $false)]
-		[int]$HistoryRetention = 14420,
-		[switch]$CompressBackup,
-		[Parameter(Mandatory = $false)]
-		[string]$MonitorServer,
-		[Parameter(Mandatory = $false)]
-		[ValidateSet(0, "sqlserver", 1, "windows")]
-		[object]$MonitorServerSecurityMode = 1,
-		[Parameter(Mandatory = $false)]
-		[System.Management.Automation.PSCredential]$MonitorCredential,
-		[Parameter(Mandatory = $false)]
-		[switch]$ThresholdAlertEnabled,
-		[switch]$Silent,
-		[Parameter(Mandatory = $false)]
-		[switch]$Force
-	)
-	
-	# Try connecting to the instance
-	Write-Message -Message "Attempting to connect to $SqlInstance" -Level Verbose
-	try {
-		$Server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
-	}
-	catch {
-		Stop-Function -Message "Could not connect to Sql Server instance" -Target $SqlInstance -Continue
-	}
-	
-	# Check if the backup UNC path is correct and reachable
-	if ([bool]([uri]$BackupShare).IsUnc -and $BackupShare -notmatch '^\\(?:\\[^<>:`"/\\|?*]+)+$') {
-		Stop-Function -Message "The backup share path $BackupShare should be formatted in the form \\server\share." -InnerErrorRecord $_ -Target $SqlInstance
-		return
-	}
-	else {
-		if (-not ((Test-Path $BackupShare -PathType Container -IsValid) -and ((Get-Item $BackupShare).PSProvider.Name -eq 'FileSystem'))) {
-			Stop-Function -Message "The backup share path $BackupShare is not valid or can't be reached." -InnerErrorRecord $_ -Target $SqlInstance
-			return
-		}
-	}
-	
-	# Check the backup compression
-	if ($CompressBackup) {
-		$BackupCompression = 1
-		Write-Message -Message "Setting backup compression to 1." -Level Verbose
-	}
-	else {
-		$BackupCompression = 0
-		Write-Message -Message "Setting backup compression to 0." -Level Verbose
-	}
-	
-	# Check of the MonitorServerSecurityMode value is of type string and set the integer value
-	if ($MonitorServerSecurityMode -notin 0, 1) {
-		$MonitorServerSecurityMode = switch ($MonitorServerSecurityMode) { "WINDOWS" { 1 } "SQLSERVER" { 0 } }
-		Write-Message -Message "Setting monitor server security mode to $MonitorServerSecurityMode." -Level Verbose
-	}
-	
-	# Check the MonitorServer
-	if (-not $MonitorServer) {
-		if ($Force) {
-			$MonitorServer = $SqlInstance
-			Write-Message -Message "Setting monitor server to $MonitorServer." -Level Verbose
-		}
-		else {
-			Stop-Function -Message "The monitor server needs to be set. Use -Force if system name must be used." -InnerErrorRecord $_ -Target $SqlInstance
-			return
-		}
-	}
-	
-	# Check the MonitorServerSecurityMode if it's SQL Server authentication
-	if ($MonitorServerSecurityMode -eq 0 -and -not $MonitorCredential) {
-		Stop-Function -Message "The MonitorServerCredential cannot be empty when using SQL Server authentication." -InnerErrorRecord $_ -Target $SqlInstance
-		return
-	}
-	elseif ($MonitorServerSecurityMode -eq 0 -and $MonitorCredential) {
-		# Get the username and password from the credential
-		$MonitorLogin = $MonitorCredential.UserName
-		$MonitorPassword = $MonitorCredential.GetNetworkCredential().Password
-		
-		# Check if the user is in the database
-		if ($Server.Databases['master'].Users.Name -notcontains $MonitorLogin) {
-			Stop-Function -Message "User $MonitorLogin for monitor login must be in the master database." -InnerErrorRecord $_ -Target $SqlInstance
-			return
-		}
-	}
-	
-	# Check if the database is present on the source sql server
-	if ($Server.Databases.Name -notcontains $Database) {
-		Stop-Function -Message "Database $Database is not available on instance $SqlInstance" -InnerErrorRecord $_ -Target $SqlInstance
-		return
-	}
-	
-	# Check the if thresshold alert needs to be enabled
-	if ($ThresholdAlertEnabled) {
-		[int]$ThresholdAlertEnabled = 1
-		Write-Message -Message "Setting thresshold alert to $ThresholdAlertEnabled." -Level Verbose
-	}
-	else {
-		[int]$ThresholdAlertEnabled = 0
-		Write-Message -Message "Setting thresshold alert to $ThresholdAlertEnabled." -Level Verbose
-	}
-	
-	# Set the log shipping primary
-	$sql = "
+
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+
+    param (
+        [parameter(Mandatory = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [object]$SqlInstance,
+
+        [System.Management.Automation.PSCredential]
+        $SqlCredential,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [object]$Database,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$BackupDirectory,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$BackupJob,
+
+        [Parameter(Mandatory = $true)]
+        [int]$BackupRetention,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$BackupShare,
+
+        [int]$BackupThreshold = 60,
+
+        [int]$HistoryRetention = 14420,
+
+        [int]$BackupCompression = 0,
+
+        [switch]$CompressBackup,
+
+        [string]$MonitorServer,
+
+        [ValidateSet(0, "sqlserver", 1, "windows")]
+        [object]$MonitorServerSecurityMode = 1,
+
+        [System.Management.Automation.PSCredential]
+        $MonitorCredential,
+
+        [switch]$ThresholdAlertEnabled,
+
+        [switch]$Silent,
+
+        [switch]$Force
+    )
+
+    # Try connecting to the instance
+    Write-Message -Message "Attempting to connect to $SqlInstance" -Level Verbose
+    try {
+        $Server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+    }
+    catch {
+        Stop-Function -Message "Could not connect to Sql Server instance" -Target $SqlInstance -Continue
+    }
+
+    # Check if the backup UNC path is correct and reachable
+    if ([bool]([uri]$BackupShare).IsUnc -and $BackupShare -notmatch '^\\(?:\\[^<>:`"/\\|?*]+)+$') {
+        Stop-Function -Message "The backup share path $BackupShare should be formatted in the form \\server\share." -InnerErrorRecord $_ -Target $SqlInstance
+        return
+    }
+    else {
+        if (-not ((Test-Path $BackupShare -PathType Container -IsValid) -and ((Get-Item $BackupShare).PSProvider.Name -eq 'FileSystem'))) {
+            Stop-Function -Message "The backup share path $BackupShare is not valid or can't be reached." -InnerErrorRecord $_ -Target $SqlInstance
+            return
+        }
+    }
+
+    # Check the backup compression
+    if ($CompressBackup) {
+        $BackupCompression = 1
+        Write-Message -Message "Setting backup compression to 1." -Level Verbose
+    }
+    else {
+        $BackupCompression = 0
+        Write-Message -Message "Setting backup compression to 0." -Level Verbose
+    }
+
+    # Check of the MonitorServerSecurityMode value is of type string and set the integer value
+    if ($MonitorServerSecurityMode -notin 0, 1) {
+        $MonitorServerSecurityMode = switch ($MonitorServerSecurityMode) {"WINDOWS" { 1 } "SQLSERVER" { 0 } }
+        Write-Message -Message "Setting monitor server security mode to $MonitorServerSecurityMode." -Level Verbose
+    }
+
+    # Check the MonitorServer
+    if (-not $MonitorServer) {
+        if ($Force) {
+            $MonitorServer = $SqlInstance
+            Write-Message -Message "Setting monitor server to $MonitorServer." -Level Verbose
+        }
+        else {
+            Stop-Function -Message "The monitor server needs to be set. Use -Force if system name must be used." -InnerErrorRecord $_ -Target $SqlInstance 
+            return
+        }
+    }
+
+    # Check the MonitorServerSecurityMode if it's SQL Server authentication
+    if ($MonitorServerSecurityMode -eq 0 -and -not $MonitorCredential) {
+        Stop-Function -Message "The MonitorServerCredential cannot be empty when using SQL Server authentication." -InnerErrorRecord $_ -Target $SqlInstance 
+        return
+    }
+    elseif ($MonitorServerSecurityMode -eq 0 -and $MonitorCredential) {
+        # Get the username and password from the credential
+        $MonitorLogin = $MonitorCredential.UserName
+        $MonitorPassword = $MonitorCredential.GetNetworkCredential().Password
+
+        # Check if the user is in the database
+        if ($Server.Databases['master'].Users.Name -notcontains $MonitorLogin) {
+            Stop-Function -Message "User $MonitorLogin for monitor login must be in the master database." -InnerErrorRecord $_ -Target $SqlInstance 
+            return
+        }
+    }
+
+    # Check if the database is present on the source sql server
+    if ($Server.Databases.Name -notcontains $Database) {
+        Stop-Function -Message "Database $Database is not available on instance $SqlInstance" -InnerErrorRecord $_ -Target $SqlInstance 
+        return
+    }
+
+    # Check the if Threshold alert needs to be enabled
+    if ($ThresholdAlertEnabled) {
+        [int]$ThresholdAlertEnabled = 1
+        Write-Message -Message "Setting Threshold alert to $ThresholdAlertEnabled." -Level Verbose
+    }
+    else {
+        [int]$ThresholdAlertEnabled = 0
+        Write-Message -Message "Setting Threshold alert to $ThresholdAlertEnabled." -Level Verbose
+    }
+
+    # Set the log shipping primary
+    $Query = "
         DECLARE @LS_BackupJobId AS uniqueidentifier;
         DECLARE @LS_PrimaryId AS uniqueidentifier;
         EXEC master.dbo.sp_add_log_shipping_primary_database 
@@ -230,25 +239,27 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
             ,@history_retention_period = $HistoryRetention
             ,@backup_job_id = @LS_BackupJobId OUTPUT
             ,@primary_id = @LS_PrimaryId OUTPUT "
-	
-	# Check the MonitorServerSecurityMode if it's SQL Server authentication
-	if ($MonitorServerSecurityMode -eq 0) {
-		$sql += ",@monitor_server_login = N'$MonitorLogin'
+
+    # Check the MonitorServerSecurityMode if it's SQL Server authentication
+    if ($MonitorServerSecurityMode -eq 0) {
+        $Query += ",@monitor_server_login = N'$MonitorLogin'
             ,@monitor_server_password = N'$MonitorPassword' "
-	}
-	
-	$sql += ",@overwrite = 1;"
-	
-	# Execute the query to add the log shipping primary
-	if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping for primary database $Database on $SqlInstance with the query: $sql"))) {
-		try {
-			Write-Message -Message "Configuring logshipping for primary database $Database." -Level Output
-			Invoke-SqlCmd2 -ServerInstance $Server -Database master -Query $sql
-		}
-		catch {
-			Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n $sql" -InnerErrorRecord $_ -Target $SqlInstance
-			return
-		}
-	}
-	Write-Message -Message "Finished adding the primary database $Database to log shipping." -Level Output
+    }
+
+    $Query += ",@overwrite = 1;"
+
+    # Execute the query to add the log shipping primary
+    if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping for primary database $Database on $SqlInstance"))) {
+        try {
+            Write-Message -Message "Configuring logshipping for primary database $Database." -Level Output
+            Invoke-SqlCmd2 -ServerInstance $SqlInstance -Credential $SqlCredential -Database 'master' -Query $Query
+        }
+        catch {
+            Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$($Query)" -InnerErrorRecord $_ -Target $SqlInstance
+            return
+        }
+    }
+
+    Write-Message -Message "Finished adding the primary database $Database to log shipping." -Level Output
+    
 }
