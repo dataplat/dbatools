@@ -1,5 +1,5 @@
-Function Get-DbaTrigger {
-<#
+function Get-DbaTrigger {
+	<#
 .SYNOPSIS
 Get all existing triggers on one or more SQL instances.
 
@@ -17,11 +17,13 @@ SqlCredential object used to connect to the SQL Server as a different user.
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Exclude
+.PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is autopopulated from the server
 
 .NOTES
+Tags: Database, Triggers
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -60,7 +62,7 @@ Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerN
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude
+		[object[]]$ExcludeDatabase
 	)
 	
 	process {
@@ -76,15 +78,15 @@ Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerN
 			
 			Write-Verbose "Getting Server Level Triggers on $Instance"
 			$server.Triggers |
-			ForEach-Object {
+				ForEach-Object {
 				[PSCustomObject]@{
-					ComputerName = $server.NetName
-					InstanceName = $server.ServiceName
-					SqlInstance = $server.DomainInstanceName
-					TriggerLevel = "Server"
-					Database = $null
-					TriggerName = $_.Name
-					Status = switch ($_.IsEnabled) { $true { "Enabled" } $false { "Disabled" } }
+					ComputerName     = $server.NetName
+					InstanceName     = $server.ServiceName
+					SqlInstance      = $server.DomainInstanceName
+					TriggerLevel     = "Server"
+					Database         = $null
+					TriggerName      = $_.Name
+					Status           = switch ($_.IsEnabled) { $true { "Enabled" } $false { "Disabled" } }
 					DateLastModified = $_.DateLastModified
 				}
 			}
@@ -92,27 +94,27 @@ Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerN
 			Write-Verbose "Getting Database Level Triggers on $Instance"
 			$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' }
 			
-			if ($database) {
-				$dbs = $dbs | Where-Object Name -in $database
+			if ($Database) {
+				$dbs = $dbs | Where-Object Name -in $Database
 			}
-			if ($exclude) {
-				$dbs = $dbs | Where-Object Name -notin $exclude
+			if ($ExcludeDatabase) {
+				$dbs = $dbs | Where-Object Name -notin $ExcludeDatabase
 			}
 			
 			$dbs |
-			ForEach-Object {
+				ForEach-Object {
 				$DatabaseName = $_.Name
 				Write-Verbose "Getting Database Level Triggers on Database $DatabaseName on $Instance"
 				$_.Triggers |
-				ForEach-Object {
+					ForEach-Object {
 					[PSCustomObject]@{
-						ComputerName = $server.NetName
-						InstanceName = $server.ServiceName
-						SqlInstance = $server.DomainInstanceName
-						TriggerLevel = "Database"
-						Database = $DatabaseName
-						TriggerName = $_.Name
-						Status = switch ($_.IsEnabled) { $true { "Enabled" } $false { "Disabled" } }
+						ComputerName     = $server.NetName
+						InstanceName     = $server.ServiceName
+						SqlInstance      = $server.DomainInstanceName
+						TriggerLevel     = "Database"
+						Database         = $DatabaseName
+						TriggerName      = $_.Name
+						Status           = switch ($_.IsEnabled) { $true { "Enabled" } $false { "Disabled" } }
 						DateLastModified = $_.DateLastModified
 					}
 				}
