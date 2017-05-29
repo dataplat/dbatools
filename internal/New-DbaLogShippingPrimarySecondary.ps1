@@ -62,23 +62,21 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
 		[Alias("ServerInstance", "SqlServer")]
 		[object]$SqlInstance,
 
-        [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]
         $SqlCredential,
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]$PrimaryDatabase,
+        [object]$PrimaryDatabase,
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]$SecondaryDatabase,
+        [object]$SecondaryDatabase,
         
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [object]$SecondaryServer,
 
-        [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]
         $SecondarySqlCredential,
 
