@@ -26,38 +26,4 @@
 		}
 	}
 	
-	Context "Properly restores a database on the local drive using piped Get-ChildItem results" {
-		$results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance localhost
-		It "Should Return the proper backup file location" {
-			$results.BackupFile | Should Be "C:\github\appveyor-lab\singlerestore\singlerestore.bak"
-		}
-		It "Should return successful restore" {
-			$results.RestoreComplete | Should Be $true
-		}
-	}
-	
-	Context "Database is properly removed again" {
-		$results = Remove-DbaDatabase -SqlInstance localhost -Database singlerestore
-		It "Should say the status was dropped" {
-			$results.Status | Should Be "Dropped"
-		}
-	}
-	
-	Context "Properly restores an instance using ola-style backups" {
-		$results = Get-ChildItem C:\github\appveyor-lab\sql2008-backups | Restore-DbaDatabase -SqlInstance localhost
-		It "Restored files count should be right" {
-			$results.databasename.count | Should Be 30
-		}
-		It "Should return successful restore" {
-			($results.Restorecomplete -contains $false) | Should Be $false
-		}
-	}
-	
-	Context "All user databases are removed" {
-		$results = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
-		It "Should say the status was dropped" {
-			$results.ForEach{ $_.Status | Should Be "Dropped" }
-		}
-	}
 }
-$error[0]
