@@ -1,20 +1,14 @@
 ﻿Function New-DbaSqlConnectionString {
 <#
 .SYNOPSIS
-Creates an efficient SMO SQL Server object.
+Builds or extracts a SQL Server Connection String
 
 .DESCRIPTION
-This command is efficient because it initializes properties that do not cause enumeration by default. It also supports both Windows and SQL Server credentials and detects which alternative credentials. 
-
-By default, this command also sets the client to "dbatools PowerShell module - dbatools.io - custom connection" if you're doing anything that requires profiling, you can look for this client name.
-
-Alternatively, you can pass in whichever client name you'd like using the -ClientName parameter. There are a ton of other parameters for you to explore as well.
+Builds or extracts a SQL Server Connection String
 	
 See https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.connectionstring.aspx
 and https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnectionstringbuilder.aspx
 and https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.aspx
-
-To execute SQL commands, you can use $server.ConnectionContext.ExecuteReader($sql) or $server.Databases['master'].ExecuteNonQuery($sql)
 
 .PARAMETER SqlInstance
 The SQL Server that you're connecting to.
@@ -118,6 +112,11 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 New-DbaSqlConnectionString -SqlInstance sql2014
 
 Creates a connection string that connects using Windows Authentication
+
+.EXAMPLE
+Connect-DbaSqlServer -SqlInstance sql2016 | New-DbaSqlConnectionString
+
+Builds a connected SMO object using Connect-DbaSqlServer then extracts and displays the connection string
 
 .EXAMPLE
 $wincred = Get-Credential ad\sqladmin
