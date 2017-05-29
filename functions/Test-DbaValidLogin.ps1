@@ -8,7 +8,7 @@ Test-DbaValidLogin finds any logins on SQL instance that are AD logins with eith
 The purpose of this function is to find SQL Server logins that are used by active directory users that are either disabled or removed from the domain. It allows you to
 keep your logins accurate and up to date by removing accounts that are no longer needed.
 
-.PARAMETER SQLServer
+.PARAMETER SqlInstance
 SQL instance to check. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER SqlCredential
@@ -47,17 +47,17 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Test-DbaValidLogin
 
 .EXAMPLE
-Test-DbaValidLogin -SqlServer Dev01
+Test-DbaValidLogin -SqlInstance Dev01
 
 Tests all logins in the domain ran from (check $env:domain) that are either disabled or do not exist
 
 .EXAMPLE
-Test-DbaValidLogin -SqlServer Dev01 -FilterBy GroupsOnly -Detailed
+Test-DbaValidLogin -SqlInstance Dev01 -FilterBy GroupsOnly -Detailed
 
 Tests all Active directory groups that have logins on Dev01 returning a detailed view.
 
 .EXAMPLE
-Test-DbaValidLogin -SqlServer Dev01 -ExcludeDomains subdomain
+Test-DbaValidLogin -SqlInstance Dev01 -ExcludeDomains subdomain
 
 Tests all logins excluding any that are from the subdomain Domain
 
@@ -65,8 +65,8 @@ Tests all logins excluding any that are from the subdomain Domain
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[string[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer", "SqlServers")]
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[ValidateSet("LoginsOnly", "GroupsOnly")]
 		[string]$FilterBy = "None",
@@ -75,13 +75,7 @@ Tests all logins excluding any that are from the subdomain Domain
 		[switch]$Silent
 	)
 
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlLogins -SqlServer $SqlServer[0] -SqlCredential $SqlCredential -WindowsOnly } }
-
-	BEGIN
-	{
-		$Logins = $psboundparameters.Logins
-		$Exclude = $psboundparameters.Exclude
-
+	begin {
 		if($IgnoreDomains) {
 			$IgnoreDomainsNormalized = $IgnoreDomains.toUpper()
 			Write-Message -Message ("Excluding logins for domains " + ($IgnoreDomains -join ',')) -Level Verbose
@@ -112,17 +106,16 @@ Tests all logins excluding any that are from the subdomain Domain
 			'DONT_REQUIRE_PREAUTH'                   = 4194304
 			'PASSWORD_EXPIRED'                       = 8388608
 			'TRUSTED_TO_AUTHENTICATE_FOR_DELEGATION' = 16777216
+			'NO_AUTH_DATA_REQUIRED'                  = 33554432
 			'PARTIAL_SECRETS_ACCOUNT'                = 67108864
 		}
 	}
-
-	PROCESS
-	{
-		foreach ($instance in $sqlserver)
+	process {
+		foreach ($instance in $SqlInstance)
 		{
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 				Write-Message -Message "Connected to: $instance" -Level Verbose
 			}
 			catch
@@ -142,7 +135,6 @@ Tests all logins excluding any that are from the subdomain Domain
 			}
 			if ($Exclude)
 			{
-				Write-verbose "excluding something"
 				$allwindowsloginsgroups = $allwindowsloginsgroups | Where-Object { $Exclude -notcontains $_.Name }
 			}
 			switch ($FilterBy) {
@@ -165,6 +157,7 @@ Tests all logins excluding any that are from the subdomain Domain
 			}
 			foreach ($login in $windowslogins) {
 				$adlogin = $login.Name
+				$loginsid = $login.Sid -join ''
 				$domain, $username = $adlogin.Split("\")
 				if($domain.toUpper() -in $IgnoreDomainsNormalized) {
 					Write-Message -Message "Skipping Login $adlogin" -Level Verbose
@@ -176,17 +169,23 @@ Tests all logins excluding any that are from the subdomain Domain
 				{
 					$u = Get-DbaADObject -ADObject $adlogin -Type User -Silent
 					$founduser = $u.GetUnderlyingObject()
+					$foundsid = $founduser.objectSid.Value -join ''
 					if ($founduser) {
 						$exists = $true
+					}
+					if ($foundsid -ne $loginsid) {
+						Write-Message -Message "SID mismatch detected for $adlogin" -Level Warning
+						Write-Message -Message "SID mismatch detected for $adlogin (MSSQL: $loginsid, AD: $foundsid)" -Level Debug
+						$exists = $false
 					}
 				}
 				catch
 				{
 					Write-Message -Message "AD Searcher Error for $username" -Level Warning
 				}
-
+				
 				$UAC = $founduser.Properties.userAccountControl
-
+				
 				$additionalProps = @{
 					AccountNotDelegated = $null
 					AllowReversiblePasswordEncryption  = $null
@@ -211,7 +210,7 @@ Tests all logins excluding any that are from the subdomain Domain
 						PasswordNotRequired  = [bool]($UAC.Value -band $MappingRaw['PASSWD_NOTREQD'])
 						SmartcardLogonRequired  = [bool]($UAC.Value -band $MappingRaw['SMARTCARD_REQUIRED'])
 						TrustedForDelegation = [bool]($UAC.Value -band $MappingRaw['TRUSTED_FOR_DELEGATION'])
-						UserAccountControl = [bool]($UAC.Value)
+						UserAccountControl = $UAC.Value
 					}
 				}
 				$rtn = [PSCustomObject]@{
@@ -244,6 +243,7 @@ Tests all logins excluding any that are from the subdomain Domain
 			foreach ($login in $windowsGroups)
 			{
 				$adlogin = $login.Name
+				$loginsid = $login.Sid -join ''
 				$domain, $groupname = $adlogin.Split("\")
 				if($domain.toUpper() -in $IgnoreDomainsNormalized) {
 					Write-Message -Message "Skipping Login $adlogin" -Level Verbose
@@ -253,9 +253,16 @@ Tests all logins excluding any that are from the subdomain Domain
 				$exists = $false
 				if ($true)
 				{
-					$founduser = Get-DbaADObject -ADObject $adlogin -Type Group -Silent
+					$u = Get-DbaADObject -ADObject $adlogin -Type Group -Silent
+					$founduser = $u.GetUnderlyingObject()
 					if ($founduser) {
 						$exists = $true
+					}
+					$foundsid = $founduser.objectSid.Value -join ''
+					if ($foundsid -ne $loginsid) {
+						Write-Message -Message "SID mismatch detected for $adlogin" -Level Warning
+						Write-Message -Message "SID mismatch detected for $adlogin (MSSQL: $loginsid, AD: $foundsid)" -Level Debug
+						$exists = $false
 					}
 				}
 				else

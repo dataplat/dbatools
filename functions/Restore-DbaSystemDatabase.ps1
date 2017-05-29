@@ -273,7 +273,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
         {
             Stop-Function -message "Cannot connect to $sqlserver, stopping" -target $SqlServer -Silent:$false
         }
-        $CurrentStartup = Get-DbaStartupParameter -SqlServer $server
+        $CurrentStartup = Get-DbaStartupParameter -SqlInstance $server
         if ((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type Agent | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -eq 'Running')
         {
             Write-Message -Level Verbose -Message "SQL agent running, stopping it" -Silent:$true

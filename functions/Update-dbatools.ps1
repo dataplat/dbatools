@@ -1,4 +1,4 @@
-Function Update-dbatools
+Function Update-Dbatools
 {
 <#
 .SYNOPSIS

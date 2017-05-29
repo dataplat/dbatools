@@ -40,7 +40,7 @@ Returns all Custom Error Message(s) for the local and sql2016 SQL Server instanc
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
@@ -51,7 +51,7 @@ Returns all Custom Error Message(s) for the local and sql2016 SQL Server instanc
 			Write-Verbose "Attempting to connect to $instance"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch
 			{
@@ -62,9 +62,9 @@ Returns all Custom Error Message(s) for the local and sql2016 SQL Server instanc
 			
 			foreach ($customError in $server.UserDefinedMessages)
 			{
-				Add-Member -InputObject $customError -MemberType NoteProperty ComputerName -value $customError.Parent.NetName
-				Add-Member -InputObject $customError -MemberType NoteProperty InstanceName -value $customError.Parent.ServiceName
-				Add-Member -InputObject $customError -MemberType NoteProperty SqlInstance -value $customError.Parent.DomainInstanceName
+				Add-Member -InputObject $customError -MemberType NoteProperty -Name ComputerName -value $customError.Parent.NetName
+				Add-Member -InputObject $customError -MemberType NoteProperty -Name InstanceName -value $customError.Parent.ServiceName
+				Add-Member -InputObject $customError -MemberType NoteProperty -Name SqlInstance -value $customError.Parent.DomainInstanceName
 				
 				Select-DefaultView -InputObject $customError -Property ComputerName, InstanceName, SqlInstance, ID, Text, LanguageID, Language
 			}

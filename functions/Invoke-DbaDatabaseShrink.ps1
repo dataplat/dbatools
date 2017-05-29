@@ -28,11 +28,11 @@ The SQL Server that you're connecting to.
 .PARAMETER SqlCredential
 SqlCredential object used to connect to the SQL Server as a different user.
 
-.PARAMETER Databases
-Shrink specific databases.
+.PARAMETER Database
+The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
 .PARAMETER Exclude
-Shrink all databases on the connected server except databases entered through this parameter.
+The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER AllUserDatabases
 Run command against all user databases	
@@ -70,27 +70,25 @@ Use this switch to disable any kind of verbose messages
 
 .NOTES
 Tags: Shrink, Database
-dbatools PowerShell module (https://dbatools.io)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Invoke-DbaDatabaseShrink
 
 .EXAMPLE
-Invoke-DbaDatabaseShrink -SqlInstance sql2016 -Databases Northwind,pubs,Adventureworks2014
+Invoke-DbaDatabaseShrink -SqlInstance sql2016 -DatabaseNorthwind,pubs,Adventureworks2014
 
 Shrinks Northwind, pubs and Adventureworks2014 to have as little free space as possible.
 
 .EXAMPLE
-Invoke-DbaDatabaseShrink -SqlInstance sql2014 -Databases Adventureworks2014 -PercentFreeSpace 50
+Invoke-DbaDatabaseShrink -SqlInstance sql2014 -DatabaseAdventureworks2014 -PercentFreeSpace 50
 
 Shrinks Adventureworks2014 to have 50% free space. So let's say Adventureworks2014 was 1GB and it's using 100MB space. The database free space would be reduced to 50MB.
 
 .EXAMPLE
-Invoke-DbaDatabaseShrink -SqlInstance sql2012 -AllUserDatabase
+Invoke-DbaDatabaseShrink -SqlInstance sql2012 -AllUserDatabases
 
 Shrinks all databases on SQL2012 (not ideal for production)
 
@@ -99,8 +97,13 @@ Shrinks all databases on SQL2012 (not ideal for production)
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
-		[PsCredential]$SqlCredential,
+		[DbaInstanceParameter[]]$SqlInstance,
+		[Alias("Credential")]
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$Exclude,
 		[switch]$AllUserDatabases,
 		[ValidateRange(0, 99)]
 		[int]$PercentFreeSpace = 0,
@@ -110,22 +113,9 @@ Shrinks all databases on SQL2012 (not ideal for production)
 		[switch]$Silent
 	)
 	
-	DynamicParam
+	begin
 	{
-		if ($SqlInstance)
-		{
-			Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential
-		}
-		
-		# change from mins to seconds, as needed by Server.ConnectionContext.StatementTimeout
 		$StatementTimeoutMinutes = $StatementTimeout * 60
-	}
-	
-	BEGIN
-	{
-		# Convert from RuntimeDefinedParameter object to regular array
-		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
 		
 		$sql = "SELECT 
 				indexstats.avg_fragmentation_in_percent
@@ -148,7 +138,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 				ORDER BY indexstats.avg_fragmentation_in_percent desc"
 	}
 	
-	PROCESS
+	process
 	{
 		if (!$databases -and !$exclude -and !$AllUserDatabases)
 		{
@@ -160,7 +150,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 			Write-Message -Level Verbose -Message "Connecting to $instance"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 				
 			}
 			catch
@@ -220,8 +210,8 @@ Shrinks all databases on SQL2012 (not ideal for production)
 						if ($db.Tables.Indexes.Name -and $server.VersionMajor -gt 8)
 						{
 							Write-Message -Level Verbose -Message "Getting average fragmentation"
-							$startingfrag = (Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sql -Database $db.name -Verbose:$false | Select-Object -ExpandProperty avg_fragmentation_in_percent | Measure-Object -Average).Average
-							$startingtopfrag = (Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sqltop1 -Database $db.name -Verbose:$false).avg_fragmentation_in_percent
+							$startingfrag = (Invoke-DbaSqlcmd -ServerInstance $instance -Credential $SqlCredential -Query $sql -Database  $db.name -Verbose:$false | Select-Object -ExpandProperty avg_fragmentation_in_percent | Measure-Object -Average).Average
+							$startingtopfrag = (Invoke-DbaSqlcmd -ServerInstance $instance -Credential $SqlCredential -Query $sqltop1 -Database  $db.name -Verbose:$false).avg_fragmentation_in_percent
 						}
 						else
 						{
@@ -256,8 +246,8 @@ Shrinks all databases on SQL2012 (not ideal for production)
 						if ($db.Tables.Indexes.Name -and $server.VersionMajor -gt 8)
 						{
 							Write-Message -Level Verbose -Message "Refreshing indexes and getting average fragmentation"
-							$endingdefrag = (Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sql -Database $db.name -Verbose:$false | Select-Object -ExpandProperty avg_fragmentation_in_percent | Measure-Object -Average).Average
-							$endingtopfrag = (Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sqltop1 -Database $db.name -Verbose:$false).avg_fragmentation_in_percent
+							$endingdefrag = (Invoke-DbaSqlcmd -ServerInstance $instance -Credential $SqlCredential -Query $sql -Database  $db.name -Verbose:$false | Select-Object -ExpandProperty avg_fragmentation_in_percent | Measure-Object -Average).Average
+							$endingtopfrag = (Invoke-DbaSqlcmd -ServerInstance $instance -Credential $SqlCredential -Query $sqltop1 -Database  $db.name -Verbose:$false).avg_fragmentation_in_percent
 						}
 						else
 						{
@@ -289,9 +279,9 @@ Shrinks all databases on SQL2012 (not ideal for production)
 						Elapsed = $elapsed
 						Success = $success
 						StartingTotalSizeMB = [math]::Round($startingsize, 2)
-						CurrentlyUsedMB = [math]::Round($spaceused, 2)
+						StartingUsedMB = [math]::Round($spaceused, 2)
 						FinalTotalSizeMB = [math]::Round($db.size, 2)
-						CurrentlyAvailableMB = [math]::Round($spaceavailableMB, 2)
+						StartingAvailableMB = [math]::Round($spaceavailableMB, 2)
 						DesiredAvailableMB = [math]::Round($desiredSpaceAvailable, 2)
 						FinalAvailableMB = [math]::Round(($db.SpaceAvailable/1024), 2)
 						StartingAvgIndexFragmentation = [math]::Round($startingfrag, 1)
@@ -305,3 +295,4 @@ Shrinks all databases on SQL2012 (not ideal for production)
 		}
 	}
 }
+

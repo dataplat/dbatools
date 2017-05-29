@@ -55,7 +55,7 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
 	Param (
 		[parameter(Position = 0, Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[parameter(Mandatory = $true)]
 		[string]$Database,
@@ -65,7 +65,7 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
 
 		try
 		{
-			$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+			$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 		}
 		catch
 		{
@@ -96,7 +96,7 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
 								sum(FileProperty(sf.name,'spaceused')*8/1024) as 'SizeMb'
 								from sys.sysfiles sf
 								where CONVERT(INT,sf.status & 0x40) / 64=1"	
-			$TransLogSize = Invoke-SqlCmd2 -ServerInstance $server.name -Credential $SqlCredential -Query $SqlSizeCheck -Database $Database
+			$TransLogSize = Invoke-DbaSqlcmd -ServerInstance $server.name -Credential $SqlCredential -Query $SqlSizeCheck -Database $Database
 			if ($TransLogSize.SizeMb -ge 500) 
 			{
 				Stop-Function -Message "$Database has more than 0.5 Gb of live log data, returning this may have an impact on the database and the calling system. If you wish to proceed please rerun with the -IgnoreLimit switch"
@@ -107,6 +107,6 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
 		$sql = "select * from fn_dblog(NULL,NULL)"
 		Write-Message -Level Debug -Message $sql
 		Write-Message -Level Verbose -Message "Starting Log retrieval"
-		Invoke-SqlCmd2 -ServerInstance $server.name -Credential $SqlCredential -Query $sql -Database $Database
+		Invoke-DbaSqlcmd -ServerInstance $server.name -Credential $SqlCredential -Query $sql -Database $Database
 
 }

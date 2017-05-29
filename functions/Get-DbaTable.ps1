@@ -3,68 +3,76 @@
 <#
 .SYNOPSIS
 Returns a summary of information on the tables
+
 .DESCRIPTION
 Shows table information around table row and data sizes and if it has any table type information. 
+
 .PARAMETER SqlInstance
 SQLServer name or SMO object representing the SQL Server to connect to. This can be a
 collection and recieve pipeline input
+
 .PARAMETER SqlCredential
 PSCredential object to connect as. If not specified, currend Windows login will be used.
+
 .PARAMETER Database
-Define the databases you wish to search
+The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+
+.PARAMETER Exclude
+The database(s) to exclude - this list is autopopulated from the server
+
 .PARAMETER IncludeSystemDBs
 Switch parameter that when used will display system database information
+
 .PARAMETER Table
 Define a specific table you would like to query
+
 .PARAMETER Silent 
 Use this switch to disable any kind of verbose messages
 	
 .NOTES 
-Original Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.	
+Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 	
 .LINK
 https://dbatools.io/Get-DbaTable
+	
 .EXAMPLE
 Get-DbaTable -SqlInstance DEV01 -Database Test1
 Return all tables in the Test1 database
+	
 .EXAMPLE
 Get-DbaTable -SqlInstance DEV01 -Database MyDB -Table MyTable
 Return only information on the table MyTable from the database MyDB
+	
 .EXAMPLE
 Get-DbaTable -SqlInstance DEV01 -Table MyTable
 Returns information on table called MyTable if it exists in any database on the server, under any schema
+	
 .EXAMPLE
-@('localhost','localhost\namedinstance') | Get-DbaTable -Database DBA -Table Commandlog
+'localhost','localhost\namedinstance' | Get-DbaTable -Database DBA -Table Commandlog
 Returns information on the CommandLog table in the DBA database on both instances localhost and the named instance localhost\namedinstance
 
 #>
 	[CmdletBinding()]
 	param ([parameter(ValueFromPipeline, Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[DbaInstanceParameter[]]$SqlInstance,
+		[Alias("Credential")]
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$Exclude,
 		[switch]$IncludeSystemDBs,
 		[string[]]$Table,
 		[switch]$Silent
 	)
 	
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SourceSqlCredential } }
-	
-	BEGIN
+	begin
 	{
-		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
-		
-        $defaultprops = @("Parent", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex", "IsFileTable", "IsMemoryOptimized", "IsPartitioned", "FullTextIndex", "ChangeTrackingEnabled")
-
-		$fqtns = @()
+       $fqtns = @()
 		
 		if ($Table)
 		{
@@ -99,14 +107,14 @@ Returns information on the CommandLog table in the DBA database on both instance
         #$fqtns
 	}
 	
-	PROCESS
+	process
 	{
 		foreach ($instance in $sqlinstance)
 		{	
 			try
 			{
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch
 			{
@@ -117,9 +125,9 @@ Returns information on the CommandLog table in the DBA database on both instance
 			#only look at online databases (Status equal normal)
 			try
 			{
-				if ($databases.length -gt 0)
+				if ($database)
 				{
-					$dbs = $server.Databases | Where-Object { $databases -contains $_.Name -and $_.status -eq 'Normal' }
+					$dbs = $server.Databases | Where-Object { $database -contains $_.Name -and $_.status -eq 'Normal' }
 				}
 				elseif ($IncludeSystemDBs)
 				{
@@ -130,7 +138,7 @@ Returns information on the CommandLog table in the DBA database on both instance
 					$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' -and $_.IsSystemObject -eq 0 }
 				}
 				
-				if ($exclude.length -gt 0)
+				if ($exclude)
 				{
 					$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
 				}
@@ -145,6 +153,7 @@ Returns information on the CommandLog table in the DBA database on both instance
 				Write-Message -Level Verbose -Message "Processing $db"
 				
 				$d = $server.Databases[$db]
+				
 				if ($fqtns.Count -gt 0)
 				{
 					foreach ($fqtn in $fqtns)
@@ -153,7 +162,7 @@ Returns information on the CommandLog table in the DBA database on both instance
 						{
 							try
 							{
-								$db.Tables | Where-Object { $_.name -eq $tbl -and $_.Schema -eq $schema } | Select-DefaultView -Property $defaultprops
+								$tables = $db.Tables | Where-Object { $_.name -eq $tbl -and $_.Schema -eq $schema }
 							}
 							catch
 							{
@@ -164,7 +173,7 @@ Returns information on the CommandLog table in the DBA database on both instance
 						{
 							try
 							{
-								$db.Tables | Where-Object { $_.name -eq $tbl } | Select-DefaultView -Property $defaultprops
+								$tables = $db.Tables | Where-Object { $_.name -eq $tbl }
 							}
 							catch
 							{
@@ -175,9 +184,18 @@ Returns information on the CommandLog table in the DBA database on both instance
 				}
 				else
 				{
-					$db.Tables | Select-DefaultView -Property $defaultprops
+					$tables = $db.Tables
 				}
+				
+				$tables | Add-Member -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+				$tables | Add-Member -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+				$tables | Add-Member -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+				
+				$defaultprops = "ComputerName", "InstanceName", "SqlInstance","Parent as Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex", "IsFileTable", "IsMemoryOptimized", "IsPartitioned", "FullTextIndex", "ChangeTrackingEnabled"
+				
+				Select-DefaultView -InputObject $tables -Property $defaultprops
 			}
-        }
+		}
 	}
 }
+
