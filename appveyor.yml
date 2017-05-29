@@ -18,7 +18,7 @@ before_test:
    # "Get Pester manually"
   - ps: Install-Module -Name Pester -Repository PSGallery -Force | Out-Null
   # "Setting up the local SQL Server environments"
- - ps: .\Tests\appveyor.sqlserver.ps1
+  - ps: .\Tests\appveyor.sqlserver.ps1
 
 test_script:
   # "Installing nuget and PSScriptAnalyzer"
