@@ -1,6 +1,7 @@
 ﻿Describe "Restore-DbaDatabase Integration Tests" -Tags "Integrationtests" {
 	Context "Properly restores a database on the local drive using Path" {
-		$results = Restore-DbaDatabase -SqlServer localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak
+		$null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
+		$results = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak
 		It "Should Return the proper backup file location" {
 			$results.BackupFile | Should Be "C:\github\appveyor-lab\singlerestore\singlerestore.bak"
 		}
@@ -8,9 +9,9 @@
 			$results.RestoreComplete | Should Be $true
 		}
 	}
-
+	
 	Context "Ensuring warning is thrown if database already exists" {
-		$results = Restore-DbaDatabase -SqlServer localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak -WarningVariable warning
+		$results = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak -WarningVariable warning
 		It "Should warn" {
 			$warning | Should Match "exists and will not be overwritten"
 		}
@@ -27,7 +28,7 @@
 	}
 	
 	Context "Properly restores a database on the local drive using piped Get-ChildItem results" {
-		$results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlServer localhost
+		$results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance localhost
 		It "Should Return the proper backup file location" {
 			$results.BackupFile | Should Be "C:\github\appveyor-lab\singlerestore\singlerestore.bak"
 		}
@@ -44,7 +45,7 @@
 	}
 	
 	Context "Properly restores an instance using ola-style backups" {
-		$results = Get-ChildItem C:\github\appveyor-lab\sql2008-backups | Restore-DbaDatabase -SqlServer localhost
+		$results = Get-ChildItem C:\github\appveyor-lab\sql2008-backups | Restore-DbaDatabase -SqlInstance localhost
 		It "Restored files count should be right" {
 			$results.databasename.count | Should Be 30
 		}
