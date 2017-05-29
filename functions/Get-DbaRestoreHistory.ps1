@@ -31,7 +31,8 @@ Returns a ton of information about the backup history with no max rows
 Returns the last restore action performed on each specified database
 
 .NOTES
-Tags: DisasterRecovery, Backup, Restore
+Tags: DisasterRecovery, Backup, Restore, Databases
+
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
