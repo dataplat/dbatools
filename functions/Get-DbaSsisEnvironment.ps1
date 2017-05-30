@@ -3,7 +3,7 @@
 This command gets specified SSIS Environment and all its variables
 
 .DESCRIPTION
-This command gets Environment from SSIS Catalog. All sensitive valus are decrypted.
+This command gets all variables from specified environment from SSIS Catalog. All sensitive valus are decrypted.
 
 .PARAMETER SqlServer
 The SQL Server instance.
@@ -15,7 +15,7 @@ The SSIS Environment name
 The Folder name that contains the environment
 
 .EXAMPLE
-Get-DbaSsisEnvironment -SqlServer localhost -Environment DEV -Folder DWH_ETL
+Get-DbaSsisEnvironment -SqlInstance localhost -Environment DEV -Folder DWH_ETL
 
 .NOTES
 Author: Bartosz Ratajczyk ( @b_ratajczyk )
@@ -28,117 +28,127 @@ You should have received a copy of the GNU General Public License along with thi
 #>
 function Get-DbaSsisEnvironment {
 
-[CmdletBinding(SupportsShouldProcess = $true)]
+[CmdletBinding()]
 	Param (
-		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[object[]]$SqlServer,
+		[parameter(Mandatory, ValueFromPipeline)]
+		[Alias('SqlServer', 'ServerInstance')]
+		[DbaInstanceParameter[]]$SqlInstance,
 		[string]$Environment,
         [string]$Folder
 	)
 
     begin {
-        $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
 
-        $connection = Connect-SqlServer -SqlServer $SqlServer
+        try
+        {
+            Write-Verbose "Connecting to $SqlInstance"
+            $connection = Connect-SqlInstance -SqlInstance $SqlInstance
+        }
+        catch
+        {
+            Stop-Function -Message "Could not connect to $SqlInstance"
+            return
+        }
+        
 
         if ($connection.versionMajor -lt 11)
 		{
-			throw "SSISDB catalog is only available on Sql Server 2012 and above, exiting... $($connection.versionMajor)"
+            Stop-Function -Message "SSISDB catalog is only available on Sql Server 2012 and above, exiting." 
+            return
 		}
 
         try
 		{
-			Write-Verbose "Connecting to $Source integration services."
+            $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
+
+			Write-Verbose "Connecting to $SqlInstance Integration Services."
 			$SSIS = New-Object "$ISNamespace.IntegrationServices" $connection
 		}
 		catch
 		{
-			Write-Exception $_
-			throw "There was an error connecting to the source integration services."
+            Stop-Function -Message "Could not connect to Integration Services on $Source" -Silent $true
+            return
 		}
 
+        Write-Verbose "Fetching SSIS Catalog nd its folders"
         $catalog = $SSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
         $folders = $catalog.Folders
     }
 
     process {
-        if($PSCmdlet.ShouldProcess('GetEnvironment')) {
-            if ($folder) {
-                if ($folders.Name -contains $folder) {
-                    $srcFolder = $folders | Where-Object { $_.Name -eq $folder }
+        if ($folder) {
+            if ($folders.Name -contains $folder) {
+                $srcFolder = $folders | Where-Object { $_.Name -eq $folder }
 
-                    $srcEnvironment = $srcFolder.Environments | Where-Object {$_.Name -eq $Environment}
+                $srcEnvironment = $srcFolder.Environments | Where-Object {$_.Name -eq $Environment}
 
-                    #encryption handling
-                    $encKey = 'MS_Enckey_Env_' + $srcEnvironment.EnvironmentId
-                    $encCert = 'MS_Cert_Env_' + $srcEnvironment.EnvironmentId
+                #encryption handling
+                $encKey = 'MS_Enckey_Env_' + $srcEnvironment.EnvironmentId
+                $encCert = 'MS_Cert_Env_' + $srcEnvironment.EnvironmentId
 
-                    <# SMO does not return sensitive values (gets data from catalog.environment_variables)
-                    We have to manualy query internal.environment_variables instead and use symmetric keys
-                    within T-SQL code
-                    #>
+                <#
+                SMO does not return sensitive values (gets data from catalog.environment_variables)
+                We have to manualy query internal.environment_variables instead and use symmetric keys
+                within T-SQL code
+                #>
 
-                    $sql = @"
-                        OPEN SYMMETRIC KEY $encKey DECRYPTION BY CERTIFICATE $encCert;
+                $sql = @"
+                    OPEN SYMMETRIC KEY $encKey DECRYPTION BY CERTIFICATE $encCert;
 
-                        SELECT
-                            ev.variable_id,
-                            ev.name,
-                            ev.description,
-                            ev.type,
-                            ev.sensitive,
-                            value			= ev.value,
-                            ev.sensitive_value,
-                            ev.base_data_type,
-                            decrypted		= decrypted.value
-                        FROM internal.environment_variables ev
+                    SELECT
+                        ev.variable_id,
+                        ev.name,
+                        ev.description,
+                        ev.type,
+                        ev.sensitive,
+                        value			= ev.value,
+                        ev.sensitive_value,
+                        ev.base_data_type,
+                        decrypted		= decrypted.value
+                    FROM internal.environment_variables ev
 
-                            CROSS APPLY (
-                                SELECT
-                                    value	= CASE base_data_type
-                                                WHEN 'nvarchar' THEN CONVERT(NVARCHAR(MAX), DECRYPTBYKEY(sensitive_value))
-                                                WHEN 'bit' THEN CONVERT(NVARCHAR(MAX), CONVERT(bit, DECRYPTBYKEY(sensitive_value)))
-                                                WHEN 'datetime' THEN CONVERT(NVARCHAR(MAX), CONVERT(datetime2(0), DECRYPTBYKEY(sensitive_value)))
-                                                WHEN 'single' THEN CONVERT(NVARCHAR(MAX), CONVERT(DECIMAL(38, 18), DECRYPTBYKEY(sensitive_value)))
-                                                WHEN 'float' THEN CONVERT(NVARCHAR(MAX), CONVERT(DECIMAL(38, 18), DECRYPTBYKEY(sensitive_value)))
-                                                WHEN 'decimal' THEN CONVERT(NVARCHAR(MAX), CONVERT(DECIMAL(38, 18), DECRYPTBYKEY(sensitive_value)))
-                                                WHEN 'tinyint' THEN CONVERT(NVARCHAR(MAX), CONVERT(tinyint, DECRYPTBYKEY(sensitive_value)))
-                                                WHEN 'smallint' THEN CONVERT(NVARCHAR(MAX), CONVERT(smallint, DECRYPTBYKEY(sensitive_value)))
-                                                WHEN 'int' THEN CONVERT(NVARCHAR(MAX), CONVERT(INT, DECRYPTBYKEY(sensitive_value)))
-                                                WHEN 'bigint' THEN CONVERT(NVARCHAR(MAX), CONVERT(bigint, DECRYPTBYKEY(sensitive_value)))
-                                            END
-                            ) decrypted
+                        CROSS APPLY (
+                            SELECT
+                                value	= CASE base_data_type
+                                            WHEN 'nvarchar' THEN CONVERT(NVARCHAR(MAX), DECRYPTBYKEY(sensitive_value))
+                                            WHEN 'bit' THEN CONVERT(NVARCHAR(MAX), CONVERT(bit, DECRYPTBYKEY(sensitive_value)))
+                                            WHEN 'datetime' THEN CONVERT(NVARCHAR(MAX), CONVERT(datetime2(0), DECRYPTBYKEY(sensitive_value)))
+                                            WHEN 'single' THEN CONVERT(NVARCHAR(MAX), CONVERT(DECIMAL(38, 18), DECRYPTBYKEY(sensitive_value)))
+                                            WHEN 'float' THEN CONVERT(NVARCHAR(MAX), CONVERT(DECIMAL(38, 18), DECRYPTBYKEY(sensitive_value)))
+                                            WHEN 'decimal' THEN CONVERT(NVARCHAR(MAX), CONVERT(DECIMAL(38, 18), DECRYPTBYKEY(sensitive_value)))
+                                            WHEN 'tinyint' THEN CONVERT(NVARCHAR(MAX), CONVERT(tinyint, DECRYPTBYKEY(sensitive_value)))
+                                            WHEN 'smallint' THEN CONVERT(NVARCHAR(MAX), CONVERT(smallint, DECRYPTBYKEY(sensitive_value)))
+                                            WHEN 'int' THEN CONVERT(NVARCHAR(MAX), CONVERT(INT, DECRYPTBYKEY(sensitive_value)))
+                                            WHEN 'bigint' THEN CONVERT(NVARCHAR(MAX), CONVERT(bigint, DECRYPTBYKEY(sensitive_value)))
+                                        END
+                        ) decrypted
 
-                        WHERE environment_id = $($srcEnvironment.EnvironmentId);
+                    WHERE environment_id = $($srcEnvironment.EnvironmentId);
 
-                        CLOSE SYMMETRIC KEY $encKey;
+                    CLOSE SYMMETRIC KEY $encKey;
 "@
 
-                    $ssisVariables = $connection.Databases['SSISDB'].ExecuteWithResults($sql).Tables[0]
-                    
-                    foreach($variable in $ssisVariables) {
-                        if($variable.sensitive -eq $true) {
-                            $value = $variable.decrypted
-                        } else {
-                            $value = $variable.value
-                        }
-                        [pscustomobject]@{
-                            Id              = $variable.variable_id
-                            Name            = $variable.Name
-                            Description     = $variable.description
-                            Type            = $variable.type
-                            IsSensitive     = $variable.sensitive
-                            BaseDataType    = $variable.base_data_type
-                            Value           = $value
-                        }
+                $ssisVariables = $connection.Databases['SSISDB'].ExecuteWithResults($sql).Tables[0]
+                
+                foreach($variable in $ssisVariables) {
+                    if($variable.sensitive -eq $true) {
+                        $value = $variable.decrypted
+                    } else {
+                        $value = $variable.value
                     }
-                    
-
-                }
-            }
-        }
-    }
+                    [PSCustomObject]@{
+                        Id              = $variable.variable_id
+                        Name            = $variable.Name
+                        Description     = $variable.description
+                        Type            = $variable.type
+                        IsSensitive     = $variable.sensitive
+                        BaseDataType    = $variable.base_data_type
+                        Value           = $value
+                    }
+                } # end foreach
+            } # end if($folders.Name -contains $folder)
+        } # end if($folder)
+    } # end process
 
     end {
 
