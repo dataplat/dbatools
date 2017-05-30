@@ -242,13 +242,11 @@ Filters only results where LinkServerName = myls and StartTime is greater than '
 			$exists = Test-DbaSqlPath -SqlInstance $server -Path $file
 			
 			if (!$exists) {
-				Stop-Function -Message "Path does not exist"
-				return
+				Stop-Function -Message "Path does not exist" -Target $file -Continue
 			}
 			
 			foreach ($file in $path) {
 				$sql = "select * FROM [fn_trace_gettable]('$file', DEFAULT) $Where"
-				#Write-Message -Level Verbose -Message $sql
 				Invoke-DbaSqlcmd -ServerInstance $server -Query $sql
 			}
 		}
