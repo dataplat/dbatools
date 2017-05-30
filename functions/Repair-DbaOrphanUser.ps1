@@ -40,6 +40,9 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm
 Prompts you for confirmation before executing any changing operations within the command.
 
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
+
 .EXAMPLE
 Repair-DbaOrphanUser -SqlInstance sql2005
 
