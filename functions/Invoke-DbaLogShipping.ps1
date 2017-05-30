@@ -343,7 +343,7 @@ Invoke-DbaLogShipping -SourceSqlInstance sql1 -DestinationSqlInstance sql2 -Data
 
 Sets up log shiping for database "db1" with the backup path to a network share allowing local backups. 
 It creates daily schedules for the backup, copy and restore job with all the defaults to be executed every 15 minutes daily.
-The secondary databse will be called "LS_db1".
+The secondary databse will be called "db1_LS".
 
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
