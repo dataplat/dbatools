@@ -142,7 +142,6 @@ Read-DbaTraceFile -SqlInstance sql2016 -Path C:\traces\big.trc -Where "LinkedSer
 
 Reads the tracefile C:\traces\big.trc, stored on the sql2016 sql server. 
 Filters only results where LinkServerName = myls and StartTime is greater than '5/30/2017 4:27:52 PM'.
-	
 
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
@@ -242,12 +241,21 @@ Filters only results where LinkServerName = myls and StartTime is greater than '
 			$exists = Test-DbaSqlPath -SqlInstance $server -Path $file
 			
 			if (!$exists) {
-				Stop-Function -Message "Path does not exist" -Target $file -Continue
+				Write-Message -Level Warning -Message "Path does not exist" -Target $file
+				Continue
 			}
 			
 			foreach ($file in $path) {
-				$sql = "select * FROM [fn_trace_gettable]('$file', DEFAULT) $Where"
-				Invoke-DbaSqlcmd -ServerInstance $server -Query $sql
+				$sql = "select SERVERPROPERTY('MachineName') AS ComputerName, 
+								   ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName, 
+								   SERVERPROPERTY('ServerName') AS SqlInstance,
+									* FROM [fn_trace_gettable]('$file', DEFAULT) $Where"
+				try {
+					Invoke-DbaSqlcmd -ServerInstance $server -Query $sql -Silent:$false
+				}
+				catch {
+					Stop-Function -Message "Error returned from SQL Server: $_" -Target $server -InnerErrorRecord $_
+				}
 			}
 		}
 	}
