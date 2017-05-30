@@ -434,8 +434,7 @@ The secondary databse will be called "db1_DR".
         [parameter(Mandatory = $false)]
         [switch]$CompressBackup,
 
-        [parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
+        [parameter(Mandatory = $false)]
         [string]$CopyDestinationFolder,
 
         [parameter(Mandatory = $false)]
@@ -650,7 +649,7 @@ The secondary databse will be called "db1_DR".
         $RegexUnc = '^\\(?:\\[^<>:`"/\\|?*]+)+$'
 
         # Check the instance names and the database settings
-        if (($SourceSqlInstance -eq $DestinationSqlInstance) -and ($SecondaryDatabaseSuffix.Length -eq 0)) {
+        if (($SourceSqlInstance -eq $DestinationSqlInstance) -and (-not $SecondaryDatabaseSuffix)) {
             Stop-Function -Message "If the destination is same as source please enter a suffix with paramater SecondaryDatabaseSuffix." -Target $SourceSqlInstance 
             return
         }
@@ -665,8 +664,78 @@ The secondary databse will be called "db1_DR".
             return
         }
 
-        # Check the backup network path
-        if (-not ((Test-Path $CopyDestinationFolder -PathType Container -IsValid -Credential $DestinationCredential) -and (Get-Item $CopyDestinationFolder).PSProvider.Name -eq 'FileSystem')) {
+        # Check the copy destination
+        if (-not $CopyDestinationFolder) {
+            # Make a default copy destination by retrieving the backup folder and adding a directory
+            $CopyDestinationFolder = "$($DestinationServer.Settings.BackupDirectory)\Logshipping"
+
+            # Check to see if the path already exists
+            if (Test-Path $CopyDestinationFolder -Credential $DestinationCredential) {
+                Write-Message -Message "Copy destination $CopyDestinationFolder already exists" -Level Verbose
+            }
+            else {
+                # Check if force is being used
+                if (-not $Force) {
+                    # Set up the confirm part
+                    $message = "The copy destination is missing. Do you want to use the default $($CopyDestinationFolder)?"
+                    $choiceYes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Answer Yes."
+                    $choiceNo = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Answer No."
+                    $options = [System.Management.Automation.Host.ChoiceDescription[]]($choiceYes, $choiceNo)
+                    $result = $host.ui.PromptForChoice($title, $message, $options, 0)
+            
+                    # Check the result from the confirm
+                    switch ($result) {
+                        # If yes
+                        0 {
+                            # Try to create the new directory
+                            try {
+                                # If the destination server is remote and the credential is set
+                                if (-not $IsDestinationLocal -and $DestinationCredential) {
+                                    Invoke-Command -ComputerName $DestinationServerName -Credential $DestinationCredential -ScriptBlock {
+                                        Write-Message -Message "Creating copy destination folder $CopyDestinationFolder" -Level Verbose
+                                        New-Item -Path $CopyDestinationFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
+                                    }
+                                }
+                                # If the server is local and the credential is set
+                                elseif ($DestinationCredential) {
+                                    Invoke-Command -ScriptBlock -Credential $DestinationCredential {
+                                        Write-Message -Message "Creating copy destination folder $CopyDestinationFolder" -Level Verbose
+                                        New-Item -Path $CopyDestinationFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
+                                    }
+                                }
+                                # If the server is local and the credential is not set
+                                else {
+                                    Write-Message -Message "Creating copy destination folder $CopyDestinationFolder" -Level Verbose
+                                    New-Item -Path $CopyDestinationFolder -ItemType Directory -Force:$Force | Out-Null
+                                }
+                                Write-Message -Message "Copy destination $CopyDestinationFolder created." -Level Verbose
+                            }
+                            catch {
+                                Stop-Function -Message "Something went wrong creating the copy destination folder $CopyDestinationFolder. `n$_" -Target $DestinationSqlInstance -InnerErrorRecord $_
+                                return
+                            }
+                        }
+                        1 {
+                            Stop-Function -Message "Copy destination is a mandatory parameter. Please make sure the value is entered." -Target $DestinationSqlInstance 
+                            return
+                        } 
+                    } # switch
+                } # if not force
+                else {
+                    # Try to create the copy destination on the local server
+                    try {
+                        Write-Message -Message "Creating copy destination folder $CopyDestinationFolder" -Level Verbose
+                        New-Item $CopyDestinationFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
+                        Write-Message -Message "Copy destination $CopyDestinationFolder created." -Level Verbose
+                    }
+                    catch {
+                        Stop-Function -Message "Something went wrong creating the copy destination folder $CopyDestinationFolder. `n$_" -Target $DestinationSqlInstance -InnerErrorRecord $_
+                        return
+                    } 
+                } # else not force
+            } # if test path copy destination
+        } # if not copy destination
+        elseif (-not ((Test-Path $CopyDestinationFolder -PathType Container -IsValid -Credential $DestinationCredential) -and (Get-Item $CopyDestinationFolder).PSProvider.Name -eq 'FileSystem')) {
             Stop-Function -Message "Copy destination folder $CopyDestinationFolder is not valid or can't be reached." -Target $DestinationSqlInstance 
             return
         }
@@ -807,6 +876,15 @@ The secondary databse will be called "db1_DR".
         if (-not $RestoreScheduleFrequencyRecurrenceFactor) {
             $RestoreScheduleFrequencyRecurrenceFactor = 0 
             Write-Message -Message "Restore frequency recurrence factor set to $RestoreScheduleFrequencyType" -Level Verbose 
+        }
+        if (-not $SecondaryDatabaseSuffix -and ($SourceServer.Name -eq $DestinationServer.Name) -and ($SourceServer.InstanceName -eq $DestinationServer.InstanceName)) {
+            if ($Force) {
+                $SecondaryDatabaseSuffix = "LS"
+            }
+            else {
+                Stop-Function -Message "Destination database is the same as source database.`nPlease check the secondary server, databse suffix or use -Force to set the secondary databse using a suffix." -Target $SourceSqlInstance 
+                return
+            }
         }
 
         # Check if the interval is valid
@@ -1194,7 +1272,7 @@ The secondary databse will be called "db1_DR".
                     $DatabaseRestoreJob = "$RestoreJob_$SourceServerName_$db"
                 }
                 else {
-                    $DatabaseRestoreJob = "LSRestore_$DestinationServerName_$db"                    
+                    $DatabaseRestoreJob = "LSRestore_$DestinationServerName_$db"
                 }
                 Write-Message -Message "Restore job name set to $DatabaseRestoreJob" -Level Verbose
 
@@ -1203,7 +1281,7 @@ The secondary databse will be called "db1_DR".
                     $DatabaseRestoreSchedule = "$RestoreSchedule_$db"
                 }
                 else {
-                    $DatabaseRestoreSchedule = "LSRestoreSchedule_$db"                    
+                    $DatabaseRestoreSchedule = "LSRestoreSchedule_$db"
                 }
                 Write-Message -Message "Restore job schedule name set to $DatabaseRestoreSchedule" -Level Verbose
 
