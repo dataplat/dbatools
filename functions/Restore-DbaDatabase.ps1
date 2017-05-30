@@ -398,11 +398,11 @@ function Restore-DbaDatabase {
                 }				
                 Write-Message -Level Verbose -Message "type = $($f.gettype())"
                 if ($f -is [string]) {
-                    Write-Verbose "$FunctionName : Paths passed in"
+                    Write-Message -Level Verbose -Message "Paths passed in"
                     foreach ($p in $f) {
                         if ($XpDirTree) {
                             if ($p -match '\.\w{3}\Z') {
-                                if (Test-DbaSqlPath -Path $p -SqlInstance $SqlInstance -SqlCredential $SqlCredential -and $p -notlike 'http*') {
+                                if ((Test-DbaSqlPath -Path $p -SqlInstance $SqlInstance -SqlCredential $SqlCredential) -and $p -notlike 'http*') {
                                     $p = $p | Select-Object *, @{ Name = "FullName"; Expression = { $p } }
                                     $backupFiles += $p
                                 }
@@ -438,11 +438,11 @@ function Restore-DbaDatabase {
                             }
                         }
                         elseif ($MaintenanceSolutionBackup) {
-                            Write-Verbose "$FunctionName : Ola Style Folder"
+                            Write-Message -Level Verbose -Message "Ola Style Folder"
                             $backupFiles += Get-OlaHRestoreFile -Path $p
                         }
                         else {
-                            Write-Verbose "$FunctionName : Standard Directory"
+                            Write-Message -Level Verbose -Message "Standard Directory"
                             $FileCheck = $backupFiles.count
                             $backupFiles += Get-DirectoryRestoreFile -Path $p
                             if ((($backupFiles.count) - $FileCheck) -eq 0) {
@@ -452,7 +452,7 @@ function Restore-DbaDatabase {
                     }
                 }
                 elseif (($f -is [System.IO.FileInfo]) -or ($f -is [System.Object] -and $f.FullName.Length -ne 0)) {
-                    Write-Verbose "$FunctionName : Files passed in $($Path.count)"
+                    Write-Message -Level Verbose -Message "Files passed in $($Path.count)"
                     Foreach ($FileTmp in $Path) {
                         Write-Message -Level Verbose -Message "Type - $($FileTmp.GetType()), length =$($FileTmp.length)"
                         if ($FileTmp -is [System.Io.FileInfo] -and $isLocal -eq $False) {
