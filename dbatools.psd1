@@ -287,8 +287,7 @@
         'Remove-DbaMasterKey',
         'Set-DbaCmConnection',
         'Set-DbaTcpPort',
-        'Test-DbaCmConnection',
-		'Restore-DbaSystemDatabase'
+        'Test-DbaCmConnection'
 	)
 	
 	# Cmdlets to export from this module
