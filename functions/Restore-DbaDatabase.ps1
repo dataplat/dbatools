@@ -394,7 +394,7 @@ function Restore-DbaDatabase {
                     foreach ($p in $f) {
                         if ($XpDirTree) {
                             if ($p -match '\.\w{3}\Z') {
-                                if (Test-DbaSqlPath -Path $p -SqlInstance $SqlInstance -SqlCredential $SqlCredential -and $p -notlike 'http*') {
+                                if ((Test-DbaSqlPath -Path $p -SqlInstance $SqlInstance -SqlCredential $SqlCredential) -and $p -notlike 'http*') {
                                     $p = $p | Select-Object *, @{ Name = "FullName"; Expression = { $p } }
                                     $backupFiles += $p
                                 }
