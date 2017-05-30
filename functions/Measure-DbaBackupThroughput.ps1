@@ -29,7 +29,7 @@ PSCredential object to connect as. If not specified, current Windows login will 
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Exclude
+.PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER Type
@@ -42,7 +42,8 @@ Datetime object used to narrow the results to a date
 Measure only the last backup
 
 .NOTES
-Tags: DisasterRecovery, Backup
+Tags: DisasterRecovery, Backup, Databases
+
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -91,7 +92,7 @@ Gets backup calculations, limited to the last year and only the bigoldb database
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[datetime]$Since,
 		[switch]$Last,
 		[ValidateSet("Full", "Log", "Differential")]
@@ -120,11 +121,11 @@ Gets backup calculations, limited to the last year and only the bigoldb database
 				continue
 			}
 			
-			if (!$database) { $database = $server.databases.name }
+			if (!$Database) { $Database = $server.databases.name }
 			
 			
-			if ($exclude) {
-				$database = $database | Where-Object { $_ -notin $exclude }
+			if ($ExcludeDatabase) {
+				$database = $database | Where-Object { $_ -notin $ExcludeDatabase }
 			}
 			
 			foreach ($db in $database)

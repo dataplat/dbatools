@@ -1,6 +1,5 @@
-﻿function Get-DbaTable
-{
-<#
+﻿function Get-DbaTable {
+	<#
 .SYNOPSIS
 Returns a summary of information on the tables
 
@@ -17,7 +16,7 @@ PSCredential object to connect as. If not specified, currend Windows login will 
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Exclude
+.PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER IncludeSystemDBs
@@ -30,7 +29,9 @@ Define a specific table you would like to query
 Use this switch to disable any kind of verbose messages
 	
 .NOTES 
-Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+Tags: Database, Tables
+Original Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -64,33 +65,28 @@ Returns information on the CommandLog table in the DBA database on both instance
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[switch]$IncludeSystemDBs,
 		[string[]]$Table,
 		[switch]$Silent
 	)
 	
-	begin
-	{
-       $fqtns = @()
+	begin {
+		$fqtns = @()
 		
-		if ($Table)
-		{
-			foreach ($t in $Table)
-			{
+		if ($Table) {
+			foreach ($t in $Table) {
 				$dotcount = ([regex]::Matches($t, "\.")).count
 				
-                $database = $NULL
-                $Schema = $NULL
+				$database = $NULL
+				$Schema = $NULL
 
-				if ($dotcount -eq 1)
-				{
+				if ($dotcount -eq 1) {
 					$schema = $t.Split(".")[0]
 					$tbl = $t.Split(".")[1]
 				}
 				
-				if ($dotcount -eq 2)
-				{
+				if ($dotcount -eq 2) {
 					$database = $t.Split(".")[0]
 					$schema = $t.Split(".")[1]
 					$tbl = $t.Split(".")[2]
@@ -98,92 +94,72 @@ Returns information on the CommandLog table in the DBA database on both instance
 				
 				$fqtn = [PSCustomObject] @{
 					Database = $database
-					Schema = $Schema
-					Table = $tbl
+					Schema   = $Schema
+					Table    = $tbl
 				}
 				$fqtns += $fqtn
 			}
 		}
-        #$fqtns
+		#$fqtns
 	}
 	
-	process
-	{
-		foreach ($instance in $sqlinstance)
-		{	
-			try
-			{
+	process {
+		foreach ($instance in $sqlinstance) {	
+			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
-			catch
-			{
+			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance -InnerErrorRecord $_
 			}
 			
 			#If IncludeSystemDBs is true, include systemdbs
 			#only look at online databases (Status equal normal)
-			try
-			{
-				if ($database)
-				{
-					$dbs = $server.Databases | Where-Object { $database -contains $_.Name -and $_.status -eq 'Normal' }
+			try {
+				if ($Database) {
+					$dbs = $server.Databases | Where-Object { $Database -contains $_.Name -and $_.status -eq 'Normal' }
 				}
-				elseif ($IncludeSystemDBs)
-				{
+				elseif ($IncludeSystemDBs) {
 					$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' }
 				}
-				else
-				{
+				else {
 					$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' -and $_.IsSystemObject -eq 0 }
 				}
 				
-				if ($exclude)
-				{
-					$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
+				if ($ExcludeDatabase) {
+					$dbs = $dbs | Where-Object { $ExcludeDatabase -notcontains $_.Name }
 				}
 			}
-			catch
-			{
+			catch {
 				Stop-Function -Message "Unable to gather dbs for $instance" -Target $instance -Continue -InnerErrorRecord $_
 			}
-            
-            foreach ($db in $dbs)
-		    {
+			
+			foreach ($db in $dbs) {
 				Write-Message -Level Verbose -Message "Processing $db"
 				
 				$d = $server.Databases[$db]
 				
-				if ($fqtns.Count -gt 0)
-				{
-					foreach ($fqtn in $fqtns)
-					{
-                        if ($fqtn.schema -ne $NULL)
-						{
-							try
-							{
+				if ($fqtns.Count -gt 0) {
+					foreach ($fqtn in $fqtns) {
+						if ($fqtn.schema -ne $NULL) {
+							try {
 								$tables = $db.Tables | Where-Object { $_.name -eq $tbl -and $_.Schema -eq $schema }
 							}
-							catch
-							{
+							catch {
 								Write-Message -Level Warning -Message "Could not find table name: $($fqtn.tbl) schema: $($fqtn.schema)" -ErrorRecord $_
 							}
 						}
-						else
-						{
-							try
-							{
+						else {
+							try {
 								$tables = $db.Tables | Where-Object { $_.name -eq $tbl }
 							}
-							catch
-							{
+							catch {
 								Write-Message -Level Warning -Message "Could not find table name: $($fqtn.tbl)" -ErrorRecord $_
 							}
 						}
 					}
 				}
-				else
-				{
+				else {
 					$tables = $db.Tables
 				}
 				
@@ -191,7 +167,7 @@ Returns information on the CommandLog table in the DBA database on both instance
 				$tables | Add-Member -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
 				$tables | Add-Member -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
 				
-				$defaultprops = "ComputerName", "InstanceName", "SqlInstance","Parent as Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex", "IsFileTable", "IsMemoryOptimized", "IsPartitioned", "FullTextIndex", "ChangeTrackingEnabled"
+				$defaultprops = "ComputerName", "InstanceName", "SqlInstance", "Parent as Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex", "IsFileTable", "IsMemoryOptimized", "IsPartitioned", "FullTextIndex", "ChangeTrackingEnabled"
 				
 				Select-DefaultView -InputObject $tables -Property $defaultprops
 			}
