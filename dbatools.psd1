@@ -7,95 +7,95 @@
 #
 @{
 	
-	# Script module or binary module file associated with this manifest.
-	RootModule = 'dbatools.psm1'
+    # Script module or binary module file associated with this manifest.
+    RootModule             = 'dbatools.psm1'
 	
-	# Version number of this module.
-	ModuleVersion = '0.8.957'
+    # Version number of this module.
+    ModuleVersion          = '0.8.957'
 	
-	# ID used to uniquely identify this module
-	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
+    # ID used to uniquely identify this module
+    GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
 	
-	# Author of this module
-	Author = 'Chrissy LeMaire'
+    # Author of this module
+    Author                 = 'Chrissy LeMaire'
 	
-	# Company or vendor of this module
-	CompanyName = 'dbatools.io'
+    # Company or vendor of this module
+    CompanyName            = 'dbatools.io'
 	
-	# Copyright statement for this module
-	Copyright = '2017 Chrissy LeMaire'
+    # Copyright statement for this module
+    Copyright              = '2017 Chrissy LeMaire'
 	
-	# Description of the functionality provided by this module
-	Description = 'Provides extra functionality for SQL Server Database admins and enables SQL Server instance migrations.'
+    # Description of the functionality provided by this module
+    Description            = 'Provides extra functionality for SQL Server Database admins and enables SQL Server instance migrations.'
 	
-	# Minimum version of the Windows PowerShell engine required by this module
-	PowerShellVersion = '3.0'
+    # Minimum version of the Windows PowerShell engine required by this module
+    PowerShellVersion      = '3.0'
 	
-	# Name of the Windows PowerShell host required by this module
-	PowerShellHostName = ''
+    # Name of the Windows PowerShell host required by this module
+    PowerShellHostName     = ''
 	
-	# Minimum version of the Windows PowerShell host required by this module
-	PowerShellHostVersion = ''
+    # Minimum version of the Windows PowerShell host required by this module
+    PowerShellHostVersion  = ''
 	
-	# Minimum version of the .NET Framework required by this module
-	DotNetFrameworkVersion = ''
+    # Minimum version of the .NET Framework required by this module
+    DotNetFrameworkVersion = ''
 	
-	# Minimum version of the common language runtime (CLR) required by this module
-	CLRVersion = ''
+    # Minimum version of the common language runtime (CLR) required by this module
+    CLRVersion             = ''
 	
-	# Processor architecture (None, X86, Amd64, IA64) required by this module
-	ProcessorArchitecture = ''
+    # Processor architecture (None, X86, Amd64, IA64) required by this module
+    ProcessorArchitecture  = ''
 	
-	# Modules that must be imported into the global environment prior to importing this module
-	RequiredModules = @()
+    # Modules that must be imported into the global environment prior to importing this module
+    RequiredModules        = @()
 	
-	# Assemblies that must be loaded prior to importing this module
-	RequiredAssemblies = @()
+    # Assemblies that must be loaded prior to importing this module
+    RequiredAssemblies     = @()
 	
-	# Script files () that are run in the caller's environment prior to importing this module
-	ScriptsToProcess = @()
+    # Script files () that are run in the caller's environment prior to importing this module
+    ScriptsToProcess       = @()
 	
-	# Type files (xml) to be loaded when importing this module
-	TypesToProcess = @()
+    # Type files (xml) to be loaded when importing this module
+    TypesToProcess         = @()
 	
-	# Format files (xml) to be loaded when importing this module
-	# "xml\dbatools.Format.ps1xml"
-	FormatsToProcess = @("xml\dbatools.Format.ps1xml")
+    # Format files (xml) to be loaded when importing this module
+    # "xml\dbatools.Format.ps1xml"
+    FormatsToProcess       = @("xml\dbatools.Format.ps1xml")
 	
-	# Modules to import as nested modules of the module specified in ModuleToProcess
-	NestedModules = @()
+    # Modules to import as nested modules of the module specified in ModuleToProcess
+    NestedModules          = @()
 	
-	# Functions to export from this module
-	FunctionsToExport = @(
-		'Start-DbaMigration',
-		'Copy-DbaDatabase',
-		'Copy-DbaLogin',
-		'Copy-DbaSqlServerAgent',
-		'Copy-DbaSpConfigure',
-		'Copy-DbaLinkedServer',
-		'Copy-DbaDatabaseMail',
-		'Copy-DbaDatabaseAssembly',
-		'Copy-DbaSqlPolicyManagement',
-		'Copy-DbaAgentSharedSchedule',
-		'Copy-DbaAgentOperator',
-		'Copy-DbaAgentJob',
-		'Copy-DbaSqlDataCollector',
-		'Copy-DbaCustomError',
-		'Copy-DbaServerAuditSpecification',
-		'Copy-DbaEndpoint',
-		'Copy-DbaServerAudit',
-		'Copy-DbaServerRole',
-		'Copy-DbaResourceGovernor',
-		'Copy-DbaExtendedEvent',
-		'Copy-DbaBackupDevice',
-		'Copy-DbaServerTrigger',
-		'Copy-DbaCredential',
-		'Copy-DbaCentralManagementServer',
-		'Copy-DbaSysDbUserObject',
-		'Copy-DbaAgentProxyAccount',
-		'Copy-DbaAgentAlert',
-		'Import-DbaSpConfigure',
-		'Export-DbaSpConfigure'
+    # Functions to export from this module
+    FunctionsToExport      = @(
+        'Start-DbaMigration',
+        'Copy-DbaDatabase',
+        'Copy-DbaLogin',
+        'Copy-DbaSqlServerAgent',
+        'Copy-DbaSpConfigure',
+        'Copy-DbaLinkedServer',
+        'Copy-DbaDatabaseMail',
+        'Copy-DbaDatabaseAssembly',
+        'Copy-DbaSqlPolicyManagement',
+        'Copy-DbaAgentSharedSchedule',
+        'Copy-DbaAgentOperator',
+        'Copy-DbaAgentJob',
+        'Copy-DbaSqlDataCollector',
+        'Copy-DbaCustomError',
+        'Copy-DbaServerAuditSpecification',
+        'Copy-DbaEndpoint',
+        'Copy-DbaServerAudit',
+        'Copy-DbaServerRole',
+        'Copy-DbaResourceGovernor',
+        'Copy-DbaExtendedEvent',
+        'Copy-DbaBackupDevice',
+        'Copy-DbaServerTrigger',
+        'Copy-DbaCredential',
+        'Copy-DbaCentralManagementServer',
+        'Copy-DbaSysDbUserObject',
+        'Copy-DbaAgentProxyAccount',
+        'Copy-DbaAgentAlert',
+        'Import-DbaSpConfigure',
+        'Export-DbaSpConfigure'
         'Get-DbaDetachedDatabaseInfo',
         'Restore-DbaBackupFromDirectory',
         'Test-DbaConnection',
@@ -108,7 +108,7 @@
         'Reset-DbaAdmin',
         'Watch-DbaDbLogin',
         'Expand-DbaTLogResponsibly',
-		'Test-DbaMigrationConstraint',
+        'Test-DbaMigrationConstraint',
         'Get-DbaRegisteredServerName',
         'Test-DbaNetworkLatency',
         'Find-DbaDuplicateIndex',
@@ -177,7 +177,7 @@
         'Export-DbaUser',
         'Get-DbaDatabaseState',
         'Set-DbaDatabaseState',
-		'Get-DbaHelpIndex',
+        'Get-DbaHelpIndex',
         'Get-DbaAgentAlert',
         'Get-DbaAgentOperator',
         'Get-DbaPageFileSetting',
@@ -193,7 +193,7 @@
         'Measure-DbaBackupThroughput',
         'Find-DbaLoginInGroup',
         'Get-DbaSpn',
-		'Test-DbaSpn',
+        'Test-DbaSpn',
         'Set-DbaSpn',
         'Remove-DbaSpn',
         'Get-DbaDatabase',
@@ -205,10 +205,10 @@
         'Get-DbaConfig',
         'Get-DbaConfigValue',
         'Set-DbaConfig',
-		'Get-DbaClientProtocol',
+        'Get-DbaClientProtocol',
         'Backup-DbaDatabase',
         'New-DbaSqlDirectory',
-		'Get-DbaPrivilege',
+        'Get-DbaPrivilege',
         'Install-DbaWatchUpdate',
         'Watch-DbaUpdate',
         'Uninstall-DbaWatchUpdate',
@@ -217,13 +217,13 @@
         'Restore-DbaDatabase',
         'Copy-DbaQueryStoreConfig',
         'Get-DbaExecutionPlan',
-		'Export-DbaExecutionPlan',
+        'Export-DbaExecutionPlan',
         'Get-DbaServerProtocol',
         'Get-DbaLocaleSetting',
         'Get-DbaSqlBuildReference',
         'Set-DbaSpConfigure',
         'Test-DbaIdentityUsage',
-		'Get-DbaDatabaseAssembly',
+        'Get-DbaDatabaseAssembly',
         'Get-DbaAgentJob',
         'Get-DbaCustomError',
         'Get-DbaCredential',
@@ -232,7 +232,7 @@
         'Get-DbaJobCategory',
         'Get-DbaDatabaseEncryption',
         'New-DbaSsisCatalog',
-		'Remove-DbaDatabase',
+        'Remove-DbaDatabase',
         'Get-DbaQueryExecutionTime',
         'Get-DbaTempdbUsage',
         'Find-DbaDatabaseGrowthEvent',
@@ -257,7 +257,7 @@
         'Invoke-DbaDiagnosticQuery',
         'Export-DbaDiagnosticQuery',
         'Invoke-DbaWhoisActive',
-		'Install-DbaWhoIsActive',
+        'Install-DbaWhoIsActive',
         'Set-DbaAgentJob',
         'Remove-DbaAgentJob',
         'New-DbaAgentJobStep',
@@ -268,142 +268,143 @@
         'Remove-DbaAgentSchedule',
         'Export-DbaCertificate',
         'Get-DbaCertificate',
-		'Get-DbaCmConnection',
-		'Get-DbaCmObject',
-		'Get-DbaEndpoint',
-		'Get-DbaMasterKey',
-		'Get-DbaSchemaChangeHistory',
-		'Get-DbaServerAudit',
-		'Get-DbaServerAuditSpecification',
-		'Get-DbaSqlProductKey',
-		'Get-DbatoolsLog',
-		'Import-DbaCertificate',
-		'New-DbaCertificate',
-		'New-DbaCmConnection',
-		'New-DbaMasterKey',
-		'New-DbatoolsSupportPackage',
-		'Remove-DbaCertificate',
-		'Remove-DbaCmConnection',
-		'Remove-DbaMasterKey',
-		'Set-DbaCmConnection',
-		'Set-DbaTcpPort',
-		'Test-DbaCmConnection',
-		'New-DbaSqlConnectionStringBuilder',
-		'Get-DbaSqlInstanceProperty',
-		'Get-DbaSqlInstanceUserOption',
-		'New-DbaSqlConnectionString'
-	)
+        'Get-DbaCmConnection',
+        'Get-DbaCmObject',
+        'Get-DbaEndpoint',
+        'Get-DbaMasterKey',
+        'Get-DbaSchemaChangeHistory',
+        'Get-DbaServerAudit',
+        'Get-DbaServerAuditSpecification',
+        'Get-DbaSqlProductKey',
+        'Get-DbatoolsLog',
+        'Import-DbaCertificate',
+        'New-DbaCertificate',
+        'New-DbaCmConnection',
+        'New-DbaMasterKey',
+        'New-DbatoolsSupportPackage',
+        'Remove-DbaCertificate',
+        'Remove-DbaCmConnection',
+        'Remove-DbaMasterKey',
+        'Set-DbaCmConnection',
+        'Set-DbaTcpPort',
+        'Test-DbaCmConnection',
+        'New-DbaSqlConnectionStringBuilder',
+        'Get-DbaSqlInstanceProperty',
+        'Get-DbaSqlInstanceUserOption',
+        'New-DbaSqlConnectionString',
+        'Invoke-DbaLogShipping'
+    )
 	
-	# Cmdlets to export from this module
-	CmdletsToExport = '*'
+    # Cmdlets to export from this module
+    CmdletsToExport        = '*'
 	
-	# Variables to export from this module
-	VariablesToExport = '*'
+    # Variables to export from this module
+    VariablesToExport      = '*'
 	
-	# Aliases to export from this module
-	# Aliases are stored in dbatools.psm1
-	AliasesToExport = 'Reset-SqlSaPassword',
-	'Copy-SqlUserDefinedMessage',
-	'Copy-SqlJobServer',
-	'Restore-HallengrenBackup',
-	'Update-SqlWhoIsActive',
-	'Install-SqlWhoIsActive',
-	'Show-SqlMigrationConstraint',
-	'Test-SqlDiskAllocation',
-	'Get-DiskSpace',
-	'Get-SqlMaxMemory',
-	'Set-SqlMaxMemory',
-	'Show-SqlWhoIsActive',
-	'Copy-SqlAgentCategory',
-	'Copy-SqlAlert',
-	'Copy-SqlAudit',
-	'Copy-SqlAuditSpecification',
-	'Copy-SqlBackupDevice',
-	'Copy-SqlCentralManagementServer',
-	'Copy-SqlCredential',
-	'Copy-SqlCustomError',
-	'Copy-SqlDatabase',
-	'Copy-SqlDatabaseAssembly',
-	'Copy-SqlDatabaseMail',
-	'Copy-SqlDataCollector',
-	'Copy-SqlEndpoint',
-	'Copy-SqlExtendedEvent',
-	'Copy-SqlJob',
-	'Copy-SqlLinkedServer',
-	'Copy-SqlLogin',
-	'Copy-SqlOperator',
-	'Copy-SqlPolicyManagement',
-	'Copy-SqlProxyAccount',
-	'Copy-SqlResourceGovernor',
-	'Copy-SqlServerAgent',
-	'Copy-SqlServerRole',
-	'Copy-SqlServerTrigger',
-	'Copy-SqlSharedSchedule',
-	'Copy-SqlSpConfigure',
-	'Copy-SqlSsisCatalog',
-	'Copy-SqlSysDbUserObjects',
-	'Expand-SqlTLogResponsibly',
-	'Export-SqlLogin',
-	'Export-SqlSpConfigure',
-	'Export-SqlUser',
-	'Find-SqlDuplicateIndex',
-	'Find-SqlUnusedIndex',
-	'Get-SqlRegisteredServerName',
-	'Get-SqlServerKey',
-	'Import-SqlSpConfigure',
-	'Remove-SqlDatabaseSafely',
-	'Remove-SqlOrphanUser',
-	'Repair-SqlOrphanUser',
-	'Reset-SqlAdmin',
-	'Restore-SqlBackupFromDirectory',
-	'Set-SqlTempDbConfiguration',
-	'Show-SqlDatabaseList',
-	'Show-SqlServerFileSystem',
-	'Start-SqlMigration',
-	'Sync-SqlLoginPermissions',
-	'Test-SqlConnection',
-	'Test-SqlMigrationConstraint',
-	'Test-SqlNetworkLatency',
-	'Test-SqlPath',
-	'Test-SqlTempDbConfiguration',
-	'Watch-SqlDbLogin',
-	'Invoke-Sqlcmd2'
+    # Aliases to export from this module
+    # Aliases are stored in dbatools.psm1
+    AliasesToExport        = 'Reset-SqlSaPassword',
+    'Copy-SqlUserDefinedMessage',
+    'Copy-SqlJobServer',
+    'Restore-HallengrenBackup',
+    'Update-SqlWhoIsActive',
+    'Install-SqlWhoIsActive',
+    'Show-SqlMigrationConstraint',
+    'Test-SqlDiskAllocation',
+    'Get-DiskSpace',
+    'Get-SqlMaxMemory',
+    'Set-SqlMaxMemory',
+    'Show-SqlWhoIsActive',
+    'Copy-SqlAgentCategory',
+    'Copy-SqlAlert',
+    'Copy-SqlAudit',
+    'Copy-SqlAuditSpecification',
+    'Copy-SqlBackupDevice',
+    'Copy-SqlCentralManagementServer',
+    'Copy-SqlCredential',
+    'Copy-SqlCustomError',
+    'Copy-SqlDatabase',
+    'Copy-SqlDatabaseAssembly',
+    'Copy-SqlDatabaseMail',
+    'Copy-SqlDataCollector',
+    'Copy-SqlEndpoint',
+    'Copy-SqlExtendedEvent',
+    'Copy-SqlJob',
+    'Copy-SqlLinkedServer',
+    'Copy-SqlLogin',
+    'Copy-SqlOperator',
+    'Copy-SqlPolicyManagement',
+    'Copy-SqlProxyAccount',
+    'Copy-SqlResourceGovernor',
+    'Copy-SqlServerAgent',
+    'Copy-SqlServerRole',
+    'Copy-SqlServerTrigger',
+    'Copy-SqlSharedSchedule',
+    'Copy-SqlSpConfigure',
+    'Copy-SqlSsisCatalog',
+    'Copy-SqlSysDbUserObjects',
+    'Expand-SqlTLogResponsibly',
+    'Export-SqlLogin',
+    'Export-SqlSpConfigure',
+    'Export-SqlUser',
+    'Find-SqlDuplicateIndex',
+    'Find-SqlUnusedIndex',
+    'Get-SqlRegisteredServerName',
+    'Get-SqlServerKey',
+    'Import-SqlSpConfigure',
+    'Remove-SqlDatabaseSafely',
+    'Remove-SqlOrphanUser',
+    'Repair-SqlOrphanUser',
+    'Reset-SqlAdmin',
+    'Restore-SqlBackupFromDirectory',
+    'Set-SqlTempDbConfiguration',
+    'Show-SqlDatabaseList',
+    'Show-SqlServerFileSystem',
+    'Start-SqlMigration',
+    'Sync-SqlLoginPermissions',
+    'Test-SqlConnection',
+    'Test-SqlMigrationConstraint',
+    'Test-SqlNetworkLatency',
+    'Test-SqlPath',
+    'Test-SqlTempDbConfiguration',
+    'Watch-SqlDbLogin',
+    'Invoke-Sqlcmd2'
 	
-	# List of all modules packaged with this module
-	ModuleList = @()
+    # List of all modules packaged with this module
+    ModuleList             = @()
 	
-	# List of all files packaged with this module
-	FileList = ''
+    # List of all files packaged with this module
+    FileList               = ''
 	
-	PrivateData = @{
-		# PSData is module packaging and gallery metadata embedded in PrivateData
-		# It's for rebuilding PowerShellGet (and PoshCode) NuGet-style packages
-		# We had to do this because it's the only place we're allowed to extend the manifest
-		# https://connect.microsoft.com/PowerShell/feedback/details/421837
-		PSData = @{
-			# The primary categorization of this module (from the TechNet Gallery tech tree).
-			Category = "Databases"
+    PrivateData            = @{
+        # PSData is module packaging and gallery metadata embedded in PrivateData
+        # It's for rebuilding PowerShellGet (and PoshCode) NuGet-style packages
+        # We had to do this because it's the only place we're allowed to extend the manifest
+        # https://connect.microsoft.com/PowerShell/feedback/details/421837
+        PSData = @{
+            # The primary categorization of this module (from the TechNet Gallery tech tree).
+            Category     = "Databases"
 			
-			# Keyword tags to help users find this module via navigations and search.
-			Tags = @('sqlserver', 'migrations', 'sql', 'dba', 'databases')
+            # Keyword tags to help users find this module via navigations and search.
+            Tags         = @('sqlserver', 'migrations', 'sql', 'dba', 'databases')
 			
-			# The web address of an icon which can be used in galleries to represent this module
-			IconUri = "https://dbatools.io/logo.png"
+            # The web address of an icon which can be used in galleries to represent this module
+            IconUri      = "https://dbatools.io/logo.png"
 			
-			# The web address of this module's project or support homepage.
-			ProjectUri = "https://dbatools.io"
+            # The web address of this module's project or support homepage.
+            ProjectUri   = "https://dbatools.io"
 			
-			# The web address of this module's license. Points to a page that's embeddable and linkable.
-			LicenseUri = "http://www.gnu.org/licenses/gpl-3.0.en.html"
+            # The web address of this module's license. Points to a page that's embeddable and linkable.
+            LicenseUri   = "http://www.gnu.org/licenses/gpl-3.0.en.html"
 			
-			# Release notes for this particular version of the module
-			ReleaseNotes = "https://dbatools.io/releases"
+            # Release notes for this particular version of the module
+            ReleaseNotes = "https://dbatools.io/releases"
 			
-			# If true, the LicenseUrl points to an end-user license (not just a source license) which requires the user agreement before use.
-			# RequireLicenseAcceptance = ""
+            # If true, the LicenseUrl points to an end-user license (not just a source license) which requires the user agreement before use.
+            # RequireLicenseAcceptance = ""
 			
-			# Indicates this is a pre-release/testing version of the module.
-			IsPrerelease = 'True'
-		}
-	}
+            # Indicates this is a pre-release/testing version of the module.
+            IsPrerelease = 'True'
+        }
+    }
 }
