@@ -1,4 +1,4 @@
-﻿Function Remove-DbaCertificate {
+﻿function Remove-DbaCertificate {
 <#
 .SYNOPSIS
 Deletes specified database certificate
@@ -55,7 +55,7 @@ Suppresses all prompts to remove the certificate in the 'db1' database and drops
 		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[parameter(Mandatory, ParameterSetName = "instance")]
-		[string[]]$Database,
+		[object[]]$Database,
 		[parameter(Mandatory, ParameterSetName = "instance")]
 		[object[]]$Certificate,
 		[parameter(ValueFromPipeline, ParameterSetName = "collection")]
@@ -109,7 +109,7 @@ Suppresses all prompts to remove the certificate in the 'db1' database and drops
 				Stop-Function -Message "Failed to connect to: $instance" -Target $instance -InnerErrorRecord $_ -Continue
 			}
 			
-			foreach ($db in $database) {
+			foreach ($db in $Database) {
 				$smodb = $server.Databases[$db]
 				
 				if ($null -eq $smodb) {
