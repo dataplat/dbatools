@@ -38,20 +38,20 @@ Returns all Security Audit Specifications for the local and sql2016 SQL Server i
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
-	PROCESS
+	process
 	{
 		foreach ($instance in $SqlInstance)
 		{
 			Write-Verbose "Attempting to connect to $instance"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch
 			{
@@ -67,12 +67,15 @@ Returns all Security Audit Specifications for the local and sql2016 SQL Server i
 			
 			foreach ($auditSpecification in $server.ServerAuditSpecifications)
 			{
-				Add-Member -InputObject $auditSpecification -MemberType NoteProperty ComputerName -value $server.NetName
-				Add-Member -InputObject $auditSpecification -MemberType NoteProperty InstanceName -value $server.ServiceName
-				Add-Member -InputObject $auditSpecification -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
+				Add-Member -InputObject $auditSpecification -MemberType NoteProperty -Name ComputerName -value $server.NetName
+				Add-Member -InputObject $auditSpecification -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+				Add-Member -InputObject $auditSpecification -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 				
 				Select-DefaultView -InputObject $auditSpecification -Property ComputerName, InstanceName, SqlInstance, ID, Name, AuditName, Enabled, CreateDate, DateLastModified, Guid
 			}
 		}
+	}
+    end { 
+            Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-SqlServerAuditSpecification 
 	}
 }

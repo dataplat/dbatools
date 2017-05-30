@@ -1,3 +1,4 @@
+#ValidationTags#FlowControl,Pipeline#
 Function Get-DbaADObject
 {
 <#
@@ -6,14 +7,34 @@ Get-DbaADObject tries to facilitate searching AD with dbatools, which ATM can't 
 
 .DESCRIPTION
 As working with multiple domains, forests, ldap filters, partitions, etc is quite hard to grasp, let's try to do "the right thing" here and
-facilitate everybody's work with it.
+facilitate everybody's work with it. It either returns the exact matched result or None if it isn't found. You can inspect the raw object
+calling GetUnderlyingObject() on the returned object.
 
 .PARAMETER ADObject
-ATM it takes something in the format "DOMAIN\LdapFilter" but let's see how to make it better
+Pass in both the domain and the login name in Domain\sAMAccountName format (the one everybody is accustomed to)
+You can also pass a UserPrincipalName format (with the correct IdentityType, either with Domain\UserPrincipalName or UserPrincipalName@Domain)
+Beware: the "Domain" part of the UPN *can* be different from the real domain, see "UPN suffixes" (https://msdn.microsoft.com/en-us/library/windows/desktop/aa380525(v=vs.85).aspx)
+It's always best to pass the real domain name in (see the examples)
+For any other format, please beware that the domain part must always be specified (again, for the best result, before the slash)
+
+.PARAMETER Type
+You *should* always know what you are asking for. Please pass in Computer,Group or User to help speeding up the search
+
+.PARAMETER IdentityType
+By default objects are searched using sAMAccountName format, here you can pass different representation that need to match the passed in ADObject
+
+.PARAMETER Credential
+Use this credential to connect to the domain and search for the needed ADObject. If not passed, uses the current process' one.
+
+.PARAMETER SearchAllDomains
+Search for the object in all domains connected to the current one. If you are unsure what domain the object is coming from,
+using this switch will search through all domains in your forest and also in the ones that are trusted. This is HEAVY, but it can save
+some headaches.
+
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
 
 .NOTES
-Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
-Author: Chrissy LeMaire (@cl), netnerds.net
 Author: Niphlod, https://github.com/niphlod
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -24,108 +45,150 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .EXAMPLE
-Get-DbaADObject -ADObject "contoso\(&(objectCategory=User)(sAMAccountName=ctrlb))"
+Get-DbaADObject -ADObject "contoso\ctrlb" -Type User
 
-Seaches in the contoso domain for a ctrlb sAMAccountName
+Searches in the contoso domain for a ctrlb user
+
+.EXAMPLE
+Get-DbaADObject -ADObject "ctrlb@contoso.com" -Type User -IdentityType UserPrincipalName
+
+Searches in the contoso domain for a ctrlb user using the UserPrincipalName format. Again, beware of the UPN suffixes in elaborate AD structures!
+
+.EXAMPLE
+Get-DbaADObject -ADObject "contoso\ctrlb@super.contoso.com" -Type User -IdentityType UserPrincipalName
+
+Searches in the contoso domain for a ctrlb@super.contoso.com user using the UserPrincipalName format. This kind of search is better than the previous one
+because it takes into account possible UPN suffixes
+
+.EXAMPLE
+Get-DbaADObject -ADObject "ctrlb@super.contoso.com" -Type User -IdentityType UserPrincipalName -SearchAllDomains
+
+As a last resort, searches in all the current forest for a ctrlb@super.contoso.com user using the UserPrincipalName format
+
+.EXAMPLE
+Get-DbaADObject -ADObject "contoso\sqlcollaborative" -Type Group
+
+Searches in the contoso domain for a sqlcollaborative group
+
+.EXAMPLE
+Get-DbaADObject -ADObject "contoso\SqlInstance2014$" -Type Group
+
+Searches in the contoso domain for a SqlInstance2014 computer (remember the ending $ for computer objects)
+
+.EXAMPLE
+Get-DbaADObject -ADObject "contoso\ctrlb" -Type User -Silent
+
+Searches in the contoso domain for a ctrlb user, suppressing all error messages and throw exceptions that can be caught instead
 
 #>
 	[CmdletBinding()]
 	Param (
-		[string[]]$ADObject
+		[string[]]$ADObject,
+		[ValidateSet("User","Group","Computer")]
+		[string]$Type,
+
+		[ValidateSet("DistinguishedName","Guid","Name","SamAccountName","Sid","UserPrincipalName")]
+		[string]$IdentityType = "SamAccountName",
+
+		[System.Management.Automation.Credential()]$Credential,
+		[switch]$SearchAllDomains,
+		[switch]$Silent
 	)
-
 	BEGIN {
-		function ConvertTo-Dn ([string]$dns)
-		{
-			$array = $dns.Split(".")
-			for ($x = 0; $x -lt $array.Length; $x++)
-			{
-				if ($x -eq ($array.Length - 1)) { $separator = "" }
-				else { $separator = "," }
-				[string]$dn += "DC=" + $array[$x] + $separator
+		try {
+			Add-Type -AssemblyName System.DirectoryServices.AccountManagement
+		} catch {
+			Stop-Function -Message "Failed to load the required module $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_
+			return
+		}
+		switch ($Type) {
+			"User" {
+				$searchClass = [System.DirectoryServices.AccountManagement.UserPrincipal]
 			}
-			return $dn
-		}
-		try
-		{
-			$alldomains = @()
-			$currentforest = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
-			$alldomains += $currentforest.Domains.name
-
-			$cd = $currentforest.Domains
-		}
-		catch
-		{
-			Write-warning "No Active Directory domains Found."
-			break
-		}
-		foreach ($domain in $cd)
-		{
-			try
-			{
-				$alldomains += ($Domain.GetAllTrustRelationships()).TargetName
+			"Group" {
+				$searchClass = [System.DirectoryServices.AccountManagement.GroupPrincipal]
 			}
-			catch
-			{
-				$alldomains = $alldomains | Where-Object { $_ -ne $domain.name }
-				Write-Warning "Couldn't contact $domain"
+			"Computer" {
+				$searchClass = [System.DirectoryServices.AccountManagement.ComputerPrincipal]
+			}
+			default {
+				$searchClass = [System.DirectoryServices.AccountManagement.Principal]
 			}
 		}
-
-		$alldomains = $alldomains | Select-Object -Unique
-
-		# should leverage "process" cache for this, maybe @fred can help
-		$script:domains = @()
-
-		function Resolve-ExpensiveDomain([string]$NetBiosName) {
-			foreach ($domain in $alldomains) {
-				if ($script:domains.DNS -contains $domain) { continue }
-				try {
-					$dn = ConvertTo-Dn $domain
-					$translate = New-Object -comObject NameTranslate
-					$reflection = $translate.GetType()
-					$reflection.InvokeMember("Init", "InvokeMethod", $Null, $translate, (3, $Null)) | out-null
-					$reflection.InvokeMember("Set", "InvokeMethod", $Null, $translate, (1, $dn)) | out-null
-					$netbios = $reflection.InvokeMember("Get", "InvokeMethod", $Null, $translate, 3).Trim("\")
-					$script:domains += [pscustomobject]@{
-						DNS = $domain
-						DN = $dn
-						NetBios = $netbios
-						LDAP = "LDAP://" + $netbios + "/" + $DN
-					}
-					if ($NetBiosName -eq $netbios) {
-						break
-					}
-				} catch {
-					Write-Warning "Removing $domain from domain list"
+		
+		function Get-DbaADObjectInternal($Domain, $IdentityType, $obj, $Silent) {
+			try {
+				# can we simply resolve the passed domain ? This has the benefit of raising almost instantly if the domain is not valid
+				$Context = New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext('Domain', $Domain)
+				$DContext = [System.DirectoryServices.ActiveDirectory.Domain]::GetDomain($Context)
+				if ($Credential) {
+					$ctx = New-Object System.DirectoryServices.AccountManagement.PrincipalContext('Domain', $Domain, $Credential.UserName, $Credential.GetNetworkCredential().Password)
+				} else {
+					$ctx = New-Object System.DirectoryServices.AccountManagement.PrincipalContext('Domain', $Domain)
 				}
+				$found = $searchClass::FindByIdentity($ctx, $IdentityType, $obj)
+				$found
+			} catch {
+				Stop-Function -Message "Errors trying to connect to the domain $Domain $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_ -Target $ADObj
 			}
 		}
-
 	}
 	PROCESS {
-		foreach($adobj in $ADObject) {
-			$domain, $filter = $adobj.Split("\")
-			if ($env:USERDOMAIN -eq $domain) {
-				$searcher = New-Object System.DirectoryServices.DirectorySearcher
-				$searcher.Filter = $filter
+		if (Test-FunctionInterrupt) { return }
+		foreach($ADObj in $ADObject) {
+			# passing the domain as the first part before the \ wins always in defining the domain to search into
+			$Splitted = $ADObj.Split("\")
+			if ($Splitted.Length -ne 2) {
+				# we can also take the object@domain format
+				$Splitted = $ADObj.Split("@")
+				if ($Splitted.Length -ne 2) {
+					Stop-Function -Message "You need to pass ADObject either DOMAIN\object or object@domain format" -Continue -Silent $Silent
+				} else {
+					if($IdentityType -ne 'UserPrincipalName') {
+						$obj, $Domain = $Splitted
+					} else {
+						# if searching for a UserPrincipalName format without a specific domain passed in before the slash, 
+						# we can assume there are no custom UPN suffixes in place
+						$obj, $Domain = $AdObj, $Splitted[1]
+					}
+				}
 			} else {
-				Resolve-ExpensiveDomain -NetBiosName $domain
-				$LDAP = ($script:domains | Where-Object NetBios -eq $domain).LDAP
-				$ad = New-Object System.DirectoryServices.DirectoryEntry $LDAP
-				$searcher = New-Object System.DirectoryServices.DirectorySearcher
-				$searcher.SearchRoot = $ad
-				$searcher.Filter = $filter
+				$Domain, $obj = $Splitted
 			}
-			try
-			{
-				$foundobject = $searcher.findAll()
+			if ($SearchAllDomains) {
+				Write-Message -Message "Searching for $obj under all domains in $IdentityType format" -Level 4 -Silent $Silent
+				# if we're lucky, we can resolve the domain right away
+				try {
+					Get-DbaADObjectInternal -Domain $Domain -IdentityType $IdentityType -obj $obj -Silent $true
+				} catch {
+					# if not, let's build up all domains
+					$ForestObject = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
+					$AllDomains = $ForestObject.Domains.Name
+					foreach($ForestDomain in $AllDomains) {
+						Write-Message -Message "Searching for $obj under domain $ForestDomain in $IdentityType format" -Level 4 -Silent $Silent
+						$found = Get-DbaADObjectInternal -Domain $ForestDomain -IdentityType $IdentityType -obj $obj
+						if ($found) {
+							$found
+							break
+						}
+					}
+					# we are very unlucky, let's search also in all trusted domains
+					$AllTrusted = ($ForestObject.GetAllTrustRelationships().TopLevelNames | where Status -eq 'Enabled').Name
+					foreach($ForestDomain in $AllTrusted) {
+						Write-Message -Message "Searching for $obj under domain $ForestDomain in $IdentityType format" -Level 4 -Silent $Silent
+						$found = Get-DbaADObjectInternal -Domain $ForestDomain -IdentityType $IdentityType -obj $obj
+						if ($found) {
+							$found
+							break
+						}
+					}
+				}
+			} else {
+				Write-Message -Message "Searching for $obj under domain $domain in $IdentityType format" -Level 4 -Silent $Silent
+				Get-DbaADObjectInternal -Domain $Domain -IdentityType $IdentityType -obj $obj
 			}
-			catch
-			{
-				Write-Warning "AD Searcher Error for filter $filter"
-			}
-			$foundobject
+			
 		}
 	}
 }
+

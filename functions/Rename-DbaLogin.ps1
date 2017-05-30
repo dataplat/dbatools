@@ -69,28 +69,23 @@ WhatIf Example
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[parameter(Mandatory = $true)]
 		[String]$NewLogin
 	)
 	
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlLogin -SqlServer $SqlInstance -SqlCredential $SqlCredential } }
-	
-	BEGIN
-	{
-		$Login = $psboundparameters.Login
+	begin {
 		
 		if (!$Login) { throw "You must specify a login" }
 		
-		$server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 		$Databases = $server.Databases
 		
 		$currentLogin = $server.Logins[$Login]
 		
 	}
-	PROCESS
-	{
+	process {
 		if ($Pscmdlet.ShouldProcess($SqlInstance, "Changing Login name from  [$Login] to [$NewLogin]"))
 		{
 			try

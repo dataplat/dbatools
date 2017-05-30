@@ -1,4 +1,4 @@
-Function Update-dbatools
+Function Update-Dbatools
 {
 <#
 .SYNOPSIS
@@ -33,5 +33,5 @@ Update-dbatools
 Updates dbatools. Deletes current copy and replaces it with freshest copy.
 	
 #>	
-	Invoke-Expression (Invoke-WebRequest -UseBasicParsing https://raw.githubusercontent.com/sqlcollaborative/dbatools/master/install.ps1).Content
+	Invoke-Expression (Invoke-WebRequest -UseBasicParsing https://dbatools.io/in).Content
 }
