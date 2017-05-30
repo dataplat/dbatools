@@ -9,6 +9,24 @@ Creates a System.Data.SqlClient.SqlConnectionStringBuilder from a connection str
 .PARAMETER ConnectionString
 A Connection String
 
+.PARAMETER ApplicationName
+The application name to tell SQL Server the connection is associated with.
+
+.PARAMETER DataSource
+The Sql Server to connect to.
+
+.PARAMETER InitialCatalog
+The initial database on the server to connect to.
+
+.PARAMETER IntegratedSecurity
+Set to true to use windows authentication.
+
+.PARAMETER UserName
+Sql User Name to connect with.
+
+.PARAMETER Password
+Password to use to connect withy.
+
 .NOTES
 Author: zippy1981
 Tags: SqlBuild
@@ -36,11 +54,45 @@ Returns a connection string builder that can be used to connect to the local sql
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $false, ValueFromPipeline = $true)]
-		[string[]]$ConnectionString = $null
+        [string[]]$ConnectionString = "",
+		[Parameter(Mandatory = $false)]
+		[string]$ApplicationName = "dbatools Powershell Module",
+		[Parameter(Mandatory = $false)]
+		[string]$DataSource = $null,
+		[Parameter(Mandatory = $false)]
+		[string]$InitialCatalog = $null,
+		[Parameter(Mandatory = $false)]
+		[Nullable[bool]]$IntegratedSecurity = $null,
+		[Parameter(Mandatory = $false)]
+		[string]$UserName = $null,
+		# No point in securestring here, the memory is never stored securely in memory.
+		[Parameter(Mandatory = $false)]
+		[string]$Password = $null
 	)
-	process {
+    process {
 		foreach ($cs in $ConnectionString) {
-			New-Object Data.SqlClient.SqlConnectionStringBuilder $cs
+			$builder = New-Object Data.SqlClient.SqlConnectionStringBuilder $cs
+			if ($builder.ApplicationName -eq ".Net SqlClient Data Provider") {
+				$builder['Application Name'] = $ApplicationName
+			}
+			if (![string]::IsNullOrWhiteSpace($DataSource)) {
+				$builder['Data Source'] = $DataSource
+			}
+			if (![string]::IsNullOrWhiteSpace($InitialCatalog)) {
+				$builder['Initial Catalog'] = $InitialCatalog
+			}
+			if (![string]::IsNullOrWhiteSpace($IntegratedSecurity)) {
+				$builder['Integrated Security'] = $IntegratedSecurity
+			}
+			if (![string]::IsNullOrWhiteSpace($UserName)) {
+				$builder["User ID"] = $UserName
+			}
+			<#
+			if ($Password -ne $null) {
+				$builder['Password'] = $Password
+			}
+			#>
+			$builder
 		}
-	}
+    }
 }
