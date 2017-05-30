@@ -58,8 +58,8 @@ Function Resolve-DbaNetworkName
 	param (
 		[parameter(ValueFromPipeline)]
 		[Alias('cn', 'host', 'ServerInstance', 'Server', 'SqlServer')]
-		[object[]]$ComputerName = $env:COMPUTERNAME,
-    [PSCredential] [System.Management.Automation.CredentialAttribute()]$Credential,
+		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
+    	[PSCredential] [System.Management.Automation.CredentialAttribute()]$Credential,
 		[Alias('FastParrot')]
 		[switch]$Turbo
 	)
@@ -85,9 +85,14 @@ Function Resolve-DbaNetworkName
 				$Computer = $env:COMPUTERNAME
 			}
 			
-			$Computer = $Computer.Split('\\')[0]
-			$Computer = ($Computer -Split ('\:'))[0]
-			$Computer = ($Computer.Split('\,'))[0]
+			if ($Computer.GetType() -eq [Sqlcollective.Dbatools.Parameter.DbaInstanceParameter]) {
+				$Computer = $Computer.ComputerName
+			}
+			else {
+				$Computer = $Computer.Split('\\')[0]
+				$Computer = ($Computer -Split ('\:'))[0]
+				$Computer = ($Computer.Split('\,'))[0]
+			}
 			
 			if ($Turbo)
 			{

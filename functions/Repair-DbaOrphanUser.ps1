@@ -40,6 +40,9 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm
 Prompts you for confirmation before executing any changing operations within the command.
 
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
+
 .EXAMPLE
 Repair-DbaOrphanUser -SqlInstance sql2005
 
@@ -74,21 +77,9 @@ Will also remove all users that does not have their matching login by calling Re
 .NOTES
 Tags: Orphan
 Original Author: Claudio Silva (@ClaudioESSilva)
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Repair-DbaOrphanUser
@@ -98,126 +89,145 @@ https://dbatools.io/Repair-DbaOrphanUser
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[object]$SqlCredential,
+		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[parameter(Mandatory = $false, ValueFromPipeline = $true)]
 		[object[]]$Users,
-		[switch]$RemoveNotExisting
+		[switch]$RemoveNotExisting,
+		[switch]$Silent
 	)
 
-	begin {
-		Write-Output "Attempting to connect to Sql Server.."
-		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-	}
-
 	process {
+        $start = [System.Diagnostics.Stopwatch]::StartNew()
+		foreach ($instance in $SqlInstance) {
+			
+			try {
+                Write-Message -Level Verbose -Message "Connecting to $instance"
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+			}
+			catch {
+				Write-Message -Level Warning -Message "Failed to connect to: $SqlInstance"
+				continue
+			}
 
-		if ($Database.Count -eq 0) {
-			$Database = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true }
-		}
-		else {
-			if ($pipedatabase.Length -gt 0) {
-				$Source = $pipedatabase[0].parent.name
-				$Database = $pipedatabase.name
+			if ($Database.Count -eq 0) {
+
+				$DatabaseCollection = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true }
 			}
 			else {
-				$Database = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true -and ($Database -contains $_.Name) }
+				if ($pipedatabase.Length -gt 0) {
+					$Source = $pipedatabase[0].parent.name
+					$DatabaseCollection = $pipedatabase.name
+				}
+				else {
+					$DatabaseCollection = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true -and ($Database -contains $_.Name) }
+				}
 			}
-		}
 
-		if ($Database.Count -gt 0) {
-			$start = [System.Diagnostics.Stopwatch]::StartNew()
-
-			foreach ($db in $Database) {
-				try {
-					#if SQL 2012 or higher only validate databases with ContainmentType = NONE
-					if ($server.versionMajor -gt 10) {
-						if ($db.ContainmentType -ne [Microsoft.SqlServer.Management.Smo.ContainmentType]::None) {
-							Write-Warning "Database '$db' is a contained database. Contained databases can't have orphaned users. Skipping validation."
-							Continue
+			if ($DatabaseCollection.Count -gt 0) {
+				foreach ($db in $DatabaseCollection) {
+					try {
+						#if SQL 2012 or higher only validate databases with ContainmentType = NONE
+						if ($server.versionMajor -gt 10) {
+							if ($db.ContainmentType -ne [Microsoft.SqlServer.Management.Smo.ContainmentType]::None) {
+								Write-Message -Level Warning -Message "Database '$db' is a contained database. Contained databases can't have orphaned users. Skipping validation."
+								Continue
+							}
 						}
-					}
 
-					Write-Output "Validating users on database '$db'"
+						Write-Message -Level Verbose -Message "Validating users on database '$db'"
 
-					if ($Users.Count -eq 0) {
-						#the third validation will remove from list sql users without login. The rule here is Sid with length higher than 16
-						$Users = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false }
-					}
-					else {
-						if ($pipedatabase.Length -gt 0) {
-							$Source = $pipedatabase[3].parent.name
-							$Users = $pipedatabase.name
+						if ($Users.Count -eq 0) {
+							#the third validation will remove from list sql users without login. The rule here is Sid with length higher than 16
+							$Users = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false }
 						}
 						else {
-							#the fourth validation will remove from list sql users without login. The rule here is Sid with length higher than 16
-							$Users = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($Users -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false) }
-						}
-					}
-
-					if ($Users.Count -gt 0) {
-						Write-Verbose "Orphan users found"
-						$UsersToRemove = @()
-						foreach ($User in $Users) {
-							$ExistLogin = $server.logins | Where-Object {
-								$_.Isdisabled -eq $False -and
-								$_.IsSystemObject -eq $False -and
-								$_.IsLocked -eq $False -and
-								$_.Name -eq $User.Name
-							}
-
-							if ($ExistLogin) {
-								if ($server.versionMajor -gt 8) {
-									$query = "ALTER USER " + $User + " WITH LOGIN = " + $User
-								}
-								else {
-									$query = "exec sp_change_users_login 'update_one', '$User'"
-								}
-
-								if ($Pscmdlet.ShouldProcess($db.Name, "Mapping user '$($User.Name)'")) {
-									$server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
-									Write-Output "`r`nUser '$($User.Name)' mapped with their login"
-								}
+							if ($pipedatabase.Length -gt 0) {
+								$Source = $pipedatabase[3].parent.name
+								$Users = $pipedatabase.name
 							}
 							else {
-								if ($RemoveNotExisting -eq $true) {
-									#add user to collection
-									$UsersToRemove += $User
-								}
-								else {
-									Write-Warning "Orphan user $($User.Name) does not have matching login."
-								}
+								#the fourth validation will remove from list sql users without login. The rule here is Sid with length higher than 16
+								$Users = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($Users -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false) }
 							}
 						}
 
-						#With the colelction complete invoke remove.
-						if ($RemoveNotExisting -eq $true) {
-							if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaOrphanUser")) {
-								Write-Verbose "Calling 'Remove-DbaOrphanUser'"
-								Remove-DbaOrphanUser -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $db.Name -Users $UsersToRemove
+						if ($Users.Count -gt 0) {
+							Write-Message -Level Verbose -Message "Orphan users found"
+							$UsersToRemove = @()
+							foreach ($User in $Users) {
+								$ExistLogin = $server.logins | Where-Object {
+									$_.Isdisabled -eq $False -and
+									$_.IsSystemObject -eq $False -and
+									$_.IsLocked -eq $False -and
+									$_.Name -eq $User.Name
+								}
+
+								if ($ExistLogin) {
+									if ($server.versionMajor -gt 8) {
+										$query = "ALTER USER " + $User + " WITH LOGIN = " + $User
+									}
+									else {
+										$query = "exec sp_change_users_login 'update_one', '$User'"
+									}
+
+									if ($Pscmdlet.ShouldProcess($db.Name, "Mapping user '$($User.Name)'")) {
+										$server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
+										Write-Message -Level Verbose -Message "`r`nUser '$($User.Name)' mapped with their login"
+
+										[PSCustomObject]@{
+															SqlInstance = $server.name
+															DatabaseName = $db.Name
+															User = $User.Name
+															Status = "Success"
+														}
+									}
+								}
+								else {
+									if ($RemoveNotExisting -eq $true) {
+										#add user to collection
+										$UsersToRemove += $User
+									}
+									else {
+										Write-Message -Level Verbose -Message "Orphan user $($User.Name) does not have matching login."
+										[PSCustomObject]@{
+															SqlInstance = $server.name
+															DatabaseName = $db.Name
+															User = $User.Name
+															Status = "No matching login"
+														}
+									}
+								}
+							}
+
+							#With the colelction complete invoke remove.
+							if ($RemoveNotExisting -eq $true) {
+								if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaOrphanUser")) {
+									Write-Message -Level Verbose -Message "Calling 'Remove-DbaOrphanUser'"
+									Remove-DbaOrphanUser -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $db.Name -Users $UsersToRemove
+								}
 							}
 						}
+						else {
+							Write-Message -Level Verbose -Message "No orphan users found on database '$db'"
+						}
+						#reset collection
+						$Users = $null
 					}
-					else {
-						Write-Output "No orphan users found on database '$db'"
+					catch {
+						Stop-Function -Message $_ -Continue
 					}
-					#reset collection
-					$Users = $null
-				}
-				catch {
-					throw $_
 				}
 			}
-		}
-		else {
-			Write-Output "There are no databases to analyse."
+			else {
+				Write-Message -Level Verbose -Message "There are no databases to analyse."
+			}
 		}
 	}
 	end {
-
 		$totaltime = ($start.Elapsed)
-		Write-Output "Total Elapsed time: $totaltime"
+		Write-Message -Level Verbose -Message "Total Elapsed time: $totaltime"
 
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Repair-SqlOrphanUser
 	}

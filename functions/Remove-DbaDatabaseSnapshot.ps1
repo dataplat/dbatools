@@ -17,6 +17,10 @@ Credential object used to connect to the SQL Server as a different user
 Restores from the last snapshot databases with this names only
 NB: you can pass either Databases or Snapshots
 
+.PARAMETER ExcludeDatabase
+Processes all databases excepting the these 
+NB: you can pass either Databases or Snapshots
+
 .PARAMETER Snapshot
 Restores databases from snapshots with this names only
 NB: you can pass either Databases or Snapshots
