@@ -190,7 +190,7 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
                 $backupdirectory = $server.Settings.BackupDirectory
             }
 			
-            $pathexists = Test-DbaPath -SqlInstance $server -Path $backupdirectory
+            $pathexists = Test-DbaSqlPath -SqlInstance $server -Path $backupdirectory
 			
             if ($pathexists -eq $false) {
                 throw "Backup directory does not exist"

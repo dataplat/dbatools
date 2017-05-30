@@ -1,5 +1,4 @@
-Function New-DbaSqlConnectionStringBuilder
-{
+Function New-DbaSqlConnectionStringBuilder {
 <#
 .SYNOPSIS
 Returns a System.Data.SqlClient.SqlConnectionStringBuilder with the string specified
@@ -22,7 +21,7 @@ The initial database on the server to connect to.
 .PARAMETER IntegratedSecurity
 Set to true to use windows authentication.
 
-.PARAMETER SqlUser
+.PARAMETER UserName
 Sql User Name to connect with.
 
 .PARAMETER Password
@@ -39,21 +38,21 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Get-DbaSqlConnectionStringBuilder
+https://dbatools.io/New-DbaSqlConnectionStringBuilder
 
 .EXAMPLE
-Get-DbaSqlConnectionStringBuilder
+New-DbaSqlConnectionStringBuilder
 
 Returns an empty ConnectionStringBuilder
 
 .EXAMPLE
-"Data Source=localhost,1433;Initial Catalog=AlwaysEncryptedSample;UID=sa;PWD=alwaysB3Encrypt1ng;Application Name=Always Encrypted Sample MVC App;Column Encryption Setting=enabled" | Get-DbaSqlConnectionStringBuilder 
+"Data Source=localhost,1433;Initial Catalog=AlwaysEncryptedSample;UID=sa;PWD=alwaysB3Encrypt1ng;Application Name=Always Encrypted Sample MVC App;Column Encryption Setting=enabled" | New-DbaSqlConnectionStringBuilder 
 
 Returns a connection string builder that can be used to connect to the local sql server instance on the default port.
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[Parameter(Mandatory = $false, ValueFromPipeline = $true)]
         [string[]]$ConnectionString = "",
 		[Parameter(Mandatory = $false)]
@@ -65,30 +64,30 @@ Returns a connection string builder that can be used to connect to the local sql
 		[Parameter(Mandatory = $false)]
 		[Nullable[bool]]$IntegratedSecurity = $null,
 		[Parameter(Mandatory = $false)]
-		[string]$SqlUser = $null,
+		[string]$UserName = $null,
 		# No point in securestring here, the memory is never stored securely in memory.
 		[Parameter(Mandatory = $false)]
 		[string]$Password = $null
 	)
     process {
-		foreach ($string in $ConnectionString) {
-			$builder = New-Object Data.SqlClient.SqlConnectionStringBuilder $ConnectionString
+		foreach ($cs in $ConnectionString) {
+			$builder = New-Object Data.SqlClient.SqlConnectionStringBuilder $cs
 			if ($builder.ApplicationName -eq ".Net SqlClient Data Provider") {
 				$builder['Application Name'] = $ApplicationName
 			}
-			if ($DataSource -ne $null) {
+			if (![string]::IsNullOrWhiteSpace($DataSource)) {
 				$builder['Data Source'] = $DataSource
 			}
-			if ($InitialCatalog -ne $null) {
+			if (![string]::IsNullOrWhiteSpace($InitialCatalog)) {
 				$builder['Initial Catalog'] = $InitialCatalog
 			}
-			if ($IntegratedSecurity -ne $null) {
+			if (![string]::IsNullOrWhiteSpace($IntegratedSecurity)) {
 				$builder['Integrated Security'] = $IntegratedSecurity
 			}
-			<#
-			if ($SqlUser -ne $null) {
-				$builder['User ID'] = $SqlUser
+			if (![string]::IsNullOrWhiteSpace($UserName)) {
+				$builder["User ID"] = $UserName
 			}
+			<#
 			if ($Password -ne $null) {
 				$builder['Password'] = $Password
 			}

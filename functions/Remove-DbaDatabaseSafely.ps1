@@ -1,4 +1,4 @@
-Function Remove-DbaDatabaseSafely {
+function Remove-DbaDatabaseSafely {
 <#
 .SYNOPSIS
 Safely removes a SQL Database and creates an Agent Job to restore it
@@ -32,6 +32,7 @@ Allows you to login to servers using alternative credentials
 $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 
 Windows Authentication will be used if SqlCredential is not specified
+
 .PARAMETER Destination
 If specified this is the server that the Agent Jobs will be created on. By default this is the same server as the SQLServer.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
@@ -73,8 +74,9 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .NOTES
-Tags: DisasterRecovery, Backup, Restore
+Tags: DisasterRecovery, Backup, Restore, Databases
 Author: Rob Sewell @SQLDBAWithBeard, sqldbawithabeard.com
+
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -110,6 +112,7 @@ JusticeForAll to restore the database from that backup. It will drop the databas
 perform a DBCC ChECK DB and then drop the database
 
 Any DBCC errors will be written to your documents folder
+
 .EXAMPLE 
 Remove-DbaDatabaseSafely -SqlInstance IronMaiden -Database $Database -DestinationServer TheWildHearts -DBCCErrorFolder C:\DBCCErrors -BackupFolder z:\Backups -NoDBCCCheck -UseDefaultFilePaths -JobOwner 'THEBEARD\Rob' 
 
@@ -130,8 +133,6 @@ It will drop the database on IronMaiden, run the agent job to restore it on TheW
 a DBCC ChECK DB and then drop the database
 
 If there is a DBCC Error it will continue to perform rest of the actions and will create an Agent Job with DBCCERROR in the name and a Backup file with DBCCError in the name
-
-
 #>
 	[CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
 	Param (
@@ -167,7 +168,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 	)
 	
 	begin {
-		if (!$AllDatabases -and !$database) {
+		if (!$AllDatabases -and !$Database) {
 			throw "You must specify at least one database. Use -Database or -AllDatabases."
 		}
 		
@@ -200,11 +201,11 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			$jobowner = Get-SqlSaLogin $destserver
 		}
 		
-		if ($alldatabases -or !$database) {
+		if ($alldatabases -or !$Database) {
 			$database = ($sourceserver.databases | Where-Object{ $_.IsSystemObject -eq $false -and ($_.Status -match 'Offline') -eq $false }).Name
 		}
 		
-		if (!(Test-DbaPath -SqlInstance $destserver -Path $backupFolder)) {
+		if (!(Test-DbaSqlPath -SqlInstance $destserver -Path $backupFolder)) {
 			$serviceaccount = $destserver.ServiceAccount
 			throw "Can't access $backupFolder Please check if $serviceaccount has permissions"
 		}
@@ -399,7 +400,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		$start = Get-Date
 		Write-Output "Starting Rationalisation Script at $start"
 		
-		foreach ($dbname in $database) {
+		foreach ($dbname in $Database) {
 			
 			$db = $sourceserver.databases[$dbname]
 			

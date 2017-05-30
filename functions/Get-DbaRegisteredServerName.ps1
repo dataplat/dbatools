@@ -129,7 +129,7 @@ Gets a list of server IP addresses in the HR and Accounting groups from the Cent
         }
 		
         if ($NoCmsServer -eq $false) {
-            $servers += $SqlInstance
+            $servers += $SqlInstance.ComputerName
         }
     }
     end {

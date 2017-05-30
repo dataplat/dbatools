@@ -8,7 +8,7 @@ Describe "New-DbaSqlConnectionStringBuilder Unit Tests" -Tag 'Unittests' {
             $results.ColumnEncryptionSetting  | Should Be "Enabled"
         }
         It "Should have a user name of sa" {
-            $results.UID  | Should Be "sa"
+            $results.UserID  | Should Be "sa"
         }
         It "Should have an Application name of `"dbatools Powershell Module`"" {
             $results.ApplicationName  | Should Be "dbatools Powershell Module"
@@ -24,7 +24,7 @@ Describe "New-DbaSqlConnectionStringBuilder Unit Tests" -Tag 'Unittests' {
         $results = New-DbaSqlConnectionStringBuilder `
             -DataSource "localhost,1433" `
             -InitialCatalog "AlwaysEncryptedSample" `
-            -SqlUser "sa" `
+            -UserName "sa" `
             -Password "alwaysB3Encrypt1ng" 
         It "Should be a connection string builder" {
             $results.GetType() | Should Be System.Data.SqlClient.SqlConnectionStringBuilder
