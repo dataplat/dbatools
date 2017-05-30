@@ -53,30 +53,30 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .EXAMPLE 
-Restore-DbaSystemDatabase -SqlServer server1\prod1 -BackupPath \\server2\backups\master\master_20170411.bak -master
+Restore-DbaSystemDatabase -SqlInstance server1\prod1 -BackupPath \\server2\backups\master\master_20170411.bak -master
 
 This will restore the master database on the server1\prod1 instance from the master db backup in \\server2\backups\master\master_20170411.bak
 
 .EXAMPLE
-Restore-DbaSystemDatabase -SqlServer server1\prod1 -BackupPath \\server2\backups\msdb\msdb_20170411.bak -msdb
+Restore-DbaSystemDatabase -SqlInstance server1\prod1 -BackupPath \\server2\backups\msdb\msdb_20170411.bak -msdb
 
 This will restore the msdb database on the server1\prod1 instance from the msdb db backup in \\server2\backups\master\master_20170411.bak
 
 .EXAMPLE
-Restore-DbaSystemDatabase -SqlServer server1\prod1 -BackupPath \\server2\backups\master\,\\server2\backups\model\,\\server2\backups\msdb\  -msdb -model -master
+Restore-DbaSystemDatabase -SqlInstance server1\prod1 -BackupPath \\server2\backups\master\,\\server2\backups\model\,\\server2\backups\msdb\  -msdb -model -master
 
 This will restore the master, model and msdb on server1\prod1 to the most recent points in the backups in \\server2\backups\master\,\\server2\backups\model\,\\server2\backups\msdb\ respectively
 
 .EXAMPLE
-Restore-DbaSystemDatabase -SqlServer server1\prod1 -BackupPath \\server2\backups\master\,\\server2\backups\model\,\\server2\backups\msdb\  -msdb -model -master -RestoreTime (Get-Date).AddHours(-2)
+Restore-DbaSystemDatabase -SqlInstance server1\prod1 -BackupPath \\server2\backups\master\,\\server2\backups\model\,\\server2\backups\msdb\  -msdb -model -master -RestoreTime (Get-Date).AddHours(-2)
 
 This will restore the master, model and msdb on server1\prod1 to a point in time 2 hours ago from the backups in \\server2\backups\master\,\\server2\backups\model\,\\server2\backups\msdb\ respectively
 
 #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param ([parameter(ValueFromPipeline, Mandatory = $true)]
-        [Alias("ServerInstance", "SqlInstance")]
-        [object[]]$SqlServer,
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
         [PSCredential]$SqlCredential,
         [String[]]$BackupPath,
@@ -87,27 +87,21 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
         [Switch]$Silent,
         [switch]$AcceptClusterRisk
     )
-    BEGIN {
+    begin {
         #workarounds requested by Klaas until Fred finished his work:
         Function Stop-DbaService {
             [CmdletBinding(SupportsShouldProcess = $true)]
             param (
-                [Alias("ServerInstance", "SqlInstance")]
-                [object[]]$SqlServer,
+                [Alias("ServerInstance", "SqlServer")]
+                [DbaInstanceParameter[]]$SqlInstance,
                 [PSCredential]$Credential,
                 [ValidateSet('SqlServer', 'SqlAgent', 'FullText')]
                 [String]$Service = 'SqlServer'
             )
-            $FunctionName = (Get-PSCallstack)[0].Command
-
-            #$ServerName, $InstanceName = ($SqlServer.Split('\'))
-            if ($null -eq $SqlServer.name) {
-                $ServerName, $InstanceName = ($SqlServer.Split('\'))
-            }
-            else {
-                $ServerName, $InstanceName = ($SqlServer.name.Split('\'))
-            }
-        
+			
+			$ServerName = $SqlInstance.ComputerName
+			$InstanceName = $SqlInstance.InstanceName
+			
             if ($InstanceName.Length -eq 0) { $InstanceName = "MSSqlServer" }
 
             Write-Verbose "Attempting to stop SQL Service $InstanceName on $ServerName" 
@@ -164,23 +158,19 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
 
         Function Start-DbaService {
             param (
-                [Alias("ServerInstance", "SqlInstance")]
-                [object[]]$SqlServer,
+                [Alias("ServerInstance", "SqlServer")]
+                [DbaInstanceParameter[]]$SqlInstance,
                 [PSCredential]$Credential,
                 [ValidateSet('SqlServer', 'SqlAgent', 'FullText')]
                 [String]$Service = 'SqlServer'
-            )
-            $FunctionName = (Get-PSCallstack)[0].Command
-
-            #$ServerName, $InstanceName = ($SqlServer.Split('\'))
-            if ($null -eq $SqlServer.name) {
-                $ServerName, $InstanceName = ($SqlServer.Split('\'))
-            }
-            else {
-                $ServerName, $InstanceName = ($SqlServer.name.Split('\'))
-            }
-        
-            if ($InstanceName.Length -eq 0) { $InstanceName = "MSSqlServer" }
+			)
+			
+			$ServerName = $SqlInstance.ComputerName
+			$InstanceName = $SqlInstance.InstanceName
+			
+			if ($InstanceName.Length -eq 0) { $InstanceName = "MSSqlServer" }
+			
+			if ($InstanceName.Length -eq 0) { $InstanceName = "MSSqlServer" }
 
             Write-Verbose "Attempting to Start SQL Service $InstanceName on $ServerName" 
 
@@ -233,58 +223,51 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                 Invoke-ManagedComputerCommand -ComputerName $ServerName -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $ServerName, $DisplayName
             }
         }
-    }
-
-
-    END {
-        $FunctionName = (Get-PSCallstack)[0].Command
+	}
+	
+	end {
+        
         $RestoreResult = @()
-        #Needed while we don't have SqlConnection support for getservice
-        if ($null -eq $SqlServer.name) {
-            $ServerName, $InstanceName = ($SqlServer.Split('\'))
-        }
-        else {
-            $ServerName, $InstanceName = ($SqlServer.name.Split('\'))
-        }
-        if ($InstanceName.Length -eq 0) {
-            $InstanceName = 'MSSQLSERVER'
-        }
-
+		$ServerName = $SqlInstance.ComputerName
+		$InstanceName = $SqlInstance.InstanceName
+		
+		if ($InstanceName.Length -eq 0) { $InstanceName = "MSSQLSERVER" }
+		
         if (($PsBoundParameters.Keys | Where-Object {$_ -in ('master', 'msdb', 'model')} | measure-object).count -eq 0) {
             Stop-Function -Message "Must provide at least one of master, msdb or model switches" 
         }
         try {
-            $server = connect-SqlInstance -SqlInstance $SqlServer -applicationName dbatoolsSystemk34i23hs3u57w
+            $server = Connect-SqlInstance -SqlInstance $SqlInstance -ApplicationName dbatoolsSystemk34i23hs3u57w
         }
         catch {
-            Stop-Function -message "Cannot connect to $sqlserver, stopping" -target $SqlServer 
+            Stop-Function -message "Cannot connect to $SqlInstance, stopping" -target $SqlInstance 
             return
         }
         if (($server.IsCluster) -and $AcceptClusterRisk -ne $true) {
             Stop-Function -message "Clustered Instance and AcceptClusterRisk not set, `n please read notes in help and decide how to proceed"
             return
         }
-        $CurrentStartup = Get-DbaStartupParameter -SqlInstance $SqlServer
+        $CurrentStartup = Get-DbaStartupParameter -SqlInstance $SqlInstance
         if ((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type Agent | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -eq 'Running') {
             Write-Message -Level Verbose -Message "SQL agent running, stopping it" 
             $RestartAgent = $True
-            Stop-DbaService -sqlserver $server -service SqlAgent | out-null
+            Stop-DbaService -SqlInstance $server -service SqlAgent | out-null
         }
         if ((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type FullText | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -eq 'Running') {
             Write-Message -Level Verbose -Message "Full Text agent running, stopping it" 
             $RestartFullText = $True
-            Stop-DbaService -sqlserver $server -service FullText | out-null
+            Stop-DbaService -SqlInstance $server -service FullText | out-null
         }
         try {
             if ($true -eq $master) {
             
                 Write-Message -Level Verbose -Message "Restoring Master, setting single user"
                 Set-DbaStartupParameter -SqlInstance $server -SingleUser -SingleUserDetails dbatoolsSystemk34i23hs3u57w | out-null
-                Stop-DbaService -SqlServer $server | out-null
-                Start-DbaService -SqlServer $server | out-null
+                Stop-DbaService -SqlInstance $server | out-null
+                Start-DbaService -SqlInstance $server | out-null
                 $StartCount = 0
                 while ((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type Engine | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -ne 'running') {
-                    Start-DbaService -SqlServer $server | out-null
+                    Start-DbaService -SqlInstance $server | out-null
                     Start-Sleep -seconds 65
                     $StartCount++
                     if ($StartCount -ge 4) {
@@ -320,12 +303,12 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                     $filter += 'msdb'
                 }
                 if ((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type Engine | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -eq 'Running') {
-                    Stop-DbaService -SqlServer $server | out-null
+                    Stop-DbaService -SqlInstance $server | out-null
                 }
-                Start-DbaService -SqlServer $server | out-null
+                Start-DbaService -SqlInstance $server | out-null
                 $StartCount = 0
                 while ((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type Engine | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -ne 'running') {
-                    Start-DbaService -SqlServer $server | out-null
+                    Start-DbaService -SqlInstance $server | out-null
                     Start-Sleep -seconds 65
                     $StartCount++
                     if ($StartCount -ge 4) {
@@ -356,19 +339,19 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
         }
         finally {
             if ((Get-DbaSqlService -ComputerName $ServerName -Credential $Credential -Type Engine | Where-Object {$_.DisplayName -like "*$InstanceName*"}).State -ne 'Running') {
-                Start-DbaService -sqlserver $server -service SqlServer | out-null
+                Start-DbaService -SqlInstance $server -service SqlServer | out-null
             }
             Write-Message -Level Verbose  -Message "Resetting Startup Parameters"
             Set-DbaStartupParameter -SqlInstance $server -StartUpConfig $CurrentStartup  | out-null
-            Stop-DbaService -SqlServer $server -Service SqlServer | out-null
-            Start-DbaService -SqlServer $server -service SqlServer | out-null
+            Stop-DbaService -SqlInstance $server -Service SqlServer | out-null
+            Start-DbaService -SqlInstance $server -service SqlServer | out-null
             if ($RestartAgent -eq $True) {
                 Write-Message -Level Verbose  -Message "SQL Agent was running at start, so restarting"
-                Start-DbaService -sqlserver $server -service SqlAgent | out-null
+                Start-DbaService -SqlInstance $server -service SqlAgent | out-null
             }
             if ($RestartFullText -eq $True) {
                 Write-Message -Level Verbose  -Message "Full Text was running at start, so restarting"
-                Start-DbaService -sqlserver $server -service FullText | out-null
+                Start-DbaService -SqlInstance $server -service FullText | out-null
             }
             $Server.ConnectionContext.Disconnect()
             $RestoreResult + $RestoreResults
