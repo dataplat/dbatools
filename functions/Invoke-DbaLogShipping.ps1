@@ -320,7 +320,7 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 https://dbatools.io/Invoke-DbaLogShipping
 
 .EXAMPLE   
-Invoke-DbaLogShipping -SourceSqlServer sql1 -DestinationSqlServer sql2 -Database db1 -BackupNetworkPath "\\sql1\logshipping" -BackupLocalPath "D:\Data\logshipping" -BackupScheduleFrequencyType "daily" -BackupScheduleFrequencyInterval 1 -CompressBackup -CopyScheduleFrequencyType daily -CopyScheduleFrequencyInterval 1 -GenerateFullBackup -RestoreScheduleFrequencyType daily -RestoreScheduleFrequencyInterval 1 -SecondaryDatabaseSuffix "DR" -CopyDestinationFolder "\\sql2\logshippingdest" -Force
+Invoke-DbaLogShipping -SourceSqlInstance sql1 -DestinationSqlInstance sql2 -Database db1 -BackupNetworkPath "\\sql1\logshipping" -BackupLocalPath "D:\Data\logshipping" -BackupScheduleFrequencyType "daily" -BackupScheduleFrequencyInterval 1 -CompressBackup -CopyScheduleFrequencyType daily -CopyScheduleFrequencyInterval 1 -GenerateFullBackup -RestoreScheduleFrequencyType daily -RestoreScheduleFrequencyInterval 1 -SecondaryDatabaseSuffix "DR" -CopyDestinationFolder "\\sql2\logshippingdest" -Force
 
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
