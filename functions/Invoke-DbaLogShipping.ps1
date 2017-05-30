@@ -322,6 +322,10 @@ https://dbatools.io/Invoke-DbaLogShipping
 .EXAMPLE   
 Invoke-DbaLogShipping -SourceSqlInstance sql1 -DestinationSqlInstance sql2 -Database db1 -BackupNetworkPath "\\sql1\logshipping" -BackupLocalPath "D:\Data\logshipping" -BackupScheduleFrequencyType "daily" -BackupScheduleFrequencyInterval 1 -CompressBackup -CopyScheduleFrequencyType daily -CopyScheduleFrequencyInterval 1 -GenerateFullBackup -RestoreScheduleFrequencyType daily -RestoreScheduleFrequencyInterval 1 -SecondaryDatabaseSuffix "DR" -CopyDestinationFolder "\\sql2\logshippingdest" -Force
 
+Sets up log shiping for database "db1" with the backup path to a network share allowing local backups. 
+It creates daily schedules for the backup, copy and restore job with all the defaults to be executed every 15 minutes daily.
+The secondary databse will be called "db1_DR".
+
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 
