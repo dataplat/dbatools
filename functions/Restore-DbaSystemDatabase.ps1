@@ -289,8 +289,8 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                     $StartCount++
                     if ($StartCount -ge 4) {
                         #Didn't start nicely, jump to finally to try to come back up sanely
-                        Write-Message -Level Warning -Message "SQL Server not starting nicely, trying to fix" -
-                        throw
+                        Stop-Function -Message "SQL Server not starting nicely, tried to fix, but not responding" 
+                        return
                     }
                 }
                 if ($server.connectionContext.IsOpen -eq $false) {
@@ -305,7 +305,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                     Write-Message -Level Verbose  -Message "Restore of Master suceeded"   
                 }
                 else {
-                    Write-Message -Level Verbose  -Message "Restore of Master failed"   
+                    Write-Message -Level Warning  -Message "Restore of Master failed"   
                 }
             }
             if (($true -eq $model) -or ($true -eq $msdb)) {
@@ -346,7 +346,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                         Write-Message -Level Verbose  -Message "Database $($Database.Databasename) restore suceeded"
                     }
                     else {
-                        Write-Message -Level Verbose  -Message "Database $($Database.Databasename) restore failed"
+                        Write-Message -Level Warning  -Message "Database $($Database.Databasename) restore failed"
                     }
                 }
             }
