@@ -291,7 +291,8 @@
 		'New-DbaSqlConnectionStringBuilder',
 		'Get-DbaSqlInstanceProperty',
 		'Get-DbaSqlInstanceUserOption',
-		'New-DbaSqlConnectionString'
+		'New-DbaSqlConnectionString',
+		'Invoke-DbaLogShipping'
 	)
 	
 	# Cmdlets to export from this module
