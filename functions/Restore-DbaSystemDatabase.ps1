@@ -34,13 +34,19 @@ Switch to indicate that the model database should be restored
 .PARAMETER msdb
 Switch to indicate that the msdb database should be restored
 
-.PARAMETER Silent
-Indicates if warning messages should be displayed.
-
 .PARAMETER AcceptClusterRisk
 This function has been tested and works on clustered instances, but there have been occasions where the cluster has decide to failover and disrupt the restore.
 As we don't want to break anything, by default we won't proceed against a clustered instance, unless this switch is present
 Recommendation is that you disable services using Cluster management tools and then restore. 
+
+.PARAMETER WhatIf
+Shows what would happen if the command were to run. No actions are actually performed.
+
+.PARAMETER Confirm
+Prompts you for confirmation before executing any changing operations within the command.
+
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
 
 .NOTES
 Original Author: Stuart Moore (@napalmgram), stuart-moore.com
