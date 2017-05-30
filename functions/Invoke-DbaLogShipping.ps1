@@ -345,6 +345,12 @@ Sets up log shiping for database "db1" with the backup path to a network share a
 It creates daily schedules for the backup, copy and restore job with all the defaults to be executed every 15 minutes daily.
 The secondary databse will be called "db1_LS".
 
+.EXAMPLE
+Invoke-DbaLogShipping -SourceSqlInstance sql1 -DestinationSqlInstance sql2 -Database db1 -BackupNetworkPath \\sql1\logshipping -GenerateFullBackup
+
+Sets up log shipping with all defaults except that a backup file is generated.
+The script will show a message that the copy destination has not been supplied and asks if you want to use the default which would be the backup directory of the secondary server with the folder "logshipping" i.e. "D:\SQLBackup\Logshiping".
+
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 
