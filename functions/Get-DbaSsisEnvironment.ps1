@@ -33,7 +33,9 @@ function Get-DbaSsisEnvironment {
 		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias('SqlServer', 'ServerInstance')]
 		[DbaInstanceParameter[]]$SqlInstance,
+        [parameter(Mandatory)]
 		[string]$Environment,
+        [parameter(Mandatory)]
         [string]$Folder
 	)
 
@@ -70,84 +72,85 @@ function Get-DbaSsisEnvironment {
             return
 		}
 
-        Write-Verbose "Fetching SSIS Catalog nd its folders"
+        Write-Verbose "Fetching SSIS Catalog and its folders"
         $catalog = $SSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
-        $folders = $catalog.Folders
+        $srcFolder = $catalog.Folders | Where-Object {$_.Name -eq $Folder}
     }
 
     process {
-        if ($folder) {
-            if ($folders.Name -contains $folder) {
-                $srcFolder = $folders | Where-Object { $_.Name -eq $folder }
+        if ($srcFolder) {
+            $srcEnvironment = $srcFolder.Environments | Where-Object {$_.Name -eq $Environment}
 
-                $srcEnvironment = $srcFolder.Environments | Where-Object {$_.Name -eq $Environment}
+            #encryption handling
+            $encKey = 'MS_Enckey_Env_' + $srcEnvironment.EnvironmentId
+            $encCert = 'MS_Cert_Env_' + $srcEnvironment.EnvironmentId
 
-                #encryption handling
-                $encKey = 'MS_Enckey_Env_' + $srcEnvironment.EnvironmentId
-                $encCert = 'MS_Cert_Env_' + $srcEnvironment.EnvironmentId
+            <#
+            SMO does not return sensitive values (gets data from catalog.environment_variables)
+            We have to manualy query internal.environment_variables instead and use symmetric keys
+            within T-SQL code
+            #>
 
-                <#
-                SMO does not return sensitive values (gets data from catalog.environment_variables)
-                We have to manualy query internal.environment_variables instead and use symmetric keys
-                within T-SQL code
-                #>
+            $sql = @"
+                OPEN SYMMETRIC KEY $encKey DECRYPTION BY CERTIFICATE $encCert;
 
-                $sql = @"
-                    OPEN SYMMETRIC KEY $encKey DECRYPTION BY CERTIFICATE $encCert;
+                SELECT
+                    ev.variable_id,
+                    ev.name,
+                    ev.description,
+                    ev.type,
+                    ev.sensitive,
+                    value			= ev.value,
+                    ev.sensitive_value,
+                    ev.base_data_type,
+                    decrypted		= decrypted.value
+                FROM internal.environment_variables ev
 
-                    SELECT
-                        ev.variable_id,
-                        ev.name,
-                        ev.description,
-                        ev.type,
-                        ev.sensitive,
-                        value			= ev.value,
-                        ev.sensitive_value,
-                        ev.base_data_type,
-                        decrypted		= decrypted.value
-                    FROM internal.environment_variables ev
+                    CROSS APPLY (
+                        SELECT
+                            value	= CASE base_data_type
+                                        WHEN 'nvarchar' THEN CONVERT(NVARCHAR(MAX), DECRYPTBYKEY(sensitive_value))
+                                        WHEN 'bit' THEN CONVERT(NVARCHAR(MAX), CONVERT(bit, DECRYPTBYKEY(sensitive_value)))
+                                        WHEN 'datetime' THEN CONVERT(NVARCHAR(MAX), CONVERT(datetime2(0), DECRYPTBYKEY(sensitive_value)))
+                                        WHEN 'single' THEN CONVERT(NVARCHAR(MAX), CONVERT(DECIMAL(38, 18), DECRYPTBYKEY(sensitive_value)))
+                                        WHEN 'float' THEN CONVERT(NVARCHAR(MAX), CONVERT(DECIMAL(38, 18), DECRYPTBYKEY(sensitive_value)))
+                                        WHEN 'decimal' THEN CONVERT(NVARCHAR(MAX), CONVERT(DECIMAL(38, 18), DECRYPTBYKEY(sensitive_value)))
+                                        WHEN 'tinyint' THEN CONVERT(NVARCHAR(MAX), CONVERT(tinyint, DECRYPTBYKEY(sensitive_value)))
+                                        WHEN 'smallint' THEN CONVERT(NVARCHAR(MAX), CONVERT(smallint, DECRYPTBYKEY(sensitive_value)))
+                                        WHEN 'int' THEN CONVERT(NVARCHAR(MAX), CONVERT(INT, DECRYPTBYKEY(sensitive_value)))
+                                        WHEN 'bigint' THEN CONVERT(NVARCHAR(MAX), CONVERT(bigint, DECRYPTBYKEY(sensitive_value)))
+                                    END
+                    ) decrypted
 
-                        CROSS APPLY (
-                            SELECT
-                                value	= CASE base_data_type
-                                            WHEN 'nvarchar' THEN CONVERT(NVARCHAR(MAX), DECRYPTBYKEY(sensitive_value))
-                                            WHEN 'bit' THEN CONVERT(NVARCHAR(MAX), CONVERT(bit, DECRYPTBYKEY(sensitive_value)))
-                                            WHEN 'datetime' THEN CONVERT(NVARCHAR(MAX), CONVERT(datetime2(0), DECRYPTBYKEY(sensitive_value)))
-                                            WHEN 'single' THEN CONVERT(NVARCHAR(MAX), CONVERT(DECIMAL(38, 18), DECRYPTBYKEY(sensitive_value)))
-                                            WHEN 'float' THEN CONVERT(NVARCHAR(MAX), CONVERT(DECIMAL(38, 18), DECRYPTBYKEY(sensitive_value)))
-                                            WHEN 'decimal' THEN CONVERT(NVARCHAR(MAX), CONVERT(DECIMAL(38, 18), DECRYPTBYKEY(sensitive_value)))
-                                            WHEN 'tinyint' THEN CONVERT(NVARCHAR(MAX), CONVERT(tinyint, DECRYPTBYKEY(sensitive_value)))
-                                            WHEN 'smallint' THEN CONVERT(NVARCHAR(MAX), CONVERT(smallint, DECRYPTBYKEY(sensitive_value)))
-                                            WHEN 'int' THEN CONVERT(NVARCHAR(MAX), CONVERT(INT, DECRYPTBYKEY(sensitive_value)))
-                                            WHEN 'bigint' THEN CONVERT(NVARCHAR(MAX), CONVERT(bigint, DECRYPTBYKEY(sensitive_value)))
-                                        END
-                        ) decrypted
+                WHERE environment_id = $($srcEnvironment.EnvironmentId);
 
-                    WHERE environment_id = $($srcEnvironment.EnvironmentId);
-
-                    CLOSE SYMMETRIC KEY $encKey;
+                CLOSE SYMMETRIC KEY $encKey;
 "@
 
-                $ssisVariables = $connection.Databases['SSISDB'].ExecuteWithResults($sql).Tables[0]
-                
-                foreach($variable in $ssisVariables) {
-                    if($variable.sensitive -eq $true) {
-                        $value = $variable.decrypted
-                    } else {
-                        $value = $variable.value
-                    }
-                    [PSCustomObject]@{
-                        Id              = $variable.variable_id
-                        Name            = $variable.Name
-                        Description     = $variable.description
-                        Type            = $variable.type
-                        IsSensitive     = $variable.sensitive
-                        BaseDataType    = $variable.base_data_type
-                        Value           = $value
-                    }
-                } # end foreach
-            } # end if($folders.Name -contains $folder)
-        } # end if($folder)
+            $ssisVariables = $connection.Databases['SSISDB'].ExecuteWithResults($sql).Tables[0]
+            
+            foreach($variable in $ssisVariables) {
+                if($variable.sensitive -eq $true) {
+                    $value = $variable.decrypted
+                } else {
+                    $value = $variable.value
+                }
+                [PSCustomObject]@{
+                    Id              = $variable.variable_id
+                    Name            = $variable.Name
+                    Description     = $variable.description
+                    Type            = $variable.type
+                    IsSensitive     = $variable.sensitive
+                    BaseDataType    = $variable.base_data_type
+                    Value           = $value
+                }
+            } # end foreach
+        } # end if($scrFolder)
+        else
+        {
+            Stop-Function -Message "Folder $Folder no found" -Silent $false
+            return
+        }
     } # end process
 
     end {
