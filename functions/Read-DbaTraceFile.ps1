@@ -252,21 +252,5 @@ Filters only results where LinkServerName = myls and StartTime is greater than '
 				Invoke-DbaSqlcmd -ServerInstance $server -Query $sql
 			}
 		}
-		
-		<#
-		pfclnt.dll is junk but I'm not ready to give up on it just yet.
-		https://connect.microsoft.com/SQLServer/feedback/details/483926/cannot-open-server-tracefile-with-sql-server-r2-x64
-		
-		Add-Type -AssemblyName "Microsoft.SqlServer.ConnectionInfo, Version=10.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91"
-		Add-Type -AssemblyName "Microsoft.SqlServer.ConnectionInfoExtended,  Version=10.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91"
-		
-		[System.Reflection.Assembly]::LoadFrom("C:\Program Files (x86)\Microsoft SQL Server\130\Tools\Binn\PFCLNT.DLL")
-		
-		$localpath = "C:\Program Files\Microsoft SQL Server\MSSQL10_50.SQL2008R2SP2\MSSQL\DATA\bigtrace.trc"
-		foreach ($file in $localpath) {
-			$reader = New-Object Microsoft.SqlServer.Management.Trace.TraceFile
-			$reader.InitializeAsReader($file)
-		}
-		#>
 	}
 }
