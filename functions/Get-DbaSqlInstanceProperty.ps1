@@ -55,12 +55,29 @@ Returns SQL Instance properties on sql2 and sql4
 			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -ErrorRecord $_ -Target $instance -Continue -Silent $Silent
 			}
-			$props = $server.properties
+			$props = $server.information.properties
+      foreach ($prop in $props) {
+        Add-Member -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+        Add-Member -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+        Add-Member -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+				Add-Member -InputObject $prop -MemberType NoteProperty -Name PropertyType -Value 'Information'
+				Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, SqlInstance, Name, Value, PropertyType
+      }
+      $props = $server.useroptions.properties
 			foreach ($prop in $props) {
 				Add-Member -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
 				Add-Member -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
 				Add-Member -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-				Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, SqlInstance, Name, Value
+				Add-Member -InputObject $prop -MemberType NoteProperty -Name PropertyType -Value 'UserOption'
+				Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, SqlInstance, Name, Value, PropertyType
+			}
+      $props = $server.settings.properties
+			foreach ($prop in $props) {
+				Add-Member -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+				Add-Member -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+				Add-Member -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+				Add-Member -InputObject $prop -MemberType NoteProperty -Name PropertyType -Value 'Setting'
+				Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, SqlInstance, Name, Value, PropertyType
 			}
 		}
 	}
