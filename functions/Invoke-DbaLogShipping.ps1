@@ -6,6 +6,25 @@ Invoke-DbaLogShipping sets up log shipping for one or more databases
 .DESCRIPTION
 Invoke-DbaLogShipping helps to easily set up log shipping for one or more databases.
 
+This function will make a lot of decisions for you assuming you want default values like a daily interval for the schedules with a 15 minute interval on the day.
+There are some settings that cannot be made by the function and they need to be prepared before the function is executed.
+
+The following settings need to be made before log shipping can be initiated:
+- Backup destination (the folder and the privileges)
+- Copy destination (the folder and the privileges)
+
+* Privileges
+Make sure your agent service on both the primary and the secondary instance is an Active Directory account.
+Also have the credentials ready to set the folder permissions
+
+** Network share
+The backup destination needs to be shared and have the share privileges of FULL CONTROL to Everyone.
+
+** NTFS permissions
+The backup destination must have at least read/write permissions for the primary instance agent account. 
+The backup destination must have at least read permissions for the secondary instance agent account.
+The copy destination must have at least read/write permission for the secondary instance agent acount.
+
 .PARAMETER SourceSqlInstance
 Source SQL Server instance which contains the databases to be log shipped. 
 You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -648,11 +667,11 @@ The secondary databse will be called "db1_DR".
 
         # Check the backup network path
         if (-not ((Test-Path $CopyDestinationFolder -PathType Container -IsValid -Credential $DestinationCredential) -and (Get-Item $CopyDestinationFolder).PSProvider.Name -eq 'FileSystem')) {
-            Stop-Function -Message "Backup network path $CopyDestinationFolder is not valid or can't be reached." -Target $DestinationSqlInstance 
+            Stop-Function -Message "Copy destination folder $CopyDestinationFolder is not valid or can't be reached." -Target $DestinationSqlInstance 
             return
         }
-        elseif ($CopyDestinationFolder -notmatch $RegexUnc) {
-            Stop-Function -Message "Backup network path $CopyDestinationFolder has to be in the form of \\server\share." -Target $DestinationSqlInstance 
+        elseif ($CopyDestinationFolder.StartsWith("\\") -and $CopyDestinationFolder -notmatch $RegexUnc) {
+            Stop-Function -Message "Copy destination folder $CopyDestinationFolder has to be in the form of \\server\share." -Target $DestinationSqlInstance 
             return
         }
 
