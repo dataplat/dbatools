@@ -75,10 +75,10 @@ Allowed values are 2, "Seconds", 4, "Minutes", 8 or "Hours"
 .PARAMETER BackupScheduleFrequencySubdayInterval
 The number of subday type periods to occur between each execution of the backup job.
 
-.PARAMETER BackupFrequencyRelativeInterval
+.PARAMETER BackupScheduleFrequencyRelativeInterval
 A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
 
-.PARAMETER BackupFrequencyRecurrenceFactor
+.PARAMETER BackupScheduleFrequencyRecurrenceFactor
 The number of weeks or months between the scheduled execution of a job. FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative". 
 
 .PARAMETER BackupScheduleStartDate
@@ -139,10 +139,10 @@ Allowed values are 2, "Seconds", 4, "Minutes", 8 or "Hours"
 .PARAMETER CopyScheduleFrequencySubdayInterval
 The number of subday type periods to occur between each execution of the copy job.
 
-.PARAMETER CopyFrequencyRelativeInterval
+.PARAMETER CopyScheduleFrequencyRelativeInterval
 A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
 
-.PARAMETER CopyFrequencyRecurrenceFactor
+.PARAMETER CopyScheduleFrequencyRecurrenceFactor
 The number of weeks or months between the scheduled execution of a job. FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative". 
 
 .PARAMETER CopyScheduleStartDate
@@ -243,10 +243,10 @@ Allowed values are 2, "Seconds", 4, "Minutes", 8 or "Hours"
 .PARAMETER RestoreScheduleFrequencySubdayInterval
 The number of subday type periods to occur between each execution of the restore job.
 
-.PARAMETER RestoreFrequencyRelativeInterval
+.PARAMETER RestoreScheduleFrequencyRelativeInterval
 A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
 
-.PARAMETER RestoreFrequencyRecurrenceFactor
+.PARAMETER RestoreScheduleFrequencyRecurrenceFactor
 The number of weeks or months between the scheduled execution of a job. FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative". 
 
 .PARAMETER RestoreScheduleStartDate
