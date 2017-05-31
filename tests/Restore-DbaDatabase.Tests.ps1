@@ -69,8 +69,8 @@
     }
 	
     Context "Folder restore options" {
-        $DataFolder = 'c:\github\data'
-        $LogFolder = 'C:\github\log'
+        $DataFolder = 'c:\temp\datafiles'
+        $LogFolder = 'C:\temp\logfiles'
         New-Item -Type Directory $DataFolder
         new-Item -Type Directory $LogFolder
         $results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance localhost -DestinationDataDirectory $DataFolder
