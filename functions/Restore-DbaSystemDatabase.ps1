@@ -75,8 +75,8 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
 #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param ([parameter(ValueFromPipeline, Mandatory = $true)]
-        [Alias("ServerInstance", "SqlInstance")]
-        [object[]]$SqlServer,
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter]$SqlInstace,
         [PSCredential]$Credential,
         [PSCredential]$SqlCredential,
         [String[]]$BackupPath,
@@ -87,7 +87,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
         [Switch]$Silent,
         [switch]$AcceptClusterRisk
     )
-    BEGIN {
+    begin {
         #workarounds requested by Klaas until Fred finished his work:
         Function Stop-DbaService {
             [CmdletBinding(SupportsShouldProcess = $true)]
@@ -236,7 +236,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
     }
 
 
-    END {
+    process {
         $FunctionName = (Get-PSCallstack)[0].Command
         $RestoreResult = @()
         #Needed while we don't have SqlConnection support for getservice
