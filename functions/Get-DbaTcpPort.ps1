@@ -64,7 +64,7 @@ Returns an object with server name, IPAddress (just ipv4), port and static ($tru
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("SqlCredential")]
 		[PsCredential]$Credential,
 		[switch]$Detailed,
