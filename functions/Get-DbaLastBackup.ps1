@@ -40,12 +40,17 @@ Get-DbaLastBackup -SqlInstance ServerA\sql987
 Returns a custom object displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated
 
 .EXAMPLE
-Get-DbaLastBackup -SqlInstance ServerA\sql987 -Simple
+Get-DbaLastBackup -SqlInstance ServerA\sql987
 
 Returns a custom object with Server name, Database name, and the date the last time backups were performed
 
 .EXAMPLE
-Get-DbaLastBackup -SqlInstance ServerA\sql987 | Out-Gridview
+Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select *
+
+Returns a custom object with Server name, Database name, and the date the last time backups were performed, and also recoverymodel and calculations on how long ago backups were taken and what the status is.
+
+.EXAMPLE
+Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select * | Out-Gridview
 
 Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated
 
@@ -60,8 +65,7 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$ExcludeDatabase,
-		[switch]$Simple
+		[object[]]$ExcludeDatabase
 	)
 
 	process {
@@ -132,13 +136,8 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 					DatabaseCreated    = $db.createDate
 					DaysSinceDbCreated = $daysSinceDbCreated
 					Status             = $status
-				}
-				if ($Simple) {
-					$result | Select-Object ComputerName, InstanceName, Database, LastFullBackup, LastDiffBackup, LastLogBackup
-				}
-				else {
-					$result
-				}
+				    }
+				Select-DefaultView -InputObject $result -Property ComputerName, InstanceName, SqlInstance, Database, LastFullBackup, LastDiffBackup, LastLogBackup
 			}
 		}
 	}
