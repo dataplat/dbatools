@@ -39,7 +39,7 @@ If specified this is the server that the Agent Jobs will be created on. By defau
 .PARAMETER Database
 The database name to remove or an array of database names eg $Database = 'DB1','DB2','DB3'
 
-.PARAMETER NoDbccCheckDB
+.PARAMETER NoDbccCheckDb
 If this switch is used the initial DBCC CHECK DB will be skipped. This will make the process quicker but will also create an agent job to restore a database backup containing a corrupt database. 
 A second DBCC CHECKDB is performed on the restored database so you will still be notified BUT USE THIS WITH CARE
 
@@ -117,7 +117,7 @@ perform a DBCC ChECK DB and then drop the database
 Any DBCC errors will be written to your documents folder
 
 .EXAMPLE 
-Remove-DbaDatabaseSafely -SqlInstance IronMaiden -Database $Database -DestinationServer TheWildHearts -DBCCErrorFolder C:\DBCCErrors -BackupFolder z:\Backups -NoDbccCheckDB -UseDefaultFilePaths -JobOwner 'THEBEARD\Rob' 
+Remove-DbaDatabaseSafely -SqlInstance IronMaiden -Database $Database -DestinationServer TheWildHearts -DBCCErrorFolder C:\DBCCErrors -BackupFolder z:\Backups -NoDbccCheckDb -UseDefaultFilePaths -JobOwner 'THEBEARD\Rob' 
 
 For the databases $Database on the server IronMaiden Will NOT perform a DBCC CHECKDB 
 It will backup the databases to the folder Z:\Backups It will then create an Agent Job on the server with a Job Owner of THEBEARD\Rob 
@@ -152,7 +152,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		[object]$DestinationCredential,
 		[parameter(Mandatory = $false)]
 		[Alias("NoCheck")]
-		[switch]$NoDbccCheckDB,
+		[switch]$NoDbccCheckDb,
 		[parameter(Mandatory = $true)]
 		[string]$BackupFolder,
 		[parameter(Mandatory = $false)]
@@ -166,14 +166,16 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		[ValidateSet("Default", "On", "Of")]
 		[string]$BackupCompression = 'Default',
 		#[Alias("UseDefaultFilePaths")]
+
 		[switch]$ReuseSourceFolderStructure,
 		[switch]$Force,
-		[switch]$Silent		
+		[switch]$Silent
 	)
 	
 	begin {
 		if (!$AllDatabases -and !$Database) {
-            Stop-Function -Message "You must specify at least one database. Use -Database or -AllDatabases." -Silent $Silent -InnerErrorRecord $_
+			Stop-Function -Message "You must specify at least one database. Use -Database or -AllDatabases." -InnerErrorRecord $_
+			return
 		}
 		
 		$sourceserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlCredential -ParameterConnection
@@ -191,7 +193,8 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			$destnb = $sourceserver.ComputerNamePhysicalNetBIOS
 			
 			if ($BackupFolder.StartsWith("\\") -eq $false -and $sourcenb -ne $destnb) {
-				Stop-Function -Message "Backup folder must be a network share if the source and destination servers are not the same." -Silent $Silent -InnerErrorRecord $_ -Target $backupFolder
+				Stop-Function -Message "Backup folder must be a network share if the source and destination servers are not the same." -InnerErrorRecord $_ -Target $backupFolder
+				return	
 			}
 		}
 		else {
@@ -211,14 +214,14 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		
 		if (!(Test-DbaSqlPath -SqlInstance $destserver -Path $backupFolder)) {
 			$serviceaccount = $destserver.ServiceAccount
-            Stop-Function -Message "Can't access $backupFolder Please check if $serviceaccount has permissions" -Silent $Silent -InnerErrorRecord $_ -Target $backupFolder
+			Stop-Function -Message "Can't access $backupFolder Please check if $serviceaccount has permissions" -InnerErrorRecord $_ -Target $backupFolder
 		}
 		
 		$jobname = "Rationalised Final Database Restore for $dbname"
 		$jobStepName = "Restore the $dbname database from Final Backup"
 		
 		if (!($destserver.Logins | Where-Object{ $_.Name -eq $jobowner })) {
-            Stop-Function -Message "$destination does not contain the login $jobowner - Please fix and try again - Aborting" -Silent $Silent -InnerErrorRecord $_ -Target $jobowner
+			Stop-Function -Message "$destination does not contain the login $jobowner - Please fix and try again - Aborting" -InnerErrorRecord $_ -Target $jobowner
 		}
 		
 		function Start-SqlAgent {
@@ -251,6 +254,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				
 				catch {
 					Stop-Function -Message "Error occured: $_" -Target $agentservice -InnerExceptionRecord $_
+					return
 				}
 				
 				if ($agentservice.Status -ne 'Running') {
@@ -269,7 +273,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			
 			$servername = $server.name
 			$db = $server.databases[$dbname]
-
+			
 			if ($Pscmdlet.ShouldProcess($sourceserver, "Running dbcc check on $dbname on $servername")) {
 				try {
 					$null = $db.CheckTables('None')
@@ -308,7 +312,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 					}
 					catch {
 						Stop-Function -Message "FAILED : To Create Agent Job Category - $categoryname - Aborting" -Target $categoryname -InnerExceptionRecord $_
-                        return
+						return
 					}
 				}
 			}
@@ -399,6 +403,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		
 	}
 	process {
+		if (Test-FunctionInterrupt) { return }
 		Start-SqlAgent
 		
 		$start = Get-Date
@@ -410,8 +415,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			
 			# The db check is needed when the number of databases exceeds 255, then it's no longer autopopulated
 			if (!$db) {
-				Write-Message -Level Warning -Message "$dbname does not exist on $source. Aborting routine for this database"
-				continue
+				Stop-Function -Message "$dbname does not exist on $source. Aborting routine for this database" -Continue
 			}
 			
 			$jobname = "Rationalised Database Restore Script for $dbname"
@@ -420,12 +424,11 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			
 			if ($jobServer.Jobs[$jobname].count -gt 0) {
 				if ($force -eq $false) {
-					Write-Message -Level Warning -Message "FAILED: The Job $jobname already exists. Have you done this before? Rename the existing job and try again or use -Force to drop and recreate."
-					continue
+					Stop-Function -Message "FAILED: The Job $jobname already exists. Have you done this before? Rename the existing job and try again or use -Force to drop and recreate." -Continue
 				}
 				else {
 					if ($Pscmdlet.ShouldProcess($dbname, "Dropping $jobname on $source")) {
-						Write-Message -Level Verbose -Message  "Dropping $jobname on $source"
+						Write-Message -Level Verbose -Message "Dropping $jobname on $source"
 						$jobServer.Jobs[$jobname].Drop()
 						$jobServer.Jobs.Refresh()
 					}
@@ -435,11 +438,11 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			
 			Write-Message -Level Verbose -Message "Starting Rationalisation of $dbname"
 			## if we want to Dbcc before to abort if we have a corrupt database to start with
-			if ($NoDbccCheckDB -eq $false) {
+			if ($NoDbccCheckDb -eq $false) {
 				if ($Pscmdlet.ShouldProcess($dbname, "Running dbcc check on $dbname on $source")) {
 					Write-Message -Level Verbose -Message "Starting Dbcc CHECKDB for $dbname on $source"
 					$dbccgood = Start-DbccCheck -Server $sourceserver -DBName $dbname
-
+					
 					if ($dbccgood -eq $false) {
 						if ($force -eq $false) {
 							Write-Message -Level Verbose -Message "DBCC failed for $dbname (you should check that).  Aborting routine for this database"
@@ -504,15 +507,11 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 						Write-Message -Level Verbose -Message "Restore Verify Only for $filename Succeeded "
 					}
 					catch {
-						Write-Message -Level Warning -Message "FAILED : Restore Verify Only failed for $filename on $server - aborting routine for this database"
-						Stop-Function -Message "$_" -Target $filename -InnerExceptionRecord $_
-                        return
+						Stop-Function -Message "FAILED : Restore Verify Only failed for $filename on $server - aborting routine for this database. Exception: $_" -Target $filename -InnerExceptionRecord $_ -Continue
 					}
 				}
 				catch {
-					Stop-Function -Message "$_" -Target $filename -InnerExceptionRecord $_
-					Write-Message -Level Warning -Message "FAILED : To backup database $dbname on $server - aborting routine for this database"
-					return
+					Stop-Function -Message "FAILED : Restore Verify Only failed for $filename on $server - aborting routine for this database. Exception: $_" -Target $filename -InnerExceptionRecord $_ -Continue
 				}
 			}
 			
@@ -542,9 +541,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 						}
 					}
 					catch {
-						Write-Message -Level Warning -Message "FAILED : To Create Agent Job $jobname on $destination - aborting routine for this database"
-						Stop-Function -Message "$_" -Target $categoryname -InnerExceptionRecord $_
-						continue
+						Stop-Function -Message "FAILED : To Create Agent Job $jobname on $destination - aborting routine for this database" -Target $categoryname -InnerExceptionRecord $_ -Continue
 					}
 					
 					## Create Job Step
@@ -585,9 +582,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 						Write-Message -Level Verbose -Message "Created Agent JobStep $jobStepName on $destination "
 					}
 					catch {
-						Write-Message -Level Warning -Message "FAILED : To Create Agent JobStep $jobStepName on $destination - Aborting"
-						Stop-Function -Message "$_" -Target $jobStepName -InnerExceptionRecord $_
-						continue
+						Stop-Function -Message "FAILED : To Create Agent JobStep $jobStepName on $destination - Aborting" -Target $jobStepName -InnerExceptionRecord $_ -Continue
 					}
 					if ($Pscmdlet.ShouldProcess($destination, "Applying Agent Job $jobname to $destination")) {
 						$job.ApplyToTargetServer($destination)
@@ -596,9 +591,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 					}
 				}
 				catch {
-					Write-Message -Level Warning -Message "FAILED : To Create Agent Job $jobname on $destination - aborting routine for $dbname"
-					Stop-Function -Message "$_" -Target $jobname -InnerExceptionRecord $_
-					continue
+					Stop-Function -Message "FAILED : To Create Agent Job $jobname on $destination - aborting routine for $dbname. Exception: $_" -Target $jobname -InnerExceptionRecord $_ -Continue
 				}
 			}
 			
@@ -610,10 +603,8 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 					Write-Message -Level Verbose -Message "Dropped $dbname Database  on $source prior to running the Agent Job"
 				}
 				catch {
-					Write-Message -Level Warning -Message "FAILED : To Drop database $dbname on $server - aborting routine for $dbname"
-					Stop-Function -Message $_ -Continue
-					continue
-				}
+					Stop-Function -Message "FAILED : To Drop database $dbname on $server - aborting routine for $dbname. Exception: $_" -Continue
+					}
 			}
 			
 			if ($Pscmdlet.ShouldProcess($destination, "Running Agent Job on $destination to restore $dbname")) {
@@ -637,9 +628,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 					Start-Sleep -Seconds 10 ## This is required to ensure the next DBCC Check succeeds
 				}
 				catch {
-					Write-Message -Level Warning -Message "FAILED : Restore Job $jobname failed on $destination - aborting routine for $dbname"
-					Stop-Function -Message $_ -Continue
-					continue
+					Stop-Function -Message "FAILED : Restore Job $jobname failed on $destination - aborting routine for $dbname. Exception: $_" -Continue
 				}
 				
 				if ($job.LastRunOutcome -ne 'Succeeded') {
@@ -650,22 +639,21 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 					continue
 				}
 			}
-
-            		$refreshRetries = 1
-            		
-            		while (($destserver.databases[$dbname] -eq $null) -and $refreshRetries -lt 5)
-            		{
-            		    Write-Verbose "Database $dbname not found! Refreshing collection"
-            		    
-            		    #refresh database list, otherwise the next step (DBCC) can fail
-            		    $destserver.Databases.Refresh()
-            		    
-            		    Start-Sleep -Seconds 1
-            		    
-            		    $refreshRetries += 1
-            		}
-           
-
+			
+			$refreshRetries = 1
+			
+			while (($destserver.databases[$dbname] -eq $null) -and $refreshRetries -lt 5) {
+				Write-Verbose "Database $dbname not found! Refreshing collection"
+				
+				#refresh database list, otherwise the next step (DBCC) can fail
+				$destserver.Databases.Refresh()
+				
+				Start-Sleep -Seconds 1
+				
+				$refreshRetries += 1
+			}
+			
+			
 			## Run a Dbcc No choice here
 			if ($Pscmdlet.ShouldProcess($dbname, "Running Dbcc CHECKDB on $dbname on $destination")) {
 				Write-Message -Level Verbose -Message "Starting Dbcc CHECKDB for $dbname on $destination"
@@ -679,21 +667,19 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 					Write-Message -Level Verbose -Message "Dropped $dbname database on $destination"
 				}
 				catch {
-					Write-Message -Level Warning -Message "FAILED : To Drop database $dbname on $destination - Aborting"
-					Stop-Function -Message "$_" -Target $dbname -InnerExceptionRecord $_
-					continue
+					Stop-Function -Message "FAILED : To Drop database $dbname on $destination - Aborting. Exception: $_" -Target $dbname -InnerExceptionRecord $_ -Continue
 				}
 			}
 			Write-Message -Level Verbose -Message "Rationalisation Finished for $dbname"
 		}
-
+		
 		[PSCustomObject]@{
 			SqlInstance = $source
 			DatabaseName = $dbname
 			JobName = $jobname
 			TestingInstance = $destination
 			BackupFolder = $backupFolder
-		} 
+		}
 	}
 	
 	end {
