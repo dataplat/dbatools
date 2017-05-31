@@ -110,7 +110,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
 			
             if ($InstanceName.Length -eq 0) { $InstanceName = "MSSqlServer" }
 
-            Write-Verbose "Attempting to stop SQL Service $InstanceName on $ServerName" 
+           Write-Message -Level verbose "Attempting to stop SQL Service $InstanceName on $ServerName" 
 
             If ($Service -eq 'SqlServer') {
                 $DisplayName = "SQL Server ($InstanceName)"  
@@ -129,7 +129,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                 $DisplayName = $args[1]
                     
                 $wmisvc = $wmi.Services | Where-Object { $_.DisplayName -like $DisplayName }
-                Write-Verbose "Attempting to Stop $DisplayName on $ServerName"
+               Write-Message -Level verbose "Attempting to Stop $DisplayName on $ServerName"
                 try {
                     $timeout = new-timespan -Minutes 1
                     $timer = [diagnostics.stopwatch]::StartNew()
@@ -178,7 +178,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
 			
 			if ($InstanceName.Length -eq 0) { $InstanceName = "MSSqlServer" }
 
-            Write-Verbose "Attempting to Start SQL Service $InstanceName on $ServerName" 
+           Write-Message -Level verbose "Attempting to Start SQL Service $InstanceName on $ServerName" 
 
             If ($Service -eq 'SqlServer') {
                 $DisplayName = "SQL Server ($InstanceName)"  
@@ -197,7 +197,7 @@ This will restore the master, model and msdb on server1\prod1 to a point in time
                 $DisplayName = $args[1]
                     
                 $wmisvc = $wmi.Services | Where-Object { $_.DisplayName -like $DisplayName }
-                Write-Verbose "Attempting to Start $DisplayName on $ServerName"
+                Write-Message -Level verbose "Attempting to Start $DisplayName on $ServerName"
                 try {
                     $timeout = new-timespan -Minutes 1
                     $timer = [diagnostics.stopwatch]::StartNew()
