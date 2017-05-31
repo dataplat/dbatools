@@ -174,7 +174,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
+				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance -InnerErrorRecord $_
 			}
 			# Reset all the arrays
 			$dirtreefiles = $valid = $paths = $matching = @()
