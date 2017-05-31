@@ -67,7 +67,12 @@ Returns a connection string builder that can be used to connect to the local sql
 		[string]$UserName = $null,
 		# No point in securestring here, the memory is never stored securely in memory.
 		[Parameter(Mandatory = $false)]
-		[string]$Password = $null
+		[string]$Password =  $null,
+		[Alias('MARS')]
+		[Parameter(Mandatory = $false)]
+		[switch]$MultipleActiveResultSets,
+		[Parameter(Mandatory = $false)]
+		[string]$WorkstationId = $env:COMPUTERNAME
 	)
     process {
 		foreach ($cs in $ConnectionString) {
@@ -87,11 +92,17 @@ Returns a connection string builder that can be used to connect to the local sql
 			if (![string]::IsNullOrWhiteSpace($UserName)) {
 				$builder["User ID"] = $UserName
 			}
-			<#
-			if ($Password -ne $null) {
+			if (![string]::IsNullOrWhiteSpace($Password)) {
 				$builder['Password'] = $Password
 			}
-			#>
+			if (![string]::IsNullOrWhiteSpace($WorkstationId)) {
+				$builder['Workstation ID'] = $WorkstationId
+			}
+			if ($MultipleActiveResultSets -eq $true) {
+				Write-Host "Here"
+				$builder['MultipleActiveResultSets'] = $true
+				Write-Host $builder
+			}
 			$builder
 		}
     }
