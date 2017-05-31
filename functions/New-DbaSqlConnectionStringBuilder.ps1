@@ -71,6 +71,10 @@ Returns a connection string builder that can be used to connect to the local sql
 		[Alias('MARS')]
 		[Parameter(Mandatory = $false)]
 		[switch]$MultipleActiveResultSets,
+		[Alias('AlwaysEncrypted')]
+		[Parameter(Mandatory = $false)]
+		[Data.SqlClient.SqlConnectionColumnEncryptionSetting]$ColumnEncryptionSetting = 
+			[Data.SqlClient.SqlConnectionColumnEncryptionSetting]::Enabled,
 		[Parameter(Mandatory = $false)]
 		[string]$WorkstationId = $env:COMPUTERNAME
 	)
@@ -101,6 +105,11 @@ Returns a connection string builder that can be used to connect to the local sql
 			if ($MultipleActiveResultSets -eq $true) {
 				Write-Host "Here"
 				$builder['MultipleActiveResultSets'] = $true
+				Write-Host $builder
+			}
+			if ($ColumnEncryptionSetting -eq [Data.SqlClient.SqlConnectionColumnEncryptionSetting]::Enabled) {
+				Write-Host "Here"
+				$builder['Column Encryption Setting'] = [Data.SqlClient.SqlConnectionColumnEncryptionSetting]::Enabled
 				Write-Host $builder
 			}
 			$builder

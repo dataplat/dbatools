@@ -5,7 +5,7 @@ Describe "New-DbaSqlConnectionStringBuilder Unit Tests" -Tag 'Unittests' {
             $results.GetType() | Should Be System.Data.SqlClient.SqlConnectionStringBuilder
         }
         It "Should enable Always Encrypted" {
-            $results.ColumnEncryptionSetting  | Should Be "Enabled"
+            $results.ColumnEncryptionSetting | Should Be Enabled
         }
         It "Should have a user name of sa" {
             $results.UserID  | Should Be "sa"
@@ -62,6 +62,12 @@ Describe "New-DbaSqlConnectionStringBuilder Unit Tests" -Tag 'Unittests' {
         $results = New-DbaSqlConnectionStringBuilder -MARS
         It "Should have a MultipeActiveResultSets value of true" {
             $results.MultipleActiveResultSets | Should Be $true
+        }
+    }
+    Context "Set AlwaysEncrypted" {
+        $results = New-DbaSqlConnectionStringBuilder -AlwaysEncrypted "Enabled" 
+        It "Should have a `"Column Encryption Setting`" value of `"Enabled`"" {
+            $results.ColumnEncryptionSetting | Should Be 'Enabled'
         }
     }
 }
