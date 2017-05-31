@@ -151,7 +151,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		[object]$Destination = $sqlinstance,
 		[object]$DestinationCredential,
 		[parameter(Mandatory = $false)]
-        [Alias("NoCheck")]
+        	[Alias("NoCheck")]
 		[switch]$NoDBCCCheck,
 		[parameter(Mandatory = $true)]
 		[string]$BackupFolder,
@@ -651,20 +651,19 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				}
 			}
 
-            $refreshRetries = 1
-
-            while (($destserver.databases[$dbname] -eq $null) -and $refreshRetries -lt 5)
-            {
-                Write-Verbose "Database $dbname not found! Refreshing collection"
-                
-                #refresh database list, otherwise the next step (DBCC) can fail
-                $destserver.Databases.Refresh()
-                
-                Start-Sleep -Seconds 1
-                
-                $backupRetries+=1
-            }
-           
+            		$refreshRetries = 1
+		
+            		while (($destserver.databases[$dbname] -eq $null) -and $refreshRetries -lt 5)
+            		{
+            		    Write-Verbose "Database $dbname not found! Refreshing collection"
+            		    
+            		    #refresh database list, otherwise the next step (DBCC) can fail
+            		    $destserver.Databases.Refresh()
+            		    
+            		    Start-Sleep -Seconds 1
+            		    
+            		    $refreshRetries += 1
+            		}
 
 			## Run a Dbcc No choice here
 			if ($Pscmdlet.ShouldProcess($dbname, "Running Dbcc CHECKDB on $dbname on $destination")) {
@@ -687,10 +686,10 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			Write-Message -Level Verbose -Message "Rationalisation Finished for $dbname"
 		}
 
-        [PSCustomObject]@{
+        	[PSCustomObject]@{
 				SqlInstance = $source
-                DatabaseName = $dbname
-                JobName = $jobname
+                		DatabaseName = $dbname
+                		JobName = $jobname
 				TestingInstance = $destination
 				BackupFolder = $backupFolder
 			} 
