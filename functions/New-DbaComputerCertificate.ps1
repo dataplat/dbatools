@@ -216,11 +216,11 @@ Suppresses all prompts to install but prompts to securely enter your password an
 					$tempdir = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 					$filename = "$tempdir\cert.cer"
 					[System.IO.File]::WriteAllBytes($filename, $args)
-					certutil -addstore -f -enterprise Personal "$filename"
+					certutil -addstore -enterprise "$filename"
 					#-Enterprise 
 					$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
 					$cert.Import($filename, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
-					$cert 
+					 
 					Get-ChildItem Cert:\LocalMachine -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
 					
 					Remove-Item -Path $filename
