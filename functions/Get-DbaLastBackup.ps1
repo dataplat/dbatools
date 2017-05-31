@@ -118,7 +118,9 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 				else { $Status = 'OK' }
 
 				$result = [PSCustomObject]@{
-					Server             = $server.name
+					ComputerName       = $server.NetName
+					InstanceName       = $server.ServiceName
+					SqlInstance        = $server.DomainInstanceName
 					Database           = $db.name
 					RecoveryModel      = $db.recoverymodel
 					LastFullBackup     = if ($db.LastBackupdate -eq 0) { $null } else { $db.LastBackupdate.tostring() }
@@ -129,10 +131,10 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 					SinceLog           = $SinceLog
 					DatabaseCreated    = $db.createDate
 					DaysSinceDbCreated = $daysSinceDbCreated
-					Status             = $statu
+					Status             = $status
 				}
 				if ($Simple) {
-					$result | Select-Object Server, Database, LastFullBackup, LastDiffBackup, LastLogBackup
+					$result | Select-Object ComputerName, InstanceName, Database, LastFullBackup, LastDiffBackup, LastLogBackup
 				}
 				else {
 					$result
