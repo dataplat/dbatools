@@ -1,9 +1,13 @@
-# Implement query accelerator
+# Implement query accelerator for the server object
 Update-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Server -MemberName Query -MemberType ScriptMethod -Value {
     Param (
-        $Database,
-        $Query
+		$Query,
+		
+        $Database = "master",
+        
+		$AllTables = $false
     )
     
-    ($this.Databases[$Database].ExecuteWithResults($Query)).Tables[0]
+	if ($AllTables) { ($this.Databases[$Database].ExecuteWithResults($Query)).Tables }
+    else { ($this.Databases[$Database].ExecuteWithResults($Query)).Tables[0] }
 }
