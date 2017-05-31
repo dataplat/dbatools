@@ -17,6 +17,8 @@ The Folder name that contains the project
 .EXAMPLE
 Get-DbaSsisProjectConfiguration -SqlInstance localhost -Project SSISProject -Folder DWH_ETL
 
+Gets project 'SSISProject' configuration located in 'DWH_ETL' folder on 'localhost' server
+
 .NOTES
 Author: Bartosz Ratajczyk ( @b_ratajczyk )
 

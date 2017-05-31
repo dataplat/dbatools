@@ -17,6 +17,8 @@ The Folder name that contains the environment
 .EXAMPLE
 Get-DbaSsisEnvironment -SqlInstance localhost -Environment DEV -Folder DWH_ETL
 
+Gets variables of 'DEV' environment located in 'DWH_ETL' folder on 'localhost' Server
+
 .NOTES
 Author: Bartosz Ratajczyk ( @b_ratajczyk )
 
