@@ -6,7 +6,7 @@
 		[object[]]$ArgumentList
 	)
 	
-	if ($ComputerName -eq $env:COMPUTERNAME) {
+	if ([dbavalidate]::IsLocalhost($ComputerName)) {
 		Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList
 	}
 	else {
