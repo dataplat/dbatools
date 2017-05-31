@@ -277,6 +277,7 @@ function Restore-DbaDatabase {
         Write-Message -Level Debug -Message "Parameters bound: $($PSBoundParameters.Keys -join ", ")"
 		
         #region Validation
+        $useDestinationDefaultDirectories = $true
         $paramCount = 0
         if (Was-Bound "FileMapping") {
             $paramCount += 1
@@ -340,7 +341,7 @@ function Restore-DbaDatabase {
         $isLocal = [dbavalidate]::IsLocalHost($SqlInstance.ComputerName)
 		
         $backupFiles = @()
-        $useDestinationDefaultDirectories = $true
+        #$useDestinationDefaultDirectories = $true
     }
     process {
         if (Test-FunctionInterrupt) { return }
