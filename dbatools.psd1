@@ -293,7 +293,8 @@
 		'Get-DbaSqlInstanceUserOption',
 		'New-DbaSqlConnectionString',
 		'Invoke-DbaLogShipping',
-		'Read-DbaTraceFile'
+		'Read-DbaTraceFile',
+		'New-DbaComputerCertificate'
 	)
 	
 	# Cmdlets to export from this module
