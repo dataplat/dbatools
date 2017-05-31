@@ -5,7 +5,7 @@ This command gets specified SSIS Environment and all its variables
 .DESCRIPTION
 This command gets all variables from specified environment from SSIS Catalog. All sensitive valus are decrypted.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server instance.
 
 .PARAMETER Project
