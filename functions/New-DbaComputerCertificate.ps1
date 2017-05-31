@@ -69,144 +69,166 @@ Suppresses all prompts to install but prompts to securely enter your password an
 		[System.Management.Automation.PSCredential]$Credential,
 		[string]$RootServer,
 		[string]$RootCaName,
-		[string]$Org = "IT",
-		[string]$City = "Brussels",
-		[string]$State = "BE",
-		[string]$Country = "BE",
-		[string]$OrganizationalUnit = "IT",
 		[string]$FriendlyName,
 		[int]$KeyLength = 4096,
 		[switch]$Silent
 	)
-	process {
-		foreach ($computer in $computername) {
-
-			Test-RunAsAdmin -ComputerName $computer.ComputerName
-			
-			if (!$RootServer -or !$RootCaName) {
-				try {
-					Write-Verbose "No RootServer or RootCaName specified. Finding it."
-					# hat tip Vadims Podans
-					$domain = ([System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain()).Name
-					$domain = "DC=" + $domain -replace '\.', ", DC="
-					$pks = [ADSI]"LDAP://CN=Enrollment Services, CN=Public Key Services, CN=Services, CN=Configuration, $domain"
-					$cas = $pks.psBase.Children
-					
-					$allcas = @()
-					foreach ($ca in $cas) {
-						$allcas += [pscustomobject]@{
-							CA = $ca | ForEach-Object { $_.Name }
-							Computer = $ca | ForEach-Object { $_.DNSHostName }
-						}
+	begin {
+		
+		if (!$RootServer -or !$RootCaName) {
+			try {
+				Write-Message -Level Verbose -Message "No RootServer or RootCaName specified. Finding it."
+				# hat tip Vadims Podans
+				$domain = ([System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain()).Name
+				$domain = "DC=" + $domain -replace '\.', ", DC="
+				$pks = [ADSI]"LDAP://CN=Enrollment Services, CN=Public Key Services, CN=Services, CN=Configuration, $domain"
+				$cas = $pks.psBase.Children
+				
+				$allcas = @()
+				foreach ($ca in $cas) {
+					$allcas += [pscustomobject]@{
+						CA = $ca | ForEach-Object { $_.Name }
+						Computer = $ca | ForEach-Object { $_.DNSHostName }
 					}
 				}
-				catch {
-					Write-Warning "Cannot access Active Direcotry or find the Certificate Authority: $_"
-					return
-				}
+			}
+			catch {
+				Stop-Function -Message "Cannot access Active Direcotry or find the Certificate Authority: $_"
+				return
+			}
+		}
+		
+		if (!$RootServer) {
+			$RootServer = ($allcas | Select-Object -First 1).Computer
+			Write-Message -Level Verbose -Message "Root Server: $RootServer"
+		}
+		
+		if (!$RootCaName) {
+			$RootCaName = ($allcas | Select-Object -First 1).CA
+			Write-Message -Level Verbose -Message "Root CA name: $RootCaName"
+		}
+		
+		$tempdir = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
+		$certTemplate = "CertificateTemplate:WebServer"
+	}
+	
+	process {
+		
+		if (Test-FunctionInterrupt) { return }
+		
+		foreach ($computer in $computername) {
+			Test-RunAsAdmin -ComputerName $computer
+			
+			$dns = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Turbo -WarningAction SilentlyContinue
+			
+			if (!$dns) {
+				$fqdn = "$ComputerName.$env:USERDNSDOMAIN"
+				Write-Message -Level Warning -Message "Server name cannot be resolved. Guessing it's $fqdn"
+			}
+			else {
+				$fqdn = $dns.fqdn
 			}
 			
-			if (!$RootServer) {
-				$RootServer = ($allcas | Select-Object -First 1).Computer
-				Write-Verbose "Root Server: $RootServer"
+			Write-Message -Level Verbose -Message "Processing $computer"
+			
+			if (!$FriendlyName) {
+				$FriendlyName = $fqdn
 			}
 			
-			if (!$RootCaName) {
-				$RootCaName = ($allcas | Select-Object -First 1).CA
-				Write-Verbose "Root CA name: $RootCaName"
+			$certdir = "$tempdir\$fqdn"
+			$certcfg = "$certdir\request.inf"
+			$certcsr = "$certdir\$fqdn.csr"
+			$certcrt = "$certdir\$fqdn.crt"
+			$certpfx = "$certdir\$fqdn.pfx"
+			
+			if (Test-Path($certdir)) {
+				Write-Message -Level Verbose -Message "Deleting files from $certdir"
+				$null = Remove-Item "$certdir\*.*"
+			}
+			else {
+				Write-Message -Level Verbose -Message "Creating $certdir"
+				$null = mkdir $certdir
 			}
 			
-			$scriptblock = {
-				$computer = $env:COMPUTERNAME
-				Write-Verbose "Processing $computer"
+			Set-Content $certcfg "[Version]"
+			Add-Content $certcfg 'Signature="$Windows NT$"'
+			Add-Content $certcfg "[NewRequest]"
+			Add-Content $certcfg "Subject = ""CN=$fqdn"""
+			Add-Content $certcfg "KeySpec = 1"
+			Add-Content $certcfg "KeyLength = $KeyLength"
+			Add-Content $certcfg "Exportable = TRUE"
+			Add-Content $certcfg "MachineKeySet = TRUE"
+			Add-Content $certcfg "FriendlyName=""$FriendlyName"""
+			Add-Content $certcfg "SMIME = False"
+			Add-Content $certcfg "PrivateKeyArchive = FALSE"
+			Add-Content $certcfg "UserProtected = FALSE"
+			Add-Content $certcfg "UseExistingKeySet = FALSE"
+			Add-Content $certcfg "ProviderName = ""Microsoft RSA SChannel Cryptographic Provider"""
+			Add-Content $certcfg "ProviderType = 12"
+			Add-Content $certcfg "RequestType = PKCS10"
+			Add-Content $certcfg "KeyUsage = 0xa0"
+			Add-Content $certcfg "[EnhancedKeyUsageExtension]"
+			Add-Content $certcfg "OID=1.3.6.1.5.5.7.3.1 ; this is for Server Authentication"
+			Add-Content $certcfg "[RequestAttributes]"
+			Add-Content $certcfg "SAN=""DNS=$fqdn&DNS=$computer"""
+			
+			Write-Message -Level Verbose -Message "Running: certreq -new $certcfg $certcsr"
+			$create = certreq -new $certcfg $certcsr
+			
+			Write-Message -Level Verbose -Message "certreq -submit -config `"$RootServer\$RootCaName`" -attrib $certTemplate $certcsr $certcrt $certpfx"
+			$submit = certreq -submit -config ""$RootServer\$RootCaName"" -attrib $certTemplate $certcsr $certcrt $certpfx
+			
+			if ($submit -match "ssued") {
+				Write-Message -Level Verbose -Message "certreq -accept -machine $certcrt"
+				$null = certreq -accept -machine $certcrt
+				$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+				$cert.Import($certcrt, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
+				$storedcert = Get-ChildItem Cert:\LocalMachine\My -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
 				
-				$fqdn = ("$env:computername.$env:userdnsdomain").ToLower()
-				
-				if (!$FriendlyName) {
-					$FriendlyName = $fqdn
+				if ([dbavalidate]::IsLocalhost($computer)) {
+					$storedcert
 				}
+			}
+			else {
+				Write-Message -Level Warning -Message "Something went wrong"
+				Write-Message -Level Warning -Message "$create"
+				Write-Message -Level Warning -Message "$submit"
+			}
+			
+			if (1 -eq 2 -and $allcas) {
+				Write-Message -Level Verbose -Message "Trying next CA"
+				$RootServer = ($allcas | Select-Object -Last 1).Computer
+				$RootCaName = ($allcas | Select-Object -Last 1).Name
 				
-				# Place the certs on a network location if your farm is larger than one server
-				$tempdir = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
+				Write-Message -Level Verbose -Message "certreq -submit -config `"$RootServer\$RootCaName`" -attrib $certTemplate $certcsr $certcrt $certpfx"
+				certreq -submit -config ""$RootServer\$RootCaName"" -attrib $certTemplate $certcsr $certcrt $certpfx
 				
-				$fqdn = ("$env:computername.$env:userdnsdomain").ToLower()
-				$certTemplate = "CertificateTemplate:WebServer"
+				Write-Message -Level Verbose -Message "certreq -accept -machine $certcrt"
+				certreq -accept -machine $certcrt
+			}
+			
+			if (![dbavalidate]::IsLocalhost($computer)) {
+				$storedcert | Remove-Item
 				
-				$certdir = "$tempdir\$fqdn"
-				$certcfg = "$certdir\request.inf"
-				$certcsr = "$certdir\$fqdn.csr"
-				$certcrt = "$certdir\$fqdn.crt"
-				$certpfx = "$certdir\$fqdn.pfx"
+				$file = [System.IO.File]::ReadAllBytes($certcrt)
 				
-				if (Test-Path($certdir)) {
-					Write-Verbose "Deleting files from $certdir"
-					$null = Remove-Item "$certdir\*.*"
-				}
-				else {
-					Write-Verbose "Creating $certdir"
-					$null = mkdir $certdir
-				}
-				Write-Warning $certdir
-				
-				Set-Content $certcfg "[Version]"
-				Add-Content $certcfg 'Signature="$Windows NT$"'
-				Add-Content $certcfg "[NewRequest]"
-				Add-Content $certcfg "Subject = ""CN=$fqdn, OU=$OrganizationalUnit, O=$org, L=$city, S=$state, C=$country"""
-				Add-Content $certcfg "KeySpec = 1"
-				Add-Content $certcfg "KeyLength = $KeyLength"
-				Add-Content $certcfg "Exportable = TRUE"
-				Add-Content $certcfg "MachineKeySet = TRUE"
-				Add-Content $certcfg "FriendlyName=""$FriendlyName"""
-				Add-Content $certcfg "SMIME = False"
-				Add-Content $certcfg "PrivateKeyArchive = FALSE"
-				Add-Content $certcfg "UserProtected = FALSE"
-				Add-Content $certcfg "UseExistingKeySet = FALSE"
-				Add-Content $certcfg "ProviderName = ""Microsoft RSA SChannel Cryptographic Provider"""
-				Add-Content $certcfg "ProviderType = 12"
-				Add-Content $certcfg "RequestType = PKCS10"
-				Add-Content $certcfg "KeyUsage = 0xa0"
-				Add-Content $certcfg "[EnhancedKeyUsageExtension]"
-				Add-Content $certcfg "OID=1.3.6.1.5.5.7.3.1 ; this is for Server Authentication"
-				Add-Content $certcfg "[RequestAttributes]"
-				Add-Content $certcfg "SAN=""DNS=$fqdn&DNS=$env:computername"""
-				
-				Write-Verbose "Running: certreq -new $certcfg $certcsr"
-				$create = cmd /c certreq -new $certcfg $certcsr
-				
-				Write-Verbose "certreq -submit -config `"$RootServer\$RootCaName`" -attrib $certTemplate $certcsr $certcrt $certpfx"
-				$submit = cmd /c certreq -submit -config ""$RootServer\$RootCaName"" -attrib $certTemplate $certcsr $certcrt $certpfx
-				
-				if ($submit -match "ssued") {
-					Write-Verbose "certreq -accept -machine $certcrt"
-					$null = cmd /c certreq -accept -machine $certcrt
+				$scriptblock = {
+					$tempdir = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
+					$filename = "$tempdir\cert.cer"
+					[System.IO.File]::WriteAllBytes($filename, $args)
+					certutil -addstore -f -enterprise Personal "$filename"
+					#-Enterprise 
 					$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-					$cert.Import($certcrt, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
+					$cert.Import($filename, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
+					$cert 
+					Get-ChildItem Cert:\LocalMachine -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
 					
-					Get-ChildItem Cert:\LocalMachine\My -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
-					
-				}
-				else {
-					Write-Warning "Something went wrong"
-					Write-Warning "$create"
-					Write-Warning "$submit"
+					Remove-Item -Path $filename
 				}
 				
-				if (1 -eq 2 -and $allcas) {
-					Write-Verbose "Trying next CA"
-					$RootServer = ($allcas | Select-Object -Last 1).Computer
-					$RootCaName = ($allcas | Select-Object -Last 1).Name
-					
-					Write-Verbose "certreq -submit -config `"$RootServer\$RootCaName`" -attrib $certTemplate $certcsr $certcrt $certpfx"
-					cmd /c certreq -submit -config ""$RootServer\$RootCaName"" -attrib $certTemplate $certcsr $certcrt $certpfx
-					
-					Write-Verbose "certreq -accept -machine $certcrt"
-					cmd /c certreq -accept -machine $certcrt
-				}
-				
-				Remove-Item -Force -Recurse $certdir -ErrorAction SilentlyContinue
+				Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $file -ScriptBlock $scriptblock
 			}
-			
-			Invoke-Command2 -ComputerName $computer.ComputerName -ScriptBlock $scriptblock -Verbose:$verbose -ArgumentList $PSBoundParameters
+			Remove-Item -Force -Recurse $certdir -ErrorAction SilentlyContinue
 		}
 	}
 }

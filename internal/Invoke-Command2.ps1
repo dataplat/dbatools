@@ -2,14 +2,26 @@
 	[CmdletBinding()]
 	param (
 		[string]$ComputerName,
+		[object]$Credential,
 		[scriptblock]$ScriptBlock,
 		[object[]]$ArgumentList
 	)
 	
 	if ([dbavalidate]::IsLocalhost($ComputerName)) {
-		Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList
+		if ($Credential) {
+			Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential
+		}
+		else {
+			Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList
+		}
+		
 	}
 	else {
-		Invoke-Command -ScriptBlock $ScriptBlock -ComputerName $ComputerName -ArgumentList $ArgumentList
+		if ($Credential) {
+			Invoke-Command -ScriptBlock $ScriptBlock -ComputerName $ComputerName -ArgumentList $ArgumentList -Credential $Credential
+		}
+		else {
+			Invoke-Command -ScriptBlock $ScriptBlock -ComputerName $ComputerName -ArgumentList $ArgumentList
+		}
 	}
 }
