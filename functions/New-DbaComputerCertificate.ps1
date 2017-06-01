@@ -78,7 +78,7 @@ Shows what would happen if the command were run
 		[string]$CaServer,
 		[string]$CaName,
 		[securestring]$Password,
-		[string]$FriendlyName,
+		[string]$FriendlyName = "SQL Server",
 		[int]$KeyLength = 4096,
 		[switch]$Silent
 	)
@@ -120,7 +120,7 @@ Shows what would happen if the command were run
 		}
 		
 		$tempdir = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-		$certTemplate = "CertificateTemplate:WebServer"
+		$certTemplate = "CertificateTemplate:Computer"
 		
 	}
 	
@@ -182,13 +182,18 @@ Shows what would happen if the command were run
 			Add-Content $certcfg "UseExistingKeySet = FALSE"
 			Add-Content $certcfg "ProviderName = ""Microsoft RSA SChannel Cryptographic Provider"""
 			Add-Content $certcfg "ProviderType = 12"
-			Add-Content $certcfg "RequestType = PKCS10"
+			Add-Content $certcfg "RequestType = Cert" #PKCS10
+			Add-Content $certcfg "Hashalgorithm = sha512"
+			Add-Content $certcfg "ProviderType = 12"
+			Add-Content $certcfg "ValidityPeriod = Years"
+			Add-Content $certcfg "ValidityPeriodUnits = 10"
 			Add-Content $certcfg "KeyUsage = 0xa0"
 			Add-Content $certcfg "[EnhancedKeyUsageExtension]"
-			Add-Content $certcfg "OID=1.3.6.1.5.5.7.3.1 ; this is for Server Authentication"
+			Add-Content $certcfg "OID=1.3.6.1.5.5.7.3.1"
 			Add-Content $certcfg "[RequestAttributes]"
+			Add-Content $certcfg "CertificateTemplate=Machine"
 			Add-Content $certcfg "SAN=""DNS=$fqdn&DNS=$computer"""
-			
+						
 			if ($PScmdlet.ShouldProcess("local", "Creating certificate request for $computer")) {
 				Write-Message -Level Output -Message "Running: certreq -new $certcfg $certcsr"
 				$create = certreq -new $certcfg $certcsr
@@ -196,7 +201,8 @@ Shows what would happen if the command were run
 			
 			if ($PScmdlet.ShouldProcess("local", "Submitting certificate request for $computer to $CaServer\$CaName")) {
 				Write-Message -Level Output -Message "certreq -submit -config `"$CaServer\$CaName`" -attrib $certTemplate $certcsr $certcrt $certpfx"
-				$submit = certreq -submit -config ""$CaServer\$CaName"" -attrib $certTemplate $certcsr $certcrt $certpfx
+				#$submit = certreq -submit -config ""$CaServer\$CaName"" -attrib $certTemplate $certcsr $certcrt $certpfx
+				certreq -submit -attrib $certcsr $certcrt $certpfx
 			}
 			
 			if ($submit -match "ssued") {
@@ -214,6 +220,7 @@ Shows what would happen if the command were run
 				Write-Message -Level Warning -Message "Something went wrong"
 				Write-Message -Level Warning -Message "$create"
 				Write-Message -Level Warning -Message "$submit"
+				Stop-Function -Message "Failure when attempting to create the cert on $computer. Exception: $_" -ErrorRecord $_ -Target $computer -Continue
 			}
 			
 			if (![dbavalidate]::IsLocalhost($computer)) {
