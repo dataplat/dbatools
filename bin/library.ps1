@@ -4948,6 +4948,10 @@ namespace Sqlcollective.Dbatools
             }
             #endregion Methods
 
+            #region Fields
+            public int Digits = 2;
+            #endregion Fields
+
             #region Constructors
             /// <summary>
             /// 
@@ -5021,13 +5025,11 @@ namespace Sqlcollective.Dbatools
 
                 if (_timespan.TotalSeconds < 1)
                 {
-                    temp = Math.Round(_timespan.TotalMilliseconds, 2).ToString() + "ms";
+                    temp = Math.Round(_timespan.TotalMilliseconds, Digits).ToString() + "ms";
                 }
                 else if (_timespan.TotalSeconds <= 60)
                 {
-                    temp = _timespan.Seconds + "s";
-                    if (_timespan.Milliseconds > 0)
-                        temp = temp + ", " + _timespan.Milliseconds + "ms";
+                    temp = Math.Round(_timespan.TotalSeconds, Digits).ToString() + "s";
                 }
                 else
                 {
