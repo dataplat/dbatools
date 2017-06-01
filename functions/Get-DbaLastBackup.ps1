@@ -20,9 +20,6 @@ The database(s) to process - this list is autopopulated from the server. If unsp
 .PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is autopopulated from the server
 
-.PARAMETER Simple
-Shows concise information including Server name, Database name, and the date the last time backups were performed
-
 .NOTES
 Tags: DisasterRecovery, Backup
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
