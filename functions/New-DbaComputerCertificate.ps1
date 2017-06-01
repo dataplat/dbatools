@@ -4,7 +4,9 @@
 Creates a new computer certificate useful for Forcing Encryption
 
 .DESCRIPTION
-Creates a new computer certificate - signed by an Active Directory CA. By default, a key with a length of 4096 and a friendly name of the machines FQDN is generated.
+Creates a new computer certificate - signed by an Active Directory CA, using the Web Server certificate. Self-signing is not currenty supported but feel free to add it.
+	
+By default, a key with a length of 4096 and a friendly name of the machines FQDN is generated.
 	
 This command was originally intended to help automate the process so that SSL certificates can be available for enforcing encryption on connections.
 
