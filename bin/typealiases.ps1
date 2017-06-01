@@ -13,6 +13,8 @@ try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators
 catch { }
 try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("dbatimespan", "sqlcollective.dbatools.Utility.DbaTimeSpan") }
 catch { }
+try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("prettytimespan", "sqlcollective.dbatools.Utility.DbaTimeSpanPretty") }
+catch { }
 try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("dbasize", "sqlcollective.dbatools.Utility.Size") }
 catch { }
 try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("dbavalidate", "Sqlcollective.Dbatools.Utility.Validation") }
