@@ -1,4 +1,10 @@
-﻿Describe "Restore-DbaDatabase Integration Tests" -Tags "Integrationtests" {
+﻿#Setup variable for multuple contexts
+$DataFolder = 'c:\temp\datafiles'
+$LogFolder = 'C:\temp\logfiles'
+New-Item -Type Directory $DataFolder
+new-Item -Type Directory $LogFolder
+
+Describe "Restore-DbaDatabase Integration Tests" -Tags "Integrationtests" {
     Context "Properly restores a database on the local drive using Path" {
         $null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
         $results = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak
@@ -85,10 +91,6 @@
     }
 	
     Context "Folder restore options" {
-        $DataFolder = 'c:\temp\datafiles'
-        $LogFolder = 'C:\temp\logfiles'
-        New-Item -Type Directory $DataFolder
-        new-Item -Type Directory $LogFolder
         $results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance localhost -DestinationDataDirectory $DataFolder
         It "Should return successful restore with DestinationDataDirectory" {
             $results.RestoreComplete | Should Be $true
@@ -130,7 +132,7 @@
 		It "Should have moved data file to $DataFolder (output)" {
 			(($results.restoredfilefull -split ',') -like "$DataFolder*").count | Should be 1
 		}
-		It "Should have moved data file to $LogFolder (output)" {
+		It "Should have moved Log file to $LogFolder (output)" {
 			(($results.restoredfilefull -split ',') -like "$LogFolder*").count | Should be 1
 		}
 		It "Should return the 2 prefixed and suffixed files" {
