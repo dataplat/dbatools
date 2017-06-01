@@ -71,8 +71,19 @@
         It "Should return the 2 prefixed and suffixed files" {
             (($Results.RestoredFile -split ',') -match "^prefix.*suffix\.").count | Should be 2
         }
+    }
+  
+    Context "Database is properly removed again" {
+        $results = Remove-DbaDatabase -SqlInstance localhost -Database singlerestore
+        It "Should say the status was dropped" {
+            $results.Status | Should Be "Dropped"
+        }
+
+    }
+	
+	Context "Replace databasename in Restored File" {
         $results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance localhost -DatabaseName Pestering -replaceDbNameInFile -WithReplace
-        It "Should return the 2 prefixed and suffixed files (output)" {
+        It "Should return the 2 files swapping singlerestore for pestering (output)" {
             (($Results.RestoredFile -split ',') -like "*pestering*").count | Should be 2
         }
         ForEach ($file in ($results.RestoredFileFull -split ',')) {
