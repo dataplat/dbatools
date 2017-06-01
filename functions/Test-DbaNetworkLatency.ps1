@@ -10,10 +10,10 @@ Function Test-DbaNetworkLatency {
 
 	Server
 	Count
-	TotalMs
-	AvgMs
-	ExecuteOnlyTotalMS
-	ExecuteOnlyAvgMS
+	Total
+	Avg
+	ExecuteOnlyTotal
+	ExecuteOnlyAvg
 
 	.PARAMETER SqlInstance
 	The SQL Server instance.
