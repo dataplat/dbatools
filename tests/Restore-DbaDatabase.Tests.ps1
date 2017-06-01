@@ -70,7 +70,7 @@
         It "Should return the 2 prefixed and suffixed files (output)" {
             (($Results.RestoredFile -split ',') -like "*pestering*").count | Should be 2
         }
-        ForEach ($file in ($results.RestoreFileFull)) {
+        ForEach ($file in ($results.RestoredFileFull -split ',')) {
 			It "$file Should exist on Filesystem" {
 				$file | Should Exist	
 			}
@@ -96,7 +96,7 @@
         It "Should have moved all files to $DataFolder" {
             (($results.restoredfilefull -split ',') -like "$DataFolder*").count | Should be 2
         }
-        ForEach ($file in ($results.RestoreFileFull) {
+        ForEach ($file in ($results.RestoredFileFull -split ',')) {
 			It "$file Should exist on Filesystem" {
 				$file | Should Exist	
 			}
@@ -108,7 +108,7 @@
 		It "Should have moved Log file to $LogFolder" {
 			(($results.restoredfilefull -split ',') -like "$LogFolder*").count | Should be 1
 		}
-		ForEach ($file in ($results.RestoreFileFull)) {
+		ForEach ($file in ($results.RestoredFileFull -split ',')) {
 			It "$file Should exist on Filesystem" {
 				$file | Should Exist	
 			}
@@ -136,7 +136,7 @@
 		It "Should return the 2 prefixed and suffixed files" {
 			(($Results.RestoredFile -split ',') -match "^prefix.*suffix\.").count | Should be 2
 		}
-		ForEach ($file in ($results.RestoreFileFull)) {
+		ForEach ($file in ($results.RestoredFileFull -split ',')) {
 				It "$file Should exist on Filesystem" {
 					$file | Should Exist	
 				}
