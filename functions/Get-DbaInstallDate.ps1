@@ -175,9 +175,9 @@ Returns an object with SQL Server Install date as a string and the Windows insta
 			} else 
 			{ 
 				[PSCustomObject]@{
-					ComputerName = $WindowsServerName
+					ComputerName = $server.NetName
 					InstanceName = $server.ServiceName
-					SqlServer = $server.Name
+					SqlServer = $server.InstanceName
 					SqlInstallDate = $sqlInstallDate
 					WindowsInstallDate = $windowsInstallDate
 				}
