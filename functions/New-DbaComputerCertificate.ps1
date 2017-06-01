@@ -77,7 +77,7 @@ Suppresses all prompts to install but prompts to securely enter your password an
 		
 		if (!$RootServer -or !$RootCaName) {
 			try {
-				Write-Message -Level Verbose -Message "No RootServer or RootCaName specified. Finding it."
+				Write-Message -Level Output -Message "No RootServer or RootCaName specified. Finding it."
 				# hat tip Vadims Podans
 				$domain = ([System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain()).Name
 				$domain = "DC=" + $domain -replace '\.', ", DC="
@@ -100,12 +100,12 @@ Suppresses all prompts to install but prompts to securely enter your password an
 		
 		if (!$RootServer) {
 			$RootServer = ($allcas | Select-Object -First 1).Computer
-			Write-Message -Level Verbose -Message "Root Server: $RootServer"
+			Write-Message -Level Output -Message "Root Server: $RootServer"
 		}
 		
 		if (!$RootCaName) {
 			$RootCaName = ($allcas | Select-Object -First 1).CA
-			Write-Message -Level Verbose -Message "Root CA name: $RootCaName"
+			Write-Message -Level Output -Message "Root CA name: $RootCaName"
 		}
 		
 		$tempdir = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
@@ -129,7 +129,7 @@ Suppresses all prompts to install but prompts to securely enter your password an
 				$fqdn = $dns.fqdn
 			}
 			
-			Write-Message -Level Verbose -Message "Processing $computer"
+			Write-Message -Level Output -Message "Processing $computer"
 			
 			if (!$FriendlyName) {
 				$FriendlyName = $fqdn
@@ -142,11 +142,11 @@ Suppresses all prompts to install but prompts to securely enter your password an
 			$certpfx = "$certdir\$fqdn.pfx"
 			
 			if (Test-Path($certdir)) {
-				Write-Message -Level Verbose -Message "Deleting files from $certdir"
+				Write-Message -Level Output -Message "Deleting files from $certdir"
 				$null = Remove-Item "$certdir\*.*"
 			}
 			else {
-				Write-Message -Level Verbose -Message "Creating $certdir"
+				Write-Message -Level Output -Message "Creating $certdir"
 				$null = mkdir $certdir
 			}
 			
@@ -172,14 +172,14 @@ Suppresses all prompts to install but prompts to securely enter your password an
 			Add-Content $certcfg "[RequestAttributes]"
 			Add-Content $certcfg "SAN=""DNS=$fqdn&DNS=$computer"""
 			
-			Write-Message -Level Verbose -Message "Running: certreq -new $certcfg $certcsr"
+			Write-Message -Level Output -Message "Running: certreq -new $certcfg $certcsr"
 			$create = certreq -new $certcfg $certcsr
 			
-			Write-Message -Level Verbose -Message "certreq -submit -config `"$RootServer\$RootCaName`" -attrib $certTemplate $certcsr $certcrt $certpfx"
+			Write-Message -Level Output -Message "certreq -submit -config `"$RootServer\$RootCaName`" -attrib $certTemplate $certcsr $certcrt $certpfx"
 			$submit = certreq -submit -config ""$RootServer\$RootCaName"" -attrib $certTemplate $certcsr $certcrt $certpfx
 			
 			if ($submit -match "ssued") {
-				Write-Message -Level Verbose -Message "certreq -accept -machine $certcrt"
+				Write-Message -Level Output -Message "certreq -accept -machine $certcrt"
 				$null = certreq -accept -machine $certcrt
 				$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
 				$cert.Import($certcrt, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
@@ -196,14 +196,14 @@ Suppresses all prompts to install but prompts to securely enter your password an
 			}
 			
 			if (1 -eq 2 -and $allcas) {
-				Write-Message -Level Verbose -Message "Trying next CA"
+				Write-Message -Level Output -Message "Trying next CA"
 				$RootServer = ($allcas | Select-Object -Last 1).Computer
 				$RootCaName = ($allcas | Select-Object -Last 1).Name
 				
-				Write-Message -Level Verbose -Message "certreq -submit -config `"$RootServer\$RootCaName`" -attrib $certTemplate $certcsr $certcrt $certpfx"
+				Write-Message -Level Output -Message "certreq -submit -config `"$RootServer\$RootCaName`" -attrib $certTemplate $certcsr $certcrt $certpfx"
 				certreq -submit -config ""$RootServer\$RootCaName"" -attrib $certTemplate $certcsr $certcrt $certpfx
 				
-				Write-Message -Level Verbose -Message "certreq -accept -machine $certcrt"
+				Write-Message -Level Output -Message "certreq -accept -machine $certcrt"
 				certreq -accept -machine $certcrt
 			}
 			
@@ -215,13 +215,17 @@ Suppresses all prompts to install but prompts to securely enter your password an
 				$scriptblock = {
 					$tempdir = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 					$filename = "$tempdir\cert.cer"
+					
 					[System.IO.File]::WriteAllBytes($filename, $args)
-					certutil -addstore -enterprise "$filename"
-					#-Enterprise 
 					$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
 					$cert.Import($filename, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
-					 
-					Get-ChildItem Cert:\LocalMachine -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
+					
+					$store = New-Object System.Security.Cryptography.X509Certificates.X509Store("My", "LocalMachine")
+					$store.Open('ReadWrite')
+					$store.Add($cert)
+					$store.Close()
+					
+					Get-ChildItem Cert:\LocalMachine\My -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
 					
 					Remove-Item -Path $filename
 				}
