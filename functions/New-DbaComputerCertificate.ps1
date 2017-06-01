@@ -1,30 +1,35 @@
 ﻿function New-DbaComputerCertificate {
 <#
 .SYNOPSIS
-Creates a new computer certificate
+Creates a new computer certificate useful for Forcing Encryption
 
 .DESCRIPTION
-Creates a new computer certificate. If no computer is specified, the certificate will be created in master.
+Creates a new computer certificate - signed by an Active Directory CA. By default, a key with a length of 4096 and a friendly name of the machines FQDN is generated.
+	
+This command was originally intended to help automate the process so that SSL certificates can be available for enforcing encryption on connections.
 
 https://blogs.msdn.microsoft.com/sqlserverfaq/2016/09/26/creating-and-registering-ssl-certificates/
-	
+
+The certificate is generated on the client machine and pushed to the remote machine. If your organization's security policies block these kind of certs, 
+simply run New-DbaComputerCertificate on the target machine instead of using the -ComputerName parameter.
+
 .PARAMETER ComputerName
-The SQL Server to create the certificates on.
+The target SQL Server - defaults to localhost
 
 .PARAMETER Credential
-Allows you to login to SQL Server using alternative credentials.
+Allows you to login to $ComputerName using alternative credentials.
 
-.PARAMETER RootServer
-The computer where the certificate will be created. Defaults to master.
+.PARAMETER CaServer
+Optional - the CA Server where the request will be sent to
 
-.PARAMETER RootCaName
-Optional secure string used to create the certificate.
+.PARAMETER CaName
+The properly formatted CA name of the corresponding CaServer
 
 .PARAMETER FriendlyName
-Optional secure string used to create the certificate.
+The FriendlyName listed in the certificate. This defaults to the FQDN of the $ComputerName
 	
 .PARAMETER KeyLength
-Optional secure string used to create the certificate.
+The length of the key - defaults to 4096
 		
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
@@ -44,12 +49,19 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
 New-DbaCertificate
-Creates
-
+Creates a computer certificate for the local machine with the keylength of 4096.
 
 .EXAMPLE
-New-DbaCertificate -ComputerName Server1 -Confirm:$false
+New-DbaCertificate -ComputerName Server1
 
+Creates a computer certificate _on the local machine_ for server1 with the keylength of 4096. 
+	
+The certificate is then copied to the new machine over WinRM and imported.
+
+.EXAMPLE
+New-DbaCertificate -ComputerName Server1 -WhatIf
+
+Shows what would happen if the command were run
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
@@ -58,17 +70,17 @@ New-DbaCertificate -ComputerName Server1 -Confirm:$false
 		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
 		[System.Management.Automation.PSCredential]$Credential,
-		[string]$RootServer,
-		[string]$RootCaName,
+		[string]$CaServer,
+		[string]$CaName,
 		[string]$FriendlyName,
 		[int]$KeyLength = 4096,
 		[switch]$Silent
 	)
 	begin {
 		
-		if (!$RootServer -or !$RootCaName) {
+		if (!$CaServer -or !$CaName) {
 			try {
-				Write-Message -Level Output -Message "No RootServer or RootCaName specified. Finding it."
+				Write-Message -Level Output -Message "No CaServer or CaName specified. Finding it."
 				# hat tip Vadims Podans
 				$domain = ([System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain()).Name
 				$domain = "DC=" + $domain -replace '\.', ", DC="
@@ -84,19 +96,19 @@ New-DbaCertificate -ComputerName Server1 -Confirm:$false
 				}
 			}
 			catch {
-				Stop-Function -Message "Cannot access Active Direcotry or find the Certificate Authority: $_"
+				Stop-Function -Message "Cannot access Active Directory or find the Certificate Authority: $_"
 				return
 			}
 		}
 		
-		if (!$RootServer) {
-			$RootServer = ($allcas | Select-Object -First 1).Computer
-			Write-Message -Level Output -Message "Root Server: $RootServer"
+		if (!$CaServer) {
+			$CaServer = ($allcas | Select-Object -First 1).Computer
+			Write-Message -Level Output -Message "Root Server: $CaServer"
 		}
 		
-		if (!$RootCaName) {
-			$RootCaName = ($allcas | Select-Object -First 1).CA
-			Write-Message -Level Output -Message "Root CA name: $RootCaName"
+		if (!$CaName) {
+			$CaName = ($allcas | Select-Object -First 1).CA
+			Write-Message -Level Output -Message "Root CA name: $CaName"
 		}
 		
 		$tempdir = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
@@ -163,14 +175,14 @@ New-DbaCertificate -ComputerName Server1 -Confirm:$false
 			Add-Content $certcfg "[RequestAttributes]"
 			Add-Content $certcfg "SAN=""DNS=$fqdn&DNS=$computer"""
 			
-			if ($PScmdlet.ShouldProcess($baseaddress, "Creating certificate request for $computer")) {
+			if ($PScmdlet.ShouldProcess("local", "Creating certificate request for $computer")) {
 				Write-Message -Level Output -Message "Running: certreq -new $certcfg $certcsr"
 				$create = certreq -new $certcfg $certcsr
 			}
 			
-			if ($PScmdlet.ShouldProcess($baseaddress, "Submitting certificate request for $computer to $RootServer\$RootCaName")) {
-				Write-Message -Level Output -Message "certreq -submit -config `"$RootServer\$RootCaName`" -attrib $certTemplate $certcsr $certcrt $certpfx"
-				$submit = certreq -submit -config ""$RootServer\$RootCaName"" -attrib $certTemplate $certcsr $certcrt $certpfx
+			if ($PScmdlet.ShouldProcess("local", "Submitting certificate request for $computer to $CaServer\$CaName")) {
+				Write-Message -Level Output -Message "certreq -submit -config `"$CaServer\$CaName`" -attrib $certTemplate $certcsr $certcrt $certpfx"
+				$submit = certreq -submit -config ""$CaServer\$CaName"" -attrib $certTemplate $certcsr $certcrt $certpfx
 			}
 			
 			if ($submit -match "ssued") {
@@ -192,11 +204,11 @@ New-DbaCertificate -ComputerName Server1 -Confirm:$false
 			
 			if (![dbavalidate]::IsLocalhost($computer)) {
 				
-				if ($PScmdlet.ShouldProcess($baseaddress, "Removing cert from disk")) {
+				if ($PScmdlet.ShouldProcess("local", "Removing cert from disk")) {
 					$storedcert | Remove-Item
 				}
 				
-				if ($PScmdlet.ShouldProcess($baseaddress, "Reading newly generated cert")) {
+				if ($PScmdlet.ShouldProcess("local", "Reading newly generated cert")) {
 					$file = [System.IO.File]::ReadAllBytes($certcrt)
 				}
 				
@@ -218,11 +230,18 @@ New-DbaCertificate -ComputerName Server1 -Confirm:$false
 					Remove-Item -Path $filename
 				}
 				
-				if ($PScmdlet.ShouldProcess($baseaddress, "Connecting to $computer to import new cert")) {
-					Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $file -ScriptBlock $scriptblock
+				if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to import new cert")) {
+					try {
+						Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $file -ScriptBlock $scriptblock
+					}
+					catch {
+						Stop-Function -Message "Failure when attempting to import the cert on $computer. Exception: $_" -InnerErrorRecord $_ -Target $computer -Continue
+					}
 				}
 			}
-			Remove-Item -Force -Recurse $certdir -ErrorAction SilentlyContinue
+			if ($PScmdlet.ShouldProcess("local", "Removing all files from $certdir")) {
+				Remove-Item -Force -Recurse $certdir -ErrorAction SilentlyContinue
+			}
 		}
 	}
 }
