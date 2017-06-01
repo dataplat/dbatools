@@ -36,6 +36,7 @@ Function Restore-DBFromFilteredArray {
         [switch]$Continue,
         [string]$AzureCredential,
         [switch]$ReplaceDbNameInFile,
+        [string]$OldDatabaseName,
         [string]$DestinationFileSuffix
     )
     
@@ -191,7 +192,7 @@ Function Restore-DBFromFilteredArray {
                     $MoveFile.LogicalFileName = $File.LogicalName
                     $filename, $extension = (Split-Path $file.PhysicalName -leaf).split('.')
                     if ($ReplaceDbNameInFile) {
-                        $Filename = $filename -replace '', ''                    
+                        $Filename = $filename -replace $OldDatabaseName, $dbname                    
                     }
                     if (Was-Bound "DestinationFilePrefix") {
                         $Filename = $DestinationFilePrefix + $FileName

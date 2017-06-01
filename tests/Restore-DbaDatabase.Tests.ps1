@@ -93,8 +93,8 @@
         }
     }
 
-    Context "Database is properly removed again" {
-        $results = Remove-DbaDatabase -SqlInstance localhost -Database singlerestore
+    Context "Database is properly removed (name change)" {
+        $results = Remove-DbaDatabase -SqlInstance localhost -Database pestering
         It "Should say the status was dropped" {
             $results.Status | Should Be "Dropped"
         }
