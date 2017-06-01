@@ -18,9 +18,9 @@
 		[string]$ComputerName
 	)
 	
-	if ($ComputerName -and $ComputerName -ne $env:COMPUTERNAME) { return }
+	if ($ComputerName -and ![dbavalidate]::IsLocalhost($computername)) { return }
 	
-	if ($ComputerName -eq $env:COMPUTERNAME) {
+	if ([dbavalidate]::IsLocalhost($computername)) {
 		if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator")) {
 			Stop-Function -Message "Administrative rights required. Run this command again with elevated privileges."
 			break
