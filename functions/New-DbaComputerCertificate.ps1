@@ -27,6 +27,9 @@ Optional - the CA Server where the request will be sent to
 .PARAMETER CaName
 The properly formatted CA name of the corresponding CaServer
 
+.PARAMETER Password
+Password to encrypt/decrypt private key for export to remote machine
+	
 .PARAMETER FriendlyName
 The FriendlyName listed in the certificate. This defaults to the FQDN of the $ComputerName
 	
@@ -74,11 +77,14 @@ Shows what would happen if the command were run
 		[System.Management.Automation.PSCredential]$Credential,
 		[string]$CaServer,
 		[string]$CaName,
+		[securestring]$Password,
 		[string]$FriendlyName,
 		[int]$KeyLength = 4096,
 		[switch]$Silent
 	)
 	begin {
+		
+		Test-RunAsAdmin
 		
 		if (!$CaServer -or !$CaName) {
 			try {
@@ -115,6 +121,7 @@ Shows what would happen if the command were run
 		
 		$tempdir = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 		$certTemplate = "CertificateTemplate:WebServer"
+		
 	}
 	
 	process {
@@ -122,7 +129,11 @@ Shows what would happen if the command were run
 		if (Test-FunctionInterrupt) { return }
 		
 		foreach ($computer in $computername) {
-			Test-RunAsAdmin -ComputerName $computer
+			
+			if (![dbavalidate]::IsLocalhost($computer) -and !$Password) {
+				Write-Message -Level Output -Message "You have specified a remote computer. A password is required for private key encryption/decryption for import."
+				$Password = Read-Host -AsSecureString -Prompt "Password"
+			}
 			
 			$dns = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Turbo -WarningAction SilentlyContinue
 			
@@ -145,6 +156,7 @@ Shows what would happen if the command were run
 			$certcsr = "$certdir\$fqdn.csr"
 			$certcrt = "$certdir\$fqdn.crt"
 			$certpfx = "$certdir\$fqdn.pfx"
+			$temppfx = "$certdir\temp-$fqdn.pfx"
 			
 			if (Test-Path($certdir)) {
 				Write-Message -Level Output -Message "Deleting files from $certdir"
@@ -205,22 +217,25 @@ Shows what would happen if the command were run
 			}
 			
 			if (![dbavalidate]::IsLocalhost($computer)) {
-				
+				 								
 				if ($PScmdlet.ShouldProcess("local", "Removing cert from disk")) {
 					$storedcert | Remove-Item
 				}
 				
-				if ($PScmdlet.ShouldProcess("local", "Reading newly generated cert")) {
-					$file = [System.IO.File]::ReadAllBytes($certcrt)
+				if ($PScmdlet.ShouldProcess("local", "Generating pfx and reading from disk")) {
+					Write-Message -Level Output -Message "Exporting PFX with password to $temppfx"
+					$certdata = $storedcert.Export("pfx", $password)
+					[System.IO.File]::WriteAllBytes($temppfx, $certdata)
+					$file = [System.IO.File]::ReadAllBytes($temppfx)
 				}
 				
 				$scriptblock = {
 					$tempdir = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 					$filename = "$tempdir\cert.cer"
 					
-					[System.IO.File]::WriteAllBytes($filename, $args)
+					[System.IO.File]::WriteAllBytes($filename, $args[0])
 					$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-					$cert.Import($filename, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
+					$cert.Import($filename, $args[1], [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
 					
 					$store = New-Object System.Security.Cryptography.X509Certificates.X509Store("My", "LocalMachine")
 					$store.Open('ReadWrite')
@@ -234,7 +249,8 @@ Shows what would happen if the command were run
 				
 				if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to import new cert")) {
 					try {
-						Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $file -ScriptBlock $scriptblock
+						Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $file, $Password -ScriptBlock $scriptblock
+						Remove-Variable -Name Password
 					}
 					catch {
 						Stop-Function -Message "Failure when attempting to import the cert on $computer. Exception: $_" -InnerErrorRecord $_ -Target $computer -Continue
