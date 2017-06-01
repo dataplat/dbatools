@@ -5025,11 +5025,11 @@ namespace Sqlcollective.Dbatools
 
                 if (_timespan.TotalSeconds < 1)
                 {
-                    temp = Math.Round(_timespan.TotalMilliseconds, Digits).ToString() + "ms";
+                    temp = Math.Round(_timespan.TotalMilliseconds, Digits).ToString() + " ms";
                 }
                 else if (_timespan.TotalSeconds <= 60)
                 {
-                    temp = Math.Round(_timespan.TotalSeconds, Digits).ToString() + "s";
+                    temp = Math.Round(_timespan.TotalSeconds, Digits).ToString() + " s";
                 }
                 else
                 {
