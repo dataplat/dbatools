@@ -114,10 +114,10 @@ Function Test-DbaNetworkLatency {
 					InstanceName = $server.ServiceName
 					SqlInstance = $server.DomainInstanceName
 					Count = $count
-					TotalMs = $totaltime
-					AvgMs = $avg
-					ExecuteOnlyTotalMs = $totalwarm
-					ExecuteOnlyAvgMs = $avgwarm
+					Total = [prettytimespan]::FromMilliseconds($totaltime)
+					Avg = [prettytimespan]::FromMilliseconds($avg)
+					ExecuteOnlyTotal = [prettytimespan]::FromMilliseconds($totalwarm)
+					ExecuteOnlyAvg = [prettytimespan]::FromMilliseconds($avgwarm)
 				}
 			}
 			catch {
