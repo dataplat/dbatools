@@ -20,9 +20,6 @@ The database(s) to process - this list is autopopulated from the server. If unsp
 .PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is autopopulated from the server
 
-.PARAMETER Simple
-Shows concise information including Server name, Database name, and the date the last time backups were performed
-
 .NOTES
 Tags: DisasterRecovery, Backup
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
@@ -40,12 +37,17 @@ Get-DbaLastBackup -SqlInstance ServerA\sql987
 Returns a custom object displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated
 
 .EXAMPLE
-Get-DbaLastBackup -SqlInstance ServerA\sql987 -Simple
+Get-DbaLastBackup -SqlInstance ServerA\sql987
 
 Returns a custom object with Server name, Database name, and the date the last time backups were performed
 
 .EXAMPLE
-Get-DbaLastBackup -SqlInstance ServerA\sql987 | Out-Gridview
+Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select *
+
+Returns a custom object with Server name, Database name, and the date the last time backups were performed, and also recoverymodel and calculations on how long ago backups were taken and what the status is.
+
+.EXAMPLE
+Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select * | Out-Gridview
 
 Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated
 
@@ -60,8 +62,7 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$ExcludeDatabase,
-		[switch]$Simple
+		[object[]]$ExcludeDatabase
 	)
 
 	process {
@@ -118,7 +119,9 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 				else { $Status = 'OK' }
 
 				$result = [PSCustomObject]@{
-					Server             = $server.name
+					ComputerName       = $server.NetName
+					InstanceName       = $server.ServiceName
+					SqlInstance        = $server.DomainInstanceName
 					Database           = $db.name
 					RecoveryModel      = $db.recoverymodel
 					LastFullBackup     = if ($db.LastBackupdate -eq 0) { $null } else { $db.LastBackupdate.tostring() }
@@ -129,14 +132,9 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 					SinceLog           = $SinceLog
 					DatabaseCreated    = $db.createDate
 					DaysSinceDbCreated = $daysSinceDbCreated
-					Status             = $statu
-				}
-				if ($Simple) {
-					$result | Select-Object Server, Database, LastFullBackup, LastDiffBackup, LastLogBackup
-				}
-				else {
-					$result
-				}
+					Status             = $status
+				    }
+				Select-DefaultView -InputObject $result -Property ComputerName, InstanceName, SqlInstance, Database, LastFullBackup, LastDiffBackup, LastLogBackup
 			}
 		}
 	}
