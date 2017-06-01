@@ -163,11 +163,15 @@ New-DbaCertificate -ComputerName Server1 -Confirm:$false
 			Add-Content $certcfg "[RequestAttributes]"
 			Add-Content $certcfg "SAN=""DNS=$fqdn&DNS=$computer"""
 			
-			Write-Message -Level Output -Message "Running: certreq -new $certcfg $certcsr"
-			$create = certreq -new $certcfg $certcsr
+			if ($PScmdlet.ShouldProcess($baseaddress, "Creating certificate request for $computer")) {
+				Write-Message -Level Output -Message "Running: certreq -new $certcfg $certcsr"
+				$create = certreq -new $certcfg $certcsr
+			}
 			
-			Write-Message -Level Output -Message "certreq -submit -config `"$RootServer\$RootCaName`" -attrib $certTemplate $certcsr $certcrt $certpfx"
-			$submit = certreq -submit -config ""$RootServer\$RootCaName"" -attrib $certTemplate $certcsr $certcrt $certpfx
+			if ($PScmdlet.ShouldProcess($baseaddress, "Submitting certificate request for $computer to $RootServer\$RootCaName")) {
+				Write-Message -Level Output -Message "certreq -submit -config `"$RootServer\$RootCaName`" -attrib $certTemplate $certcsr $certcrt $certpfx"
+				$submit = certreq -submit -config ""$RootServer\$RootCaName"" -attrib $certTemplate $certcsr $certcrt $certpfx
+			}
 			
 			if ($submit -match "ssued") {
 				Write-Message -Level Output -Message "certreq -accept -machine $certcrt"
@@ -180,28 +184,21 @@ New-DbaCertificate -ComputerName Server1 -Confirm:$false
 					$storedcert
 				}
 			}
-			else {
+			elseif ($submit) {
 				Write-Message -Level Warning -Message "Something went wrong"
 				Write-Message -Level Warning -Message "$create"
 				Write-Message -Level Warning -Message "$submit"
 			}
 			
-			if (1 -eq 2 -and $allcas) {
-				Write-Message -Level Output -Message "Trying next CA"
-				$RootServer = ($allcas | Select-Object -Last 1).Computer
-				$RootCaName = ($allcas | Select-Object -Last 1).Name
-				
-				Write-Message -Level Output -Message "certreq -submit -config `"$RootServer\$RootCaName`" -attrib $certTemplate $certcsr $certcrt $certpfx"
-				certreq -submit -config ""$RootServer\$RootCaName"" -attrib $certTemplate $certcsr $certcrt $certpfx
-				
-				Write-Message -Level Output -Message "certreq -accept -machine $certcrt"
-				certreq -accept -machine $certcrt
-			}
-			
 			if (![dbavalidate]::IsLocalhost($computer)) {
-				$storedcert | Remove-Item
 				
-				$file = [System.IO.File]::ReadAllBytes($certcrt)
+				if ($PScmdlet.ShouldProcess($baseaddress, "Removing cert from disk")) {
+					$storedcert | Remove-Item
+				}
+				
+				if ($PScmdlet.ShouldProcess($baseaddress, "Reading newly generated cert")) {
+					$file = [System.IO.File]::ReadAllBytes($certcrt)
+				}
 				
 				$scriptblock = {
 					$tempdir = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
@@ -221,7 +218,9 @@ New-DbaCertificate -ComputerName Server1 -Confirm:$false
 					Remove-Item -Path $filename
 				}
 				
-				Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $file -ScriptBlock $scriptblock
+				if ($PScmdlet.ShouldProcess($baseaddress, "Connecting to $computer to import new cert")) {
+					Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $file -ScriptBlock $scriptblock
+				}
 			}
 			Remove-Item -Force -Recurse $certdir -ErrorAction SilentlyContinue
 		}
