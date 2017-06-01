@@ -14,27 +14,18 @@ The SQL Server to create the certificates on.
 .PARAMETER Credential
 Allows you to login to SQL Server using alternative credentials.
 
-.PARAMETER computer
+.PARAMETER RootServer
 The computer where the certificate will be created. Defaults to master.
 
-.PARAMETER Name
+.PARAMETER RootCaName
 Optional secure string used to create the certificate.
 
-.PARAMETER Subject
+.PARAMETER FriendlyName
 Optional secure string used to create the certificate.
 	
-.PARAMETER StartDate
+.PARAMETER KeyLength
 Optional secure string used to create the certificate.
-	
-.PARAMETER ExpirationDate
-Optional secure string used to create the certificate.
-	
-.PARAMETER ActiveForServiceBrokerDialog
-Optional secure string used to create the certificate.
-
-.PARAMETER Password
-Optional password - if no password is supplied, the password will be protected by the master key
-	
+		
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
 
@@ -52,14 +43,14 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
-New-DbaCertificate -ComputerName Server1
+New-DbaCertificate
+Creates
 
-You will be prompted to securely enter your password, then a certificate will be created in the master computer on server1 if it does not exist.
 
 .EXAMPLE
-New-DbaCertificate -ComputerName Server1 -computer db1 -Confirm:$false
+New-DbaCertificate -ComputerName Server1 -Confirm:$false
 
-Suppresses all prompts to install but prompts to securely enter your password and creates a certificate in the 'db1' computer
+
 #>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
 	param (
