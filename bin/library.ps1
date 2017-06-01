@@ -4936,6 +4936,18 @@ namespace Sqlcollective.Dbatools
         /// </summary>
         public class DbaTimeSpanPretty : DbaTimeSpan
         {
+            #region Methods
+            /// <summary>
+            /// Creates a new, pretty timespan object from milliseconds
+            /// </summary>
+            /// <param name="Milliseconds">The milliseconds to convert from.</param>
+            /// <returns>A pretty timespan object</returns>
+            public static DbaTimeSpanPretty FromMilliseconds(double Milliseconds)
+            {
+                return new DbaTimeSpanPretty((long)(Milliseconds * 10000));
+            }
+            #endregion Methods
+
             #region Constructors
             /// <summary>
             /// 
