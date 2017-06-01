@@ -66,6 +66,22 @@
         It "Should return the 2 prefixed and suffixed files" {
             (($Results.RestoredFile -split ',') -match "^prefix.*suffix\.").count | Should be 2
         }
+        $results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance localhost -DatabaseName Pestering -replaceDbNameInFile -WithReplace
+        It "Should return the 2 prefixed and suffixed files (output)" {
+            (($Results.RestoredFile -split ',') -like "*pestering*").count | Should be 2
+        }
+        ForEach ($file in ($results.RestoreFileFull)) {
+			It "$file Should exist on Filesystem" {
+				$file | Should Exist	
+			}
+		}
+    }
+
+    Context "Database is properly removed again" {
+        $results = Remove-DbaDatabase -SqlInstance localhost -Database singlerestore
+        It "Should say the status was dropped" {
+            $results.Status | Should Be "Dropped"
+        }
     }
 	
     Context "Folder restore options" {
@@ -80,36 +96,74 @@
         It "Should have moved all files to $DataFolder" {
             (($results.restoredfilefull -split ',') -like "$DataFolder*").count | Should be 2
         }
-        $results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance localhost -DestinationDataDirectory $DataFolder -DestinationLogDirectory $LogFolder -WithReplace
-        It "Should have moved data file to $DataFolder" {
-            (($results.restoredfilefull -split ',') -like "$DataFolder*").count | Should be 1
-        }
-        It "Should have moved data file to $LogFolder" {
-            (($results.restoredfilefull -split ',') -like "$LogFolder*").count | Should be 1
-        }
+        ForEach ($file in ($results.RestoreFileFull) {
+			It "$file Should exist on Filesystem" {
+				$file | Should Exist	
+			}
+		}
+		$results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance localhost -DestinationDataDirectory $DataFolder -DestinationLogDirectory $LogFolder -WithReplace
+		It "Should have moved data file to $DataFolder" {
+		(($results.restoredfilefull -split ',') -like "$DataFolder*").count | Should be 1
+		}
+		It "Should have moved Log file to $LogFolder" {
+			(($results.restoredfilefull -split ',') -like "$LogFolder*").count | Should be 1
+		}
+		ForEach ($file in ($results.RestoreFileFull)) {
+			It "$file Should exist on Filesystem" {
+				$file | Should Exist	
+			}
+		}
 	}
 
-    Context "Database is properly removed again" {
-        $results = Remove-DbaDatabase -SqlInstance localhost -Database singlerestore
-        It "Should say the status was dropped" {
-            $results.Status | Should Be "Dropped"
-        }
-    }
+	Context "Database is properly removed again" {
+		$results = Remove-DbaDatabase -SqlInstance localhost -Database singlerestore
+		It "Should say the status was dropped" {
+			$results.Status | Should Be "Dropped"
+		}
+	}
+
+	Context "Putting all restore file modification options together" {
+		$results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance localhost -DestinationDataDirectory $DataFolder -DestinationLogDirectory $LogFolder -DestinationFileSuffix Suffix -DestinationFilePrefix prefix
+		It "Should return successful restore with all file mod options" {
+			$results.RestoreComplete | Should Be $true
+		}
+		It "Should have moved data file to $DataFolder (output)" {
+			(($results.restoredfilefull -split ',') -like "$DataFolder*").count | Should be 1
+		}
+		It "Should have moved data file to $LogFolder (output)" {
+			(($results.restoredfilefull -split ',') -like "$LogFolder*").count | Should be 1
+		}
+		It "Should return the 2 prefixed and suffixed files" {
+			(($Results.RestoredFile -split ',') -match "^prefix.*suffix\.").count | Should be 2
+		}
+		ForEach ($file in ($results.RestoreFileFull)) {
+				It "$file Should exist on Filesystem" {
+					$file | Should Exist	
+				}
+			}
+		}
+
+	Context "Database is properly removed again" {
+		$results = Remove-DbaDatabase -SqlInstance localhost -Database singlerestore
+		It "Should say the status was dropped" {
+			$results.Status | Should Be "Dropped"
+		}
+	}
 
 	Context "Properly restores an instance using ola-style backups" {
-        $results = Get-ChildItem C:\github\appveyor-lab\sql2008-backups | Restore-DbaDatabase -SqlInstance localhost
-        It "Restored files count should be right" {
-            $results.databasename.count | Should Be 30
-        }
-        It "Should return successful restore" {
-            ($results.Restorecomplete -contains $false) | Should Be $false
+		$results = Get-ChildItem C:\github\appveyor-lab\sql2008-backups | Restore-DbaDatabase -SqlInstance localhost
+		It "Restored files count should be right" {
+			$results.databasename.count | Should Be 30
 		}
-    }
+		It "Should return successful restore" {
+			($results.Restorecomplete -contains $false) | Should Be $false
+		}
+	}
 
-    Context "All user databases are removed" {
-        $results = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
-        It "Should say the status was dropped" {
-            $results.ForEach{ $_.Status | Should Be "Dropped" }
+	Context "All user databases are removed" {
+		$results = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
+		It "Should say the status was dropped" {
+			$results.ForEach{ $_.Status | Should Be "Dropped" }
 		}
-    }
+	}
 }
