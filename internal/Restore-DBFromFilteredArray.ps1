@@ -352,10 +352,12 @@ Function Restore-DBFromFilteredArray {
                     if ($ReuseSourceFolderStructure) {
                         $RestoreDirectory = ((Split-Path $RestoreFiles[0].FileList.PhysicalName) | sort-Object -unique) -join ','
                         $RestoredFile = ((Split-Path $RestoreFiles[0].FileList.PhysicalName -Leaf) | sort-Object -unique) -join ','
+                        $RestoredFileFull = $RestoreFiles[0].Filelist.PhysicalName -join ','
                     }
                     else {
                         $RestoreDirectory = ((Split-Path $Restore.RelocateFiles.PhysicalFileName) | sort-Object -unique) -join ','
                         $RestoredFile = (Split-Path $Restore.RelocateFiles.PhysicalFileName -Leaf) -join ','
+                        $RestoredFileFull = $Restore.RelocateFiles.PhysicalFileName -join ','
                     }
                     if ($ScriptOnly -eq $false) {
                         [PSCustomObject]@{
@@ -371,7 +373,7 @@ Function Restore-DBFromFilteredArray {
                             CompressedBackupSizeMB = if ([bool]($RestoreFiles.PSobject.Properties.name -match 'CompressedBackupSizeMb')) {($RestoreFiles | measure-object -property CompressedBackupSizeMB -Sum).sum}else {$null}
                             BackupFile             = $RestoreFiles.BackupPath -join ','
                             RestoredFile           = $RestoredFile
-                            RestoredFileFull       = $RestoreFiles[0].Filelist.PhysicalName -join ','
+                            RestoredFileFull       = $RestoredFileFull
                             RestoreDirectory       = $RestoreDirectory
                             BackupSize             = if ([bool]($RestoreFiles.PSobject.Properties.name -match 'BackupSize')) {($RestoreFiles | measure-object -property BackupSize -Sum).sum}else {$null}
                             CompressedBackupSize   = if ([bool]($RestoreFiles.PSobject.Properties.name -match 'CompressedBackupSize')) {($RestoreFiles | measure-object -property CompressedBackupSize -Sum).sum}else {$null}

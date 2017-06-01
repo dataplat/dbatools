@@ -55,7 +55,7 @@ Function Set-DbaTcpPort {
     .LINK
         https://dbatools.io/Set-DbaTcpPort
 #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
+    [CmdletBinding(ConfirmImpact = "High")]
     Param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
