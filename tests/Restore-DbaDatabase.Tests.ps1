@@ -25,7 +25,7 @@
         }
     }
 	
-    Context "Database is properly removed for next test" {
+    Context "Database is properly removed again after withreplace test" {
         $results = Remove-DbaDatabase -SqlInstance localhost -Database singlerestore
         It "Should say the status was dropped" {
             $results.Status | Should Be "Dropped"
@@ -42,7 +42,7 @@
         }
     }
   
-    Context "Database is properly removed again" {
+    Context "Database is properly removed again after gci tests" {
         $results = Remove-DbaDatabase -SqlInstance localhost -Database singlerestore
         It "Should say the status was dropped" {
             $results.Status | Should Be "Dropped"
@@ -73,7 +73,7 @@
         }
     }
   
-    Context "Database is properly removed again" {
+    Context "Database is properly removed again post prefix and suffix tests" {
         $results = Remove-DbaDatabase -SqlInstance localhost -Database singlerestore
         It "Should say the status was dropped" {
             $results.Status | Should Be "Dropped"
@@ -127,7 +127,7 @@
         }
     }
 
-    Context "Database is properly removed again" {
+    Context "Database is properly removed again after folder options tests" {
         $results = Remove-DbaDatabase -SqlInstance localhost -Database singlerestore
         It "Should say the status was dropped" {
             $results.Status | Should Be "Dropped"
@@ -155,7 +155,7 @@
         }
     }
 
-    Context "Database is properly removed again" {
+    Context "Database is properly removed again after all file mods test" {
         $results = Remove-DbaDatabase -SqlInstance localhost -Database singlerestore
         It "Should say the status was dropped" {
             $results.Status | Should Be "Dropped"
@@ -172,7 +172,7 @@
         }
     }
 
-    Context "All user databases are removed" {
+    Context "All user databases are removed post ola-style test" {
         $results = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
         It "Should say the status was dropped" {
             $results.ForEach{ $_.Status | Should Be "Dropped" }
@@ -196,7 +196,7 @@
         }
     }
 
-    Context "All user databases are removed" {
+    Context "All user databases are removed post RestoreTime check" {
         $results = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
         It "Should say the status was dropped" {
             $results.ForEach{ $_.Status | Should Be "Dropped" }
@@ -219,7 +219,7 @@
 
     Context "All user databases are removed" {
         $results = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
-        It "Should say the status was dropped" {
+        It "Should say the status was dropped post point in time test" {
             $results.ForEach{ $_.Status | Should Be "Dropped" }
         }
     }
@@ -249,7 +249,7 @@
 
     }
 
-    Context "All user databases are removed" {
+    Context "All user databases are removed post continue test" {
         $results = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
         It "Should say the status was dropped" {
             $results.ForEach{ $_.Status | Should Be "Dropped" }
