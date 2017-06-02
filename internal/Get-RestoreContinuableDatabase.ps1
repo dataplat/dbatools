@@ -20,7 +20,7 @@ Takes a SQL instance and checks for databases with a redo_start_lsn value, and r
 
 		try 
 		{
-			$Server = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential	
+            $Server = Connect-SqlInstance -Sqlinstance $SqlInstance -SqlCredential $SqlCredential	
 		}
 		catch {
 
