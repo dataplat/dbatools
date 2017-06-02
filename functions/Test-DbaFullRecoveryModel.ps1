@@ -22,7 +22,7 @@ function Test-DbaFullRecoveryModel {
 	.PARAMETER Database
 		The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-	.PARAMETER Exclude
+	.PARAMETER ExcludeDatabase
 		The database(s) to exclude - this list is autopopulated from the server
 
 	.PARAMETER Detailed
@@ -62,7 +62,7 @@ function Test-DbaFullRecoveryModel {
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
 		[switch]$Detailed
@@ -95,12 +95,12 @@ function Test-DbaFullRecoveryModel {
 					   ON D.database_id = drs.database_id
 				  WHERE d.recovery_model = 1"
 
-				if ($Database.length -gt 0) {
+				if ($Database) {
 					$dblist = $Database -join "','"
 					$databasefilter += "AND d.[name] in ('$dblist')"
 				}
-				if ($Exclude) {
-					$dblist = $Exclude -join "','"
+				if ($ExcludeDatabase) {
+					$dblist = $ExcludeDatabase -join "','"
 					$databasefilter += "AND d.[name] NOT IN ('$dblist')"
 				}
 
