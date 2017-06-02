@@ -181,7 +181,7 @@
 
     Context "RestoreTime setup checks" {
         $results = Restore-DbaDatabase -SqlInstance localhost -path c:\github\appveyor-lab\RestoreTimeClean
-        $sqlresults = Invoke-DbaSqlCmd -SqlInstance localhost -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
+        $sqlresults = Invoke-DbaSqlCmd -ServerInstance localhost -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should restore cleanly" {
             ($results.RestoreComplete -contains $false) | Should Be $false
         }      
@@ -205,7 +205,7 @@
 
     Context "RestoreTime point in time" {
         $results = Restore-DbaDatabase -SqlInstance localhost -path c:\github\appveyor-lab\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44")
-        $sqlresults = Invoke-DbaSqlCmd -SqlInstance localhost -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
+        $sqlresults = Invoke-DbaSqlCmd -ServerInstance localhost -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should have restored 5 files" {
             $results.count | Should be 3
         }
@@ -226,7 +226,7 @@
 
     Context "RestoreTime point in time and continue" {
         $results = Restore-DbaDatabase -SqlInstance localhost -path c:\github\appveyor-lab\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44") -StandbyDirectory c:\temp
-        $sqlresults = Invoke-DbaSqlCmd -SqlInstance localhost -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
+        $sqlresults = Invoke-DbaSqlCmd -ServerInstance localhost -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should have restored 5 files" {
             $results.count | Should be 3
         }
@@ -237,6 +237,7 @@
             $sqlresults.maxdt | Should be (get-date "2017-06-01 13:22:43")
         }
         $results2 = Restore-DbaDatabase -SqlInstance localhost -path c:\github\appveyor-lab\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44") -Continue
+        $sqlresults2 = Invoke-DbaSqlCmd -ServerInstance localhost -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should have restored 5 files" {
             $results2.count | Should be 3
         }
@@ -244,7 +245,7 @@
             $sqlresults2.mindt | Should be (get-date "2017-06-01 12:59:12")
         }
         It "Should have restored to 2017-06-01 13:28:43" {
-            $sqlresults2.maxdt | Should be (get-date "2017-06-01 13:22:43")
+            $sqlresults2.maxdt | Should be (get-date "2017-06-01 13:28:43")
         }
 
     }
