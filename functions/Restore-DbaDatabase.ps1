@@ -325,7 +325,8 @@ function Restore-DbaDatabase {
             }
         }
         if ($Continue) {
-            $ContinuePoints = Get-RestoreContinuableDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential 
+            $ContinuePoints = Get-RestoreContinuableDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            $WithReplace = $true 
             #$ContinuePoints
         }
 		
