@@ -18,7 +18,7 @@ function Test-DbaIdentityUsage {
 	.PARAMETER Database
 		The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-	.PARAMETER Exclude
+	.PARAMETER ExcludeDatabase
 		The database(s) to exclude - this list is autopopulated from the server
 
 	.PARAMETER Threshold
@@ -62,7 +62,7 @@ function Test-DbaIdentityUsage {
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[parameter(Position = 1, Mandatory = $false)]
 		[int]$Threshold = 0,
 		[parameter(Position = 2, Mandatory = $false)]
@@ -156,12 +156,12 @@ function Test-DbaIdentityUsage {
 			
 			$dbs = $server.Databases
 			
-			if ($Database.count -gt 0) {
+			if ($Database) {
 				$dbs = $dbs | Where-Object {$Database -contains $_.Name}
 			}
 			
-			if ($exclude.count -gt 0) {
-				$dbs = $dbs | Where-Object Name -NotIn $Exclude
+			if ($ExcludeDatabase) {
+				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
 			}
 			
 			if ($NoSystemDb) {
