@@ -227,8 +227,8 @@
     Context "RestoreTime point in time and continue" {
         $results = Restore-DbaDatabase -SqlInstance localhost -path c:\github\appveyor-lab\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44") -StandbyDirectory c:\temp
         $sqlresults = Invoke-DbaSqlCmd -ServerInstance localhost -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
-        It "Should have restored 5 files" {
-            $results.count | Should be 3
+        It "Should have restored 4 files" {
+            $results.count | Should be 4
         }
         It "Should have restored from 2017-06-01 12:59:12" {
             $sqlresults.mindt | Should be (get-date "2017-06-01 12:59:12")
@@ -238,8 +238,8 @@
         }
         $results2 = Restore-DbaDatabase -SqlInstance localhost -path c:\github\appveyor-lab\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44") -Continue
         $sqlresults2 = Invoke-DbaSqlCmd -ServerInstance localhost -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
-        It "Should have restored 5 files" {
-            $results2.count | Should be 3
+        It "Should have restored 2 files" {
+            $results2.count | Should be 2
         }
         It "Should have restored from 2017-06-01 12:59:12" {
             $sqlresults2.mindt | Should be (get-date "2017-06-01 12:59:12")
