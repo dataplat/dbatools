@@ -22,7 +22,7 @@ Credential object used to connect to the SQL Server as a different user
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Exclude
+.PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER AllDatabases
@@ -114,7 +114,7 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[switch]$AllDatabases,
 		[switch]$ReadOnly,
 		[switch]$ReadWrite,
@@ -237,8 +237,8 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 				if ($database) {
 					$dbs = $dbs | Where-Object { $database -contains $_.Name }
 				}
-				if ($exclude) {
-					$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
+				if ($ExcludeDatabase) {
+					$dbs = $dbs | Where-Object { $ExcludeDatabase -notcontains $_.Name }
 				}
 			}
 		}
