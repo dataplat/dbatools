@@ -80,12 +80,6 @@
         }
 
     }
-    Context "Test that RestoreTimeClean does a full restore" {
-        $results = Restore-DbaDatabase -SqlInstance localhost -path c:\github\appveyor-lab\RestoreTimeClean
-        It "Should restore cleanly" {
-			$results.
-        }
-    }
 	
 	Context "Replace databasename in Restored File" {
         $results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance localhost -DatabaseName Pestering -replaceDbNameInFile -WithReplace
@@ -186,8 +180,11 @@
     }
 
     Context "RestoreTime setup checks" {
-		$results = Restore-DbaDatabase -SqlInstance localhost -path c:\github\appveyor-lab\RestoreTimeClean
+        $results = Restore-DbaDatabase -SqlInstance localhost -path c:\github\appveyor-lab\RestoreTimeClean
         $sqlresults = Invoke-DbaSqlCmd -SqlInstance localhost -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
+        It "Should restore cleanly" {
+            ($results.RestoreComplete -contains $false) | Should Be $false
+        }      
         It "Should have restored 5 files" {
             $results.count | Should be 5
         }
@@ -252,5 +249,11 @@
 
     }
 
+    Context "All user databases are removed" {
+        $results = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
+        It "Should say the status was dropped" {
+            $results.ForEach{ $_.Status | Should Be "Dropped" }
+        }
+    }
 
 }
