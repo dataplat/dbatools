@@ -1,4 +1,4 @@
-Function Set-DbaDatabaseState {
+function Set-DbaDatabaseState {
 <#
 .SYNOPSIS
 Sets various options for databases, hereby called "states"
