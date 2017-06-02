@@ -35,7 +35,7 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 
 Windows Authentication will be used if SqlCredential is not specified
 
-.PARAMETER Databases
+.PARAMETER Database
 The database backups to test. If -Database is not provided, all database backups will be tested
 
 .PARAMETER ExcludeDatabase
