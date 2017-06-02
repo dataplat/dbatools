@@ -80,6 +80,12 @@
         }
 
     }
+    Context "Test that RestoreTimeClean does a full restore" {
+        $results = Restore-DbaDatabase -SqlInstance localhost -path c:\github\appveyor-lab\RestoreTimeClean
+        It "Should restore cleanly" {
+			$results.
+        }
+    }
 	
 	Context "Replace databasename in Restored File" {
         $results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance localhost -DatabaseName Pestering -replaceDbNameInFile -WithReplace
@@ -178,4 +184,73 @@
             $results.ForEach{ $_.Status | Should Be "Dropped" }
         }
     }
+
+    Context "RestoreTime setup checks" {
+		$results = Restore-DbaDatabase -SqlInstance localhost -path c:\github\appveyor-lab\RestoreTimeClean
+        $sqlresults = Invoke-DbaSqlCmd -SqlInstance localhost -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
+        It "Should have restored 5 files" {
+            $results.count | Should be 5
+        }
+        It "Should have restored from 2017-06-01 12:59:12" {
+            $sqlresults.mindt | Should be (get-date "2017-06-01 12:59:12")
+        }
+        It "Should have restored to 2017-06-01 13:28:43" {
+            $sqlresults.maxdt | Should be (get-date "2017-06-01 13:28:43")
+        }
+    }
+
+    Context "All user databases are removed" {
+        $results = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
+        It "Should say the status was dropped" {
+            $results.ForEach{ $_.Status | Should Be "Dropped" }
+        }
+    }
+
+    Context "RestoreTime point in time" {
+        $results = Restore-DbaDatabase -SqlInstance localhost -path c:\github\appveyor-lab\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44")
+        $sqlresults = Invoke-DbaSqlCmd -SqlInstance localhost -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
+        It "Should have restored 5 files" {
+            $results.count | Should be 3
+        }
+        It "Should have restored from 2017-06-01 12:59:12" {
+            $sqlresults.mindt | Should be (get-date "2017-06-01 12:59:12")
+        }
+        It "Should have restored to 2017-06-01 13:28:43" {
+            $sqlresults.maxdt | Should be (get-date "2017-06-01 13:22:43")
+        }
+    }
+
+    Context "All user databases are removed" {
+        $results = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
+        It "Should say the status was dropped" {
+            $results.ForEach{ $_.Status | Should Be "Dropped" }
+        }
+    }
+
+    Context "RestoreTime point in time and continue" {
+        $results = Restore-DbaDatabase -SqlInstance localhost -path c:\github\appveyor-lab\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44") -StandbyDirectory c:\temp
+        $sqlresults = Invoke-DbaSqlCmd -SqlInstance localhost -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
+        It "Should have restored 5 files" {
+            $results.count | Should be 3
+        }
+        It "Should have restored from 2017-06-01 12:59:12" {
+            $sqlresults.mindt | Should be (get-date "2017-06-01 12:59:12")
+        }
+        It "Should have restored to 2017-06-01 13:22:43" {
+            $sqlresults.maxdt | Should be (get-date "2017-06-01 13:22:43")
+        }
+        $results2 = Restore-DbaDatabase -SqlInstance localhost -path c:\github\appveyor-lab\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44") -Continue
+        It "Should have restored 5 files" {
+            $results2.count | Should be 3
+        }
+        It "Should have restored from 2017-06-01 12:59:12" {
+            $sqlresults2.mindt | Should be (get-date "2017-06-01 12:59:12")
+        }
+        It "Should have restored to 2017-06-01 13:28:43" {
+            $sqlresults2.maxdt | Should be (get-date "2017-06-01 13:22:43")
+        }
+
+    }
+
+
 }
