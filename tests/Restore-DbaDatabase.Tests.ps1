@@ -199,15 +199,15 @@
     Context "All user databases are removed post RestoreTime check" {
         $results = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
         It "Should say the status was dropped" {
-            $results.ForEach{ $_.Status | Should Be "Dropped" }
+            Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
     }
 
     Context "RestoreTime point in time" {
         $results = Restore-DbaDatabase -SqlInstance localhost -path c:\github\appveyor-lab\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44")
         $sqlresults = Invoke-DbaSqlCmd -ServerInstance localhost -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
-        It "Should have restored 5 files" {
-            $results.count | Should be 3
+        It "Should have restored 4 files" {
+            $results.count | Should be 4
         }
         It "Should have restored from 2017-06-01 12:59:12" {
             $sqlresults.mindt | Should be (get-date "2017-06-01 12:59:12")
@@ -220,7 +220,7 @@
     Context "All user databases are removed" {
         $results = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
         It "Should say the status was dropped post point in time test" {
-            $results.ForEach{ $_.Status | Should Be "Dropped" }
+            Foreach ($db in $results){ $db.Status | Should Be "Dropped" }
         }
     }
 
@@ -253,7 +253,7 @@
     Context "All user databases are removed post continue test" {
         $results = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
         It "Should say the status was dropped" {
-            $results.ForEach{ $_.Status | Should Be "Dropped" }
+            Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
     }
 
