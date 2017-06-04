@@ -152,9 +152,9 @@ Shows what would happen if the command were run
 			}
 			
 			$certdir = "$tempdir\$fqdn"
-			$certinf = "$certdir\request.inf"
+			$certcfg = "$certdir\request.inf"
 			$certcsr = "$certdir\$fqdn.csr"
-			$certcrt = "$certdir\$fqdn.cer"
+			$certcrt = "$certdir\$fqdn.crt"
 			$certpfx = "$certdir\$fqdn.pfx"
 			$temppfx = "$certdir\temp-$fqdn.pfx"
 			
@@ -167,44 +167,43 @@ Shows what would happen if the command were run
 				$null = mkdir $certdir
 			}
 			
-			Set-Content $certinf "[Version]"
-			Add-Content $certinf 'Signature="$Windows NT$"'
-			Add-Content $certinf "[NewRequest]"
-			Add-Content $certinf "Subject = ""CN=$fqdn"""
-			Add-Content $certinf "KeySpec = 1"
-			Add-Content $certinf "KeyLength = $KeyLength"
-			Add-Content $certinf "Exportable = TRUE"
-			Add-Content $certinf "MachineKeySet = TRUE"
-			Add-Content $certinf "FriendlyName=""$FriendlyName"""
-			Add-Content $certinf "SMIME = False"
-			Add-Content $certinf "PrivateKeyArchive = FALSE"
-			Add-Content $certinf "UserProtected = FALSE"
-			Add-Content $certinf "UseExistingKeySet = FALSE"
-			Add-Content $certinf "ProviderName = ""Microsoft RSA SChannel Cryptographic Provider"""
-			Add-Content $certinf "ProviderType = 12"
-			Add-Content $certinf "RequestType = Cert" #PKCS10
-			Add-Content $certinf "Hashalgorithm = sha512"
-			Add-Content $certinf "ProviderType = 12"
-			Add-Content $certinf "ValidityPeriod = Years"
-			Add-Content $certinf "ValidityPeriodUnits = 10"
-			Add-Content $certinf "KeyUsage = 0xa0"
-			Add-Content $certinf "[EnhancedKeyUsageExtension]"
-			Add-Content $certinf "OID=1.3.6.1.5.5.7.3.1"
-			Add-Content $certinf "[RequestAttributes]"
-			Add-Content $certinf "CertificateTemplate=Machine"
-			Add-Content $certinf "SAN=""DNS=$fqdn&DNS=$computer"""
-						
+			Set-Content $certcfg "[Version]"
+			Add-Content $certcfg 'Signature="$Windows NT$"'
+			Add-Content $certcfg "[NewRequest]"
+			Add-Content $certcfg "Subject = ""CN=$fqdn"""
+			Add-Content $certcfg "KeySpec = 1"
+			Add-Content $certcfg "KeyLength = $KeyLength"
+			Add-Content $certcfg "Exportable = TRUE"
+			Add-Content $certcfg "MachineKeySet = TRUE"
+			Add-Content $certcfg "FriendlyName=""$FriendlyName"""
+			Add-Content $certcfg "SMIME = False"
+			Add-Content $certcfg "PrivateKeyArchive = FALSE"
+			Add-Content $certcfg "UserProtected = FALSE"
+			Add-Content $certcfg "UseExistingKeySet = FALSE"
+			Add-Content $certcfg "ProviderName = ""Microsoft RSA SChannel Cryptographic Provider"""
+			Add-Content $certcfg "ProviderType = 12"
+			Add-Content $certcfg "RequestType = Cert" #PKCS10
+			Add-Content $certcfg "Hashalgorithm = sha512"
+			Add-Content $certcfg "ProviderType = 12"
+			Add-Content $certcfg "ValidityPeriod = Years"
+			Add-Content $certcfg "ValidityPeriodUnits = 10"
+			Add-Content $certcfg "KeyUsage = 0xa0"
+			Add-Content $certcfg "[EnhancedKeyUsageExtension]"
+			Add-Content $certcfg "OID=1.3.6.1.5.5.7.3.1"
+			
+			# check out https://social.technet.microsoft.com/wiki/contents/articles/16429.active-directory-on-premises-to-windows-azure-active-directory-windows-powershell-script.aspx
+			
 			if ($PScmdlet.ShouldProcess("local", "Creating certificate request for $computer")) {
-				Write-Message -Level Output -Message "Running: certreq -new $certinf $certcsr"
-				$create = certreq -new $certinf $certcsr
+				Write-Message -Level Output -Message "Running: certreq -new $certcfg $certcsr"
+				$create = certreq -new $certcfg $certcsr
 			}
 			
 			if ($PScmdlet.ShouldProcess("local", "Submitting certificate request for $computer to $CaServer\$CaName")) {
 				Write-Message -Level Output -Message "certreq -submit -config `"$CaServer\$CaName`" -attrib $certTemplate $certcsr $certcrt $certpfx"
 				#$submit = certreq -submit -config ""$CaServer\$CaName"" -attrib $certTemplate $certcsr $certcrt $certpfx
-				certreq -submit -config ""$CaServer\$CaName"" -attrib $certcsr $certcrt $certpfx
+				#Write-Debug "certreq -attrib `"SAN:$SAN`" -submit -config `"$CAName`" certreq.req 
+				certreq -attrib "SAN=""DNS=$fqdn&DNS=$computer""" -submit -config ""$CaServer\$CaName"" $certcsr
 			}
-			
 			return
 			if ($submit -match "ssued") {
 				Write-Message -Level Output -Message "certreq -accept -machine $certcrt"
@@ -225,7 +224,7 @@ Shows what would happen if the command were run
 			}
 			
 			if (![dbavalidate]::IsLocalhost($computer)) {
-				 								
+				
 				if ($PScmdlet.ShouldProcess("local", "Removing cert from disk")) {
 					$storedcert | Remove-Item
 				}
@@ -261,7 +260,7 @@ Shows what would happen if the command were run
 						Remove-Variable -Name Password
 					}
 					catch {
-						Stop-Function -Message "Failure when attempting to import the cert on $computer. Exception: $_" -InnerErrorRecord $_ -Target $computer -Continue
+						Stop-Function -Message "Failure when attempting to import the cert on $computer. Exception: $_" -ErrorRecord $_ -Target $computer -Continue
 					}
 				}
 			}
