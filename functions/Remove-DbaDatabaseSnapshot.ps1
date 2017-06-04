@@ -41,7 +41,7 @@ Internal parameter
 Use this switch to disable any kind of verbose messages
 
 .NOTES
-Tags: Snapshot, Databases
+Tags: Snapshot, Database
 Author: niphlod
 
 Website: https://dbatools.io
@@ -96,7 +96,7 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 	)
 
 	process {
-		if (!$snapshot -and !$Database -and !$AllSnapshots -and $null -eq $PipelineSnapshot -and !$ExcludeDatabase) {
+		if (!$Snapshot -and !$Database -and !$AllSnapshots -and $null -eq $PipelineSnapshot -and !$ExcludeDatabase) {
 			Stop-Function -Message "You must specify -Snapshot, -Database, -Exclude or -AllSnapshots"
 		}
 		# handle the database object passed by the pipeline
@@ -139,10 +139,10 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 			if ($ExcludeDatabase) {
 				$dbs = $dbs | Where-Object { $ExcludeDatabase -notcontains $_.DatabaseSnapshotBaseName }
 			}
-			if ($snapshot) {
-				$dbs = $dbs | Where-Object { $snapshot -contains $_.Name }
+			if ($Snapshot) {
+				$dbs = $dbs | Where-Object { $Snapshot -contains $_.Name }
 			}
-			if (!$snapshot -and !$Database) {
+			if (!$Snapshot -and !$Database) {
 				$dbs = $dbs | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
 			}
 
