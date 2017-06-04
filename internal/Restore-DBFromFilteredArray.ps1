@@ -36,7 +36,9 @@ Function Restore-DBFromFilteredArray {
         [switch]$Continue,
         [string]$AzureCredential,
         [switch]$ReplaceDbNameInFile,
-        [string]$DestinationFileSuffix
+        [string]$DestinationFileSuffix,
+		[string[]]$DatabaseFilter,
+		[Bool]$SystemRestore
     )
     
     Begin {
@@ -85,18 +87,20 @@ Function Restore-DBFromFilteredArray {
         }
 
         If ($DbName -in $Server.databases.name -and ($ScriptOnly -eq $false -or $VerfiyOnly -eq $false)) {
-            If ($ReplaceDatabase -eq $true) {	
-                if ($Pscmdlet.ShouldProcess("Killing processes in $dbname on $SqlInstance as it exists and WithReplace specified  `n", "Cannot proceed if processes exist, ", "Database Exists and WithReplace specified, need to kill processes to restore")) {
-                    try {
-                        Write-Message -Level Verbose -Message "Set $DbName single_user to kill processes"
-                        Stop-DbaProcess -SqlInstance $Server -Database $Dbname -WarningAction Silentlycontinue
-                        Invoke-DbaSqlcmd -ServerInstance:$SqlInstance -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; alter database $DbName set restricted_user; Alter database $DbName set online with rollback immediate" -database master
-                        $server.ConnectionContext.Connect()
+            If ($ReplaceDatabase -eq $true) {
+                if (!($SystemRestore)) {
+                    if ($Pscmdlet.ShouldProcess("Killing processes in $dbname on $SqlInstance as it exists and WithReplace specified  `n", "Cannot proceed if processes exist, ", "Database Exists and WithReplace specified, need to kill processes to restore")) {
+                        try {
+                            Write-Message -Level Verbose -Message "Set $DbName single_user to kill processes"
+                            Stop-DbaProcess -SqlInstance $Server -Database $Dbname -WarningAction Silentlycontinue
+                            Invoke-DbaSqlcmd -ServerInstance:$SqlInstance -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; alter database $DbName set restricted_user; Alter database $DbName set online with rollback immediate" -database master
+                            $server.ConnectionContext.Connect()
+                        }
+                        catch {
+                            Write-Message -Level Verbose -Message "No processes to kill in $DbName"
+                        }
                     }
-                    catch {
-                        Write-Message -Level Verbose -Message "No processes to kill in $DbName"
-                    }
-                } 
+                }
             }
             else {
                 Write-Warning "$FunctionName - Database $DbName exists and will not be overwritten without the WithReplace switch"
@@ -262,7 +266,6 @@ Function Restore-DBFromFilteredArray {
             elseif ($RestoreFiles[0].RecoveryModel -ne 'Simple') {
                 $Restore.ToPointInTime = $RestoreTime
                 Write-Message -Level Verbose -Message "restoring to $RestoreTime"
-					
             } 
             else {
                 Write-Message -Level Verbose -Message "Restoring a Simple mode db, no restoretime"	
@@ -337,7 +340,6 @@ Function Restore-DBFromFilteredArray {
                         Write-Progress -id 2 -activity "Restoring $DbName to $ServerName" -status "Complete" -Completed
 					
                     }
-		
                 }
                 catch {
                     Write-Message -Level Verbose -Message "Failed, Closing Server connection"
@@ -346,7 +348,6 @@ Function Restore-DBFromFilteredArray {
                     Write-Warning "$FunctionName - $ExitError" -WarningAction stop
                     #Exit as once one restore has failed there's no point continuing
                     break
-				
                 }
                 finally {	
                     if ($ReuseSourceFolderStructure) {

@@ -131,7 +131,14 @@ function Restore-DbaDatabase {
 
     .PARAMETER ReplaceDbNameInFile
         If switch set and occurence of the original database's name in a data or log file will be replace with the name specified in the Databasename paramter
-        
+
+    .PARAMETER DatabaseFilter
+        A comma seperated list of databases to restore. The function will still scan all files passed in, but will then filter down to just those from the databases listed 
+        in this parameter
+
+    .PARAMETER SystemRestore
+       Switch that indicates a system db (master,model, msdb) is being restored. Restrictes some tests and process killing as these have to be restore in single user startup
+            
 	.PARAMETER Silent
         Replaces user friendly yellow warnings with bloody red exceptions of doom!
         Use this if you want the function to throw terminating errors you want to catch.
@@ -270,7 +277,9 @@ function Restore-DbaDatabase {
         [switch]$Continue,
         [string]$AzureCredential,
         [switch]$ReplaceDbNameInFile,
-        [string]$DestinationFileSuffix
+        [string]$DestinationFileSuffix,
+		[string[]]$DatabaseFilter,
+		[Switch]$SystemRestore
     )
     begin {
         Write-Message -Level InternalComment -Message "Starting"
@@ -388,8 +397,7 @@ function Restore-DbaDatabase {
                             $MaintenanceSolutionBackup = $false
                         }
                     }
-                }
-				
+                }				
                 Write-Message -Level Verbose -Message "type = $($f.gettype())"
                 if ($f -is [string]) {
                     Write-Verbose "$FunctionName : Paths passed in"
@@ -506,7 +514,25 @@ function Restore-DbaDatabase {
     }
     end {
         if (Test-FunctionInterrupt) { return }
-		
+        try
+		{
+			if ('master' -in $DatabaseFilter)
+			{
+				Write-Verbose "$FunctionName - Single User connection for master restores"
+				$Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ApplicationName dbatoolsSystemk34i23hs3u57w
+			}
+			else
+			{
+				Write-Verbose "$FunctionName - normnal connections"
+				$Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+			}
+		}
+		catch
+		{
+			Write-Warning "$FunctionName - Cannot connect to $SqlServer"
+			
+			Return
+		}
         if ($null -ne $DatabaseName) {
             If (($null -ne $server.Databases[$DatabaseName]) -and ($WithReplace -eq $false)) {
                 Write-Warning "$FunctionName - $DatabaseName exists on Sql Instance $SqlInstance , must specify WithReplace to continue"
@@ -563,7 +589,7 @@ function Restore-DbaDatabase {
 		
         ForEach ($FilteredFileSet in $AllFilteredFiles) {
             $FilteredFiles = $FilteredFileSet.values
-			
+	
 			
             Write-Message -Level Verbose -Message "Starting FileSet"
             if (($FilteredFiles.DatabaseName | Group-Object | Measure-Object).count -gt 1) {
@@ -579,7 +605,7 @@ function Restore-DbaDatabase {
 			
             if ((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles -continue:$continue) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlInstance $SqlInstance -SqlCredential $SqlCredential)) {
                 try {
-                $FilteredFiles | Restore-DBFromFilteredArray -SqlInstance $SqlInstance -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -TrustDbBackupHistory:$TrustDbBackupHistory -ReplaceDatabase:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure $FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$useDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix -MaxTransferSize $MaxTransferSize -BufferCount $BufferCount -BlockSize $BlockSize -StandbyDirectory $StandbyDirectory -continue:$continue -AzureCredential $AzureCredential -ReplaceDbNameInFile:$ReplaceDbNameInFile -DestinationFileSuffix $DestinationFileSuffix
+                $FilteredFiles | Restore-DBFromFilteredArray -SqlInstance $SqlInstance -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -TrustDbBackupHistory:$TrustDbBackupHistory -ReplaceDatabase:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure $FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$useDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix -MaxTransferSize $MaxTransferSize -BufferCount $BufferCount -BlockSize $BlockSize -StandbyDirectory $StandbyDirectory -continue:$continue -AzureCredential $AzureCredential -ReplaceDbNameInFile:$ReplaceDbNameInFile -DestinationFileSuffix $DestinationFileSuffix -SystemRestore:$SystemRestore
                     $Completed = 'successfully'
                 }
                 catch {

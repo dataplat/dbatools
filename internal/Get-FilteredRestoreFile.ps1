@@ -101,7 +101,6 @@ function Get-FilteredRestoreFile {
         if ($SqlCredential) { $sqlInstanceParameterSplat["SqlCredential"] = $SqlCredential }
         
         $allSqlBackupDetails = @()
-        $outResults = @()
         $internalFiles = @()
     }
     process {
@@ -135,7 +134,7 @@ function Get-FilteredRestoreFile {
         }
         else {
     		Write-Message -Level Verbose -Message "Read File headers (Read-DBABackupHeader)"		
-			$AllSQLBackupdetails = $InternalFiles | ForEach-Object{if($_.fullname -ne $null){$_.Fullname}else{$_}} | Read-DBAbackupheader -sqlinstance $sqlinstance -SqlCredential $SqlCredential -AzureCredential $AzureCredential
+			$AllSQLBackupdetails = $InternalFiles | ForEach-Object{if($null -ne $_.fullname){$_.Fullname}else{$_}} | Read-DBAbackupheader -sqlinstance $sqlinstance -SqlCredential $SqlCredential -AzureCredential $AzureCredential
         }
 
 		Write-Message -Level Verbose -Message "$($AllSQLBackupdetails.count) Files to filter"
@@ -175,7 +174,7 @@ function Get-FilteredRestoreFile {
             if (!($continue)) {
                 $Fullbackup = $SQLBackupdetails | where-object {$_.BackupTypeDescription -eq 'Database' -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1
                 $TlogStartlsn = $Fullbackup.FirstLSN
-                if ($Fullbackup -eq $null) {
+                if ($null -eq $Fullbackup) {
                     Stop-Function -Message "No Full backup found to anchor the restore" -Continue -Target $database
                     break
                 }
