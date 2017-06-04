@@ -97,7 +97,7 @@ Returns information for database snapshots HR_snapshot and Accounting_snapshot
                 $dbs = $dbs | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
             }
             if ($ExcludeSnapshot) {
-                $dbs = $dbs | Where-Object { $ExcludeSnapshot -notcontains $_.DatabaseSnapshotBaseName }
+                $dbs = $dbs | Where-Object { $ExcludeSnapshot -notcontains $_.Name }
             }
 
             foreach ($db in $dbs) {
