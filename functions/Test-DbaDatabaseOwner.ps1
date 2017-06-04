@@ -29,7 +29,7 @@ function Test-DbaDatabaseOwner {
 	.PARAMETER Database
 		The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-	.PARAMETER Exclude
+	.PARAMETER ExcludeDatabase
 		The database(s) to exclude - this list is autopopulated from the server
 
 	.PARAMETER TargetLogin
@@ -63,7 +63,7 @@ function Test-DbaDatabaseOwner {
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[string]$TargetLogin,
 		[Switch]$Detailed
 	)
@@ -98,12 +98,12 @@ function Test-DbaDatabaseOwner {
 			$dbs = $server.Databases
 
 			#filter database collection based on parameters
-			if ($Database.Length -gt 0) {
+			if ($Database) {
 				$dbs = $dbs | Where-Object { $Database -contains $_.Name }
 			}
 
-			if ($Exclude.Length -gt 0) {
-				$dbs = $dbs | Where-Object Name -NotIn $Exclude
+			if ($ExcludeDatabase) {
+				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
 			}
 
 			#for each database, create custom object for return set.
