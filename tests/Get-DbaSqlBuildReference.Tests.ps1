@@ -18,7 +18,7 @@ Describe "$name - JSON Data" {
         }
         It "LastUpdated is updated regularly (keeps everybody on their toes)" {
             $lastupdate = Get-Date -Date $IdxRef.LastUpdated
-            $lastupdate | Should BeGreaterThan (Get-Date).AddDays(-45)
+            $lastupdate | Should BeGreaterThan (Get-Date).AddDays(-90)
         }
         It "LastUpdated is not in the future" {
             $lastupdate = Get-Date -Date $IdxRef.LastUpdated
