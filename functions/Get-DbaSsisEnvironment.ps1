@@ -214,7 +214,7 @@ function Get-DbaSsisEnvironment {
                             Value           = $value
                         }
                     } # end foreach($ssisVariables)
-                } # end foreach($srcEnvironment)
+                } # end foreach($Environments)
             } # end foreach($Folder)
         } # end foreach($SqlInstance)
     } # end process
