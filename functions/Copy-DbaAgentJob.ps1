@@ -1,86 +1,86 @@
 function Copy-DbaAgentJob {
 	<#
-.SYNOPSIS
-Copy-DbaAgentJob migrates jobs from one SQL Server to another.
+		.SYNOPSIS
+			Copy-DbaAgentJob migrates jobs from one SQL Server to another.
 
-.DESCRIPTION
-By default, all jobs are copied. The -Job parameter is autopopulated for command-line completion and can be used to copy only specific jobs.
+		.DESCRIPTION
+			By default, all jobs are copied. The -Job parameter is autopopulated for command-line completion and can be used to copy only specific jobs.
 
-If the job already exists on the destination, it will be skipped unless -Force is used.
+			If the job already exists on the destination, it will be skipped unless -Force is used.
 
-.PARAMETER Source
-Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+		.PARAMETER Source
+			Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-.PARAMETER SourceSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+		.PARAMETER SourceSqlCredential
+			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-To connect as a different Windows user, run PowerShell as that user.
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER Destination
-Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+		.PARAMETER Destination
+			Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-.PARAMETER DestinationSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+		.PARAMETER DestinationSqlCredential
+			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
+			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-To connect as a different Windows user, run PowerShell as that user.
+			To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER Job
-The job(s) to process - this list is auto populated from the server. If unspecified, all jobs will be processed.
+		.PARAMETER Job
+			The job(s) to process - this list is auto populated from the server. If unspecified, all jobs will be processed.
 
-.PARAMETER ExcludeJob
-The job(s) to exclude - this list is auto populated from the server
+		.PARAMETER ExcludeJob
+			The job(s) to exclude - this list is auto populated from the server
 
-.PARAMETER DisableOnSource
-Disable the job on the source server
+		.PARAMETER DisableOnSource
+			Disable the job on the source server
 
-.PARAMETER DisableOnDestination
-Disable the newly migrated job on the destination server
+		.PARAMETER DisableOnDestination
+			Disable the newly migrated job on the destination server
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
+		.PARAMETER WhatIf
+			Shows what would happen if the command were to run. No actions are actually performed.
 
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
+		.PARAMETER Confirm
+			Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER Force
-Drops and recreates the Job if it exists
+		.PARAMETER Force
+			Drops and recreates the Job if it exists
 
-.PARAMETER Silent
-Replaces user friendly yellow warnings with bloody red exceptions of doom!
+		.PARAMETER Silent
+			Replaces user friendly yellow warnings with bloody red exceptions of doom!
 
-.NOTES
-Tags: Migration, Agent, Job
-Author: Chrissy LeMaire (@cl), netnerds.net
+		.NOTES
+			Tags: Migration, Agent, Job
+			Author: Chrissy LeMaire (@cl), netnerds.net
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.LINK
-https://dbatools.io/Copy-DbaAgentJob
+		.LINK
+			https://dbatools.io/Copy-DbaAgentJob
 
-.EXAMPLE
-Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster
+		.EXAMPLE
+			Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster
 
-Copies all jobs from sqlserver2014a to sqlcluster, using Windows credentials. If jobs with the same name exist on sqlcluster, they will be skipped.
+			Copies all jobs from sqlserver2014a to sqlcluster, using Windows credentials. If jobs with the same name exist on sqlcluster, they will be skipped.
 
-.EXAMPLE
-Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -Job PSJob -SourceSqlCredential $cred -Force
+		.EXAMPLE
+			Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -Job PSJob -SourceSqlCredential $cred -Force
 
-Copies a single job, the PSJob job from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a job with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+			Copies a single job, the PSJob job from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a job with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
-.EXAMPLE
-Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+		.EXAMPLE
+			Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
-Shows what would happen if the command were executed using force.
-#>
+			Shows what would happen if the command were executed using force.
+	#>
 	[cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
