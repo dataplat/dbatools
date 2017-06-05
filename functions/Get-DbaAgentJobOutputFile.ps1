@@ -1,5 +1,5 @@
 ﻿function Get-DbaAgentJobOutputFile {
-	<#
+    <#
 		.Synopsis
 			Returns the Output File for each step of one or many agent job with the Job Names provided dynamically if 
 			required for one or more SQL Instances
@@ -16,11 +16,14 @@
 			the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it 
 			contains a backslash.
 
-		.PARAMETER JobName
-			The Agent Job Name to provide Output File Path for. Also available dynamically. If ommitted all Agent Jobs will be used
+		.PARAMETER Job
+			The job(s) to process - this list is auto populated from the server. If unspecified, all jobs will be processed.
+
+		.PARAMETER ExcludeJob
+			The job(s) to exclude - this list is auto populated from the server
 
 		.NOTES
-			Tags: Agent
+			Tags: Agent, Job
 			Author: Rob Sewell (https://sqldbawithabeard.com)
 			
 			Website: https://dbatools.io
@@ -71,66 +74,62 @@
 			This will return the paths to the output files for each of the job step of all the Agent Jobs
 			on the SERVERNAME instance and also show the job steps without an output file
 	#>
-	[CmdletBinding()]
-	param
-	(
-		[Parameter(Mandatory = $true, HelpMessage = 'The SQL Server Instance',
-				   ValueFromPipeline = $true,
-				   ValueFromPipelineByPropertyName = $true,
-				   ValueFromRemainingArguments = $false,
-				   Position = 0)]
-		[ValidateNotNull()]
-		[ValidateNotNullOrEmpty()]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[Parameter(Mandatory = $false, HelpMessage = 'SQL Credential',
-				   ValueFromPipelineByPropertyName = $true,
-				   ValueFromRemainingArguments = $false,
-				   Position = 1)]
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	process {
-		foreach ($instance in $sqlinstance) {
-			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-			}
-			catch {
-				Write-Warning "Failed to connect to: $instance"
-				continue
-			}
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory = $true, HelpMessage = 'The SQL Server Instance',
+            ValueFromPipeline = $true,
+            ValueFromPipelineByPropertyName = $true,
+            ValueFromRemainingArguments = $false,
+            Position = 0)]
+        [ValidateNotNull()]
+        [ValidateNotNullOrEmpty()]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [Parameter(Mandatory = $false, HelpMessage = 'SQL Credential',
+            ValueFromPipelineByPropertyName = $true,
+            ValueFromRemainingArguments = $false,
+            Position = 1)]
+        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+        [object[]]$Job,
+		[object[]]$ExcludeJob
+    )
+
+    process {
+        foreach ($instance in $sqlinstance) {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+            }
+            catch {
+                Write-Warning "Failed to connect to: $instance"
+                continue
+            }
 			
-			$jobs = $Server.JobServer.Jobs
-			
-			if ($JobName) {
-				$jobs = @()
-				
-				foreach ($name in $jobname) {
-					$jobs += $server.JobServer.Jobs[$name]
-				}
+            $jobs = $Server.JobServer.Jobs
+            if ($Job) {
+                $jobs = $jobs | Where-Object Name -In $Job
+            }
+            if ($ExcludeJob) {
+				$jobs = $jobs | Where-Object Name -NotIn $ExcludeJob
 			}
-			else {
-				$jobs = $server.JobServer.Jobs
-			}
-			
-			foreach ($Job in $Jobs) {
-				foreach ($Step in $Job.JobSteps) {
-					if ($Step.OutputFileName) {
-						[pscustomobject]@{
-							ComputerName = $server.NetName
-							InstanceName = $server.ServiceName
-							SqlInstance = $server.DomainInstanceName
-							Job = $Job.Name
-							JobStep = $step.Name
-							OutputFileName = $Step.OutputFileName
-							RemoteOutputFileName = Join-AdminUNC $Server.ComputerNamePhysicalNetBIOS $Step.OutputFileName
-						}
-					}
-					else {
-						Write-Verbose "$step for $job has no output file"
-					}
-				}
-			}
-		}
-	}
+            foreach ($j in $Jobs) {
+                foreach ($Step in $j.JobSteps) {
+                    if ($Step.OutputFileName) {
+                        [pscustomobject]@{
+                            ComputerName         = $server.NetName
+                            InstanceName         = $server.ServiceName
+                            SqlInstance          = $server.DomainInstanceName
+                            Job                  = $j.Name
+                            JobStep              = $step.Name
+                            OutputFileName       = $Step.OutputFileName
+                            RemoteOutputFileName = Join-AdminUNC $Server.ComputerNamePhysicalNetBIOS $Step.OutputFileName
+                        }
+                    }
+                    else {
+                        Write-Verbose "$step for $j has no output file"
+                    }
+                }
+            }
+        }
+    }
 }
