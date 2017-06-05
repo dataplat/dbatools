@@ -23,7 +23,7 @@ function Test-DbaVirtualLogFile {
 	.PARAMETER Database
 		The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-	.PARAMETER Exclude
+	.PARAMETER ExcludeDatabase
 		The database(s) to exclude - this list is autopopulated from the server
 
 	.PARAMETER IncludeSystemDBs
@@ -70,7 +70,7 @@ function Test-DbaVirtualLogFile {
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[switch]$IncludeSystemDBs,
 		[switch]$Detailed
 	)
@@ -90,11 +90,11 @@ function Test-DbaVirtualLogFile {
 			#If IncludeSystemDBs is true, include systemdbs
 			#only look at online databases (Status equal normal)
 
-			if ($Database.count -gt 0) {
+			if ($Database) {
 				$dbs = $dbs | Where-Object { $Database -contains $_.Name }
 			}
-			if ($Exclude) {
-				$dbs = $dbs | Where-Object Name -notin $Exclude
+			if ($ExcludeDatabase) {
+				$dbs = $dbs | Where-Object Name -notin $ExcludeDatabase
 			}
 
 			if ($IncludeSystemDBs) {

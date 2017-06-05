@@ -15,7 +15,7 @@ function Test-DbaDatabaseCompatibility {
 	.PARAMETER Database
 		The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-	.PARAMETER Exclude
+	.PARAMETER ExcludeDatabase
 		The database(s) to exclude - this list is autopopulated from the server
 
 	.PARAMETER Detailed
@@ -59,7 +59,7 @@ function Test-DbaDatabaseCompatibility {
 		$Credential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[switch]$Detailed
 	)
 
@@ -86,12 +86,12 @@ function Test-DbaDatabaseCompatibility {
 			$serverversion = "Version$($server.VersionMajor)0"
 			$dbs = $server.Databases
 
-			if ($Database.count -gt 0) {
+			if ($Database) {
 				$dbs = $dbs | Where-Object { $Database -contains $_.Name }
 			}
 
-			if ($Exclude.count -gt 0) {
-				$dbs = $dbs | Where-Object Name -NotIn $Exclude
+			if ($ExcludeDatabase) {
+				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
 			}
 
 			foreach ($db in $dbs) {

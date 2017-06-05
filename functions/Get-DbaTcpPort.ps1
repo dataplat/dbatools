@@ -163,7 +163,7 @@ Returns an object with server name, IPAddress (just ipv4), port and static ($tru
 			{
 				try
 				{
-					$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $Credential
+					$server = Connect-SqlInstance -SqlInstance "TCP:$servername" -SqlCredential $Credential
 				}
 				catch
 				{

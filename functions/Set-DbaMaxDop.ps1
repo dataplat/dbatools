@@ -1,5 +1,5 @@
-Function Set-DbaMaxDop {
-<# 
+function Set-DbaMaxDop {
+    <# 
 .SYNOPSIS 
 Sets SQL Server max dop then displays information relating to SQL Server Max DOP configuration settings. Works on SQL Server 2005-2016.
 
@@ -23,6 +23,9 @@ Windows Authentication will be used if DestinationSqlCredential is not specified
 
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+
+.PARAMETER ExcludeDatabase
+The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER MaxDop
 Allows you to specify the MaxDop value that you want to use.
@@ -75,190 +78,194 @@ Set recommended Max DOP setting for all databases on server sql2016.
  
 
 #>
-	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
-		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$SqlCredential,
-		[Alias("Databases")]
-		[object[]]$Database,
-		[int]$MaxDop = -1,
-		[Parameter(ValueFromPipeline = $True)]
-		[object]$Collection,
-		[Alias("All")]
-		[switch]$AllDatabases
-	)
-	
-	begin {
-		if ($database -and $AllDatabases) {
-			throw "-Database and -AllDatabases are mutually exclusive. Please choose only one. Quitting"
-		}
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param (
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [Alias("Credential")]
+        [PSCredential][System.Management.Automation.CredentialAttribute()]
+        $SqlCredential,
+        [Alias("Databases")]
+        [object[]]$Database,
+		[object[]]$ExcludeDatabase,
+        [int]$MaxDop = -1,
+        [Parameter(ValueFromPipeline = $True)]
+        [object]$Collection,
+        [Alias("All")]
+        [switch]$AllDatabases
+    )
+
+    begin {
+        if ($Database -and $AllDatabases -and $ExcludeDatabase) {
+            throw "-Database, -AllDatabases and -ExcludeDatabase are mutually exclusive. Please choose only one. Quitting"
+        }
 		
-		$processed = New-Object System.Collections.ArrayList
-		$results = @()
-	}
-	process {
-		$dbscopedconfiguration = $false
+        $processed = New-Object System.Collections.ArrayList
+        $results = @()
+    }
+    process {
+        $dbscopedconfiguration = $false
 		
-		if ($MaxDop -eq -1) {
-			$UseRecommended = $true
-		}
+        if ($MaxDop -eq -1) {
+            $UseRecommended = $true
+        }
 		
-		if ($collection -eq $null) {
-			$collection = Test-DbaMaxDop -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Verbose:$false
-		}
-		elseif ($collection.Instance -eq $null) {
-			$collection = Test-DbaMaxDop -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Verbose:$false
-		}
+        if ($collection -eq $null) {
+            $collection = Test-DbaMaxDop -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Verbose:$false
+        }
+        elseif ($collection.Instance -eq $null) {
+            $collection = Test-DbaMaxDop -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Verbose:$false
+        }
 		
-		$collection | Add-Member -NotePropertyName OldInstanceMaxDopValue -NotePropertyValue 0
-		$collection | Add-Member -NotePropertyName OldDatabaseMaxDopValue -NotePropertyValue 0
+        $collection | Add-Member -NotePropertyName OldInstanceMaxDopValue -NotePropertyValue 0
+        $collection | Add-Member -NotePropertyName OldDatabaseMaxDopValue -NotePropertyValue 0
 		
-		$servers = $collection | Select-Object Instance -Unique
+        $servers = $collection | Select-Object Instance -Unique
 		
-		foreach ($server in $servers) {
-			if ($server.Instance -ne $null) {
-				$servername = $server.Instance
-			}
-			else {
-				$servername = $server
-			}
+        foreach ($server in $servers) {
+            if ($server.Instance -ne $null) {
+                $servername = $server.Instance
+            }
+            else {
+                $servername = $server
+            }
 			
-			Write-Verbose "Attempting to connect to $servername"
-			try {
-				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
-			}
-			catch {
-				Write-Warning "Can't connect to $server or access denied. Skipping."
-				continue
-			}
+            Write-Verbose "Attempting to connect to $servername"
+            try {
+                $server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
+            }
+            catch {
+                Write-Warning "Can't connect to $server or access denied. Skipping."
+                continue
+            }
 			
-			if (!(Test-SqlSa -SqlInstance $server)) {
-				Write-Error "Not a sysadmin on $server. Skipping."
-				$server.ConnectionContext.Disconnect()
-				continue
-			}
+            if (!(Test-SqlSa -SqlInstance $server)) {
+                Write-Error "Not a sysadmin on $server. Skipping."
+                $server.ConnectionContext.Disconnect()
+                continue
+            }
 			
-			if ($server.versionMajor -ge 13) {
+            if ($server.versionMajor -ge 13) {
 				
-				Write-Verbose "Server '$servername' supports Max DOP configuration per database."
+                Write-Verbose "Server '$servername' supports Max DOP configuration per database."
 				
-				if ($database -eq 0) {
-					#Set at instance level
-					$collection = $collection | Where-Object { $_.DatabaseMaxDop -eq "N/A" }
-				}
-				else {
-					$dbscopedconfiguration = $true
+                if (!$Database -and !$ExcludeDatabase) {
+                    #Set at instance level
+                    $collection = $collection | Where-Object { $_.DatabaseMaxDop -eq "N/A" }
+                }
+                else {
+                    $dbscopedconfiguration = $true
 					
-					if (!$AllDatabases -and $database) {
+                    if (!$AllDatabases -and $Database) {
 						
-						$collection = $collection | Where-Object { $_.Database -in $database }
+                        $collection = $collection | Where-Object { $_.Database -in $Database }
+                    }
+                    elseif (!$AllDatabases -and $ExcludeDatabase) {
+                        $collection = $collection | Where-Object { $_.Database -notin $ExcludeDatabase }
 					}
-					else {
-						if ($AllDatabases) {
-							$collection = $collection | Where-Object { $_.DatabaseMaxDop -ne "N/A" }
-						}
-						else {
-							$collection = $collection | Where-Object { $_.DatabaseMaxDop -eq "N/A" }
-							$dbscopedconfiguration = $false
-						}
-					}
-				}
-			}
-			else {
-				if ($database -or $AllDatabases) {
-					Write-Warning "Server '$servername' (v$($server.versionMajor)) does not support Max DOP configuration at the database level. Remember that this option is only available from SQL Server 2016 (v13). Run the command again without using database related parameters. Skipping."
-					Continue
-				}
-			}
+                    else {
+                        if ($AllDatabases) {
+                            $collection = $collection | Where-Object { $_.DatabaseMaxDop -ne "N/A" }
+                        }
+                        else {
+                            $collection = $collection | Where-Object { $_.DatabaseMaxDop -eq "N/A" }
+                            $dbscopedconfiguration = $false
+                        }
+                    }
+                }
+            }
+            else {
+                if ($database -or $AllDatabases) {
+                    Write-Warning "Server '$servername' (v$($server.versionMajor)) does not support Max DOP configuration at the database level. Remember that this option is only available from SQL Server 2016 (v13). Run the command again without using database related parameters. Skipping."
+                    Continue
+                }
+            }
 			
-			foreach ($row in $collection | Where-Object { $_.Instance -eq $servername }) {
-				if ($UseRecommended -and ($row.RecommendedMaxDop -eq $row.CurrentInstanceMaxDop) -and !($dbscopedconfiguration)) {
-					Write-Output "$servername is configured properly :) No change required."
-					Continue
-				}
+            foreach ($row in $collection | Where-Object { $_.Instance -eq $servername }) {
+                if ($UseRecommended -and ($row.RecommendedMaxDop -eq $row.CurrentInstanceMaxDop) -and !($dbscopedconfiguration)) {
+                    Write-Output "$servername is configured properly :) No change required."
+                    Continue
+                }
 				
-				if ($UseRecommended -and ($row.RecommendedMaxDop -eq $row.DatabaseMaxDop) -and $dbscopedconfiguration) {
-					Write-Output "Database $($row.Database) on $servername is configured properly :) No change required."
-					Continue
-				}
+                if ($UseRecommended -and ($row.RecommendedMaxDop -eq $row.DatabaseMaxDop) -and $dbscopedconfiguration) {
+                    Write-Output "Database $($row.Database) on $servername is configured properly :) No change required."
+                    Continue
+                }
 				
-				$row.OldInstanceMaxDopValue = $row.CurrentInstanceMaxDop
+                $row.OldInstanceMaxDopValue = $row.CurrentInstanceMaxDop
 				
-				try {
-					if ($UseRecommended) {
-						if ($dbscopedconfiguration) {
-							$row.OldDatabaseMaxDopValue = $row.DatabaseMaxDop
+                try {
+                    if ($UseRecommended) {
+                        if ($dbscopedconfiguration) {
+                            $row.OldDatabaseMaxDopValue = $row.DatabaseMaxDop
 							
-							if ($resetDatabases) {
-								Write-Verbose "Changing $($row.Database) database max DOP to $($row.DatabaseMaxDop)."
-								$server.Databases["$($row.Database)"].MaxDop = $row.DatabaseMaxDop
-							}
-							else {
-								Write-Verbose "Changing $($row.Database) database max DOP from $($row.DatabaseMaxDop) to $($row.RecommendedMaxDop)"
-								$server.Databases["$($row.Database)"].MaxDop = $row.RecommendedMaxDop
-								$row.DatabaseMaxDop = $row.RecommendedMaxDop
-							}
+                            if ($resetDatabases) {
+                                Write-Verbose "Changing $($row.Database) database max DOP to $($row.DatabaseMaxDop)."
+                                $server.Databases["$($row.Database)"].MaxDop = $row.DatabaseMaxDop
+                            }
+                            else {
+                                Write-Verbose "Changing $($row.Database) database max DOP from $($row.DatabaseMaxDop) to $($row.RecommendedMaxDop)"
+                                $server.Databases["$($row.Database)"].MaxDop = $row.RecommendedMaxDop
+                                $row.DatabaseMaxDop = $row.RecommendedMaxDop
+                            }
 							
-						}
-						else {
-							Write-Verbose "Changing $server SQL Server max DOP from $($row.CurrentInstanceMaxDop) to $($row.RecommendedMaxDop)"
-							$server.Configuration.MaxDegreeOfParallelism.ConfigValue = $row.RecommendedMaxDop
-							$row.CurrentInstanceMaxDop = $row.RecommendedMaxDop
-						}
-					}
-					else {
-						if ($dbscopedconfiguration) {
-							$row.OldDatabaseMaxDopValue = $row.DatabaseMaxDop
+                        }
+                        else {
+                            Write-Verbose "Changing $server SQL Server max DOP from $($row.CurrentInstanceMaxDop) to $($row.RecommendedMaxDop)"
+                            $server.Configuration.MaxDegreeOfParallelism.ConfigValue = $row.RecommendedMaxDop
+                            $row.CurrentInstanceMaxDop = $row.RecommendedMaxDop
+                        }
+                    }
+                    else {
+                        if ($dbscopedconfiguration) {
+                            $row.OldDatabaseMaxDopValue = $row.DatabaseMaxDop
 							
-							Write-Verbose "Changing $($row.Database) database max DOP from $($row.DatabaseMaxDop) to $MaxDop"
-							$server.Databases["$($row.Database)"].MaxDop = $MaxDop
-							$row.DatabaseMaxDop = $MaxDop
-						}
-						else {
-							Write-Verbose "Changing $servername SQL Server max DOP from $($row.CurrentInstanceMaxDop) to $MaxDop"
-							$server.Configuration.MaxDegreeOfParallelism.ConfigValue = $MaxDop
-							$row.CurrentInstanceMaxDop = $MaxDop
-						}
-					}
+                            Write-Verbose "Changing $($row.Database) database max DOP from $($row.DatabaseMaxDop) to $MaxDop"
+                            $server.Databases["$($row.Database)"].MaxDop = $MaxDop
+                            $row.DatabaseMaxDop = $MaxDop
+                        }
+                        else {
+                            Write-Verbose "Changing $servername SQL Server max DOP from $($row.CurrentInstanceMaxDop) to $MaxDop"
+                            $server.Configuration.MaxDegreeOfParallelism.ConfigValue = $MaxDop
+                            $row.CurrentInstanceMaxDop = $MaxDop
+                        }
+                    }
 					
-					if ($dbscopedconfiguration) {
-						if ($Pscmdlet.ShouldProcess($row.Database, "Setting max dop on database")) {
-							$server.Databases["$($row.Database)"].Alter()
-						}
-					}
-					else {
-						if ($Pscmdlet.ShouldProcess($servername, "Setting max dop on instance")) {
-							$server.Configuration.Alter()
-						}
-					}
+                    if ($dbscopedconfiguration) {
+                        if ($Pscmdlet.ShouldProcess($row.Database, "Setting max dop on database")) {
+                            $server.Databases["$($row.Database)"].Alter()
+                        }
+                    }
+                    else {
+                        if ($Pscmdlet.ShouldProcess($servername, "Setting max dop on instance")) {
+                            $server.Configuration.Alter()
+                        }
+                    }
 					
-					$results += [pscustomobject]@{
-						ComputerName = $server.NetName
-						InstanceName = $server.ServiceName
-						SqlInstance = $server.DomainInstanceName
-						InstanceVersion = $row.InstanceVersion
-						Database = $row.Database
-						DatabaseMaxDop = $row.DatabaseMaxDop
-						CurrentInstanceMaxDop = $row.CurrentInstanceMaxDop
-						RecommendedMaxDop = $row.RecommendedMaxDop
-						OldDatabaseMaxDopValue = $row.OldDatabaseMaxDopValue
-						OldInstanceMaxDopValue = $row.OldInstanceMaxDopValue
-					}
-				}
-				catch { Write-Error "Could not modify Max Degree of Paralellism for $server." }
-			}
+                    $results += [pscustomobject]@{
+                        ComputerName           = $server.NetName
+                        InstanceName           = $server.ServiceName
+                        SqlInstance            = $server.DomainInstanceName
+                        InstanceVersion        = $row.InstanceVersion
+                        Database               = $row.Database
+                        DatabaseMaxDop         = $row.DatabaseMaxDop
+                        CurrentInstanceMaxDop  = $row.CurrentInstanceMaxDop
+                        RecommendedMaxDop      = $row.RecommendedMaxDop
+                        OldDatabaseMaxDopValue = $row.OldDatabaseMaxDopValue
+                        OldInstanceMaxDopValue = $row.OldInstanceMaxDopValue
+                    }
+                }
+                catch { Write-Error "Could not modify Max Degree of Paralellism for $server." }
+            }
 			
-			if ($dbscopedconfiguration) {
-				$results | Select-Object Instance, Database, OldDatabaseMaxDopValue, @{ name = "CurrentDatabaseMaxDopValue"; expression = { $_.DatabaseMaxDop } }
-			}
-			else {
-				$results | Select-Object Instance, OldInstanceMaxDopValue, CurrentInstanceMaxDop
-			}
-		}
-	}
+            if ($dbscopedconfiguration) {
+                $results | Select-Object Instance, Database, OldDatabaseMaxDopValue, @{ name = "CurrentDatabaseMaxDopValue"; expression = { $_.DatabaseMaxDop } }
+            }
+            else {
+                $results | Select-Object Instance, OldInstanceMaxDopValue, CurrentInstanceMaxDop
+            }
+        }
+    }
 }
 
