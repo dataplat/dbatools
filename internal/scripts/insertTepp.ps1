@@ -29,10 +29,10 @@ foreach ($function in $functions) {
     if ($function.Parameters.Keys -contains "ExcludeOperator") {
         Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeOperator -Name Operator
     }
-    if ($functino.Parameters.Keys -contains "Snapshot") {
+    if ($function.Parameters.Keys -contains "Snapshot") {
         Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter Snapshot -Name Snapshot
     }
-	if ($functino.Parameters.Keys -contains "ExcludeSnapshot") {
+	if ($function.Parameters.Keys -contains "ExcludeSnapshot") {
         Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeSnapshot -Name Snapshot
 	}
 }

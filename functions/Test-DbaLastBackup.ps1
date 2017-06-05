@@ -1,4 +1,4 @@
-Function Test-DbaLastBackup {
+function Test-DbaLastBackup {
 <#
 .SYNOPSIS
 Quickly and easily tests the last set of full backups for a server
@@ -35,10 +35,10 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 
 Windows Authentication will be used if SqlCredential is not specified
 
-.PARAMETER Databases
+.PARAMETER Database
 The database backups to test. If -Database is not provided, all database backups will be tested
 
-.PARAMETER Exclude
+.PARAMETER ExcludeDatabase
 Exclude specific Database backups to test
 
 .PARAMETER DataDirectory
@@ -68,14 +68,11 @@ Do not restore databases larger than MaxMB
 .PARAMETER IgnoreCopyOnly
 If set, copy only backups will not be counted as a last backup
 
+.PARAMETER IgnoreLogBackup
+This switch tells the function to ignore transaction log backups. The process will restore to the latest full or differential backup point only
+
 .PARAMETER Prefix
 The database is restored as "dbatools-testrestore-$databaseName" by default. You can change dbatools-testrestore to whatever you would like using this parameter.
-
-.PARAMETER Database
-The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
-
-.PARAMETER Exclude
-The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER WhatIf
 Shows what would happen if the command were to run
@@ -89,9 +86,6 @@ Performing the operation "Restoring model as dbatools-testrestore-model" on targ
 	
 .PARAMETER Silent 
 Use this switch to disable any kind of verbose messages
-
-.PARAMETER IgnoreLogBackup
-This switch tells the function to ignore transaction log backups. The process will restore to the latest full or differential backup point only
 
 .NOTES
 Tags: DisasterRecovery, Backup, Restore
@@ -149,7 +143,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[DbaInstanceParameter]$Destination,
 		[object]$DestinationCredential,
 		[string]$DataDirectory,
@@ -162,8 +156,8 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 		[string]$CopyPath,
 		[int]$MaxMB,
 		[switch]$IgnoreCopyOnly,
-		[switch]$Silent,
-    [switch]$IgnoreLogBackup
+		[switch]$IgnoreLogBackup,
+		[switch]$Silent
 	)
 	
 	process {
@@ -211,8 +205,8 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 			}
 			
 			if ($instance -ne $destination -and !$CopyFile) {
-				$sourcerealname = $sourceserver.DomainInstanceName
-				$destrealname = $sourceserver.DomainInstanceName
+				$sourcerealname = $sourceserver.ComputerNetBiosName
+				$destrealname = $destserver.ComputerNetBiosName
 				
 				if ($BackupFolder) {
 					if ($BackupFolder.StartsWith("\\") -eq $false -and $sourcerealname -ne $destrealname) {
@@ -244,15 +238,15 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 				$logdirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType ldf
 			}
 			
-			if (!$database) {
+			if (!$Database) {
 				$database = $sourceserver.databases.Name | Where-Object Name -ne 'tempdb'
 			}
 			
-			if ($exclude) {
-				$database = $database | Where-Object { $_ -notin $exclude }
+			if ($ExcludeDatabase) {
+				$database = $database | Where-Object { $_ -notin $ExcludeDatabase }
 			}
 			
-			if ($database -or $exclude) {
+			if ($Database -or $ExcludeDatabase) {
 				$dblist = $database
 				
 				Write-Message -Level Verbose -Message "Getting recent backup history for $instance"

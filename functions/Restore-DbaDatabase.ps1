@@ -277,6 +277,7 @@ function Restore-DbaDatabase {
         Write-Message -Level Debug -Message "Parameters bound: $($PSBoundParameters.Keys -join ", ")"
 		
         #region Validation
+        $useDestinationDefaultDirectories = $true
         $paramCount = 0
         if (Was-Bound "FileMapping") {
             $paramCount += 1
@@ -291,7 +292,7 @@ function Restore-DbaDatabase {
             Stop-Function -Category InvalidArgument -Message "You've specified incompatible Location parameters. Please only specify one of FileMapping, ReuseSourceFolderStructure or DestinationDataDirectory"
             return
         }
-        if (($ReplaceDbNameInFile) -and !(Was-Bound"DatabaseName")) {
+        if (($ReplaceDbNameInFile) -and !(Was-Bound "DatabaseName")) {
             Stop-Function -Category InvalidArgument -Message "To use ReplaceDbNameInFile you must specify DatabaseName"
             return
         }
@@ -324,7 +325,8 @@ function Restore-DbaDatabase {
             }
         }
         if ($Continue) {
-            $ContinuePoints = Get-RestoreContinuableDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential 
+            $ContinuePoints = Get-RestoreContinuableDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            $WithReplace = $true 
             #$ContinuePoints
         }
 		
@@ -340,7 +342,7 @@ function Restore-DbaDatabase {
         $isLocal = [dbavalidate]::IsLocalHost($SqlInstance.ComputerName)
 		
         $backupFiles = @()
-        $useDestinationDefaultDirectories = $true
+        #$useDestinationDefaultDirectories = $true
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -569,7 +571,7 @@ function Restore-DbaDatabase {
                 Stop-Function  -message "We can only handle 1 Database at a time - $dbs"
                 break
             }
-			
+			$OldDatabaseName = ($FilteredFiles | Select-Object -Property DatabaseName -unique).DatabaseName
             IF ($DatabaseName -eq '') {
                 $DatabaseName = $RestoredDatababaseNamePrefix + ($FilteredFiles | Select-Object -Property DatabaseName -unique).DatabaseName
                 Write-Message -Level Verbose -Message "Dbname set from backup = $DatabaseName"
@@ -577,7 +579,7 @@ function Restore-DbaDatabase {
 			
             if ((Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles -continue:$continue) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlInstance $SqlInstance -SqlCredential $SqlCredential)) {
                 try {
-                $FilteredFiles | Restore-DBFromFilteredArray -SqlInstance $SqlInstance -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -TrustDbBackupHistory:$TrustDbBackupHistory -ReplaceDatabase:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure $FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$useDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix -MaxTransferSize $MaxTransferSize -BufferCount $BufferCount -BlockSize $BlockSize -StandbyDirectory $StandbyDirectory -continue:$continue -AzureCredential $AzureCredential -ReplaceDbNameInFile:$ReplaceDbNameInFile -DestinationFileSuffix $DestinationFileSuffix
+                    $FilteredFiles | Restore-DBFromFilteredArray -SqlInstance $SqlInstance -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -TrustDbBackupHistory:$TrustDbBackupHistory -ReplaceDatabase:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure $FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$useDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix -MaxTransferSize $MaxTransferSize -BufferCount $BufferCount -BlockSize $BlockSize -StandbyDirectory $StandbyDirectory -continue:$continue -AzureCredential $AzureCredential -ReplaceDbNameInFile:$ReplaceDbNameInFile -DestinationFileSuffix $DestinationFileSuffix -OldDatabaseName $OldDatabaseName
                     $Completed = 'successfully'
                 }
                 catch {
