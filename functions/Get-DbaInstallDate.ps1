@@ -1,4 +1,4 @@
-function Get-DbaInstallDate
+function Get-DbaServerInstallDate
 {
 <#
 .SYNOPSIS
@@ -24,15 +24,16 @@ Excludes the Windows server information
 .PARAMETER WindowsOnly
 Excludes the SQL server information
 
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
+
 .NOTES
 Tags: CIM 
 Original Author: Mitchell Hamann (@SirCaptainMitch), mitchellhamann.com
 	
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Get-DbaInstallDate
@@ -68,13 +69,14 @@ Returns an object with SQL Server Install date as a string and the Windows insta
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance", "ComputerName")]
 		[object[]]$SqlServer,
+		[PsCredential]$SqlCredential,
+		[PsCredential]$WindowsCredential,
 		[parameter(ParameterSetName = "Sql")]
 		[Switch]$SqlOnly,
 		[parameter(ParameterSetName = "Windows")]
 		[Switch]$WindowsOnly,
 		[Alias("Credential")]
-		[PsCredential]$SqlCredential,
-		[PsCredential]$WindowsCredential
+		[switch]$Silent
 	)
 	
 	PROCESS
@@ -98,10 +100,10 @@ Returns an object with SQL Server Install date as a string and the Windows insta
 			{ 
 				try 
 				{
-					Write-Message -Level Verbose -Message "Connecting to $instance" -Silent $false 
+					Write-Message -Level Verbose -Message "Connecting to $instance"
                     if ($SqlCredential)
                     { 
-                        $server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential #-ErrorVariable ConnectError
+                        $server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
                     } else 
                     { 
                         $server = Connect-SqlInstance -SqlInstance $servername 
@@ -114,41 +116,38 @@ Returns an object with SQL Server Install date as a string and the Windows insta
 
 				if ( $server.VersionMajor -ge 9 )
 				{ 
-					Write-Message -Level Verbose -Message "Getting Install Date for: $instance" -Silent $false 
+					Write-Message -Level Verbose -Message "Getting Install Date for: $instance" 
 					$sql = "SELECT create_date FROM sys.server_principals WHERE sid = 0x010100000000000512000000"
-					$sqlInstallDate = $server.databases['master'].ExecuteWithResults($sql).tables
-					$sqlInstallDate = ($sqlInstallDate.rows).create_date.toString('MM-dd-yyyy') 
+					$sqlInstallDate = $server.query('master',$sql).tables[0]
+					[SqlCollective.dbatools.Utility.DbaDateTime]$sqlInstallDate = $sqlInstallDate.Rows.Create_Date
 
 				} else { 
-					Write-Message -Level Verbose -Message "Getting Install Date for: $instance" -Silent $false 
+					Write-Message -Level Verbose -Message "Getting Install Date for: $instance" 
 					$sql = "SELECT schemadate FROM sysservers"
-					$sqlInstallDate = $server.databases['master'].ExecuteWithResults($sql).tables					
-					$sqlInstallDate = ($sqlInstallDate.rows).create_date.toString('MM-dd-yyyy') 
+					$sqlInstallDate = $server.query('master',$sql).tables[0]
+					[SqlCollective.dbatools.Utility.DbaDateTime]$sqlInstallDate = $sqlInstallDate.Rows.Create_Date
 				}											
 
 			} 
 
 			if ($SqlOnly -ne $true)			
 			{ 
-				Write-Message -Level Verbose -Message "Getting Windows Server Name for: $servername" -Silent $false 
+				Write-Message -Level Verbose -Message "Getting Windows Server Name for: $servername" 
 				$WindowsServerName = (Resolve-DbaNetworkName $servername -Credential $WindowsCredential).ComputerName
 				
 				try
 				{
-					Write-Message -Level Verbose -Message "Getting Windows Install date via CIM for: $WindowsServerName" -Silent $false 
-					$windowsInstallDate = (Get-CimInstance -ClassName win32_operatingsystem -ComputerName $windowsServerName -ErrorAction SilentlyContinue).InstallDate	
-					$windowsInstallDate = $windowsInstallDate.toString('MM-dd-yyyy')				
+					Write-Message -Level Verbose -Message "Getting Windows Install date via CIM for: $WindowsServerName" 
+					[SqlCollective.dbatools.Utility.DbaDateTime]$windowsInstallDate = (Get-CimInstance -ClassName win32_operatingsystem -ComputerName $windowsServerName -ErrorAction SilentlyContinue).InstallDate								
 				}
 				catch
 				{
 					try
 					{	
-						Write-Message -Level Verbose -Message "Getting Windows Install date via DCOM for: $WindowsServerName" -Silent $false 
+						Write-Message -Level Verbose -Message "Getting Windows Install date via DCOM for: $WindowsServerName" 
 						$CimOption = New-CimSessionOption -Protocol DCOM
 						$CimSession = New-CimSession -Credential:$WindowsCredential -ComputerName $WindowsServerName -SessionOption $CimOption
-						$windowsInstallDate = ($CimSession | Get-CimInstance -ClassName Win32_OperatingSystem).LastBootUpTime
-
-						$windowsInstallDate = $windowsInstallDate.toString('MM-dd-yyyy')						
+						[SqlCollective.dbatools.Utility.DbaDateTime]$windowsInstallDate = ($CimSession | Get-CimInstance -ClassName Win32_OperatingSystem).LastBootUpTime					
 					}
 					catch
 					{
