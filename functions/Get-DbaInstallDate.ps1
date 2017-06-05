@@ -156,30 +156,25 @@ Returns an object with SQL Server Install date as a string and the Windows insta
 				}
 			}
 
-			if ($sqlOnly -eq $true)
-			{ 
-				[PSCustomObject]@{
-					ComputerName = $server.NetName
-					InstanceName = $server.ServiceName
-					SqlServer = $server.Name
-					SqlInstallDate = $sqlInstallDate
-				}
+			$object = [PSCustomObject]@{
+							ComputerName = $server.NetName
+							InstanceName = $server.ServiceName
+							SqlServer = $server.InstanceName
+							SqlInstallDate = $sqlInstallDate
+							WindowsInstallDate = $windowsInstallDate
+						}
 
-			} elseif ($WindowsOnly -eq $true)
-			{ 
-				[PSCustomObject]@{
-					ComputerName = $WindowsServerName										
-					WindowsInstallDate = $windowsInstallDate
-				}
-			} else 
-			{ 
-				[PSCustomObject]@{
-					ComputerName = $server.NetName
-					InstanceName = $server.ServiceName
-					SqlServer = $server.InstanceName
-					SqlInstallDate = $sqlInstallDate
-					WindowsInstallDate = $windowsInstallDate
-				}
+			if ($sqlOnly) 
+			{
+				Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlServer, SqlInstallDate
+			}
+			elseif ($WindowsOnly) 
+			{
+				Select-DefaultView -InputObject $object -Property ComptuerName, WindowsInstallDate
+			}
+			else 
+			{
+				Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlServer, SqlInstallDate, WindowsInstallDate
 			}
 
         } 
