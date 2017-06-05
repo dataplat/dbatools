@@ -8,6 +8,9 @@ This command gets all variables from specified environment from SSIS Catalog. Al
 .PARAMETER SqlInstance
 The SQL Server instance.
 
+.PARAMETER SqlCredential
+SqlCredential object to connect as. If not specified, current Windows login will be used.
+
 .PARAMETER Environment
 The SSIS Environments names
 
