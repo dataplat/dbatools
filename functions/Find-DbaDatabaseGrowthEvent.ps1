@@ -156,8 +156,8 @@ function Find-DbaDatabaseGrowthEvent {
 
 			$sql = $sql -replace '_DatabaseList_', $dbsList
 			Write-Message -Level Debug -Message $sql
-			
-			$props = 'ComputerName', 'InstanceName', 'SqlInstance', 'EventClass', 'DatabaseName', 'Filename', 'Duration', 'StartTime', 'EndTime', 'ChangeInSize'	
+
+			$props = 'ComputerName', 'InstanceName', 'SqlInstance', 'EventClass', 'DatabaseName', 'Filename', 'Duration', 'StartTime', 'EndTime', 'ChangeInSize'
 
 			$results = $server.Query($sql)
 			Select-DefaultView -InputObject $results -Property $props
