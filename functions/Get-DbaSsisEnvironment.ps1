@@ -3,19 +3,55 @@
 This command gets specified SSIS Environment and all its variables
 
 .DESCRIPTION
-This command gets Environment from SSIS Catalog. All sensitive valus are decrypted.
+This command gets all variables from specified environment from SSIS Catalog. All sensitive valus are decrypted.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server instance.
 
 .PARAMETER Environment
-The SSIS Environment name
+The SSIS Environments names
+
+.PARAMETER EnvironmentExclude
+The SSIS Environments to exclude
 
 .PARAMETER Folder
-The Folder name that contains the environment
+The Folders names that contain the environments
+
+.PARAMETER FolderExclude
+The Folders names to exclude
+
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
 
 .EXAMPLE
-Get-DbaSsisEnvironment -SqlServer localhost -Environment DEV -Folder DWH_ETL
+Get-DbaSsisEnvironment -SqlInstance localhost -Environment DEV -Folder DWH_ETL
+
+Gets variables of 'DEV' environment located in 'DWH_ETL' folder on 'localhost' Server
+
+.EXAMPLE
+Get-DbaSsisEnvironment -SqlInstance localhost -Environment DEV -Folder DWH_ETL, DEV2, QA
+
+Gets variables of 'DEV' environment(s) located in folders 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
+
+.EXAMPLE
+Get-DbaSsisEnvironment -SqlInstance localhost -Environment DEV -FolderExclude DWH_ETL, DEV2, QA
+
+Gets variables of 'DEV' environments located in folders other than 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
+
+.EXAMPLE
+Get-DbaSsisEnvironment -SqlInstance localhost -Environment DEV, PROD -Folder DWH_ETL, DEV2, QA
+
+Gets variables of 'DEV' and 'PROD' environment(s) located in folders 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
+
+.EXAMPLE
+Get-DbaSsisEnvironment -SqlInstance localhost -EnvironmentExclude DEV, PROD -Folder DWH_ETL, DEV2, QA
+
+Gets variables of environments other than 'DEV' and 'PROD' located in folders 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
+
+.EXAMPLE
+Get-DbaSsisEnvironment -SqlInstance localhost -EnvironmentExclude DEV, PROD -FolderEcxclude DWH_ETL, DEV2, QA
+
+Gets variables of environments other than 'DEV' and 'PROD' located in folders other than 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
 
 .NOTES
 Author: Bartosz Ratajczyk ( @b_ratajczyk )
@@ -28,53 +64,94 @@ You should have received a copy of the GNU General Public License along with thi
 #>
 function Get-DbaSsisEnvironment {
 
-[CmdletBinding(SupportsShouldProcess = $true)]
+[CmdletBinding()]
 	Param (
-		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[object[]]$SqlServer,
-		[string]$Environment,
-        [string]$Folder
+		[parameter(Mandatory, ValueFromPipeline)]
+		[Alias('SqlServer', 'ServerInstance')]
+		[DbaInstanceParameter[]]$SqlInstance,
+        [Parameter(Mandatory=$false)]
+        [System.Management.Automation.PSCredential]$SqlCredential,
+        [parameter(Mandatory=$false)]
+		[object[]]$Environment,
+        [parameter(Mandatory=$false)]
+        [object[]]$EnvironmentExclude,
+        [parameter(Mandatory=$false)]
+        [object[]]$Folder,
+        [parameter(Mandatory=$false)]
+        [object[]]$FolderExclude,
+		[switch]$Silent
 	)
 
     begin {
-        $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
 
-        $connection = Connect-SqlServer -SqlServer $SqlServer
-
-        if ($connection.versionMajor -lt 11)
-		{
-			throw "SSISDB catalog is only available on Sql Server 2012 and above, exiting... $($connection.versionMajor)"
-		}
-
-        try
-		{
-			Write-Verbose "Connecting to $Source integration services."
-			$SSIS = New-Object "$ISNamespace.IntegrationServices" $connection
-		}
-		catch
-		{
-			Write-Exception $_
-			throw "There was an error connecting to the source integration services."
-		}
-
-        $catalog = $SSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
-        $folders = $catalog.Folders
     }
 
     process {
-        if($PSCmdlet.ShouldProcess('GetEnvironment')) {
-            if ($folder) {
-                if ($folders.Name -contains $folder) {
-                    $srcFolder = $folders | Where-Object { $_.Name -eq $folder }
 
-                    $srcEnvironment = $srcFolder.Environments | Where-Object {$_.Name -eq $Environment}
+        foreach($instance in $SqlInstance)
+        {
+            try
+            {
+                Write-Message -Message "Connecting to $instance" -Level 5 -Silent $Silent
+                $connection = Connect-SqlInstance -SqlInstance $instance
+            }
+            catch
+            {
+                Stop-Function -Message "Failed to connect to: $instance" -ErrorRecord $_ -Target $instance -Continue -Silent $Silent
+                return
+            }
+            
 
+            if ($connection.versionMajor -lt 11)
+            {
+                Stop-Function -Message "SSISDB catalog is only available on Sql Server 2012 and above, exiting." -Silent $Silent
+                return
+            }
+
+            try
+            {
+                $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
+
+                Write-Message -Message "Connecting to $instance Integration Services" -Level 5 -Silent $Silent
+                $SSIS = New-Object "$ISNamespace.IntegrationServices" $connection
+            }
+            catch
+            {
+                Stop-Function -Message "Could not connect to Integration Services on $instance" -Silent $Silent
+                return
+            }
+
+            Write-Message -Message "Fetching SSIS Catalog and its folders" -Level 5 -Silent $Silent
+            $catalog = $SSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
+
+            # get all folders names if none provided
+            if($null -eq $Folder) {$Folder = $catalog.Folders.Name}
+
+            # filter unwanted folders
+            if ($FolderExclude) {
+                $Folder = $Folder | Where-Object { $_ -notin $FolderExclude }
+            }
+
+            # get all environments names if none provided
+            if($null -eq $Environment) {$Environment = $catalog.Folders.Environments.Name}
+
+            #filter unwanted environments
+            if ($EnvironmentExclude) {
+                $Environment = $Environment | Where-Object { $_ -notin $EnvironmentExclude }
+            }
+
+            foreach ($f in $Folder)
+            {
+                $Environments = $catalog.Folders[$f].Environments | Where-Object {$_.Name -in $Environment}
+
+                foreach($e in $Environments)
+                {
                     #encryption handling
-                    $encKey = 'MS_Enckey_Env_' + $srcEnvironment.EnvironmentId
-                    $encCert = 'MS_Cert_Env_' + $srcEnvironment.EnvironmentId
+                    $encKey = 'MS_Enckey_Env_' + $e.EnvironmentId
+                    $encCert = 'MS_Cert_Env_' + $e.EnvironmentId
 
-                    <# SMO does not return sensitive values (gets data from catalog.environment_variables)
+                    <#
+                    SMO does not return sensitive values (gets data from catalog.environment_variables)
                     We have to manualy query internal.environment_variables instead and use symmetric keys
                     within T-SQL code
                     #>
@@ -110,12 +187,14 @@ function Get-DbaSsisEnvironment {
                                             END
                             ) decrypted
 
-                        WHERE environment_id = $($srcEnvironment.EnvironmentId);
+                        WHERE environment_id = $($e.EnvironmentId);
 
                         CLOSE SYMMETRIC KEY $encKey;
 "@
 
-                    $ssisVariables = $connection.Databases['SSISDB'].ExecuteWithResults($sql).Tables[0]
+
+                    #$ssisVariables = $connection.Databases['SSISDB'].ExecuteWithResults($sql).Tables[0]
+                    $ssisVariables = Invoke-DbaSqlCmd -ServerInstance $instance -Database SSISDB -Query $sql -As DataTable
                     
                     foreach($variable in $ssisVariables) {
                         if($variable.sensitive -eq $true) {
@@ -123,7 +202,9 @@ function Get-DbaSsisEnvironment {
                         } else {
                             $value = $variable.value
                         }
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
+                            Folder          = $f
+                            Environment     = $e.Name
                             Id              = $variable.variable_id
                             Name            = $variable.Name
                             Description     = $variable.description
@@ -132,13 +213,11 @@ function Get-DbaSsisEnvironment {
                             BaseDataType    = $variable.base_data_type
                             Value           = $value
                         }
-                    }
-                    
-
-                }
-            }
-        }
-    }
+                    } # end foreach($ssisVariables)
+                } # end foreach($srcEnvironment)
+            } # end foreach($Folder)
+        } # end foreach($SqlInstance)
+    } # end process
 
     end {
 
