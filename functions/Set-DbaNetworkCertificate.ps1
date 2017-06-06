@@ -1,51 +1,28 @@
-﻿function Set-DbaNetworkEncryption {
+﻿function Set-DbaNetworkCertificate {
 <#
 .SYNOPSIS
-Creates a new computer certificate useful for Forcing Encryption
+Sets the network certificate for SQL Server instance
 
 .DESCRIPTION
-Creates a new computer certificate - signed by an Active Directory CA, using the Web Server certificate. Self-signing is not currenty supported but feel free to add it.
-	
-By default, a key with a length of 1024 and a friendly name of the machines FQDN is generated.
-	
-This command was originally intended to help automate the process so that SSL certificates can be available for enforcing encryption on connections.
-	
-It makes a lot of assumptions - namely, that your account is allowed to auto-enroll and that you have permission to do everything it needs to do ;)
+Sets the network certificate for SQL Server instance
 
 References:
 http://sqlmag.com/sql-server/7-steps-ssl-encryption
 https://azurebi.jppp.org/2016/01/23/using-lets-encrypt-certificates-for-secure-sql-server-connections/
 https://blogs.msdn.microsoft.com/sqlserverfaq/2016/09/26/creating-and-registering-ssl-certificates/
 
-The certificate is generated using AD's webserver SSL template on the client machine and pushed to the remote machine.
-
-.PARAMETER ComputerName
+.PARAMETER SqlInstance
 The target SQL Server - defaults to localhost. If target is a cluster, you must also specify InstanceClusterName (see below)
 
 .PARAMETER Credential
-Allows you to login to $ComputerName using alternative credentials.
+Allows you to login to the computer (not sql instance) using alternative credentials.
 
-.PARAMETER CaServer
-Optional - the CA Server where the request will be sent to
-
-.PARAMETER CaName
-The properly formatted CA name of the corresponding CaServer
-
-.PARAMETER Password
-Password to encrypt/decrypt private key for export to remote machine
+.PARAMETER Certificate
+The Certificate object
 	
-.PARAMETER FriendlyName
-The FriendlyName listed in the certificate. This defaults to the FQDN of the $ComputerName
-	
-.PARAMETER KeyLength
-The length of the key - defaults to 1024
-	
-.PARAMETER CertificateTemplate
-The domain's Certificate Template - WebServer by default.
+.PARAMETER Thumbprint
+The thumbprint 
 
-.PARAMETER InstanceClusterName
-When creating certs for a cluster, use this parameter to create the certificate for the cluster node name. Use ComputerName for each of the nodes.
-		
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
 
@@ -63,25 +40,12 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
-Set-DbaNetworkEncryption
-Creates a computer certificate signed by the local domain CA for the local machine with the keylength of 1024.
+New-DbaComputerCertificate | Set-DbaNetworkCertificate -SqlInstance localhost\SQL2008R2SP2
+
+Hello
 
 .EXAMPLE
-Set-DbaNetworkEncryption -ComputerName Server1
-
-Creates a computer certificate signed by the local domain CA _on the local machine_ for server1 with the keylength of 1024. 
-	
-The certificate is then copied to the new machine over WinRM and imported.
-
-.EXAMPLE
-Set-DbaNetworkEncryption -ComputerName sqla, sqlb -InstanceClusterName sqlcluster -KeyLength 4096
-
-Creates a computer certificate for sqlcluster, signed by the local domain CA, with the keylength of 4096. 
-	
-The certificate is then copied to sqla _and_ sqlb over WinRM and imported.
-
-.EXAMPLE
-Set-DbaNetworkEncryption -ComputerName Server1 -WhatIf
+Set-DbaNetworkCertificate -SqlInstance localhost\SQL2008R2SP2 -Thumbprint 1223FB1ACBCA44D3EE9640F81B6BA14A92F3D6E2 -WhatIf
 
 Shows what would happen if the command were run
 
@@ -108,9 +72,11 @@ Shows what would happen if the command were run
 		}
 		
 		if (!$Thumbprint) {
+			Write-Message -Level Output -Message "Getting thumbprint"
 			$Thumbprint = $Certificate.Thumbprint
 		}
 		
+		Write-Message -Level Output -Message "Resolving hostname"
 		$resolved = Resolve-DbaNetworkName -ComputerName $SqlInstance -Turbo
 		
 		if ($null -eq $resolved) {
@@ -118,10 +84,15 @@ Shows what would happen if the command were run
 			return
 		}
 		
+		Write-Message -Level Output -Message "Getting WMI info"
 		$instance = Invoke-ManagedComputerCommand -Server $resolved.FQDN -ScriptBlock { $wmi.Services } | Where-Object DisplayName -eq "SQL Server ($($SqlInstance.InstanceName))"
 		$instanceid = ($instance.AdvancedProperties | Where-Object Name -eq INSTANCEID).Value
 		$regroot = ($instance.AdvancedProperties | Where-Object Name -eq REGROOT).Value
 		$serviceaccount = $instance.ServiceAccount
+		
+		Write-Message -Level Output -Message "Instanceid: $instanceid"
+		Write-Message -Level Output -Message "Regroot: $regroot"
+		Write-Message -Level Output -Message "ServiceAcct: $serviceaccount"
 		
 		if ($null -eq $regroot) {
 			Stop-Function -Message "Can't find instance $($SqlInstance.InstanceName) on $env:COMPUTERNAME" -Target $args[0]
@@ -130,14 +101,27 @@ Shows what would happen if the command were run
 
 		$scriptblock = {
 			$cert = Get-ChildItem Cert:\LocalMachine\My -Recurse | Where-Object Thumbprint -eq $args[0]
+			
 			if ($null -eq $cert) {
 				Stop-Function -Message "Certificate does not exist on $env:COMPUTERNAME" -Target $args[0]
 				return
 			}
-			$serviceaccount = $args[2]
 			
-			$regpath = 'Registry::HKEY_LOCAL_MACHINE\$regroot\MSSQLServer\SuperSocketNetLib'
-			Set-ItemProperty -Path $regpath -Name Certificate -Value $args[1]
+			$permission = $args[2], "Read", "Allow"
+			$accessRule = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList $permission
+			
+			$keyPath = $env:ProgramData + "\Microsoft\Crypto\RSA\MachineKeys\"
+			$keyName = $cert.PrivateKey.CspKeyContainerInfo.UniqueKeyContainerName
+			$keyFullPath = $keyPath + $keyName
+			
+			$acl = Get-Acl -Path $keyFullPath
+			$null = $acl.AddAccessRule($accessRule)
+			Set-Acl -Path $keyFullPath -AclObject $acl
+			
+			if ($acl) {
+				$regpath = "Registry::HKEY_LOCAL_MACHINE\$regroot\MSSQLServer\SuperSocketNetLib"
+				Set-ItemProperty -Path $regpath -Name Certificate -Value $args[1]
+			}
 		}
 		
 		if ($PScmdlet.ShouldProcess("local", "Connecting to $ComputerName to import new cert")) {
