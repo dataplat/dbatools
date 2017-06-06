@@ -86,62 +86,67 @@ Set-DbaNetworkEncryption -ComputerName Server1 -WhatIf
 Shows what would happen if the command were run
 
 #>
-	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
 	param (
 		[Alias("ServerInstance", "SqlServer", "ComputerName")]
 		[DbaInstanceParameter]$SqlInstance = $env:COMPUTERNAME,
 		[System.Management.Automation.PSCredential]$Credential,
-		[parameter(ValueFromPipeline, Mandatory)]
+		[parameter(Mandatory, ParameterSetName = "Certificate", ValueFromPipeline)]
 		[System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate,
+		[parameter(Mandatory, ParameterSetName = "Thumbprint")]
+		[string]$Thumbprint,
 		[switch]$Silent
 	)
-	
 	process {
-		if (![dbavalidate]::IsLocalhost($ComputerName)) {
-			
-			if (!$secondarynode) {
-				if ($PScmdlet.ShouldProcess("local", "Removing cert from disk")) {
-					$storedcert | Remove-Item
-				}
-				
-				if ($PScmdlet.ShouldProcess("local", "Generating pfx and reading from disk")) {
-					Write-Message -Level Output -Message "Exporting PFX with password to $temppfx"
-					$certdata = $storedcert.Export("pfx", $password)
-					[System.IO.File]::WriteAllBytes($temppfx, $certdata)
-					$file = [System.IO.File]::ReadAllBytes($temppfx)
-				}
-				if ($InstanceClusterName) { $secondarynode = $true }
-			}
-			
-			$scriptblock = {
-				$tempdir = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-				$filename = "$tempdir\cert.cer"
-				
-				[System.IO.File]::WriteAllBytes($filename, $args[0])
-				$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-				$cert.Import($filename, $args[1], [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
-				
-				$store = New-Object System.Security.Cryptography.X509Certificates.X509Store("My", "LocalMachine")
-				$store.Open('ReadWrite')
-				$store.Add($cert)
-				$store.Close()
-				
-				Get-ChildItem Cert:\LocalMachine\My -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
-				
-				Remove-Item -Path $filename
-			}
-			
-			if ($PScmdlet.ShouldProcess("local", "Connecting to $ComputerName to import new cert")) {
-				try {
-					Invoke-Command2 -ComputerName $ComputerName -Credential $Credential -ArgumentList $file, $Password -ScriptBlock $scriptblock -ErrorAction Stop
-				}
-				catch {
-					Stop-Function -Message $_ -ErrorRecord $_ -Target $ComputerName -Continue
-				}
-			}
+		if ([dbavalidate]::IsLocalhost($sqlinstance)) {
+			Test-RunAsAdmin
 		}
-		if ($PScmdlet.ShouldProcess("local", "Removing all files from $certdir")) {
-			Remove-Item -Force -Recurse $certdir -ErrorAction SilentlyContinue
+		
+		if (!$Certificate -and !$Thumbprint) {
+			Stop-Function -Message "You must specify a certificate or thumbprint"
+			return
+		}
+		
+		if (!$Thumbprint) {
+			$Thumbprint = $Certificate.Thumbprint
+		}
+		
+		$resolved = Resolve-DbaNetworkName -ComputerName $SqlInstance -Turbo
+		
+		if ($null -eq $resolved) {
+			Stop-Function -Message "Can't resolve $SqlInstance" -Target $resolved
+			return
+		}
+		
+		$instance = Invoke-ManagedComputerCommand -Server $resolved.FQDN -ScriptBlock { $wmi.Services } | Where-Object DisplayName -eq "SQL Server ($($SqlInstance.InstanceName))"
+		$instanceid = ($instance.AdvancedProperties | Where-Object Name -eq INSTANCEID).Value
+		$regroot = ($instance.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+		$serviceaccount = $instance.ServiceAccount
+		
+		if ($null -eq $regroot) {
+			Stop-Function -Message "Can't find instance $($SqlInstance.InstanceName) on $env:COMPUTERNAME" -Target $args[0]
+			return
+		}
+
+		$scriptblock = {
+			$cert = Get-ChildItem Cert:\LocalMachine\My -Recurse | Where-Object Thumbprint -eq $args[0]
+			if ($null -eq $cert) {
+				Stop-Function -Message "Certificate does not exist on $env:COMPUTERNAME" -Target $args[0]
+				return
+			}
+			$serviceaccount = $args[2]
+			
+			$regpath = 'Registry::HKEY_LOCAL_MACHINE\$regroot\MSSQLServer\SuperSocketNetLib'
+			Set-ItemProperty -Path $regpath -Name Certificate -Value $args[1]
+		}
+		
+		if ($PScmdlet.ShouldProcess("local", "Connecting to $ComputerName to import new cert")) {
+			try {
+				Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $Thumbprint, $regroot, $serviceaccount -ScriptBlock $scriptblock -ErrorAction Stop
+			}
+			catch {
+				Stop-Function -Message $_ -ErrorRecord $_ -Target $ComputerName -Continue
+			}
 		}
 	}
 }
