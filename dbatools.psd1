@@ -294,7 +294,8 @@
 		'New-DbaSqlConnectionString',
 		'Invoke-DbaLogShipping',
 		'Read-DbaTraceFile',
-		'New-DbaComputerCertificate'
+		'New-DbaComputerCertificate',		
+		'Get-DbaServerInstallDate'
 	)
 	
 	# Cmdlets to export from this module

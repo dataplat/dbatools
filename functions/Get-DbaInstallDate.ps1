@@ -68,7 +68,7 @@ Returns an object with SQL Server Install date as a string and the Windows insta
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance", "ComputerName")]
-		[object[]]$SqlServer,
+		[DbaInstanceParameter[]]$SqlServer,
 		[PsCredential]$SqlCredential,
 		[PsCredential]$WindowsCredential,
 		[parameter(ParameterSetName = "Sql")]
@@ -137,7 +137,8 @@ Returns an object with SQL Server Install date as a string and the Windows insta
 				
 				try
 				{
-					Write-Message -Level Verbose -Message "Getting Windows Install date via CIM for: $WindowsServerName" 
+					Write-Message -Level Verbose -Message "Getting Windows Install date via CIM for: $WindowsServerName"
+					$WindowsServerName		
 					[SqlCollective.dbatools.Utility.DbaDateTime]$windowsInstallDate = (Get-CimInstance -ClassName win32_operatingsystem -ComputerName $windowsServerName -ErrorAction SilentlyContinue).InstallDate								
 				}
 				catch
