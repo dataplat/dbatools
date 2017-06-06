@@ -21,9 +21,6 @@ Certificate folder - defaults to My (Personal)
 .PARAMETER Thumbprint
 Return certificate based on thumbprint
 
-.PARAMETER Thumbprint
-Return certificate based on thumbprint
-
 .PARAMETER Silent 
 Use this switch to disable any kind of verbose messages
 
