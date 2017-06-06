@@ -47,12 +47,12 @@ FUNCTION Get-DbaAgentSchedule
 	
 	process {
 		foreach ($instance in $SqlInstance) {
-			Write-Verbose "Attempting to connect to $instance"
+			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 			try {
 				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Write-Warning "Can't connect to $instance or access denied. Skipping."
+				Write-Message -Level Warning -Message "Can't connect to $instance or access denied. Skipping."
 				continue
 			}
 
