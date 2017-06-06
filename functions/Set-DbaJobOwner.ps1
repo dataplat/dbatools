@@ -97,7 +97,7 @@ function Set-DbaJobOwner {
 			#Validate login
 			if (($server.Logins.Name) -notcontains $Login) {
 				if ($SqlInstance.count -eq 1) {
-					Stop-Function -Message "Invalid login: $Login"
+					throw -Message "Invalid login: $Login"
 				}
 				else {
 					Write-Message -Level Warning -Message "$Login is not a valid login on $servername. Moving on."
@@ -106,7 +106,7 @@ function Set-DbaJobOwner {
 			}
 
 			if ($server.logins[$Login].LoginType -eq 'WindowsGroup') {
-				Stop-Function -Message "$Login is a Windows Group and can not be a job owner."
+				throw "$Login is a Windows Group and can not be a job owner."
 			}
 
 			#Get database list. If value for -Job is passed, massage to make it a string array.
