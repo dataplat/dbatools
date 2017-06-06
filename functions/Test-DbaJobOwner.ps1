@@ -1,5 +1,5 @@
 function Test-DbaJobOwner {
-    <#
+	<#
 		.SYNOPSIS
 			Checks SQL Agent Job owners against a login to validate which jobs do not match that owner.
 
@@ -19,20 +19,23 @@ function Test-DbaJobOwner {
 		.PARAMETER SqlCredential
 			PSCredential object to connect under. If not specified, currend Windows login will be used.
 
-		.PARAMETER TargetLogin
-			Specific login that you wish to check for ownership. This defaults to 'sa'.
+		.PARAMETER Job
+			The job(s) to process - this list is auto populated from the server. If unspecified, all jobs will be processed.
 
-		.PARAMETER Jobs
-			Auto-populated list of Jobs to apply changes to. Will accept a comma separated list or a string array.
+		.PARAMETER ExcludeJob
+			The job(s) to exclude - this list is auto populated from the server.
 
-		.PARAMETER Exclude
-			Jobs to exclude
+		.PARAMETER Login
+			Specific login that you wish to check for ownership - this list is auto populated from the server. This defaults to 'sa' or the sysadmin name if sa was renamed.
 
 		.PARAMETER Detailed
 			Provides Detailed information
 
+		.PARAMETER Silent
+			Use this switch to disable any kind of verbose messages
+
 		.NOTES 
-			Tags: Jobs, Owner
+			Tags: Agent, Job, Owner
 			Original Author: Michael Fal (@Mike_Fal), http://mikefal.net
 
 			Website: https://dbatools.io
@@ -48,99 +51,102 @@ function Test-DbaJobOwner {
 			Returns all databases where the owner does not match 'sa'.
 
 		.EXAMPLE
-			Test-DbaJobOwner -SqlInstance localhost -TargetLogin DOMAIN\account
+			Test-DbaJobOwner -SqlInstance localhost -Login DOMAIN\account
 
 			Returns all databases where the owner does not match DOMAIN\account. Note
-			that TargetLogin must be a valid security principal that exists on the target server.
+			that Login must be a valid security principal that exists on the target server.
 	#>
-    [CmdletBinding()]
-    [OutputType('System.Object[]')]
-    Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter[]]$SqlInstance,
-        [System.Management.Automation.PSCredential]$SqlCredential,
-        [string]$TargetLogin,
-        [Switch]$Detailed
-    )
+	[CmdletBinding()]
+	[OutputType('System.Object[]')]
+	param (
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential,
+		[object[]]$Job,
+		[object[]]$ExcludeJob,
+		[object]$Login,
+		[Switch]$Detailed,
+		[switch]$Silent
+	)
 
-    begin {
-        #connect to the instance and set return array empty
-        $return = @()
-    }
-    process {
-        foreach ($servername in $SqlInstance) {
-            #connect to the instance
-            Write-Verbose "Connecting to $servername"
-            $server = Connect-SqlInstance $servername -SqlCredential $SqlCredential
+	begin {
+		#connect to the instance and set return array empty
+		$return = @()
+	}
+	process {
+		foreach ($servername in $SqlInstance) {
+			#connect to the instance
+			Write-Message -Level Verbose -Message "Connecting to $servername"
+			$server = Connect-SqlInstance $servername -SqlCredential $SqlCredential
 			
-            # dynamic sa name for orgs who have changed their sa name
-            if ($TargetLogin) {
-                $TargetLogin = ($server.logins | Where-Object { $_.id -eq 1 }).Name
-                
-                #sql2000 id property is empty -force target login to 'sa' login
-                if (($server.versionMajor -lt 9) -and ([string]::IsNullOrEmpty($TargetLogin))) {
-                    $TargetLogin = "sa"
-                }
-            }
+			#Validate login
+			if (($server.Logins.Name) -notcontains $Login) {
+				if ($SqlInstance.count -eq 1) {
+					throw "Invalid login: $Login"
+				}
+				else {
+					Write-Message -Level Warning -Message "$Login is not a valid login on $servername. Moving on."
+					continue
+				}
+			}
+
+			# dynamic sa name for orgs who have changed their sa name
+			if ($Login) {
+				$Login = ($server.logins | Where-Object { $_.id -eq 1 }).Name
+				
+				#sql2000 id property is empty -force target login to 'sa' login
+				if (($server.versionMajor -lt 9) -and ([string]::IsNullOrEmpty($Login))) {
+					$Login = "sa"
+				}
+			}
 			
-            #Validate login
-            if (($server.Logins.Name) -notcontains $TargetLogin) {
-                if ($SqlInstance.count -eq 1) {
-                    throw "Invalid login: $TargetLogin"
-                }
-                else {
-                    Write-Warning "$TargetLogin is not a valid login on $servername. Moving on."
-                    Continue
-                }
-            }
+			if ($server.logins[$Login].LoginType -eq 'WindowsGroup') {
+				throw "$Login is a Windows Group and can not be a job owner."
+			}
 			
-            if ($server.logins[$TargetLogin].LoginType -eq 'WindowsGroup') {
-                throw "$TargetLogin is a Windows Group and can not be a job owner."
-            }
+			#Get database list. If value for -Job is passed, massage to make it a string array.
+			#Otherwise, use all jobs on the instance where owner not equal to -TargetLogin
+			Write-Message -Level Verbose -Message "Gathering jobs to Check"
 			
-            #Get database list. If value for -Job is passed, massage to make it a string array.
-            #Otherwise, use all jobs on the instance where owner not equal to -TargetLogin
-            Write-Verbose "Gathering jobs to Check"
+			if ($Job) {
+				$jobcollection = $server.JobServer.Jobs | Where-Object { $Job -contains $_.Name }
+			}
+			else {
+				$jobcollection = $server.JobServer.Jobs
+			}
 			
-            if ($Job.Length -gt 0) {
-                $jobcollection = $server.JobServer.Jobs | Where-Object { $Job -contains $_.Name }
-            }
-            else {
-                $jobcollection = $server.JobServer.Jobs
-            }
+			if ($ExcludeJob) {
+				$jobcollection = $jobcollection | Where-Object { $ExcludeJob -notcontains $_.Name }
+			}
 			
-            if ($Exclude.Length -gt 0) {
-                $jobcollection = $jobcollection | Where-Object { $Exclude -notcontains $_.Name }
-            }
-			
-            #for each database, create custom object for return set.
-            foreach ($job in $jobcollection) {
-                Write-Verbose "Checking $job"
-                $row = [ordered]@{
-                    Server       = $server.Name
-                    Job          = $job.Name
-                    CurrentOwner = $job.OwnerLoginName
-                    TargetOwner  = $TargetLogin
-                    OwnerMatch   = ($job.OwnerLoginName -eq $TargetLogin)
+			#for each database, create custom object for return set.
+			foreach ($j in $jobcollection) {
+				Write-Message -Level Verbose -Message "Checking $j"
+				$row = [ordered]@{
+					Server       = $server.Name
+					Job          = $j.Name
+					CurrentOwner = $j.OwnerLoginName
+					TargetOwner  = $Login
+					OwnerMatch   = ($j.OwnerLoginName -eq $Login)
 					
-                }
-                #add each custom object to the return array
-                $return += New-Object PSObject -Property $row
-            }
-        }
-    }
-	
-    END {
-        #return results
-        if ($Detailed) {
-            Write-Verbose "Returning detailed results."
-            return $return
-        }
-        else {
-            Write-Verbose "Returning default results."
-            return ($return | Where-Object { $_.OwnerMatch -eq $false })
-        }
-    }
+				}
+				#add each custom object to the return array
+				$return += New-Object PSObject -Property $row
+			}
+		}
+	}
+	end {
+		#return results
+		if ($Detailed) {
+			Write-Message -Level Verbose -Message "Returning detailed results."
+			return $return
+		}
+		else {
+			Write-Message -Level Verbose -Message "Returning default results."
+			return ($return | Where-Object { $_.OwnerMatch -eq $false })
+		}
+	}
 	
 }
