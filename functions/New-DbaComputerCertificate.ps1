@@ -64,14 +64,21 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
 New-DbaComputerCertificate
-Creates a computer certificate for the local machine with the keylength of 1024.
+Creates a computer certificate signed by the local domain CA for the local machine with the keylength of 1024.
 
 .EXAMPLE
 New-DbaComputerCertificate -ComputerName Server1
 
-Creates a computer certificate _on the local machine_ for server1 with the keylength of 1024. 
+Creates a computer certificate signed by the local domain CA _on the local machine_ for server1 with the keylength of 1024. 
 	
 The certificate is then copied to the new machine over WinRM and imported.
+
+.EXAMPLE
+New-DbaComputerCertificate -ComputerName sqla, sqlb -InstanceClusterName sqlcluster -KeyLength 4096
+
+Creates a computer certificate for sqlcluster, signed by the local domain CA, with the keylength of 4096. 
+	
+The certificate is then copied to sqla _and_ sqlb over WinRM and imported.
 
 .EXAMPLE
 New-DbaComputerCertificate -ComputerName Server1 -WhatIf
