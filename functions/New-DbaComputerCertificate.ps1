@@ -63,18 +63,18 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
-New-DbaCertificate
+New-DbaComputerCertificate
 Creates a computer certificate for the local machine with the keylength of 1024.
 
 .EXAMPLE
-New-DbaCertificate -ComputerName Server1
+New-DbaComputerCertificate -ComputerName Server1
 
 Creates a computer certificate _on the local machine_ for server1 with the keylength of 1024. 
 	
 The certificate is then copied to the new machine over WinRM and imported.
 
 .EXAMPLE
-New-DbaCertificate -ComputerName Server1 -WhatIf
+New-DbaComputerCertificate -ComputerName Server1 -WhatIf
 
 Shows what would happen if the command were run
 
