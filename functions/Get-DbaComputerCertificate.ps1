@@ -43,19 +43,13 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
 Get-DbaComputerCertificate
-Creates a computer certificate for the local machine with the keylength of 1024.
+Gets computer certificates on localhost that are candidates for using with SQL Server's network encryption
 
 .EXAMPLE
-Get-DbaComputerCertificate -ComputerName Server1
+Get-DbaComputerCertificate -ComputerName
 
-Creates a computer certificate _on the local machine_ for server1 with the keylength of 1024. 
-	
-The certificate is then copied to the new machine over WinRM and imported.
+Gets computer certificates on sql2016 that are candidates for using with SQL Server's network encryption
 
-.EXAMPLE
-Get-DbaComputerCertificate -ComputerName Server1 -WhatIf
-
-Shows what would happen if the command were run
 
 #>
 	[CmdletBinding()]
