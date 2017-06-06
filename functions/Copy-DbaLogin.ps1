@@ -408,7 +408,7 @@ function Copy-DbaLogin {
 		}
 
 		if ($SyncOnly) {
-			Sync-SqlLoginPermissions -Source $Source -Destination $Destination $loginparms
+			Sync-DbaSqlLoginPermission -Source $Source -Destination $Destination $loginparms
 			return
 		}
 
