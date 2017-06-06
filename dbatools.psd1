@@ -295,8 +295,9 @@
 		'Invoke-DbaLogShipping',
 		'Read-DbaTraceFile',
 		'New-DbaComputerCertificate',
-		'Get-DbaComputerCertificate'
-		'Set-DbaNetworkEncryption',
+		'Get-DbaComputerCertificate',
+		'Add-DbaComputerCertificate',
+		'Set-DbaNetworkCertificate',
 		'Get-DbaAgentSchedule'
 	)
 	
