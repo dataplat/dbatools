@@ -102,10 +102,52 @@ Shows what would happen if the command were run
 		[switch]$Silent
 	)
 	begin {
-		
 		Test-RunAsAdmin
 		
-		if (!$CaServer -or !$CaName) {
+		function GetHexLength([int]$strLen) {
+			$hex = [String]::Format("{0:X2}", $strLen)
+			
+			if ($strLen -gt 127) { [String]::Format("{0:X2}", 128 + ($hex.Length / 2)) + $hex }
+			else { $hex }
+		}
+		
+		function Get-SanExt ([string[]]$hostname) {
+			# thanks to Lincoln of 
+			# https://social.technet.microsoft.com/Forums/windows/en-US/f568edfa-7f93-46a4-aab9-a06151592dd9/converting-ascii-to-asn1-der
+			
+			$temp = ''
+			foreach ($fqdn in $hostname) {
+				# convert each character of fqdn to hex
+				$hexString = ($fqdn.ToCharArray() | ForEach-Object{ [String]::Format("{0:X2}", [int]$_) }) -join ''
+				
+				# length of hex fqdn, in hex
+				$hexLength = GetHexLength ($hexString.Length / 2)
+				
+				# concatenate special code 82, hex length, hex string
+				$temp += "82${hexLength}${hexString}"
+			}
+			# calculate total length of concatenated string, in hex
+			$totalHexLength = GetHexLength ($temp.Length / 2)
+			# concatenate special code 30, hex length, hex string
+			$temp = "30${totalHexLength}${temp}"
+			# convert to binary
+			$bytes = $(
+				for ($i = 0; $i -lt $temp.length; $i += 2) {
+					[byte]"0x$($temp.SubString($i, 2))"
+				}
+			)
+			# convert to base 64
+			$base64 = [Convert]::ToBase64String($bytes)
+			# output in proper format
+			for ($i = 0; $i -lt $base64.Length; $i += 64) {
+				$line = $base64.Substring($i, [Math]::Min(64, $base64.Length - $i))
+				if ($i -eq 0) { "2.5.29.17=$line" }
+				else { "_continue_=$line" }
+			}
+		}
+	
+	
+	if (!$CaServer -or !$CaName) {
 			try {
 				Write-Message -Level Output -Message "No CaServer or CaName specified. Finding it."
 				# hat tip Vadims Podans
@@ -197,6 +239,7 @@ Shows what would happen if the command were run
 				# Make sure output is compat with clusters
 				$shortname = $fqdn.Split(".")[0]
 				
+				$san = Get-SanExt $computer, $fqdn
 				# Write config file
 				Set-Content $certcfg "[Version]"
 				Add-Content $certcfg 'Signature="$Windows NT$"'
@@ -217,8 +260,9 @@ Shows what would happen if the command were run
 				Add-Content $certcfg "KeyUsage = 0xa0"
 				Add-Content $certcfg "[EnhancedKeyUsageExtension]"
 				Add-Content $certcfg "OID=1.3.6.1.5.5.7.3.1"
-				Add-Content $certcfg "[RequestAttributes]"
-				Add-Content $certcfg "SAN=""DNS=$fqdn&DNS=$shortname"""
+				Add-Content $certcfg "[Extensions]"
+				Add-Content $certcfg $san
+				Add-Content $certcfg "Critical=2.5.29.17"
 				
 				if ($PScmdlet.ShouldProcess("local", "Creating certificate request for $computer")) {
 					Write-Message -Level Output -Message "Running: certreq -new $certcfg $certcsr"
