@@ -296,7 +296,8 @@
 		'Read-DbaTraceFile',
 		'New-DbaComputerCertificate',
 		'Get-DbaComputerCertificate'
-		'Set-DbaNetworkEncryption'
+		'Set-DbaNetworkEncryption',
+		'Get-DbaAgentSchedule'
 	)
 	
 	# Cmdlets to export from this module
