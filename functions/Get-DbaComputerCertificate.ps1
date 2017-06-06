@@ -74,7 +74,7 @@ Shows what would happen if the command were run
 		foreach ($computer in $computername) {
 			
 			$scriptblock = {
-				Get-ChildItem Cert:\$Store\$Folder -Recurse
+				Get-ChildItem Cert:\$Store\$Folder -Recurse | Where-Object { $_.DnsNameList -contains "$env:COMPUTERNAME.$env:USERDNSDOMAIN" -and $_.EnhancedKeyUsageList -contains 'Server Authentication (1.3.6.1.5.5.7.3.1)' }
 			}
 			
 			if ($PScmdlet.ShouldProcess("local", "Connecting to $computer")) {
