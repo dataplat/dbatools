@@ -1,6 +1,5 @@
-Function Connect-DbaSqlServer
-{
-<#
+Function Connect-DbaSqlServer {
+    <#
 .SYNOPSIS
 Creates an efficient SMO SQL Server object.
 
@@ -22,6 +21,9 @@ The SQL Server that you're connecting to.
 
 .PARAMETER Credential
 Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determiend by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
+
+.PARAMETER Database
+The database(s) to process - this list is auto populated from the server.
 
 .PARAMETER AccessToken	
 Gets or sets the access token for the connection.
@@ -156,154 +158,141 @@ $server = Connect-DbaSqlServer sql2016 -ApplicationIntent ReadOnly
 Connects with ReadOnly ApplicantionIntent.
 	
 #>	
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter]$SqlInstance,
-		[Alias("SqlCredential")]
-		[System.Management.Automation.PSCredential]$Credential,
-		[string]$AccessToken,
-		[ValidateSet('ReadOnly', 'ReadWrite')]
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter]$SqlInstance,
+        [Alias("SqlCredential")]
+        [System.Management.Automation.PSCredential]$Credential,
+		[object[]]$Database,
+        [string]$AccessToken,
+        [ValidateSet('ReadOnly', 'ReadWrite')]
 		[string]$ApplicationIntent,
-		[string]$BatchSeparator,
-		[string]$ClientName = "dbatools PowerShell module - dbatools.io - custom connection",
-		[int]$ConnectTimeout,
-		[switch]$EncryptConnection,
-		[string]$FailoverPartner,
-		[switch]$IsActiveDirectoryUniversalAuth,
-		[int]$LockTimeout,
-		[int]$MaxPoolSize,
-		[int]$MinPoolSize,
-		[switch]$MultipleActiveResultSets,
-		[switch]$MultiSubnetFailover,
-		[ValidateSet('TcpIp','NamedPipes','Multiprotocol','AppleTalk','BanyanVines','Via','SharedMemory','NWLinkIpxSpx')]
-		[string]$NetworkProtocol,
-		[switch]$NonPooledConnection,
-		[int]$PacketSize,
-		[int]$PooledConnectionLifetime,
-		[ValidateSet('CaptureSql', 'ExecuteAndCaptureSql', 'ExecuteSql')]
-		[string]$SqlExecutionModes,
-		[int]$StatementTimeout,
-		[switch]$TrustServerCertificate,
-		[string]$WorkstationId,
-		[string]$AppendConnectionString
-	)
+        [string]$BatchSeparator,
+        [string]$ClientName = "dbatools PowerShell module - dbatools.io - custom connection",
+        [int]$ConnectTimeout,
+        [switch]$EncryptConnection,
+        [string]$FailoverPartner,
+        [switch]$IsActiveDirectoryUniversalAuth,
+        [int]$LockTimeout,
+        [int]$MaxPoolSize,
+        [int]$MinPoolSize,
+        [switch]$MultipleActiveResultSets,
+        [switch]$MultiSubnetFailover,
+        [ValidateSet('TcpIp', 'NamedPipes', 'Multiprotocol', 'AppleTalk', 'BanyanVines', 'Via', 'SharedMemory', 'NWLinkIpxSpx')]
+        [string]$NetworkProtocol,
+        [switch]$NonPooledConnection,
+        [int]$PacketSize,
+        [int]$PooledConnectionLifetime,
+        [ValidateSet('CaptureSql', 'ExecuteAndCaptureSql', 'ExecuteSql')]
+        [string]$SqlExecutionModes,
+        [int]$StatementTimeout,
+        [switch]$TrustServerCertificate,
+        [string]$WorkstationId,
+        [string]$AppendConnectionString
+    )
 	
 
 	
-	PROCESS
-	{
-		if ($SqlInstance.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
-		{
+    PROCESS {
+        if ($SqlInstance.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
 			
-			if ($SqlInstance.ConnectionContext.IsOpen -eq $false)
-			{
-				$SqlInstance.ConnectionContext.Connect()
-			}
-			return $SqlInstance
-		}
+            if ($SqlInstance.ConnectionContext.IsOpen -eq $false) {
+                $SqlInstance.ConnectionContext.Connect()
+            }
+            return $SqlInstance
+        }
 		
-		$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlInstance
+        $server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlInstance
 		
-		if ($AppendConnectionString)
-		{
-			$connstring = $server.ConnectionContext.ConnectionString
-			$server.ConnectionContext.ConnectionString = "$connstring;$appendconnectionstring"
-			$server.ConnectionContext.Connect()
-		}
-		else
-		{
+        if ($AppendConnectionString) {
+            $connstring = $server.ConnectionContext.ConnectionString
+            $server.ConnectionContext.ConnectionString = "$connstring;$appendconnectionstring"
+            $server.ConnectionContext.Connect()
+        }
+        else {
 			
-			$server.ConnectionContext.ApplicationName = $clientname
+            $server.ConnectionContext.ApplicationName = $clientname
 			
-			if ($AccessToken) { $server.ConnectionContext.AccessToken = $AccessToken }
-			if ($ApplicationIntent) { $server.ConnectionContext.ApplicationIntent = $ApplicationIntent }
-			if ($BatchSeparator) { $server.ConnectionContext.BatchSeparator = $BatchSeparator }
-			if ($ConnectTimeout) { $server.ConnectionContext.ConnectTimeout = $ConnectTimeout }
-			if ($Database) { $server.ConnectionContext.DatabaseName = $Database }
-			if ($EncryptConnection) { $server.ConnectionContext.EncryptConnection = $true }
-			if ($IsActiveDirectoryUniversalAuth) { $server.ConnectionContext.IsActiveDirectoryUniversalAuth = $true }
-			if ($LockTimeout) { $server.ConnectionContext.LockTimeout = $LockTimeout }
-			if ($MaxPoolSize) { $server.ConnectionContext.MaxPoolSize = $MaxPoolSize }
-			if ($MinPoolSize) { $server.ConnectionContext.MinPoolSize = $MinPoolSize }
-			if ($MultipleActiveResultSets) { $server.ConnectionContext.MultipleActiveResultSets = $true }
-			if ($NetworkProtocol) { $server.ConnectionContext.NetworkProtocol = $NetworkProtocol }
-			if ($NonPooledConnection) { $server.ConnectionContext.NonPooledConnection = $true }
-			if ($PacketSize) { $server.ConnectionContext.PacketSize = $PacketSize }
-			if ($PooledConnectionLifetime) { $server.ConnectionContext.PooledConnectionLifetime = $PooledConnectionLifetime }
-			if ($StatementTimeout) { $server.ConnectionContext.StatementTimeout = $StatementTimeout }
-			if ($SqlExecutionModes) { $server.ConnectionContext.SqlExecutionModes = $SqlExecutionModes }
-			if ($TrustServerCertificate) { $server.ConnectionContext.TrustServerCertificate = $true }
-			if ($WorkstationId) { $server.ConnectionContext.WorkstationId = $WorkstationId }
+            if ($AccessToken) { $server.ConnectionContext.AccessToken = $AccessToken }
+            if ($ApplicationIntent) { $server.ConnectionContext.ApplicationIntent = $ApplicationIntent }
+            if ($BatchSeparator) { $server.ConnectionContext.BatchSeparator = $BatchSeparator }
+            if ($ConnectTimeout) { $server.ConnectionContext.ConnectTimeout = $ConnectTimeout }
+            if ($Database) { $server.ConnectionContext.DatabaseName = $Database }
+            if ($EncryptConnection) { $server.ConnectionContext.EncryptConnection = $true }
+            if ($IsActiveDirectoryUniversalAuth) { $server.ConnectionContext.IsActiveDirectoryUniversalAuth = $true }
+            if ($LockTimeout) { $server.ConnectionContext.LockTimeout = $LockTimeout }
+            if ($MaxPoolSize) { $server.ConnectionContext.MaxPoolSize = $MaxPoolSize }
+            if ($MinPoolSize) { $server.ConnectionContext.MinPoolSize = $MinPoolSize }
+            if ($MultipleActiveResultSets) { $server.ConnectionContext.MultipleActiveResultSets = $true }
+            if ($NetworkProtocol) { $server.ConnectionContext.NetworkProtocol = $NetworkProtocol }
+            if ($NonPooledConnection) { $server.ConnectionContext.NonPooledConnection = $true }
+            if ($PacketSize) { $server.ConnectionContext.PacketSize = $PacketSize }
+            if ($PooledConnectionLifetime) { $server.ConnectionContext.PooledConnectionLifetime = $PooledConnectionLifetime }
+            if ($StatementTimeout) { $server.ConnectionContext.StatementTimeout = $StatementTimeout }
+            if ($SqlExecutionModes) { $server.ConnectionContext.SqlExecutionModes = $SqlExecutionModes }
+            if ($TrustServerCertificate) { $server.ConnectionContext.TrustServerCertificate = $true }
+            if ($WorkstationId) { $server.ConnectionContext.WorkstationId = $WorkstationId }
 			
-			$connstring = $server.ConnectionContext.ConnectionString
-			if ($MultiSubnetFailover) { $connstring = "$connstring;MultiSubnetFailover=True" }
-			if ($FailoverPartner) { $connstring = "$connstring;Failover Partner=$FailoverPartner" }
+            $connstring = $server.ConnectionContext.ConnectionString
+            if ($MultiSubnetFailover) { $connstring = "$connstring;MultiSubnetFailover=True" }
+            if ($FailoverPartner) { $connstring = "$connstring;Failover Partner=$FailoverPartner" }
 			
-			if ($connstring -ne $server.ConnectionContext.ConnectionString)
-			{
-				$server.ConnectionContext.ConnectionString = $connstring
-			}
+            if ($connstring -ne $server.ConnectionContext.ConnectionString) {
+                $server.ConnectionContext.ConnectionString = $connstring
+            }
 			
-			try
-			{
-				if ($Credential.username -ne $null)
-				{
-					$username = ($Credential.username).TrimStart("\")
+            try {
+                if ($Credential.username -ne $null) {
+                    $username = ($Credential.username).TrimStart("\")
 					
-					if ($username -like "*\*")
-					{
-						$username = $username.Split("\")[1]
-						$authtype = "Windows Authentication with Credential"
-						$server.ConnectionContext.LoginSecure = $true
-						$server.ConnectionContext.ConnectAsUser = $true
-						$server.ConnectionContext.ConnectAsUserName = $username
-						$server.ConnectionContext.ConnectAsUserPassword = ($Credential).GetNetworkCredential().Password
-					}
-					else
-					{
-						$authtype = "SQL Authentication"
-						$server.ConnectionContext.LoginSecure = $false
-						$server.ConnectionContext.set_Login($username)
-						$server.ConnectionContext.set_SecurePassword($Credential.Password)
-					}
-				}
+                    if ($username -like "*\*") {
+                        $username = $username.Split("\")[1]
+                        $authtype = "Windows Authentication with Credential"
+                        $server.ConnectionContext.LoginSecure = $true
+                        $server.ConnectionContext.ConnectAsUser = $true
+                        $server.ConnectionContext.ConnectAsUserName = $username
+                        $server.ConnectionContext.ConnectAsUserPassword = ($Credential).GetNetworkCredential().Password
+                    }
+                    else {
+                        $authtype = "SQL Authentication"
+                        $server.ConnectionContext.LoginSecure = $false
+                        $server.ConnectionContext.set_Login($username)
+                        $server.ConnectionContext.set_SecurePassword($Credential.Password)
+                    }
+                }
 				
-				$server.ConnectionContext.Connect()
-			}
-			catch
-			{
-				$message = $_.Exception.InnerException.InnerException
-				$message = $message.ToString()
-				$message = ($message -Split '-->')[0]
-				$message = ($message -Split 'at System.Data.SqlClient')[0]
-				$message = ($message -Split 'at System.Data.ProviderBase')[0]
-				throw "Can't connect to $SqlInstance`: $message "
-			}
+                $server.ConnectionContext.Connect()
+            }
+            catch {
+                $message = $_.Exception.InnerException.InnerException
+                $message = $message.ToString()
+                $message = ($message -Split '-->')[0]
+                $message = ($message -Split 'at System.Data.SqlClient')[0]
+                $message = ($message -Split 'at System.Data.ProviderBase')[0]
+                throw "Can't connect to $SqlInstance`: $message "
+            }
 			
-		}
+        }
 		
-		if ($server.VersionMajor -eq 8)
-		{
-			# 2000
-			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Version')
-			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'CreateDate', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'Name', 'Sid', 'WindowsLoginAccessType')
-		}
+        if ($server.VersionMajor -eq 8) {
+            # 2000
+            $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Version')
+            $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'CreateDate', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'Name', 'Sid', 'WindowsLoginAccessType')
+        }
 		
-		elseif ($server.VersionMajor -eq 9 -or $server.VersionMajor -eq 10)
-		{
-			# 2005 and 2008
-			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
-			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
-		}
+        elseif ($server.VersionMajor -eq 9 -or $server.VersionMajor -eq 10) {
+            # 2005 and 2008
+            $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
+            $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
+        }
 		
-		else
-		{
-			# 2012 and above
-			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'ActiveConnections', 'AvailabilityDatabaseSynchronizationState', 'AvailabilityGroupName', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'ContainmentType', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
-			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordHashAlgorithm', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
-		}
-		return $server
-	}
+        else {
+            # 2012 and above
+            $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'ActiveConnections', 'AvailabilityDatabaseSynchronizationState', 'AvailabilityGroupName', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'ContainmentType', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
+            $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordHashAlgorithm', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
+        }
+        return $server
+    }
 }
