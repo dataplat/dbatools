@@ -34,7 +34,7 @@ function Set-DbaJobOwner {
 			The job(s) to exclude - this list is auto populated from the server.
 
 		.PARAMETER Login
-			Specific login that you wish to check for ownership - this list is auto populated from the server. This defaults to 'sa' or the sysadmin name if sa was renamed.
+			Specific login that you wish to set as owner - this list is auto populated from the server. This defaults to 'sa' or the sysadmin name if sa was renamed.
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.
