@@ -298,7 +298,9 @@
 		'Get-DbaComputerCertificate',
 		'Add-DbaComputerCertificate',
 		'Set-DbaNetworkCertificate',
-		'Get-DbaAgentSchedule'
+		'Get-DbaAgentSchedule',
+		'Enable-DbaForceNetworkEncryption',
+		'Disable-DbaForceNetworkEncryption'
 	)
 	
 	# Cmdlets to export from this module
