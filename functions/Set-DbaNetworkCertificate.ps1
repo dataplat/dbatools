@@ -113,7 +113,7 @@ Sets the network certificate for the SQL2008R2SP2 instance to the certificate wi
 			
 			$oldthumbprint = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
 			
-			$cert = Get-ChildItem Cert:\LocalMachine\My -Recurse | Where-Object Thumbprint -eq $Thumbprint
+			$cert = Get-ChildItem Cert:\ -Recurse | Where-Object Thumbprint -eq $Thumbprint
 			
 			if ($null -eq $cert) {
 				Write-Warning "Certificate does not exist on $env:COMPUTERNAME"

@@ -40,6 +40,12 @@ The FriendlyName listed in the certificate. This defaults to the FQDN of the $Co
 .PARAMETER KeyLength
 The length of the key - defaults to 1024
 	
+.PARAMETER Store
+Certificate store - defaults to LocalMachine
+
+.PARAMETER Folder
+Certificate folder - defaults to My (Personal)
+
 .PARAMETER CertificateTemplate
 The domain's Certificate Template - WebServer by default.
 

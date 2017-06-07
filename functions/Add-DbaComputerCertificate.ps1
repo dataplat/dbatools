@@ -26,10 +26,10 @@ The target SQL Server - defaults to localhost. If target is a cluster, you must 
 Allows you to login to $ComputerName using alternative credentials.
 
 .PARAMETER Store
-Store
-	
+Certificate store - defaults to LocalMachine
+
 .PARAMETER Folder
-Folder
+Certificate folder - defaults to My (Personal)
 
 .PARAMETER Password
 Password to encrypt/decrypt private key for export to remote machine

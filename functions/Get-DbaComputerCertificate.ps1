@@ -62,10 +62,10 @@ Gets computer certificates on sql2016 that match thumbprints 8123472E32AB412ED42
 			
 			$scriptblock = {
 				if ($args) {
-					Get-ChildItem Cert:\$Store\$Folder -Recurse | Where-Object Thumbprint -in $args
+					Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object Thumbprint -in $args
 				}
 				else {
-					Get-ChildItem Cert:\$Store\$Folder -Recurse | Where-Object { $_.DnsNameList -match "$env:COMPUTERNAME.$env:USERDNSDOMAIN" -and $_.EnhancedKeyUsageList -match '1\.3\.6\.1\.5\.5\.7\.3\.1' }
+					Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object { $_.DnsNameList -match "$env:COMPUTERNAME.$env:USERDNSDOMAIN" -and $_.EnhancedKeyUsageList -match '1\.3\.6\.1\.5\.5\.7\.3\.1' }
 				}
 			}
 			
