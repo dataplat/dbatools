@@ -387,7 +387,7 @@ Creates a schedule that's not connected to a job
             # Try connecting to the instance
             Write-Message -Message "Attempting to connect to $instance" -Level Output
             try {
-                $Server = Connect-SqlInstance -SqlServer $instance -SqlCredential $SqlCredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
                 Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -InnerErrorRecord $_ -Continue

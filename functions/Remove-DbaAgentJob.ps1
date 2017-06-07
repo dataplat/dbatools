@@ -96,7 +96,7 @@ Removes the job from multiple servers using pipe line
             # Try connecting to the instance
             Write-Message -Message "Attempting to connect to $instance" -Level Output
             try {
-                $Server = Connect-SqlInstance -SqlServer $instance -SqlCredential $SqlCredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
                 Stop-Function -Message "Could not connect to Sql Server instance" -Target $instance -Continue
