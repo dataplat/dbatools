@@ -4,7 +4,7 @@ function Remove-DbaAgentJob {
 Remove-DbaAgentJob removes a job.
 
 .DESCRIPTION
-Remove-DbaAgentJob removes a job in the SQL Server Agent.
+Remove-DbaAgentJob removes a a job in the SQL Server Agent.
 
 .PARAMETER SqlInstance
 SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -62,7 +62,7 @@ Removes the job from multiple servers
 
 .EXAMPLE   
 sql1, sql2, sql3 | Remove-DbaAgentJob -Job Job1 
-Removes the job from multiple servers using pipeline
+Removes the job from multiple servers using pipe line
 
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
@@ -70,16 +70,21 @@ Removes the job from multiple servers using pipeline
     param(
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter[]]$SqlInstance,
+        [object[]]$SqlInstance,
+
         [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]$SqlCredential,
+        
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string[]]$Job,
+        [object[]]$Job,
+        
         [Parameter(Mandatory = $false)]
         [switch]$KeepHistory,
+        
         [Parameter(Mandatory = $false)]
         [switch]$KeepUnusedSchedule,
+        
         [Parameter(Mandatory = $false)]
         [switch]$Silent
     )
@@ -91,7 +96,7 @@ Removes the job from multiple servers using pipeline
             # Try connecting to the instance
             Write-Message -Message "Attempting to connect to $instance" -Level Output
             try {
-                $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $Server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
             }
             catch {
                 Stop-Function -Message "Could not connect to Sql Server instance" -Target $instance -Continue

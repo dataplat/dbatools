@@ -18,6 +18,12 @@ To connect as a different Windows user, run PowerShell as that user.
 .PARAMETER Job
 The name of the job. The name must be unique and cannot contain the percent (%) character.
 
+.PARAMETER Schedule
+Schedule to attach to job. This can be more than one schedule.
+
+.PARAMETER ScheduleId
+Schedule ID to attach to job. This can be more than one schedule ID.
+
 .PARAMETER Disabled
 Sets the status of the job to disabled. By default a job is enabled.
 
@@ -127,46 +133,71 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter[]]$SqlInstance,
+        [object[]]$SqlInstance,
+
         [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]$SqlCredential,
+        
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$Job,
+
+        [Parameter(Mandatory = $false)]
+        [object[]]$Schedule,
+
+        [Parameter(Mandatory = $false)]
+        [int[]]$ScheduleId,
+        
         [Parameter(Mandatory = $false)]
         [switch]$Disabled,
+        
         [Parameter(Mandatory = $false)]
         [string]$Description,
+        
         [Parameter(Mandatory = $false)]
         [int]$StartStepId,
+        
         [Parameter(Mandatory = $false)]
         [string]$Category,
+        
         [Parameter(Mandatory = $false)]
         [int]$CategoryId,
+        
         [Parameter(Mandatory = $false)]
         [string]$OwnerLogin,
+        
         [Parameter(Mandatory = $false)]
         [ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
         [object]$EventLogLevel,
+        
         [Parameter(Mandatory = $false)]
         [ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
         [object]$EmailLevel,
+        
         [Parameter(Mandatory = $false)]
         [ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
         [object]$NetsendLevel,
+        
         [Parameter(Mandatory = $false)]
         [ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
         [object]$PageLevel,
+        
         [Parameter(Mandatory = $false)]
         [string]$EmailOperator,
+        
         [Parameter(Mandatory = $false)]
         [string]$NetsendOperator,
+        
         [Parameter(Mandatory = $false)]
         [string]$PageOperator,
+        
         [Parameter(Mandatory = $false)]
         [ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
+        
         [object]$DeleteLevel,
+        
         [switch]$Force,
+        
         [switch]$Silent
     )
 	
@@ -224,10 +255,10 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
             # Try connecting to the instance
             Write-Message -Message "Attempting to connect to $instance" -Level Verbose
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
             }
             catch {
-				Stop-Function -Message "Could not connect to $instance. Message: $($_.Exception.Message)" -Target $instance -Continue -InnerErrorRecord $_
+                Stop-Function -Message "Could not connect to $instance. Message: $($_.Exception.Message)" -Target $instance -Continue -InnerErrorRecord $_
             }
 			
             # Check if the job already exists
@@ -379,8 +410,15 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
                     # Make sure the target is set for the job
                     Write-Message -Message "Applying the target (local) to job $Job" -Level Verbose
                     $smoJob.ApplyToTargetServer("(local)")
-					
-                    
+
+                    # If a schedule needs to be attached
+                    if($Schedule){
+                        Set-DbaAgentJob -SqlInstance $instance -Job $smoJob -Schedule $Schedule
+                    }
+
+                    if($ScheduleId){
+                        Set-DbaAgentJob -SqlInstance $instance -Job $smoJob -Schedule $ScheduleId
+                    }
                 }
                 catch {
                     Stop-Function -Message "Something went wrong creating the job. `n$($_.Exception.Message)" -Continue -InnerErrorRecord $_
@@ -388,7 +426,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
             }
 
             # Return the job
-            $smoJob
+            return $smoJob
         }
     }
 	
