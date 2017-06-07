@@ -1,5 +1,5 @@
-Function Export-DbaCertificate {
-<#
+function Export-DbaCertificate {
+	<#
 .SYNOPSIS
  Exports certificates from SQL Server using smo
 
@@ -21,6 +21,9 @@ The Path to output the files to. The path is relative to the SQL Server itself. 
 
 .PARAMETER Database
 Exports the encryptor for specific database(s).
+
+.PARAMETER ExcludeDatabase
+Database(s) to skip when exporting encryptors.
 
 .PARAMETER Certificate
 Exports certificate that matches the name(s).
@@ -56,7 +59,7 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
 Get-DbaCertificate -SqlInstance sql2016 | Export-DbaCertificate
-Exports all certificates found on sql2016 to the default data directory. Prompts for encryption and decrecyption passwords.
+Exports all certificates found on sql2016 to the default data directory. Prompts for encryption and decryption  passwords.
 
 .EXAMPLE
 Export-DbaCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
@@ -64,7 +67,7 @@ Exports all the certificates on the specified SQL Server
 
 .EXAMPLE
 $EncryptionPassword = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -force
-Export-DbaCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword $EncryptionPassword -Databases Database1
+Export-DbaCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword $EncryptionPassword -Database Database1
 Exports the certificate that is used as the encryptor for a specific database on the specified SQL Server
 
 .EXAMPLE
@@ -76,12 +79,14 @@ Exports all certificates named CertTDE on the specified SQL Server, not specifyi
 	param (
 		[parameter(Mandatory, ParameterSetName = "instance")]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[parameter(ParameterSetName = "instance")]
 		[object[]]$Certificate,
 		[parameter(ParameterSetName = "instance")]
 		[object[]]$Database,
+		[parameter(ParameterSetName = "instance")]
+		[object[]]$ExcludeDatabase,
 		[parameter(Mandatory = $false)]
 		[Security.SecureString]$EncryptionPassword = (Read-Host "EncryptionPassword (recommended, not required)" -AsSecureString),
 		[parameter(Mandatory = $false)]
@@ -101,23 +106,23 @@ Exports all certificates named CertTDE on the specified SQL Server, not specifyi
 		
 		function export-cert ($cert) {
 			$certname = $cert.Name
-			$database = $cert.Parent
-			$server = $database.Parent
+			$db = $cert.Parent
+			$server = $db.Parent
 			$instance = $server.Name
 			$actualpath = $Path
 			
 			if ($null -eq $actualpath) {
-				$actualpath = Get-SqlDefaultPaths -SqlServer $server -filetype Data
+				$actualpath = Get-SqlDefaultPaths -SqlInstance $server -filetype Data
 			}
 			
 			$fullcertname = "$actualpath\$certname$Suffix"
 			$exportpathkey = "$fullcertname.pvk"
 			
-			if (!(Test-SqlPath -SqlServer $server -Path $actualpath)) {
+			if (!(Test-DbaSqlPath -SqlInstance $server -Path $actualpath)) {
 				Stop-Function -Message "$SqlInstance cannot access $actualpath" -Target $actualpath
 			}
 			
-			if ($Pscmdlet.ShouldProcess($instance, "Exporting certificate $certname from $database on $instance to $actualpath")) {
+			if ($Pscmdlet.ShouldProcess($instance, "Exporting certificate $certname from $db on $instance to $actualpath")) {
 				Write-Message -Level Verbose -Message "Exporting Certificate: $certname to $fullcertname"
 				try {
 										
@@ -151,14 +156,14 @@ Exports all certificates named CertTDE on the specified SQL Server, not specifyi
 					}
 					
 					[pscustomobject]@{
-						ComputerName = $server.NetName
-						InstanceName = $server.ServiceName
-						SqlInstance = $server.DomainInstanceName
-						Database = $database.name
-						Certificate = $certname
+						ComputerName   = $server.NetName
+						InstanceName   = $server.ServiceName
+						SqlInstance    = $server.DomainInstanceName
+						Database       = $db.name
+						Certificate    = $certname
 						ExportPathCert = $exportpathcert
-						ExportPathKey = $exportpathkey
-						Status = "Success"
+						ExportPathKey  = $exportpathkey
+						Status         = "Success"
 					}
 				}
 				catch {
@@ -170,17 +175,17 @@ Exports all certificates named CertTDE on the specified SQL Server, not specifyi
 					else {
 						$exception = $_.Exception
 					}
-						[pscustomobject]@{
-							ComputerName = $server.NetName
-							InstanceName = $server.ServiceName
-							SqlInstance = $server.DomainInstanceName
-							Database = $database.name
-							Certificate = $certname
-							ExportPathCert = $exportpathcert
-							ExportPathKey = $exportpathkey
-							Status = "Failure: $exception"
-						}
-					Stop-Function -Message "$certname from $database on $instance cannot be exported." -Continue -Target $cert -InnerErrorRecord $_
+					[pscustomobject]@{
+						ComputerName   = $server.NetName
+						InstanceName   = $server.ServiceName
+						SqlInstance    = $server.DomainInstanceName
+						Database       = $db.name
+						Certificate    = $certname
+						ExportPathCert = $exportpathcert
+						ExportPathKey  = $exportpathkey
+						Status         = "Failure: $exception"
+					}
+					Stop-Function -Message "$certname from $db on $instance cannot be exported." -Continue -Target $cert -InnerErrorRecord $_
 				}
 			}
 		}
@@ -191,23 +196,36 @@ Exports all certificates named CertTDE on the specified SQL Server, not specifyi
 		foreach ($instance in $sqlinstance) {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -Target $instance -InnerErrorRecord $_
 				return
 			}
+			$databases = Get-DbaDatabase -SqlInstance $server
+			if ($Database) {
+				$databases = $databases | Where-Object Name -in $Database
+			}
+			if ($ExcludeDatabase) {
+				$databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
+			}
 			
-			$CertificateCollection = Get-DbaCertificate -SqlInstance $server -Certificate $Certificate -Database $database
-			$CertificateCollection = $CertificateCollection | where Name -NotLike "##*"
-			if (!$CertificateCollection) {
-				Write-Message -Level Output -Message "No certificates found to export."
-				continue
+			foreach ($db in $databases.Name) {
+                $CertificateCollection = Get-DbaCertificate -SqlInstance $server -Database $db
+                if ($Certificate) {
+					$CertificateCollection = $CertificateCollection | Where-Object Name -In $Certificate
+				}
+				$CertificateCollection = $CertificateCollection | Where-Object Name -NotLike "##*"
+				if (!$CertificateCollection) {
+					Write-Message -Level Output -Message "No certificates found to export in $db."
+					continue
+				}
 			}
 			
 		}
 		
-		foreach ($cert in $CertificateCollection) {
+        foreach ($cert in $CertificateCollection) {
+			Write-Output "Working on $cert"
 			if ($cert.Name.StartsWith("##")) {
 				Write-Message -Level Output -Message "Skipping system cert $cert"
 			}

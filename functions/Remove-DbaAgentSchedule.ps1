@@ -5,7 +5,7 @@ function Remove-DbaAgentSchedule {
 Remove-DbaAgentJobSchedule removes a job schedule.
 
 .DESCRIPTION
-Remove-DbaAgentJobSchedule removes a a job in the SQL Server Agent.
+Remove-DbaAgentJobSchedule removes a job schedule in the SQL Server Agent.
 
 .PARAMETER SqlInstance
 SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -63,7 +63,7 @@ Remove the job schedule on multiple servers for multiple jobs
 
 .EXAMPLE   
 sql1, sql2, sql3 | Remove-DbaAgentSchedule -Job Job1, Job2, Job3 -ScheduleName 'daily' 
-Remove the job schedule on multiple servers using pipe line
+Remove the job schedule on multiple servers using pipeline
 
 #>  
 
@@ -72,7 +72,7 @@ Remove the job schedule on multiple servers using pipe line
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
-        [object[]]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]$SqlCredential,
         [Parameter(Mandatory = $true)]
@@ -93,7 +93,7 @@ Remove the job schedule on multiple servers using pipe line
             # Try connecting to the instance
             Write-Message -Message "Attempting to connect to $instance" -Level Output
             try {
-                $Server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+                $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
                 Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -InnerRecord $_ -Continue

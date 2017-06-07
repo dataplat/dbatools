@@ -1180,6 +1180,27 @@ namespace Sqlcollective.Dbatools
             /// </summary>
             PowerShellRemoting = 8
         }
+
+        /// <summary>
+        /// The protocol to connect over via SMO
+        /// </summary>
+        public enum SqlConnectionProtocol
+        {
+            /// <summary>
+            /// Connect using any protocol available
+            /// </summary>
+            Any = 1,
+
+            /// <summary>
+            /// Connect using TCP/IP
+            /// </summary>
+            TCP = 2,
+
+            /// <summary>
+            /// Connect using named pipes or shared memory
+            /// </summary>
+            NP = 3,
+        }
     }
 
     namespace Database
@@ -1220,12 +1241,12 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// When was the backup started
             /// </summary>
-            public DbaDateTime Start;
+            public DateTime Start;
 
             /// <summary>
             /// When did the backup end
             /// </summary>
-            public DbaDateTime End;
+            public DateTime End;
 
             /// <summary>
             /// What was the longest duration among the backups
@@ -1235,7 +1256,7 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// Where is the backup stored
             /// </summary>
-            public string Path;
+            public string[] Path;
 
             /// <summary>
             /// What is the total size of the backup
@@ -1250,7 +1271,7 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// The ID for the Backup job
             /// </summary>
-            public string BackupSetupId;
+            public string BackupSetId;
 
             /// <summary>
             /// What kind of backup-device was the backup stored to
@@ -1265,12 +1286,12 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// The full name of the backup
             /// </summary>
-            public string FullName;
+            public string[] FullName;
 
             /// <summary>
             /// The files that are part of this backup
             /// </summary>
-            public string[] FileList;
+            public object FileList;
 
             /// <summary>
             /// The position of the backup
@@ -1676,7 +1697,7 @@ namespace Sqlcollective.Dbatools
             /// </summary>
             /// <param name="Record">The error record to copy from</param>
             public DbatoolsException(ErrorRecord Record)
-                :this(Record.Exception)
+                : this(Record.Exception)
             {
                 CategoryInfo = Record.CategoryInfo;
                 ErrorDetails = Record.ErrorDetails;
@@ -1969,7 +1990,7 @@ namespace Sqlcollective.Dbatools
                 {
                     tempRecord.Exceptions.Add(new DbatoolsException(rec, FunctionName, Timestamp, Message, Runspace));
                 }
-                
+
                 if (ErrorLogFileEnabled) { OutQueueError.Enqueue(tempRecord); }
                 if (ErrorLogEnabled) { ErrorRecords.Enqueue(tempRecord); }
 
@@ -2004,7 +2025,7 @@ namespace Sqlcollective.Dbatools
             }
             #endregion Access Queues
         }
-        
+
         /// <summary>
         /// An individual entry for the message log
         /// </summary>
@@ -2308,6 +2329,31 @@ namespace Sqlcollective.Dbatools
         }
     }
 
+    namespace General
+    {
+        /// <summary>
+        /// What kind of mode do you want to run a command in?
+        /// This allows the user to choose how a dbatools function handles a bump in the execution where terminating directly may not be actually mandated.
+        /// </summary>
+        public enum ExecutionMode
+        {
+            /// <summary>
+            /// When encountering issues, terminate, or skip the currently processed input, rather than continue.
+            /// </summary>
+            Strict,
+
+            /// <summary>
+            /// Continue as able with a best-effort attempt. Simple verbose output should do the rest.
+            /// </summary>
+            Lazy,
+
+            /// <summary>
+            /// Continue, but provide output that can be used to identify the operations that had issues.
+            /// </summary>
+            Report
+        }
+    }
+
     namespace Parameter
     {
         using Connection;
@@ -2477,6 +2523,8 @@ namespace Sqlcollective.Dbatools
             {
                 get
                 {
+                    if (String.IsNullOrEmpty(_InstanceName))
+                        return "MSSQLSERVER";
                     return _InstanceName;
                 }
             }
@@ -2489,7 +2537,33 @@ namespace Sqlcollective.Dbatools
             {
                 get
                 {
+                    if (_Port == 0 && String.IsNullOrEmpty(_InstanceName))
+                        return 1433;
                     return _Port;
+                }
+            }
+
+            /// <summary>
+            /// The network protocol to connect over
+            /// </summary>
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
+            public SqlConnectionProtocol NetworkProtocol
+            {
+                get
+                {
+                    return _NetworkProtocol;
+                }
+            }
+
+            /// <summary>
+            /// Verifies, whether the specified computer is localhost or not.
+            /// </summary>
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
+            public bool IsLocalHost
+            {
+                get
+                {
+                    return Utility.Validation.IsLocalhost(_ComputerName);
                 }
             }
 
@@ -2517,6 +2591,8 @@ namespace Sqlcollective.Dbatools
                 get
                 {
                     string temp = _ComputerName;
+                    if (_NetworkProtocol == SqlConnectionProtocol.NP) { temp = "NP:" + temp; }
+                    if (_NetworkProtocol == SqlConnectionProtocol.TCP) { temp = "TCP:" + temp; }
                     if (_Port > 0) { return temp + "," + _Port; }
                     if (!String.IsNullOrEmpty(_InstanceName)) { return temp + "\\" + _InstanceName; }
                     return temp;
@@ -2535,12 +2611,13 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// Name of the instance as used in an SQL Statement
             /// </summary>
-            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Optional)]
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
             public string SqlInstanceName
             {
                 get
                 {
-                    if (String.IsNullOrEmpty(_InstanceName)) { return ""; }
+                    if (String.IsNullOrEmpty(_InstanceName))
+                        return "[MSSQLSERVER]";
                     else { return "[" + _InstanceName + "]"; }
                 }
             }
@@ -2568,6 +2645,7 @@ namespace Sqlcollective.Dbatools
             private string _ComputerName;
             private string _InstanceName;
             private int _Port;
+            private SqlConnectionProtocol _NetworkProtocol = SqlConnectionProtocol.Any;
 
             #region Uncontracted properties
             /// <summary>
@@ -2650,10 +2728,23 @@ namespace Sqlcollective.Dbatools
                 if (Name == ".")
                 {
                     _ComputerName = Name;
+                    _NetworkProtocol = SqlConnectionProtocol.NP;
                     return;
                 }
 
                 string tempString = Name;
+
+                // Handle and clear protocols. Otherwise it'd make port detection unneccessarily messy
+                if (Regex.IsMatch(tempString, "^TCP:", RegexOptions.IgnoreCase))
+                {
+                    _NetworkProtocol = SqlConnectionProtocol.TCP;
+                    tempString = tempString.Substring(4);
+                }
+                if (Regex.IsMatch(tempString, "^NP:", RegexOptions.IgnoreCase))
+                {
+                    _NetworkProtocol = SqlConnectionProtocol.NP;
+                    tempString = tempString.Substring(3);
+                }
 
                 // Case: Default instance | Instance by port
                 if (tempString.Split('\\').Length == 1)
@@ -2717,6 +2808,33 @@ namespace Sqlcollective.Dbatools
             }
 
             /// <summary>
+            /// Creates a DBA Instance Parameter from an IPAddress
+            /// </summary>
+            /// <param name="Address"></param>
+            public DbaInstanceParameter(System.Net.IPAddress Address)
+            {
+                _ComputerName = Address.ToString();
+            }
+
+            /// <summary>
+            /// Creates a DBA Instance Parameter from the reply to a ping
+            /// </summary>
+            /// <param name="Ping">The result of a ping</param>
+            public DbaInstanceParameter(System.Net.NetworkInformation.PingReply Ping)
+            {
+                _ComputerName = Ping.Address.ToString();
+            }
+
+            /// <summary>
+            /// Creates a DBA Instance Parameter from the result of a dns resolution
+            /// </summary>
+            /// <param name="Entry">The result of a dns resolution, to be used for targetting the default instance</param>
+            public DbaInstanceParameter(System.Net.IPHostEntry Entry)
+            {
+                _ComputerName = Entry.HostName;
+            }
+
+            /// <summary>
             /// Creates a DBA Instance parameter from any object
             /// </summary>
             /// <param name="Input">Object to parse</param>
@@ -2762,7 +2880,27 @@ namespace Sqlcollective.Dbatools
                         }
                         break;
                     case "microsoft.sqlserver.management.smo.linkedserver":
-                        try { _ComputerName = (string)tempInput.Properties["Name"].Value; }
+                        try
+                        {
+                            _ComputerName = (string)tempInput.Properties["Name"].Value;
+                        }
+                        catch (Exception e)
+                        {
+                            throw new PSArgumentException("Failed to interpret input as Instance: " + Input.ToString(), e);
+                        }
+                        break;
+                    case "microsoft.activedirectory.management.adcomputer":
+                        try
+                        {
+                            _ComputerName = (string)tempInput.Properties["Name"].Value;
+                            
+                            // We prefer using the dnshostname whenever possible
+                            if (tempInput.Properties["DNSHostName"].Value != null)
+                            {
+                                if (!String.IsNullOrEmpty((string)tempInput.Properties["DNSHostName"].Value))
+                                    _ComputerName = (string)tempInput.Properties["DNSHostName"].Value;
+                            }
+                        }
                         catch (Exception e)
                         {
                             throw new PSArgumentException("Failed to interpret input as Instance: " + Input.ToString(), e);
@@ -2914,6 +3052,55 @@ namespace Sqlcollective.Dbatools
             Operator
         }
         #endregion ParameterClass Interna
+    }
+
+    namespace TabExpansion
+    {
+        using System.Collections.Concurrent;
+        using System.Collections;
+        using System.Management.Automation;
+
+        /// <summary>
+        /// Class that handles the static fields supporting the dbatools TabExpansion implementation
+        /// </summary>
+        public static class TabExpansionHost
+        {
+            /// <summary>
+            /// Field containing the scripts that were registered.
+            /// </summary>
+            public static ConcurrentDictionary<string, ScriptContainer> Scripts = new ConcurrentDictionary<string, ScriptContainer>();
+            
+            /// <summary>
+            /// The cache used by scripts utilizing TabExpansionPlusPlus in dbatools
+            /// </summary>
+            public static Hashtable Cache = new Hashtable();
+        }
+
+        /// <summary>
+        /// Regular container to store scripts in, that are used in TEPP
+        /// </summary>
+        public class ScriptContainer
+        {
+            /// <summary>
+            /// The name of the scriptblock
+            /// </summary>
+            public string Name;
+
+            /// <summary>
+            /// The scriptblock doing the logic
+            /// </summary>
+            public ScriptBlock ScriptBlock;
+
+            /// <summary>
+            /// The last time the scriptblock was called. Must be updated by the scriptblock itself
+            /// </summary>
+            public DateTime LastExecution;
+
+            /// <summary>
+            /// The time it took to run the last time
+            /// </summary>
+            public TimeSpan LastDuration;
+        }
     }
 
     namespace Utility
@@ -4745,6 +4932,123 @@ namespace Sqlcollective.Dbatools
         }
 
         /// <summary>
+        /// Makes timespan great again
+        /// </summary>
+        public class DbaTimeSpanPretty : DbaTimeSpan
+        {
+            #region Methods
+            /// <summary>
+            /// Creates a new, pretty timespan object from milliseconds
+            /// </summary>
+            /// <param name="Milliseconds">The milliseconds to convert from.</param>
+            /// <returns>A pretty timespan object</returns>
+            public static DbaTimeSpanPretty FromMilliseconds(double Milliseconds)
+            {
+                return new DbaTimeSpanPretty((long)(Milliseconds * 10000));
+            }
+            #endregion Methods
+
+            #region Fields
+            public int Digits = 2;
+            #endregion Fields
+
+            #region Constructors
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="Timespan"></param>
+            public DbaTimeSpanPretty(TimeSpan Timespan)
+                :base(Timespan)
+            {
+                
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ticks"></param>
+            public DbaTimeSpanPretty(long ticks)
+                :base(ticks)
+            {
+                
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="hours"></param>
+            /// <param name="minutes"></param>
+            /// <param name="seconds"></param>
+            public DbaTimeSpanPretty(int hours, int minutes, int seconds)
+                :base(hours, minutes, seconds)
+            {
+                
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="days"></param>
+            /// <param name="hours"></param>
+            /// <param name="minutes"></param>
+            /// <param name="seconds"></param>
+            public DbaTimeSpanPretty(int days, int hours, int minutes, int seconds)
+                :base(days, hours, minutes, seconds)
+            {
+                
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="days"></param>
+            /// <param name="hours"></param>
+            /// <param name="minutes"></param>
+            /// <param name="seconds"></param>
+            /// <param name="milliseconds"></param>
+            public DbaTimeSpanPretty(int days, int hours, int minutes, int seconds, int milliseconds)
+                :base(days, hours, minutes, seconds, milliseconds)
+            {
+                
+            }
+            #endregion Constructors
+
+            /// <summary>
+            /// Creates extra-nice timespan formats
+            /// </summary>
+            /// <returns>Humanly readable timespans</returns>
+            public override string ToString()
+            {
+                if (UtilityHost.DisableCustomTimeSpan) { return _timespan.ToString(); }
+
+                string temp = "";
+
+                if (_timespan.TotalSeconds < 1)
+                {
+                    temp = Math.Round(_timespan.TotalMilliseconds, Digits).ToString() + " ms";
+                }
+                else if (_timespan.TotalSeconds <= 60)
+                {
+                    temp = Math.Round(_timespan.TotalSeconds, Digits).ToString() + " s";
+                }
+                else
+                {
+                    if (_timespan.Ticks % 10000000 == 0) { return _timespan.ToString(); }
+                    else
+                    {
+                        temp = _timespan.ToString();
+
+                        temp = temp.Substring(0, temp.LastIndexOf("."));
+
+                        return temp;
+                    }
+                }
+
+                return temp;
+            }
+        }
+
+        /// <summary>
         /// Static class that holds useful regex patterns, ready for use
         /// </summary>
         public static class RegexHelper
@@ -5154,7 +5458,7 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// The Version of the dbatools Library. Used to compare with import script to determine out-of-date libraries
             /// </summary>
-            public readonly static Version LibraryVersion = new Version(1, 0, 1, 8);
+            public readonly static Version LibraryVersion = new Version(1, 0, 1, 11);
         }
 
         /// <summary>
@@ -5194,6 +5498,8 @@ namespace Sqlcollective.Dbatools
                 #region Handle Names
                 try
                 {
+                    if (Name == ".")
+                        return true;
                     if (Name.ToLower() == "localhost")
                         return true;
                     if (Name.ToLower() == Environment.MachineName.ToLower())
@@ -5398,7 +5704,7 @@ aka "The guy who made most of The Library that Failed to import"
 }
 
 #region Version Warning
-$LibraryVersion = New-Object System.Version(1, 0, 1, 8)
+$LibraryVersion = New-Object System.Version(1, 0, 1, 11)
 if ($LibraryVersion -ne ([Sqlcollective.Dbatools.Utility.UtilityHost]::LibraryVersion))
 {
     Write-Warning @"

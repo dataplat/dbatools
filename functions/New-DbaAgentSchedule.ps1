@@ -96,407 +96,406 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 https://dbatools.io/New-DbaAgentSchedule
 
 .EXAMPLE   
-New-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -FrequencyType Daily -FrequencyInterval 1 -Force
+New-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -FrequencyType Daily -FrequencyInterval 1 -Force 1
 Creates a schedule for the job with a daily frequency every day. It also assumes default values for the start date, start time, end date and end time.
 
 .EXAMPLE   
-New-DbaAgentSchedule -SqlInstance sql1 -Job Job1, Job2, Job3 -ScheduleName weekly -FrequencyType Weekly -FrequencyInterval Monday, Wednesday, Friday -Force
+New-DbaAgentSchedule -SqlInstance sql1 -Job Job1, Job2, Job3 -ScheduleName weekly -FrequencyType Weekly -FrequencyInterval Monday, Wednesday, Friday -Force 1
 Creates a schedule for the job with a daily frequency every day. It also assumes default values for the start date, start time, end date and end time.
 
 .EXAMPLE   
-New-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -StartDate 20170530 -StartTime 110000 -EndTime 150000 -FrequencyType Daily -FrequencyInterval 1 -Force
+New-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -StartDate 20170530 -StartTime 110000 -EndTime 150000 -FrequencyType Daily -FrequencyInterval 1 -Force 1
 Create a daily schedule that starts on the May 30th on 11 AM and ends on 3 PM.
  
 .EXAMPLE   
-sql1, sql2, sql3 | New-DbaAgentSchedule -Job Job1 -ScheduleName daily -FrequencyType Daily -FrequencyInterval 1 -Force
+sql1, sql2, sql3 | New-DbaAgentSchedule -Job Job1 -ScheduleName daily -FrequencyType Daily -FrequencyInterval 1 -Force 1
 Creates a schedule for the job with a daily frequency every day on multiple servers
 
 .EXAMPLE   
-sql1, sql2, sql3 | New-DbaAgentSchedule -Job Job1, Job2, Job3 -ScheduleName daily -FrequencyType Daily -FrequencyInterval 1 -Force
-Creates a schedule for the job with a daily frequency every day on multiple servers for multiple jobs using pipe line
+sql1, sql2, sql3 | New-DbaAgentSchedule -Job Job1, Job2, Job3 -ScheduleName daily -FrequencyType Daily -FrequencyInterval 1 -Force 1
+Creates a schedule for the job with a daily frequency every day on multiple servers for multiple jobs using pipeline
 
 #>
-	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
-	param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
-		[Parameter(Mandatory = $false)]
-		[System.Management.Automation.PSCredential]$SqlCredential,
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[object[]]$Job,
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[string]$ScheduleName,
-		[Parameter(Mandatory = $false)]
-		[switch]$Disabled,
-		[Parameter(Mandatory = $false)]
-		[ValidateSet(1, "Once", 4, "Daily", 8, "Weekly", 16, "Monthly", 32, "MonthlyRelative", 64, "AgentStart", 128, "IdleComputer")]
-		[object]$FrequencyType,
-		[Parameter(Mandatory = $false)]
-		[object]$FrequencyInterval,
-		[ValidateSet(1, "Time", 2, "Seconds", 4, "Minutes", 8, "Hours")]
-		[object]$FrequencySubdayType,
-		[Parameter(Mandatory = $false)]
-		[int]$FrequencySubdayInterval,
-		[Parameter(Mandatory = $false)]
-		[int]$FrequencyRelativeInterval,
-		[Parameter(Mandatory = $false)]
-		[int]$FrequencyRecurrenceFactor,
-		[Parameter(Mandatory = $false)]
-		[string]$StartDate,
-		[Parameter(Mandatory = $false)]
-		[string]$EndDate,
-		[Parameter(Mandatory = $false)]
-		[string]$StartTime,
-		[Parameter(Mandatory = $false)]
-		[string]$EndTime,
-		[Parameter(Mandatory = $false)]
-		[switch]$Silent,
-		[Parameter(Mandatory = $false)]
-		[switch]$Force
-	)
-	
-	begin {
-		
-		# Check of the FrequencyType value is of type string and set the integer value
-		if ($FrequencyType -notin 0, 1, 4, 8, 16, 32, 64, 128) {
-			[int]$FrequencyType = switch ($FrequencyType) { "Once" { 1 } "Daily" { 4 } "Weekly" { 8 } "Monthly" { 16 } "MonthlyRelative" { 32 } "AgentStart" { 64 } "IdleComputer" { 128 }
-				default { 0 } }
-		}
-		
-		# Check of the FrequencySubdayType value is of type string and set the integer value
-		if ($FrequencySubdayType -notin 0, 1, 2, 4, 8) {
-			[int]$FrequencySubdayType = switch ($FrequencySubdayType) { "Time" { 1 } "Seconds" { 2 } "Minutes" { 4 } "Hours" { 8 }
-				default { 0 } }
-		}
-		
-		# Check if the interval is valid
-		if (($FrequencyType -eq 4) -and ($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365)) {
-			Stop-Function -Message "The interval $FrequencyInterval needs to be higher than 1 and lower than 365 when using a daily frequency the interval." -Target $SqlInstance
-			return
-		}
-		
-		# Check if the recurrence factor is set for weekly or monthly interval
-		if (($FrequencyType -in 8, 16) -and $FrequencyRecurrenceFactor -lt 1) {
-			if ($Force) {
-				$FrequencyRecurrenceFactor = 1
-				Write-Message -Message "Recurrence factor not set for weekly or monthly interval. Setting it to $FrequencyRecurrenceFactor." -Level Verbose
-			}
-			else {
-				Stop-Function -Message "The recurrence fctor $FrequencyRecurrenceFactor needs to be at least on when using a weekly or monthly interval." -Target $SqlInstance
-				return
-			}
-		}
-		
-		# Check the subday interval
-		if (($FrequencySubdayType -in 2, 4) -and (-not ($FrequencySubdayInterval -ge 1 -or $FrequencySubdayInterval -le 59))) {
-			Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 59 when subday type is 2, 'Seconds', 4 or 'Minutes'" -Target $SqlInstance
-			return
-		}
-		elseif (($FrequencySubdayType -eq 8) -and (-not ($FrequencySubdayInterval -ge 1 -and $FrequencySubdayInterval -le 23))) {
-			Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 23 when subday type is 8 or 'Hours" -Target $SqlInstance
-			return
-		}
-		
-		# If the FrequencyInterval is set for the weekly FrequencyType
-		if ($FrequencyType -in 4, 8) {
-			# Create the interval to hold the value(s)
-			[int]$Interval = 0
-			
-			# Loop through the array
-			foreach ($Item in $FrequencyInterval) {
-				switch ($Item) {
-					"Sunday" { $Interval += 1 }
-					"Monday" { $Interval += 2 }
-					"Tuesday" { $Interval += 4 }
-					"Wednesday" { $Interval += 8 }
-					"Thursday" { $Interval += 16 }
-					"Friday" { $Interval += 32 }
-					"Saturday" { $Interval += 64 }
-					"Weekdays" { $Interval = 62 }
-					"Weekend" { $Interval = 65 }
-					"EveryDay" { $Interval = 127 }
-					1 { $Interval += 1 }
-					2 { $Interval += 2 }
-					4 { $Interval += 4 }
-					8 { $Interval += 8 }
-					16 { $Interval += 16 }
-					32 { $Interval += 32 }
-					64 { $Interval += 64 }
-					62 { $Interval = 62 }
-					65 { $Interval = 65 }
-					127 { $Interval = 127 }
-				}
-			}
-		}
-		
-		# If the FrequencyInterval is set for the relative monthly FrequencyInterval
-		if ($FrequencyType -eq 32) {
-			# Create the interval to hold the value(s)
-			[int]$Interval = 0
-			
-			# Loop through the array
-			foreach ($Item in $FrequencyInterval) {
-				switch ($Item) {
-					"Sunday" { $Interval += 1 }
-					"Monday" { $Interval += 2 }
-					"Tuesday" { $Interval += 3 }
-					"Wednesday" { $Interval += 4 }
-					"Thursday" { $Interval += 5 }
-					"Friday" { $Interval += 6 }
-					"Saturday" { $Interval += 7 }
-					"Day" { $Interval += 8 }
-					"Weekday" { $Interval += 9 }
-					"WeekendDay" { $Interval += 10 }
-					1 { $Interval += 1 }
-					2 { $Interval += 2 }
-					3 { $Interval += 3 }
-					4 { $Interval += 4 }
-					5 { $Interval += 5 }
-					6 { $Interval += 6 }
-					7 { $Interval += 7 }
-					8 { $Interval += 8 }
-					9 { $Interval += 9 }
-					10 { $Interval += 10 }
-				}
-			}
-		}
-		
-		# Check of the relative FrequencyInterval value is of type string and set the integer value
-		if ($FrequencyRelativeInterval -notin 1, 2, 4, 8, 16) {
-			$FrequencyRelativeInterval = switch ($FrequencyRelativeInterval) { "First" { 1 } "Second" { 2 } "Third" { 4 } "Fourth" { 8 } "Last" { 16 }
-				default { 0 } }
-		}
-		
-		# Check if the interval is valid for the frequency
-		if ($FrequencyType -eq 0) {
-			if ($Force) {
-				Write-Message -Message "Parameter FrequencyType must be set to at least once. Setting it to 1 (Once)." -Level Warning
-				$FrequencyType = 1
-			}
-			else {
-				Stop-Function -Message "Parameter FrequencyType must be set to at least once." -Target $SqlInstance
-				return
-			}
-		}
-		
-		# Check if the interval is valid for the frequency
-		if (($FrequencyType -in 4, 8, 32) -and ($Interval -lt 1)) {
-			if ($Force) {
-				Write-Message -Message "Parameter FrequencyInterval must be at least 1 for a recurring schedule. Setting it to 1." -Level Warning
-				$Interval = 1
-			}
-			else {
-				Stop-Function -Message "Parameter FrequencyInterval must be at least 1 for a recurring schedule" -Target $SqlInstance
-				return
-			}
-		}
-		
-		# Setup the regex
-		$RegexDate = '(?<!\d)(?:(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:(?:0[13578]|1[02])31)|(?:(?:0[1,3-9]|1[0-2])(?:29|30)))|(?:(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00)))0229)|(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:0?[1-9])|(?:1[0-2]))(?:0?[1-9]|1\d|2[0-8]))(?!\d)'
-		$RegexTime = '^(?:(?:([01]?\d|2[0-3]))?([0-5]?\d))?([0-5]?\d)$'
-		
-		# Check the start date
-		if (-not $StartDate -and $Force) {
-			$StartDate = Get-Date -Format 'yyyyMMdd'
-			Write-Message -Message "Start date was not set. Force is being used. Setting it to $StartDate" -Level Verbose
-		}
-		elseif (-not $StartDate) {
-			Stop-Function -Message "Please enter a start date or use -Force to use defaults." -Target $SqlInstance
-			return
-		}
-		elseif ($StartDate -notmatch $RegexDate) {
-			Stop-Function -Message "Start date $StartDate needs to be a valid date with format yyyyMMdd" -Target $SqlInstance
-			return
-		}
-		
-		# Check the end date
-		if (-not $EndDate -and $Force) {
-			$EndDate = '99991231'
-			Write-Message -Message "End date was not set. Force is being used. Setting it to $EndDate" -Level Verbose
-		}
-		elseif (-not $EndDate) {
-			Stop-Function -Message "Please enter an end date or use -Force to use defaults." -Target $SqlInstance
-			return
-		}
-		
-		elseif ($EndDate -notmatch $RegexDate) {
-			Stop-Function -Message "End date $EndDate needs to be a valid date with format yyyyMMdd" -Target $SqlInstance
-			return
-		}
-		elseif ($EndDate -lt $StartDate) {
-			Stop-Function -Message "End date $EndDate cannot be before start date $StartDate" -Target $SqlInstance
-			return
-		}
-		
-		# Check the start time
-		if (-not $StartTime -and $Force) {
-			$StartTime = '000000'
-			Write-Message -Message "Start time was not set. Force is being used. Setting it to $StartTime" -Level Verbose
-		}
-		elseif (-not $StartTime) {
-			Stop-Function -Message "Please enter a start time or use -Force to use defaults." -Target $SqlInstance
-			return
-		}
-		elseif ($StartTime -notmatch $RegexTime) {
-			Stop-Function -Message "Start time $StartTime needs to match between '000000' and '235959'" -Target $SqlInstance
-			return
-		}
-		
-		# Check the end time
-		if (-not $EndTime -and $Force) {
-			$EndTime = '235959'
-			Write-Message -Message "End time was not set. Force is being used. Setting it to $EndTime" -Level Verbose
-		}
-		elseif (-not $EndTime) {
-			Stop-Function -Message "Please enter an end time or use -Force to use defaults." -Target $SqlInstance
-			return
-		}
-		elseif ($EndTime -notmatch $RegexTime) {
-			Stop-Function -Message "End time $EndTime needs to match between '000000' and '235959'" -Target $SqlInstance
-			return
-		}
-	}
-	
-	process {
-		
-		if (Test-FunctionInterrupt) { return }
-		
-		foreach ($instance in $sqlinstance) {
-			# Try connecting to the instance
-			Write-Message -Message "Attempting to connect to $instance" -Level Output
-			try {
-				$Server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
-			}
-			catch {
-				Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -InnerErrorRecord $_ -Continue
-			}
-			
-			foreach ($j in $Job) {
-				
-				# Check if the job exists
-				if ($Server.JobServer.Jobs.Name -notcontains $j) {
-					Write-Message -Message "Job $j doesn't exists on $instance" -Level Warning
-				}
-				else {
-					# Create the job schedule object
-					try {
-						# Get the job
-						$smojob = $Server.JobServer.Jobs[$j]
-						
-						# Check if schedule already exists with the same name
-						if ($smojob.JobSchedules.Name -contains $ScheduleName) {
-							# Check if force is set which will remove the other schedule
-							if ($Force) {
-								if ($PSCmdlet.ShouldProcess($instance, "Removing the schedule for job $j on $instance")) {
-									# Removing schedule
-									Remove-DbaAgentSchedule -SqlInstance $instance -SqlCredential $SqlCredential -Job $j -ScheduleName $ScheduleName -Force:$Force
-								}
-							}
-							else {
-								Stop-Function -Message "Schedule $ScheduleName already exists for job $j" -Target $instance -InnerErrorRecord $_ -Continue
-							}
-						}
-						
-						# Create the job schedule
-						$smojobSchedule = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobSchedule($smojob, $ScheduleName)
-						
-					}
-					catch {
-						Stop-Function -Message "Something went wrong creating the job schedule $ScheduleName for job $j. `n$($_.Exception.Message)" -Target $instance -InnerErrorRecord $_ -Continue
-					}
-					
-					#region job schedule options
-					if ($Disabled) {
-						Write-Message -Message "Setting job schedule to disabled" -Level Verbose
-						$smojobSchedule.IsEnabled = $false
-					}
-					else {
-						Write-Message -Message "Setting job schedule to enabled" -Level Verbose
-						$smojobSchedule.IsEnabled = $true
-					}
-					
-					if ($Interval -ge 1) {
-						Write-Message -Message "Setting job schedule frequency interval to $Interval" -Level Verbose
-						$smojobSchedule.FrequencyInterval = $Interval
-					}
-					
-					if ($FrequencyType -ge 1) {
-						Write-Message -Message "Setting job schedule frequency to $FrequencyType" -Level Verbose
-						$smojobSchedule.FrequencyTypes = $FrequencyType
-					}
-					
-					if ($FrequencySubdayType -ge 1) {
-						Write-Message -Message "Setting job schedule frequency subday type to $FrequencySubdayType" -Level Verbose
-						$smojobSchedule.FrequencySubDayTypes = $FrequencySubdayType
-					}
-					
-					if ($FrequencySubdayInterval -ge 1) {
-						Write-Message -Message "Setting job schedule frequency subday interval to $FrequencySubdayInterval" -Level Verbose
-						$smojobSchedule.FrequencySubDayInterval = $FrequencySubdayInterval
-					}
-					
-					if (($FrequencyRelativeInterval -ge 1) -and ($FrequencyType -eq 32)) {
-						Write-Message -Message "Setting job schedule frequency relative interval to $FrequencyRelativeInterval" -Level Verbose
-						$smojobSchedule.FrequencyRelativeIntervals = $FrequencyRelativeInterval
-					}
-					
-					if (($FrequencyRecurrenceFactor -ge 1) -and ($FrequencyType -in 8, 16, 32)) {
-						Write-Message -Message "Setting job schedule frequency recurrence factor to $FrequencyRecurrenceFactor" -Level Verbose
-						$smojobSchedule.FrequencyRecurrenceFactor = $FrequencyRecurrenceFactor
-					}
-					
-					if ($StartDate) {
-						$StartDate = $StartDate.Insert(6, '-').Insert(4, '-')
-						Write-Message -Message "Setting job schedule start date to $StartDate" -Level Verbose
-						$smojobSchedule.ActiveStartDate = $StartDate
-					}
-					
-					if ($EndDate) {
-						$EndDate = $EndDate.Insert(6, '-').Insert(4, '-')
-						Write-Message -Message "Setting job schedule end date to $EndDate" -Level Verbose
-						$smojobSchedule.ActiveEndDate = $EndDate
-					}
-					
-					if ($StartTime) {
-						$StartTime = $StartTime.Insert(4, ':').Insert(2, ':')
-						Write-Message -Message "Setting job schedule start time to $StartTime" -Level Verbose
-						$smojobSchedule.ActiveStartTimeOfDay = $StartTime
-					}
-					
-					if ($EndTime) {
-						$EndTime = $EndTime.Insert(4, ':').Insert(2, ':')
-						Write-Message -Message "Setting job schedule end time to $EndTime" -Level Verbose
-						$smojobSchedule.ActiveEndTimeOfDay = $EndTime
-					} #>
-					#endregion job schedule options
-					
-					# Execute the query
-					if ($PSCmdlet.ShouldProcess($SqlInstance, "Adding the schedule $ScheduleName to job $j on $SqlInstance")) {
-						try {
-							Write-Message -Message "Adding the schedule $ScheduleName to job $j" -Level Output
-							
-							$smojobSchedule.Create()
-							
-							Write-Message -Message "Job schedule created with UID $($smojobSchedule.ScheduleUid)" -Level Verbose
-						}
-						catch {
-							Stop-Function -Message "Something went wrong adding the schedule. `n$($_.Exception.Message)" -Target $smojobSchedule -InnerErrorRecord $_ -Continue
-						}
-						
-					}
-					
-					# Output the job schedule
-					$smojobSchedule | Select-DefaultView -Property Parent, ActiveEndDate, ActiveEndTimeOfDay, ActiveStartDate, ActiveStartTimeOfDay, DateCreated, FrequencyInterval, FrequencyRecurrenceFactor, FrequencyRelativeIntervals, FrequencySubDayInterval, FrequencySubDayTypes, FrequencyTypes, IsEnabled, JobCount, ScheduleUid
-					
-				}
-			} # foreach object job
-		} # foreach object instance
-	} #process
-	
-	end {
-		Write-Message -Message "Finished adding the job schedule(s)" -Level Output
-	}
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    
+    param (
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [Parameter(Mandatory = $false)]
+        [System.Management.Automation.PSCredential]$SqlCredential,
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [object[]]$Job,
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$ScheduleName,
+        [Parameter(Mandatory = $false)]
+        [switch]$Disabled,
+        [Parameter(Mandatory = $false)]
+        [ValidateSet(1, "Once", 4, "Daily", 8, "Weekly", 16, "Monthly", 32, "MonthlyRelative", 64, "AgentStart", 128, "IdleComputer")]
+        [object]$FrequencyType,
+        [Parameter(Mandatory = $false)]
+        [object]$FrequencyInterval,
+        [ValidateSet(1, "Time", 2, "Seconds", 4, "Minutes", 8, "Hours")]
+        [object]$FrequencySubdayType,
+        [Parameter(Mandatory = $false)]
+        [int]$FrequencySubdayInterval,
+        [Parameter(Mandatory = $false)]
+        [int]$FrequencyRelativeInterval,
+        [Parameter(Mandatory = $false)]
+        [int]$FrequencyRecurrenceFactor,
+        [Parameter(Mandatory = $false)]
+        [string]$StartDate,
+        [Parameter(Mandatory = $false)]
+        [string]$EndDate,
+        [Parameter(Mandatory = $false)]
+        [string]$StartTime,
+        [Parameter(Mandatory = $false)]
+        [string]$EndTime,
+        [Parameter(Mandatory = $false)]
+        [switch]$Silent,
+        [Parameter(Mandatory = $false)]
+        [switch]$Force
+    )
+
+    begin {
+
+        # Check of the FrequencyType value is of type string and set the integer value
+        if ($FrequencyType -notin 0, 1, 4, 8, 16, 32, 64, 128) {
+            [int]$FrequencyType = switch ($FrequencyType) { "Once" { 1 } "Daily" { 4 } "Weekly" { 8 } "Monthly" { 16 } "MonthlyRelative" { 32 } "AgentStart" { 64 } "IdleComputer" { 128 } default {0} }
+        }
+
+        # Check of the FrequencySubdayType value is of type string and set the integer value
+        if ($FrequencySubdayType -notin 0, 1, 2, 4, 8) {
+            [int]$FrequencySubdayType = switch ($FrequencySubdayType) { "Time" { 1 } "Seconds" { 2 } "Minutes" { 4 } "Hours" { 8 } default {0} }
+        }
+
+        # Check if the interval is valid
+        if (($FrequencyType -eq 4) -and ($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365)) {
+            Stop-Function -Message "The interval $FrequencyInterval needs to be higher than 1 and lower than 365 when using a daily frequency the interval." -Target $SqlInstance 
+            return
+        }
+
+        # Check if the recurrence factor is set for weekly or monthly interval
+        if (($FrequencyType -in 8, 16) -and $FrequencyRecurrenceFactor -lt 1) {
+            if ($Force) {
+                $FrequencyRecurrenceFactor = 1
+                Write-Message -Message "Recurrence factor not set for weekly or monthly interval. Setting it to $FrequencyRecurrenceFactor." -Level Verbose
+            }
+            else {
+                Stop-Function -Message "The recurrence fctor $FrequencyRecurrenceFactor needs to be at least on when using a weekly or monthly interval." -Target $SqlInstance 
+                return
+            }
+        }
+
+        # Check the subday interval
+        if (($FrequencySubdayType -in 2, 4) -and (-not ($FrequencySubdayInterval -ge 1 -or $FrequencySubdayInterval -le 59))) {
+            Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 59 when subday type is 2, 'Seconds', 4 or 'Minutes'" -Target $SqlInstance 
+            return
+        }
+        elseif (($FrequencySubdayType -eq 8) -and (-not ($FrequencySubdayInterval -ge 1 -and $FrequencySubdayInterval -le 23))) {
+            Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 23 when subday type is 8 or 'Hours" -Target $SqlInstance 
+            return
+        }
+
+        # If the FrequencyInterval is set for the weekly FrequencyType
+        if ($FrequencyType -in 4, 8) {
+            # Create the interval to hold the value(s)
+            [int]$Interval = 0
+
+            # Loop through the array
+            foreach ($Item in $FrequencyInterval) {
+                switch ($Item) {
+                    "Sunday" { $Interval += 1 }
+                    "Monday" { $Interval += 2 } 
+                    "Tuesday" { $Interval += 4 }
+                    "Wednesday" { $Interval += 8 }
+                    "Thursday" { $Interval += 16 }
+                    "Friday" { $Interval += 32 }
+                    "Saturday" { $Interval += 64 }
+                    "Weekdays" { $Interval = 62 }
+                    "Weekend" { $Interval = 65 }
+                    "EveryDay" {$Interval = 127 }
+                    1 { $Interval += 1 }
+                    2 { $Interval += 2 }
+                    4 { $Interval += 4 }
+                    8 { $Interval += 8 }
+                    16 { $Interval += 16 }
+                    32 { $Interval += 32 }
+                    64 { $Interval += 64 }
+                    62 { $Interval = 62 }
+                    65 { $Interval = 65 }
+                    127 {$Interval = 127 }
+                }
+            }
+        }
+
+        # If the FrequencyInterval is set for the relative monthly FrequencyInterval
+        if ($FrequencyType -eq 32) {
+            # Create the interval to hold the value(s)
+            [int]$Interval = 0
+
+            # Loop through the array
+            foreach ($Item in $FrequencyInterval) {
+                switch ($Item) {
+                    "Sunday" { $Interval += 1 }
+                    "Monday" { $Interval += 2 } 
+                    "Tuesday" { $Interval += 3 }
+                    "Wednesday" { $Interval += 4 }
+                    "Thursday" { $Interval += 5 }
+                    "Friday" { $Interval += 6 }
+                    "Saturday" { $Interval += 7 }
+                    "Day" { $Interval += 8 }
+                    "Weekday" { $Interval += 9 } 
+                    "WeekendDay" { $Interval += 10 }
+                    1 { $Interval += 1 }
+                    2 { $Interval += 2 }
+                    3 { $Interval += 3 }
+                    4 { $Interval += 4 }
+                    5 { $Interval += 5 }
+                    6 { $Interval += 6 }
+                    7 { $Interval += 7 }
+                    8 { $Interval += 8 }
+                    9 { $Interval += 9 }
+                    10 { $Interval += 10 }
+                }
+            }
+        } 
+
+        # Check of the relative FrequencyInterval value is of type string and set the integer value
+        if ($FrequencyRelativeInterval -notin 1, 2, 4, 8, 16) {
+            $FrequencyRelativeInterval = switch ($FrequencyRelativeInterval) { "First" { 1 } "Second" { 2 } "Third" { 4 } "Fourth" { 8 } "Last" { 16 } default {0} }
+        }
+
+        # Check if the interval is valid for the frequency
+        if ($FrequencyType -eq 0) {
+            if ($Force) {
+                Write-Message -Message "Parameter FrequencyType must be set to at least once. Setting it to 1 (Once)." -Warning
+                $FrequencyType = 1
+            }
+            else {
+                Stop-Function -Message "Parameter FrequencyType must be set to at least once." -Target $SqlInstance 
+                return
+            } 
+        }
+
+        # Check if the interval is valid for the frequency
+        if (($FrequencyType -in 4, 8, 32) -and ($Interval -lt 1)) {
+            if ($Force) {
+                Write-Message -Message "Parameter FrequencyInterval must be at least 1 for a recurring schedule. Setting it to 1." -Warning
+                $Interval = 1
+            }
+            else {
+                Stop-Function -Message "Parameter FrequencyInterval must be at least 1 for a recurring schedule" -Target $SqlInstance 
+                return
+            } 
+        }
+
+        # Setup the regex
+        $RegexDate = '(?<!\d)(?:(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:(?:0[13578]|1[02])31)|(?:(?:0[1,3-9]|1[0-2])(?:29|30)))|(?:(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00)))0229)|(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:0?[1-9])|(?:1[0-2]))(?:0?[1-9]|1\d|2[0-8]))(?!\d)'
+        $RegexTime = '^(?:(?:([01]?\d|2[0-3]))?([0-5]?\d))?([0-5]?\d)$'
+
+        # Check the start date
+        if (-not $StartDate -and $Force) {
+            $StartDate = Get-Date -Format 'yyyyMMdd'
+            Write-Message -Message "Start date was not set. Force is being used. Setting it to $StartDate" -Level Verbose
+        }
+        elseif (-not $StartDate) {
+            Stop-Function -Message "Please enter a start date or use -Force 1 to use defaults." -Target $SqlInstance 
+            return
+        }
+        elseif ($StartDate -notmatch $RegexDate) {
+            Stop-Function -Message "Start date $StartDate needs to be a valid date with format yyyyMMdd" -Target $SqlInstance 
+            return
+        }
+
+        # Check the end date
+        if (-not $EndDate -and $Force) {
+            $EndDate = '99991231'
+            Write-Message -Message "End date was not set. Force is being used. Setting it to $EndDate" -Level Verbose
+        }
+        elseif (-not $EndDate) {
+            Stop-Function -Message "Please enter an end date or use -Force 1 to use defaults." -Target $SqlInstance 
+            return
+        }
+
+        elseif ($EndDate -notmatch $RegexDate) {
+            Stop-Function -Message "End date $EndDate needs to be a valid date with format yyyyMMdd" -Target $SqlInstance 
+            return
+        }
+        elseif ($EndDate -lt $StartDate) {
+            Stop-Function -Message "End date $EndDate cannot be before start date $StartDate" -Target $SqlInstance 
+            return
+        }
+
+        # Check the start time
+        if (-not $StartTime -and $Force) {
+            $StartTime = '000000'
+            Write-Message -Message "Start time was not set. Force is being used. Setting it to $StartTime" -Level Verbose
+        }
+        elseif (-not $StartTime) {
+            Stop-Function -Message "Please enter a start time or use -Force 1 to use defaults." -Target $SqlInstance 
+            return
+        }
+        elseif ($StartTime -notmatch $RegexTime) {
+            Stop-Function -Message "Start time $StartTime needs to match between '000000' and '235959'" -Target $SqlInstance 
+            return
+        }
+
+        # Check the end time
+        if (-not $EndTime -and $Force) {
+            $EndTime = '235959'
+            Write-Message -Message "End time was not set. Force is being used. Setting it to $EndTime" -Level Verbose
+        }
+        elseif (-not $EndTime) {
+            Stop-Function -Message "Please enter an end time or use -Force 1 to use defaults." -Target $SqlInstance 
+            return
+        }
+        elseif ($EndTime -notmatch $RegexTime) {
+            Stop-Function -Message "End time $EndTime needs to match between '000000' and '235959'" -Target $SqlInstance 
+            return
+        }
+    }
+
+    process {
+
+        if (Test-FunctionInterrupt) { return }
+
+        foreach ($instance in $sqlinstance) {
+            # Try connecting to the instance
+            Write-Message -Message "Attempting to connect to $instance" -Level Output
+            try {
+                $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            }
+            catch {
+                Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -InnerErrorRecord $_ -Continue
+            }
+
+            foreach ($j in $Job) {
+
+                # Check if the job exists
+                if ($Server.JobServer.Jobs.Name -notcontains $j) {
+                    Write-Message -Message "Job $j doesn't exists on $instance" -Warning
+                }
+                else {
+                    # Create the job schedule object
+                    try {
+                        # Get the job
+                        $smoJob = $Server.JobServer.Jobs[$j]
+
+                        # Check if schedule already exists with the same name
+                        if ($smoJob.JobSchedules.Name -contains $ScheduleName) {
+                            # Check if force is set which will remove the other schedule
+                            if ($Force) {
+                                if ($PSCmdlet.ShouldProcess($instance, "Removing the schedule for job $j on $instance")) {
+                                    # Removing schedule
+                                    Remove-DbaAgentSchedule -SqlInstance $instance -SqlCredential $SqlCredential -Job $j -ScheduleName $ScheduleName -Force $Force   
+                                }                    
+                            }
+                            else {
+                                Stop-Function -Message "Schedule $ScheduleName already exists for job $j" -Target $instance -InnerErrorRecord $_ -Continue
+                            }
+                        }
+                    
+                        # Create the job schedule
+                        $JobSchedule = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobSchedule($smoJob, $ScheduleName)
+
+                    }
+                    catch {
+                        Stop-Function -Message "Something went wrong creating the job schedule $ScheduleName for job $j. `n$($_.Exception.Message)" -Target $instance -InnerErrorRecord $_ -Continue
+                    }
+
+                    #region job schedule options
+                    if ($Disabled) {
+                        Write-Message -Message "Setting job schedule to disabled" -Level Verbose
+                        $JobSchedule.IsEnabled = $false
+                    }
+                    else {
+                        Write-Message -Message "Setting job schedule to enabled" -Level Verbose
+                        $JobSchedule.IsEnabled = $true
+                    }
+
+                    if ($Interval -ge 1) {
+                        Write-Message -Message "Setting job schedule frequency interval to $Interval" -Level Verbose
+                        $JobSchedule.FrequencyInterval = $Interval
+                    }
+
+                    if ($FrequencyType -ge 1) {
+                        Write-Message -Message "Setting job schedule frequency to $FrequencyType" -Level Verbose
+                        $JobSchedule.FrequencyTypes = $FrequencyType
+                    }
+
+                    if ($FrequencySubdayType -ge 1) {
+                        Write-Message -Message "Setting job schedule frequency subday type to $FrequencySubdayType" -Level Verbose
+                        $JobSchedule.FrequencySubDayTypes = $FrequencySubdayType
+                    }
+
+                    if ($FrequencySubdayInterval -ge 1) {
+                        Write-Message -Message "Setting job schedule frequency subday interval to $FrequencySubdayInterval" -Level Verbose
+                        $JobSchedule.FrequencySubDayInterval = $FrequencySubdayInterval
+                    }
+
+                    if (($FrequencyRelativeInterval -ge 1) -and ($FrequencyType -eq 32)) {
+                        Write-Message -Message "Setting job schedule frequency relative interval to $FrequencyRelativeInterval" -Level Verbose
+                        $JobSchedule.FrequencyRelativeIntervals = $FrequencyRelativeInterval
+                    }
+
+                    if (($FrequencyRecurrenceFactor -ge 1) -and ($FrequencyType -in 8, 16, 32)) {
+                        Write-Message -Message "Setting job schedule frequency recurrence factor to $FrequencyRecurrenceFactor" -Level Verbose
+                        $JobSchedule.FrequencyRecurrenceFactor = $FrequencyRecurrenceFactor
+                    }
+
+                    if ($StartDate) {
+                        $StartDate = $StartDate.Insert(6, '-').Insert(4, '-')
+                        Write-Message -Message "Setting job schedule start date to $StartDate" -Level Verbose
+                        $JobSchedule.ActiveStartDate = $StartDate
+                    }
+
+                    if ($EndDate) {
+                        $EndDate = $EndDate.Insert(6, '-').Insert(4, '-')
+                        Write-Message -Message "Setting job schedule end date to $EndDate" -Level Verbose
+                        $JobSchedule.ActiveEndDate = $EndDate
+                    }
+
+                    if ($StartTime) {
+                        $StartTime = $StartTime.Insert(4, ':').Insert(2, ':')
+                        Write-Message -Message "Setting job schedule start time to $StartTime" -Level Verbose 
+                        $JobSchedule.ActiveStartTimeOfDay = $StartTime
+                    }
+
+                    if ($EndTime) {
+                        $EndTime = $EndTime.Insert(4, ':').Insert(2, ':')
+                        Write-Message -Message "Setting job schedule end time to $EndTime" -Level Verbose 
+                        $JobSchedule.ActiveEndTimeOfDay = $EndTime
+                    }#>
+                    #endregion job schedule options
+
+                    # Execute the query
+                    if ($PSCmdlet.ShouldProcess($SqlInstance, "Adding the schedule $ScheduleName to job $j on $SqlInstance")) {
+                        try {
+                            Write-Message -Message "Adding the schedule $ScheduleName to job $j" -Level Output
+
+                            $JobSchedule.Create()
+
+                            Write-Message -Message "Job schedule created with UID $($JobSchedule.ScheduleUid)" -Level Verbose
+                        }
+                        catch {
+                            Stop-Function -Message "Something went wrong adding the schedule. `n$($_.Exception.Message)" -Target $instance -InnerErrorRecord $_ -Continue 
+                        }
+                
+                    }
+
+                    # Output the job schedule
+                    return $JobSchedule
+                }
+            } # foreach object job
+        } # foreach object instance
+    } #process
+
+    END {
+        Write-Message -Message "Finished adding the job schedule(s)." -Level Output
+    }
+
+
 }

@@ -17,7 +17,7 @@ if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\"))
 
 #>
 
-$smoversions = "14.0.0.0", "13.0.0.0", "12.0.0.0", "11.0.0.0", "10.0.0.0", "9.0.242.0", "9.0.0.0"
+$smoversions = "13.0.0.0", "12.0.0.0", "11.0.0.0", "10.0.0.0", "14.0.0.0", "9.0.242.0", "9.0.0.0"
 
 foreach ($smoversion in $smoversions)
 {
@@ -48,7 +48,7 @@ foreach ($assembly in $assemblies)
 	}
 	catch
 	{
-		# Don't care
+		Write-Verbose "$assembly not loaded for version $smoversion"
 	}
 }
 
@@ -72,6 +72,24 @@ foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\*.ps1"))
 	$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null)
 }
 
+#region Finally register autocompletion - 32ms
+# Test whether we have Tab Expansion Plus available (used in dynamicparams scripts ran below)
+if (Get-Command TabExpansionPlusPlus\Register-ArgumentCompleter -ErrorAction Ignore)
+{
+	$script:TEPP = $true
+}
+else
+{
+	$script:TEPP = $false
+}
+
+# dynamic params - 136ms
+foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\dynamicparams\*.ps1"))
+{
+	$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null)
+}
+#endregion Finally register autocompletion
+
 # All exported functions - 600ms
 foreach ($function in (Get-ChildItem "$PSScriptRoot\functions\*.ps1"))
 {
@@ -87,23 +105,8 @@ foreach ($function in (Get-ChildItem "$PSScriptRoot\optional\*.ps1"))
 	$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null)
 }
 
-#region Finally register autocompletion - 32ms
-# Test whether we have Tab Expansion Plus available (used in dynamicparams scripts ran below)
-if (Get-Command TabExpansionPlusPlus\Register-ArgumentCompleter -ErrorAction Ignore)
-{
-	$TEPP = $true
-}
-else
-{
-	$TEPP = $false
-}
-
-# dynamic params - 136ms
-foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\dynamicparams\*.ps1"))
-{
-	$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null)
-}
-#endregion Finally register autocompletion
+# Process TEPP parameters
+$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\internal\scripts\insertTepp.ps1"))), $null, $null)
 
 # Load configuration system
 # Should always go next to last
@@ -127,4 +130,57 @@ Set-Alias -Name Get-SqlMaxMemory -Value Get-DbaMaxMemory
 Set-Alias -Name Set-SqlMaxMemory -Value Set-DbaMaxMemory
 Set-Alias -Name Install-SqlWhoIsActive -Value Install-DbaWhoIsActive
 Set-Alias -Name Show-SqlWhoIsActive -Value Invoke-DbaWhoIsActive
-
+Set-Alias -Name Copy-SqlAgentCategory -Value Copy-DbaAgentCategory
+Set-Alias -Name Copy-SqlAlert -Value Copy-DbaAgentAlert
+Set-Alias -Name Copy-SqlAudit -Value Copy-DbaAudit
+Set-Alias -Name Copy-SqlAuditSpecification -Value Copy-DbaAuditSpecification
+Set-Alias -Name Copy-SqlBackupDevice -Value Copy-DbaBackupDevice
+Set-Alias -Name Copy-SqlCentralManagementServer -Value Copy-DbaCentralManagementServer
+Set-Alias -Name Copy-SqlCredential -Value Copy-DbaCredential
+Set-Alias -Name Copy-SqlCustomError -Value Copy-DbaCustomError
+Set-Alias -Name Copy-SqlDatabase -Value Copy-DbaDatabase
+Set-Alias -Name Copy-SqlDatabaseAssembly -Value Copy-DbaDatabaseAssembly
+Set-Alias -Name Copy-SqlDatabaseMail -Value Copy-DbaDatabaseMail
+Set-Alias -Name Copy-SqlDataCollector -Value Copy-DbaDataCollector
+Set-Alias -Name Copy-SqlEndpoint -Value Copy-DbaEndpoint
+Set-Alias -Name Copy-SqlExtendedEvent -Value Copy-DbaExtendedEvent
+Set-Alias -Name Copy-SqlJob -Value Copy-DbaJob
+Set-Alias -Name Copy-SqlLinkedServer -Value Copy-DbaLinkedServer
+Set-Alias -Name Copy-SqlLogin -Value Copy-DbaLogin
+Set-Alias -Name Copy-SqlOperator -Value Copy-DbaOperator
+Set-Alias -Name Copy-SqlPolicyManagement -Value Copy-DbaPolicyManagement
+Set-Alias -Name Copy-SqlProxyAccount -Value Copy-DbaProxyAccount
+Set-Alias -Name Copy-SqlResourceGovernor -Value Copy-DbaResourceGovernor
+Set-Alias -Name Copy-SqlServerAgent -Value Copy-DbaServerAgent
+Set-Alias -Name Copy-SqlServerRole -Value Copy-DbaServerRole
+Set-Alias -Name Copy-SqlServerTrigger -Value Copy-DbaServerTrigger
+Set-Alias -Name Copy-SqlSharedSchedule -Value Copy-DbaSharedSchedule
+Set-Alias -Name Copy-SqlSpConfigure -Value Copy-DbaSpConfigure
+Set-Alias -Name Copy-SqlSsisCatalog -Value Copy-DbaSsisCatalog
+Set-Alias -Name Copy-SqlSysDbUserObjects -Value Copy-DbaSysDbUserObjects
+Set-Alias -Name Expand-SqlTLogResponsibly -Value Expand-DbaTLogResponsibly
+Set-Alias -Name Export-SqlLogin -Value Export-DbaLogin
+Set-Alias -Name Export-SqlSpConfigure -Value Export-DbaSpConfigure
+Set-Alias -Name Export-SqlUser -Value Export-DbaUser
+Set-Alias -Name Find-SqlDuplicateIndex -Value Find-DbaDuplicateIndex
+Set-Alias -Name Find-SqlUnusedIndex -Value Find-DbaUnusedIndex
+Set-Alias -Name Get-SqlRegisteredServerName -Value Get-DbaRegisteredServerName
+Set-Alias -Name Get-SqlServerKey -Value Get-DbaSqlProductKey
+Set-Alias -Name Import-SqlSpConfigure -Value Import-DbaSpConfigure
+Set-Alias -Name Invoke-Sqlcmd2 -Value Invoke-DbaSqlcmd
+Set-Alias -Name Remove-SqlDatabaseSafely -Value Remove-DbaDatabaseSafely
+Set-Alias -Name Remove-SqlOrphanUser -Value Remove-DbaOrphanUser
+Set-Alias -Name Repair-SqlOrphanUser -Value Repair-DbaOrphanUser
+Set-Alias -Name Reset-SqlAdmin -Value Reset-DbaAdmin
+Set-Alias -Name Restore-SqlBackupFromDirectory -Value Restore-DbaBackupFromDirectory
+Set-Alias -Name Set-SqlTempDbConfiguration -Value Set-DbaTempDbConfiguration
+Set-Alias -Name Show-SqlDatabaseList -Value Show-DbaDatabaseList
+Set-Alias -Name Show-SqlServerFileSystem -Value Show-DbaServerFileSystem
+Set-Alias -Name Start-SqlMigration -Value Start-DbaMigration
+Set-Alias -Name Sync-SqlLoginPermissions -Value Sync-DbaLoginPermissions
+Set-Alias -Name Test-SqlConnection -Value Test-DbaConnection
+Set-Alias -Name Test-SqlMigrationConstraint -Value Test-DbaMigrationConstraint
+Set-Alias -Name Test-SqlNetworkLatency -Value Test-DbaNetworkLatency
+Set-Alias -Name Test-SqlPath -Value Test-DbaPath
+Set-Alias -Name Test-SqlTempDbConfiguration -Value Test-DbaTempDbConfiguration
+Set-Alias -Name Watch-SqlDbLogin -Value Watch-DbaDbLogin

@@ -41,16 +41,16 @@ Function Resolve-DbaNetworkName
       Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for ServerA
 	
       .EXAMPLE
-      Resolve-DbaNetworkName -SqlServer sql2016\sqlexpress
+      Resolve-DbaNetworkName -SqlInstance sql2016\sqlexpress
 
       Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for the SQL instance sql2016\sqlexpress
 	
       .EXAMPLE
-      Resolve-DbaNetworkName -SqlServer sql2016\sqlexpress, sql2014
+      Resolve-DbaNetworkName -SqlInstance sql2016\sqlexpress, sql2014
 
       Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for the SQL instance sql2016\sqlexpress and sql2014
 
-      Get-SqlRegisteredServerName -SqlServer sql2014 | Resolve-DbaNetworkName
+      Get-SqlRegisteredServerName -SqlInstance sql2014 | Resolve-DbaNetworkName
 	
       Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-SqlRegisteredServerName
   #>
@@ -58,8 +58,8 @@ Function Resolve-DbaNetworkName
 	param (
 		[parameter(ValueFromPipeline)]
 		[Alias('cn', 'host', 'ServerInstance', 'Server', 'SqlServer')]
-		[object[]]$ComputerName = $env:COMPUTERNAME,
-    [PSCredential] [System.Management.Automation.CredentialAttribute()]$Credential,
+		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
+    	[PSCredential] [System.Management.Automation.CredentialAttribute()]$Credential,
 		[Alias('FastParrot')]
 		[switch]$Turbo
 	)
@@ -85,9 +85,14 @@ Function Resolve-DbaNetworkName
 				$Computer = $env:COMPUTERNAME
 			}
 			
-			$Computer = $Computer.Split('\\')[0]
-			$Computer = ($Computer -Split ('\:'))[0]
-			$Computer = ($Computer.Split('\,'))[0]
+			if ($Computer.GetType() -eq [Sqlcollective.Dbatools.Parameter.DbaInstanceParameter]) {
+				$Computer = $Computer.ComputerName
+			}
+			else {
+				$Computer = $Computer.Split('\\')[0]
+				$Computer = ($Computer -Split ('\:'))[0]
+				$Computer = ($Computer.Split('\,'))[0]
+			}
 			
 			if ($Turbo)
 			{

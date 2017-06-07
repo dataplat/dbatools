@@ -1,5 +1,4 @@
-﻿Function Get-DbaEstimatedCompletionTime
-{
+﻿function Get-DbaEstimatedCompletionTime {
 <#
 .SYNOPSIS
 Gets execution and estimated completion time information for queries
@@ -31,22 +30,20 @@ The SQL Server that you're connecting to.
 .PARAMETER SqlCredential
 SqlCredential object used to connect to the SQL Server as a different user.
 
-.PARAMETER Databases
-Get queries for specific databases.
+.PARAMETER Database
+The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Exclude
-Get queries for all databases except databases entered through this parameter.
+.PARAMETER ExcludeDatabase
+The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER Silent 
 Use this switch to disable any kind of verbose messages.
 
 .NOTES
 Tags: Database
-dbatools PowerShell module (https://dbatools.io)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Get-DbaEstimatedCompletionTime
@@ -67,7 +64,7 @@ Get-DbaEstimatedCompletionTime -SqlInstance sql2016 | Where-Object { $_.Text -ma
 Gets results for commands whose queries only match specific text (match is like LIKE but way more powerful)
 
 .EXAMPLE
-Get-DbaEstimatedCompletionTime -SqlInstance sql2016 -Databases Northwind,pubs,Adventureworks2014
+Get-DbaEstimatedCompletionTime -SqlInstance sql2016 -Database Northwind,pubs,Adventureworks2014
 
 Gets estimated completion times for queries performed against the Northwind, pubs, and Adventureworks2014 databases
 
@@ -76,25 +73,15 @@ Gets estimated completion times for queries performed against the Northwind, pub
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[PsCredential]$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$ExcludeDatabase,
 		[switch]$Silent
 	)
 	
-	DynamicParam
-	{
-		if ($SqlInstance)
-		{
-			Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential
-		}
-	}
-	
-	BEGIN
-	{
-		# Convert from RuntimeDefinedParameter object to regular array
-		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
-		
+	begin {
 		$sql = "SELECT
 				DB_NAME(r.database_id) as [Database],
 				USER_NAME(r.user_id) as [Login],
@@ -123,37 +110,30 @@ Gets estimated completion times for queries performed against the Northwind, pub
 			CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) s"
 	}
 	
-	PROCESS
-	{
-		foreach ($instance in $SqlInstance)
-		{
+	process {
+		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Connecting to $instance"
-			try
-			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+			try {
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 				
 			}
-			catch
-			{
+			catch {
 				Stop-Function -Message "Can't connect to $instance. Moving on." -Continue
 			}
 			
-			if ($databases)
-			{
-				$includedatabases = $databases -join "','"
+			if ($Database) {
+				$includedatabases = $Database -join "','"
 				$sql = "$sql WHERE DB_NAME(r.database_id) in ('$includedatabases')"
 			}
 			
-			if ($exclude)
-			{
-				$excludedatabases = $exclude -join "','"
+			if ($ExcludeDatabase) {
+				$excludedatabases = $ExcludeDatabase -join "','"
 				$sql = "$sql WHERE DB_NAME(r.database_id) not in ('$excludedatabases')"
 			}
 			
 			Write-Message -Level Debug -Message $sql
-			#Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sql | Select-DefaultView -ExcludeProperty Text
-			foreach ($row in (Invoke-Sqlcmd2 -ServerInstance $instance -Credential $SqlCredential -Query $sql))
-			{			
+			#Invoke-DbaSqlcmd -ServerInstance $instance -Credential $SqlCredential -Query $sql | Select-DefaultView -ExcludeProperty Text
+			foreach ($row in (Invoke-DbaSqlcmd -ServerInstance $instance -Credential $SqlCredential -Query $sql)) {
 				[pscustomobject]@{
 					ComputerName = $server.NetName
 					InstanceName = $server.ServiceName
@@ -172,3 +152,4 @@ Gets estimated completion times for queries performed against the Northwind, pub
 		}
 	}
 }
+

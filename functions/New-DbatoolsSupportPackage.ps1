@@ -1,36 +1,50 @@
-﻿function New-DbatoolsSupportPackage
-{
+﻿function New-DbatoolsSupportPackage {
     <#
-        .SYNOPSIS
-            Creates a package of troubleshooting information that can be used by dbatools to help debug issues.
-        
-        .DESCRIPTION
-            This function creates an extensive debugging package that can help with reproducing and fixing issues.
+    .SYNOPSIS
+    Creates a package of troubleshooting information that can be used by dbatools to help debug issues.
     
-            The file will be created on the desktop by default and will contain quite a bit of information:
-            - OS Information
-            - Hardware Information (CPU, Ram, things like that)
-            - .NET Information
-            - PowerShell Information
-            - Your input history
-            - The In-Memory message log
-            - The In-Memory error log
-            - Screenshot of the console buffer (Basically, everything written in your current console, even if you have to scroll upwards to see it.
+    .DESCRIPTION
+    This function creates an extensive debugging package that can help with reproducing and fixing issues.
     
-        .PARAMETER Path
-            The folder where to place the output xml in.
-        
-        .PARAMETER Silent
-            Replaces user friendly yellow warnings with bloody red exceptions of doom!
-            Use this if you want the function to throw terminating errors you want to catch.
-        
-        .EXAMPLE
-            New-DbatoolsSupportPackage
+    The file will be created on the desktop by default and will contain quite a bit of information:
+        - OS Information
+        - Hardware Information (CPU, Ram, things like that)
+        - .NET Information
+        - PowerShell Information
+        - Your input history
+        - The In-Memory message log
+        - The In-Memory error log
+        - Screenshot of the console buffer (Basically, everything written in your current console, even if you have to scroll upwards to see it.
     
-            Creates a large support pack in order to help us troubleshoot stuff.
+    .PARAMETER Path
+    The folder where to place the output xml in.
+	
+	.PARAMETER Variables
+	Name of additional variables to attach.
+	This allows you to add the content of variables to the support package, if you believe them to be relevant to the case.
+    
+    .PARAMETER Silent
+    Replaces user friendly yellow warnings with bloody red exceptions of doom!
+    Use this if you want the function to throw terminating errors you want to catch.
+
+    .NOTES
+	Original Author: Fred Weinmann (@FredWeinmann)
+	Tags: Debug
+
+	Website: https://dbatools.io
+	Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+
+	.LINK
+	https://dbatools.io/New-DbatoolsSupportPackage
+
+    .EXAMPLE
+    New-DbatoolsSupportPackage
+    
+    Creates a large support pack in order to help us troubleshoot stuff.
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [string]
         $Path = "$($env:USERPROFILE)\Desktop",
         
@@ -41,17 +55,14 @@
         $Silent
     )
     
-    Begin
-    {
+    BEGIN {
         Write-Message -Level InternalComment -Message "Starting"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
         
         #region Helper functions
-        function Get-ShellBuffer
-        {
+        function Get-ShellBuffer {
             [CmdletBinding()]
-            Param (
-            )
+            Param ()
             
             # Define limits
             $rec = New-Object System.Management.Automation.Host.Rectangle
@@ -66,12 +77,10 @@
             # Convert Buffer to list of strings
             $int = 0
             $lines = @()
-            while ($int -le $rec.Bottom)
-            {
+            while ($int -le $rec.Bottom) {
                 $n = 0
                 $line = ""
-                while ($n -le $rec.Right)
-                {
+                while ($n -le $rec.Right) {
                     $line += $buffer[$int, $n].Character
                     $n++
                 }
@@ -103,10 +112,9 @@
         }
         #endregion Helper functions
     }
-    Process
-    {
+    PROCESS {
         $filePathXml = "$($Path.Trim('\'))\dbatools_support_pack_$(Get-Date -Format "yyyy_MM_dd-HH_mm_ss").xml"
-        $filePathZip = $filePathXml -replace "\.xml$",".zip"
+        $filePathZip = $filePathXml -replace "\.xml$", ".zip"
         
         Write-Message -Level Critical -Message @"
 Gathering information...
@@ -144,8 +152,7 @@ This will make it easier for us to troubleshoot and you won't be sending us the 
         Write-Message -Level Output -Message "Collecting list of loaded assemblies (Name, Version, and Location)"
         $hash["Assemblies"] = [appdomain]::CurrentDomain.GetAssemblies() | Select-Object CodeBase, FullName, Location, ImageRuntimeVersion, GlobalAssemblyCache, IsDynamic
         
-        if (Was-Bound "Variables")
-        {
+        if (Was-Bound "Variables") {
             Write-Message -Level Output -Message "Adding variables specified for export: $($Variables -join ", ")"
             $hash["Variables"] = $Variables | Get-Variable -ErrorAction Ignore
         }
@@ -153,23 +160,20 @@ This will make it easier for us to troubleshoot and you won't be sending us the 
         $data = [pscustomobject]$hash
         
         try { $data | Export-Clixml -Path $filePathXml -ErrorAction Stop }
-        catch
-        {
+        catch {
             Stop-Function -Message "Failed to export dump to file!" -ErrorRecord $_ -Target $filePathXml
             return
         }
         
         try { Compress-Archive -Path $filePathXml -DestinationPath $filePathZip -ErrorAction Stop }
-        catch
-        {
+        catch {
             Stop-Function -Message "Failed to pack dump-file into a zip archive. Please do so manually before submitting the results as the unpacked xml file will be rather large." -ErrorRecord $_ -Target $filePathZip
             return
         }
         
         Remove-Item -Path $filePathXml -ErrorAction Ignore
     }
-    End
-    {
+    END {
         Write-Message -Level InternalComment -Message "Ending"
     }
 }

@@ -1,4 +1,4 @@
-﻿Function New-DbaMasterKey {
+﻿function New-DbaMasterKey {
 <#
 .SYNOPSIS
 Creates a new database master key
@@ -29,6 +29,7 @@ Use this switch to disable any kind of verbose messages
 
 .NOTES
 Tags: Certificate
+
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -41,21 +42,17 @@ You will be prompted to securely enter your password, then a master key will be 
 .EXAMPLE
 New-DbaMasterKey -SqlInstance Server1 -Database db1 -Confirm:$false
 
-Supresses all prompts to install but prompts to securely enter your password and creates a master key in the 'db1' database
+Suppresses all prompts to install but prompts to securely enter your password and creates a master key in the 'db1' database
 
-.EXAMPLE
-New-DbaMasterKey -SqlInstance Server1 -WhatIf
-
-Shows what would happen if the command were executed against server1
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact="High")]
 	param (
 		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[string[]]$Database = "master",
+		[object[]]$Database = "master",
 		[parameter(Mandatory)]
 		[Security.SecureString]$Password = (Read-Host "Password" -AsSecureString),
 		[switch]$Silent
@@ -65,13 +62,13 @@ Shows what would happen if the command were executed against server1
 		foreach ($instance in $SqlInstance) {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -Target $instance -InnerErrorRecord $_ -Continue
 			}
 			
-			foreach ($db in $database) {
+			foreach ($db in $Database) {
 				$smodb = $server.Databases[$db]
 				
 				if ($null -eq $smodb) {
