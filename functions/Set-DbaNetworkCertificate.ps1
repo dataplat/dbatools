@@ -64,9 +64,7 @@ Sets the network certificate for the SQL2008R2SP2 instance to the certificate wi
 		[switch]$Silent
 	)
 	process {
-		if ([dbavalidate]::IsLocalhost($sqlinstance)) {
-			Test-RunAsAdmin
-		}
+		Test-RunAsAdmin -ComputerName $SqlInstance.ComputerName
 		
 		if (!$Certificate -and !$Thumbprint) {
 			Stop-Function -Message "You must specify a certificate or thumbprint"
