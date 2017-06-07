@@ -47,61 +47,62 @@ Shows what would happen if the command were executed.
 #>
 	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
 	param (
-		[Alias("ServerInstance", "SqlServer", "ComputerName")]
-		[DbaInstanceParameter]$SqlInstance = $env:COMPUTERNAME,
+		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
+		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
 		[System.Management.Automation.PSCredential]$Credential,
 		[switch]$Silent
 	)
 	process {
-		if ([dbavalidate]::IsLocalhost($sqlinstance)) {
-			Test-RunAsAdmin
-		}
-		
-		Write-Message -Level Output -Message "Resolving hostname"
-		$resolved = Resolve-DbaNetworkName -ComputerName $SqlInstance -Turbo
-		
-		if ($null -eq $resolved) {
-			Write-Message -Level Warning -Message "Can't resolve $SqlInstance"
-			return
-		}
-		
-		Write-Message -Level Output -Message "Connecting to SQL WMI on $($SqlInstance.ComputerName)"
-		try {
-			$instance = Invoke-ManagedComputerCommand -Server $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($SqlInstance.InstanceName))"
-		}
-		catch {
-			Stop-Function -Message $_ -Target $instance
-			return
-		}
-		
-		$regroot = ($instance.AdvancedProperties | Where-Object Name -eq REGROOT).Value
-		Write-Message -Level Output -Message "Regroot: $regroot"
-		
-		if ($null -eq $regroot) {
-			Write-Message -Level Warning -Message "Can't find instance $($SqlInstance.InstanceName) on $env:COMPUTERNAME"
-			return
-		}
-		
-		$scriptblock = {
-			$regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
-			$cert = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
-			$forceencryption = (Get-ItemProperty -Path $regpath -Name ForceEncryption).ForceEncryption
+		foreach ($computer in $ComputerName) {
+			Write-Message -Level Verbose -Message "Resolving hostname"
+			$resolved = Resolve-DbaNetworkName -ComputerName $Computer -Turbo
 			
-			[pscustomobject]@{
-				ComputerName = $env:COMPUTERNAME
-				InstanceName = $args[2]
-				SqlInstance = $args[1]
-				ForceEncryption = $forceencryption
-				CertificateThumbprint = $cert
+			if ($null -eq $resolved) {
+				Write-Message -Level Warning -Message "Can't resolve $Computer"
+				return
 			}
-		}
-		
-		if ($PScmdlet.ShouldProcess("local", "Connecting to $sqlinstance to view the ForceEncryption value in $regroot for $($SqlInstance.InstanceName)")) {
+			
+			Write-Message -Level Verbose -Message "Connecting to SQL WMI on $($Computer.ComputerName)"
 			try {
-				Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $SqlInstance, $SqlInstance.InstanceName -ScriptBlock $scriptblock -ErrorAction Stop
+				$instances = Invoke-ManagedComputerCommand -Server $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -match "SQL Server \("
 			}
 			catch {
-				Stop-Function -Message $_ -ErrorRecord $_ -Target $ComputerName -Continue
+				Stop-Function -Message $_ -Target $instance
+				return
+			}
+			
+			foreach ($instance in $instances) {
+				$regroot = ($instance.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+				$instance = $instance.DisplayName.Replace('SQL Server (','').Replace(')', '') # Don't clown, I don't know regex :(
+				Write-Message -Level Verbose -Message "Regroot: $regroot"
+				
+				if ($null -eq $regroot) {
+					Write-Message -Level Warning -Message "Can't find instance $instance on $env:COMPUTERNAME"
+					return
+				}
+				
+				$scriptblock = {
+					$regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
+					$cert = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
+					$forceencryption = (Get-ItemProperty -Path $regpath -Name ForceEncryption).ForceEncryption
+					
+					[pscustomobject]@{
+						ComputerName = $env:COMPUTERNAME
+						InstanceName = $args[2]
+						SqlInstance = $args[1]
+						ForceEncryption = ($forceencryption -eq $true)
+						CertificateThumbprint = $cert
+					}
+				}
+				
+				if ($PScmdlet.ShouldProcess("local", "Connecting to $Computer to view the ForceEncryption value in $regroot for $instance")) {
+					try {
+						Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $Computer, $instance -ScriptBlock $scriptblock -ErrorAction Stop
+					}
+					catch {
+						Stop-Function -Message $_ -ErrorRecord $_ -Target $Computer -Continue
+					}
+				}
 			}
 		}
 	}
