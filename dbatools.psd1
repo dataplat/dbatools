@@ -292,13 +292,14 @@
 		'Get-DbaSqlInstanceProperty',
 		'Get-DbaSqlInstanceUserOption',
 		'New-DbaSqlConnectionString',
+		'Get-DbaAgentSchedule',
 		'Invoke-DbaLogShipping',
 		'Read-DbaTraceFile',
 		'New-DbaComputerCertificate',
 		'Get-DbaComputerCertificate',
 		'Add-DbaComputerCertificate',
 		'Set-DbaNetworkCertificate',
-		'Get-DbaAgentSchedule',
+		'Remove-DbaNetworkCertificate',
 		'Enable-DbaForceNetworkEncryption',
 		'Disable-DbaForceNetworkEncryption'
 	)
