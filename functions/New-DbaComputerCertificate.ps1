@@ -99,6 +99,8 @@ Shows what would happen if the command were run
 		[string]$FriendlyName = "SQL Server",
 		[string]$CertificateTemplate = "WebServer",
 		[int]$KeyLength = 1024,
+		[string]$Store = "LocalMachine",
+		[string]$Folder = "My",
 		[switch]$Silent
 	)
 	begin {
@@ -279,7 +281,7 @@ Shows what would happen if the command were run
 					$null = certreq -accept -machine $certcrt
 					$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
 					$cert.Import($certcrt, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
-					$storedcert = Get-ChildItem Cert:\LocalMachine\My -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
+					$storedcert = Get-ChildItem "Cert:\$store\$folder" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
 					
 					if ([dbavalidate]::IsLocalhost($computer)) {
 						$storedcert
@@ -292,7 +294,7 @@ Shows what would happen if the command were run
 					Stop-Function -Message "Failure when attempting to create the cert on $computer. Exception: $_" -ErrorRecord $_ -Target $computer -Continue
 				}
 			}
-			
+
 			if (![dbavalidate]::IsLocalhost($computer)) {
 				
 				if (!$secondarynode) {
@@ -312,24 +314,26 @@ Shows what would happen if the command were run
 				$scriptblock = {
 					$tempdir = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 					$filename = "$tempdir\cert.cer"
+					$store = $args[2]
+					$folder = $args[3]
 					
 					[System.IO.File]::WriteAllBytes($filename, $args[0])
 					$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
 					$cert.Import($filename, $args[1], [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
 					
-					$store = New-Object System.Security.Cryptography.X509Certificates.X509Store("My", "LocalMachine")
-					$store.Open('ReadWrite')
-					$store.Add($cert)
-					$store.Close()
+					$tempstore = New-Object System.Security.Cryptography.X509Certificates.X509Store($folder, $store)
+					$tempstore.Open('ReadWrite')
+					$tempstore.Add($cert)
+					$tempstore.Close()
 					
-					Get-ChildItem Cert:\LocalMachine\My -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
+					Get-ChildItem "Cert:\$store\$folder" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
 					
 					Remove-Item -Path $filename
 				}
 				
 				if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to import new cert")) {
 					try {
-						Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $file, $Password -ScriptBlock $scriptblock -ErrorAction Stop
+						Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $file, $Password, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop
 					}
 					catch {
 						Stop-Function -Message $_ -ErrorRecord $_ -Target $computer -Continue
