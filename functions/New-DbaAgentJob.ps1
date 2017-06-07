@@ -413,11 +413,11 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 
                     # If a schedule needs to be attached
                     if($Schedule){
-                        Set-DbaAgentJob -SqlInstance $instance -Job $smoJob -Schedule $Schedule
+                        Set-DbaAgentJob -SqlInstance $instance -Job $smoJob -Schedule $Schedule -SqlCredential $SqlCredential
                     }
 
                     if($ScheduleId){
-                        Set-DbaAgentJob -SqlInstance $instance -Job $smoJob -Schedule $ScheduleId
+                        Set-DbaAgentJob -SqlInstance $instance -Job $smoJob -Schedule $ScheduleId -SqlCredential $SqlCredential
                     }
                 }
                 catch {
