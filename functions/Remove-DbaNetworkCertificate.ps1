@@ -4,7 +4,7 @@
 Removes the network certificate for SQL Server instance
 
 .DESCRIPTION
-Removes the network certificate for SQL Server instance
+Removes the network certificate for SQL Server instance. This setting is found in Configuration Manager.
 
 .PARAMETER SqlInstance
 The target SQL Server - defaults to localhost. If target is a cluster, you must also specify InstanceClusterName (see below)
@@ -60,29 +60,56 @@ Shows what would happen if the command were run
 		$resolved = Resolve-DbaNetworkName -ComputerName $SqlInstance -Turbo
 		
 		if ($null -eq $resolved) {
-			Stop-Function -Message "Can't resolve $SqlInstance" -Target $resolved
+			Write-Message -Level Warning -Message "Can't resolve $SqlInstance"
 			return
 		}
 		
-		Write-Message -Level Output -Message "Connecting to SQL WMI"
-		$instance = Invoke-ManagedComputerCommand -Server $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($SqlInstance.InstanceName))"
+		Write-Message -Level Output -Message "Connecting to SQL WMI on $($SqlInstance.ComputerName)"
+		try {
+			$instance = Invoke-ManagedComputerCommand -Server $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($SqlInstance.InstanceName))"
+		}
+		catch {
+			Stop-Function -Message $_ -Target $instance
+			return
+		}
+		
 		$regroot = ($instance.AdvancedProperties | Where-Object Name -eq REGROOT).Value
 		
 		Write-Message -Level Output -Message "Regroot: $regroot"
 		
 		if ($null -eq $regroot) {
-			Stop-Function -Message "Can't find instance $($SqlInstance.InstanceName) on $env:COMPUTERNAME" -Target $args[0]
+			Write-Message -Level Warning -Message "Can't find instance $($SqlInstance.InstanceName) on $env:COMPUTERNAME"
 			return
 		}
 		
 		$scriptblock = {
 			$regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
+			$cert = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
 			Set-ItemProperty -Path $regpath -Name Certificate -Value $null
+			
+			if (![System.String]::IsNullOrEmpty($cert)) {
+				[pscustomobject]@{
+					ComputerName = $env:COMPUTERNAME
+					InstanceName = $args[2]
+					SqlInstance = $args[1]
+					CertificateThumbprint = $null
+					Notes = "Removed thumbprint: $cert"
+				}
+			}
+			else {
+				[pscustomobject]@{
+					ComputerName = $env:COMPUTERNAME
+					InstanceName = $args[2]
+					SqlInstance = $args[1]
+					CertificateThumbprint = $null
+					Notes = $null
+				} | Select-DefaultView -ExcludeProperty Notes
+			}			
 		}
 		
 		if ($PScmdlet.ShouldProcess("local", "Connecting to $ComputerName to remove the cert")) {
 			try {
-				Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot -ScriptBlock $scriptblock -ErrorAction Stop
+				Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $SqlInstance, $SqlInstance.InstanceName -ScriptBlock $scriptblock -ErrorAction Stop
 			}
 			catch {
 				Stop-Function -Message $_ -ErrorRecord $_ -Target $ComputerName -Continue

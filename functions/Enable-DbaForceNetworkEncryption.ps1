@@ -5,6 +5,8 @@ Enables Force Encryption for a SQL Server instance
 
 .DESCRIPTION
 Enables Force Encryption for a SQL Server instance. Note that this requires access to the Windows Server - not the SQL instance itself.
+	
+This setting is found in Configuration Manager.
 
 .PARAMETER SqlInstance
 The target SQL Server - defaults to localhost.
@@ -59,11 +61,11 @@ Shows what would happen if the command were executed.
 		$resolved = Resolve-DbaNetworkName -ComputerName $SqlInstance -Turbo
 		
 		if ($null -eq $resolved) {
-			Stop-Function -Message "Can't resolve $SqlInstance" -Target $resolved
+			Write-Message -Level Warning -Message "Can't resolve $SqlInstance"
 			return
 		}
 		
-		Write-Message -Level Output -Message "Connecting to SQL WMI"
+		Write-Message -Level Output -Message "Connecting to SQL WMI on $($SqlInstance.ComputerName)"
 		try {
 			$instance = Invoke-ManagedComputerCommand -Server $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($SqlInstance.InstanceName))"
 		}
@@ -76,7 +78,7 @@ Shows what would happen if the command were executed.
 		Write-Message -Level Output -Message "Regroot: $regroot"
 		
 		if ($null -eq $regroot) {
-			Stop-Function -Message "Can't find instance $($SqlInstance.InstanceName) on $env:COMPUTERNAME" -Target $args[0]
+			Write-Message -Level Warning -Message "Can't find instance $($SqlInstance.InstanceName) on $env:COMPUTERNAME"
 			return
 		}
 		
@@ -114,4 +116,4 @@ Shows what would happen if the command were executed.
 			}
 		}
 	}
-}112
+}
