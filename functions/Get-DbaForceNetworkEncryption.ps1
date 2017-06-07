@@ -8,7 +8,7 @@ Gets Force Encryption for a SQL Server instance. Note that this requires access 
 
 This setting is found in Configuration Manager.
 
-.PARAMETER SqlInstance
+.PARAMETER ComputerName
 The target SQL Server - defaults to localhost.
 
 .PARAMETER Credential
