@@ -1,13 +1,13 @@
 function Get-ServerOsInfo {
 	<#
 		.SYNOPSIS
-			Short description
+			Gets operating system information from the server.
 
 		.DESCRIPTION
-			Long description
+			Gets operating system information from the server and returns an object.
 
 		.PARAMETER ComputerName
-			The SQL Server (or server in general) that you're connecting to. The -SqlInstance parameter also works.
+			The SQL Server (or server in general) that you're connecting to.
 
 		.PARAMETER Credential
 			Credential object used to connect to the server as a different user
