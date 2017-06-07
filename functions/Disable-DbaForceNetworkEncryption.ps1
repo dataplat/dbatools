@@ -1,27 +1,22 @@
 ﻿function Disable-DbaForceNetworkEncryption {
 <#
 .SYNOPSIS
-Sets the network certificate for SQL Server instance
+Disables Force Encryption for a SQL Server instance
 
 .DESCRIPTION
-Sets the network certificate for SQL Server instance
-
-References:
-http://sqlmag.com/sql-server/7-steps-ssl-encryption
-https://azurebi.jppp.org/2016/01/23/using-lets-encrypt-certificates-for-secure-sql-server-connections/
-https://blogs.msdn.microsoft.com/sqlserverfaq/2016/09/26/creating-and-registering-ssl-certificates/
+Disables Force Encryption for a SQL Server instance. Note that this requires access to the Windows Server - not the SQL instance itself.
 
 .PARAMETER SqlInstance
-The target SQL Server - defaults to localhost. If target is a cluster, you must also specify InstanceClusterName (see below)
+The target SQL Server - defaults to localhost.
 
 .PARAMETER Credential
-Allows you to login to the computer (not sql instance) using alternative credentials.
+Allows you to login to the computer (not sql instance) using alternative Windows credentials
 
 .PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+Shows what would happen if the command were to run. No actions are actually performed
 
 .PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+Prompts you for confirmation before executing any changing operations within the command
 
 .PARAMETER Silent 
 Use this switch to disable any kind of verbose messages
@@ -35,12 +30,18 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
 Disable-DbaForceNetworkEncryption
-Hello
+	
+Disables Force Encryption on the default (MSSQLSERVER) instance on localhost - requires (and checks for) RunAs admin.
+
+.EXAMPLE
+Disable-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2
+
+Disables Force Network Encryption for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both login and modify the registry.
 
 .EXAMPLE
 Disable-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2 -WhatIf
 
-Shows what would happen if the command were run
+Shows what would happen if the command were executed.
 
 #>
 	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
@@ -63,8 +64,15 @@ Shows what would happen if the command were run
 			return
 		}
 		
-		Write-Message -Level Output -Message "Getting WMI info"
-		$instance = Invoke-ManagedComputerCommand -Server $resolved.FQDN -ScriptBlock { $wmi.Services } | Where-Object DisplayName -eq "SQL Server ($($SqlInstance.InstanceName))"
+		Write-Message -Level Output -Message "Connecting to SQL WMI"
+		try {
+			$instance = Invoke-ManagedComputerCommand -Server $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($SqlInstance.InstanceName))"
+		}
+		catch {
+			Stop-Function -Message $_ -ErrorRecord $_ -Target $instance
+			return
+		}
+		
 		$regroot = ($instance.AdvancedProperties | Where-Object Name -eq REGROOT).Value
 		Write-Message -Level Output -Message "Regroot: $regroot"
 		
@@ -75,13 +83,27 @@ Shows what would happen if the command were run
 		
 		$scriptblock = {
 			$regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
+			$cert = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
+			$oldvalue = (Get-ItemProperty -Path $regpath -Name ForceEncryption).ForceEncryption
 			Set-ItemProperty -Path $regpath -Name ForceEncryption -Value $false
-			Write-Warning "Force encryption was successfully set on $env:COMPUTERNAME for the $($args[1]) instance. You must now restart the SQL Server for changes to take effect."
+			$forceencryption = (Get-ItemProperty -Path $regpath -Name ForceEncryption).ForceEncryption
+			
+			[pscustomobject]@{
+				ComputerName = $env:COMPUTERNAME
+				InstanceName = $args[2]
+				SqlInstance = $args[1]
+				ForceEncryption = ($forceencryption -eq $true)
+				CertificateThumbprint = $cert
+			}
+			
+			if ($oldvalue -ne $forceencryption) {
+				Write-Warning "Force encryption was successfully set on $env:COMPUTERNAME for the $($args[2]) instance. You must now restart the SQL Server for changes to take effect."
+			}
 		}
 		
-		if ($PScmdlet.ShouldProcess("local", "Connecting to $ComputerName to import new cert")) {
+		if ($PScmdlet.ShouldProcess("local", "Connecting to $sqlinstance to modify the ForceEncryption value in $regroot for $($SqlInstance.InstanceName)")) {
 			try {
-				Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $SqlInstance.InstanceName -ScriptBlock $scriptblock -ErrorAction Stop
+				Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $SqlInstance, $SqlInstance.InstanceName -ScriptBlock $scriptblock -ErrorAction Stop
 				}
 			catch {
 				Stop-Function -Message $_ -ErrorRecord $_ -Target $ComputerName -Continue
