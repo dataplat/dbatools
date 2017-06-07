@@ -69,7 +69,7 @@ Shows what would happen if the command were executed.
 			$instance = Invoke-ManagedComputerCommand -Server $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($SqlInstance.InstanceName))"
 		}
 		catch {
-			Stop-Function -Message $_ -ErrorRecord $_ -Target $instance
+			Stop-Function -Message $_ -Target $instance
 			return
 		}
 		
