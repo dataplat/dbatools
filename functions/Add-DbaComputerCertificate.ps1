@@ -30,6 +30,12 @@ Certificate store - defaults to LocalMachine
 
 .PARAMETER Folder
 Certificate folder - defaults to My (Personal)
+	
+.PARAMETER Certificate
+The target certificate object
+
+.PARAMETER Path
+The path to the target certificate object
 
 .PARAMETER Password
 Password to encrypt/decrypt private key for export to remote machine
