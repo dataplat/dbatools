@@ -298,6 +298,7 @@
 		'Get-DbaComputerCertificate',
 		'Add-DbaComputerCertificate',
 		'Set-DbaNetworkCertificate',
+		'Remove-DbaNetworkCertificate',
 		'Get-DbaAgentSchedule',
 		'Enable-DbaForceNetworkEncryption',
 		'Disable-DbaForceNetworkEncryption'
