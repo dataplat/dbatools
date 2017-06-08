@@ -1,4 +1,4 @@
-﻿Function Show-SqlDatabaseList
+Function Show-SqlDatabaseList
 {
 <#
 .SYNOPSIS

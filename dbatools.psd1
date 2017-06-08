@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.61'
+	ModuleVersion = '0.8.957'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -23,7 +23,7 @@
 	CompanyName = 'dbatools.io'
 	
 	# Copyright statement for this module
-	Copyright = '2016 Chrissy LeMaire'
+	Copyright = '2017 Chrissy LeMaire'
 	
 	# Description of the functionality provided by this module
 	Description = 'Provides extra functionality for SQL Server Database admins and enables SQL Server instance migrations.'
@@ -50,7 +50,7 @@
 	RequiredModules = @()
 	
 	# Assemblies that must be loaded prior to importing this module
-	RequiredAssemblies = @('Microsoft.SqlServer.Smo', 'Microsoft.SqlServer.SmoExtended')
+	RequiredAssemblies = @()
 	
 	# Script files () that are run in the caller's environment prior to importing this module
 	ScriptsToProcess = @()
@@ -59,7 +59,8 @@
 	TypesToProcess = @()
 	
 	# Format files (xml) to be loaded when importing this module
-	FormatsToProcess = @()
+	# "xml\dbatools.Format.ps1xml"
+	FormatsToProcess = @("xml\dbatools.Format.ps1xml")
 	
 	# Modules to import as nested modules of the module specified in ModuleToProcess
 	NestedModules = @()
@@ -94,8 +95,7 @@
 		'Copy-SqlProxyAccount',
 		'Copy-SqlAlert',
 		'Import-SqlSpConfigure',
-		'Export-SqlSpConfigure',
-		'Get-SqlMaxMemory',
+		'Export-SqlSpConfigure'
 		'Get-DbaDetachedDatabaseInfo',
 		'Restore-SqlBackupFromDirectory',
 		'Test-SqlConnection',
@@ -106,7 +106,6 @@
 		'Sync-SqlLoginPermissions',
 		'Export-SqlLogin',
 		'Get-SqlServerKey',
-		'Set-SqlMaxMemory',
 		'Reset-SqlAdmin',
 		'Watch-SqlDbLogin',
 		'Expand-SqlTLogResponsibly',
@@ -118,13 +117,11 @@
 		'Get-DbaDiskSpace',
 		'Remove-SqlDatabaseSafely',
 		'Show-SqlDatabaseList',
-		'Show-SqlWhoIsActive',
 		'Set-SqlTempDbConfiguration',
 		'Test-SqlTempDbConfiguration',
 		'Repair-SqlOrphanUser',
 		'Remove-SqlOrphanUser',
 		'Find-SqlUnusedIndex',
-		'Install-SqlWhoIsActive',
 		'Update-SqlWhoIsActive',
 		'Test-DbaDiskAllocation',
 		'Test-DbaPowerPlan',
@@ -153,7 +150,126 @@
 		'Get-DbaRunningJob',
 		'Set-DbaMaxDop',
 		'Test-DbaFullRecoveryModel',
-		'Test-DbaMaxDop'
+		'Test-DbaMaxDop',
+		'Remove-DbaBackup',
+		'Get-DbaPermission',
+		'Get-DbaLastBackup',
+		'Connect-DbaSqlServer',
+		'Get-DbaStartupParameter',
+		'Get-DbaMemoryUsage',
+		'Get-DbaBackupHistory',
+		'Read-DbaBackupHeader',
+		'Test-DbaLastBackup',
+		'Get-DbaMaxMemory',
+		'Set-DbaMaxMemory',
+		'Test-DbaMaxMemory',
+		'Get-DbaDatabaseSnapshot',
+		'Remove-DbaDatabaseSnapshot',
+		'Get-DbaRoleMember',
+		'Resolve-DbaNetworkName',
+		'Test-DbaValidLogin',
+		'Get-DbaMemoryUsage',
+		'Export-DbaAvailabilityGroup',
+		'Out-DbaDataTable',
+		'Write-DbaDataTable',
+		'New-DbaDatabaseSnapshot',
+		'Restore-DbaFromDatabaseSnapshot',
+		'Get-DbaTrigger',
+		'Invoke-Sqlcmd2',
+		'Export-SqlUser',
+		'Get-DbaDatabaseState',
+		'Set-DbaDatabaseState',
+		'Move-DbaDatabaseFile',
+		'Get-DbaHelpIndex',
+		'Get-DbaAgentAlert',
+		'Get-DbaAgentOperator',
+		'Get-DbaPageFileSetting',
+		'Get-DbaSpConfigure',
+		'Rename-DbaLogin',
+		'Find-DbaAgentJob',
+		'Find-DbaDatabase',
+		'Get-DbaMsdtc',
+		'Get-DbaUptime',
+		'Get-DbaXEventsSession',
+		'Test-DbaOptimizeForAdHoc',
+		'Find-DbaStoredProcedure',
+		'Measure-DbaBackupThroughput',
+		'Find-DbaLoginInGroup',
+		'Get-DbaSpn',
+		'Test-DbaSpn',
+		'Set-DbaSpn',
+		'Remove-DbaSpn',
+		'Get-DbaDatabase',
+		'Find-DbaUserObject',
+		'Get-DbaSqlService',
+		'Get-DbaDependency',
+		'Clear-DbaSqlConnectionPool',
+		'Find-DbaCommand',
+		'Get-DbaConfig',
+		'Get-DbaConfigValue',
+		'Set-DbaConfig',
+		'Get-DbaClientProtocol',
+		'Backup-DbaDatabase',
+		'New-DbaSqlDirectory',
+		'Get-DbaPrivilege',
+		'Install-DbaWatchUpdate',
+		'Watch-DbaUpdate',
+		'Uninstall-DbaWatchUpdate',
+		'Get-DbaQueryStoreConfig',
+		'Set-DbaQueryStoreConfig',
+		'Restore-DbaDatabase',
+		'Copy-DbaQueryStoreConfig',
+		'Get-DbaExecutionPlan',
+		'Export-DbaExecutionPlan',
+		'Get-DbaServerProtocol',
+		'Get-DbaLocaleSetting',
+		'Get-DbaSqlBuildReference',
+		'Set-DbaSpConfigure',
+		'Test-DbaIdentityUsage',
+		'Get-DbaDatabaseAssembly',
+		'Get-DbaAgentJob',
+		'Get-DbaCustomError',
+		'Get-DbaCredential',
+		'Get-DbaBackupDevice',
+		'Get-DbaServerAuditSpecification',
+		'Get-DbaJobCategory',
+		'Get-DbaDatabaseEncryption',
+		'New-DbaSsisCatalog',
+		'Remove-DbaDatabase',
+		'Get-DbaQueryExecutionTime',
+		'Get-DbaTempdbUsage',
+		'Find-DbaDatabaseGrowthEvent',
+		'Get-DbaNetworkActivity',
+		'Get-DbaWhoisActive',
+		'Get-DbaAgentJobOutputFile',
+		'Set-DbaAgentJobOutputFile',
+		'Test-DbaLinkedServerConnection',
+		'Get-DbaDatabaseFile',
+		'Read-DbaTransactionLog',
+		'Get-DbaTable',
+		'Invoke-DbaDatabaseShrink',
+		'Get-DbaEstimatedCompletionTime',
+		'Export-DbaScript',
+		'New-DbaScriptingOption',
+		'Get-DbaLinkedServer',
+		'Set-DbaStartupParameter',
+		'New-DbaAgentJob',
+		'Export-DbaScript',
+		'Get-DbaLogin',
+		'New-DbaScriptingOption',
+		'Save-DbaDiagnosticQueryScript',
+		'Invoke-DbaDiagnosticQuery',
+		'Export-DbaDiagnosticQuery',
+		'Invoke-DbaWhoisActive',
+		'Install-DbaWhoIsActive',
+		'Set-DbaAgentJob',
+		'Remove-DbaAgentJob',
+		'New-DbaAgentJobStep',
+		'Set-DbaAgentJobStep',
+		'Remove-DbaAgentJobStep',
+		'New-DbaAgentSchedule',
+		'Set-DbaAgentSchedule',
+		'Remove-DbaAgentSchedule'
 	)
 	
 	# Cmdlets to export from this module
@@ -169,9 +285,13 @@
 	'Copy-SqlJobServer',
 	'Restore-HallengrenBackup',
 	'Update-SqlWhoIsActive',
+	'Install-SqlWhoIsActive',
 	'Show-SqlMigrationConstraint',
 	'Test-SqlDiskAllocation',
-	'Get-DiskSpace'
+	'Get-DiskSpace',
+	'Get-SqlMaxMemory',
+	'Set-SqlMaxMemory',
+	'Show-SqlWhoIsActive'
 	
 	# List of all modules packaged with this module
 	ModuleList = @()
@@ -201,7 +321,7 @@
 			LicenseUri = "http://www.gnu.org/licenses/gpl-3.0.en.html"
 			
 			# Release notes for this particular version of the module
-			# ReleaseNotes = False
+			ReleaseNotes = "https://dbatools.io/releases"
 			
 			# If true, the LicenseUrl points to an end-user license (not just a source license) which requires the user agreement before use.
 			# RequireLicenseAcceptance = ""

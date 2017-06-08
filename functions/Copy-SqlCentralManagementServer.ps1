@@ -36,7 +36,17 @@ $dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential 
 Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
 To connect as a different Windows user, run PowerShell as that user.
 
-.NOTES 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
+.PARAMETER Force
+Drops and recreates the CMS if it exists
+
+.NOTES
+Tags: Migration
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
@@ -100,7 +110,7 @@ In the above example, top level Group1 and Group3, along with its subgroups and 
 						continue
 					}
 					
-					If ($Pscmdlet.ShouldProcess($destination, "Dropping group $groupname and recreating"))
+					If ($Pscmdlet.ShouldProcess($destination, "Dropping group $groupname"))
 					{
 						try
 						{
@@ -115,9 +125,11 @@ In the above example, top level Group1 and Group3, along with its subgroups and 
 					}
 				}
 				
-				Write-Output "Creating group $($sourceGroup.name)"
-				$destinationgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($currentservergroup, $sourcegroup.name)
-				$destinationgroup.Create()
+				If ($Pscmdlet.ShouldProcess($destination, "Creating group $groupname")) {
+					Write-Output "Creating group $($sourceGroup.name)"
+					$destinationgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($currentservergroup, $sourcegroup.name)
+					$destinationgroup.Create()
+				}
 			}
 			
 			# Add Servers
@@ -225,11 +237,11 @@ In the above example, top level Group1 and Group3, along with its subgroups and 
 					}
 				}
 				
-				
-				Write-Output "Creating group $($fromsubgroup.name)"
-				$tosubgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($destinationgroup, $fromsubgroup.name)
-				$tosubgroup.create()
-				
+				If ($Pscmdlet.ShouldProcess($destination, "Creating group $($fromsubgroup.name)")) {
+					Write-Output "Creating group $($fromsubgroup.name)"
+					$tosubgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($destinationgroup, $fromsubgroup.name)
+					$tosubgroup.create()
+				}
 				
 				Parse-ServerGroup -sourceGroup $fromsubgroup -destinationgroup $tosubgroup -SwitchServerName $SwitchServerName
 			}

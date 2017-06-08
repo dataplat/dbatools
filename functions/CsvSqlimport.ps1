@@ -33,6 +33,14 @@ Connect to SQL Server using specified SQL Login credentials.
 .PARAMETER Database
 Required. The name of the database where the CSV will be imported into. This parameter is autopopulated using the -SqlServer and -SqlCredential (optional) parameters. 
 
+.PARAMETER Schema
+The schema in which the SQL table or view where CSV will be imported into resides.
+Default is dbo
+
+If a schema name is not specificed, and a CSV with multiple . (ie; something.data.csv) then this will be interpreted as a request to import into a table [data] in the schema [something]
+
+If a schema does not currently exist, it will be created, after a prompt to confirm this. Authorization will be set to dbo by default
+
 .PARAMETER Table
 SQL table or view where CSV will be imported into. 
 
@@ -71,6 +79,12 @@ Optional. Cannot be used in conjunction with -Turbo or -First. When Query is spe
 
 If you want to import just the results of a specific query from your CSV file, use this parameter. To make command line queries easy, this module will convert the word "csv" to the actual CSV formatted table name. If the FirstRowColumns switch is not used, the query should use column1, column2, column3, etc.
 
+.PARAMETER NotifyAfter
+Sets the option to show the notification after so many rows of import
+
+.PARAMETER BatchSize
+The batchsize for the import defaults to 5000
+
 Example: select column1, column2, column3 from csv where column2 > 5
 Example: select distinct artist from csv
 Example: select top 100 artist, album from csv where category = 'Folk'
@@ -93,7 +107,8 @@ SqlBulkCopy option. Per Microsoft "Preserve source identity values. When not spe
 .PARAMETER KeepNulls
 SqlBulkCopy option. Per Microsoft "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
 
-.NOTES 
+.NOTES
+Tags: Migration
 Author: Chrissy LeMaire (@cl), netnerds.net
 
 .LINK 
@@ -140,6 +155,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		[string]$SqlServer,
 		[object]$SqlCredential,
 		[string]$Table,
+        [string]$Schema = "dbo",
 		[switch]$Truncate,
 		[string]$Delimiter = ",",
 		[switch]$FirstRowColumns,
@@ -624,7 +640,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 				$sqldatatypes += "$sqlcolumnname $sqldatatype"
 			}
 			
-			$sql = "BEGIN CREATE TABLE [$table] ($($sqldatatypes -join ' NULL,')) END"
+			$sql = "BEGIN CREATE TABLE [$schema].[$table] ($($sqldatatypes -join ' NULL,')) END"
 			$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 			try { $null = $sqlcmd.ExecuteNonQuery() }
 			catch
@@ -633,7 +649,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 				throw "Failed to execute $sql. `nDid you specify the proper delimiter? `n$errormessage"
 			}
 			
-			Write-Output "[*] Successfully created table $table with the following column definitions:`n $($sqldatatypes -join "`n ")"
+			Write-Output "[*] Successfully created table $schema.$table with the following column definitions:`n $($sqldatatypes -join "`n ")"
 			# Write-Warning "All columns are created using a best guess, and use their maximum datatype."
 			Write-Warning "This is inefficient but allows the script to import without issues."
 			Write-Warning "Consider creating the table first using best practices if the data will be used in production."
@@ -755,7 +771,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			
 			$sql = "SELECT t.name as datatype FROM sys.columns c
 				JOIN sys.types t ON t.system_type_id = c.system_type_id 
-				WHERE c.object_id = object_id('$table') and t.name != 'sysname'"
+				WHERE c.object_id = object_id('$schema.$table') and t.name != 'sysname'"
 			$sqlcheckcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlcheckconn)
 			$sqlcolumns = New-Object System.Data.DataTable
 			$sqlcolumns.load($sqlcheckcmd.ExecuteReader("CloseConnection"))
@@ -858,18 +874,47 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		if ($table.length -eq 0)
 		{
 			$table = [IO.Path]::GetFileNameWithoutExtension($csv[0])
-			$title = "Table name not specified."
-			$message = "Would you like to use the automatically generated name: $table"
-			$yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Uses table name $table for import."
-			$no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Allows you to specify an alternative table name."
-			$options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
-			$result = $host.ui.PromptForChoice($title, $message, $options, 0)
-			if ($result -eq 1)
-			{
-				do { $table = Read-Host "Please enter a table name" }
-				while ($table.Length -eq 0)
-			}
-		}
+            
+            #Count the dots in the file name.
+            #1 dot, treat it as schema.table naming
+            #2 or more dots, really should catch it as bad practice, but the rest of the script appears to let it pass
+            if (($table.ToCharArray() | ?{$_ -eq '.'} | Measure-Object).count -gt 0)
+            {
+                if (($schema -ne $table.Split('.')[0]) -and ($schema -ne 'dbo'))
+                {
+                    $title = "Conflicting schema names specified"
+                    $message = "Please confirm which schema you want to use."
+                    $schemaA = New-Object System.Management.Automation.Host.ChoiceDescription "&A - $schema", "Use schema name $schema for import."
+		            $schemaB = New-Object System.Management.Automation.Host.ChoiceDescription "&B - $($table.Split('.')[0])", "Use schema name $($table.Split('.')[0]) for import."
+		            $options = [System.Management.Automation.Host.ChoiceDescription[]]($schemaA, $schemaB)
+			        $result = $host.ui.PromptForChoice($title, $message, $options, 0)
+                    if ($result -eq 1)
+                    {
+                        $schema = $table.Split('.')[0]
+                        $tmparray = $table.split('.')
+                        $table = $tmparray[1..$tmparray.Length] -join '.'
+                    }
+                }
+
+            } 
+            else 
+            {
+                $title = "Table name not specified."
+		        $message = "Would you like to use the automatically generated name: $table"
+		        $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Uses table name $table for import."
+		        $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Allows you to specify an alternative table name."
+		        $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+			    $result = $host.ui.PromptForChoice($title, $message, $options, 0)
+			    if ($result -eq 1)
+		        {
+			        do { $table = Read-Host "Please enter a table name" }
+			            while ($table.Length -eq 0)
+			        }
+                
+            }
+            }
+
+
 		
 		# If the shell has switched, decode the $query string.
 		if ($shellswitch -eq $true)
@@ -937,9 +982,27 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		Write-Output "[*] Database exists"
 		
 		$sqlconn.ChangeDatabase($database)
+
+        # Enure Schema exists
+        $sql = "select count(*) from $database.sys.schemas where name='$schema'"
+        $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
+		$schemaexists = $sqlcmd.ExecuteScalar()
+        
+        # If Schema doesn't exist create it
+        # Defaulting to dbo.
+        if ($schemaexists -eq $false)
+        {
+            Write-Output "[*] Creating schema $schema"
+			$sql = "CREATE SCHEMA [$schema] AUTHORIZATION dbo"
+			$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
+			try { $null = $sqlcmd.ExecuteNonQuery() }
+			catch { Write-Warning "Could not create $schema" }
+
+        }
+
 		
 		# Ensure table exists
-		$sql = "select count(*) from $database.sys.tables where name = '$table'"
+		$sql = "select count(*) from $database.sys.tables where name = '$table' and schema_id=schema_id('$schema')"
 		$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 		$tablexists = $sqlcmd.ExecuteScalar()
 		
@@ -958,18 +1021,18 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		if ($truncate -eq $true)
 		{
 			Write-Output "[*] Truncating table"
-			$sql = "TRUNCATE TABLE [$table]"
+			$sql = "TRUNCATE TABLE [$schema].[$table]"
 			$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 			try { $null = $sqlcmd.ExecuteNonQuery() }
-			catch { Write-Warning "Could not truncate $table" }
+			catch { Write-Warning "Could not truncate $schema.$table" }
 		}
 		
 		# Get columns for column mapping
 		if ($columnMappings -eq $null)
 		{
 			$olecolumns = ($columns | ForEach-Object { $_ -Replace "\[|\]" })
-			$sql = "select name from sys.columns where object_id = object_id('$table') order by column_id"
-			$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
+			$sql = "select name from sys.columns where object_id = object_id('$schema.$table') order by column_id"
+            $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 			$sqlcolumns = New-Object System.Data.DataTable
 			$sqlcolumns.Load($sqlcmd.ExecuteReader())
 		}
@@ -992,6 +1055,8 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			Write-Output "[*] Starting bulk copy for $(Split-Path $file -Leaf)"
 			
 			# Setup bulk copy options
+
+
 			$bulkCopyOptions = @()
 			$options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default", "Truncate"
 			foreach ($option in $options)
@@ -1005,7 +1070,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			if ($bulkCopyOptions.count -gt 1) { $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($oleconnstring, $bulkCopyOptions, $transaction) }
 			else { $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($sqlconn, "Default", $transaction) }
 			
-			$bulkcopy.DestinationTableName = "[$table]"
+			$bulkcopy.DestinationTableName = "[$schema].[$table]"
 			$bulkcopy.bulkcopyTimeout = 0
 			$bulkCopy.BatchSize = $BatchSize
 			$bulkCopy.NotifyAfter = $NotifyAfter
@@ -1102,7 +1167,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 					# Get table column info from SQL Server
 					$sql = "SELECT c.name as colname, t.name as datatype, c.max_length, c.is_nullable FROM sys.columns c
 						JOIN sys.types t ON t.system_type_id = c.system_type_id 
-						WHERE c.object_id = object_id('$table') and t.name != 'sysname'	
+						WHERE c.object_id = object_id('$schema.$table') and t.name != 'sysname'	
 						order by c.column_id"
 					$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 					$sqlcolumns = New-Object System.Data.DataTable

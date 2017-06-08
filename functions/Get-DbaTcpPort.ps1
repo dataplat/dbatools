@@ -1,4 +1,4 @@
-﻿Function Get-DbaTcpPort
+Function Get-DbaTcpPort
 {
 <#
 .SYNOPSIS
@@ -23,7 +23,8 @@ Remote sqlwmi is used by default. If this doesn't work, then remoting is used. I
 .PARAMETER NoIpv6
 Excludes IPv6 information when -Detailed is specified.
 
-.NOTES 
+.NOTES
+Tags: SQLWMI
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -71,108 +72,82 @@ Returns an object with server name, IPAddress (just ipv4), port and static ($tru
 		[switch]$NoIpv6
 	)
 	
-	BEGIN
-	{
-		$collection = New-Object System.Collections.ArrayList
-	}
-	
 	PROCESS
 	{
-		$servercount = ++$i
 		foreach ($servername in $SqlServer)
 		{
-			try
-			{
-				$server = Connect-SqlServer -SqlServer "TCP:$servername" -SqlCredential $Credential
-			}
-			catch
-			{
-				if ($servercount -eq 1)
-				{
-					throw $_
-				}
-				else
-				{
-					Write-Warning "Can't connect to $servername. Moving on."
-					Continue
-				}
-			}
-			
-			if ($server.VersionMajor -lt 9)
-			{
-				if ($servercount -eq 1)
-				{
-					throw "SQL Server 2000 not supported."
-				}
-				else
-				{
-					Write-Warning "SQL Server 2000 not supported. Skipping $servername."
-					Continue
-				}
-			}
-			
 			if ($detailed -eq $true)
 			{
-				
-				$instancename = $server.instanceName
-				
-				if ($instancename.length -eq 0)
-				{
-					$instancename = 'MSSQLSERVER'
-				}
-				
 				try
 				{
 					$scriptblock = {
 						$servername = $args[0]
-						$instancename = $args[1]
-						$allips = @()
-						Add-Type -Assembly Microsoft.VisualBasic
-						$wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $servername
-						$instance = $wmi.ServerInstances | Where-Object { $_.Name -eq $instancename }
-						$tcp = $instance.ServerProtocols | Where-Object { $_.DisplayName -eq "TCP/IP" }
-						$ips = $tcp.IPAddresses
 						
-						Write-Verbose "Parsing information for $($ips.count) IP addresses"
-						foreach ($ip in $ips)
+						Add-Type -AssemblyName Microsoft.VisualBasic
+						$wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $servername
+						
+						foreach ($instance in $wmi.ServerInstances)
 						{
-							$props = $ip.IPAddressProperties | Where-Object { $_.Name -eq "TcpPort" -or $_.Name -eq "TcpDynamicPorts" }
+							$allips = @()
+							$instancename = $instance.name
 							
-							foreach ($prop in $props)
+							$tcp = $instance.ServerProtocols | Where-Object { $_.DisplayName -eq "TCP/IP" }
+							$ips = $tcp.IPAddresses
+							
+							Write-Verbose "Parsing information for $($ips.count) IP addresses"
+							foreach ($ip in $ips)
 							{
-								if ([Microsoft.VisualBasic.Information]::IsNumeric($prop.value))
+								$props = $ip.IPAddressProperties | Where-Object { $_.Name -eq "TcpPort" -or $_.Name -eq "TcpDynamicPorts" }
+								
+								foreach ($prop in $props)
 								{
-									$port = $prop.value
-									if ($prop.name -eq 'TcpPort')
+									if ([Microsoft.VisualBasic.Information]::IsNumeric($prop.value))
 									{
-										$static = $true
+										$port = $prop.value
+										if ($prop.name -eq 'TcpPort')
+										{
+											$static = $true
+										}
+										else
+										{
+											$static = $false
+										}
+										break
 									}
-									else
-									{
-										$static = $false
-									}
-									break
+								}
+								
+								[PsCustomObject]@{
+									ComputerName = $servername
+									InstanceName = $instancename
+									IPAddress = $ip.Ipaddress.IPAddressToString
+									Port = $port
+									Static = $static
 								}
 							}
-							
-							$allips += [PsCustomObject]@{
-								Server = $servername
-								IPAddress = $ip.Ipaddress.IPAddressToString
-								Port = $port
-								Static = $static
-							}
 						}
-						return $allips
 					}
 					
-					$allips = Invoke-ManagedComputerCommand -ComputerName $server.ComputerNamePhysicalNetBIOS -ArgumentList $servername, $instancename -ScriptBlock $scriptblock
+					$resolved = Resolve-DbaNetworkName -ComputerName $servername -Verbose:$false
+					$fqdn = $resolved.FQDN
+					$computername = $resolved.ComputerName
+					try
+					{
+						Write-Verbose "Trying with ComputerName ($computername)"
+						$someips = Invoke-ManagedComputerCommand -ComputerName $computername -ArgumentList $computername -ScriptBlock $scriptblock
+					}
+					catch
+					{
+						Write-Verbose "Trying with FQDN because ComputerName failed"
+						$someips = Invoke-ManagedComputerCommand -ComputerName $fqdn -ArgumentList $fqdn -ScriptBlock $scriptblock
+					}
 				}
 				catch
 				{
 					Write-Warning "Could not get detailed information for $servername"
+					Write-Warning $_.Exception.Message
 				}
 				
-				$cleanedup = $allips | Sort-Object IPAddress | Select-Object Server, IPAddress, Port, Static
+				$cleanedup = $someips | Sort-Object IPAddress
 				
 				if ($NoIpv6)
 				{
@@ -181,40 +156,43 @@ Returns an object with server name, IPAddress (just ipv4), port and static ($tru
 					$cleanedup = $cleanedup | Where-Object { $_.IPAddress -match $ipv4 }
 				}
 				
-				if ($cleanedup.count -gt 0)
-				{
-					$null = $collection.Add($cleanedup)
-				}
+				$cleanedup
 			}
 			
-			if ($Detailed -eq $false -or ($Detailed -eq $true -and $allips -eq $null))
+			if ($Detailed -eq $false -or ($Detailed -eq $true -and $someips -eq $null))
 			{
+				try
+				{
+					$server = Connect-SqlServer -SqlServer "TCP:$servername" -SqlCredential $Credential
+				}
+				catch
+				{
+					Write-Warning "Can't connect to $servername. Moving on."
+					Continue
+				}
+				
+				if ($server.VersionMajor -lt 9)
+				{
+					if ($servercount -eq 1)
+					{
+						throw "SQL Server 2000 not supported."
+					}
+					else
+					{
+						Write-Warning "SQL Server 2000 not supported. Skipping $servername."
+						Continue
+					}
+				}
+				
 				# WmiComputer can be unreliable :( Use T-SQL
 				$sql = "SELECT local_tcp_port FROM sys.dm_exec_connections WHERE session_id = @@SPID"
 				$port = $server.ConnectionContext.ExecuteScalar($sql)
 				
-				$null = $collection.Add([PSCustomObject]@{
-						Server = $servername
-						Port = $port
-					})
+				[PSCustomObject]@{
+					Server = $servername
+					Port = $port
+				}
 			}
-		}
-	}
-	
-	END
-	{
-		if ($Detailed -eq $true)
-		{
-			return $collection
-		}
-		
-		if ($collection.count -eq 1)
-		{
-			return $collection.Port
-		}
-		else
-		{
-			return $collection
 		}
 	}
 }

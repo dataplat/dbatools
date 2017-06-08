@@ -1,4 +1,4 @@
-﻿Function Get-DbaProcess
+Function Get-DbaProcess
 {
 <#
 .SYNOPSIS
@@ -33,6 +33,11 @@ This parameter is auto-populated from -SqlServer. You can specify one or more Sp
 
 Exclude is the last filter to run, so even if a Spid matches, for example, Hosts, if it's listed in Exclude it wil be excluded.
 	
+.PARAMETER Detailed
+Provides Detailed information
+
+.PARAMETER NoSystemSpids
+Ignores the System Spids
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
@@ -97,20 +102,22 @@ Shows information about the processes that were initiated by hosts (computers/cl
 		$allsessions = @()
 		
 		$processes = $sourceserver.EnumProcesses()
+		$servercolumn = $processes.Columns.Add("SqlServer", [object])
+		$servercolumn.SetOrdinal(0)
 		
-		if ($nosystemspids -eq $true)
+		foreach ($row in $processes)
 		{
-			$allsessions += $processes | Where-Object { $_.Spid -gt 50 }
+			$row["SqlServer"] = $sourceserver
 		}
 		
 		if ($logins.count -gt 0)
 		{
-			$allsessions += $processes | Where-Object { $_.Login -in $Logins -and $_.Spid -notin $allsessions.Spid  }
+			$allsessions += $processes | Where-Object { $_.Login -in $Logins -and $_.Spid -notin $allsessions.Spid }
 		}
 		
 		if ($spids.count -gt 0)
 		{
-			$allsessions += $processes | Where-Object { ($_.Spid -in $spids -or $_.BlockingSpid -in $spids) -and $_.Spid -notin $allsessions.Spid  }
+			$allsessions += $processes | Where-Object { ($_.Spid -in $spids -or $_.BlockingSpid -in $spids) -and $_.Spid -notin $allsessions.Spid }
 		}
 		
 		if ($hosts.count -gt 0)
@@ -125,49 +132,56 @@ Shows information about the processes that were initiated by hosts (computers/cl
 		
 		if ($databases.count -gt 0)
 		{
-			$allsessions += $processes | Where-Object { $_.Database -in $databases -and $_.Spid -notin $allsessions.Spid  }
+			$allsessions += $processes | Where-Object { $databases -contains $_.Database -and $_.Spid -notin $allsessions.Spid }
 		}
 		
-		if ($allsessions.urn.count -eq 0)
+		# feel like I'm doing this wrong but it's 2am ;)
+		if ($logins -eq $null -and $spids -eq $null -and $spids -eq $exclude -and $hosts -eq $null -and $programs -eq $null -and $programs -eq $databases)
 		{
 			$allsessions = $processes
 		}
 		
+		if ($nosystemspids -eq $true)
+		{
+			$allsessions = $allsessions | Where-Object { $_.Spid -gt 50 }
+		}
+		
 		if ($exclude.count -gt 0)
 		{
-			$allsessions = $allsessions | Where-Object { $exclude -notcontains $_.SPID -and $_.Spid -notin $allsessions.Spid  }
+			$allsessions = $allsessions | Where-Object { $exclude -notcontains $_.SPID -and $_.Spid -notin $allsessions.Spid }
 		}
-	}
-	
-	END
-	{
-		$sourceserver.ConnectionContext.Disconnect()
 		
 		if ($Detailed)
 		{
-			return $allsessions | Select-Object Spid, Login, Host, Database, BlockingSpid, Program, @{
-				name = "Status"; expression = {
-					if ($_.Status -eq "") { "sleeping" }
-					else { $_.Status }
-				}
-			}, @{
-				name = "Command"; expression = {
-					if ($_.Command -eq "") { "AWAITING COMMAND" }
-					else { $_.Command }
-				}
-			}, Cpu, MemUsage, IsSystem
+			$object = ($allsessions | Select-Object SqlServer, Spid, Login, Host, Database, BlockingSpid, Program, @{
+					name = "Status"; expression = {
+						if ($_.Status -eq "") { "sleeping" }
+						else { $_.Status }
+					}
+				}, @{
+					name = "Command"; expression = {
+						if ($_.Command -eq "") { "AWAITING COMMAND" }
+						else { $_.Command }
+					}
+				}, Cpu, MemUsage, IsSystem)
+			
+			Select-DefaultView -InputObject $object -Property Spid, Login, Host, Database, BlockingSpid, Program, Status, Command, Cpu, MemUsage, IsSystem
 		}
-		
-		return ($allsessions | Select-Object Spid, Login, Host, Database, BlockingSpid, Program, @{
-				name = "Status"; expression = {
-					if ($_.Status -eq "") { "sleeping" }
-					else { $_.Status }
-				}
-			}, @{
-				name = "Command"; expression = {
-					if ($_.Command -eq "") { "AWAITING COMMAND" }
-					else { $_.Command }
-				}
-			})
+		else
+		{
+			$object = ($allsessions | Select-Object SqlServer, Spid, Login, Host, Database, BlockingSpid, Program, @{
+					name = "Status"; expression = {
+						if ($_.Status -eq "") { "sleeping" }
+						else { $_.Status }
+					}
+				}, @{
+					name = "Command"; expression = {
+						if ($_.Command -eq "") { "AWAITING COMMAND" }
+						else { $_.Command }
+					}
+				})
+			
+			Select-DefaultView -InputObject $object -Property Spid, Login, Host, Database, BlockingSpid, Program, Status, Command
+		}
 	}
 }

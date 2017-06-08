@@ -1,4 +1,4 @@
-﻿Function Get-DbaClusterActiveNode
+Function Get-DbaClusterActiveNode
 {
 <#
 .SYNOPSIS
@@ -20,6 +20,12 @@ NodeName
 Status
 StatusDescription
 CurrentOwner
+
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
 	
 .NOTES
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)

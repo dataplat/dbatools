@@ -1,4 +1,4 @@
-﻿Function Copy-SqlLinkedServer
+Function Copy-SqlLinkedServer
 {
 <# 
 .SYNOPSIS 
@@ -41,7 +41,14 @@ $dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential 
 Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
 To connect as a different Windows user, run PowerShell as that user.
 
-.NOTES 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
+.NOTES
+Tags: WSMan, Migration
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers, Remote Registry & Remote Adminsitration enabled and accessible on source server.
 Limitations: Hasn't been tested thoroughly. Works on Win8.1 and SQL Server 2012 & 2014 so far.
@@ -70,7 +77,7 @@ Copy-SqlLinkedServer -Source sqlserver2014a -Destination sqlcluster -LinkedServe
 
 Description
 Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped.
-#>		
+#>	
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true)]
@@ -89,23 +96,20 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 	{
 		Function Get-LinkedServerLogins
 		{
-<# 
+			<# 
+			.SYNOPSIS
+			Internal function. 
+				 
+			This function is heavily based on Antti Rantasaari's script at http://goo.gl/wpqSib
+			Antti Rantasaari 2014, NetSPI
+			License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
 
-.SYNOPSIS
-Internal function. 
-	 
-This function is heavily based on Antti Rantasaari's script at http://goo.gl/wpqSib
-Antti Rantasaari 2014, NetSPI
-License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
-
-#>
-			
+			#>	
 			param (
-				[object]$SqlServer,
-				[System.Management.Automation.PSCredential]$SqlCredential
+				[object]$SqlServer
 			)
 			
-			$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+			$server = $SqlServer
 			$sourcename = $server.name
 			
 			# Query Service Master Key from the database - remove padding from the key
@@ -200,9 +204,9 @@ License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
 					return $dt
 				}
 			}
-			catch 
+			catch
 			{
-				Write-Warning "Can't establish local DAC connection to $sourcename from $sourcename or other error. Quitting." 
+				Write-Warning "Can't establish local DAC connection to $sourcename from $sourcename or other error. Quitting."
 			}
 			
 			if ($server.IsClustered -and $dacenabled -eq $false)
@@ -249,27 +253,10 @@ License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
 		
 		Function Copy-SqlLinkedServers
 		{
-<#
-
-.SYNOPSIS
-Internal function.
-
-#>
-			
 			param (
-				[object]$source,
-				[object]$destination,
 				[string[]]$LinkedServers,
-				[bool]$force,
-				[System.Management.Automation.PSCredential]$SourceSqlCredential,
-				[System.Management.Automation.PSCredential]$DestinationSqlCredential
+				[bool]$force
 			)
-			
-			$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-			$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
-			
-			$source = $sourceserver.name
-			$destination = $destserver.name
 			
 			Write-Output "Collecting Linked Server logins and passwords on $($sourceserver.name)"
 			$sourcelogins = Get-LinkedServerLogins $sourceserver
@@ -294,10 +281,14 @@ Internal function.
 				
 				$linkedservername = $linkedserver.name
 				
-				if (!$destserver.Settings.OleDbProviderSettings.Name.Contains($provider) -and !$provider.StartsWith("SQLN"))
+				# This does a check to warn of missing OleDbProviderSettings but should only be checked on SQL on Windows
+				if ($destserver.Settings.OleDbProviderSettings.Name.Length -ne 0)
 				{
-					Write-Warning "$($destserver.name) does not support the $provider provider. Skipping $linkedservername."
-					continue
+					if (!$destserver.Settings.OleDbProviderSettings.Name.Contains($provider) -and !$provider.StartsWith("SQLN"))
+					{
+						Write-Warning "$($destserver.name) does not support the $provider provider. Skipping $linkedservername."
+						continue
+					}
 				}
 				
 				if ($destserver.LinkedServers[$linkedservername] -ne $null)
@@ -379,9 +370,9 @@ Internal function.
 		
 		$LinkedServers = $psboundparameters.LinkedServers
 		
-		if ($SourceSqlCredential.username -ne $null -or $DestinationSqlCredential -ne $null)
+		if ($SourceSqlCredential.username -ne $null)
 		{
-			Write-Warning "You are using SQL credentials and this script requires Windows admin access to the server. Trying anyway."
+			Write-Warning "You are using SQL credentials and this script requires Windows admin access to the source server. Trying anyway."
 		}
 		
 		$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
@@ -396,19 +387,23 @@ Internal function.
 		if (!(Test-SqlSa -SqlServer $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
 		if (!(Test-SqlSa -SqlServer $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
 		
-		Write-Output "Getting NetBios name"
+		Write-Output "Getting NetBios name for $source"
 		$sourcenetbios = Resolve-NetBiosName $sourceserver
 		
-		Write-Output "Checking if remote access is enabled"
+		Write-Output "Checking if remote access is enabled on $source"
 		winrm id -r:$sourcenetbios 2>$null | Out-Null
-		if ($LastExitCode -ne 0) { throw "Remote PowerShell access not enabled on $source or access denied. Windows admin acccess required. Quitting." }
 		
-		Write-Output "Checking if Remote Registry is enabled"
+		if ($LastExitCode -ne 0)
+		{
+			Write-Warning "Having trouble with accessing PowerShell remotely on $source. Do you have Windows admin access and is PowerShell Remoting enabled? Anyway, good luck! This may work."
+		}
+		
+		Write-Output "Checking if Remote Registry is enabled on $source"
 		try { Invoke-Command -ComputerName $sourcenetbios { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } }
 		catch { throw "Can't connect to registry on $source. Quitting." }
 		
 		# Magic happens here
-		Copy-SqlLinkedServers $sourceserver $destserver $linkedservers -force:$force
+		Copy-SqlLinkedServers $linkedservers -force:$force
 		
 	}
 	

@@ -113,7 +113,7 @@ In the above example, a list of servers is generated using database instance nam
 
 #>
 		
-		if ($sqlcredential.Username -ne $null)
+		if ($sqlcredential.UserName)
 		{
 			$username = $sqlcredential.Username
 			$password = $SqlCredential.GetNetworkCredential().Password
@@ -149,7 +149,7 @@ In the above example, a list of servers is generated using database instance nam
 			try { $cmstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sqlconnection) }
 			catch { throw "Cannot access Central Management Server" }
 			
-			if ($SqlCmsGroups -ne $null)
+			if ($SqlCmsGroups)
 			{
 				foreach ($groupname in $SqlCmsGroups)
 				{
@@ -186,7 +186,7 @@ In the above example, a list of servers is generated using database instance nam
 			
 			
 			$procs = $server.EnumProcesses() | Where-Object { $_.Host -ne $sourceserver.ComputerNamePhysicalNetBIOS -and ![string]::IsNullOrEmpty($_.Host) }
-			$procs = $procs | Where-Object { $systemdbs -notcontains $_.Database -and $excludedPrograms -notcontains $_.Program } | Select Login, Host, Database, Program
+			$procs = $procs | Where-Object { $systemdbs -notcontains $_.Database -and $excludedPrograms -notcontains $_.Program } | Select-Object Login, Host, Database, Program
 			
 			foreach ($p in $procs)
 			{

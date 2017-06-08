@@ -2,13 +2,46 @@ Function Copy-SqlSysDbUserObjects
 {
 <#
 .SYNOPSIS
+Imports *all* user objects found in source SQL Server's master, msdb and model databases to the destination.
+
+.DESCRIPTION
 Imports *all* user objects found in source SQL Server's master, msdb and model databases to the destination. This is useful because many DBA's store backup/maintenance procs/tables/triggers/etc (among other things) in master or msdb.
 
 It is also useful for migrating objects within the model database.
 
+.PARAMETER Source
+Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+
+.PARAMETER Destination
+Destination SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+
+.PARAMETER SourceSqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+$scred = Get-Credential, this pass $scred object to the param. 
+
+Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+
+.PARAMETER DestinationSqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+$dcred = Get-Credential, this pass this $dcred to the param. 
+
+Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
 .EXAMPLE
 Copy-SqlSysDbUserObjects $sourceserver $destserver
+	
+Copies user objects from source to destination 
 
+.NOTES
+Tags: Migration
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 

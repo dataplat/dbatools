@@ -1,5 +1,10 @@
-dbatools-startmigration-transcript.txt
+﻿dbatools-startmigration-transcript.txt
 dbatools-exceptions.txt
 *TempPoint*
 *.sln
 *.pssproj
+
+# ignore the settings folder and files for VSCode
+.vscode/*
+*.psproj
+dbatools.psprojs

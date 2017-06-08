@@ -1,4 +1,4 @@
-﻿Function Test-DbaMaxDop
+Function Test-DbaMaxDop
 {
 <# 
 .SYNOPSIS 
@@ -30,8 +30,11 @@ $cred = Get-Credential, this pass this $cred to the param.
 
 Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
+.PARAMETER Detailed
+Provides Detailed information
+
 .NOTES 
-Author  : Cláudio Silva (@claudioessilva)
+Author  : Claudio Silva (@claudioessilva)
 Requires: sysadmin access on SQL Servers
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)

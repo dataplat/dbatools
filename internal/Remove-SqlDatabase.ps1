@@ -15,28 +15,34 @@ an SMO server object.
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
+	$escapedname = "[$dbname]"
+	
 	try
 	{
 		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 		$server.KillDatabase($dbname)
-		$server.refresh()
-		Write-Output "Successfully dropped $dbname on $($server.name)"
+		$server.Refresh()
+		return "Successfully dropped $dbname on $($server.name)"
 	}
 	catch
 	{
 		try
 		{
-			$server.databases[$dbname].Drop()
-			Write-Output "Successfully dropped $dbname on $($server.name)"
+			$null = $server.ConnectionContext.ExecuteNonQuery("DROP DATABASE $escapedname")
+			return "Successfully dropped $dbname on $($server.name)"
 		}
 		catch
 		{
 			try
 			{
-				$null = $server.ConnectionContext.ExecuteNonQuery("DROP DATABASE $dbname")
-				Write-Output "Successfully dropped $dbname on $($server.name)"
+				$server.databases[$dbname].Drop()
+				$server.Refresh()
+				return "Successfully dropped $dbname on $($server.name)"
 			}
-			catch { return $false }
+			catch
+			{
+				return $_
+			}
 		}
 	}
 }

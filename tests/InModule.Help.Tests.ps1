@@ -1,4 +1,4 @@
-﻿<#	
+<#	
 	.NOTES
 		===========================================================================
 		Created with: 	SAPIEN Technologies, Inc., PowerShell Studio 2016 v5.2.119
@@ -13,6 +13,7 @@
 #>
 
 $ModuleBase = Split-Path -Parent $MyInvocation.MyCommand.Path
+. "$ModuleBase\InModule.Help.Exceptions.ps1"
 
 # For tests in .\Tests subdirectory
 if ((Split-Path $ModuleBase -Leaf) -eq 'Tests')
@@ -47,9 +48,12 @@ $commands = Get-Command -Module $module -CommandType Cmdlet, Function, Workflow 
 
 foreach ($command in $commands)
 {
-	$commandName = $command.Name
-	
-	# The module-qualified command fails on Microsoft.PowerShell.Archive cmdlets
+    $commandName = $command.Name
+    
+    # Skip all functions that are on the exclusions list
+    if ($global:FunctionHelpTestExceptions -contains $commandName) { continue }
+    
+    # The module-qualified command fails on Microsoft.PowerShell.Archive cmdlets
 	$Help = Get-Help $commandName -ErrorAction SilentlyContinue
 	
 	Describe "Test help for $commandName" {
@@ -79,7 +83,7 @@ foreach ($command in $commands)
 			$Common = 'Debug', 'ErrorAction', 'ErrorVariable', 'InformationAction', 'InformationVariable', 'OutBuffer', 'OutVariable',
 			'PipelineVariable', 'Verbose', 'WarningAction', 'WarningVariable'
 			
-			$parameters = $command.ParameterSets.Parameters | Sort-Object -Property Name -Unique | Where-Object { $_.Name -notin $common }
+			$parameters = $command.ParameterSets.Parameters | Sort-Object -Property Name -Unique | Where-Object Name -notin $common
 			$parameterNames = $parameters.Name
 			$HelpParameterNames = $Help.Parameters.Parameter.Name | Sort-Object -Unique
 			

@@ -35,7 +35,17 @@ To connect as a different Windows user, run PowerShell as that user.
 .PARAMETER IncludeDefaults
 Copy SQL Agent defaults such as FailSafeEmailAddress, ForwardingServer, and PagerSubjectTemplate.
 
-.NOTES 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
+.PARAMETER Force
+Drops and recreates the Alert if it exists
+
+.NOTES
+Tags: Migration
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 

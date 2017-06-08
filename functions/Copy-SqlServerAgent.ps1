@@ -39,7 +39,20 @@ To connect as a different Windows user, run PowerShell as that user.
 .PARAMETER DisableJobsOnDestination
 When this flag is set, copy all jobs as Enabled=0
 
-.NOTES 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
+.PARAMETER Force
+Drops and recreates the objects if it exists
+
+.PARAMETER DisableJobsOnSource
+Disables the jobs on source
+
+.NOTES
+Tags: Migration
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 

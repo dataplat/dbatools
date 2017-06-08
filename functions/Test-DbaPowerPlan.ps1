@@ -1,30 +1,36 @@
-﻿Function Test-DbaPowerPlan
+Function Test-DbaPowerPlan
 {
 <#
 .SYNOPSIS
 Checks SQL Server Power Plan, which Best Practices recommends should be set to High Performance
-	
+
 .DESCRIPTION
 Returns $true or $false by default for one server. Returns Server name and IsBestPractice for more than one server.
-	
+
 Specify -Detailed for details.
-	
+
 References:
 https://support.microsoft.com/en-us/kb/2207548
 http://www.sqlskills.com/blogs/glenn/windows-power-plan-effects-on-newer-intel-processors/
-	
+
 .PARAMETER ComputerName
 The SQL Server (or server in general) that you're connecting to. The -SqlServer parameter also works.
-	
+
+.PARAMETER Credential
+Credential object used to connect to the server as a different user
+
 .PARAMETER CustomPowerPlan
 If your organization uses a custom power plan that's considered best practice, specify it here.
 
 .PARAMETER Detailed
-Show a detailed list.
+This parameter will be removed in 1.0. Default is now to show a detailed list.
 
-.NOTES 
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
+
+.NOTES
 Requires: WMI access to servers
-	
+
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -42,83 +48,129 @@ Test-DbaPowerPlan -ComputerName sqlserver2014a
 
 To return true or false for Power Plan being set to High Performance
 
-.EXAMPLE   
+.EXAMPLE
 Test-DbaPowerPlan -ComputerName sqlserver2014a -CustomPowerPlan 'Maximum Performance'
 
-To return true or false for Power Plan being set to the custom power plan called Maximum Performance 
+To return true or false for Power Plan being set to the custom power plan called Maximum Performance
 
-.EXAMPLE   
+.EXAMPLE
 Test-DbaPowerPlan -ComputerName sqlserver2014a -Detailed
-	
+
 To return detailed information Power Plans
-	
+
 #>
-	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+	param (
+		[parameter(ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServer")]
-		[string[]]$ComputerName,
+		[string[]]$ComputerName = $env:COMPUTERNAME,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
 		[string]$CustomPowerPlan,
-		[switch]$Detailed
+		[switch]$Detailed,
+		[switch]$Silent
 	)
 	
-	BEGIN
+	begin
 	{
+		if ($Detailed)
+		{
+			Write-Message -Level Warning -Message "Detailed is deprecated and will be removed in dbatools 1.0"
+		}
+		
 		$bpPowerPlan = [PSCustomObject]@{
 			InstanceID = '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'
 			ElementName = $null
 		}
-					
-		Function Get-PowerPlan
+		
+		$sessionoption = New-CimSessionOption -Protocol DCom
+	}
+	
+	process
+	{
+		foreach ($computer in $ComputerName)
 		{
+			$Server = Resolve-DbaNetworkName -ComputerName $computer -Credential $credential
+			
+			$Computer = $server.ComputerName
+			
+			if (!$Computer)
+			{
+				Stop-Function -Message "Couldn't resolve hostname. Skipping." -Continue
+			}
+			
+			Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan"
+			
+			if (!$Credential)
+			{
+				$cimsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue
+			}
+			else
+			{
+				$cimsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
+			}
+			
+			if ($null -eq $cimsession.id)
+			{
+				Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan failed. Creating CimSession on $computer over DCom"
+				
+				if (!$Credential)
+				{
+					$cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
+				}
+				else
+				{
+					$cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue
+				}
+			}
+			
+			if ($null -eq $cimsession.id)
+			{
+				Stop-Function -Message "Can't create CimSession on $computer" -Target $Computer
+			}
+			
+			Write-Message -Level Verbose -Message "Getting Power Plan information from $Computer"
+			
 			try
 			{
-				Write-Verbose "Testing connection to $server and resolving IP address"
-				$ipaddr = (Test-Connection $server -Count 1 -ErrorAction SilentlyContinue).Ipv4Address | Select-Object -First 1				
+				$powerplans = Get-CimInstance -CimSession $cimsession -classname Win32_PowerPlan -Namespace "root\cimv2\power" -ErrorAction Stop | Select-Object ElementName, InstanceID, IsActive
 			}
 			catch
 			{
-				Write-Warning "Can't connect to $server"
-				return
-			}
-			
-			try
-			{				
-				Write-Verbose "Getting Power Plan information from $server"
-				$powerplans = $(Get-CimInstance -ComputerName $ipaddr -classname Win32_PowerPlan -Namespace "root\cimv2\power" | select ElementName, InstanceID, IsActive)                
-				$powerplan = $($powerplans | where {  $_.IsActive -eq 'True' } |  select ElementName, InstanceID)
-				$powerplan.InstanceID = $powerplan.InstanceID.Split('{')[1].Split('}')[0]
-				
-				if ($CustomPowerPlan.Length -gt 0)
-				{					
-					$bpPowerPlan.ElementName = $CustomPowerPlan
-					$bpPowerPlan.InstanceID = $( $powerplans | where {  $_.ElementName -eq $CustomPowerPlan }).InstanceID
-				}
-				else 
+				if ($_.Exception -match "namespace")
 				{
-					$bpPowerPlan.ElementName =  $( $powerplans | where {  $_.InstanceID.Split('{')[1].Split('}')[0] -eq $bpPowerPlan.InstanceID }).ElementName  
-                    if ($bpPowerplan.ElementName -eq $null)
-                    {
-                        $bpPowerPlan.ElementName = "You do not have the high performance plan installed on this machine."
-                    }
+					Stop-Function -Message "Can't get Power Plan Info for $Computer. Unsupported operating system." -Continue -InnerErrorRecord $_ -Target $Computer
 				}
-
-			}
-			catch 
-			{
-				Write-Warning "Can't connect to WMI on $server"
-				return
+				else
+				{
+					Stop-Function -Message "Can't get Power Plan Info for $Computer. Check logs for more details." -Continue -InnerErrorRecord $_ -Target $Computer
+				}
 			}
 			
-            Write-Verbose "Recommended GUID is $($bpPowerPlan.InstanceID) and you have $($powerplan.InstanceID)"
-			if ($powerplan.InstanceID -eq $null)
+			$powerplan = $powerplans | Where-Object { $_.IsActive -eq 'True' } | Select-Object ElementName, InstanceID
+			$powerplan.InstanceID = $powerplan.InstanceID.Split('{')[1].Split('}')[0]
+			
+			if ($CustomPowerPlan.Length -gt 0)
 			{
-				# the try/catch above isn't working, so make it silent and handle it here.
+				$bpPowerPlan.ElementName = $CustomPowerPlan
+				$bpPowerPlan.InstanceID = $($powerplans | Where-Object { $_.ElementName -eq $CustomPowerPlan }).InstanceID
+			}
+			else
+			{
+				$bpPowerPlan.ElementName = $($powerplans | Where-Object { $_.InstanceID.Split('{')[1].Split('}')[0] -eq $bpPowerPlan.InstanceID }).ElementName
+				if ($null -eq $bpPowerplan.ElementName)
+				{
+					$bpPowerPlan.ElementName = "You do not have the high performance plan installed on this machine."
+				}
+			}
+			
+			Write-Message -Level Verbose -Message "Recommended GUID is $($bpPowerPlan.InstanceID) and you have $($powerplan.InstanceID)"
+			
+			if ($null -eq $powerplan.InstanceID)
+			{
 				$powerplan.ElementName = "Unknown"
 			}
 			
 			if ($powerplan.InstanceID -eq $bpPowerPlan.InstanceID)
-			{                
+			{
 				$IsBestPractice = $true
 			}
 			else
@@ -126,77 +178,11 @@ To return detailed information Power Plans
 				$IsBestPractice = $false
 			}
 			
-			$planinfo = [PSCustomObject]@{
-				Server = $server
+			[PSCustomObject]@{
+				Server = $computer
 				ActivePowerPlan = $powerplan.ElementName
 				RecommendedPowerPlan = $bpPowerPlan.ElementName
 				IsBestPractice = $IsBestPractice
-			}
-			return $planinfo
-		}
-		
-		$collection = New-Object System.Collections.ArrayList
-		$processed = New-Object System.Collections.ArrayList
-	}
-	
-	PROCESS
-	{
-		foreach ($server in $ComputerName)
-		{
-			if ($server -match '\\')
-			{
-				Write-Verbose "SQL Server naming convention detected. Getting hostname."
-				$server = $server.Split('\')[0]
-			}
-			
-			if ($server -notin $processed)
-			{
-				$null = $processed.Add($server)
-				Write-Verbose "Connecting to $server"
-			}
-			else
-			{
-				continue
-			}
-			
-			$data = Get-PowerPlan $server
-			
-			if ($data.Count -gt 1)
-			{
-				$data.GetEnumerator() | ForEach-Object { $null = $collection.Add($_) }
-			}
-			else
-			{
-				$null = $collection.Add($data)
-			}
-		}
-	}
-	
-	END
-	{
-		if ($Detailed -eq $true)
-		{
-			return $collection
-		}
-		elseif ($processed.Count -gt 1)
-		{
-			$newcollection = @()
-			foreach ($computer in $collection)
-			{
-				if ($newcollection.Server -contains $computer.Server) { continue }
-								
-				$newcollection += [PSCustomObject]@{
-					Server = $computer.Server
-					IsBestPractice = $computer.IsBestPractice
-				}
-			}
-			return $newcollection
-		}
-		else
-		{
-			foreach ($computer in $collection)
-			{
-				return $computer.IsBestPractice
 			}
 		}
 	}

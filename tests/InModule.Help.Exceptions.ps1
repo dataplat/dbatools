@@ -1,0 +1,3 @@
+$global:FunctionHelpTestExceptions = @(
+    "TabExpansion2"
+)

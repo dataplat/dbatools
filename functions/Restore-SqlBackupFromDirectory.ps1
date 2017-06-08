@@ -8,7 +8,7 @@ Restores SQL Server databases from the backup directory structure created by Ola
 Many SQL Server database administrators use Ola Hallengren's SQL Server Maintenance Solution which can be found at http://ola.hallengren.com
 Hallengren uses a predictable backup structure which made it relatively easy to create a script that can restore an entire SQL Server database instance, down to the master database (next version), to a new server. This script is intended to be used in the event that the originating SQL Server becomes unavailable, thus rendering my other SQL restore script (http://goo.gl/QmfQ6s) ineffective.
 
-.PARAMETER ServerName
+.PARAMETER SqlServer
 Required. The SQL Server to which you will be restoring the databases.
 
 .PARAMETER Path
@@ -33,7 +33,17 @@ $cred = Get-Credential, this pass this $cred to the param.
 
 Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
-.NOTES 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
+.PARAMETER NoRecovery
+Leaves the databases in No Recovery state to enable further backups to be added
+
+.NOTES
+Tags: DisasterRecovery, Backup, Restore
 Author  : Chrissy LeMaire, netnerds.net
 Requires: sysadmin access on destination SQL Server.
 
@@ -58,7 +68,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Restore-SqlBackupFromDirectory
 
 .EXAMPLE   
-Restore-SqlBackupFromDirectory -ServerName sqlcluster -Path \\fileserver\share\sqlbackups\SQLSERVER2014A
+Restore-SqlBackupFromDirectory -SqlServer sqlcluster -Path \\fileserver\share\sqlbackups\SQLSERVER2014A
 
 Description
 
@@ -66,7 +76,7 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 
 #>	
 	#Requires -Version 3.0
-	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance","SqlInstance")]
@@ -112,7 +122,88 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 	}
 	
 	BEGIN {
-	
+		
+		Function Restore-Database
+		{
+        <#
+            .SYNOPSIS
+             Restores .bak file to SQL database. Creates db if it doesn't exist. $filestructure is
+			a custom object that contains logical and physical file locations.
+
+            .EXAMPLE
+			 $filestructure = Get-SqlFileStructure $sourceserver $destserver $ReuseFolderstructure
+             Restore-Database $destserver $dbname $backupfile $filetype   
+
+            .OUTPUTS
+                $true if success
+                $true if failure
+        #>
+			[CmdletBinding()]
+			param (
+				[Parameter(Mandatory = $true)]
+				[ValidateNotNullOrEmpty()]
+				[object]$server,
+				[Parameter(Mandatory = $true)]
+				[ValidateNotNullOrEmpty()]
+				[string]$dbname,
+				[Parameter(Mandatory = $true)]
+				[ValidateNotNullOrEmpty()]
+				[string]$backupfile,
+				[Parameter(Mandatory = $true)]
+				[ValidateNotNullOrEmpty()]
+				[string]$filetype,
+				[Parameter(Mandatory = $true)]
+				[ValidateNotNullOrEmpty()]
+				[object]$filestructure
+				
+			)
+			
+			$servername = $server.name
+			$server.ConnectionContext.StatementTimeout = 0
+			$restore = New-Object "Microsoft.SqlServer.Management.Smo.Restore"
+			$restore.ReplaceDatabase = $true
+			
+			foreach ($file in $filestructure.values)
+			{
+				$movefile = New-Object "Microsoft.SqlServer.Management.Smo.RelocateFile"
+				$movefile.LogicalFileName = $file.logical
+				$movefile.PhysicalFileName = $file.physical
+				$null = $restore.RelocateFiles.Add($movefile)
+			}
+			
+			try
+			{
+				
+				$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
+					Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
+				}
+				$restore.add_PercentComplete($percent)
+				$restore.PercentCompleteNotification = 1
+				$restore.add_Complete($complete)
+				$restore.ReplaceDatabase = $true
+				$restore.Database = $dbname
+				$restore.Action = $filetype
+				$restore.NoRecovery = $true
+				$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
+				$device.name = $backupfile
+				$device.devicetype = "File"
+				$restore.Devices.Add($device)
+				
+				Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+				$restore.sqlrestore($server)
+				Write-Progress -id 1 -activity "Restoring $dbname to $servername" -status "Complete" -Completed
+				
+				return $true
+			}
+			catch
+			{
+				$x = $_.Exception
+				Write-Warning "Restore failed: $x"
+				return $false
+			}
+		}
+		
+		
 		if (!([string]::IsNullOrEmpty($Path)))
 		{
 			if (!($Path.StartsWith("\\")))
@@ -130,7 +221,7 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 		$server.ConnectionContext.StatementTimeout = 0
 		
-		if ($server.versionMajor -lt 8 -and $server.versionMajor -lt 8)
+		if ($server.versionMajor -lt 8)
 		{
 			throw "This script can only be run on SQL Server 2000 and above. Quitting."
 		}

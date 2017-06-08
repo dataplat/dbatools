@@ -1,4 +1,4 @@
-﻿Function Find-SqlDuplicateIndex
+Function Find-SqlDuplicateIndex
 {
 <#
 .SYNOPSIS
@@ -52,8 +52,14 @@ Append to file
 .PARAMETER Force
 Instead of export or output the script, it runs performing the drop instruction
 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
 .NOTES 
-Original Author: Cláudio Silva (@ClaudioESSilva)
+Original Author: Claudio Silva (@ClaudioESSilva)
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 

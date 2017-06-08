@@ -1,11 +1,11 @@
-﻿Function Get-SqlRegisteredServerName
+Function Get-SqlRegisteredServerName
 {
 <#
 .SYNOPSIS
-Gets list of SQL Server names stored in SQL Server Central Management Server
+Gets list of SQL Server names stored in SQL Server Central Management Server.
 
 .DESCRIPTION
-Returns a simple array of server namess
+Returns a simple array of server names. Be aware of the dynamic parameter 'Group', which can be used to limit results to one or more groups you have created on the CMS. See get-help for examples.
 
 .PARAMETER SqlServer
 The SQL Server instance. 
@@ -19,13 +19,13 @@ Windows Authentication will be used if SqlCredential is not specified. SQL Serve
 Auto-populated list of groups in SQL Server Central Management Server. You can specify one or more, comma separated.
 		
 .PARAMETER NoCmsServer
-By default, the Central Management Server name is included in the list. use -NoCmsServer to exclude the CMS itself.
+By default, the Central Management Server name is included in the list. Use -NoCmsServer to exclude the CMS itself.
 	
 .PARAMETER NetBiosName
-Returns just the NetBios names of each server
+Returns just the NetBios names of each server.
 	
 .PARAMETER IpAddr
-Returns just the ip addresses of each server
+Returns just the ip addresses of each server.
 	
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -58,14 +58,14 @@ Get-SqlRegisteredServerName -SqlServer sqlserver2014a -SqlCredential $credential
 Gets a list of all server names from the Central Management Server on sqlserver2014a, using SQL Authentication
 		
 .EXAMPLE 
-Get-SqlRegisteredServerName -SqlServer sqlserver2014a -Groups HR, Accounting
+Get-SqlRegisteredServerName -SqlServer sqlserver2014a -Group HR, Accounting
 	
-Gets a list of server names in the HR and Accouting groups from the Central Management Server on sqlserver2014a.
+Gets a list of server names in the HR and Accounting groups from the Central Management Server on sqlserver2014a.
 	
 .EXAMPLE 
-Get-SqlRegisteredServerName -SqlServer sqlserver2014a -Groups HR, Accounting -IpAddr
+Get-SqlRegisteredServerName -SqlServer sqlserver2014a -Group HR, Accounting -IpAddr
 	
-Gets a list of server IP addresses in the HR and Accouting groups from the Central Management Server on sqlserver2014a.
+Gets a list of server IP addresses in the HR and Accounting groups from the Central Management Server on sqlserver2014a.
 	
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
@@ -103,13 +103,33 @@ Gets a list of server IP addresses in the HR and Accouting groups from the Centr
 	PROCESS
 	{
 		
+		# see notes at Get-ParamSqlCmsGroups
+		Function Find-CmsGroup($CmsGrp, $base = '', $stopat)
+		{
+			$results = @()
+			foreach($el in $CmsGrp) {
+				if($base -eq ''){
+					$partial = $el.name
+				} else {
+					$partial = "$base\$($el.name)"
+				}
+				if ($partial -eq $stopat) {
+					return $el
+				} else {
+					foreach($group in $el.ServerGroups) {
+						$results += Find-CmsGroup $group $partial $stopat
+					}
+				}
+			}
+			return $results
+		}
 		
 		$servers = @()
 		if ($groups -ne $null)
 		{
 			foreach ($group in $groups)
 			{
-				$cms = $cmstore.ServerGroups["DatabaseEngineServerGroup"].ServerGroups[$group]
+				$cms = Find-CmsGroup $cmstore.DatabaseEngineServerGroup.ServerGroups '' $group
 				$servers += ($cms.GetDescendantRegisteredServers()).servername
 			}
 		}

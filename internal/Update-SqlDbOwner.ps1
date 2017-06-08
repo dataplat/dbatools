@@ -18,7 +18,24 @@ Internal function. Updates specified database dbowner.
 	)
 	
 	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
-	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+    try 
+    {
+        if ($Destination -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject])
+        {
+            $Newconnection  = $true
+            $destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $SqlCredential	
+        }
+        else
+        {
+            $destserver = $Destination
+        }
+    }
+    catch 
+    {
+        Write-Warning "$FunctionName - Cannot connect to $SqlServer" 
+        break
+    }
+	#$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
 	
 	$source = $sourceserver.DomainInstanceName
 	$destination = $destserver.DomainInstanceName

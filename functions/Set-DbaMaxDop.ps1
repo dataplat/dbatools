@@ -1,4 +1,4 @@
-﻿Function Set-DbaMaxDop
+Function Set-DbaMaxDop
 {
 <# 
 .SYNOPSIS 
@@ -28,8 +28,17 @@ Allows you to specify the MaxDop value that you want to use.
 .PARAMETER AllDatabases
 This is a parameter that was included so you can set MaxDop value to all databases. Only valid when using on SQL Server 2016 instances.
 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
+.PARAMETER Collection
+Results of Test-SQLMaxDop to be passed into the command
+
 .NOTES 
-Author  : Cláudio Silva (@claudioessilva)
+Author  : Claudio Silva (@claudioessilva)
 Requires: sysadmin access on SQL Servers
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -79,7 +88,7 @@ Set recommended Max DOP setting for all databases on server sql2016.
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[int]$MaxDop = -1,
 		[Parameter(ValueFromPipeline = $True)]
-		[object]$collection,
+		[object]$Collection,
         [Alias("All")]
         [switch]$AllDatabases
 	)
@@ -109,11 +118,11 @@ Set recommended Max DOP setting for all databases on server sql2016.
 		
 		if ($collection -eq $null)
 		{
-			$collection = Test-DbaMaxDop -SqlServer $SqlServer -Verbose:$false
+			$collection = Test-DbaMaxDop -SqlServer $SqlServer -SqlCredential $SqlCredential -Verbose:$false
 		}
 		elseif ($collection.Instance -eq $null)
 		{
-			$collection = Test-DbaMaxDop -SqlServer $SqlServer -Verbose:$false
+			$collection = Test-DbaMaxDop -SqlServer $SqlServer -SqlCredential $SqlCredential -Verbose:$false
 		}
 		
 		$collection | Add-Member -NotePropertyName OldInstanceMaxDopValue -NotePropertyValue 0
@@ -187,7 +196,7 @@ Set recommended Max DOP setting for all databases on server sql2016.
             {
                 if ($databases -gt 0 -or $AllDatabases)
                 {
-				    Write-Warning "Server '$servername' does not supports Max DOP configuration per database. Run the command again without -Databases parameter. Skipping."
+                    Write-Warning "Server '$servername' (v$($server.versionMajor)) does not support Max DOP configuration at the database level. Remember that this option is only available from SQL Server 2016 (v13). Run the command again without using database related parameters. Skipping."
 				    Continue
 			    }
             }

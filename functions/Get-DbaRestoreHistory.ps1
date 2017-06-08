@@ -1,4 +1,4 @@
-﻿Function Get-DbaRestoreHistory
+Function Get-DbaRestoreHistory
 {
 <#
 .SYNOPSIS
@@ -24,13 +24,11 @@ Return restore information for all but these specific databases
 .PARAMETER Since
 Datetime object used to narrow the results to a date
 	
-.PARAMETER Detailed
-Returns default information plus From (\\server\backups\test.bak) and To (the mdf and ldf locations) information
-	
 .PARAMETER Force
 Returns a ton of information about the backup history with no max rows
 
-.NOTES 
+.NOTES
+Tags: DisasterRecovery, Backup, Restore
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -54,12 +52,12 @@ Get-DbaRestoreHistory -SqlServer sqlserver2014a -Databases db1, db2 -Since '7/1/
 Returns restore information only for databases db1 and db2 on sqlserve2014a since July 1, 2016 at 10:47 AM.
 	
 .EXAMPLE   
-Get-DbaRestoreHistory -SqlServer sqlserver2014a, sql2016 -Detailed -Exclude db1
+Get-DbaRestoreHistory -SqlServer sqlserver2014a, sql2016 -Exclude db1
 
 Lots of detailed information for all databases except db1 on sqlserver2014a and sql2016
 
 .EXAMPLE   
-Get-DbaRestoreHistory -SqlServer sql2014 -Databases AdventureWorks2014, pubs -Detailed | Format-Table
+Get-DbaRestoreHistory -SqlServer sql2014 -Databases AdventureWorks2014, pubs | Format-Table
 
 Adds From and To file information to output, returns information only for AdventureWorks2014 and pubs, and makes the output pretty
 
@@ -77,7 +75,6 @@ Returns database restore information for every database on every server listed i
 		[Alias("SqlCredential")]
 		[PsCredential]$Credential,
 		[datetime]$Since,
-		[switch]$Detailed,
 		[switch]$Force
 	)
 	
@@ -89,8 +86,6 @@ Returns database restore information for every database on every server listed i
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
 		
-		$collection = New-Object System.Collections.ArrayList
-		
 		if ($Since -ne $null)
 		{
 			$Since = $Since.ToString("yyyy-MM-dd HH:mm:ss")
@@ -99,20 +94,34 @@ Returns database restore information for every database on every server listed i
 	
 	PROCESS
 	{
-		foreach ($server in $SqlServer)
+		foreach ($instance in $SqlServer)
 		{
 			try
 			{
-				$sourceserver = Connect-SqlServer -SqlServer $server -SqlCredential $Credential
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
+				
+				if ($server.VersionMajor -lt 9)
+				{
+					Write-Warning "SQL Server 2000 not supported"
+					continue
+				}
+				
+				$computername = $server.NetName
+				$instancename = $server.ServiceName
+				$servername = $server.DomainInstanceName
 				
 				if ($force -eq $true)
 				{
-					$select = "SELECT * "
+					$select = "SELECT '$computername' AS [ComputerName],
+					'$instancename' AS [InstanceName],
+					'$servername' AS [SqlInstance], * "
 				}
 				else
 				{
 					$select = "SELECT 
-				     '$server' AS [Server],
+				    '$computername' AS [ComputerName],
+					'$instancename' AS [InstanceName],
+					'$servername' AS [SqlInstance],
 				     rsh.destination_database_name AS [Database],
 				     --rsh.restore_history_id as RestoreHistoryID,
 				     rsh.user_name AS [Username],
@@ -173,25 +182,16 @@ Returns database restore information for every database on every server listed i
 				
 				$sql = "$select $from $where"
 				Write-Debug $sql
-				$results = $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables
+				
+				$server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
+				
 			}
 			catch
 			{
-				Write-Warning "$_ `nMoving on"
+				Write-Warning $_
+				Write-Exception $_
 				continue
 			}
-			
-			$null = $collection.Add($results)
 		}
-	}
-	
-	END
-	{
-		if ($Detailed -eq $true -or $Force -eq $true)
-		{
-			return $collection.rows
-		}
-		
-		return ($collection.rows | Select-Object * -ExcludeProperty From, To, RowError, Rowstate, table, itemarray, haserrors)
 	}
 }

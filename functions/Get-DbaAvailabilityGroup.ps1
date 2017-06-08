@@ -28,7 +28,14 @@ Shows detailed information about the AGs including EndpointUrl and BackupPriorit
 .PARAMETER IsPrimary
 Returns true or false for the server passed in.
 
-.NOTES 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
+.NOTES
+Tags: DisasterRecovery, Backup
 Original Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -89,15 +96,18 @@ Returns true/false if the server, sqlserver2014a, is the primary replica for AG-
 			$agReplicas = @()
 			$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
 			
-			if ($server.VersionMajor -lt 11) 
-			{			
-				Write-Output "[$servername] Major Version detected: $(server.VersionMajor)"
-				throw "Availability Groups are only supported in SQL Server 2012+."
+			$version = $server.VersionMajor
+			if ($version -lt 11) 
+			{
+				Write-Verbose "$server Major Version detected: $version"
+				Write-Warning "$server is version $version. Availability Groups are only supported in SQL Server 2012 and above."
+				continue
 			}
 
 			if (!$server.IsHadrEnabled)
 			{
-				return "[$servername] Availability Group is not configured."
+				Write-Warning "$server Availability Group is not configured."
+				continue
 			}
 
 			if ($AvailabilityGroups)
@@ -114,7 +124,8 @@ Returns true/false if the server, sqlserver2014a, is the primary replica for AG-
 			
 			if (!$agReplicas)
 			{
-				return "No data found"
+				Write-Warning "[$servername] Availability Groups not found"
+                continue
 			}
 			
 			

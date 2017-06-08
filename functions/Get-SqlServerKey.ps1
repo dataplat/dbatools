@@ -120,7 +120,7 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
 			if ([Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers") -eq $null)
 			{ throw "Can't load CMS assemblies. You must have SQL Server Management Studio installed to use the -SqlCms switch." }
 			
-			Write-Output "Gathering SQL Servers names from Central Management Server"
+            Write-Verbose "Gathering SQL Servers names from Central Management Server"
 			$server = Connect-SqlServer -SqlServer $SqlCms -SqlCredential $SqlCredential
 			$sqlconnection = $server.ConnectionContext.SqlConnectionObject
 			
@@ -195,9 +195,9 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
 				catch { Write-Warning "Can't connect to $sqlserver or access denied. Skipping."; continue }
 				
 				$servicePack = $server.ProductLevel
-				
+				Write-Debug "$servername $instance version is $($server.VersionMajor)"
 				switch ($server.VersionMajor)
-				{
+				{					
 					9 {
 						$sqlversion = "SQL Server 2005 $servicePack"
 						$findkeys = $reg.OpenSubKey("$basepath\90\ProductID", $false)
@@ -214,6 +214,7 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
 					}
 					11 { $key = "$basepath\110\Tools\Setup\DigitalProductID"; $sqlversion = "SQL Server 2012 $servicePack" }
 					12 { $key = "$basepath\120\Tools\Setup\DigitalProductID"; $sqlversion = "SQL Server 2014 $servicePack" }
+					13 { $key = "$basepath\130\Tools\Setup\DigitalProductID"; $sqlversion = "SQL Server 2016 $servicePack" }
 					default { Write-Warning "SQL version not currently supported."; continue }
 				}
 				if ($server.Edition -notlike "*Express*")

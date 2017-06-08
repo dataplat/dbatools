@@ -13,7 +13,8 @@ Internal command
 		[System.Management.Automation.PSCredential]$Credential,
 		[Parameter(Mandatory = $true)]
 		[scriptblock]$ScriptBlock,
-		[string[]]$ArgumentList
+		[string[]]$ArgumentList,
+		[switch]$Silent
 	)
 	
 	if ($Server.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
@@ -29,7 +30,8 @@ Internal command
 		$Server = 'localhost'
 		if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
 		{
-			throw "This command must be run with elevated privileges for the local host."
+			Stop-Function -Message "This command must be run with elevated privileges for the local host."
+			return
 		}
 	}
 	
@@ -62,13 +64,13 @@ Internal command
 			$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList
 		}
 		
-		Write-Verbose "Local connection for $server succeeded"
+		Write-Message -Level Verbose -Message "Local connection for $server succeeded"
 	}
 	catch
 	{
 		try
 		{
-			Write-Verbose "Local connection attempt to $Server failed. Connecting remotely."
+			Write-Message -Level Verbose -Message "Local connection attempt to $Server failed. Connecting remotely."
 			
 			# For surely resolve stuff
 			$hostname = [System.Net.Dns]::gethostentry($ipaddr)
@@ -83,10 +85,9 @@ Internal command
 				$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ComputerName $hostname
 			}
 		}
-		catch
-		{
-			Write-Exception $_
-			throw $_
+		catch{
+			Stop-Function -Message "SqlWmi connection failed: $_" -Target $result
+			return
 		}
 	}
 	

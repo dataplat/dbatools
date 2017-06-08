@@ -1,4 +1,4 @@
-﻿Function Find-SqlUnusedIndex
+Function Find-SqlUnusedIndex
 {
 <#
 .SYNOPSIS
@@ -35,14 +35,20 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER FileName
-The file to write to.
+.PARAMETER FilePath
+The filepath of the file to write to.
 
 .PARAMETER NoClobber
 Do not overwrite file
 	
 .PARAMETER Append
 Append to file
+
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
 
 .NOTES 
 Original Author: Aaron Nelson (@SQLvariant), SQLvariant.com
@@ -262,8 +268,8 @@ Will find exact Unused indexes on all user databases
 
                                     $sqlDropScript += "USE [$($index.DatabaseName)]`r`n"
                                     $sqlDropScript += "GO`r`n"
-                                    $sqlDropScript += "IF EXISTS (SELECT 1 FROM sys.indexes WHERE [object_id] = OBJECT_ID('$($index.TableName)') AND name = '$($index.IndexName)')`r`n"
-                                    $sqlDropScript += "    DROP INDEX $($index.TableName).$($index.IndexName)`r`n"
+                                    $sqlDropScript += "IF EXISTS (SELECT 1 FROM sys.indexes WHERE [object_id] = OBJECT_ID('$($index.SchemaName).$($index.TableName)') AND name = '$($index.IndexName)')`r`n"
+                                    $sqlDropScript += "    DROP INDEX $($index.SchemaName).$($index.TableName).$($index.IndexName)`r`n"
                                     $sqlDropScript += "GO`r`n`r`n"
                                 }
 

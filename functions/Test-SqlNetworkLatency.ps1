@@ -1,107 +1,101 @@
-﻿Function Test-SqlNetworkLatency
-{
+Function Test-SqlNetworkLatency {
 <#
-.SYNOPSIS
-Tests how long a query takes to return from SQL Server
+	.SYNOPSIS
+	Tests how long a query takes to return from SQL Server
 
-.DESCRIPTION
-This function is intended to help measure SQL Server network latency by establishing a connection and making a simple query. This is a better alternative
-than ping because it actually creates the connection to the SQL Server, and times not ony the entire routine, but also how long the actual queries take vs
-how long it takes to get the results.
-	
-Server
-Count
-TotalMs
-AvgMs
-ExecuteOnlyTotalMS
-ExecuteOnlyAvgMS
-	
-.PARAMETER SqlServer
-The SQL Server instance.
+	.DESCRIPTION
+	This function is intended to help measure SQL Server network latency by establishing a connection and making a simple query. This is a better alternative
+	than ping because it actually creates the connection to the SQL Server, and times not ony the entire routine, but also how long the actual queries take vs
+	how long it takes to get the results.
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+	Server
+	Count
+	TotalMs
+	AvgMs
+	ExecuteOnlyTotalMS
+	ExecuteOnlyAvgMS
 
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+	.PARAMETER SqlInstance
+	The SQL Server instance.
 
-Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+	.PARAMETER SqlCredential
+	Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-.PARAMETER Query
-Specifies the query to be executed. By default, "SELECT TOP 100 * FROM sys.objects" will be executed on master. To execute in other databases, use fully qualified table names.
+	$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-.PARAMETER Count
-Specifies how many times the query should be executed. By default, the query is executed three times.
-	
-.NOTES 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+	Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+	.PARAMETER Query
+	Specifies the query to be executed. By default, "SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES" will be executed on master. To execute in other databases, use fully qualified table names.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+	.PARAMETER Count
+	Specifies how many times the query should be executed. By default, the query is executed three times.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	.PARAMETER WhatIf
+	Shows what would happen if the command were to run. No actions are actually performed.
 
-.LINK
-https://dbatools.io/Test-SqlNetworkLatency
+	.PARAMETER Confirm
+	Prompts you for confirmation before executing any changing operations within the command.
 
-.EXAMPLE
-Test-SqlNetworkLatency -SqlServer sqlserver2014a, sqlcluster
+	.PARAMETER Silent
+	Use this switch to disable any kind of verbose messages
 
-Times the roundtrip return of "SELECT TOP 100 * FROM sys.objects" on sqlserver2014a and sqlcluster using Windows credentials. 
+	.NOTES
+	Tags: Performance, Network
+	Website: https://dbatools.io
+	Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.EXAMPLE   
-Test-SqlNetworkLatency -SqlServer sqlserver2014a -SqlCredential $cred
-	
-Times the execution results return of "SELECT TOP 100 * FROM sys.objects" on sqlserver2014a using SQL credentials. 
-	
-.EXAMPLE   
-Test-SqlNetworkLatency -SqlServer sqlserver2014a, sqlcluster, sqlserver -Query "select top 10 * from otherdb.dbo.table" -Count 10
+	.LINK
+	https://dbatools.io/Test-SqlNetworkLatency
 
-Times the execution results return of "select top 10 * from otherdb.dbo.table" 10 times on sqlserver2014a, sqlcluster, and sqlserver using Windows credentials. 
-	
+	.EXAMPLE
+	Test-SqlNetworkLatency -SqlInstance sqlserver2014a, sqlcluster
+
+	Times the roundtrip return of "SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES" on sqlserver2014a and sqlcluster using Windows credentials. 
+
+	.EXAMPLE
+	Test-SqlNetworkLatency -SqlInstance sqlserver2014a -SqlCredential $cred
+
+	Times the execution results return of "SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES" on sqlserver2014a using SQL credentials.
+
+	.EXAMPLE
+	Test-SqlNetworkLatency -SqlInstance sqlserver2014a, sqlcluster, sqlserver -Query "select top 10 * from otherdb.dbo.table" -Count 10
+
+	Times the execution results return of "select top 10 * from otherdb.dbo.table" 10 times on sqlserver2014a, sqlcluster, and sqlserver using Windows credentials. 
+
 #>
-	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	[CmdletBinding()]
+	[OutputType([System.Object[]])]
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object[]]$SqlServer,
-		[object]$SqlCredential,
-		[string]$Query = "SELECT TOP 100 * FROM sys.objects",
-		[int]$Count = 3
+		[Alias("ServerInstance", "SqlServer")]
+		[object[]]$SqlInstance,
+		[PsCredential]$SqlCredential,
+		[string]$Query = "select top 100 * from INFORMATION_SCHEMA.TABLES",
+		[int]$Count = 3,
+		[switch]$Silent
 	)
-	
-	BEGIN
-	{
-		$allresults = @()
-	}
-	
-	PROCESS
-	{
-		foreach ($server in $SqlServer)
-		{
-			try
-			{
+	process {
+		foreach ($instance in $SqlInstance) {
+			try {
 				$start = [System.Diagnostics.Stopwatch]::StartNew()
 				$currentcount = 0
-				$sourceserver = Connect-SqlServer -SqlServer $server -SqlCredential $SqlCredential
-				$singleresult = $sourceserver.ConnectionContext.ExecuteWithResults($query)
+				try {
+					Write-Message -Level Verbose -Message "Connecting to $instance"
+					$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				}
+				catch {
+					Stop-Function -Message "Failed to connect to $instance : $($_.Exception.Message)" -Continue -Target $instance -InnerErrorRecord $_
+				}
 				
-				do
-				{
-					if (++$currentcount -eq 1)
-					{
+				do {
+					
+					if (++$currentcount -eq 1) {
 						$first = [System.Diagnostics.Stopwatch]::StartNew()
 					}
-					if ($currentcount -eq $count)
-					{
+					$server.ConnectionContext.ExecuteWithResults($query) | Out-Null
+					if ($currentcount -eq $count) {
 						$last = $first.elapsed
 					}
 				}
@@ -115,8 +109,10 @@ Times the execution results return of "select top 10 * from otherdb.dbo.table" 1
 				$totalwarm = $last.TotalMilliseconds
 				$avgwarm = $totalwarm / ($count - 1)
 				
-				$allresults += [PSCustomObject]@{
-					Server = $server
+				[PSCustomObject]@{
+					ComputerName = $server.NetName
+					InstanceName = $server.ServiceName
+					SqlInstance = $server.DomainInstanceName
 					Count = $count
 					TotalMs = $totaltime
 					AvgMs = $avg
@@ -124,16 +120,9 @@ Times the execution results return of "select top 10 * from otherdb.dbo.table" 1
 					ExecuteOnlyAvgMs = $avgwarm
 				}
 			}
-			catch
-			{
-				throw $_
+			catch {
+				Stop-Function -Message "Error occurred: $_" -InnerErrorRecord $_ -Continue
 			}
 		}
-	}
-	
-	END
-	{
-		return $allresults
-		$sourceserver.ConnectionContext.Disconnect()
 	}
 }

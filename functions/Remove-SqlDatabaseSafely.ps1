@@ -1,4 +1,4 @@
-﻿Function Remove-SqlDatabaseSafely
+Function Remove-SqlDatabaseSafely
 {
 <#
 .SYNOPSIS
@@ -23,13 +23,13 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER DestinationServer
+.PARAMETER Destination
 If specified this is the server that the Agent Jobs will be created on. By default this is the same server as the SQLServer.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 .PARAMETER Databases
 The database name to remove or an array of database names eg $Databases = 'DB1','DB2','DB3'
 
-.PARAMETER NoDBCCCheck
+.PARAMETER NoCheck
 If this switch is used the initial DBCC CHECK DB will be skipped. This will make the process quicker but will also create an agent job to restore a database backup containing a corrupt database. 
 A second DBCC CHECKDB is performed on the restored database so you will still be notified BUT USE THIS WITH CARE
 
@@ -42,8 +42,14 @@ The account that will own the Agent Jobs - Defaults to sa
 .PARAMETER UseDefaultFilePaths
 Use the instance default file paths for the mdf and ldf files to restore the database if not set will use the original file paths
 
+.PARAMETER CategoryName
+The Category Name for the Agent Job that gets created defaults to Rationalisation
+
 .PARAMETER DBCCErrorFolder 
 FolderPath for DBCC Error Output - defaults to C:\temp
+
+.PARAMETER BackupCompression
+The setting for the backup compression for the backup defaults to the default setting for the server but accepts On or Off to override that setting
 
 .PARAMETER AllDatabases
 Runs the script for every user databases on a server - Useful when decomissioning a server - That would need a DestinationServer set
@@ -51,7 +57,14 @@ Runs the script for every user databases on a server - Useful when decomissionin
 .PARAMETER Force
 This switch will continue to perform rest of the actions and will create an Agent Job with DBCCERROR in the name and a Backup file with DBCC in the name
 
-.NOTES 
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+
+.NOTES
+Tags: DisasterRecovery, Backup, Restore
 Original Author: Rob Sewell @SQLDBAWithBeard, sqldbawithabeard.com
                  With huge thanks to Grant Fritchey and his verify your backups video 
                  Take a look its only 3 minutes long
@@ -149,7 +162,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		[parameter(Mandatory = $false)]
 		[switch]$AllDatabases,
 		[ValidateSet("Default", "On", "Of")]
-		[string]$backupCompression = 'Default',
+		[string]$BackupCompression = 'Default',
 		#[Alias("UseDefaultFilePaths")]
 		[switch]$ReuseSourceFolderStructure,
 		[switch]$Force
@@ -197,7 +210,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		
 		if ($alldatabases -or $databases.count -eq 0)
 		{
-			$databases = ($sourceserver.databases | Where-Object{ $_.IsSystemObject -eq $false }).Name
+			$databases = ($sourceserver.databases | Where-Object{ $_.IsSystemObject -eq $false -and ($_.Status -match 'Offline') -eq  $false}).Name
 		}
 		
 		if (!(Test-SqlPath -SqlServer $destserver -Path $backupFolder))
@@ -216,7 +229,8 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 
 		function Start-SqlAgent
 		{
-			
+			[CmdletBinding(SupportsShouldProcess = $true)]
+			param()
 			if ($destserver.VersionMajor -eq 8)
 			{
 				$serviceName = 'MSSQLSERVER'
@@ -241,9 +255,9 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 						$timeout = New-Timespan -seconds 60
 						$sw = [diagnostics.stopwatch]::StartNew()
 						$agentstatus = (Get-Service -ComputerName $ipaddr -DisplayName $serviceName).Status
-						while ($dbStatus -ne 'Running' -and $sw.elapsed -lt $timeout)
+						while ($AgentStatus -ne 'Running' -and $sw.elapsed -lt $timeout)
 						{
-							$dbStatus = (Get-Service -ComputerName $ipaddr -DisplayName $serviceName).Status
+							$agentStatus = (Get-Service -ComputerName $ipaddr -DisplayName $serviceName).Status
 						}
 					}
 				}
@@ -262,6 +276,8 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		
 		Function Start-DbccCheck
 		{
+			
+			[CmdletBinding(SupportsShouldProcess = $true)]
 			param (
 				[object]$server,
 				[string]$dbname
@@ -297,6 +313,8 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		
 		Function New-SqlAgentJobCategory
 		{
+			
+			[CmdletBinding(SupportsShouldProcess = $true)]
 			param ([string]$categoryname,
 				[object]$jobServer)
 			
@@ -332,7 +350,6 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				ALTERED To Add TSql switch and remove norecovery switch default
 			#>
 			
-			[CmdletBinding()]
 			param (
 				[Parameter(Mandatory = $true)]
 				[Alias('ServerInstance', 'SqlInstance')]
@@ -493,7 +510,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 					$backup.Checksum = $True
 					if ($sourceserver.versionMajor -gt 9)
 					{
-						$backup.CompressionOption = $backupCompression
+						$backup.CompressionOption = $BackupCompression
 					}
 					if ($force -and $dbccgood -eq $false)
 					{
@@ -677,19 +694,20 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				{
 					$job = $destserver.JobServer.Jobs[$jobname]
 					$job.Start()
+                    $job.Refresh()
 					$status = $job.CurrentRunStatus
 					
 					while ($status -ne 'Idle')
 					{
 						Write-Output "Restore Job for $dbname on $destination is $status..."
-						$job.Refresh()
+						Start-Sleep -Seconds 15
+                        $job.Refresh()
 						$status = $job.CurrentRunStatus
-						Start-Sleep -Seconds 5
 					}
 					
 					Write-Output "Restore Job $jobname has completed on $destination "
 					Write-Output "Sleeping for a few seconds to ensure the next step (DBCC) succeeds"
-					Start-Sleep -Seconds 5 ## This is required to ensure the next DBCC Check succeeds
+					Start-Sleep -Seconds 10 ## This is required to ensure the next DBCC Check succeeds
 				}
 				catch
 				{

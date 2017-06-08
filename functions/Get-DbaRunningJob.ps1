@@ -1,4 +1,4 @@
-﻿FUNCTION Get-DbaRunningJob
+FUNCTION Get-DbaRunningJob
 {
 <#
 .SYNOPSIS

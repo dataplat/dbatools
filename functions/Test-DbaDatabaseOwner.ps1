@@ -1,4 +1,4 @@
-﻿function Test-DbaDatabaseOwner
+function Test-DbaDatabaseOwner
 {
 <#
 .SYNOPSIS
@@ -62,16 +62,17 @@ Test-DbaDatabaseOwner -SqlServer localhost -TargetLogin 'DOMAIN\account'
 Returns all databases where the owner does not match 'DOMAIN\account'. Note
 that TargetLogin must be a valid security principal that exists on the target server.
 #>
-	[CmdletBinding()]
+[OutputType("System.Object[]")]	
+[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object[]]$SqlServer,
-		[object]$SqlCredential,
+		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string]$TargetLogin,
 		[Switch]$Detailed
 	)
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
+	 DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
 	
 	BEGIN
 	{

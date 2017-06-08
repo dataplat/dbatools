@@ -1,4 +1,4 @@
-﻿Function Stop-DbaProcess
+Function Stop-DbaProcess
 {
 <#
 .SYNOPSIS
@@ -34,6 +34,15 @@ This parameter is auto-populated from -SqlServer and allows only database names 
 This parameter is auto-populated from -SqlServer. You can specify one or more Spids to exclude from being killed (goes well with Logins).
 
 Exclude is the last filter to run, so even if a Spid matches, for example, Hosts, if it's listed in Exclude it wil be excluded.
+
+.PARAMETER WhatIf 
+Shows what would happen if the command were to run. No actions are actually performed. 
+
+.PARAMETER Confirm 
+Prompts you for confirmation before executing any changing operations within the command. 
+	
+.PARAMETER Process 
+This is the process object passed by Get-DbaProcess if using a pipeline
 	
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -73,37 +82,89 @@ Stop-DbaProcess -SqlServer sqlserver2014  -Databases tempdb -WhatIf
 	
 Shows what would happen if the command were executed.
 	
+.EXAMPLE   
+Get-DbaProcess -SqlServer sql2016 -Programs 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess
+	
+Finds processes that were created with dbatools, then kills them.
+
 #>
-	[CmdletBinding(SupportsShouldProcess = $true)]
+	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[parameter(Mandatory = $true, ParameterSetName = "Server")]
 		[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlServer,
-		[object]$SqlCredential
+		[object]$SqlCredential,
+		[parameter(ValueFromPipeline = $true, Mandatory = $true, ParameterSetName = "Process")]
+		[object[]]$Process
 	)
 	
 	DynamicParam { if ($sqlserver) { Get-ParamSqlAllProcessInfo -SqlServer $sqlserver -SqlCredential $SqlCredential } }
 	
 	BEGIN
 	{
-		$sourceserver = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
-		$source = $sourceserver.DomainInstanceName
-		
 		$logins = $psboundparameters.Logins
 		$spids = $psboundparameters.Spids
 		$exclude = $psboundparameters.Exclude
 		$hosts = $psboundparameters.Hosts
 		$programs = $psboundparameters.Programs
 		$databases = $psboundparameters.Databases
-		
-		if ($logins.count -eq 0 -and $spids.count -eq 0 -and $hosts.count -eq 0 -and $programs.count -eq 0 -and $databases.count -eq 0)
-		{
-			throw "At least one login, spid, host, program or database must be specified."
-		}
 	}
 	
 	PROCESS
 	{
+		if ($Process)
+		{
+			foreach ($session in $Process)
+			{
+				$sourceserver = $session.SqlServer
+				
+				if (!$sourceserver)
+				{
+					Write-Warning "Only process objects can be passed through the pipeline"
+					break
+				}
+				
+				$spid = $session.spid
+				
+				if ($sourceserver.ConnectionContext.ProcessID -eq $spid)
+				{
+					Write-Warning "Skipping spid $spid because you cannot use KILL to kill your own process"
+					Continue
+				}
+				
+				If ($Pscmdlet.ShouldProcess($sourceserver, "Killing spid $spid"))
+				{
+					try
+					{
+						$sourceserver.KillProcess($spid)
+						[pscustomobject]@{
+							SqlInstance = $sourceserver.name
+							Spid = $session.Spid
+							Login = $session.Login
+							Host = $session.Host
+							Database = $session.Database
+							Program = $session.Program
+							Status = 'Killed'
+						}
+					}
+					catch
+					{
+						Write-Warning "Couldn't kill spid $spid"
+						Write-Exception $_
+					}
+				}
+			}
+			return
+		}
+		
+		$sourceserver = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
+		
+		if ($logins.count -eq 0 -and $spids.count -eq 0 -and $hosts.count -eq 0 -and $programs.count -eq 0 -and $databases.count -eq 0)
+		{
+			Write-Warning "At least one login, spid, host, program or database must be specified."
+			continue
+		}
+		
 		$allsessions = @()
 		
 		$processes = $sourceserver.EnumProcesses() | Where-Object { $_.spid -gt 50 }
@@ -151,59 +212,33 @@ Shows what would happen if the command were executed.
 			$duplicates += $session.spid
 			
 			$spid = $session.spid
-			$login = $session.login
-			$database = $session.database
-			$program = $session.program
-			$host = $session.host
-			
-			$info = @()
-			
-			if ($login.length -gt 1)
-			{
-				$info += "Login: $login"
-			}
-			
-			if ($database.length -gt 1)
-			{
-				$info += "Database: $database"
-			}
-			
-			if ($program.length -gt 1)
-			{
-				$info += "Program: $program"
-			}
-			
-			if ($host.length -gt 1)
-			{
-				$info += "Host: $host"
-			}
-			
-			$info = $info -join ", "
-			
 			if ($sourceserver.ConnectionContext.ProcessID -eq $spid)
 			{
-				Write-Output "Skipping spid $spid because it's this process"
+				Write-Warning "Skipping spid $spid because you cannot use KILL to kill your own process"
 				Continue
 			}
 			
-			If ($Pscmdlet.ShouldProcess($sqlserver, "Killing spid $spid ($info)"))
+			If ($Pscmdlet.ShouldProcess($sqlserver, "Killing spid $spid"))
 			{
 				try
 				{
 					$sourceserver.KillProcess($spid)
-					Write-Output "Killed spid $spid ($info)"
+					[pscustomobject]@{
+						SqlInstance = $sourceserver.name
+						Spid = $session.Spid
+						Login = $session.Login
+						Host = $session.Host
+						Database = $session.Database
+						Program = $session.Program
+						Status = 'Killed'
+					}
 				}
 				catch
 				{
-					Write-Warning "Couldn't kill spid $spid ($info)"
+					Write-Warning "Couldn't kill spid $spid"
 					Write-Exception $_
 				}
 			}
 		}
-	}
-	
-	END
-	{
-		$sourceserver.ConnectionContext.Disconnect()
 	}
 }

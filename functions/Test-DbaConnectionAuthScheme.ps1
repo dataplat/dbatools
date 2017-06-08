@@ -1,4 +1,4 @@
-﻿Function Test-DbaConnectionAuthScheme
+Function Test-DbaConnectionAuthScheme
 {
 <#
 .SYNOPSIS
@@ -23,7 +23,15 @@ Returns $true if the connection is using NTLM, $false if other
 .PARAMETER Detailed
 Show a detailed list (SELECT * from sys.dm_exec_connections WHERE session_id = @@SPID)
 
-.NOTES 
+.PARAMETER SqlCredential 
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+  
+$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.  
+ 
+Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user. 
+
+.NOTES
+Tags: SPN
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -53,11 +61,13 @@ Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id =
 	
 #>
 	[CmdletBinding()]
+	[OutputType("System.Collections.ArrayList")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
 		[string[]]$SqlServer,
-		[PsCredential]$Credential,
+        [Alias("Credential", "Cred")]
+		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$Kerberos,
 		[switch]$Ntlm,
 		[switch]$Detailed
@@ -75,7 +85,7 @@ Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id =
 			try
 			{
 				Write-Verbose "Connecting to $servername"
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
+				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
 				
 				if ($server.versionMajor -lt 9)
 				{
