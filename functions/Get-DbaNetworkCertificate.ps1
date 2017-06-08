@@ -57,22 +57,32 @@ Gets computer certificates on sql2016 that are being used for SQL Server network
 				$instances = Invoke-ManagedComputerCommand -Server $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -match "SQL Server \("
 			}
 			catch {
-				Stop-Function -Message $_ -Target $instance
-				return
+				Write-Warning blah
+				Stop-Function -Message $_ -Target $instance -Continue
 			}
 			
 			foreach ($instance in $instances) {
 				$regroot = ($instance.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+				
+				if ($null -eq $regroot) {
+					$regroot = $instance.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
+					if ($null -ne $regroot) {
+						$regroot = ($regroot -Split 'Value\=')[1]
+					}
+					else {
+						Write-Message -Level Warning -Message "Can't find instance $($SqlInstance.InstanceName) on $env:COMPUTERNAME"
+						return
+					}
+				}
+				
 				$serviceaccount = $instance.ServiceAccount
 				$instancename = $instance.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
+				
 				
 				Write-Message -Level Verbose -Message "Regroot: $regroot"
 				Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount"
 				
-				if ($null -eq $regroot) {
-					Write-Message -Level Warning -Message "Can't find instance $($SqlInstance.InstanceName) on $env:COMPUTERNAME"
-					return
-				}
+				
 				
 				$scriptblock = {
 					$regroot = $args[0]
@@ -81,9 +91,14 @@ Gets computer certificates on sql2016 that are being used for SQL Server network
 					
 					$regpath = "Registry::HKEY_LOCAL_MACHINE\$regroot\MSSQLServer\SuperSocketNetLib"
 					
-					$thumbprint = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
+					$thumbprint = (Get-ItemProperty -Path $regpath -Name Certificate -ErrorAction SilentlyContinue).Certificate
 					
-					$cert = Get-ChildItem Cert:\ -Recurse | Where-Object Thumbprint -eq $Thumbprint
+					try {
+						$cert = Get-ChildItem Cert:\ -Recurse -ErrorAction Stop | Where-Object Thumbprint -eq $Thumbprint
+					}
+					catch {
+						# Don't care - sometimes there's errors that are thrown for apparent good reason
+					}
 					
 					if (!$cert) { continue }
 					
@@ -103,7 +118,7 @@ Gets computer certificates on sql2016 that are being used for SQL Server network
 					} | Select-DefaultView -ExcludeProperty Certificate
 				}
 				
-				if ($PScmdlet.ShouldProcess("local", "Connecting to $ComputerName to import new cert")) {
+				if ($PScmdlet.ShouldProcess("local", "Connecting to $ComputerName to get a list of certs")) {
 					try {
 						Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename -ScriptBlock $scriptblock -ErrorAction Stop
 					}
