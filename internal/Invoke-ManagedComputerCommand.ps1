@@ -56,11 +56,11 @@ Internal command
 	{
 		if ($credential.username -ne $null)
 		{
-			$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential
+			$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ErrorAction Stop
 		}
 		else
 		{
-			$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList
+			$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ErrorAction Stop
 		}
 		
 		Write-Message -Level Verbose -Message "Local connection for $server succeeded"
@@ -77,11 +77,11 @@ Internal command
 			
 			if ($credential.username -ne $null)
 			{
-				$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ComputerName $hostname
+				$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ComputerName $hostname -ErrorAction Stop
 			}
 			else
 			{
-				$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ComputerName $hostname
+				$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ComputerName $hostname -ErrorAction Stop
 			}
 		}
 		catch{
