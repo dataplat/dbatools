@@ -67,15 +67,14 @@ Returns an object with SQL Server Install date as a string and the Windows insta
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance", "ComputerName")]
-		[DbaInstanceParameter[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer", "ComputerName")]
+		[DbaInstanceParameter[]]$SqlInstance,
 		[PsCredential]$SqlCredential,
-		[PsCredential]$WindowsCredential,
+		[PsCredential]$Credential,
 		[parameter(ParameterSetName = "Sql")]
 		[Switch]$SqlOnly,
 		[parameter(ParameterSetName = "Windows")]
-		[Switch]$WindowsOnly,
-		[Alias("Credential")]
+		[Switch]$WindowsOnly,		
 		[switch]$Silent
 	)
 	
