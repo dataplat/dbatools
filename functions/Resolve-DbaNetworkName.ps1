@@ -1,64 +1,64 @@
 function Resolve-DbaNetworkName {
 	<#
-	  .SYNOPSIS
-		Returns information about the network connection of the target computer including NetBIOS name, IP Address, domain name and fully qualified domain name (FQDN).
+		.SYNOPSIS
+			Returns information about the network connection of the target computer including NetBIOS name, IP Address, domain name and fully qualified domain name (FQDN).
 
-	  .DESCRIPTION
-		Retrieves the IPAddress, ComputerName from one computer.
-		The object can be used to take action against its name or IPAddress.
+		.DESCRIPTION
+			Retrieves the IPAddress, ComputerName from one computer.
+			The object can be used to take action against its name or IPAddress.
 
-		First ICMP is used to test the connection, and get the connected IPAddress.
+			First ICMP is used to test the connection, and get the connected IPAddress.
 
-		Multiple protocols (e.g. WMI, CIM, etc) are attempted before giving up.
+			Multiple protocols (e.g. WMI, CIM, etc) are attempted before giving up.
 
-	  .PARAMETER ComputerName
-		The Server that you're connecting to.
-		This can be the name of a computer, a SMO object, an IP address or a SQL Instance.
+		.PARAMETER ComputerName
+			The Server that you're connecting to.
+			This can be the name of a computer, a SMO object, an IP address or a SQL Instance.
 
-	  .PARAMETER Credential
-		Credential object used to connect to the SQL Server as a different user
+		.PARAMETER Credential
+			Credential object used to connect to the SQL Server as a different user
 
-	  .PARAMETER Turbo
-		Resolves without accessing the serer itself. Faster but may be less accurate.
+		.PARAMETER Turbo
+			Resolves without accessing the serer itself. Faster but may be less accurate.
 
-	  .PARAMETER Silent
-		Use this switch to disable any kind of verbose messages.
+		.PARAMETER Silent
+			Use this switch to disable any kind of verbose messages.
 
-	  .NOTES
-	  	Tags: Network, Resolve
-		Original Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+		.NOTES
+			Tags: Network, Resolve
+			Original Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
-		Website: https://dbatools.io
-		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-	  .LINK
-		https://dbatools.io/Resolve-DbaNetworkName
+		.LINK
+			https://dbatools.io/Resolve-DbaNetworkName
 
-	  .EXAMPLE
-		Resolve-DbaNetworkName -ComputerName ServerA
+		.EXAMPLE
+			Resolve-DbaNetworkName -ComputerName ServerA
 
-		Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for ServerA
+			Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for ServerA
 
-	  .EXAMPLE
-		Resolve-DbaNetworkName -SqlInstance sql2016\sqlexpress
+		.EXAMPLE
+			Resolve-DbaNetworkName -SqlInstance sql2016\sqlexpress
 
-		Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for the SQL instance sql2016\sqlexpress
+			Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for the SQL instance sql2016\sqlexpress
 
-	  .EXAMPLE
-		Resolve-DbaNetworkName -SqlInstance sql2016\sqlexpress, sql2014
+		.EXAMPLE
+			Resolve-DbaNetworkName -SqlInstance sql2016\sqlexpress, sql2014
 
-		Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for the SQL instance sql2016\sqlexpress and sql2014
+			Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for the SQL instance sql2016\sqlexpress and sql2014
 
-		Get-SqlRegisteredServerName -SqlInstance sql2014 | Resolve-DbaNetworkName
+			Get-SqlRegisteredServerName -SqlInstance sql2014 | Resolve-DbaNetworkName
 
-		Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-SqlRegisteredServerName
-  #>
+			Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-SqlRegisteredServerName
+	#>
 	[CmdletBinding()]
 	param (
 		[parameter(ValueFromPipeline)]
 		[Alias('cn', 'host', 'ServerInstance', 'Server', 'SqlInstance')]
-		[string[]]$ComputerName = $env:COMPUTERNAME,
+		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
 		[PSCredential] [System.Management.Automation.CredentialAttribute()]$Credential,
 		[Alias('FastParrot')]
 		[switch]$Turbo,
@@ -67,25 +67,12 @@ function Resolve-DbaNetworkName {
 
 	process {
 		foreach ($Computer in $ComputerName) {
-			$conn = $ipaddress = $CIMsession = $null
-
-			if ($Computer.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
-				$Computer = $Computer.NetName
-			}
+			$conn = $ipaddress = $null
 
 			$OGComputer = $Computer
 
 			if ($Computer -eq 'localhost' -or $Computer -eq '.') {
 				$Computer = $env:COMPUTERNAME
-			}
-
-			if ($Computer.GetType() -eq [Sqlcollective.Dbatools.Parameter.DbaInstanceParameter]) {
-				$Computer = $Computer.ComputerName
-			}
-			else {
-				$Computer = $Computer.Split('\\')[0]
-				$Computer = ($Computer -Split ('\:'))[0]
-				$Computer = ($Computer.Split('\,'))[0]
 			}
 
 			if ($Turbo) {
@@ -103,8 +90,7 @@ function Resolve-DbaNetworkName {
 						$fqdn = $resolved.HostName
 					}
 					catch {
-						Write-Message -Level Warning -Message "DNS name not found"
-						continue
+						Stop-Function -Message "DNS name not found" -Continue
 					}
 				}
 
@@ -180,8 +166,7 @@ function Resolve-DbaNetworkName {
 						}
 					}
 					catch {
-						Write-Message -Level Warning -Message "No .NET.Dns information from $Computer"
-						continue
+						Stop-Function -Message "No .NET.Dns information from $Computer" -InnerErrorRecord $_ -Continue
 					}
 				}
 			}
@@ -191,7 +176,7 @@ function Resolve-DbaNetworkName {
 				$hostentry = ([System.Net.Dns]::GetHostEntry($conn.DNSHostname)).HostName
 			}
 			catch {
-				Write-Message -Level Warning -Message ".NET.Dns GetHostEntry failed for $($conn.DNSHostname)"
+				Stop-Function -Message ".NET.Dns GetHostEntry failed for $($conn.DNSHostname)" -InnerErrorRecord $_
 			}
 
 			$fqdn = "$($conn.DNSHostname).$($conn.Domain)"
