@@ -124,7 +124,6 @@ Returns an object with SQL Server Install date as a string and the Windows insta
 				} else { 
 					Write-Message -Level Verbose -Message "Getting Install Date for: $instance" 
 					$sql = "SELECT schemadate FROM sysservers"
-					$sqlInstallDate = $server.Query($sql, 'master').tables
 					[DbaDateTime]$sqlInstallDate = $server.Query($sql, 'master', $true).create_date
 				}											
 
