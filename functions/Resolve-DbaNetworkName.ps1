@@ -57,8 +57,8 @@ Function Resolve-DbaNetworkName
 	[CmdletBinding()]
 	param (
 		[parameter(ValueFromPipeline)]
-		[Alias('cn', 'host', 'ServerInstance', 'Server', 'SqlServer')]
-		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
+		[Alias('cn', 'host', 'ServerInstance', 'Server', 'SqlInstance')]
+		[string[]]$ComputerName = $env:COMPUTERNAME,
     	[PSCredential] [System.Management.Automation.CredentialAttribute()]$Credential,
 		[Alias('FastParrot')]
 		[switch]$Turbo
