@@ -191,11 +191,9 @@ Shows what would happen if the command were run
 		
 		$tempdir = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 		$certTemplate = "CertificateTemplate:$CertificateTemplate"
-		
 	}
 	
 	process {
-		
 		if (Test-FunctionInterrupt) { return }
 		
 		foreach ($computer in $computername) {
@@ -248,7 +246,7 @@ Shows what would happen if the command were run
 				# Make sure output is compat with clusters
 				$shortname = $fqdn.Split(".")[0]
 				
-				$san = Get-SanExt $computer, $fqdn
+				$san = Get-SanExt $shortname, $fqdn
 				# Write config file
 				Set-Content $certcfg "[Version]"
 				Add-Content $certcfg 'Signature="$Windows NT$"'

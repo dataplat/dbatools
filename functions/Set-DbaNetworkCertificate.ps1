@@ -153,7 +153,7 @@ Sets the network certificate for the SQL2008R2SP2 instance to the certificate wi
 				Set-Acl -Path $keyFullPath -AclObject $acl
 				
 				if ($acl) {
-					Set-ItemProperty -Path $regpath -Name Certificate -Value $Thumbprint
+					Set-ItemProperty -Path $regpath -Name Certificate -Value $Thumbprint.ToString().ToLower() # to make it compat with SQL config
 				}
 				else {
 					Write-Warning "Read-only permissions could not be granted to certificate"
@@ -167,12 +167,14 @@ Sets the network certificate for the SQL2008R2SP2 instance to the certificate wi
 					$notes = "Granted $serviceaccount read access to certificate private key"
 				}
 				
+				$newthumbprint = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
+				
 				[pscustomobject]@{
 					ComputerName = $env:COMPUTERNAME
 					InstanceName = $instancename
 					SqlInstance = $vsname
 					ServiceAccount = $serviceaccount
-					CertificateThumbprint = $cert.Thumbprint
+					CertificateThumbprint = $newthumbprint
 					Certificate = $cert
 					Notes = $notes
 				}

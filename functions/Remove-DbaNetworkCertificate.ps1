@@ -66,7 +66,7 @@ Shows what would happen if the command were run
 			
 			Write-Message -Level Output -Message "Connecting to SQL WMI on $($instance.ComputerName)"
 			try {
-				$sqlwmi = Invoke-ManagedComputerCommand -Server $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instancename)"
+				$sqlwmi = Invoke-ManagedComputerCommand -Server $instance.ComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($instance.instancename))"
 			}
 			catch {
 				Stop-Function -Message $_ -Target $sqlwmi
@@ -75,7 +75,7 @@ Shows what would happen if the command were run
 			
 			$regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
 			$vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
-			$instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
+			$instancename = $instance.instancename # $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
 			$serviceaccount = $sqlwmi.ServiceAccount
 			
 			if ([System.String]::IsNullOrEmpty($regroot)) {
@@ -92,7 +92,7 @@ Shows what would happen if the command were run
 				}
 			}
 			
-			if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $computer }
+			if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance.ComputerName }
 			
 			Write-Message -Level Output -Message "Regroot: $regroot"
 			Write-Message -Level Output -Message "ServiceAcct: $serviceaccount"
@@ -108,21 +108,13 @@ Shows what would happen if the command were run
 				$regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
 				$cert = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
 				Set-ItemProperty -Path $regpath -Name Certificate -Value $null
-				
-				if (![System.String]::IsNullOrEmpty($cert)) {
-					$notes = "Removed thumbprint: $cert"
-				}
-				else {
-					$notes = "Nothing to remove"
-				}
-				
+								
 				[pscustomobject]@{
 					ComputerName = $env:COMPUTERNAME
 					InstanceName = $instancename
 					SqlInstance = $vsname
 					ServiceAccount = $serviceaccount
-					CertificateThumbprint = $null
-					Notes = $notes
+					RemovedThumbprint = $cert.Thumbprint
 				}
 			}
 			
