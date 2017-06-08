@@ -153,14 +153,14 @@ function Find-DbaDatabaseGrowthEvent {
 
 			#Create dblist name in 'bd1', 'db2' format
 			$dbsList = "'$($($dbs | ForEach-Object {$_.Name}) -join "','")'"
-
+			Write-Message -Level Verbose -Message "Executing query against $dbsList on $instance"
+			
 			$sql = $sql -replace '_DatabaseList_', $dbsList
 			Write-Message -Level Debug -Message $sql
 
 			$props = 'ComputerName', 'InstanceName', 'SqlInstance', 'EventClass', 'DatabaseName', 'Filename', 'Duration', 'StartTime', 'EndTime', 'ChangeInSize'
 
-			$results = $server.Query($sql)
-			Select-DefaultView -InputObject $results -Property $props
+			Select-DefaultView -InputObject $server.Query($sql) -Property $props
 		}
 	}
 }
