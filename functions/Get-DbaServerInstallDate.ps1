@@ -104,9 +104,9 @@ Returns an object with SQL Server Install date as a string and the Windows insta
                     if ($SqlCredential)
                     { 
                         $server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
-                    } else 
+                    } 
                     { 
-                        $server = Connect-SqlInstance -SqlInstance $servername 
+                        $server = Connect-SqlInstance -SqlInstance $servername
                     }					
 				}
 				catch 
@@ -138,7 +138,6 @@ Returns an object with SQL Server Install date as a string and the Windows insta
 				try
 				{
 					Write-Message -Level Verbose -Message "Getting Windows Install date via CIM for: $WindowsServerName"
-					$WindowsServerName		
 					[SqlCollective.dbatools.Utility.DbaDateTime]$windowsInstallDate = (Get-CimInstance -ClassName win32_operatingsystem -ComputerName $windowsServerName -ErrorAction SilentlyContinue).InstallDate								
 				}
 				catch
