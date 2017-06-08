@@ -69,8 +69,10 @@ Returns an object with SQL Server Install date as a string and the Windows insta
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer", "ComputerName")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PsCredential]$SqlCredential,
-		[PsCredential]$Credential,
+		[PSCredential] 
+		[System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential] 
+		[System.Management.Automation.CredentialAttribute()]$Credential,
 		[parameter(ParameterSetName = "Sql")]
 		[Switch]$SqlOnly,
 		[parameter(ParameterSetName = "Windows")]
@@ -110,7 +112,7 @@ Returns an object with SQL Server Install date as a string and the Windows insta
 				}
 				catch 
 				{
-					Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance					
+					Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance -InnerErrorRecord $_
 				}
 
 				if ( $server.VersionMajor -ge 9 )
@@ -131,7 +133,7 @@ Returns an object with SQL Server Install date as a string and the Windows insta
 			if ($SqlOnly -ne $true)			
 			{ 
 				Write-Message -Level Verbose -Message "Getting Windows Server Name for: $servername" 
-				$WindowsServerName = (Resolve-DbaNetworkName $servername -Credential $WindowsCredential).ComputerName
+				$WindowsServerName = (Resolve-DbaNetworkName $servername -Credential $Credential).ComputerName
 				
 				try
 				{
@@ -144,12 +146,12 @@ Returns an object with SQL Server Install date as a string and the Windows insta
 					{	
 						Write-Message -Level Verbose -Message "Getting Windows Install date via DCOM for: $WindowsServerName" 
 						$CimOption = New-CimSessionOption -Protocol DCOM
-						$CimSession = New-CimSession -Credential:$WindowsCredential -ComputerName $WindowsServerName -SessionOption $CimOption
+						$CimSession = New-CimSession -Credential:$Credential -ComputerName $WindowsServerName -SessionOption $CimOption
 						[DbaDateTime]$windowsInstallDate = ($CimSession | Get-CimInstance -ClassName Win32_OperatingSystem).InstallDate					
 					}
 					catch
 					{
-						Stop-Function -Message "Failed to connect to: $WindowsServerName" -Continue -Target $instance						
+						Stop-Function -Message "Failed to connect to: $WindowsServerName" -Continue -Target $instance -InnerErrorRecord $_
 					}
 				}
 			}
