@@ -61,17 +61,33 @@ Gets computer certificates on sql2016 that match thumbprints 8123472E32AB412ED42
 		foreach ($computer in $computername) {
 			
 			$scriptblock = {
-				if ($args) {
-					Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object Thumbprint -in $args
+				$Thumbprint = $args[0]
+				$Store = $args[1]
+				$Folder = $args[2]
+				
+				if ($Thumbprint) {
+					try {
+						Write-Verbose "Searching Cert:\$Store\$Folder"
+						Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object Thumbprint -in $args[0]
+					}
+					catch {
+						# don't care - there's a weird issue with remoting where an exception gets thrown for no apparent reason
+					}
 				}
 				else {
-					# This used to be hostname only but that didn't support clusters
-					Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object { $_.DnsNameList -match $env:USERDNSDOMAIN -and $_.EnhancedKeyUsageList -match '1\.3\.6\.1\.5\.5\.7\.3\.1' }
+					try {
+						# This used to be hostname only but that didn't support clusters
+						Write-Verbose "Searching Cert:\$Store\$Folder"
+						Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object { $_.DnsNameList -match $env:USERDNSDOMAIN -and $_.EnhancedKeyUsageList -match '1\.3\.6\.1\.5\.5\.7\.3\.1' }
+					}
+					catch {
+						# don't care
+					}
 				}
 			}
 			
 			try {
-				Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $thumbprint -ErrorAction Stop
+				Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $thumbprint, $Store, $Folder -ErrorAction Stop
 			}
 			catch {
 				Stop-Function -Message $_ -ErrorRecord $_ -Target $computer -Continue

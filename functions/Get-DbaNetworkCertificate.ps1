@@ -62,36 +62,43 @@ Gets computer certificates on sql2016 that are being used for SQL Server network
 			}
 			
 			foreach ($instance in $instances) {
+				
 				$regroot = ($instance.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+				$vsname = ($instance.AdvancedProperties | Where-Object Name -eq VSNAME).Value
+				$instancename = $instance.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
+				$serviceaccount = $instance.ServiceAccount
 				
 				if ($null -eq $regroot) {
 					$regroot = $instance.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
+					$vsname = $instance.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
+					
 					if ($null -ne $regroot) {
 						$regroot = ($regroot -Split 'Value\=')[1]
+						$vsname = ($vsname -Split 'Value\=')[1]
 					}
 					else {
-						Write-Message -Level Warning -Message "Can't find instance $($SqlInstance.InstanceName) on $env:COMPUTERNAME"
+						Write-Message -Level Warning -Message "Can't find instance $vsname on $env:COMPUTERNAME"
 						return
 					}
 				}
 				
-				$serviceaccount = $instance.ServiceAccount
-				$instancename = $instance.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
-				
 				Write-Message -Level Verbose -Message "Regroot: $regroot"
 				Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount"
+				Write-Message -Level Verbose -Message "InstanceName: $instancename"
+				Write-Message -Level Verbose -Message "VSNAME: $vsname"
 				
 				$scriptblock = {
 					$regroot = $args[0]
 					$serviceaccount = $args[1]
 					$instancename = $args[2]
+					$vsname = $args[3]
 					
 					$regpath = "Registry::HKEY_LOCAL_MACHINE\$regroot\MSSQLServer\SuperSocketNetLib"
 					
 					$thumbprint = (Get-ItemProperty -Path $regpath -Name Certificate -ErrorAction SilentlyContinue).Certificate
 					
 					try {
-						$cert = Get-ChildItem Cert:\ -Recurse -ErrorAction Stop | Where-Object Thumbprint -eq $Thumbprint
+						$cert = Get-ChildItem Cert:\LocalMachine -Recurse -ErrorAction Stop | Where-Object Thumbprint -eq $Thumbprint
 					}
 					catch {
 						# Don't care - sometimes there's errors that are thrown for apparent good reason
@@ -102,7 +109,7 @@ Gets computer certificates on sql2016 that are being used for SQL Server network
 					[pscustomobject]@{
 						ComputerName = $env:COMPUTERNAME
 						InstanceName = $instancename
-						SqlInstance = "$env:COMPUTERNAME\$instancename"
+						SqlInstance = $vsname
 						ServiceAccount = $serviceaccount
 						FriendlyName = $cert.FriendlyName
 						DnsNameList = $cert.DnsNameList
@@ -112,12 +119,13 @@ Gets computer certificates on sql2016 that are being used for SQL Server network
 						IssuedTo = $cert.Subject
 						IssuedBy = $cert.Issuer
 						Certificate = $cert
-					} | Select-DefaultView -ExcludeProperty Certificate
+					}
 				}
 				
 				if ($PScmdlet.ShouldProcess("local", "Connecting to $ComputerName to get a list of certs")) {
 					try {
-						Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename -ScriptBlock $scriptblock -ErrorAction Stop
+						Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname -ScriptBlock $scriptblock -ErrorAction Stop |
+						Select-DefaultView -ExcludeProperty Certificate
 					}
 					catch {
 						Stop-Function -Message $_ -ErrorRecord $_ -Target $ComputerName -Continue

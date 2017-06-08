@@ -137,16 +137,18 @@ Shows what would happen if the command were run
 				$Store = $args[2]
 				$Folder = $args[3]
 				
+				Write-Verbose "Writing cert to $tempfile"
 				[System.IO.File]::WriteAllBytes($tempfile, $args[0])
 				
 				$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
 				$cert.Import($tempfile, $args[1], [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
-				
+				Write-Verbose "Importing cert to $Folder\$Store"
 				$tempstore = New-Object System.Security.Cryptography.X509Certificates.X509Store($Folder, $Store)
 				$tempstore.Open('ReadWrite')
 				$tempstore.Add($cert)
 				$tempstore.Close()
 				
+				Write-Verbose "Searching Cert:\$Store\$Folder"
 				Get-ChildItem "Cert:\$store\$folder" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
 				
 				Remove-Item -Path $tempfile

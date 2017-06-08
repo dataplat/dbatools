@@ -66,7 +66,7 @@ Shows what would happen if the command were run
 		
 		Write-Message -Level Output -Message "Connecting to SQL WMI on $($SqlInstance.ComputerName)"
 		try {
-			$instance = Invoke-ManagedComputerCommand -Server $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($SqlInstance.InstanceName))"
+			$instance = Invoke-ManagedComputerCommand -Server $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instancename)"
 		}
 		catch {
 			Stop-Function -Message $_ -Target $instance
@@ -74,42 +74,64 @@ Shows what would happen if the command were run
 		}
 		
 		$regroot = ($instance.AdvancedProperties | Where-Object Name -eq REGROOT).Value
-		
-		Write-Message -Level Output -Message "Regroot: $regroot"
+		$vsname = ($instance.AdvancedProperties | Where-Object Name -eq VSNAME).Value
+		$instancename = $instance.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
+		$serviceaccount = $instance.ServiceAccount
 		
 		if ($null -eq $regroot) {
-			Write-Message -Level Warning -Message "Can't find instance $($SqlInstance.InstanceName) on $env:COMPUTERNAME"
+			$regroot = $instance.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
+			$vsname = $instance.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
+			
+			if ($null -ne $regroot) {
+				$regroot = ($regroot -Split 'Value\=')[1]
+				$vsname = ($vsname -Split 'Value\=')[1]
+			}
+			else {
+				Write-Message -Level Warning -Message "Can't find instance $vsname on $env:COMPUTERNAME"
+				return
+			}
+		}
+		
+		Write-Message -Level Verbose -Message "Regroot: $regroot"
+		Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount"
+		Write-Message -Level Verbose -Message "InstanceName: $instancename"
+		Write-Message -Level Verbose -Message "VSNAME: $vsname"
+		
+		if ($null -eq $regroot) {
+			Write-Message -Level Warning -Message "Can't find instance $vsname on $env:COMPUTERNAME"
 			return
 		}
 		
 		$scriptblock = {
+			$regroot = $args[0]
+			$serviceaccount = $args[1]
+			$instancename = $args[2]
+			$vsname = $args[3]
+			
 			$regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
 			$cert = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
 			Set-ItemProperty -Path $regpath -Name Certificate -Value $null
 			
 			if (![System.String]::IsNullOrEmpty($cert)) {
-				[pscustomobject]@{
-					ComputerName = $env:COMPUTERNAME
-					InstanceName = $args[2]
-					SqlInstance = $args[1]
-					CertificateThumbprint = $null
-					Notes = "Removed thumbprint: $cert"
-				}
+				$notes = "Removed thumbprint: $cert"
 			}
 			else {
-				[pscustomobject]@{
-					ComputerName = $env:COMPUTERNAME
-					InstanceName = $args[2]
-					SqlInstance = $args[1]
-					CertificateThumbprint = $null
-					Notes = $null
-				} | Select-DefaultView -ExcludeProperty Notes
-			}			
+				$notes = "Nothing to remove"
+			}
+			
+			[pscustomobject]@{
+				ComputerName = $env:COMPUTERNAME
+				InstanceName = $instancename
+				SqlInstance = $vsname
+				ServiceAccount = $serviceaccount
+				CertificateThumbprint = $null
+				Notes = $notes
+			}
 		}
 		
 		if ($PScmdlet.ShouldProcess("local", "Connecting to $ComputerName to remove the cert")) {
 			try {
-				Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $SqlInstance, $SqlInstance.InstanceName -ScriptBlock $scriptblock -ErrorAction Stop
+				Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname -ScriptBlock $scriptblock -ErrorAction Stop
 			}
 			catch {
 				Stop-Function -Message $_ -ErrorRecord $_ -Target $ComputerName -Continue
