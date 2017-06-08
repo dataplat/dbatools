@@ -110,6 +110,7 @@ Shows what would happen if the command were run
 		[switch]$Silent
 	)
 	begin {
+		
 		Test-RunAsAdmin
 		
 		function GetHexLength([int]$strLen) {
@@ -191,47 +192,6 @@ Shows what would happen if the command were run
 		$tempdir = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 		$certTemplate = "CertificateTemplate:$CertificateTemplate"
 		
-		# This dude is awesome: https://social.technet.microsoft.com/Forums/office/en-US/0b6ece8e-818f-4a0c-bde3-3f695b78433e/export-certificate-using-private-key?forum=winserversecurity
-		$signature = '[StructLayout(LayoutKind.Sequential)]
-						public struct CRYPT_DATA_BLOB {
-						   public int cbData;
-						   public IntPtr pbData;
-						}
-						 
-						[DllImport("crypt32.dll", SetLastError=true)]
-						    public static extern Boolean PFXExportCertStoreEx(
-						        IntPtr hCertStore,
-						        ref CRYPT_DATA_BLOB pPFX,
-						        [MarshalAs(UnmanagedType.LPWStr)] String szPassword,
-						        IntPtr  pvReserved,
-						        uint   dwFlags
-						        );
-
-						const uint EXPORT_PRIVATE_KEYS = 0x0004;
-
-						public static byte[]
-						PFXExportCertStoreEx(IntPtr hCertStore, String szPassword)
-						{
-						    CRYPT_DATA_BLOB ppfx = new CRYPT_DATA_BLOB();
-						    ppfx.cbData = 0; 
-						    ppfx.pbData = (System.IntPtr)0;
-
-						    PFXExportCertStoreEx(hCertStore,ref ppfx,szPassword,(System.IntPtr)0,EXPORT_PRIVATE_KEYS);
-
-						    byte[] returnValue = new byte[ppfx.cbData];
-						    ppfx.pbData = Marshal.AllocHGlobal(ppfx.cbData);
-
-						    PFXExportCertStoreEx(hCertStore,ref ppfx,szPassword,(System.IntPtr)0,EXPORT_PRIVATE_KEYS);
-
-						    Marshal.Copy(ppfx.pbData, returnValue, 0, ppfx.cbData);
-
-						    Marshal.FreeHGlobal(ppfx.pbData);
-
-						    return returnValue;
-						}'
-		
-		# load a new type to call the PFXExportCertStoreEx API
-		$type = Add-Type -Name ExportStore -Namespace CRYPT32 -MemberDefinition $signature -ErrorAction SilentlyContinue
 	}
 	
 	process {
@@ -347,18 +307,7 @@ Shows what would happen if the command were run
 				if (!$secondarynode) {
 					if ($PScmdlet.ShouldProcess("local", "Generating pfx and reading from disk")) {
 						Write-Message -Level Output -Message "Exporting PFX with password to $temppfx"
-						<#$certdata = $storedcert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $password)
-						[System.IO.File]::WriteAllBytes($temppfx, $certdata)
-						$file = [System.IO.File]::ReadAllBytes($temppfx)
-						#>
-						
-						$storeTemp = New-Object System.Security.Cryptography.x509Certificates.X509Store("temp")
-						$storeTemp.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
-						$storeTemp.Add($storedcert)
-						$file = [CRYPT32.ExportStore]::PFXExportCertStoreEx($storeTemp.StoreHandle, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))
-						Write-Message -Level Output -Message "Writing to $temppfx"
-						$storeTemp.Remove($storedcert)
-						$storeTemp.Close()
+						$certdata = $storedcert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $password)
 					}
 					
 					if ($PScmdlet.ShouldProcess("local", "Removing cert from disk")) {
@@ -368,30 +317,20 @@ Shows what would happen if the command were run
 					if ($InstanceClusterName) { $secondarynode = $true }
 				}
 				
-				$scriptblock = {
-					$tempdir = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-					$filename = "$tempdir\cert.pfx"
-					$store = $args[2]
-					$folder = $args[3]
-					
-					[System.IO.File]::WriteAllBytes($filename, $args[0])
-					#$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-					#$cert.Import($filename, $args[1], [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
-					$cert = new-object System.Security.Cryptography.x509Certificates.x509Certificate2([System.IO.File]::ReadAllBytes($filename), $args[1])
+				$scriptblock = {					
+					$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+					$cert.Import($args[0], $args[1], "Exportable,PersistKeySet")
 						
-					$tempstore = New-Object System.Security.Cryptography.X509Certificates.X509Store($folder, $store)
-					$tempstore.Open('ReadWrite')
-					$tempstore.Add($cert)
-					$tempstore.Close()
-					
-					Get-ChildItem "Cert:\$store\$folder" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
-					
-					Remove-Item -Path $filename
+					$certstore = New-Object System.Security.Cryptography.X509Certificates.X509Store($args[3], $args[2])
+					$certstore.Open('ReadWrite')
+					$certstore.Add($cert)
+					$certstore.Close()
+					Get-ChildItem "Cert:\$($args[2])\$($args[3])" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
 				}
 				
 				if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to import new cert")) {
 					try {
-						Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $file, $Password, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop
+						Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $Password, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop
 					}
 					catch {
 						Stop-Function -Message $_ -ErrorRecord $_ -Target $computer -Continue
@@ -402,6 +341,5 @@ Shows what would happen if the command were run
 				Remove-Item -Force -Recurse $certdir -ErrorAction SilentlyContinue
 			}
 		}
-		Remove-Variable -Name Password
 	}
 }

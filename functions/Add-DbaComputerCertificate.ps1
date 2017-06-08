@@ -101,6 +101,11 @@ Shows what would happen if the command were run
 			return
 		}
 		
+		if (!(Test-Path -Path $path)) {
+			Write-Message -Level Warning -Message "$Path does not exist"
+			return
+		}
+		
 		foreach ($computer in $computername) {
 			if (![dbavalidate]::IsLocalhost($computer) -and !$Password) {
 				Write-Message -Level Output -Message "You have specified a remote computer. A password is required for private key encryption/decryption for import."
@@ -110,10 +115,7 @@ Shows what would happen if the command were run
 			if ($Certificate) {
 				$tempdir = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 				$tempfile = "$tempdir\cert.cer"
-				$certdata = $certificate.Export("pfx", $password)
-				[System.IO.File]::WriteAllBytes($tempfile, $certdata)
-				$file = [System.IO.File]::ReadAllBytes($tempfile)
-				Remove-Item $tempfile
+				$certdata = $certificate.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $password)
 			}
 			
 			if ($path) {
@@ -125,23 +127,16 @@ Shows what would happen if the command were run
 			if (![dbavalidate]::IsLocalhost($computer)) {
 				if ($PScmdlet.ShouldProcess("local", "Generating pfx and reading from disk")) {
 					Write-Message -Level Output -Message "Exporting PFX with password to $temppfx"
-					$certdata = $certificate.Export("pfx", $password)
-					[System.IO.File]::WriteAllBytes($temppfx, $certdata)
-					$file = [System.IO.File]::ReadAllBytes($temppfx)
+					$certdata = $certificate.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $password)
 				}
 			}
 			
 			$scriptblock = {
-				$tempdir = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-				$tempfile = "$tempdir\cert.cer"
 				$Store = $args[2]
 				$Folder = $args[3]
 				
-				Write-Verbose "Writing cert to $tempfile"
-				[System.IO.File]::WriteAllBytes($tempfile, $args[0])
-				
 				$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-				$cert.Import($tempfile, $args[1], [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
+				$cert.Import($args[0], $args[1], [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
 				Write-Verbose "Importing cert to $Folder\$Store"
 				$tempstore = New-Object System.Security.Cryptography.X509Certificates.X509Store($Folder, $Store)
 				$tempstore.Open('ReadWrite')
@@ -156,13 +151,12 @@ Shows what would happen if the command were run
 			
 			if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to import cert")) {
 				try {
-					Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $file, $Password, $store, $folder -ScriptBlock $scriptblock -ErrorAction Stop
+					Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $Password, $store, $folder -ScriptBlock $scriptblock -ErrorAction Stop
 				}
 				catch {
 					Stop-Function -Message $_ -ErrorRecord $_ -Target $computer -Continue
 				}
 			}
 		}
-		Remove-Variable -Name Password
 	}
 }

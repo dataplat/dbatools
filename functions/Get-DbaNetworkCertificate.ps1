@@ -44,35 +44,26 @@ Gets computer certificates on sql2016 that are being used for SQL Server network
 	process {
 		foreach ($computer in $computername) {
 			
-			Write-Message -Level Verbose -Message "Resolving hostname"
-			$resolved = Resolve-DbaNetworkName -ComputerName $computer -Turbo
-			
-			if ($null -eq $resolved) {
-				Write-Message -Level Warning -Message "Can't resolve $computer"
-				return
-			}
-			
-			Write-Message -Level Verbose -Message "Connecting to SQL WMI on $($SqlInstance.ComputerName)"
+			Write-Message -Level Verbose -Message "Connecting to SQL WMI on $($computer.ComputerName)"
 			try {
-				$instances = Invoke-ManagedComputerCommand -Server $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -match "SQL Server \("
+				$sqlwmis = Invoke-ManagedComputerCommand -Server $computer.ComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -match "SQL Server \("
 			}
 			catch {
-				Write-Warning blah
-				Stop-Function -Message $_ -Target $instance -Continue
+				Stop-Function -Message $_ -Target $sqlwmi -Continue
 			}
 			
-			foreach ($instance in $instances) {
+			foreach ($sqlwmi in $sqlwmis) {
 				
-				$regroot = ($instance.AdvancedProperties | Where-Object Name -eq REGROOT).Value
-				$vsname = ($instance.AdvancedProperties | Where-Object Name -eq VSNAME).Value
-				$instancename = $instance.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
-				$serviceaccount = $instance.ServiceAccount
+				$regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+				$vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
+				$instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
+				$serviceaccount = $sqlwmi.ServiceAccount
 				
-				if ($null -eq $regroot) {
-					$regroot = $instance.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
-					$vsname = $instance.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
+				if ([System.String]::IsNullOrEmpty($regroot)) {
+					$regroot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
+					$vsname = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
 					
-					if ($null -ne $regroot) {
+					if (![System.String]::IsNullOrEmpty($regroot)) {
 						$regroot = ($regroot -Split 'Value\=')[1]
 						$vsname = ($vsname -Split 'Value\=')[1]
 					}
@@ -82,10 +73,12 @@ Gets computer certificates on sql2016 that are being used for SQL Server network
 					}
 				}
 				
-				Write-Message -Level Verbose -Message "Regroot: $regroot"
-				Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount"
-				Write-Message -Level Verbose -Message "InstanceName: $instancename"
-				Write-Message -Level Verbose -Message "VSNAME: $vsname"
+				if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $computer }
+				
+				Write-Message -Level Output -Message "Regroot: $regroot"
+				Write-Message -Level Output -Message "ServiceAcct: $serviceaccount"
+				Write-Message -Level Output -Message "InstanceName: $instancename"
+				Write-Message -Level Output -Message "VSNAME: $vsname"
 				
 				$scriptblock = {
 					$regroot = $args[0]
@@ -122,9 +115,9 @@ Gets computer certificates on sql2016 that are being used for SQL Server network
 					}
 				}
 				
-				if ($PScmdlet.ShouldProcess("local", "Connecting to $ComputerName to get a list of certs")) {
+				if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to get a list of certs")) {
 					try {
-						Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname -ScriptBlock $scriptblock -ErrorAction Stop |
+						Invoke-Command2 -ComputerName $computer.ComputerName -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname -ScriptBlock $scriptblock -ErrorAction Stop |
 						Select-DefaultView -ExcludeProperty Certificate
 					}
 					catch {

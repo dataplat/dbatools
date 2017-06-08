@@ -1,7 +1,7 @@
 ﻿function Invoke-Command2 {
 	[CmdletBinding()]
 	param (
-		[string]$ComputerName,
+		[string]$ComputerName=$env:COMPUTERNAME,
 		[object]$Credential,
 		[scriptblock]$ScriptBlock,
 		[object[]]$ArgumentList
