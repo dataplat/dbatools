@@ -119,14 +119,16 @@ function Resolve-DbaNetworkName {
 				$ipaddress = ((Test-Connection -ComputerName $Computer -Count 1 -ErrorAction Stop).Ipv4Address).IPAddressToString
 			}
 			catch {
-				try {
-					$ipaddress = ((Test-Connection -ComputerName "$Computer.$env:USERDNSDOMAIN" -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
-					$Computer = "$Computer.$env:USERDNSDOMAIN"
-				}
-				catch {
-					$Computer = $OGComputer
-					$ipaddress = ([System.Net.Dns]::GetHostEntry($Computer)).AddressList[0].IPAddressToString
-				}
+								try {
+										if ($env:USERDNSDOMAIN) {
+												$ipaddress = ((Test-Connection -ComputerName "$Computer.$env:USERDNSDOMAIN" -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
+												$Computer = "$Computer.$env:USERDNSDOMAIN"
+										}
+								}
+								catch {
+										$Computer = $OGComputer
+										$ipaddress = ([System.Net.Dns]::GetHostEntry($Computer)).AddressList[0].IPAddressToString
+								}
 			}
 
 			if ($ipaddress) {
