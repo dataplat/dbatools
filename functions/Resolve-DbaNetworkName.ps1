@@ -23,6 +23,9 @@ Function Resolve-DbaNetworkName
       .PARAMETER Turbo
       Resolves without accessing the serer itself. Faster but may be less accurate.
 
+      .PARAMETER Silent
+      Use this switch to disable any kind of verbose messages.
+
       .NOTES
       Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
@@ -61,7 +64,8 @@ Function Resolve-DbaNetworkName
 		[string[]]$ComputerName = $env:COMPUTERNAME,
     	[PSCredential] [System.Management.Automation.CredentialAttribute()]$Credential,
 		[Alias('FastParrot')]
-		[switch]$Turbo
+		[switch]$Turbo,
+		[switch]$Silent
 	)
 	BEGIN
 	{
@@ -98,23 +102,23 @@ Function Resolve-DbaNetworkName
 			{
 				try
 				{
-					Write-Verbose "$functionName - Resolving $Computer using .NET.Dns GetHostEntry"
+					Write-Message -Level Verbose -Message "$functionName - Resolving $Computer using .NET.Dns GetHostEntry"
 					$ipaddress = ([System.Net.Dns]::GetHostEntry($Computer)).AddressList[0].IPAddressToString
-					Write-Verbose "$functionName - Resolving $ipaddress using .NET.Dns GetHostByAddress"
+					Write-Message -Level Verbose -Message "$functionName - Resolving $ipaddress using .NET.Dns GetHostByAddress"
 					$fqdn = [System.Net.Dns]::GetHostByAddress($ipaddress).HostName
 				}
 				catch
 				{
 					try
 					{
-						Write-Verbose "$functionName - Resolving $Computer and IP using .NET.Dns GetHostEntry"
+						Write-Message -Level Verbose -Message "$functionName - Resolving $Computer and IP using .NET.Dns GetHostEntry"
 						$resolved = [System.Net.Dns]::GetHostEntry($Computer)
 						$ipaddress = $resolved.AddressList[0].IPAddressToString
 						$fqdn = $resolved.HostName
 					}
 					catch
 					{
-						Write-Warning "$functionName - DNS name not found"
+						Write-Message -Level Warning -Message "$functionName - DNS name not found"
 						continue
 					}
 				}
@@ -139,7 +143,7 @@ Function Resolve-DbaNetworkName
 				return
 			}
 			
-			Write-Verbose "$functionName - Connecting to $Computer"
+			Write-Message -Level Verbose -Message "$functionName - Connecting to $Computer"
 			
 			try
 			{
@@ -161,21 +165,21 @@ Function Resolve-DbaNetworkName
 			
 			if ($ipaddress)
 			{
-				Write-Verbose "$functionName - IP Address from $Computer is $ipaddress"
+				Write-Message -Level Verbose -Message "$functionName - IP Address from $Computer is $ipaddress"
 			}
 			else
 			{
-				Write-Verbose "$functionName - No IP Address returned from $Computer"
-				Write-Verbose "$functionName - Using .NET.Dns to resolve IP Address"
+				Write-Message -Level Verbose -Message "$functionName - No IP Address returned from $Computer"
+				Write-Message -Level Verbose -Message "$functionName - Using .NET.Dns to resolve IP Address"
 				return (Resolve-DbaNetworkName -ComputerName $Computer -Turbo)
 			}
 			
 			if ($host.Version.Major -gt 2)
 			{
-				Write-Verbose "$functionName - Your PowerShell Version is $($host.Version.Major)"
+				Write-Message -Level Verbose -Message "$functionName - Your PowerShell Version is $($host.Version.Major)"
 				try
 				{
-					Write-Verbose "$functionName - Getting computer information from $Computer via CIM (WSMan)"
+					Write-Message -Level Verbose -Message "$functionName - Getting computer information from $Computer via CIM (WSMan)"
 					if ($Credential)
 					{
 						$CIMsession = New-CimSession -ComputerName $Computer -ErrorAction Stop -Credential $Credential
@@ -188,13 +192,13 @@ Function Resolve-DbaNetworkName
 				}
 				catch
 				{
-					Write-Verbose "$functionName - No WSMan connection to $Computer"
+					Write-Message -Level Verbose -Message "$functionName - No WSMan connection to $Computer"
 				}
 				if (!$conn)
 				{
 					try
 					{
-						Write-Verbose "$functionName - Getting computer information from $Computer via CIM (DCOM)"
+						Write-Message -Level Verbose -Message "$functionName - Getting computer information from $Computer via CIM (DCOM)"
 						$sessionoption = New-CimSessionOption -Protocol DCOM
 						if ($Credential)
 						{
@@ -210,13 +214,13 @@ Function Resolve-DbaNetworkName
 					}
 					catch
 					{
-						Write-Warning "$functionName - No DCOM connection for CIM to $Computer"
+						Write-Message -Level Warning -Message "$functionName - No DCOM connection for CIM to $Computer"
 					}
 				}
 				
 				if (!$conn)
 				{
-					Write-Verbose "$functionName - No CIM from $Computer. Getting HostName via .NET.Dns"
+					Write-Message -Level Verbose -Message "$functionName - No CIM from $Computer. Getting HostName via .NET.Dns"
 					try
 					{
 						$fqdn = ([System.Net.Dns]::GetHostEntry($Computer)).HostName
@@ -230,7 +234,7 @@ Function Resolve-DbaNetworkName
 					}
 					catch
 					{
-						Write-Warning "$functionName - No .NET.Dns information from $Computer"
+						Write-Message -Level Warning -Message "$functionName - No .NET.Dns information from $Computer"
 						continue
 					}
 				}
@@ -239,18 +243,18 @@ Function Resolve-DbaNetworkName
 			
 			try
 			{
-				Write-Verbose "$functionName - Resolving $($conn.DNSHostname) using .NET.Dns GetHostEntry"
+				Write-Message -Level Verbose -Message "$functionName - Resolving $($conn.DNSHostname) using .NET.Dns GetHostEntry"
 				$hostentry = ([System.Net.Dns]::GetHostEntry($conn.DNSHostname)).HostName
 			}
 			catch
 			{
-				Write-Warning "$functionName - .NET.Dns GetHostEntry failed for $($conn.DNSHostname)"
+				Write-Message -Level Warning -Message "$functionName - .NET.Dns GetHostEntry failed for $($conn.DNSHostname)"
 			}
 			
 			$fqdn = "$($conn.DNSHostname).$($conn.Domain)"
 			if ($fqdn -eq ".")
 			{
-				Write-Verbose "$functionName - No full FQDN found. Setting to null"
+				Write-Message -Level Verbose -Message "$functionName - No full FQDN found. Setting to null"
 				$fqdn = $null
 			}
 			
