@@ -78,11 +78,8 @@ Gets computer certificates on sql2016 that are being used for SQL Server network
 				$serviceaccount = $instance.ServiceAccount
 				$instancename = $instance.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
 				
-				
 				Write-Message -Level Verbose -Message "Regroot: $regroot"
 				Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount"
-				
-				
 				
 				$scriptblock = {
 					$regroot = $args[0]
