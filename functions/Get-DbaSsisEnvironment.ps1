@@ -52,9 +52,19 @@ Get-DbaSsisEnvironment -SqlInstance localhost -EnvironmentExclude DEV, PROD -Fol
 Gets variables of environments other than 'DEV' and 'PROD' located in folders 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
 
 .EXAMPLE
-Get-DbaSsisEnvironment -SqlInstance localhost -EnvironmentExclude DEV, PROD -FolderEcxclude DWH_ETL, DEV2, QA
+Get-DbaSsisEnvironment -SqlInstance localhost -EnvironmentExclude DEV, PROD -FolderExclude DWH_ETL, DEV2, QA
 
 Gets variables of environments other than 'DEV' and 'PROD' located in folders other than 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
+
+.EXAMPLE
+'localhost' | Get-DbaSsisEnvironment -EnvironmentExclude DEV, PROD
+
+Gets all SSIS environments except 'DEV' and 'PROD' from 'localhost' server. The server name comes from pipeline
+
+.EXAMPLE
+'SRV1', 'SRV3' | Get-DbaSsisEnvironment
+
+Gets all SSIS environments from 'SRV1' and 'SRV3' servers. The server's names come from pipeline
 
 .NOTES
 Author: Bartosz Ratajczyk ( @b_ratajczyk )
@@ -95,36 +105,34 @@ function Get-DbaSsisEnvironment {
         {
             try
             {
-                Write-Message -Message "Connecting to $instance" -Level 5 -Silent $Silent
+                Write-Message -Message "Connecting to $instance" -Level Verbose
                 $connection = Connect-SqlInstance -SqlInstance $instance
             }
             catch
             {
-                Stop-Function -Message "Failed to connect to: $instance" -ErrorRecord $_ -Target $instance -Continue -Silent $Silent
-                return
+                Stop-Function -Message "Failed to connect to: $instance" -ErrorRecord $_ -Target $instance -Continue
             }
             
 
             if ($connection.versionMajor -lt 11)
             {
-                Stop-Function -Message "SSISDB catalog is only available on Sql Server 2012 and above, exiting." -Silent $Silent
-                return
+                Stop-Function -Message "SSIS Catalog is only available on Sql Server 2012 and above, skipping server $instance"  -ErrorRecord $_ -Target $instance -Continue
             }
 
             try
             {
                 $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
 
-                Write-Message -Message "Connecting to $instance Integration Services" -Level 5 -Silent $Silent
+                Write-Message -Message "Connecting to $instance Integration Services" -Level Verbose
                 $SSIS = New-Object "$ISNamespace.IntegrationServices" $connection
             }
             catch
             {
-                Stop-Function -Message "Could not connect to Integration Services on $instance" -Silent $Silent
+                Stop-Function -Message "Could not connect to Integration Services on $instance"
                 return
             }
 
-            Write-Message -Message "Fetching SSIS Catalog and its folders" -Level 5 -Silent $Silent
+            Write-Message -Message "Fetching SSIS Catalog and its folders" -Level Verbose
             $catalog = $SSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
 
             # get all folders names if none provided
