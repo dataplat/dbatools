@@ -90,7 +90,7 @@ function Resolve-DbaNetworkName {
 						$fqdn = $resolved.HostName
 					}
 					catch {
-						Stop-Function -Message "DNS name not found" -Continue
+						Stop-Function -Message "DNS name not found" -Continue -InnerErrorRecord $_
 					}
 				}
 
@@ -145,10 +145,10 @@ function Resolve-DbaNetworkName {
 				try {
 					Write-Message -Level Verbose -Message "Getting computer information from $Computer"
 					if (Was-Bound "Credential") {
-						$conn = Get-DbaCmObject -ClassName win32_ComputerSystem -Computer $Computer -Credential $Credential
+						$conn = Get-DbaCmObject -ClassName win32_ComputerSystem -Computer $Computer -Credential $Credential -Silent
 					}
 					else {
-						$conn = Get-DbaCmObject -ClassName win32_ComputerSystem -Computer $Computer
+						$conn = Get-DbaCmObject -ClassName win32_ComputerSystem -Computer $Computer -Silent
 					}
 				}
 				catch {
