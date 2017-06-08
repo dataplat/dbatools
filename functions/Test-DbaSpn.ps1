@@ -251,9 +251,7 @@ have be a valid login with appropriate rights on the domain
 							} else {
 								$newspn.RequiredSPN = $newspn.RequiredSPN.Replace($newSPN.InstanceName, $newspn.Port)
 							}
-
 						}
-						
 						$spns += $newspn
 					}
 				}
@@ -278,16 +276,21 @@ have be a valid login with appropriate rights on the domain
 				$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer, $hostentry
 			}
 			
-			
 			#Now query AD for each required SPN
 			foreach ($spn in $spns) {
+				$searchfor = 'User'
+				if($spn.InstanceServiceAccount -eq 'LocalSystem' -or $newspn.InstanceServiceAccount -like 'NT SERVICE\*') {
+					Write-Message -Level Verbose -Message "Virtual account detected, changing target registration to computername"
+					$spn.InstanceServiceAccount = "$($resolved.Domain)\$($resolved.ComputerName)$"
+					$searchfor = 'Computer'
+				}
 				$serviceAccount = $spn.InstanceServiceAccount
 				# spare the cmdlet to search for the same account over and over
 				if ($spn.InstanceServiceAccount -notin $resultcache.Keys) {
 					Write-Message -Message "searching for $serviceAccount" -Level Verbose
 					try
 					{
-						$result = Get-DbaADObject -ADObject $serviceAccount -Type User -Credential $Credential -Silent
+						$result = Get-DbaADObject -ADObject $serviceAccount -Type $searchfor -Credential $Credential -Silent
 						$resultcache[$spn.InstanceServiceAccount] = $result
 					}
 					catch

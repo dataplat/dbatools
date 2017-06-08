@@ -9,10 +9,6 @@
     .PARAMETER Errors
     Instead of log entries, the error entries will be retrieved
 
-    .PARAMETER Silent
-    Replaces user friendly yellow warnings with bloody red exceptions of doom!
-    Use this if you want the function to throw terminating errors you want to catch.
-
     .NOTES
 	Original Author: Fred Weinmann (@FredWeinmann)
 	Tags: Debug
@@ -33,15 +29,11 @@
     param
     (
         [switch]
-        $Errors,
-
-        [switch]
-        $Silent
+        $Errors
     )
 
     BEGIN {
-        Write-Message -Level InternalComment -Message "Starting"
-        Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
+        # No Write-Message, since that would clutter the very log you want to retrieve
     }
 
     PROCESS {
@@ -50,6 +42,6 @@
     }
 
     END {
-        Write-Message -Level InternalComment -Message "Ending"
+        
     }
 }
