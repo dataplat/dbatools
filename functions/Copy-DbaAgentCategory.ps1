@@ -168,7 +168,6 @@ function Copy-DbaAgentCategory {
 						try {
 							Write-Message -Level Verbose -Message "Copying Job category $categoryName"
 							$sql = $jobCategory.Script() | Out-String
-							$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 							Write-Message -Level Debug -Message $sql
 							$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 
@@ -232,7 +231,6 @@ function Copy-DbaAgentCategory {
 									$destServer.JobServer.OperatorCategories[$categoryName].Drop()
 									Write-Message -Level Verbose -Message "Copying Operator category $categoryName"
 									$sql = $operatorCategory.Script() | Out-String
-									$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 									Write-Message -Level Derbug -Message $sql
 									$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 								}
@@ -249,7 +247,6 @@ function Copy-DbaAgentCategory {
 							try {
 								Write-Message -Level Verbose -Message "Copying Operator category $categoryName"
 								$sql = $operatorCategory.Script() | Out-String
-								$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 								Write-Message -Level Debug -Message $sql
 								$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 
@@ -319,7 +316,6 @@ function Copy-DbaAgentCategory {
                                     $destServer.JobServer.AlertCategories[$categoryName].Drop()
                                     Write-Message -Level Verbose -Message "Copying Alert category $categoryName"
                                     $sql = $alertcategory.Script() | Out-String
-                                    $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
                                     Write-Verbose $sql
                                     $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
                                 }
@@ -336,7 +332,6 @@ function Copy-DbaAgentCategory {
                             try {
                                 Write-Message -Level Verbose -Message "Copying Alert category $categoryName"
                                 $sql = $alertCategory.Script() | Out-String
-                                $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
                                 Write-Message -Level Debug -Message $sql
                                 $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 								
