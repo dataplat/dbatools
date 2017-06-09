@@ -1,16 +1,29 @@
-﻿function Add-DbaComputerCertificate {
+﻿function Remove-DbaComputerCertificate {
 <#
 .SYNOPSIS
-Adds a computer certificate - useful for removing certs from remote computers
+Removes a computer certificate useful for Forcing Encryption
 
 .DESCRIPTION
-Adds a computer certificate from a local or remote compuer
+Removes a computer certificate - signed by an Active Directory CA, using the Web Server certificate. Self-signing is not currenty supported but feel free to add it.
+	
+By default, a key with a length of 1024 and a friendly name of the machines FQDN is generated.
+	
+This command was originally intended to help automate the process so that SSL certificates can be available for enforcing encryption on connections.
+	
+It makes a lot of assumptions - namely, that your account is allowed to auto-enroll and that you have permission to do everything it needs to do ;)
+
+References:
+http://sqlmag.com/sql-server/7-steps-ssl-encryption
+https://azurebi.jppp.org/2016/01/23/using-lets-encrypt-certificates-for-secure-sql-server-connections/
+https://blogs.msdn.microsoft.com/sqlserverfaq/2016/09/26/creating-and-registering-ssl-certificates/
+
+The certificate is generated using AD's webserver SSL template on the client machine and pushed to the remote machine.
 
 .PARAMETER ComputerName
-The target SQL Server - defaults to localhost
+The target SQL Server - defaults to localhost. If target is a cluster, you must also specify InstanceClusterName (see below)
 
 .PARAMETER Credential
-Allows you to login to $ComputerName using alternative credentials
+Allows you to login to $ComputerName using alternative credentials.
 
 .PARAMETER Store
 Certificate store - defaults to LocalMachine
@@ -21,11 +34,8 @@ Certificate folder - defaults to My (Personal)
 .PARAMETER Certificate
 The target certificate object
 
-.PARAMETER Thumbprint
-The thumbprint of the certificate object 
-
 .PARAMETER Path
-The path to the target certificate object 
+The path to the target certificate object
 
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
@@ -44,14 +54,14 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
-Add-DbaComputerCertificate -ComputerName Server1 -Path C:\temp\cert.cer
+Remove-DbaComputerCertificate -ComputerName Server1 -Path C:\temp\cert.cer
 
-Adds the local C:\temp\cer.cer to the remote server Server1 in LocalMachine\My (Personal)
+Removes the local C:\temp\cer.cer to the remote server Server1 in LocalMachine\My (Personal)
 
 .EXAMPLE
-Add-DbaComputerCertificate -Path C:\temp\cert.cer
+Remove-DbaComputerCertificate -Path C:\temp\cert.cer
 
-Adds the local C:\temp\cer.cer to the local computer's LocalMachine\My (Personal) certificate store
+Removes the local C:\temp\cer.cer to the local computer's LocalMachine\My (Personal) certificate store
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
@@ -59,7 +69,6 @@ Adds the local C:\temp\cer.cer to the local computer's LocalMachine\My (Personal
 		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
 		[System.Management.Automation.PSCredential]$Credential,
-		[securestring]$Password,
 		[parameter(ParameterSetName = "Certificate", ValueFromPipeline)]
 		[System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate,
 		[string]$Path,
