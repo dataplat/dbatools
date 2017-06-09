@@ -1,7 +1,7 @@
 ﻿function Add-DbaComputerCertificate {
 <#
 .SYNOPSIS
-Adds a computer certificate - useful for removing certs from remote computers
+Adds a computer certificate - useful for older systems
 
 .DESCRIPTION
 Adds a computer certificate from a local or remote compuer
@@ -22,7 +22,7 @@ Certificate folder - defaults to My (Personal)
 The target certificate object
 
 .PARAMETER Path
-The path to the target certificate object
+The local path to the target certificate object
 	
 .PARAMETER Password
 The password for the certificate, if it is password protected
@@ -86,34 +86,28 @@ Adds the local C:\temp\cer.cer to the local computer's LocalMachine\My (Personal
 			$Password = ((65 .. 90) + (97 .. 122) | Get-Random -Count 29 | ForEach-Object { [char]$_ }) -join "" | ConvertTo-SecureString -AsPlainText -Force
 		}
 		
-		if ($Certificate) {
-			$certdata = $certificate.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $password)
+		if ($path) {
+			try {
+				# This may be too much, but ¯\_(ツ)_/¯
+				$bytes = [System.IO.File]::ReadAllBytes($path)
+				$Certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+				$Certificate.Import($bytes, $password, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
+			}
+			catch {
+				Stop-Function -Message "Can't import certificate." -ErrorRecord $_ -Continue
+			}
 		}
 		
-		if ($path) {
-			# This may be too much, but ¯\_(ツ)_/¯
+		if ($Certificate) {
 			try {
-				$file = Get-ChildItem $Path
-				$bytes = [System.IO.File]::ReadAllBytes($path)
-				
-				if ($file.Extension -eq '.pfx') {
-					$pfx = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection
-					$pfx.Import($bytes, $password, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::PersistKeySet)
-					$certdata = $pfx.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $password)
-				}
-				else {
-					$Certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-					$Certificate.Import($bytes, $password, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
-					$certdata = $certificate.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $password)
-				}
-		}
+				$certdata = $certificate.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $password)
+			}
 			catch {
-				Stop-Function -Message "Can't import certificate."	-ErrorRecord $_ -Continue
+				Stop-Function -Message "Can't export certificate" -ErrorRecord $_ -Continue
 			}
 		}
 		
 		foreach ($computer in $computername) {
-			
 			$scriptblock = {
 				$Store = $args[2]
 				$Folder = $args[3]
