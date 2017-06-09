@@ -169,7 +169,7 @@ function Copy-DbaAgentCategory {
 							Write-Message -Level Verbose -Message "Copying Job category $categoryName"
 							$sql = $jobCategory.Script() | Out-String
 							Write-Message -Level Debug -Message $sql
-							$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+							$destServer.Query($sql)
 
 							$copyJobCategoryStatus.Status = "Successful"
 							$copyJobCategoryStatus
@@ -232,7 +232,7 @@ function Copy-DbaAgentCategory {
 									Write-Message -Level Verbose -Message "Copying Operator category $categoryName"
 									$sql = $operatorCategory.Script() | Out-String
 									Write-Message -Level Derbug -Message $sql
-									$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+									$destServer.Query($sql)
 								}
 								catch {
 									$copyOperatorCategoryStatus.Status = "Failed"
@@ -248,7 +248,7 @@ function Copy-DbaAgentCategory {
 								Write-Message -Level Verbose -Message "Copying Operator category $categoryName"
 								$sql = $operatorCategory.Script() | Out-String
 								Write-Message -Level Debug -Message $sql
-								$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+								$destServer.Query($sql)
 
 								$copyOperatorCategoryStatus.Status = "Successful"
 								$copyOperatorCategoryStatus
@@ -317,7 +317,7 @@ function Copy-DbaAgentCategory {
                                     Write-Message -Level Verbose -Message "Copying Alert category $categoryName"
                                     $sql = $alertcategory.Script() | Out-String
                                     Write-Verbose $sql
-                                    $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+                                    $destServer.Query($sql)
                                 }
                                 catch {
                                     $copyAlertCategoryStatus.Status = "Failed"
@@ -333,7 +333,7 @@ function Copy-DbaAgentCategory {
                                 Write-Message -Level Verbose -Message "Copying Alert category $categoryName"
                                 $sql = $alertCategory.Script() | Out-String
                                 Write-Message -Level Debug -Message $sql
-                                $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+                                $destServer.Query($sql)
 								
                                 $copyAlertCategoryStatus.Status = "Successful"
                                 $copyAlertCategoryStatus
