@@ -279,7 +279,7 @@ have be a valid login with appropriate rights on the domain
 			#Now query AD for each required SPN
 			foreach ($spn in $spns) {
 				$searchfor = 'User'
-				if($spn.InstanceServiceAccount -eq 'LocalSystem' -or $newspn.InstanceServiceAccount -like 'NT SERVICE\*') {
+				if($spn.InstanceServiceAccount -eq 'LocalSystem' -or $spn.InstanceServiceAccount -like 'NT SERVICE\*') {
 					Write-Message -Level Verbose -Message "Virtual account detected, changing target registration to computername"
 					$spn.InstanceServiceAccount = "$($resolved.Domain)\$($resolved.ComputerName)$"
 					$searchfor = 'Computer'
