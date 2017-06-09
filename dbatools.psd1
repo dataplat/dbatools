@@ -303,7 +303,7 @@
 		'Remove-DbaNetworkCertificate',
 		'Enable-DbaForceNetworkEncryption',
 		'Disable-DbaForceNetworkEncryption',
-		'Get-DbaForceNetworkEncryption'		
+		'Get-DbaForceNetworkEncryption'
 	)
 	
 	# Cmdlets to export from this module
