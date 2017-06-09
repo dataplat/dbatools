@@ -1,10 +1,10 @@
 ﻿function Set-DbaAgentJobOutputFile {
 	<#
 		.Synopsis
-
+			Set the output file for a step within an Agent job.
 
 		.DESCRIPTION
-			Sets the OutPut File for a step of an agent job with the Job Names and steps provided dynamically if required
+			Sets the Output File for a step of an agent job with the Job Names and steps provided dynamically if required
 
 		.PARAMETER SqlInstance
 			The SQL Server that you're connecting to.
@@ -12,8 +12,8 @@
 		.PARAMETER SQLCredential
 			Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determiend by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
-		.PARAMETER JobName
-			The Agent Job Name to provide Output File Path for. Also available dynamically
+		.PARAMETER Job
+			The job to process - this list is auto populated from the server.
 
 		.PARAMETER Step
 			The Agent Job Step to provide Output File Path for. Also available dynamically
@@ -27,9 +27,12 @@
 		.PARAMETER Confirm
 			Prompts you for confirmation before executing any changing operations within the command.
 
+		.PARAMETER Silent
+			Replaces user friendly yellow warnings with bloody red exceptions of doom!
+
 		.NOTES
 			Original Author - Rob Sewell (https://sqldbawithabeard.com)
-			
+
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -42,8 +45,7 @@
 			Sets the Job step for The Agent job on SERVERNAME to E:\Logs\AgentJobStepOutput.txt
 	#>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	param
-	(# The Server/instance
+	param (
 		[Parameter(Mandatory = $true, HelpMessage = 'The SQL Server Instance',
 			ValueFromPipeline = $true,
 			ValueFromPipelineByPropertyName = $true,
@@ -58,6 +60,13 @@
 			ValueFromPipelineByPropertyName = $true,
 			ValueFromRemainingArguments = $false)]
 		[System.Management.Automation.PSCredential]$SqlCredential,
+		[object[]]$Job,
+		[Parameter(Mandatory = $false, HelpMessage = 'The Job Step name',
+			ValueFromPipeline = $true,
+			ValueFromPipelineByPropertyName = $true)]
+		[ValidateNotNull()]
+		[ValidateNotNullOrEmpty()]
+		[object[]]$Step,
 		[Parameter(Mandatory = $true, HelpMessage = 'The Full Output File Path',
 			ValueFromPipeline = $true,
 			ValueFromPipelineByPropertyName = $true,
@@ -65,12 +74,7 @@
 		[ValidateNotNull()]
 		[ValidateNotNullOrEmpty()]
 		[string]$OutputFile,
-		[Parameter(Mandatory = $false, HelpMessage = 'The Job Step name',
-			ValueFromPipeline = $true,
-			ValueFromPipelineByPropertyName = $true)]
-		[ValidateNotNull()]
-		[ValidateNotNullOrEmpty()]
-		[object[]]$Step
+		[switch]$Silent
 	)
 
 	foreach ($instance in $sqlinstance) {
@@ -78,49 +82,49 @@
 			$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 		}
 		catch {
-			Write-Warning "Failed to connect to: $instance"
+			Write-Message -Level Warning -Message "Failed to connect to: $instance"
 			continue
 		}
 
-		if (!$JobName) {
+		if (!$Job) {
 			# This is because jobname isn't yet required
-			Write-Warning "You must specify a jobname using -Jobs"
+			Write-Message -Level Warning -Message "You must specify a job using the -Job parameter."
 			return
 		}
 
-		foreach ($name in $JobName) {
-			$Job = $server.JobServer.Jobs[$name]
+		foreach ($name in $Job) {
+			$currentJob = $server.JobServer.Jobs[$name]
 
-			If ($step) {
-				$steps = $Job.JobSteps | Where-Object Name -in $step
+			if ($Step) {
+				$steps = $currentJob.JobSteps | Where-Object Name -in $Step
 
 				if (!$steps) {
-					Write-Warning "$step didn't return any steps"
+					Write-Message -Level Warning -Message "$Step didn't return any steps"
 					return
 				}
 			}
 			else {
-				if (($Job.JobSteps).Count -gt 1) {
-					Write-output "Which Job Step do you wish to add output file to?"
-					$steps = $Job.JobSteps | Out-GridView -Title "Choose the Job Steps to add an output file to" -PassThru -Verbose
+				if (($currentJob.JobSteps).Count -gt 1) {
+					Write-Message -Level Output -Message "Which Job Step do you wish to add output file to?"
+					$steps = $currentJob.JobSteps | Out-GridView -Title "Choose the Job Steps to add an output file to" -PassThru -Verbose
 				}
 				else {
-					$steps = $Job.JobSteps
+					$steps = $currentJob.JobSteps
 				}
 			}
 
 			if (!$steps) {
-				$steps = $Job.JobSteps
+				$steps = $currentJob.JobSteps
 			}
 
 			foreach ($jobstep in $steps) {
 				$currentoutputfile = $jobstep.OutputFileName
 
-				Write-Verbose "Current Output File for $job is $currentoutputfile"
-				Write-Verbose "Adding $OutputFile to $jobstep for $Job"
+				Write-Message -Level Verbose -Message "Current Output File for $currentJob is $currentoutputfile"
+				Write-Message -Level Verbose -Message "Adding $OutputFile to $jobstep for $currentJob"
 
 				try {
-					If ($Pscmdlet.ShouldProcess($jobstep, "Changing Output File from $currentoutputfile to $OutputFile")) {
+					if ($Pscmdlet.ShouldProcess($jobstep, "Changing Output File from $currentoutputfile to $OutputFile")) {
 						$jobstep.OutputFileName = $OutputFile
 						$jobstep.Alter()
 						$jobstep.Refresh()
@@ -129,14 +133,14 @@
 							ComputerName   = $server.NetName
 							InstanceName   = $server.ServiceName
 							SqlInstance    = $server.DomainInstanceName
-							Job            = $Job.Name
+							Job            = $currentJob.Name
 							JobStep        = $jobstep.Name
 							OutputFileName = $currentoutputfile
 						}
 					}
 				}
 				catch {
-					Write-Warning "Failed to add $OutputFile to $jobstep for $JobName"
+					Stop-Function -Message "Failed to add $OutputFile to $jobstep for $currentJob" -InnerErrorRecord $_ -Target $currentJob
 				}
 			}
 		}

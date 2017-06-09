@@ -151,7 +151,7 @@
                 try { $conType = $connection.GetConnectionType(($excluded -join ","), $Force) }
                 catch {
                     if (-not $disable_cache) { [sqlcollective.dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
-                    Stop-Function -Message "[$computer] Could not find a valid connection protocol, interrupting execution now" -Target $computer -Category OpenError -Continue -ContinueLabel "main" -SilentlyContinue:$SilentlyContinue -InnerErrorRecord $_
+                    Stop-Function -Message "[$computer] Could not find a valid connection protocol, interrupting execution now" -Target $computer -Category OpenError -Continue -ContinueLabel "main" -SilentlyContinue:$SilentlyContinue -ErrorRecord $_
                 }
 
                 switch ($conType.ToString()) {
@@ -234,15 +234,30 @@
                     #region Wmi
                     "Wmi" {
                         Write-Message -Level Verbose -Message "[$computer] Accessing computer using WMI"
-                        try {
-                            $parameters = @{
-                                ComputerName = $computer
-                                Credential   = $cred
-                                ClassName    = $ClassName
-                                ErrorAction  = 'Stop'
-                            }
-                            if ($PSBoundParameters.ContainsKey("Namespace")) { $parameters["Namespace"] = $Namespace }
-                            Get-WmiObject @parameters
+						try {
+							switch ($ParSet) {
+								"Class" {
+									$parameters = @{
+										ComputerName = $computer
+										ClassName = $ClassName
+										ErrorAction = 'Stop'
+									}
+									if ($cred) { $parameters["Credential"] = $cred }
+									if (Was-Bound "Namespace") { $parameters["Namespace"] = $Namespace }
+									
+								}
+								"Query" {
+									$parameters = @{
+										ComputerName = $computer
+										Query = $Query
+										ErrorAction = 'Stop'
+									}
+									if ($cred) { $parameters["Credential"] = $cred }
+									if (Was-Bound "Namespace") { $parameters["Namespace"] = $Namespace }
+								}
+							}
+							
+							Get-WmiObject @parameters
 
                             Write-Message -Level Verbose -Message "[$computer] Accessing computer using WMI - Success!"
                             $connection.ReportSuccess('Wmi')
@@ -251,17 +266,17 @@
                             continue main
                         }
                         catch {
-                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using WMI - Failed!"
+                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using WMI - Failed!" -ErrorRecord $_
 
                             if ($_.CategoryInfo.Reason -eq "UnauthorizedAccessException") {
                                 # Ignore the global setting for bad credential cache disabling, since the connection object is aware of that state and will ignore input if it should.
                                 # This is due to the ability to locally override the global setting, thus it must be done on the object and can then be done in code
                                 $connection.AddBadCredential($cred)
                                 if (-not $disable_cache) { [sqlcollective.dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
-                                Stop-Function -Message "[$computer] Invalid connection credentials" -Target $computer -Continue -ContinueLabel "main" -InnerErrorRecord $_ -SilentlyContinue:$SilentlyContinue
+                                Stop-Function -Message "[$computer] Invalid connection credentials" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue
                             }
                             elseif ($_.CategoryInfo.Category -eq "InvalidType") {
-                                Stop-Function -Message "[$computer] Invalid class name ($ClassName), not found in current namespace ($Namespace)" -Target $computer -Continue -ContinueLabel "main" -InnerErrorRecord $_ -SilentlyContinue:$SilentlyContinue
+                                Stop-Function -Message "[$computer] Invalid class name ($ClassName), not found in current namespace ($Namespace)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue
                             }
                             else {
                                 $connection.ReportFailure('Wmi')

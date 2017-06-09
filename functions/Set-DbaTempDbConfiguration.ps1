@@ -165,7 +165,7 @@ Returns PSObject representing tempdb configuration.
 			}
 		}
 		else {
-			$Filepath = $server.Databases['tempdb'].ExecuteWithResults('SELECT physical_name as FileName FROM sys.database_files WHERE file_id = 1').Tables.FileName
+			$Filepath = $server.Databases['tempdb'].ExecuteWithResults('SELECT physical_name as FileName FROM sys.database_files WHERE file_id = 1').Tables[0].Rows[0].FileName
 			$DataPath = Split-Path $Filepath
 		}
 		
@@ -178,7 +178,7 @@ Returns PSObject representing tempdb configuration.
 			}
 		}
 		else {
-			$Filepath = $server.Databases['tempdb'].ExecuteWithResults('SELECT physical_name as FileName FROM sys.database_files WHERE file_id = 2').Tables.FileName
+			$Filepath = $server.Databases['tempdb'].ExecuteWithResults('SELECT physical_name as FileName FROM sys.database_files WHERE file_id = 2').Tables[0].Rows[0].FileName
 			$LogPath = Split-Path $Filepath
 		}
 		Write-Message -Message "Using log path: $LogPath" -Level Verbose
@@ -192,8 +192,8 @@ Returns PSObject representing tempdb configuration.
 		$LogSizeMBActual = if (-not $LogFileSizeMB) { $([Math]::Floor($DataFileSizeMB/4)) }
 
 		# Check current tempdb. Throw an error if current tempdb is larger than config.
-		$CurrentFileCount = $server.Databases['tempdb'].ExecuteWithResults('SELECT count(1) as FileCount FROM sys.database_files WHERE type=0').Tables.FileCount
-		$TooBigCount = $server.Databases['tempdb'].ExecuteWithResults("SELECT TOP 1 (size/128) as Size FROM sys.database_files WHERE size/128 > $DataFilesizeSingleMB AND type = 0").Tables.Size
+		$CurrentFileCount = $server.Databases['tempdb'].ExecuteWithResults('SELECT count(1) as FileCount FROM sys.database_files WHERE type=0').Tables[0].Rows[0].FileCount
+		$TooBigCount = $server.Databases['tempdb'].ExecuteWithResults("SELECT TOP 1 (size/128) as Size FROM sys.database_files WHERE size/128 > $DataFilesizeSingleMB AND type = 0").Tables[0].Rows[0].Size
 		
 		if ($CurrentFileCount -gt $DataFileCount) {
 			Stop-Function -Message "Current tempdb not suitable to be reconfigured. The current tempdb has a greater number of files ($CurrentFileCount) than the calculated configuration ($DataFileCount)."
@@ -205,7 +205,7 @@ Returns PSObject representing tempdb configuration.
 			return
 		}
 		
-		$EqualCount = $server.Databases['tempdb'].ExecuteWithResults("SELECT count(1) as FileCount FROM sys.database_files WHERE size/128 = $DataFilesizeSingleMB AND type = 0").Tables.FileCount
+		$EqualCount = $server.Databases['tempdb'].ExecuteWithResults("SELECT count(1) as FileCount FROM sys.database_files WHERE size/128 = $DataFilesizeSingleMB AND type = 0").Tables[0].Rows[0].FileCount
 		
 		if ($EqualCount -gt 0) {
 			Stop-Function -Message "Current tempdb not suitable to be reconfigured. The current tempdb is the same size as the specified DataFileSizeMB."
@@ -214,7 +214,7 @@ Returns PSObject representing tempdb configuration.
 		
 		Write-Message -Message "tempdb configuration validated." -Level Verbose
 		
-		$DataFiles = $server.Databases['tempdb'].ExecuteWithResults("select f.Name, f.physical_name as FileName from sys.filegroups fg join sys.database_files f on fg.data_space_id = fg.data_space_id where fg.name = 'PRIMARY' and f.type_desc = 'ROWS'").Tables
+		$DataFiles = $server.Databases['tempdb'].ExecuteWithResults("select f.name as Name, f.physical_name as FileName from sys.filegroups fg join sys.database_files f on fg.data_space_id = f.data_space_id where fg.name = 'PRIMARY' and f.type_desc = 'ROWS'").Tables[0];
 		
 		#Checks passed, process reconfiguration
 		for ($i = 0; $i -lt $DataFileCount; $i++) {
@@ -236,7 +236,7 @@ Returns PSObject representing tempdb configuration.
 			$LogFileSizeMB = [Math]::Floor($DataFileSizeMB/4)
 		}
 		
-		$logfile = $server.Databases['tempdb'].ExecuteWithResults("SELECT name, physical_name as FileName FROM sys.database_files WHERE file_id = 2").Tables
+		$logfile = $server.Databases['tempdb'].ExecuteWithResults("SELECT name, physical_name as FileName FROM sys.database_files WHERE file_id = 2").Tables[0].Rows[0];
 		$Filename = Split-Path $logfile.FileName -Leaf
 		$LogicalName = $logfile.Name
 		$NewPath = "$LogPath\$Filename"

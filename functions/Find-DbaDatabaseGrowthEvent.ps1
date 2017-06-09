@@ -1,145 +1,166 @@
-function Find-DbaDatabaseGrowthEvent
-{
-<#
-.SYNOPSIS
-Finds any database AutoGrow events in the Default Trace.
-	
-.DESCRIPTION
-Finds any database AutoGrow events in the Default Trace.
-	
-.PARAMETER SqlInstance
-The SQL Server that you're connecting to.
+function Find-DbaDatabaseGrowthEvent {
+	<#
+		.SYNOPSIS
+			Finds any database AutoGrow events in the Default Trace.
 
-.PARAMETER SqlCredential
-SqlCredential object used to connect to the SQL Server as a different user.
-	
-.PARAMETER Database
-The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+		.DESCRIPTION
+			Finds any database AutoGrow events in the Default Trace.
 
-.PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is autopopulated from the server
-	
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
+		.PARAMETER SqlInstance
+			The SQL Server that you're connecting to.
 
-.NOTES
-Author: Aaron Nelson
-Tags: AutoGrow
-dbatools PowerShell module (https://dbatools.io)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
-Query Extracted from SQL Server Management Studio (SSMS) 2016.
+		.PARAMETER SqlCredential
+			SqlCredential object used to connect to the SQL Server as a different user.
 
-.LINK
-https://dbatools.io/Find-DbaDatabaseGrowthEvent
+		.PARAMETER Database
+			The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-.EXAMPLE
-Find-DBADatabaseGrowthEvent -SqlInstance localhost
+		.PARAMETER ExcludeDatabase
+			The database(s) to exclude - this list is autopopulated from the server
 
-Returns any database AutoGrow events in the Default Trace for every database on the localhost instance.
+		.PARAMETER Silent
+			Use this switch to disable any kind of verbose messages
 
-.EXAMPLE
-Find-DBADatabaseGrowthEvent -SqlInstance ServerA\SQL2016, ServerA\SQL2014
+		.NOTES
+			Tags: AutoGrow
+			Original Author: Aaron Nelson
+			Query Extracted from SQL Server Management Studio (SSMS) 2016.
 
-Returns any database AutoGrow events in the Default Traces for every database on ServerA\sql2016 & ServerA\SQL2014.
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.EXAMPLE
-Find-DBADatabaseGrowthEvent -SqlInstance ServerA\SQL2016 | Format-Table -AutoSize -Wrap
+		.LINK
+			https://dbatools.io/Find-DbaDatabaseGrowthEvent
 
-Returns any database AutoGrow events in the Default Trace for every database on the ServerA\SQL2016 instance in a table format.
-	
-#>
+		.EXAMPLE
+			Find-DBADatabaseGrowthEvent -SqlInstance localhost
+
+			Returns any database AutoGrow events in the Default Trace for every database on the localhost instance.
+
+		.EXAMPLE
+			Find-DBADatabaseGrowthEvent -SqlInstance ServerA\SQL2016, ServerA\SQL2014
+
+			Returns any database AutoGrow events in the Default Traces for every database on ServerA\sql2016 & ServerA\SQL2014.
+
+		.EXAMPLE
+			Find-DBADatabaseGrowthEvent -SqlInstance ServerA\SQL2016 | Format-Table -AutoSize -Wrap
+
+			Returns any database AutoGrow events in the Default Trace for every database on the ServerA\SQL2016 instance in a table format.
+	#>
 	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[switch]$Silent
 	)
-		
-	begin
-	{
-		$query = "begin try  
-					if (select convert(int,value_in_use) from sys.configurations where name = 'default trace enabled' ) = 1 
-					begin 
-					declare @curr_tracefilename varchar(500) ; 
-					declare @base_tracefilename varchar(500) ; 
-					declare @indx int ;
 
-					select @curr_tracefilename = path from sys.traces where is_default = 1 ; 
-					set @curr_tracefilename = reverse(@curr_tracefilename);
-					select @indx  = patindex('%\%', @curr_tracefilename) ;
-					set @curr_tracefilename = reverse(@curr_tracefilename) ;
-					set @base_tracefilename = left( @curr_tracefilename,len(@curr_tracefilename) - @indx) + '\log.trc' ;  
+	begin {
+		$sql = "
+			BEGIN TRY
+				IF (SELECT CONVERT(INT,[value_in_use]) FROM sys.configurations WHERE [name] = 'default trace enabled' ) = 1
+					BEGIN
+						DECLARE @curr_tracefilename VARCHAR(500);
+						DECLARE @base_tracefilename VARCHAR(500);
+						DECLARE @indx INT;
 
-					select SERVERPROPERTY('MachineName') AS ComputerName, 
-								   ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName, 
-								   SERVERPROPERTY('ServerName') AS SqlInstance, 
-							CONVERT(INT,(dense_rank() over (order by StartTime desc))%2) as OrderRank
-					,       convert(int, EventClass) as EventClass
-					,       DatabaseName
-					,       Filename
-					,       CONVERT(INT,(Duration/1000)) as Duration
-					,       dateadd (minute, datediff (minute, getdate(), getutcdate()), StartTime) as StartTime  -- Convert to UTC time
-					,       dateadd (minute, datediff (minute, getdate(), getutcdate()), EndTime) as EndTime  -- Convert to UTC time
-					,       (IntegerData*8.0/1024) as ChangeInSize 
-					from ::fn_trace_gettable( @base_tracefilename, default ) 
-					where EventClass >=  92      and EventClass <=  95        and ServerName = @@servername   
-					and DatabaseName IN (_DatabaseList_)
-					order by StartTime desc ;   
-					end     else    
-					select -1 as OrderRank, 0 as EventClass, 0 DatabaseName, 0 as Filename, 0 as Duration, 0 as StartTime, 0 as EndTime,0 as ChangeInSize 
-					end try 
-					begin catch 
-					select -100 as OrderRank
-					,       ERROR_NUMBER() as EventClass
-					,       ERROR_SEVERITY() DatabaseName
-					,       ERROR_STATE() as Filename
-					,       ERROR_MESSAGE() as Duration
-					,       1 as StartTime, 1 as EndTime,1 as ChangeInSize 
-					end catch"
+						SELECT @curr_tracefilename = [path]
+						FROM sys.traces
+						WHERE is_default = 1 ;
+
+						SET @curr_tracefilename = REVERSE(@curr_tracefilename);
+						SELECT @indx  = PATINDEX('%\%', @curr_tracefilename);
+						SET @curr_tracefilename = REVERSE(@curr_tracefilename);
+						SET @base_tracefilename = LEFT( @curr_tracefilename,LEN(@curr_tracefilename) - @indx) + '\log.trc';
+
+						SELECT
+							SERVERPROPERTY('MachineName') AS ComputerName,
+							ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
+							SERVERPROPERTY('ServerName') AS SqlInstance,
+							CONVERT(INT,(DENSE_RANK() OVER (ORDER BY [StartTime] DESC))%2) AS OrderRank,
+								CONVERT(INT, [EventClass]) AS EventClass,
+							[DatabaseName],
+							[Filename],
+							CONVERT(INT,(Duration/1000)) AS Duration,
+							DATEADD (MINUTE, DATEDIFF(MINUTE, GETDATE(), GETUTCDATE()), [StartTime]) AS StartTime,  -- Convert to UTC time
+							DATEADD (MINUTE, DATEDIFF(MINUTE, GETDATE(), GETUTCDATE()), [EndTime]) AS EndTime,  -- Convert to UTC time
+							([IntegerData]*8.0/1024) AS ChangeInSize
+						FROM::fn_trace_gettable( @base_tracefilename, DEFAULT )
+						WHERE
+							[EventClass] >= 92
+							AND [EventClass] <= 95
+							AND [ServerName] = @@SERVERNAME
+							AND [DatabaseName] IN (_DatabaseList_)
+						ORDER BY [StartTime] DESC;
+					END
+				ELSE
+					SELECT
+						SERVERPROPERTY('MachineName') AS ComputerName,
+						ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
+						SERVERPROPERTY('ServerName') AS SqlInstance,
+						-100 AS [OrderRank],
+						-1 AS [OrderRank],
+						0 AS [EventClass],
+						0 [DatabaseName],
+						0 AS [Filename],
+						0 AS [Duration],
+						0 AS [StartTime],
+						0 AS [EndTime],
+						0 AS ChangeInSize
+			END	TRY
+			BEGIN CATCH
+				SELECT
+					SERVERPROPERTY('MachineName') AS ComputerName,
+					ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
+					SERVERPROPERTY('ServerName') AS SqlInstance,
+					-100 AS [OrderRank],
+					-100 AS [OrderRank],
+					ERROR_NUMBER() AS [EventClass],
+					ERROR_SEVERITY() AS [DatabaseName],
+					ERROR_STATE() AS [Filename],
+					ERROR_MESSAGE() AS [Duration],
+					1 AS [StartTime],
+					1 AS [EndTime],
+					1 AS [ChangeInSize]
+			END CATCH"
 	}
-	
-	process
-	{
-		foreach ($instance in $SqlInstance)
-		{
+	process {
+		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Connecting to $instance"
-			try
-			{
+			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
-			catch
-			{
+			catch {
 				Write-Message -Level Warning -Message "Can't connect to $instance. Moving on."
 				continue
 			}
-			
+
 			$dbs = $server.Databases
 
-			if ($Database)
-			{
+			if ($Database) {
 				$dbs = $dbs | Where-Object Name -in $Database
 			}
-			
-			if ($ExcludeDatabase)
-			{
+
+			if ($ExcludeDatabase) {
 				$dbs = $dbs | Where-Object Name -notin $ExcludeDatabase
 			}
 
 			#Create dblist name in 'bd1', 'db2' format
-			$dbsList = "'$($($dbs | % {$_.Name}) -join "','")'" 
+			$dbsList = "'$($($dbs | ForEach-Object {$_.Name}) -join "','")'"
+			Write-Message -Level Verbose -Message "Executing query against $dbsList on $instance"
+			
+			$sql = $sql -replace '_DatabaseList_', $dbsList
+			Write-Message -Level Debug -Message $sql
 
-			$queryToExcute = $query -replace '_DatabaseList_', $dbsList
-			Write-Message -Level Debug -Message $queryToExcute
+			$props = 'ComputerName', 'InstanceName', 'SqlInstance', 'EventClass', 'DatabaseName', 'Filename', 'Duration', 'StartTime', 'EndTime', 'ChangeInSize'
 
-			$server.Databases["master"].ExecuteWithResults($queryToExcute).Tables | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, EventClass, DatabaseName, Filename, Duration, StartTime, EndTime, ChangeInSize
+			Select-DefaultView -InputObject $server.Query($sql) -Property $props
 		}
 	}
 }
