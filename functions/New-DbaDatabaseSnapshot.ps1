@@ -24,11 +24,15 @@ The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER WhatIf
 Shows what would happen if the command were to run
-	
+
 .PARAMETER Confirm
 Prompts for confirmation of every step. 
 
 .PARAMETER Name
+The specific snapshot name you want to create. Works only if you target a single database. If you need to create multiple snapshot,
+you must use the NameSuffix parameter
+
+.PARAMETER NameSuffix
 When you pass a simple string, it'll be appended to use it to build the name of the snapshot. By default snapshots are created with yyyyMMdd_HHmmss suffix
 You can also pass a standard placeholder, in which case it'll be interpolated (e.g. '{0}' gets replaced with the database name)
 
@@ -62,12 +66,12 @@ New-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
 Creates snapshot for HR and Accounting, returning a custom object displaying Server, Database, DatabaseCreated, SnapshotOf, SizeMB, DatabaseCreated, PrimaryFilePath, Status, Notes
 
 .EXAMPLE
-New-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR -Name _snap
+New-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR -Name HR_snap
 
 Creates snapshot named "HR_snap" for HR
 
 .EXAMPLE
-New-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR -Name 'fool_{0}_snap'
+New-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR -NameSuffix 'fool_{0}_snap'
 
 Creates snapshot named "fool_HR_snap" for HR
 
@@ -91,6 +95,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		[object[]]$ExcludeDatabase,
 		[switch]$AllDatabases,
 		[string]$Name,
+		[string]$NameSuffix,
 		[string]$Path,
 		[switch]$Force,
 		[switch]$Silent
@@ -101,13 +106,13 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		$NoSupportForSnap = @('model', 'master', 'tempdb')
 		# Evaluate the default suffix here for naming consistency
 		$DefaultSuffix = (Get-Date -Format "yyyyMMdd_HHmmss")
-		if ($Name.Length -gt 0) {
+		if ($NameSuffix.Length -gt 0) {
 			#Validate if Name can be interpolated
 			try {
-				$null = $Name -f 'some_string'
+				$null = $NameSuffix -f 'some_string'
 			}
 			catch {
-				Stop-Function -Message "Name parameter must be a template only containing one parameter {0}" -ErrorRecord $_
+				Stop-Function -Message "NameSuffix parameter must be a template only containing one parameter {0}" -ErrorRecord $_
 			}
 		}
 		
@@ -135,7 +140,8 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 	}
 	process {
 		if (!$Database -and $AllDatabases -eq $false -and !$smodatabase) {
-			throw "You must specify a -AllDatabases or -Database to continue"
+			Stop-Function -Message "You must specify a -AllDatabases or -Database to continue" -Silent $Silent
+			return
 		}
 		
 		foreach ($instance in $SqlInstance) {
@@ -179,13 +185,15 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 					$sourcedbs += $db
 				}
 			}
-			
+			if($sourcedbs.Length -gt 1 -and $Name) {
+				Stop-Function -Message "You passed the Name parameter that is fixed but selected multiple databases to snapshot: use the NameSuffix parameter" -Continue -Silent $Silent
+			}
 			foreach ($db in $sourcedbs) {
-				if ($Name.Length -gt 0) {
-					$SnapName = $Name -f $db.Name
-					if ($SnapName -eq $Name) {
+				if ($NameSuffix.Length -gt 0) {
+					$SnapName = $NameSuffix -f $db.Name
+					if ($SnapName -eq $NameSuffix) {
 						#no interpolation, just append
-						$SnapName = '{0}{1}' -f $db.Name, $Name
+						$SnapName = '{0}{1}' -f $db.Name, $NameSuffix
 					}
 				}
 				else {
