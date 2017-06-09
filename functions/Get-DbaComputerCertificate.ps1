@@ -87,7 +87,8 @@ Gets computer certificates on sql2016 that match thumbprints 8123472E32AB412ED42
 			}
 			
 			try {
-				Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $thumbprint, $Store, $Folder -ErrorAction Stop
+				Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $thumbprint, $Store, $Folder -ErrorAction Stop |
+				Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
 			}
 			catch {
 				Stop-Function -Message $_ -ErrorRecord $_ -Target $computer -Continue

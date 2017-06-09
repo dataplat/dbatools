@@ -52,6 +52,9 @@ The domain's Certificate Template - WebServer by default.
 .PARAMETER InstanceClusterName
 When creating certs for a cluster, use this parameter to create the certificate for the cluster node name. Use ComputerName for each of the nodes.
 		
+.PARAMETER Dns
+Specify the Dns entries listed in SAN. By default, it will be ComputerName + FQDN, or in the case of clusters, clustername + cluster FQDN.
+	
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
 
@@ -107,6 +110,7 @@ Shows what would happen if the command were run
 		[int]$KeyLength = 1024,
 		[string]$Store = "LocalMachine",
 		[string]$Folder = "My",
+		[string[]]$Dns,
 		[switch]$Silent
 	)
 	begin {
@@ -199,8 +203,7 @@ Shows what would happen if the command were run
 		foreach ($computer in $computername) {
 			if (!$secondarynode) {
 				if (![dbavalidate]::IsLocalhost($computer) -and !$Password) {
-					Write-Message -Level Output -Message "You have specified a remote computer. A password is required for private key encryption/decryption for import."
-					$Password = Read-Host -AsSecureString -Prompt "Password"
+					$Password = ((65 .. 90) + (97 .. 122) | Get-Random -Count 29 | ForEach-Object { [char]$_ }) -join "" | ConvertTo-SecureString -AsPlainText -Force
 				}
 				
 				if ($InstanceClusterName) {
@@ -212,14 +215,15 @@ Shows what would happen if the command were run
 					}
 				}
 				else {
-					$dns = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Turbo -WarningAction SilentlyContinue
 					
-					if (!$dns) {
+					$resolved = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Turbo -WarningAction SilentlyContinue
+					
+					if (!$resolved) {
 						$fqdn = "$ComputerName.$env:USERDNSDOMAIN"
 						Write-Message -Level Warning -Message "Server name cannot be resolved. Guessing it's $fqdn"
 					}
 					else {
-						$fqdn = $dns.fqdn
+						$fqdn = $resolved.fqdn
 					}
 				}
 				
@@ -246,7 +250,11 @@ Shows what would happen if the command were run
 				# Make sure output is compat with clusters
 				$shortname = $fqdn.Split(".")[0]
 				
-				$san = Get-SanExt $shortname, $fqdn
+				if (!$dns) {
+					$dns = $shortname, $fqdn
+				}
+				
+				$san = Get-SanExt $dns
 				# Write config file
 				Set-Content $certcfg "[Version]"
 				Add-Content $certcfg 'Signature="$Windows NT$"'
@@ -328,7 +336,8 @@ Shows what would happen if the command were run
 				
 				if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to import new cert")) {
 					try {
-						Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $Password, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop
+						Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $Password, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop |
+						Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
 					}
 					catch {
 						Stop-Function -Message $_ -ErrorRecord $_ -Target $computer -Continue

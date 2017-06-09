@@ -125,7 +125,8 @@ Adds the local C:\temp\cer.cer to the local computer's LocalMachine\My (Personal
 			
 			if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to import cert")) {
 				try {
-					Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $Password, $store, $folder -ScriptBlock $scriptblock -ErrorAction Stop
+					Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $Password, $store, $folder -ScriptBlock $scriptblock -ErrorAction Stop |
+					Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
 				}
 				catch {
 					Stop-Function -Message $_ -ErrorRecord $_ -Target $computer -Continue
