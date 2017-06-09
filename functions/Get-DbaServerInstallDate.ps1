@@ -127,11 +127,11 @@ Returns an object with SQL Server Install date as a string for every server list
 				{
 					if (Was-Bound $Credential) {
 						$WindowsServerName = (Resolve-DbaNetworkName $servername -Credential $Credential).ComputerName
-						[DbaDateTime]$windowsInstallDate = (Get-DbaCmObject -ClassName win32_OperatingSystem -ComputerName $WindowServerName -Credential $Credential -Silent).InstallDate
+						[DbaDateTime]$windowsInstallDate = (Get-DbaCmObject -ClassName win32_OperatingSystem -ComputerName $WindowsServerName -Credential $Credential -Silent).InstallDate
 					}
 					else {
 						$WindowsServerName = (Resolve-DbaNetworkName $servername ).ComputerName
-						[DbaDateTime]$windowsInstallDate = (Get-DbaCmObject -ClassName win32_OperatingSystem -ComputerName $WindowServerName -Silent).InstallDate
+						[DbaDateTime]$windowsInstallDate = (Get-DbaCmObject -ClassName win32_OperatingSystem -ComputerName $WindowsServerName -Silent).InstallDate
 					} 				
 				}
 				catch
