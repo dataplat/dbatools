@@ -12,7 +12,7 @@ function Copy-DbaAgentCategory {
 			The -AgentCategories parameter is autopopulated for command-line completion and can be used to copy only specific agent categories.
 			The -JobCategories parameter is autopopulated for command-line completion and can be used to copy only specific job categories.
 
-			if the category already exists on the destination, it will be skipped unless -Force is used.  
+			If the category already exists on the destination, it will be skipped unless -Force is used.  
 
 		.PARAMETER Source
 			Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -50,7 +50,7 @@ function Copy-DbaAgentCategory {
 		.PARAMETER JobCategory
 			This parameter is autopopulated for command-line completion and can be used to copy only specific job categories.
 
-		.PARAMETER Whatif 
+		.PARAMETER WhatIf 
 			Shows what would happen if the command were to run. No actions are actually performed. 
 
 		.PARAMETER Confirm 
@@ -77,15 +77,15 @@ function Copy-DbaAgentCategory {
 		.EXAMPLE   
 			Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster
 
-			Copies all operator categories from sqlserver2014a to sqlcluster, using Windows credentials. if operator categories with the same name exist on sqlcluster, they will be skipped.
+			Copies all operator categories from sqlserver2014a to sqlcluster, using Windows credentials. If operator categories with the same name exist on sqlcluster, they will be skipped.
 
 		.EXAMPLE   
 			Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -OperatorCategory PSOperator -SourceSqlCredential $cred -Force
 
-			Copies a single operator category, the PSOperator operator category from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. if a operator category with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+			Copies a single operator category, the PSOperator operator category from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a operator category with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 		.EXAMPLE   
-			Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -Whatif -Force
+			Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 			Shows what would happen if the command were executed using force.
 	#>
@@ -114,7 +114,7 @@ function Copy-DbaAgentCategory {
 				.DESCRIPTION
 					By default, all job categories are copied. The -JobCategories parameter is autopopulated for command-line completion and can be used to copy only specific job categories.
 
-					if the associated credential for the category does not exist on the destination, it will be skipped. if the job category already exists on the destination, it will be skipped unless -Force is used.  
+					If the associated credential for the category does not exist on the destination, it will be skipped. If the job category already exists on the destination, it will be skipped unless -Force is used.  
 			#>
 			param (
 				[string[]]$JobCategories
@@ -172,7 +172,7 @@ function Copy-DbaAgentCategory {
 				.DESCRIPTION
 					By default, all operator categories are copied. The -OperatorCategories parameter is autopopulated for command-line completion and can be used to copy only specific operator categories.
 
-					if the associated credential for the category does not exist on the destination, it will be skipped. if the operator category already exists on the destination, it will be skipped unless -Force is used.  
+					If the associated credential for the category does not exist on the destination, it will be skipped. If the operator category already exists on the destination, it will be skipped unless -Force is used.  
 			#>
 			[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldprocess = $true)]
 			param (
@@ -233,7 +233,7 @@ function Copy-DbaAgentCategory {
 				.DESCRIPTION
 					By default, all alert categories are copied. The -AlertCategories parameter is autopopulated for command-line completion and can be used to copy only specific alert categories.
 
-					if the associated credential for the category does not exist on the destination, it will be skipped. if the alert category already exists on the destination, it will be skipped unless -Force is used.  			
+					If the associated credential for the category does not exist on the destination, it will be skipped. If the alert category already exists on the destination, it will be skipped unless -Force is used.  			
 			#>
 			[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldprocess = $true)]
 			param (
