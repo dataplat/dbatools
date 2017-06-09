@@ -18,11 +18,8 @@ Credential object used to connect to the SQL Server as a different user
 .PARAMETER WindowsCredential
 Credential object used to connect to the SQL Server as a different user
 
-.PARAMETER SqlOnly
-Excludes the Windows server information
-
-.PARAMETER WindowsOnly
-Excludes the SQL server information
+.PARAMETER IncludeWindows
+Includes the Windows Server Install date information 
 
 .PARAMETER Silent 
 Use this switch to disable any kind of verbose messages
@@ -49,19 +46,19 @@ Get-DbaInstallDate -SqlServer winserver\sqlexpress, sql2016
 Returns an object with SQL Server Install date as a string and the Windows install date as a string for both SQLInstances that are passed to the cmdlet.  
 	
 .EXAMPLE   
-Get-DbaInstallDate -SqlServer sqlserver2014a, sql2016 -SqlOnly
+Get-DbaInstallDate -SqlServer sqlserver2014a, sql2016 
 
 Returns an object with only the SQL Server Install date as a string. 
 
 .EXAMPLE   
-Get-DbaInstallDate -SqlServer sqlserver2014a, sql2016 -WindowsOnly
+Get-DbaInstallDate -SqlServer sqlserver2014a, sql2016 -IncludeWindows
 
-Returns an object with only the Windows Install date as a string. 
+Returns an object with the Windows Install date and the SQL install date as a string. 
 
 .EXAMPLE   
 Get-SqlRegisteredServerName -SqlServer sql2014 | Get-DbaInstallDate
 
-Returns an object with SQL Server Install date as a string and the Windows install date as string for every server listed in the Central Management Server on sql2014
+Returns an object with SQL Server Install date as a string for every server listed in the Central Management Server on sql2014
 	
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
@@ -74,21 +71,19 @@ Returns an object with SQL Server Install date as a string and the Windows insta
 		[PSCredential] 
 		[System.Management.Automation.CredentialAttribute()]$Credential,
 		[parameter(ParameterSetName = "Sql")]
-		[Switch]$SqlOnly,
-		[parameter(ParameterSetName = "Windows")]
-		[Switch]$WindowsOnly,		
+		[Switch]$IncludeWindows, 
 		[switch]$Silent
 	)
 	
 	PROCESS
 	{
-		foreach ($instance in $SqlServer)
+		foreach ($instance in $SqlInstance)
 		{
-			if ($instance.Gettype().FullName -eq [System.Management.Automation.PSCustomObject] )
+			if ($instance.SqlInstance)
 			{
 				$servername = $instance.SqlInstance
 			}
-			elseif ($instance.Gettype().FullName -eq [Microsoft.SqlServer.Management.Smo.Server])
+			elseif ($instance.NetName)
 			{
 				$servername = $instance.NetName
 			}
@@ -96,62 +91,52 @@ Returns an object with SQL Server Install date as a string and the Windows insta
 			{
 				$servername = $instance
 			}
-						
-			if ($WindowsOnly -ne $true)
-			{ 				
-				try 
-				{
-					Write-Message -Level Verbose -Message "Connecting to $instance"
-                    if ($SqlCredential)
-                    { 
-						$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
-                    } else 
-                    {
-						$server = Connect-SqlInstance -SqlInstance $servername
-                    }					
-				}
-				catch 
-				{
-					Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance -InnerErrorRecord $_
-				}
-
-				if ( $server.VersionMajor -ge 9 )
+							
+			try 
+			{
+				Write-Message -Level Verbose -Message "Connecting to $instance"
+				if ($SqlCredential)
 				{ 
-					Write-Message -Level Verbose -Message "Getting Install Date for: $instance" 
-					$sql = "SELECT create_date FROM sys.server_principals WHERE sid = 0x010100000000000512000000"
-					[DbaDateTime]$sqlInstallDate = $server.Query($sql, 'master', $true).create_date
+					$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
+				} else 
+				{
+					$server = Connect-SqlInstance -SqlInstance $servername
+				}					
+			}
+			catch 
+			{
+				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance -InnerErrorRecord $_
+			}
 
-				} else { 
-					Write-Message -Level Verbose -Message "Getting Install Date for: $instance" 
-					$sql = "SELECT schemadate FROM sysservers"
-					[DbaDateTime]$sqlInstallDate = $server.Query($sql, 'master', $true).create_date
-				}											
-
-			} 
-
-			if ($SqlOnly -ne $true)			
+			if ( $server.VersionMajor -ge 9 )
 			{ 
-				Write-Message -Level Verbose -Message "Getting Windows Server Name for: $servername" 
-				$WindowsServerName = (Resolve-DbaNetworkName $servername -Credential $Credential).ComputerName
-				
+				Write-Message -Level Verbose -Message "Getting Install Date for: $instance" 
+				$sql = "SELECT create_date FROM sys.server_principals WHERE sid = 0x010100000000000512000000"
+				[DbaDateTime]$sqlInstallDate = $server.Query($sql, 'master', $true).create_date
+
+			} else { 
+				Write-Message -Level Verbose -Message "Getting Install Date for: $instance" 
+				$sql = "SELECT schemadate FROM sysservers"
+				[DbaDateTime]$sqlInstallDate = $server.Query($sql, 'master', $true).create_date
+			}
+
+			if ( $IncludeWindows )			
+			{ 
+				Write-Message -Level Verbose -Message "Getting Windows Server Name for: $servername" 				
 				try
 				{
-					Write-Message -Level Verbose -Message "Getting Windows Install date via CIM for: $WindowsServerName"
-					[DbaDateTime]$windowsInstallDate = (Get-DbaCmObject -ComputerName $WindowsServerName -ClassName win32_OperatingSystem -Credential $WindowsCredential).InstallDate					
+					if (Was-Bound $Credential) {
+						$WindowsServerName = (Resolve-DbaNetworkName $servername -Credential $Credential).ComputerName
+						[DbaDateTime]$windowsInstallDate = (Get-DbaCmObject -ClassName win32_OperatingSystem -ComputerName $WindowServerName -Credential $Credential -Silent).InstallDate
+					}
+					else {
+						$WindowsServerName = (Resolve-DbaNetworkName $servername ).ComputerName
+						[DbaDateTime]$windowsInstallDate = (Get-DbaCmObject -ClassName win32_OperatingSystem -ComputerName $WindowServerName -Silent).InstallDate
+					} 				
 				}
 				catch
-				{
-					try
-					{	
-						Write-Message -Level Verbose -Message "Getting Windows Install date via DCOM for: $WindowsServerName" 
-						$CimOption = New-CimSessionOption -Protocol DCOM
-						$CimSession = New-CimSession -Credential:$Credential -ComputerName $WindowsServerName -SessionOption $CimOption
-						[DbaDateTime]$windowsInstallDate = ($CimSession | Get-CimInstance -ClassName Win32_OperatingSystem).InstallDate					
-					}
-					catch
-					{
-						Stop-Function -Message "Failed to connect to: $WindowsServerName" -Continue -Target $instance -InnerErrorRecord $_
-					}
+				{				
+					Stop-Function -Message "Failed to connect to: $WindowsServerName" -Continue -Target $instance -InnerErrorRecord $_
 				}
 			}
 
@@ -163,17 +148,13 @@ Returns an object with SQL Server Install date as a string and the Windows insta
 							WindowsInstallDate = $windowsInstallDate
 						}
 
-			if ($sqlOnly) 
+			if ($IncludeWindows) 
 			{
-				Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlServer, SqlInstallDate
-			}
-			elseif ($WindowsOnly) 
-			{
-				Select-DefaultView -InputObject $object -Property ComptuerName, WindowsInstallDate
+				Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlServer, SqlInstallDate, WindowsInstallDate
 			}
 			else 
 			{
-				Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlServer, SqlInstallDate, WindowsInstallDate
+				Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlServer, SqlInstallDate				
 			}
 
         } 
