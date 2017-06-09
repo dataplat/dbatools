@@ -1,7 +1,7 @@
 ﻿function Invoke-Command2 {
 	[CmdletBinding()]
 	param (
-		[string]$ComputerName,
+		[string]$ComputerName=$env:COMPUTERNAME,
 		[object]$Credential,
 		[scriptblock]$ScriptBlock,
 		[object[]]$ArgumentList
@@ -18,10 +18,12 @@
 	}
 	else {
 		if ($Credential) {
-			Invoke-Command -ScriptBlock $ScriptBlock -ComputerName $ComputerName -ArgumentList $ArgumentList -Credential $Credential
+			Invoke-Command -ScriptBlock $ScriptBlock -ComputerName $ComputerName -ArgumentList $ArgumentList -Credential $Credential |
+			Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
 		}
 		else {
-			Invoke-Command -ScriptBlock $ScriptBlock -ComputerName $ComputerName -ArgumentList $ArgumentList
+			Invoke-Command -ScriptBlock $ScriptBlock -ComputerName $ComputerName -ArgumentList $ArgumentList |
+			Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
 		}
 	}
 }
