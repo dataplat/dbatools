@@ -133,18 +133,17 @@ function Copy-DbaAgentCategory {
 					
                     if ($destJobCategories.Name -contains $jobCategory.name) {
                         if ($force -eq $false) {
-                            Write-Warning "Job category $categoryName exists at destination. Use -Force to drop and migrate."
+                            Write-Message -Level Warning -Message "Job category $categoryName exists at destination. Use -Force to drop and migrate."
                             continue
                         }
                         else {
                             if ($Pscmdlet.ShouldProcess($destination, "Dropping job category $categoryName and recreating")) {
                                 try {
-                                    Write-Verbose "Dropping Job category $categoryName"
+                                    Write-Message -Level Verbose -Message "Dropping Job category $categoryName"
                                     $destServer.JobServer.JobCategories[$categoryName].Drop()
                                 }
-                                catch { 
-                                    Write-Exception $_ 
-                                    continue
+                                catch {
+									Stop-Function -Message "Issue dropping job category" -Target $categoryName -InnerErrorRecord $_ -Continue
                                 }
                             }
                         }
@@ -152,14 +151,14 @@ function Copy-DbaAgentCategory {
 					
                     if ($Pscmdlet.ShouldProcess($destination, "Creating Job category $categoryName")) {
                         try {
-                            Write-Output "Copying Job category $categoryName"
+                            Write-Message -Level Verbose -Message "Copying Job category $categoryName"
                             $sql = $jobCategory.Script() | Out-String
                             $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
-                            Write-Verbose $sql
+                            Write-Message -Level Debug -Message $sql
                             $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
                         }
                         catch {
-                            Write-Exception $_
+                            Stop-Function -Message "Issue copying job category" -Target $categoryName -InnerErrorRecord $_
                         }
                     }
                 }
@@ -191,35 +190,37 @@ function Copy-DbaAgentCategory {
 					
                     if ($destOperatorCategories.Name -contains $operatorCategory.Name) {
                         if ($force -eq $false) {
-                            Write-Warning "Operator category $categoryName exists at destination. Use -Force to drop and migrate."
+                            Write-Message -Level Warning -Message "Operator category $categoryName exists at destination. Use -Force to drop and migrate."
                             continue
                         }
                         else {
                             if ($Pscmdlet.ShouldProcess($destination, "Dropping operator category $categoryName and recreating")) {
                                 try {
-                                    Write-Verbose "Dropping Operator category $categoryName"
+                                    Write-Message -Level Verbose -Message "Dropping Operator category $categoryName"
                                     $destServer.JobServer.OperatorCategories[$categoryName].Drop()
-                                    Write-Output "Copying Operator category $categoryName"
+                                    Write-Message -Level Verbose -Message "Copying Operator category $categoryName"
                                     $sql = $operatorCategory.Script() | Out-String
                                     $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
-                                    Write-Verbose $sql
+                                    Write-Message -Level Derbug -Message $sql
                                     $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
                                 }
-                                catch { Write-Exception $_ }
+                                catch {
+									Stop-Function -Message "Issue dropping operator category" -Target $categoryName -InnerErrorRecord $_
+                                }
                             }
                         }
                     }
                     else {
                         if ($Pscmdlet.ShouldProcess($destination, "Creating Operator category $categoryName")) {
                             try {
-                                Write-Output "Copying Operator category $categoryName"
+                                Write-Message -Level Verbose -Message "Copying Operator category $categoryName"
                                 $sql = $operatorCategory.Script() | Out-String
                                 $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
-                                Write-Verbose $sql
+                                Write-Message -Level Debug -Message $sql
                                 $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
                             }
                             catch {
-                                Write-Exception $_
+                                Stop-Function -Message "Issue copying operator category" -Target $categoryName -InnerErrorRecord $_
                             }
                         }
                     }
@@ -256,35 +257,37 @@ function Copy-DbaAgentCategory {
 					
                     if ($destAlertCategories.Name -contains $alertCategory.name) {
                         if ($force -eq $false) {
-                            Write-Warning "Alert category $categoryName exists at destination. Use -Force to drop and migrate."
+                            Write-Message -Level Warning -Message "Alert category $categoryName exists at destination. Use -Force to drop and migrate."
                             continue
                         }
                         else {
                             if ($Pscmdlet.ShouldProcess($destination, "Dropping alert category $categoryName and recreating")) {
                                 try {
-                                    Write-Verbose "Dropping Alert category $categoryName"
+                                    Write-Message -Level Verbose -Message "Dropping Alert category $categoryName"
                                     $destServer.JobServer.AlertCategories[$categoryName].Drop()
-                                    Write-Output "Copying Alert category $categoryName"
+                                    Write-Message -Level Verbose -Message "Copying Alert category $categoryName"
                                     $sql = $alertcategory.Script() | Out-String
                                     $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
                                     Write-Verbose $sql
                                     $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
                                 }
-                                catch { Write-Exception $_ }
+                                catch {
+                                    Stop-Function -Message "Issue dropping alert category" -Target $categoryName -InnerErrorRecord $_
+                                }
                             }
                         }
                     }
                     else {
                         if ($Pscmdlet.ShouldProcess($destination, "Creating Alert category $categoryName")) {
                             try {
-                                Write-Output "Copying Alert category $categoryName"
+                                Write-Message -Level Verbose -Message "Copying Alert category $categoryName"
                                 $sql = $alertCategory.Script() | Out-String
                                 $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
-                                Write-Verbose $sql
+                                Write-Message -Level Debug -Message $sql
                                 $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
                             }
                             catch {
-                                Write-Exception $_
+                                Stop-Function -Message "Issue creating alert category" -Target $categoryName -InnerErrorRecord $_
                             }
                         }
                     }
