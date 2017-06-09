@@ -25,7 +25,10 @@ The target certificate object
 The thumbprint of the certificate object 
 
 .PARAMETER Path
-The path to the target certificate object 
+The path to the target certificate object
+	
+.PARAMETER Password
+The password for the certificate, if it is password protected
 
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 

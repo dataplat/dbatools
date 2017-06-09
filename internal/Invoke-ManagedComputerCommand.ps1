@@ -9,7 +9,7 @@ Internal command
 	param (
 		[Parameter(Mandatory = $true)]
 		[Alias("ComputerName")]
-		[object]$Server,
+		[dbainstanceparameter]$Server,
 		[System.Management.Automation.PSCredential]$Credential,
 		[Parameter(Mandatory = $true)]
 		[scriptblock]$ScriptBlock,
@@ -17,22 +17,9 @@ Internal command
 		[switch]$Silent # Left in for legacy but this command needs to throw
 	)
 	
-	if ($Server.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
-	{
-		$server = $server.ComputerNamePhysicalNetBIOS
-	}
+	$Server = $Server.ComputerName
 	
-	# Remove instance name if it as passed
-	$server = ($Server.Split("\"))[0]
-	
-	if ($Server -eq $env:COMPUTERNAME -or $Server -eq 'localhost' -or $Server -eq '.')
-	{
-		$Server = 'localhost'
-		if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
-		{
-			throw "This command must be run with elevated privileges for the local host."
-		}
-	}
+	Test-RunAsAdmin -ComputerName $Server
 	
 	$ipaddr = (Test-Connection $server -Count 1 -ErrorAction Stop).Ipv4Address
 	$ArgumentList += $ipaddr
