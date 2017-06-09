@@ -17,9 +17,6 @@ function Copy-DbaAgentCategory {
 		.PARAMETER Source
 			Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-		.PARAMETER Destination
-			Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
-
 		.PARAMETER SourceSqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
@@ -28,6 +25,9 @@ function Copy-DbaAgentCategory {
 			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
 
 			To connect as a different Windows user, run PowerShell as that user.
+
+		.PARAMETER Destination
+			Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 		.PARAMETER DestinationSqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -41,13 +41,13 @@ function Copy-DbaAgentCategory {
 		.PARAMETER CategoryType
 			Specifies the Category Type to migrate. Valid options are Job, Alert and Operator. When CategoryType is specified, all categories from the selected type will be migrated. For granular migrations, use the three parameters below.
 
-		.PARAMETER OperatorCategories 
+		.PARAMETER OperatorCategory
 			This parameter is autopopulated for command-line completion and can be used to copy only specific operator categories.
 
-		.PARAMETER AgentCategories
+		.PARAMETER AgentCategory
 			This parameter is autopopulated for command-line completion and can be used to copy only specific agent categories.
 
-		.PARAMETER JobCategories
+		.PARAMETER JobCategory
 			This parameter is autopopulated for command-line completion and can be used to copy only specific job categories.
 
 		.PARAMETER WhatIf 
@@ -59,19 +59,17 @@ function Copy-DbaAgentCategory {
 		.PARAMETER Force
 			Drops and recreates the XXXXX if it exists
 
+		.PARAMETER Silent 
+			Use this switch to disable any kind of verbose messages
+
 		.NOTES
 			Tags: Migration, Agent
 			Author: Chrissy LeMaire (@cl), netnerds.net
 			Requires: sysadmin access on SQL Servers
 
-			dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-			Copyright (C) 2016 Chrissy LeMaire
-
-			This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-			This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-			You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 		.LINK
 			https://dbatools.io/Copy-DbaAgentCategory
@@ -91,22 +89,22 @@ function Copy-DbaAgentCategory {
 
 			Shows what would happen if the command were executed using force.
 	#>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldprocess = $true)]
     param (
         [parameter(Mandatory = $true)]
         [DbaInstanceParameter]$Source,
+        [System.Management.Automation.PSCredential]$SourceSqlCredential,
         [parameter(Mandatory = $true)]
         [DbaInstanceParameter]$Destination,
+        [System.Management.Automation.PSCredential]$DestinationSqlCredential,
         [Parameter(ParameterSetName = 'SpecifcAlerts')]
         [ValidateSet('Job', 'Alert', 'Operator')]
         [string[]]$CategoryType,
-        [System.Management.Automation.PSCredential]$SourceSqlCredential,
-        [System.Management.Automation.PSCredential]$DestinationSqlCredential,
-        [switch]$Force
+        [switch]$Force,
+		[switch]$Silent
     )
 
-	
-    BEGIN {
+    begin {
 		
         Function Copy-JobCategory {
             <#
@@ -122,7 +120,7 @@ function Copy-DbaAgentCategory {
                 [string[]]$JobCategories
             )
 			
-            PROCESS {
+            process {
 				
                 $serverjobcategories = $sourceserver.JobServer.JobCategories | Where-Object { $_.ID -ge 100 }
                 $destjobcategories = $destserver.JobServer.JobCategories | Where-Object { $_.ID -ge 100 }
@@ -165,10 +163,6 @@ function Copy-DbaAgentCategory {
                     }
                 }
             }
-			
-            END {
-                If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Job category migration finished" }
-            }
         }
 		
         Function Copy-OperatorCategory {
@@ -181,12 +175,12 @@ function Copy-DbaAgentCategory {
 
 					If the associated credential for the category does not exist on the destination, it will be skipped. If the operator category already exists on the destination, it will be skipped unless -Force is used.  
 			#>
-            [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+            [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldprocess = $true)]
             param (
                 [string[]]$OperatorCategories
             )
 			
-            PROCESS {
+            process {
                 $serveroperatorcategories = $sourceserver.JobServer.OperatorCategories | Where-Object { $_.ID -ge 100 }
                 $destoperatorcategories = $destserver.JobServer.OperatorCategories | Where-Object { $_.ID -ge 100 }
 				
@@ -231,10 +225,6 @@ function Copy-DbaAgentCategory {
                     }
                 }
             }
-			
-            END {
-                If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Operator category migration finished" }
-            }
         }
 		
         Function Copy-AlertCategory {
@@ -247,12 +237,12 @@ function Copy-DbaAgentCategory {
 
 					If the associated credential for the category does not exist on the destination, it will be skipped. If the alert category already exists on the destination, it will be skipped unless -Force is used.  			
 			#>
-            [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+            [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldprocess = $true)]
             param (
                 [string[]]$AlertCategories
             )
-			
-            PROCESS {
+
+            process {
                 if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9) {
                     throw "Server AlertCategories are only supported in SQL Server 2005 and above. Quitting."
                 }
@@ -300,10 +290,6 @@ function Copy-DbaAgentCategory {
                     }
                 }
             }
-			
-            END {
-                If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Alert category migration finished" }
-            }
         }
 		
         $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
@@ -313,8 +299,7 @@ function Copy-DbaAgentCategory {
         $destination = $destserver.DomainInstanceName
 		
     }
-	
-    PROCESS {
+    process {
         if ($CategoryType.count -gt 0) {
 			
             switch ($CategoryType) {
@@ -334,34 +319,28 @@ function Copy-DbaAgentCategory {
             return
         }
 		
-        if (($operatorcategories.count + $alertcategories.count + $jobcategories.count) -gt 0) {
+        if (($OperatorCategory.Count + $AlertCategory.Count + $JobCategory.Count) -gt 0) {
 			
-            if ($operatorcategories.count -gt 0) {
-                Copy-OperatorCategory -OperatorCategories $operatorcategories 
+            if ($OperatorCategory.Count -gt 0) {
+                Copy-OperatorCategory -OperatorCategories $OperatorCategory 
             }
 			
-            if ($alertcategories.count -gt 0) {
-                Copy-AlertCategory -AlertCategories $alertcategories 
+            if ($AlertCategory.Count -gt 0) {
+                Copy-AlertCategory -AlertCategories $AlertCategory 
             }
 			
-            if ($jobcategories.count -gt 0) {
-                Copy-JobCategory -JobCategories $jobcategories 
+            if ($JobCategory.Count -gt 0) {
+                Copy-JobCategory -JobCategories $JobCategory 
             }
-			
+
             return
         }
 		
         Copy-OperatorCategory 
         Copy-AlertCategory 
         Copy-JobCategory 
-    }
-	
-    END {
-		
-        $sourceserver.ConnectionContext.Disconnect()
-        $destserver.ConnectionContext.Disconnect()
-		
-        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Agent category migration finished" }
+    }	
+    end {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlAgentCategory
     }
 }
