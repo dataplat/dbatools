@@ -183,7 +183,7 @@ Sets the network certificate for the SQL2008R2SP2 instance to the certificate wi
 			if ($PScmdlet.ShouldProcess("local", "Connecting to $instanceName to import new cert")) {
 				try {
 					Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname, $Thumbprint -ScriptBlock $scriptblock -ErrorAction Stop |
-					Select-DefaultView -ExcludeProperty Certificate, PSComputerName, RunspaceId, PSShowComputerName, PSComputerName
+					Select-DefaultView -ExcludeProperty Certificate
 				}
 				catch {
 					Stop-Function -Message $_ -ErrorRecord $_ -Target $instanceName -Continue

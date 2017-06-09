@@ -84,7 +84,7 @@ Shows what would happen if the command were executed.
 			if ([System.String]::IsNullOrEmpty($regroot)) {
 				$regroot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
 				$vsname = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
-				Write-Warning $vsname
+
 				if (![System.String]::IsNullOrEmpty($regroot)) {
 					$regroot = ($regroot -Split 'Value\=')[1]
 					$vsname = ($vsname -Split 'Value\=')[1]

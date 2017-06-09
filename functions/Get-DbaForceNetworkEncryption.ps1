@@ -45,7 +45,7 @@ Get-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2 -WhatIf
 
 Shows what would happen if the command were executed.
 #>
-	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
+	[CmdletBinding()]
 	param (
 		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
@@ -71,15 +71,32 @@ Shows what would happen if the command were executed.
 				return
 			}
 			
-			foreach ($instance in $instances) {
-				$regroot = ($instance.AdvancedProperties | Where-Object Name -eq REGROOT).Value
-				$instance = $instance.DisplayName.Replace('SQL Server (','').Replace(')', '') # Don't clown, I don't know regex :(
-				Write-Message -Level Verbose -Message "Regroot: $regroot"
+			foreach ($sqlwmi in $instances) {
+				$regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+				$vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
+				$instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
+				$serviceaccount = $sqlwmi.ServiceAccount
 				
-				if ($null -eq $regroot) {
-					Write-Message -Level Warning -Message "Can't find instance $instance on $env:COMPUTERNAME"
-					return
+				if ([System.String]::IsNullOrEmpty($regroot)) {
+					$regroot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
+					$vsname = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
+					
+					if (![System.String]::IsNullOrEmpty($regroot)) {
+						$regroot = ($regroot -Split 'Value\=')[1]
+						$vsname = ($vsname -Split 'Value\=')[1]
+					}
+					else {
+						Write-Message -Level Warning -Message "Can't find instance $vsname on $env:COMPUTERNAME"
+						return
+					}
 				}
+				
+				if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
+				
+				Write-Message -Level Verbose -Message "Regroot: $regroot"
+				Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount"
+				Write-Message -Level Verbose -Message "InstanceName: $instancename"
+				Write-Message -Level Verbose -Message "VSNAME: $vsname"
 				
 				$scriptblock = {
 					$regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
@@ -95,13 +112,11 @@ Shows what would happen if the command were executed.
 					}
 				}
 				
-				if ($PScmdlet.ShouldProcess("local", "Connecting to $Computer to view the ForceEncryption value in $regroot for $instance")) {
-					try {
-						Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $Computer, $instance -ScriptBlock $scriptblock -ErrorAction Stop
-					}
-					catch {
-						Stop-Function -Message $_ -ErrorRecord $_ -Target $Computer -Continue
-					}
+				try {
+					Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop
+				}
+				catch {
+					Stop-Function -Message $_ -ErrorRecord $_ -Target $Computer -Continue
 				}
 			}
 		}

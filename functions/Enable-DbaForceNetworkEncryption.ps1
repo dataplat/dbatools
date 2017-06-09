@@ -120,7 +120,8 @@ Shows what would happen if the command were executed.
 			
 			if ($PScmdlet.ShouldProcess("local", "Connecting to $instance to modify the ForceEncryption value in $regroot for $($instance.InstanceName)")) {
 				try {
-					Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop
+					Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop |
+					Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
 				}
 				catch {
 					Stop-Function -Message $_ -ErrorRecord $_ -Target $ComputerName -Continue
