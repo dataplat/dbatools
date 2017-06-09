@@ -8,8 +8,8 @@ Internal command
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ComputerName")]
-		[dbainstanceparameter]$Server,
+		[Alias("Server")]
+		[dbainstanceparameter]$ComputerName,
 		[System.Management.Automation.PSCredential]$Credential,
 		[Parameter(Mandatory = $true)]
 		[scriptblock]$ScriptBlock,
@@ -17,11 +17,11 @@ Internal command
 		[switch]$Silent # Left in for legacy but this command needs to throw
 	)
 	
-	$Server = $Server.ComputerName
+	$ComputerName = $ComputerName.ComputerName
 	
-	Test-RunAsAdmin -ComputerName $Server
+	Test-RunAsAdmin -ComputerName $ComputerName
 	
-	$ipaddr = (Test-Connection $server -Count 1 -ErrorAction Stop).Ipv4Address
+	$ipaddr = (Test-Connection $ComputerName -Count 1 -ErrorAction Stop).Ipv4Address
 	$ArgumentList += $ipaddr
 		
 	[scriptblock]$setupScriptBlock = {
@@ -50,13 +50,13 @@ Internal command
 			$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ErrorAction Stop
 		}
 		
-		Write-Message -Level Verbose -Message "Local connection for $server succeeded"
+		Write-Message -Level Verbose -Message "Local connection for $ComputerName succeeded"
 	}
 	catch
 	{
 		try
 		{
-			Write-Message -Level Verbose -Message "Local connection attempt to $Server failed. Connecting remotely."
+			Write-Message -Level Verbose -Message "Local connection attempt to $ComputerName failed. Connecting remotely."
 			
 			# For surely resolve stuff
 			$hostname = [System.Net.Dns]::gethostentry($ipaddr)
