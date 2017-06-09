@@ -193,9 +193,11 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 					If ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot $drop")) {
 						# SKIP IT IF IT'S THE SAME NAME
 						if ($drop -ne $($op['from'])) {
-							$dropped = Remove-SqlDatabase -SqlInstance $server -DBName $drop -SqlCredential $Credential
-							if ($dropped -notmatch "Success") {
-								Write-Message -Level Warning -Message $dropped
+							try {
+								$null = $server.ConnectionContext.ExecuteNonQuery("drop database [$drop]")
+								$status = "Dropped"
+							} catch {
+								Write-Message -Level Warning -Message $_
 								$operror = $true
 								break
 							}
@@ -229,7 +231,7 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 					}
 				}
 				if ($operror) {
-					Write-Message -Level Warning "Errors trying to restore $($op['to']) from $($op['from'])"
+					Write-Message -Level Warning -Message "Errors trying to restore $($op['to']) from $($op['from'])"
 					[PSCustomObject]@{
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
