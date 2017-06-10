@@ -149,7 +149,7 @@ function Copy-DbaAgentOperator {
 
 			if ($Pscmdlet.ShouldProcess($destination, "Creating Operator $operatorName")) {
 				try {
-					Write-Message -Level Verbose -Mesage "Copying Operator $operatorName"
+					Write-Message -Level Verbose -Message "Copying Operator $operatorName"
 					$sql = $sOperator.Script() | Out-String
 					Write-Message -Level Debug -Message $sql
 					$destServer.Query($sql)
