@@ -105,24 +105,24 @@ function Copy-DbaAgentOperator {
 	process {
 
 		foreach ($sOperator in $serverOperator) {
-			$operatorName = $sOperator.name
+			$operatorName = $sOperator.Name
 			if ($Operator -and $Operator -notcontains $operatorName -or $ExcludeOperator -in $operatorName) { continue }
 			
-			if ($destOperator.name -contains $sOperator.name) {
+			if ($destOperator.Name -contains $sOperator.Name) {
 				if ($force -eq $false) {
-					Write-Message -Message "Operator $operatorName exists at destination. Use -Force to drop and migrate." -Level Warning
+                    Write-Message -Level Warning -Message "Operator $operatorName exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else {
 					if ($failsafe.FailSafeOperator -eq $operatorName) {
-						Write-Message -Message "$operatorName is the failsafe operator. Skipping drop." -Level Warning
+                        Write-Message -Level Warning -Message "$operatorName is the failsafe operator. Skipping drop."
 						continue
 					}
 					
 					if ($Pscmdlet.ShouldProcess($destination, "Dropping operator $operatorName and recreating")) {
 						try {
-							Write-Verbose "Dropping Operator $operatorName"
-							$destServer.jobserver.operators[$operatorName].Drop()
+							Write-Message -Level Verbose -Message "Dropping Operator $operatorName"
+							$destServer.JobServer.Operators[$operatorName].Drop()
 						}
 						catch { 
 							Stop-Function -Message "Issue dropping operator" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
@@ -133,10 +133,10 @@ function Copy-DbaAgentOperator {
 
 			if ($Pscmdlet.ShouldProcess($destination, "Creating Operator $operatorName")) {
 				try {
-					Write-Message -Mesage "Copying Operator $operatorName" -Level Output
+                    Write-Message -Level Verbose -Mesage "Copying Operator $operatorName"
 					$sql = $sOperator.Script() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
-					Write-Message -Message $sql -Level Debug
+                    Write-Message -Level Debug -Message $sql
 					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 				}
 				catch {
