@@ -110,12 +110,12 @@ function Copy-DbaAgentOperator {
 			
 			if ($destOperator.Name -contains $sOperator.Name) {
 				if ($force -eq $false) {
-                    Write-Message -Level Warning -Message "Operator $operatorName exists at destination. Use -Force to drop and migrate."
+					Write-Message -Level Warning -Message "Operator $operatorName exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else {
 					if ($failsafe.FailSafeOperator -eq $operatorName) {
-                        Write-Message -Level Warning -Message "$operatorName is the failsafe operator. Skipping drop."
+						Write-Message -Level Warning -Message "$operatorName is the failsafe operator. Skipping drop."
 						continue
 					}
 					
@@ -133,11 +133,10 @@ function Copy-DbaAgentOperator {
 
 			if ($Pscmdlet.ShouldProcess($destination, "Creating Operator $operatorName")) {
 				try {
-                    Write-Message -Level Verbose -Mesage "Copying Operator $operatorName"
+					Write-Message -Level Verbose -Mesage "Copying Operator $operatorName"
 					$sql = $sOperator.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
-                    Write-Message -Level Debug -Message $sql
-					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+					Write-Message -Level Debug -Message $sql
+					$destServer.Query($sql)
 				}
 				catch {
 					Stop-Function -Message "Issue creating operator." -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
