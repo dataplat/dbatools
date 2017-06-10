@@ -142,13 +142,12 @@ function Copy-DbaAgentJob {
 				WHERE job_id = '$($jobId)'"
 			Write-Message -Message $sql -Level Debug
 
-			$MaintenancePlan = $sourceServer.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
-			$MaintPlanName = $MaintenancePlan.MaintenancePlanName
+			$MaintenancePlanName = $sourceServer.Query($sql).MaintenancePlanName
 
-            if ($MaintenancePlan) {
+            if ($MaintenancePlanName) {
 				$copyJobStatus.Status = "Skipped"
 				$copyJobStatus
-                Write-Message -Level Warning -Message "Job [$jobname] is associated with Maintennace Plan: $MaintPlanName"
+                Write-Message -Level Warning -Message "Job [$jobname] is associated with Maintennace Plan: $MaintenancePlanName"
 				continue
 			}
 
@@ -221,9 +220,8 @@ function Copy-DbaAgentJob {
                 try {
                     Write-Message -Message "Copying Job $jobName" -Level Output
                     $sql = $serverJob.Script() | Out-String
-                    $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
                     Write-Message -Message $sql -Level Debug
-                    $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+                    $destServer.Query($sql)
                 }
                 catch {
                     $copyJobStatus.Status = "Failed"
