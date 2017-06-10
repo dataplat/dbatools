@@ -106,10 +106,23 @@ function Copy-DbaAgentOperator {
 
 		foreach ($sOperator in $serverOperator) {
 			$operatorName = $sOperator.Name
-			if ($Operator -and $Operator -notcontains $operatorName -or $ExcludeOperator -in $operatorName) { continue }
+			
+			$copyOperatorStatus = [pscustomobject]@{
+				SourceServer        = $sourceServer.Name
+				DestinationServer   = $destServer.Name
+				Name                = $operatorName
+				Status              = $null
+				DateTime            = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+			}
+			
+			if ($Operator -and $Operator -notcontains $operatorName -or $ExcludeOperator -in $operatorName) {
+				continue 
+			}
 			
 			if ($destOperator.Name -contains $sOperator.Name) {
 				if ($force -eq $false) {
+					$copyOperatorStatus.Status = "Skipped"
+					$copyOperatorStatus
 					Write-Message -Level Warning -Message "Operator $operatorName exists at destination. Use -Force to drop and migrate."
 					continue
 				}
@@ -124,7 +137,10 @@ function Copy-DbaAgentOperator {
 							Write-Message -Level Verbose -Message "Dropping Operator $operatorName"
 							$destServer.JobServer.Operators[$operatorName].Drop()
 						}
-						catch { 
+						catch {
+							$copyOperatorStatus.Status = "Failed"
+							$copyOperatorStatus
+							
 							Stop-Function -Message "Issue dropping operator" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
 						}
 					}
@@ -137,8 +153,13 @@ function Copy-DbaAgentOperator {
 					$sql = $sOperator.Script() | Out-String
 					Write-Message -Level Debug -Message $sql
 					$destServer.Query($sql)
+					
+					$copyOperatorStatus.Status = "Successful"
+					$copyOperatorStatus
 				}
 				catch {
+					$copyOperatorStatus.Status = "Failed"
+					$copyOperatorStatus
 					Stop-Function -Message "Issue creating operator." -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
 				}
 			}
