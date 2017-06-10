@@ -139,30 +139,30 @@ function Copy-DbaAgentJob {
 				Stop-Function -Message "Job [$jobname] is associated with Maintennace Plan: $MaintPlanName" -Target $jobName -Continue
 			}
 
-			$dbNames = $serverJob.JobSteps.Databasename | Where-Object { $_.length -gt 0 }
+			$dbNames = $serverJob.JobSteps.DatabaseName | Where-Object { $_.Length -gt 0 }
 			$missingDb = $dbNames | Where-Object { $destServer.Databases.Name -notcontains $_ }
 
-			if ($missingDb.count -gt 0 -and $dbNames.count -gt 0) {
+			if ($missingDb.Count -gt 0 -and $dbNames.Count -gt 0) {
 				$missingDb = ($missingDb | Sort-Object | Get-Unique) -join ", "
 				Stop-Function -Message "Database(s) $missingDb doesn't exist on destination. Skipping job [$jobname]." -Target $jobName -Continue
 			}
 
 			$missingLogin = $serverJob.OwnerLoginName | Where-Object { $destServer.Logins.Name -notcontains $_ }
 
-			if ($missingLogin.count -gt 0) {
+			if ($missingLogin.Count -gt 0) {
 				$missingLogin = ($missingLogin | Sort-Object | Get-Unique) -join ", "
 				Stop-Function -Message "Login(s) $missingLogin doesn't exist on destination. Skipping job [$jobname]." -Target $jobName -Continue
 			}
 
-			$proxyNames = $serverJob.JobSteps.ProxyName | Where-Object { $_.length -gt 0 }
+			$proxyNames = $serverJob.JobSteps.ProxyName | Where-Object { $_.Length -gt 0 }
 			$missingProxy = $proxyNames | Where-Object { $destServer.JobServer.ProxyAccounts.Name -notcontains $_ }
 
-			if ($missingProxy.count -gt 0 -and $proxyNames.count -gt 0) {
+			if ($missingProxy.Count -gt 0 -and $proxyNames.Count -gt 0) {
 				$missingProxy = ($missingProxy | Sort-Object | Get-Unique) -join ", "
 				Stop-Function -Message "Proxy Account(s) $($proxyNames[0]) doesn't exist on destination. Skipping job [$jobname]." -Target $jobName -Continue
 			}
 
-			$operators = $serverJob.OperatorToEmail, $serverJob.OperatorToNedSend, $serverJob.OperatorToPage | Where-Object { $_.Length -gt 0 }
+			$operators = $serverJob.OperatorToEmail, $serverJob.OperatorToNetSend, $serverJob.OperatorToPage | Where-Object { $_.Length -gt 0 }
 			$missingOperators = $operators | Where-Object {$destServer.JobServer.Operators.Name -notcontains $_}
 
 			if ($missingOperators.Count -gt 0 -and $operators.Count -gt 0) {
@@ -196,7 +196,7 @@ function Copy-DbaAgentJob {
 					$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 				}
 				catch {
-					Stop-Function -Message "Issue copying job. See error log under $((Get-DbaConfig -Name dbatoolslogpath).Value) for more details." -Target $jobName -InnerErrorRecord $_ -Continue
+					Stop-Function -Message "Issue copying job." -Target $jobName -InnerErrorRecord $_ -Continue
 				}
 			}
 
@@ -219,6 +219,6 @@ function Copy-DbaAgentJob {
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlAlert
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlJob
 	}
 }
