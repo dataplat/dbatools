@@ -241,12 +241,17 @@ function Copy-DbaCentralManagementServer {
 			throw "Cannot access Central Management Servers"
 		}
 
-		if ($CMSGroup -eq $null) {
-			$stores = $fromcmstore.DatabaseEngineServerGroup
-		}
-		else {
-			$stores = @(); foreach ($groupname in $CMSGroup) { $stores += $fromcmstore.DatabaseEngineServerGroup.ServerGroups[$groupname] }
-		}
+		$stores = $fromcmstore.DatabaseEngineServerGroup
+        if ($CMSGroup) {
+            $stores = $stores | Where-Object GroupName -In $CMSGroup
+        }
+        if ($ExcludeCMSGroup) {
+            $stores = $stores | Where-Object GroupName -NotIn $ExcludeCMSGroup
+        }
+        $stores = @();
+        foreach ($groupname in $CMSGroup) {
+            $stores += $fromcmstore.DatabaseEngineServerGroup.ServerGroups[$groupname]
+        }
 
 		foreach ($store in $stores) {
 			Parse-ServerGroup -sourceGroup $store -destinationgroup $tocmstore.DatabaseEngineServerGroup -SwitchServerName $SwitchServerName
