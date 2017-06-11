@@ -190,9 +190,6 @@ function Copy-DbaBackupDevice {
 		}
 	}
 	end	{
-		$sourceServer.ConnectionContext.Disconnect()
-		$destServer.ConnectionContext.Disconnect()
-		if ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "backup device migration finished" }
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlBackupDevice
 	}
 }
