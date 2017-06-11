@@ -103,89 +103,117 @@ function Copy-DbaBackupDevice {
 		foreach ($backupDevice in $serverBackupDevices) {
 			$deviceName = $backupDevice.Name
 
-			if ($backupDevices.Length -gt 0 -and $backupDevices -notcontains $deviceName) { continue }
+			$copyBackpDeviceStatus = [pscustomobject]@{
+				SourceServer = $sourceServer.Name
+				DestinationServer = $destServer.Name
+				Name = $deviceName
+				Type = "BackupDevice"
+				Status = $null
+				DateTime = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+			}
+
+			if ($backupDevices.Length -gt 0 -and $backupDevices -notcontains $deviceName) {
+				continue
+			}
 
 			if ($destBackupDevices.Name -contains $deviceName) {
 				if ($force -eq $false) {
-					Write-Warning "backup device $deviceName exists at destination. Use -Force to drop and migrate."
+					$copyBackupDeviceStatus.Status = "Skipped"
+					$copyBackupDeviceStatus
+
+					Write-Message -Level Warning -Message "backup device $deviceName exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else {
 					if ($Pscmdlet.ShouldProcess($destination, "Dropping backup device $deviceName")) {
 						try {
-							Write-Verbose "Dropping backup device $deviceName"
+							Write-Message -Level Verbose -Message "Dropping backup device $deviceName"
 							$destServer.BackupDevices[$deviceName].Drop()
 						}
-						catch { 
-							Write-Exception $_; 
-							continue
+						catch {
+							$copyBackupDeviceStatus.Status = "Failed"
+							$copyBackupDeviceStatus
+
+							Stop-Function -Message "Issue dropping backup device" -Target $deviceName -InnerErrorRecord $_ -Continue
 						}
 					}
 				}
 			}
 
 			if ($Pscmdlet.ShouldProcess($destination, "Generating SQL code for $deviceName")) {
-				Write-Output "Scripting out SQL for $deviceName"
+				Write-Message -Level Verbose -Message "Scripting out SQL for $deviceName"
 				try {
 					$sql = $backupDevice.Script() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 				}
 				catch {
-					Write-Exception $_
-					continue
+					$copyBackupDeviceStatus.Status = "Failed"
+					$copyBackupDeviceStatus
+
+					Stop-Function -Message "Issue scripting out backup device" -Target $deviceName -InnerErrorRecord $_ -Continue
 				}
 			}
 
 			if ($Pscmdlet.ShouldProcess("console", "Stating that the actual file copy is about to occur")) {
-				Write-Output "Preparing to copy actual backup file"
+				Write-Message -Level Verbose -Message "Preparing to copy actual backup file"
 			}
 
 			$path = Split-Path $sourceServer.BackupDevices[$deviceName].PhysicalLocation
-			$filename = Split-Path -Leaf $sourceServer.BackupDevices[$deviceName].PhysicalLocation
-
 			$destPath = Join-AdminUnc $destNetBios $path
 			$sourcepath = Join-AdminUnc $sourceNetBios $sourceServer.BackupDevices[$deviceName].PhysicalLocation
 
-			Write-Output "Checking if directory $destPath exists"
+			Write-Message -Level Verbose -Message "Checking if directory $destPath exists"
 
 			if ($(Test-DbaSqlPath -SqlInstance $Destination -Path $path) -eq $false) {
 				$backupDirectory = $destServer.BackupDirectory
 				$destPath = Join-AdminUnc $destNetBios $backupDirectory
 
 				if ($Pscmdlet.ShouldProcess($destination, "Updating create code to use new path")) {
-					Write-Warning "$path doesn't exist on $destination"
-					Write-Warning "Using default backup directory $backupDirectory"
+					Write-Message -Level Warning -Message "$path doesn't exist on $destination"
+					Write-Message -Level Warning -Message "Using default backup directory $backupDirectory"
 
 					try {
-						Write-Output "Updating $deviceName to use $backupDirectory"
+						Write-Message -Level Verbose -Message "Updating $deviceName to use $backupDirectory"
 						$sql = $sql -replace $path, $backupDirectory
 						$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					}
 					catch {
-						Write-Exception $_
-						continue
+						$copyBackupDeviceStatus.Status = "Failed"
+						$copyBackupDeviceStatus
+
+						Stop-Function -Message "Issue updating script of backup device with new path" -Target $deviceName -InnerErrorRecord $_ -Continue
 					}
 				}
 			}
 
 			if ($Pscmdlet.ShouldProcess($destination, "Adding backup device $deviceName")) {
-				Write-Output "Adding backup device $deviceName on $destination"
+				Write-Message -Level Verbose -Message "Adding backup device $deviceName on $destination"
 				try {
 					$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 					$destServer.BackupDevices.Refresh()
 				}
 				catch {
-					Write-Exception $_
-					continue
+					$copyBackupDeviceStatus.Status = "Failed"
+					$copyBackupDeviceStatus
+
+					Stop-Function -Message "Issue adding backup device" -Target $deviceName -InnerErrorRecord $_ -Continue
 				}
 			}
 
 			if ($Pscmdlet.ShouldProcess($destination, "Copying $sourcepath to $destPath using BITSTransfer")) {
 				try {
 					Start-BitsTransfer -Source $sourcepath -Destination $destPath
-					Write-Output "Backup device $deviceName successfully copied"
+					Write-Message -Level Verbose -Message "Backup device $deviceName successfully copied"
+
+					$copyBackupDeviceStatus.Status = "Successful"
+					$copyBackupDeviceStatus
 				}
-				catch { Write-Exception $_ }
+				catch {
+					$copyBackupDeviceStatus.Status = "Failed"
+					$copyBackupDeviceStatus
+
+					Stop-Function -Message "Issue copying backup device to destination" -Target $deviceName -InnerErrorRecord $_
+				}
 			}
 		}
 	}
