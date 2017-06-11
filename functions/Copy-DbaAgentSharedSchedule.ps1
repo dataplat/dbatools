@@ -98,50 +98,68 @@ function Copy-DbaAgentSharedSchedule {
 		$destSchedules = $destServer.JobServer.SharedSchedules
 	}
 	process {
-		foreach ($schedule in $serverSchedules) {
-			$scheduleName = $schedule.Name
-			if ($schedules.Length -gt 0 -and $schedules -notcontains $scheduleName) {
-				continue
-			}
+        foreach ($schedule in $serverSchedules) {
+            $scheduleName = $schedule.Name
+            $copySharedScheduleStatus = [pscustomobject]@{
+                SourceServer        = $sourceServer.Name
+                DestinationServer   = $destServer.Name
+                Name                = $scheduleName
+                Status              = $null
+                DateTime            = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+            }
 
-			if ($destSchedules.Name -contains $scheduleName) {
-				if ($force -eq $false) {
-					Write-Warning "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate."
-					continue
-				}
-				else {
-					if ($destServer.JobServer.Jobs.JobSchedules.Name -contains $scheduleName) {
-						Write-Warning "Schedule $scheduleName has associated jobs. Skipping."
-						continue
-					}
-					else {
-						if ($Pscmdlet.ShouldProcess($destination, "Dropping schedule $scheduleName and recreating")) {
-							try {
-								Write-Verbose "Dropping schedule $scheduleName"
-								$destServer.JobServer.SharedSchedules[$scheduleName].Drop()
-							}
-							catch {
-								Write-Exception $_
-								continue
-							}
-						}
-					}
-				}
-			}
+            if ($schedules.Length -gt 0 -and $schedules -notcontains $scheduleName) {
+                continue
+            }
 
-			If ($Pscmdlet.ShouldProcess($destination, "Creating schedule $scheduleName")) {
-				try {
-					Write-Output "Copying schedule $scheduleName"
-					$sql = $schedule.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
-					Write-Verbose $sql
-					$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-				}
-				catch {
-					Write-Exception $_
-				}
-			}
-		}
+            if ($destSchedules.Name -contains $scheduleName) {
+                if ($force -eq $false) {
+                    $copySharedScheduleStatus.Status = "Skipped"
+                    $copySharedScheduleStatus
+                    Write-Message -Level Warning -Message "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate."
+                    continue
+                }
+                else {
+                    if ($destServer.JobServer.Jobs.JobSchedules.Name -contains $scheduleName) {
+                        $copySharedScheduleStatus.Status = "Skipped"
+                        $copySharedScheduleStatus
+                        Write-Message -Level Warning -Message "Schedule $scheduleName has associated jobs. Skipping."
+                        continue
+                    }
+                    else {
+                        if ($Pscmdlet.ShouldProcess($destination, "Dropping schedule $scheduleName and recreating")) {
+                            try {
+                                Write-Message -Level Verbose -Message "Dropping schedule $scheduleName"
+                                $destServer.JobServer.SharedSchedules[$scheduleName].Drop()
+                            }
+                            catch {
+                                $copySharedScheduleStatus.Status = "Failed"
+                                $copySharedScheduleStatus
+                                Stop-Function -Message "Issue dropping schedule" -Target $scheduleName -InnerErrorRecord $_ -Continue
+                            }
+                        }
+                    }
+                }
+            }
+
+            If ($Pscmdlet.ShouldProcess($destination, "Creating schedule $scheduleName")) {
+                try {
+                    Write-Message -Level Verbose -Message "Copying schedule $scheduleName"
+                    $sql = $schedule.Script() | Out-String
+                    $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
+                    Write-Message -Level Debug -Message $sql
+                    $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+
+                    $copySharedScheduleStatus.Status = "Successful"
+                    $copySharedScheduleStatus
+                }
+                catch {
+					$copySharedScheduleStatus.Status = "Failed"
+					$copySharedScheduleStatus
+                    Stop-Function -Message "Issue creating schedule" -Target $scheduleName -InnerErrorRecord $_ -Continue
+                }
+            }
+        }
 	}
 	end {
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlSharedSchedule
