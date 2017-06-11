@@ -175,7 +175,6 @@ function Copy-DbaBackupDevice {
 					try {
 						Write-Message -Level Verbose -Message "Updating $deviceName to use $backupDirectory"
 						$sql = $sql -replace $path, $backupDirectory
-						$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					}
 					catch {
 						$copyBackupDeviceStatus.Status = "Failed"
@@ -189,7 +188,7 @@ function Copy-DbaBackupDevice {
 			if ($Pscmdlet.ShouldProcess($destination, "Adding backup device $deviceName")) {
 				Write-Message -Level Verbose -Message "Adding backup device $deviceName on $destination"
 				try {
-					$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+					$destServer.Query($sql)
 					$destServer.BackupDevices.Refresh()
 				}
 				catch {
