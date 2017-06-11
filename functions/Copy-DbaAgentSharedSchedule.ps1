@@ -142,7 +142,7 @@ function Copy-DbaAgentSharedSchedule {
                 }
             }
 
-            If ($Pscmdlet.ShouldProcess($destination, "Creating schedule $scheduleName")) {
+            if ($Pscmdlet.ShouldProcess($destination, "Creating schedule $scheduleName")) {
                 try {
                     Write-Message -Level Verbose -Message "Copying schedule $scheduleName"
                     $sql = $schedule.Script() | Out-String
