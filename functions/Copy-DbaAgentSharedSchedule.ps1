@@ -146,9 +146,9 @@ function Copy-DbaAgentSharedSchedule {
                 try {
                     Write-Message -Level Verbose -Message "Copying schedule $scheduleName"
                     $sql = $schedule.Script() | Out-String
-                    $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
+
                     Write-Message -Level Debug -Message $sql
-                    $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+                    $destServer.Query($sql)
 
                     $copySharedScheduleStatus.Status = "Successful"
                     $copySharedScheduleStatus
