@@ -86,60 +86,60 @@ function Copy-DbaAgentProxyAccount {
 	
 	begin {
 		
-		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
-		$source = $sourceserver.DomainInstanceName
-		$destination = $destserver.DomainInstanceName
+		$source = $sourceServer.DomainInstanceName
+		$destination = $destServer.DomainInstanceName
 		
-		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9) {
+		if ($sourceServer.VersionMajor -lt 9 -or $destServer.VersionMajor -lt 9) {
 			throw "Server ProxyAccounts are only supported in SQL Server 2005 and above. Quitting."
 		}
-		
-		$serverproxyaccounts = $sourceserver.JobServer.ProxyAccounts
-		$destproxyaccounts = $destserver.JobServer.ProxyAccounts
+
+		$serverProxyAccounts = $sourceServer.JobServer.ProxyAccounts
+		$destProxyAccounts = $destServer.JobServer.ProxyAccounts
 		
 	}
 	process {
-		
-		foreach ($proxyaccount in $serverproxyaccounts) {
-			$proxyname = $proxyaccount.name
-			if ($proxyaccounts.length -gt 0 -and $proxyaccounts -notcontains $proxyname) { continue }
+		foreach ($proxyAccount in $serverProxyAccounts) {
+			$proxyName = $proxyAccount.Name
+            if ($proxyAccounts.Length -gt 0 -and $proxyAccounts -notcontains $proxyName) { 
+                continue
+			}
 			
 			# Proxy accounts rely on Credential accounts 
-			$credentialName = $proxyaccount.CredentialName
-			if ($destserver.Credentials[$CredentialName] -eq $null) {
-				Write-Warning "Associated credential account, $CredentialName, does not exist on $destination. Skipping migration of $proxyname."
+			$credentialName = $proxyAccount.CredentialName
+			if ($null -eq $destServer.Credentials[$CredentialName]) {
+				Write-Warning "Associated credential account, $CredentialName, does not exist on $destination. Skipping migration of $proxyName."
 				continue
 			}
 			
-			if ($destproxyaccounts.name -contains $proxyname) {
+			if ($destProxyAccounts.Name -contains $proxyName) {
 				if ($force -eq $false) {
-					Write-Warning "Server proxy account $proxyname exists at destination. Use -Force to drop and migrate."
+					Write-Warning "Server proxy account $proxyName exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else {
-					If ($Pscmdlet.ShouldProcess($destination, "Dropping server proxy account $proxyname and recreating")) {
+					if ($Pscmdlet.ShouldProcess($destination, "Dropping server proxy account $proxyName and recreating")) {
 						try {
-							Write-Verbose "Dropping server proxy account $proxyname"
-							$destserver.jobserver.proxyaccounts[$proxyname].Drop()
+							Write-Verbose "Dropping server proxy account $proxyName"
+							$destServer.JobServer.ProxyAccounts[$proxyName].Drop()
 						}
 						catch { 
 							Write-Exception $_
 							continue
-							
 						}
 					}
 				}
 			}
 	
-			If ($Pscmdlet.ShouldProcess($destination, "Creating server proxy account $proxyname")) {
+			if ($Pscmdlet.ShouldProcess($destination, "Creating server proxy account $proxyName")) {
 				try {
-					Write-Output "Copying server proxy account $proxyname"
-					$sql = $proxyaccount.Script() | Out-String
+					Write-Output "Copying server proxy account $proxyName"
+					$sql = $proxyAccount.Script() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Verbose $sql
-					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+					$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 				}
 				catch {
 					$exceptionstring = $_.Exception.InnerException.ToString()
@@ -153,11 +153,7 @@ function Copy-DbaAgentProxyAccount {
 			}
 		}
 	}
-	
 	end {
-		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Server proxy account migration finished" }
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlProxyAccount
 	}
 }
