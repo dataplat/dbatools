@@ -117,7 +117,7 @@
         [string]
         $FunctionName = ((Get-PSCallStack)[0].Command),
         
-        [System.Management.Automation.ErrorRecord]
+        [System.Management.Automation.ErrorRecord[]]
         $ErrorRecord,
         
         [Parameter(Mandatory = $true, ParameterSetName = 'Warning')]
@@ -132,21 +132,59 @@
     )
     
     # Since it's internal, I set it to always silent. Will show up in tests, but not bother the end users with a reminder over something they didn't do.
-    Test-DbaDeprecation -DeprecatedOn "1.0.0.0" -Parameter "Warning" -CustomMessage "The parameter -Warning has been deprecated and will be removed on release 1.0.0.0. Please use '-Level Warning' instead." -Silent $true
+    Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "Warning" -CustomMessage "The parameter -Warning has been deprecated and will be removed on release 1.0.0. Please use '-Level Warning' instead." -Silent $true
     
     $timestamp = Get-Date
-    $NewMessage = "[$FunctionName][$($timestamp.ToString("HH:mm:ss"))] $Message"
+    $developerMode = [sqlcollective.dbatools.dbaSystem.DebugHost]::DeveloperMode
+    
+    $max_info = [sqlcollective.dbatools.dbaSystem.MessageHost]::MaximumInformation
+    $max_verbose = [sqlcollective.dbatools.dbaSystem.MessageHost]::MaximumVerbose
+    $max_debug = [sqlcollective.dbatools.dbaSystem.MessageHost]::MaximumDebug
+    $min_info = [sqlcollective.dbatools.dbaSystem.MessageHost]::MinimumInformation
+    $min_verbose = [sqlcollective.dbatools.dbaSystem.MessageHost]::MinimumVerbose
+    $min_debug = [sqlcollective.dbatools.dbaSystem.MessageHost]::MinimumDebug
+    $info_color = [sqlcollective.dbatools.dbaSystem.MessageHost]::InfoColor
+    $dev_color = [sqlcollective.dbatools.dbaSystem.MessageHost]::DeveloperColor
+    
+    if ($developerMode)
+    {
+        $channels_future = @()
+        if ((-not $Silent) -and ($Level -eq [Sqlcollective.Dbatools.dbaSystem.MessageLevel]::Warning)) { $channels_future += "Warning" }
+        if ((-not $Silent) -and ($max_info -ge $Level) -and ($min_info -le $Level)) { $channels_future += "Information" }
+        if (($max_verbose -ge $Level) -and ($min_verbose -le $Level)) { $channels_future += "Verbose" }
+        if (($max_debug -ge $Level) -and ($min_debug -le $Level)){ $channels_future += "Debug" }
+        
+        if ((Was-Bound "Target") -and ($null -ne $Target))
+        {
+            if ($Target.ToString() -ne $Target.GetType().FullName) { $targetString = " [T: $($Target.ToString())] " }
+            else { $targetString = " [T: <$($Target.GetType().FullName.Split(".")[-1])>] " }
+        }
+        else { $targetString = "" }
+        
+        $NewMessage = @"
+[$FunctionName][$($timestamp.ToString("HH:mm:ss"))][L: $Level]$targetString[C: $channels_future][S: $Silent][O: $($true -eq $Once)]
+    $Message
+"@
+    }
+    else
+    {
+        $NewMessage = "[$FunctionName][$($timestamp.ToString("HH:mm:ss"))] $Message"
+    }
+    if ($ErrorRecord -and ($Message -notlike "*$($ErrorRecord[0].Exception.Message)*")) { $NewMessage += " | $($ErrorRecord[0].Exception.Message)" }
     
     #region Handle Errors
-    if ($ErrorRecord)
+    if ($ErrorRecord -and ((Get-PSCallStack)[1].Command -ne "Stop-Function"))
     {
-        $Exception = New-Object System.Exception($Message, $ErrorRecord.Exception)
-        $record = New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $ErrorRecord.CategoryInfo.Category, $Target)
-        
-        if ($Silent) { Write-Error -Message $record -Category $ErrorRecord.CategoryInfo.Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue }
-        else { $null = Write-Error -Message $record -Category $ErrorRecord.CategoryInfo.Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue 2>&1 }
-        
-        [sqlcollective.dbatools.dbaSystem.DebugHost]::WriteErrorEntry($ErrorRecord, $FunctionName, $timestamp, $Message)
+        foreach ($record in $ErrorRecord)
+        {
+            $Exception = New-Object System.Exception($Message, $record.Exception)
+            $newRecord = New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $record.CategoryInfo.Category, $Target)
+            
+            if ($Silent) { Write-Error -Message $newRecord -Category $record.CategoryInfo.Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue }
+            else { $null = Write-Error -Message $newRecord -Category $record.CategoryInfo.Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue 2>&1 }
+        }
+        $foo = "bar"
+        [sqlcollective.dbatools.dbaSystem.DebugHost]::WriteErrorEntry($ErrorRecord, $FunctionName, $timestamp, $Message, $Host.InstanceId)
     }
     #endregion Handle Errors
     
@@ -173,6 +211,11 @@
             }
             $channels += "Warning"
         }
+        elseif ($developerMode)
+        {
+            Write-Host $NewMessage -ForegroundColor $dev_color
+        }
+        
         Write-Debug $NewMessage
         $channels += "Debug"
     }
@@ -181,13 +224,6 @@
     #region Message Mode
     else
     {
-        $max_info = [sqlcollective.dbatools.dbaSystem.MessageHost]::MaximumInformation
-        $max_verbose = [sqlcollective.dbatools.dbaSystem.MessageHost]::MaximumVerbose
-        $max_debug = [sqlcollective.dbatools.dbaSystem.MessageHost]::MaximumDebug
-        $min_info = [sqlcollective.dbatools.dbaSystem.MessageHost]::MinimumInformation
-        $min_verbose = [sqlcollective.dbatools.dbaSystem.MessageHost]::MinimumVerbose
-        $min_debug = [sqlcollective.dbatools.dbaSystem.MessageHost]::MinimumDebug
-        
         if ((-not $Silent) -and ($max_info -ge $Level) -and ($min_info -le $Level))
         {
             if ($PSBoundParameters.ContainsKey("Once"))
@@ -196,15 +232,19 @@
                 
                 if (-not (Get-DbaConfigValue -Name $OnceName))
                 {
-                    Write-Host $NewMessage -ForegroundColor (Get-DbaConfigValue -Name 'message.infocolor' -Fallback 'Cyan') -ErrorAction Ignore
+                    Write-Host $NewMessage -ForegroundColor $info_color -ErrorAction Ignore
                     Set-DbaConfig -Name $OnceName -Value $True -Hidden -Silent -ErrorAction Ignore
                 }
             }
             else
             {
-                Write-Host $NewMessage -ForegroundColor (Get-DbaConfigValue -Name 'message.infocolor' -Fallback 'Cyan') -ErrorAction Ignore
+                Write-Host $NewMessage -ForegroundColor $info_color -ErrorAction Ignore
             }
             $channels += "Information"
+        }
+        elseif ($developerMode)
+        {
+            Write-Host $NewMessage -ForegroundColor $dev_color
         }
         
         if (($max_verbose -ge $Level) -and ($min_verbose -le $Level))
@@ -224,6 +264,10 @@
     $channel_Result = $channels -join ", "
     if ($channel_Result)
     {
-        [sqlcollective.dbatools.dbaSystem.DebugHost]::WriteLogEntry($Message, $channel_Result, $timestamp, $FunctionName, $Level)
+        [sqlcollective.dbatools.dbaSystem.DebugHost]::WriteLogEntry($Message, $channel_Result, $timestamp, $FunctionName, $Level, $Host.InstanceId, $Target)
+    }
+    else
+    {
+        [sqlcollective.dbatools.dbaSystem.DebugHost]::WriteLogEntry($Message, "None", $timestamp, $FunctionName, $Level, $Host.InstanceId, $Target)
     }
 }

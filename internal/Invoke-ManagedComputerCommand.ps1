@@ -14,7 +14,7 @@ Internal command
 		[Parameter(Mandatory = $true)]
 		[scriptblock]$ScriptBlock,
 		[string[]]$ArgumentList,
-		[switch]$Silent
+		[switch]$Silent # Left in for legacy but this command needs to throw
 	)
 	
 	if ($Server.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
@@ -30,8 +30,7 @@ Internal command
 		$Server = 'localhost'
 		if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
 		{
-			Stop-Function -Message "This command must be run with elevated privileges for the local host."
-			return
+			throw "This command must be run with elevated privileges for the local host."
 		}
 	}
 	
@@ -86,8 +85,7 @@ Internal command
 			}
 		}
 		catch{
-			Stop-Function -Message "SqlWmi connection failed: $_" -Target $result
-			return
+			throw "SqlWmi connection failed: $_"
 		}
 	}
 	

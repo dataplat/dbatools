@@ -40,7 +40,7 @@ Returns all SQL Credentials for the local and sql2016 SQL Server instances
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	
@@ -51,7 +51,7 @@ Returns all SQL Credentials for the local and sql2016 SQL Server instances
 			Write-Verbose "Attempting to connect to $instance"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch
 			{
@@ -62,9 +62,9 @@ Returns all SQL Credentials for the local and sql2016 SQL Server instances
 			
 			foreach ($credential in $server.Credentials)
 			{
-				Add-Member -InputObject $credential -MemberType NoteProperty ComputerName -value $credential.Parent.NetName
-				Add-Member -InputObject $credential -MemberType NoteProperty InstanceName -value $credential.Parent.ServiceName
-				Add-Member -InputObject $credential -MemberType NoteProperty SqlInstance -value $credential.Parent.DomainInstanceName
+				Add-Member -InputObject $credential -MemberType NoteProperty -Name ComputerName -value $credential.Parent.NetName
+				Add-Member -InputObject $credential -MemberType NoteProperty -Name InstanceName -value $credential.Parent.ServiceName
+				Add-Member -InputObject $credential -MemberType NoteProperty -Name SqlInstance -value $credential.Parent.DomainInstanceName
 				
 				Select-DefaultView -InputObject $credential -Property ComputerName, InstanceName, SqlInstance, ID, Name, Identity, MappedClassType, ProviderName
 			}

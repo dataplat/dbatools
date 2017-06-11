@@ -41,7 +41,7 @@ Get-DbaSqlBuildReference -Build "12.0.4502","10.50.4260"
 Returns information builds identified by these versions strings
 
 .EXAMPLE
-Get-SqlRegisteredServerName -SqlServer sqlserver2014a | Foreach-Object { Connect-DbaSqlServer -SqlServer $_ } | Get-DbaSqlBuildReference
+Get-SqlRegisteredServerName -SqlInstance sqlserver2014a | Foreach-Object { Connect-DbaSqlServer -SqlInstance $_ } | Get-DbaSqlBuildReference
 
 Integrate with other commandlets to have builds checked for all your registered servers on sqlserver2014a
 
