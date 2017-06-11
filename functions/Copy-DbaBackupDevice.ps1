@@ -1,6 +1,5 @@
-function Copy-DbaBackupDevice
-{
-<#
+function Copy-DbaBackupDevice {
+    <#
 .SYNOPSIS
 Copies backup devices one by one. Copies both SQL code and the backup file itself.
 
@@ -75,144 +74,128 @@ Copy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster -WhatIf -For
 
 Shows what would happen if the command were executed using force.
 #>
-	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-	param (
-		[parameter(Mandatory = $true)]
-		[DbaInstanceParameter]$Source,
-		[parameter(Mandatory = $true)]
-		[DbaInstanceParameter]$Destination,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
-		[switch]$Force
-	)
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    param (
+        [parameter(Mandatory = $true)]
+        [DbaInstanceParameter]$Source,
+        [parameter(Mandatory = $true)]
+        [DbaInstanceParameter]$Destination,
+        [System.Management.Automation.PSCredential]$SourceSqlCredential,
+        [System.Management.Automation.PSCredential]$DestinationSqlCredential,
+        [switch]$Force
+    )
 
 	
-	begin {
+    begin {
 
-		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+        $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+        $destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
-		$source = $sourceserver.DomainInstanceName
-		$destination = $destserver.DomainInstanceName
+        $source = $sourceserver.DomainInstanceName
+        $destination = $destserver.DomainInstanceName
 		
-		$serverbackupdevices = $sourceserver.BackupDevices
-		$destbackupdevices = $destserver.BackupDevices
+        $serverbackupdevices = $sourceserver.BackupDevices
+        $destbackupdevices = $destserver.BackupDevices
 		
-		Write-Output "Resolving NetBios name"
-		$destnetbios = Resolve-NetBiosName $destserver
-		$sourcenetbios = Resolve-NetBiosName $sourceserver
+        Write-Output "Resolving NetBios name"
+        $destnetbios = Resolve-NetBiosName $destserver
+        $sourcenetbios = Resolve-NetBiosName $sourceserver
 		
-	}
-	process	{
+    }
+    process	{
 	
-		foreach ($backupdevice in $serverbackupdevices)
-		{
-			$devicename = $backupdevice.name
+        foreach ($backupdevice in $serverbackupdevices) {
+            $devicename = $backupdevice.name
 			
-			if ($BackupDevices.length -gt 0 -and $BackupDevices -notcontains $devicename) { continue }
+            if ($BackupDevices.length -gt 0 -and $BackupDevices -notcontains $devicename) { continue }
 			
-			if ($destbackupdevices.name -contains $devicename)
-			{
-				if ($force -eq $false)
-				{
-					Write-Warning "backup device $devicename exists at destination. Use -Force to drop and migrate."
-					continue
-				}
-				else
-				{
-					If ($Pscmdlet.ShouldProcess($destination, "Dropping backup device $devicename"))
-					{
-						try
-						{
-							Write-Verbose "Dropping backup device $devicename"
-							$destserver.BackupDevices[$devicename].Drop()
-						}
-						catch { Write-Exception $_; continue }
-					}
-				}
-			}
+            if ($destbackupdevices.name -contains $devicename) {
+                if ($force -eq $false) {
+                    Write-Warning "backup device $devicename exists at destination. Use -Force to drop and migrate."
+                    continue
+                }
+                else {
+                    If ($Pscmdlet.ShouldProcess($destination, "Dropping backup device $devicename")) {
+                        try {
+                            Write-Verbose "Dropping backup device $devicename"
+                            $destserver.BackupDevices[$devicename].Drop()
+                        }
+                        catch { Write-Exception $_; continue }
+                    }
+                }
+            }
 			
-			If ($Pscmdlet.ShouldProcess($destination, "Generating SQL code for $devicename"))
-			{
-				Write-Output "Scripting out SQL for $devicename"
-				try
-				{
-					$sql = $backupdevice.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
-				}
-				catch { 
-					Write-Exception $_
-					continue 
-				}
-			}
+            If ($Pscmdlet.ShouldProcess($destination, "Generating SQL code for $devicename")) {
+                Write-Output "Scripting out SQL for $devicename"
+                try {
+                    $sql = $backupdevice.Script() | Out-String
+                    $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
+                }
+                catch { 
+                    Write-Exception $_
+                    continue 
+                }
+            }
 			
-			If ($Pscmdlet.ShouldProcess("console", "Stating that the actual file copy is about to occur"))
-			{
-				Write-Output "Preparing to copy actual backup file"
-			}
+            If ($Pscmdlet.ShouldProcess("console", "Stating that the actual file copy is about to occur")) {
+                Write-Output "Preparing to copy actual backup file"
+            }
 			
-			$path = Split-Path $sourceserver.BackupDevices[$devicename].PhysicalLocation
-			$filename = Split-Path -Leaf $sourceserver.BackupDevices[$devicename].PhysicalLocation
+            $path = Split-Path $sourceserver.BackupDevices[$devicename].PhysicalLocation
+            $filename = Split-Path -Leaf $sourceserver.BackupDevices[$devicename].PhysicalLocation
 			
-			$destpath = Join-AdminUnc $destnetbios $path
-			$sourcepath = Join-AdminUnc $sourcenetbios $sourceserver.BackupDevices[$devicename].PhysicalLocation
+            $destpath = Join-AdminUnc $destnetbios $path
+            $sourcepath = Join-AdminUnc $sourcenetbios $sourceserver.BackupDevices[$devicename].PhysicalLocation
 			
-			Write-Output "Checking if directory $destpath exists"
+            Write-Output "Checking if directory $destpath exists"
 			
-			if ($(Test-DbaSqlPath -SqlInstance $Destination -Path $path) -eq $false)
-			{
-				$backupdirectory = $destserver.BackupDirectory
-				$destpath = Join-AdminUnc $destnetbios $backupdirectory
+            if ($(Test-DbaSqlPath -SqlInstance $Destination -Path $path) -eq $false) {
+                $backupdirectory = $destserver.BackupDirectory
+                $destpath = Join-AdminUnc $destnetbios $backupdirectory
 				
-				# if ($force -eq $false) { Write-Warning "Destination directory does not exist. Use -Force to use the default backup directory at $backupdirectory "; continue }
-				If ($Pscmdlet.ShouldProcess($destination, "Updating create code to use new path"))
-				{
-					Write-Warning "$path doesn't exist on $destination"
-					Write-Warning "Using default backup directory $backupdirectory"
+                # if ($force -eq $false) { Write-Warning "Destination directory does not exist. Use -Force to use the default backup directory at $backupdirectory "; continue }
+                If ($Pscmdlet.ShouldProcess($destination, "Updating create code to use new path")) {
+                    Write-Warning "$path doesn't exist on $destination"
+                    Write-Warning "Using default backup directory $backupdirectory"
 					
-					try
-					{
-						Write-Output "Updating $devicename to use $backupdirectory"
-						$sql = $sql -replace $path, $backupdirectory
-						$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
-					}
-					catch { 
-						Write-Exception $_
-						continue 
-					}
-				}
-			}
+                    try {
+                        Write-Output "Updating $devicename to use $backupdirectory"
+                        $sql = $sql -replace $path, $backupdirectory
+                        $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
+                    }
+                    catch { 
+                        Write-Exception $_
+                        continue 
+                    }
+                }
+            }
 			
-			If ($Pscmdlet.ShouldProcess($destination, "Adding backup device $devicename"))
-			{
-				Write-Output "Adding backup device $devicename on $destination"
-				try
-				{
-					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-					$destserver.BackupDevices.Refresh()
-				}
-				catch { 
-					Write-Exception $_
-					continue 
-				}
-			}
+            If ($Pscmdlet.ShouldProcess($destination, "Adding backup device $devicename")) {
+                Write-Output "Adding backup device $devicename on $destination"
+                try {
+                    $destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+                    $destserver.BackupDevices.Refresh()
+                }
+                catch { 
+                    Write-Exception $_
+                    continue 
+                }
+            }
 			
-			If ($Pscmdlet.ShouldProcess($destination, "Copying $sourcepath to $destpath using BITSTransfer"))
-			{
-				try
-				{
-					Start-BitsTransfer -Source $sourcepath -Destination $destpath
-					Write-Output "Backup device $devicename successfully copied"
-				}
-				catch { Write-Exception $_ }
-			}
-		}
-	}
+            If ($Pscmdlet.ShouldProcess($destination, "Copying $sourcepath to $destpath using BITSTransfer")) {
+                try {
+                    Start-BitsTransfer -Source $sourcepath -Destination $destpath
+                    Write-Output "Backup device $devicename successfully copied"
+                }
+                catch { Write-Exception $_ }
+            }
+        }
+    }
 	
-	end	{
-		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
+    end	{
+        $sourceserver.ConnectionContext.Disconnect()
+        $destserver.ConnectionContext.Disconnect()
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "backup device migration finished" }
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlBackupDevice
-	}
+    }
 }
