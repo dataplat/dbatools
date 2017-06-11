@@ -103,7 +103,7 @@ function Copy-DbaBackupDevice {
 		foreach ($backupDevice in $serverBackupDevices) {
 			$deviceName = $backupDevice.Name
 
-			$copyBackpDeviceStatus = [pscustomobject]@{
+			$copyBackupDeviceStatus = [pscustomobject]@{
 				SourceServer = $sourceServer.Name
 				DestinationServer = $destServer.Name
 				Name = $deviceName
@@ -185,27 +185,10 @@ function Copy-DbaBackupDevice {
 				}
 			}
 
-			if ($Pscmdlet.ShouldProcess($destination, "Adding backup device $deviceName")) {
-				Write-Message -Level Verbose -Message "Adding backup device $deviceName on $destination"
-				try {
-					$destServer.Query($sql)
-					$destServer.BackupDevices.Refresh()
-				}
-				catch {
-					$copyBackupDeviceStatus.Status = "Failed"
-					$copyBackupDeviceStatus
-
-					Stop-Function -Message "Issue adding backup device" -Target $deviceName -InnerErrorRecord $_ -Continue
-				}
-			}
-
 			if ($Pscmdlet.ShouldProcess($destination, "Copying $sourcepath to $destPath using BITSTransfer")) {
 				try {
-					Start-BitsTransfer -Source $sourcepath -Destination $destPath
+					Start-BitsTransfer -Source $sourcepath -Destination $destPath -ErrorAction Stop
 					Write-Message -Level Verbose -Message "Backup device $deviceName successfully copied"
-
-					$copyBackupDeviceStatus.Status = "Successful"
-					$copyBackupDeviceStatus
 				}
 				catch {
 					$copyBackupDeviceStatus.Status = "Failed"
@@ -214,7 +197,24 @@ function Copy-DbaBackupDevice {
 					Stop-Function -Message "Issue copying backup device to destination" -Target $deviceName -InnerErrorRecord $_
 				}
 			}
-		}
+
+			if ($Pscmdlet.ShouldProcess($destination, "Adding backup device $deviceName")) {
+				Write-Message -Level Verbose -Message "Adding backup device $deviceName on $destination"
+				try {
+					$destServer.Query($sql)
+					$destServer.BackupDevices.Refresh()
+
+					$copyBackupDeviceStatus.Status = "Successful"
+					$copyBackupDeviceStatus
+				}
+				catch {
+					$copyBackupDeviceStatus.Status = "Failed"
+					$copyBackupDeviceStatus
+
+					Stop-Function -Message "Issue adding backup device" -Target $deviceName -InnerErrorRecord $_ -Continue
+				}
+			}
+		} #end foreach backupDevice
 	}
 	end	{
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlBackupDevice
