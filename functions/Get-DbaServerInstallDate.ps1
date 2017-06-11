@@ -9,7 +9,7 @@ By default, this command returns for each SQL Server instance passed in:
 SQL Instance install date, formatted as a string
 Hosting Windows server install date, formatted as a string
 	
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 
 .PARAMETER SqlCredential
