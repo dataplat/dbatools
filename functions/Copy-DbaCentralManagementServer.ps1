@@ -242,28 +242,22 @@ function Copy-DbaCentralManagementServer {
 		}
 
 		$stores = $fromcmstore.DatabaseEngineServerGroup
-        if ($CMSGroup) {
-            $stores = $stores | Where-Object GroupName -In $CMSGroup
-        }
-        if ($ExcludeCMSGroup) {
-            $stores = $stores | Where-Object GroupName -NotIn $ExcludeCMSGroup
-        }
-        $stores = @();
-        foreach ($groupname in $CMSGroup) {
-            $stores += $fromcmstore.DatabaseEngineServerGroup.ServerGroups[$groupname]
-        }
+		if ($CMSGroup) {
+			$stores = $stores | Where-Object GroupName -In $CMSGroup
+		}
+		if ($ExcludeCMSGroup) {
+			$stores = $stores | Where-Object GroupName -NotIn $ExcludeCMSGroup
+		}
+		$stores = @();
+		foreach ($groupname in $CMSGroup) {
+			$stores += $fromcmstore.DatabaseEngineServerGroup.ServerGroups[$groupname]
+		}
 
 		foreach ($store in $stores) {
 			Parse-ServerGroup -sourceGroup $store -destinationgroup $tocmstore.DatabaseEngineServerGroup -SwitchServerName $SwitchServerName
 		}
 	}
-
 	end {
-		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
-			Write-Output "Central Management Server migration finished"
-		}
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlCentralManagementServer
 	}
 }
