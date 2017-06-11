@@ -5,7 +5,7 @@ function Get-DbaServerInstallDate
 Returns the install date of a SQL Instance and Windows Server, depending on what is passed. 
 	
 .DESCRIPTION
-By default, this command returns for each SQL Server instance passed in:
+By default, this command returns for each SQL Instance instance passed in:
 SQL Instance install date, formatted as a string
 Hosting Windows server install date, formatted as a string
 	
@@ -36,29 +36,29 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 https://dbatools.io/Get-DbaInstallDate
 
 .EXAMPLE
-Get-DbaInstallDate -SqlServer SqlBox1\Instance2
+Get-DbaInstallDate -SqlInstance SqlBox1\Instance2
 
-Returns an object with SQL Server Install date as a string and the Windows install date as string. 
+Returns an object with SQL Instance Install date as a string and the Windows install date as string. 
 
 .EXAMPLE
-Get-DbaInstallDate -SqlServer winserver\sqlexpress, sql2016
+Get-DbaInstallDate -SqlInstance winserver\sqlexpress, sql2016
 
-Returns an object with SQL Server Install date as a string and the Windows install date as a string for both SQLInstances that are passed to the cmdlet.  
+Returns an object with SQL Instance Install date as a string and the Windows install date as a string for both SQLInstances that are passed to the cmdlet.  
 	
 .EXAMPLE   
-Get-DbaInstallDate -SqlServer sqlserver2014a, sql2016 
+Get-DbaInstallDate -SqlInstance sqlserver2014a, sql2016 
 
 Returns an object with only the SQL Server Install date as a string. 
 
 .EXAMPLE   
-Get-DbaInstallDate -SqlServer sqlserver2014a, sql2016 -IncludeWindows
+Get-DbaInstallDate -SqlInstance sqlserver2014a, sql2016 -IncludeWindows
 
 Returns an object with the Windows Install date and the SQL install date as a string. 
 
 .EXAMPLE   
-Get-SqlRegisteredServerName -SqlServer sql2014 | Get-DbaInstallDate
+Get-SqlRegisteredServerName -SqlInstance sql2014 | Get-DbaInstallDate
 
-Returns an object with SQL Server Install date as a string for every server listed in the Central Management Server on sql2014
+Returns an object with SQL Instance install date as a string for every server listed in the Central Management Server on sql2014
 	
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
