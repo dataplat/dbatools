@@ -2,7 +2,7 @@ function Get-DbaServerInstallDate
 {
 <#
 .SYNOPSIS
-Returns the install date of SqlServer and Windows Server, depending on what is passed. 
+Returns the install date of a SQL Instance and Windows Server, depending on what is passed. 
 	
 .DESCRIPTION
 By default, this command returns for each SQL Server instance passed in:
