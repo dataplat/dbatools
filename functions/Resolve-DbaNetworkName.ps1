@@ -140,8 +140,8 @@ function Resolve-DbaNetworkName {
 				return (Resolve-DbaNetworkName -ComputerName $Computer -Turbo)
 			}
 
-			if ($host.Version.Major -gt 2) {
-				Write-Message -Level Verbose -Message "Your PowerShell Version is $($host.Version.Major)"
+			if ($PSVersionTable.PSVersion.Major -gt 2) {
+                Write-Message -Level Verbose -Message "Your PowerShell Version is $($PSVersionTable.PSVersion.Major)"
 				try {
 					Write-Message -Level Verbose -Message "Getting computer information from $Computer"
 					if (Was-Bound "Credential") {
