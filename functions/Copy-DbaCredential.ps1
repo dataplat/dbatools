@@ -172,7 +172,7 @@ function Copy-DbaCredential {
 
 				if ($dacenabled -eq $false) {
 					If ($Pscmdlet.ShouldProcess($server.name, "Enabling DAC on clustered instance")) {
-						Write-Verbose "DAC must be enabled for clusters, even when accessed from active node. Enabling."
+						Write-Message -Level Verbose -Message "DAC must be enabled for clusters, even when accessed from active node. Enabling."
 						$server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
 						$server.Configuration.Alter()
 					}
@@ -200,17 +200,17 @@ function Copy-DbaCredential {
 						return $dt
 					}
 					catch {
-						Write-Warning "Can't establish local DAC connection to $sourcename from $sourcename or other error. Quitting."
+						Write-Message -Level Warning -Message "Can't establish local DAC connection to $sourcename from $sourcename or other error. Quitting."
 					}
 				}
 			}
 			catch {
-				Write-Warning "Can't establish local DAC connection to $sourcename from $sourcename or other error. Quitting."
+				Write-Message -Level Warning -Message "Can't establish local DAC connection to $sourcename from $sourcename or other error. Quitting."
 			}
 
 			if ($server.IsClustered -and $dacenabled -eq $false) {
 				If ($Pscmdlet.ShouldProcess($server.name, "Disabling DAC on clustered instance")) {
-					Write-Verbose "Setting DAC config back to 0"
+					Write-Message -Level Verbose -Message "Setting DAC config back to 0"
 					$server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $false
 					$server.Configuration.Alter()
 				}
@@ -259,7 +259,7 @@ function Copy-DbaCredential {
 				[bool]$force
 			)
 
-			Write-Output "Collecting Credential logins and passwords on $($sourceserver.name)"
+			Write-Message -Level Verbose -Message "Collecting Credential logins and passwords on $($sourceserver.name)"
 			$sourcecredentials = Get-SqlCredentials $sourceserver
 
 			if ($CredentialIdenity -ne $null) {
@@ -270,14 +270,14 @@ function Copy-DbaCredential {
 			}
 
 
-			Write-Output "Starting migration"
+			Write-Message -Level Verbose -Message "Starting migration"
 			foreach ($credential in $credentiallist) {
 				$destserver.credentials.Refresh()
 				$credentialname = $credential.name
 
 				if ($destserver.credentials[$credentialname] -ne $null) {
 					if (!$force) {
-						Write-Warning "$credentialname exists $($destserver.name). Skipping."
+						Write-Message -Level Warning -Message "$credentialname exists $($destserver.name). Skipping."
 						continue
 					}
 					else {
@@ -288,7 +288,7 @@ function Copy-DbaCredential {
 					}
 				}
 
-				Write-Output "Attempting to migrate $credentialname"
+				Write-Message -Level Verbose -Message "Attempting to migrate $credentialname"
 
 				try {
 					$currentcred = $sourcecredentials | Where-Object { $_.Credential -eq $credentialname }
@@ -297,10 +297,10 @@ function Copy-DbaCredential {
 
 					If ($Pscmdlet.ShouldProcess($destination.name, "Copying $identity")) {
 						$sql = "CREATE CREDENTIAL [$credentialname] WITH IDENTITY = N'$identity', SECRET = N'$password'"
-						Write-Verbose $sql
+						Write-Message -Level Debug -Message $sql
 						$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 						$destserver.Credentials.Refresh()
-						Write-Output "$credentialname successfully copied"
+						Write-Message -Level Verbose -Message "$credentialname successfully copied"
 					}
 				}
 				catch {
@@ -316,7 +316,7 @@ function Copy-DbaCredential {
 		$destination = $destserver.DomainInstanceName
 
 		if ($SourceSqlCredential.username -ne $null) {
-			Write-Warning "You are using SQL credentials and this script requires Windows admin access to the $Source server. Trying anyway."
+			Write-Message -Level Warning -Message "You are using SQL credentials and this script requires Windows admin access to the $Source server. Trying anyway."
 		}
 
 		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9) {
@@ -327,18 +327,18 @@ function Copy-DbaCredential {
 		Invoke-SmoCheck -SqlInstance $destserver
 	}
 	process {
-		Write-Output "Getting NetBios name for $source"
+		Write-Message -Level Verbose -Message "Getting NetBios name for $source"
 		$sourcenetbios = Resolve-NetBiosName $sourceserver
 
-		Write-Output "Checking if remote access is enabled on $source"
+		Write-Message -Level Verbose -Message "Checking if remote access is enabled on $source"
 		winrm id -r:$sourcenetbios 2>$null | Out-Null
 
 		if ($LastExitCode -ne 0) {
-			Write-Warning "Having trouble with accessing PowerShell remotely on $source. Do you have Windows admin access and is PowerShell Remoting enabled? Anyway, good luck! This may work."
+			Write-Message -Level Warning -Message "Having trouble with accessing PowerShell remotely on $source. Do you have Windows admin access and is PowerShell Remoting enabled? Anyway, good luck! This may work."
 		}
 
 		# This output is wrong. Will fix later.
-		Write-Output "Checking if Remote Registry is enabled on $source"
+		Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source"
 		try { Invoke-Command -ComputerName $sourcenetbios { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } }
 		catch { throw "Can't connect to registry on $source. Quitting." }
 
