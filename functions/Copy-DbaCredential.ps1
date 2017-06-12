@@ -92,7 +92,7 @@ function Copy-DbaCredential {
 	)
 
 	begin {
-		function Get-SqlCredentials {
+		function Get-SqlCredential {
 			<#
 				.SYNOPSIS
 					Gets Credential Logins
@@ -260,7 +260,7 @@ function Copy-DbaCredential {
 			)
 
 			Write-Message -Level Verbose -Message "Collecting Credential logins and passwords on $($sourceserver.name)"
-			$sourcecredentials = Get-SqlCredentials $sourceserver
+			$sourcecredentials = Get-SqlCredential $sourceserver
 
 			if ($CredentialIdenity -ne $null) {
 				$credentiallist = $sourceserver.credentials | Where-Object { $CredentialIdentity -contains $_.Name }
