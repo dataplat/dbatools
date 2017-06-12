@@ -32,9 +32,6 @@ function Copy-DbaCentralManagementServer {
 			This is an auto-populated array that contains your Central Management Server top-level groups on $Source. You can specify one, many or none.
 			If -CMSGroup is not specified, the Copy-DbaCentralManagementServer script will migrate all groups in your Central Management Server. Note this variable is only populated by top level groups.
 
-		.PARAMETER ExcludeCMSGroup
-			The CMSGroup(s) to exclude - this list is auto populated from the server.
-
 		.PARAMETER SwitchServerName
 			Central Management Server does not allow you to add a shared registered server with the same name as the Configuration Server. If you wish to change all migrating instance names of $Destination to $Source, use this switch.
 
@@ -88,7 +85,6 @@ function Copy-DbaCentralManagementServer {
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$DestinationSqlCredential,
 		[object[]]$CMSGroup,
-		[object[]]$ExcludeCMSGroup,
 		[switch]$SwitchServerName,
 		[switch]$Force,
 		[switch]$Silent
@@ -97,9 +93,9 @@ function Copy-DbaCentralManagementServer {
 		function Invoke-ParseServerGroup {
 			[cmdletbinding()]
 			param (
-				[object]$sourceGroup,
-				[object]$destinationGroup,
-				[switch]$SwitchServerName
+				$sourceGroup,
+				$destinationGroup,
+				$SwitchServerName
 			)
 			if ($destinationGroup.Name -eq "DatabaseEngineServerGroup" -and $sourceGroup.Name -ne "DatabaseEngineServerGroup") {
 				$currentServerGroup = $destinationGroup
@@ -243,36 +239,36 @@ function Copy-DbaCentralManagementServer {
 				}
 
 				if ($null -ne $toSubGroup) {
-                    if ($force -eq $false) {
-                        $copyGroupStatus.Status = "Skipped"
-                        $copyGroupStatus
-						
+					if ($force -eq $false) {
+						$copyGroupStatus.Status = "Skipped"
+						$copyGroupStatus
+
 						Write-Message -Level Warning -Message "Subgroup $fromSubGroupName exists at destination. Use -Force to drop and migrate."
 						continue
 					}
 
 					if ($Pscmdlet.ShouldProcess($destination, "Dropping subgroup $fromSubGroupName recreating")) {
-                        try {
-                            Write-Message -Level Verbose -Message "Dropping subgroup $fromSubGroupName"
-                            $toSubGroup.Drop()
-                        }
-                        catch {
-                            $copyGroupStatus.Status = "Failed"
-                            $copyGroupStatus
-							
-                            Stop-Function -Message "Issue dropping subgroup" -Target $toSubGroup -InnerErrorRecord $_ -Continue
-                        }
+						try {
+							Write-Message -Level Verbose -Message "Dropping subgroup $fromSubGroupName"
+							$toSubGroup.Drop()
+						}
+						catch {
+							$copyGroupStatus.Status = "Failed"
+							$copyGroupStatus
+
+							Stop-Function -Message "Issue dropping subgroup" -Target $toSubGroup -InnerErrorRecord $_ -Continue
+						}
 					}
 				}
 
-                if ($Pscmdlet.ShouldProcess($destination, "Creating group $($fromSubGroup.Name)")) {
-                    Write-Message -Level Verbose -Message "Creating group $($fromSubGroup.Name)"
-                    $toSubGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($destinationGroup, $fromSubGroup.Name)
-                    $toSubGroup.create()
-					
-                    $copyGroupStatus.Status = "Successful"
+				if ($Pscmdlet.ShouldProcess($destination, "Creating group $($fromSubGroup.Name)")) {
+					Write-Message -Level Verbose -Message "Creating group $($fromSubGroup.Name)"
+					$toSubGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($destinationGroup, $fromSubGroup.Name)
+					$toSubGroup.create()
+
+					$copyGroupStatus.Status = "Successful"
 					$copyGroupStatus
-                }
+				}
 
 				Invoke-ParseServerGroup -sourceGroup $fromSubGroup -destinationgroup $toSubGroup -SwitchServerName $SwitchServerName
 			}
@@ -302,14 +298,10 @@ function Copy-DbaCentralManagementServer {
 
 		$stores = $fromCmStore.DatabaseEngineServerGroup
 		if ($CMSGroup) {
-			$stores = $stores | Where-Object GroupName -In $CMSGroup
-		}
-		if ($ExcludeCMSGroup) {
-			$stores = $stores | Where-Object GroupName -NotIn $ExcludeCMSGroup
-		}
-		$stores = @();
-		foreach ($groupName in $CMSGroup) {
-			$stores += $fromCmStore.DatabaseEngineServerGroup.ServerGroups[$groupName]
+            $stores = @();
+            foreach ($groupName in $CMSGroup) {
+                $stores += $fromCmStore.DatabaseEngineServerGroup.ServerGroups[$groupName]
+            }
 		}
 
 		foreach ($store in $stores) {
