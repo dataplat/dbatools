@@ -55,6 +55,9 @@ When creating certs for a cluster, use this parameter to create the certificate 
 .PARAMETER Dns
 Specify the Dns entries listed in SAN. By default, it will be ComputerName + FQDN, or in the case of clusters, clustername + cluster FQDN.
 	
+.PARAMETER SelfSigned 
+Creates a self-signed certificate
+
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
 
