@@ -106,8 +106,19 @@ function Copy-DbaCentralManagementServer {
 				$groupName = $sourceGroup.Name
 				$destinationGroup = $destinationGroup.ServerGroups[$groupName]
 
+				$copyDestinationGroupStatus = [pscustomobject]@{
+					SourceServer        = $sourceServer.Name
+					DestinationServer   = $destServer.Name
+					Name                = $destinationGroup
+					Type                = "Create Destination Group"
+					Status              = $null
+					DateTime            = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+				}
+
 				if ($null -ne $destinationGroup) {
 					if ($force -eq $false) {
+						$copyDestinationGroupStatus.Status = "Skipped"
+						$copyDestinationGroupStatus
 						Write-Message -Level Warning -Message "Destination group $groupName exists at destination. Use -Force to drop and migrate."
 						continue
 					}
@@ -117,6 +128,9 @@ function Copy-DbaCentralManagementServer {
 							$destinationGroup.Drop()
 						}
 						catch {
+							$copyDestinationGroupStatus.Status = "Failed"
+							$copyDestinationGroupStatus
+
 							Stop-Function -Message "Issue dropping group" -Target $groupName -InnerErrorRecord $_ -Continue
 						}
 					}
@@ -126,6 +140,9 @@ function Copy-DbaCentralManagementServer {
 					Write-Message -Level Verbose -Message "Creating group $($sourceGroup.Name)"
 					$destinationGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($currentServerGroup, $sourceGroup.Name)
 					$destinationGroup.Create()
+
+					$copyDestinationGroupStatus.Status = "Successful"
+					$copyDestinationGroupStatus
 				}
 			}
 
@@ -134,6 +151,15 @@ function Copy-DbaCentralManagementServer {
 				$instanceName = $instance.Name
 				$serverName = $instance.ServerName
 
+				$copyInstanceStatus = [pscustomobject]@{
+					SourceServer        = $sourceServer.Name
+					DestinationServer   = $destServer.Name
+					Name                = $instanceName
+					Type                = "Add Instance"
+					Status              = $null
+					DateTime            = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+				}
+
 				if ($serverName.ToLower() -eq $toCmStore.DomainInstanceName.ToLower()) {
 					if ($SwitchServerName) {
 						$serverName = $fromCmStore.DomainInstanceName
@@ -141,6 +167,9 @@ function Copy-DbaCentralManagementServer {
 						Write-Message -Level Verbose -Message "SwitchServerName was used and new CMS equals current server name. $($toCmStore.DomainInstanceName.ToLower()) changed to $serverName."
 					}
 					else {
+						$copyInstanceStatus.Status = "Skipped"
+						$copyInstanceStatus
+
 						Write-Message -Level Warning -Message "$serverName is Central Management Server. Add prohibited. Skipping."
 						continue
 					}
@@ -148,6 +177,9 @@ function Copy-DbaCentralManagementServer {
 
 				if ($destinationGroup.RegisteredServers.Name -contains $instanceName) {
 					if ($force -eq $false) {
+						$copyInstanceStatus.Status = "Skipped"
+						$copyInstanceStatus
+
 						Write-Message -Level Warning -Message "Instance $instanceName exists in group $groupName at destination. Use -Force to drop and migrate."
 						continue
 					}
@@ -158,6 +190,9 @@ function Copy-DbaCentralManagementServer {
 							$destinationGroup.RegisteredServers[$instanceName].Drop()
 						}
 						catch {
+							$copyInstanceStatus.Status = "Failed"
+							$copyInstanceStatus
+
 							Stop-Function -Message "Issue dropping instance from group" -Target $instanceName -InnerErrorRecord $_ -Continue
 						}
 					}
@@ -175,8 +210,13 @@ function Copy-DbaCentralManagementServer {
 
 					try {
 						$newServer.Create()
+
+						$copyInstanceStatus.Status = "Successful"
+						$copyInstanceStatus
 					}
 					catch {
+						$copyInstanceStatus.Status = "Failed"
+						$copyInstanceStatus
 						if ($_.Exception -match "same name") {
 							Stop-Function -Message "Could not add Switched Server instance name." -Target $instanceName -InnerErrorRecord $_ -Continue
 						}
@@ -193,28 +233,46 @@ function Copy-DbaCentralManagementServer {
 				$fromSubGroupName = $fromSubGroup.Name
 				$toSubGroup = $destinationGroup.ServerGroups[$fromSubGroupName]
 
+				$copyGroupStatus = [pscustomobject]@{
+					SourceServer      = $sourceServer.Name
+					DestinationServer = $destServer.Name
+					Name              = $fromSubGroupName
+					Type              = "Add Group"
+					Status            = $null
+					DateTime          = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+				}
+
 				if ($null -ne $toSubGroup) {
-					if ($force -eq $false) {
+                    if ($force -eq $false) {
+                        $copyGroupStatus.Status = "Skipped"
+                        $copyGroupStatus
+						
 						Write-Message -Level Warning -Message "Subgroup $fromSubGroupName exists at destination. Use -Force to drop and migrate."
 						continue
 					}
 
 					if ($Pscmdlet.ShouldProcess($destination, "Dropping subgroup $fromSubGroupName recreating")) {
-						try {
-							Write-Message -Level Verbose -Message "Dropping subgroup $fromSubGroupName"
-							$toSubGroup.Drop()
-						}
-						catch {
+                        try {
+                            Write-Message -Level Verbose -Message "Dropping subgroup $fromSubGroupName"
+                            $toSubGroup.Drop()
+                        }
+                        catch {
+                            $copyGroupStatus.Status = "Failed"
+                            $copyGroupStatus
+							
                             Stop-Function -Message "Issue dropping subgroup" -Target $toSubGroup -InnerErrorRecord $_ -Continue
-						}
+                        }
 					}
 				}
 
-				if ($Pscmdlet.ShouldProcess($destination, "Creating group $($fromSubGroup.Name)")) {
-					Write-Message -Level Verbose -Message "Creating group $($fromSubGroup.Name)"
-					$toSubGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($destinationGroup, $fromSubGroup.Name)
-					$toSubGroup.create()
-				}
+                if ($Pscmdlet.ShouldProcess($destination, "Creating group $($fromSubGroup.Name)")) {
+                    Write-Message -Level Verbose -Message "Creating group $($fromSubGroup.Name)"
+                    $toSubGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($destinationGroup, $fromSubGroup.Name)
+                    $toSubGroup.create()
+					
+                    $copyGroupStatus.Status = "Successful"
+					$copyGroupStatus
+                }
 
 				Invoke-ParseServerGroup -sourceGroup $fromSubGroup -destinationgroup $toSubGroup -SwitchServerName $SwitchServerName
 			}
