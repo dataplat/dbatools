@@ -4,6 +4,8 @@ This command gets specified SSIS Environment and all its variables
 
 .DESCRIPTION
 This command gets all variables from specified environment from SSIS Catalog. All sensitive valus are decrypted.
+The function communicates directly with SSISDB database, "SQL Server Intergation Services" service isn't queried there.
+Each parameter (besides SqlInstance and SqlCredential) acts as the filter to only include or exclude particular element
 
 .PARAMETER SqlInstance
 The SQL Server instance.
@@ -12,16 +14,18 @@ The SQL Server instance.
 SqlCredential object to connect as. If not specified, current Windows login will be used.
 
 .PARAMETER Environment
-The SSIS Environments names
+The SSIS Environments names that we want to get variables from
 
 .PARAMETER EnvironmentExclude
-The SSIS Environments to exclude
+The SSIS Environments to exclude. Acts as a filter for environments, best used without 'Environment' parameter 
+to get variables for all environments but excluded ones
 
 .PARAMETER Folder
 The Folders names that contain the environments
 
 .PARAMETER FolderExclude
-The Folders names to exclude
+The Folders names to exclude. Acts as a filter for folders containing environments, best user without 'Folder' parameter
+to get variables for all folders but excluded ones
 
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages
@@ -136,24 +140,34 @@ function Get-DbaSsisEnvironment {
             $catalog = $SSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
 
             # get all folders names if none provided
-            if($null -eq $Folder) {$Folder = $catalog.Folders.Name}
+            if($null -eq $Folder) {
+                $searchFolders = $catalog.Folders.Name
+            }
+            else {
+                $searchFolders = $Folder
+            }
 
             # filter unwanted folders
             if ($FolderExclude) {
-                $Folder = $Folder | Where-Object { $_ -notin $FolderExclude }
+                $searchFolders = $searchFolders | Where-Object { $_ -notin $FolderExclude }
             }
 
             # get all environments names if none provided
-            if($null -eq $Environment) {$Environment = $catalog.Folders.Environments.Name}
+            if($null -eq $Environment) {
+                $searchEnvironments = $catalog.Folders.Environments.Name
+            }
+            else {
+                $searchEnvironments = $Environment
+            }
 
             #filter unwanted environments
             if ($EnvironmentExclude) {
-                $Environment = $Environment | Where-Object { $_ -notin $EnvironmentExclude }
+                $searchEnvironments = $searchEnvironments | Where-Object { $_ -notin $EnvironmentExclude }
             }
 
-            foreach ($f in $Folder)
+            foreach ($f in $searchFolders)
             {
-                $Environments = $catalog.Folders[$f].Environments | Where-Object {$_.Name -in $Environment}
+                $Environments = $catalog.Folders[$f].Environments | Where-Object {$_.Name -in $searchEnvironments}
 
                 foreach($e in $Environments)
                 {
@@ -203,8 +217,6 @@ function Get-DbaSsisEnvironment {
                         CLOSE SYMMETRIC KEY $encKey;
 "@
 
-
-                    #$ssisVariables = $connection.Databases['SSISDB'].ExecuteWithResults($sql).Tables[0]
                     $ssisVariables = Invoke-DbaSqlCmd -ServerInstance $instance -Database SSISDB -Query $sql -As DataTable
                     
                     foreach($variable in $ssisVariables) {
@@ -213,7 +225,9 @@ function Get-DbaSsisEnvironment {
                         } else {
                             $value = $variable.value
                         }
+
                         [PSCustomObject]@{
+                            Server          = $instance
                             Folder          = $f
                             Environment     = $e.Name
                             Id              = $variable.variable_id
