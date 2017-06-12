@@ -12,13 +12,6 @@ function Copy-DbaCredential {
 		.PARAMETER Source
 			Source SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.
 
-		.PARAMETER Destination
-			Destination SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.
-
-		.PARAMETER Credentials
-			Auto-populated list of Credentials from Source. If no Credential is specified, all Credentials will be migrated.
-			Note: if spaces exist in the credential name, you will have to type "" or '' around it. I couldn't figure out a way around this.
-
 		.PARAMETER SourceSqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
@@ -27,6 +20,9 @@ function Copy-DbaCredential {
 			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 			To connect as a different Windows user, run PowerShell as that user.
 
+		.PARAMETER Destination
+			Destination SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.
+
 		.PARAMETER DestinationSqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
@@ -34,6 +30,10 @@ function Copy-DbaCredential {
 
 			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 			To connect as a different Windows user, run PowerShell as that user.
+
+		.PARAMETER CredentialIdentity
+			Auto-populated list of Credentials from Source. If no Credential is specified, all Credentials will be migrated.
+			Note: if spaces exist in the credential name, you will have to type "" or '' around it. I couldn't figure out a way around this.
 
 		.PARAMETER Force
 			By default, if a Credential exists on the source and destination, the Credential is not copied over. Specifying -force will drop and recreate the Credential on the Destination server.
@@ -71,7 +71,7 @@ function Copy-DbaCredential {
 			Copies all SQL Server Credentials on sqlserver2014a to sqlcluster. If credentials exist on destination, they will be skipped.
 
 		.EXAMPLE
-			Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster -Credential "PowerShell Proxy Account" -Force
+			Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster -CredentialIdentity "PowerShell Proxy Account" -Force
 
 			Description
 			Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped and recreated.
@@ -80,10 +80,13 @@ function Copy-DbaCredential {
 	Param (
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Source,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$DestinationSqlCredential,
+		[object[]]$CredentialIdentity,
 		[switch]$Force,
 		[switch]$Silent
 	)
@@ -259,8 +262,8 @@ function Copy-DbaCredential {
 			Write-Output "Collecting Credential logins and passwords on $($sourceserver.name)"
 			$sourcecredentials = Get-SqlCredentials $sourceserver
 
-			if ($credentials -ne $null) {
-				$credentiallist = $sourceserver.credentials | Where-Object { $credentials -contains $_.Name }
+			if ($CredentialIdenity -ne $null) {
+				$credentiallist = $sourceserver.credentials | Where-Object { $CredentialIdentity -contains $_.Name }
 			}
 			else {
 				$credentiallist = $sourceserver.credentials
