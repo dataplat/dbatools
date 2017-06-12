@@ -108,12 +108,12 @@ function Copy-DbaCentralManagementServer {
 
 				if ($null -ne $destinationGroup) {
 					if ($force -eq $false) {
-						Write-Warning "Destination group $groupName exists at destination. Use -Force to drop and migrate."
+						Write-Message -Level Warning -Message "Destination group $groupName exists at destination. Use -Force to drop and migrate."
 						continue
 					}
 					if ($Pscmdlet.ShouldProcess($destination, "Dropping group $groupName")) {
 						try {
-							Write-Verbose "Dropping group $groupName"
+                            Write-Message -Level Verbose -Message "Dropping group $groupName"
 							$destinationGroup.Drop()
 						}
 						catch {
@@ -124,7 +124,7 @@ function Copy-DbaCentralManagementServer {
 				}
 
 				if ($Pscmdlet.ShouldProcess($destination, "Creating group $groupName")) {
-					Write-Output "Creating group $($sourceGroup.Name)"
+					Write-Message -Level Verbose -Message "Creating group $($sourceGroup.Name)"
 					$destinationGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($currentServerGroup, $sourceGroup.Name)
 					$destinationGroup.Create()
 				}
@@ -139,23 +139,23 @@ function Copy-DbaCentralManagementServer {
 					if ($SwitchServerName) {
 						$serverName = $fromCmStore.DomainInstanceName
 						$instanceName = $fromCmStore.DomainInstanceName
-						Write-Output "SwitchServerName was used and new CMS equals current server name. $($toCmStore.DomainInstanceName.ToLower()) changed to $serverName."
+						Write-Message -Level Verbose -Message "SwitchServerName was used and new CMS equals current server name. $($toCmStore.DomainInstanceName.ToLower()) changed to $serverName."
 					}
 					else {
-						Write-Warning "$serverName is Central Management Server. Add prohibited. Skipping."
+						Write-Message -Level Warning -Message "$serverName is Central Management Server. Add prohibited. Skipping."
 						continue
 					}
 				}
 
 				if ($destinationGroup.RegisteredServers.Name -contains $instanceName) {
 					if ($force -eq $false) {
-						Write-Warning "Instance $instanceName exists in group $groupName at destination. Use -Force to drop and migrate."
+						Write-Message -Level Warning -Message "Instance $instanceName exists in group $groupName at destination. Use -Force to drop and migrate."
 						continue
 					}
 
 					if ($Pscmdlet.ShouldProcess($destination, "Dropping instance $instanceName from $groupName and recreating")) {
 						try {
-							Write-Verbose "Dropping instance $instance from $groupName"
+							Write-Message -Level Verbose -Message "Dropping instance $instance from $groupName"
 							$destinationGroup.RegisteredServers[$instanceName].Drop()
 						}
 						catch {
@@ -187,7 +187,7 @@ function Copy-DbaCentralManagementServer {
 							Write-Error "Failed to add $serverName"
 						}
 					}
-					Write-Output "Added Server $serverName as $instanceName to $($destinationGroup.Name)"
+					Write-Message -Level Verbose -Message "Added Server $serverName as $instanceName to $($destinationGroup.Name)"
 				}
 			}
 
@@ -198,13 +198,13 @@ function Copy-DbaCentralManagementServer {
 
 				if ($null -ne $toSubGroup) {
 					if ($force -eq $false) {
-						Write-Warning "Subgroup $fromSubGroupName exists at destination. Use -Force to drop and migrate."
+                        Write-Message -Level Warning -Message "Subgroup $fromSubGroupName exists at destination. Use -Force to drop and migrate."
 						continue
 					}
 
 					if ($Pscmdlet.ShouldProcess($destination, "Dropping subgroup $fromSubGroupName recreating")) {
 						try {
-							Write-Verbose "Dropping subgroup $fromSubGroupName"
+                            Write-Message -Level Verbose -Message "Dropping subgroup $fromSubGroupName"
 							$toSubGroup.Drop()
 						}
 						catch {
@@ -215,7 +215,7 @@ function Copy-DbaCentralManagementServer {
 				}
 
 				if ($Pscmdlet.ShouldProcess($destination, "Creating group $($fromSubGroup.Name)")) {
-					Write-Output "Creating group $($fromSubGroup.Name)"
+                    Write-Message -Level Verbose -Message "Creating group $($fromSubGroup.Name)"
 					$toSubGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($destinationGroup, $fromSubGroup.Name)
 					$toSubGroup.create()
 				}
@@ -236,7 +236,7 @@ function Copy-DbaCentralManagementServer {
 	}
 
 	process {
-		Write-Output "Connecting to Central Management Servers"
+        Write-Message -Level Verbose -Message "Connecting to Central Management Servers"
 
 		try {
 			$fromCmStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sourceServer.ConnectionContext.SqlConnectionObject)
