@@ -54,13 +54,13 @@ Add-DbaComputerCertificate -Path C:\temp\cert.cer
 Adds the local C:\temp\cer.cer to the local computer's LocalMachine\My (Personal) certificate store
 
 #>
-	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
+	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
 	param (
 		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
 		[System.Management.Automation.PSCredential]$Credential,
 		[securestring]$Password,
-		[parameter(ParameterSetName = "Certificate", ValueFromPipeline)]
+		[parameter(ValueFromPipeline)]
 		[System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate,
 		[string]$Path,
 		[string]$Store = "LocalMachine",
@@ -68,25 +68,14 @@ Adds the local C:\temp\cer.cer to the local computer's LocalMachine\My (Personal
 		[switch]$Silent
 	)
 	
-	process {
-		
-		if (!$Certificate -and !$Path) {
-			Write-Message -Level Warning -Message "You must specify either Certificate or Path"
-			return
-		}
+	begin {
 		
 		if ($Path) {
 			if (!(Test-Path -Path $Path)) {
-				Write-Message -Level Warning -Message "$Path does not exist"
+				Stop-Function -Message "Path ($Path) does not exist."
 				return
 			}
-		}
-		
-		if (![dbavalidate]::IsLocalhost($computer) -and !$Password) {
-			$Password = ((65 .. 90) + (97 .. 122) | Get-Random -Count 29 | ForEach-Object { [char]$_ }) -join "" | ConvertTo-SecureString -AsPlainText -Force
-		}
-		
-		if ($path) {
+
 			try {
 				# This may be too much, but ¯\_(ツ)_/¯
 				$bytes = [System.IO.File]::ReadAllBytes($path)
@@ -96,6 +85,14 @@ Adds the local C:\temp\cer.cer to the local computer's LocalMachine\My (Personal
 			catch {
 				Stop-Function -Message "Can't import certificate." -ErrorRecord $_ -Continue
 			}
+		}
+	}
+	process {
+		if (Test-FunctionInterrupt) { return }
+		
+		if (!$Certificate -and !$Path) {
+			Write-Message -Level Warning -Message "You must specify either Certificate or Path"
+			return
 		}
 		
 		if ($Certificate) {
@@ -108,6 +105,11 @@ Adds the local C:\temp\cer.cer to the local computer's LocalMachine\My (Personal
 		}
 		
 		foreach ($computer in $computername) {
+			
+			if (![dbavalidate]::IsLocalhost($computer) -and !$Password) {
+				$Password = ((65 .. 90) + (97 .. 122) | Get-Random -Count 29 | ForEach-Object { [char]$_ }) -join "" | ConvertTo-SecureString -AsPlainText -Force
+			}
+			
 			$scriptblock = {
 				$Store = $args[2]
 				$Folder = $args[3]
