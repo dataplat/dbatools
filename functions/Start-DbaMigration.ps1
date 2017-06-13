@@ -523,7 +523,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating Audits"
 				try
 				{
-					Copy-DbaSqlAudit -Source $sourceserver -Destination $destserver -Force:$Force
+					Copy-DbaServerAudit -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch { Write-Error "Backup device migration reported the following error $($_.Exception.Message)" }
 			}
@@ -540,7 +540,7 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 				Write-Output "`n`nMigrating Server Audit Specifications"
 				try
 				{
-					Copy-DbaSqlAuditSpecification -Source $sourceserver -Destination $destserver -Force:$Force
+					Copy-DbaServerAuditSpecification -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 				catch { Write-Error "Server Audit Specification migration reported the following error $($_.Exception.Message)" }
 			}
