@@ -194,7 +194,6 @@ function Copy-DbaCredential {
 				$connString = "Server=ADMIN:$sourceName;Trusted_Connection=True"
 			}
 
-
 			$sql = "SELECT name,credential_identity,substring(imageval,5,$ivlen) iv, substring(imageval,$($ivlen + 5),len(imageval)-$($ivlen + 4)) pass from sys.Credentials cred inner join sys.sysobjvalues obj on cred.credential_id = obj.objid where valclass=28 and valnum=2"
 
 			# Get entropy from the registry
@@ -213,12 +212,12 @@ function Copy-DbaCredential {
 						return $dt
 					}
 					catch {
-						Write-Message -Level Warning -Message "Can't establish local DAC connection to $sourceName from $sourceName or other error. Quitting."
+						Stop-Message -Message "Can't establish local DAC connection to $sourceName from $sourceName or other error. Quitting." -InnerErrorRecord $_
 					}
 				}
 			}
 			catch {
-				Write-Message -Level Warning -Message "Can't establish local DAC connection to $sourceName from $sourceName or other error. Quitting."
+				Stop-Function -Message "Can't establish local DAC connection to $sourceName from $sourceName or other error. Quitting." -InnerErrorRecord $_
 			}
 
 			if ($server.IsClustered -and $dacEnabled -eq $false) {
@@ -325,7 +324,7 @@ function Copy-DbaCredential {
 						}
 					}
 					catch {
-						Write-Exception $_
+						Stop-Function -Message "Error creating credential" -Target $credentialName -InnerErrorRecord $_
 					}
 				}
 			}
