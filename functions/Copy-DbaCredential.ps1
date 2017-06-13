@@ -247,7 +247,7 @@ function Copy-DbaCredential {
 				# convert decrypted password to unicode
 				$encode = New-Object System.Text.UnicodeEncoding
 
-				<# 
+				<#
 					Print results - removing the weird padding (8 bytes in the front, some bytes at the end)...
 					Might cause problems but so far seems to work.. may be dependant on SQL server version...
 					If problems arise remove the next three lines..
@@ -256,7 +256,7 @@ function Copy-DbaCredential {
 				foreach ($b in $decrypted) {
 					if ($decrypted[$i] -ne 0 -and $decrypted[$i + 1] -ne 0 -or $i -eq $decrypted.Length) {
 						$i -= 1
-						break 
+						break
 					}
 					$i += 1
 				}
@@ -294,8 +294,20 @@ function Copy-DbaCredential {
 			foreach ($credential in $credentialList) {
 				$destServer.Credentials.Refresh()
 				$credentialName = $credential.Name
+
+				$copyCredentialStatus = [pscustomobject]@{
+					SourceServer        = $sourceServer.Name
+					DestinationServer   = $destServer.Name
+					Name                = $credentialName
+					Status              = $null
+					DateTime            = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+				}
+
 				if ($destServer.Credentials[$credentialName] -ne $null) {
 					if (!$force) {
+						$copyCredentialStatus.Status = "Skipping"
+						$copyCredentialStatus
+
 						Write-Message -Level Warning -Message "$credentialName exists $($destServer.Name). Skipping."
 						continue
 					}
@@ -319,8 +331,14 @@ function Copy-DbaCredential {
 						$destServer.Credentials.Refresh()
 						Write-Message -Level Verbose -Message "$credentialName successfully copied"
 					}
+
+					$copyCredentialStatus.Status = "Successful"
+					$copyCredentialStatus
 				}
 				catch {
+					$copyCredentialStatus.Status = "Failed"
+					$copyCredentialStatus
+
 					Stop-Function -Message "Error creating credential" -Target $credentialName -InnerErrorRecord $_
 				}
 			}
@@ -356,10 +374,10 @@ function Copy-DbaCredential {
 
 		# This output is wrong. Will fix later.
 		Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source"
-        try { Invoke-Command -ComputerName $sourceNetBios { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } }
-        catch {
-            throw "Can't connect to registry on $source. Quitting."
-        }
+		try { Invoke-Command -ComputerName $sourceNetBios { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } }
+		catch {
+			throw "Can't connect to registry on $source. Quitting."
+		}
 
 		# Magic happens here
 		Copy-Credential $credentials -force:$force
