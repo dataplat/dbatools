@@ -2212,9 +2212,12 @@ namespace Sqlcollective.Dbatools
             /// </summary>
             public static void Kill()
             {
-                LogWriter.Runspace.Close();
-                LogWriter.Dispose();
-                LogWriter = null;
+                if (LogWriter != null)
+                {
+                    LogWriter.Runspace.Close();
+                    LogWriter.Dispose();
+                    LogWriter = null;
+                }
             }
             #endregion Logwriter
         }
@@ -2893,7 +2896,7 @@ namespace Sqlcollective.Dbatools
                         try
                         {
                             _ComputerName = (string)tempInput.Properties["Name"].Value;
-                            
+
                             // We prefer using the dnshostname whenever possible
                             if (tempInput.Properties["DNSHostName"].Value != null)
                             {
@@ -3056,24 +3059,204 @@ namespace Sqlcollective.Dbatools
 
     namespace TabExpansion
     {
-        using System.Collections.Concurrent;
         using System.Collections;
+        using System.Collections.Concurrent;
+        using System.Collections.Generic;
         using System.Management.Automation;
+        using System.Threading;
+
+        /// <summary>
+        /// Contains information on access to an instance
+        /// </summary>
+        public class InstanceAccess
+        {
+            /// <summary>
+            /// The name of the instance to access
+            /// </summary>
+            public string InstanceName;
+
+            /// <summary>
+            /// Whether the account had sysadmin privileges. On multiple user usage, the cache will prefer sysadmin accounts.
+            /// </summary>
+            public bool IsSysAdmin;
+
+            /// <summary>
+            /// The actual connection object to connect with to the server
+            /// </summary>
+            public object ConnectionObject;
+
+            /// <summary>
+            /// When was the instance last accessed using dbatools
+            /// </summary>
+            public DateTime LastAccess;
+
+            /// <summary>
+            /// When was the instance's TEPP cache last updated
+            /// </summary>
+            public DateTime LastUpdate = new DateTime(1, 1, 1, 0, 0, 0);
+        }
 
         /// <summary>
         /// Class that handles the static fields supporting the dbatools TabExpansion implementation
         /// </summary>
         public static class TabExpansionHost
         {
+            #region State information
             /// <summary>
             /// Field containing the scripts that were registered.
             /// </summary>
             public static ConcurrentDictionary<string, ScriptContainer> Scripts = new ConcurrentDictionary<string, ScriptContainer>();
-            
+
             /// <summary>
             /// The cache used by scripts utilizing TabExpansionPlusPlus in dbatools
             /// </summary>
             public static Hashtable Cache = new Hashtable();
+
+            /// <summary>
+            /// List of instances and when they were last accessed
+            /// </summary>
+            public static ConcurrentDictionary<string, InstanceAccess> InstanceAccess = new ConcurrentDictionary<string, InstanceAccess>();
+            
+            /// <summary>
+            /// Scripts that build the cache and are suitable for synchronous execution
+            /// </summary>
+            public static List<ScriptBlock> TeppGatherScriptsFast = new List<ScriptBlock>();
+
+            /// <summary>
+            /// Scripts that build the cache and are not suitable for synchronous execution
+            /// </summary>
+            public static List<ScriptBlock> TeppGatherScriptsSlow = new List<ScriptBlock>();
+            #endregion State information
+
+            #region Utility methods
+            /// <summary>
+            /// Registers a new instance or updates an already existing one. Should only be called from Connect-SqlInstance and Connect-DbaSqlServer
+            /// </summary>
+            /// <param name="InstanceName">Name of the instance connected to</param>
+            /// <param name="Connection">To connection object containing the relevant information for accessing the instance</param>
+            /// <param name="IsSysAdmin">Whether the account connecting to the instnace has SA privileges</param>
+            public static void SetInstance(string InstanceName, object Connection, bool IsSysAdmin)
+            {
+                string tempName = InstanceName.ToLower();
+
+                if (!InstanceAccess.ContainsKey(tempName))
+                {
+                    InstanceAccess tempAccess = new InstanceAccess();
+                    tempAccess.InstanceName = tempName;
+                    tempAccess.LastAccess = DateTime.Now;
+                    tempAccess.ConnectionObject = Connection;
+                    tempAccess.IsSysAdmin = IsSysAdmin;
+                    InstanceAccess[tempName] = tempAccess;
+                }
+                else
+                {
+                    InstanceAccess[tempName].LastAccess = DateTime.Now;
+
+                    if (IsSysAdmin & !InstanceAccess[tempName].IsSysAdmin)
+                    {
+                        InstanceAccess[tempName].ConnectionObject = Connection;
+                        InstanceAccess[tempName].IsSysAdmin = IsSysAdmin;
+                    }
+                }
+            }
+            #endregion Utility methods
+
+            #region Configuration
+            /// <summary>
+            /// Whether TEPP in its entirety is disabled
+            /// </summary>
+            public static bool TeppDisabled = false;
+
+            /// <summary>
+            /// Whether asynchronous TEPP updating should be disabled
+            /// </summary>
+            public static bool TeppAsyncDisabled = false;
+
+            /// <summary>
+            /// Whether synchronous TEPP updating should be disabled
+            /// </summary>
+            public static bool TeppSyncDisabled = true;
+
+            /// <summary>
+            /// The interval in which asynchronous TEPP cache updates are performed
+            /// </summary>
+            public static TimeSpan TeppUpdateInterval = new TimeSpan(0, 3, 0);
+
+            /// <summary>
+            /// After this timespan of no requests to a server, the updates to its cache are disabled.
+            /// </summary>
+            public static TimeSpan TeppUpdateTimeout = new TimeSpan(0, 30, 0);
+            #endregion Configuration
+
+            #region Updater
+            private static ScriptBlock TeppUpdateScript;
+
+            private static PowerShell TeppUdater;
+
+            /// <summary>
+            /// Setting this to true should cause the script running in the runspace to selfterminate, allowing a graceful selftermination.
+            /// </summary>
+            public static bool TeppUdaterStopper
+            {
+                get { return _TeppUdaterStopper; }
+            }
+            private static bool _TeppUdaterStopper = false;
+
+            /// <summary>
+            /// Set the script to use as part of the TEPP updater
+            /// </summary>
+            /// <param name="Script">The script to use</param>
+            public static void SetScript(ScriptBlock Script)
+            {
+                TeppUpdateScript = Script;
+            }
+
+            /// <summary>
+            /// Starts the TEPP Updater.
+            /// </summary>
+            public static void Start()
+            {
+                if (TeppUdater == null)
+                {
+                    _TeppUdaterStopper = false;
+                    TeppUdater = PowerShell.Create();
+                    TeppUdater.AddScript(TeppUpdateScript.ToString());
+                    TeppUdater.BeginInvoke();
+                }
+            }
+
+            /// <summary>
+            /// Gracefully stops the TEPP Updater
+            /// </summary>
+            public static void Stop()
+            {
+                _TeppUdaterStopper = true;
+
+                int i = 0;
+
+                // Wait up to 30 seconds for the running script to notice and kill itself
+                while ((TeppUdater.Runspace.RunspaceAvailability != System.Management.Automation.Runspaces.RunspaceAvailability.Available) && (i < 300))
+                {
+                    i++;
+                    Thread.Sleep(100);
+                }
+
+                Kill();
+            }
+
+            /// <summary>
+            /// Very ungracefully kills the TEPP Updater. Use only in the most dire emergency.
+            /// </summary>
+            public static void Kill()
+            {
+                if (TeppUdater != null)
+                {
+                    TeppUdater.Runspace.Close();
+                    TeppUdater.Dispose();
+                    TeppUdater = null;
+                }
+            }
+            #endregion Updater
         }
 
         /// <summary>
@@ -4949,6 +5132,9 @@ namespace Sqlcollective.Dbatools
             #endregion Methods
 
             #region Fields
+            /// <summary>
+            /// The number of digits a pretty timespan should round to.
+            /// </summary>
             public int Digits = 2;
             #endregion Fields
 
@@ -4958,9 +5144,9 @@ namespace Sqlcollective.Dbatools
             /// </summary>
             /// <param name="Timespan"></param>
             public DbaTimeSpanPretty(TimeSpan Timespan)
-                :base(Timespan)
+                : base(Timespan)
             {
-                
+
             }
 
             /// <summary>
@@ -4968,9 +5154,9 @@ namespace Sqlcollective.Dbatools
             /// </summary>
             /// <param name="ticks"></param>
             public DbaTimeSpanPretty(long ticks)
-                :base(ticks)
+                : base(ticks)
             {
-                
+
             }
 
             /// <summary>
@@ -4980,9 +5166,9 @@ namespace Sqlcollective.Dbatools
             /// <param name="minutes"></param>
             /// <param name="seconds"></param>
             public DbaTimeSpanPretty(int hours, int minutes, int seconds)
-                :base(hours, minutes, seconds)
+                : base(hours, minutes, seconds)
             {
-                
+
             }
 
             /// <summary>
@@ -4993,9 +5179,9 @@ namespace Sqlcollective.Dbatools
             /// <param name="minutes"></param>
             /// <param name="seconds"></param>
             public DbaTimeSpanPretty(int days, int hours, int minutes, int seconds)
-                :base(days, hours, minutes, seconds)
+                : base(days, hours, minutes, seconds)
             {
-                
+
             }
 
             /// <summary>
@@ -5007,9 +5193,9 @@ namespace Sqlcollective.Dbatools
             /// <param name="seconds"></param>
             /// <param name="milliseconds"></param>
             public DbaTimeSpanPretty(int days, int hours, int minutes, int seconds, int milliseconds)
-                :base(days, hours, minutes, seconds, milliseconds)
+                : base(days, hours, minutes, seconds, milliseconds)
             {
-                
+
             }
             #endregion Constructors
 
@@ -5458,7 +5644,7 @@ namespace Sqlcollective.Dbatools
             /// <summary>
             /// The Version of the dbatools Library. Used to compare with import script to determine out-of-date libraries
             /// </summary>
-            public readonly static Version LibraryVersion = new Version(1, 0, 1, 11);
+            public readonly static Version LibraryVersion = new Version(1, 0, 1, 12);
         }
 
         /// <summary>
@@ -5704,7 +5890,7 @@ aka "The guy who made most of The Library that Failed to import"
 }
 
 #region Version Warning
-$LibraryVersion = New-Object System.Version(1, 0, 1, 11)
+$LibraryVersion = New-Object System.Version(1, 0, 1, 12)
 if ($LibraryVersion -ne ([Sqlcollective.Dbatools.Utility.UtilityHost]::LibraryVersion))
 {
     Write-Warning @"
