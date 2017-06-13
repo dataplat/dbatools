@@ -66,25 +66,25 @@ Logs into server1\instance1 with SQL authentication and then installs the FRK in
 		#[Alias("ServerInstance", "SqlInstance")]
 		[object]$SqlInstance,
 		[object]$Database,
-        [object]$SqlCredential
+		[object]$SqlCredential
 	)
 	
 	BEGIN {
-        $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
+		$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 		$zipfile = "$temp\SQL-Server-First-Responder-Kit-master.zip"
-        $zipfolder = "$temp\SQL-Server-First-Responder-Kit-master\"
-
-        $url = 'https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/master.zip'
+		$zipfolder = "$temp\SQL-Server-First-Responder-Kit-master\"
+		
+		$url = 'https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/master.zip'
 		
 		if ($zipfile | Test-Path) {
-            Remove-Item -Path $zipfile
-        }
-
-        if ($zipfolder | Test-Path) {
-            Remove-Item -Path $zipfolder -Recurse
-        }
-
-        Write-Host "Downloading and unzipping the First Responder Kit zip file."
+			Remove-Item -Path $zipfile
+		}
+		
+		if ($zipfolder | Test-Path) {
+			Remove-Item -Path $zipfolder -Recurse
+		}
+		
+		Write-Host "Downloading and unzipping the First Responder Kit zip file."
 		
 		try {
 			try {
@@ -102,15 +102,15 @@ Logs into server1\instance1 with SQL authentication and then installs the FRK in
 			# Unzip the files
 			$shell = New-Object -ComObject Shell.Application
 			$zip = $shell.NameSpace($zipfile)
-
-            foreach ($item in $zip.items()) {
-                $shell.Namespace($temp).CopyHere($item)
-            }
+			
+			foreach ($item in $zip.items()) {
+				$shell.Namespace($temp).CopyHere($item)
+			}
 			
 			Remove-Item -Path $zipfile
 		}
 		catch {
-			Stop-Function -Message "Couldn't download the First Responder Kit. Download and install manually from https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/master.zip." -InnerErrorRecord $_
+			Stop-Function -Message "Couldn't download the First Responder Kit. Download and install manually from https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/master.zip." -ErrorRecord $_
 			return
 		}
 		
@@ -120,25 +120,25 @@ Logs into server1\instance1 with SQL authentication and then installs the FRK in
 		Foreach ($instance in $SqlInstance) {
 			try {
 				Write-Host "Connecting to $instance"
-				$Connection = Connect-DbaSqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$Connection = Connect-DbaSqlServer -SqlInstance $instance -Credential $sqlcredential
 			}
-			catch { 
-                Write-Host "Failed to connect to $instance : $($_.Exception.Message)" 
-            }
-
-            # Install/Update each FRK stored procedure
-            Get-ChildItem $zipfolder -Filter sp_Blitz*.sql | Foreach-Object {
-                if ($_.Name -ne "sp_BlitzRS.sql") {
-                    Write-Host "Installing/Updating $_."
-
-                    $sql = [IO.File]::ReadAllText($_.FullName)
-                    
-                    $null = $Connection.databases[$Database].ExecuteNonQuery($sql)
-                }
+			catch {
+				Write-Host "Failed to connect to $instance : $($_.Exception.Message)"
 			}
-				
+			
+			# Install/Update each FRK stored procedure
+			Get-ChildItem $zipfolder -Filter sp_Blitz*.sql | Foreach-Object {
+				if ($_.Name -ne "sp_BlitzRS.sql") {
+					Write-Host "Installing/Updating $_."
+					
+					$sql = [IO.File]::ReadAllText($_.FullName)
+					
+					$null = $Connection.databases[$Database].ExecuteNonQuery($sql)
+				}
+			}
+			
 			Write-Host "Finished installing/updating the First Responder Kit stored procedures in $database on $instance."
 		}
-    }
-    END { }
+	}
+	END { }
 }
