@@ -304,7 +304,8 @@
 		'Enable-DbaForceNetworkEncryption',
 		'Disable-DbaForceNetworkEncryption',
 		'Get-DbaForceNetworkEncryption',
-		'Remove-DbaComputerCertificate'
+		'Remove-DbaComputerCertificate',
+		'Get-DbaServerInstallDate'
 	)
 	
 	# Cmdlets to export from this module
