@@ -45,6 +45,17 @@ Install-DbaFirstResponderKit -SqlInstance server1\instance1 -Database master -Sq
 
 Logs into server1\instance1 with SQL authentication and then installs the FRK in the master database.
 
+.EXAMPLE 
+Install-DbaFirstResponderKit -SqlInstance sql2016\standardrtm, sql2016\sqlexpress, sql2014
+
+Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs the FRK in the master database.
+
+.EXAMPLE 
+$servers = "sql2016\standardrtm", "sql2016\sqlexpress", "sql2014"
+$servers | Install-DbaFirstResponderKit
+
+Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs the FRK in the master database.
+
 #>
 	
 	[CmdletBinding()]
@@ -117,13 +128,18 @@ Logs into server1\instance1 with SQL authentication and then installs the FRK in
 				Stop-Function -Message "Failed to connect to: $instance" -Target $instance -ErrorRecord $_ -Continue
 			}
 			
-			Write-Message -Level Output -Message "Starting installing/updating the First Responder Kit stored procedures in $database on $instance."
+			Write-Message -Level Output -Message "Starting installing/updating the First Responder Kit stored procedures in $database on $instance"
 			
 			# Install/Update each FRK stored procedure
-			Get-ChildItem $zipfolder -Filter sp_Blitz*.sql | Foreach-Object {
-				if ($_.Name -ne "sp_BlitzRS.sql") {
-					Write-Message -Level Output -Message "Installing/Updating $_"
-					$sql = [IO.File]::ReadAllText($_.FullName)
+			foreach ($script in (Get-ChildItem $zipfolder -Filter sp_Blitz*.sql)) {
+				$scriptname = $script.Name
+				if ($scriptname -ne "sp_BlitzRS.sql") {
+					Write-Message -Level Output -Message "Installing/Updating $scriptname"
+					$sql = [IO.File]::ReadAllText($script.FullName)
+					
+					if ($scriptname -eq "sp_BlitzQueryStore.sql") {
+						if ($server.VersionMajor -lt 13) { continue }
+					}
 					
 					foreach ($query in ($sql -Split "\nGO\b")) {
 						$query = $query.Trim()
@@ -132,13 +148,13 @@ Logs into server1\instance1 with SQL authentication and then installs the FRK in
 								$null = $server.Query($query, $Database)
 							}
 							catch {
-								Write-Message -Level Warning -Message "Could not execute at least one portion of $($_.Name)"
+								Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptname in $Database on $instance" -ErrorRecord $_
 							}
 						}
 					}
 				}
 			}
-			Write-Message -Level Output -Message "Finished installing/updating the First Responder Kit stored procedures in $database on $instance."
+			Write-Message -Level Output -Message "Finished installing/updating the First Responder Kit stored procedures in $database on $instance"
 		}
 	}
 }
