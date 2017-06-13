@@ -1,5 +1,10 @@
-﻿[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"] = @{ }
+﻿#region Initialize Cache
+if (-not [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"]) {
+	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"] = @{ }
+}
+#endregion Initialize Cache
 
+#region Tepp Data return
 $ScriptBlock = {
     param (
         $commandName,
@@ -66,3 +71,11 @@ $ScriptBlock = {
 }
 
 Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name Database
+#endregion Tepp Data return
+
+#region Update Cache
+$ScriptBlock = {
+	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$FullSmoName] = $server.Databases.Name
+}
+Register-DbaTeppInstanceCacheBuilder -ScriptBlock $ScriptBlock
+#endregion Update Cache

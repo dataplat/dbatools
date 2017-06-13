@@ -1,5 +1,10 @@
-﻿[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["operator"] = @{ }
+﻿#region Initialize Cache
+if (-not [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["operator"]) {
+	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["operator"] = @{ }
+}
+#endregion Initialize Cache
 
+#region Tepp Data return
 $ScriptBlock = {
     param (
         $commandName,
@@ -65,3 +70,11 @@ $ScriptBlock = {
 }
 
 Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name Operator
+#endregion Tepp Data return
+
+#region Update Cache
+$ScriptBlock = {
+	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["operator"][$FullSmoName] = $server.JobServer.Operators.Name
+}
+Register-DbaTeppInstanceCacheBuilder -ScriptBlock $ScriptBlock
+#endregion Update Cache
