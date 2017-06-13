@@ -118,6 +118,9 @@ $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.
 # Start the logging system (requires the configuration system up and running)
 $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\internal\scripts\logfilescript.ps1"))), $null, $null)
 
+# Start the tepp asynchronous update system (requires the configuration system up and running)
+$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\internal\scripts\updateTeppAsync.ps1"))), $null, $null)
+
 # I renamed this function to be more accurate - 1ms
 Set-Alias -Name Reset-SqlSaPassword -Value Reset-SqlAdmin
 Set-Alias -Name Copy-SqlUserDefinedMessage -Value Copy-SqlCustomError
