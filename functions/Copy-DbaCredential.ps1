@@ -275,59 +275,56 @@ function Copy-DbaCredential {
 				.OUTPUT
 					System.Data.DataTable
 			#>
-				param (
-					[string[]]$credentials,
-					[bool]$force
-				)
+			param (
+				[string[]]$credentials,
+				[bool]$force
+			)
 
-				Write-Message -Level Verbose -Message "Collecting Credential logins and passwords on $($sourceServer.Name)"
-				$sourceCredentials = Get-SqlCredential $sourceServer
+			Write-Message -Level Verbose -Message "Collecting Credential logins and passwords on $($sourceServer.Name)"
+			$sourceCredentials = Get-SqlCredential $sourceServer
 
-				if ($CredentialIdenity -ne $null) {
-					$credentialList = $sourceServer.Credentials | Where-Object { $CredentialIdentity -contains $_.Name }
-				}
-				else {
-					$credentialList = $sourceServer.Credentials
-				}
+			if ($CredentialIdenity -ne $null) {
+				$credentialList = $sourceServer.Credentials | Where-Object { $CredentialIdentity -contains $_.Name }
+			}
+			else {
+				$credentialList = $sourceServer.Credentials
+			}
 
-				Write-Message -Level Verbose -Message "Starting migration"
-				foreach ($credential in $credentialList) {
-					$destServer.Credentials.Refresh()
-					$credentialName = $credential.Name
-
-					if ($destServer.Credentials[$credentialName] -ne $null) {
-						if (!$force) {
-							Write-Message -Level Warning -Message "$credentialName exists $($destServer.Name). Skipping."
-							continue
-						}
-						else {
-							if ($Pscmdlet.ShouldProcess($destination.Name, "Dropping $identity")) {
-								$destServer.Credentials[$credentialName].Drop()
-								$destServer.Credentials.Refresh()
-							}
-						}
+			Write-Message -Level Verbose -Message "Starting migration"
+			foreach ($credential in $credentialList) {
+				$destServer.Credentials.Refresh()
+				$credentialName = $credential.Name
+				if ($destServer.Credentials[$credentialName] -ne $null) {
+					if (!$force) {
+						Write-Message -Level Warning -Message "$credentialName exists $($destServer.Name). Skipping."
+						continue
 					}
-
-					Write-Message -Level Verbose -Message "Attempting to migrate $credentialName"
-
-					try {
-						$currentCred = $sourceCredentials | Where-Object { $_.Credential -eq $credentialName }
-						$identity = $currentCred.Identity
-						$password = $currentCred.Password
-
-						if ($Pscmdlet.ShouldProcess($destination.Name, "Copying $identity")) {
-							$sql = "CREATE CREDENTIAL [$credentialName] WITH IDENTITY = N'$identity', SECRET = N'$password'"
-							Write-Message -Level Debug -Message $sql
-							$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+					else {
+						if ($Pscmdlet.ShouldProcess($destination.Name, "Dropping $identity")) {
+							$destServer.Credentials[$credentialName].Drop()
 							$destServer.Credentials.Refresh()
-							Write-Message -Level Verbose -Message "$credentialName successfully copied"
 						}
 					}
-					catch {
-						Stop-Function -Message "Error creating credential" -Target $credentialName -InnerErrorRecord $_
+				}
+
+				Write-Message -Level Verbose -Message "Attempting to migrate $credentialName"
+				try {
+					$currentCred = $sourceCredentials | Where-Object { $_.Credential -eq $credentialName }
+					$identity = $currentCred.Identity
+					$password = $currentCred.Password
+					if ($Pscmdlet.ShouldProcess($destination.Name, "Copying $identity")) {
+						$sql = "CREATE CREDENTIAL [$credentialName] WITH IDENTITY = N'$identity', SECRET = N'$password'"
+						Write-Message -Level Debug -Message $sql
+						$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+						$destServer.Credentials.Refresh()
+						Write-Message -Level Verbose -Message "$credentialName successfully copied"
 					}
+				}
+				catch {
+					Stop-Function -Message "Error creating credential" -Target $credentialName -InnerErrorRecord $_
 				}
 			}
+		}
 
 		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
 		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
