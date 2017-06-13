@@ -49,7 +49,7 @@ Logs into server1\instance1 with SQL authentication and then installs the FRK in
 	
 	[CmdletBinding()]
 	param (
-		[Parameter(Mandatory = $True, ValueFromPipeline = $True)]
+		[Parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
