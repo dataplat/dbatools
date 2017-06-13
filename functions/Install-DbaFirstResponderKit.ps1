@@ -21,6 +21,9 @@ Database to store the FRK stored procs, typically master and master by default
 Use SqlCredential to connect to SqlInstance with SQL authentication. 
 If SqlCredential is not specified, Windows authentication will be used.
 
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
+
 .NOTES 
 Original author: Tara Kizer, Brent Ozar Unlimited (https://www.brentozar.com/)
 Website: https://dbatools.io
