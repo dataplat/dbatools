@@ -270,7 +270,7 @@ function Get-DbaBackupHistory {
 								  backupset.database_name AS [Database],
 								  backupset.user_name AS Username,
 								  backupset.backup_start_date AS Start,
-								  backupset.server_name as [server],
+								  backupset.server_name as [Server],
 								  backupset.backup_finish_date AS [End],
 								  DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS Duration,
 								  mediafamily.physical_device_name AS Path,
@@ -287,7 +287,7 @@ function Get-DbaBackupHistory {
 								  END AS Type,
 								  backupset.media_set_id AS MediaSetId,
 								  mediafamily.media_family_id as mediafamilyid,
-								  backupset.backup_set_id as backupsetid,
+								  backupset.backup_set_id as BackupSetID,
 								  CASE mediafamily.device_type
 									WHEN 2 THEN 'Disk'
 									WHEN 102 THEN 'Permanent Disk  Device'
