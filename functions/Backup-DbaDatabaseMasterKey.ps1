@@ -1,10 +1,10 @@
 ﻿Function Backup-DbaDatabaseMasterKey {
 	<#
 .SYNOPSIS
-Gets specified database master key
+Backs up specified database master key
 
 .DESCRIPTION
-Gets specified database master key
+Backs up specified database master key
 
 .PARAMETER SqlInstance
 The target SQL Server instance
@@ -13,7 +13,7 @@ The target SQL Server instance
 Allows you to login to SQL Server using alternative credentials
 
 .PARAMETER Database
-Get master key from specific database
+Backup master key from specific database
 
 .PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is auto populated from the server
@@ -35,14 +35,21 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
-Backup-DbaDatabaseMasterKey -SqlInstance sql2016
+Backup-DbaDatabaseMasterKey -SqlInstance server1\sql2016
 
-Gets all master database keys
+Prompts for export password, then logs into server1\sql2016 with windows credentials then backs up all database keys to the default backup directory
+	
+ComputerName : SERVER1
+InstanceName : SQL2016
+SqlInstance  : SERVER1\SQL2016
+Database     : master
+Filename     : E:\MSSQL13.SQL2016\MSSQL\Backup\server1$sql2016-master-20170614162311.key
+Status       : Success
 
 .EXAMPLE
-Backup-DbaDatabaseMasterKey -SqlInstance Server1 -Database db1
+Backup-DbaDatabaseMasterKey -SqlInstance Server1 -Database db1 -BackupDirectory \\nas\sqlbackups\keys
 
-Gets the master key for the db1 database
+Logs into sql2016 with windows credentials then backs up db1's keys to the \\nas\sqlbackups\keys directory
 
 #>
 	[CmdletBinding()]
@@ -78,7 +85,15 @@ Gets the master key for the db1 database
 				$databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
 			}
 			
-			if (!(Test-Dbapath -SqlInstance $server -Path $BackupDirectory)) {
+			if (Was-bound -ParameterName BackupDirectory -Not) {
+				$backupdirectory = $server.BackupDirectory
+			}
+			
+			if (!$backupdirectory) {
+				Stop-Function -Message "Backup directory discovery failed. Please expliticly specify -BackupDirectory" -Target $server -Continue
+			}
+			
+			if (!(Test-DbaSqlPath -SqlInstance $server -Path $BackupDirectory)) {
 				Stop-Function -Message "$instance cannot access $backupdirectory" -Target $server -InnerErrorRecord $_ -Continue
 			}
 			
@@ -106,15 +121,29 @@ Gets the master key for the db1 database
 					}
 				}
 				
+				$time = (Get-Date -Format yyyMMddHHmmss)
+				$dbname = $db.name
+				$BackupDirectory = $BackupDirectory.TrimEnd("\")
+				$fileinstance = $instance.ToString().Replace('\','$')
+				$filename = "$BackupDirectory\$fileinstance-$dbname-$time.key"
+				
+				try {
+					$masterkey.export($filename, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))
+					$status = "Success"
+				}
+				catch {
+					$status = "Failure"
+					Write-Message -Level Warning -Message "Backup failure: $($_.Exception.InnerException)"
+				}
+				
 				Add-Member -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $server.NetName
 				Add-Member -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
 				Add-Member -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-				Add-Member -InputObject $masterkey -MemberType NoteProperty -Name Database -value $db.Name
-				Add-Member -InputObject $masterkey -MemberType NoteProperty -Name BackupDirectory -value $backuppath
+				Add-Member -InputObject $masterkey -MemberType NoteProperty -Name Database -value $dbname
 				Add-Member -InputObject $masterkey -MemberType NoteProperty -Name Filename -value $filename
 				Add-Member -InputObject $masterkey -MemberType NoteProperty -Name Status -value $status
 				
-				Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, DateLastModified, IsEncryptedByServer
+				Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, Filename, Status
 			}
 		}
 	}
