@@ -1,4 +1,4 @@
-﻿Function Get-DbaServiceMasterKey {
+﻿Function Get-DbaDatabaseMasterKey {
 	<#
 .SYNOPSIS
 Gets specified database master key
@@ -35,12 +35,12 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
-Get-DbaServiceMasterKey -SqlInstance sql2016
+Get-DbaDatabaseMasterKey -SqlInstance sql2016
 
 Gets all master database keys
 
 .EXAMPLE
-Get-DbaServiceMasterKey -SqlInstance Server1 -Database db1
+Get-DbaDatabaseMasterKey -SqlInstance Server1 -Database db1
 
 Gets the master key for the db1 database
 
