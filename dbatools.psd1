@@ -307,7 +307,8 @@
 		'Get-DbaForceNetworkEncryption',
 		'Remove-DbaComputerCertificate',
 		'Get-DbaServerInstallDate',
-		'Install-DbaFirstResponderKit'
+		'Install-DbaFirstResponderKit',
+		'Backup-DbaDatabaseMasterKey'
 	)
 	
 	# Cmdlets to export from this module
