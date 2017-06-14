@@ -70,6 +70,18 @@ Gets all SSIS environments except 'DEV' and 'PROD' from 'localhost' server. The 
 
 Gets all SSIS environments from 'SRV1' and 'SRV3' servers. The server's names come from pipeline
 
+.EXAMPLE
+'SRV1', 'SRV2' | Get-DbaSsisEnvironment DEV | Out-GridView
+
+Gets all variables from 'DEV' Environment(s) on servers 'SRV1' and 'SRV2' and outputs it as the GridView. 
+The server names come from the pipeline.
+
+.EXAMPLE
+'localhost' | Get-DbaSsisEnvironment -EnvironmentExclude DEV, PROD | Select-Object -Property Name, Value | Where-Object {$_.Name -match '^a'} | Out-GridView
+
+Gets all variables from Environments other than 'DEV' and 'PROD' on 'localhost' server, 
+selects Name and Value properties for variables that names start with letter 'a' and outputs it as the GridView
+
 .NOTES
 Author: Bartosz Ratajczyk ( @b_ratajczyk )
 
@@ -127,12 +139,12 @@ function Get-DbaSsisEnvironment {
             {
                 $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
 
-                Write-Message -Message "Connecting to $instance Integration Services" -Level Verbose
+                Write-Message -Message "Connecting to SSIS Catalog on $instance" -Level Verbose
                 $SSIS = New-Object "$ISNamespace.IntegrationServices" $connection
             }
             catch
             {
-                Stop-Function -Message "Could not connect to Integration Services on $instance"
+                Stop-Function -Message "Could not connect to SSIS Catalog on $instance"
                 return
             }
 
@@ -152,95 +164,113 @@ function Get-DbaSsisEnvironment {
                 $searchFolders = $searchFolders | Where-Object { $_ -notin $FolderExclude }
             }
 
-            # get all environments names if none provided
-            if($null -eq $Environment) {
-                $searchEnvironments = $catalog.Folders.Environments.Name
-            }
-            else {
-                $searchEnvironments = $Environment
-            }
-
-            #filter unwanted environments
-            if ($EnvironmentExclude) {
-                $searchEnvironments = $searchEnvironments | Where-Object { $_ -notin $EnvironmentExclude }
-            }
-
-            foreach ($f in $searchFolders)
+            if($searchFolders -eq $null)
             {
-                $Environments = $catalog.Folders[$f].Environments | Where-Object {$_.Name -in $searchEnvironments}
-
-                foreach($e in $Environments)
+                Write-Message -Message "Instance: $instance > -Folder and -FolderExclude filters return an empty collection. Skipping" -Level Warning
+            }
+            else
+            {
+                foreach ($f in $searchFolders)
                 {
-                    #encryption handling
-                    $encKey = 'MS_Enckey_Env_' + $e.EnvironmentId
-                    $encCert = 'MS_Cert_Env_' + $e.EnvironmentId
+                    $Environments = $catalog.Folders[$f].Environments | Where-Object {$_.Name -in $searchEnvironments}
 
-                    <#
-                    SMO does not return sensitive values (gets data from catalog.environment_variables)
-                    We have to manualy query internal.environment_variables instead and use symmetric keys
-                    within T-SQL code
-                    #>
+                    # get all environments names if none provided
+                    if($null -eq $Environment) {
+                        $searchEnvironments = $catalog.Folders.Environments.Name
+                    }
+                    else {
+                        $searchEnvironments = $Environment
+                    }
 
-                    $sql = @"
-                        OPEN SYMMETRIC KEY $encKey DECRYPTION BY CERTIFICATE $encCert;
+                    #filter unwanted environments
+                    if ($EnvironmentExclude) {
+                        $searchEnvironments = $searchEnvironments | Where-Object { $_ -notin $EnvironmentExclude }
+                    }
 
-                        SELECT
-                            ev.variable_id,
-                            ev.name,
-                            ev.description,
-                            ev.type,
-                            ev.sensitive,
-                            value			= ev.value,
-                            ev.sensitive_value,
-                            ev.base_data_type,
-                            decrypted		= decrypted.value
-                        FROM internal.environment_variables ev
+                    if($searchEnvironments -eq $null)
+                    {
+                        Write-Message -Message "Instance: $instance / Folder: $f > -Environment and -EnvironmentExclude filters return an empty collection. Skipping."  -Level Warning
+                    }
+                    else
+                    {
+                        foreach($e in $Environments)
+                        {
+                            #encryption handling
+                            $encKey = 'MS_Enckey_Env_' + $e.EnvironmentId
+                            $encCert = 'MS_Cert_Env_' + $e.EnvironmentId
 
-                            CROSS APPLY (
+                            <#
+                            SMO does not return sensitive values (gets data from catalog.environment_variables)
+                            We have to manualy query internal.environment_variables instead and use symmetric keys
+                            within T-SQL code
+                            #>
+
+                            $sql = @"
+                                OPEN SYMMETRIC KEY $encKey DECRYPTION BY CERTIFICATE $encCert;
+
                                 SELECT
-                                    value	= CASE base_data_type
-                                                WHEN 'nvarchar' THEN CONVERT(NVARCHAR(MAX), DECRYPTBYKEY(sensitive_value))
-                                                WHEN 'bit' THEN CONVERT(NVARCHAR(MAX), CONVERT(bit, DECRYPTBYKEY(sensitive_value)))
-                                                WHEN 'datetime' THEN CONVERT(NVARCHAR(MAX), CONVERT(datetime2(0), DECRYPTBYKEY(sensitive_value)))
-                                                WHEN 'single' THEN CONVERT(NVARCHAR(MAX), CONVERT(DECIMAL(38, 18), DECRYPTBYKEY(sensitive_value)))
-                                                WHEN 'float' THEN CONVERT(NVARCHAR(MAX), CONVERT(DECIMAL(38, 18), DECRYPTBYKEY(sensitive_value)))
-                                                WHEN 'decimal' THEN CONVERT(NVARCHAR(MAX), CONVERT(DECIMAL(38, 18), DECRYPTBYKEY(sensitive_value)))
-                                                WHEN 'tinyint' THEN CONVERT(NVARCHAR(MAX), CONVERT(tinyint, DECRYPTBYKEY(sensitive_value)))
-                                                WHEN 'smallint' THEN CONVERT(NVARCHAR(MAX), CONVERT(smallint, DECRYPTBYKEY(sensitive_value)))
-                                                WHEN 'int' THEN CONVERT(NVARCHAR(MAX), CONVERT(INT, DECRYPTBYKEY(sensitive_value)))
-                                                WHEN 'bigint' THEN CONVERT(NVARCHAR(MAX), CONVERT(bigint, DECRYPTBYKEY(sensitive_value)))
-                                            END
-                            ) decrypted
+                                    ev.variable_id,
+                                    ev.name,
+                                    ev.description,
+                                    ev.type,
+                                    ev.sensitive,
+                                    value			= ev.value,
+                                    ev.sensitive_value,
+                                    ev.base_data_type,
+                                    decrypted		= decrypted.value
+                                FROM internal.environment_variables ev
 
-                        WHERE environment_id = $($e.EnvironmentId);
+                                    CROSS APPLY (
+                                        SELECT
+                                            value	= CASE base_data_type
+                                                        WHEN 'nvarchar' THEN CONVERT(NVARCHAR(MAX), DECRYPTBYKEY(sensitive_value))
+                                                        WHEN 'bit' THEN CONVERT(NVARCHAR(MAX), CONVERT(bit, DECRYPTBYKEY(sensitive_value)))
+                                                        WHEN 'datetime' THEN CONVERT(NVARCHAR(MAX), CONVERT(datetime2(0), DECRYPTBYKEY(sensitive_value)))
+                                                        WHEN 'single' THEN CONVERT(NVARCHAR(MAX), CONVERT(DECIMAL(38, 18), DECRYPTBYKEY(sensitive_value)))
+                                                        WHEN 'float' THEN CONVERT(NVARCHAR(MAX), CONVERT(DECIMAL(38, 18), DECRYPTBYKEY(sensitive_value)))
+                                                        WHEN 'decimal' THEN CONVERT(NVARCHAR(MAX), CONVERT(DECIMAL(38, 18), DECRYPTBYKEY(sensitive_value)))
+                                                        WHEN 'tinyint' THEN CONVERT(NVARCHAR(MAX), CONVERT(tinyint, DECRYPTBYKEY(sensitive_value)))
+                                                        WHEN 'smallint' THEN CONVERT(NVARCHAR(MAX), CONVERT(smallint, DECRYPTBYKEY(sensitive_value)))
+                                                        WHEN 'int' THEN CONVERT(NVARCHAR(MAX), CONVERT(INT, DECRYPTBYKEY(sensitive_value)))
+                                                        WHEN 'bigint' THEN CONVERT(NVARCHAR(MAX), CONVERT(bigint, DECRYPTBYKEY(sensitive_value)))
+                                                    END
+                                    ) decrypted
 
-                        CLOSE SYMMETRIC KEY $encKey;
+                                WHERE environment_id = $($e.EnvironmentId);
+
+                                CLOSE SYMMETRIC KEY $encKey;
 "@
 
-                    $ssisVariables = Invoke-DbaSqlCmd -ServerInstance $instance -Database SSISDB -Query $sql -As DataTable
-                    
-                    foreach($variable in $ssisVariables) {
-                        if($variable.sensitive -eq $true) {
-                            $value = $variable.decrypted
-                        } else {
-                            $value = $variable.value
-                        }
+                            $ssisVariables = Invoke-DbaSqlCmd -ServerInstance $instance -Database SSISDB -Query $sql -As DataTable
+                            
+                            foreach($variable in $ssisVariables)
+                            {
+                                if($variable.sensitive -eq $true)
+                                {
+                                    $value = $variable.decrypted
+                                }
+                                else
+                                {
+                                    $value = $variable.value
+                                }
 
-                        [PSCustomObject]@{
-                            Server          = $instance
-                            Folder          = $f
-                            Environment     = $e.Name
-                            Id              = $variable.variable_id
-                            Name            = $variable.Name
-                            Description     = $variable.description
-                            Type            = $variable.type
-                            IsSensitive     = $variable.sensitive
-                            BaseDataType    = $variable.base_data_type
-                            Value           = $value
-                        }
-                    } # end foreach($ssisVariables)
-                } # end foreach($Environments)
-            } # end foreach($Folder)
+                                [PSCustomObject]@{
+                                    Server          = $instance
+                                    Folder          = $f
+                                    Environment     = $e.Name
+                                    Id              = $variable.variable_id
+                                    Name            = $variable.Name
+                                    Description     = $variable.description
+                                    Type            = $variable.type
+                                    IsSensitive     = $variable.sensitive
+                                    BaseDataType    = $variable.base_data_type
+                                    Value           = $value
+                                }
+                            } # end foreach($ssisVariables)
+                        } # end foreach($Environments)
+                    } # end if($searchEnvironments)
+                } # end foreach($Folder)    
+            } # end if($searchFolders)
         } # end foreach($SqlInstance)
     } # end process
 
