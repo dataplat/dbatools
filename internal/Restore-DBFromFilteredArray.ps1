@@ -204,7 +204,9 @@ Function Restore-DBFromFilteredArray {
                     if ($DestinationFileNumber) {
                         $FileName = $FileName + '_' + $FileId + '_of_' + $RestoreFileCountFileCount
                     }
-                    $filename = $filename + '.' + $extension
+                    if ($null -ne $extension) { 
+                        $filename = $filename + '.' + $extension
+                    }
                     Write-Verbose "past the checks"
                     if ($File.Type -eq 'L' -and $DestinationLogDirectory -ne '') {
                         $MoveFile.PhysicalFileName = $DestinationLogDirectory + '\' + $FileName					
