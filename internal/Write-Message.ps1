@@ -232,7 +232,7 @@
                 
                 if (-not (Get-DbaConfigValue -Name $OnceName))
                 {
-                    Write-Host $NewMessage -ForegroundColor $info_color -ErrorAction Ignore
+                    Write-HostColor -String $NewMessage -DefaultColor $info_color -ErrorAction Ignore
                     Set-DbaConfig -Name $OnceName -Value $True -Hidden -Silent -ErrorAction Ignore
                 }
             }
@@ -244,7 +244,7 @@
         }
         elseif ($developerMode)
         {
-            Write-Host $NewMessage -ForegroundColor $dev_color
+			Write-HostColor -String $NewMessage -DefaultColor $info_color -ErrorAction Ignore
         }
         
         if (($max_verbose -ge $Level) -and ($min_verbose -le $Level))
