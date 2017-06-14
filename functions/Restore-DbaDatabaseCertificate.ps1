@@ -1,4 +1,4 @@
-function Import-DbaCertificate {
+function Restore-DbaDatabaseCertificate {
 	<#
 .SYNOPSIS
 Imports certificates from .cer files using SMO.
@@ -43,7 +43,7 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
-Import-DbaCertificate -SqlInstance Server1 -Path \\Server1\Certificates -password (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
+Restore-DbaDatabaseCertificate -SqlInstance Server1 -Path \\Server1\Certificates -password (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
 Imports all the certificates in the specified path.
 
 #>
