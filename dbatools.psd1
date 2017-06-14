@@ -281,6 +281,7 @@
 		'New-DbaCertificate',
 		'New-DbaCmConnection',
 		'New-DbaDatabaseMasterKey',
+		'New-DbaServiceMasterKey',
 		'New-DbatoolsSupportPackage',
 		'Remove-DbaCertificate',
 		'Remove-DbaCmConnection',
