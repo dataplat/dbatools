@@ -1,4 +1,4 @@
-﻿function Remove-DbaServiceMasterKey {
+﻿function Remove-DbaDatabaseMasterKey {
 	<#
 	.SYNOPSIS
 		Deletes specified database master key
@@ -41,12 +41,12 @@
 		Prompts you for confirmation before executing any changing operations within the command.
 	
 	.EXAMPLE
-		Remove-DbaServiceMasterKey -SqlInstance Server1
+		Remove-DbaDatabaseMasterKey -SqlInstance Server1
 		
 		The master key in the master database on server1 will be removed if it exists.
 	
 	.EXAMPLE
-		Remove-DbaServiceMasterKey -SqlInstance Server1 -Database db1 -Confirm:$false
+		Remove-DbaDatabaseMasterKey -SqlInstance Server1 -Database db1 -Confirm:$false
 		
 		Suppresses all prompts to remove the master key in the 'db1' database and drops the key.
 	
