@@ -65,8 +65,9 @@ Gets the master key for the db1 database
 			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -Target $instance -InnerErrorRecord $_ -Continue
 			}
-
+			
 			$databases = $server.Databases
+			
 			if ($Database) {
 				$databases = $databases | Where-Object Name -In $Database
 			}
@@ -82,7 +83,7 @@ Gets the master key for the db1 database
 
 				$masterkey = $db.MasterKey
 
-				if ($masterkey) {
+				if (!$masterkey) {
 					Write-Message -Message "No master key exists in the $db database on $instance" -Target $db -Level Verbose
 					continue
 				}
