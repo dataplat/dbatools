@@ -18,6 +18,12 @@ Backup master key from specific database
 .PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is auto populated from the server
 
+.PARAMETER BackupDirectory
+The directory to export the key. If no backup directory is specified, the default backup directory will be used.
+	
+.PARAMETER Password
+The password to encrypt the exported key. This must be a securestring.
+
 .PARAMETER WhatIf
 Shows what would happen if the command were to run. No actions are actually performed
 
