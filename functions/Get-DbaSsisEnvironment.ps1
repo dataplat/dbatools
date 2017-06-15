@@ -31,53 +31,53 @@ to get variables for all folders but excluded ones
 Use this switch to disable any kind of verbose messages
 
 .EXAMPLE
-Get-DbaSsisEnvironment -SqlInstance localhost -Environment DEV -Folder DWH_ETL
+Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV -Folder DWH_ETL
 
 Gets variables of 'DEV' environment located in 'DWH_ETL' folder on 'localhost' Server
 
 .EXAMPLE
-Get-DbaSsisEnvironment -SqlInstance localhost -Environment DEV -Folder DWH_ETL, DEV2, QA
+Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV -Folder DWH_ETL, DEV2, QA
 
 Gets variables of 'DEV' environment(s) located in folders 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
 
 .EXAMPLE
-Get-DbaSsisEnvironment -SqlInstance localhost -Environment DEV -FolderExclude DWH_ETL, DEV2, QA
+Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV -FolderExclude DWH_ETL, DEV2, QA
 
 Gets variables of 'DEV' environments located in folders other than 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
 
 .EXAMPLE
-Get-DbaSsisEnvironment -SqlInstance localhost -Environment DEV, PROD -Folder DWH_ETL, DEV2, QA
+Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV, PROD -Folder DWH_ETL, DEV2, QA
 
 Gets variables of 'DEV' and 'PROD' environment(s) located in folders 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
 
 .EXAMPLE
-Get-DbaSsisEnvironment -SqlInstance localhost -EnvironmentExclude DEV, PROD -Folder DWH_ETL, DEV2, QA
+Get-DbaSsisEnvironmentVariable -SqlInstance localhost -EnvironmentExclude DEV, PROD -Folder DWH_ETL, DEV2, QA
 
 Gets variables of environments other than 'DEV' and 'PROD' located in folders 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
 
 .EXAMPLE
-Get-DbaSsisEnvironment -SqlInstance localhost -EnvironmentExclude DEV, PROD -FolderExclude DWH_ETL, DEV2, QA
+Get-DbaSsisEnvironmentVariable -SqlInstance localhost -EnvironmentExclude DEV, PROD -FolderExclude DWH_ETL, DEV2, QA
 
 Gets variables of environments other than 'DEV' and 'PROD' located in folders other than 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
 
 .EXAMPLE
-'localhost' | Get-DbaSsisEnvironment -EnvironmentExclude DEV, PROD
+'localhost' | Get-DbaSsisEnvironmentVariable -EnvironmentExclude DEV, PROD
 
 Gets all SSIS environments except 'DEV' and 'PROD' from 'localhost' server. The server name comes from pipeline
 
 .EXAMPLE
-'SRV1', 'SRV3' | Get-DbaSsisEnvironment
+'SRV1', 'SRV3' | Get-DbaSsisEnvironmentVariable
 
 Gets all SSIS environments from 'SRV1' and 'SRV3' servers. The server's names come from pipeline
 
 .EXAMPLE
-'SRV1', 'SRV2' | Get-DbaSsisEnvironment DEV | Out-GridView
+'SRV1', 'SRV2' | Get-DbaSsisEnvironmentVariable DEV | Out-GridView
 
 Gets all variables from 'DEV' Environment(s) on servers 'SRV1' and 'SRV2' and outputs it as the GridView. 
 The server names come from the pipeline.
 
 .EXAMPLE
-'localhost' | Get-DbaSsisEnvironment -EnvironmentExclude DEV, PROD | Select-Object -Property Name, Value | Where-Object {$_.Name -match '^a'} | Out-GridView
+'localhost' | Get-DbaSsisEnvironmentVariable -EnvironmentExclude DEV, PROD | Select-Object -Property Name, Value | Where-Object {$_.Name -match '^a'} | Out-GridView
 
 Gets all variables from Environments other than 'DEV' and 'PROD' on 'localhost' server, 
 selects Name and Value properties for variables that names start with letter 'a' and outputs it as the GridView
@@ -91,7 +91,7 @@ This program is free software: you can redistribute it and/or modify it under th
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
 #>
-function Get-DbaSsisEnvironment {
+function Get-DbaSsisEnvironmentVariable {
 
 [CmdletBinding()]
 	Param (
