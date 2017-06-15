@@ -1,4 +1,4 @@
-﻿function New-DbaCertificate {
+﻿function New-DbaDatabaseCertificate {
 <#
 .SYNOPSIS
 Creates a new database certificate
@@ -50,12 +50,12 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
-New-DbaCertificate -SqlInstance Server1
+New-DbaDatabaseCertificate -SqlInstance Server1
 
 You will be prompted to securely enter your password, then a certificate will be created in the master database on server1 if it does not exist.
 
 .EXAMPLE
-New-DbaCertificate -SqlInstance Server1 -Database db1 -Confirm:$false
+New-DbaDatabaseCertificate -SqlInstance Server1 -Database db1 -Confirm:$false
 
 Suppresses all prompts to install but prompts to securely enter your password and creates a certificate in the 'db1' database
 #>

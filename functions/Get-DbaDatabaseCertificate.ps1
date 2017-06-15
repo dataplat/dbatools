@@ -1,4 +1,4 @@
-﻿function Get-DbaCertificate {
+﻿function Get-DbaDatabaseCertificate {
 	<#
 .SYNOPSIS
 Gets database certificates
@@ -31,17 +31,17 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
-Get-DbaCertificate -SqlInstance sql2016
+Get-DbaDatabaseCertificate -SqlInstance sql2016
 
 Gets all certificates
 
 .EXAMPLE
-Get-DbaCertificate -SqlInstance Server1 -Database db1
+Get-DbaDatabaseCertificate -SqlInstance Server1 -Database db1
 
 Gets the certificate for the db1 database
 
 .EXAMPLE
-Get-DbaCertificate -SqlInstance Server1 -Database db1 -Certificate cert1
+Get-DbaDatabaseCertificate -SqlInstance Server1 -Database db1 -Certificate cert1
 
 Gets the cert1 certificate within the db1 database
 	

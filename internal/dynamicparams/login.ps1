@@ -1,5 +1,10 @@
-﻿[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"] = @{ }
+﻿#region Initialize Cache
+if (-not [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"]) {
+	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"] = @{ }
+}
+#endregion Initialize Cache
 
+#region Tepp Data return
 $ScriptBlock = {
 	param (
 		$commandName,
@@ -55,3 +60,11 @@ $ScriptBlock = {
 }
 
 Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name Login
+#endregion Tepp Data return
+
+#region Update Cache
+$ScriptBlock = {
+	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"][$FullSmoName] = $server.Logins.Name
+}
+Register-DbaTeppInstanceCacheBuilder -ScriptBlock $ScriptBlock
+#endregion Update Cache

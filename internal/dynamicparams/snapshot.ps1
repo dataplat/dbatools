@@ -1,5 +1,10 @@
-﻿[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["snapshot"] = @{ }
+﻿#region Initialize Cache
+if (-not [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["snapshot"]) {
+	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["snapshot"] = @{ }
+}
+#endregion Initialize Cache
 
+#region Tepp Data return
 $ScriptBlock = {
     param (
         $commandName,
@@ -65,3 +70,12 @@ $ScriptBlock = {
 }
 
 Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name snapshot
+#endregion Tepp Data return
+
+#region Update Cache
+$ScriptBlock = {
+	if ($PSVersionTable.PSVersion.Major -ge 4) { [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["snapshot"][$FullSmoName] = $server.Databases.Where({ $_.IsDatabaseSnapShot }).Name }
+	else { [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["snapshot"][$FullSmoName] = ($server.Databases | Where-Object IsDatabaseSnapShot).Name }
+}
+Register-DbaTeppInstanceCacheBuilder -ScriptBlock $ScriptBlock
+#endregion Update Cache
