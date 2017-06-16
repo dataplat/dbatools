@@ -1,197 +1,249 @@
-Function Get-DbaSqlBuildReference
-{
+Function Get-DbaSqlBuildReference {
 <#
-.SYNOPSIS
-Returns SQL Server Build infos on a SQL instance
-
-.DESCRIPTION
-Returns info about the specific build of a SQL instance, including the SP, the CU and the reference KB, wherever possible.
-It also includes End Of Support dates as specified on Microsoft Lifecycle Policy
-
-.PARAMETER Build
-Instead of connecting to a real instance, pass a string identifying the build to get the info back.
+	.SYNOPSIS
+		Returns SQL Server Build infos on a SQL instance
 	
-.PARAMETER SqlInstance
-Optionally, an SQL Server SMO object can be passed to the command to be parsed.
-
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
-.NOTES
-Author: niphlod
-Tags: SqlBuild
-
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-.LINK
-https://dbatools.io/Get-DbaSqlBuildReference
-
-.EXAMPLE
-Get-DbaSqlBuildReference -Build "12.00.4502"
-
-Returns information about a build identified by  "12.00.4502" (which is SQL 2014 with SP1 and CU11)
-
-.EXAMPLE
-Get-DbaSqlBuildReference -Build "12.0.4502","10.50.4260"
-
-Returns information builds identified by these versions strings
-
-.EXAMPLE
-Get-SqlRegisteredServerName -SqlInstance sqlserver2014a | Foreach-Object { Connect-DbaSqlServer -SqlInstance $_ } | Get-DbaSqlBuildReference
-
-Integrate with other commandlets to have builds checked for all your registered servers on sqlserver2014a
-
+	.DESCRIPTION
+		Returns info about the specific build of a SQL instance, including the SP, the CU and the reference KB, wherever possible.
+		It also includes End Of Support dates as specified on Microsoft Lifecycle Policy
+	
+	.PARAMETER Build
+		Instead of connecting to a real instance, pass a string identifying the build to get the info back.
+	
+	.PARAMETER SqlInstance
+		Target any number of instances, in order to return their build state.
+	
+	.PARAMETER SqlCredential
+		When connecting to an instance, use the credentials specified.
+	
+	.PARAMETER Silent
+		Use this switch to disable any kind of verbose messages
+	
+	.EXAMPLE
+		Get-DbaSqlBuildReference -Build "12.00.4502"
+		
+		Returns information about a build identified by  "12.00.4502" (which is SQL 2014 with SP1 and CU11)
+	
+	.EXAMPLE
+		Get-DbaSqlBuildReference -Build "12.0.4502","10.50.4260"
+		
+		Returns information builds identified by these versions strings
+	
+	.EXAMPLE
+		Get-DbaRegisteredServerName -SqlInstance sqlserver2014a | Get-DbaSqlBuildReference
+		
+		Integrate with other commandlets to have builds checked for all your registered servers on sqlserver2014a
+	
+	.NOTES
+		Author: niphlod
+		Editor: Fred
+		Tags: SqlBuild
+		
+		dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+		Copyright (C) 2016 Chrissy LeMaire
+		This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+		This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+		You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	
+	.LINK
+		https://dbatools.io/Get-DbaSqlBuildReference
 #>
 	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
 	[CmdletBinding()]
 	Param (
-		[string[]]$Build,
-		[Parameter(Mandatory = $false, ValueFromPipeline = $true)]
-		[Microsoft.SqlServer.Management.Smo.Server[]]$SqlInstance,
-		[switch]$Silent
+		[version[]]
+		$Build,
+		
+		[parameter(Mandatory = $false, ValueFromPipeline = $true)]
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]
+		$SqlInstance,
+		
+		[Alias("Credential")]
+		[PsCredential]
+		$SqlCredential,
+		
+		[switch]
+		$Silent
 	)
-
-	BEGIN {
-		function Find-DbaSqlBuildReferenceIndex {
-			[CmdletBinding()]
-			Param()
-			$orig_idxfile = "$moduledirectory\bin\dbatools-buildref-index.json"
-			$DbatoolsData = Get-DbaConfigValue -Name 'Path.DbatoolsData'
-			$writable_idxfile = Join-Path $DbatoolsData "dbatools-buildref-index.json"
-			if (!(Test-Path $orig_idxfile)) {
-				Write-Message -Message "Unable to read local file" -Warning -Silent $Silent
-			} else {
-				if(!(Test-Path $writable_idxfile)) {
-					Copy-Item $orig_idxfile $writable_idxfile
-				}
-				return (Get-Content -Raw $writable_idxfile)
-			}
-		}
-
+	
+	begin {
+		#region Helper functions
 		function Get-DbaSqlBuildReferenceIndex {
 			[CmdletBinding()]
-			Param()
-			return Find-DbaSqlBuildReferenceIndex | ConvertFrom-Json
-		}
-
-		function Compare-DbaSqlBuildGreater {
-			[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
-			[CmdletBinding()]
-			[OutputType([bool])]
-			Param([string]$firstref, [string]$secondref)
-			$first = $firstref.split('.') | Foreach-Object { [convert]::ToInt32($_) }
-			$second = $secondref.split('.') | Foreach-Object { [convert]::ToInt32($_) }
-			$x = 0
-			while($true) {
-				if($first[$x] -gt $second[$x]) {
-					return $true
+			Param (
+				[string]
+				$Moduledirectory,
+				
+				[bool]
+				$Silent
+			)
+			
+			$orig_idxfile = "$Moduledirectory\bin\dbatools-buildref-index.json"
+			$DbatoolsData = Get-DbaConfigValue -Name 'Path.DbatoolsData'
+			$writable_idxfile = Join-Path $DbatoolsData "dbatools-buildref-index.json"
+			
+			if (-not (Test-Path $orig_idxfile)) {
+				Write-Message -Level Warning -Silent $Silent -Message "Unable to read local SQL build reference file. Check your module integrity!"
+			}
+			
+			if ((-not (Test-Path $orig_idxfile)) -and (-not (Test-Path $writable_idxfile))) {
+				throw "Build reference file not found, check module health!"
+			}
+			
+			# If no writable copy exists, create one and return the module original
+			if (-not (Test-Path $writable_idxfile)) {
+				Copy-Item -Path $orig_idxfile -Destination $writable_idxfile -Force -ErrorAction Stop
+				$result = Get-Content $orig_idxfile -Raw | ConvertFrom-Json
+			}
+			
+			# Else, if both exist, update the writeable if necessary and return the current version
+			elseif (Test-Path $orig_idxfile) {
+				$module_content = Get-Content $orig_idxfile -Raw | ConvertFrom-Json
+				$data_content = Get-Content $writable_idxfile -Raw | ConvertFrom-Json
+				
+				$module_time = Get-Date $module_content.LastUpdated
+				$data_time = Get-Date $data_content.LastUpdated
+				
+				if ($module_time -gt $data_time) {
+					Copy-Item -Path $orig_idxfile -Destination $writable_idxfile -Force -ErrorAction Stop
+					$result = $module_content
 				}
-				$x += 1
-				if($x -gt $first.Length) {
-					return $false
+				
+				else {
+					$result = $data_content
 				}
 			}
+			
+			# Else if the module version of the file no longer exists, but the writable version exists, return the writable version
+			else {
+				$result = Get-Content $writable_idxfile -Raw | ConvertFrom-Json
+			}
+			
+			$LastUpdated = Get-Date -Date $result.LastUpdated
+			if ($LastUpdated -lt (Get-Date).AddDays(-45)) {
+				Write-Message -Level Warni -Silent $Silent -Message "Index is stale, last update on: $(Get-Date -Date $LastUpdated -Format s)"
+			}
+			
+			$result.Data | Select-Object @{ Name = "VersionObject"; Expression = { [version]$_.Version } }, *
 		}
-
-		$moduledirectory = $MyInvocation.MyCommand.Module.ModuleBase
-
-		$IdxRef = Get-DbaSqlBuildReferenceIndex
-		$LastUpdated = Get-Date -Date $IdxRef.LastUpdated
-		if ($LastUpdated -lt (Get-Date).AddDays(-45)) {
-			Write-Message -Message "Index is Stale, Last Update on: $(Get-Date -Date $LastUpdated -f s)" -Warning
-		}
-
+		
 		function Resolve-DbaSqlBuild {
 			[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
 			[CmdletBinding()]
 			[OutputType([System.Collections.Hashtable])]
-			Param([string]$build)
-			$LookFor = ($build.split('.')[0..2] | Foreach-Object { [convert]::ToInt32($_) }) -join '.'
-			Write-Message -Message "Looking for $LookFor" -Level 5 -Silent $Silent
-			$SqlVersion = $build.split('.')[0..1] -join '.'
-			$IdxVersion = $IdxRef.Data | Where-Object Version -like "$SqlVersion.*"
-			$Detected = @{}
+			Param (
+				[version]
+				$Build,
+				
+				$Data,
+				
+				[bool]
+				$Silent
+			)
+			
+			Write-Message -Level Verbose -Silent $Silent -Message "Looking for $Build"
+			
+			$IdxVersion = $Data | Where-Object Version -like "$($Build.Major).$($Build.Minor).*"
+			$Detected = @{ }
 			$Detected.MatchType = 'Approximate'
-			Write-Message -Message "We have $($IdxVersion.Length) in store for this Release" -Level 5 -Silent $Silent
-			If ($IdxVersion.Length -eq 0)
-			{
-				Write-Message -Message "No info in store for this Release" -Warning -Silent $Silent
+			Write-Message -Level Verbose -Silent $Silent -Message "We have $($IdxVersion.Length) builds in store for this Release"
+			If ($IdxVersion.Length -eq 0) {
+				Write-Message -Level Warning -Silent $Silent -Message "No info in store for this Release"
 				$Detected.Warning = "No info in store for this Release"
 			}
-			else
-			{
+			else {
 				$LastVer = $IdxVersion[0]
 			}
-			foreach($el in $IdxVersion) {
-				if($null -ne $el.Name) {
+			foreach ($el in $IdxVersion) {
+				if ($null -ne $el.Name) {
 					$Detected.Name = $el.Name
 				}
-				if(Compare-DbaSqlBuildGreater -firstref $el.Version -secondref $LookFor) {
+				if ($el.VersionObject -gt $Build) {
 					$Detected.MatchType = 'Approximate'
-					$Detected.Warning = "$LookFor not found, closest build we have is $($LastVer.Version)"
+					$Detected.Warning = "$Build not found, closest build we have is $($LastVer.Version)"
 					break
 				}
 				$LastVer = $el
-				if($null -ne $el.SP) {
+				if ($null -ne $el.SP) {
 					$Detected.SP = $el.SP
 					$Detected.CU = $null
 				}
-				if($null -ne $el.CU) {
+				if ($null -ne $el.CU) {
 					$Detected.CU = $el.CU
 				}
-				if($null -ne $el.SupportedUntil) {
+				if ($null -ne $el.SupportedUntil) {
 					$Detected.SupportedUntil = (Get-Date -date $el.SupportedUntil)
 				}
 				$Detected.KB = $el.KBList
-				if($el.Version -eq $LookFor) {
+				if ($el.Version -eq $Build) {
 					$Detected.MatchType = 'Exact'
 					break
 				}
 			}
 			return $Detected
 		}
+		#endregion Helper functions
+		
+		$moduledirectory = $MyInvocation.MyCommand.Module.ModuleBase
+		
+		try {
+			$IdxRef = Get-DbaSqlBuildReferenceIndex -Moduledirectory $moduledirectory -Silent $Silent
+		}
+		catch {
+			Stop-Function -Message "Error loading SQL build reference" -ErrorRecord $_
+			return
+		}
 	}
-	PROCESS
-	{
-		foreach ($instance in $SqlInstance)
-		{
+	process {
+		if (Test-FunctionInterrupt) { return }
+		
+		foreach ($instance in $SqlInstance) {
+			#region Ensure the connection is established
 			try {
-				$null = $instance.Version.ToString()
-			} catch {
+				Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+			}
+			catch {
+				Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
+			}
+			
+			try {
+				$null = $server.Version.ToString()
+			}
+			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -Continue -Silent $Silent -Target $instance
 			}
-			$Detected = Resolve-DbaSqlBuild  $instance.Version.ToString()
+			#endregion Ensure the connection is established
+			
+			$Detected = Resolve-DbaSqlBuild -Build $server.Version -Data $IdxRef -Silent $Silent
 			
 			[PSCustomObject]@{
-				SqlInstance = $instance.DomainInstanceName
-				Build = $instance.Version.ToString()
-				NameLevel = $Detected.Name
-				SPLevel = $Detected.SP
-				CULevel = $Detected.CU
-				KBLevel = $Detected.KB
+				SqlInstance    = $server.DomainInstanceName
+				Build		   = $server.Version
+				NameLevel	   = $Detected.Name
+				SPLevel	       = $Detected.SP
+				CULevel	       = $Detected.CU
+				KBLevel	       = $Detected.KB
 				SupportedUntil = $Detected.SupportedUntil
-				MatchType = $Detected.MatchType
-				Warning = $Detected.Warning
+				MatchType	   = $Detected.MatchType
+				Warning	       = $Detected.Warning
 			}
 		}
 		
-		foreach($buildstr in $Build) {
-			$Detected = Resolve-DbaSqlBuild -Build $buildstr
+		foreach ($buildstr in $Build) {
+			$Detected = Resolve-DbaSqlBuild -Build $buildstr -Data $IdxRef -Silent $Silent
 			
 			[PSCustomObject]@{
-					SqlInstance = $null
-					Build = $buildstr
-					NameLevel = $Detected.Name
-					SPLevel = $Detected.SP
-					CULevel = $Detected.CU
-					KBLevel = $Detected.KB
-					SupportedUntil = $Detected.SupportedUntil
-					MatchType = $Detected.MatchType
-					Warning = $Detected.Warning
+				SqlInstance    = $null
+				Build		   = $buildstr
+				NameLevel	   = $Detected.Name
+				SPLevel	       = $Detected.SP
+				CULevel	       = $Detected.CU
+				KBLevel	       = $Detected.KB
+				SupportedUntil = $Detected.SupportedUntil
+				MatchType	   = $Detected.MatchType
+				Warning	       = $Detected.Warning
 			} | Select-DefaultView -ExcludeProperty SqlInstance
 		}
 	}
