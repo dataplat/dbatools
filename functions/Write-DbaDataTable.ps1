@@ -1,5 +1,5 @@
 Function Write-DbaDataTable {
-<#
+    <#
     .SYNOPSIS
         Writes data to a SQL Server Table
     
@@ -53,6 +53,13 @@ Function Write-DbaDataTable {
     .PARAMETER Truncate
         Prompts for confirmation then truncates destination
     
+    .PARAMETER BulkCopyTimeOut
+        Value in seconds for the BulkCopy operations timeout, default is 30 seconds
+
+    .PARAMETER RegularUser
+        The underlying connection assumes the user connecting has administrative privilege, this switch removest that assumption
+        This is particularly importand when connecting to a SQL Azure Database
+    
     .PARAMETER Silent
         Use this switch to disable any kind of verbose messages
     
@@ -99,7 +106,15 @@ Function Write-DbaDataTable {
         Quickly and efficiently performs a bulk insert of all the data into mydb.dbo.customers -- since Schema was not specified, dbo was used.
         
         Per Microsoft, KeepNulls will "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
+
     
+    .EXAMPLE
+        $passwd = ConvertTo-SecureString "P@ssw0rd" -AsPlainText -Force
+        $AzureCredential = Mew-Object System.Management.Automation.PSCredential("AzureAccount"),$passwd)
+        $datatable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
+        Write-DbaDataTable -SqlInstance AzureDB.database.windows.net -InputObject $datatable -Database mydb -Table customers -KeepNulls -Credential $AzureCredential -ReqularUser -BulkCopyTimeOut 300
+
+        This performs the same opertation as the previous example, but against a SQL Azure Database instance using the required credentials. The RegularUser switch is needed to prevent trying to get administative privilege, and we increase the BulkCopyTimeout value to cope with any latency
     .EXAMPLE
         $process = Get-Process | Out-DbaDataTable
         Write-DbaDataTable -InputObject $process -SqlInstance sql2014 -Database mydb -Table myprocesses -AutoCreateTable
@@ -159,6 +174,10 @@ Function Write-DbaDataTable {
         [ValidateNotNull()]
         [int]
         $NotifyAfter = 5000,
+
+        [ValidateNotNull()]
+        [int]
+        $BulkCopyTimeOut = 5000,
         
         [switch]
         $AutoCreateTable,
@@ -180,6 +199,9 @@ Function Write-DbaDataTable {
         
         [switch]
         $Truncate,
+        
+        [switch]
+        $RegularUser,
         
         [switch]
         $Silent
@@ -232,20 +254,28 @@ Function Write-DbaDataTable {
         
         try {
             Write-Message -Level VeryVerbose -Message "Connecting to $SqlInstance" -Target $SqlInstance
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -RegularUser:$RegularUser
         }
         catch {
             Stop-Function -Message "Failed to process Instance $SqlInstance" -ErrorRecord $_ -Target $SqlInstance
             return
         }
-        
+
+        if ($server.servertype -eq 'SqlAzureDatabase') {     
+            #For some reasons SMO wants an initial pull when talking to Azure Sql DB
+            #This will throw and be caught, and then we can continue as normal.  
+            try {
+                $server.databases | out-null
+            }
+            catch {}
+        }
         $db = $server.Databases | Where-Object Name -eq $Database
-        
+    
         if ($db -eq $null) {
             Stop-Function -Message "$Database does not exist" -Target $SqlInstance
             return
         }
-        
+    
         $bulkCopyOptions = @()
         $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default", "Truncate"
         
@@ -273,60 +303,66 @@ Function Write-DbaDataTable {
         if ($InputObject -eq $null) {
             Write-Message -Once SlowDataTablePipeline -Level Warning -Message "Using the pipeline can be insanely (5 minutes vs 0.5 seconds) slower for larger batches and doesn't show a progress bar. Consider using -InputObject for large batches."
         }
-        
-        $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($server.ConnectionContext.ConnectionString) #, $bulkCopyOptions)
+            
+        if ($server.servertype -eq 'SqlAzureDatabase') {
+            $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy("$($server.ConnectionContext.ConnectionString);Database=$Database")
+        }
+        else {
+            $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($server.ConnectionContext.ConnectionString) #, $bulkCopyOptions)
+        }
         $bulkcopy.DestinationTableName = $fqtn
         $bulkcopy.BatchSize = $batchsize
         $bulkcopy.NotifyAfter = $NotifyAfter
+        $bulkcopy.BulkCopyTimeOut = $BulkCopyTimeOut
         
         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
         # Add rowcount output
-        $bulkCopy.Add_SqlRowscopied({
+        $bulkCopy.Add_SqlRowscopied( {
                 $script:totalrows = $args[1].RowsCopied
-                $percent = [int](($script:totalrows/$rowcount) * 100)
+                $percent = [int](($script:totalrows / $rowcount) * 100)
                 $timetaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
                 Write-Progress -id 1 -activity "Inserting $rowcount rows" -percentcomplete $percent -status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalrows, $percent, $timetaken))
             })
         
         $PStoSQLtypes = @{
             #PS datatype      = SQL data type
-            'System.Int32' = 'int';
-            'System.UInt32' = 'bigint';
-            'System.Int16' = 'smallint';
-            'System.UInt16' = 'int';
-            'System.Int64' = 'bigint';
+            'System.Int32'    = 'int';
+            'System.UInt32'   = 'bigint';
+            'System.Int16'    = 'smallint';
+            'System.UInt16'   = 'int';
+            'System.Int64'    = 'bigint';
             'System.UInt64' = 'decimal(20,0)';
-            'System.Decimal' = 'decimal(20,5)';
-            'System.Single' = 'bigint';
-            'System.Double' = 'float';
-            'System.Byte' = 'tinyint';
-            'System.SByte' = 'smallint';
+            'System.Decimal'  = 'decimal(20,5)';
+            'System.Single'   = 'bigint';
+            'System.Double'   = 'float';
+            'System.Byte'     = 'tinyint';
+            'System.SByte'    = 'smallint';
             'System.TimeSpan' = 'nvarchar(30)';
-            'System.String' = 'nvarchar(MAX)';
-            'System.Char' = 'nvarchar(1)'
+            'System.String'   = 'nvarchar(MAX)';
+            'System.Char'     = 'nvarchar(1)'
             'System.DateTime' = 'datetime';
-            'System.Boolean' = 'bit';
-            'System.Guid' = 'uniqueidentifier';
-            'Int32' = 'int';
-            'UInt32' = 'bigint';
-            'Int16' = 'smallint';
-            'UInt16' = 'int';
-            'Int64' = 'bigint';
+            'System.Boolean'  = 'bit';
+            'System.Guid'     = 'uniqueidentifier';
+            'Int32'           = 'int';
+            'UInt32'          = 'bigint';
+            'Int16'           = 'smallint';
+            'UInt16'          = 'int';
+            'Int64'           = 'bigint';
             'UInt64' = 'decimal(20,0)';
-            'Decimal' = 'decimal(20,5)';
-            'Single' = 'bigint';
+            'Decimal'         = 'decimal(20,5)';
+            'Single'          = 'bigint';
             'Double' = 'float';
-            'Byte' = 'tinyint';
-            'SByte' = 'smallint';
-            'TimeSpan' = 'nvarchar(30)';
+            'Byte'            = 'tinyint';
+            'SByte'           = 'smallint';
+            'TimeSpan'        = 'nvarchar(30)';
             'String' = 'nvarchar(MAX)';
-            'Char' = 'nvarchar(1)'
-            'DateTime' = 'datetime';
-            'Boolean' = 'bit';
-            'Bool' = 'bit';
-            'Guid' = 'uniqueidentifier';
-            'int' = 'int';
-            'long' = 'bigint';
+            'Char'            = 'nvarchar(1)'
+            'DateTime'        = 'datetime';
+            'Boolean'         = 'bit';
+            'Bool'            = 'bit';
+            'Guid'            = 'uniqueidentifier';
+                'int'         = 'int';
+            'long'            = 'bigint';
         }
         
     }
@@ -339,7 +375,7 @@ Function Write-DbaDataTable {
         
         $validtypes = @([System.Data.DataSet], [System.Data.DataTable], [System.Data.DataRow], [System.Data.DataRow[]]) #[System.Data.Common.DbDataReader], [System.Data.IDataReader]
         
-        if ($InputObject.GetType() -notin $validtypes) {
+            if ($InputObject.GetType() -notin $validtypes) {
             Stop-Function -Message "Data is not of the right type (DbDataReader, DataTable, DataRow, or IDataReader). Tip: Try using Out-DbaDataTable to convert the object first."
             return
         }
@@ -349,8 +385,8 @@ Function Write-DbaDataTable {
         }
         
         $db.tables.refresh()
-        $tableExists = $db | Where-Object { $_.Tables.Name -eq $table -and $_.Tables.Schema -eq $schema }
-        
+        $tableExists = $db | Where-Object { $table -in $_.Tables.Name -and $_.Tables.Schema -eq $schema }
+            
         if ($tableExists -eq $null) {
             if ($AutoCreateTable -eq $false) {
                 Stop-Function -Message "$fqtn does not exist. Use -AutoCreateTable to AutoCreate."
@@ -385,7 +421,7 @@ Function Write-DbaDataTable {
                     # PS to SQL type conversion
                     # If data type exists in hash table, use the corresponding SQL type
                     # Else, fallback to nvarchar
-                    if ($PStoSQLtypes.Keys -contains $column.DataType) {
+                        if ($PStoSQLtypes.Keys -contains $column.DataType) {
                         $sqldatatype = $PStoSQLtypes[$($column.DataType.toString())]
                     }
                     else {
@@ -399,7 +435,7 @@ Function Write-DbaDataTable {
                 
                 Write-Message -Level Debug -Message $sql
                 
-                if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating table $fqtn")) {
+                    if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating table $fqtn")) {
                     try {
                         $null = $server.Databases[$Database].ExecuteNonQuery($sql)
                     }
@@ -411,7 +447,7 @@ Function Write-DbaDataTable {
             }
         }
         
-        $rowcount = $InputObject.Rows.count
+            $rowcount = $InputObject.Rows.count
         if ($rowcount -eq 0) { $rowcount = 1 }
         
         if ($Pscmdlet.ShouldProcess($SqlInstance, "Writing $rowcount rows to $fqtn")) {
@@ -425,5 +461,5 @@ Function Write-DbaDataTable {
             $bulkcopy.Dispose()
         }
     }
-}
+    }
 
