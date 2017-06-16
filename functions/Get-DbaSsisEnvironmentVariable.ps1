@@ -172,8 +172,6 @@ function Get-DbaSsisEnvironmentVariable {
             {
                 foreach ($f in $searchFolders)
                 {
-                    $Environments = $catalog.Folders[$f].Environments | Where-Object {$_.Name -in $searchEnvironments}
-
                     # get all environments names if none provided
                     if($null -eq $Environment) {
                         $searchEnvironments = $catalog.Folders.Environments.Name
@@ -193,6 +191,8 @@ function Get-DbaSsisEnvironmentVariable {
                     }
                     else
                     {
+                        $Environments = $catalog.Folders[$f].Environments | Where-Object {$_.Name -in $searchEnvironments}
+                        
                         foreach($e in $Environments)
                         {
                             #encryption handling
