@@ -149,7 +149,8 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		[object[]]$Database,
 		[parameter(Mandatory = $false)]
 		[object]$Destination = $sqlinstance,
-		[object]$DestinationCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$DestinationCredential,
 		[parameter(Mandatory = $false)]
 		[Alias("NoCheck")]
 		[switch]$NoDbccCheckDb,
@@ -417,7 +418,35 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			if (!$db) {
 				Stop-Function -Message "$dbname does not exist on $source. Aborting routine for this database" -Continue
 			}
+
+			$lastFullBckDuration = (Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -LastFull).Duration
 			
+			if (-NOT ([string]::IsNullOrEmpty($lastFullBckDuration))) {
+				$lastFullBckDurationSec = $lastFullBckDuration.TotalSeconds
+				$lastFullBckDurationMin = [Math]::Round($lastFullBckDuration.TotalMinutes, 2)
+
+				Write-Message -Level Verbose -Message "From the backup history the last full backup took $lastFullBckDurationSec seconds ($lastFullBckDurationMin minutes)"
+				if ($lastFullBckDurationSec -gt 600) {
+					Write-Message -Level Verbose -Message "Last full backup took more than 10 minutes. Do you want to continue?"
+					
+					# Set up the parts for the user choice
+					$Title = "Backup duration"
+					$Info = "Last full backup took more than $lastFullBckDurationMin minutes. Do you want to continue?"
+					
+					$Options = [System.Management.Automation.Host.ChoiceDescription[]] @("&Yes", "&No (Skip)")
+					[int]$Defaultchoice = 0
+					$choice = $host.UI.PromptForChoice($Title, $Info, $Options, $Defaultchoice)
+					# Check the given option 
+					if ($choice -eq 1) {
+						Stop-Function -Message "You have chosen skipping the database $dbname  because of last known backup time ($lastFullBckDurationMin minutes)" -InnerErrorRecord $_ -Target $dbname -Continue
+						Continue
+					}
+				}
+			}
+			else {
+				Write-Message -Level Verbose -Message "Couldn't find last full backup time for database $dbname using Get-DbaBackupHistory"
+			}
+
 			$jobname = "Rationalised Database Restore Script for $dbname"
 			$jobStepName = "Restore the $dbname database from Final Backup"
 			$jobServer = $destserver.JobServer
@@ -642,7 +671,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 			
 			$refreshRetries = 1
 			
-			while (($destserver.databases[$dbname] -eq $null) -and $refreshRetries -lt 5) {
+			while (($destserver.databases[$dbname] -eq $null) -and $refreshRetries -lt 6) {
 				Write-Verbose "Database $dbname not found! Refreshing collection"
 				
 				#refresh database list, otherwise the next step (DBCC) can fail
@@ -671,14 +700,14 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				}
 			}
 			Write-Message -Level Verbose -Message "Rationalisation Finished for $dbname"
-		}
-		
-		[PSCustomObject]@{
-			SqlInstance = $source
-			DatabaseName = $dbname
-			JobName = $jobname
-			TestingInstance = $destination
-			BackupFolder = $backupFolder
+
+			[PSCustomObject]@{
+				SqlInstance = $source
+				DatabaseName = $dbname
+				JobName = $jobname
+				TestingInstance = $destination
+				BackupFolder = $backupFolder
+			}
 		}
 	}
 	
