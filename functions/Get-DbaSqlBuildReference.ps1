@@ -122,7 +122,7 @@ Function Get-DbaSqlBuildReference {
 			
 			$LastUpdated = Get-Date -Date $result.LastUpdated
 			if ($LastUpdated -lt (Get-Date).AddDays(-45)) {
-				Write-Message -Level Warni -Silent $Silent -Message "Index is stale, last update on: $(Get-Date -Date $LastUpdated -Format s)"
+				Write-Message -Level Warning -Silent $Silent -Message "Index is stale, last update on: $(Get-Date -Date $LastUpdated -Format s)"
 			}
 			
 			$result.Data | Select-Object @{ Name = "VersionObject"; Expression = { [version]$_.Version } }, *
