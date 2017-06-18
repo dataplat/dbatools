@@ -86,13 +86,17 @@ function Copy-DbaCustomError {
     param (
         [parameter(Mandatory = $true)]
         [DbaInstanceParameter]$Source,
+        [PSCredential][System.Management.Automation.CredentialAttribute()]
+        $SourceSqlCredential,
         [parameter(Mandatory = $true)]
-        [DbaInstanceParameter]$Destination,
-        [System.Management.Automation.PSCredential]$SourceSqlCredential,
-        [System.Management.Automation.PSCredential]$DestinationSqlCredential,
-        [switch]$Force
+        [DbaInstanceParameter]$Destination,      
+        [PSCredential][System.Management.Automation.CredentialAttribute()]
+        $DestinationSqlCredential,
+        [object[]]$CustomError,
+		[object[]]$ExcludeCustomError,
+        [switch]$Force,
+        [switch]$Silent
     )
-
 	
     begin {
 
