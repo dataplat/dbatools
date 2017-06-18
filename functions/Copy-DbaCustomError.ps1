@@ -121,12 +121,23 @@ function Copy-DbaCustomError {
 			$customErrorId = $currentCustomError.ID
 			$language = $currentCustomError.Language.ToString()
 
+			$copyCustomErrorStatus = [pscustomobject]@{
+				SourceServer        = $sourceServer.Name
+				DestinationServer   = $destServer.Name
+				Name                = $curretnCustomError
+				Status              = $null
+				DateTime            = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+			}
+
 			if ( $CustomError -and ($customErrorId -notin $CustomError -or $customErrorId -in $ExcludeCustomError) ) {
 				continue
 			}
 
 			if ($destCustomErrors.ID -contains $customErrorId) {
 				if ($force -eq $false) {
+					$copyCustomErrorStatus.Status = "Skipped"
+					$copyCustomErrorStatus
+
 					Write-Message -Level Warning -Message "Custom error $customErrorId $language exists at destination. Use -Force to drop and migrate."
 					continue
 				}
@@ -137,6 +148,9 @@ function Copy-DbaCustomError {
 							$destServer.UserDefinedMessages[$customErrorId, $language].Drop()
 						}
 						catch {
+							$copyCustomErrorStatus.Status = "Failed"
+							$copyCustomErrorStatus
+
 							Stop-Function -Message "Issue dropping customer error" -Target $customErrorId -InnerErrorRecord $_ -Continue
 						}
 					}
@@ -148,10 +162,16 @@ function Copy-DbaCustomError {
 					Write-Message -Level Verbose -Message "Copying custom error $customErrorId $language"
 					$sql = $currentCustomError.Script() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
-					Write-Verbose $sql
+					Write-Message -Level Debug -Message $sql
 					$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+
+					$copyCustomErrorStatus.Status = "Successful"
+					$copyCustomErrorStatus
 				}
 				catch {
+					$copyCustomErrorStatus.Status = "Failed"
+					$copyCustomErrorStatus
+
 					Stop-Function -Message "Issue creating custom error" -Target $customErrorId -InnerErrorRecord $_
 				}
 			}
