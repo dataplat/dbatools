@@ -161,9 +161,8 @@ function Copy-DbaCustomError {
 				try {
 					Write-Message -Level Verbose -Message "Copying custom error $customErrorId $language"
 					$sql = $currentCustomError.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Message -Level Debug -Message $sql
-					$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+					$destServer.Query($sql)
 
 					$copyCustomErrorStatus.Status = "Successful"
 					$copyCustomErrorStatus
