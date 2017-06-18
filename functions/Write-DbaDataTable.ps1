@@ -304,12 +304,7 @@ Function Write-DbaDataTable {
             Write-Message -Once SlowDataTablePipeline -Level Warning -Message "Using the pipeline can be insanely (5 minutes vs 0.5 seconds) slower for larger batches and doesn't show a progress bar. Consider using -InputObject for large batches."
         }
             
-        if ($server.servertype -eq 'SqlAzureDatabase') {
-            $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy("$($server.ConnectionContext.ConnectionString);Database=$Database")
-        }
-        else {
-            $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($server.ConnectionContext.ConnectionString) #, $bulkCopyOptions)
-        }
+        $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy("$($server.ConnectionContext.ConnectionString);Database=$Database")
         $bulkcopy.DestinationTableName = $fqtn
         $bulkcopy.BatchSize = $batchsize
         $bulkcopy.NotifyAfter = $NotifyAfter
