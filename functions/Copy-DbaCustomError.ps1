@@ -1,5 +1,5 @@
 function Copy-DbaCustomError {
-    <#
+	<#
 		.SYNOPSIS 
 			Copy-DbaCustomError migrates custom errors (user defined messages), by the customer error ID, from one SQL Server to another.
 
@@ -82,81 +82,83 @@ function Copy-DbaCustomError {
 
 			Shows what would happen if the command were executed using force.
 	#>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-    param (
-        [parameter(Mandatory = $true)]
-        [DbaInstanceParameter]$Source,
-        [PSCredential][System.Management.Automation.CredentialAttribute()]
-        $SourceSqlCredential,
-        [parameter(Mandatory = $true)]
-        [DbaInstanceParameter]$Destination,      
-        [PSCredential][System.Management.Automation.CredentialAttribute()]
-        $DestinationSqlCredential,
-        [object[]]$CustomError,
-        [object[]]$ExcludeCustomError,
-        [switch]$Force,
-        [switch]$Silent
-    )
+	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+	param (
+		[parameter(Mandatory = $true)]
+		[DbaInstanceParameter]$Source,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SourceSqlCredential,
+		[parameter(Mandatory = $true)]
+		[DbaInstanceParameter]$Destination,      
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$DestinationSqlCredential,
+		[object[]]$CustomError,
+		[object[]]$ExcludeCustomError,
+		[switch]$Force,
+		[switch]$Silent
+	)
 	
-    begin {
+	begin {
 
-        $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
-        $source = $sourceServer.DomainInstanceName
-        $destination = $destServer.DomainInstanceName
+		$source = $sourceServer.DomainInstanceName
+		$destination = $destServer.DomainInstanceName
 		
-        if ($sourceServer.VersionMajor -lt 9 -or $destServer.VersionMajor -lt 9) {
-            throw "Custom Errors are only supported in SQL Server 2005 and above. Quitting."
-        }
-    }
-    process {
+		if ($sourceServer.VersionMajor -lt 9 -or $destServer.VersionMajor -lt 9) {
+			throw "Custom Errors are only supported in SQL Server 2005 and above. Quitting."
+		}
+	}
+	process {
 
-        # US has to go first
-        $orderedCustomErrors = @($sourceServer.UserDefinedMessages | Where-Object Language -eq "us_english")
-        $orderedCustomErrors += $sourceServer.UserDefinedMessages | Where-Object Language -ne "us_english"
-        $destCustomErrors = $destServer.UserDefinedMessages
+		# US has to go first
+		$orderedCustomErrors = @($sourceServer.UserDefinedMessages | Where-Object Language -eq "us_english")
+		$orderedCustomErrors += $sourceServer.UserDefinedMessages | Where-Object Language -ne "us_english"
+		$destCustomErrors = $destServer.UserDefinedMessages
 		
-        foreach ($currentCustomError in $orderedCustomErrors) {
-            $customErrorId = $currentCustomError.ID
-            $language = $currentCustomError.Language.ToString()
+		foreach ($currentCustomError in $orderedCustomErrors) {
+			$customErrorId = $currentCustomError.ID
+			$language = $currentCustomError.Language.ToString()
 			
-            if ($CustomError.Length -gt 0 -and $CustomError -notcontains $customErrorId) { continue }
+			if ( $CustomError -and ($customErrorId -notin $CustomError -or $customErrorId -in $ExcludeCustomError) ) { 
+				continue 
+			}
 			
-            if ($destCustomErrors.ID -contains $customErrorId) {
-                if ($force -eq $false) {
-                    Write-Warning "Custom error $customErrorId $language exists at destination. Use -Force to drop and migrate."
-                    continue
-                }
-                else {
-                    If ($Pscmdlet.ShouldProcess($destination, "Dropping custom error $customErrorId $language and recreating")) {
-                        try {
-                            Write-Verbose "Dropping custom error $customErrorId (drops all languages for custom error $customErrorId)"
-                            $destServer.UserDefinedMessages[$customErrorId, $language].Drop()
-                        }
-                        catch { 
-                            Write-Exception $_ 
-                            continue
-                        }
-                    }
-                }
-            }
+			if ($destCustomErrors.ID -contains $customErrorId) {
+				if ($force -eq $false) {
+					Write-Warning "Custom error $customErrorId $language exists at destination. Use -Force to drop and migrate."
+					continue
+				}
+				else {
+					If ($Pscmdlet.ShouldProcess($destination, "Dropping custom error $customErrorId $language and recreating")) {
+						try {
+							Write-Verbose "Dropping custom error $customErrorId (drops all languages for custom error $customErrorId)"
+							$destServer.UserDefinedMessages[$customErrorId, $language].Drop()
+						}
+						catch { 
+							Write-Exception $_ 
+							continue
+						}
+					}
+				}
+			}
 
-            if ($Pscmdlet.ShouldProcess($destination, "Creating custom error $customErrorId $language")) {
-                try {
-                    Write-Output "Copying custom error $customErrorId $language"
-                    $sql = $currentCustomError.Script() | Out-String
-                    $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
-                    Write-Verbose $sql
-                    $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-                }
-                catch {
-                    Write-Exception $_
-                }
-            }
-        }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlCustomError
-    }
+			if ($Pscmdlet.ShouldProcess($destination, "Creating custom error $customErrorId $language")) {
+				try {
+					Write-Output "Copying custom error $customErrorId $language"
+					$sql = $currentCustomError.Script() | Out-String
+					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
+					Write-Verbose $sql
+					$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+				}
+				catch {
+					Write-Exception $_
+				}
+			}
+		}
+	}
+	end {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlCustomError
+	}
 } 
