@@ -132,32 +132,32 @@ function Copy-DbaDatabaseAssembly {
 
 		foreach ($currentAssembly in $sourceAssemblies) {
 			$assemblyName = $currentAssembly.Name
-            $dbName = $currentAssembly.Parent.Name
+			$dbName = $currentAssembly.Parent.Name
 			$destDb = $destServer.Databases[$dbName]
 
-            if (!$destDb) {
-                Write-Warning "Destination database $dbName does not exist. Skipping $assemblyName.";
-                continue
-            }
-			
-            if ($assemblies.length -gt 0 -and $assemblies -notcontains "$dbName.$assemblyName") {
-                continue
+			if (!$destDb) {
+				Write-Warning "Destination database $dbName does not exist. Skipping $assemblyName.";
+				continue
 			}
 
-            if ($currentAssembly.AssemblySecurityLevel -eq "External" -and $destDb.Trustworthy -eq $false) {
+			if ($assemblies.length -gt 0 -and $assemblies -notcontains "$dbName.$assemblyName") {
+				continue
+			}
+
+			if ($currentAssembly.AssemblySecurityLevel -eq "External" -and $destDb.Trustworthy -eq $false) {
 				if ($Pscmdlet.ShouldProcess($destination, "Setting $dbName to External")) {
 					Write-Warning "Setting $dbName Security Level to External on $destination"
 					$sql = "ALTER DATABASE $dbName SET TRUSTWORTHY ON"
-                    try {
-                        $destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-                    }
-                    catch {
-                        Write-Exception $_ 
-                    }
+					try {
+						$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+					}
+					catch {
+						Write-Exception $_
+					}
 				}
 			}
 
-            if ($destServer.Databases[$dbName].Assemblies.Name -contains $currentAssembly.name) {
+			if ($destServer.Databases[$dbName].Assemblies.Name -contains $currentAssembly.name) {
 				if ($force -eq $false) {
 					Write-Warning "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate."
 					continue
@@ -169,7 +169,8 @@ function Copy-DbaDatabaseAssembly {
 							Write-Output "This won't work if there are dependencies."
 							$destServer.Databases[$dbName].Assemblies[$assemblyName].Drop()
 							Write-Output "Copying assembly $assemblyName"
-                            $destServer.Databases[$dbName].ExecuteNonQuery($currentAssembly.Script()) | Out-Null
+							$sql = $currentAssembly.Script()
+							$destServer.Query($sql,$dbName)
 						}
 						catch {
 							Write-Exception $_
@@ -182,7 +183,8 @@ function Copy-DbaDatabaseAssembly {
 			if ($Pscmdlet.ShouldProcess($destination, "Creating assembly $assemblyName")) {
 				try {
 					Write-Output "Copying assembly $assemblyName from database."
-                    $destServer.Databases[$dbName].ExecuteNonQuery($currentAssembly.Script()) | Out-Null
+					$sql = $currentAssembly.Script()
+					$destServer.Query($sql,$dbName)
 				}
 				catch {
 					Write-Exception $_
