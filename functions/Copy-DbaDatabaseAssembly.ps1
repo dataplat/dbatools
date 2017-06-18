@@ -1,6 +1,5 @@
-function Copy-DbaDatabaseAssembly
-{
-<#
+function Copy-DbaDatabaseAssembly {
+    <#
 .SYNOPSIS 
 Copy-DbaDatabaseAssembly migrates assemblies from one SQL Server to another. 
 
@@ -76,128 +75,109 @@ Copy-DbaThing -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 Shows what would happen if the command were executed using force.
 #>
-	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-	param (
-		[parameter(Mandatory = $true)]
-		[DbaInstanceParameter]$Source,
-		[parameter(Mandatory = $true)]
-		[DbaInstanceParameter]$Destination,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
-		[switch]$Force
-	)
-	begin {
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    param (
+        [parameter(Mandatory = $true)]
+        [DbaInstanceParameter]$Source,
+        [parameter(Mandatory = $true)]
+        [DbaInstanceParameter]$Destination,
+        [System.Management.Automation.PSCredential]$SourceSqlCredential,
+        [System.Management.Automation.PSCredential]$DestinationSqlCredential,
+        [switch]$Force
+    )
+    begin {
 		
-		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+        $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+        $destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
-		$source = $sourceserver.DomainInstanceName
-		$destination = $destserver.DomainInstanceName
+        $source = $sourceserver.DomainInstanceName
+        $destination = $destserver.DomainInstanceName
 		
-		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
-		{
-			throw "Assemblies are only supported in SQL Server 2005 and above. Quitting."
-		}
+        if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9) {
+            throw "Assemblies are only supported in SQL Server 2005 and above. Quitting."
+        }
 	
-	}
-	process {
+    }
+    process {
 		
-		$sourceassemblies = @()
-		foreach ($database in $sourceserver.Databases)
-		{
-			try
-			{
-				# a bug here requires a try/catch
-				$userassemblies = $database.assemblies | Where-Object { $_.isSystemObject -eq $false }
-				foreach ($assembly in $userassemblies)
-				{
-					$sourceassemblies += $assembly
-				}
-			}
-			catch { }
-		}
+        $sourceassemblies = @()
+        foreach ($database in $sourceserver.Databases) {
+            try {
+                # a bug here requires a try/catch
+                $userassemblies = $database.assemblies | Where-Object { $_.isSystemObject -eq $false }
+                foreach ($assembly in $userassemblies) {
+                    $sourceassemblies += $assembly
+                }
+            }
+            catch { }
+        }
 		
-		$destassemblies = @()
-		foreach ($database in $destserver.Databases)
-		{
-			try
-			{
-				# a bug here requires a try/catch
-				$userassemblies = $database.assemblies | Where-Object { $_.isSystemObject -eq $false }
-				foreach ($assembly in $userassemblies)
-				{
-					$destassemblies += $assembly
-				}
-			}
-			catch { }
-		}
+        $destassemblies = @()
+        foreach ($database in $destserver.Databases) {
+            try {
+                # a bug here requires a try/catch
+                $userassemblies = $database.assemblies | Where-Object { $_.isSystemObject -eq $false }
+                foreach ($assembly in $userassemblies) {
+                    $destassemblies += $assembly
+                }
+            }
+            catch { }
+        }
 		
-		foreach ($assembly in $sourceassemblies)
-		{
-			$assemblyname = $assembly.Name
-			$dbname = $assembly.Parent.Name
-			$destdb = $destserver.Databases[$dbname]
+        foreach ($assembly in $sourceassemblies) {
+            $assemblyname = $assembly.Name
+            $dbname = $assembly.Parent.Name
+            $destdb = $destserver.Databases[$dbname]
 			
-			if ($destdb -eq $null) { Write-Warning "Destination database $dbname does not exist. Skipping $assemblyname.";  continue }
-			if ($assemblies.length -gt 0 -and $assemblies -notcontains "$dbname.$assemblyname") { continue }
+            if ($destdb -eq $null) { Write-Warning "Destination database $dbname does not exist. Skipping $assemblyname."; continue }
+            if ($assemblies.length -gt 0 -and $assemblies -notcontains "$dbname.$assemblyname") { continue }
 			
-			if ($assembly.AssemblySecurityLevel -eq "External" -and $destdb.Trustworthy -eq $false)
-			{
-				If ($Pscmdlet.ShouldProcess($destination, "Setting $dbname to External"))
-				{
-					Write-Warning "Setting $dbname Security Level to External on $destination"
-					$sql = "ALTER DATABASE $dbname SET TRUSTWORTHY ON"
-					try
-					{
-						$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-					}
-					catch { Write-Exception $_ }
-				}
-			}
+            if ($assembly.AssemblySecurityLevel -eq "External" -and $destdb.Trustworthy -eq $false) {
+                If ($Pscmdlet.ShouldProcess($destination, "Setting $dbname to External")) {
+                    Write-Warning "Setting $dbname Security Level to External on $destination"
+                    $sql = "ALTER DATABASE $dbname SET TRUSTWORTHY ON"
+                    try {
+                        $destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+                    }
+                    catch { Write-Exception $_ }
+                }
+            }
 			
 			
-			if ($destserver.Databases[$dbname].Assemblies.Name -contains $assembly.name)
-			{
-				if ($force -eq $false)
-				{
-					Write-Warning "Assembly $assemblyname exists at destination in the $dbname database. Use -Force to drop and migrate."
-					continue
-				}
-				else
-				{
-					If ($Pscmdlet.ShouldProcess($destination, "Dropping assembly $assemblyname and recreating"))
-					{
-						try
-						{
-							Write-Output "Dropping assembly $assemblyname"
-							Write-Output "This won't work if there are dependencies."
-							$destserver.Databases[$dbname].Assemblies[$assemblyname].Drop()
-							Write-Output "Copying assembly $assemblyname"
-							$destserver.Databases[$dbname].ExecuteNonQuery($assembly.Script()) | Out-Null
-						}
-						catch { 
-							Write-Exception $_ 
-							continue
-						}
-					}
-				}
-			}
+            if ($destserver.Databases[$dbname].Assemblies.Name -contains $assembly.name) {
+                if ($force -eq $false) {
+                    Write-Warning "Assembly $assemblyname exists at destination in the $dbname database. Use -Force to drop and migrate."
+                    continue
+                }
+                else {
+                    If ($Pscmdlet.ShouldProcess($destination, "Dropping assembly $assemblyname and recreating")) {
+                        try {
+                            Write-Output "Dropping assembly $assemblyname"
+                            Write-Output "This won't work if there are dependencies."
+                            $destserver.Databases[$dbname].Assemblies[$assemblyname].Drop()
+                            Write-Output "Copying assembly $assemblyname"
+                            $destserver.Databases[$dbname].ExecuteNonQuery($assembly.Script()) | Out-Null
+                        }
+                        catch { 
+                            Write-Exception $_ 
+                            continue
+                        }
+                    }
+                }
+            }
 			
-			If ($Pscmdlet.ShouldProcess($destination, "Creating assembly $assemblyname"))
-			{
-				try
-				{
-					Write-Output "Copying assembly $assemblyname from database."
-					$destserver.Databases[$dbname].ExecuteNonQuery($assembly.Script()) | Out-Null
-				}
-				catch
-				{
-					Write-Exception $_
-				}
-			}
-		}
-	}
-	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlDatabaseAssembly
-	}
+            If ($Pscmdlet.ShouldProcess($destination, "Creating assembly $assemblyname")) {
+                try {
+                    Write-Output "Copying assembly $assemblyname from database."
+                    $destserver.Databases[$dbname].ExecuteNonQuery($assembly.Script()) | Out-Null
+                }
+                catch {
+                    Write-Exception $_
+                }
+            }
+        }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlDatabaseAssembly
+    }
 }
