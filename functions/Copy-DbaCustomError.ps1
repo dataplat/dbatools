@@ -1,6 +1,5 @@
-function Copy-DbaCustomError
-{
-<#
+function Copy-DbaCustomError {
+    <#
 .SYNOPSIS 
 Copy-DbaCustomError migrates custom errors (user defined messages) from one SQL Server to another. 
 
@@ -74,93 +73,82 @@ Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -WhatIf -Forc
 
 Shows what would happen if the command were executed using force.
 #>
-	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-	param (
-		[parameter(Mandatory = $true)]
-		[DbaInstanceParameter]$Source,
-		[parameter(Mandatory = $true)]
-		[DbaInstanceParameter]$Destination,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
-		[switch]$Force
-	)
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    param (
+        [parameter(Mandatory = $true)]
+        [DbaInstanceParameter]$Source,
+        [parameter(Mandatory = $true)]
+        [DbaInstanceParameter]$Destination,
+        [System.Management.Automation.PSCredential]$SourceSqlCredential,
+        [System.Management.Automation.PSCredential]$DestinationSqlCredential,
+        [switch]$Force
+    )
 
 	
-	begin {
+    begin {
 
-		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+        $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+        $destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
-		$source = $sourceserver.DomainInstanceName
-		$destination = $destserver.DomainInstanceName
+        $source = $sourceserver.DomainInstanceName
+        $destination = $destserver.DomainInstanceName
 		
-		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
-		{
-			throw "Custom Errors are only supported in SQL Server 2005 and above. Quitting."
-		}
-	}
+        if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9) {
+            throw "Custom Errors are only supported in SQL Server 2005 and above. Quitting."
+        }
+    }
 	
-	process {
+    process {
 
-		# Us has to go first
-		$orderedcustomerrors = @($sourceserver.UserDefinedMessages | Where-Object { $_.Language -eq "us_english" })
-		$orderedcustomerrors += $sourceserver.UserDefinedMessages | Where-Object { $_.Language -ne "us_english" }
-		$destcustomerrors = $destserver.UserDefinedMessages
+        # Us has to go first
+        $orderedcustomerrors = @($sourceserver.UserDefinedMessages | Where-Object { $_.Language -eq "us_english" })
+        $orderedcustomerrors += $sourceserver.UserDefinedMessages | Where-Object { $_.Language -ne "us_english" }
+        $destcustomerrors = $destserver.UserDefinedMessages
 		
-		foreach ($customerror in $orderedcustomerrors)
-		{
-			$customerrorid = $customerror.ID
-			$language = $customerror.language.ToString()
+        foreach ($customerror in $orderedcustomerrors) {
+            $customerrorid = $customerror.ID
+            $language = $customerror.language.ToString()
 			
-			if ($customerrors.length -gt 0 -and $customerrors -notcontains $customerrorid) { continue }
+            if ($customerrors.length -gt 0 -and $customerrors -notcontains $customerrorid) { continue }
 			
-			if ($destcustomerrors.ID -contains $customerror.ID)
-			{
-				if ($force -eq $false)
-				{
-					Write-Warning "Custom error $customerrorid $language exists at destination. Use -Force to drop and migrate."
-					continue
-				}
-				else
-				{
-					If ($Pscmdlet.ShouldProcess($destination, "Dropping custom error $customerrorid $language and recreating"))
-					{
-						try
-						{
-							Write-Verbose "Dropping custom error $customerrorid (drops all languages for custom error $customerrorid)"
-							$destserver.UserDefinedMessages[$customerrorid, $language].Drop()
-						}
-						catch 
-						{ 
-							Write-Exception $_ 
-							continue
-						}
-					}
-				}
-			}
+            if ($destcustomerrors.ID -contains $customerror.ID) {
+                if ($force -eq $false) {
+                    Write-Warning "Custom error $customerrorid $language exists at destination. Use -Force to drop and migrate."
+                    continue
+                }
+                else {
+                    If ($Pscmdlet.ShouldProcess($destination, "Dropping custom error $customerrorid $language and recreating")) {
+                        try {
+                            Write-Verbose "Dropping custom error $customerrorid (drops all languages for custom error $customerrorid)"
+                            $destserver.UserDefinedMessages[$customerrorid, $language].Drop()
+                        }
+                        catch { 
+                            Write-Exception $_ 
+                            continue
+                        }
+                    }
+                }
+            }
 			
-			If ($Pscmdlet.ShouldProcess($destination, "Creating custom error $customerrorid $language"))
-			{
-				try
-				{
-					Write-Output "Copying custom error $customerrorid $language"
-					$sql = $customerror.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
-					Write-Verbose $sql
-					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-				}
-				catch
-				{
-					Write-Exception $_
-				}
-			}
-		}
-	}
+            If ($Pscmdlet.ShouldProcess($destination, "Creating custom error $customerrorid $language")) {
+                try {
+                    Write-Output "Copying custom error $customerrorid $language"
+                    $sql = $customerror.Script() | Out-String
+                    $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
+                    Write-Verbose $sql
+                    $destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+                }
+                catch {
+                    Write-Exception $_
+                }
+            }
+        }
+    }
 	
-	end {
-		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Custom error migration finished" }
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlCustomError
-	}
+    end {
+        $sourceserver.ConnectionContext.Disconnect()
+        $destserver.ConnectionContext.Disconnect()
+        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Custom error migration finished" }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlCustomError
+    }
 } 
