@@ -136,7 +136,7 @@ function Copy-DbaDatabaseAssembly {
 			$destDb = $destServer.Databases[$dbName]
 
 			if (!$destDb) {
-				Write-Warning "Destination database $dbName does not exist. Skipping $assemblyName.";
+				Write-Message -Level Warning -Message "Destination database $dbName does not exist. Skipping $assemblyName.";
 				continue
 			}
 
@@ -146,35 +146,36 @@ function Copy-DbaDatabaseAssembly {
 
 			if ($currentAssembly.AssemblySecurityLevel -eq "External" -and $destDb.Trustworthy -eq $false) {
 				if ($Pscmdlet.ShouldProcess($destination, "Setting $dbName to External")) {
-					Write-Warning "Setting $dbName Security Level to External on $destination"
+                    Write-Message -Level Warning -Message "Setting $dbName Security Level to External on $destination"
 					$sql = "ALTER DATABASE $dbName SET TRUSTWORTHY ON"
-					try {
-						$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-					}
-					catch {
-						Write-Exception $_
-					}
+                    try {
+						Write-Message -Level Debug -Message $sql
+                        $destServer.Query($sql)
+                    }
+                    catch {
+                        Stop-Function -Message "Issue setting security level" -Target $destDb -InnerErrorRecord $_
+                    }
 				}
 			}
 
 			if ($destServer.Databases[$dbName].Assemblies.Name -contains $currentAssembly.name) {
 				if ($force -eq $false) {
-					Write-Warning "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate."
+                    Write-Message -Level Warning -Message "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate."
 					continue
 				}
 				else {
 					if ($Pscmdlet.ShouldProcess($destination, "Dropping assembly $assemblyName and recreating")) {
 						try {
-							Write-Output "Dropping assembly $assemblyName"
-							Write-Output "This won't work if there are dependencies."
+                            Write-Message -Level Verbose -Message "Dropping assembly $assemblyName"
+                            Write-Message -Level Verbose -Message "This won't work if there are dependencies."
 							$destServer.Databases[$dbName].Assemblies[$assemblyName].Drop()
-							Write-Output "Copying assembly $assemblyName"
-							$sql = $currentAssembly.Script()
+                            Write-Message -Level Verbose -Message "Copying assembly $assemblyName"
+                            $sql = $currentAssembly.Script()
+							Write-Message -Level Debug -Message $sql
 							$destServer.Query($sql,$dbName)
 						}
 						catch {
-							Write-Exception $_
-							continue
+							Stop-Function -Message "Issue dropping assembly" -Target $assemblyName -InnerErrorRecord $_ -Continue
 						}
 					}
 				}
@@ -182,12 +183,13 @@ function Copy-DbaDatabaseAssembly {
 
 			if ($Pscmdlet.ShouldProcess($destination, "Creating assembly $assemblyName")) {
 				try {
-					Write-Output "Copying assembly $assemblyName from database."
-					$sql = $currentAssembly.Script()
+                    Write-Message -Level Verbose -Message "Copying assembly $assemblyName from database."
+                    $sql = $currentAssembly.Script()
+					Write-Message -Level Debug -Message $sql
 					$destServer.Query($sql,$dbName)
 				}
 				catch {
-					Write-Exception $_
+					Stop-Function -Message "Issue creating assembly" -Target $assemblyName -InnerErrorRecord $_
 				}
 			}
 		}
