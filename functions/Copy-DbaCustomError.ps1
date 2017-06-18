@@ -157,9 +157,6 @@ function Copy-DbaCustomError {
         }
     }
     end {
-        $sourceServer.ConnectionContext.Disconnect()
-        $destServer.ConnectionContext.Disconnect()
-        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Custom error migration finished" }
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlCustomError
     }
 } 
