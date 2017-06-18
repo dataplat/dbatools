@@ -1,6 +1,6 @@
 function Copy-DbaCustomError {
 	<#
-		.SYNOPSIS 
+		.SYNOPSIS
 			Copy-DbaCustomError migrates custom errors (user defined messages), by the customer error ID, from one SQL Server to another.
 
 		.DESCRIPTION
@@ -9,16 +9,16 @@ function Copy-DbaCustomError {
 			If the custom error already exists on the destination, it will be skipped unless -Force is used. Interesting fact, if you drop the us_english version, all the other languages will be dropped for that specific ID as well.
 
 			Also, the us_english version must be created first.
-			
+
 		.PARAMETER Source
 			Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 		.PARAMETER SourceSqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Destination
@@ -27,9 +27,9 @@ function Copy-DbaCustomError {
 		.PARAMETER DestinationSqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
+			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER CustomError
@@ -38,16 +38,16 @@ function Copy-DbaCustomError {
 		.PARAMETER ExcludeCustomError
 			The custom error(s) to exclude - this list is auto populated from the server
 
-		.PARAMETER WhatIf 
-			Shows what would happen if the command were to run. No actions are actually performed. 
+		.PARAMETER WhatIf
+			Shows what would happen if the command were to run. No actions are actually performed.
 
-		.PARAMETER Confirm 
-			Prompts you for confirmation before executing any changing operations within the command. 
+		.PARAMETER Confirm
+			Prompts you for confirmation before executing any changing operations within the command.
 
 		.PARAMETER Force
 			Drops and recreates the XXXXX if it exists
 
-		.PARAMETER Silent 
+		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -62,7 +62,7 @@ function Copy-DbaCustomError {
 		.LINK
 			https://dbatools.io/Copy-DbaCustomError
 
-		.EXAMPLE   
+		.EXAMPLE
 			Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster
 
 			Copies all server custom errors from sqlserver2014a to sqlcluster, using Windows credentials. If custom errors with the same name exist on sqlcluster, they will be skipped.
@@ -77,7 +77,7 @@ function Copy-DbaCustomError {
 
 			Copies all the custom errors found on sqlserver2014a, except the custom error with ID number 60000. If a custom error with the same name exists on sqlcluster, it will be updated because -Force was used.
 
-		.EXAMPLE   
+		.EXAMPLE
 			Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 			Shows what would happen if the command were executed using force.
@@ -89,7 +89,7 @@ function Copy-DbaCustomError {
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
-		[DbaInstanceParameter]$Destination,      
+		[DbaInstanceParameter]$Destination,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$DestinationSqlCredential,
 		[object[]]$CustomError,
@@ -97,15 +97,15 @@ function Copy-DbaCustomError {
 		[switch]$Force,
 		[switch]$Silent
 	)
-	
+
 	begin {
 
 		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
 		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-		
+
 		$source = $sourceServer.DomainInstanceName
 		$destination = $destServer.DomainInstanceName
-		
+
 		if ($sourceServer.VersionMajor -lt 9 -or $destServer.VersionMajor -lt 9) {
 			throw "Custom Errors are only supported in SQL Server 2005 and above. Quitting."
 		}
@@ -116,15 +116,15 @@ function Copy-DbaCustomError {
 		$orderedCustomErrors = @($sourceServer.UserDefinedMessages | Where-Object Language -eq "us_english")
 		$orderedCustomErrors += $sourceServer.UserDefinedMessages | Where-Object Language -ne "us_english"
 		$destCustomErrors = $destServer.UserDefinedMessages
-		
+
 		foreach ($currentCustomError in $orderedCustomErrors) {
 			$customErrorId = $currentCustomError.ID
 			$language = $currentCustomError.Language.ToString()
-			
-			if ( $CustomError -and ($customErrorId -notin $CustomError -or $customErrorId -in $ExcludeCustomError) ) { 
-				continue 
+
+			if ( $CustomError -and ($customErrorId -notin $CustomError -or $customErrorId -in $ExcludeCustomError) ) {
+				continue
 			}
-			
+
 			if ($destCustomErrors.ID -contains $customErrorId) {
 				if ($force -eq $false) {
 					Write-Warning "Custom error $customErrorId $language exists at destination. Use -Force to drop and migrate."
@@ -136,8 +136,8 @@ function Copy-DbaCustomError {
 							Write-Verbose "Dropping custom error $customErrorId (drops all languages for custom error $customErrorId)"
 							$destServer.UserDefinedMessages[$customErrorId, $language].Drop()
 						}
-						catch { 
-							Write-Exception $_ 
+						catch {
+							Write-Exception $_
 							continue
 						}
 					}
@@ -161,4 +161,4 @@ function Copy-DbaCustomError {
 	end {
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlCustomError
 	}
-} 
+}
