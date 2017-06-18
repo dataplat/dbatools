@@ -75,7 +75,7 @@ function Copy-DbaCustomError {
 		.EXAMPLE
 			Copy-DbaCustomError -Source slserver2014a -Destination sqlcluster -ExcludeCustomError 60000 -Force
 
-			Copies all the custom errors found on sqlserver2014a, except the custom error with ID number 60000. If a custom error with the same name exists on sqlcluster, it will be updated because -Force was used.
+			Copies all the custom errors found on sqlserver2014a, except the custom error with ID number 60000,to sqlcluster. If a custom error with the same name exists on sqlcluster, it will be updated because -Force was used.
 
 		.EXAMPLE
 			Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
@@ -127,18 +127,17 @@ function Copy-DbaCustomError {
 
 			if ($destCustomErrors.ID -contains $customErrorId) {
 				if ($force -eq $false) {
-					Write-Warning "Custom error $customErrorId $language exists at destination. Use -Force to drop and migrate."
+					Write-Message -Level Warning -Message "Custom error $customErrorId $language exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else {
 					If ($Pscmdlet.ShouldProcess($destination, "Dropping custom error $customErrorId $language and recreating")) {
 						try {
-							Write-Verbose "Dropping custom error $customErrorId (drops all languages for custom error $customErrorId)"
+							Write-Message -Level Verbose -Message "Dropping custom error $customErrorId (drops all languages for custom error $customErrorId)"
 							$destServer.UserDefinedMessages[$customErrorId, $language].Drop()
 						}
 						catch {
-							Write-Exception $_
-							continue
+							Stop-Function -Message "Issue dropping customer error" -Target $customErrorId -InnerErrorRecord $_ -Continue
 						}
 					}
 				}
@@ -146,14 +145,14 @@ function Copy-DbaCustomError {
 
 			if ($Pscmdlet.ShouldProcess($destination, "Creating custom error $customErrorId $language")) {
 				try {
-					Write-Output "Copying custom error $customErrorId $language"
+					Write-Message -Level Verbose -Message "Copying custom error $customErrorId $language"
 					$sql = $currentCustomError.Script() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Verbose $sql
 					$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 				}
 				catch {
-					Write-Exception $_
+					Stop-Function -Message "Issue creating custom error" -Target $customErrorId -InnerErrorRecord $_
 				}
 			}
 		}
