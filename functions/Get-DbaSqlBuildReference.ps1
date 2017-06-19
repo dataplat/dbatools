@@ -159,7 +159,7 @@ Function Get-DbaSqlBuildReference {
 				[bool]
 				$Silent
 			)
-			$url = 'https://sqlcollaborative.github.io/assets/dbatools-buildref-index.json'
+			$url = Get-DbaConfigValue -Name 'assets.sqlbuildreference'
 			try {
 				$WebContent = Invoke-WebRequest $url -ErrorAction Stop
 			}
