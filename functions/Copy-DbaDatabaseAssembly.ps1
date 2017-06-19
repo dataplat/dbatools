@@ -135,7 +135,21 @@ function Copy-DbaDatabaseAssembly {
 			$dbName = $currentAssembly.Parent.Name
 			$destDb = $destServer.Databases[$dbName]
 
+			$copyDbAssemlbyStatus = [pscustomobject]@{
+				SourceServer        = $sourceServer.Name
+				SourceDatabase      = $dbName
+				DestinationServer   = $destServer.Name
+				DestinationDatabase = $destDb
+				Name                = $assemblyName
+				Status              = $null
+				DateTime            = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+			}
+
+
 			if (!$destDb) {
+				$copyDbAssemlbyStatus.Status = "Skipped"
+				$copyDbAssemlbyStatus
+
 				Write-Message -Level Warning -Message "Destination database $dbName does not exist. Skipping $assemblyName.";
 				continue
 			}
@@ -146,36 +160,45 @@ function Copy-DbaDatabaseAssembly {
 
 			if ($currentAssembly.AssemblySecurityLevel -eq "External" -and $destDb.Trustworthy -eq $false) {
 				if ($Pscmdlet.ShouldProcess($destination, "Setting $dbName to External")) {
-                    Write-Message -Level Warning -Message "Setting $dbName Security Level to External on $destination"
+					Write-Message -Level Warning -Message "Setting $dbName Security Level to External on $destination"
 					$sql = "ALTER DATABASE $dbName SET TRUSTWORTHY ON"
-                    try {
+					try {
 						Write-Message -Level Debug -Message $sql
-                        $destServer.Query($sql)
-                    }
-                    catch {
+						$destServer.Query($sql)
+					}
+					catch {
+                        $copyDbAssemlbyStatus.Status = "Failed"
+                        $copyDbAssemlbyStatus
+
                         Stop-Function -Message "Issue setting security level" -Target $destDb -InnerErrorRecord $_
-                    }
+					}
 				}
 			}
 
 			if ($destServer.Databases[$dbName].Assemblies.Name -contains $currentAssembly.name) {
 				if ($force -eq $false) {
+                    $copyDbAssemlbyStatus.Status = "Skipped"
+                    $copyDbAssemlbyStatus
+
                     Write-Message -Level Warning -Message "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate."
 					continue
 				}
 				else {
 					if ($Pscmdlet.ShouldProcess($destination, "Dropping assembly $assemblyName and recreating")) {
 						try {
-                            Write-Message -Level Verbose -Message "Dropping assembly $assemblyName"
-                            Write-Message -Level Verbose -Message "This won't work if there are dependencies."
+							Write-Message -Level Verbose -Message "Dropping assembly $assemblyName"
+							Write-Message -Level Verbose -Message "This won't work if there are dependencies."
 							$destServer.Databases[$dbName].Assemblies[$assemblyName].Drop()
-                            Write-Message -Level Verbose -Message "Copying assembly $assemblyName"
-                            $sql = $currentAssembly.Script()
+							Write-Message -Level Verbose -Message "Copying assembly $assemblyName"
+							$sql = $currentAssembly.Script()
 							Write-Message -Level Debug -Message $sql
 							$destServer.Query($sql,$dbName)
-						}
+                        }
 						catch {
-							Stop-Function -Message "Issue dropping assembly" -Target $assemblyName -InnerErrorRecord $_ -Continue
+                            $copyDbAssemlbyStatus.Status = "Failed"
+                            $copyDbAssemlbyStatus
+
+                            Stop-Function -Message "Issue dropping assembly" -Target $assemblyName -InnerErrorRecord $_ -Continue
 						}
 					}
 				}
@@ -183,13 +206,20 @@ function Copy-DbaDatabaseAssembly {
 
 			if ($Pscmdlet.ShouldProcess($destination, "Creating assembly $assemblyName")) {
 				try {
-                    Write-Message -Level Verbose -Message "Copying assembly $assemblyName from database."
-                    $sql = $currentAssembly.Script()
+					Write-Message -Level Verbose -Message "Copying assembly $assemblyName from database."
+					$sql = $currentAssembly.Script()
 					Write-Message -Level Debug -Message $sql
 					$destServer.Query($sql,$dbName)
-				}
+
+                    $copyDbAssemlbyStatus.Status = "Successful"
+                    $copyDbAssemlbyStatus
+
+                }
 				catch {
-					Stop-Function -Message "Issue creating assembly" -Target $assemblyName -InnerErrorRecord $_
+                    $copyDbAssemlbyStatus.Status = "Failed"
+                    $copyDbAssemlbyStatus
+
+                    Stop-Function -Message "Issue creating assembly" -Target $assemblyName -InnerErrorRecord $_
 				}
 			}
 		}
