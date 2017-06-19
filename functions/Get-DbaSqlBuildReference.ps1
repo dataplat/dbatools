@@ -120,7 +120,8 @@ Function Get-DbaSqlBuildReference {
 				if ($module_time -gt $data_time) {
 					Copy-Item -Path $orig_idxfile -Destination $writable_idxfile -Force -ErrorAction Stop
 					$result = $module_content
-				} else {
+				}
+				else {
 					$result = $data_content
 					$offline_time = $data_time
 				}
@@ -131,7 +132,7 @@ Function Get-DbaSqlBuildReference {
 						$webdata_content = $WebContent.Content | ConvertFrom-Json
 						$webdata_time = Get-Date $webdata_content.LastUpdated
 						if ($webdata_time -gt $offline_time) {
-							Write-Message -Level Output -Message "Index updated correctly, last update on: $(Get-Date -Date $webdata_time -f s), was $(Get-Date -Date $offline_time -f s)"
+							Write-Message -Level Output -Message "Index updated correctly, last update on: $(Get-Date -Date $webdata_time -Format s), was $(Get-Date -Date $offline_time -Format s)"
 							$WebContent.Content | Out-File $writable_idxfile -Encoding utf8 -ErrorAction Stop
 							$result = Get-Content $writable_idxfile -Raw | ConvertFrom-Json
 						}
