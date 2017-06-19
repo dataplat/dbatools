@@ -154,7 +154,7 @@ function Copy-DbaDatabaseAssembly {
 				continue
 			}
 
-			if ($assemblies.length -gt 0 -and $assemblies -notcontains "$dbName.$assemblyName") {
+			if ($Assembly -and $Assembly -notcontains "$dbName.$assemblyName" -or $ExcludeAssembly -contains "$dbName.$assemblyName") {
 				continue
 			}
 
