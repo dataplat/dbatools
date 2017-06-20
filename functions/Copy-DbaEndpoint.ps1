@@ -117,18 +117,17 @@ function Copy-DbaEndpoint {
 
             if ($destEndpoints.Name -contains $endpointName) {
                 if ($force -eq $false) {
-                    Write-Warning "Server endpoint $endpointName exists at destination. Use -Force to drop and migrate."
+                    Write-Message -Level Warning -Message "Server endpoint $endpointName exists at destination. Use -Force to drop and migrate."
                     continue
                 }
                 else {
                     if ($Pscmdlet.ShouldProcess($destination, "Dropping server endpoint $endpointName and recreating")) {
                         try {
-                            Write-Output "Dropping server endpoint $endpointName"
+                            Write-Message -Level Verbose -Message "Dropping server endpoint $endpointName"
                             $destServer.Endpoints[$endpointName].Drop()
                         }
                         catch {
-                            Write-Exception $_
-                            continue
+                            Stop-Function -Message "Issue dropping server endpoint" -Target $endpointName -InnerErrorRecord $_ -Continue
                         }
                     }
                 }
@@ -136,11 +135,11 @@ function Copy-DbaEndpoint {
 
             if ($Pscmdlet.ShouldProcess($destination, "Creating server endpoint $endpointName")) {
                 try {
-                    Write-Output "Copying server endpoint $endpointName"
+                    Write-Message -Level Warning -Message "Copying server endpoint $endpointName"
                     $destServer.ConnectionContext.ExecuteNonQuery($currentEndpoint.Script()) | Out-Null
                 }
                 catch {
-                    Write-Exception $_
+                    Stop-Function -Message "Issue creating server endpoint" -Target $endpointName -InnerErrorRecord $_
                 }
             }
         }
