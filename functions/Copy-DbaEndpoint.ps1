@@ -1,5 +1,5 @@
 function Copy-DbaEndpoint {
-    <#
+	<#
 		.SYNOPSIS
 			Copy-DbaEndpoint migrates server endpoints from one SQL Server to another.
 
@@ -75,76 +75,96 @@ function Copy-DbaEndpoint {
 
 			Shows what would happen if the command were executed using force.
 	#>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-    param (
-        [parameter(Mandatory = $true)]
-        [DbaInstanceParameter]$Source,
-        [PSCredential][System.Management.Automation.CredentialAttribute()]
-        $SourceSqlCredential,
-        [parameter(Mandatory = $true)]
-        [DbaInstanceParameter]$Destination,
-        [PSCredential][System.Management.Automation.CredentialAttribute()]
-        $DestinationSqlCredential,
-        [object[]]$Endpoint,
-        [object[]]$ExcludeEndpoint,
-        [switch]$Force,
+	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+	param (
+		[parameter(Mandatory = $true)]
+		[DbaInstanceParameter]$Source,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SourceSqlCredential,
+		[parameter(Mandatory = $true)]
+		[DbaInstanceParameter]$Destination,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$DestinationSqlCredential,
+		[object[]]$Endpoint,
+		[object[]]$ExcludeEndpoint,
+		[switch]$Force,
 		[switch]$Silent
-    )
+	)
 
-    begin {
+	begin {
 
-        $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
-        $source = $sourceServer.DomainInstanceName
-        $destination = $destServer.DomainInstanceName
+		$source = $sourceServer.DomainInstanceName
+		$destination = $destServer.DomainInstanceName
 
-        if ($sourceServer.VersionMajor -lt 9 -or $destServer.VersionMajor -lt 9) {
-            throw "Server Endpoints are only supported in SQL Server 2008 and above. Quitting."
-        }
-    }
-    process {
+		if ($sourceServer.VersionMajor -lt 9 -or $destServer.VersionMajor -lt 9) {
+			throw "Server Endpoints are only supported in SQL Server 2008 and above. Quitting."
+		}
+	}
+	process {
 
-        $serverEndpoints = $sourceServer.Endpoints | Where-Object IsSystemObject -eq $false
-        $destEndpoints = $destServer.Endpoints
+		$serverEndpoints = $sourceServer.Endpoints | Where-Object IsSystemObject -eq $false
+		$destEndpoints = $destServer.Endpoints
 
-        foreach ($currentEndpoint in $serverEndpoints) {
-            $endpointName = $currentEndpoint.Name
+		foreach ($currentEndpoint in $serverEndpoints) {
+			$endpointName = $currentEndpoint.Name
 
-            if ($Endpoint -and $Endpoint -notcontains $endpointName -or $ExcludeEndpoint -contains $endpointName) {
-                continue
+			$copyEndpointStatus = [pscustomobject]@{
+				SourceServer        = $sourceServer.Name
+				DestinationServer   = $destServer.Name
+				Name                = $endpointName
+				Status              = $null
+				DateTime            = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
 			}
 
-            if ($destEndpoints.Name -contains $endpointName) {
-                if ($force -eq $false) {
-                    Write-Message -Level Warning -Message "Server endpoint $endpointName exists at destination. Use -Force to drop and migrate."
-                    continue
-                }
-                else {
-                    if ($Pscmdlet.ShouldProcess($destination, "Dropping server endpoint $endpointName and recreating")) {
-                        try {
-                            Write-Message -Level Verbose -Message "Dropping server endpoint $endpointName"
-                            $destServer.Endpoints[$endpointName].Drop()
-                        }
-                        catch {
-                            Stop-Function -Message "Issue dropping server endpoint" -Target $endpointName -InnerErrorRecord $_ -Continue
-                        }
-                    }
-                }
-            }
+			if ($Endpoint -and $Endpoint -notcontains $endpointName -or $ExcludeEndpoint -contains $endpointName) {
+				continue
+			}
 
-            if ($Pscmdlet.ShouldProcess($destination, "Creating server endpoint $endpointName")) {
-                try {
-                    Write-Message -Level Warning -Message "Copying server endpoint $endpointName"
-                    $destServer.ConnectionContext.ExecuteNonQuery($currentEndpoint.Script()) | Out-Null
-                }
-                catch {
-                    Stop-Function -Message "Issue creating server endpoint" -Target $endpointName -InnerErrorRecord $_
-                }
-            }
-        }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlEndpoint
-    }
+			if ($destEndpoints.Name -contains $endpointName) {
+				if ($force -eq $false) {
+					$copyEndpointStatus.Status = "Skipped"
+					$copyEndpointStatus
+
+					Write-Message -Level Warning -Message "Server endpoint $endpointName exists at destination. Use -Force to drop and migrate."
+					continue
+				}
+				else {
+					if ($Pscmdlet.ShouldProcess($destination, "Dropping server endpoint $endpointName and recreating")) {
+						try {
+							Write-Message -Level Verbose -Message "Dropping server endpoint $endpointName"
+							$destServer.Endpoints[$endpointName].Drop()
+						}
+						catch {
+							$copyEndpointStatus.Status = "Failed"
+							$copyEndpointStatus
+
+							Stop-Function -Message "Issue dropping server endpoint" -Target $endpointName -InnerErrorRecord $_ -Continue
+						}
+					}
+				}
+			}
+
+			if ($Pscmdlet.ShouldProcess($destination, "Creating server endpoint $endpointName")) {
+				try {
+					Write-Message -Level Warning -Message "Copying server endpoint $endpointName"
+					$destServer.ConnectionContext.ExecuteNonQuery($currentEndpoint.Script()) | Out-Null
+
+					$copyEndpointStatus.Status = "Successful"
+					$copyEndpointStatus
+				}
+				catch {
+					$copyEndpointStatus.Status = "Failed"
+					$copyEndpointStatus
+
+					Stop-Function -Message "Issue creating server endpoint" -Target $endpointName -InnerErrorRecord $_
+				}
+			}
+		}
+	}
+	end {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlEndpoint
+	}
 }
