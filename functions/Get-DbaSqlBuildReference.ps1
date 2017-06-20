@@ -16,6 +16,9 @@ Function Get-DbaSqlBuildReference {
 	.PARAMETER SqlCredential
 		When connecting to an instance, use the credentials specified.
 	
+	.PARAMETER Update
+		Looks online for the most up to date reference, replacing the local one.
+	
 	.PARAMETER Silent
 		Use this switch to disable any kind of verbose messages
 	
@@ -23,6 +26,11 @@ Function Get-DbaSqlBuildReference {
 		Get-DbaSqlBuildReference -Build "12.00.4502"
 		
 		Returns information about a build identified by  "12.00.4502" (which is SQL 2014 with SP1 and CU11)
+	
+	.EXAMPLE
+		Get-DbaSqlBuildReference -Build "12.00.4502" -Update
+		
+		Returns information about a build trying to fetch the most up to date index online. When the online version is newer, the local one gets overwritten
 	
 	.EXAMPLE
 		Get-DbaSqlBuildReference -Build "12.0.4502","10.50.4260"
@@ -64,6 +72,9 @@ Function Get-DbaSqlBuildReference {
 		$SqlCredential,
 		
 		[switch]
+		$Update,
+		
+		[switch]
 		$Silent
 	)
 	
@@ -74,6 +85,9 @@ Function Get-DbaSqlBuildReference {
 			Param (
 				[string]
 				$Moduledirectory,
+				
+				[bool]
+				$Update,
 				
 				[bool]
 				$Silent
@@ -105,13 +119,27 @@ Function Get-DbaSqlBuildReference {
 				$module_time = Get-Date $module_content.LastUpdated
 				$data_time = Get-Date $data_content.LastUpdated
 				
+				$offline_time = $module_time
 				if ($module_time -gt $data_time) {
 					Copy-Item -Path $orig_idxfile -Destination $writable_idxfile -Force -ErrorAction Stop
 					$result = $module_content
 				}
-				
 				else {
 					$result = $data_content
+					$offline_time = $data_time
+				}
+				# If Update is passed, try to fetch from online resource and store into the writeable
+				if ($Update) {
+					$WebContent = Get-DbaSqlBuildReferenceIndexOnline -Silent $Silent
+					if ($null -ne $WebContent) {
+						$webdata_content = $WebContent.Content | ConvertFrom-Json
+						$webdata_time = Get-Date $webdata_content.LastUpdated
+						if ($webdata_time -gt $offline_time) {
+							Write-Message -Level Output -Message "Index updated correctly, last update on: $(Get-Date -Date $webdata_time -Format s), was $(Get-Date -Date $offline_time -Format s)"
+							$WebContent.Content | Out-File $writable_idxfile -Encoding utf8 -ErrorAction Stop
+							$result = Get-Content $writable_idxfile -Raw | ConvertFrom-Json
+						}
+					}
 				}
 			}
 			
@@ -122,10 +150,33 @@ Function Get-DbaSqlBuildReference {
 			
 			$LastUpdated = Get-Date -Date $result.LastUpdated
 			if ($LastUpdated -lt (Get-Date).AddDays(-45)) {
-				Write-Message -Level Warning -Silent $Silent -Message "Index is stale, last update on: $(Get-Date -Date $LastUpdated -Format s)"
+				Write-Message -Level Warning -Silent $Silent -Message "Index is stale, last update on: $(Get-Date -Date $LastUpdated -Format s), try the -Update parameter to fetch the most up to date index"
 			}
 			
 			$result.Data | Select-Object @{ Name = "VersionObject"; Expression = { [version]$_.Version } }, *
+		}
+		
+		function Get-DbaSqlBuildReferenceIndexOnline {
+			[CmdletBinding()]
+			Param (
+				[bool]
+				$Silent
+			)
+			$url = Get-DbaConfigValue -Name 'assets.sqlbuildreference'
+			try {
+				$WebContent = Invoke-WebRequest $url -ErrorAction Stop
+			}
+			catch {
+				try {
+					Write-Message -Level Verbose -Silent $Silent -Message "Probably using a proxy for internet access, trying default proxy settings"
+					(New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+					$WebContent = Invoke-WebRequest $url -ErrorAction Stop
+				} catch {
+					Write-Message -Level Warning -Silent $Silent -Message "Couldn't download updated index from $url"
+					return
+				}
+			}
+			return $WebContent
 		}
 		
 		function Resolve-DbaSqlBuild {
@@ -188,7 +239,7 @@ Function Get-DbaSqlBuildReference {
 		$moduledirectory = $MyInvocation.MyCommand.Module.ModuleBase
 		
 		try {
-			$IdxRef = Get-DbaSqlBuildReferenceIndex -Moduledirectory $moduledirectory -Silent $Silent
+			$IdxRef = Get-DbaSqlBuildReferenceIndex -Moduledirectory $moduledirectory -Update $Update -Silent $Silent
 		}
 		catch {
 			Stop-Function -Message "Error loading SQL build reference" -ErrorRecord $_
