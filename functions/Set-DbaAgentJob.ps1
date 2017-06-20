@@ -139,7 +139,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
-        [object[]]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
 
         [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]$SqlCredential,
@@ -277,6 +277,9 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                     # Get the job
                     try {
                         $smojob = $server.JobServer.Jobs[$j]
+						
+                        # Refresh the object
+                        $smoJob.Refresh()
                     }
                     catch {
                         Stop-Function -Message "Something went wrong retrieving the job. `n$($_.Exception.Message)" -Target $j -InnerErrorRecord $_ -Continue
@@ -301,7 +304,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                                 $smojob.AddSharedSchedule($sID)
                             }
                             else {
-								Stop-Function -Message "Schedule $s cannot be found on instance $instance" -Target $s -Continue
+                                Stop-Function -Message "Schedule $s cannot be found on instance $instance" -Target $s -Continue
                             }
 						
                         }

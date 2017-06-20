@@ -133,7 +133,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
-        [object[]]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
 
         [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]$SqlCredential,
@@ -411,12 +411,15 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
                     Write-Message -Message "Applying the target (local) to job $Job" -Level Verbose
                     $smoJob.ApplyToTargetServer("(local)")
 
+                    # Refresh the object
+                    $smoJob.Refresh()
+
                     # If a schedule needs to be attached
-                    if($Schedule){
+                    if ($Schedule) {
                         Set-DbaAgentJob -SqlInstance $instance -Job $smoJob -Schedule $Schedule -SqlCredential $SqlCredential
                     }
 
-                    if($ScheduleId){
+                    if ($ScheduleId) {
                         Set-DbaAgentJob -SqlInstance $instance -Job $smoJob -Schedule $ScheduleId -SqlCredential $SqlCredential
                     }
                 }
