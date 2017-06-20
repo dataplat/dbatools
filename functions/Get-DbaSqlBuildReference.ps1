@@ -16,6 +16,9 @@ Function Get-DbaSqlBuildReference {
 	.PARAMETER SqlCredential
 		When connecting to an instance, use the credentials specified.
 	
+	.PARAMETER Update
+		Looks online for the most up to date reference, replacing the local one.
+	
 	.PARAMETER Silent
 		Use this switch to disable any kind of verbose messages
 	
@@ -27,7 +30,7 @@ Function Get-DbaSqlBuildReference {
 	.EXAMPLE
 		Get-DbaSqlBuildReference -Build "12.00.4502" -Update
 		
-		Same as previous, but checks online for a more up to date index
+		Returns information about a build trying to fetch the most up to date index online. When the online version is newer, the local one gets overwritten
 	
 	.EXAMPLE
 		Get-DbaSqlBuildReference -Build "12.0.4502","10.50.4260"
