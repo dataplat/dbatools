@@ -194,6 +194,8 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 						# SKIP IT IF IT'S THE SAME NAME
 						if ($drop -ne $($op['from'])) {
 							try {
+								# snapshot with open transactions cannot be dropped
+								$server.KillAllProcesses($drop)
 								$null = $server.ConnectionContext.ExecuteNonQuery("drop database [$drop]")
 								$status = "Dropped"
 							} catch {
@@ -221,6 +223,9 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 				If ($Pscmdlet.ShouldProcess($server.DomainInstanceName, "Restore db $($op['to']) from $($op['from'])")) {
 					$query = "RESTORE DATABASE [$($op['to'])] FROM DATABASE_SNAPSHOT='$($op['from'])'"
 					try {
+						# for whatever reason, a snapshot with open transactions, albeit read-only, block the restore process
+						$server.KillAllProcesses($op['from'])
+						# for a "good" reason, all open transactions on the destination block the restore process
 						$server.KillAllProcesses($op['to'])
 						$server.ConnectionContext.ExecuteScalar($query)
 					}
