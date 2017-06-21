@@ -411,17 +411,13 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
                     Write-Message -Message "Applying the target (local) to job $Job" -Level Verbose
                     $smoJob.ApplyToTargetServer("(local)")
 
-                    # Refresh the object
-                    $smoJob.Refresh()
-                    $server.JobServer.Refresh()
-
                     # If a schedule needs to be attached
                     if ($Schedule) {
                         Set-DbaAgentJob -SqlInstance $instance -Job $smoJob -Schedule $Schedule -SqlCredential $SqlCredential
                     }
 
                     if ($ScheduleId) {
-                        Set-DbaAgentJob -SqlInstance $instance -Job $smoJob -Schedule $ScheduleId -SqlCredential $SqlCredential
+                        Set-DbaAgentJob -SqlInstance $instance -Job $smoJob -ScheduleId $ScheduleId -SqlCredential $SqlCredential
                     }
                 }
                 catch {
