@@ -46,17 +46,32 @@
 		.EXAMPLE
 			Get-DbaAgentJobHistory -SqlInstance localhost
 
-			Returns all SQL Agent Job on the local default SQL Server instance
+			Returns all SQL Agent Job execution results on the local default SQL Server instance.
 
 		.EXAMPLE
 			Get-DbaAgentJobHistory -SqlInstance localhost, sql2016
 
-			Returns all SQl Agent Job for the local and sql2016 SQL Server instances
+			Returns all SQL Agent Job execution results for the local and sql2016 SQL Server instances.
 
 		.EXAMPLE
 			'sql1','sql2\Inst2K17' | Get-DbaAgentJobHistory
 
-			Returns all SQl Agent Job for sql1 and sql2\Inst2K17
+			Returns all SQL Agent Job execution results for sql1 and sql2\Inst2K17.
+
+		.EXAMPLE
+			Get-DbaAgentJobHistory -SqlInstance sql2\Inst2K17 | select *
+
+			Returns all properties for all SQl Agent Job execution results on sql2\Inst2K17.
+
+		.EXAMPLE
+			Get-DbaAgentJobHistory -SqlInstance sql2\Inst2K17 -NoJobSteps
+
+			Returns the SQL Agent Job execution results for the whole jobs on sql2\Inst2K17, leaving out job step execution results.
+
+		.EXAMPLE
+			Get-DbaAgentJobHistory -SqlInstance sql2\Inst2K17 -StartDate '2017-05-22' -EndDate '2017-05-23 12:30:00'
+
+			Returns the SQL Agent Job execution results between 2017/05/22 00:00:00 and 2017/05/23 12:30:00 on sql2\Inst2K17.
 	#>
 	[CmdletBinding()]
 	param (
