@@ -19,6 +19,9 @@ FUNCTION Get-DbaAgentJob {
 		.PARAMETER ExcludeJob
 			The job(s) to exclude - this list is auto populated from the server.
 
+		.PARAMETER Enabled
+			True will return only enabled jobs, false will return disabled jobs.
+
 		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
 
@@ -42,6 +45,11 @@ FUNCTION Get-DbaAgentJob {
 			Get-DbaAgentJob -SqlInstance localhost, sql2016
 
 			Returns all SQl Agent Job for the local and sql2016 SQL Server instances
+
+		.EXAMPLE
+			Get-DbaAgentJob -SqlInstance localhost -Enabled True
+
+			Returns all enabled SQl Agent Job for the local SQL Server instances
 	#>
 	[CmdletBinding()]
 	param (
@@ -52,6 +60,8 @@ FUNCTION Get-DbaAgentJob {
 		$SqlCredential,
 		[object[]]$Job,
 		[object[]]$ExcludeJob,
+		[ValidateSet('True', 'False')]
+		[string]$Enabled,
 		[switch]$Silent
 	)
 
@@ -67,18 +77,26 @@ FUNCTION Get-DbaAgentJob {
 			}
 
 			$jobs = $server.JobServer.Jobs
+			if ($Enabled) {
+				if($Enabled -eq 'True') { 
+					$jobs = $Jobs | Where-Object IsEnabled -eq $true
+				} else {
+					$jobs = $Jobs | Where-Object IsEnabled -eq $false
+				}
+			}
+			
 			if ($Job) {
 				$jobs = $jobs | Where-Object Name -In $Job
 			}
 			if ($ExcludeJob) {
 				$jobs = $jobs | Where-Object Name -NotIn $ExcludeJob
 			}
-
+			
 			foreach ($agentJob in $jobs) {
 				Add-Member -InputObject $agentJob -MemberType NoteProperty -Name ComputerName -value $agentJob.Parent.Parent.NetName
 				Add-Member -InputObject $agentJob -MemberType NoteProperty -Name InstanceName -value $agentJob.Parent.Parent.ServiceName
 				Add-Member -InputObject $agentJob -MemberType NoteProperty -Name SqlInstance -value $agentJob.Parent.Parent.DomainInstanceName
-
+				
 				Select-DefaultView -InputObject $agentJob -Property ComputerName, InstanceName, SqlInstance, Name, Category, OwnerLoginName, 'IsEnabled as Enabled', LastRunDate, DateCreated, HasSchedule, OperatorToEmail
 			}
 		}
