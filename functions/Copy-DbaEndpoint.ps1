@@ -49,7 +49,7 @@ function Copy-DbaEndpoint {
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
-			Tags: Migration
+			Tags: Migration, Endpoint
 			Author: Chrissy LeMaire (@cl), netnerds.net
 			Requires: sysadmin access on SQL Servers
 
@@ -149,7 +149,7 @@ function Copy-DbaEndpoint {
 
 			if ($Pscmdlet.ShouldProcess($destination, "Creating server endpoint $endpointName")) {
 				try {
-					Write-Message -Level Warning -Message "Copying server endpoint $endpointName"
+					Write-Message -Level Verbose -Message "Copying server endpoint $endpointName"
 					$destServer.ConnectionContext.ExecuteNonQuery($currentEndpoint.Script()) | Out-Null
 
 					$copyEndpointStatus.Status = "Successful"
