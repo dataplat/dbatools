@@ -413,6 +413,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 
                     # Refresh the object
                     $smoJob.Refresh()
+                    $server.JobServer.Refresh()
 
                     # If a schedule needs to be attached
                     if ($Schedule) {
