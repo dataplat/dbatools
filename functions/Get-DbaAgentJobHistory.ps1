@@ -26,6 +26,9 @@
 		.PARAMETER EndDate
 			The DateTime before which the history is wanted. If unspecified, all available records will be processed.
 
+		.PARAMETER NoJobSteps
+			Use this switch to discard all job steps, and return only the job totals
+
 		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
 
@@ -65,32 +68,42 @@
 		[string]$JobName,
 		[DateTime]$StartDate = '1900-01-01',
 		[DateTime]$EndDate = $(Get-Date),
+        [Switch]$NoJobSteps,
 		[switch]$Silent
 	)
     begin {
     
         $Filter = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobHistoryFilter
         $Filter.StartRunDate = $StartDate
+        $Filter.EndRunDate = $EndDate
         if ( $JobName ) { $Filter.JobName = $JobName }
     }
 	process {
 		foreach ($instance in $SqlInstance) {
-			Write-Message -Message "Attempting to connect to $instance" -Level Output
+			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
 			try {
 				$Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
 				Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -Continue
 			}
+            try {
 			Write-Message -Message "Attempting to get job history from $instance" -Level Verbose
-            $server.JobServer.EnumJobHistory($Filter) |
-            foreach {
-                Add-Member -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.NetName
-                Add-Member -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                Add-Member -InputObject $_ -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+            $Executions = $server.JobServer.EnumJobHistory($Filter)
+            if ( $NoJobSteps ) {
+                $Executions = $Executions | Where-Object { $_.StepID -eq 0 }
+            }
+            foreach ( $Execution in $Executions ) {
+                Add-Member -InputObject $Execution -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                Add-Member -InputObject $Execution -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -InputObject $Execution -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 
-                Select-DefaultView -InputObject $_ -Property ComputerName, InstanceName, SqlInstance, JobName, StepName, RunDate, RunDuration, RunStatus
+                Select-DefaultView -InputObject $Execution -Property ComputerName, InstanceName, SqlInstance, JobName, StepName, RunDate, RunDuration, RunStatus
                 } #foreach jobhistory
-            } #foreach instance
+            }
+			catch {
+				Stop-Function -Message "Could not get Agent Job History from $instance" -Target $instance -Continue
+			}
+        } #foreach instance
     } # process
 } #function
