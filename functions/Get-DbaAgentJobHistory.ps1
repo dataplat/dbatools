@@ -7,6 +7,9 @@
 			Get-DbaAgentJobHistory returns all information on the executions still available on each instance(s) of SQL Server submitted.
             The cleanup of SQL Agent history determines how many records are kept.
 
+            https://msdn.microsoft.com/en-us/library/ms201680.aspx
+            https://msdn.microsoft.com/en-us/library/microsoft.sqlserver.management.smo.agent.jobhistoryfilter(v=sql.120).aspx
+
 		.PARAMETER SqlInstance
 			SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
 			to be executed against multiple SQL Server instances.
@@ -14,11 +17,14 @@
 		.PARAMETER SqlCredential
 			SqlCredential object to connect as. If not specified, current Windows login will be used.
 
-		.PARAMETER Job
-			The job(s) to process - this list is auto populated from the server. If unspecified, all jobs will be processed.
+		.PARAMETER JobName
+			The name of the job from which the history is wanted. If unspecified, all jobs will be processed.
 
-		.PARAMETER ExcludeJob
-			The job(s) to exclude - this list is auto populated from the server.
+		.PARAMETER StartDate
+			The DateTime starting from which the history is wanted. If unspecified, all available records will be processed.
+
+		.PARAMETER EndDate
+			The DateTime before which the history is wanted. If unspecified, all available records will be processed.
 
 		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
@@ -56,40 +62,35 @@
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
-		[object[]]$Job,
-		[object[]]$ExcludeJob,
+		[string]$JobName,
+		[DateTime]$StartDate = '1900-01-01',
+		[DateTime]$EndDate = $(Get-Date),
 		[switch]$Silent
 	)
-
+    begin {
+    
+        $Filter = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobHistoryFilter
+        $Filter.StartRunDate = $StartDate
+        if ( $JobName ) { $Filter.JobName = $JobName }
+    }
 	process {
 		foreach ($instance in $SqlInstance) {
-			Write-Verbose "Attempting to connect to $instance"
+			Write-Message -Message "Attempting to connect to $instance" -Level Output
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+				$Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Write-Warning "Can't connect to $instance or access denied. Skipping."
-				continue
+				Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -Continue
 			}
-<#
-https://msdn.microsoft.com/en-us/library/ms201680.aspx
-https://msdn.microsoft.com/en-us/library/microsoft.sqlserver.management.smo.agent.jobhistoryfilter(v=sql.120).aspx
-#>
-#ipmo sqlserver
-$serv = New-Object Microsoft.SqlServer.Management.Smo.Server SQLDev02
-$DateFrom = (Get-Date).AddDays(-2)
-$Filter = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobHistoryFilter;
-$Filter.StartRunDate = $DateFrom;
+			Write-Message -Message "Attempting to get job history from $instance" -Level Verbose
+            $server.JobServer.EnumJobHistory($Filter) |
+            foreach {
+                Add-Member -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                Add-Member -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -InputObject $_ -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 
-$serv.JobServer.EnumJobHistory($Filter) |
-foreach {
-				Add-Member -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $serv.NetName
-				Add-Member -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $serv.ServiceName
-				Add-Member -InputObject $_ -MemberType NoteProperty -Name SqlInstance -value $serv.DomainInstanceName
-
-			#	Select-DefaultView -InputObject $_ -Property ComputerName, InstanceName, SqlInstance, JobName, StepName, RunDate, RunDuration, RunStatus
-            #$_
-			} #foreach jobhistory
-} #foreach instance
-} # process
+                Select-DefaultView -InputObject $_ -Property ComputerName, InstanceName, SqlInstance, JobName, StepName, RunDate, RunDuration, RunStatus
+                } #foreach jobhistory
+            } #foreach instance
+    } # process
 } #function
