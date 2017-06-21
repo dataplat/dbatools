@@ -136,7 +136,7 @@ function Export-DbaLogin {
 			$userBase = ($userName.Split("\")[0]).ToLower()
 			if ($serverName -eq $userBase -or $userName.StartsWith("NT ")) {
 				if ($Pscmdlet.ShouldProcess("console", "Stating $userName is skipped because it is a local machine name.")) {
-					Write-Message -Level Warning "$userName is skipped because it is a local machine name."
+					Write-Message -Level Warning -Message "$userName is skipped because it is a local machine name."
 					continue
 				}
 			}
