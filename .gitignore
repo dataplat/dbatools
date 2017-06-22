@@ -12,6 +12,4 @@ dbatools.psprojs
 bin/dbatools.dll
 bin/dbatools.xml
 bin/dbatools.pdb
-bin/projects/dbatools/dbatools/obj/Release/dbatools.pdb
-bin/projects/dbatools/dbatools/obj/Release/dbatools.dll
-bin/projects/dbatools/dbatools/obj/Release/dbatools.csproj.FileListAbsolute.txt
+bin/projects/dbatools/dbatools/obj/*

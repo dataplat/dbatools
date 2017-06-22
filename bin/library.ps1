@@ -59,6 +59,7 @@ if ($ImportLibrary) {
 			$hasCompiledDll = Test-Path -Path "$libraryBase\dbatools.dll"
 			
 			if ((-not $dbatools_alwaysbuildlibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo("$libraryBase\dbatools.dll").FileVersion -eq $currentLibraryVersion)) {
+				$start = Get-Date
 				try {
 					Write-Host "Found library, trying to copy & import"
 					$libraryTempPath = "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999).dll"
@@ -71,14 +72,18 @@ if ($ImportLibrary) {
 						}
 					}
 					Copy-Item -Path "$libraryBase\dbatools.dll" -Destination $libraryTempPath -Force -ErrorAction Stop
+					Write-Host "Finished Copy"
 					Add-Type -Path $libraryTempPath -ErrorAction Stop
+					Write-Host "Finished Import"
 				}
 				catch {
 					Write-Host "Failed to copy&import, attempting to import straight from the module directory"
 					Add-Type -Path "$libraryBase\dbatools.dll" -ErrorAction Stop
 				}
+				Write-Host "Total duration: $((Get-Date) - $start)"
 			}
 			elseif ($hasProject) {
+				$start = Get-Date
 				$system = [Appdomain]::CurrentDomain.GetAssemblies() | Where-Object FullName -like "System, *"
 				$msbuild = (Resolve-Path "$(Split-Path $system.Location)\..\..\..\..\Framework$(if ([intptr]::Size -eq 8) { "64" })\$($system.ImageRuntimeVersion)\msbuild.exe").Path
 				
@@ -108,6 +113,7 @@ if ($ImportLibrary) {
 					Write-Host "Failed to copy&import, attempting to import straight from the module directory"
 					Add-Type -Path "$libraryBase\dbatools.dll" -ErrorAction Stop
 				}
+				Write-Host "Total duration: $((Get-Date) - $start)"
 			}
 			else {
 				throw "No valid dbatools library found! Check your module integrity"
