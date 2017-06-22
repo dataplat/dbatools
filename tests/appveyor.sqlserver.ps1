@@ -63,6 +63,9 @@ do {
 }
 while ((Get-Service 'SQLAgent$sql2016').Status -ne 'Running' -and $z++ -lt 10)
 
+# Whatever, just sleep an extra 5
+Start-Sleep 5
+
 Write-Output "Executing startup scripts for SQL Server 2008"
 # Add some jobs to the sql2008r2sp2 instance (1433 = default)
 foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2008-startup\*.sql -Recurse -ErrorAction SilentlyContinue)) {
