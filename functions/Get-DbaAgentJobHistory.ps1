@@ -1,4 +1,4 @@
-﻿FUNCTION Get-DbaAgentJobHistory {
+﻿function Get-DbaAgentJobHistory {
 	<#
 		.SYNOPSIS
 			Gets execution history of SQL Agent Job on instance(s) of SQL Server.
@@ -17,7 +17,7 @@
 		.PARAMETER SqlCredential
 			SqlCredential object to connect as. If not specified, current Windows login will be used.
 
-		.PARAMETER JobName
+		.PARAMETER Job
 			The name of the job from which the history is wanted. If unspecified, all jobs will be processed.
 
 		.PARAMETER StartDate
@@ -28,6 +28,9 @@
 
 		.PARAMETER NoJobSteps
 			Use this switch to discard all job steps, and return only the job totals
+	
+		.PARAMETER JobCollection
+			An array of SMO jobs
 
 		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
@@ -64,10 +67,9 @@
 			Returns all properties for all SQl Agent Job execution results on sql2\Inst2K17.
 
 		.EXAMPLE
-			Get-DbaAgentJobHistory -SqlInstance sql2\Inst2K17 -JobName 'Output File Cleanup'
+			Get-DbaAgentJobHistory -SqlInstance sql2\Inst2K17 -Job 'Output File Cleanup'
 
 			Returns all properties for all SQl Agent Job execution results of the 'Output File Cleanup' job on sql2\Inst2K17.
-
 
 		.EXAMPLE
 			Get-DbaAgentJobHistory -SqlInstance sql2\Inst2K17 -NoJobSteps
@@ -78,53 +80,89 @@
 			Get-DbaAgentJobHistory -SqlInstance sql2\Inst2K17 -StartDate '2017-05-22' -EndDate '2017-05-23 12:30:00'
 
 			Returns the SQL Agent Job execution results between 2017/05/22 00:00:00 and 2017/05/23 12:30:00 on sql2\Inst2K17.
+	
+		.EXAMPLE 
+	 		Get-DbaAgentJob -SqlInstance sql2016 | Where Name -match backup | Get-DbaAgentJobHistory
+	
+			Gets all jobs with the name that match the regex pattern "backup" and then gets the job history from those. You can also use -Like *backup* in this example.
+	
 	#>
-	[CmdletBinding()]
+	[CmdletBinding(DefaultParameterSetName = "Default")]
 	param (
-		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+		[parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Server")]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
-		[string]$JobName,
-		[DateTime]$StartDate = '1900-01-01',
+		[string[]]$Job,
+		[DateTime]$StartDate = "1900-01-01",
 		[DateTime]$EndDate = $(Get-Date),
-        [Switch]$NoJobSteps,
+		[Switch]$NoJobSteps,
+		[parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Collection")]
+		[Microsoft.SqlServer.Management.Smo.Agent.Job]$JobCollection,
 		[switch]$Silent
 	)
-    begin {
-    
-        $Filter = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobHistoryFilter
-        $Filter.StartRunDate = $StartDate
-        $Filter.EndRunDate = $EndDate
-        if ( $JobName ) { $Filter.JobName = $JobName }
-    }
+	
+	begin {
+		$filter = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobHistoryFilter
+		$filter.StartRunDate = $StartDate
+		$filter.EndRunDate = $EndDate
+		
+		function Get-JobHistory {
+			[CmdletBinding()]
+			param (
+				$Server,
+				$Job
+			)
+			
+			try {
+				Write-Message -Message "Attempting to get job history from $instance" -Level Verbose
+				if ($Job) {
+					foreach ($currentjob in $job) {
+						$filter.JobName = $currentjob
+						$executions += $server.JobServer.EnumJobHistory($filter)
+					}
+				}
+				else {
+					$executions = $server.JobServer.EnumJobHistory($filter)
+				}
+				
+				if ($NoJobSteps) {
+					$executions = $executions | Where-Object { $_.StepID -eq 0 }
+				}
+				
+				foreach ($execution in $executions) {
+					Add-Member -InputObject $execution -MemberType NoteProperty -Name ComputerName -value $server.NetName
+					Add-Member -InputObject $execution -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+					Add-Member -InputObject $execution -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+					
+					Select-DefaultView -InputObject $execution -Property ComputerName, InstanceName, SqlInstance, 'JobName as Job', StepName, RunDate, RunDuration, RunStatus
+				}
+			}
+			catch {
+				Stop-Function -Message "Could not get Agent Job History from $instance" -Target $instance -Continue
+			}
+		}
+	}
+	
 	process {
+		
+		if ($JobCollection) {
+			foreach ($currentjob in $JobCollection) {
+				Get-JobHistory -Server $currentjob.Parent.Parent -Job $currentjob.Name
+			}
+		}
+		
 		foreach ($instance in $SqlInstance) {
 			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
 			try {
-				$Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
 				Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -Continue
 			}
-            try {
-			Write-Message -Message "Attempting to get job history from $instance" -Level Verbose
-            $Executions = $server.JobServer.EnumJobHistory($Filter)
-            if ( $NoJobSteps ) {
-                $Executions = $Executions | Where-Object { $_.StepID -eq 0 }
-            }
-            foreach ( $Execution in $Executions ) {
-                Add-Member -InputObject $Execution -MemberType NoteProperty -Name ComputerName -value $server.NetName
-                Add-Member -InputObject $Execution -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                Add-Member -InputObject $Execution -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-
-                Select-DefaultView -InputObject $Execution -Property ComputerName, InstanceName, SqlInstance, JobName, StepName, RunDate, RunDuration, RunStatus
-                } #foreach jobhistory
-            }
-			catch {
-				Stop-Function -Message "Could not get Agent Job History from $instance" -Target $instance -Continue
-			}
-        } #foreach instance
-    } # process
-} #function
+			
+			Get-JobHistory -Server $server -Job $Job
+		}
+	}
+}
