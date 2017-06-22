@@ -13,3 +13,4 @@ bin/dbatools.dll
 bin/dbatools.xml
 bin/dbatools.pdb
 bin/projects/dbatools/dbatools/obj/*
+bin/projects/dbatools/*.user
