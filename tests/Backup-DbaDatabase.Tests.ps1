@@ -1,5 +1,5 @@
 ﻿Describe "Backup-DbaDatabase Integration Tests" -Tags "Integrationtests" {
-	Context "Properly restores a database on the local drive using Path" {
+	Context "Backs up the database on the local drive using Path" {
 		$results = Backup-DbaDatabase -SqlInstance localhost -BackupDirectory C:\temp\backups
 		It "Should return a database name, specifically master" {
 			($results.DatabaseName -contains 'master') | Should Be $true
