@@ -31,11 +31,11 @@ Mostly for developers working on the library.
 #region Test whether the module had already been imported
 if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configuration.Config').Type) {
 	# No need to load the library again, if the module was once already imported.
-	Write-Verbose -Message "Library already loaded, will not load again"
+	Write-Host "Library already loaded, will not load again"
 	$ImportLibrary = $false
 }
 else {
-	Write-Verbose -Message "Library not present already, will import"
+	Write-Host "Library not present already, will import"
 	$ImportLibrary = $true
 }
 #endregion Test whether the module had already been imported
@@ -60,7 +60,7 @@ if ($ImportLibrary) {
 			
 			if ((-not $dbatools_alwaysbuildlibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo("$libraryBase\dbatools.dll").FileVersion -eq $currentLibraryVersion)) {
 				try {
-					Write-Verbose -Message "Found library, trying to copy & import"
+					Write-Host "Found library, trying to copy & import"
 					$libraryTempPath = "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999).dll"
 					while (Test-Path -Path $libraryTempPath) {
 						try {
@@ -74,7 +74,7 @@ if ($ImportLibrary) {
 					Add-Type -Path $libraryTempPath -ErrorAction Stop
 				}
 				catch {
-					Write-Verbose -Message "Failed to copy&import, attempting to import straight from the module directory"
+					Write-Host "Failed to copy&import, attempting to import straight from the module directory"
 					Add-Type -Path "$libraryBase\dbatools.dll" -ErrorAction Stop
 				}
 			}
@@ -86,11 +86,11 @@ if ($ImportLibrary) {
 					throw "msbuild not found, cannot compile library! Check your .NET installation health, then try again. Path checked: $msbuild"
 				}
 				
-				Write-Verbose -Message "Building the library"
+				Write-Host "Building the library"
 				$null = & $msbuild "bin\projects\dbatools\dbatools.sln"
 				
 				try {
-					Write-Verbose -Message "Found library, trying to copy & import"
+					Write-Host "Found library, trying to copy & import"
 					$libraryTempPath = "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999).dll"
 					while (Test-Path -Path $libraryTempPath) {
 						try {
@@ -105,7 +105,7 @@ if ($ImportLibrary) {
 					Add-Type -Path $libraryTempPath -ErrorAction Stop
 				}
 				catch {
-					Write-Verbose -Message "Failed to copy&import, attempting to import straight from the module directory"
+					Write-Host "Failed to copy&import, attempting to import straight from the module directory"
 					Add-Type -Path "$libraryBase\dbatools.dll" -ErrorAction Stop
 				}
 			}
