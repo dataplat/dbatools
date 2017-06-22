@@ -16,10 +16,10 @@ Allows you to login to SQL Server using alternative credentials.
 The database where the certificate will be created. Defaults to master.
 
 .PARAMETER Name
-Optional secure string used to create the certificate.
+Optional name to create the certificate. Defaults to database name.
 
 .PARAMETER Subject
-Optional secure string used to create the certificate.
+Optional subject to create the certificate.
 	
 .PARAMETER StartDate
 Optional secure string used to create the certificate.
@@ -65,10 +65,9 @@ Suppresses all prompts to install but prompts to securely enter your password an
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[parameter(Mandatory)]
 		[string[]]$Name,
 		[object[]]$Database = "master",
-		[string[]]$Subject = $Name,
+		[string[]]$Subject,
 		[datetime]$StartDate = (Get-Date),
 		[datetime]$ExpirationDate = $StartDate.AddYears(5),
 		[switch]$ActiveForServiceBrokerDialog,

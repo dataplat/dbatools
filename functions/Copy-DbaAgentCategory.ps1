@@ -1,4 +1,4 @@
-function Copy-DbaAgentCategory {
+﻿function Copy-DbaAgentCategory {
 	<#
 		.SYNOPSIS
 			Copy-DbaAgentCategory migrates SQL Agent categories from one SQL Server to another. This is similar to sp_add_category.
@@ -135,7 +135,7 @@ function Copy-DbaAgentCategory {
 						DestinationServer = $destServer.Name
 						Name              = $categoryName
 						Status            = $null
-						DateTime          = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+						DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 					}
 
 					if ($JobCategories.Count -gt 0 -and $JobCategories -notcontains $categoryName) {
@@ -210,7 +210,7 @@ function Copy-DbaAgentCategory {
 						DestinationServer = $destServer.Name
 						Name              = $categoryName
 						Status            = $null
-						DateTime          = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+						DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 					}
 
 					if ($operatorCategories.Count -gt 0 -and $operatorCategories -notcontains $categoryName) {
@@ -295,7 +295,7 @@ function Copy-DbaAgentCategory {
 						DestinationServer = $destServer.Name
 						Name              = $categoryName
 						Status            = $null
-						DateTime          = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+						DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 					}
 
 					if ($alertCategories.Length -gt 0 -and $alertCategories -notcontains $categoryName) {

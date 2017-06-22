@@ -1,0 +1,12 @@
+F:\Synchronized Data\Scripte\Powershell Studio\Projects\dbatools_2017_06_21\bin\projects\dbatools\dbatools\obj\Release\dbatools.csprojResolveAssemblyReference.cache
+F:\Synchronized Data\Scripte\Powershell Studio\Projects\dbatools_2017_06_21\bin\projects\dbatools\dbatools\obj\Release\dbatools.dll
+F:\Synchronized Data\Scripte\Powershell Studio\Projects\dbatools_2017_06_21\bin\projects\dbatools\dbatools\obj\Release\dbatools.pdb
+F:\Synchronized Data\Scripte\Powershell Studio\Projects\dbatools_2017_06_21\bin\dbatools.dll
+F:\Synchronized Data\Scripte\Powershell Studio\Projects\dbatools_2017_06_21\bin\dbatools.pdb
+F:\Synchronized Data\Scripte\Powershell Studio\Projects\dbatools_2017_06_21\bin\dbatools.xml
+F:\Code & Projects\Github Teams\dbatools\bin\projects\dbatools\dbatools\obj\Release\dbatools.csprojResolveAssemblyReference.cache
+F:\Code & Projects\Github Teams\dbatools\bin\projects\dbatools\dbatools\obj\Release\dbatools.dll
+F:\Code & Projects\Github Teams\dbatools\bin\dbatools.xml
+F:\Code & Projects\Github Teams\dbatools\bin\projects\dbatools\dbatools\obj\Release\dbatools.pdb
+F:\Code & Projects\Github Teams\dbatools\bin\dbatools.dll
+F:\Code & Projects\Github Teams\dbatools\bin\dbatools.pdb

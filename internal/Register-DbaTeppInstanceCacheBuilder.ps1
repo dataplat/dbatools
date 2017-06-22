@@ -43,10 +43,10 @@
 		$Slow
 	)
 	
-	if ($Slow -and ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsSlow -notcontains $ScriptBlock)) {
-		[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsSlow.Add($ScriptBlock)
+	if ($Slow -and ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsSlow -notcontains $ScriptBlock)) {
+		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsSlow.Add($ScriptBlock)
 	}
-	elseif ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast -notcontains $ScriptBlock) {
-		[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast.Add($ScriptBlock)
+	elseif ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast -notcontains $ScriptBlock) {
+		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast.Add($ScriptBlock)
 	}
 }

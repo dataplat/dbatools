@@ -113,7 +113,7 @@
     [CmdletBinding(DefaultParameterSetName = 'Credential')]
     param (
         [Parameter(ValueFromPipeline = $true)]
-        [sqlcollective.dbatools.Parameter.DbaCmConnectionParameter[]]
+        [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName = $env:COMPUTERNAME,
 
         [Parameter(ParameterSetName = "Credential")]
@@ -127,7 +127,7 @@
         [switch]
         $OverrideExplicitCredential,
 
-        [SqlCollective.Dbatools.Connection.ManagementConnectionType]
+        [Sqlcollaborative.Dbatools.Connection.ManagementConnectionType]
         $DisabledConnectionTypes = 'None',
 
         [switch]
@@ -259,7 +259,7 @@
 
             if (-not $disable_cache) {
                 Write-Message -Level Verbose -Message "Writing connection to cache"
-                [sqlcollective.dbatools.Connection.ConnectionHost]::Connections[$connectionObject.Connection.ComputerName] = $connection
+                [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$connectionObject.Connection.ComputerName] = $connection
             }
             else { Write-Message -Level Verbose -Message "Skipping writing to cache, since the cache has been disabled!" }
             $connection

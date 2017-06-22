@@ -1,29 +1,35 @@
 ﻿function Invoke-Command2 {
 	[CmdletBinding()]
 	param (
-		[string]$ComputerName=$env:COMPUTERNAME,
+		[object]$ComputerName=$env:COMPUTERNAME,
 		[object]$Credential,
 		[scriptblock]$ScriptBlock,
-		[object[]]$ArgumentList
+		[object[]]$ArgumentList,
+		[switch]$Silent
 	)
 	
-	if ([dbavalidate]::IsLocalhost($ComputerName)) {
-		if ($Credential) {
-			Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential
+	try {
+		if ([dbavalidate]::IsLocalhost($ComputerName)) {
+			if ($Credential) {
+				Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ErrorAction Stop
+			}
+			else {
+				Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ErrorAction Stop
+			}
+			
 		}
 		else {
-			Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList
+			if ($Credential) {
+				Invoke-Command -ScriptBlock $ScriptBlock -ComputerName $ComputerName -ArgumentList $ArgumentList -Credential $Credential -ErrorAction Stop |
+				Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
+			}
+			else {
+				Invoke-Command -ScriptBlock $ScriptBlock -ComputerName $ComputerName -ArgumentList $ArgumentList -ErrorAction Stop |
+				Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
+			}
 		}
-		
 	}
-	else {
-		if ($Credential) {
-			Invoke-Command -ScriptBlock $ScriptBlock -ComputerName $ComputerName -ArgumentList $ArgumentList -Credential $Credential |
-			Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
-		}
-		else {
-			Invoke-Command -ScriptBlock $ScriptBlock -ComputerName $ComputerName -ArgumentList $ArgumentList |
-			Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
-		}
+	catch {
+		Stop-Function -Message $_ -InnerErrorRecord $_
 	}
 }

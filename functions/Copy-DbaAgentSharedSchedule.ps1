@@ -1,4 +1,4 @@
-function Copy-DbaAgentSharedSchedule {
+﻿function Copy-DbaAgentSharedSchedule {
 	<#
 		.SYNOPSIS
 			Copy-DbaAgentSharedSchedule migrates shared job schedules from one SQL Server to another.
@@ -105,7 +105,7 @@ function Copy-DbaAgentSharedSchedule {
                 DestinationServer   = $destServer.Name
                 Name                = $scheduleName
                 Status              = $null
-                DateTime            = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+                DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
             }
 
             if ($schedules.Length -gt 0 -and $schedules -notcontains $scheduleName) {

@@ -308,7 +308,8 @@
 		'Remove-DbaComputerCertificate',
 		'Get-DbaServerInstallDate',
 		'Install-DbaFirstResponderKit',
-		'Backup-DbaDatabaseMasterKey'
+		'Backup-DbaDatabaseMasterKey',
+		'Get-DbaAgentJobHistory'
 	)
 	
 	# Cmdlets to export from this module

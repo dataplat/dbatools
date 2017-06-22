@@ -1,4 +1,4 @@
-function Copy-DbaCentralManagementServer {
+﻿function Copy-DbaCentralManagementServer {
 	<#
 		.SYNOPSIS
 			Migrates SQL Server Central Management groups and server instances from one SQL Server to another.
@@ -108,7 +108,7 @@ function Copy-DbaCentralManagementServer {
 					Name                = $destinationGroup
 					Type                = "Create Destination Group"
 					Status              = $null
-					DateTime            = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+					DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
 
 				if ($null -ne $destinationGroup) {
@@ -153,7 +153,7 @@ function Copy-DbaCentralManagementServer {
 					Name                = $instanceName
 					Type                = "Add Instance"
 					Status              = $null
-					DateTime            = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+					DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
 
 				if ($serverName.ToLower() -eq $toCmStore.DomainInstanceName.ToLower()) {
@@ -235,7 +235,7 @@ function Copy-DbaCentralManagementServer {
 					Name              = $fromSubGroupName
 					Type              = "Add Group"
 					Status            = $null
-					DateTime          = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+					DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
 
 				if ($null -ne $toSubGroup) {

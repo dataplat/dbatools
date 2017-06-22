@@ -1,4 +1,4 @@
-function Copy-DbaAgentOperator {
+﻿function Copy-DbaAgentOperator {
 	<#
 		.SYNOPSIS 
 			Copy-DbaAgentOperator migrates operators from one SQL Server to another. 
@@ -112,7 +112,7 @@ function Copy-DbaAgentOperator {
 				DestinationServer   = $destServer.Name
 				Name                = $operatorName
 				Status              = $null
-				DateTime            = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+				DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 			}
 			
 			if ($Operator -and $Operator -notcontains $operatorName -or $ExcludeOperator -in $operatorName) {
