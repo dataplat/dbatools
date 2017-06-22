@@ -4,11 +4,12 @@ FUNCTION Get-DbaAgentJob {
 			Gets SQL Agent Job information for each instance(s) of SQL Server.
 
 		.DESCRIPTION
-			The Get-DbaAgentJob returns connected SMO object for SQL Agent Job information for each instance(s) of SQL Server.
+			The Get-DbaAgentJob returns connected SMO object for SQL Agent Job information for each instance(s) of SQL Server. The default behavior
+			is to return enabled jobs only.
 
 		.PARAMETER SqlInstance
-			SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
-			to be executed against multiple SQL Server instances.
+			SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input 
+			to allow the function to be executed against multiple SQL Server instances.
 
 		.PARAMETER SqlCredential
 			SqlCredential object to connect as. If not specified, current Windows login will be used.
@@ -20,7 +21,7 @@ FUNCTION Get-DbaAgentJob {
 			The job(s) to exclude - this list is auto populated from the server.
 
 		.PARAMETER IncludeDisabled
-			Default is to only return enabled jobs, switch will also return disabled jobs.
+			Switch will include the disabled jobs in output.
 
 		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
@@ -39,17 +40,27 @@ FUNCTION Get-DbaAgentJob {
 		.EXAMPLE
 			Get-DbaAgentJob -SqlInstance localhost
 
-			Returns all SQL Agent Job on the local default SQL Server instance
+			Returns all enabled SQL Agent Jobs on the local default SQL Server instance
 
 		.EXAMPLE
 			Get-DbaAgentJob -SqlInstance localhost, sql2016
 
-			Returns all SQl Agent Job for the local and sql2016 SQL Server instances
+			Returns all enabled SQl Agent Jobs for the local and sql2016 SQL Server instances
 
+		.EXAMPLE
+			Get-DbaAgentJob -SqlInstance localhost -Job BackupData, BackupDiff
+
+			Returns all enabled SQL Agent Jobs named BackupData and BackupDiff from the local SQL Server instance.
+
+		.EXAMPLE
+			Get-DbaAgentJob -SqlInstance localhost -ExcludeJob BackupDiff
+
+			Returns all enabled SQl Agent Jobs for the local SQL Server instances, except the BackupDiff Job.
+			
 		.EXAMPLE
 			Get-DbaAgentJob -SqlInstance localhost -IncludeDisabled
 
-			Includes disabled SQl Agent Jobs in the returned set for the local SQL Server instances
+			Returns all SQl Agent Jobs for the local SQL Server instances, including disabled jobs.
 	#>
 	[CmdletBinding()]
 	param (
@@ -90,7 +101,7 @@ FUNCTION Get-DbaAgentJob {
 			foreach ($agentJob in $jobs) {
 				Add-Member -InputObject $agentJob -MemberType NoteProperty -Name ComputerName -value $agentJob.Parent.Parent.NetName
 				Add-Member -InputObject $agentJob -MemberType NoteProperty -Name InstanceName -value $agentJob.Parent.Parent.ServiceName
-				Add-Member -InputObject $agentJob -MemberType NoteProperty -Name SqlInstance -value $agentJob.Parent.Parent.DomainInstanceName
+				Add-Member -InputObject $agentJob -MemberType NoteProperty -Name SqlInstance -value $agentJob.Parent.Parent.DomainInstanceName			
 				
 				Select-DefaultView -InputObject $agentJob -Property ComputerName, InstanceName, SqlInstance, Name, Category, OwnerLoginName, 'IsEnabled as Enabled', LastRunDate, DateCreated, HasSchedule, OperatorToEmail
 			}
