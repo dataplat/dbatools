@@ -1,4 +1,4 @@
-function Copy-DbaAgentProxyAccount {
+﻿function Copy-DbaAgentProxyAccount {
 	<#
 		.SYNOPSIS
 			Copy-DbaAgentProxyAccount migrates proxy accounts from one SQL Server to another.
@@ -107,7 +107,7 @@ function Copy-DbaAgentProxyAccount {
 				Name                = $null
 				Type                = $null
 				Status              = $null
-				DateTime            = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+				DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 			}
 
 			if ($proxyAccounts.Length -gt 0 -and $proxyAccounts -notcontains $proxyName) {

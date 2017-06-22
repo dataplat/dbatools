@@ -99,7 +99,7 @@
     [CmdletBinding(DefaultParameterSetName = 'Credential')]
     param (
         [Parameter(ValueFromPipeline = $true)]
-        [sqlcollective.dbatools.Parameter.DbaCmConnectionParameter[]]
+        [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName = $env:COMPUTERNAME,
         [Parameter(ParameterSetName = "Credential")]
         [PSCredential]
@@ -109,7 +109,7 @@
         $UseWindowsCredentials,
         [switch]
         $OverrideExplicitCredential,
-        [SqlCollective.Dbatools.Connection.ManagementConnectionType]
+        [Sqlcollaborative.Dbatools.Connection.ManagementConnectionType]
         $DisabledConnectionTypes = 'None',
         [switch]
         $DisableBadCredentialCache,
@@ -141,7 +141,7 @@
             if (-not $connectionObject.Success) { Stop-Function -Message "Failed to interpret computername input: $($connectionObject.InputObject)" -Category InvalidArgument -Target $connectionObject.InputObject -Continue }
             Write-Message -Level VeryVerbose -Message "Processing computer: $($connectionObject.Connection.ComputerName)" -Target $connectionObject.Connection
 
-            $connection = New-Object -TypeName Sqlcollective.Dbatools.Connection.ManagementConnection -ArgumentList $connectionObject.Connection.ComputerName
+            $connection = New-Object -TypeName Sqlcollaborative.Dbatools.Connection.ManagementConnection -ArgumentList $connectionObject.Connection.ComputerName
             if (Was-Bound "Credential") { $connection.Credentials = $Credential }
             if (Was-Bound "UseWindowsCredentials") {
                 $connection.Credentials = $null
@@ -159,7 +159,7 @@
 
             if (-not $disable_cache) {
                 Write-Message -Level Verbose -Message "Writing connection to cache"
-                [sqlcollective.dbatools.Connection.ConnectionHost]::Connections[$connectionObject.Connection.ComputerName] = $connection
+                [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$connectionObject.Connection.ComputerName] = $connection
             }
             else { Write-Message -Level Verbose -Message "Skipping writing to cache, since the cache has been disabled!" }
             $connection

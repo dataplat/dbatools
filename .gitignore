@@ -8,3 +8,8 @@ dbatools-exceptions.txt
 .vscode/*
 *.psproj
 dbatools.psprojs
+
+# ignore library
+bin/dbatools.dll
+bin/dbatools.xml
+bin/dbatools.pdb

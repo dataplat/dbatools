@@ -1,4 +1,4 @@
-function Copy-DbaCredential {
+﻿function Copy-DbaCredential {
 	<#
 		.SYNOPSIS
 			Copy-DbaCredential migrates SQL Server Credentials from one SQL Server to another, while maintaining Credential passwords.
@@ -300,7 +300,7 @@ function Copy-DbaCredential {
 					DestinationServer   = $destServer.Name
 					Name                = $credentialName
 					Status              = $null
-					DateTime            = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+					DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
 
 				if ($destServer.Credentials[$credentialName] -ne $null) {

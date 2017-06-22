@@ -1,4 +1,4 @@
-function Copy-DbaBackupDevice {
+﻿function Copy-DbaBackupDevice {
 	<#
 		.SYNOPSIS
 			Copies backup devices one by one. Copies both SQL code and the backup file itself.
@@ -109,7 +109,7 @@ function Copy-DbaBackupDevice {
 				Name = $deviceName
 				Type = "BackupDevice"
 				Status = $null
-				DateTime = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+				DateTime = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 			}
 
 			if ($backupDevices.Length -gt 0 -and $backupDevices -notcontains $deviceName) {

@@ -1,4 +1,4 @@
-function Copy-DbaDatabaseAssembly {
+﻿function Copy-DbaDatabaseAssembly {
 	<#
 		.SYNOPSIS
 			Copy-DbaDatabaseAssembly migrates assemblies from one SQL Server to another.
@@ -142,7 +142,7 @@ function Copy-DbaDatabaseAssembly {
 				DestinationDatabase = $destDb
 				Name                = $assemblyName
 				Status              = $null
-				DateTime            = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+				DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 			}
 
 
