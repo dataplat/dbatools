@@ -1,4 +1,4 @@
-function Copy-DbaDatabaseMail {
+﻿function Copy-DbaDatabaseMail {
 	<#
 	.SYNOPSIS
 		Migrates Mail Profiles, Accounts, Mail Servers and Mail Server Configs from one SQL Server to another.
@@ -117,7 +117,7 @@ function Copy-DbaDatabaseMail {
 				Name              = "Mail Configuration"
 				Type              = "Configuration"
 				Status            = $null
-				DateTime          = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+				DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 			}
 			if ($pscmdlet.ShouldProcess($destination, "Migrating all mail server configuration values")) {
 				try {
@@ -150,7 +150,7 @@ function Copy-DbaDatabaseMail {
 					Name              = $accountName
 					Type              = "Mail Account"
 					Status            = $null
-					DateTime          = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+					DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
 
 				if ($accounts.count -gt 0 -and $accounts -notcontains $accountName) {
@@ -213,7 +213,7 @@ function Copy-DbaDatabaseMail {
 					Name              = $profileName
 					Type              = "Mail Profile"
 					Status            = $null
-					DateTime          = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+					DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
 
 				if ($profiles.count -gt 0 -and $profiles -notcontains $profileName) {
@@ -275,7 +275,7 @@ function Copy-DbaDatabaseMail {
 					Name              = $mailServerName
 					Type              = "Mail Server"
 					Status            = $null
-					DateTime          = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+					DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
 				if ($mailServers.count -gt 0 -and $mailServers -notcontains $mailServerName) {
 					continue
@@ -407,7 +407,7 @@ function Copy-DbaDatabaseMail {
 			Name              = "Enabled DBMail on Destination"
 			Type              = "Configuration"
 			Status            = if ($destDbMailEnabled -eq 1) { "Enabled" } else { $null }
-			DateTime          = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+			DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 		}
 
 		if (($sourceDbMailEnabled -eq 1) -and ($destDbMailEnabled -eq 0)) {

@@ -39,7 +39,7 @@
 			$lowername = $p
 		}
 		
-		$scriptBlock = [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Scripts[$lowername.ToLower()].ScriptBlock
+		$scriptBlock = [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts[$lowername.ToLower()].ScriptBlock
 		
 		if ($script:TEPP) {
 			TabExpansionPlusPlus\Register-ArgumentCompleter -CommandName $Command -ParameterName $p -ScriptBlock $scriptBlock

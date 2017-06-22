@@ -428,7 +428,7 @@ function Get-DbaBackupHistory {
 					
 					Write-Message -Level Debug -Message "FileSQL: $fileSql"
 					
-					$historyObject = New-Object sqlcollective.dbatools.Database.BackupHistory
+					$historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
 					$historyObject.ComputerName = $server.NetName
 					$historyObject.InstanceName = $server.ServiceName
 					$historyObject.SqlInstance = $server.DomainInstanceName

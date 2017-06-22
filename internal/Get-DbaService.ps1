@@ -52,13 +52,13 @@
 		$DisplayName,
 		
 		[Parameter(ValueFromPipeline = $true)]
-		[Sqlcollective.Dbatools.Parameter.DbaInstanceParameter[]]
+		[Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter[]]
 		$ComputerName = $env:COMPUTERNAME,
 		
 		[System.Management.Automation.PSCredential]
 		$Credential,
 		
-		[Sqlcollective.Dbatools.Connection.ManagementConnectionType[]]
+		[Sqlcollaborative.Dbatools.Connection.ManagementConnectionType[]]
 		$DoNotUse,
 		
 		[switch]

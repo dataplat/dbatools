@@ -1,4 +1,4 @@
-function Copy-DbaQueryStoreConfig {
+﻿function Copy-DbaQueryStoreConfig {
 	<#
 	.SYNOPSIS
 		Copies the configuration of a Query Store enabled database and sets the copied configuration on other databases.
@@ -140,7 +140,7 @@ function Copy-DbaQueryStoreConfig {
 					DestinationDatabase = $db.name
 					Name = "QueryStore Configuration"
 					Status = $null
-					DateTime = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+					DateTime = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
 
 				if ($db.IsAccessible -eq $false) {

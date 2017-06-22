@@ -15,14 +15,14 @@ $ScriptBlock = {
 		return $Result
 	}
 	
-	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppDisabled = $Value
+	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppDisabled = $Value
 	
 	# Disable Async TEPP runspace if not needed
-	if ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled -or [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppDisabled) {
-		[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Stop()
+	if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled -or [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppDisabled) {
+		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Stop()
 	}
 	else {
-		[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Start()
+		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Start()
 	}
 	
 	return $Result
@@ -47,14 +47,14 @@ $ScriptBlock = {
 		return $Result
 	}
 	
-	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled = $Value
+	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled = $Value
 	
 	# Disable Async TEPP runspace if not needed
-	if ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled -or [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppDisabled) {
-		[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Stop()
+	if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled -or [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppDisabled) {
+		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Stop()
 	}
 	else {
-		[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Start()
+		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Start()
 	}
 	
 	return $Result
@@ -79,7 +79,7 @@ $ScriptBlock = {
 		return $Result
 	}
 	
-	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled = $Value
+	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled = $Value
 	
 	return $Result
 }
@@ -103,7 +103,7 @@ $ScriptBlock = {
 		return $Result
 	}
 	
-	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppUpdateInterval = $Value
+	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppUpdateInterval = $Value
 	
 	return $Result
 }
@@ -127,7 +127,7 @@ $ScriptBlock = {
 		return $Result
 	}
 	
-	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppUpdateTimeout = $Value
+	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppUpdateTimeout = $Value
 	
 	return $Result
 }

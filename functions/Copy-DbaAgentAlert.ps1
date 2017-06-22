@@ -1,4 +1,4 @@
-function Copy-DbaAgentAlert {
+﻿function Copy-DbaAgentAlert {
 	<#
 		.SYNOPSIS
 			Copy-DbaAgentAlert migrates alerts from one SQL Server to another.
@@ -118,7 +118,7 @@ function Copy-DbaAgentAlert {
 					Name              = "Alert Defaults"
 					Type              = "Alert Defaults"
 					Status            = $null
-					DateTime          = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+					DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
 				try {
 					Write-Message -Message "Creating Alert Defaults" -Level Output
@@ -147,7 +147,7 @@ function Copy-DbaAgentAlert {
 				Name              = $alertName
 				Type              = "Agent Alert"
 				Status            = $null
-				DateTime          = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+				DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 			}
 
 			if ($Alert -and $Alert -notcontains $alertName -and $ExcludeAlert -contains $alertName) {
@@ -237,7 +237,7 @@ function Copy-DbaAgentAlert {
 					Name              = $alertName
 					Type              = "Attach to Job"
 					Status            = $null
-					DateTime          = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+					DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
 				if ($PSCmdlet.ShouldProcess($Destination, "Adding $alertName to $jobName")) {
 					try {
@@ -270,7 +270,7 @@ function Copy-DbaAgentAlert {
 						Name              = $alertName
 						Type              = "Notifications"
 						Status            = $null
-						DateTime          = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+						DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 					}
 					# cant add them this way, we need to modify the existing one or give all options that are supported.
 					foreach ($notify in $notifications) {

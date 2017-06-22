@@ -108,7 +108,7 @@
         $Message,
         
         [Parameter(Mandatory = $true, ParameterSetName = 'Level')]
-        [sqlcollective.dbatools.dbaSystem.MessageLevel]
+        [Sqlcollaborative.Dbatools.dbaSystem.MessageLevel]
         $Level = "Warning",
         
         [bool]
@@ -135,16 +135,16 @@
     Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "Warning" -CustomMessage "The parameter -Warning has been deprecated and will be removed on release 1.0.0. Please use '-Level Warning' instead." -Silent $true
     
     $timestamp = Get-Date
-    $developerMode = [sqlcollective.dbatools.dbaSystem.DebugHost]::DeveloperMode
+    $developerMode = [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::DeveloperMode
     
-    $max_info = [sqlcollective.dbatools.dbaSystem.MessageHost]::MaximumInformation
-    $max_verbose = [sqlcollective.dbatools.dbaSystem.MessageHost]::MaximumVerbose
-    $max_debug = [sqlcollective.dbatools.dbaSystem.MessageHost]::MaximumDebug
-    $min_info = [sqlcollective.dbatools.dbaSystem.MessageHost]::MinimumInformation
-    $min_verbose = [sqlcollective.dbatools.dbaSystem.MessageHost]::MinimumVerbose
-    $min_debug = [sqlcollective.dbatools.dbaSystem.MessageHost]::MinimumDebug
-    $info_color = [sqlcollective.dbatools.dbaSystem.MessageHost]::InfoColor
-	$dev_color = [sqlcollective.dbatools.dbaSystem.MessageHost]::DeveloperColor
+    $max_info = [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::MaximumInformation
+    $max_verbose = [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::MaximumVerbose
+    $max_debug = [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::MaximumDebug
+    $min_info = [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::MinimumInformation
+    $min_verbose = [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::MinimumVerbose
+    $min_debug = [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::MinimumDebug
+    $info_color = [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::InfoColor
+	$dev_color = [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::DeveloperColor
 	
 	$coloredMessage = $Message
 	$baseMessage = $Message
@@ -155,7 +155,7 @@
 	if ($developerMode)
     {
         $channels_future = @()
-        if ((-not $Silent) -and ($Level -eq [Sqlcollective.Dbatools.dbaSystem.MessageLevel]::Warning)) { $channels_future += "Warning" }
+        if ((-not $Silent) -and ($Level -eq [Sqlcollaborative.Dbatools.dbaSystem.MessageLevel]::Warning)) { $channels_future += "Warning" }
         if ((-not $Silent) -and ($max_info -ge $Level) -and ($min_info -le $Level)) { $channels_future += "Information" }
         if (($max_verbose -ge $Level) -and ($min_verbose -le $Level)) { $channels_future += "Verbose" }
         if (($max_debug -ge $Level) -and ($min_debug -le $Level)){ $channels_future += "Debug" }
@@ -191,7 +191,7 @@
             else { $null = Write-Error -Message $newRecord -Category $record.CategoryInfo.Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue 2>&1 }
         }
         $foo = "bar"
-        [sqlcollective.dbatools.dbaSystem.DebugHost]::WriteErrorEntry($ErrorRecord, $FunctionName, $timestamp, $Message, $Host.InstanceId)
+        [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::WriteErrorEntry($ErrorRecord, $FunctionName, $timestamp, $Message, $Host.InstanceId)
     }
     #endregion Handle Errors
     
@@ -271,10 +271,10 @@
     $channel_Result = $channels -join ", "
     if ($channel_Result)
     {
-        [sqlcollective.dbatools.dbaSystem.DebugHost]::WriteLogEntry($Message, $channel_Result, $timestamp, $FunctionName, $Level, $Host.InstanceId, $Target)
+        [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::WriteLogEntry($Message, $channel_Result, $timestamp, $FunctionName, $Level, $Host.InstanceId, $Target)
     }
     else
     {
-        [sqlcollective.dbatools.dbaSystem.DebugHost]::WriteLogEntry($Message, "None", $timestamp, $FunctionName, $Level, $Host.InstanceId, $Target)
+        [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::WriteLogEntry($Message, "None", $timestamp, $FunctionName, $Level, $Host.InstanceId, $Target)
     }
 }

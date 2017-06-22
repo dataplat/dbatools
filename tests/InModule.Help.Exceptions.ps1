@@ -1,9 +1,9 @@
-$global:FunctionHelpTestExceptions = @(
+﻿$global:FunctionHelpTestExceptions = @(
     "TabExpansion2"
 )
 
 $global:HelpTestEnumeratedArrays = @(
-	"SqlCollective.Dbatools.Connection.ManagementConnectionType[]"
+	"Sqlcollaborative.Dbatools.Connection.ManagementConnectionType[]"
 )
 
 $global:HelpTestSkipParameterType = @{
