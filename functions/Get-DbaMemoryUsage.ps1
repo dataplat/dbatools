@@ -207,7 +207,7 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
 				Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptblock
 			}
 			else {
-				Write-Message -Level Verbose -Message "Can't connect to $Computer."
+				Write-Message -Level Warning -Message "Can't connect to $Computer."
 				Continue
 			}
 		}
