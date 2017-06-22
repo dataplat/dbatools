@@ -1,14 +1,4 @@
 ﻿Describe "Backup-DbaDatabase Integration Tests" -Tags "Integrationtests" {
-	Context "Properly restores a database on the local drive using Path" {
-		$results = Backup-DbaDatabase -SqlInstance localhost -BackupDirectory C:\temp\backups
-		It "Should return a database name, specifically master" {
-			($results.DatabaseName -contains 'master') | Should Be $true
-		}
-		It "Should return successful restore" {
-			$results.ForEach{ $_.BackupComplete | Should Be $true }
-		}
-	}
-	
 	Context "Should not backup if database and exclude match" {
 		$results = Backup-DbaDatabase -SqlInstance localhost -BackupDirectory C:\temp\backups -Database master -Exclude master
 		It "Should not return object" {
@@ -37,5 +27,16 @@
 		It "Should return successful restore" {
 			$results.RestoreComplete | Should Be $true
 		}
-	}	
+	}
+	
+	Context "Properly restores a database on the local drive using Path" {
+		$results = Backup-DbaDatabase -SqlInstance localhost -BackupDirectory C:\temp\backups
+		It "Should return a database name, specifically master" {
+			($results.DatabaseName -contains 'master') | Should Be $true
+		}
+		It "Should return successful restore" {
+			$results.ForEach{ $_.BackupComplete | Should Be $true }
+		}
+	}
+	
 }
