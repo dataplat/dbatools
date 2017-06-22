@@ -250,6 +250,18 @@ Function Write-DbaDataTable {
             $table = $Table.Split(".")[2]
         }
         
+        if ($Database -match "\[.*\]"){
+            $Database = ($Database -replace '\[','') -replace '\]',''
+        }
+        
+        if ($Schema -match "\[.*\]"){
+            $Schema = ($Schema -replace '\[','') -replace '\]',''
+        }
+
+        if ($table -match "\[.*\]"){
+            $table = ($table -replace '\[','') -replace '\]',''
+        }
+
         $fqtn = "[$Database].[$Schema].[$table]"
         
         try {
