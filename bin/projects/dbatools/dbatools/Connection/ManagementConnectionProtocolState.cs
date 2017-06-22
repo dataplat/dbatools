@@ -1,31 +1,28 @@
-﻿namespace Sqlcollaborative.Dbatools
+﻿namespace Sqlcollaborative.Dbatools.Connection
 {
-    namespace Connection
+    /// <summary>
+    /// The various types of state a connection-protocol may have
+    /// </summary>
+    public enum ManagementConnectionProtocolState
     {
         /// <summary>
-        /// The various types of state a connection-protocol may have
+        /// The default initial state, before any tests are performed
         /// </summary>
-        public enum ManagementConnectionProtocolState
-        {
-            /// <summary>
-            /// The default initial state, before any tests are performed
-            /// </summary>
-            Unknown = 1,
+        Unknown = 1,
 
-            /// <summary>
-            /// A successful connection was last established
-            /// </summary>
-            Success = 2,
+        /// <summary>
+        /// A successful connection was last established
+        /// </summary>
+        Success = 2,
 
-            /// <summary>
-            /// Connecting using the relevant protocol failed last it was tried
-            /// </summary>
-            Error = 3,
+        /// <summary>
+        /// Connecting using the relevant protocol failed last it was tried
+        /// </summary>
+        Error = 3,
 
-            /// <summary>
-            /// The relevant protocol has been disabled and should not be used
-            /// </summary>
-            Disabled = 4
-        }
+        /// <summary>
+        /// The relevant protocol has been disabled and should not be used
+        /// </summary>
+        Disabled = 4
     }
 }
