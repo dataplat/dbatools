@@ -19,8 +19,8 @@ FUNCTION Get-DbaAgentJob {
 		.PARAMETER ExcludeJob
 			The job(s) to exclude - this list is auto populated from the server.
 
-		.PARAMETER Enabled
-			True will return only enabled jobs, false will return disabled jobs.
+		.PARAMETER IncludeDisabled
+			Default is to only return enabled jobs, switch will also return disabled jobs.
 
 		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
@@ -47,9 +47,9 @@ FUNCTION Get-DbaAgentJob {
 			Returns all SQl Agent Job for the local and sql2016 SQL Server instances
 
 		.EXAMPLE
-			Get-DbaAgentJob -SqlInstance localhost -Enabled True
+			Get-DbaAgentJob -SqlInstance localhost -IncludeDisabled
 
-			Returns all enabled SQl Agent Job for the local SQL Server instances
+			Includes disabled SQl Agent Jobs in the returned set for the local SQL Server instances
 	#>
 	[CmdletBinding()]
 	param (
@@ -60,8 +60,7 @@ FUNCTION Get-DbaAgentJob {
 		$SqlCredential,
 		[object[]]$Job,
 		[object[]]$ExcludeJob,
-		[ValidateSet('True', 'False')]
-		[string]$Enabled,
+		[switch]$IncludeDisabled,
 		[switch]$Silent
 	)
 
@@ -77,19 +76,15 @@ FUNCTION Get-DbaAgentJob {
 			}
 
 			$jobs = $server.JobServer.Jobs
-			if ($Enabled) {
-				if($Enabled -eq 'True') { 
-					$jobs = $Jobs | Where-Object IsEnabled -eq $true
-				} else {
-					$jobs = $Jobs | Where-Object IsEnabled -eq $false
-				}
-			}
 			
 			if ($Job) {
 				$jobs = $jobs | Where-Object Name -In $Job
 			}
 			if ($ExcludeJob) {
 				$jobs = $jobs | Where-Object Name -NotIn $ExcludeJob
+			}
+			if (!$IncludeDisabled -and !$job) {
+					$jobs = $Jobs | Where-Object IsEnabled -eq $true
 			}
 			
 			foreach ($agentJob in $jobs) {
