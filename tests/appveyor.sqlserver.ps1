@@ -45,13 +45,11 @@ foreach ($instance in $instances) {
 }
 
 do {
-	Write-Warning "Waiting for SQL Server 2016 to start"
 	Start-Sleep 1
 }
 while ((Get-Service 'MSSQL$SQL2016').Status -ne 'Running' -and $i++ -lt 10)
 
 do {
-	Write-Warning "Waiting for SQL Server SQL2008R2SP2 to start"
 	Start-Sleep 1
 }
 while ((Get-Service 'MSSQL$SQL2008R2SP2').Status -ne 'Running' -and $i++ -lt 10)
