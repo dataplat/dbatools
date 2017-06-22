@@ -45,12 +45,13 @@ foreach ($instance in $instances) {
 }
 
 do {
-	# The timeout makes a sleep unnecessary
+	Start-Sleep 1
 	$null = (& sqlcmd -S localhost -b -Q "select 1" -d master)
 }
 while ($lastexitcode -ne 0 -and $t++ -lt 10)
 
 do {
+	Start-Sleep 1
 	$null = (& sqlcmd -S localhost\sql2016 -b -Q "select 1" -d master)
 }
 while ($lastexitcode -ne 0 -and $s++ -lt 10)
