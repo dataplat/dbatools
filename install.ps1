@@ -28,7 +28,7 @@ try {
 		if ($PSCommandPath.Length -gt 0) {
 			$path = Split-Path $PSCommandPath
 			if ($path -match "github") {
-				Write-Output "Looks like this isntaller is run from your GitHub Repo, defaulting to psmodulepath"
+				Write-Output "Looks like this installer is run from your GitHub Repo, defaulting to psmodulepath"
 				$path = $localpath
 			}
 		}
