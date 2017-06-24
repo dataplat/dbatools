@@ -82,10 +82,8 @@ namespace Sqlcollaborative.Dbatools.Utility
             {
                 return _digits;
             }
-            set
-            {
-                if (value < 0) { _digits = 0; }
-                else { _digits = value; }
+            set {
+                _digits = value < 0 ? 0 : value;
             }
         }
         private int _digits = 2;
@@ -96,7 +94,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <returns></returns>
         public override string ToString()
         {
-            string format = "{0:N" + _digits + "} {1}";
+            string format = "{0:N" + Digits + "} {1}";
 
             if (Terabyte > 1)
             {
@@ -116,7 +114,7 @@ namespace Sqlcollaborative.Dbatools.Utility
             }
             if (Byte > -1)
             {
-                return (String.Format(format, Byte, "B"));
+                return (String.Format("{0} {1}", Byte, "B"));
             }
             if (Byte == -1)
                 return "Unlimited";
