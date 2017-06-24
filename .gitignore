@@ -8,3 +8,4 @@ dbatools-exceptions.txt
 .vscode/*
 *.psproj
 dbatools.psprojs
+*.psd1

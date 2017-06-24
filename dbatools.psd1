@@ -303,7 +303,9 @@
 		'Remove-DbaNetworkCertificate',
 		'Enable-DbaForceNetworkEncryption',
 		'Disable-DbaForceNetworkEncryption',
-		'Get-DbaForceNetworkEncryption'
+		'Get-DbaForceNetworkEncryption',
+		'Get-DbaSqlManagementObject',
+		'Test-DbaSqlManagementObject'
 	)
 	
 	# Cmdlets to export from this module
