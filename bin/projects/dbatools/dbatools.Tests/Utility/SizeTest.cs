@@ -7,6 +7,14 @@ namespace Sqlcollaborative.Dbatools.Utility
     public class SizeTest
     {
         [TestMethod]
+        public void TestDefaultContrustor()
+        {
+            var size = new Size();
+            Assert.AreEqual(0, size.Byte);
+            Assert.AreEqual("0 B", size.ToString());
+        }
+
+        [TestMethod]
         public void TestGetHash()
         {
             var size = 10234453626262624;

@@ -1,8 +1,0 @@
-C:\Users\zippy\Documents\dbatools\bin\projects\dbatools\dbatools.Tests\bin\Debug\dbatools.Tests.dll
-C:\Users\zippy\Documents\dbatools\bin\projects\dbatools\dbatools.Tests\bin\Debug\dbatools.Tests.pdb
-C:\Users\zippy\Documents\dbatools\bin\projects\dbatools\dbatools.Tests\bin\Debug\dbatools.dll
-C:\Users\zippy\Documents\dbatools\bin\projects\dbatools\dbatools.Tests\bin\Debug\dbatools.pdb
-C:\Users\zippy\Documents\dbatools\bin\projects\dbatools\dbatools.Tests\bin\Debug\dbatools.xml
-C:\Users\zippy\Documents\dbatools\bin\projects\dbatools\dbatools.Tests\obj\Debug\dbatools.Tests.csprojResolveAssemblyReference.cache
-C:\Users\zippy\Documents\dbatools\bin\projects\dbatools\dbatools.Tests\obj\Debug\dbatools.Tests.dll
-C:\Users\zippy\Documents\dbatools\bin\projects\dbatools\dbatools.Tests\obj\Debug\dbatools.Tests.pdb
