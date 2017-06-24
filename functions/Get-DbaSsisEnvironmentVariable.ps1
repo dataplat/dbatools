@@ -8,7 +8,7 @@ The function communicates directly with SSISDB database, "SQL Server Intergation
 Each parameter (besides SqlInstance and SqlCredential) acts as the filter to only include or exclude particular element
 
 .PARAMETER SqlInstance
-The SQL Server instance.
+The SQL Server instance or set of instances separated by commas
 
 .PARAMETER SqlCredential
 SqlCredential object to connect as. If not specified, current Windows login will be used.
@@ -192,7 +192,7 @@ function Get-DbaSsisEnvironmentVariable {
                     else
                     {
                         $Environments = $catalog.Folders[$f].Environments | Where-Object {$_.Name -in $searchEnvironments}
-                        
+
                         foreach($e in $Environments)
                         {
                             #encryption handling
@@ -255,7 +255,9 @@ function Get-DbaSsisEnvironmentVariable {
                                 }
 
                                 [PSCustomObject]@{
-                                    Server          = $instance
+                                    ComputerName    = $connection.NetName
+                                    InstanceName    = $connection.ServiceName
+                                    SqlInstance     = $connection.DomainInstanceName
                                     Folder          = $f
                                     Environment     = $e.Name
                                     Id              = $variable.variable_id
