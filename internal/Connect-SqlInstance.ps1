@@ -72,7 +72,7 @@
     
     Note: Multiple servers in one call were never supported, those old functions were liable to break anyway and should be fixed soonest.
     #>
-    if ($SqlInstance.GetType() -eq [SqlCollective.Dbatools.Parameter.DbaInstanceParameter])
+    if ($SqlInstance.GetType() -eq [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter])
     {
         [DbaInstanceParameter]$ConvertedSqlInstance = $SqlInstance
     }
@@ -127,23 +127,24 @@
         {
             $server.ConnectionContext.Connect()
         }
-        
-        # Update cache for instance names
-        if ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $ConvertedSqlInstance.FullSmoName.ToLower())
-        {
-            [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $ConvertedSqlInstance.FullSmoName.ToLower()
-        }
-        
-        # Update cache for tepp names
-		[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.Databases.Name
-		[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.Logins.Name
-		[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["job"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.JobServer.Jobs.Name
-        [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["operator"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.JobServer.Operators.Name
-
-        $snapshots = $server.Databases | Where-Object IsDatabaseSnapShot
-        [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["snapshot"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $snapshots.Name
 		
-        return $server
+		# Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
+		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($ConvertedSqlInstance.FullSmoName.ToLower(), $server.ConnectionContext, ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
+		
+		# Update cache for instance names
+		if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $ConvertedSqlInstance.FullSmoName.ToLower()) {
+			[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $ConvertedSqlInstance.FullSmoName.ToLower()
+		}
+		
+		# Update lots of registered stuff
+		if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
+			$FullSmoName = $ConvertedSqlInstance.FullSmoName.ToLower()
+			foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
+				$ExecutionContext.InvokeCommand.InvokeScript($false, $scriptBlock, $null, $null)
+			}
+		}
+		
+		return $server
     }
     #endregion Input Object was a server object
     
@@ -249,22 +250,25 @@
             $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'ActiveConnections', 'AvailabilityDatabaseSynchronizationState', 'AvailabilityGroupName', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'ContainmentType', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
             $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordHashAlgorithm', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
         }
-    }
-    
-    # Update cache for instance names
-    if ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $ConvertedSqlInstance.FullSmoName.ToLower())
+	}
+	
+	# Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
+	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($ConvertedSqlInstance.FullSmoName.ToLower(), $server.ConnectionContext, ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
+	
+	# Update cache for instance names
+    if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $ConvertedSqlInstance.FullSmoName.ToLower())
     {
-        [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $ConvertedSqlInstance.FullSmoName.ToLower()
+        [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $ConvertedSqlInstance.FullSmoName.ToLower()
     }
-    
-    # Update cache for tepp names
-	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.Databases.Name
-	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.Logins.Name
-	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["job"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.JobServer.Jobs.Name
-    [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["operator"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $server.JobServer.Operators.Name
-
-    $snapshots = $server.Databases | Where-Object IsDatabaseSnapShot
-    [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["snapshot"][$ConvertedSqlInstance.FullSmoName.ToLower()] = $snapshots.Name
-    return $server
+	
+	# Update lots of registered stuff
+	if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
+		$FullSmoName = $ConvertedSqlInstance.FullSmoName.ToLower()
+		foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
+			$ExecutionContext.InvokeCommand.InvokeScript($false, $scriptBlock, $null, $null)
+		}
+	}
+	
+	return $server
     #endregion Input Object was anything else
 }

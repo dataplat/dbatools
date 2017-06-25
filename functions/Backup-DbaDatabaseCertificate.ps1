@@ -1,10 +1,10 @@
-function Export-DbaCertificate {
+function Backup-DbaDatabaseCertificate {
 	<#
 .SYNOPSIS
- Exports certificates from SQL Server using smo
+ Exports database certificates from SQL Server using smo
 
 .DESCRIPTION
-Exports certificates from SQL Server using smo and outputs the .cer and .pvk files
+Exports database certificates from SQL Server using smo and outputs the .cer and .pvk files
 
 .PARAMETER SqlInstance
 The SQL Server that you're connecting to.
@@ -58,20 +58,20 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
-Get-DbaCertificate -SqlInstance sql2016 | Export-DbaCertificate
+Get-DbaDatabaseCertificate -SqlInstance sql2016 | Backup-DbaDatabaseCertificate
 Exports all certificates found on sql2016 to the default data directory. Prompts for encryption and decryption  passwords.
 
 .EXAMPLE
-Export-DbaCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
+Backup-DbaDatabaseCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
 Exports all the certificates on the specified SQL Server
 
 .EXAMPLE
 $EncryptionPassword = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -force
-Export-DbaCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword $EncryptionPassword -Database Database1
+Backup-DbaDatabaseCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword $EncryptionPassword -Database Database1
 Exports the certificate that is used as the encryptor for a specific database on the specified SQL Server
 
 .EXAMPLE
-Export-DbaCertificate -SqlInstance Server1 -Path \\Server1\Certificates -Certificate CertTDE
+Backup-DbaDatabaseCertificate -SqlInstance Server1 -Path \\Server1\Certificates -Certificate CertTDE
 Exports all certificates named CertTDE on the specified SQL Server, not specifying the -EncryptionPassword will generate a prompt for user entry.
 
 #>
@@ -211,7 +211,7 @@ Exports all certificates named CertTDE on the specified SQL Server, not specifyi
 			}
 			
 			foreach ($db in $databases.Name) {
-                $CertificateCollection = Get-DbaCertificate -SqlInstance $server -Database $db
+                $CertificateCollection = Get-DbaDatabaseCertificate -SqlInstance $server -Database $db
                 if ($Certificate) {
 					$CertificateCollection = $CertificateCollection | Where-Object Name -In $Certificate
 				}

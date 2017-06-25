@@ -16,7 +16,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.Connection.ConnectionHost]::DisableCache = $Value
+    [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::DisableCache = $Value
     
     return $Result
 }
@@ -41,7 +41,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.Connection.ConnectionHost]::DisableBadCredentialCache = $Value
+    [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::DisableBadCredentialCache = $Value
     
     return $Result
 }
@@ -66,7 +66,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.Connection.ConnectionHost]::DisableCredentialAutoRegister = $Value
+    [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::DisableCredentialAutoRegister = $Value
     
     return $Result
 }
@@ -91,7 +91,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.Connection.ConnectionHost]::OverrideExplicitCredential = $Value
+    [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::OverrideExplicitCredential = $Value
     
     return $Result
 }
@@ -116,7 +116,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.Connection.ConnectionHost]::BadConnectionTimeout = $Value
+    [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::BadConnectionTimeout = $Value
     
     return $Result
 }
@@ -141,7 +141,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.Connection.ConnectionHost]::DisableCimPersistence = $Value
+    [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::DisableCimPersistence = $Value
     
     return $Result
 }
@@ -166,7 +166,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.Connection.ConnectionHost]::EnableCredentialFailover = $Value
+    [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::EnableCredentialFailover = $Value
     
     return $Result
 }

@@ -1,4 +1,4 @@
-function Register-DbaConfigHandler
+﻿function Register-DbaConfigHandler
 {
     <#
         .SYNOPSIS
@@ -70,5 +70,5 @@ function Register-DbaConfigHandler
         $ScriptBlock
     )
     
-    [sqlcollective.dbatools.Configuration.Config]::ConfigHandler[$Name.ToLower()] = $ScriptBlock
+    [Sqlcollaborative.Dbatools.Configuration.Config]::ConfigHandler[$Name.ToLower()] = $ScriptBlock
 }
