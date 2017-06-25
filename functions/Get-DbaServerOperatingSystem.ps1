@@ -4,7 +4,7 @@ function Get-DbaServerOperatingSystem {
 			Gets operating system information from the server.
 
 		.DESCRIPTION
-			Gets operating system information from the server and returns an object.
+			Gets operating system information from the server and returns as an object.
 
 		.PARAMETER ComputerName
 			The SQL Server (or server in general) that you're connecting to.
@@ -16,7 +16,7 @@ function Get-DbaServerOperatingSystem {
 			Use this switch to disable any kind of verbose messages.
 
 		.NOTES
-			Tags: ServerInfo
+			Tags: ServerInfo, OperatingSystem
 			Original Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
 
 			Website: https: //dbatools.io
@@ -28,10 +28,12 @@ function Get-DbaServerOperatingSystem {
 
 		.EXAMPLE
 			Get-DbaServerOperatingSystem
+
 			Example of how to use this cmdlet
 
 		.EXAMPLE
 			Get-DbaServerOperatingSystem
+
 			Another example of how to use this cmdlet
 	#>
 	[CmdletBinding()]
