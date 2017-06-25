@@ -8,7 +8,9 @@ The function communicates directly with SSISDB database, "SQL Server Intergation
 Each parameter (besides SqlInstance and SqlCredential) acts as the filter to only include or exclude particular element
 
 .PARAMETER SqlInstance
-The SQL Server instance or set of instances separated by commas
+SQLServer name or SMO object representing the SQL Server to connect to. 
+This can be a collection and recieve pipeline input to allow the function
+to be executed against multiple SQL Server instances.
 
 .PARAMETER SqlCredential
 SqlCredential object to connect as. If not specified, current Windows login will be used.
