@@ -164,7 +164,7 @@ function Get-DbaSsisEnvironmentVariable {
                 $searchFolders = $searchFolders | Where-Object { $_ -notin $FolderExclude }
             }
 
-            if($searchFolders -eq $null)
+            if($null -eq $searchFolders)
             {
                 Write-Message -Message "Instance: $instance > -Folder and -FolderExclude filters return an empty collection. Skipping" -Level Warning
             }
@@ -185,7 +185,7 @@ function Get-DbaSsisEnvironmentVariable {
                         $searchEnvironments = $searchEnvironments | Where-Object { $_ -notin $EnvironmentExclude }
                     }
 
-                    if($searchEnvironments -eq $null)
+                    if($null -eq $searchEnvironments)
                     {
                         Write-Message -Message "Instance: $instance / Folder: $f > -Environment and -EnvironmentExclude filters return an empty collection. Skipping."  -Level Warning
                     }
