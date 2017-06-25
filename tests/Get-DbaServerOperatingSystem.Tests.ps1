@@ -22,14 +22,13 @@ Describe "Get-DbaServerOperatingSystem Unit Tests" -Tag "Unittests" {
 }
 Describe "Get-DbaServerOperatingSystem Integration Test" -Tag "Integrationtests" {
 	$result = Get-DbaServerOperatingSystem -ComputerName localhost
-    Context "Validate output" {
-        it "Should return nothing if unable to connect to server" {
-            $result = Get-DbaServerOperatingSystem -ComputerName 'Melton5312'
+	Context "Validate output" {
+		it "Should return nothing if unable to connect to server" {
+			$result = Get-DbaServerOperatingSystem -ComputerName 'Melton5312'
 			$result | Should Be $null
-        }
-        it "Should return property of Server" {
-            $result.Server | Should Not Be $null
-        }
-		
-    }
+		}
+		it "Should return property of Server" {
+			$result.Server | Should Not Be $null
+		}
+	}
 }
