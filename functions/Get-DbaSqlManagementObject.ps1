@@ -28,6 +28,7 @@
 
 		.EXAMPLE
 			Get-DbaSqlManagementObject
+	
 			Returns all versions of SMO on the computer
 		
 		.EXAMPLE
@@ -44,7 +45,7 @@
 	)
 	begin
 	{
-		if ($VersionNumber -lt 9 and $VersionNumber -ne 0)
+		if ($VersionNumber -lt 9 -and $VersionNumber -ne 0)
 		{
 			throw "SMO existed from SQL 2005 (version 9) onward. Please use a version after 9. Quitting."
 		}	
@@ -61,21 +62,19 @@
 			$array = $version.Split("__")
 			if ($VersionNumber -eq 0)
 			{
-				Write-Message -Level Verbose -Message "Inside VersionNumber not present"
+				Write-Message -Level Verbose -Message "Did not pass a version, looking for all versions"
 				$VersionList += [PSCustomObject]@{
 					Version = $array[0]
-					LoadTemplate = "Add-Type -AssemblyName `"Microsoft.SqlServer.Smo, Version=$($array[0]), Culture=neutral, PublicKeyToken=89845dcd8080cc91`""
 				}
 			}
 			else
 			{
-				Write-Message -Level Verbose -Message "Inside the Version is $VersionNumber"
+				Write-Message -Level Verbose -Message "Passed version $VersionNumber, looking for that specific version"
 				if ($array[0].StartsWith("$VersionNumber."))
 				{
 					Write-Message -Level Verbose -Message "Found the Version $VersionNumber"
 					$VersionList += [PSCustomObject]@{
 						Version	  = $array[0]
-						LoadTemplate = "Add-Type -AssemblyName `"Microsoft.SqlServer.Smo, Version=$($array[0]), Culture=neutral, PublicKeyToken=89845dcd8080cc91`""
 					}
 					break
 				}
