@@ -125,7 +125,7 @@
 		'Test-DbaPowerPlan',
 		'Set-DbaPowerPlan',
 		'Test-DbaDiskAlignment',
-		'Get-DbaDatabaseFreespace',
+		'Get-DbaDatabaseSpace',
 		'Get-DbaClusterActiveNode',
 		'Test-DbaDatabaseOwner',
 		'Set-DbaDatabaseOwner',
