@@ -1,6 +1,5 @@
-function Copy-DbaLinkedServer
-{
-<# 
+function Copy-DbaLinkedServer {
+	<# 
 .SYNOPSIS 
 Copy-DbaLinkedServer migrates Linked Servers from one SQL Server to another. Linked Server logins and passwords are migrated as well.
 
@@ -116,8 +115,7 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 			$serviceInstanceId = $server.serviceInstanceId
 			
 			# Get entropy from the registry - hopefully finds the right SQL server instance
-			try
-			{
+			try {
 				[byte[]]$entropy = Invoke-Command -ComputerName $sourcenetbios -argumentlist $serviceInstanceId {
 					$serviceInstanceId = $args[0]
 					$entropy = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\$serviceInstanceId\Security\").Entropy
@@ -127,8 +125,7 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 			catch { throw "Can't access registry keys on $sourcename. Quitting." }
 			
 			# Decrypt the service master key
-			try
-			{
+			try {
 				$servicekey = Invoke-Command -ComputerName $sourcenetbios -argumentlist $smkbytes, $Entropy {
 					Add-Type -assembly System.Security
 					Add-Type -assembly System.Core
@@ -143,13 +140,11 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 			# Choose IV length based on the algorithm
 			if (($servicekey.Length -ne 16) -and ($servicekey.Length -ne 32)) { throw "Unknown key size. Cannot continue. Quitting." }
 			
-			if ($servicekey.Length -eq 16)
-			{
+			if ($servicekey.Length -eq 16) {
 				$decryptor = New-Object System.Security.Cryptography.TripleDESCryptoServiceProvider
 				$ivlen = 8
 			}
-			elseif ($servicekey.Length -eq 32)
-			{
+			elseif ($servicekey.Length -eq 32) {
 				$decryptor = New-Object System.Security.Cryptography.AESCryptoServiceProvider
 				$ivlen = 16
 			}
@@ -157,18 +152,14 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 			# Query link server password information from the Db. Remove header from pwdhash, extract IV (as iv) and ciphertext (as pass)
 			# Ignore links with blank credentials (integrated auth ?)
 			
-			if ($server.IsClustered -eq $false)
-			{
+			if ($server.IsClustered -eq $false) {
 				$connstring = "Server=ADMIN:$sourcenetbios\$instance;Trusted_Connection=True"
 			}
-			else
-			{
+			else {
 				$dacenabled = $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue
 				
-				if ($dacenabled -eq $false)
-				{
-					If ($Pscmdlet.ShouldProcess($server.name, "Enabling DAC on clustered instance"))
-					{
+				if ($dacenabled -eq $false) {
+					If ($Pscmdlet.ShouldProcess($server.name, "Enabling DAC on clustered instance")) {
 						Write-Verbose "DAC must be enabled for clusters, even when accessed from active node. Enabling."
 						$server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
 						$server.Configuration.Alter()
@@ -190,8 +181,7 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 				WHERE len(pwdhash) > 0"
 
 			# Get entropy from the registry
-			try
-			{
+			try {
 				$logins = Invoke-Command -ComputerName $sourcenetbios -argumentlist $connstring, $sql {
 					$connstring = $args[0]; $sql = $args[1]
 					$conn = New-Object System.Data.SqlClient.SQLConnection($connstring)
@@ -205,15 +195,12 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 					return $dt
 				}
 			}
-			catch
-			{
+			catch {
 				Write-Warning "Can't establish local DAC connection to $sourcename from $sourcename or other error. Quitting."
 			}
 			
-			if ($server.IsClustered -and $dacenabled -eq $false)
-			{
-				If ($Pscmdlet.ShouldProcess($server.name, "Disabling DAC on clustered instance"))
-				{
+			if ($server.IsClustered -and $dacenabled -eq $false) {
+				If ($Pscmdlet.ShouldProcess($server.name, "Disabling DAC on clustered instance")) {
 					Write-Verbose "Setting DAC config back to 0"
 					$server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $false
 					$server.Configuration.Alter()
@@ -227,12 +214,11 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 			
 			
 			# Go through each row in results
-			foreach ($login in $logins)
-			{
+			foreach ($login in $logins) {
 				# decrypt the password using the service master key and the extracted IV
 				$decryptor.Padding = "None"
 				$decrypt = $decryptor.Createdecryptor($servicekey, $login.iv)
-				$stream = New-Object System.IO.MemoryStream ( ,$login.pass)
+				$stream = New-Object System.IO.MemoryStream ( , $login.pass)
 				$crypto = New-Object System.Security.Cryptography.CryptoStream $stream, $decrypt, "Write"
 				
 				$crypto.Write($login.pass, 0, $login.pass.Length)
@@ -262,18 +248,15 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 			$sourcelogins = Get-LinkedServerLogins $sourceserver
 			
 			
-			if ($LinkedServers -ne $null)
-			{
+			if ($LinkedServers -ne $null) {
 				$serverlist = $sourceserver.LinkedServers | Where-Object { $LinkedServers -contains $_.Name }
 			}
 			else { $serverlist = $sourceserver.LinkedServers }
 			
 			Write-Output "Starting migration"
-			foreach ($linkedserver in $serverlist)
-			{
+			foreach ($linkedserver in $serverlist) {
 				$provider = $linkedserver.ProviderName
-				try
-				{
+				try {
 					$destserver.LinkedServers.Refresh()
 					$destserver.LinkedServers.LinkedServerLogins.Refresh()
 				}
@@ -282,28 +265,21 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 				$linkedservername = $linkedserver.name
 				
 				# This does a check to warn of missing OleDbProviderSettings but should only be checked on SQL on Windows
-				if ($destserver.Settings.OleDbProviderSettings.Name.Length -ne 0)
-				{
-					if (!$destserver.Settings.OleDbProviderSettings.Name.Contains($provider) -and !$provider.StartsWith("SQLN"))
-					{
+				if ($destserver.Settings.OleDbProviderSettings.Name.Length -ne 0) {
+					if (!$destserver.Settings.OleDbProviderSettings.Name.Contains($provider) -and !$provider.StartsWith("SQLN")) {
 						Write-Warning "$($destserver.name) does not support the $provider provider. Skipping $linkedservername."
 						continue
 					}
 				}
 				
-				if ($destserver.LinkedServers[$linkedservername] -ne $null)
-				{
-					if (!$force)
-					{
+				if ($destserver.LinkedServers[$linkedservername] -ne $null) {
+					if (!$force) {
 						Write-Warning "$linkedservername exists $($destserver.name). Skipping."
 						continue
 					}
-					else
-					{
-						If ($Pscmdlet.ShouldProcess($destination, "Dropping $linkedservername"))
-						{
-							if ($linkedserver.name -eq 'repl_distributor')
-							{
+					else {
+						If ($Pscmdlet.ShouldProcess($destination, "Dropping $linkedservername")) {
+							if ($linkedserver.name -eq 'repl_distributor') {
 								Write-Warning "repl_distributor cannot be dropped. Not going to try."
 								continue
 							}
@@ -315,10 +291,8 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 				}
 				
 				Write-Output "Attempting to migrate: $linkedservername"
-				If ($Pscmdlet.ShouldProcess($destination, "Migrating $linkedservername"))
-				{
-					try
-					{
+				If ($Pscmdlet.ShouldProcess($destination, "Migrating $linkedservername")) {
+					try {
 						$sql = $linkedserver.Script() | Out-String
 						$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 						Write-Verbose $sql
@@ -327,29 +301,23 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 						$destserver.LinkedServers.Refresh()
 						Write-Output "$linkedservername successfully copied"
 					}
-					catch
-					{
+					catch {
 						Write-Warning "$linkedservername could not be added to $($destserver.name)"
 						Write-Warning "Reason: $($_.Exception)"
 						$skiplogins = $true
 					}
 				}
 				
-				if ($skiplogins -ne $true)
-				{
+				if ($skiplogins -ne $true) {
 					$destlogins = $destserver.LinkedServers[$linkedservername].LinkedServerLogins
 					$lslogins = $sourcelogins | Where-Object { $_.LinkedServer -eq $linkedservername }
 					
-					foreach ($login in $lslogins)
-					{
-						If ($Pscmdlet.ShouldProcess($destination, "Migrating $($login.Login)"))
-						{
+					foreach ($login in $lslogins) {
+						If ($Pscmdlet.ShouldProcess($destination, "Migrating $($login.Login)")) {
 							$currentlogin = $destlogins | Where-Object { $_.RemoteUser -eq $login.Login }
 							
-							if ($currentlogin.RemoteUser.length -ne 0)
-							{
-								try
-								{
+							if ($currentlogin.RemoteUser.length -ne 0) {
+								try {
 									$currentlogin.SetRemotePassword($login.Password)
 									$currentlogin.Alter()
 								}
@@ -365,8 +333,7 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 	}
 	process {
 
-		if ($SourceSqlCredential.username -ne $null)
-		{
+		if ($SourceSqlCredential.username -ne $null) {
 			Write-Warning "You are using SQL credentials and this script requires Windows admin access to the source server. Trying anyway."
 		}
 		
@@ -388,8 +355,7 @@ Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to s
 		Write-Output "Checking if remote access is enabled on $source"
 		winrm id -r:$sourcenetbios 2>$null | Out-Null
 		
-		if ($LastExitCode -ne 0)
-		{
+		if ($LastExitCode -ne 0) {
 			Write-Warning "Having trouble with accessing PowerShell remotely on $source. Do you have Windows admin access and is PowerShell Remoting enabled? Anyway, good luck! This may work."
 		}
 		
