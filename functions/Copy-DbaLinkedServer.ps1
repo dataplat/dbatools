@@ -110,7 +110,7 @@ function Copy-DbaLinkedServer {
 			}
 			catch {
 				Stop-Function -Message "Can't run query" -Target $server -InnerErrorRecord $_
-#				throw "Can't execute SQL on $sourceName"
+				return
 			}
 
 			$sourceNetBios = Resolve-NetBiosName $server
@@ -126,7 +126,8 @@ function Copy-DbaLinkedServer {
 				}
 			}
 			catch {
-				throw "Can't access registry keys on $sourceName. Quitting."
+				Stop-Function -Message "Can't access registry keys on $sourceName. Quitting." -Target $server -InnerErrorRecord $_
+				return
 			}
 
 			# Decrypt the service master key
@@ -140,13 +141,14 @@ function Copy-DbaLinkedServer {
 				}
 			}
 			catch {
-				throw "Can't unprotect registry data on $($source.Name)). Quitting."
+				Stop-Function -Message "Can't unprotect registry data on $($source.Name)). Quitting." -Target $server -InnerErrorRecord $_
+				return
 			}
 
 			# Choose the encryption algorithm based on the SMK length - 3DES for 2008, AES for 2012
 			# Choose IV length based on the algorithm
 			if (($serviceKey.Length -ne 16) -and ($serviceKey.Length -ne 32)) {
-				Write-Output "ServiceKey found: $serviceKey.Length"
+				Write-Message -Level Verbose -Message "ServiceKey found: $serviceKey.Length"
 				throw "Unknown key size. Cannot continue. Quitting."
 			}
 
@@ -172,7 +174,7 @@ function Copy-DbaLinkedServer {
 
 				if ($dacEnabled -eq $false) {
 					If ($Pscmdlet.ShouldProcess($server.Name, "Enabling DAC on clustered instance")) {
-						Write-Verbose "DAC must be enabled for clusters, even when accessed from active node. Enabling."
+						Write-Message -Level Verbose -Message "DAC must be enabled for clusters, even when accessed from active node. Enabling."
 						$server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
 						$server.Configuration.Alter()
 					}
@@ -209,12 +211,13 @@ function Copy-DbaLinkedServer {
 				}
 			}
 			catch {
-				Write-Warning "Can't establish local DAC connection to $sourceName from $sourceName or other error. Quitting."
+				Stop-Function -Message "Can't establish local DAC connection" -Target $server -InnerErrorRecord $_
+				return
 			}
 
 			if ($server.IsClustered -and $dacEnabled -eq $false) {
 				If ($Pscmdlet.ShouldProcess($server.Name, "Disabling DAC on clustered instance")) {
-					Write-Verbose "Setting DAC config back to 0"
+					Write-Message -Level Verbose -Message "Setting DAC config back to 0"
 					$server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $false
 					$server.Configuration.Alter()
 				}
@@ -257,7 +260,7 @@ function Copy-DbaLinkedServer {
 				[bool]$force
 			)
 
-			Write-Output "Collecting Linked Server logins and passwords on $($sourceServer.Name)"
+			Write-Message -Level Verbose -Message "Collecting Linked Server logins and passwords on $($sourceServer.Name)"
 			$sourcelogins = Get-LinkedServerLogins $sourceServer
 
 			$serverlist = $sourceServer.LinkedServers
@@ -269,7 +272,6 @@ function Copy-DbaLinkedServer {
 				$serverList = $serverlist | Where-Object Name -NotIn $ExcludeLinkedServer
 			}
 
-			Write-Output "Starting migration"
 			foreach ($currentLinkedServer in $serverlist) {
 				$provider = $currentLinkedServer.ProviderName
 				try {
@@ -283,20 +285,20 @@ function Copy-DbaLinkedServer {
 				# This does a check to warn of missing OleDbProviderSettings but should only be checked on SQL on Windows
 				if ($destServer.Settings.OleDbProviderSettings.Name.Length -ne 0) {
 					if (!$destServer.Settings.OleDbProviderSettings.Name.Contains($provider) -and !$provider.StartsWith("SQLN")) {
-						Write-Warning "$($destServer.Name) does not support the $provider provider. Skipping $linkedServerName."
+						Write-Message -Level Warning -Message "$($destServer.Name) does not support the $provider provider. Skipping $linkedServerName."
 						continue
 					}
 				}
 
 				if ($destServer.LinkedServers[$linkedServerName] -ne $null) {
 					if (!$force) {
-						Write-Warning "$linkedServerName exists $($destServer.Name). Skipping."
+						Write-Message -Level Warning -Message "$linkedServerName exists $($destServer.Name). Skipping."
 						continue
 					}
 					else {
-						If ($Pscmdlet.ShouldProcess($destination, "Dropping $linkedServerName")) {
+						if ($Pscmdlet.ShouldProcess($destination, "Dropping $linkedServerName")) {
 							if ($currentLinkedServer.Name -eq 'repl_distributor') {
-								Write-Warning "repl_distributor cannot be dropped. Not going to try."
+								Write-Message -Level Warning -Message "repl_distributor cannot be dropped. Not going to try."
 								continue
 							}
 
