@@ -86,8 +86,10 @@ function Copy-DbaExtendedEvent {
 		[DbaInstanceParameter]$Source,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SourceSqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$DestinationSqlCredential,
 		[object[]]$XeSession,
 		[object[]]$ExcludeXeSession,
 		[switch]$Force,
