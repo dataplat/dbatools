@@ -1,83 +1,72 @@
 function Copy-DbaExtendedEvent {
 	<#
-.SYNOPSIS
-Migrates SQL Extended Event Sessions except the two default sessions, AlwaysOn_health and system_health.
+		.SYNOPSIS
+			Migrates SQL Extended Event Sessions except the two default sessions, AlwaysOn_health and system_health.
 
-.DESCRIPTION
-By default, all non-system extended events are migrated. If the event already exists on the destination, it will be skipped unless -Force is used. 
-	
-The -Session parameter is autopopulated for command-line completion and can be used to copy only specific objects.
+		.DESCRIPTION
+			By default, all non-system extended events are migrated. If the event already exists on the destination, it will be skipped unless -Force is used. 
+				
+			The -Session parameter is autopopulated for command-line completion and can be used to copy only specific objects.
 
-THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
+		.PARAMETER Source
+			Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-.PARAMETER Source
-Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+		.PARAMETER SourceSqlCredential
+			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-.PARAMETER Destination
-Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
 
-.PARAMETER SourceSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+			To connect as a different Windows user, run PowerShell as that user.
 
-$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
+		.PARAMETER Destination
+			Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-To connect as a different Windows user, run PowerShell as that user.
+		.PARAMETER DestinationSqlCredential
+			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-.PARAMETER DestinationSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
 
-$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+			To connect as a different Windows user, run PowerShell as that user.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-To connect as a different Windows user, run PowerShell as that user.
+		.PARAMETER Force
+			If sessions exists on destination server, it will be dropped and recreated.
 
-.PARAMETER Force
-If sessions exists on destination server, it will be dropped and recreated.
+		.PARAMETER WhatIf 
+			Shows what would happen if the command were to run. No actions are actually performed. 
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+		.PARAMETER Confirm 
+			Prompts you for confirmation before executing any changing operations within the command. 
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+		.NOTES
+			Tags: Migration, ExtendedEvent, XEvent
+			Author: Chrissy LeMaire (@cl), netnerds.net
+			Requires: sysadmin access on SQL Servers
 
-.NOTES
-Tags: Migration
-Author: Chrissy LeMaire (@cl), netnerds.net
-Requires: sysadmin access on SQL Servers
+		.LINK
+			https://dbatools.io/Copy-DbaExtendedEvent
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+		.EXAMPLE   
+			Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+			Copies all extended event sessions from sqlserver2014a to sqlcluster, using Windows credentials. 
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+		.EXAMPLE   
+			Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+			Copies all extended event sessions from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
-.LINK
-https://dbatools.io/Copy-DbaExtendedEvent
+		.EXAMPLE   
+			Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
-.EXAMPLE   
-Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster
+			Shows what would happen if the command were executed.
+			
+		.EXAMPLE   
+			Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -Session CheckQueries, MonitorUserDefinedException 
 
-Copies all extended event sessions from sqlserver2014a to sqlcluster, using Windows credentials. 
-
-.EXAMPLE   
-Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
-
-Copies all extended event sessions from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
-
-.EXAMPLE   
-Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -WhatIf
-
-Shows what would happen if the command were executed.
-	
-.EXAMPLE   
-Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -Session CheckQueries, MonitorUserDefinedException 
-
-Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from sqlserver2014a to sqlcluster.
-#>
+			Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from sqlserver2014a to sqlcluster.
+	#>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
