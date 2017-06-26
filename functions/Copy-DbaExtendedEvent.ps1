@@ -1,6 +1,5 @@
-function Copy-DbaExtendedEvent
-{
-<#
+function Copy-DbaExtendedEvent {
+	<#
 .SYNOPSIS
 Migrates SQL Extended Event Sessions except the two default sessions, AlwaysOn_health and system_health.
 
@@ -91,8 +90,7 @@ Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from s
 	)
 	begin {
 
-		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null)
-		{
+		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null) {
 			throw "SMO version is too old. To migrate Extended Events, you must have SQL Server Management Studio 2008 R2 or higher installed."
 		}
 		
@@ -102,8 +100,7 @@ Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from s
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
 
-		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
-		{
+		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
 			throw "Extended Events are only supported in SQL Server 2008 and above. Quitting."
 		}
 	}
@@ -121,30 +118,23 @@ Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from s
 		if ($sessions.length -gt 0) { $storeSessions = $storeSessions | Where-Object { $sessions -contains $_.Name } }
 		
 		Write-Output "Migrating sessions"
-		foreach ($session in $storeSessions)
-		{
+		foreach ($session in $storeSessions) {
 			$sessionName = $session.name
-			if ($deststore.sessions[$sessionName] -ne $null)
-			{
-				if ($force -eq $false)
-				{
+			if ($deststore.sessions[$sessionName] -ne $null) {
+				if ($force -eq $false) {
 					Write-Warning "Extended Event Session '$sessionName' was skipped because it already exists on $destination"
 					Write-Warning "Use -Force to drop and recreate"
 					continue
 				}
-				else
-				{
-					if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $sessionName"))
-					{
+				else {
+					if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $sessionName")) {
 						Write-Verbose "Extended Event Session '$sessionName' exists on $destination"
 						Write-Verbose "Force specified. Dropping $sessionName."
 						
-						try
-						{
+						try {
 							$deststore.sessions[$sessionName].Drop()
 						}
-						catch
-						{
+						catch {
 							Write-Exception "Unable to drop: $_  Moving on."
 							continue
 						}
@@ -152,24 +142,20 @@ Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from s
 				}
 			}
 			
-			if ($Pscmdlet.ShouldProcess($destination, "Migrating session $sessionName"))
-			{
-				try
-				{
+			if ($Pscmdlet.ShouldProcess($destination, "Migrating session $sessionName")) {
+				try {
 					$sql = $session.ScriptCreate().GetScript() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Verbose $sql
 					Write-Output "Migrating session $sessionName"
 					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
 					
-					if ($session.IsRunning -eq $true)
-					{
+					if ($session.IsRunning -eq $true) {
 						$deststore.sessions.Refresh()
 						$deststore.sessions[$sessionName].Start()
 					}
 				}
-				catch
-				{
+				catch {
 					Write-Exception $_
 				}
 			}
@@ -179,4 +165,3 @@ Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from s
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlExtendedEvent
 	}
 }
-
