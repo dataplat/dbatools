@@ -385,7 +385,11 @@
 	'Test-SqlPath',
 	'Test-SqlTempDbConfiguration',
 	'Watch-SqlDbLogin',
-	'Invoke-Sqlcmd2'
+	'Invoke-Sqlcmd2',
+	'Get-DbaSqlManagementObject',
+	'Get-DbaMaintenanceSolutionLog',
+	'Invoke-DbaLogShippingRecovery',
+	'Sync-DbaLoginPermission'
 	
 	# List of all modules packaged with this module
 	ModuleList = @()
