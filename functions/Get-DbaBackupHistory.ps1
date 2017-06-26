@@ -85,7 +85,7 @@ function Get-DbaBackupHistory {
 		Returns information about the most recent full backup for AdventureWorks2014 on sql2014
 	
 	.EXAMPLE
-		Get-SqlRegisteredServerName -SqlInstance sql2016 | Get-DbaBackupHistory
+		Get-DbaRegisteredServerName -SqlInstance sql2016 | Get-DbaBackupHistory
 		
 		Returns database backup information for every database on every server listed in the Central Management Server on sql2016
 	
