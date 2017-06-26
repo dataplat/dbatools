@@ -104,9 +104,9 @@ function Copy-DbaLinkedServer {
 
 			# Query Service Master Key from the database - remove padding from the key
 			# key_id 102 eq service master key, thumbprint 3 means encrypted with machinekey
-			$sql = "SELECT substring(crypt_property,9,len(crypt_property)-8) FROM sys.key_encryptions WHERE key_id=102 and (thumbprint=0x03 or thumbprint=0x0300000001)"
+			$sql = "SELECT substring(crypt_property,9,len(crypt_property)-8) as smk FROM sys.key_encryptions WHERE key_id=102 and (thumbprint=0x03 or thumbprint=0x0300000001)"
 			try {
-				$smkbytes = $server.Query($sql)
+				$smkbytes = $server.Query($sql).smk
 			}
 			catch {
 				Stop-Function -Message "Can't run query" -Target $server -InnerErrorRecord $_
