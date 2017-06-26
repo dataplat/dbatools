@@ -270,7 +270,7 @@ function Copy-DbaLinkedServer {
 			}
 
 			Write-Output "Starting migration"
-			foreach ($linkedserver in $serverlist) {
+			foreach ($currentLinkedServer in $serverlist) {
 				$provider = $currentLinkedServer.ProviderName
 				try {
 					$destServer.LinkedServers.Refresh()
