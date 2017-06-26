@@ -76,7 +76,7 @@ function Copy-DbaExtendedEvent {
 			Shows what would happen if the command were executed.
 
 		.EXAMPLE
-			Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -Session CheckQueries, MonitorUserDefinedException
+			Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -XeSession CheckQueries, MonitorUserDefinedException
 
 			Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from sqlserver2014a to sqlcluster.
 	#>
