@@ -93,12 +93,20 @@ function Resolve-DbaNetworkName {
 						Stop-Function -Message "DNS name not found" -Continue -InnerErrorRecord $_
 					}
 				}
-
+				
 				if ($fqdn -notmatch "\.") {
-					$dnsdomain = $env:USERDNSDOMAIN.ToLower()
-					$fqdn = "$fqdn.$dnsdomain"
+					if ($computer -match "\.") {
+						$dnsdomain = $computer.ComputerName.Substring($computer.ComputerName.IndexOf(".") + 1)
+						$fqdn = "$resolved.$dnsdomain"
+					}
+					else {
+						$dnsdomain = $env:USERDNSDOMAIN.ToLower()
+						if ($dnsdomain -match "\.") {
+							$fqdn = "$fqdn.$dnsdomain"
+						}
+					}
 				}
-
+				
 				$hostname = $fqdn.Split(".")[0]
 
 				[PSCustomObject]@{
