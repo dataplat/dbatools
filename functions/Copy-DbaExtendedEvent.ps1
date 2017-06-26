@@ -45,7 +45,7 @@ function Copy-DbaExtendedEvent {
 		.PARAMETER Confirm
 			Prompts you for confirmation before executing any changing operations within the command.
 
-		.PARAMETER Silent 
+		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -157,10 +157,10 @@ function Copy-DbaExtendedEvent {
 			if ($Pscmdlet.ShouldProcess($destination, "Migrating session $sessionName")) {
 				try {
 					$sql = $session.ScriptCreate().GetScript() | Out-String
-					
+
 					Write-Verbose $sql
 					Write-Output "Migrating session $sessionName"
-					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+					$null = $destServer.Query($sql)
 
 					if ($session.IsRunning -eq $true) {
 						$destStore.Sessions.Refresh()
