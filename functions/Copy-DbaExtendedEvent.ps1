@@ -121,7 +121,7 @@ function Copy-DbaExtendedEvent {
 		$destSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $destSqlConn
 		$destStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $destSqlStoreConnection
 
-		$storeSessions = $sourceStore.sessions | Where-Object { $_.Name -notin 'AlwaysOn_health', 'system_health' }
+		$storeSessions = $sourceStore.Sessions | Where-Object { $_.Name -notin 'AlwaysOn_health', 'system_health' }
 		if ($XeSession) {
 			$storeSessions = $storeSessions | Where-Object Name -In $XeSession
 		}
@@ -131,8 +131,8 @@ function Copy-DbaExtendedEvent {
 
 		Write-Output "Migrating sessions"
 		foreach ($session in $storeSessions) {
-			$sessionName = $session.name
-			if ($deststore.sessions[$sessionName] -ne $null) {
+			$sessionName = $session.Name
+			if ($destStore.Sessions[$sessionName] -ne $null) {
 				if ($force -eq $false) {
 					Write-Warning "Extended Event Session '$sessionName' was skipped because it already exists on $destination"
 					Write-Warning "Use -Force to drop and recreate"
@@ -144,7 +144,7 @@ function Copy-DbaExtendedEvent {
 						Write-Verbose "Force specified. Dropping $sessionName."
 
 						try {
-							$deststore.sessions[$sessionName].Drop()
+							$destStore.Sessions[$sessionName].Drop()
 						}
 						catch {
 							Write-Exception "Unable to drop: $_  Moving on."
@@ -163,8 +163,8 @@ function Copy-DbaExtendedEvent {
 					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 
 					if ($session.IsRunning -eq $true) {
-						$deststore.sessions.Refresh()
-						$deststore.sessions[$sessionName].Start()
+						$destStore.Sessions.Refresh()
+						$destStore.Sessions[$sessionName].Start()
 					}
 				}
 				catch {
