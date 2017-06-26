@@ -304,7 +304,7 @@ Function Write-DbaDataTable {
             'System.TimeSpan' = 'nvarchar(30)';
             'System.String' = 'nvarchar(MAX)';
             'System.Char' = 'nvarchar(1)'
-            'System.DateTime' = 'datetime';
+            'System.DateTime' = 'datetime2';
             'System.Boolean' = 'bit';
             'System.Guid' = 'uniqueidentifier';
             'Int32' = 'int';
@@ -321,7 +321,7 @@ Function Write-DbaDataTable {
             'TimeSpan' = 'nvarchar(30)';
             'String' = 'nvarchar(MAX)';
             'Char' = 'nvarchar(1)'
-            'DateTime' = 'datetime';
+            'DateTime' = 'datetime2';
             'Boolean' = 'bit';
             'Bool' = 'bit';
             'Guid' = 'uniqueidentifier';
