@@ -1,82 +1,77 @@
 function Copy-DbaLinkedServer {
 	<# 
-.SYNOPSIS 
-Copy-DbaLinkedServer migrates Linked Servers from one SQL Server to another. Linked Server logins and passwords are migrated as well.
+		.SYNOPSIS 
+			Copy-DbaLinkedServer migrates Linked Servers from one SQL Server to another. Linked Server logins and passwords are migrated as well.
 
-.DESCRIPTION 
-By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Linked Servers from one server to another, while maintaining username and password.
+		.DESCRIPTION 
+			By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Linked Servers from one server to another, while maintaining username and password.
 
-Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
-License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
+			Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
+			License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
 
-THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
+		.PARAMETER Source
+			Source SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.
 
-.PARAMETER Source
-Source SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.
+		.PARAMETER SourceSqlCredential
+			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-.PARAMETER Destination
-Destination SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
 
-.PARAMETER LinkedServers
-Auto-populated list of Linked Servers from Source. If no LinkedServer is specified, all Linked Servers will be migrated.
-Note: if spaces exist in the Linked Server name, you will have to type "" or '' around it. I couldn't figure out a way around this.
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+			To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER Force
-By default, if a Linked Server exists on the source and destination, the Linked Server is not copied over. Specifying -force will drop and recreate the Linked Server on the Destination server.
+		.PARAMETER Destination
+			Destination SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.
 
-.PARAMETER SourceSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+		.PARAMETER DestinationSqlCredential
+			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
+			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-To connect as a different Windows user, run PowerShell as that user.
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+			To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER DestinationSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+		.PARAMETER LinkedServer
+			The linked server(s) to process - this list is auto populated from the server. If unspecified, all linked servers will be processed.
 
-$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
+		.PARAMETER ExcludeLinkedServer
+			The linked server(s) to exclude - this list is auto populated from the server
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-To connect as a different Windows user, run PowerShell as that user.
+		.PARAMETER WhatIf 
+			Shows what would happen if the command were to run. No actions are actually performed. 
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+		.PARAMETER Confirm 
+			Prompts you for confirmation before executing any changing operations within the command. 
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+		.PARAMETER Force
+			By default, if a Linked Server exists on the source and destination, the Linked Server is not copied over. Specifying -force will drop and recreate the Linked Server on the Destination server.
 
-.NOTES
-Tags: WSMan, Migration
-Author: Chrissy LeMaire (@cl), netnerds.net
-Requires: sysadmin access on SQL Servers, Remote Registry & Remote Adminsitration enabled and accessible on source server.
-Limitations: Hasn't been tested thoroughly. Works on Win8.1 and SQL Server 2012 & 2014 so far.
-This just copies the SQL portion. It does not copy files (ie. a local SQLITE database, or Access Db), nor does it configure ODbC entries.
+		.PARAMETER Silent 
+			Use this switch to disable any kind of verbose messages
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+		.NOTES
+			Tags: WSMan, Migration, LinkedServer
+			Author: Chrissy LeMaire (@cl), netnerds.net
+			Requires: sysadmin access on SQL Servers, Remote Registry & Remote Adminsitration enabled and accessible on source server.
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+			Limitations: Hasn't been tested thoroughly. Works on Win8.1 and SQL Server 2012 & 2014 so far.
+			This just copies the SQL portion. It does not copy files (ie. a local SQLITE database, or Access Db), nor does it configure ODBC entries.
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+		.LINK
+			https://dbatools.io/Copy-DbaLinkedServer 
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		.EXAMPLE   
+			Copy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster
 
-.LINK
-https://dbatools.io/Copy-DbaLinkedServer 
+			Description
+			Copies all SQL Server Linked Servers on sqlserver2014a to sqlcluster. If Linked Server exists on destination, it will be skipped.
 
-.EXAMPLE   
-Copy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster
+		.EXAMPLE   
+			Copy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster -LinkedServer SQL2K5,SQL2k -Force
 
-Description
-Copies all SQL Server Linked Servers on sqlserver2014a to sqlcluster. If Linked Server exists on destination, it will be skipped.
-
-.EXAMPLE   
-Copy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster -LinkedServer SQL2K5,SQL2k -Force
-
-Description
-Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped.
-#>	
+			Description
+			Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped.
+	#>	
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true)]
