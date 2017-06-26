@@ -310,10 +310,9 @@ function Copy-DbaLinkedServer {
 				If ($Pscmdlet.ShouldProcess($destination, "Migrating $linkedServerName")) {
 					try {
 						$sql = $currentLinkedServer.Script() | Out-String
-						$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 						Write-Verbose $sql
 
-						[void]$destServer.ConnectionContext.ExecuteNonQuery($sql)
+						$destServer.Query($sql)
 						$destServer.LinkedServers.Refresh()
 						Write-Output "$linkedServerName successfully copied"
 					}
