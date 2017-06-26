@@ -129,26 +129,25 @@ function Copy-DbaExtendedEvent {
 			$storeSessions = $storeSessions | Where-Object Name -NotIn $ExcludeXeSession
 		}
 
-		Write-Output "Migrating sessions"
+		Write-Message -Level Verbose -Message "Migrating sessions"
 		foreach ($session in $storeSessions) {
 			$sessionName = $session.Name
 			if ($destStore.Sessions[$sessionName] -ne $null) {
 				if ($force -eq $false) {
-					Write-Warning "Extended Event Session '$sessionName' was skipped because it already exists on $destination"
-					Write-Warning "Use -Force to drop and recreate"
+					Write-Message -Level Warning -Message "Extended Event Session '$sessionName' was skipped because it already exists on $destination"
+					Write-Message -Level Warning -Message "Use -Force to drop and recreate"
 					continue
 				}
 				else {
 					if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $sessionName")) {
-						Write-Verbose "Extended Event Session '$sessionName' exists on $destination"
-						Write-Verbose "Force specified. Dropping $sessionName."
+						Write-Message -Level Verbose -Message "Extended Event Session '$sessionName' exists on $destination"
+						Write-Message -Level Verbose -Message "Force specified. Dropping $sessionName."
 
 						try {
 							$destStore.Sessions[$sessionName].Drop()
 						}
 						catch {
-							Write-Exception "Unable to drop: $_  Moving on."
-							continue
+							Stop-Function -Message "Unable to drop session. Moving on." -Target $sessionName -InnerErrorRecord $_ -Continue
 						}
 					}
 				}
@@ -158,8 +157,8 @@ function Copy-DbaExtendedEvent {
 				try {
 					$sql = $session.ScriptCreate().GetScript() | Out-String
 
-					Write-Verbose $sql
-					Write-Output "Migrating session $sessionName"
+					Write-Message -Level Debug -Message $sql
+					Write-Message -Level Verbose -Message "Migrating session $sessionName"
 					$null = $destServer.Query($sql)
 
 					if ($session.IsRunning -eq $true) {
@@ -168,7 +167,7 @@ function Copy-DbaExtendedEvent {
 					}
 				}
 				catch {
-					Write-Exception $_
+					Stop-Function -Message "Unable to create session" -Target $sessionName -InnerErrorRecord $_
 				}
 			}
 		}
