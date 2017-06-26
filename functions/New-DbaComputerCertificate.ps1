@@ -4,7 +4,7 @@
 Creates a new computer certificate useful for Forcing Encryption
 
 .DESCRIPTION
-Creates a new computer certificate - signed by an Active Directory CA, using the Web Server certificate. Self-signing is not currenty supported but feel free to add it.
+Creates a new computer certificate - self-signed or signed by an Active Directory CA, using the Web Server certificate. 
 	
 By default, a key with a length of 1024 and a friendly name of the machines FQDN is generated.
 	
@@ -40,12 +40,24 @@ The FriendlyName listed in the certificate. This defaults to the FQDN of the $Co
 .PARAMETER KeyLength
 The length of the key - defaults to 1024
 	
+.PARAMETER Store
+Certificate store - defaults to LocalMachine
+
+.PARAMETER Folder
+Certificate folder - defaults to My (Personal)
+
 .PARAMETER CertificateTemplate
 The domain's Certificate Template - WebServer by default.
 
 .PARAMETER InstanceClusterName
 When creating certs for a cluster, use this parameter to create the certificate for the cluster node name. Use ComputerName for each of the nodes.
 		
+.PARAMETER Dns
+Specify the Dns entries listed in SAN. By default, it will be ComputerName + FQDN, or in the case of clusters, clustername + cluster FQDN.
+	
+.PARAMETER SelfSigned 
+Creates a self-signed certificate. All other parameters can still apply except CaServer and CaName because the command does not go and get the certificate signed.
+
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
 
@@ -84,6 +96,11 @@ The certificate is then copied to sqla _and_ sqlb over WinRM and imported.
 New-DbaComputerCertificate -ComputerName Server1 -WhatIf
 
 Shows what would happen if the command were run
+	
+.EXAMPLE
+New-DbaComputerCertificate -SelfSigned
+
+Creates a self-signed certificate
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
@@ -99,9 +116,14 @@ Shows what would happen if the command were run
 		[string]$FriendlyName = "SQL Server",
 		[string]$CertificateTemplate = "WebServer",
 		[int]$KeyLength = 1024,
+		[string]$Store = "LocalMachine",
+		[string]$Folder = "My",
+		[string[]]$Dns,
+		[switch]$SelfSigned,
 		[switch]$Silent
 	)
 	begin {
+		
 		Test-RunAsAdmin
 		
 		function GetHexLength([int]$strLen) {
@@ -145,9 +167,9 @@ Shows what would happen if the command were run
 				else { "_continue_=$line" }
 			}
 		}
-	
-	
-	if (!$CaServer -or !$CaName) {
+		
+		
+		if ((!$CaServer -or !$CaName) -and !$SelfSigned) {
 			try {
 				Write-Message -Level Output -Message "No CaServer or CaName specified. Finding it."
 				# hat tip Vadims Podans
@@ -168,32 +190,29 @@ Shows what would happen if the command were run
 				Stop-Function -Message "Cannot access Active Directory or find the Certificate Authority: $_"
 				return
 			}
-		}
-		
-		if (!$CaServer) {
-			$CaServer = ($allcas | Select-Object -First 1).Computer
-			Write-Message -Level Output -Message "Root Server: $CaServer"
-		}
-		
-		if (!$CaName) {
-			$CaName = ($allcas | Select-Object -First 1).CA
-			Write-Message -Level Output -Message "Root CA name: $CaName"
+			
+			if (!$CaServer) {
+				$CaServer = ($allcas | Select-Object -First 1).Computer
+				Write-Message -Level Output -Message "Root Server: $CaServer"
+			}
+			
+			if (!$CaName) {
+				$CaName = ($allcas | Select-Object -First 1).CA
+				Write-Message -Level Output -Message "Root CA name: $CaName"
+			}
 		}
 		
 		$tempdir = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 		$certTemplate = "CertificateTemplate:$CertificateTemplate"
-		
 	}
 	
 	process {
-		
 		if (Test-FunctionInterrupt) { return }
 		
 		foreach ($computer in $computername) {
 			if (!$secondarynode) {
 				if (![dbavalidate]::IsLocalhost($computer) -and !$Password) {
-					Write-Message -Level Output -Message "You have specified a remote computer. A password is required for private key encryption/decryption for import."
-					$Password = Read-Host -AsSecureString -Prompt "Password"
+					$Password = ((65 .. 90) + (97 .. 122) | Get-Random -Count 29 | ForEach-Object { [char]$_ }) -join "" | ConvertTo-SecureString -AsPlainText -Force
 				}
 				
 				if ($InstanceClusterName) {
@@ -205,14 +224,15 @@ Shows what would happen if the command were run
 					}
 				}
 				else {
-					$dns = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Turbo -WarningAction SilentlyContinue
 					
-					if (!$dns) {
+					$resolved = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Turbo -WarningAction SilentlyContinue
+					
+					if (!$resolved) {
 						$fqdn = "$ComputerName.$env:USERDNSDOMAIN"
 						Write-Message -Level Warning -Message "Server name cannot be resolved. Guessing it's $fqdn"
 					}
 					else {
-						$fqdn = $dns.fqdn
+						$fqdn = $resolved.fqdn
 					}
 				}
 				
@@ -239,7 +259,11 @@ Shows what would happen if the command were run
 				# Make sure output is compat with clusters
 				$shortname = $fqdn.Split(".")[0]
 				
-				$san = Get-SanExt $computer, $fqdn
+				if (!$dns) {
+					$dns = $shortname, $fqdn
+				}
+				
+				$san = Get-SanExt $dns
 				# Write config file
 				Set-Content $certcfg "[Version]"
 				Add-Content $certcfg 'Signature="$Windows NT$"'
@@ -256,7 +280,12 @@ Shows what would happen if the command were run
 				Add-Content $certcfg "UseExistingKeySet = FALSE"
 				Add-Content $certcfg "ProviderName = ""Microsoft RSA SChannel Cryptographic Provider"""
 				Add-Content $certcfg "ProviderType = 12"
-				Add-Content $certcfg "RequestType = PKCS10"
+				if ($SelfSigned) {
+					Add-Content $certcfg "RequestType = Cert"
+				}
+				else {
+					Add-Content $certcfg "RequestType = PKCS10"
+				}
 				Add-Content $certcfg "KeyUsage = 0xa0"
 				Add-Content $certcfg "[EnhancedKeyUsageExtension]"
 				Add-Content $certcfg "OID=1.3.6.1.5.5.7.3.1"
@@ -264,82 +293,85 @@ Shows what would happen if the command were run
 				Add-Content $certcfg $san
 				Add-Content $certcfg "Critical=2.5.29.17"
 				
-				if ($PScmdlet.ShouldProcess("local", "Creating certificate request for $computer")) {
+				
+				if ($PScmdlet.ShouldProcess("local", "Creating certificate for $computer")) {
 					Write-Message -Level Output -Message "Running: certreq -new $certcfg $certcsr"
 					$create = certreq -new $certcfg $certcsr
 				}
 				
-				if ($PScmdlet.ShouldProcess("local", "Submitting certificate request for $computer to $CaServer\$CaName")) {
-					Write-Message -Level Output -Message "certreq -submit -config `"$CaServer\$CaName`" -attrib $certTemplate $certcsr $certcrt $certpfx"
-					$submit = certreq -submit -config ""$CaServer\$CaName"" -attrib $certTemplate $certcsr $certcrt $certpfx
-				}
-				
-				if ($submit -match "ssued") {
-					Write-Message -Level Output -Message "certreq -accept -machine $certcrt"
-					$null = certreq -accept -machine $certcrt
-					$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-					$cert.Import($certcrt, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
-					$storedcert = Get-ChildItem Cert:\LocalMachine\My -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
+				if ($SelfSigned) {
+					$serial = (($create -Split "Serial Number:" -Split "Subject")[2]).Trim() # D:
+					$storedcert = Get-ChildItem Cert:\LocalMachine\My -Recurse | Where-Object SerialNumber -eq $serial
 					
 					if ([dbavalidate]::IsLocalhost($computer)) {
-						$storedcert
+						$storedcert | Select-Object * | Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
 					}
 				}
-				elseif ($submit) {
-					Write-Message -Level Warning -Message "Something went wrong"
-					Write-Message -Level Warning -Message "$create"
-					Write-Message -Level Warning -Message "$submit"
-					Stop-Function -Message "Failure when attempting to create the cert on $computer. Exception: $_" -ErrorRecord $_ -Target $computer -Continue
-				}
-			}
-			
-			if (![dbavalidate]::IsLocalhost($computer)) {
-				
-				if (!$secondarynode) {
-					if ($PScmdlet.ShouldProcess("local", "Removing cert from disk")) {
-						$storedcert | Remove-Item
+				else {
+					if ($PScmdlet.ShouldProcess("local", "Submitting certificate request for $computer to $CaServer\$CaName")) {
+						Write-Message -Level Output -Message "certreq -submit -config `"$CaServer\$CaName`" -attrib $certTemplate $certcsr $certcrt $certpfx"
+						$submit = certreq -submit -config ""$CaServer\$CaName"" -attrib $certTemplate $certcsr $certcrt $certpfx
 					}
 					
-					if ($PScmdlet.ShouldProcess("local", "Generating pfx and reading from disk")) {
-						Write-Message -Level Output -Message "Exporting PFX with password to $temppfx"
-						$certdata = $storedcert.Export("pfx", $password)
-						[System.IO.File]::WriteAllBytes($temppfx, $certdata)
-						$file = [System.IO.File]::ReadAllBytes($temppfx)
+					if ($submit -match "ssued") {
+						Write-Message -Level Output -Message "certreq -accept -machine $certcrt"
+						$null = certreq -accept -machine $certcrt
+						$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+						$cert.Import($certcrt, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
+						$storedcert = Get-ChildItem "Cert:\$store\$folder" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
 					}
-					if ($InstanceClusterName) { $secondarynode = $true }
-				}
-				
-				$scriptblock = {
-					$tempdir = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-					$filename = "$tempdir\cert.cer"
-					
-					[System.IO.File]::WriteAllBytes($filename, $args[0])
-					$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-					$cert.Import($filename, $args[1], [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
-					
-					$store = New-Object System.Security.Cryptography.X509Certificates.X509Store("My", "LocalMachine")
-					$store.Open('ReadWrite')
-					$store.Add($cert)
-					$store.Close()
-					
-					Get-ChildItem Cert:\LocalMachine\My -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
-					
-					Remove-Item -Path $filename
-				}
-				
-				if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to import new cert")) {
-					try {
-						Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $file, $Password -ScriptBlock $scriptblock -ErrorAction Stop
+					elseif ($submit) {
+						Write-Message -Level Warning -Message "Something went wrong"
+						Write-Message -Level Warning -Message "$create"
+						Write-Message -Level Warning -Message "$submit"
+						Stop-Function -Message "Failure when attempting to create the cert on $computer. Exception: $_" -ErrorRecord $_ -Target $computer -Continue
 					}
-					catch {
-						Stop-Function -Message $_ -ErrorRecord $_ -Target $computer -Continue
+					
+					if ([dbavalidate]::IsLocalhost($computer)) {
+						$storedcert | Select * | Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
 					}
 				}
-			}
-			if ($PScmdlet.ShouldProcess("local", "Removing all files from $certdir")) {
-				Remove-Item -Force -Recurse $certdir -ErrorAction SilentlyContinue
 			}
 		}
-		Remove-Variable -Name Password
+		
+		if (![dbavalidate]::IsLocalhost($computer)) {
+			
+			if (!$secondarynode) {
+				if ($PScmdlet.ShouldProcess("local", "Generating pfx and reading from disk")) {
+					Write-Message -Level Output -Message "Exporting PFX with password to $temppfx"
+					$certdata = $storedcert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $password)
+				}
+				
+				if ($PScmdlet.ShouldProcess("local", "Removing cert from disk")) {
+					$storedcert | Remove-Item
+				}
+				
+				if ($InstanceClusterName) { $secondarynode = $true }
+			}
+			
+			$scriptblock = {
+				$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+				$cert.Import($args[0], $args[1], "Exportable,PersistKeySet")
+				
+				$certstore = New-Object System.Security.Cryptography.X509Certificates.X509Store($args[3], $args[2])
+				$certstore.Open('ReadWrite')
+				$certstore.Add($cert)
+				$certstore.Close()
+				Get-ChildItem "Cert:\$($args[2])\$($args[3])" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
+			}
+			
+			if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to import new cert")) {
+				try {
+					Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $Password, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop |
+					Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
+				}
+				catch {
+					Stop-Function -Message $_ -ErrorRecord $_ -Target $computer -Continue
+				}
+			}
+		}
+		if ($PScmdlet.ShouldProcess("local", "Removing all files from $certdir")) {
+			Remove-Item -Force -Recurse $certdir -ErrorAction SilentlyContinue
+		}
 	}
 }

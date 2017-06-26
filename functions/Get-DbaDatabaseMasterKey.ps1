@@ -1,4 +1,4 @@
-﻿Function Get-DbaMasterKey {
+﻿Function Get-DbaDatabaseMasterKey {
 	<#
 .SYNOPSIS
 Gets specified database master key
@@ -35,12 +35,12 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
-Get-DbaMasterKey -SqlInstance sql2016
+Get-DbaDatabaseMasterKey -SqlInstance sql2016
 
 Gets all master database keys
 
 .EXAMPLE
-Get-DbaMasterKey -SqlInstance Server1 -Database db1
+Get-DbaDatabaseMasterKey -SqlInstance Server1 -Database db1
 
 Gets the master key for the db1 database
 
@@ -65,8 +65,9 @@ Gets the master key for the db1 database
 			catch {
 				Stop-Function -Message "Failed to connect to: $instance" -Target $instance -InnerErrorRecord $_ -Continue
 			}
-
+			
 			$databases = $server.Databases
+			
 			if ($Database) {
 				$databases = $databases | Where-Object Name -In $Database
 			}
@@ -82,7 +83,7 @@ Gets the master key for the db1 database
 
 				$masterkey = $db.MasterKey
 
-				if ($masterkey) {
+				if (!$masterkey) {
 					Write-Message -Message "No master key exists in the $db database on $instance" -Target $db -Level Verbose
 					continue
 				}

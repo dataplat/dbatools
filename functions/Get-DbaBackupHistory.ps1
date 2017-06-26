@@ -85,7 +85,7 @@ function Get-DbaBackupHistory {
 		Returns information about the most recent full backup for AdventureWorks2014 on sql2014
 	
 	.EXAMPLE
-		Get-SqlRegisteredServerName -SqlInstance sql2016 | Get-DbaBackupHistory
+		Get-DbaRegisteredServerName -SqlInstance sql2016 | Get-DbaBackupHistory
 		
 		Returns database backup information for every database on every server listed in the Central Management Server on sql2016
 	
@@ -270,7 +270,7 @@ function Get-DbaBackupHistory {
 								  backupset.database_name AS [Database],
 								  backupset.user_name AS Username,
 								  backupset.backup_start_date AS Start,
-								  backupset.server_name as [server],
+								  backupset.server_name as [Server],
 								  backupset.backup_finish_date AS [End],
 								  DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS Duration,
 								  mediafamily.physical_device_name AS Path,
@@ -287,7 +287,7 @@ function Get-DbaBackupHistory {
 								  END AS Type,
 								  backupset.media_set_id AS MediaSetId,
 								  mediafamily.media_family_id as mediafamilyid,
-								  backupset.backup_set_id as backupsetid,
+								  backupset.backup_set_id as BackupSetID,
 								  CASE mediafamily.device_type
 									WHEN 2 THEN 'Disk'
 									WHEN 102 THEN 'Permanent Disk  Device'
@@ -428,7 +428,7 @@ function Get-DbaBackupHistory {
 					
 					Write-Message -Level Debug -Message "FileSQL: $fileSql"
 					
-					$historyObject = New-Object sqlcollective.dbatools.Database.BackupHistory
+					$historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
 					$historyObject.ComputerName = $server.NetName
 					$historyObject.InstanceName = $server.ServiceName
 					$historyObject.SqlInstance = $server.DomainInstanceName

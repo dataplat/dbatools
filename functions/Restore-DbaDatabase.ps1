@@ -433,14 +433,14 @@ function Restore-DbaDatabase {
                         }
                         elseif ($MaintenanceSolutionBackup) {
                             Write-Verbose "$FunctionName : Ola Style Folder"
-                            $backupFiles += Get-OlaHRestoreFile -Path $p
+                            $backupFiles += Get-OlaHRestoreFile -Path $p -IgnoreLogBackup:$IgnoreLogBackup
                         }
                         else {
                             Write-Verbose "$FunctionName : Standard Directory"
                             $FileCheck = $backupFiles.count
                             $backupFiles += Get-DirectoryRestoreFile -Path $p
                             if ((($backupFiles.count) - $FileCheck) -eq 0) {
-                                $backupFiles += Get-OlaHRestoreFile -Path $p
+                                $backupFiles += Get-OlaHRestoreFile -Path $p -IgnoreLogBackup:$IgnoreLogBackup
                             }
                         }
                     }

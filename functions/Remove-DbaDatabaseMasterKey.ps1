@@ -1,4 +1,4 @@
-﻿function Remove-DbaMasterKey {
+﻿function Remove-DbaDatabaseMasterKey {
 	<#
 	.SYNOPSIS
 		Deletes specified database master key
@@ -41,12 +41,12 @@
 		Prompts you for confirmation before executing any changing operations within the command.
 	
 	.EXAMPLE
-		Remove-DbaMasterKey -SqlInstance Server1
+		Remove-DbaDatabaseMasterKey -SqlInstance Server1
 		
 		The master key in the master database on server1 will be removed if it exists.
 	
 	.EXAMPLE
-		Remove-DbaMasterKey -SqlInstance Server1 -Database db1 -Confirm:$false
+		Remove-DbaDatabaseMasterKey -SqlInstance Server1 -Database db1 -Confirm:$false
 		
 		Suppresses all prompts to remove the master key in the 'db1' database and drops the key.
 	
@@ -105,7 +105,7 @@
 			$server = $masterkey.Parent.Parent
 			$instance = $server.DomainInstanceName
 			$cert = $masterkey.Name
-			$db = $masterkey.Parent.Name
+			$db = $masterkey.Parent
 			
 			if ($Pscmdlet.ShouldProcess($instance, "Dropping the master key for database '$db'")) {
 				try {
@@ -116,7 +116,7 @@
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
 						SqlInstance  = $server.DomainInstanceName
-						Database     = $db.name
+						Database     = $db.Name
 						Status       = "Success"
 					}
 				}
@@ -125,7 +125,7 @@
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
 						SqlInstance  = $server.DomainInstanceName
-						Database     = $db.name
+						Database     = $db.Name
 						Status       = "Failure"
 					}
 					Stop-Function -Message "Failed to drop master key from $db on $instance." -Target $db -InnerErrorRecord $_ -Continue
@@ -164,7 +164,7 @@
 								ComputerName = $server.NetName
 								InstanceName = $server.ServiceName
 								SqlInstance  = $server.DomainInstanceName
-								Database     = $db.Name
+								Database     = $db
 								Status       = "Unknown Database"
 							}
 							continue Database
@@ -186,7 +186,7 @@
 								ComputerName = $server.NetName
 								InstanceName = $server.ServiceName
 								SqlInstance  = $server.DomainInstanceName
-								Database     = $db.Name
+								Database     = $smodb.Name
 								Status       = "No Masterkey"
 							}
 							continue Database

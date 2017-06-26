@@ -125,7 +125,7 @@
 		'Test-DbaPowerPlan',
 		'Set-DbaPowerPlan',
 		'Test-DbaDiskAlignment',
-		'Get-DbaDatabaseFreespace',
+		'Get-DbaDatabaseSpace',
 		'Get-DbaClusterActiveNode',
 		'Test-DbaDatabaseOwner',
 		'Set-DbaDatabaseOwner',
@@ -266,25 +266,26 @@
 		'New-DbaAgentSchedule',
 		'Set-DbaAgentSchedule',
 		'Remove-DbaAgentSchedule',
-		'Export-DbaCertificate',
-		'Get-DbaCertificate',
+		'Backup-DbaDatabaseCertificate',
+		'Get-DbaDatabaseCertificate',
 		'Get-DbaCmConnection',
 		'Get-DbaCmObject',
 		'Get-DbaEndpoint',
-		'Get-DbaMasterKey',
+		'Get-DbaDatabaseMasterKey',
 		'Get-DbaSchemaChangeHistory',
 		'Get-DbaServerAudit',
 		'Get-DbaServerAuditSpecification',
 		'Get-DbaSqlProductKey',
 		'Get-DbatoolsLog',
-		'Import-DbaCertificate',
-		'New-DbaCertificate',
+		'Restore-DbaDatabaseCertificate',
+		'New-DbaDatabaseCertificate',
 		'New-DbaCmConnection',
-		'New-DbaMasterKey',
+		'New-DbaDatabaseMasterKey',
+		'New-DbaServiceMasterKey',
 		'New-DbatoolsSupportPackage',
-		'Remove-DbaCertificate',
+		'Remove-DbaDatabaseCertificate',
 		'Remove-DbaCmConnection',
-		'Remove-DbaMasterKey',
+		'Remove-DbaDatabaseMasterKey',
 		'Set-DbaCmConnection',
 		'Set-DbaTcpPort',
 		'Test-DbaCmConnection',
@@ -302,7 +303,14 @@
 		'Set-DbaNetworkCertificate',
 		'Remove-DbaNetworkCertificate',
 		'Enable-DbaForceNetworkEncryption',
-		'Disable-DbaForceNetworkEncryption'
+		'Disable-DbaForceNetworkEncryption',
+		'Get-DbaForceNetworkEncryption',
+		'Remove-DbaComputerCertificate',
+		'Get-DbaServerInstallDate',
+		'Install-DbaFirstResponderKit',
+		'Backup-DbaDatabaseMasterKey',
+		'Get-DbaAgentJobHistory',
+		'Get-DbaSsisEnvironmentVariable'
 	)
 	
 	# Cmdlets to export from this module
@@ -378,7 +386,11 @@
 	'Test-SqlPath',
 	'Test-SqlTempDbConfiguration',
 	'Watch-SqlDbLogin',
-	'Invoke-Sqlcmd2'
+	'Invoke-Sqlcmd2',
+	'Get-DbaSqlManagementObject',
+	'Get-DbaMaintenanceSolutionLog',
+	'Invoke-DbaLogShippingRecovery',
+	'Sync-DbaLoginPermission'
 	
 	# List of all modules packaged with this module
 	ModuleList = @()

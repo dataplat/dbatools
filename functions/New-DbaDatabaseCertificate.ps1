@@ -1,4 +1,4 @@
-﻿function New-DbaCertificate {
+﻿function New-DbaDatabaseCertificate {
 <#
 .SYNOPSIS
 Creates a new database certificate
@@ -16,10 +16,10 @@ Allows you to login to SQL Server using alternative credentials.
 The database where the certificate will be created. Defaults to master.
 
 .PARAMETER Name
-Optional secure string used to create the certificate.
+Optional name to create the certificate. Defaults to database name.
 
 .PARAMETER Subject
-Optional secure string used to create the certificate.
+Optional subject to create the certificate.
 	
 .PARAMETER StartDate
 Optional secure string used to create the certificate.
@@ -50,12 +50,12 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
-New-DbaCertificate -SqlInstance Server1
+New-DbaDatabaseCertificate -SqlInstance Server1
 
 You will be prompted to securely enter your password, then a certificate will be created in the master database on server1 if it does not exist.
 
 .EXAMPLE
-New-DbaCertificate -SqlInstance Server1 -Database db1 -Confirm:$false
+New-DbaDatabaseCertificate -SqlInstance Server1 -Database db1 -Confirm:$false
 
 Suppresses all prompts to install but prompts to securely enter your password and creates a certificate in the 'db1' database
 #>
@@ -65,10 +65,9 @@ Suppresses all prompts to install but prompts to securely enter your password an
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[parameter(Mandatory)]
 		[string[]]$Name,
 		[object[]]$Database = "master",
-		[string[]]$Subject = $Name,
+		[string[]]$Subject,
 		[datetime]$StartDate = (Get-Date),
 		[datetime]$ExpirationDate = $StartDate.AddYears(5),
 		[switch]$ActiveForServiceBrokerDialog,

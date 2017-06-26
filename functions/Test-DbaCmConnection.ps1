@@ -67,13 +67,13 @@
     [CmdletBinding()]
     Param (
         [Parameter(ValueFromPipeline = $true)]
-        [Sqlcollective.Dbatools.Parameter.DbaCmConnectionParameter[]]
+        [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName = $env:COMPUTERNAME,
 
         [System.Management.Automation.PSCredential]
         $Credential,
 
-        [sqlcollective.dbatools.Connection.ManagementConnectionType[]]
+        [Sqlcollaborative.Dbatools.Connection.ManagementConnectionType[]]
         $Type = @("CimRM", "CimDCOM", "Wmi", "PowerShellRemoting"),
 
         [switch]
@@ -93,7 +93,7 @@
         function Test-ConnectionCimRM {
             [CmdletBinding()]
             Param (
-                [Sqlcollective.Dbatools.Parameter.DbaCmConnectionParameter]
+                [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter]
                 $ComputerName,
 
                 [System.Management.Automation.PSCredential]
@@ -130,7 +130,7 @@
         function Test-ConnectionCimDCOM {
             [CmdletBinding()]
             Param (
-                [Sqlcollective.Dbatools.Parameter.DbaCmConnectionParameter]
+                [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter]
                 $ComputerName,
 
                 [System.Management.Automation.PSCredential]
@@ -321,7 +321,7 @@
             }
             #endregion Connectivity Tests
 
-            if (-not $disable_cache) { [sqlcollective.dbatools.Connection.ConnectionHost]::Connections[$Computer] = $con }
+            if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$Computer] = $con }
             $con
         }
     }

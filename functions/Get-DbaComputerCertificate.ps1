@@ -20,6 +20,9 @@ Certificate folder - defaults to My (Personal)
 	
 .PARAMETER Thumbprint
 Return certificate based on thumbprint
+	
+.PARAMETER Path
+The path to a certificate - basically changes the path into a certificate object
 
 .PARAMETER Silent 
 Use this switch to disable any kind of verbose messages
@@ -53,24 +56,50 @@ Gets computer certificates on sql2016 that match thumbprints 8123472E32AB412ED42
 		[System.Management.Automation.PSCredential]$Credential,
 		[string]$Store = "LocalMachine",
 		[string]$Folder = "My",
+		[string]$Path,
 		[string[]]$Thumbprint,
 		[switch]$Silent
 	)
 	
 	process {
 		foreach ($computer in $computername) {
-			
 			$scriptblock = {
-				if ($args) {
-					Get-ChildItem Cert:\$Store\$Folder -Recurse | Where-Object Thumbprint -in $args
+				$Thumbprint = $args[0]
+				$Store = $args[1]
+				$Folder = $args[2]
+				$Path = $args[3]
+				
+				if ($Path) {
+					$bytes = [System.IO.File]::ReadAllBytes($path)
+					$Certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+					$Certificate.Import($bytes, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
+					return $Certificate
+				}
+				
+				if ($Thumbprint) {
+					try {
+						Write-Verbose "Searching Cert:\$Store\$Folder"
+						Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object Thumbprint -in $args[0]
+					}
+					catch {
+						# don't care - there's a weird issue with remoting where an exception gets thrown for no apparent reason
+					}
 				}
 				else {
-					Get-ChildItem Cert:\$Store\$Folder -Recurse | Where-Object { $_.DnsNameList -match "$env:COMPUTERNAME.$env:USERDNSDOMAIN" -and $_.EnhancedKeyUsageList -match '1\.3\.6\.1\.5\.5\.7\.3\.1' }
+					try {
+						# This used to be hostname only but that didn't support clusters
+						Write-Verbose "Searching Cert:\$Store\$Folder"
+						Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object { $_.DnsNameList -match $env:USERDNSDOMAIN -and $_.EnhancedKeyUsageList -match '1\.3\.6\.1\.5\.5\.7\.3\.1' }
+					}
+					catch {
+						# don't care
+					}
 				}
 			}
 			
 			try {
-				Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $thumbprint -ErrorAction Stop
+				Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $thumbprint, $Store, $Folder, $Path -ErrorAction Stop |
+				Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
 			}
 			catch {
 				Stop-Function -Message $_ -ErrorRecord $_ -Target $computer -Continue

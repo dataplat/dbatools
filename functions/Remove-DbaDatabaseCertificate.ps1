@@ -1,4 +1,4 @@
-﻿function Remove-DbaCertificate {
+﻿function Remove-DbaDatabaseCertificate {
 <#
 .SYNOPSIS
 Deletes specified database certificate
@@ -37,12 +37,12 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
-Remove-DbaCertificate -SqlInstance Server1
+Remove-DbaDatabaseCertificate -SqlInstance Server1
 
 The certificate in the master database on server1 will be removed if it exists.
 
 .EXAMPLE
-Remove-DbaCertificate -SqlInstance Server1 -Database db1 -Confirm:$false
+Remove-DbaDatabaseCertificate -SqlInstance Server1 -Database db1 -Confirm:$false
 
 Suppresses all prompts to remove the certificate in the 'db1' database and drops the key.
 
