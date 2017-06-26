@@ -101,28 +101,33 @@ function Copy-DbaExtendedEvent {
 			throw "SMO version is too old. To migrate Extended Events, you must have SQL Server Management Studio 2008 R2 or higher installed."
 		}
 
-		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
-		$source = $sourceserver.DomainInstanceName
-		$destination = $destserver.DomainInstanceName
+		$source = $sourceServer.DomainInstanceName
+		$destination = $destServer.DomainInstanceName
 
-		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
+		if ($sourceServer.VersionMajor -lt 10 -or $destServer.VersionMajor -lt 10) {
 			throw "Extended Events are only supported in SQL Server 2008 and above. Quitting."
 		}
 	}
 	process {
 
-		$sourceSqlConn = $sourceserver.ConnectionContext.SqlConnectionObject
+		$sourceSqlConn = $sourceServer.ConnectionContext.SqlConnectionObject
 		$sourceSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sourceSqlConn
 		$sourceStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $sourceSqlStoreConnection
 
-		$destSqlConn = $destserver.ConnectionContext.SqlConnectionObject
+		$destSqlConn = $destServer.ConnectionContext.SqlConnectionObject
 		$destSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $destSqlConn
 		$destStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $destSqlStoreConnection
 
 		$storeSessions = $sourceStore.sessions | Where-Object { $_.Name -notin 'AlwaysOn_health', 'system_health' }
-		if ($sessions.length -gt 0) { $storeSessions = $storeSessions | Where-Object { $sessions -contains $_.Name } }
+		if ($XeSession) {
+			$storeSessions = $storeSessions | Where-Object Name -In $XeSession
+		}
+		if ($ExcludeXeSession) {
+			$storeSessions = $storeSessions | Where-Object Name -NotIn $ExcludeXeSession
+		}
 
 		Write-Output "Migrating sessions"
 		foreach ($session in $storeSessions) {
@@ -155,7 +160,7 @@ function Copy-DbaExtendedEvent {
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Verbose $sql
 					Write-Output "Migrating session $sessionName"
-					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
+					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 
 					if ($session.IsRunning -eq $true) {
 						$deststore.sessions.Refresh()
