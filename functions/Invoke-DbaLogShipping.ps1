@@ -1,342 +1,356 @@
 function Invoke-DbaLogShipping {
-<#
-    .SYNOPSIS
-        Invoke-DbaLogShipping sets up log shipping for one or more databases
-    
-    .DESCRIPTION
-        Invoke-DbaLogShipping helps to easily set up log shipping for one or more databases.
-    
-    .PARAMETER SourceSqlInstance
-        Source SQL Server instance which contains the databases to be log shipped.
-        You must have sysadmin access and server version must be SQL Server version 2000 or greater.
-    
-    .PARAMETER DestinationSqlInstance
-        Destination SQL Server instance which contains the databases to be log shipped.
-        You must have sysadmin access and server version must be SQL Server version 2000 or greater.
-    
-    .PARAMETER SourceSqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-        To connect as a different Windows user, run PowerShell as that user.
-    
-    .PARAMETER SourceCredential
-        A description of the SourceCredential parameter.
-    
-    .PARAMETER DestinationSqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-        To connect as a different Windows user, run PowerShell as that user.
-    
-    .PARAMETER DestinationCredential
-        A description of the DestinationCredential parameter.
-    
-    .PARAMETER Database
-        Database to set up log shipping for.
-    
-    .PARAMETER BackupNetworkPath
-        The backup unc path to place the backup files. This is the root directory.
-        A directory with the name of the database will be created in this path.
-    
-    .PARAMETER BackupLocalPath
-        If the backup path is locally for the source server you can also set this value.
-    
-    .PARAMETER BackupJob
-        Name of the backup that will be created in the SQL Server agent.
-        The parameter works as a prefix where the name of the database will be added to the backup job name.
-        The default is "LSBackup_[databasename]"
-    
-    .PARAMETER BackupRetention
-        The backup retention period in minutes. Default is 4320 / 72 hours
-    
-    .PARAMETER BackupScheduleName
-        Name of the backup schedule created for the backup job.
-        The parameter works as a prefix where the name of the database will be added to the backup job schedule name.
-        Default is "LSBackupSchedule_[databasename]"
-    
-    .PARAMETER BackupScheduleDisabled
-        A description of the BackupScheduleDisabled parameter.
-    
-    .PARAMETER BackupScheduleFrequencyType
-        A value indicating when a job is to be executed.
-        Allowed values are 4, "Daily", 64, "AgentStart", 128, "IdleComputer"
-    
-    .PARAMETER BackupScheduleFrequencyInterval
-        A description of the BackupScheduleFrequencyInterval parameter.
-    
-    .PARAMETER BackupScheduleFrequencySubdayType
-        Specifies the units for the subday FrequencyInterval.
-        Allowed values are 2, "Seconds", 4, "Minutes", 8 or "Hours"
-    
-    .PARAMETER BackupScheduleFrequencySubdayInterval
-        The number of subday type periods to occur between each execution of the backup job.
-    
-    .PARAMETER BackupScheduleFrequencyRelativeInterval
-        A description of the BackupScheduleFrequencyRelativeInterval parameter.
-    
-    .PARAMETER BackupScheduleFrequencyRecurrenceFactor
-        A description of the BackupScheduleFrequencyRecurrenceFactor parameter.
-    
-    .PARAMETER BackupScheduleStartDate
-        The date on which execution of a job can begin.
-    
-    .PARAMETER BackupScheduleEndDate
-        The date on which execution of a job can stop.
-    
-    .PARAMETER BackupScheduleStartTime
-        The time on any day to begin execution of a job. Format HHMMSS / 24 hour clock.
-        Example: '010000' for 01:00:00 AM.
-        Example: '140000' for 02:00:00 PM.
-    
-    .PARAMETER BackupScheduleEndTime
-        The time on any day to end execution of a job. Format HHMMSS / 24 hour clock.
-        Example: '010000' for 01:00:00 AM.
-        Example: '140000' for 02:00:00 PM.
-    
-    .PARAMETER BackupThreshold
-        Is the length of time, in minutes, after the last backup before a threshold alert error is raised.
-        The default is 60.
-    
-    .PARAMETER CompressBackup
-        Do the backups need to be compressed. By default the backupss are not compressed.
-    
-    .PARAMETER CopyDestinationFolder
-        The path to copy the transaction log backup files to. This is the root directory.
-        A directory with the name of the database will be created in this path.
-    
-    .PARAMETER CopyJob
-        Name of the copy job that will be created in the SQL Server agent.
-        The parameter works as a prefix where the name of the database will be added to the copy job name.
-        The default is "LSBackup_[databasename]"
-    
-    .PARAMETER CopyRetention
-        The copy retention period in minutes. Default is 4320 / 72 hours
-    
-    .PARAMETER CopyScheduleName
-        Name of the backup schedule created for the copy job.
-        The parameter works as a prefix where the name of the database will be added to the copy job schedule name.
-        Default is "LSCopy_[DestinationServerName]_[DatabaseName]"
-    
-    .PARAMETER CopyScheduleDisabled
-        A description of the CopyScheduleDisabled parameter.
-    
-    .PARAMETER CopyScheduleFrequencyType
-        A value indicating when a job is to be executed.
-        Allowed values are 4, "Daily", 64, "AgentStart", 128, "IdleComputer"
-    
-    .PARAMETER CopyScheduleFrequencyInterval
-        A description of the CopyScheduleFrequencyInterval parameter.
-    
-    .PARAMETER CopyScheduleFrequencySubdayType
-        Specifies the units for the subday FrequencyInterval.
-        Allowed values are 2, "Seconds", 4, "Minutes", 8 or "Hours"
-    
-    .PARAMETER CopyScheduleFrequencySubdayInterval
-        The number of subday type periods to occur between each execution of the copy job.
-    
-    .PARAMETER CopyScheduleFrequencyRelativeInterval
-        A description of the CopyScheduleFrequencyRelativeInterval parameter.
-    
-    .PARAMETER CopyScheduleFrequencyRecurrenceFactor
-        A description of the CopyScheduleFrequencyRecurrenceFactor parameter.
-    
-    .PARAMETER CopyScheduleStartDate
-        The date on which execution of a job can begin.
-    
-    .PARAMETER CopyScheduleEndDate
-        The date on which execution of a job can stop.
-    
-    .PARAMETER CopyScheduleStartTime
-        The time on any day to begin execution of a job. Format HHMMSS / 24 hour clock.
-        Example: '010000' for 01:00:00 AM.
-        Example: '140000' for 02:00:00 PM.
-    
-    .PARAMETER CopyScheduleEndTime
-        The time on any day to end execution of a job. Format HHMMSS / 24 hour clock.
-        Example: '010000' for 01:00:00 AM.
-        Example: '140000' for 02:00:00 PM.
-    
-    .PARAMETER DisconnectUsers
-        If this parameter is set in combinations of standby the users will be disconnected during restore.
-    
-    .PARAMETER FullBackupPath
-        A description of the FullBackupPath parameter.
-    
-    .PARAMETER GenerateFullBackup
-        If the database is not initialized on the secondary instance it can be done by creating a new full backup and
-        restore it for you.
-    
-    .PARAMETER HistoryRetention
-        Is the length of time in minutes in which the history is retained.
-        The default value is 14420
-    
-    .PARAMETER NoRecovery
-        If this parameter is set the database will be in recoery mode. The database will not be readable.
-        This setting is default.
-    
-    .PARAMETER PrimaryMonitorServer
-        Is the name of the monitor server for the primary server.
-        The default is the name of the primary sql server.
-    
-    .PARAMETER PrimaryMonitorCredential
-        Allows you to login to enter a secure credential. Only needs to be used when the PrimaryMonitorServerSecurityMode is 0 or "sqlserver"
-        To use: $scred = Get-Credential, then pass $scred object to the -PrimaryMonitorCredential parameter.
-    
-    .PARAMETER PrimaryMonitorServerSecurityMode
-        The security mode used to connect to the monitor server for the primary server. Allowed values are 0, "sqlserver", 1, "windows"
-        The default is 1 or Windows.
-    
-    .PARAMETER PrimaryThresholdAlertEnabled
-        Enables the Threshold alert for the primary database
-    
-    .PARAMETER SecondaryDatabaseSuffix
-        The secondary database can be renamed to include a suffix.
-    
-    .PARAMETER SecondaryMonitorServer
-        Is the name of the monitor server for the secondary server.
-        The default is the name of the secondary sql server.
-    
-    .PARAMETER SecondaryMonitorCredential
-        Allows you to login to enter a secure credential. Only needs to be used when the SecondaryMonitorServerSecurityMode is 0 or "sqlserver"
-        To use: $scred = Get-Credential, then pass $scred object to the -SecondaryMonitorCredential parameter.
-    
-    .PARAMETER SecondaryMonitorServerSecurityMode
-        The security mode used to connect to the monitor server for the secondary server. Allowed values are 0, "sqlserver", 1, "windows"
-        The default is 1 or Windows.
-    
-    .PARAMETER SecondaryThresholdAlertEnabled
-        ENables the Threshold alert for the secondary database
-    
-    .PARAMETER Standby
-        If this parameter is set the database will be set to standby mode making the database readable.
-        If not set the database will be in recovery mode.
-    
-    .PARAMETER RestoreDataFolder
-        Folder to be used to restore the database data files. Only used when parameter GenerateFullBackup or UseExistingFullBackup are set.
-        If the parameter is not set the default data folder of the secondary instance will be used including the name of the database.
-        If the folder is set but doesn't exist the default data folder of the secondary instance will be used including the name of the database.
-    
-    .PARAMETER RestoreLogFolder
-        Folder to be used to restore the database log files. Only used when parameter GenerateFullBackup or UseExistingFullBackup are set.
-        If the parameter is not set the default transaction log folder of the secondary instance will be used.
-        If the folder is set but doesn't exist the default transaction log folder of the secondary instance will be used.
-    
-    .PARAMETER RestoreDelay
-        A description of the RestoreDelay parameter.
-    
-    .PARAMETER RestoreAlertThreshold
-        The amount of minutes after which an alert will be raised is no restore has taken place.
-        The default is 45 minutes.
-    
-    .PARAMETER RestoreJob
-        Name of the restore job that will be created in the SQL Server agent.
-        The parameter works as a prefix where the name of the database will be added to the restore job name.
-        The default is "LSRestore_[databasename]"
-    
-    .PARAMETER RestoreRetention
-        A description of the RestoreRetention parameter.
-    
-    .PARAMETER RestoreScheduleName
-        Name of the backup schedule created for the restore job.
-        The parameter works as a prefix where the name of the database will be added to the restore job schedule name.
-        Default is "LSRestore_[DestinationServerName]_[DatabaseName]"
-    
-    .PARAMETER RestoreScheduleDisabled
-        A description of the RestoreScheduleDisabled parameter.
-    
-    .PARAMETER RestoreScheduleFrequencyType
-        A value indicating when a job is to be executed.
-        Allowed values are 4, "Daily", 64, "AgentStart", 128, "IdleComputer"
-    
-    .PARAMETER RestoreScheduleFrequencyInterval
-        A description of the RestoreScheduleFrequencyInterval parameter.
-    
-    .PARAMETER RestoreScheduleFrequencySubdayType
-        Specifies the units for the subday FrequencyInterval.
-        Allowed values are 2, "Seconds", 4, "Minutes", 8 or "Hours"
-    
-    .PARAMETER RestoreScheduleFrequencySubdayInterval
-        The number of subday type periods to occur between each execution of the restore job.
-    
-    .PARAMETER RestoreScheduleFrequencyRelativeInterval
-        A description of the RestoreScheduleFrequencyRelativeInterval parameter.
-    
-    .PARAMETER RestoreScheduleFrequencyRecurrenceFactor
-        A description of the RestoreScheduleFrequencyRecurrenceFactor parameter.
-    
-    .PARAMETER RestoreScheduleStartDate
-        The date on which execution of a job can begin.
-    
-    .PARAMETER RestoreScheduleEndDate
-        The date on which execution of a job can stop.
-    
-    .PARAMETER RestoreScheduleStartTime
-        The time on any day to begin execution of a job. Format HHMMSS / 24 hour clock.
-        Example: '010000' for 01:00:00 AM.
-        Example: '140000' for 02:00:00 PM.
-    
-    .PARAMETER RestoreScheduleEndTime
-        The time on any day to end execution of a job. Format HHMMSS / 24 hour clock.
-        Example: '010000' for 01:00:00 AM.
-        Example: '140000' for 02:00:00 PM.
-    
-    .PARAMETER RestoreThreshold
-        The number of minutes allowed to elapse between restore operations before an alert is generated.
-        The default value = 0
-    
-    .PARAMETER UseExistingFullBackup
-        If the database is not initialized on the secondary instance it can be done by selecting an existing full backup
-        and restore it for you.
-    
-    .PARAMETER Force
-        The force parameter will ignore some errors in the parameters and assume defaults.
-        It will also remove the any present schedules with the same name for the specific job.
-    
-    .PARAMETER Silent
-        Use this switch to disable any kind of verbose messages
-    
-    .PARAMETER Backupath
-        Is the location of the last full backup. If this is not set in combination with parameter UseExistingFullBackup
-        then the last full backup will be retrieved from the source server.
-    
-    .PARAMETER BackupFrequencyRelativeInterval
-        A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
-    
-    .PARAMETER BackupFrequencyRecurrenceFactor
-        The number of weeks or months between the scheduled execution of a job. FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative".
-    
-    .PARAMETER CopyFrequencyRelativeInterval
-        A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
-    
-    .PARAMETER CopyFrequencyRecurrenceFactor
-        The number of weeks or months between the scheduled execution of a job. FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative".
-    
-    .PARAMETER RestoreFrequencyRelativeInterval
-        A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
-    
-    .PARAMETER RestoreFrequencyRecurrenceFactor
-        The number of weeks or months between the scheduled execution of a job. FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative".
-    
-    .PARAMETER WhatIf
-        Shows what would happen if the command were to run. No actions are actually performed.
-    
-    .PARAMETER Confirm
-        Prompts you for confirmation before executing any changing operations within the command.
-    
-    .EXAMPLE
-        Invoke-DbaLogShipping -SourceSqlServer sql1 -DestinationSqlServer sql2 -Database db1 -BackupNetworkPath "\\sql1\logshipping" -BackupLocalPath "D:\Data\logshipping" -BackupScheduleFrequencyType "daily" -BackupScheduleFrequencyInterval 1 -CompressBackup -CopyScheduleFrequencyType daily -CopyScheduleFrequencyInterval 1 -GenerateFullBackup -RestoreScheduleFrequencyType daily -RestoreScheduleFrequencyInterval 1 -SecondaryDatabaseSuffix "DR" -CopyDestinationFolder "\\sql2\logshippingdest" -Force
-    
-        Does stuff <insert better explanation here>
-    
-    .NOTES
-        Original Author: Sander Stad (@sqlstad, sqlstad.nl)
-        Tags: Log shippin, disaster recovery
-        
-        Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-    
-    .LINK
-        https://dbatools.io/Invoke-DbaLogShipping
+    <#
+.SYNOPSIS 
+Invoke-DbaLogShipping sets up log shipping for one or more databases
+
+.DESCRIPTION
+Invoke-DbaLogShipping helps to easily set up log shipping for one or more databases.
+
+This function will make a lot of decisions for you assuming you want default values like a daily interval for the schedules with a 15 minute interval on the day.
+There are some settings that cannot be made by the function and they need to be prepared before the function is executed.
+
+The following settings need to be made before log shipping can be initiated:
+- Backup destination (the folder and the privileges)
+- Copy destination (the folder and the privileges)
+
+* Privileges
+Make sure your agent service on both the primary and the secondary instance is an Active Directory account.
+Also have the credentials ready to set the folder permissions
+
+** Network share
+The backup destination needs to be shared and have the share privileges of FULL CONTROL to Everyone.
+
+** NTFS permissions
+The backup destination must have at least read/write permissions for the primary instance agent account. 
+The backup destination must have at least read permissions for the secondary instance agent account.
+The copy destination must have at least read/write permission for the secondary instance agent acount.
+
+.PARAMETER SourceSqlInstance
+Source SQL Server instance which contains the databases to be log shipped. 
+You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+
+.PARAMETER DestinationSqlInstance
+Destination SQL Server instance which contains the databases to be log shipped. 
+You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+
+.PARAMETER SourceSqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
+To connect as a different Windows user, run PowerShell as that user.
+
+.PARAMETER SourceCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+$scred = Get-Credential, then pass $scred object to the -SourceCredential parameter. 
+To connect as a different Windows user, run PowerShell as that user.
+
+.PARAMETER DestinationSqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+$scred = Get-Credential, then pass $scred object to the -DestinationSqlCredential parameter. 
+To connect as a different Windows user, run PowerShell as that user.
+
+.PARAMETER DestinationCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+$scred = Get-Credential, then pass $scred object to the -DestinationCredential parameter. 
+To connect as a different Windows user, run PowerShell as that user.
+
+.PARAMETER Database
+Database to set up log shipping for.
+
+.PARAMETER BackupNetworkPath
+The backup unc path to place the backup files. This is the root directory.
+A directory with the name of the database will be created in this path.
+
+.PARAMETER BackupLocalPath
+If the backup path is locally for the source server you can also set this value.
+
+.PARAMETER BackupJob
+Name of the backup that will be created in the SQL Server agent.
+The parameter works as a prefix where the name of the database will be added to the backup job name.
+The default is "LSBackup_[databasename]"
+
+.PARAMETER BackupRetention
+The backup retention period in minutes. Default is 4320 / 72 hours
+
+.PARAMETER BackupSchedule
+Name of the backup schedule created for the backup job.
+The parameter works as a prefix where the name of the database will be added to the backup job schedule name.
+Default is "LSBackupSchedule_[databasename]"
+
+.PARAMETER BackupScheduleDisabled
+Parameter to set the backup schedule to disabled upon creation.
+By default the schedule is enabled.
+
+.PARAMETER BackupScheduleFrequencyType
+A value indicating when a job is to be executed.
+Allowed values are 4, "Daily", 64, "AgentStart", 128, "IdleComputer"
+
+.PARAMETER BackupScheduleFrequencyInterval
+The number of type periods to occur between each execution of the backup job.
+
+.PARAMETER BackupScheduleFrequencySubdayType
+Specifies the units for the subday FrequencyInterval.
+Allowed values are 2, "Seconds", 4, "Minutes", 8 or "Hours"
+
+.PARAMETER BackupScheduleFrequencySubdayInterval
+The number of subday type periods to occur between each execution of the backup job.
+
+.PARAMETER BackupScheduleFrequencyRelativeInterval
+A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
+
+.PARAMETER BackupScheduleFrequencyRecurrenceFactor
+The number of weeks or months between the scheduled execution of a job. FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative". 
+
+.PARAMETER BackupScheduleStartDate
+The date on which execution of a job can begin.
+
+.PARAMETER BackupScheduleEndDate
+The date on which execution of a job can stop.
+
+.PARAMETER BackupScheduleStartTime
+The time on any day to begin execution of a job. Format HHMMSS / 24 hour clock.
+Example: '010000' for 01:00:00 AM. 
+Example: '140000' for 02:00:00 PM.
+
+.PARAMETER BackupScheduleEndTime
+The time on any day to end execution of a job. Format HHMMSS / 24 hour clock.
+Example: '010000' for 01:00:00 AM. 
+Example: '140000' for 02:00:00 PM.
+
+.PARAMETER BackupThreshold
+Is the length of time, in minutes, after the last backup before a threshold alert error is raised.
+The default is 60.
+
+.PARAMETER CompressBackup
+Do the backups need to be compressed. By default the backupss are not compressed.
+
+.PARAMETER CopyDestinationFolder
+The path to copy the transaction log backup files to. This is the root directory.
+A directory with the name of the database will be created in this path.
+
+.PARAMETER CopyJob
+Name of the copy job that will be created in the SQL Server agent.
+The parameter works as a prefix where the name of the database will be added to the copy job name.
+The default is "LSBackup_[databasename]"
+
+.PARAMETER CopyRetention
+The copy retention period in minutes. Default is 4320 / 72 hours
+
+.PARAMETER CopySchedule
+Name of the backup schedule created for the copy job.
+The parameter works as a prefix where the name of the database will be added to the copy job schedule name.
+Default is "LSCopy_[DestinationServerName]_[DatabaseName]"
+
+.PARAMETER CopyScheduleDisabled
+Parameter to set the copy schedule to disabled upon creation.
+By default the schedule is enabled.
+
+.PARAMETER CopyScheduleFrequencyType
+A value indicating when a job is to be executed.
+Allowed values are 4, "Daily", 64, "AgentStart", 128, "IdleComputer"
+
+.PARAMETER CopyScheduleFrequencyInterval
+The number of type periods to occur between each execution of the copy job.
+
+.PARAMETER CopyScheduleFrequencySubdayType
+Specifies the units for the subday FrequencyInterval.
+Allowed values are 2, "Seconds", 4, "Minutes", 8 or "Hours"
+
+.PARAMETER CopyScheduleFrequencySubdayInterval
+The number of subday type periods to occur between each execution of the copy job.
+
+.PARAMETER CopyScheduleFrequencyRelativeInterval
+A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
+
+.PARAMETER CopyScheduleFrequencyRecurrenceFactor
+The number of weeks or months between the scheduled execution of a job. FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative". 
+
+.PARAMETER CopyScheduleStartDate
+The date on which execution of a job can begin.
+
+.PARAMETER CopyScheduleEndDate
+The date on which execution of a job can stop.
+
+.PARAMETER CopyScheduleStartTime
+The time on any day to begin execution of a job. Format HHMMSS / 24 hour clock.
+Example: '010000' for 01:00:00 AM. 
+Example: '140000' for 02:00:00 PM.
+
+.PARAMETER CopyScheduleEndTime
+The time on any day to end execution of a job. Format HHMMSS / 24 hour clock.
+Example: '010000' for 01:00:00 AM. 
+Example: '140000' for 02:00:00 PM.
+
+.PARAMETER DisconnectUsers
+If this parameter is set in combinations of standby the users will be disconnected during restore.
+
+.PARAMETER FullBackupPath
+Path to an existing full backup. Use this when an existing backup needs to used to initialize the database on the secondary instance.
+
+.PARAMETER GenerateFullBackup
+If the database is not initialized on the secondary instance it can be done by creating a new full backup and
+restore it for you.
+
+.PARAMETER HistoryRetention
+Is the length of time in minutes in which the history is retained.
+The default value is 14420
+
+.PARAMETER NoRecovery
+If this parameter is set the database will be in recoery mode. The database will not be readable.
+This setting is default.
+
+.PARAMETER PrimaryMonitorServer
+Is the name of the monitor server for the primary server.
+The default is the name of the primary sql server.
+
+.PARAMETER PrimaryMonitorCredential
+Allows you to login to enter a secure credential. Only needs to be used when the PrimaryMonitorServerSecurityMode is 0 or "sqlserver" 
+To use: $scred = Get-Credential, then pass $scred object to the -PrimaryMonitorCredential parameter. 
+
+.PARAMETER PrimaryMonitorServerSecurityMode
+The security mode used to connect to the monitor server for the primary server. Allowed values are 0, "sqlserver", 1, "windows"
+The default is 1 or Windows.
+
+.PARAMETER PrimaryThresholdAlertEnabled
+Enables the Threshold alert for the primary database
+
+.PARAMETER RestoreDataFolder
+Folder to be used to restore the database data files. Only used when parameter GenerateFullBackup or UseExistingFullBackup are set.
+If the parameter is not set the default data folder of the secondary instance will be used including the name of the database.
+If the folder is set but doesn't exist the default data folder of the secondary instance will be used including the name of the database.
+
+.PARAMETER RestoreLogFolder
+Folder to be used to restore the database log files. Only used when parameter GenerateFullBackup or UseExistingFullBackup are set.
+If the parameter is not set the default transaction log folder of the secondary instance will be used.
+If the folder is set but doesn't exist the default transaction log folder of the secondary instance will be used.
+
+.PARAMETER RestoreDelay
+In case a delay needs to be set for the restore.
+The default is 0.
+
+.PARAMETER RestoreAlertThreshold
+The amount of minutes after which an alert will be raised is no restore has taken place.
+The default is 45 minutes.
+
+.PARAMETER RestoreJob
+Name of the restore job that will be created in the SQL Server agent.
+The parameter works as a prefix where the name of the database will be added to the restore job name.
+The default is "LSRestore_[databasename]"
+
+.PARAMETER RestoreRetention
+The backup retention period in minutes. Default is 4320 / 72 hours
+
+.PARAMETER RestoreSchedule
+Name of the backup schedule created for the restore job.
+The parameter works as a prefix where the name of the database will be added to the restore job schedule name.
+Default is "LSRestore_[DestinationServerName]_[DatabaseName]"
+
+.PARAMETER RestoreScheduleDisabled
+Parameter to set the restore schedule to disabled upon creation.
+By default the schedule is enabled.
+
+.PARAMETER RestoreScheduleFrequencyType
+A value indicating when a job is to be executed.
+Allowed values are 4, "Daily", 64, "AgentStart", 128, "IdleComputer"
+
+.PARAMETER RestoreScheduleFrequencyInterval
+The number of type periods to occur between each execution of the restore job.
+
+.PARAMETER RestoreScheduleFrequencySubdayType
+Specifies the units for the subday FrequencyInterval.
+Allowed values are 2, "Seconds", 4, "Minutes", 8 or "Hours"
+
+.PARAMETER RestoreScheduleFrequencySubdayInterval
+The number of subday type periods to occur between each execution of the restore job.
+
+.PARAMETER RestoreScheduleFrequencyRelativeInterval
+A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
+
+.PARAMETER RestoreScheduleFrequencyRecurrenceFactor
+The number of weeks or months between the scheduled execution of a job. FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative". 
+
+.PARAMETER RestoreScheduleStartDate
+The date on which execution of a job can begin.
+
+.PARAMETER RestoreScheduleEndDate
+The date on which execution of a job can stop.
+
+.PARAMETER RestoreScheduleStartTime
+The time on any day to begin execution of a job. Format HHMMSS / 24 hour clock.
+Example: '010000' for 01:00:00 AM. 
+Example: '140000' for 02:00:00 PM.
+
+.PARAMETER RestoreScheduleEndTime
+The time on any day to end execution of a job. Format HHMMSS / 24 hour clock.
+Example: '010000' for 01:00:00 AM. 
+Example: '140000' for 02:00:00 PM.
+
+.PARAMETER RestoreThreshold
+The number of minutes allowed to elapse between restore operations before an alert is generated. 
+The default value = 0
+
+.PARAMETER SecondaryDatabaseSuffix
+The secondary database can be renamed to include a suffix.
+
+.PARAMETER SecondaryMonitorServer
+Is the name of the monitor server for the secondary server.
+The default is the name of the secondary sql server.
+
+.PARAMETER SecondaryMonitorCredential
+Allows you to login to enter a secure credential. Only needs to be used when the SecondaryMonitorServerSecurityMode is 0 or "sqlserver" 
+To use: $scred = Get-Credential, then pass $scred object to the -SecondaryMonitorCredential parameter. 
+
+.PARAMETER SecondaryMonitorServerSecurityMode
+The security mode used to connect to the monitor server for the secondary server. Allowed values are 0, "sqlserver", 1, "windows"
+The default is 1 or Windows.
+
+.PARAMETER SecondaryThresholdAlertEnabled
+ENables the Threshold alert for the secondary database
+
+.PARAMETER Standby
+If this parameter is set the database will be set to standby mode making the database readable.
+If not set the database will be in recovery mode.
+
+.PARAMETER UseExistingFullBackup
+If the database is not initialized on the secondary instance it can be done by selecting an existing full backup 
+and restore it for you.
+
+.PARAMETER WhatIf
+Shows what would happen if the command were to run. No actions are actually performed.
+
+.PARAMETER Confirm
+Prompts you for confirmation before executing any changing operations within the command.
+
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
+
+.PARAMETER Force
+The force parameter will ignore some errors in the parameters and assume defaults.
+It will also remove the any present schedules with the same name for the specific job.
+
+.NOTES 
+Original Author: Sander Stad (@sqlstad, sqlstad.nl)
+Tags: Log shippin, disaster recovery
+	
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+
+.LINK
+https://dbatools.io/Invoke-DbaLogShipping
+
+.EXAMPLE   
+Invoke-DbaLogShipping -SourceSqlInstance sql1 -DestinationSqlInstance sql2 -Database db1 -BackupNetworkPath \\sql1\logshipping -BackupLocalPath D:\Data\logshipping -BackupScheduleFrequencyType daily -BackupScheduleFrequencyInterval 1 -CompressBackup -CopyScheduleFrequencyType daily -CopyScheduleFrequencyInterval 1 -GenerateFullBackup -RestoreScheduleFrequencyType daily -RestoreScheduleFrequencyInterval 1 -SecondaryDatabaseSuffix DR -CopyDestinationFolder \\sql2\logshippingdest -Force
+
+Sets up log shiping for database "db1" with the backup path to a network share allowing local backups. 
+It creates daily schedules for the backup, copy and restore job with all the defaults to be executed every 15 minutes daily.
+The secondary databse will be called "db1_LS".
+
+.EXAMPLE
+Invoke-DbaLogShipping -SourceSqlInstance sql1 -DestinationSqlInstance sql2 -Database db1 -BackupNetworkPath \\sql1\logshipping -GenerateFullBackup
+
+Sets up log shipping with all defaults except that a backup file is generated.
+The script will show a message that the copy destination has not been supplied and asks if you want to use the default which would be the backup directory of the secondary server with the folder "logshipping" i.e. "D:\SQLBackup\Logshiping".
+
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 
@@ -368,7 +382,7 @@ function Invoke-DbaLogShipping {
         $DestinationCredential,
 
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [string[]]$Database,
+        [object[]]$Database,
 
         [parameter(Mandatory = $true)]
         [string]$BackupNetworkPath,
@@ -383,7 +397,7 @@ function Invoke-DbaLogShipping {
         [int]$BackupRetention,
 
         [parameter(Mandatory = $false)]
-        [string]$BackupScheduleName,
+        [string]$BackupSchedule,
 
         [parameter(Mandatory = $false)]
         [switch]$BackupScheduleDisabled,
@@ -426,8 +440,7 @@ function Invoke-DbaLogShipping {
         [parameter(Mandatory = $false)]
         [switch]$CompressBackup,
 
-        [parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
+        [parameter(Mandatory = $false)]
         [string]$CopyDestinationFolder,
 
         [parameter(Mandatory = $false)]
@@ -437,7 +450,7 @@ function Invoke-DbaLogShipping {
         [int]$CopyRetention,
 
         [parameter(Mandatory = $false)]
-        [string]$CopyScheduleName,
+        [string]$CopySchedule,
 
         [parameter(Mandatory = $false)]
         [switch]$CopyScheduleDisabled,
@@ -504,26 +517,6 @@ function Invoke-DbaLogShipping {
         [switch]$PrimaryThresholdAlertEnabled,
 
         [parameter(Mandatory = $false)]
-        [string]$SecondaryDatabaseSuffix,
-
-        [Parameter(Mandatory = $false)]
-        [string]$SecondaryMonitorServer,
-
-        [Parameter(Mandatory = $false)]
-        [System.Management.Automation.PSCredential]
-        $SecondaryMonitorCredential, 
-
-        [Parameter(Mandatory = $false)]
-        [ValidateSet(0, "sqlserver", 1, "windows")]
-        [object]$SecondaryMonitorServerSecurityMode,
-
-        [Parameter(Mandatory = $false)]
-        [switch]$SecondaryThresholdAlertEnabled,
-
-        [parameter(Mandatory = $false)]
-        [switch]$Standby,
-
-        [parameter(Mandatory = $false)]
         [string]$RestoreDataFolder,
 
         [parameter(Mandatory = $false)]
@@ -542,7 +535,7 @@ function Invoke-DbaLogShipping {
         [int]$RestoreRetention,
 
         [parameter(Mandatory = $false)]
-        [string]$RestoreScheduleName,
+        [string]$RestoreSchedule,
 
         [parameter(Mandatory = $false)]
         [switch]$RestoreScheduleDisabled,
@@ -581,6 +574,26 @@ function Invoke-DbaLogShipping {
 
         [parameter(Mandatory = $false)]
         [int]$RestoreThreshold,
+
+        [parameter(Mandatory = $false)]
+        [string]$SecondaryDatabaseSuffix,
+
+        [Parameter(Mandatory = $false)]
+        [string]$SecondaryMonitorServer,
+
+        [Parameter(Mandatory = $false)]
+        [System.Management.Automation.PSCredential]
+        $SecondaryMonitorCredential, 
+
+        [Parameter(Mandatory = $false)]
+        [ValidateSet(0, "sqlserver", 1, "windows")]
+        [object]$SecondaryMonitorServerSecurityMode,
+
+        [Parameter(Mandatory = $false)]
+        [switch]$SecondaryThresholdAlertEnabled,
+
+        [parameter(Mandatory = $false)]
+        [switch]$Standby,
 
         [parameter(Mandatory = $false)]
         [switch]$UseExistingFullBackup,
@@ -642,7 +655,7 @@ function Invoke-DbaLogShipping {
         $RegexUnc = '^\\(?:\\[^<>:`"/\\|?*]+)+$'
 
         # Check the instance names and the database settings
-        if (($SourceSqlInstance -eq $DestinationSqlInstance) -and ($SecondaryDatabaseSuffix.Length -eq 0)) {
+        if (($SourceSqlInstance -eq $DestinationSqlInstance) -and (-not $SecondaryDatabaseSuffix)) {
             Stop-Function -Message "If the destination is same as source please enter a suffix with paramater SecondaryDatabaseSuffix." -Target $SourceSqlInstance 
             return
         }
@@ -657,13 +670,83 @@ function Invoke-DbaLogShipping {
             return
         }
 
-        # Check the backup network path
-        if (-not ((Test-Path $CopyDestinationFolder -PathType Container -IsValid -Credential $DestinationCredential) -and (Get-Item $CopyDestinationFolder).PSProvider.Name -eq 'FileSystem')) {
-            Stop-Function -Message "Backup network path $CopyDestinationFolder is not valid or can't be reached." -Target $DestinationSqlInstance 
+        # Check the copy destination
+        if (-not $CopyDestinationFolder) {
+            # Make a default copy destination by retrieving the backup folder and adding a directory
+            $CopyDestinationFolder = "$($DestinationServer.Settings.BackupDirectory)\Logshipping"
+
+            # Check to see if the path already exists
+            if (Test-Path $CopyDestinationFolder -Credential $DestinationCredential) {
+                Write-Message -Message "Copy destination $CopyDestinationFolder already exists" -Level Verbose
+            }
+            else {
+                # Check if force is being used
+                if (-not $Force) {
+                    # Set up the confirm part
+                    $message = "The copy destination is missing. Do you want to use the default $($CopyDestinationFolder)?"
+                    $choiceYes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Answer Yes."
+                    $choiceNo = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Answer No."
+                    $options = [System.Management.Automation.Host.ChoiceDescription[]]($choiceYes, $choiceNo)
+                    $result = $host.ui.PromptForChoice($title, $message, $options, 0)
+            
+                    # Check the result from the confirm
+                    switch ($result) {
+                        # If yes
+                        0 {
+                            # Try to create the new directory
+                            try {
+                                # If the destination server is remote and the credential is set
+                                if (-not $IsDestinationLocal -and $DestinationCredential) {
+                                    Invoke-Command -ComputerName $DestinationServerName -Credential $DestinationCredential -ScriptBlock {
+                                        Write-Message -Message "Creating copy destination folder $CopyDestinationFolder" -Level Verbose
+                                        New-Item -Path $CopyDestinationFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
+                                    }
+                                }
+                                # If the server is local and the credential is set
+                                elseif ($DestinationCredential) {
+                                    Invoke-Command -ScriptBlock -Credential $DestinationCredential {
+                                        Write-Message -Message "Creating copy destination folder $CopyDestinationFolder" -Level Verbose
+                                        New-Item -Path $CopyDestinationFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
+                                    }
+                                }
+                                # If the server is local and the credential is not set
+                                else {
+                                    Write-Message -Message "Creating copy destination folder $CopyDestinationFolder" -Level Verbose
+                                    New-Item -Path $CopyDestinationFolder -ItemType Directory -Force:$Force | Out-Null
+                                }
+                                Write-Message -Message "Copy destination $CopyDestinationFolder created." -Level Verbose
+                            }
+                            catch {
+                                Stop-Function -Message "Something went wrong creating the copy destination folder $CopyDestinationFolder. `n$_" -Target $DestinationSqlInstance -InnerErrorRecord $_
+                                return
+                            }
+                        }
+                        1 {
+                            Stop-Function -Message "Copy destination is a mandatory parameter. Please make sure the value is entered." -Target $DestinationSqlInstance 
+                            return
+                        } 
+                    } # switch
+                } # if not force
+                else {
+                    # Try to create the copy destination on the local server
+                    try {
+                        Write-Message -Message "Creating copy destination folder $CopyDestinationFolder" -Level Verbose
+                        New-Item $CopyDestinationFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
+                        Write-Message -Message "Copy destination $CopyDestinationFolder created." -Level Verbose
+                    }
+                    catch {
+                        Stop-Function -Message "Something went wrong creating the copy destination folder $CopyDestinationFolder. `n$_" -Target $DestinationSqlInstance -InnerErrorRecord $_
+                        return
+                    } 
+                } # else not force
+            } # if test path copy destination
+        } # if not copy destination
+        elseif (-not ((Test-Path $CopyDestinationFolder -PathType Container -IsValid -Credential $DestinationCredential) -and (Get-Item $CopyDestinationFolder).PSProvider.Name -eq 'FileSystem')) {
+            Stop-Function -Message "Copy destination folder $CopyDestinationFolder is not valid or can't be reached." -Target $DestinationSqlInstance 
             return
         }
-        elseif ($CopyDestinationFolder -notmatch $RegexUnc) {
-            Stop-Function -Message "Backup network path $CopyDestinationFolder has to be in the form of \\server\share." -Target $DestinationSqlInstance 
+        elseif ($CopyDestinationFolder.StartsWith("\\") -and $CopyDestinationFolder -notmatch $RegexUnc) {
+            Stop-Function -Message "Copy destination folder $CopyDestinationFolder has to be in the form of \\server\share." -Target $DestinationSqlInstance 
             return
         }
 
@@ -799,6 +882,15 @@ function Invoke-DbaLogShipping {
         if (-not $RestoreScheduleFrequencyRecurrenceFactor) {
             $RestoreScheduleFrequencyRecurrenceFactor = 0 
             Write-Message -Message "Restore frequency recurrence factor set to $RestoreScheduleFrequencyType" -Level Verbose 
+        }
+        if (-not $SecondaryDatabaseSuffix -and ($SourceServer.Name -eq $DestinationServer.Name) -and ($SourceServer.InstanceName -eq $DestinationServer.InstanceName)) {
+            if ($Force) {
+                $SecondaryDatabaseSuffix = "LS"
+            }
+            else {
+                Stop-Function -Message "Destination database is the same as source database.`nPlease check the secondary server, databse suffix or use -Force to set the secondary databse using a suffix." -Target $SourceSqlInstance 
+                return
+            }
         }
 
         # Check if the interval is valid
@@ -1027,13 +1119,13 @@ function Invoke-DbaLogShipping {
                 Write-Message -Message "Backup job name set to $DatabaseBackupJob" -Level Verbose
 
                 # Check if the backup job schedule name is set
-                if ($BackupScheduleName) {
-                    $DatabaseBackupScheduleName = "$BackupScheduleName_$db"
+                if ($BackupSchedule) {
+                    $DatabaseBackupSchedule = "$BackupSchedule_$db"
                 }
                 else {
-                    $DatabaseBackupScheduleName = "LSBackupSchedule_$db"
+                    $DatabaseBackupSchedule = "LSBackupSchedule_$db"
                 }
-                Write-Message -Message "Backup job schedule name set to $DatabaseBackupScheduleName" -Level Verbose
+                Write-Message -Message "Backup job schedule name set to $DatabaseBackupSchedule" -Level Verbose
 
                 # Set the database suffix
                 if ($SecondaryDatabaseSuffix) {
@@ -1160,12 +1252,12 @@ function Invoke-DbaLogShipping {
                 Write-Message -Message "Copy job name set to $DatabaseCopyJob" -Level Verbose
 
                 # Check if the copy job schedule name is set
-                if ($CopyScheduleName) {
-                    $DatabaseCopyScheduleName = "$CopyScheduleName_$db"
+                if ($CopySchedule) {
+                    $DatabaseCopySchedule = "$CopySchedule_$db"
                 }
                 else {
-                    $DatabaseCopyScheduleName = "LSCopySchedule_$db"
-                    Write-Message -Message "Copy job schedule name set to $DatabaseCopyScheduleName" -Level Verbose                    
+                    $DatabaseCopySchedule = "LSCopySchedule_$db"
+                    Write-Message -Message "Copy job schedule name set to $DatabaseCopySchedule" -Level Verbose                    
                 }
 
                 # Check if the copy destination folder exists
@@ -1186,18 +1278,18 @@ function Invoke-DbaLogShipping {
                     $DatabaseRestoreJob = "$RestoreJob_$SourceServerName_$db"
                 }
                 else {
-                    $DatabaseRestoreJob = "LSRestore_$DestinationServerName_$db"                    
+                    $DatabaseRestoreJob = "LSRestore_$DestinationServerName_$db"
                 }
                 Write-Message -Message "Restore job name set to $DatabaseRestoreJob" -Level Verbose
 
                 # Check if the restore job schedule name is set
-                if ($RestoreScheduleName) {
-                    $DatabaseRestoreScheduleName = "$RestoreScheduleName_$db"
+                if ($RestoreSchedule) {
+                    $DatabaseRestoreSchedule = "$RestoreSchedule_$db"
                 }
                 else {
-                    $DatabaseRestoreScheduleName = "LSRestoreSchedule_$db"                    
+                    $DatabaseRestoreSchedule = "LSRestoreSchedule_$db"
                 }
-                Write-Message -Message "Restore job schedule name set to $DatabaseRestoreScheduleName" -Level Verbose
+                Write-Message -Message "Restore job schedule name set to $DatabaseRestoreSchedule" -Level Verbose
 
                 # If the database needs to be backed up first
                 if ($PSCmdlet.ShouldProcess($SourceSqlInstance, "Backing up database $db")) {
@@ -1411,19 +1503,19 @@ function Invoke-DbaLogShipping {
                         # Check if the backup job needs to be enabled or disabled
                         if ($BackupScheduleDisabled) {
                             Set-DbaAgentJob -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Job $DatabaseBackupJob -Disabled
-                            Write-Message -Message "Disabling backup job schedule $DatabaseBackupScheduleName" -Level Output
+                            Write-Message -Message "Disabling backup job schedule $DatabaseBackupSchedule" -Level Output
                         }
                         else {
                             Set-DbaAgentJob -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Job $DatabaseBackupJob -Enabled
-                            Write-Message -Message "Enabling backup job schedule $DatabaseBackupScheduleName" -Level Output
+                            Write-Message -Message "Enabling backup job schedule $DatabaseBackupSchedule" -Level Output
                         }
 
-                        Write-Message -Message "Create backup job schedule $DatabaseBackupScheduleName" -Level Output
+                        Write-Message -Message "Create backup job schedule $DatabaseBackupSchedule" -Level Output
 
                         $BackupJobSchedule = New-DbaAgentSchedule -SqlInstance $SourceSqlInstance `
                         -SqlCredential $SourceSqlCredential `
                         -Job $DatabaseBackupJob `
-                        -ScheduleName $DatabaseBackupScheduleName `
+                        -ScheduleName $DatabaseBackupSchedule `
                         -FrequencyType $BackupScheduleFrequencyType `
                         -FrequencyInterval $BackupScheduleFrequencyInterval `
                         -FrequencySubdayType $BackupScheduleFrequencySubdayType `
@@ -1472,12 +1564,12 @@ function Invoke-DbaLogShipping {
                         -RestoreJob $DatabaseRestoreJob `
                         -Force:$Force
 
-                        Write-Message -Message "Create copy job schedule $DatabaseCopyScheduleName" -Level Output
+                        Write-Message -Message "Create copy job schedule $DatabaseCopySchedule" -Level Output
 
                         $CopyJobSchedule = New-DbaAgentSchedule -SqlInstance $DestinationSqlInstance `
                         -SqlCredential $DestinationSqlCredential `
                         -Job $DatabaseCopyJob `
-                        -ScheduleName $DatabaseCopyScheduleName `
+                        -ScheduleName $DatabaseCopySchedule `
                         -FrequencyType $CopyScheduleFrequencyType `
                         -FrequencyInterval $CopyScheduleFrequencyInterval `
                         -FrequencySubdayType $CopyScheduleFrequencySubdayType `
@@ -1490,12 +1582,12 @@ function Invoke-DbaLogShipping {
                         -EndTime $CopyScheduleEndTime `
                         -Force:$Force
 
-                        Write-Message -Message "Create restore job schedule $DatabaseRestoreScheduleName" -Level Output
+                        Write-Message -Message "Create restore job schedule $DatabaseRestoreSchedule" -Level Output
 
                         $RestoreJobSchedule = New-DbaAgentSchedule -SqlInstance $DestinationSqlInstance `
                         -SqlCredential $DestinationSqlCredential `
                         -Job $DatabaseRestoreJob `
-                        -ScheduleName $DatabaseRestoreScheduleName `
+                        -ScheduleName $DatabaseRestoreSchedule `
                         -FrequencyType $RestoreScheduleFrequencyType `
                         -FrequencyInterval $RestoreScheduleFrequencyInterval `
                         -FrequencySubdayType $RestoreScheduleFrequencySubdayType `
