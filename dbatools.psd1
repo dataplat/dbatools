@@ -309,7 +309,8 @@
 		'Get-DbaServerInstallDate',
 		'Install-DbaFirstResponderKit',
 		'Backup-DbaDatabaseMasterKey',
-		'Get-DbaAgentJobHistory'
+		'Get-DbaAgentJobHistory',
+		'Get-DbaSsisEnvironment'
 	)
 	
 	# Cmdlets to export from this module
