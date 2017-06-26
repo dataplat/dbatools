@@ -310,7 +310,7 @@
 		'Install-DbaFirstResponderKit',
 		'Backup-DbaDatabaseMasterKey',
 		'Get-DbaAgentJobHistory',
-		'Get-DbaSsisEnvironment'
+		'Get-DbaSsisEnvironmentVariable'
 	)
 	
 	# Cmdlets to export from this module
