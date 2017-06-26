@@ -65,6 +65,7 @@
 				Write-Message -Level Verbose -Message "Did not pass a version, looking for all versions"
 				$VersionList += [PSCustomObject]@{
 					Version = $array[0]
+					LoadTemplate = "Add-Type -AssemblyName `"Microsoft.SqlServer.Smo, Version=$($array[0]), Culture=neutral, PublicKeyToken=89845dcd8080cc91`""
 				}
 			}
 			else
@@ -75,6 +76,7 @@
 					Write-Message -Level Verbose -Message "Found the Version $VersionNumber"
 					$VersionList += [PSCustomObject]@{
 						Version	  = $array[0]
+						LoadTemplate = "Add-Type -AssemblyName `"Microsoft.SqlServer.Smo, Version=$($array[0]), Culture=neutral, PublicKeyToken=89845dcd8080cc91`""
 					}
 					break
 				}
