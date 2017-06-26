@@ -157,7 +157,7 @@ function Copy-DbaExtendedEvent {
 			if ($Pscmdlet.ShouldProcess($destination, "Migrating session $sessionName")) {
 				try {
 					$sql = $session.ScriptCreate().GetScript() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
+					
 					Write-Verbose $sql
 					Write-Output "Migrating session $sessionName"
 					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
