@@ -31,13 +31,13 @@ function Get-DbaProcess {
 			This parameter is auto-populated from -SqlInstance. You can specify one or more Spids to exclude from being displayed (goes well with Logins).
 
 			Exclude is the last filter to run, so even if a Spid matches, for example, Hosts, if it's listed in Exclude it wil be excluded.
-			
-		.PARAMETER Detailed
-			Provides Detailed information
 
 		.PARAMETER NoSystemSpids
 			Ignores the System Spids
-
+			
+		.PARAMETER Silent
+		Use this switch to disable any kind of verbose messages
+	
 		.NOTES 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -70,90 +70,87 @@ function Get-DbaProcess {
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter]$SqlInstance,
-		[object]$SqlCredential,
+		[DbaInstanceParameter[]]$SqlInstance,
+		[Alias("Credential")]
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential,
 		[switch]$NoSystemSpids,
-		[switch]$Detailed
+		[switch]$Silent
 	)
-
-	begin {
-		$sourceserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-	}
-
+	
 	process {
-
-		$allsessions = @()
 		
-		$processes = $sourceserver.EnumProcesses()
-		$servercolumn = $processes.Columns.Add("SqlServer", [object])
-		$servercolumn.SetOrdinal(0)
-		
-		foreach ($row in $processes) {
-			$row["SqlServer"] = $sourceserver
-		}
-		
-		if ($Login.count -gt 0) {
-			$allsessions += $processes | Where-Object { $_.Login -in $Login -and $_.Spid -notin $allsessions.Spid }
-		}
-		
-		if ($Spid.count -gt 0) {
-			$allsessions += $processes | Where-Object { ($_.Spid -in $Spid -or $_.BlockingSpid -in $Spid) -and $_.Spid -notin $allsessions.Spid }
-		}
-		
-		if ($Host.count -gt 0) {
-			$allsessions += $processes | Where-Object { $_.Host -in $Host -and $_.Spid -notin $allsessions.Spid }
-		}
-		
-		if ($Program.count -gt 0) {
-			$allsessions += $processes | Where-Object { $_.Program -in $Program -and $_.Spid -notin $allsessions.Spid }
-		}
-		
-		if ($Database.count -gt 0) {
-			$allsessions += $processes | Where-Object { $Database -contains $_.Database -and $_.Spid -notin $allsessions.Spid }
-		}
-		
-		# feel like I'm doing this wrong but it's 2am ;)
-		if ($Login -eq $null -and $Spid -eq $null -and $Spid -eq $Exclude -and $Host -eq $null -and $Program -eq $null -and $Program -eq $Database) {
-			$allsessions = $processes
-		}
-		
-		if ($nosystemspids -eq $true) {
-			$allsessions = $allsessions | Where-Object { $_.Spid -gt 50 }
-		}
-		
-		if ($Exclude.count -gt 0) {
-			$allsessions = $allsessions | Where-Object { $Exclude -notcontains $_.SPID -and $_.Spid -notin $allsessions.Spid }
-		}
-		
-		if ($Detailed) {
-			$object = ($allsessions | Select-Object SqlServer, Spid, Login, Host, Database, BlockingSpid, Program, @{
-					name = "Status"; expression = {
-						if ($_.Status -eq "") { "sleeping" }
-						else { $_.Status }
-					}
-				}, @{
-					name = "Command"; expression = {
-						if ($_.Command -eq "") { "AWAITING COMMAND" }
-						else { $_.Command }
-					}
-				}, Cpu, MemUsage, IsSystem)
+		foreach ($instance in $sqlinstance) {
 			
-			Select-DefaultView -InputObject $object -Property Spid, Login, Host, Database, BlockingSpid, Program, Status, Command, Cpu, MemUsage, IsSystem
-		}
-		else {
-			$object = ($allsessions | Select-Object SqlServer, Spid, Login, Host, Database, BlockingSpid, Program, @{
-					name = "Status"; expression = {
-						if ($_.Status -eq "") { "sleeping" }
-						else { $_.Status }
-					}
-				}, @{
-					name = "Command"; expression = {
-						if ($_.Command -eq "") { "AWAITING COMMAND" }
-						else { $_.Command }
-					}
-				})
+			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
+			try {
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+			}
+			catch {
+				Stop-Function -Message "Could not connect to Sql Server instance $instance : $_" -Target $instance -ErrorRecord $_ -Continue
+			}
 			
-			Select-DefaultView -InputObject $object -Property Spid, Login, Host, Database, BlockingSpid, Program, Status, Command
+			$allsessions = @()
+			
+			$processes = $server.EnumProcesses()
+			
+			if ($Login.count -gt 0) {
+				$allsessions += $processes | Where-Object { $_.Login -in $Login -and $_.Spid -notin $allsessions.Spid }
+			}
+			
+			if ($Spid.count -gt 0) {
+				$allsessions += $processes | Where-Object { ($_.Spid -in $Spid -or $_.BlockingSpid -in $Spid) -and $_.Spid -notin $allsessions.Spid }
+			}
+			
+			if ($Host.count -gt 0) {
+				$allsessions += $processes | Where-Object { $_.Host -in $Host -and $_.Spid -notin $allsessions.Spid }
+			}
+			
+			if ($Program.count -gt 0) {
+				$allsessions += $processes | Where-Object { $_.Program -in $Program -and $_.Spid -notin $allsessions.Spid }
+			}
+			
+			if ($Database.count -gt 0) {
+				$allsessions += $processes | Where-Object { $Database -contains $_.Database -and $_.Spid -notin $allsessions.Spid }
+			}
+						
+			if ($PSBoundParameters.Key -notcontains 'Login','Spid','Exclude','Host', 'Program','Database') {
+				$allsessions = $processes
+			}
+			
+			if ($nosystemspids -eq $true) {
+				$allsessions = $allsessions | Where-Object { $_.Spid -gt 50 }
+			}
+			
+			if ($Exclude.count -gt 0) {
+				$allsessions = $allsessions | Where-Object { $Exclude -notcontains $_.SPID -and $_.Spid -notin $allsessions.Spid }
+			}
+			
+			foreach ($session in $allsessions) {
+				
+				if ($session.Status -eq "") {
+					$status = "sleeping"
+				}
+				else {
+					$status = $session.Status
+				}
+				
+				if ($session.Command -eq "") {
+					$command = "AWAITING COMMAND"
+				}
+				else {
+					$command = $session.Command
+				}
+				
+				Add-Member -InputObject $session -MemberType NoteProperty -Name Parent -value $server
+				Add-Member -InputObject $session -MemberType NoteProperty -Name ComputerName -value $server.NetName
+				Add-Member -InputObject $session -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+				Add-Member -InputObject $session -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+				Add-Member -InputObject $session -MemberType NoteProperty -Name Status -value $status -Force
+				Add-Member -InputObject $session -MemberType NoteProperty -Name Command -value $command -Force
+				
+				Select-DefaultView -InputObject $session -Property ComputerName, InstanceName, SqlInstance, Spid, Login, Host, Database, BlockingSpid, Program, Status, Command, Cpu, MemUsage, IsSystem
+			}
 		}
 	}
 }

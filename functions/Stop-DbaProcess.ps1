@@ -40,7 +40,7 @@ function Stop-DbaProcess {
 		.PARAMETER Confirm 
 			Prompts you for confirmation before executing any changing operations within the command. 
 			
-		.PARAMETER Process 
+		.PARAMETER ProcessCollection 
 			This is the process object passed by Get-DbaProcess if using a pipeline
 			
 		.NOTES 
@@ -83,19 +83,20 @@ function Stop-DbaProcess {
 			Finds processes that were created with dbatools, then kills them.
 
 	#>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     Param (
-        [parameter(Mandatory = $true, ParameterSetName = "Server")]
+        [parameter(Mandatory, ParameterSetName = "Server")]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [object]$SqlCredential,
         [parameter(ValueFromPipeline = $true, Mandatory = $true, ParameterSetName = "Process")]
-        [object[]]$Process
-    )
-
+        [object[]]$ProcessCollection,
+		[switch]$Silent
+	)
+	
     process {
-        if ($Process) {
-            foreach ($session in $Process) {
+        if ($ProcessCollection) {
+            foreach ($session in $ProcessCollection) {
                 $sourceserver = $session.SqlServer
 				
                 if (!$sourceserver) {
