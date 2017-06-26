@@ -4,8 +4,8 @@ function Copy-DbaExtendedEvent {
 			Migrates SQL Extended Event Sessions except the two default sessions, AlwaysOn_health and system_health.
 
 		.DESCRIPTION
-			By default, all non-system extended events are migrated. If the event already exists on the destination, it will be skipped unless -Force is used. 
-				
+			By default, all non-system extended events are migrated. If the event already exists on the destination, it will be skipped unless -Force is used.
+
 			The -Session parameter is autopopulated for command-line completion and can be used to copy only specific objects.
 
 		.PARAMETER Source
@@ -14,9 +14,9 @@ function Copy-DbaExtendedEvent {
 		.PARAMETER SourceSqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Destination
@@ -25,19 +25,28 @@ function Copy-DbaExtendedEvent {
 		.PARAMETER DestinationSqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
+			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 			To connect as a different Windows user, run PowerShell as that user.
+
+		.PARAMETER XeSession
+			The Extended Event Session(s) to process - this list is auto populated from the server. If unspecified, all Extended Event  Sessions will be processed.
+
+		.PARAMETER ExcludeXeSession
+			The Extended Event Session(s) to exclude - this list is auto populated from the server
 
 		.PARAMETER Force
 			If sessions exists on destination server, it will be dropped and recreated.
 
-		.PARAMETER WhatIf 
-			Shows what would happen if the command were to run. No actions are actually performed. 
+		.PARAMETER WhatIf
+			Shows what would happen if the command were to run. No actions are actually performed.
 
-		.PARAMETER Confirm 
-			Prompts you for confirmation before executing any changing operations within the command. 
+		.PARAMETER Confirm
+			Prompts you for confirmation before executing any changing operations within the command.
+
+		.PARAMETER Silent 
+			Use this switch to disable any kind of verbose messages
 
 		.NOTES
 			Tags: Migration, ExtendedEvent, XEvent
@@ -47,23 +56,23 @@ function Copy-DbaExtendedEvent {
 		.LINK
 			https://dbatools.io/Copy-DbaExtendedEvent
 
-		.EXAMPLE   
+		.EXAMPLE
 			Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster
 
-			Copies all extended event sessions from sqlserver2014a to sqlcluster, using Windows credentials. 
+			Copies all extended event sessions from sqlserver2014a to sqlcluster, using Windows credentials.
 
-		.EXAMPLE   
+		.EXAMPLE
 			Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
 			Copies all extended event sessions from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
-		.EXAMPLE   
+		.EXAMPLE
 			Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
 			Shows what would happen if the command were executed.
-			
-		.EXAMPLE   
-			Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -Session CheckQueries, MonitorUserDefinedException 
+
+		.EXAMPLE
+			Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -Session CheckQueries, MonitorUserDefinedException
 
 			Copies two Extended Events, CheckQueries and MonitorUserDefinedException, from sqlserver2014a to sqlcluster.
 	#>
@@ -75,17 +84,20 @@ function Copy-DbaExtendedEvent {
 		[DbaInstanceParameter]$Destination,
 		[System.Management.Automation.PSCredential]$SourceSqlCredential,
 		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
-		[switch]$Force
+		[object[]]$XeSession,
+		[object[]]$ExcludeXeSession,
+		[switch]$Force,
+		[switch]$Silent
 	)
 	begin {
 
 		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null) {
 			throw "SMO version is too old. To migrate Extended Events, you must have SQL Server Management Studio 2008 R2 or higher installed."
 		}
-		
+
 		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-		
+
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
 
@@ -94,18 +106,18 @@ function Copy-DbaExtendedEvent {
 		}
 	}
 	process {
-		
+
 		$sourceSqlConn = $sourceserver.ConnectionContext.SqlConnectionObject
 		$sourceSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sourceSqlConn
 		$sourceStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $sourceSqlStoreConnection
-		
+
 		$destSqlConn = $destserver.ConnectionContext.SqlConnectionObject
 		$destSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $destSqlConn
 		$destStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $destSqlStoreConnection
-		
+
 		$storeSessions = $sourceStore.sessions | Where-Object { $_.Name -notin 'AlwaysOn_health', 'system_health' }
 		if ($sessions.length -gt 0) { $storeSessions = $storeSessions | Where-Object { $sessions -contains $_.Name } }
-		
+
 		Write-Output "Migrating sessions"
 		foreach ($session in $storeSessions) {
 			$sessionName = $session.name
@@ -119,7 +131,7 @@ function Copy-DbaExtendedEvent {
 					if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $sessionName")) {
 						Write-Verbose "Extended Event Session '$sessionName' exists on $destination"
 						Write-Verbose "Force specified. Dropping $sessionName."
-						
+
 						try {
 							$deststore.sessions[$sessionName].Drop()
 						}
@@ -130,7 +142,7 @@ function Copy-DbaExtendedEvent {
 					}
 				}
 			}
-			
+
 			if ($Pscmdlet.ShouldProcess($destination, "Migrating session $sessionName")) {
 				try {
 					$sql = $session.ScriptCreate().GetScript() | Out-String
@@ -138,7 +150,7 @@ function Copy-DbaExtendedEvent {
 					Write-Verbose $sql
 					Write-Output "Migrating session $sessionName"
 					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
-					
+
 					if ($session.IsRunning -eq $true) {
 						$deststore.sessions.Refresh()
 						$deststore.sessions[$sessionName].Start()
