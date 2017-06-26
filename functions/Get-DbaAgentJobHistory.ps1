@@ -20,6 +20,9 @@
 		.PARAMETER Job
 			The name of the job from which the history is wanted. If unspecified, all jobs will be processed.
 
+		.PARAMETER ExcludeJob
+		The job(s) to exclude - this list is auto populated from the server
+	
 		.PARAMETER StartDate
 			The DateTime starting from which the history is wanted. If unspecified, all available records will be processed.
 
@@ -94,7 +97,8 @@
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
-		[string[]]$Job,
+		[object[]]$Job,
+		[object[]]$ExcludeJob,
 		[DateTime]$StartDate = "1900-01-01",
 		[DateTime]$EndDate = $(Get-Date),
 		[Switch]$NoJobSteps,
@@ -159,10 +163,19 @@
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -Continue
+				Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -Continue -InnerErrorRecord $_
 			}
 			
-			Get-JobHistory -Server $server -Job $Job
+			if ($ExcludeJob) {
+				$jobs = $server.JobServer.Jobs.Name | Where-Object { $_ -notin $ExcludeJob }
+
+				foreach ($currentjob in $jobs) {
+					Get-JobHistory -Server $server -Job $currentjob
+				}
+			}
+			else {
+				Get-JobHistory -Server $server -Job $Job
+			}
 		}
 	}
 }
