@@ -100,76 +100,89 @@ function Copy-DbaLinkedServer {
 			)
 
 			$server = $SqlInstance
-			$sourcename = $server.name
+			$sourceName = $server.Name
 
 			# Query Service Master Key from the database - remove padding from the key
 			# key_id 102 eq service master key, thumbprint 3 means encrypted with machinekey
 			$sql = "SELECT substring(crypt_property,9,len(crypt_property)-8) FROM sys.key_encryptions WHERE key_id=102 and (thumbprint=0x03 or thumbprint=0x0300000001)"
-			try { $smkbytes = $server.ConnectionContext.ExecuteScalar($sql) }
-			catch { throw "Can't execute SQL on $sourcename" }
+			try {
+				$smkbytes = $server.ConnectionContext.ExecuteScalar($sql)
+			}
+			catch {
+				throw "Can't execute SQL on $sourceName"
+			}
 
-			$sourcenetbios = Resolve-NetBiosName $server
+			$sourceNetBios = Resolve-NetBiosName $server
 			$instance = $server.InstanceName
-			$serviceInstanceId = $server.serviceInstanceId
+			$serviceInstanceId = $server.ServiceInstanceId
 
 			# Get entropy from the registry - hopefully finds the right SQL server instance
 			try {
-				[byte[]]$entropy = Invoke-Command -ComputerName $sourcenetbios -argumentlist $serviceInstanceId {
+				[byte[]]$entropy = Invoke-Command -ComputerName $sourceNetBios -argumentlist $serviceInstanceId {
 					$serviceInstanceId = $args[0]
 					$entropy = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\$serviceInstanceId\Security\").Entropy
 					return $entropy
 				}
 			}
-			catch { throw "Can't access registry keys on $sourcename. Quitting." }
+			catch {
+				throw "Can't access registry keys on $sourceName. Quitting."
+			}
 
 			# Decrypt the service master key
 			try {
-				$servicekey = Invoke-Command -ComputerName $sourcenetbios -argumentlist $smkbytes, $Entropy {
+				$serviceKey = Invoke-Command -ComputerName $sourceNetBios -ArgumentList $smkbytes, $Entropy {
 					Add-Type -assembly System.Security
 					Add-Type -assembly System.Core
 					$smkbytes = $args[0]; $Entropy = $args[1]
-					$servicekey = [System.Security.Cryptography.ProtectedData]::Unprotect($smkbytes, $Entropy, 'LocalMachine')
-					return $servicekey
+					$serviceKey = [System.Security.Cryptography.ProtectedData]::Unprotect($smkbytes, $Entropy, 'LocalMachine')
+					return $serviceKey
 				}
 			}
-			catch { throw "Can't unprotect registry data on $($source.name)). Quitting." }
+			catch {
+				throw "Can't unprotect registry data on $($source.Name)). Quitting."
+			}
 
 			# Choose the encryption algorithm based on the SMK length - 3DES for 2008, AES for 2012
 			# Choose IV length based on the algorithm
-			if (($servicekey.Length -ne 16) -and ($servicekey.Length -ne 32)) { throw "Unknown key size. Cannot continue. Quitting." }
+			if (($serviceKey.Length -ne 16) -and ($serviceKey.Length -ne 32)) {
+				throw "Unknown key size. Cannot continue. Quitting."
+			}
 
-			if ($servicekey.Length -eq 16) {
+			if ($serviceKey.Length -eq 16) {
 				$decryptor = New-Object System.Security.Cryptography.TripleDESCryptoServiceProvider
 				$ivlen = 8
 			}
-			elseif ($servicekey.Length -eq 32) {
+			elseif ($serviceKey.Length -eq 32) {
 				$decryptor = New-Object System.Security.Cryptography.AESCryptoServiceProvider
 				$ivlen = 16
 			}
 
-			# Query link server password information from the Db. Remove header from pwdhash, extract IV (as iv) and ciphertext (as pass)
-			# Ignore links with blank credentials (integrated auth ?)
-
+			<#
+				Query link server password information from the Db.
+				Remove header from pwdhash, extract IV (as iv) and ciphertext (as pass)
+				Ignore links with blank credentials (integrated auth ?)
+			#>
 			if ($server.IsClustered -eq $false) {
-				$connstring = "Server=ADMIN:$sourcenetbios\$instance;Trusted_Connection=True"
+				$connString = "Server=ADMIN:$sourceNetBios\$instance;Trusted_Connection=True"
 			}
 			else {
-				$dacenabled = $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue
+				$dacEnabled = $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue
 
-				if ($dacenabled -eq $false) {
-					If ($Pscmdlet.ShouldProcess($server.name, "Enabling DAC on clustered instance")) {
+				if ($dacEnabled -eq $false) {
+					If ($Pscmdlet.ShouldProcess($server.Name, "Enabling DAC on clustered instance")) {
 						Write-Verbose "DAC must be enabled for clusters, even when accessed from active node. Enabling."
 						$server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
 						$server.Configuration.Alter()
 					}
 				}
 
-				$connstring = "Server=ADMIN:$sourcename;Trusted_Connection=True"
+				$connString = "Server=ADMIN:$sourceName;Trusted_Connection=True"
 			}
 
+			<# NOTE: This query is accessing syslnklgns table. Can only be done via the DAC connection #>
 			$sql = "
 				SELECT sysservers.srvname,
-					syslnklgns.name,
+					syslnklgns.Name,
 					substring(syslnklgns.pwdhash,5,$ivlen) iv,
 					substring(syslnklgns.pwdhash,$($ivlen + 5),
 					len(syslnklgns.pwdhash)-$($ivlen + 4)) pass
@@ -180,9 +193,9 @@ function Copy-DbaLinkedServer {
 
 			# Get entropy from the registry
 			try {
-				$logins = Invoke-Command -ComputerName $sourcenetbios -argumentlist $connstring, $sql {
-					$connstring = $args[0]; $sql = $args[1]
-					$conn = New-Object System.Data.SqlClient.SQLConnection($connstring)
+				$logins = Invoke-Command -ComputerName $sourceNetBios -ArgumentList $connString, $sql {
+					$connString = $args[0]; $sql = $args[1]
+					$conn = New-Object System.Data.SqlClient.SQLConnection($connString)
 					$conn.open()
 					$cmd = New-Object System.Data.SqlClient.SqlCommand($sql, $conn);
 					$data = $cmd.ExecuteReader()
@@ -194,28 +207,28 @@ function Copy-DbaLinkedServer {
 				}
 			}
 			catch {
-				Write-Warning "Can't establish local DAC connection to $sourcename from $sourcename or other error. Quitting."
+				Write-Warning "Can't establish local DAC connection to $sourceName from $sourceName or other error. Quitting."
 			}
 
-			if ($server.IsClustered -and $dacenabled -eq $false) {
-				If ($Pscmdlet.ShouldProcess($server.name, "Disabling DAC on clustered instance")) {
+			if ($server.IsClustered -and $dacEnabled -eq $false) {
+				If ($Pscmdlet.ShouldProcess($server.Name, "Disabling DAC on clustered instance")) {
 					Write-Verbose "Setting DAC config back to 0"
 					$server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $false
 					$server.Configuration.Alter()
 				}
 			}
 
-			$decryptedlogins = New-Object "System.Data.DataTable"
-			[void]$decryptedlogins.Columns.Add("LinkedServer")
-			[void]$decryptedlogins.Columns.Add("Login")
-			[void]$decryptedlogins.Columns.Add("Password")
+			$decryptedLogins = New-Object "System.Data.DataTable"
+			[void]$decryptedLogins.Columns.Add("LinkedServer")
+			[void]$decryptedLogins.Columns.Add("Login")
+			[void]$decryptedLogins.Columns.Add("Password")
 
 
 			# Go through each row in results
 			foreach ($login in $logins) {
 				# decrypt the password using the service master key and the extracted IV
 				$decryptor.Padding = "None"
-				$decrypt = $decryptor.Createdecryptor($servicekey, $login.iv)
+				$decrypt = $decryptor.Createdecryptor($serviceKey, $login.iv)
 				$stream = New-Object System.IO.MemoryStream ( , $login.pass)
 				$crypto = New-Object System.Security.Cryptography.CryptoStream $stream, $decrypt, "Write"
 
@@ -228,12 +241,12 @@ function Copy-DbaLinkedServer {
 				# Print results - removing the weird padding (8 bytes in the front, some bytes at the end)...
 				# Might cause problems but so far seems to work.. may be dependant on SQL server version...
 				# If problems arise remove the next three lines..
-				$i = 8; foreach ($b in $decrypted) { if ($decrypted[$i] -ne 0 -and $decrypted[$i + 1] -ne 0 -or $i -eq $decrypted.Length) { $i -= 1; break; }; $i += 1; }
+				$i = 8; foreach ($b in $decrypted) {if ($decrypted[$i] -ne 0 -and $decrypted[$i + 1] -ne 0 -or $i -eq $decrypted.Length) { $i -= 1; break; }; $i += 1; }
 				$decrypted = $decrypted[8..$i]
 
-				[void]$decryptedlogins.Rows.Add($($login.srvname), $($login.name), $($encode.GetString($decrypted)))
+				[void]$decryptedLogins.Rows.Add($($login.srvname), $($login.Name), $($encode.GetString($decrypted)))
 			}
-			return $decryptedlogins
+			return $decryptedLogins
 		}
 
 		function Copy-DbaLinkedServers {
@@ -242,10 +255,10 @@ function Copy-DbaLinkedServer {
 				[bool]$force
 			)
 
-			Write-Output "Collecting Linked Server logins and passwords on $($sourceserver.name)"
-			$sourcelogins = Get-LinkedServerLogins $sourceserver
+			Write-Output "Collecting Linked Server logins and passwords on $($sourceServer.Name)"
+			$sourcelogins = Get-LinkedServerLogins $sourceServer
 
-			$serverlist = $sourceserver.LinkedServers
+			$serverlist = $sourceServer.LinkedServers
 
 			if ($LinkedServers) {
 				$serverlist = $serverlist | Where-Object Name -In $LinkedServers
@@ -256,37 +269,37 @@ function Copy-DbaLinkedServer {
 
 			Write-Output "Starting migration"
 			foreach ($linkedserver in $serverlist) {
-				$provider = $linkedserver.ProviderName
+				$provider = $currentLinkedServer.ProviderName
 				try {
-					$destserver.LinkedServers.Refresh()
-					$destserver.LinkedServers.LinkedServerLogins.Refresh()
+					$destServer.LinkedServers.Refresh()
+					$destServer.LinkedServers.LinkedServerLogins.Refresh()
 				}
 				catch { }
 
-				$linkedservername = $linkedserver.name
+				$linkedservername = $currentLinkedServer.Name
 
 				# This does a check to warn of missing OleDbProviderSettings but should only be checked on SQL on Windows
-				if ($destserver.Settings.OleDbProviderSettings.Name.Length -ne 0) {
-					if (!$destserver.Settings.OleDbProviderSettings.Name.Contains($provider) -and !$provider.StartsWith("SQLN")) {
-						Write-Warning "$($destserver.name) does not support the $provider provider. Skipping $linkedservername."
+				if ($destServer.Settings.OleDbProviderSettings.Name.Length -ne 0) {
+					if (!$destServer.Settings.OleDbProviderSettings.Name.Contains($provider) -and !$provider.StartsWith("SQLN")) {
+						Write-Warning "$($destServer.Name) does not support the $provider provider. Skipping $linkedservername."
 						continue
 					}
 				}
 
-				if ($destserver.LinkedServers[$linkedservername] -ne $null) {
+				if ($destServer.LinkedServers[$linkedservername] -ne $null) {
 					if (!$force) {
-						Write-Warning "$linkedservername exists $($destserver.name). Skipping."
+						Write-Warning "$linkedservername exists $($destServer.Name). Skipping."
 						continue
 					}
 					else {
 						If ($Pscmdlet.ShouldProcess($destination, "Dropping $linkedservername")) {
-							if ($linkedserver.name -eq 'repl_distributor') {
+							if ($currentLinkedServer.Name -eq 'repl_distributor') {
 								Write-Warning "repl_distributor cannot be dropped. Not going to try."
 								continue
 							}
 
-							$destserver.LinkedServers[$linkedservername].Drop($true)
-							$destserver.LinkedServers.refresh()
+							$destServer.LinkedServers[$linkedservername].Drop($true)
+							$destServer.LinkedServers.refresh()
 						}
 					}
 				}
@@ -294,23 +307,23 @@ function Copy-DbaLinkedServer {
 				Write-Output "Attempting to migrate: $linkedservername"
 				If ($Pscmdlet.ShouldProcess($destination, "Migrating $linkedservername")) {
 					try {
-						$sql = $linkedserver.Script() | Out-String
+						$sql = $currentLinkedServer.Script() | Out-String
 						$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 						Write-Verbose $sql
 
-						[void]$destserver.ConnectionContext.ExecuteNonQuery($sql)
-						$destserver.LinkedServers.Refresh()
+						[void]$destServer.ConnectionContext.ExecuteNonQuery($sql)
+						$destServer.LinkedServers.Refresh()
 						Write-Output "$linkedservername successfully copied"
 					}
 					catch {
-						Write-Warning "$linkedservername could not be added to $($destserver.name)"
+						Write-Warning "$linkedservername could not be added to $($destServer.Name)"
 						Write-Warning "Reason: $($_.Exception)"
 						$skiplogins = $true
 					}
 				}
 
 				if ($skiplogins -ne $true) {
-					$destlogins = $destserver.LinkedServers[$linkedservername].LinkedServerLogins
+					$destlogins = $destServer.LinkedServers[$linkedservername].LinkedServerLogins
 					$lslogins = $sourcelogins | Where-Object { $_.LinkedServer -eq $linkedservername }
 
 					foreach ($login in $lslogins) {
@@ -338,35 +351,42 @@ function Copy-DbaLinkedServer {
 			Write-Warning "You are using SQL credentials and this script requires Windows admin access to the source server. Trying anyway."
 		}
 
-		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
-		$source = $sourceserver.name
-		$destination = $destserver.name
+		$source = $sourceServer.Name
+		$destination = $destServer.Name
 
-		Invoke-SmoCheck -SqlInstance $sourceserver
-		Invoke-SmoCheck -SqlInstance $destserver
+		Invoke-SmoCheck -SqlInstance $sourceServer
+		Invoke-SmoCheck -SqlInstance $destServer
 
-		if (!(Test-SqlSa -SqlInstance $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
-		if (!(Test-SqlSa -SqlInstance $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
-
+		if (!(Test-SqlSa -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential)) {
+			throw "Not a sysadmin on $source. Quitting."
+		}
+		if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
+			throw "Not a sysadmin on $destination. Quitting."
+		}
+		
 		Write-Output "Getting NetBios name for $source"
-		$sourcenetbios = Resolve-NetBiosName $sourceserver
+		$sourceNetBios = Resolve-NetBiosName $sourceserver
 
 		Write-Output "Checking if remote access is enabled on $source"
-		winrm id -r:$sourcenetbios 2>$null | Out-Null
+		winrm id -r:$sourceNetBios 2>$null | Out-Null
 
 		if ($LastExitCode -ne 0) {
 			Write-Warning "Having trouble with accessing PowerShell remotely on $source. Do you have Windows admin access and is PowerShell Remoting enabled? Anyway, good luck! This may work."
 		}
 
 		Write-Output "Checking if Remote Registry is enabled on $source"
-		try { Invoke-Command -ComputerName $sourcenetbios { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } }
-		catch { throw "Can't connect to registry on $source. Quitting." }
+		try {
+			Invoke-Command -ComputerName $sourceNetBios -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" }
+		}
+		catch {
+			throw "Can't connect to registry on $source. Quitting."
+		}
 
 		# Magic happens here
-		Copy-DbaLinkedServers $linkedservers -force:$force
-
+		Copy-DbaLinkedServers $linkedservers -Force:$force
 	}
 	end {
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlLinkedServer
