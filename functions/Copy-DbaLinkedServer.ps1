@@ -96,7 +96,7 @@ function Copy-DbaLinkedServer {
 				License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
 			#>
 			param (
-				[DbaInstanceParameter]$SqlInstance
+				$SqlInstance
 			)
 
 			$server = $SqlInstance
@@ -106,10 +106,11 @@ function Copy-DbaLinkedServer {
 			# key_id 102 eq service master key, thumbprint 3 means encrypted with machinekey
 			$sql = "SELECT substring(crypt_property,9,len(crypt_property)-8) FROM sys.key_encryptions WHERE key_id=102 and (thumbprint=0x03 or thumbprint=0x0300000001)"
 			try {
-				$smkbytes = $server.ConnectionContext.ExecuteScalar($sql)
+				$smkbytes = $server.Query($sql)
 			}
 			catch {
-				throw "Can't execute SQL on $sourceName"
+				Stop-Function -Message "Can't run query" -Target $server -InnerErrorRecord $_
+#				throw "Can't execute SQL on $sourceName"
 			}
 
 			$sourceNetBios = Resolve-NetBiosName $server
@@ -145,6 +146,7 @@ function Copy-DbaLinkedServer {
 			# Choose the encryption algorithm based on the SMK length - 3DES for 2008, AES for 2012
 			# Choose IV length based on the algorithm
 			if (($serviceKey.Length -ne 16) -and ($serviceKey.Length -ne 32)) {
+				Write-Output "ServiceKey found: $serviceKey.Length"
 				throw "Unknown key size. Cannot continue. Quitting."
 			}
 
@@ -276,36 +278,36 @@ function Copy-DbaLinkedServer {
 				}
 				catch { }
 
-				$linkedservername = $currentLinkedServer.Name
+				$linkedServerName = $currentLinkedServer.Name
 
 				# This does a check to warn of missing OleDbProviderSettings but should only be checked on SQL on Windows
 				if ($destServer.Settings.OleDbProviderSettings.Name.Length -ne 0) {
 					if (!$destServer.Settings.OleDbProviderSettings.Name.Contains($provider) -and !$provider.StartsWith("SQLN")) {
-						Write-Warning "$($destServer.Name) does not support the $provider provider. Skipping $linkedservername."
+						Write-Warning "$($destServer.Name) does not support the $provider provider. Skipping $linkedServerName."
 						continue
 					}
 				}
 
-				if ($destServer.LinkedServers[$linkedservername] -ne $null) {
+				if ($destServer.LinkedServers[$linkedServerName] -ne $null) {
 					if (!$force) {
-						Write-Warning "$linkedservername exists $($destServer.Name). Skipping."
+						Write-Warning "$linkedServerName exists $($destServer.Name). Skipping."
 						continue
 					}
 					else {
-						If ($Pscmdlet.ShouldProcess($destination, "Dropping $linkedservername")) {
+						If ($Pscmdlet.ShouldProcess($destination, "Dropping $linkedServerName")) {
 							if ($currentLinkedServer.Name -eq 'repl_distributor') {
 								Write-Warning "repl_distributor cannot be dropped. Not going to try."
 								continue
 							}
 
-							$destServer.LinkedServers[$linkedservername].Drop($true)
+							$destServer.LinkedServers[$linkedServerName].Drop($true)
 							$destServer.LinkedServers.refresh()
 						}
 					}
 				}
 
-				Write-Output "Attempting to migrate: $linkedservername"
-				If ($Pscmdlet.ShouldProcess($destination, "Migrating $linkedservername")) {
+				Write-Output "Attempting to migrate: $linkedServerName"
+				If ($Pscmdlet.ShouldProcess($destination, "Migrating $linkedServerName")) {
 					try {
 						$sql = $currentLinkedServer.Script() | Out-String
 						$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
@@ -313,18 +315,18 @@ function Copy-DbaLinkedServer {
 
 						[void]$destServer.ConnectionContext.ExecuteNonQuery($sql)
 						$destServer.LinkedServers.Refresh()
-						Write-Output "$linkedservername successfully copied"
+						Write-Output "$linkedServerName successfully copied"
 					}
 					catch {
-						Write-Warning "$linkedservername could not be added to $($destServer.Name)"
+						Write-Warning "$linkedServerName could not be added to $($destServer.Name)"
 						Write-Warning "Reason: $($_.Exception)"
 						$skiplogins = $true
 					}
 				}
 
 				if ($skiplogins -ne $true) {
-					$destlogins = $destServer.LinkedServers[$linkedservername].LinkedServerLogins
-					$lslogins = $sourcelogins | Where-Object { $_.LinkedServer -eq $linkedservername }
+					$destlogins = $destServer.LinkedServers[$linkedServerName].LinkedServerLogins
+					$lslogins = $sourcelogins | Where-Object { $_.LinkedServer -eq $linkedServerName }
 
 					foreach ($login in $lslogins) {
 						If ($Pscmdlet.ShouldProcess($destination, "Migrating $($login.Login)")) {
@@ -340,7 +342,7 @@ function Copy-DbaLinkedServer {
 							}
 						}
 					}
-					Write-Output "Finished migrating logins for $linkedservername"
+					Write-Output "Finished migrating logins for $linkedServerName"
 				}
 			}
 		}
