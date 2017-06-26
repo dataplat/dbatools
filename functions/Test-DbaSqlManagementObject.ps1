@@ -43,7 +43,7 @@
 	}
 	process
 	{
-		$smolist = Get-ChildItem -Path "$($env:SystemRoot)\assembly\GAC_MSIL\Microsoft.SqlServer.Smo" -Filter "$VersionNumber.*" | Sort-Object Name -Desc | select -ExpandProperty Name
+		$smolist = (Get-ChildItem -Path "$($env:SystemRoot)\assembly\GAC_MSIL\Microsoft.SqlServer.Smo" -Filter "$VersionNumber.*" | Sort-Object Name -Desc).Name
 		
 		if ($smolist.Length -gt 0)
 		{
