@@ -135,13 +135,14 @@ function Copy-DbaLogin {
 				$userName = $sourceLogin.name
 
 				$copyLoginStatus = [pscustomobject]@{
-					SourceServer = $sourceServer.Name
+					SourceServer      = $sourceServer.Name
 					DestinationServer = $destServer.Name
-					SourceLogin = $userName
-					DestinationLogin = $userName
-					Type = $sourceLogin.LoginType
-					Status = $null
-					DateTime = [DbaDateTime](Get-Date)
+					SourceLogin       = $userName
+					DestinationLogin  = $userName
+					Type              = $sourceLogin.LoginType
+					Status            = $null
+					Notes             = $null
+					DateTime          = [DbaDateTime](Get-Date)
 				}
 
 				if ($Login -and $Login -notcontains $userName -or $ExcludeLogin -contains $userName) { continue }
