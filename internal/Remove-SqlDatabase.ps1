@@ -8,8 +8,8 @@ an SMO server object.
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[Parameter(Mandatory = $true)]
 		[string]$DBName,
 		[System.Management.Automation.PSCredential]$SqlCredential
@@ -19,7 +19,7 @@ an SMO server object.
 	
 	try
 	{
-		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 		$server.KillDatabase($dbname)
 		$server.Refresh()
 		return "Successfully dropped $dbname on $($server.name)"

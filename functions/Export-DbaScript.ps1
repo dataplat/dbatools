@@ -64,7 +64,7 @@
 	Exports all jobs on the SQL Server sql2016 instance using a trusted connection - automatically determines filename as .\sql2016-Job-Export-date.sql
 	
 	.EXAMPLE 
-	Get-DbaAgentJob -SqlInstance sql2016 -Jobs syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential (Get-Credetnial sqladmin) | Export-DbaScript -Path C:\temp\export.sql
+	Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential (Get-Credetnial sqladmin) | Export-DbaScript -Path C:\temp\export.sql
 		
 	Exports only syspolicy_purge_history and 'Hourly Log Backups' to C:temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
 	
