@@ -392,11 +392,11 @@ function Copy-DbaLinkedServer {
 		Invoke-SmoCheck -SqlInstance $destServer
 
 		if (!(Test-SqlSa -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential)) {
-			Stop-Function -Message "Not a sysadmin on $source. Quitting."
+			Stop-Function -Message "Not a sysadmin on $source. Quitting." -Target $sourceServer
 			return
 		}
 		if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
-			Stop-Function -Message "Not a sysadmin on $destination. Quitting."
+			Stop-Function -Message "Not a sysadmin on $destination. Quitting." -Target $destServer
 			return
 		}
 
@@ -412,10 +412,10 @@ function Copy-DbaLinkedServer {
 
 		Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source"
 		try {
-			Invoke-Command -ComputerName $sourceNetBios -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" }
+			Invoke-Command -ComputerName $sourceNetBios -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } -ErrorAction Stop
 		}
 		catch {
-			Stop-Function -Message "Can't connect to registry on $source. Quitting."
+			Stop-Function -Message "Can't connect to registry on $source. Quitting." -Target $sourceNetBios
 			return
 		}
 
