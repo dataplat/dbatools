@@ -207,8 +207,13 @@ function Get-DbaBackupHistory {
 						$Allbackups += $DiffDB
 					}
 					else {
-						Write-Verbose "No Diff found"
-						[bigint]$TLogStartLSN = $fulldb.FirstLsn
+						Write-Verbose "No Diff found"												
+						try { 
+							[bigint]$TLogStartLSN = $fulldb.FirstLsn 
+						}
+						catch {
+							continue
+						}
 					}
 					$Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Databases $db -raw:$raw | Where-object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$TLogstartLSN -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$Fulldb.CheckPointLSN }
 					$Allbackups | Sort-Object FirstLsn
