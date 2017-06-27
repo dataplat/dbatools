@@ -353,7 +353,7 @@ function Copy-DbaLinkedServer {
 						if ($Pscmdlet.ShouldProcess($destination, "Migrating $($login.Login)")) {
 							$currentlogin = $destlogins | Where-Object { $_.RemoteUser -eq $login.Login }
 
-							$copyLinkedServer.Type = $currentlogin
+							$copyLinkedServer.Type = $login.Login
 
 							if ($currentlogin.RemoteUser.length -ne 0) {
 								try {
