@@ -282,9 +282,21 @@ function Copy-DbaLinkedServer {
 
 				$linkedServerName = $currentLinkedServer.Name
 
+				$copyLinkedServer = [pscustomobject]@{
+					SourceServer        = $sourceServer.Name
+					DestinationServer   = $destServer.Name
+					Name                = $linkedServerName
+					Type                = $provider
+					Status              = $null
+					DateTime            = [DbaDateTime](Get-Date)
+				}
+
 				# This does a check to warn of missing OleDbProviderSettings but should only be checked on SQL on Windows
 				if ($destServer.Settings.OleDbProviderSettings.Name.Length -ne 0) {
 					if (!$destServer.Settings.OleDbProviderSettings.Name -contains $provider -and !$provider.StartsWith("SQLN")) {
+						$copyLinkedServer.Status = "Skipped"
+						$copyLinkedServer
+
 						Write-Message -Level Warning -Message "$($destServer.Name) does not support the $provider provider. Skipping $linkedServerName."
 						continue
 					}
@@ -292,6 +304,9 @@ function Copy-DbaLinkedServer {
 
 				if ($destServer.LinkedServers[$linkedServerName] -ne $null) {
 					if (!$force) {
+						$copyLinkedServer.Status = "Skipped"
+						$copyLinkedServer
+
 						Write-Message -Level Warning -Message "$linkedServerName exists $($destServer.Name). Skipping."
 						continue
 					}
@@ -317,8 +332,14 @@ function Copy-DbaLinkedServer {
 						$destServer.Query($sql)
 						$destServer.LinkedServers.Refresh()
 						Write-Output "$linkedServerName successfully copied"
+
+						$copyLinkedServer.Status = "Successful"
+						$copyLinkedServer
 					}
 					catch {
+						$copyLinkedServer.Status = "Failed"
+						$copyLinkedServer
+
 						Write-Warning "$linkedServerName could not be added to $($destServer.Name)"
 						Write-Warning "Reason: $($_.Exception)"
 						$skiplogins = $true
@@ -330,16 +351,25 @@ function Copy-DbaLinkedServer {
 					$lslogins = $sourcelogins | Where-Object { $_.LinkedServer -eq $linkedServerName }
 
 					foreach ($login in $lslogins) {
-						If ($Pscmdlet.ShouldProcess($destination, "Migrating $($login.Login)")) {
+						if ($Pscmdlet.ShouldProcess($destination, "Migrating $($login.Login)")) {
 							$currentlogin = $destlogins | Where-Object { $_.RemoteUser -eq $login.Login }
+
+							$copyLinkedServer.Type = $currentlogin
 
 							if ($currentlogin.RemoteUser.length -ne 0) {
 								try {
 									$currentlogin.SetRemotePassword($login.Password)
 									$currentlogin.Alter()
-								}
-								catch { Write-Error "$($login.login) failed to copy" }
 
+									$copyLinkedServer.Status = "Successful"
+									$copyLinkedServer
+								}
+								catch {
+									$copyLinkedServer.Status = "Failed"
+									$copyLinkedServer
+
+									Write-Error "$($login.login) failed to copy"
+								}
 							}
 						}
 					}
@@ -369,7 +399,7 @@ function Copy-DbaLinkedServer {
 		if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
 			throw "Not a sysadmin on $destination. Quitting."
 		}
-		
+
 		Write-Output "Getting NetBios name for $source"
 		$sourceNetBios = Resolve-NetBiosName $sourceserver
 
