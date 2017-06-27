@@ -132,6 +132,10 @@ function Get-DbaLogin {
 					$sql = "SELECT MAX(login_time) AS [login_time] FROM sys.dm_exec_sessions WHERE login_name = '$($serverLogin.name)'"
 					Add-Member -InputObject $serverLogin -MemberType NoteProperty -Name LastLogin -Value $server.ConnectionContext.ExecuteScalar($sql)
 				}
+				else 
+				{
+					Add-Member -InputObject $serverLogin -MemberType NoteProperty -Name LastLogin -Value $null
+				}
 
 				Add-Member -InputObject $serverLogin -MemberType NoteProperty -Name ComputerName -Value $server.NetName
 				Add-Member -InputObject $serverLogin -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
