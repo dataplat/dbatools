@@ -134,6 +134,16 @@ function Copy-DbaLogin {
 
 				$userName = $sourceLogin.name
 
+				$copyLoginStatus = [pscustomobject]@{
+					SourceServer = $sourceServer.Name
+					DestinationServer = $destServer.Name
+					SourceLogin = $userName
+					DestinationLogin = $userName
+					Type = $sourceLogin.LoginType
+					Status = $null
+					DateTime = [DbaDateTime](Get-Date)
+				}
+
 				if ($Login -and $Login -notcontains $userName -or $ExcludeLogin -contains $userName) { continue }
 
 				if ($sourceLogin.id -eq 1) { continue }
@@ -151,6 +161,9 @@ function Copy-DbaLogin {
 					if ($Pscmdlet.ShouldProcess("console", "Stating $userName is skipped because it is performing the migration.")) {
 						Write-Message -Level Warning -Message "Cannot drop login performing the migration. Skipping"
 					}
+
+					$copyLoginStatus.Status = "Skipped"
+					$copyLoginStatus
 					continue
 				}
 
@@ -165,6 +178,9 @@ function Copy-DbaLogin {
 						if ($Pscmdlet.ShouldProcess("console", "Stating $userName was skipped because it is a local machine name.")) {
 							Write-Message -Level Warning -Message "$userName was skipped because it is a local machine name."
 						}
+
+						$copyLoginStatus.Status = "Skipped"
+						$copyLoginStatus
 						continue
 					}
 					else {
@@ -178,12 +194,18 @@ function Copy-DbaLogin {
 					if ($Pscmdlet.ShouldProcess("console", "Stating $userName is skipped because it exists at destination.")) {
 						Write-Message -Level Warning -Message "$userName already exists in destination. Use -Force to drop and recreate."
 					}
+
+					$copyLoginStatus.Status = "Skipped"
+					$copyLoginStatus
 					continue
 				}
 
 				if ($Login -ne $null -and $force) {
 					if ($userName -eq $destServer.ServiceAccount) {
 						Write-Message -Level Warning -Message "$userName is the destination service account. Skipping drop."
+
+						$copyLoginStatus.Status = "Skipped"
+						$copyLoginStatus
 						continue
 					}
 
@@ -219,6 +241,9 @@ function Copy-DbaLogin {
 							Write-Message -Level Verbose -Message "Successfully dropped $userName on $destination"
 						}
 						catch {
+							$copyLoginStatus.Status = "Failed"
+							$copyLoginStatus
+
 							Stop-Function -Message "Could not drop $userName" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
 						}
 					}
@@ -287,6 +312,10 @@ function Copy-DbaLogin {
 							$destLogin.Create($hashedPass, [Microsoft.SqlServer.Management.Smo.LoginCreateOptions]::IsHashed)
 							$destLogin.Refresh()
 							Write-Message -Level Verbose -Message "Successfully added $userName to $destination"
+
+							$copyLoginStatus.Status = "Successful"
+							$copyLoginStatus
+
 						}
 						catch {
 							try {
@@ -299,8 +328,15 @@ function Copy-DbaLogin {
 
 								$destLogin = $destServer.logins[$userName]
 								Write-Message -Level Verbose -Message "Successfully added $userName to $destination"
+
+								$copyLoginStatus.Status = "Successful"
+								$copyLoginStatus
+
 							}
 							catch {
+								$copyLoginStatus.Status = "Failed"
+								$copyLoginStatus
+
 								Stop-Function -Message "Failed to add $userName to $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
 							}
 						}
@@ -317,14 +353,25 @@ function Copy-DbaLogin {
 							$destLogin.Create()
 							$destLogin.Refresh()
 							Write-Message -Level Verbose -Message "Successfully added $userName to $destination"
+
+							$copyLoginStatus.Status = "Successful"
+							$copyLoginStatus
+
 						}
 						catch {
-							Stop-Function -Message "Failed to add $userName to $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer (or whatever applicable) -Continue
+							$copyLoginStatus.Status = "Failed"
+							$copyLoginStatus
+
+							Stop-Function -Message "Failed to add $userName to $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
 						}
 					}
 					# This script does not currently support certificate mapped or asymmetric key users.
 					else {
 						Write-Message -Level Warning -Message "$($sourceLogin.LoginType) logins not supported. $($sourceLogin.name) skipped."
+
+						$copyLoginStatus.Status = "Skipped"
+						$copyLoginStatus
+
 						continue
 					}
 
@@ -333,7 +380,10 @@ function Copy-DbaLogin {
 							$destLogin.Disable()
 						}
 						catch {
-							Stop-Function -Message "$userName disabled on source, could not be disabled on $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer (or whatever applicable)
+							$copyLoginStatus.Status = "Successful - but could not disable on destination"
+							$copyLoginStatus
+
+							Stop-Function -Message "$userName disabled on source, could not be disabled on $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
 						}
 					}
 					if ($sourceLogin.DenyWindowsLogin) {
@@ -341,7 +391,10 @@ function Copy-DbaLogin {
 							$destLogin.DenyWindowsLogin = $true
 						}
 						catch {
-							Stop-Function -Message "$userName denied login on source, could not be denied login on $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer (or whatever applicable)
+							$copyLoginStatus.Status = "Successful - but could not deny login on destination"
+							$copyLoginStatus
+
+							Stop-Function -Message "$userName denied login on source, could not be denied login on $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
 						}
 					}
 				}
@@ -355,7 +408,17 @@ function Copy-DbaLogin {
 					if ($Pscmdlet.ShouldProcess($destination, "Renaming SQL Login $userName to $NewLogin")) {
 						try {
 							Rename-DbaLogin -SqlInstance $destServer -Login $userName -NewLogin $NewLogin
-						} catch {
+
+							$copyLoginStatus.DestinationLogin = $NewLogin
+							$copyLoginStatus.Status = "Successful"
+							$copyLoginStatus
+
+						}
+						catch {
+							$copyLoginStatus.DestinationLogin = $NewLogin
+							$copyLoginStatus.Status = "Failed to rename"
+							$copyLoginStatus
+
 							Stop-Function -Message "Issue renaming $userName to $NewLogin" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
 						}
 					}
