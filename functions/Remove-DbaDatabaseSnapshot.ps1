@@ -28,6 +28,9 @@ NB: you can pass either Databases or Snapshots
 .PARAMETER AllSnapshots
 Specifies that you want to remove all snapshots from the server
 
+.PARAMETER Force
+Will forcibly kill all running queries that prevent the drop process.
+
 .PARAMETER WhatIf
 Shows what would happen if the command were to run
 
@@ -79,7 +82,7 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[parameter(Mandatory = $false, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
@@ -92,23 +95,32 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 		[parameter(ValueFromPipeline = $true)]
 		[object]$PipelineSnapshot,
 		[switch]$AllSnapshots,
+		[switch]$Force,
 		[switch]$Silent
 	)
 
 	process {
 		if (!$Snapshot -and !$Database -and !$AllSnapshots -and $null -eq $PipelineSnapshot -and !$ExcludeDatabase) {
 			Stop-Function -Message "You must specify -Snapshot, -Database, -Exclude or -AllSnapshots"
+			return
 		}
 		# handle the database object passed by the pipeline
 		# do we need a specialized type back ?
 		if ($null -ne $PipelineSnapshot -and $PipelineSnapshot.getType().Name -eq 'pscustomobject') {
 			if ($Pscmdlet.ShouldProcess($PipelineSnapshot.SnapshotDb.Parent.DomainInstanceName, "Remove db snapshot $($PipelineSnapshot.SnapshotDb.Name)")) {
-				$dropped = Remove-SqlDatabase -SqlInstance $PipelineSnapshot.SnapshotDb.Parent.DomainInstanceName -DBName $PipelineSnapshot.SnapshotDb.Name -SqlCredential $Credential
-				if ($dropped -match "Success") {
-					$status = "Dropped"
+				try {
+					$server = Connect-SqlInstance -SqlInstance $PipelineSnapshot.SnapshotDb.Parent.DomainInstanceName -SqlCredential $Credential
+				} catch {
+					Stop-Function -Message "Failed to connect to: $instance" -InnerErrorRecord $_ -Target $instance -Continue -Silent $Silent
 				}
-				else {
-					Write-Message -Level Warning -Message $dropped
+				try {
+					if ($Force) {
+						$server.KillAllProcesses($PipelineSnapshot.SnapshotDb.Name)
+					}
+					$null = $server.ConnectionContext.ExecuteNonQuery("drop database [$($PipelineSnapshot.SnapshotDb.Name)]")
+					$status = "Dropped"
+				} catch {
+					Write-Message -Level Warning -Message $_
 					$status = "Drop failed"
 				}
 
@@ -130,6 +142,7 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 			} catch {
 				Stop-Function -Message "Failed to connect to: $instance" -InnerErrorRecord $_ -Target $instance -Continue -Silent $Silent
 			}
+			
 
 			$dbs = $server.Databases
 
@@ -152,12 +165,15 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 					continue
 				}
 				If ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot $db")) {
-					$dropped = Remove-DbaDatabase -SqlInstance $server -DBName $db.Name -SqlCredential $Credential
-					if ($dropped -match "Success") {
+					try {
+						if ($Force) {
+							# cannot drop the snapshot if someone is using it
+							$server.KillAllProcesses($db)
+						}
+						$null = $server.ConnectionContext.ExecuteNonQuery("drop database $db")
 						$status = "Dropped"
-					}
-					else {
-						Write-Message -Level Warning -Message $dropped
+					} catch {
+						Write-Message -Level Warning -Message $_
 						$status = "Drop failed"
 					}
 					[PSCustomObject]@{
